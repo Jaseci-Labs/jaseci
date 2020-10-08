@@ -1,0 +1,164 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Basic Arithmetic Operations}
+The simplest math operations in Jac.
+\begin{description}
+    \item[Code] \texttt{}
+          \begin{lstlisting}[caption={Basic arithmetic operations}]
+walker init {
+    a = 4 + 4;
+    b = 4 * -5;
+    c = 4 / 4;  # Evaluates to a floating point number
+    d = 4 - 6;
+    e = a + b + c + d;
+    std.out(a, b, c, d, e);
+}
+    \end{lstlisting}
+    \item[Output] \texttt{ }
+          \begin{lstlisting}[language=shell]
+8 -20 1.0 -2 -13.0
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+\noindent Additionally, Jac supports power and modulo operations.
+\begin{description}
+    \begin{lstlisting}[caption={Additional arithmetic operations}]
+walker init {
+    a = 4 ^ 4; b = 9 % 5; std.out(a, b);
+}
+    \end{lstlisting}
+    \item[Output] \texttt{ }
+          \begin{lstlisting}[language=shell]
+256 4
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Comparison Operations}
+\begin{description}
+    \begin{lstlisting}[caption={Comparision operations}]
+walker init {
+    a = 5; b = 6;
+    std.out(a == b,
+            a != b,
+            a < b,
+            a > b,
+            a <= b,
+            a >= b,
+            a == b-1);
+}
+    \end{lstlisting}
+    \item[Output] \texttt{ }
+          \begin{lstlisting}[language=shell]
+false true true false true false true
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Logical Operations}
+\begin{description}
+    \begin{lstlisting}[caption={Logical operations}]
+walker init {
+    a = true; b = false;
+    std.out(a,
+            !a,
+            a && b,
+            a || b,
+            a and b,
+            a or b,
+            !a or b,
+            !(a and b));
+}
+    \end{lstlisting}
+    \item[Output] \texttt{ }
+          \begin{lstlisting}[language=shell]
+true false false true false true false true
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Assignment Operations}
+\begin{description}
+    \begin{lstlisting}[caption={Assignment operations}]
+walker init {
+    a = 4 + 4; std.out(a);
+    a += 4 + 4; std.out(a);
+    a -= 4 * -5; std.out(a);
+    a *= 4 / 4; std.out(a);
+    a /= 4 - 6; std.out(a);
+
+    # a := here; std.out(a);
+    # Noting existence of copy assign, described later
+}
+    \end{lstlisting}
+    \item[Output] \texttt{ }
+          \begin{lstlisting}[language=shell]
+8
+16
+36
+36.0
+-18.0
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Foreshadowing Unique Graph Operations}
+\begin{description}
+    \begin{lstlisting}[caption={Preview of graph operators},
+        label={code:moremath}]
+edge back;
+
+walker init {
+    node_a = spawn node;
+    here --> node_a;
+    here <-[back]- node_a;
+
+    node_b = spawn here <-> node;
+    node_b --> node_a
+}
+    \end{lstlisting}
+    \item[Output] \texttt{ }
+    \item[Description] \texttt{}
+
+          \begin{tikzpicture}[node distance = {1.0cm and 1.5cm}, v/.style = {draw, circle}]
+              \graph[nodes={circle, draw}, grow right=2.25cm, branch down=1.75cm]{
+              H -> A,
+              A -> ["back"] H,
+              H -- B,
+              B -> A,
+              };
+          \end{tikzpicture}
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Precedence}
+
+\begin{table}[h]
+    \small
+    \centering
+    \begin{tabular}{l l l}
+        \toprule
+        \textbf{Rank} & \textbf{Symbol}          & \textbf{Description}                           \\
+        \midrule
+        1             & () [] . :: --> <-- spawn & Parenthetical/grouping, node/edge manipulation \\
+        2             & \textasciicircum         & Exponent                                       \\
+        3             & * / \%                   & Multiplication, division, modulo               \\
+        4             & + -                      & Addition, subtraction                          \\
+        5             & == != >= <= > <          & Comparison                                     \\
+        6             & \&\& || and or           & Logical                                        \\
+        7             & = += -= *= /= :=         & Assignment                                     \\
+        \bottomrule
+    \end{tabular}
+    \caption{Precedence of operations in Jac}
+    \label{tab:jacprecedence} % Unique label used for referencing the table in-text
+    %\addcontentsline{toc}{table}{Table \ref{tab:jacprecedence}} % Uncomment to add the table to the table of contents
+\end{table}

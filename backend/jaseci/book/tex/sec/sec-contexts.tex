@@ -1,0 +1,44 @@
+In Jaseci, a \emph{context element} represents a data element with a corresponding unique identifier of that data element. This abstraction is analogous to the traditional view of addressible memory in a computer system [CITE] for which which each word (data value) is addressible with a 32-bit or 64-bit memory address (identifier). However, a context element is untyped and in principle unbounded in size. Context have no requirements or restrictions for the kind or type of data element that is stored and only requires the identifier to be unique.
+
+Though contexts are sufficent to enable all representations and management of data in the Jaseci machine, we also introduce the abstraction of \emph{context sets} that represents an explicit set of contexts bound to a single identifier. This \emph{context set} abstraction provides the utility of grouping, organizing, and handeling collections of related contexts as a single unit.
+\begin{remark}
+    \begin{tBox}
+        The practical implmenetation of a Jaseci machine described in this book uses URN UUIDs [CITE] for the identifer.
+    \end{tBox}
+\end{remark}
+
+\subsection{Formal Definition of Contexts and Context Sets}
+
+Definitions~\ref{def:context} and~\ref{def:context_set} formally describe contexts and context sets.
+
+\begin{definition}[context]
+    \label{def:context}
+    \index{context}
+    A \emph{context} is a representation of data that can be expressed as a $2$-tuple $(k,v)$, where
+    \begin{enumerate}
+        \item $k$ is a unique identifier of the context
+        \item $v$ is an encoding of the data represented by the context
+    \end{enumerate}
+\end{definition}
+
+\begin{definition}[context set]
+    \label{def:context_set}
+    \index{context set}
+    A \emph{context set} is a representation of data that can be expressed as a $2$-tuple $(k,C)$, where
+    \begin{enumerate}
+        \item $k$ is a unique identifier of the context set
+        \item $C$ is an explicit finite set of contexts and context sets
+    \end{enumerate}
+\end{definition}
+
+
+
+\subsection{Example}
+\begin{example}
+    For each trip a shopper has made to a grocery store, suppose we'd like to use contexts to represent what the shopper bought and the most expensive item.
+    Let the set $I = \{ item_{1},\:item_{2},\:item_{3},\:\dots,\:item_{n}\}$ be the set of all distinct items in a given store and $P = \{item | item \in I \:\text{and was paid for by shopper}\}$ . We construct the context and context set
+    \begin{align}
+        A & = (k,\:item_{i}\:|\:\text{$item_{i}$ is the first $item \in I \land P$ sorted by cost.}) \\
+        B & = (k, I \land P)
+    \end{align}
+\end{example}

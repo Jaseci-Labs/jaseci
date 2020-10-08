@@ -1,0 +1,145 @@
+Define and describe walker in Jac
+
+Introduce graphs, nodes, edges
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Simple walker creating and connected nodes}]
+walker init {
+    node1 = spawn node;
+    node2 = spawn node;
+    node1 <-> node2;
+    here --> node1;
+    node2 <-- here;
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Creating named node types}]
+node person;
+edge assists;
+edge family;
+
+walker init {
+    node1 = spawn node::person;
+    node2 = spawn node::person;
+    node1 <-[family]-> node2;
+    here -[friend]-> node1;
+    node2 <-[friend]- here;
+
+    # named and unnamed edges and nodes can be mixed
+    node2 --> here;
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Connecting nodes within \texttt{spawn} statement}]
+node person;
+edge assists;
+edge family;
+
+walker init {
+    node1 = spawn here -[friend]-> node::person;
+    node2 = spawn node1 <-[family]-> node::person;
+    here -[friend]-> node2;
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Chaining node connections using the connect operator}]
+node person;
+edge assists;
+edge family;
+
+walker init {
+    node1 = spawn node::person;
+    node2 = spawn node::person;
+    node2 <-[friend]- here -[friend]-> node1
+          <-[family]-> node2;
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+\begin{description}
+    \begin{lstlisting}[caption={Walkers spawning other walkers}]
+node person;
+edge assists;
+edge family;
+
+walker family_ties {
+    for i in -[family]->:
+        std.out(here, ' is related to ', i);
+}
+
+walker init {
+    node1 = spawn here -[friend]-> node::person;
+    node2 = spawn node1 <-[family]-> node::person;
+    here -[friend]-> node2;
+    spawn here walker::family_ties;
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Getting returned values from spawned walkers}]
+node person;
+edge assists;
+edge family;
+
+walker family_ties {
+    has anchor fam_nodes;
+    fam_nodes = -[family]->:
+}
+
+walker init {
+    node1 = spawn here -[friend]-> node::person;
+    node2 = spawn node1 <-[family]-> node::person;
+    here -[friend]-> node2;
+    fam = spawn here walker::family_ties;
+    for i in fam:
+        std.out(here, ' is related to ', i);
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+          \begin{remark}
+              \begin{tBox}
+                  Remember \texttt{spawn} statements are expressions so they can be used as such, e.g.,
+                  \begin{lstlisting}
+for i in spawn here walker::family_ties:
+    std.out(here, ' is related to ', i);
+        \end{lstlisting}
+              \end{tBox}
+          \end{remark}
+\end{description}
+

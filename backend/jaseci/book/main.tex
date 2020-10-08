@@ -1,0 +1,249 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The Legrand Orange Book
+% LaTeX Template
+% Version 2.4 (26/09/2018)
+%
+% This template was downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% Mathias Legrand (legrand.mathias@gmail.com) with modifications by:
+% Vel (vel@latextemplates.com)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+% Compiling this template:
+% This template uses biber for its bibliography and makeindex for its index.
+% When you first open the template, compile it from the command line with the
+% commands below to make sure your LaTeX distribution is configured correctly:
+%
+% 1) pdflatex main
+% 2) makeindex main.idx -s StyleInd.ist
+% 3) biber main
+% 4) pdflatex main x 2
+%
+% After this, when you wish to update the bibliography/index use the appropriate
+% command above and make sure to compile with pdflatex several times
+% afterwards to propagate your changes to the document.
+%
+% This template also uses a number of packages which may need to be
+% updated to the newest versions for the template to compile. It is strongly
+% recommended you update your LaTeX distribution if you have any
+% compilation errors.
+%
+% Important note:
+% Chapter heading images should have a 2:1 width:height ratio,
+% e.g. 920px width and 460px height.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[11pt,fleqn,openany]{book} % Default font size and left-justified equations
+\input{structure.tex} % Insert the commands.tex file which contains the majority of the structure behind the template
+
+%\hypersetup{pdftitle={Title},pdfauthor={Author}} % Uncomment and fill out to include PDF metadata for the author and title of the book
+
+\usepackage{listings}
+\usepackage{caption}
+%----------------------------------------------------------------------------------------
+
+
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\lstdefinelanguage{jac}
+{
+    % list of keywords
+    keywords={ node, ignore, take, entry, activity, exit, spawn, with,
+            edge, walker, and, or, if, elif, else, for, with, by, while,
+            continue, break, disengage, report, anchor, has, can, true, false
+        },
+    sensitive=false, % keywords are not case-sensitive
+    morecomment=[l]{//}, % l is for line comment
+    morecomment=[l]{\#}, % l is for line comment
+    morecomment=[s]{/*}{*/}, % s is for start and end delimiter
+    morestring=[b]", % defines that strings are enclosed in double quotes
+    morestring=[b]',
+}
+\lstdefinelanguage{shell}
+{
+    % list of keywords
+    keywords={
+        },
+}
+
+\lstdefinestyle{gram}{
+basicstyle=\footnotesize\ttfamily\color{olive},%
+breaklines=true,%                                      allow line breaks
+moredelim=[s][\color{green!50!black}\ttfamily]{'}{'},% single quotes in green
+moredelim=*[s][\color{black}\ttfamily]{options}{\}},%  options in black (until trailing })
+commentstyle={\color{gray}\itshape},%                  gray italics for comments
+morecomment=[l]{//},%                                  define // comment
+emph={%
+        STRING%                                            literal strings listed here
+    },emphstyle={\color{blue}\ttfamily},%              and formatted in blue
+alsoletter={:,|,;},%
+morekeywords={:,|,;},%                                 define the special characters
+keywordstyle={\color{black}},%                         and format them in black
+}
+\renewcommand{\lstlistingname}{Jac Code}% Listing -> Jac Code
+\renewcommand{\lstlistlistingname}{List of \lstlistingname s}% List of Listings -> List of Algorithms
+
+% \DeclareCaptionFormat{listing}{#1#2#3}
+
+% \captionsetup[lstlisting]{format=listing,singlelinecheck=false,margin=0pt,labelfont=bf}
+\DeclareCaptionFont{white}{\color{white}\footnotesize\upshape\ttfamily}
+\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\linewidth}{#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white,margin=0pt}
+\lstset{ %
+    language=jac,                                     % choose the language of the code
+    frame=single,	                                % adds a frame around the code
+    captionpos=t,
+    basicstyle=\footnotesize\upshape\ttfamily,      % the size of the fonts that are used for the code
+    numbers=none,                    % where to put the line-numbers; possible values are (none, left, right)
+    numbersep=10pt,                   % how far the line-numbers are from the code
+    numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+    keywordstyle=\bfseries\color{green!55!black},
+    commentstyle=\itshape\color{purple!70!black},
+    identifierstyle=\color{blue!60!black},
+    stringstyle=\color{orange},
+    xleftmargin=3.5pt,
+    xrightmargin=-2.5pt,
+}
+
+
+
+\begin{document}
+
+
+
+% \lstset{
+%   backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+%   basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+%   breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+%   breaklines=true,                 % sets automatic line breaking
+%   captionpos=b,                    % sets the caption-position to bottom
+%   commentstyle=\color{mygreen},    % comment style
+%   deletekeywords={...},            % if you want to delete keywords from the given language
+%   escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+%   extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+%   firstnumber=1000,                % start line enumeration with line 1000
+%   frame=single,	                   % adds a frame around the code
+%   keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+%   keywordstyle=\color{blue},       % keyword style
+%   language=Octave,                 % the language of the code
+%   morekeywords={*,...},            % if you want to add more keywords to the set
+%   numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+%   numbersep=5pt,                   % how far the line-numbers are from the code
+%   numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+%   rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+%   showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+%   showstringspaces=false,          % underline spaces within strings only
+%   showtabs=false,                  % show tabs within strings adding particular underscores
+%   stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+%   stringstyle=\color{mymauve},     % string literal style
+%   tabsize=2,	                   % sets default tabsize to 2 spaces
+%   title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+% }
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\begingroup
+\thispagestyle{empty} % Suppress headers and footers on the title page
+\begin{tikzpicture}[remember picture,overlay]
+    \node[inner sep=0pt] (background) at (current page.center) {\includegraphics[width=\paperwidth]{background.pdf}};
+    \draw (current page.center) node [fill=ocre!30!white,fill opacity=0.6,text opacity=1,inner sep=1cm]
+    {\Huge\centering\bfseries\sffamily\parbox[c][][t]{\paperwidth}
+    {\centering The Jaseci Machine \& \\Jac Language\\[15pt] % Book title
+    {\Large Processing Architecture and Programming Language for High Complexity AI}\\[20pt] % Subtitle
+    {\huge Dr. Jason Mars}}}; % Author name
+\end{tikzpicture}
+\vfill
+\endgroup
+
+%----------------------------------------------------------------------------------------
+%	COPYRIGHT PAGE
+%----------------------------------------------------------------------------------------
+
+\newpage
+~\vfill
+\thispagestyle{empty}
+
+\noindent Copyright \copyright\ 2020 Dr. Jason Mars\\ % Copyright notice
+
+\noindent \textsc{Published by Publisher}\\ % Publisher
+
+\noindent \textsc{jasonmars.org}\\ % URL
+
+% \noindent Licensed under the Creative Commons Attribution-NonCommercial 3.0 Unported License (the ``License''). You may not use this file except in compliance with the License. You may obtain a copy of the License at \url{http://creativecommons.org/licenses/by-nc/3.0}. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \textsc{``as is'' basis, without warranties or conditions of any kind}, either express or implied. See the License for the specific language governing permissions and limitations under the License.\\ % License information, replace this with your own license (if any)
+
+\noindent \textit{First printing, September 2020} % Printing/edition date
+
+%----------------------------------------------------------------------------------------
+%	TABLE OF CONTENTS
+%----------------------------------------------------------------------------------------
+
+%\usechapterimagefalse % If you don't want to include a chapter image, use this to toggle images off - it can be enabled later with \usechapterimagetrue
+
+\chapterimage{chapter_head.pdf} % Table of contents heading image
+
+\pagestyle{empty} % Disable headers and footers for the following pages
+
+\tableofcontents % Print the table of contents itself
+
+% \cleardoublepage % Forces the first chapter to start on an odd page so it's on the right side of the book
+
+\pagestyle{fancy} % Enable headers and footers again
+
+
+%----------------------------------------------------------------------------------------
+%   Main Content
+%----------------------------------------------------------------------------------------
+\chapterimage{chapter_head.pdf}\chapter{Introduction}\input{tex/chap/chap-intro}
+\part{Jaseci Machine}\input{tex/part/part-machine}
+\part{Jac Language}\input{tex/part/part-language}
+\part{API Substrate for Computation}\input{tex/part/part-api}
+\part{Case Studies}\input{tex/part/part-cases}
+
+This statement requires citation \cite{article_key}; this one is more specific \cite[162]{book_key}.
+
+\appendix\part{Appendix}
+\chapterimage{chapter_head.pdf}\chapter{Jaseci Shell}\input{tex/chap/chap-shell}
+\chapterimage{chapter_head.pdf}\chapter{Jac Language Grammar}\input{tex/chap/chap-jacspec}
+
+%----------------------------------------------------------------------------------------
+%	BIBLIOGRAPHY
+%----------------------------------------------------------------------------------------
+
+\chapter*{Bibliography}
+\addcontentsline{toc}{chapter}{\textcolor{ocre}{Bibliography}} % Add a Bibliography heading to the table of contents
+
+%------------------------------------------------
+
+\section*{Articles}
+\addcontentsline{toc}{section}{Articles}
+\printbibliography[heading=bibempty,type=article]
+
+%------------------------------------------------
+
+\section*{Books}
+\addcontentsline{toc}{section}{Books}
+\printbibliography[heading=bibempty,type=book]
+
+
+%----------------------------------------------------------------------------------------
+%	INDEX
+%----------------------------------------------------------------------------------------
+
+\cleardoublepage % Make sure the index starts on an odd (right side) page
+\phantomsection
+\setlength{\columnsep}{0.75cm} % Space between the 2 columns of the index
+\addcontentsline{toc}{chapter}{\textcolor{ocre}{Index}} % Add an Index heading to the table of contents
+\printindex % Output the index
+
+%----------------------------------------------------------------------------------------
+
+\end{document}

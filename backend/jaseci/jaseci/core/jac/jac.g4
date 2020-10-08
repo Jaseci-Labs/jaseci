@@ -1,0 +1,217 @@
+grammar jac;
+
+/* Sentinels handle these top rules */
+start: element*;
+
+element: architype | walker;
+
+architype:
+	KW_NODE NAME (COLON INT)? attr_block
+	| KW_EDGE NAME attr_block;
+
+walker: KW_WALKER NAME LBRACE (attr_stmt)* statement* RBRACE;
+
+attr_block:
+	LBRACE (attr_stmt)* RBRACE
+	| COLON (attr_stmt)* SEMI
+	| SEMI;
+
+attr_stmt: has_stmt | can_stmt;
+
+has_stmt: KW_HAS KW_ANCHOR? NAME (COMMA NAME)* SEMI;
+
+can_stmt:
+	KW_CAN dotted_name preset_in_out? (KW_WITH KW_MOVE)? (
+		COMMA dotted_name preset_in_out? (KW_WITH KW_MOVE)?
+	)* SEMI;
+
+preset_in_out:
+	DBL_COLON NAME (COMMA NAME)* (DBL_COLON | COLON_OUT NAME)?;
+
+dotted_name: NAME (DOT NAME)*;
+
+code_block: LBRACE statement* RBRACE | COLON statement;
+
+node_ctx_block: NAME (COMMA NAME)* code_block;
+
+statement:
+	code_block
+	| node_ctx_block
+	| expression SEMI
+	| if_stmt
+	| for_stmt
+	| while_stmt
+	| ctrl_stmt SEMI
+	| action_stmt;
+
+if_stmt: KW_IF expression code_block (elif_stmt)* (else_stmt)?;
+
+elif_stmt: KW_ELIF expression code_block;
+
+else_stmt: KW_ELSE code_block;
+
+for_stmt:
+	KW_FOR expression KW_TO expression KW_BY expression code_block
+	| KW_FOR NAME KW_IN expression code_block;
+
+while_stmt: KW_WHILE expression code_block;
+
+ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_DISENGAGE | KW_SKIP;
+
+action_stmt:
+	ignore_action
+	| take_action
+	| report_action
+	| destroy_action;
+
+ignore_action: KW_IGNORE expression SEMI;
+
+take_action: KW_TAKE expression (SEMI | else_stmt);
+
+report_action: KW_REPORT expression SEMI;
+
+destroy_action: KW_DESTROY expression SEMI;
+
+expression: assignment | connect;
+
+assignment:
+	dotted_name EQ expression
+	| inc_assign
+	| copy_assign;
+
+inc_assign: dotted_name (PEQ | MEQ | TEQ | DEQ) expression;
+
+copy_assign: dotted_name CPY_EQ expression;
+
+connect: logical ( (NOT)? edge_ref expression)?;
+
+logical: compare ((KW_AND | KW_OR) compare)*;
+
+compare:
+	NOT compare
+	| arithmetic (
+		(EE | LT | GT | LTE | GTE | NE | KW_IN | nin) arithmetic
+	)*;
+
+nin: NOT KW_IN;
+
+arithmetic: term ((PLUS | MINUS) term)*;
+
+term: factor ((MUL | DIV | MOD) factor)*;
+
+factor: (PLUS | MINUS) factor | power;
+
+power: func_call (POW factor)*;
+
+func_call:
+	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?;
+
+atom:
+	INT
+	| FLOAT
+	| STRING
+	| BOOL
+	| array_ref
+	| attr_ref
+	| node_ref
+	| edge_ref (node_ref)? /* Returns nodes even if edge */
+	| list_val
+	| dotted_name
+	| LPAREN expression RPAREN
+	| spawn;
+
+array_ref: dotted_name (LSQUARE expression RSQUARE)+;
+
+attr_ref: dotted_name DBL_COLON dotted_name;
+
+node_ref: KW_NODE (DBL_COLON NAME)?;
+
+edge_ref: edge_to | edge_from | edge_any;
+
+edge_to: '-' ('[' NAME ']')? '->';
+
+edge_from: '<-' ('[' NAME ']')? '-';
+
+edge_any: '<-' ('[' NAME ']')? '->';
+
+list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
+
+spawn: KW_SPAWN expression spawn_object;
+
+spawn_object: node_spawn | walker_spawn;
+
+node_spawn: edge_ref node_ref spawn_ctx?;
+
+walker_spawn: KW_WALKER DBL_COLON NAME spawn_ctx?;
+
+spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
+
+/* Lexer rules */
+KW_NODE: 'node';
+KW_IGNORE: 'ignore';
+KW_TAKE: 'take';
+KW_MOVE: 'entry' | 'activity' | 'exit';
+KW_SPAWN: 'spawn';
+KW_WITH: 'with';
+COLON: ':';
+DBL_COLON: '::';
+COLON_OUT: '::>';
+LBRACE: '{';
+RBRACE: '}';
+KW_EDGE: 'edge';
+KW_WALKER: 'walker';
+SEMI: ';';
+EQ: '=';
+PEQ: '+=';
+MEQ: '-=';
+TEQ: '*=';
+DEQ: '/=';
+CPY_EQ: ':=';
+KW_AND: 'and' | '&&';
+KW_OR: 'or' | '||';
+KW_IF: 'if';
+KW_ELIF: 'elif';
+KW_ELSE: 'else';
+KW_FOR: 'for';
+KW_TO: 'to';
+KW_BY: 'by';
+KW_WHILE: 'while';
+KW_CONTINUE: 'continue';
+KW_BREAK: 'break';
+KW_DISENGAGE: 'disengage';
+KW_SKIP: 'skip';
+KW_REPORT: 'report';
+KW_DESTROY: 'destroy';
+DOT: '.';
+NOT: '!' | 'not';
+EE: '==';
+LT: '<';
+GT: '>';
+LTE: '<=';
+GTE: '>=';
+NE: '!=';
+KW_IN: 'in';
+KW_ANCHOR: 'anchor';
+KW_HAS: 'has';
+COMMA: ',';
+KW_CAN: 'can';
+PLUS: '+';
+MINUS: '-';
+MUL: '*';
+DIV: '/';
+MOD: '%';
+POW: '^';
+LPAREN: '(';
+RPAREN: ')';
+LSQUARE: '[';
+RSQUARE: ']';
+FLOAT: [0-9]+ '.' [0-9]+;
+STRING: '"' ~ ["\r\n]* '"' | '\'' ~ ['\r\n]* '\'';
+BOOL: 'true' | 'false';
+INT: [0-9]+;
+NAME: [a-zA-Z_] [a-zA-Z0-9_]*;
+COMMENT: '/*' .*? '*/' -> skip;
+LINE_COMMENT: '//' ~[\r\n]* -> skip;
+PY_COMMENT: '#' ~[\r\n]* -> skip;
+WS: [ \t\r\n] -> skip;
+ErrorChar: .;

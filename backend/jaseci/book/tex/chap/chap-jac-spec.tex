@@ -1,0 +1,733 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rules] \texttt{start, element}
+          \begin{lstlisting}[style=gram]
+grammar jac;
+
+start: element*;
+
+element: architype | walker;
+
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+node person;
+edge friend;
+
+walker friend_network {}
+        \end{lstlisting}
+
+    \item[Description] Every program begins with a number of architypes followed by walkers.
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+architype:
+    KW_NODE NAME (COLON INT)? attr_block
+    | KW_EDGE NAME attr_block;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+walker: KW_WALKER NAME LBRACE (attr_stmt)* statement* RBRACE;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+attr_block:
+    LBRACE (attr_stmt)* RBRACE
+    | COLON (attr_stmt)* SEMI
+    | SEMI;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+attr_stmt: has_stmt | can_stmt;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+has_stmt: KW_HAS KW_ANCHOR? NAME (COMMA NAME)* SEMI;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+can_stmt:
+    KW_CAN dotted_name preset_in_out? (KW_WITH KW_MOVE)? (
+        COMMA dotted_name preset_in_out? (KW_WITH KW_MOVE)?
+    )* SEMI;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+preset_in_out: DBL_COLON NAME (COMMA NAME)* (COLON_OUT NAME)?;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+code_block: LBRACE statement* RBRACE | COLON statement;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+node_ctx_block: NAME (COMMA NAME)* code_block;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+statement:
+    code_block
+    | node_ctx_block
+    | expression SEMI
+    | if_stmt
+    | for_stmt
+    | while_stmt
+    | ctrl_stmt SEMI
+    | action_stmt;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+if_stmt: KW_IF expression code_block (elif_stmt)* (else_stmt)?;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+elif_stmt: KW_ELIF expression code_block;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+else_stmt: KW_ELSE code_block;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+for_stmt:
+    KW_FOR expression KW_TO expression KW_BY expression code_block
+    | KW_FOR NAME KW_IN expression code_block;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+while_stmt: KW_WHILE expression code_block;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_DISENGAGE | KW_SKIP;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+action_stmt:
+    ignore_action
+    | take_action
+    | report_action
+    | destroy_action;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+ignore_action: KW_IGNORE expression SEMI;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+take_action: KW_TAKE expression (SEMI | else_stmt);
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+report_action: KW_REPORT expression SEMI;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+destroy_action: KW_DESTROY expression SEMI;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+expression: assignment | connect;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+assignment:
+    dotted_name EQ expression
+    | inc_assign
+    | copy_assign;
+        \end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+        \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+inc_assign: dotted_name (PEQ | MEQ | TEQ | DEQ) expression;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+\end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+copy_assign: dotted_name CPY_EQ expression;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+connect: logical ( (NOT)? edge_ref expression)?;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+logical: compare ((KW_AND | KW_OR) compare)*;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+compare:
+	NOT compare
+	| arithmetic (
+		(EE | LT | GT | LTE | GTE | NE | KW_IN | nin) arithmetic
+	)*;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+nin: NOT KW_IN;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+arithmetic: term ((PLUS | MINUS) term)*;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+term: factor ((MUL | DIV | MOD) factor)*;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+factor: (PLUS | MINUS) factor | power;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+power: func_call (POW factor)*;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+func_call:
+	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+atom:
+	INT
+	| FLOAT
+	| STRING
+	| BOOL
+	| array_ref
+	| attr_ref
+	| node_ref
+	| edge_ref (node_ref)? /* Returns nodes even if edge */
+	| list_val
+	| dotted_name
+	| LPAREN expression RPAREN
+	| spawn;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+array_ref: dotted_name (LSQUARE expression RSQUARE)+;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+attr_ref: dotted_name DBL_COLON dotted_name;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+node_ref: KW_NODE (DBL_COLON NAME)?;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+edge_ref: edge_to | edge_from | edge_any;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+edge_to: '-' ('[' NAME ']')? '->';
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+edge_from: '<-' ('[' NAME ']')? '-';
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+edge_any: '<-' ('[' NAME ']')? '->';
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+spawn: KW_SPAWN expression spawn_object;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+spawn_object: node_spawn | walker_spawn;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+node_spawn: edge_ref node_ref spawn_ctx?;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+walker_spawn: KW_WALKER DBL_COLON NAME spawn_ctx?;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{description}
+    \item[Grammar Rule] \texttt{architype}
+          \begin{lstlisting}[style=gram]
+spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
+\end{lstlisting}
+    \item[Example] \texttt{}
+          \begin{lstlisting}
+    \end{lstlisting}
+
+    \item[Description]
+\end{description}

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "Watching for code changes..."
+
+while true;do
+event=$(fswatch -1 -x -r -e ".*" -i "\\.py$" -i "\\.g4$" -i "\\.js$" -i "\\.html$" .)
+    for podname in $(kubectl get pods -l pod=ll-api-ct -o json| jq -r '.items[].metadata.name'); do kubectl cp llapi ${podname}:/; echo "Pushing to ci_test triggered by: $event" | head -n 1; done
+    for podname in $(kubectl get pods -l pod=ll-api -o json| jq -r '.items[].metadata.name'); do kubectl cp llapi ${podname}:/; echo "Pushing to prod triggered by: $event" | head -n 1; done
+    sleep 1;
+done

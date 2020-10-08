@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaseci
+spec:
+  selector:
+    pod: jaseci
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaseci-up
+  namespace: default
+data:
+  prod_up: |-
+    apk add --update --no-cache postgresql-client git make openjdk7-jre vim jq
+    apk add --update --no-cache --virtual .tmp-build-deps gcc libc-dev linux-headers postgresql-dev
+    mkdir /dl; cd /dl; git clone https://marsninja:$GITPASS@github.com/marsninja/jaseci.git
+    pip install -r jaseci/requirements.txt; apk del .tmp-build-deps; mv jaseci/jaseci /; cd /jaseci;
+    export CLASSPATH="$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH"
+    java -Xmx500M -cp \"$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH\" org.antlr.v4.Tool -Dlanguage=Python3 -o $PWD/core/jac/_jac_gen $PWD/core/jac/jac.g4
+    python manage.py wait_for_db && python manage.py makemigrations base &&
+    python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:80
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jaseci-git-pass
+type: Opaque
+data:
+  password: UDE0bjM3ajEh
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaseci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: jaseci
+  template:
+    metadata:
+      labels:
+        pod: jaseci
+      name: jaseci
+    spec:
+      containers:
+        - name: jaseci
+          image: python:3-alpine
+          imagePullPolicy: IfNotPresent
+          command: [sh, -c, "source script/prod_up"]
+          ports:
+            - containerPort: 80
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: jaseci-db-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jaseci-db-credentials
+                  key: password
+
+            - name: POSTGRES_HOST
+              value: jaseci-db
+
+            - name: REDIS_HOST
+              value: jaseci-memcache
+
+            - name: GITPASS
+              valueFrom:
+                secretKeyRef:
+                  name: jaseci-git-pass
+                  key: password
+
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+
+      volumes:
+        - name: prod-script
+          configMap:
+            name: jaseci-up

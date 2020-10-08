@@ -1,0 +1,128 @@
+html, body {
+    height: 100%;
+    overflow: auto;
+    font-size: 10pt;
+}
+
+.fill-height {
+    min-height: 100%;
+    height:auto !important; /* cross-browser */
+    height: 100%; /* cross-browser */
+}
+
+.box {
+  padding: 0px;
+  width: 100%;
+  height: 100%;
+  white-space: nowrap;
+  overflow: auto;
+}
+
+.helper {
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+}
+
+.button-container {
+    display: flex;
+    flex-direction: row;
+    border: 1px solid #dddddd;
+    overflow: auto;
+
+    /* avoid browser level touch actions */
+    xtouch-action: none;
+  }
+
+.vis-network:focus {
+    outline: none;
+}
+
+
+/* horizontal main-panel*/
+
+.main-panel-container {
+  display: flex;
+  flex-direction: row;
+  border: 1px solid #dddddd;
+  overflow: auto;
+  height: 65%;
+
+  /* avoid browser level touch actions */
+  xtouch-action: none;
+}
+
+.main-panel-left {
+  flex: 0 0 auto;
+  /* only manually resize */
+  padding: 1px;
+  width: 65%;
+  min-width: 5%;
+  max-width: 95%;
+  white-space: nowrap;
+}
+
+.main-splitter {
+  flex: 0 0 auto;
+  width: 2px;
+  background:  #dddddd;
+  cursor: col-resize;
+}
+
+.main-panel-right {
+  flex: 1 1 auto;
+  /* resizable */
+  padding: 1px;
+  width: 100%;
+}
+
+
+/* Bottom panel*/
+
+.bottom-panel-container {
+  display: flex;
+  flex-direction: row;
+  border: 1px solid #dddddd;
+  height: 32%;
+  overflow: hidden;
+  /* avoid browser level touch actions */
+  xtouch-action: none;
+}
+
+.bottom-panel-left {
+  flex: 0 0 auto;
+  /* only manually resize */
+  padding: 1px;
+  width: 250px;
+  min-width: 200px;
+  max-width: 95%;
+  white-space: nowrap;
+  overflow: auto;
+}
+
+.bottom-splitter {
+  flex: 0 0 auto;
+  width: 2px;
+  height: 100%;
+  background:  #dddddd;
+  cursor: col-resize;
+  align-items: stretch;
+}
+
+.bottom-panel-right {
+  flex: 1 1 auto;
+  /* resizable */
+  padding: 1px;
+  width: 100%;
+}
+
+pre {
+  margin: 20px;
+  padding: 10px;
+  background: #eee;
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+  overflow: auto;
+}
+
+

@@ -1,0 +1,1 @@
+find . -type f \( -iname \*.aux -o -iname \*.bbl -o -iname \*.f\* -o -iname \*.gl\* -o -iname \*.blg -o -iname \*.idx -o -iname \*.ind -o -iname \*.log -o -iname \*.pytxcode -o -iname \*.synctex.gz -o -iname \*.toc -o -name *pythontex-files* -o -iname \*.bcf -o -iname \*.ilg -o -iname \*.xml -o -iname \*.ptc \) -exec rm -r {} \;

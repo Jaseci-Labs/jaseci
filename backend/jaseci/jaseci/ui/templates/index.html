@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+{% if user.is_authenticated %}
+
+<div class="main-panel-container">
+    <div id="graph" class="main-panel-left graph_view">
+        {% include "box-graph.html" %}
+    </div>
+    <div class="main-splitter">
+    </div>
+    <div  id="code" class="main-panel-right code_view">
+        {% include "box-code.html" %}
+    </div>
+</div>
+<div class="bottom-panel-container">
+    <div  id="assets" class="bottom-panel-left assets_view">
+        {% include "box-assets.html" %}
+    </div>
+    <div class="bottom-splitter">
+    </div>
+    <div id="info" class="bottom-panel-right">
+        {% include "box-info.html" %}
+    </div>
+</div>
+
+<script src="{% static 'js/jaseci_ui.js' %}?454"></script>
+{% else %}
+
+Please create an account to continue.
+
+{% endif %}
+
+
+{% endblock %}

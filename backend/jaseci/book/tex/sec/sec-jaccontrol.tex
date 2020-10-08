@@ -1,0 +1,172 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Conditional Statements}
+\begin{description}
+    \begin{lstlisting}[caption={\texttt{if} statements}]
+walker init {
+    a = 4; b = 5;
+    if(a < b): std.out("Hello!");
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+Hello!
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+\begin{description}
+    \begin{lstlisting}[caption={\texttt{else} statement}]
+walker init {
+    a = 4; b = 5;
+    if(a == b): std.out("A equals B");
+    else: std.out("A is not equal to B");
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+A is not equal to B
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+\begin{description}
+    \begin{lstlisting}[caption={\texttt{elif} statement}]
+walker init {
+    a = 4; b = 5;
+    if(a == b): std.out("A equals B");
+    elif(a > b): std.out("A is greater than B");
+    elif(a == b - 1): std.out("A is one less than B");
+    elif(a == b - 2): std.out("A is two less than B");
+    else: std.out("A is something else");
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+A is one less than B
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Loops}
+\begin{description}
+    \begin{lstlisting}[caption={\texttt{for} loops}]
+walker init {
+    for i=0 to i<10 by i+=1:
+        std.out("Hello", i, "times!");
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+Hello 0 times!
+Hello 1 times!
+Hello 2 times!
+Hello 3 times!
+Hello 4 times!
+Hello 5 times!
+Hello 6 times!
+Hello 7 times!
+Hello 8 times!
+Hello 9 times!
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+\begin{description}
+    \begin{lstlisting}[caption={\texttt{for} loops iterating through lists}]
+walker init {
+    my_list = [1, 'jon', 3.5, 4];
+    for i in my_list:
+        std.out("Hello", i, "times!");
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+TEST CASE NOT GENERATED YET
+        \end{lstlisting}
+    \item[Description] \texttt{}
+
+
+
+          \begin{remark}
+              \begin{tBox}
+                  Remember, though this looks very much like python, the \texttt{:} operator here indicates single line block. Braces should be used for multiline code blocks, e.g.,
+                  \begin{lstlisting}
+for i in my_list {
+    if(i == 'jon'): i = 5;
+    std.out("Hello", i, "times!");
+}
+        \end{lstlisting}
+              \end{tBox}
+          \end{remark}
+\end{description}
+
+\begin{description}
+    \begin{lstlisting}[caption={ \texttt{while} loops }]
+walker init {
+    i = 5;
+    while(i>0) {
+        std.out("Hello", i, "times!");
+        i -= 1;
+    }
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+Hello 5 times!
+Hello 4 times!
+Hello 3 times!
+Hello 2 times!
+Hello 1 times!
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Loop Control Statements}
+\begin{description}
+    \begin{lstlisting}[caption={\texttt{break} statement}]
+walker init {
+    for i=0 to i<10 by i+=1 {
+        std.out("Hello", i, "times!");
+        if(i == 6): break;
+    }
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+Hello 0 times!
+Hello 1 times!
+Hello 2 times!
+Hello 3 times!
+Hello 4 times!
+Hello 5 times!
+Hello 6 times!
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+\begin{description}
+    \begin{lstlisting}[caption={\texttt{continue} statement}]
+walker init {
+    i = 5;
+    while(i>0) {
+        if(i == 3){
+            i -= 1; continue;
+        }
+        std.out("Hello", i, "times!");
+        i -= 1;
+    }
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+Hello 5 times!
+Hello 4 times!
+Hello 2 times!
+Hello 1 times!
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}

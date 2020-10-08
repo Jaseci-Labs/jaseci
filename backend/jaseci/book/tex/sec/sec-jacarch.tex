@@ -1,0 +1,122 @@
+
+Nodes, and edges
+
+Spawning nodes
+
+Binding compute to architypes
+
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Binding member contexts to nodes and edges}]
+node person {
+    has name;
+    has age;
+    has birthday, profession;
+}
+
+edge friend: has meeting_place;
+edge family: has type;
+
+walker init {
+    person1 = spawn here -[friend]-> node::person;
+    person2 = spawn here -[family]-> node::person;
+    person1.name = "Josh"; person1.age = 32;
+    person2.name = "Jane"; person2.age = 30;
+    -[friend]->[0].meeting_place = "college";
+    -[family]->[0].type = "sister"
+    std.out(--> node);
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Binding contexts with less code}]
+node person {
+    has name;
+    has age;
+    has birthday, profession;
+}
+
+edge friend: has meeting_place;
+edge family: has type;
+
+walker init {
+    person1 = spawn here -[friend(meeting_place="college")]->
+        node::person(name="Josh");
+    person2 = spawn here -[family(type="sister")]->
+        node::person(name="Jane");
+    std.out(--> node);
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Adding actions to architypes},label=jac:addactions]
+node person {
+    has name;
+    has birthday;
+    can date.quantize_to_year;
+}
+
+walker init {
+    person1 = spawn here -->
+        node::person(name="Josh", birthday="1995-05-20");
+    birthyear = date.quantize_to_year(person1.birthday);
+    std.out(birthyear);
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+
+\end{description}
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Triggering actions on entry and exit}]
+node person {
+    has name;
+    has bday, byear;
+    can date.quantize_to_year::bday::>byear with entry;
+    can std.out::byear," from ",bday:: with exit;
+}
+
+walker init {
+    person1 = spawn here -->
+        node::person(name="Josh", birthday="1995-05-20");
+    take --> ;
+    person: disengage;
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+
+          \begin{remark}
+              \begin{tBox}
+                  The \lstinline{node} definition in Jac Code~\ref{jac:addactions} is equivalent to
+                  \begin{lstlisting}
+node person {
+has name, birthday;
+can date.quantize_to_year with activity;
+}
+        \end{lstlisting}
+                  The \lstinline{with activity} keywords indicates the action will be called by walkers.
+              \end{tBox}
+          \end{remark}
+
+\end{description}
+

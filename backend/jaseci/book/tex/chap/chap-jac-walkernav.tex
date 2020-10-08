@@ -1,0 +1,163 @@
+% \begin{tikzpicture}[>=stealth, every node/.style={circle, draw, minimum size=0.75cm}]
+%     \graph [tree layout, grow=down, fresh nodes, level distance=0.5in, sibling distance=0.5in]
+%     {
+%     D -> {
+%     C -> { A -> { E, " " }, B,B },
+%     C -> { A, B, B },
+%     C -> { A, B, B }
+%     }
+%     };
+% \end{tikzpicture}
+
+\begin{description}
+    \begin{lstlisting}[caption={Walking graphs by taking edges}]
+node person: has name;
+
+walker get_names {
+    std.out(here.name)
+    take -->;
+}
+
+walker build_example {
+    node1 = spawn here --> node::person(name="Joe");
+    node2 = spawn node1 --> node::person(name="Susan");
+    spawn node2 --> node::person(name="Matt");
+}
+
+walker init {
+    root {
+        spawn here walker::build_example;
+        take -->;
+    }
+    person {
+        spawn here walker::get_names;
+        disengage;
+    }
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Fan out style walks}]
+node person: has name;
+
+walker build_example {
+    spawn here -[friend]-> node::person(name="Joe");
+    spawn here -[friend]-> node::person(name="Susan");
+    spawn here -[family]-> node::person(name="Matt");
+}
+
+walker init {
+    root {
+        spawn here walker::build_example;
+        take -->;
+    }
+    person {
+        std.out(here.name);
+    }
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Ignoring paths on a walk}]
+node person: has name;
+edge family;
+edge friend;
+
+walker build_example {
+    spawn here -[friend]-> node::person(name="Joe");
+    spawn here -[friend]-> node::person(name="Susan");
+    spawn here -[family]-> node::person(name="Matt");
+    spawn here -[family]-> node::person(name="Dan");
+}
+
+walker init {
+    root {
+        spawn here walker::build_example;
+        ignore -[family]->;
+        take -->;
+    }
+    person {
+        std.out(here.name);
+    }
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Destroying (deleting) nodes}]
+node person: has name;
+edge family;
+edge friend;
+
+walker build_example {
+    spawn here -[friend]-> node::person(name="Joe");
+    spawn here -[friend]-> node::person(name="Susan");
+    spawn here -[family]-> node::person(name="Matt");
+    spawn here -[family]-> node::person(name="Dan");
+}
+
+walker init {
+    root {
+        spawn here walker::build_example;
+        for i in -[friend]->: destroy i;
+        take -->;
+    }
+    person {
+        std.out(here.name);
+    }
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}
+
+
+\begin{description}
+    \begin{lstlisting}[caption={Generating reports throughout a walk}]
+node person: has name;
+edge family;
+edge friend;
+
+walker build_example {
+    spawn here -[friend]-> node::person(name="Joe");
+    spawn here -[friend]-> node::person(name="Susan");
+    spawn here -[family]-> node::person(name="Matt");
+    spawn here -[family]-> node::person(name="Dan");
+}
+
+walker init {
+    root {
+        spawn here walker::build_example;
+        spawn -->[0] walker::build_example;
+        take -->;
+    }
+    person {
+        report here; # report print back on disengage
+        take -->;
+    }
+}
+    \end{lstlisting}
+    \item[Output] \texttt{}
+          \begin{lstlisting}[language=shell]
+        \end{lstlisting}
+    \item[Description] \texttt{}
+\end{description}

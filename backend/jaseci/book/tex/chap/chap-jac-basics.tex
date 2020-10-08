@@ -1,0 +1,30 @@
+Jac is dynamically typed.
+
+Jac is pass by reference.
+
+Jac is whitespace agnostic.
+
+Jac does not have traditional notion of functions but walkers instead. Deliberate to encourage thought about problems in a spacial graph paradigmn that is equivilant in power but more natural for many complex AI problems.
+
+\begin{lstlisting}[caption={Hello World},label={lst:hello}]
+walker init {
+    std.log('Hello World');
+}
+\end{lstlisting}
+
+Listing~\ref{lst:hello} shows the canonical 'hello world' program as it would be most simply implemented in Jac.
+
+Jac also has the notion of single statement line code blocks.
+
+\begin{lstlisting}[caption={Hello World},label={lst:hellosingle}]
+walker init: std.log('Hello World');
+\end{lstlisting}
+
+
+Program~\ref{lst:hello} is equivilant to Program~\ref{lst:hellosingle}.
+% Chapter \ref{} describes walkers and Chapter~\ref{} describes Jac's standard library of Actions.
+
+
+\section{Numbers and Arithmetic}\index{numbers in Jac}\input{tex/sec/sec-jacnumbers}
+\section{Strings and List}\index{strings in Jac}\index{lists in Jac} Coming soon.%\input{tex/sec/sec-jacnumbers}
+\section{Control Flow}\index{control in Jac}\input{tex/sec/sec-jaccontrol}
