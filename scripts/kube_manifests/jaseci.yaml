@@ -19,8 +19,8 @@ data:
   prod_up: |-
     apk add --update --no-cache postgresql-client git make openjdk7-jre vim jq
     apk add --update --no-cache --virtual .tmp-build-deps gcc libc-dev linux-headers postgresql-dev
-    mkdir /dl; cd /dl; git clone https://marsninja:$GITPASS@github.com/marsninja/jaseci.git
-    pip install -r jaseci/requirements.txt; apk del .tmp-build-deps; mv jaseci/jaseci /; cd /jaseci;
+    mkdir /dl; cd /dl; git clone https://LifeLogifyProd:$GITPASS@github.com/LifeLogifyTeam/lifelogify.git
+    pip install -r lifelogify/backend/jaseci/requirements.txt; apk del .tmp-build-deps; mv lifelogify/backend/jaseci/jaseci /; cd /jaseci;
     export CLASSPATH="$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH"
     java -Xmx500M -cp \"$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH\" org.antlr.v4.Tool -Dlanguage=Python3 -o $PWD/core/jac/_jac_gen $PWD/core/jac/jac.g4
     python manage.py wait_for_db && python manage.py makemigrations base &&
@@ -32,7 +32,7 @@ metadata:
   name: jaseci-git-pass
 type: Opaque
 data:
-  password: UDE0bjM3ajEh
+  password: UHIwZE4xbmo0
 ---
 apiVersion: apps/v1
 kind: Deployment
