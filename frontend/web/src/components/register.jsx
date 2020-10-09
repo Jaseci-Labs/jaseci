@@ -28,20 +28,16 @@ class Register extends Component {
   };
 
   validate = () => {
-    const { email, pass, errors, pass_dup } = this.state;
-    errors.length = 0;
+    const { email, pass, pass_dup } = this.state;
+    let errors = [];
     if (email.trim() === "") {
-      errors.push("Email required;\n");
+      errors.push("Please enter valid email address. ");
+    } else if (pass.trim() === "") {
+      errors.push("Please enter password. ");
+    } else if (pass_dup.trim() !== pass.trim()) {
+      errors.push("Passwords do not match. ");
     }
-    if (pass.trim() === "") {
-      errors.push("Password required;\n");
-    }
-    if (pass_dup.trim() === "") {
-      errors.push("Re-enter password;\n");
-    }
-    if (pass_dup.trim() !== pass.trim()) {
-      errors.push("Passwords do not match;\n");
-    }
+    this.setState({ errors: errors });
   };
 
   render() {
@@ -94,13 +90,6 @@ class Register extends Component {
             Register
           </button>
         </form>
-        <br />
-        {this.validate()}
-        {errors.length !== 0 && (
-          <div className="alert alert-danger">
-            <pre>{errors}</pre>
-          </div>
-        )}
       </div>
     );
   }

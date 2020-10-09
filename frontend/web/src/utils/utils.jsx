@@ -170,7 +170,19 @@ const ServerErrors = ({ errors }) => {
     <div>
       {errors && (
         <div className="alert alert-danger">
-          <pre>{JSON.stringify(errors, null, 2)}</pre>
+          <pre>
+            <small>
+              {errors.messages && errors.messages}
+              <br />
+              {errors.response &&
+                errors.response.statusText &&
+                errors.response.statusText}
+              <br />
+              {errors.response &&
+                errors.response.data &&
+                JSON.stringify(errors.response.data, null, 2)}
+            </small>
+          </pre>
         </div>
       )}
     </div>
@@ -250,11 +262,11 @@ function apply_ordering(order, arr) {
 function validURL(str) {
   var pattern = new RegExp(
     "^(https?:\\/\\/)?" + // protocol
-    "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // domain name
-    "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR ip (v4) address
-    "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" + // port and path
-    "(\\?[;&a-z\\d%_.~+=-]*)?" + // query string
-    "(\\#[-a-z\\d_]*)?$",
+      "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // domain name
+      "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR ip (v4) address
+      "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" + // port and path
+      "(\\?[;&a-z\\d%_.~+=-]*)?" + // query string
+      "(\\#[-a-z\\d_]*)?$",
     "i"
   ); // fragment locator
   return !!pattern.test(str);
