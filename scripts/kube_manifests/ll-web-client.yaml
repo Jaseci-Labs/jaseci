@@ -18,8 +18,8 @@ metadata:
 data:
   prod_up: |-
     apk add --update --no-cache git
-    git clone https://marsninja:$GITPASS@github.com/marsninja/lifelogify.git
-    cd /lifelogify;
+    git clone https://LifeLogifyProd:$GITPASS@github.com/LifeLogifyTeam/lifelogify.git
+    cd lifelogify/frontend/web;
     git checkout
     npm install
     npm install -g serve
@@ -36,7 +36,7 @@ metadata:
   name: ll-app-git-pass
 type: Opaque
 data:
-  password: UDE0bjM3ajEh
+  password: UHIwZE4xbmo0
 ---
 apiVersion: apps/v1
 kind: Deployment

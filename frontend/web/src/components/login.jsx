@@ -63,7 +63,7 @@ class LogIn extends Component {
           />
 
           <button
-            //disabled={errors.length}
+            disabled={errors.length}
             type="submit"
             className="btn btn-primary"
           >
@@ -71,10 +71,6 @@ class LogIn extends Component {
           </button>
         </form>
         <br />
-        {this.validate()}
-        {errors.length !== 0 && (
-          <div className="alert alert-danger">{errors}</div>
-        )}
       </div>
     );
   }
