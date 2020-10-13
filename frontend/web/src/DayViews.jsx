@@ -47,6 +47,14 @@ class DayViewLeft extends Component {
             items={w_filter.deepMIT()}
           />
         )}
+        {current && (
+          <DeepMITs
+            w_id={current}
+            label="Babysit these!"
+            color="#ededff"
+            items={w_filter.deepRunning()}
+          />
+        )}
       </Container>
     );
   }
@@ -70,7 +78,6 @@ class DayViewRight extends Component {
     const current = workette.days[session.cur_date];
     return (
       <Container fluid className="m-0 p-0">
-
         {current && (
           <DeepMITs
             w_id={current}
@@ -79,14 +86,7 @@ class DayViewRight extends Component {
             items={w_filter.deepCompleted()}
           />
         )}
-        {current && (
-          <DeepMITs
-            w_id={current}
-            label="Everything In Progress!"
-            color="#e4e4ff"
-            items={w_filter.deepRunning()}
-          />
-        )}
+
         {current && (
           <DeepMITs
             w_id={current}
