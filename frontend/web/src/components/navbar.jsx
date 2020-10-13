@@ -7,7 +7,7 @@ class NavBar extends Component {
   render() {
     return (
       <nav
-        className="navbar navbar-default navbar-expand-lg navbar-light bg-light"
+        className="navbar navbar-default navbar-expand-lg navbar-light bg-light border"
         role="navigation"
         style={this.props.style}
       >

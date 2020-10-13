@@ -217,7 +217,7 @@ const LoadingIndicator = ({ is_loading }) => {
 class StatusBar extends Component {
   render() {
     return (
-      <footer className="footer" style={this.props.style}>
+      <footer className="footer border" style={this.props.style}>
         <LoadingIndicator is_loading={this.props.api.is_loading} />
       </footer>
     );

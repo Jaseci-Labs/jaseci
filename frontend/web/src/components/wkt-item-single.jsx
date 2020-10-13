@@ -8,6 +8,7 @@ import { is_today, validURL } from "../utils/utils";
 import WktButton from "./wkt-button";
 import { connect } from "react-redux";
 import { workette_actions as wact } from "../store/workette";
+import { workette_filters as w_filter } from "../utils/filters";
 import {
   faCheckSquare,
   faTimesCircle,
@@ -113,17 +114,17 @@ class WktItemSingle extends Component {
                     {!this.state.self_expand && item.context.name}
                   </div>
                 </Col>
-                {/* <Col>
-                  <small>
-                    {item.children.length && item.children.length} Open
-                  </small>
-                </Col>
-                <Col>
-                  <small>
-                    {item.children.length && item.children.length} Completed
-                  </small>
-                </Col> */}
+
                 <Col xs="auto" className="m-0 p-0">
+                  <div className="badge badge-info" style={{ opacity: 0.5 }}>
+                    {w_filter.countDeepChildren(item) > 1 && (
+                      <div>
+                        {w_filter.countDeepChildrenClosed(item)}/
+                        {w_filter.countDeepChildren(item) - 1}
+                      </div>
+                    )}
+                  </div>
+
                   <WktButton
                     icon={faStar}
                     status={item.context.is_MIT}
@@ -154,7 +155,6 @@ class WktItemSingle extends Component {
                   ></div>
                 </Col>
               </Row>
-
             </Container>
             <Collapse in={this.state.self_expand} unmountOnExit={true}>
               <div>
@@ -165,7 +165,7 @@ class WktItemSingle extends Component {
                   <div>
                     <a href={item.context.note} target="_blank">
                       Pop out to tab
-                      </a>
+                    </a>
                     {validURL(item.context.note) && (
                       <iframe
                         src={item.context.note}

@@ -19,6 +19,14 @@ const workette_filters = {
     return true;
   },
 
+  is_workette: function (w) {
+    if (!workette_filters.scheduled_now(w)) return false;
+    const ctx = w.context;
+    if (!ctx.wtype || ctx.wtype === "workette" || ctx.wtype == "none")
+      return true;
+    return false;
+  },
+
   open: function (w) {
     if (!workette_filters.scheduled_now(w)) return false;
     const ctx = w.context;
@@ -104,6 +112,34 @@ const workette_filters = {
       if (k.context.status === "running") ret.push(k.jid);
     });
     return ret;
+  },
+
+  // Get total number of items inside workette thats available
+  countDeepChildren: function (w) {
+    const { items } = store.getState().workette;
+    let count =
+      workette_filters.is_workette(w) && workette_filters.scheduled_now(w)
+        ? 1
+        : 0;
+    w.children.map((i) => {
+      count += workette_filters.countDeepChildren(items[i]);
+    });
+    return count;
+  },
+
+  // Get total number of items that has been closed
+  countDeepChildrenClosed: function (w) {
+    const { items } = store.getState().workette;
+    let count =
+      workette_filters.is_workette(w) &&
+      workette_filters.scheduled_now(w) &&
+      (workette_filters.complete(w) || workette_filters.canceled(w))
+        ? 1
+        : 0;
+    w.children.map((i) => {
+      count += workette_filters.countDeepChildrenClosed(items[i]);
+    });
+    return count;
   },
 };
 

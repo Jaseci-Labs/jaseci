@@ -8,7 +8,7 @@ import WktButton from "./components/wkt-button";
 import { faAlignCenter, faEye } from "@fortawesome/free-solid-svg-icons";
 
 class LLDayApp extends Component {
-  state = { show_left: true, show_right: true }
+  state = { show_left: true, show_right: true };
   componentDidMount() {
     if (!this.props.session.logged_in) this.props.history.push("/login");
     else {
@@ -25,8 +25,8 @@ class LLDayApp extends Component {
       maxHeight: "100%",
       maxWidth: should_show ? "350px" : "70px",
       overflowY: "auto",
-    }
-  }
+    };
+  };
 
   render() {
     return (
@@ -35,6 +35,7 @@ class LLDayApp extends Component {
           <Row style={{ height: "100%", overflowY: "auto" }}>
             <Col
               style={this.sidebar_style(this.state.show_left)}
+              className="border"
             >
               <Container>
                 <center>
@@ -60,6 +61,7 @@ class LLDayApp extends Component {
             </Col>
             <Col
               style={this.sidebar_style(this.state.show_right)}
+              className="border"
             >
               <center>
                 <WktButton
