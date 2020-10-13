@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
-import { LoadingIndicator } from "../utils/utils";
 
 class NavBar extends Component {
   render() {
@@ -65,10 +64,6 @@ class NavBar extends Component {
               </ul>
             </React.Fragment>
           )}
-
-          {/* <div className="d-inline">
-            <LoadingIndicator is_loading={this.props.api.is_loading} />
-          </div> */}
         </div>
       </nav>
     );

@@ -6,6 +6,7 @@ import { workette_actions as wact } from "../store/workette";
 import { is_today, move_arr_item } from "../utils/utils";
 import { connect } from "react-redux";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { Container } from "react-bootstrap";
 
 class WktItemList extends Component {
   handle_drag = (result) => {
@@ -41,29 +42,31 @@ class WktItemList extends Component {
 
     return (
       <React.Fragment>
-        <DragDropContext onDragEnd={this.handle_drag}>
-          <Droppable droppableId={current}>
-            {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef}>
-                {children &&
-                  children.map((i, idx) => (
-                    <React.Fragment key={items[i].jid}>
-                      {this.showable(items[i]) && (
-                        <WktItemSingle
-                          item={items[i]}
-                          index={idx}
-                          is_workset={this.props.is_workset}
-                          color={this.props.color}
-                        />
-                      )}
-                    </React.Fragment>
-                  ))}
+        <Container fluid className="">
+          <DragDropContext onDragEnd={this.handle_drag}>
+            <Droppable droppableId={current}>
+              {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                  {children &&
+                    children.map((i, idx) => (
+                      <React.Fragment key={items[i].jid}>
+                        {this.showable(items[i]) && (
+                          <WktItemSingle
+                            item={items[i]}
+                            index={idx}
+                            is_workset={this.props.is_workset}
+                            color={this.props.color}
+                          />
+                        )}
+                      </React.Fragment>
+                    ))}
 
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </Container>
       </React.Fragment>
     );
   }

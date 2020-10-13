@@ -65,10 +65,11 @@ const workette_filters = {
     return ret;
   },
 
-  deepMIT: function () {
+  deepMIT: function (w_id = null) {
     const { items } = store.getState().workette;
-    const current =
+    let current =
       items[store.getState().workette.days[store.getState().session.cur_date]];
+    if (w_id) current = items[w_id];
     let ret = [];
     workette_filters.allChildren(current).map((k) => {
       if (
@@ -81,10 +82,11 @@ const workette_filters = {
     return ret;
   },
 
-  deepRunning: function () {
+  deepRunning: function (w_id = null) {
     const { items } = store.getState().workette;
-    const current =
+    let current =
       items[store.getState().workette.days[store.getState().session.cur_date]];
+    if (w_id) current = items[w_id];
     let ret = [];
     workette_filters.allChildren(current).map((k) => {
       if (workette_filters.running(k)) ret.push(k.jid);
@@ -92,10 +94,11 @@ const workette_filters = {
     return ret;
   },
 
-  deepCompleted: function () {
+  deepCompleted: function (w_id = null) {
     const { items } = store.getState().workette;
-    const current =
+    let current =
       items[store.getState().workette.days[store.getState().session.cur_date]];
+    if (w_id) current = items[w_id];
     let ret = [];
     workette_filters.allChildren(current).map((k) => {
       if (workette_filters.complete(k)) ret.push(k.jid);
@@ -103,10 +106,11 @@ const workette_filters = {
     return ret;
   },
 
-  deepCanceled: function () {
+  deepCanceled: function (w_id = null) {
     const { items } = store.getState().workette;
-    const current =
+    let current =
       items[store.getState().workette.days[store.getState().session.cur_date]];
+    if (w_id) current = items[w_id];
     let ret = [];
     workette_filters.allChildren(current).map((k) => {
       if (k.context.status === "canceled") ret.push(k.jid);

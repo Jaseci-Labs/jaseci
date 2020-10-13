@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { Container, Row, Col } from "react-bootstrap";
-import { DayViewLeft, DayViewRight, DayViewMain } from "./DayViews";
+import { ReflectViewLeft, ReflectViewMain } from "./ReflectViews";
 import { connect } from "react-redux";
 import { session_actions as session } from "./store/session";
 import axios from "axios";
@@ -18,19 +18,19 @@ class LLReflectApp extends Component {
 
   render() {
     return (
-      <Container fluid>
+      <Container fluid style={{ height: "100%" }}>
         {this.props.session.jac_loaded && (
-          <Row style={{ height: "92vh" }}>
+          <Row style={{ height: "100%", overflowY: "auto" }}>
             <Col
               style={{
-                minWidth: "350px",
+                minWidth: "300px",
                 height: "100%",
-                maxWidth: "400px",
+                maxWidth: "450px",
                 overflowY: "auto",
               }}
             >
               <Container>
-                <DayViewLeft />
+                <ReflectViewLeft />
               </Container>
             </Col>
             <Col
@@ -40,17 +40,7 @@ class LLReflectApp extends Component {
                 overflowY: "auto",
               }}
             >
-              <DayViewMain />
-            </Col>
-            <Col
-              style={{
-                minWidth: "350px",
-                height: "100%",
-                maxWidth: "400px",
-                overflowY: "auto",
-              }}
-            >
-              <DayViewRight />
+              <ReflectViewMain />
             </Col>
           </Row>
         )}

@@ -16,8 +16,8 @@ const is_today = (date) => {
 };
 
 /* Generalized Input component for text input must provide value and
-and onChange for functionality */
-const Input = ({
+and onChange for functionality
+important props:
   name,
   type,
   label,
@@ -25,21 +25,19 @@ const Input = ({
   onChange,
   description,
   extra_class,
-}) => {
+*/
+const Input = (props) => {
   return (
     <div className="form-group col-lg m-0 pl-3 pr-3 pb-1 pb-1 pt-1">
-      {label && <label htmlFor={name}>{label}</label>}
+      {props.label && <label htmlFor={props.name}>{props.label}</label>}
       <input
-        value={value}
-        onChange={onChange}
-        name={name}
-        type={type}
-        className={"form-control " + extra_class}
-        id={name}
+        {...props}
+        className={"form-control " + props.extra_class}
+        id={props.name}
         aria-describedby="inputdesc"
       />
       <small id="inputdesc" className="form-text text-muted">
-        {description}
+        {props.description}
       </small>
     </div>
   );
@@ -218,7 +216,11 @@ class StatusBar extends Component {
   render() {
     return (
       <footer className="footer border" style={this.props.style}>
-        <LoadingIndicator is_loading={this.props.api.is_loading} />
+        <LoadingIndicator
+          is_loading={
+            this.props.api.is_loading[this.props.api.is_loading.length - 1]
+          }
+        />
       </footer>
     );
   }

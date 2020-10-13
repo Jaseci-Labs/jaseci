@@ -60,16 +60,20 @@ const api_middleware = ({ dispatch, getState }) => next => async action => {
 }
 
 // Reducers
-const init_state = { is_loading: false }
+const init_state = { is_loading: [] }
 const api_reducer = (state = init_state, action) => {
+    const is_loading = state.is_loading;
     switch (action.type) {
         case API_CALL:
             const status = action.payload.status ? action.payload.status : "Working"
-            return { ...state, is_loading: status }
+            is_loading.push(status)
+            return { ...state, is_loading: is_loading }
         case API_FAIL:
-            return { ...state, is_loading: false }
+            is_loading.pop()
+            return { ...state, is_loading: is_loading }
         case API_SUCCESS:
-            return { ...state, is_loading: false }
+            is_loading.pop()
+            return { ...state, is_loading: is_loading }
         default:
             return state;
     }
