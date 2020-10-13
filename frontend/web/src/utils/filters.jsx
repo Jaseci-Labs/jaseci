@@ -73,13 +73,24 @@ const workette_filters = {
     return ret;
   },
 
+  deepRunning: function () {
+    const { items } = store.getState().workette;
+    const current =
+      items[store.getState().workette.days[store.getState().session.cur_date]];
+    let ret = [];
+    workette_filters.allChildren(current).map((k) => {
+      if (workette_filters.running(k)) ret.push(k.jid);
+    });
+    return ret;
+  },
+
   deepCompleted: function () {
     const { items } = store.getState().workette;
     const current =
       items[store.getState().workette.days[store.getState().session.cur_date]];
     let ret = [];
     workette_filters.allChildren(current).map((k) => {
-      if (k.context.status === "done") ret.push(k.jid);
+      if (workette_filters.complete(k)) ret.push(k.jid);
     });
     return ret;
   },
@@ -91,17 +102,6 @@ const workette_filters = {
     let ret = [];
     workette_filters.allChildren(current).map((k) => {
       if (k.context.status === "canceled") ret.push(k.jid);
-    });
-    return ret;
-  },
-
-  deepRunning: function () {
-    const { items } = store.getState().workette;
-    const current =
-      items[store.getState().workette.days[store.getState().session.cur_date]];
-    let ret = [];
-    workette_filters.allChildren(current).map((k) => {
-      if (k.context.status === "running") ret.push(k.jid);
     });
     return ret;
   },
