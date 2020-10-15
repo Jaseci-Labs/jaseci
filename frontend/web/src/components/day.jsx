@@ -21,14 +21,15 @@ class Day extends Component {
     const { session, workette } = this.props;
     const current = workette.days[session.cur_date];
     return (
-      <Container fluid>
-        <Container fluid>
-          <Row></Row>
-        </Container>
-        <strong>
-          {workette.items[current].context.day &&
-            print_date(workette.items[current].context.day)}
-        </strong>
+      <Container fluid className="border">
+        <h6>
+          <center>
+            <br />
+            {workette.items[current].context.day &&
+              print_date(workette.items[current].context.day)}
+          </center>
+          <br />
+        </h6>
         <Workette w_id={current} />
       </Container>
     );

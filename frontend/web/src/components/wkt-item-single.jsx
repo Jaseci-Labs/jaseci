@@ -128,19 +128,19 @@ class WktItemSingle extends Component {
                     {w_filter.countDeepChildren(item) > 1 && (
                       <div>
                         {w_filter.countDeepChildrenClosed(item)}/
-                        {w_filter.countDeepChildren(item)}
+                        {w_filter.countDeepChildren(item) - 1}
                       </div>
                     )}
                   </div>
 
-                  <WktButton
-                    icon={faStar}
-                    status={item.context.is_MIT}
-                    tooltip="Knock this Out"
-                    onClick={() => this.toggle_MIT(item)}
-                  />
                   {is_workette && (
                     <React.Fragment>
+                      <WktButton
+                        icon={faStar}
+                        status={item.context.is_MIT}
+                        tooltip="Knock this Out"
+                        onClick={() => this.toggle_MIT(item)}
+                      />
                       <WktButton
                         icon={faRunning}
                         status={item.context.status === "running"}
