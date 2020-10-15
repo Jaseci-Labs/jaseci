@@ -42,7 +42,7 @@ class WktItemList extends Component {
 
     return (
       <React.Fragment>
-        <Container fluid className="">
+        <Container fluid className="m-0 p-0">
           <DragDropContext onDragEnd={this.handle_drag}>
             <Droppable droppableId={current}>
               {(provided) => (

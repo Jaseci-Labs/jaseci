@@ -14,6 +14,7 @@ class WktItemSingleForm extends Component {
     name: "",
     owner: "",
     wtype: "",
+    date: "",
     snooze_till: "",
     is_ritual: false,
     last_written: null,
@@ -25,6 +26,7 @@ class WktItemSingleForm extends Component {
       owner,
       wtype,
       is_ritual,
+      date,
       snooze_till,
       last_written,
     } = this.props.item.context;
@@ -32,6 +34,7 @@ class WktItemSingleForm extends Component {
       name: name ? name : "",
       owner: owner ? owner : "",
       wtype: wtype ? wtype : "",
+      date: date ? date : "",
       snooze_till: snooze_till ? snooze_till : "",
       is_ritual: is_ritual ? is_ritual : false,
       last_written: last_written ? last_written : null,
@@ -50,7 +53,8 @@ class WktItemSingleForm extends Component {
 
   handleSubmit = (e) => {
     e.preventDefault();
-    this.props.update_func(this.state);
+    const { timeout, last_written, ...pl } = this.state;
+    this.props.update_func(pl);
   };
 
   handleChange = (e) => {
@@ -60,6 +64,8 @@ class WktItemSingleForm extends Component {
       this.setState({ owner: e.currentTarget.value });
     } else if (e.currentTarget.name === "wtype") {
       this.setState({ wtype: e.currentTarget.value });
+    } else if (e.currentTarget.name === "date") {
+      this.setState({ date: e.currentTarget.value });
     } else if (e.currentTarget.name === "snooze_till") {
       this.setState({ snooze_till: e.currentTarget.value });
     }
@@ -115,7 +121,7 @@ class WktItemSingleForm extends Component {
   };
 
   render() {
-    const { name, owner, wtype, snooze_till } = this.state;
+    const { name, owner, wtype, date, snooze_till } = this.state;
     let { is_ritual } = this.state;
 
     //Detected if ritual turned on elsewhere then set checkbox values
@@ -128,40 +134,54 @@ class WktItemSingleForm extends Component {
       <Container fluid>
         <form onSubmit={this.handleSubmit}>
           <Row>
-            <Input
-              value={name}
-              onChange={this.handleChange}
-              name="name"
-              extra_class="form-control-sm"
-              description="Enter title of workette."
-            />
-            &nbsp;&nbsp;
-            <Select
-              value={wtype}
-              onChange={this.handleChange}
-              name="wtype"
-              options={wtype_options}
-              extra_class="form-control-sm"
-              description="Enter type of workette."
-            />
-          </Row>
-          <Row>
-            <Input
-              value={owner}
-              onChange={this.handleChange}
-              name="owner"
-              extra_class="form-control-sm"
-              description="Enter workette owner."
-            />
-            &nbsp;&nbsp;
-            <Input
-              value={snooze_till}
-              type="date"
-              onChange={this.handleChange}
-              name="snooze_till"
-              extra_class="form-control-sm"
-              description="Enter date for workette."
-            />
+            <Col className="col-auto">
+              <Input
+                value={name}
+                onChange={this.handleChange}
+                name="name"
+                extra_class="form-control-sm"
+                description="Name"
+              />
+            </Col>
+            <Col className="col-auto">
+              <Select
+                value={wtype}
+                onChange={this.handleChange}
+                name="wtype"
+                options={wtype_options}
+                extra_class="form-control-sm"
+                description="Type"
+              />
+            </Col>
+            <Col className="col-auto">
+              <Input
+                value={owner}
+                onChange={this.handleChange}
+                name="owner"
+                extra_class="form-control-sm"
+                description="Owner"
+              />
+            </Col>
+            <Col className="col-auto">
+              <Input
+                value={date}
+                type="date"
+                onChange={this.handleChange}
+                name="date"
+                extra_class="form-control-sm"
+                description="Due Date"
+              />
+            </Col>
+            <Col className="col-auto">
+              <Input
+                value={snooze_till}
+                type="date"
+                onChange={this.handleChange}
+                name="snooze_till"
+                extra_class="form-control-sm"
+                description="Snooze Till"
+              />
+            </Col>
           </Row>
 
           <Collapse in={this.props.item.context.is_ritual ? true : false}>

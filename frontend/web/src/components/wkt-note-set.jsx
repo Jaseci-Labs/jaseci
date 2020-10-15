@@ -12,7 +12,7 @@ class WktNotes extends Component {
 
   render() {
     return (
-      <Container fluid>
+      <Container fluid className="mr-0 pr-0">
         <WktItemList
           filter_func={this.wkt_note}
           w_id={this.props.w_id}

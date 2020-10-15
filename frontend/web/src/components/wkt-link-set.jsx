@@ -12,7 +12,7 @@ class WktLinks extends Component {
 
   render() {
     return (
-      <Container fluid className="mt-3">
+      <Container fluid className="mr-0 pr-0">
         <WktItemList
           filter_func={this.wkt_link}
           w_id={this.props.w_id}

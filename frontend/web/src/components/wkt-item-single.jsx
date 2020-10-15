@@ -113,6 +113,13 @@ class WktItemSingle extends Component {
                       <strong>{item.context.name}</strong>
                     )}
                     {!this.state.self_expand && item.context.name}
+                    {item.context.date && (
+                      <span style={{ color: "grey" }}>
+                        <small>
+                          <i>&nbsp;({item.context.date})</i>
+                        </small>
+                      </span>
+                    )}
                   </div>
                 </Col>
 
@@ -121,7 +128,7 @@ class WktItemSingle extends Component {
                     {w_filter.countDeepChildren(item) > 1 && (
                       <div>
                         {w_filter.countDeepChildrenClosed(item)}/
-                        {w_filter.countDeepChildren(item) - 1}
+                        {w_filter.countDeepChildren(item)}
                       </div>
                     )}
                   </div>
@@ -129,7 +136,7 @@ class WktItemSingle extends Component {
                   <WktButton
                     icon={faStar}
                     status={item.context.is_MIT}
-                    tooltip="Make a Priority"
+                    tooltip="Knock this Out"
                     onClick={() => this.toggle_MIT(item)}
                   />
                   {is_workette && (
@@ -137,7 +144,7 @@ class WktItemSingle extends Component {
                       <WktButton
                         icon={faRunning}
                         status={item.context.status === "running"}
-                        tooltip="Make In Progress"
+                        tooltip="In Progress"
                         onClick={() => this.toggle_running(item)}
                       />
                       <WktButton
