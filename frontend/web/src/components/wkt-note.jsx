@@ -108,9 +108,10 @@ class WktNoteForm extends Component {
     const is_link =
       items[current].context.wtype && items[current].context.wtype === "link";
 
+    //Ash look at why i have to use style for padding vs using className="p-10"
     return (
-      <Container fluid>
-        <form onSubmit={this.handleSubmit}>
+      <form onSubmit={this.handleSubmit}>
+        <Container fluid style={{ padding: "15px" }}>
           {is_link && (
             <Input
               value={note}
@@ -121,26 +122,23 @@ class WktNoteForm extends Component {
             />
           )}
           {!is_link && (
-            <div>
-              <br />
-              <Container
-                fluid
-                className="border rounded m-0 p-0"
-                style={{ backgroundColor: "white" }}
-              >
-                <ReactQuill
-                  value={note}
-                  onChange={this.handleChange}
-                  //modules={this.modules}
-                  formats={this.formats}
-                  theme="bubble"
-                  placeholder={"Write something..."}
-                />
-              </Container>
-            </div>
+            <Container
+              fluid
+              className="border rounded m-0 p-0"
+              style={{ backgroundColor: "white" }}
+            >
+              <ReactQuill
+                value={note}
+                onChange={this.handleChange}
+                //modules={this.modules}
+                formats={this.formats}
+                theme="bubble"
+                placeholder={"Write something..."}
+              />
+            </Container>
           )}
-        </form>
-      </Container>
+        </Container>
+      </form>
     );
   }
 }

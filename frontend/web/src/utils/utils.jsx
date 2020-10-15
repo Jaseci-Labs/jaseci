@@ -28,7 +28,7 @@ important props:
 */
 const Input = (props) => {
   return (
-    <div className="form-group col-lg m-0 pl-3 pr-3 pb-1 pb-1 pt-1">
+    <div className="form-group m-0  pb-1 pt-1">
       {props.label && <label htmlFor={props.name}>{props.label}</label>}
       <input
         {...props}
@@ -54,7 +54,7 @@ const TextArea = ({
   extra_class,
 }) => {
   return (
-    <div className="form-group col-lg m-0 pl-3 pr-3 pb-1 pb-1 pt-1">
+    <div className="form-group m-0  pb-1 pt-1">
       {label && <label htmlFor={name}>{label}</label>}
       <textarea
         value={value}
@@ -84,7 +84,7 @@ const Select = ({
   extra_class,
 }) => {
   return (
-    <div className="form-group col-lg m-0 pl-3 pr-3 pb-1 pb-1 pt-1">
+    <div className="form-group m-0 pb-1 pt-1">
       {label && <label htmlFor={name}>{label}</label>}
       <select
         value={value}
@@ -118,7 +118,7 @@ const MultiSelect = ({
   extra_class,
 }) => {
   return (
-    <div className="form-group col-lg m-0 pl-3 pr-3 pb-1 pb-1 pt-1">
+    <div className="form-group m-0  pb-1 pt-1">
       {label && <label htmlFor={name}>{label}</label>}
       <select
         multiple
@@ -146,7 +146,7 @@ const MultiSelect = ({
 
 const CheckBox = ({ name, type, label, value, onChange, extra_class }) => {
   return (
-    <div className="form-check form-check-inline m-0 pl-3 pr-3 pb-1 pb-1 pt-1">
+    <div className="form-check form-check-inline m-0  pb-1 pt-1">
       <input
         checked={value ? true : false}
         onChange={onChange}

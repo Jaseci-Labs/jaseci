@@ -64,6 +64,8 @@ class WktItemSingle extends Component {
   render() {
     const { item } = this.props;
     let color = this.props.color ? this.props.color : "#ffffff";
+    if (this.props.is_workset && w_filter.countDeepChildren(item) === 0)
+      color = this.props.empty_color;
 
     const is_workette =
       item.context.wtype !== "workset" &&
@@ -74,7 +76,6 @@ class WktItemSingle extends Component {
       <Draggable draggableId={item.jid} index={this.props.index}>
         {(provided) => (
           <React.Fragment>
-            {this.props.is_workset && <br />}
             <Container
               fluid
               {...provided.draggableProps}
@@ -125,10 +126,10 @@ class WktItemSingle extends Component {
 
                 <Col xs="auto" className="m-0 p-0">
                   <div className="badge badge-info" style={{ opacity: 0.5 }}>
-                    {w_filter.countDeepChildren(item) > 1 && (
+                    {w_filter.countDeepChildren(item) > 0 && (
                       <div>
                         {w_filter.countDeepChildrenClosed(item)}/
-                        {w_filter.countDeepChildren(item) - 1}
+                        {w_filter.countDeepChildren(item)}
                       </div>
                     )}
                   </div>
@@ -151,7 +152,10 @@ class WktItemSingle extends Component {
                         icon={faSync}
                         status={item.context.is_ritual}
                         tooltip="Make Ritual"
-                        onClick={() => this.toggle_ritual(item)}
+                        onClick={() => {
+                          this.toggle_ritual(item);
+                          //this.setState({ self_expand: true });
+                        }}
                       />
                     </React.Fragment>
                   )}
@@ -192,6 +196,8 @@ class WktItemSingle extends Component {
                 )}
               </div>
             </Collapse>
+            {this.props.is_workset &&
+              w_filter.countDeepChildren(item) !== 0 && <br />}
           </React.Fragment>
         )}
       </Draggable>

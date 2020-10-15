@@ -33,29 +33,31 @@ class WktAddForm extends Component {
   render() {
     const { title, wtype } = this.state;
     return (
-      <form onSubmit={this.handleSubmit}>
-        <Row>
-          <Col>
-            <Input
-              value={title}
-              onChange={this.handleChange}
-              name="add"
-              extra_class="form-control-sm"
-              description="Add a new workette. Press enter to add."
-            />
-          </Col>
-          <Col className="col-md-auto">
-            <Select
-              value={wtype}
-              onChange={this.handleChange}
-              name="wtype"
-              options={wtype_options}
-              extra_class="form-control-sm"
-              description="Enter type of workette."
-            />
-          </Col>
-        </Row>
-      </form>
+      <Container fluid>
+        <form onSubmit={this.handleSubmit}>
+          <Row>
+            <Col className="col-md-auto pr-0 mr-0 ">
+              <Select
+                value={wtype}
+                onChange={this.handleChange}
+                name="wtype"
+                options={wtype_options}
+                extra_class="form-control-sm"
+                description="Type"
+              />
+            </Col>
+            <Col className="col pl-1 ml-1">
+              <Input
+                value={title}
+                onChange={this.handleChange}
+                name="add"
+                extra_class="form-control-sm"
+                description="Add a new workette. Press enter to add."
+              />
+            </Col>
+          </Row>
+        </form>
+      </Container>
     );
   }
 }

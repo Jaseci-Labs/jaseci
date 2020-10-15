@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
+import { LoadingIndicator } from "../utils/utils";
+import logo from "../logo_notext.png";
 
 class NavBar extends Component {
   render() {
@@ -11,7 +13,7 @@ class NavBar extends Component {
         style={this.props.style}
       >
         <Link className="navbar-brand" to="/">
-          LL
+          <img src={logo} height="35px"></img>
         </Link>
         <button
           className="navbar-toggler"
@@ -53,6 +55,17 @@ class NavBar extends Component {
                   <Link className="nav-link" to="/reflect">
                     Reflect
                   </Link>
+                </li>
+              </ul>
+              <ul className="nav navbar-nav ml-auto">
+                <li className="nav-item">
+                  <LoadingIndicator
+                    is_loading={
+                      this.props.api.is_loading[
+                        this.props.api.is_loading.length - 1
+                      ]
+                    }
+                  />
                 </li>
               </ul>
               <ul className="nav navbar-nav ml-auto">

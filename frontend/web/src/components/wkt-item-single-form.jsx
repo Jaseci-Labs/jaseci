@@ -185,54 +185,56 @@ class WktItemSingleForm extends Component {
           </Row>
 
           <Collapse in={this.props.item.context.is_ritual ? true : false}>
-            <Row>
-              <small>
-                <div>Ritual recurs every</div>
+            <Container fluid>
+              <Row>
+                <small>
+                  <div>Ritual recurs every</div>
 
-                <CheckBox
-                  value={is_ritual[0]}
-                  onChange={this.handleRitChange}
-                  name="mon"
-                  label="Monday"
-                />
-                <CheckBox
-                  value={is_ritual[1]}
-                  onChange={this.handleRitChange}
-                  name="tues"
-                  label="Tuesday"
-                />
-                <CheckBox
-                  value={is_ritual[2]}
-                  onChange={this.handleRitChange}
-                  name="wed"
-                  label="Wednesday"
-                />
-                <CheckBox
-                  value={is_ritual[3]}
-                  onChange={this.handleRitChange}
-                  name="thurs"
-                  label="Thursday"
-                />
-                <CheckBox
-                  value={is_ritual[4]}
-                  onChange={this.handleRitChange}
-                  name="fri"
-                  label="Friday"
-                />
-                <CheckBox
-                  value={is_ritual[5]}
-                  onChange={this.handleRitChange}
-                  name="sat"
-                  label="Saturday"
-                />
-                <CheckBox
-                  value={is_ritual[6]}
-                  onChange={this.handleRitChange}
-                  name="sun"
-                  label="Sunday"
-                />
-              </small>
-            </Row>
+                  <CheckBox
+                    value={is_ritual[0]}
+                    onChange={this.handleRitChange}
+                    name="mon"
+                    label="Monday"
+                  />
+                  <CheckBox
+                    value={is_ritual[1]}
+                    onChange={this.handleRitChange}
+                    name="tues"
+                    label="Tuesday"
+                  />
+                  <CheckBox
+                    value={is_ritual[2]}
+                    onChange={this.handleRitChange}
+                    name="wed"
+                    label="Wednesday"
+                  />
+                  <CheckBox
+                    value={is_ritual[3]}
+                    onChange={this.handleRitChange}
+                    name="thurs"
+                    label="Thursday"
+                  />
+                  <CheckBox
+                    value={is_ritual[4]}
+                    onChange={this.handleRitChange}
+                    name="fri"
+                    label="Friday"
+                  />
+                  <CheckBox
+                    value={is_ritual[5]}
+                    onChange={this.handleRitChange}
+                    name="sat"
+                    label="Saturday"
+                  />
+                  <CheckBox
+                    value={is_ritual[6]}
+                    onChange={this.handleRitChange}
+                    name="sun"
+                    label="Sunday"
+                  />
+                </small>
+              </Row>
+            </Container>
           </Collapse>
         </form>
         {this.props.item.context.status === "canceled" && (

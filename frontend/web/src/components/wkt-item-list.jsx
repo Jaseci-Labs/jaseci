@@ -9,6 +9,8 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "react-bootstrap";
 
 class WktItemList extends Component {
+  state = { is_empty: true };
+
   handle_drag = (result) => {
     const { source, destination, draggableId } = result;
     const { items } = this.props.workette;
@@ -30,8 +32,10 @@ class WktItemList extends Component {
   };
 
   showable = (item) => {
+    const { is_empty } = this.state;
     if (!item.kind === "workette") return false;
     if (!this.props.filter_func(item)) return false;
+    if (is_empty) this.setState({ is_empty: false });
     return true;
   };
 
@@ -52,10 +56,10 @@ class WktItemList extends Component {
                       <React.Fragment key={items[i].jid}>
                         {this.showable(items[i]) && (
                           <WktItemSingle
+                            {...this.props}
                             item={items[i]}
                             index={idx}
                             is_workset={this.props.is_workset}
-                            color={this.props.color}
                           />
                         )}
                       </React.Fragment>
@@ -66,6 +70,7 @@ class WktItemList extends Component {
               )}
             </Droppable>
           </DragDropContext>
+          {!this.state.is_empty && <br />}
         </Container>
       </React.Fragment>
     );
