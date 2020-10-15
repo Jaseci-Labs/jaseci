@@ -42,6 +42,7 @@ class LLDayApp extends Component {
                   <WktButton
                     icon={faEye}
                     status={this.state.show_left}
+                    tooltip="Show/Hide Column"
                     onClick={() => {
                       this.setState({ show_left: !this.state.show_left });
                     }}
@@ -67,6 +68,7 @@ class LLDayApp extends Component {
                 <WktButton
                   icon={faEye}
                   status={this.state.show_right}
+                  tooltip="Show/Hide Column"
                   onClick={() => {
                     this.setState({ show_right: !this.state.show_right });
                   }}

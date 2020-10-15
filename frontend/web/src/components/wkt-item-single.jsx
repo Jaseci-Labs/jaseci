@@ -90,6 +90,7 @@ class WktItemSingle extends Component {
                     <WktButton
                       icon={faCheckSquare}
                       status={item.context.status === "done"}
+                      tooltip="Complete"
                       onClick={() => this.toggle_done(item)}
                     />
                   </Col>
@@ -128,6 +129,7 @@ class WktItemSingle extends Component {
                   <WktButton
                     icon={faStar}
                     status={item.context.is_MIT}
+                    tooltip="Make a Priority"
                     onClick={() => this.toggle_MIT(item)}
                   />
                   {is_workette && (
@@ -135,11 +137,13 @@ class WktItemSingle extends Component {
                       <WktButton
                         icon={faRunning}
                         status={item.context.status === "running"}
+                        tooltip="Make In Progress"
                         onClick={() => this.toggle_running(item)}
                       />
                       <WktButton
                         icon={faSync}
                         status={item.context.is_ritual}
+                        tooltip="Make Ritual"
                         onClick={() => this.toggle_ritual(item)}
                       />
                     </React.Fragment>
@@ -147,6 +151,7 @@ class WktItemSingle extends Component {
                   <WktButton
                     icon={faTimesCircle}
                     status={item.context.status === "canceled"}
+                    tooltip="Cancel"
                     onClick={() => this.toggle_canceled(item)}
                   />
                   <div

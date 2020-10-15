@@ -72,6 +72,7 @@ class Workette extends Component {
             <WktButton
               icon={faPlusSquare}
               status={this.state.show_add}
+              tooltip="Add Items"
               onClick={() => {
                 this.setState({ show_add: !this.state.show_add });
               }}
@@ -81,6 +82,7 @@ class Workette extends Component {
                 <WktButton
                   icon={faEdit}
                   status={this.state.show_edit}
+                  tooltip="Edit Settings"
                   onClick={() => {
                     this.setState({ show_edit: !this.state.show_edit });
                   }}
@@ -88,6 +90,7 @@ class Workette extends Component {
                 <WktButton
                   icon={faBoxOpen}
                   status={this.state.show_move}
+                  tooltip="Organize Workettes"
                   onClick={() => {
                     this.setState({ show_move: !this.state.show_move });
                   }}
@@ -97,6 +100,7 @@ class Workette extends Component {
             <WktButton
               icon={faStickyNote}
               status={this.state.show_note}
+              tooltip="Show/Hide Notes"
               onClick={() => {
                 this.setState({ show_note: !this.state.show_note });
               }}
@@ -104,6 +108,7 @@ class Workette extends Component {
             <WktButton
               icon={faEye}
               status={!this.state.open_only}
+              tooltip="Show/Hide Completed Workettes"
               onClick={() => {
                 this.setState({ open_only: !this.state.open_only });
               }}
