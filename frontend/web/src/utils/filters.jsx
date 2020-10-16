@@ -119,29 +119,34 @@ const workette_filters = {
   },
 
   // Get total number of items inside workette thats available
-  countDeepChildren: function (w) {
+  // self_call is used internally to prevent counting the head workette
+  countDeepChildren: function (w, self_call = false) {
     const { items } = store.getState().workette;
     let count =
-      workette_filters.is_workette(w) && workette_filters.scheduled_now(w)
+      self_call &&
+      workette_filters.is_workette(w) &&
+      workette_filters.scheduled_now(w)
         ? 1
         : 0;
     w.children.map((i) => {
-      count += workette_filters.countDeepChildren(items[i]);
+      count += workette_filters.countDeepChildren(items[i], true);
     });
     return count;
   },
 
   // Get total number of items that has been closed
-  countDeepChildrenClosed: function (w) {
+  // self_call is used to prevent counting the head workette
+  countDeepChildrenClosed: function (w, self_call = false) {
     const { items } = store.getState().workette;
     let count =
+      self_call &&
       workette_filters.is_workette(w) &&
       workette_filters.scheduled_now(w) &&
       (workette_filters.complete(w) || workette_filters.canceled(w))
         ? 1
         : 0;
     w.children.map((i) => {
-      count += workette_filters.countDeepChildrenClosed(items[i]);
+      count += workette_filters.countDeepChildrenClosed(items[i], true);
     });
     return count;
   },

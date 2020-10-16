@@ -11,11 +11,11 @@ import { is_today } from "../utils/utils";
 import WktButton from "./wkt-button";
 import {
   faPlusSquare,
-  faEdit,
+  faCog,
   faStickyNote,
   faEye,
   faLink,
-  faBoxOpen,
+  faFolderOpen,
 } from "@fortawesome/free-solid-svg-icons";
 
 import { Collapse, Container } from "react-bootstrap";
@@ -66,9 +66,6 @@ class Workette extends Component {
           style={{ backgroundImage: "linear-gradient(#fffff5, #eeffff)" }}
         >
           <span>
-            {/* <strong>
-              {items[current].context.name && items[current].context.name}
-            </strong> */}
             <WktButton
               icon={faPlusSquare}
               status={this.state.show_add}
@@ -80,7 +77,7 @@ class Workette extends Component {
             {items[current].context.name && (
               <React.Fragment>
                 <WktButton
-                  icon={faEdit}
+                  icon={faCog}
                   status={this.state.show_edit}
                   tooltip="Edit Settings"
                   onClick={() => {
@@ -88,7 +85,7 @@ class Workette extends Component {
                   }}
                 />
                 <WktButton
-                  icon={faBoxOpen}
+                  icon={faFolderOpen}
                   status={this.state.show_move}
                   tooltip="Organize Workettes"
                   onClick={() => {
@@ -137,7 +134,7 @@ class Workette extends Component {
               />
             </div>
           </Collapse>
-          <WktItemSet w_id={this.props.w_id} open_only={this.state.open_only} />
+
           <Collapse
             in={this.state.show_note || items[current].context.wtype === "note"}
             unmountOnExit={true}
@@ -146,6 +143,7 @@ class Workette extends Component {
               <WktNoteForm w_id={current} />
             </div>
           </Collapse>
+          <WktItemSet w_id={this.props.w_id} open_only={this.state.open_only} />
           <WktLinks w_id={this.props.w_id} />
           <WktNotes w_id={this.props.w_id} />
           <WktWorksets w_id={this.props.w_id} />

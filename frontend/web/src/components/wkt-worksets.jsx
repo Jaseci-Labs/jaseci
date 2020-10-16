@@ -18,6 +18,7 @@ class WktWorksets extends Component {
           w_id={this.props.w_id}
           is_workset={true}
           color="#ffefcd"
+          empty_color="#fff6d6"
         />
       </Container>
     );

@@ -64,6 +64,8 @@ class WktItemSingle extends Component {
   render() {
     const { item } = this.props;
     let color = this.props.color ? this.props.color : "#ffffff";
+    if (this.props.is_workset && w_filter.countDeepChildren(item) === 0)
+      color = this.props.empty_color;
 
     const is_workette =
       item.context.wtype !== "workset" &&
@@ -74,7 +76,6 @@ class WktItemSingle extends Component {
       <Draggable draggableId={item.jid} index={this.props.index}>
         {(provided) => (
           <React.Fragment>
-            {this.props.is_workset && <br />}
             <Container
               fluid
               {...provided.draggableProps}
@@ -85,7 +86,7 @@ class WktItemSingle extends Component {
                 className="d-flex justify-content-between "
                 style={{ backgroundColor: color }}
               >
-                {is_workette && (
+                {(is_workette || this.props.is_workset) && (
                   <Col xs="auto" className="m-0 p-0">
                     <WktButton
                       icon={faCheckSquare}
@@ -113,38 +114,48 @@ class WktItemSingle extends Component {
                       <strong>{item.context.name}</strong>
                     )}
                     {!this.state.self_expand && item.context.name}
+                    {item.context.date && (
+                      <span style={{ color: "grey" }}>
+                        <small>
+                          <i>&nbsp;({item.context.date})</i>
+                        </small>
+                      </span>
+                    )}
                   </div>
                 </Col>
 
                 <Col xs="auto" className="m-0 p-0">
                   <div className="badge badge-info" style={{ opacity: 0.5 }}>
-                    {w_filter.countDeepChildren(item) > 1 && (
+                    {w_filter.countDeepChildren(item) > 0 && (
                       <div>
                         {w_filter.countDeepChildrenClosed(item)}/
-                        {w_filter.countDeepChildren(item) - 1}
+                        {w_filter.countDeepChildren(item)}
                       </div>
                     )}
                   </div>
 
-                  <WktButton
-                    icon={faStar}
-                    status={item.context.is_MIT}
-                    tooltip="Make a Priority"
-                    onClick={() => this.toggle_MIT(item)}
-                  />
                   {is_workette && (
                     <React.Fragment>
                       <WktButton
+                        icon={faStar}
+                        status={item.context.is_MIT}
+                        tooltip="Knock this Out"
+                        onClick={() => this.toggle_MIT(item)}
+                      />
+                      <WktButton
                         icon={faRunning}
                         status={item.context.status === "running"}
-                        tooltip="Make In Progress"
+                        tooltip="In Progress"
                         onClick={() => this.toggle_running(item)}
                       />
                       <WktButton
                         icon={faSync}
                         status={item.context.is_ritual}
                         tooltip="Make Ritual"
-                        onClick={() => this.toggle_ritual(item)}
+                        onClick={() => {
+                          this.toggle_ritual(item);
+                          //this.setState({ self_expand: true });
+                        }}
                       />
                     </React.Fragment>
                   )}
@@ -185,6 +196,8 @@ class WktItemSingle extends Component {
                 )}
               </div>
             </Collapse>
+            {this.props.is_workset &&
+              w_filter.countDeepChildren(item) !== 0 && <br />}
           </React.Fragment>
         )}
       </Draggable>
