@@ -86,7 +86,7 @@ class WktItemSingle extends Component {
                 className="d-flex justify-content-between "
                 style={{ backgroundColor: color }}
               >
-                {is_workette && (
+                {(is_workette || this.props.is_workset) && (
                   <Col xs="auto" className="m-0 p-0">
                     <WktButton
                       icon={faCheckSquare}
