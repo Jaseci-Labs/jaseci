@@ -1,6 +1,7 @@
 import React from 'react';
 import { Route, Switch } from 'react-router-dom';
 import './App.css';
+import './styles/colors.scss';
 import { Provider } from "react-redux";
 import store from "./store/store";
 import NavBar from './components/navbar';

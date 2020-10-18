@@ -98,7 +98,7 @@ class WktNoteForm extends Component {
     }
   };
 
-  validate = () => {};
+  validate = () => { };
 
   render() {
     const { note } = this.state;
@@ -108,10 +108,9 @@ class WktNoteForm extends Component {
     const is_link =
       items[current].context.wtype && items[current].context.wtype === "link";
 
-    //Ash look at why i have to use style for padding vs using className="p-10"
     return (
       <form onSubmit={this.handleSubmit}>
-        <Container fluid style={{ padding: "15px" }}>
+        <Container fluid className="p-3">
           {is_link && (
             <Input
               value={note}

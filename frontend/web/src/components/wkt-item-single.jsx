@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import { Container, Row, Col } from "react-bootstrap";
 import { Collapse } from "react-bootstrap";
+import ReactTooltip from 'react-tooltip'
 
 import Workette from "./workette";
 import { is_today, validURL } from "../utils/utils";
@@ -17,6 +18,7 @@ import {
   faRunning,
 } from "@fortawesome/free-solid-svg-icons";
 import "x-frame-bypass";
+import './wkt-item-single.scss'
 
 class WktItemSingle extends Component {
   state = {
@@ -46,6 +48,8 @@ class WktItemSingle extends Component {
   };
 
   toggle_done = (item) => {
+    //hide tooltips to fix bug
+    ReactTooltip.hide();
     if (!is_today(this.props.session.cur_date)) return;
     let val = this.props.item.context.status;
     if (val === "done") val = "open";
@@ -63,7 +67,7 @@ class WktItemSingle extends Component {
 
   render() {
     const { item } = this.props;
-    let color = this.props.color ? this.props.color : "#ffffff";
+    let color = this.props.color ? this.props.color : "white";
     if (this.props.is_workset && w_filter.countDeepChildren(item) === 0)
       color = this.props.empty_color;
 
@@ -83,8 +87,7 @@ class WktItemSingle extends Component {
               className="border"
             >
               <Row
-                className="d-flex justify-content-between "
-                style={{ backgroundColor: color }}
+                className={`d-flex justify-content-between color-${color}`}
               >
                 {(is_workette || this.props.is_workset) && (
                   <Col xs="auto" className="m-0 p-0">

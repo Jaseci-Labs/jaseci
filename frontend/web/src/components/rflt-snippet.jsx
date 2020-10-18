@@ -28,7 +28,7 @@ class ReflectionSnippet extends Component {
             <DeepMITs
               w_id={current}
               label="Everything Completed!"
-              color="#d4ffd4"
+              color="mit-completed"
               items={w_filter.deepCompleted(current)}
             />
           )}
@@ -36,7 +36,7 @@ class ReflectionSnippet extends Component {
             <DeepMITs
               w_id={current}
               label="Everything Abandoned!"
-              color="#ffdddd"
+              color="mit-abandoned"
               items={w_filter.deepCanceled(current)}
             />
           )}

@@ -51,7 +51,7 @@ class DayViewLeft extends Component {
           <DeepMITs
             w_id={current}
             label="Babysit these!"
-            color="#ededff"
+            color="running"
             items={w_filter.deepRunning()}
           />
         )}
@@ -82,7 +82,7 @@ class DayViewRight extends Component {
           <DeepMITs
             w_id={current}
             label="Everything Completed!"
-            color="#d4ffd4"
+            color="mit-completed"
             items={w_filter.deepCompleted()}
           />
         )}
@@ -91,7 +91,7 @@ class DayViewRight extends Component {
           <DeepMITs
             w_id={current}
             label="Everything Abandoned!"
-            color="#ffdddd"
+            color="mit-abandoned"
             items={w_filter.deepCanceled()}
           />
         )}

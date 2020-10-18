@@ -15,7 +15,7 @@ class WktItemSet extends Component {
             <WktItemList
               filter_func={w_filter.running}
               w_id={this.props.w_id}
-              color="#ededff"
+              color="running"
             />
           </Col>
           {!this.props.open_only && (
@@ -23,18 +23,18 @@ class WktItemSet extends Component {
               <WktItemList
                 filter_func={w_filter.complete}
                 w_id={this.props.w_id}
-                color="#edffed"
+                color="completed"
               />
 
               <WktItemList
                 filter_func={(w) => !w_filter.scheduled_now(w)}
                 w_id={this.props.w_id}
-                color="#ffffed"
+                color="scheduled"
               />
               <WktItemList
                 filter_func={w_filter.canceled}
                 w_id={this.props.w_id}
-                color="#ffeeee"
+                color="canceled"
               />
             </Col>
           )}

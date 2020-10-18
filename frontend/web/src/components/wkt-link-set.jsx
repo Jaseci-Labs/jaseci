@@ -16,7 +16,7 @@ class WktLinks extends Component {
         <WktItemList
           filter_func={this.wkt_link}
           w_id={this.props.w_id}
-          color="#ededff"
+          color="running"
         />
       </Container>
     );

@@ -16,7 +16,7 @@ class WktNotes extends Component {
         <WktItemList
           filter_func={this.wkt_note}
           w_id={this.props.w_id}
-          color="#eeeeee"
+          color="note"
         />
       </Container>
     );
