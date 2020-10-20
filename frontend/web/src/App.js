@@ -17,7 +17,7 @@ function App() {
         <Provider store={store}>
             <div>
                 <NavBar style={{ height: "40px" }} />
-                <Container fluid className="m-0 p-0" style={{ height: "calc(100vh - 70px)" }}>
+                <Container fluid className="m-0 p-0" style={{ height: "calc(100vh - 70px)", backgroundColor: "#F8F8F8"}}>
                     <Switch>
                         <Route path="/login" component={LogIn} />
                         <Route path="/logout" component={LogOut} />

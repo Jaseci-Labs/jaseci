@@ -63,7 +63,7 @@ class Workette extends Component {
         <Container
           fluid
           className="border m-0 p-0"
-          style={{ backgroundImage: "linear-gradient(#fffff5, #eeffff)" }}
+          style={{ backgroundImage: "linear-gradient(#9981cc30, #8fcc8120)" }}
         >
           <span>
             <WktButton

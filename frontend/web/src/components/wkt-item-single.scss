@@ -15,6 +15,12 @@ $prefix: color-;
     &white {
         background-color:var(--light-white);
     }
+    &link {
+        background-color:var(--light-link);
+    }
+    &starred {
+        background-color:var(--light-starred);
+    }
     &workset {
         background-color:var(--light-workset);
     }

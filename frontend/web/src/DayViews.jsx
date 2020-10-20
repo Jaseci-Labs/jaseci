@@ -44,6 +44,7 @@ class DayViewLeft extends Component {
           <DeepMITs
             w_id={current}
             label="Knock these out!"
+            color="starred"
             items={w_filter.deepMIT()}
           />
         )}

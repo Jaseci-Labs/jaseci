@@ -84,13 +84,13 @@ class WktItemSingle extends Component {
               fluid
               {...provided.draggableProps}
               ref={provided.innerRef}
-              className="border"
+              className="border border-dark"
             >
               <Row
                 className={`d-flex justify-content-between color-${color}`}
               >
                 {(is_workette || this.props.is_workset) && (
-                  <Col xs="auto" className="m-0 p-0">
+                  <Col xs="auto" className="m-0 p-0 pl-1">
                     <WktButton
                       icon={faCheckSquare}
                       status={item.context.status === "done"}
@@ -118,7 +118,7 @@ class WktItemSingle extends Component {
                     )}
                     {!this.state.self_expand && item.context.name}
                     {item.context.date && (
-                      <span style={{ color: "grey" }}>
+                      <span style={{ color: "black" }}>
                         <small>
                           <i>&nbsp;({item.context.date})</i>
                         </small>
@@ -128,7 +128,7 @@ class WktItemSingle extends Component {
                 </Col>
 
                 <Col xs="auto" className="m-0 p-0">
-                  <div className="badge badge-info" style={{ opacity: 0.5 }}>
+                  <div className="badge badge-info mr-1" style={{ color:"black", backgroundColor:"#A2C062", opacity: 1 }}>
                     {w_filter.countDeepChildren(item) > 0 && (
                       <div>
                         {w_filter.countDeepChildrenClosed(item)}/

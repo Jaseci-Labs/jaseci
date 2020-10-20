@@ -7,18 +7,34 @@
     --light-error:#AC2E00;
     --light-success:#708C32;
     --light-disabled:#B5B5B5;
-    --light-running:#ededff;
-    --light-completed:#edffed;
-    --light-scheduled:#ffffed;
-    --light-canceled:#ffeeee;
-    --light-white:#ffffff;
-    --light-workset:#ffefcd;
-    --light-empty-workset:#fff6d6;
-    --light-mit-completed:#d4ffd4;
-    --light-mit-abandoned:#ffdddd; 
-    --light-note:#eeeeee;
-    --light-link:#61dafb;
+    --light-running:#B4CC81;                                // current in progress
+    --light-completed:#A2C062;                              // current completed in middle
+    --light-scheduled:#ffffed;                              
+    --light-canceled:#DDAB99;                               // current abandoned in middle
+    --light-white:#D9E5C0;                                  // current workette
+    --light-workset:#AC9D91;                                // current workset
+    --light-empty-workset:#E3DEDA;                          // current empty
+    --light-mit-completed:#A2C062;                          // current completed
+    --light-mit-abandoned:#DDAB99;                          // current abandoned
+    --light-note:#E1F1F7;                                   // current note
     --light-app-header:#282c34;
+    --light-starred:#FFE66E;                                // current star
+    --light-link:#C4E3EF;                                   // current link
+    /* old
+    --light-running:#ededff;                                // current in progress
+    --light-completed:#edffed;                              // current completed in middle
+    --light-scheduled:#ffffed;                              
+    --light-canceled:#ffeeee;                               // current abandoned in middle
+    --light-white:#ffffff;                                  // current workette
+    --light-workset:#ffefcd;                                // current workset
+    --light-empty-workset:#fff6d6;                          // current empty
+    --light-mit-completed:#d4ffd4;                          // current completed
+    --light-mit-abandoned:#ffdddd;                          // current abandoned
+    --light-note:#eeeeee;                                   // current note
+    --light-app-header:#282c34;
+    --light-starred:#F5C56C;                                // current star
+    --light-link:#61dafb;                                   // current link
+    */
     //dark theme
     --dark-primary:#7BA61F;
     --dark-secondary:#413E3B;
