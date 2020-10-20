@@ -25,7 +25,7 @@ Lets get everything up and running!
 
 3. Then change to web client director and run npm -i to install all npm packages required by client
 
-   `cd frontend/web; npm -i`
+   `cd frontend/web; npm i`
 
 4. Then run npm start!
 

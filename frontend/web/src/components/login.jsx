@@ -42,6 +42,12 @@ class LogIn extends Component {
       <div className="container-sm">
         {this.props.session.logged_in && <Redirect to="/" />}
         <ServerErrors errors={this.props.session.error} />
+        {this.props.session.token === "user_created" && (
+          <div className="alert alert-success">
+            User successfully created!
+            <br /> Please check email for activation link!
+          </div>
+        )}
         <h1>Login</h1>
         <br />
 

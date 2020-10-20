@@ -42,7 +42,8 @@ def dummy_bp(inspect):
     input()
 
 
-def is_urn(s):
+def is_urn(s: str):
+    """Test if is uuid string in urn format"""
     return type(s) == str and s.startswith("urn:uuid:")
 
 

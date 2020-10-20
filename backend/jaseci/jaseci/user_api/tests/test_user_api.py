@@ -72,7 +72,9 @@ class user_api_tests_public(TestCaseHelper):
     def test_create_token_for_user(self):
         """Test that a token is created for the user"""
         payload = {'email': 'JSCITEST_test@jaseci.com', 'password': 'testpass'}
-        create_user(**payload)
+        user = create_user(**payload)
+        user.is_activated = True
+        user.save()
         res = self.client.post(TOKEN_URL, payload)
 
         # self.assertIsNotNone(get_user(email=payload['email']).hook)

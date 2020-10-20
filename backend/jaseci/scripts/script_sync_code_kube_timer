@@ -1,9 +1,0 @@
-#!/bin/bash
-
-echo "Watching for code changes..."
-
-while true;do
-    for podname in $(kubectl get pods -l pod=jaseci-ct -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci ${podname}:/; echo "Pushing to ci_test triggered by: $event" | head -n 1; done
-    for podname in $(kubectl get pods -l pod=jaseci -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci ${podname}:/; echo "Pushing to prod triggered by: $event" | head -n 1; done
-    sleep 2;
-done

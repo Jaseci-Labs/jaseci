@@ -36,6 +36,7 @@ class UserManager(BaseUserManager):
         user = self.model(email=self.normalize_email(email), **extra_fields)
         user.set_password(password)
         user.is_staff = True
+        user.is_activated = True
         user.is_admin = True
         user.is_superuser = True
         user.save(using=self._db)
@@ -60,6 +61,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     time_created = models.DateTimeField(auto_now_add=True)
     time_modified = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
+    is_activated = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
     master = models.UUIDField(default=uuid.uuid4)

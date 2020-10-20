@@ -171,14 +171,16 @@ const ServerErrors = ({ errors }) => {
           <pre>
             <small>
               {errors.messages && errors.messages}
-              <br />
+              &nbsp;
               {errors.response &&
                 errors.response.statusText &&
                 errors.response.statusText}
               <br />
               {errors.response &&
-                errors.response.data &&
-                JSON.stringify(errors.response.data, null, 2)}
+              errors.response.data &&
+              errors.response.data.non_field_errors
+                ? errors.response.data.non_field_errors
+                : JSON.stringify(errors.response.data, null, 2)}
             </small>
           </pre>
         </div>

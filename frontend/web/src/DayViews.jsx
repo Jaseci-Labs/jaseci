@@ -39,7 +39,7 @@ class DayViewLeft extends Component {
         <small>
           <Calendar value={this.state.date} onChange={this.onChange} />
         </small>
-        <small>Ver. 0.38.6 </small>
+        <small>Ver. 0.39.0 </small>
         {current && (
           <DeepMITs
             w_id={current}
