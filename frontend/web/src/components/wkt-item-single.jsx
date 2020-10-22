@@ -2,7 +2,6 @@ import React, { Component } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import { Container, Row, Col } from "react-bootstrap";
 import { Collapse } from "react-bootstrap";
-import ReactTooltip from 'react-tooltip'
 
 import Workette from "./workette";
 import { is_today, validURL } from "../utils/utils";
@@ -22,7 +21,7 @@ import './wkt-item-single.scss'
 
 class WktItemSingle extends Component {
   state = {
-    self_expand: this.props.is_workset ? false : false,
+    self_expand: this.props.is_workset ? false : false
   };
 
   toggle_MIT = (item) => {
@@ -48,8 +47,6 @@ class WktItemSingle extends Component {
   };
 
   toggle_done = (item) => {
-    //hide tooltips to fix bug
-    ReactTooltip.hide();
     if (!is_today(this.props.session.cur_date)) return;
     let val = this.props.item.context.status;
     if (val === "done") val = "open";
@@ -128,7 +125,7 @@ class WktItemSingle extends Component {
                 </Col>
 
                 <Col xs="auto" className="m-0 p-0">
-                  <div className="badge badge-info mr-1" style={{ color:"black", backgroundColor:"#A2C062", opacity: 1 }}>
+                  <div className="badge badge-info mr-1" style={{ color: "black", backgroundColor: "#A2C062", opacity: 1 }}>
                     {w_filter.countDeepChildren(item) > 0 && (
                       <div>
                         {w_filter.countDeepChildrenClosed(item)}/
