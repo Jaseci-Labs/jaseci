@@ -11,7 +11,7 @@ import { is_today } from "../utils/utils";
 import WktButton from "./wkt-button";
 import {
   faPlusSquare,
-  faCog,
+  faPen,
   faStickyNote,
   faEye,
   faLink,
@@ -62,8 +62,8 @@ class Workette extends Component {
       <React.Fragment>
         <Container
           fluid
-          className="border m-0 p-0"
-          style={{ backgroundImage: "linear-gradient(#9981cc30, #8fcc8120)" }}
+          className="shadow border-left border-info m-0 p-0 pl-1"
+          style={{ backgroundImage: "linear-gradient(#9981cc08, #FFD1DC10)" }}
         >
           <span>
             <WktButton
@@ -77,7 +77,7 @@ class Workette extends Component {
             {items[current].context.name && (
               <React.Fragment>
                 <WktButton
-                  icon={faCog}
+                  icon={faPen}
                   status={this.state.show_edit}
                   tooltip="Edit Settings"
                   onClick={() => {

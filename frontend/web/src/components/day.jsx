@@ -21,7 +21,7 @@ class Day extends Component {
     const { session, workette } = this.props;
     const current = workette.days[session.cur_date];
     return (
-      <Container fluid className="border">
+      <Container fluid className="">
         <h6>
           <center>
             <br />

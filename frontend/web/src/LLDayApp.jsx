@@ -35,7 +35,7 @@ class LLDayApp extends Component {
           <Row style={{ height: "100%", overflowY: "auto" }}>
             <Col
               style={this.sidebar_style(this.state.show_left)}
-              className="border"
+              className="border-right"
             >
               <Container>
                 <center>
@@ -62,7 +62,7 @@ class LLDayApp extends Component {
             </Col>
             <Col
               style={this.sidebar_style(this.state.show_right)}
-              className="border"
+              className="border-left"
             >
               <center>
                 <WktButton

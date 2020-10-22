@@ -65,7 +65,7 @@ class WktItemSingle extends Component {
   render() {
     const { item } = this.props;
     let color = this.props.color ? this.props.color : "white";
-    if (this.props.is_workset && w_filter.countDeepChildren(item) === 0)
+    if (this.props.is_workset && w_filter.countDeepChildren(item) === 0)    //If work set is empty, apply different color
       color = this.props.empty_color;
 
     const is_workette =
@@ -81,7 +81,7 @@ class WktItemSingle extends Component {
               fluid
               {...provided.draggableProps}
               ref={provided.innerRef}
-              className="border border-dark"
+              className="border-left border-info"          
             >
               <Row
                 className={`d-flex justify-content-between color-${color}`}
@@ -125,7 +125,7 @@ class WktItemSingle extends Component {
                 </Col>
 
                 <Col xs="auto" className="m-0 p-0">
-                  <div className="badge badge-info mr-1" style={{ color: "black", backgroundColor: "#A2C062", opacity: 1 }}>
+                  <div className="badge badge-info mr-1" style={{ color: "black", backgroundColor: "#AAAAAA20", opacity: 1 }}>
                     {w_filter.countDeepChildren(item) > 0 && (
                       <div>
                         {w_filter.countDeepChildrenClosed(item)}/
@@ -197,11 +197,11 @@ class WktItemSingle extends Component {
               </div>
             </Collapse>
             {this.props.is_workset &&
-              w_filter.countDeepChildren(item) !== 0 && <br />}
+               <br />}
           </React.Fragment>
         )}
       </Draggable>
-    );
+    );    // add w_filter.countDeepChildren(item) !== 0 && to get empty work set spacing
   }
 }
 

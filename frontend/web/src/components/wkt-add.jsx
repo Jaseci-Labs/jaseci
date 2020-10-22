@@ -53,6 +53,7 @@ class WktAddForm extends Component {
                 name="add"
                 extra_class="form-control-sm"
                 description="Add a new workette. Press enter to add."
+                autoComplete="off"
               />
             </Col>
           </Row>

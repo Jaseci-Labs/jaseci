@@ -146,7 +146,7 @@ const MultiSelect = ({
 
 const CheckBox = ({ name, type, label, value, onChange, extra_class }) => {
   return (
-    <div className="form-check form-check-inline m-0  pb-1 pt-1">
+    <div className="form-check form-check-inline m-0  pb-1 pt-1 mr-2">
       <input
         checked={value ? true : false}
         onChange={onChange}
