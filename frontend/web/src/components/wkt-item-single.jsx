@@ -126,9 +126,9 @@ class WktItemSingle extends Component {
                     )}
 
                     {this.state.self_expand && (
-                      <strong>{item.context.name}</strong>
+                      <strong>{item.context.name.trim() ? item.context.name : "Untitled"}</strong>
                     )}
-                    {!this.state.self_expand && item.context.name}
+                    {!this.state.self_expand && item.context.name.trim() ? item.context.name : "Untitled"}
                     {item.context.date && (
                       <span style={{ color: "black" }}>
                         <small>
