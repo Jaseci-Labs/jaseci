@@ -12,11 +12,6 @@ class WktItemSet extends Component {
         <Row>
           <Col style={{ minWidth: "300px" }}>
             <WktItemList filter_func={w_filter.open} w_id={this.props.w_id} />
-            <WktItemList
-              filter_func={w_filter.running}
-              w_id={this.props.w_id}
-              color="running"
-            />
           </Col>
           {!this.props.open_only && (
             <Col style={{ maxWidth: "36%", minWidth: "300px" }}>

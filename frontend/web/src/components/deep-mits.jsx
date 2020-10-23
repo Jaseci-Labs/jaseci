@@ -1,9 +1,17 @@
 import React, { Component } from "react";
 import WktItemSingle from "./wkt-item-single";
-import { Container } from "react-bootstrap";
+import { Container, Row, Col } from "react-bootstrap";
 import { connect } from "react-redux";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import { apply_ordering, move_arr_item } from "../utils/utils";
+import {
+  faStar,
+  faGlassCheers,
+  faTimesCircle,
+  faRunning,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 
 class DeepMITs extends Component {
   state = { ordered: [] };
@@ -37,34 +45,53 @@ class DeepMITs extends Component {
     const { items } = this.props.workette;
     const { ordered } = this.state;
     return (
-      <Container fluid className="m-0 p-0">
+      <Container fluid className="m-0 p-2 mb-3">
         {this.props.items && this.props.items.length > 0 && (
-          <div>
-            <br />
-            {this.props.label}
-          </div>
+            <Row className="justify-content-between">
+              <Col xs="1" className="d-flex flex-column m-0 p-0 justify-content-center align-items-center">
+              {this.props.label == "Knock these out!" && (
+                <FontAwesomeIcon icon={faStar} color="gold" size="1x" />
+              )}
+              {this.props.label == "Babysit these!" && (
+                <FontAwesomeIcon icon={faRunning} />
+              )}
+              {this.props.label == "Everything Completed!" && (
+                <FontAwesomeIcon icon={faGlassCheers} color="green" />
+              )}
+              {this.props.label == "Everything Abandoned!" && (
+                <FontAwesomeIcon icon={faTimesCircle} />
+              )}
+              </Col>
+              <Col className="m-0 p-0">
+              {this.props.label}
+              </Col>
+            </Row>
         )}
-        <DragDropContext onDragEnd={this.handle_drag}>
-          <Droppable droppableId={this.props.w_id}>
-            {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef}>
-                {this.props.items.map((i, idx) => (
-                  <React.Fragment key={i}>
-                    {
-                      <WktItemSingle
-                        item={items[i]}
-                        index={idx}
-                        is_workset={false}
-                        color={this.props.color}
-                      />
-                    }
-                  </React.Fragment>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+        <Row>
+          <Col className="p-0">
+            <DragDropContext onDragEnd={this.handle_drag}>
+              <Droppable droppableId={this.props.w_id}>
+                {(provided) => (
+                  <div {...provided.droppableProps} ref={provided.innerRef}>
+                    {this.props.items.map((i, idx) => (
+                      <React.Fragment key={i}>
+                        {
+                          <WktItemSingle
+                            item={items[i]}
+                            index={idx}
+                            is_workset={false}
+                            color={this.props.color}
+                          />
+                        }
+                      </React.Fragment>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </Col>
+        </Row>
       </Container>
     );
   }

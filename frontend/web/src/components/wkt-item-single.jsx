@@ -15,9 +15,12 @@ import {
   faSync,
   faStar,
   faRunning,
+  faLink,
+  faStickyNote,
 } from "@fortawesome/free-solid-svg-icons";
 import "x-frame-bypass";
 import './wkt-item-single.scss'
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 class WktItemSingle extends Component {
   state = {
@@ -81,7 +84,7 @@ class WktItemSingle extends Component {
               fluid
               {...provided.draggableProps}
               ref={provided.innerRef}
-              className="border-left border-info"          
+              className="border-left border-bottom border-top border-light"          
             >
               <Row
                 className={`d-flex justify-content-between color-${color}`}
@@ -96,9 +99,9 @@ class WktItemSingle extends Component {
                     />
                   </Col>
                 )}
-                <Col className="m-0 p-0">
+                <Col className="d-flex align-items-center m-0 p-0">
                   <div
-                    className="d-inline-flex ml-1"
+                    className="d-inline-flex ml-0"
                     {...provided.dragHandleProps}
                     onClick={() => {
                       this.setState({
@@ -110,6 +113,18 @@ class WktItemSingle extends Component {
                     {item.context.owner && (
                       <span>[{item.context.owner}]&nbsp;</span>
                     )}
+
+                    {item.context.wtype === "link" && (
+                      <Col xs="auto" className="m-0 p-0 pl-1 pr-1" style={{color:"gray"}}>
+                        <FontAwesomeIcon icon={faLink} />
+                      </Col>
+                    )}
+                    {item.context.wtype === "note" && (
+                      <Col xs="auto" className="m-0 p-0 pl-1 pr-1" style={{color:"gray"}}>
+                      <FontAwesomeIcon icon={faStickyNote} />
+                      </Col>
+                    )}
+
                     {this.state.self_expand && (
                       <strong>{item.context.name}</strong>
                     )}
@@ -123,9 +138,9 @@ class WktItemSingle extends Component {
                     )}
                   </div>
                 </Col>
+                <Col xs="auto" className="d-flex align-items-center m-0 p-0">
+                  <div className="badge badge-info mr-1" style={{ color: "black", backgroundColor: "#00000015", opacity: 1 }}>
 
-                <Col xs="auto" className="m-0 p-0">
-                  <div className="badge badge-info mr-1" style={{ color: "black", backgroundColor: "#AAAAAA20", opacity: 1 }}>
                     {w_filter.countDeepChildren(item) > 0 && (
                       <div>
                         {w_filter.countDeepChildrenClosed(item)}/

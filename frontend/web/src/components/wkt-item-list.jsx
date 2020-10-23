@@ -70,7 +70,7 @@ class WktItemList extends Component {
               )}
             </Droppable>
           </DragDropContext>
-          {!this.state.is_empty && <br />}
+          {!this.state.is_empty && !this.props.is_workset && <br />}
         </Container>
       </React.Fragment>
     );

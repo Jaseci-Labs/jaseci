@@ -30,7 +30,7 @@ const workette_filters = {
   open: function (w) {
     if (!workette_filters.scheduled_now(w)) return false;
     const ctx = w.context;
-    if (!ctx.status || ctx.status === "open")
+    if (!ctx.status || ctx.status === "open" || ctx.status==="running")
       if (!ctx.wtype || ctx.wtype === "workette" || ctx.wtype == "none")
         return true;
     return false;
