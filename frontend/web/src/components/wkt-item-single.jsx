@@ -84,12 +84,12 @@ class WktItemSingle extends Component {
               fluid
               {...provided.draggableProps}
               ref={provided.innerRef}
-              className="border-left border-bottom border-top border-light"          
+              className="border-left border-bottom border-top border-light"
             >
               <Row
                 className={`d-flex justify-content-between color-${color}`}
               >
-                {(is_workette || this.props.is_workset) && (
+                {(is_workette || item.context.wtype === "workset") && (
                   <Col xs="auto" className="m-0 p-0 pl-1">
                     <WktButton
                       icon={faCheckSquare}
@@ -115,13 +115,13 @@ class WktItemSingle extends Component {
                     )}
 
                     {item.context.wtype === "link" && (
-                      <Col xs="auto" className="m-0 p-0 pl-1 pr-1" style={{color:"gray"}}>
+                      <Col xs="auto" className="m-0 p-0 pl-1 pr-1" style={{ color: "gray" }}>
                         <FontAwesomeIcon icon={faLink} />
                       </Col>
                     )}
                     {item.context.wtype === "note" && (
-                      <Col xs="auto" className="m-0 p-0 pl-1 pr-1" style={{color:"gray"}}>
-                      <FontAwesomeIcon icon={faStickyNote} />
+                      <Col xs="auto" className="m-0 p-0 pl-1 pr-1" style={{ color: "gray" }}>
+                        <FontAwesomeIcon icon={faStickyNote} />
                       </Col>
                     )}
 
@@ -212,7 +212,7 @@ class WktItemSingle extends Component {
               </div>
             </Collapse>
             {this.props.is_workset &&
-               <br />}
+              <br />}
           </React.Fragment>
         )}
       </Draggable>
