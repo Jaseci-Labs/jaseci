@@ -76,8 +76,6 @@ class WktItemSingle extends Component {
       item.context.wtype !== "note" &&
       item.context.wtype !== "link";
 
-    let display_name = item.context.name.trim() ? item.context.name : "Untitled";
-
     return (
       <Draggable draggableId={item.jid} index={this.props.index}>
         {(provided) => (
@@ -128,9 +126,9 @@ class WktItemSingle extends Component {
                     )}
 
                     {this.state.self_expand && (
-                      <strong>{display_name}</strong>
+                      <strong>{item.context.name.trim() ? item.context.name : "Untitled"}</strong>
                     )}
-                    {!this.state.self_expand && display_name}
+                    {!this.state.self_expand && (item.context.name.trim() ? item.context.name : "Untitled")}
                     {item.context.date && (
                       <span style={{ color: "black" }}>
                         <small>
