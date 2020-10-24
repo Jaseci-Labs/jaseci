@@ -74,7 +74,7 @@ class Workette extends Component {
                 this.setState({ show_add: !this.state.show_add });
               }}
             />
-            {items[current].context.name && (
+            {!items[current].context.day && (
               <React.Fragment>
                 <WktButton
                   icon={faPen}
