@@ -62,13 +62,18 @@ class NavBar extends Component {
                   <LoadingIndicator
                     is_loading={
                       this.props.api.is_loading[
-                        this.props.api.is_loading.length - 1
+                      this.props.api.is_loading.length - 1
                       ]
                     }
                   />
                 </li>
               </ul>
               <ul className="nav navbar-nav ml-auto">
+                <li className="nav-item">
+                  <Link className="nav-link" to="/help">
+                    Help
+                  </Link>
+                </li>
                 <li className="nav-item">
                   <Link className="nav-link" to="/logout">
                     Logout

@@ -10,27 +10,41 @@ import LLDayApp from './LLDayApp';
 import { StatusBar } from './utils/utils'
 import { LogIn, LogOut } from './components/login';
 import Register from './components/register';
+import SplashPage from './components/splash/SplashPage'
+import HelpPage from './components/help/HelpPage'
 import { Container } from "react-bootstrap";
 
 function App() {
     return (
         <Provider store={store}>
             <div>
+                <Switch>
+                    <Route path="/splash" component={SplashPage} />
+                    <InternalRoute path="/login" component={LogIn} />
+                    <InternalRoute path="/logout" component={LogOut} />
+                    <InternalRoute path="/register" component={Register} />
+                    <InternalRoute path="/reflect" component={LLReflectApp} />
+                    <InternalRoute path="/help" component={HelpPage} />
+                    <InternalRoute path="/" component={LLDayApp} />
+                </Switch>
+            </div>
+        </Provider>
+    );
+}
+
+const InternalRoute = ({ component: Component, ...rest }) => {
+    return (
+        <Route {...rest} render={props => (
+            <div>
                 <NavBar style={{ height: "40px" }} />
-                <Container fluid className="m-0 p-0" style={{ height: "calc(100vh - 70px)", backgroundColor: "#FBFBFF"}}>
-                    <Switch>
-                        <Route path="/login" component={LogIn} />
-                        <Route path="/logout" component={LogOut} />
-                        <Route path="/register" component={Register} />
-                        <Route path="/reflect" component={LLReflectApp} />
-                        <Route path="/" component={LLDayApp} />
-                    </Switch>
+                <Container fluid className="m-0 p-0" style={{ height: "calc(100vh - 70px)", backgroundColor: "#FBFBFF" }}>
+                    <Component {...props} />
                 </Container>
                 <StatusBar style={{ height: "30px" }} />
             </div>
-
-        </Provider>
-    );
+        )
+        } />
+    )
 }
 
 export default App;
