@@ -793,6 +793,7 @@ class walker_machine(machine):
         src_walk = self.owner().walker_ids.get_obj_by_name(kid[2].token_text())
         self.rt_check_type(src_walk, type(self), kid[2])
         walk = src_walk.duplicate(persist_dup=False)
+        walk._jac_ast = src_walk._jac_ast
         walk.prime(location)
         if(len(kid) > 3):
             self.run_spawn_ctx(kid[3], walk)
@@ -856,7 +857,10 @@ class walker_machine(machine):
                     # head_obj.context['id'] = head_obj.jid
                     if (subname[1] in head_obj.context.keys()):
                         if (len(subname) > 2 and subname[2] == 'length'):
-                            return len(head_obj.context[subname[1]])
+                            if(isinstance(head_obj.context[subname[1]], list)):
+                                return len(head_obj.context[subname[1]])
+                            else:
+                                return 0
                         return ctx_value(head_obj, subname[1])
                 # other types in scope can go here
             # check if dotted var is builtin action (of walker)

@@ -99,13 +99,11 @@ class test_ll(TestCaseHelper):
 
     def test_ll_carry_forward_simple(self):
         """Test LifeLogify Jac Implementation"""
-        # self.start_perf_test()
         data = self.run_walker('gen_rand_life', {})
         data = self.run_walker('get_gen_day', {})
         wjid = data[0]['jid']
         data = self.run_walker('get_workettes', {}, prime=wjid)
         self.assertGreater(len(data), 1)
-        # self.stop_perf_test()
 
     def test_ll_delete_workette(self):
         """Test LifeLogify Jac Implementation"""

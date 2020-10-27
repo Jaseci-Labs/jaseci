@@ -96,11 +96,6 @@ class ast():
     def __repr__(self):
         return self.__str__()
 
-    def destroy(self):
-        for i in self.outbound_nodes():
-            i.destroy()
-        super().destroy()
-
     def get_tokens(self):
         """Return list of all tokens derived from this ast node"""
         tokens = []

@@ -38,6 +38,8 @@ class walker(element, walker_machine, anchored):
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
         walker_machine.__init__(self)
+        self._jac_ast = ast(jac_text=self.code,
+                            parse_rule='walker') if code else None
 
     @property
     def current_node(self):
@@ -53,14 +55,11 @@ class walker(element, walker_machine, anchored):
         else:
             self.current_node_id = None
 
-    def step(self, jac_ast=None):
+    def step(self):
         """
         Take single step through program
         if no ast provided, will be generated from code
         """
-        if(not jac_ast):
-            jac_ast = ast(jac_text=self.code,
-                          parse_rule='walker')
         if(not self.next_node_ids):
             logger.info(str(f'Walker {self.name} is disengaged'))
             return False
@@ -71,7 +70,7 @@ class walker(element, walker_machine, anchored):
             )
             return False
         self.current_node = self.next_node_ids.pop_first_obj()
-        self.run_walker(jac_ast=jac_ast)
+        self.run_walker(jac_ast=self._jac_ast)
         self.log_history('visited', self.current_node.id)
         self.current_step += 1
         self.profile['steps'] = self.current_step
@@ -103,8 +102,8 @@ class walker(element, walker_machine, anchored):
         """Executes Walker to completion"""
         if(start_node):
             self.prime(start_node, prime_ctx)
-        jac_ast = ast(jac_text=self.code, parse_rule='walker')
-        while self.step(jac_ast=jac_ast):
+
+        while self.step():
             pass
         self.save()
 

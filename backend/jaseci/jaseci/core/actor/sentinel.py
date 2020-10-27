@@ -73,6 +73,7 @@ class sentinel(element, sentinel_machine):
         if (not src_walk):
             return None
         new_walk = src_walk.duplicate(persist_dup=False)
+        new_walk._jac_ast = src_walk._jac_ast
         self.live_walker_ids.add_obj(new_walk)
         return new_walk
 
