@@ -19,7 +19,7 @@ class DayViewLeft extends Component {
 
   onChange = (date) => {
     const today = time_now();
-    //if (date > today) date = today;
+    if (date > today) date = today;
     this.props.change_date(date);
     const { workette } = this.props;
     const current = workette.days[date.toISOString().split("T")[0]];

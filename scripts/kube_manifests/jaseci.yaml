@@ -52,7 +52,7 @@ spec:
       containers:
         - name: jaseci
           image: python:3-alpine
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command: [sh, -c, "source script/prod_up"]
           ports:
             - containerPort: 80
