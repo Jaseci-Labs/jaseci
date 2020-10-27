@@ -69,6 +69,9 @@ class walker(element, walker_machine, anchored):
                     f'- {self.step_limit}')
             )
             return False
+        if (self.code and not self._jac_ast):
+            self._jac_ast = ast(jac_text=self.code, parse_rule='walker')
+
         self.current_node = self.next_node_ids.pop_first_obj()
         self.run_walker(jac_ast=self._jac_ast)
         self.log_history('visited', self.current_node.id)

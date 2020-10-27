@@ -25,18 +25,6 @@ class orm_hook(mem_hook):
         self.save_list = set()
         super().__init__()
 
-    def context_ids_adapter(self, obj):
-        """Adapter for loading context_ids"""
-        for i in dir(obj):
-            if (i == "context_ids"):
-                ctx = {}
-                for j in obj.context_ids.obj_list():
-                    ctx[j.name] = j.value
-                setattr(obj, "context", ctx)
-                delattr(obj, "context_ids")
-                return True
-        return False
-
     def get_obj_from_store(self, item_id):
         try:
             loaded_obj = self.objects.get(jid=item_id)
@@ -56,9 +44,6 @@ class orm_hook(mem_hook):
         obj_fields = json_str_to_jsci_dict(loaded_obj.jsci_obj, ret_obj)
         for i in obj_fields.keys():
             setattr(ret_obj, i, obj_fields[i])
-
-        if (self.context_ids_adapter(ret_obj)):
-            ret_obj.save()
 
         return ret_obj
 
