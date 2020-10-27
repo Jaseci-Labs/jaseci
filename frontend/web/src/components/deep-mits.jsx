@@ -68,7 +68,7 @@ class DeepMITs extends Component {
             </Row>
         )}
         <Row>
-          <Col className="p-0">
+          <Col className="shadow p-0">
             <DragDropContext onDragEnd={this.handle_drag}>
               <Droppable droppableId={this.props.w_id}>
                 {(provided) => (

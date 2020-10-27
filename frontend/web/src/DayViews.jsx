@@ -37,9 +37,9 @@ class DayViewLeft extends Component {
     return (
       <Container fluid className="m-0 p-0">
         <small>
-          <Calendar value={this.state.date} onChange={this.onChange} />
+          <Calendar className="shadow mb-3" value={this.state.date} onChange={this.onChange} />
         </small>
-        <small>Ver. 0.39.2 </small>
+        
         {current && (
           <DeepMITs
             w_id={current}
@@ -56,6 +56,7 @@ class DayViewLeft extends Component {
             items={w_filter.deepRunning()}
           />
         )}
+        <small>Ver. 0.39.2 </small>
       </Container>
     );
   }

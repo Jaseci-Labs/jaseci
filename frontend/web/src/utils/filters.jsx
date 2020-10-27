@@ -75,7 +75,7 @@ const workette_filters = {
       if (
         k.context.is_MIT &&
         workette_filters.open(k) &&
-        workette_filters.scheduled_now(k)
+        workette_filters.scheduled_now(k) && !workette_filters.running(k)
       )
         ret.push(k.jid);
     });

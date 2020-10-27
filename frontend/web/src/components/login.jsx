@@ -41,7 +41,7 @@ class LogIn extends Component {
   render() {
     const { email, pass, errors } = this.state;
     return (
-      <div className="container-sm">
+      <div className="container-sm mt-3">
         {this.props.session.logged_in && <Redirect to="/Day" />}
         <ServerErrors errors={this.props.session.error} />
         {this.props.session.token === "user_created" && (
