@@ -5,6 +5,7 @@ import { connect } from "react-redux";
 import { session_actions as session } from "./store/session";
 import axios from "axios";
 import WktButton from "./components/wkt-button";
+import ReleaseModal from "./utils/release-modal";
 import { faAlignCenter, faEye } from "@fortawesome/free-solid-svg-icons";
 
 class LLDayApp extends Component {
@@ -29,8 +30,10 @@ class LLDayApp extends Component {
   };
 
   render() {
+    
     return (
       <Container fluid style={{ height: "100%" }}>
+        {true && <ReleaseModal />}
         {this.props.session.jac_loaded && (
           <Row style={{ height: "100%", overflowY: "auto" }}>
             <Col

@@ -1,10 +1,10 @@
 # lifelogify
 
-[Please visit LifeLogify wiki fo guidelines on coding](https://wiki.lifelogify.com/)
+[Please visit LifeLogify wiki for guidelines on coding](https://wiki.lifelogify.com/)
 
 ## Getting Started
 
-Lets get everything up and running!
+Let's get everything up and running!
 
 ### Assumptions
 
@@ -23,7 +23,7 @@ Lets get everything up and running!
 
    `kubectl port-forward service/jaseci 8000:80 &`
 
-3. Then change to web client director and run npm -i to install all npm packages required by client
+3. Then change to web client director and run npm i to install all npm packages required by client
 
    `cd frontend/web; npm i`
 

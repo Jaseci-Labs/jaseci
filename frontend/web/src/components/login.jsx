@@ -4,6 +4,8 @@ import { connect } from "react-redux";
 import { session_actions as session } from "../store/session";
 import { workette_actions as wact } from "../store/workette";
 import { Redirect } from "react-router-dom";
+import ReleaseModal from "../utils/release-modal";
+
 
 class LogIn extends Component {
   state = { email: "", pass: "", errors: [] };
