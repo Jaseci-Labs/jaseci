@@ -87,7 +87,7 @@ class ast():
             )
 
     def __str__(self):
-        res = f'{self.j_type}:{self.name}'
+        res = f'{self.kind}:{self.name}'
         if(self.is_terminal()):
             res += \
                 f':{self.context["token"]["text"]}'

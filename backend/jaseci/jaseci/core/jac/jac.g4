@@ -75,13 +75,14 @@ destroy_action: KW_DESTROY expression SEMI;
 expression: assignment | connect;
 
 assignment:
-	dotted_name EQ expression
+	dotted_name array_idx* EQ expression
 	| inc_assign
 	| copy_assign;
 
-inc_assign: dotted_name (PEQ | MEQ | TEQ | DEQ) expression;
+inc_assign:
+	dotted_name array_idx* (PEQ | MEQ | TEQ | DEQ) expression;
 
-copy_assign: dotted_name CPY_EQ expression;
+copy_assign: dotted_name array_idx* CPY_EQ expression;
 
 connect: logical ( (NOT)? edge_ref expression)?;
 
@@ -118,9 +119,12 @@ atom:
 	| list_val
 	| dotted_name
 	| LPAREN expression RPAREN
-	| spawn;
+	| spawn
+	| DEREF expression;
 
-array_ref: dotted_name (LSQUARE expression RSQUARE)+;
+array_ref: dotted_name array_idx+;
+
+array_idx: LSQUARE expression RSQUARE;
 
 attr_ref: dotted_name DBL_COLON dotted_name;
 
@@ -182,6 +186,7 @@ KW_DISENGAGE: 'disengage';
 KW_SKIP: 'skip';
 KW_REPORT: 'report';
 KW_DESTROY: 'destroy';
+DEREF: '&';
 DOT: '.';
 NOT: '!' | 'not';
 EE: '==';

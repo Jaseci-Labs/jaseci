@@ -182,6 +182,8 @@
 
 ## Important todos
 
+- Allow assignments to array elements
+- Add dereferencer to get address of node/edges (get uuid with & instead of .id)
 - On JAC compile create /jac/run API for walkers so you can use urls to call walkers
 
 - CONTEXTS ARE DICTS (not elements)

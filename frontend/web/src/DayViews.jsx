@@ -19,7 +19,7 @@ class DayViewLeft extends Component {
 
   onChange = (date) => {
     const today = time_now();
-    if (date > today) date = today;
+    //if (date > today) date = today;
     this.props.change_date(date);
     const { workette } = this.props;
     const current = workette.days[date.toISOString().split("T")[0]];
@@ -39,7 +39,7 @@ class DayViewLeft extends Component {
         <small>
           <Calendar value={this.state.date} onChange={this.onChange} />
         </small>
-        <small>Ver. 0.39.1 </small>
+        <small>Ver. 0.39.2 </small>
         {current && (
           <DeepMITs
             w_id={current}

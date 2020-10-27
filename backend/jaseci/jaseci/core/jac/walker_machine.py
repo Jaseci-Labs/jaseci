@@ -141,7 +141,7 @@ class walker_machine(machine):
             lst = self.run_expression(kid[3])
             # should check that lst is list here
             for i in lst:
-                self.set_live_var(var_name, i, kid[3])
+                self.set_live_var(var_name, i, [], kid[3])
                 self.run_code_block(kid[4])
                 loops += 1
                 if (self.loop_ctrl == 'break'):
@@ -282,7 +282,7 @@ class walker_machine(machine):
     def run_assignment(self, jac_ast, assign_scope=None):
         """
         assignment:
-            dotted_name EQ expression
+            dotted_name array_idx* EQ expression
             | inc_assign
             | copy_assign;
 
@@ -296,9 +296,13 @@ class walker_machine(machine):
             assign_func = getattr(self, f'run_{kid[0].name}')
             return assign_func(kid[0])
         var_name = self.run_dotted_name(kid[0])
-        result = self.run_expression(kid[2])
+        arr_idx = []
+        for i in kid:
+            if(i.name == 'array_idx'):
+                arr_idx.append(self.run_array_idx(i))
+        result = self.run_expression(kid[-1])
         if (assign_scope is None):
-            self.set_live_var(var_name, result, kid[0])
+            self.set_live_var(var_name, result, arr_idx, kid[0])
         else:
             if(isinstance(result, element)):
                 result = result.id.urn
@@ -307,10 +311,15 @@ class walker_machine(machine):
 
     def run_inc_assign(self, jac_ast):
         """
-        inc_assign: dotted_name (PEQ | MEQ | TEQ | DEQ) expression;
+        inc_assign:
+                dotted_name array_idx* (PEQ | MEQ | TEQ | DEQ) expression;
         """
         kid = jac_ast.kid
         var_name = self.run_dotted_name(kid[0])
+        arr_idx = []
+        for i in kid:
+            if(i.name == 'array_idx'):
+                arr_idx.append(self.run_array_idx(i))
         result = self.get_live_var(var_name, kid[0])
         if(kid[1].name == 'PEQ'):
             result = result + self.run_expression(kid[2])
@@ -320,16 +329,19 @@ class walker_machine(machine):
             result = result * self.run_expression(kid[2])
         elif(kid[1].name == 'DEQ'):
             result = result / self.run_expression(kid[2])
-        self.set_live_var(var_name, result, kid[0])
+        self.set_live_var(var_name, result, arr_idx, kid[0])
         return result
 
     def run_copy_assign(self, jac_ast):
         """
-        copy_assign: dotted_name CPY_EQ expression;
+        copy_assign: dotted_name array_idx* CPY_EQ expression;
         """
         kid = jac_ast.kid
         var_name = self.run_dotted_name(kid[0])
         dest = self.get_live_var(var_name, kid[0])
+        for i in kid:
+            if(i.name == 'array_idx'):
+                dest = dest[self.run_array_idx(i)]
         src = self.run_expression(kid[2])
         if (not self.rt_check_type(dest, node, kid[0]) or not
                 self.rt_check_type(dest, node, kid[0])):
@@ -529,11 +541,12 @@ class walker_machine(machine):
             | array_ref
             | attr_ref
             | node_ref
-            | edge_ref (node_ref)?
+            | edge_ref (node_ref)? /* Returns nodes even if edge */
             | list_val
             | dotted_name
             | LPAREN expression RPAREN
-            | spawn;
+            | spawn
+            | DEREF expression;
         """
         kid = jac_ast.kid
         if(kid[0].name == 'INT'):
@@ -553,21 +566,33 @@ class walker_machine(machine):
                                      kid[0])
         elif(kid[0].name == 'LPAREN'):
             return self.run_expression(kid[1])
+        elif (kid[0].name == 'DEREF'):
+            result = self.run_expression(kid[1])
+            if (self.rt_check_type(result, element, kid[1])):
+                result = result.jid
+            return result
         else:
             return getattr(self, f'run_{kid[0].name}')(kid[0])
 
     def run_array_ref(self, jac_ast):
         """
-        array_ref: dotted_name (LSQUARE expression RSQUARE)+;
+        array_ref: dotted_name array_idx+;
         """
         kid = jac_ast.kid
         item = self.get_live_var(self.run_dotted_name(kid[0]),
                                  kid[0])
         result = item
         for i in kid:
-            if(i.name == 'expression'):
-                result = result[self.run_expression(i)]
-        return result
+            if(i.name == 'array_idx'):
+                result = result[self.run_array_idx(i)]
+        return self.reference_to_value(result)
+
+    def run_array_idx(self, jac_ast):
+        """
+        array_idx: LSQUARE expression RSQUARE;
+        """
+        kid = jac_ast.kid
+        return self.run_expression(kid[1])
 
     def run_attr_ref(self, jac_ast):
         """
@@ -772,7 +797,7 @@ class walker_machine(machine):
         if(len(kid) > 3):
             self.run_spawn_ctx(kid[3], walk)
         walk.run()
-        ret = walk.anchor_value()
+        ret = self.reference_to_value(walk.anchor_value())
         self.report = self.report + walk.report
         walk.destroy()
         return ret
@@ -828,8 +853,10 @@ class walker_machine(machine):
                 if is_urn(found):
                     head_obj = self._h.get_obj(uuid.UUID(found))
                     # NOTE: There's got to be a better place to insert builtin
-                    head_obj.context['id'] = str(uuid.UUID(head_obj.jid))
+                    # head_obj.context['id'] = head_obj.jid
                     if (subname[1] in head_obj.context.keys()):
+                        if (len(subname) > 2 and subname[2] == 'length'):
+                            return len(head_obj.context[subname[1]])
                         return ctx_value(head_obj, subname[1])
                 # other types in scope can go here
             # check if dotted var is builtin action (of walker)
@@ -861,25 +888,46 @@ class walker_machine(machine):
         if (found is None):
             self.rt_error(f"Variable not defined - {name}", jac_ast)
             return None
-        # Then make sure variable is in the right format before returning
-        while (is_urn(found) or type(found) == ctx_value):
-            if(is_urn(found)):
-                found = self._h.get_obj(uuid.UUID(found))
-            if (type(found) == ctx_value):
-                found = found.obj.context[found.name]
-        return found
+        return self.reference_to_value(found)
 
-    def set_live_var(self, name, value, jac_ast):
+    def reference_to_value(self, val):
+        """Reference to variables value"""
+        while (is_urn(val) or type(val) == ctx_value):
+            if(is_urn(val)):
+                val = self._h.get_obj(uuid.UUID(val))
+            if (type(val) == ctx_value):
+                val = val.obj.context[val.name]
+        return val
+
+    def set_live_var(self, name, value, md_array_idx, jac_ast):
         """Returns live variable, to support builtins in the future"""
         if(isinstance(value, element)):
             value = value.id.urn
         if name not in self.scope.keys():
             look = self.find_live_attr(name, allow_read_only=False)
             if (look):
-                look.obj.context[look.name] = value
+                if(not md_array_idx):
+                    look.obj.context[look.name] = value
+                else:
+                    self.set_array_live_var(look.obj.context[look.name],
+                                            value, md_array_idx, jac_ast)
                 return
             elif '.' in name:
                 self.rt_error(f"Arbitrary dotted names not allowed - {name}",
                               jac_ast)
                 return
-        self.scope[name] = value
+        if(not md_array_idx):
+            self.scope[name] = value
+        else:
+            self.set_array_live_var(self.scope[name], value,
+                                    md_array_idx, jac_ast)
+
+    def set_array_live_var(self, item, value, md_array_idx, jac_ast):
+        """Helper for setting array values"""
+        for i in md_array_idx[:-1]:
+            if (i >= len(item)):
+                self.rt_error(f"Array index out of bounds!", jac_ast)
+            item = item[i]
+        if (md_array_idx[-1] >= len(item)):
+            self.rt_error(f"Array index out of bounds!", jac_ast)
+        item[md_array_idx[-1]] = value

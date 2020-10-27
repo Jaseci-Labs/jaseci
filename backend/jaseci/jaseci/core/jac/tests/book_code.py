@@ -148,3 +148,61 @@ destroy_disconn = \
         std.out('1', -->);
     }
     """
+
+array_assign = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init{
+        root {
+            node1 = spawn here --> node::test;
+            node1.apple = [[1,2],[3,4]];
+            take node1;
+        }
+        test {
+            a = [[0,0],[0,0]];
+            std.out(a);
+            a[0] = [1,1];
+            std.out(a);
+            std.out(here.apple);
+            here.apple[0] = [4,5];
+            std.out(here.apple);
+        }
+    }
+    """
+
+array_md_assign = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init{
+        root {
+            node1 = spawn here --> node::test;
+            node1.apple = [[1,2],[3,4]];
+            take node1;
+        }
+        test {
+            std.out(here.apple);
+            here.apple[0][1] = 76;
+            std.out(here.apple);
+        }
+    }
+    """
+
+dereference = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init{
+        root {
+            node1 = spawn here --> node::test;
+            std.out(&node1);
+        }
+    }
+    """

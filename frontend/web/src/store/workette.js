@@ -119,7 +119,7 @@ const load_workettes_from_payload = (pl) => {
     pl.map(x => {
         additions[x[1].jid] = x[1];
         additions[x[1].jid].children = [];
-        const parent_id = 'urn:uuid:' + x[0];
+        const parent_id = x[0];
         additions[x[1].jid].parent = parent_id;
         if (parent_id in additions)
             additions[parent_id].children.push(x[1].jid)

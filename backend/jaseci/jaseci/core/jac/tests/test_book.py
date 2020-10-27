@@ -138,3 +138,31 @@ class jac_book_tests(TestCaseHelper):
         # self.assertEqual(self.new_stdout.getvalue(),
         #                  "Hello 5 times!\nHello 4 times!\n"
         #                  "Hello 2 times!\nHello 1 times!\n")
+
+    def test_array_assign(self):
+        self.sent.register_code(jtc.array_assign)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "[[0, 0], [0, 0]]\n"
+                         "[[1, 1], [0, 0]]\n"
+                         "[[1, 2], [3, 4]]\n"
+                         "[[4, 5], [3, 4]]\n")
+
+    def test_md_array_assign(self):
+        self.sent.register_code(jtc.array_md_assign)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "[[1, 2], [3, 4]]\n"
+                         "[[1, 76], [3, 4]]\n")
+
+    def test_dereference(self):
+        self.sent.register_code(jtc.dereference)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue()[:9],
+                         "urn:uuid:")

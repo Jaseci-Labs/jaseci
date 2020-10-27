@@ -165,7 +165,7 @@ class machine():
         """Prints error if type mismatach"""
         if (not isinstance(obj, typ)):
             self.rt_error(f'Incompatible type {typ.__name__} for object ' +
-                          f'{obj}', jac_ast)
+                          f'{obj} - {type(obj).__name__}', jac_ast)
             return False
         else:
             return True
