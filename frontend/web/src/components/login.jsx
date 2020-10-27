@@ -40,7 +40,7 @@ class LogIn extends Component {
     const { email, pass, errors } = this.state;
     return (
       <div className="container-sm">
-        {this.props.session.logged_in && <Redirect to="/" />}
+        {this.props.session.logged_in && <Redirect to="/Day" />}
         <ServerErrors errors={this.props.session.error} />
         {this.props.session.token === "user_created" && (
           <div className="alert alert-success">

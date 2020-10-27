@@ -47,7 +47,7 @@ class NavBar extends Component {
             <React.Fragment>
               <ul className="nav navbar-nav">
                 <li className="nav-item">
-                  <Link className="nav-link" to="/">
+                  <Link className="nav-link" to="/Day">
                     Day
                   </Link>
                 </li>

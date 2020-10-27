@@ -19,13 +19,13 @@ function App() {
         <Provider store={store}>
             <div>
                 <Switch>
-                    <Route path="/splash" component={SplashPage} />
                     <InternalRoute path="/login" component={LogIn} />
                     <InternalRoute path="/logout" component={LogOut} />
                     <InternalRoute path="/register" component={Register} />
                     <InternalRoute path="/reflect" component={LLReflectApp} />
-                    <InternalRoute path="/help" component={HelpPage} />
-                    <InternalRoute path="/" component={LLDayApp} />
+                    <InternalRoute path="/help" component={HelpPage} />\
+                    <InternalRoute path="/day" component={LLDayApp} />
+                    <Route path="/" component={SplashPage} />
                 </Switch>
             </div>
         </Provider>
