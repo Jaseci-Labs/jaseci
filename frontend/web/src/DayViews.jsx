@@ -10,6 +10,8 @@ import { Container } from "react-bootstrap";
 import { time_now } from "./utils/utils";
 import { workette_filters as w_filter } from "./utils/filters";
 
+const LL_VER = process.env.REACT_APP_LL_VERSION;
+
 class DayViewLeft extends Component {
   state = { date: time_now() };
 
@@ -37,9 +39,12 @@ class DayViewLeft extends Component {
     return (
       <Container fluid className="m-0 p-0">
         <small>
-          <Calendar className="shadow mb-3" value={this.state.date} onChange={this.onChange} />
+          <Calendar
+            className="shadow mb-3"
+            value={this.state.date}
+            onChange={this.onChange}
+          />
         </small>
-        
         {current && (
           <DeepMITs
             w_id={current}
@@ -56,7 +61,7 @@ class DayViewLeft extends Component {
             items={w_filter.deepRunning()}
           />
         )}
-        <small>Ver. 0.39.2 </small>
+        <small>{LL_VER}</small>
       </Container>
     );
   }

@@ -22,6 +22,7 @@ node week {
 
 node day {
     has anchor day;
+    has ll_version;
     can infer.day_from_date;
 }
 

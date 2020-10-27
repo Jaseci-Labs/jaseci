@@ -4,6 +4,7 @@ import { connect } from "react-redux";
 import WktNoteForm from "./wkt-note";
 import { Container, Row, Col } from "react-bootstrap";
 import { workette_actions as wact } from "../store/workette";
+import ReleaseModal from "../utils/release-modal";
 
 function print_date(d) {
   let ret = new Date(d);
@@ -31,6 +32,7 @@ class Day extends Component {
           <br />
         </h6>
         <Workette w_id={current} />
+        <ReleaseModal />
       </Container>
     );
   }

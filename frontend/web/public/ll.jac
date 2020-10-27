@@ -22,7 +22,7 @@ node week {
 
 node day {
     has anchor day;
-    has order, note;
+    has order, note, ll_version;
     can infer.day_from_date;
 }
 
