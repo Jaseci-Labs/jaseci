@@ -1,31 +1,32 @@
 {
   "files": {
-    "main.css": "/static/css/main.af3a9960.chunk.css",
-    "main.js": "/static/js/main.c1a36ca0.chunk.js",
-    "main.js.map": "/static/js/main.c1a36ca0.chunk.js.map",
+    "main.css": "/static/css/main.f9c064f7.chunk.css",
+    "main.js": "/static/js/main.0e5d94b6.chunk.js",
+    "main.js.map": "/static/js/main.0e5d94b6.chunk.js.map",
     "runtime-main.js": "/static/js/runtime-main.451c0d4d.js",
     "runtime-main.js.map": "/static/js/runtime-main.451c0d4d.js.map",
-    "static/css/2.6e1ccc4d.chunk.css": "/static/css/2.6e1ccc4d.chunk.css",
-    "static/js/2.5a292a13.chunk.js": "/static/js/2.5a292a13.chunk.js",
-    "static/js/2.5a292a13.chunk.js.map": "/static/js/2.5a292a13.chunk.js.map",
+    "static/css/2.dcaccb7f.chunk.css": "/static/css/2.dcaccb7f.chunk.css",
+    "static/js/2.626c05e3.chunk.js": "/static/js/2.626c05e3.chunk.js",
+    "static/js/2.626c05e3.chunk.js.map": "/static/js/2.626c05e3.chunk.js.map",
     "index.html": "/index.html",
-    "precache-manifest.f04f5a5dd6691beb233b849c40f25355.js": "/precache-manifest.f04f5a5dd6691beb233b849c40f25355.js",
+    "precache-manifest.67c8640064ce2f690be72da917295cc8.js": "/precache-manifest.67c8640064ce2f690be72da917295cc8.js",
     "service-worker.js": "/service-worker.js",
-    "static/css/2.6e1ccc4d.chunk.css.map": "/static/css/2.6e1ccc4d.chunk.css.map",
-    "static/css/main.af3a9960.chunk.css.map": "/static/css/main.af3a9960.chunk.css.map",
-    "static/js/2.5a292a13.chunk.js.LICENSE.txt": "/static/js/2.5a292a13.chunk.js.LICENSE.txt",
+    "static/css/2.dcaccb7f.chunk.css.map": "/static/css/2.dcaccb7f.chunk.css.map",
+    "static/css/main.f9c064f7.chunk.css.map": "/static/css/main.f9c064f7.chunk.css.map",
+    "static/js/2.626c05e3.chunk.js.LICENSE.txt": "/static/js/2.626c05e3.chunk.js.LICENSE.txt",
     "static/media/ExampleLL.png": "/static/media/ExampleLL.619e5943.png",
     "static/media/ExampleLLwithLabels.png": "/static/media/ExampleLLwithLabels.4ce35264.png",
     "static/media/Tutorial-CreateWorkette.png": "/static/media/Tutorial-CreateWorkette.1535cdf3.png",
     "static/media/logo_notext.png": "/static/media/logo_notext.c7f6f1a6.png",
+    "static/media/release-notes.md": "/static/media/release-notes.eeb9c1d0.md",
     "static/media/SplashPage.scss": "/static/media/test-tree-2.d7ca7574.jpg",
     "static/media/transparent_white_logo.png": "/static/media/transparent_white_logo.d888a57d.png"
   },
   "entrypoints": [
     "static/js/runtime-main.451c0d4d.js",
-    "static/css/2.6e1ccc4d.chunk.css",
-    "static/js/2.5a292a13.chunk.js",
-    "static/css/main.af3a9960.chunk.css",
-    "static/js/main.c1a36ca0.chunk.js"
+    "static/css/2.dcaccb7f.chunk.css",
+    "static/js/2.626c05e3.chunk.js",
+    "static/css/main.f9c064f7.chunk.css",
+    "static/js/main.0e5d94b6.chunk.js"
   ]
 }
