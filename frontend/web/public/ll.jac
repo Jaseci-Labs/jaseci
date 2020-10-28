@@ -104,6 +104,7 @@ walker get_gen_day {
             new.day = infer.day_from_date(date);
             if(latest_day) {
                 new.order = latest_day.order;
+                new.ll_version = latest_day.ll_version;
                 spawn latest_day walker::carry_forward(parent=new);
                 for i=0 to i<new.order.length by i+=1:
                     new.order[i] = &(spawn new.order[i] walker::past_to_now);
