@@ -166,7 +166,7 @@ const CheckBox = ({ name, type, label, value, onChange, extra_class }) => {
 const ServerErrors = ({ errors }) => {
   return (
     <div>
-      {(errors.ferror.length > 0 || errors.messages) && (
+      {(errors.ferror || errors.messages) && (
         <div className="alert alert-danger">
           <pre>
             <small>
