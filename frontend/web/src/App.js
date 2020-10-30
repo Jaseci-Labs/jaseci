@@ -1,5 +1,6 @@
 import React from 'react';
-import { Route, Switch } from 'react-router-dom';
+import { Route, Switch, withRouter } from 'react-router-dom';
+import { TransitionGroup, CSSTransition } from "react-transition-group";
 import './App.css';
 import './styles/colors.scss';
 import { Provider } from "react-redux";
@@ -14,21 +15,31 @@ import SplashPage from './components/splash/SplashPage'
 import HelpPage from './components/help/HelpPage'
 import { Container } from "react-bootstrap";
 
-function App() {
+function App({ location }) {
     return (
-        <Provider store={store}>
-            <div>
-                <Switch>
-                    <InternalRoute path="/login" component={LogIn} />
-                    <InternalRoute path="/logout" component={LogOut} />
-                    <InternalRoute path="/register" component={Register} />
-                    <InternalRoute path="/reflect" component={LLReflectApp} />
-                    <InternalRoute path="/help" component={HelpPage} />\
+        <div className="app-wrapper">
+            <TransitionGroup className="transition-group">
+                <CSSTransition
+                    key={location.key}
+                    timeout={{ enter: 700, exit: 700 }}
+                    classNames={'fade'}
+                >
+                    <Provider store={store}>
+                        <section className="route-section">
+                            <Switch location={location}>
+                                <InternalRoute path="/login" component={LogIn} />
+                                <InternalRoute path="/logout" component={LogOut} />
+                                <InternalRoute path="/register" component={Register} />
+                                <InternalRoute path="/reflect" component={LLReflectApp} />
+                                <InternalRoute path="/help" component={HelpPage} />\
                     <InternalRoute path="/day" component={LLDayApp} />
-                    <Route path="/" component={SplashPage} />
-                </Switch>
-            </div>
-        </Provider>
+                                <Route path="/" component={SplashPage} />
+                            </Switch>
+                        </section>
+                    </Provider>
+                </CSSTransition>
+            </TransitionGroup>
+        </div>
     );
 }
 
@@ -47,4 +58,4 @@ const InternalRoute = ({ component: Component, ...rest }) => {
     )
 }
 
-export default App;
+export default withRouter(App);
