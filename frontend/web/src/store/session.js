@@ -50,7 +50,7 @@ const session_actions = {
 
 //Reducers
 const init_state = {
-    error: "", logged_in: false, token: "",
+    error: {}, logged_in: false, token: "",
     cur_date: todays_date(),
     jac_loaded: false, sentinel: null, graph: null
 }
@@ -58,7 +58,7 @@ const session_reducer = (state = init_state, action) => {
     switch (action.type) {
         case LOGIN:
             return {
-                ...state, error: "", token: action.payload.token,
+                ...state, error: {}, token: action.payload.token,
                 logged_in: true
             };
         case LOGOUT:

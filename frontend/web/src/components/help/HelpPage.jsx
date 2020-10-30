@@ -1,10 +1,22 @@
 import React, { useState } from "react";
 import './HelpPage.scss';
 import { Tab, Nav, Row, Col, Container, Image } from 'react-bootstrap';
-import exampleLabeled from './ExampleLLwithLabels.png';
-import exampleSimple from './ExampleLL.png';
-import exampleCreate from './Tutorial-CreateWorkette.png';
-import exampleStarring from './Tutorial-CreateWorkette.png';
+
+// overview images
+import overview_example from './images/overview_example.png';
+
+// getting started images
+import gs_create from './images/gs_create.png';
+import gs_leftview from './images/gs_leftview.png';
+import gs_worksets from './images/gs_worksets.png';
+import gs_workettes from './images/gs_workettes.png';
+import gs_completing from './images/gs_completing.png';
+ 
+// day images
+import day_example from './images/day_example.png';
+import day_move_workette from './images/day_move_workette.png';
+import day_rename from './images/day_rename.png';
+import day_ritual from './images/day_ritual.png';
 
 
 const HelpPage = () => {
@@ -35,24 +47,33 @@ const HelpPage = () => {
                                 <h1>UI Overview</h1>
                                 <body>Welcome to LifeLogify! The Day view is what you will see upon logging in.  This is where you will be organizing and managing your days. At the top of the screen, you will see the navigation bar. This is how you can move to different parts of LifeLogify.</body> 
                                 <br></br>
-                                <img src={exampleSimple} alt="Example" class="img-thumbnail" />
+                                <img src={overview_example} alt="Example" class="img-thumbnail" />
                             </Tab.Pane>
                             <Tab.Pane eventKey="getting-started">
                                 <h1>Getting Started</h1> 
+                                    <h2>Understanding LifeLogify</h2>
+                                    <ul>
+                                        <li>LifeLogify is built to help realize the maximum potential of your productivity </li>
+                                        <li>The Day page provides you an easy and efficient way to see what you need to do, prioritize those tasks, and track your accomplishments</li> 
+                                        <li>As you track your activity, your past is recorded and frozen daily to preserve what you have done and allow for a history to be generated</li>
+                                        <li>As your LifeLog builds up over time, you will be able to leverage other aspects of LifeLogify to optimize your days and plan for the future </li>
+                                    </ul>
                                     <h2>Building Your First Day</h2> 
-                                        <img src={exampleCreate} alt="Example" class="img-thumbnail m-2" />
                                         <ol>
-                                        <li>Setup a simple structure to organize your workettes (e.g. Personal, Work etc.)</li>
-                                        <li>Create your workettes all the things you’d like to do</li>
-                                        <li>Complete your workettes to log your accomplishments</li>
+                                            <li>Setup a simple structure to organize your workettes in the way that makes the most sense to you. While you can move things around later, a good foundational structure will make it easy for you to find your tasks.</li>
+                                            <img src={gs_worksets} alt="" class="img-thumbnail m2" />
+                                            <li>Create your workettes all the things you’d like to do</li>
+                                            <img src={gs_workettes} alt="" class="img-thumbnail m2" />
+                                            <li>Complete your workettes to log your accomplishments</li>
+                                            <img src={gs_completing} alt="" class="img-thumbnail m2" />
                                         </ol>
                                     <h2>Tips for Managing your Day</h2>
-                                        <img src={exampleStarring} alt="Example" class="img-thumbnail m-2" />
                                         <ul>
                                             <li>Focus on the important things</li>
                                             <ul>
                                                 <li>Early each day, review your workettes and click the star on the priority items</li>
                                                 <li>You can also mark certain workettes as in progress</li>
+                                                <img src={gs_leftview} alt="Example" class="img-thumbnail m-2" />
                                             </ul>
                                             <li>Rank order priorities</li>
                                             <ul>
@@ -62,7 +83,7 @@ const HelpPage = () => {
                             </Tab.Pane>
                             <Tab.Pane eventKey="day-view">
                                 <h1>Day View</h1> 
-                                <img src={exampleLabeled} alt="Example" class="img-thumbnail mb-3" />
+                                <img src={day_example} alt="Example" class="img-thumbnail mb-3" />
                                 <h1>Basic Terminology</h1>
                                 <ul>
                                     <li><b>Workette - </b>Basic object used to represent a task</li>
@@ -76,22 +97,11 @@ const HelpPage = () => {
                                 
                                 <h1>How To's</h1> 
                                 <h2>Re-organize work sets or workettes</h2>
-                                <ol>
-                                    <li>To move a work set or workette, click the folder icon and select where you would like to move</li>
-                                </ol>
+                                <img src={day_move_workette} alt="" class="img-thumbnail mb-3" />
                                 <h2>Rename workettes</h2>
-                                <ol>
-                                    <li>Click on the workette you’d like to rename</li>
-                                    <li>Select the Gear icon</li>
-                                    <li>Type in new name</li>
-                                </ol>
+                                <img src={day_rename} alt="" class="img-thumbnail mb-3" />
                                 <h2>Setup a Ritual</h2>
-                                <ol>
-                                    <li>Click on the Ritual icon for the workette you’d like to set up</li>
-                                    <li>Click on the name of the workette to see the additional buttons</li>
-                                    <li>Select the gear icon to open settings</li>
-                                    <li>Select the days of the week you’d like to see this ritual (default is daily)</li>
-                                </ol>
+                                <img src={day_ritual} alt="" class="img-thumbnail mb-3" />
                                 <h2>Permanently Delete a Workette</h2>
                                 <ol>
                                     <li>Click on the Cancel button to abandon the workette</li>
@@ -99,7 +109,7 @@ const HelpPage = () => {
                                 </ol>
                             </Tab.Pane>
                             <Tab.Pane eventKey="reflect-view">
-                                <h1>This Feature is Coming Soon!</h1>
+                                <h1>This section is still under construction and will be updated soon!</h1>
                                 {/* <h1>Selecting a Date Range</h1>
                                 <ol>
                                     <li>Click on the dates to modify the date range</li>
