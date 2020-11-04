@@ -66,17 +66,17 @@ const session_reducer = (state = init_state, action) => {
                 ...init_state
             };
         case CREATE:
-            return { ...state, error: "", token: "user_created", logged_in: false };
+            return { ...state, error: {}, token: "user_created", logged_in: false };
         case CHANGE_DATE:
             return { ...state, cur_date: action.payload.date.toISOString().split("T")[0] };
         case LOAD_JAC:
             //Check first that LL Jac code compiled on server
-            let active_error = "";
+            let active_error = state.error;
             const { sentinel, graph, active } = action.payload;
             if (!active)
-                active_error = "CRITICAL: LL JAC NOT ACTIVE";
+                active_error.messages = "CRITICAL: LL JAC NOT ACTIVE";
             return {
-                ...state, error: active_error, jac_loaded: active_error === "",
+                ...state, error: active_error, jac_loaded: active,
                 sentinel: sentinel.split(":")[2], graph: graph.split(":")[2]
             };
         case ERROR:

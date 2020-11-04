@@ -5,22 +5,27 @@ import { session_actions as session } from "../store/session";
 import { Redirect } from "react-router-dom";
 import { Container, Row, Col } from "react-bootstrap";
 
-
 class Register extends Component {
-  state = { email: "", pass: "", pass_dup: "", full_name: "", access_code:"",errors: [] };
+  state = {
+    email: "",
+    pass: "",
+    pass_dup: "",
+    full_name: "",
+    access_code: "",
+    errors: [],
+  };
 
   handleSubmit = (e) => {
     const { email, pass, full_name, access_code } = this.state;
     e.preventDefault();
-    
-    if(access_code === "GROW") {
+
+    if (access_code === "GROW") {
       //Call server
-      this.setState({errors:[]});
+      this.setState({ errors: [] });
       this.props.create({ email, pass, full_name });
       this.setState({ pass: "", pass_dup: "" });
-    }
-    else{
-      this.setState({errors:["Invalid Access Code"]});
+    } else {
+      this.setState({ errors: ["Invalid Access Code"] });
     }
   };
 
@@ -53,9 +58,16 @@ class Register extends Component {
   };
 
   render() {
-    const { email, pass, pass_dup, full_name, access_code, errors } = this.state;
-    const showError=this.props.session.error;
-    showError.ferror=errors;
+    const {
+      email,
+      pass,
+      pass_dup,
+      full_name,
+      access_code,
+      errors,
+    } = this.state;
+    const showError = this.props.session.error;
+    showError.ferror = errors;
 
     return (
       <Container>
@@ -87,13 +99,13 @@ class Register extends Component {
           </Row>
           <Row>
             <Col>
-            <Input
-              value={pass_dup}
-              onChange={this.handleChange}
-              name="pass_dup"
-              type="password"
-              label="Re-enter Password"
-            />
+              <Input
+                value={pass_dup}
+                onChange={this.handleChange}
+                name="pass_dup"
+                type="password"
+                label="Re-enter Password"
+              />
             </Col>
           </Row>
           <Row>
@@ -108,7 +120,7 @@ class Register extends Component {
           </Row>
           <Row>
             <Col>
-            <Input
+              <Input
                 value={access_code}
                 onChange={this.handleChange}
                 name="access_code"
@@ -120,7 +132,7 @@ class Register extends Component {
 
           <Row>
             <Col className="d-flex justify-content-center">
-              <button 
+              <button
                 // disabled={errors.length}
                 type="submit"
                 className="btn btn-primary mt-3"

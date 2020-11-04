@@ -42,7 +42,6 @@ class Day extends Component {
 const map_state = (state) => ({
   session: state.session,
   workette: state.workette,
-  api: state.api,
 });
 
 const map_dispatch = (dispatch) => ({

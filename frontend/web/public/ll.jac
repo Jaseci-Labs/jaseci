@@ -35,7 +35,7 @@ edge past;
 edge parent;
 
 walker get_latest_day {
-    has before_date;
+    has before_date, show_report;
     has anchor latest_day;
     if(!before_date): before_date = std.time_now();
     if(!latest_day): latest_day = 0;
@@ -70,6 +70,10 @@ walker get_latest_day {
     }
     day {
         latest_day = here;
+        if(show_report) {
+            report [ "", here ];
+            spawn here walker::load_workette;
+        }
     }
 }
 

@@ -8,6 +8,11 @@ const saveDelayTimeout = (id, func) => {
 
 const time_now = () => new Date(new Date().toLocaleDateString());
 
+const local_date_obj = (date) => {
+  const ldate = new Date(date);
+  return new Date(ldate.getTime() + ldate.getTimezoneOffset() * 60000);
+};
+
 const todays_date = () => time_now().toISOString().split("T")[0];
 
 const is_today = (date) => {
@@ -281,6 +286,7 @@ function validURL(str) {
 
 export {
   time_now,
+  local_date_obj,
   todays_date,
   is_today,
   saveDelayTimeout,

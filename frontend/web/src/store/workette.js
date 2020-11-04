@@ -4,8 +4,7 @@ import store from './store';
 
 // Action Types
 const LOAD_DAY = "load_day";
-// const LOAD_MITs = "load_deep_mits";
-// const LOAD_WORKETTE = "load_workette";
+const LOAD_LATEST_DAY = "load_latest_day";
 const SET_WORKETTE = "update_workette";
 const MOVE_WORKETTE = "move_workette";
 const CREATE_WORKETTE = "create_workette";
@@ -28,27 +27,17 @@ const workette_actions = {
             error_action: ERROR
         });
     },
-    // load_mits: (w_id) => {
-    //     const { session } = store.getState();
-    //     return api_act.call({
-    //         url: "/jac/prime_run",
-    //         method: "post",
-    //         data: { name: "deep_mits", snt: session.sentinel, nd: w_id, ctx: {} },
-    //         success_action: LOAD_MITs,
-    //         error_action: ERROR,
-    //         pass_through: { w_id: w_id }
-    //     });
-    // },
-    // load_workette: (w_id) => {
-    //     const { session } = store.getState();
-    //     return api_act.call({
-    //         url: "/jac/prime_run",
-    //         method: "post",
-    //         data: { name: "load_workette", snt: session.sentinel, nd: w_id, ctx: {} },
-    //         success_action: LOAD_WORKETTE,
-    //         error_action: ERROR
-    //     });
-    // },
+    load_latest_day: (date) => {
+        const { session } = store.getState();
+        return api_act.call({
+            url: "/jac/prime_run",
+            status: "Loading Recent Day",
+            method: "post",
+            data: { name: "get_latest_day", snt: session.sentinel, nd: session.graph, ctx: { before_date: date, show_report: true } },
+            success_action: LOAD_LATEST_DAY,
+            error_action: ERROR
+        });
+    },
     set_workette: (w_id, ctx) => {
         return api_act.call({
             url: "/jac/set_node_context",
@@ -135,7 +124,7 @@ const load_workettes_from_payload = (pl) => {
 
 
 // Reducers
-const init_state = { error: "", status: "", days: {}, items: {} }
+const init_state = { error: "", status: "", days: {}, items: {}, last_day_loaded: "" }
 const workette_reducer = (state = init_state, action) => {
     switch (action.type) {
         case LOAD_DAY:
@@ -146,35 +135,25 @@ const workette_reducer = (state = init_state, action) => {
                     ...state,
                     //DB of workettes for session
                     items: { ...state.items, ...additions },
-                    days: { ...state.days, [pl[0][1].context.day.split('T')[0]]: pl[0][1].jid }
+                    days: { ...state.days, [pl[0][1].context.day.split('T')[0]]: pl[0][1].jid },
+                    last_day_loaded: pl[0][1].context.day.split('T')[0]
                 };
-
             }
-        // case LOAD_MITs:
-        //     {
-        //         const pl = action.payload;
-        //         const { w_id } = action.payload.pass_through;
-        //         let additions = {}
-        //         let mit_list = [];
-        //         pl.map(x => { additions[x.jid] = x; mit_list.push(x.jid); });
-        //         additions[w_id] = state.items[w_id];
-        //         additions[w_id].deep_mits = mit_list;
-        //         return {
-        //             ...state,
-        //             //DB of workettes for session
-        //             items: { ...state.items, ...additions },
-        //         };
-        //     }
-        // case LOAD_WORKETTE:
-        //     {
-        //         const pl = action.payload;
-        //         const additions = load_workettes_from_payload(pl);
-        //         return {
-        //             ...state,
-        //             //DB of workettes for session
-        //             items: { ...state.items, ...additions },
-        //         };
-        //     }
+        case LOAD_LATEST_DAY:
+            {
+                const pl = action.payload;
+                const additions = load_workettes_from_payload(pl);
+                if (!Object.keys(additions).length) {
+                    return state;
+                }
+                return {
+                    ...state,
+                    //DB of workettes for session
+                    items: { ...state.items, ...additions },
+                    days: { ...state.days, [pl[0][1].context.day.split('T')[0]]: pl[0][1].jid },
+                    last_day_loaded: pl[0][1].context.day.split('T')[0]
+                };
+            }
         case SET_WORKETTE:
             {
                 let new_items = { ...state.items };

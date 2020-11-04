@@ -57,7 +57,7 @@ class NavBar extends Component {
                   </Link>
                 </li>
               </ul>
-              <ul className="nav navbar-nav ml-auto">
+              {/* <ul className="nav navbar-nav ml-auto">
                 <li className="nav-item">
                   <LoadingIndicator
                     is_loading={
@@ -67,7 +67,7 @@ class NavBar extends Component {
                     }
                   />
                 </li>
-              </ul>
+              </ul> */}
               <ul className="nav navbar-nav ml-auto">
                 <li className="nav-item">
                   <Link className="nav-link" to="/help">
