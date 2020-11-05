@@ -92,35 +92,36 @@ class DayViewLeft extends Component {
     return (
       <Container fluid className="m-0 p-0">
         <small>
-          <Calendar
-            className="shadow mb-3"
-            value={this.state.date}
-            onChange={this.onChange}
-          />
-          <Row>
-            <Col md="auto">></Col>
-            <Col md="auto">
-              <LoadingIndicator
-                is_loading={
-                  this.props.api.is_loading[
-                    this.props.api.is_loading.length - 1
-                  ]
-                }
-              />
-            </Col>
-          </Row>
+          {!this.state.certify_mode && (
+            <Calendar
+              className="shadow mb-3"
+              value={this.state.date}
+              onChange={this.onChange}
+            />
+          )}
 
           {this.state.certify_mode && !this.props.api.is_loading.length && (
             <center>
               <WktButton
-                label={current ? "Certify Day" : "Start First Day"}
-                tooltip="Certify your day"
+                label={
+                  current ? "Certify " + session.cur_date : "Start First Day"
+                }
+                tooltip="Certify prior day before loading today"
                 onClick={this.onCarryDayForward}
               />
             </center>
           )}
         </small>
-
+        <Row>
+          <Col md="auto">></Col>
+          <Col md="auto">
+            <LoadingIndicator
+              is_loading={
+                this.props.api.is_loading[this.props.api.is_loading.length - 1]
+              }
+            />
+          </Col>
+        </Row>
         {current && (
           <DeepMITs
             w_id={current}
