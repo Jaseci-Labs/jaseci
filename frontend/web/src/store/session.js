@@ -6,6 +6,7 @@ const LOGIN = "user_log_in"
 const LOGOUT = "user_log_out"
 const CREATE = "user_created"
 const CHANGE_DATE = "change_date"
+const SET_FREEZE_OVERRIDE = "set_freeze_override"
 const LOAD_JAC = "load_jac_code"
 const ERROR = "user_session_error"
 
@@ -39,6 +40,10 @@ const session_actions = {
         type: CHANGE_DATE,
         payload: { date }
     }),
+    set_freeze_override: (override) => ({
+        type: SET_FREEZE_OVERRIDE,
+        payload: { override }
+    }),
     logout: () => ({
         type: LOGOUT
     }),
@@ -52,7 +57,8 @@ const session_actions = {
 const init_state = {
     error: {}, logged_in: false, token: "",
     cur_date: todays_date(),
-    jac_loaded: false, sentinel: null, graph: null
+    jac_loaded: false, sentinel: null, graph: null,
+    freeze_override: false
 }
 const session_reducer = (state = init_state, action) => {
     switch (action.type) {
@@ -69,6 +75,8 @@ const session_reducer = (state = init_state, action) => {
             return { ...state, error: {}, token: "user_created", logged_in: false };
         case CHANGE_DATE:
             return { ...state, cur_date: action.payload.date.toISOString().split("T")[0] };
+        case SET_FREEZE_OVERRIDE:
+            return { ...state, freeze_override: action.payload.override };
         case LOAD_JAC:
             //Check first that LL Jac code compiled on server
             let active_error = state.error;

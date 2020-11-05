@@ -7,7 +7,7 @@ import WktAddForm from "./wkt-add";
 import WktNoteForm from "./wkt-note";
 import WktItemSingleForm from "./wkt-item-single-form";
 import WktItemMoveForm from "./wkt-item-move-form";
-import { is_today } from "../utils/utils";
+import { check_frozen } from "../utils/utils";
 import WktButton from "./wkt-button";
 import {
   faPlusSquare,
@@ -41,13 +41,13 @@ class Workette extends Component {
 
   update_workette = (ctx) => {
     const item = this.props.workette.items[this.props.w_id];
-    if (!is_today(this.props.session.cur_date)) return;
+    if (check_frozen(this.props.session)) return;
     this.props.set_workette(item.jid, ctx);
   };
 
   delete_workette = () => {
     const item = this.props.workette.items[this.props.w_id];
-    if (!is_today(this.props.session.cur_date)) return;
+    if (check_frozen(this.props.session)) return;
     this.props.delete_workette(item.jid, item.parent);
   };
 

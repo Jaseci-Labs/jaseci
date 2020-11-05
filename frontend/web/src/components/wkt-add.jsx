@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Input, Select, is_today, wtype_options } from "../utils/utils";
+import { Input, Select, check_frozen, wtype_options } from "../utils/utils";
 import { connect } from "react-redux";
 import { workette_actions as wact } from "../store/workette";
 import { Container, Row, Col } from "react-bootstrap";
@@ -16,8 +16,7 @@ class WktAddForm extends Component {
   handleSubmit = (e) => {
     const current = this.props.w_id;
     e.preventDefault();
-    if (is_today(this.props.session.cur_date))
-      //Call Server
+    if (!check_frozen(this.props.session))
       this.props.create(current, this.state);
     this.setState({ title: "" });
   };

@@ -4,7 +4,7 @@ import { Container, Row, Col } from "react-bootstrap";
 import { Collapse } from "react-bootstrap";
 
 import Workette from "./workette";
-import { is_today, validURL } from "../utils/utils";
+import { check_frozen, validURL } from "../utils/utils";
 import WktButton from "./wkt-button";
 import { connect } from "react-redux";
 import { workette_actions as wact } from "../store/workette";
@@ -19,22 +19,22 @@ import {
   faStickyNote,
 } from "@fortawesome/free-solid-svg-icons";
 import "x-frame-bypass";
-import './wkt-item-single.scss'
+import "./wkt-item-single.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 class WktItemSingle extends Component {
   state = {
-    self_expand: this.props.is_workset ? false : false
+    self_expand: this.props.is_workset ? false : false,
   };
 
   toggle_MIT = (item) => {
-    if (!is_today(this.props.session.cur_date)) return;
+    if (check_frozen(this.props.session)) return;
     const val = this.props.item.context.is_MIT;
     this.props.set_workette(item.jid, { is_MIT: !val });
   };
 
   toggle_ritual = (item) => {
-    if (!is_today(this.props.session.cur_date)) return;
+    if (check_frozen(this.props.session)) return;
     const val = this.props.item.context.is_ritual
       ? false
       : [1, 1, 1, 1, 1, 1, 1]; //Bitmap for days of the week maps to getDay func
@@ -42,7 +42,7 @@ class WktItemSingle extends Component {
   };
 
   toggle_canceled = (item) => {
-    if (!is_today(this.props.session.cur_date)) return;
+    if (check_frozen(this.props.session)) return;
     let val = this.props.item.context.status;
     if (val === "canceled") val = "open";
     else val = "canceled";
@@ -50,7 +50,7 @@ class WktItemSingle extends Component {
   };
 
   toggle_done = (item) => {
-    if (!is_today(this.props.session.cur_date)) return;
+    if (check_frozen(this.props.session)) return;
     let val = this.props.item.context.status;
     if (val === "done") val = "open";
     else val = "done";
@@ -58,7 +58,7 @@ class WktItemSingle extends Component {
   };
 
   toggle_running = (item) => {
-    if (!is_today(this.props.session.cur_date)) return;
+    if (check_frozen(this.props.session)) return;
     let val = this.props.item.context.status;
     if (val === "running") val = "open";
     else val = "running";
@@ -68,7 +68,8 @@ class WktItemSingle extends Component {
   render() {
     const { item } = this.props;
     let color = this.props.color ? this.props.color : "white";
-    if (this.props.is_workset && w_filter.countDeepChildren(item) === 0)    //If work set is empty, apply different color
+    if (this.props.is_workset && w_filter.countDeepChildren(item) === 0)
+      //If work set is empty, apply different color
       color = this.props.empty_color;
 
     const is_workette =
@@ -86,9 +87,7 @@ class WktItemSingle extends Component {
               ref={provided.innerRef}
               className="border-left border-bottom border-top border-light"
             >
-              <Row
-                className={`d-flex justify-content-between color-${color}`}
-              >
+              <Row className={`d-flex justify-content-between color-${color}`}>
                 {(is_workette || item.context.wtype === "workset") && (
                   <Col xs="auto" className="m-0 p-0 pl-1">
                     <WktButton
@@ -115,20 +114,35 @@ class WktItemSingle extends Component {
                     )}
 
                     {item.context.wtype === "link" && (
-                      <Col xs="auto" className="m-0 p-0 pl-1 pr-1" style={{ color: "gray" }}>
+                      <Col
+                        xs="auto"
+                        className="m-0 p-0 pl-1 pr-1"
+                        style={{ color: "gray" }}
+                      >
                         <FontAwesomeIcon icon={faLink} />
                       </Col>
                     )}
                     {item.context.wtype === "note" && (
-                      <Col xs="auto" className="m-0 p-0 pl-1 pr-1" style={{ color: "gray" }}>
+                      <Col
+                        xs="auto"
+                        className="m-0 p-0 pl-1 pr-1"
+                        style={{ color: "gray" }}
+                      >
                         <FontAwesomeIcon icon={faStickyNote} />
                       </Col>
                     )}
 
                     {this.state.self_expand && (
-                      <strong>{item.context.name.trim() ? item.context.name : "Untitled"}</strong>
+                      <strong>
+                        {item.context.name.trim()
+                          ? item.context.name
+                          : "Untitled"}
+                      </strong>
                     )}
-                    {!this.state.self_expand && (item.context.name.trim() ? item.context.name : "Untitled")}
+                    {!this.state.self_expand &&
+                      (item.context.name.trim()
+                        ? item.context.name
+                        : "Untitled")}
                     {item.context.date && (
                       <span style={{ color: "black" }}>
                         <small>
@@ -139,8 +153,14 @@ class WktItemSingle extends Component {
                   </div>
                 </Col>
                 <Col xs="auto" className="d-flex align-items-center m-0 p-0">
-                  <div className="badge badge-info mr-1" style={{ color: "black", backgroundColor: "#00000015", opacity: 1 }}>
-
+                  <div
+                    className="badge badge-info mr-1"
+                    style={{
+                      color: "black",
+                      backgroundColor: "#00000015",
+                      opacity: 1,
+                    }}
+                  >
                     {w_filter.countDeepChildren(item) > 0 && (
                       <div>
                         {w_filter.countDeepChildrenClosed(item)}/
@@ -211,12 +231,11 @@ class WktItemSingle extends Component {
                 )}
               </div>
             </Collapse>
-            {this.props.is_workset &&
-              <br />}
+            {this.props.is_workset && <br />}
           </React.Fragment>
         )}
       </Draggable>
-    );    // add w_filter.countDeepChildren(item) !== 0 && to get empty work set spacing
+    ); // add w_filter.countDeepChildren(item) !== 0 && to get empty work set spacing
   }
 }
 

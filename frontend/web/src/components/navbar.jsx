@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
-import { LoadingIndicator } from "../utils/utils";
+import { LoadingIndicator, check_frozen } from "../utils/utils";
 import logo from "../logo_notext.png";
 
 class NavBar extends Component {
@@ -57,17 +57,24 @@ class NavBar extends Component {
                   </Link>
                 </li>
               </ul>
-              {/* <ul className="nav navbar-nav ml-auto">
+              <ul className="nav navbar-nav ml-auto">
                 <li className="nav-item">
-                  <LoadingIndicator
+                  {/* <LoadingIndicator
                     is_loading={
                       this.props.api.is_loading[
                       this.props.api.is_loading.length - 1
                       ]
                     }
-                  />
+                  /> */}
+                  {check_frozen(this.props.session) && (
+                    <center>
+                      <div className="badge badge-primary mr-1">
+                        Past Frozen
+                      </div>
+                    </center>
+                  )}
                 </li>
-              </ul> */}
+              </ul>
               <ul className="nav navbar-nav ml-auto">
                 <li className="nav-item">
                   <Link className="nav-link" to="/help">

@@ -3,7 +3,7 @@ import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import WktItemSingle from "./wkt-item-single";
 
 import { workette_actions as wact } from "../store/workette";
-import { is_today, move_arr_item } from "../utils/utils";
+import { check_frozen, move_arr_item } from "../utils/utils";
 import { connect } from "react-redux";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "react-bootstrap";
@@ -17,7 +17,7 @@ class WktItemList extends Component {
     const current = this.props.w_id;
     const { children } = items[current];
     if (
-      !is_today(this.props.session.cur_date) ||
+      check_frozen(this.props.session) ||
       !destination ||
       source.droppableId !== destination.droppableId ||
       source.index === destination.index

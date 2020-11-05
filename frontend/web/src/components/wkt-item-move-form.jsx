@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { MultiSelect, saveDelayTimeout } from "../utils/utils";
+import { check_frozen, MultiSelect, saveDelayTimeout } from "../utils/utils";
 import { Container } from "react-bootstrap";
 import { connect } from "react-redux";
 import { workette_actions as wact } from "../store/workette";
@@ -36,12 +36,13 @@ class WktItemMoveForm extends Component {
     return ret;
   };
 
-  handleSubmit = (e) => {
-    this.props.update_func(this.state);
-  };
+  handleSubmit = (e) => {};
 
   handleChange = (e) => {
-    if (e.currentTarget.name === "parent") {
+    if (
+      e.currentTarget.name === "parent" &&
+      !check_frozen(this.props.session)
+    ) {
       if (window.confirm("Are you sure you want to move this item?")) {
         this.props.move_workette(this.props.item, e.currentTarget.value);
       }
@@ -77,6 +78,7 @@ class WktItemMoveForm extends Component {
 //Connect this component to store.session
 const map_state = (state) => ({
   workette: state.workette,
+  session: state.session,
 });
 
 const map_dispatch = (dispatch) => ({

@@ -20,6 +20,10 @@ const is_today = (date) => {
   return dstr === todays_date();
 };
 
+const check_frozen = (session) => {
+  return !is_today(session.cur_date) && !session.freeze_override;
+};
+
 /* Generalized Input component for text input must provide value and
 and onChange for functionality
 important props:
@@ -289,6 +293,7 @@ export {
   local_date_obj,
   todays_date,
   is_today,
+  check_frozen,
   saveDelayTimeout,
   Input,
   TextArea,

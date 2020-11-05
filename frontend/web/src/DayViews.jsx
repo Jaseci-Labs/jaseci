@@ -8,7 +8,12 @@ import { workette_actions as wact } from "./store/workette";
 import DeepMITs from "./components/deep-mits";
 import { Container, Row, Col } from "react-bootstrap";
 import WktButton from "./components/wkt-button";
-import { time_now, local_date_obj, LoadingIndicator } from "./utils/utils";
+import {
+  time_now,
+  local_date_obj,
+  LoadingIndicator,
+  check_frozen,
+} from "./utils/utils";
 import { workette_filters as w_filter } from "./utils/filters";
 
 const LL_VER = process.env.REACT_APP_LL_VERSION;
@@ -22,6 +27,8 @@ class DayViewLeft extends Component {
 
   onChange = (date) => {
     const today = time_now();
+    if (this.props.session.freeze_override)
+      this.props.set_freeze_override(false);
     if (date > today) date = today;
     this.props.change_date(date);
     const { workette } = this.props;
@@ -38,14 +45,19 @@ class DayViewLeft extends Component {
   };
 
   componentDidUpdate() {
+    this.checkForCertifyMode();
+    this.checkIfTodayLoaded();
+  }
+
+  checkForCertifyMode = () => {
     const { session, workette } = this.props;
     const { items, last_day_loaded } = workette;
     const current = workette.days[session.cur_date];
     if (this.state.certify_mode && !current && last_day_loaded) {
       this.props.change_date(local_date_obj(last_day_loaded));
+      this.props.set_freeze_override(true);
     }
-    this.checkIfTodayLoaded();
-  }
+  };
 
   checkIfTodayLoaded = () => {
     const { session, workette } = this.props;
@@ -68,6 +80,7 @@ class DayViewLeft extends Component {
       this.props.load_day(this.state.date.toISOString().split("T")[0]);
       this.setState({ certify_mode: false });
       this.props.change_date(this.state.date);
+      this.props.set_freeze_override(false);
     }
   };
 
@@ -107,11 +120,6 @@ class DayViewLeft extends Component {
             </center>
           )}
         </small>
-        {!this.state.certify_mode && this.state.date < time_now() && (
-          <center>
-            <div className="badge badge-info mr-1">Frozen</div>
-          </center>
-        )}
 
         {current && (
           <DeepMITs
@@ -143,6 +151,7 @@ const map_state = (state) => ({
 
 const left_map_dispatch = (dispatch) => ({
   change_date: (date) => dispatch(session.change_date(date)),
+  set_freeze_override: (val) => dispatch(session.set_freeze_override(val)),
   load_day: (date) => dispatch(wact.load_day(date)),
   load_latest_day: (date) => dispatch(wact.load_latest_day(date)),
 });

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Input, saveDelayTimeout, is_today } from "../utils/utils";
+import { Input, saveDelayTimeout, check_frozen } from "../utils/utils";
 import { connect } from "react-redux";
 import { Container } from "react-bootstrap";
 import { workette_actions as wact } from "../store/workette";
@@ -71,7 +71,7 @@ class WktNoteForm extends Component {
     if (e) e.preventDefault();
     const { note } = this.state;
     const current = this.props.w_id;
-    if (!is_today(this.props.session.cur_date)) return;
+    if (check_frozen(this.props.session)) return;
     //Call Server
     this.props.set_workette(current, { note });
     setTimeout(() => this.setState({ ...this.state, saved: false }), 1000);
@@ -98,7 +98,7 @@ class WktNoteForm extends Component {
     }
   };
 
-  validate = () => { };
+  validate = () => {};
 
   render() {
     const { note } = this.state;
