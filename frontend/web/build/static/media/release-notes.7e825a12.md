@@ -1,3 +1,10 @@
+### Release: 0.39.4
+#### Release Date: 11/5/2020
+* General
+    * Added Day Certify feature - at the start of each new day, you get a chance to review and finalize your day.
+
+-----
+
 ### Release: 0.39.3
 #### Release Date: 10/27/2020
 * General

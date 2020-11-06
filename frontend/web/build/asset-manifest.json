@@ -1,19 +1,19 @@
 {
   "files": {
-    "main.css": "/static/css/main.5055553f.chunk.css",
-    "main.js": "/static/js/main.5a7bceb8.chunk.js",
-    "main.js.map": "/static/js/main.5a7bceb8.chunk.js.map",
+    "main.css": "/static/css/main.21b5dfa2.chunk.css",
+    "main.js": "/static/js/main.5ee0563d.chunk.js",
+    "main.js.map": "/static/js/main.5ee0563d.chunk.js.map",
     "runtime-main.js": "/static/js/runtime-main.451c0d4d.js",
     "runtime-main.js.map": "/static/js/runtime-main.451c0d4d.js.map",
-    "static/css/2.dcaccb7f.chunk.css": "/static/css/2.dcaccb7f.chunk.css",
-    "static/js/2.7e51f5e1.chunk.js": "/static/js/2.7e51f5e1.chunk.js",
-    "static/js/2.7e51f5e1.chunk.js.map": "/static/js/2.7e51f5e1.chunk.js.map",
+    "static/css/2.6e1ccc4d.chunk.css": "/static/css/2.6e1ccc4d.chunk.css",
+    "static/js/2.a54e2173.chunk.js": "/static/js/2.a54e2173.chunk.js",
+    "static/js/2.a54e2173.chunk.js.map": "/static/js/2.a54e2173.chunk.js.map",
     "index.html": "/index.html",
-    "precache-manifest.17f19c0f29d0d65b9e5e4b694b3d0740.js": "/precache-manifest.17f19c0f29d0d65b9e5e4b694b3d0740.js",
+    "precache-manifest.21b3e8ed36762f7a3ebe10e38ac03128.js": "/precache-manifest.21b3e8ed36762f7a3ebe10e38ac03128.js",
     "service-worker.js": "/service-worker.js",
-    "static/css/2.dcaccb7f.chunk.css.map": "/static/css/2.dcaccb7f.chunk.css.map",
-    "static/css/main.5055553f.chunk.css.map": "/static/css/main.5055553f.chunk.css.map",
-    "static/js/2.7e51f5e1.chunk.js.LICENSE.txt": "/static/js/2.7e51f5e1.chunk.js.LICENSE.txt",
+    "static/css/2.6e1ccc4d.chunk.css.map": "/static/css/2.6e1ccc4d.chunk.css.map",
+    "static/css/main.21b5dfa2.chunk.css.map": "/static/css/main.21b5dfa2.chunk.css.map",
+    "static/js/2.a54e2173.chunk.js.LICENSE.txt": "/static/js/2.a54e2173.chunk.js.LICENSE.txt",
     "static/media/SplashPage.scss": "/static/media/background_tree_blur.a1360668.jpg",
     "static/media/day_example.png": "/static/media/day_example.d0b5e409.png",
     "static/media/day_move_workette.png": "/static/media/day_move_workette.375ce80d.png",
@@ -26,14 +26,14 @@
     "static/media/gs_worksets.png": "/static/media/gs_worksets.71eb08bc.png",
     "static/media/logo_notext.png": "/static/media/logo_notext.c7f6f1a6.png",
     "static/media/overview_example.png": "/static/media/overview_example.619e5943.png",
-    "static/media/release-notes.md": "/static/media/release-notes.eeb9c1d0.md",
+    "static/media/release-notes.md": "/static/media/release-notes.7e825a12.md",
     "static/media/transparent_white_logo.png": "/static/media/transparent_white_logo.d888a57d.png"
   },
   "entrypoints": [
     "static/js/runtime-main.451c0d4d.js",
-    "static/css/2.dcaccb7f.chunk.css",
-    "static/js/2.7e51f5e1.chunk.js",
-    "static/css/main.5055553f.chunk.css",
-    "static/js/main.5a7bceb8.chunk.js"
+    "static/css/2.6e1ccc4d.chunk.css",
+    "static/js/2.a54e2173.chunk.js",
+    "static/css/main.21b5dfa2.chunk.css",
+    "static/js/main.5ee0563d.chunk.js"
   ]
 }
