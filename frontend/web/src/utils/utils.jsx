@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 
+const LL_VER = process.env.REACT_APP_LL_VERSION;
+
 const saveDelayTimeout = (id, func) => {
   clearTimeout(id);
   return setTimeout(() => func(), 1000);
@@ -230,6 +232,7 @@ class StatusBar extends Component {
   render() {
     return (
       <footer className="footer border" style={this.props.style}>
+        <small>{LL_VER}</small>
         <LoadingIndicator
           is_loading={
             this.props.api.is_loading[this.props.api.is_loading.length - 1]

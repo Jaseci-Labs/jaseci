@@ -60,6 +60,7 @@ class WktItemList extends Component {
                             item={items[i]}
                             index={idx}
                             is_workset={this.props.is_workset}
+                            is_day={items[current].context.day}
                           />
                         )}
                       </React.Fragment>

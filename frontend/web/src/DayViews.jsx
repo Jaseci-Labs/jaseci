@@ -2,10 +2,11 @@ import React, { Component } from "react";
 import Day from "./components/day";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import './DayViews.scss';
+import "./DayViews.scss";
 import { connect } from "react-redux";
 import { session_actions as session } from "./store/session";
 import { workette_actions as wact } from "./store/workette";
+import WktNoteForm from "./components/wkt-note";
 import DeepMITs from "./components/deep-mits";
 import { Container, Row, Col } from "react-bootstrap";
 import WktButton from "./components/wkt-button";
@@ -15,9 +16,14 @@ import {
   LoadingIndicator,
   check_frozen,
 } from "./utils/utils";
+import {
+  faSync,
+  faStar,
+  faRunning,
+  faGlassCheers,
+  faTimesCircle,
+} from "@fortawesome/free-solid-svg-icons";
 import { workette_filters as w_filter } from "./utils/filters";
-
-const LL_VER = process.env.REACT_APP_LL_VERSION;
 
 class DayViewLeft extends Component {
   state = { date: time_now(), certify_mode: false };
@@ -31,7 +37,7 @@ class DayViewLeft extends Component {
     if (this.props.session.freeze_override)
       this.props.set_freeze_override(false);
     if (date > today) date = today;
-      this.props.change_date(date);
+    this.props.change_date(date);
     const { workette } = this.props;
     const { items, last_day_loaded } = workette;
     const current = workette.days[date.toISOString().split("T")[0]];
@@ -93,38 +99,53 @@ class DayViewLeft extends Component {
     return (
       <Container fluid className="m-0 p-0">
         <Container className="m-0 p-0 day-calendar">
-          <small><Calendar
+          <small>
+            <Calendar
               className="shadow mb-3"
               value={this.state.date}
               onChange={this.onChange}
-          /></small>
-          
-            {this.state.certify_mode && !this.props.api.is_loading.length && (
-                <div className="day-cert-button"> 
-                  <WktButton className=""
-                    label={
-                      current ? "Certify " + session.cur_date : "Start First Day"
-                    }
-                    tooltip="Certify prior day before loading today"
-                    onClick={this.onCarryDayForward}
-                    />
-                </div>
-            )}
+            />
+          </small>
+
+          {this.state.certify_mode && !this.props.api.is_loading.length && (
+            <div className="day-cert-button">
+              <WktButton
+                className=""
+                label={
+                  current ? "Certify " + session.cur_date : "Start First Day"
+                }
+                tooltip="Certify prior day before loading today"
+                onClick={this.onCarryDayForward}
+              />
+            </div>
+          )}
         </Container>
         {current && (
           <DeepMITs
             w_id={current}
             label="Knock these out!"
+            iconProps={{ icon: faStar, color: "gold" }}
             color="starred"
             items={w_filter.deepMIT()}
+          />
+        )}
+
+        {current && (
+          <DeepMITs
+            w_id={current}
+            label="Babysit these!"
+            iconProps={{ icon: faRunning }}
+            color="running"
+            items={w_filter.deepRunning()}
           />
         )}
         {current && (
           <DeepMITs
             w_id={current}
-            label="Babysit these!"
-            color="running"
-            items={w_filter.deepRunning()}
+            label="Active Rituals!"
+            iconProps={{ icon: faSync }}
+            color="starred"
+            items={w_filter.deepActiveRituals()}
           />
         )}
         <Row>
@@ -136,7 +157,6 @@ class DayViewLeft extends Component {
             />
           </Col>
         </Row>
-        <small>{LL_VER}</small>
       </Container>
     );
   }
@@ -167,6 +187,7 @@ class DayViewRight extends Component {
           <DeepMITs
             w_id={current}
             label="Everything Completed!"
+            iconProps={{ icon: faGlassCheers, color: "green" }}
             color="mit-completed"
             items={w_filter.deepCompleted()}
           />
@@ -176,9 +197,22 @@ class DayViewRight extends Component {
           <DeepMITs
             w_id={current}
             label="Everything Abandoned!"
+            iconProps={{ icon: faTimesCircle }}
             color="mit-abandoned"
             items={w_filter.deepCanceled()}
           />
+        )}
+        {current && (
+          <div>
+            <Container fluid className="m-0 p-2 mb-3">
+              Reflections of the Day
+              <Row>
+                <Col className=" p-0">
+                  <WktNoteForm w_id={current} />
+                </Col>
+              </Row>
+            </Container>
+          </div>
         )}
       </Container>
     );

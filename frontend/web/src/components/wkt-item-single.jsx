@@ -19,12 +19,13 @@ import {
   faStickyNote,
 } from "@fortawesome/free-solid-svg-icons";
 import "x-frame-bypass";
+import { ReactTinyLink } from "react-tiny-link";
 import "./wkt-item-single.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 class WktItemSingle extends Component {
   state = {
-    self_expand: this.props.is_workset ? false : false,
+    self_expand: this.props.is_workset ? this.props.is_day : false,
   };
 
   toggle_MIT = (item) => {
@@ -63,6 +64,13 @@ class WktItemSingle extends Component {
     if (val === "running") val = "open";
     else val = "running";
     this.props.set_workette(item.jid, { status: val });
+  };
+
+  checkLinkTitle = (data) => {
+    console.log(data);
+    if (!this.props.item.context.name) {
+      this.props.set_workette(this.props.item.jid, { name: data.title });
+    }
   };
 
   render() {
@@ -214,18 +222,31 @@ class WktItemSingle extends Component {
                 </div>
                 {item.context.wtype === "link" && (
                   <div>
-                    <a href={item.context.note} target="_blank">
-                      Pop out to tab
-                    </a>
                     {validURL(item.context.note) && (
-                      <iframe
-                        src={item.context.note}
-                        style={{
-                          width: "100%",
-                          height: "800px",
-                          maxHeight: "80vh",
-                        }}
-                      />
+                      <center>
+                        <ReactTinyLink
+                          cardSize="small"
+                          showGraphic={true}
+                          width="100%"
+                          maxLine={2}
+                          minLine={1}
+                          url={item.context.note}
+                          onSuccess={this.checkLinkTitle}
+                        />
+                        <iframe
+                          is={
+                            item.context.note.includes("docs.google.com")
+                              ? ""
+                              : "x-frame-bypass"
+                          }
+                          src={item.context.note}
+                          style={{
+                            width: "100%",
+                            height: "800px",
+                            maxHeight: "80vh",
+                          }}
+                        />
+                      </center>
                     )}
                   </div>
                 )}

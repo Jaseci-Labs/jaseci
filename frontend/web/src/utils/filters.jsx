@@ -19,7 +19,7 @@ const workette_filters = {
     return true;
   },
 
-  is_workette: function (w) {
+  active_workette: function (w) {
     if (!workette_filters.scheduled_now(w)) return false;
     const ctx = w.context;
     if (!ctx.wtype || ctx.wtype === "workette" || ctx.wtype == "none")
@@ -27,10 +27,15 @@ const workette_filters = {
     return false;
   },
 
+  active_ritual: function (w) {
+    const ctx = w.context;
+    return workette_filters.scheduled_now(w) && ctx.is_ritual;
+  },
+
   open: function (w) {
     if (!workette_filters.scheduled_now(w)) return false;
     const ctx = w.context;
-    if (!ctx.status || ctx.status === "open" || ctx.status==="running")
+    if (!ctx.status || ctx.status === "open" || ctx.status === "running")
       if (!ctx.wtype || ctx.wtype === "workette" || ctx.wtype == "none")
         return true;
     return false;
@@ -75,9 +80,22 @@ const workette_filters = {
       if (
         k.context.is_MIT &&
         workette_filters.open(k) &&
-        workette_filters.scheduled_now(k) && !workette_filters.running(k)
+        workette_filters.scheduled_now(k) &&
+        !workette_filters.running(k)
       )
         ret.push(k.jid);
+    });
+    return ret;
+  },
+
+  deepActiveRituals: function (w_id = null) {
+    const { items } = store.getState().workette;
+    let current =
+      items[store.getState().workette.days[store.getState().session.cur_date]];
+    if (w_id) current = items[w_id];
+    let ret = [];
+    workette_filters.allChildren(current).map((k) => {
+      if (workette_filters.active_ritual(k)) ret.push(k.jid);
     });
     return ret;
   },
@@ -122,12 +140,7 @@ const workette_filters = {
   // self_call is used internally to prevent counting the head workette
   countDeepChildren: function (w, self_call = false) {
     const { items } = store.getState().workette;
-    let count =
-      self_call &&
-      workette_filters.is_workette(w) &&
-      workette_filters.scheduled_now(w)
-        ? 1
-        : 0;
+    let count = self_call && workette_filters.active_workette(w) ? 1 : 0;
     w.children.map((i) => {
       count += workette_filters.countDeepChildren(items[i], true);
     });
@@ -140,8 +153,7 @@ const workette_filters = {
     const { items } = store.getState().workette;
     let count =
       self_call &&
-      workette_filters.is_workette(w) &&
-      workette_filters.scheduled_now(w) &&
+      workette_filters.active_workette(w) &&
       (workette_filters.complete(w) || workette_filters.canceled(w))
         ? 1
         : 0;

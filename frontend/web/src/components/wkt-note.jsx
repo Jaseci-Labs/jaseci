@@ -124,7 +124,7 @@ class WktNoteForm extends Component {
             <Container
               fluid
               className="border rounded m-0 p-0"
-              style={{ backgroundColor: "white" }}
+              style={{ backgroundColor: "white", minHeight: "100px" }}
             >
               <ReactQuill
                 value={note}

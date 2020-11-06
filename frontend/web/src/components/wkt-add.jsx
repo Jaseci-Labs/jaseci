@@ -1,5 +1,11 @@
 import React, { Component } from "react";
-import { Input, Select, check_frozen, wtype_options } from "../utils/utils";
+import {
+  Input,
+  Select,
+  check_frozen,
+  wtype_options,
+  validURL,
+} from "../utils/utils";
 import { connect } from "react-redux";
 import { workette_actions as wact } from "../store/workette";
 import { Container, Row, Col } from "react-bootstrap";
@@ -16,14 +22,20 @@ class WktAddForm extends Component {
   handleSubmit = (e) => {
     const current = this.props.w_id;
     e.preventDefault();
-    if (!check_frozen(this.props.session))
-      this.props.create(current, this.state);
+    let params = this.state;
+    if (params.wtype === "link" && validURL(params.title)) {
+      params.note = params.title;
+      params.title = "";
+    }
+    if (!check_frozen(this.props.session)) this.props.create(current, params);
     this.setState({ title: "" });
   };
 
   handleChange = (e) => {
     if (e.currentTarget.name === "add") {
-      this.setState({ title: e.currentTarget.value });
+      let wtype = this.state.wtype;
+      if (validURL(e.currentTarget.value)) wtype = "link";
+      this.setState({ title: e.currentTarget.value, wtype });
     } else if (e.currentTarget.name === "wtype") {
       this.setState({ wtype: e.currentTarget.value });
     }

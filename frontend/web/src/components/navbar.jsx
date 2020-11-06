@@ -53,7 +53,7 @@ class NavBar extends Component {
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" to="/reflect">
-                    Reflect
+                    Reflect (early beta)
                   </Link>
                 </li>
               </ul>

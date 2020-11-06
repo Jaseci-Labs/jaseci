@@ -4,14 +4,7 @@ import { Container, Row, Col } from "react-bootstrap";
 import { connect } from "react-redux";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import { apply_ordering, move_arr_item } from "../utils/utils";
-import {
-  faStar,
-  faGlassCheers,
-  faTimesCircle,
-  faRunning,
-} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-
 
 class DeepMITs extends Component {
   state = { ordered: [] };
@@ -44,29 +37,19 @@ class DeepMITs extends Component {
   render() {
     const { items } = this.props.workette;
     const { ordered } = this.state;
+    if (!(this.props.items && this.props.items.length > 0)) return <div></div>;
     return (
       <Container fluid className="m-0 p-2 mb-3">
-        {this.props.items && this.props.items.length > 0 && (
-            <Row className="justify-content-between">
-              <Col xs="1" className="d-flex flex-column m-0 p-0 justify-content-center align-items-center">
-              {this.props.label == "Knock these out!" && (
-                <FontAwesomeIcon icon={faStar} color="gold" size="1x" />
-              )}
-              {this.props.label == "Babysit these!" && (
-                <FontAwesomeIcon icon={faRunning} />
-              )}
-              {this.props.label == "Everything Completed!" && (
-                <FontAwesomeIcon icon={faGlassCheers} color="green" />
-              )}
-              {this.props.label == "Everything Abandoned!" && (
-                <FontAwesomeIcon icon={faTimesCircle} />
-              )}
-              </Col>
-              <Col className="m-0 p-0">
-              {this.props.label}
-              </Col>
-            </Row>
-        )}
+        <Row className="justify-content-between">
+          <Col
+            xs="1"
+            className="d-flex flex-column m-0 p-0 justify-content-center align-items-center"
+          >
+            <FontAwesomeIcon {...this.props.iconProps} />
+          </Col>
+          <Col className="m-0 p-0">{this.props.label}</Col>
+        </Row>
+
         <Row>
           <Col className="shadow p-0">
             <DragDropContext onDragEnd={this.handle_drag}>
