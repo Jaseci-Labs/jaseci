@@ -173,9 +173,10 @@ walker cleanse_all {
 
 walker create_workette {
     has title;
-    has wtype;
+    has wtype, note;
     day, workette {
-        new = spawn here -[parent]-> node::workette(name=title, wtype=wtype);
+        new = spawn here -[parent]->
+            node::workette(name=title, wtype=wtype, note=note);
         report new;
     }
 }
