@@ -29,7 +29,12 @@ const workette_filters = {
 
   active_ritual: function (w) {
     const ctx = w.context;
-    return workette_filters.scheduled_now(w) && ctx.is_ritual;
+    return (
+      workette_filters.scheduled_now(w) &&
+      ctx.is_ritual &&
+      !workette_filters.complete(w) &&
+      !workette_filters.canceled(w)
+    );
   },
 
   open: function (w) {
