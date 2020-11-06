@@ -36,7 +36,7 @@ class WktButton extends Component {
         )}
         {!this.props.icon && (
           <button
-            className="btn btn-success"
+            className="btn btn-success shadow border border-dark"
             onMouseEnter={this.showTooltip.bind(this)}
             onMouseLeave={this.hideTooltip.bind(this)}
           >
@@ -45,9 +45,11 @@ class WktButton extends Component {
         )}
         <ToolTip
           active={this.state.isTooltipActive}
-          position="top"
+          position="left"
           arrow="center"
           parent={this.element}
+          tooltipTimeout="50"
+          useHover="false"
         >
           <div>
             <p className="m-0 p-0">{this.props.tooltip}</p>

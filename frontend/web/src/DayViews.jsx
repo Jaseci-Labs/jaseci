@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import Day from "./components/day";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import './DayViews.scss';
 import { connect } from "react-redux";
 import { session_actions as session } from "./store/session";
 import { workette_actions as wact } from "./store/workette";
@@ -30,7 +31,7 @@ class DayViewLeft extends Component {
     if (this.props.session.freeze_override)
       this.props.set_freeze_override(false);
     if (date > today) date = today;
-    this.props.change_date(date);
+      this.props.change_date(date);
     const { workette } = this.props;
     const { items, last_day_loaded } = workette;
     const current = workette.days[date.toISOString().split("T")[0]];
@@ -91,37 +92,25 @@ class DayViewLeft extends Component {
 
     return (
       <Container fluid className="m-0 p-0">
-        <small>
-          {!this.state.certify_mode && (
-            <Calendar
+        <Container className="m-0 p-0 day-calendar">
+          <small><Calendar
               className="shadow mb-3"
               value={this.state.date}
               onChange={this.onChange}
-            />
-          )}
-
-          {this.state.certify_mode && !this.props.api.is_loading.length && (
-            <center>
-              <WktButton
-                label={
-                  current ? "Certify " + session.cur_date : "Start First Day"
-                }
-                tooltip="Certify prior day before loading today"
-                onClick={this.onCarryDayForward}
-              />
-            </center>
-          )}
-        </small>
-        <Row>
-          <Col md="auto">></Col>
-          <Col md="auto">
-            <LoadingIndicator
-              is_loading={
-                this.props.api.is_loading[this.props.api.is_loading.length - 1]
-              }
-            />
-          </Col>
-        </Row>
+          /></small>
+          
+            {this.state.certify_mode && !this.props.api.is_loading.length && (
+                <div className="day-cert-button"> 
+                  <WktButton className=""
+                    label={
+                      current ? "Certify " + session.cur_date : "Start First Day"
+                    }
+                    tooltip="Certify prior day before loading today"
+                    onClick={this.onCarryDayForward}
+                    />
+                </div>
+            )}
+        </Container>
         {current && (
           <DeepMITs
             w_id={current}
@@ -138,6 +127,15 @@ class DayViewLeft extends Component {
             items={w_filter.deepRunning()}
           />
         )}
+        <Row>
+          <Col md="auto">
+            <LoadingIndicator
+              is_loading={
+                this.props.api.is_loading[this.props.api.is_loading.length - 1]
+              }
+            />
+          </Col>
+        </Row>
         <small>{LL_VER}</small>
       </Container>
     );
