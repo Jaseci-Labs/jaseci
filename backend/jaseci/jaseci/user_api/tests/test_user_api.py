@@ -43,6 +43,25 @@ class user_api_tests_public(TestCaseHelper):
         self.assertNotIn('password', res.data)
         user.delete()
 
+    def test_create_activated_user_success(self):
+        """Test creating user with valid payload is successful"""
+        payload = {
+            'email': 'JSCITEST_test2@jaseci.com',
+            'password': 'testpass',
+            'name': 'name',
+            'is_activated': True
+        }
+        res = self.client.post(CREATE_USER_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(**res.data)
+        self.assertTrue(
+            user.check_password(payload['password'])
+        )
+        self.assertTrue(user.is_activated)
+        self.assertNotIn('password', res.data)
+        user.delete()
+
     def test_user_exists(self):
         """Test creating a user that already exists fails"""
         payload = {
@@ -140,6 +159,7 @@ class user_api_tests_private(TestCaseHelper):
             'id': self.user.id,
             'name': self.user.name,
             'email': self.user.email,
+            'is_activated': self.user.is_activated,
         })
 
     def test_post_me_not_allowed(self):

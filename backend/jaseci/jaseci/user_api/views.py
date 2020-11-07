@@ -20,7 +20,8 @@ class CreateUserView(generics.CreateAPIView):
     def perform_create(self, serializer):
         """Perform create override to send out activation Email"""
         created_object = serializer.save()
-        send_activation_email(self.request, created_object.email)
+        if(not created_object.is_activated):
+            send_activation_email(self.request, created_object.email)
 
 
 class ActivateUserView(APIView):

@@ -1,5 +1,5 @@
 import { api_actions as api_act } from "./api";
-import { todays_date } from "../utils/utils"
+import { todays_date, inDevMode } from "../utils/utils"
 
 //Action Types
 const LOGIN = "user_log_in"
@@ -16,7 +16,7 @@ const session_actions = {
         api_act.call({
             url: "/user/create/",
             method: "post",
-            data: { email, password: pass, name: full_name },
+            data: { email, password: pass, name: full_name, is_activated: inDevMode() },
             success_action: CREATE,
             error_action: ERROR
         }),

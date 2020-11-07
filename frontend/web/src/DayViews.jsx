@@ -98,6 +98,7 @@ class DayViewLeft extends Component {
 
     return (
       <Container fluid className="m-0 p-0">
+
         <Container className="m-0 p-0 day-calendar">
           <small>
             <Calendar
@@ -106,7 +107,7 @@ class DayViewLeft extends Component {
               onChange={this.onChange}
             />
           </small>
-          testgit
+testgit
           {this.state.certify_mode && !this.props.api.is_loading.length && (
             <div className="day-cert-button">
               <WktButton
