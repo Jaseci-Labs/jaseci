@@ -107,7 +107,7 @@ class DayViewLeft extends Component {
               onChange={this.onChange}
             />
           </small>
-testgit
+
           {this.state.certify_mode && !this.props.api.is_loading.length && (
             <div className="day-cert-button">
               <WktButton
