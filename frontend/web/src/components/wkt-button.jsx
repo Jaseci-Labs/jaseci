@@ -8,22 +8,43 @@ class WktButton extends Component {
 
   state = {
     isTooltipActive: false,
+    delayHandler: null
   };
 
   showTooltip() {
-    this.setState({ isTooltipActive: true });
+    this.setState({
+      delayHandler: setTimeout(() => {
+        this.setState({ isTooltipActive: true });
+      }, 400)
+    })
   }
   hideTooltip() {
+    clearTimeout(this.delayHandler)
     this.setState({ isTooltipActive: false });
   }
 
   render() {
+    let style = {
+      style: {
+        background: 'white',
+        padding: 5,
+        boxShadow: '0 0 8px rgba(0,0,0,.3)',
+        borderRadius: '3px',
+        transition: `${this.state.transition} .1s ease-in-out, visibility .1s ease-in-out`,
+        fontSize: '12px'
+      },
+      arrowStyle: {
+        position: 'absolute',
+        content: '""',
+        transition: null
+      }
+    }
     return (
       <span
         ref={(element) => {
           this.element = element;
         }}
-        className="pr-1"
+        className="mr-1"
         onClick={this.props.onClick}
       >
         {this.props.icon && (
@@ -45,11 +66,12 @@ class WktButton extends Component {
         )}
         <ToolTip
           active={this.state.isTooltipActive}
-          position="left"
+          position="top"
           arrow="center"
           parent={this.element}
           tooltipTimeout="50"
-          useHover="false"
+          useHover={false}
+          style={style}
         >
           <div>
             <p className="m-0 p-0">{this.props.tooltip}</p>
