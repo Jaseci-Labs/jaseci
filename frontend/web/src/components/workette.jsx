@@ -35,7 +35,11 @@ class Workette extends Component {
     const { items } = this.props.workette;
     const current = this.props.w_id;
     const item = items[current];
-    if (item.context.note !== "" && item.context.wtype !== "workset")
+    if (
+      item.context.note !== "" &&
+      item.context.wtype !== "workset" &&
+      !item.context.day
+    )
       this.setState({ show_note: true });
   }
 
