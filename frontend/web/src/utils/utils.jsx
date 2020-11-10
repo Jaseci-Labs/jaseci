@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { connect } from "react-redux";
 
 const LL_VER = process.env.REACT_APP_LL_VERSION;
+const inDevMode = () => LL_VER === "development";
 
 const saveDelayTimeout = (id, func) => {
   clearTimeout(id);
@@ -292,6 +293,7 @@ function validURL(str) {
 }
 
 export {
+  inDevMode,
   time_now,
   local_date_obj,
   todays_date,
