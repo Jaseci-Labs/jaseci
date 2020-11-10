@@ -73,6 +73,12 @@ class WktItemSingle extends Component {
     }
   };
 
+  inLinkWhiteList = (str) => {
+    return (
+      str.includes("docs.google.com") || str.includes("calendar.google.com")
+    );
+  };
+
   render() {
     const { item } = this.props;
     let color = this.props.color ? this.props.color : "white";
@@ -235,7 +241,7 @@ class WktItemSingle extends Component {
                         />
                         <iframe
                           is={
-                            item.context.note.includes("docs.google.com")
+                            this.inLinkWhiteList(item.context.note)
                               ? ""
                               : "x-frame-bypass"
                           }

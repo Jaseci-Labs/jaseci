@@ -1,5 +1,5 @@
 import { api_actions as api_act } from "./api";
-import { time_now, apply_ordering } from "../utils/utils"
+import { apply_ordering } from "../utils/utils"
 import store from './store';
 
 // Action Types
@@ -163,7 +163,7 @@ const workette_reducer = (state = init_state, action) => {
                 new_items[action.payload.jid].children =
                     apply_ordering(action.payload.context.order, kids);
                 new_items[action.payload.jid].parent = parent;
-                new_items[action.payload.jid].context.last_written = time_now()
+                new_items[action.payload.jid].context.last_written = new Date()
 
                 return {
                     ...state,

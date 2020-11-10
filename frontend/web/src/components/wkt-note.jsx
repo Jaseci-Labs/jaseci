@@ -55,6 +55,7 @@ class WktNoteForm extends Component {
       last_written: last_written ? last_written : null,
     });
   };
+
   componentDidMount() {
     this.updateStateLinked();
   }
@@ -63,8 +64,9 @@ class WktNoteForm extends Component {
     const { items } = this.props.workette;
     const current = this.props.w_id;
     const { last_written } = items[current].context;
-    if (last_written && last_written > this.state.last_written)
+    if (last_written && last_written > this.state.last_written) {
       this.updateStateLinked();
+    }
   }
 
   handleSubmit = (e = false) => {

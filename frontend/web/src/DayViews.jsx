@@ -208,7 +208,7 @@ class DayViewRight extends Component {
               Reflections of the Day
               <Row>
                 <Col className=" p-0">
-                  <WktNoteForm w_id={current} />
+                  <WktNoteForm key={current} w_id={current} />
                 </Col>
               </Row>
             </Container>
