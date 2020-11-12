@@ -350,8 +350,9 @@ class walker_machine(machine):
         if (dest.kind != src.kind):
             self.rt_error(f"Node arch {dest} don't match {src}!", kid[0])
             return dest
-        for i in dest.context.keys():
-            dest.context[i] = src.context[i]
+        for i in src.context.keys():
+            if(i in dest.context.keys()):
+                dest.context[i] = src.context[i]
         return dest
 
     def run_connect(self, jac_ast):
