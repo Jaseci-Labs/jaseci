@@ -1,3 +1,18 @@
+### Release: 0.39.5
+#### Release Date: 11/12/2020
+* General
+    * Reflections of the Day can now be logged on the right side bar.
+    * Active rituals are now visible on the left side bar below "In Progress" workettes.
+    * Link workettes improved with more consistent and reliable behavior.
+    * You can now document life goals and objectives by clicking the Leaf icon. This is a great way to set broader direction and goals towards your life mission.
+    * In progress workettes will now time how long they are "in progress"
+* Minor UI/UX
+    * Version number is now visible in the status bar.
+    * Tooltips are more responsive now.
+    * Work sets with active workettes are now expanded by default.
+
+-----
+
 ### Release: 0.39.4
 #### Release Date: 11/5/2020
 * General
