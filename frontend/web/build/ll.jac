@@ -1,34 +1,35 @@
 node life {
-    has anchor owner;
+    has anchor owner, note;
     can infer.year_from_date;
 }
 
 node year {
-    has anchor year;
+    has anchor year, note;
     can infer.month_from_date;
 }
 
 node month {
-    has anchor month;
+    has anchor month, note;
     can infer.year_from_date;
     can infer.week_from_date;
 }
 
 node week {
-    has anchor week;
+    has anchor week, note;
     can infer.month_from_date;
     can infer.day_from_date;
 }
 
 node day {
-    has anchor day;
-    has order, note, ll_version;
+    has anchor day, note;
+    has order, ll_version;
     can infer.day_from_date;
 }
 
 node workette {
     has name, order, date, status, snooze_till;
     has owner, wtype, note, is_MIT, is_ritual;
+    has run_start, run_time;
 }
 
 edge past;
@@ -129,6 +130,44 @@ walker load_workette {
             report [&here, i];
         }
         take -[parent]-> node::workette;
+    }
+}
+
+walker get_week {
+    has date;
+    if(date){
+        root: take --> node::life;
+        life: take --> node::year == infer.year_from_date(date);
+        year: take --> node::month == infer.month_from_date(date);
+        month: take --> node::week == infer.week_from_date(date);
+        week: report [ "", here ];
+    }
+}
+
+walker get_month {
+        has date;
+    if(date){
+        root: take --> node::life;
+        life: take --> node::year == infer.year_from_date(date);
+        year: take --> node::month == infer.month_from_date(date);
+        month: report [ "", here ];
+    }
+}
+
+walker get_year {
+        has date;
+    if(date){
+        root: take --> node::life;
+        life: take --> node::year == infer.year_from_date(date);
+        year: report [ "", here ];
+    }
+}
+
+walker get_life {
+        has date;
+    if(date){
+        root: take --> node::life;
+        life: report [ "", here ];
     }
 }
 
