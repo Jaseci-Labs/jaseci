@@ -114,6 +114,16 @@ class Workette extends Component {
                 this.setState({ open_only: !this.state.open_only });
               }}
             />
+            {items[current].context.run_time && (
+              <span style={{ color: "black" }}>
+                <small>
+                  <i>
+                    In progress for &nbsp;
+                    {items[current].context.run_time.toFixed(1)} seconds
+                  </i>
+                </small>
+              </span>
+            )}
           </span>
           <Collapse in={this.state.show_add} unmountOnExit={true}>
             <div>

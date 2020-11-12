@@ -173,15 +173,6 @@ class WktItemSingle extends Component {
                         </small>
                       </span>
                     )}
-                    {item.context.run_time && (
-                      <span style={{ color: "black" }}>
-                        <small>
-                          <i>
-                            &nbsp;({item.context.run_time.toFixed(1)} seconds)
-                          </i>
-                        </small>
-                      </span>
-                    )}
                   </div>
                 </Col>
                 <Col xs="auto" className="d-flex align-items-center m-0 p-0">
