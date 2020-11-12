@@ -285,7 +285,7 @@ class PrivateJacApiTests(TestCaseHelper):
         payload = {'op': 'run_walker', 'wlk': walk.id.urn}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         nid = res.data[0]['jid']
-        payload = {'op': 'set_node_context', 'nd': nid,
+        payload = {'op': 'set_node_context', 'snt': sent.id.urn, 'nd': nid,
                    'ctx': {'apple': 'TEST'}}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')

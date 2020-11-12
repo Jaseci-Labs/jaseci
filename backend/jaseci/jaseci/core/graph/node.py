@@ -286,9 +286,12 @@ class node(element, anchored):
         """Remove node from higher dimension node"""
         node_obj.leave_membership_of(self)
 
-    def set_context(self, ctx):
+    def set_context(self, ctx, arch=None):
+        """Assign values to context fields of node, arch is node architype"""
+        if(not arch):
+            arch = self
         for i in ctx.keys():
-            if (i not in self.context.keys()):
+            if (i not in arch.context.keys()):
                 logger.warning(str(f"{i} not a context member of {self}"))
                 continue
             else:

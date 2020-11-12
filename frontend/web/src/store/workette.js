@@ -5,6 +5,10 @@ import store from './store';
 // Action Types
 const LOAD_DAY = "load_day";
 const LOAD_LATEST_DAY = "load_latest_day";
+const GET_WEEK = "get_week";
+const GET_MONTH = "get_month";
+const GET_YEAR = "get_year";
+const GET_LIFE = "get_life";
 const SET_WORKETTE = "update_workette";
 const MOVE_WORKETTE = "move_workette";
 const CREATE_WORKETTE = "create_workette";
@@ -20,7 +24,7 @@ const workette_actions = {
         const { session } = store.getState();
         return api_act.call({
             url: "/jac/prime_run",
-            status: "Loading Day",
+            status: "Loading/Generating Day",
             method: "post",
             data: { name: "get_gen_day", snt: session.sentinel, nd: session.graph, ctx: { date: date } },
             success_action: LOAD_DAY,
@@ -38,12 +42,61 @@ const workette_actions = {
             error_action: ERROR
         });
     },
+    get_week: (date) => {
+        const { session } = store.getState();
+        return api_act.call({
+            url: "/jac/prime_run",
+            status: "Getting Week",
+            method: "post",
+            data: { name: "get_week", snt: session.sentinel, nd: session.graph, ctx: { date: date } },
+            success_action: GET_WEEK,
+            error_action: ERROR,
+            pass_through: { date }
+        });
+    },
+    get_month: (date) => {
+        const { session } = store.getState();
+        return api_act.call({
+            url: "/jac/prime_run",
+            status: "Getting Month",
+            method: "post",
+            data: { name: "get_month", snt: session.sentinel, nd: session.graph, ctx: { date: date } },
+            success_action: GET_MONTH,
+            error_action: ERROR,
+            pass_through: { date }
+        });
+    },
+    get_year: (date) => {
+        const { session } = store.getState();
+        return api_act.call({
+            url: "/jac/prime_run",
+            status: "Getting Year",
+            method: "post",
+            data: { name: "get_year", snt: session.sentinel, nd: session.graph, ctx: { date: date } },
+            success_action: GET_YEAR,
+            error_action: ERROR,
+            pass_through: { date }
+        });
+    },
+    get_life: (date) => {
+        const { session } = store.getState();
+        return api_act.call({
+            url: "/jac/prime_run",
+            status: "Getting Life",
+            method: "post",
+            data: { name: "get_life", snt: session.sentinel, nd: session.graph, ctx: { date: date } },
+            success_action: GET_LIFE,
+            error_action: ERROR,
+            pass_through: { date }
+        });
+    },
     set_workette: (w_id, ctx) => {
+        const { session } = store.getState();
         return api_act.call({
             url: "/jac/set_node_context",
             status: "Updating Workette",
             method: "post",
-            data: { nd: w_id, ctx: ctx },
+            data: { snt: session.sentinel, nd: w_id, ctx: ctx },
             success_action: SET_WORKETTE,
             error_acmion: ERROR
         });
@@ -115,7 +168,7 @@ const load_workettes_from_payload = (pl) => {
     });
     for (const i in additions) {
         const item = additions[i];
-        if (item.children)
+        if (item.children && item.context.order)
             item.children = apply_ordering(item.context.order, [...item.children])
     }
     return additions;
@@ -124,7 +177,10 @@ const load_workettes_from_payload = (pl) => {
 
 
 // Reducers
-const init_state = { error: "", status: "", days: {}, items: {}, last_day_loaded: "" }
+const init_state = {
+    error: "", status: "", days: {}, weeks: {},
+    months: {}, years: {}, life: {}, items: {}, last_day_loaded: ""
+}
 const workette_reducer = (state = init_state, action) => {
     switch (action.type) {
         case LOAD_DAY:
@@ -152,6 +208,58 @@ const workette_reducer = (state = init_state, action) => {
                     items: { ...state.items, ...additions },
                     days: { ...state.days, [pl[0][1].context.day.split('T')[0]]: pl[0][1].jid },
                     last_day_loaded: pl[0][1].context.day.split('T')[0]
+                };
+            }
+        case GET_WEEK:
+            {
+                const pl = action.payload;
+                const { date } = action.payload.pass_through;
+                const additions = load_workettes_from_payload(pl);
+                if (!pl[0]) return { ...state }
+                return {
+                    ...state,
+                    //DB of workettes for session
+                    items: { ...state.items, ...additions },
+                    weeks: { ...state.weeks, [date]: pl[0][1].jid }
+                };
+            }
+        case GET_MONTH:
+            {
+                const pl = action.payload;
+                const { date } = action.payload.pass_through;
+                const additions = load_workettes_from_payload(pl);
+                if (!pl[0]) return { ...state }
+                return {
+                    ...state,
+                    //DB of workettes for session
+                    items: { ...state.items, ...additions },
+                    months: { ...state.months, [date]: pl[0][1].jid }
+                };
+            }
+        case GET_YEAR:
+            {
+                const pl = action.payload;
+                const { date } = action.payload.pass_through;
+                const additions = load_workettes_from_payload(pl);
+                if (!pl[0]) return { ...state }
+                return {
+                    ...state,
+                    //DB of workettes for session
+                    items: { ...state.items, ...additions },
+                    years: { ...state.years, [date]: pl[0][1].jid }
+                };
+            }
+        case GET_LIFE:
+            {
+                const pl = action.payload;
+                const { date } = action.payload.pass_through;
+                const additions = load_workettes_from_payload(pl);
+                if (!pl[0]) return { ...state }
+                return {
+                    ...state,
+                    //DB of workettes for session
+                    items: { ...state.items, ...additions },
+                    life: { ...state.life, [date]: pl[0][1].jid }
                 };
             }
         case SET_WORKETTE:

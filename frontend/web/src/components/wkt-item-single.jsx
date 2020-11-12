@@ -61,9 +61,18 @@ class WktItemSingle extends Component {
   toggle_running = (item) => {
     if (check_frozen(this.props.session)) return;
     let val = this.props.item.context.status;
-    if (val === "running") val = "open";
-    else val = "running";
-    this.props.set_workette(item.jid, { status: val });
+    let { run_start, run_time } = this.props.item.context;
+    if (!run_time) run_time = 0;
+    if (!run_start) run_start = 0;
+    if (val === "running") {
+      if (run_start)
+        run_time = run_time + new Date().getTime() / 1000 - run_start;
+      val = "open";
+    } else {
+      run_start = new Date().getTime() / 1000;
+      val = "running";
+    }
+    this.props.set_workette(item.jid, { status: val, run_start, run_time });
   };
 
   checkLinkTitle = (data) => {
@@ -161,6 +170,15 @@ class WktItemSingle extends Component {
                       <span style={{ color: "black" }}>
                         <small>
                           <i>&nbsp;({item.context.date})</i>
+                        </small>
+                      </span>
+                    )}
+                    {item.context.run_time && (
+                      <span style={{ color: "black" }}>
+                        <small>
+                          <i>
+                            &nbsp;({item.context.run_time.toFixed(1)} seconds)
+                          </i>
                         </small>
                       </span>
                     )}

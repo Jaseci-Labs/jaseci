@@ -98,7 +98,6 @@ class DayViewLeft extends Component {
 
     return (
       <Container fluid className="m-0 p-0">
-
         <Container className="m-0 p-0 day-calendar">
           <small>
             <Calendar

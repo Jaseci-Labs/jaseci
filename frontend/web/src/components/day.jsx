@@ -5,6 +5,7 @@ import WktNoteForm from "./wkt-note";
 import { Container, Row, Col } from "react-bootstrap";
 import { workette_actions as wact } from "../store/workette";
 import ReleaseModal from "../utils/release-modal";
+import DayBigPicture from "./day-big-picture";
 
 function print_date(d) {
   let ret = new Date(d);
@@ -31,6 +32,7 @@ class Day extends Component {
           </center>
           <br />
         </h6>
+        <DayBigPicture w_id={current} />
         <Workette w_id={current} />
         <ReleaseModal />
       </Container>
