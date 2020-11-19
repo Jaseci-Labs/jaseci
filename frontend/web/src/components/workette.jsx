@@ -79,24 +79,14 @@ class Workette extends Component {
               }}
             />
             {!items[current].context.day && (
-              <React.Fragment>
-                <WktButton
-                  icon={faPen}
-                  status={this.state.show_edit}
-                  tooltip="Edit Settings"
-                  onClick={() => {
-                    this.setState({ show_edit: !this.state.show_edit });
-                  }}
-                />
-                <WktButton
-                  icon={faFolderOpen}
-                  status={this.state.show_move}
-                  tooltip="Organize Workettes"
-                  onClick={() => {
-                    this.setState({ show_move: !this.state.show_move });
-                  }}
-                />
-              </React.Fragment>
+              <WktButton
+                icon={faPen}
+                status={this.state.show_edit}
+                tooltip="Edit Settings"
+                onClick={() => {
+                  this.setState({ show_edit: !this.state.show_edit });
+                }}
+              />
             )}
             <WktButton
               icon={faStickyNote}
@@ -106,6 +96,16 @@ class Workette extends Component {
                 this.setState({ show_note: !this.state.show_note });
               }}
             />
+            {!items[current].context.day && (
+              <WktButton
+                icon={faFolderOpen}
+                status={this.state.show_move}
+                tooltip="Organize Workettes"
+                onClick={() => {
+                  this.setState({ show_move: !this.state.show_move });
+                }}
+              />
+            )}
             <WktButton
               icon={faEye}
               status={!this.state.open_only}

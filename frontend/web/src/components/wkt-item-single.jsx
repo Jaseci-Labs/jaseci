@@ -17,6 +17,7 @@ import {
   faRunning,
   faLink,
   faStickyNote,
+  faTasks,
 } from "@fortawesome/free-solid-svg-icons";
 import "x-frame-bypass";
 import { ReactTinyLink } from "react-tiny-link";
@@ -25,7 +26,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 class WktItemSingle extends Component {
   state = {
-    self_expand: this.props.is_workset ? this.props.is_day : false,
+    //self_expand: this.props.is_workset ? this.props.is_day : false,
+    self_expand: false,
   };
 
   toggle_MIT = (item) => {
@@ -111,7 +113,7 @@ class WktItemSingle extends Component {
               className="border-left border-bottom border-top border-light"
             >
               <Row className={`d-flex justify-content-between color-${color}`}>
-                {(is_workette || item.context.wtype === "workset") && (
+                {is_workette && (
                   <Col xs="auto" className="m-0 p-0 pl-1">
                     <WktButton
                       icon={faCheckSquare}
@@ -154,6 +156,15 @@ class WktItemSingle extends Component {
                         <FontAwesomeIcon icon={faStickyNote} />
                       </Col>
                     )}
+                    {item.context.wtype === "workset" && (
+                      <Col
+                        xs="auto"
+                        className="m-0 p-0 pl-1 pr-1"
+                        style={{ color: "gray" }}
+                      >
+                        <FontAwesomeIcon icon={faTasks} />
+                      </Col>
+                    )}
 
                     {this.state.self_expand && (
                       <strong>
@@ -191,21 +202,23 @@ class WktItemSingle extends Component {
                       </div>
                     )}
                   </div>
-
+                  {!this.props.is_workset && (
+                    <WktButton
+                      icon={faStar}
+                      status={item.context.is_MIT}
+                      tooltip="Knock this Out"
+                      onClick={() => this.toggle_MIT(item)}
+                    />
+                  )}
                   {is_workette && (
                     <React.Fragment>
-                      <WktButton
-                        icon={faStar}
-                        status={item.context.is_MIT}
-                        tooltip="Knock this Out"
-                        onClick={() => this.toggle_MIT(item)}
-                      />
                       <WktButton
                         icon={faRunning}
                         status={item.context.status === "running"}
                         tooltip="In Progress"
                         onClick={() => this.toggle_running(item)}
                       />
+
                       <WktButton
                         icon={faSync}
                         status={item.context.is_ritual}
@@ -216,6 +229,14 @@ class WktItemSingle extends Component {
                         }}
                       />
                     </React.Fragment>
+                  )}
+                  {!is_workette && (
+                    <WktButton
+                      icon={faCheckSquare}
+                      status={item.context.status === "done"}
+                      tooltip="Complete"
+                      onClick={() => this.toggle_done(item)}
+                    />
                   )}
                   <WktButton
                     icon={faTimesCircle}
