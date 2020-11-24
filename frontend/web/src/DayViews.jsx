@@ -24,6 +24,7 @@ import {
   faTimesCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { workette_filters as w_filter } from "./utils/filters";
+import DayBigPicture from "./components/day-big-picture";
 
 class DayViewLeft extends Component {
   state = { date: time_now(), certify_mode: false };
@@ -212,6 +213,7 @@ class DayViewRight extends Component {
                 </Col>
               </Row>
             </Container>
+            <DayBigPicture w_id={current} />
           </div>
         )}
       </Container>

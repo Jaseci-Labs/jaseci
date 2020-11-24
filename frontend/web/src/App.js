@@ -31,8 +31,8 @@ function App({ location }) {
                                 <InternalRoute path="/logout" component={LogOut} />
                                 <InternalRoute path="/register" component={Register} />
                                 <InternalRoute path="/reflect" component={LLReflectApp} />
-                                <InternalRoute path="/help" component={HelpPage} />\
-                    <InternalRoute path="/day" component={LLDayApp} />
+                                <InternalRoute path="/help" component={HelpPage} />
+                                <InternalRoute path="/perform" component={LLDayApp} />
                                 <Route path="/" component={SplashPage} />
                             </Switch>
                         </section>

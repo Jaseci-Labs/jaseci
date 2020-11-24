@@ -6,7 +6,6 @@ import { workette_actions as wact } from "../store/workette";
 import { Redirect } from "react-router-dom";
 import ReleaseModal from "../utils/release-modal";
 
-
 class LogIn extends Component {
   state = { email: "", pass: "", errors: [] };
 
@@ -42,7 +41,7 @@ class LogIn extends Component {
     const { email, pass, errors } = this.state;
     return (
       <div className="container-sm pt-3">
-        {this.props.session.logged_in && <Redirect to="/Day" />}
+        {this.props.session.logged_in && <Redirect to="/perform" />}
         <ServerErrors errors={this.props.session.error} />
         {this.props.session.token === "user_created" && (
           <div className="alert alert-success">

@@ -5,7 +5,7 @@ import { connect } from "react-redux";
 import { session_actions as session } from "./store/session";
 import axios from "axios";
 import WktButton from "./components/wkt-button";
-import { faAlignCenter, faEye } from "@fortawesome/free-solid-svg-icons";
+import { faArrowsAltH } from "@fortawesome/free-solid-svg-icons";
 
 class LLDayApp extends Component {
   state = { show_left: true, show_right: true };
@@ -38,16 +38,16 @@ class LLDayApp extends Component {
               className="border-right"
             >
               <Container>
-                <center>
+                <div style={{ textAlign: "right" }}>
                   <WktButton
-                    icon={faEye}
+                    icon={faArrowsAltH}
                     status={this.state.show_left}
                     tooltip="Show/Hide Column"
                     onClick={() => {
                       this.setState({ show_left: !this.state.show_left });
                     }}
                   />
-                </center>
+                </div>
                 {this.state.show_left && <DayViewLeft />}
               </Container>
             </Col>
@@ -64,16 +64,16 @@ class LLDayApp extends Component {
               style={this.sidebar_style(this.state.show_right)}
               className="border-left"
             >
-              <center>
+              <div style={{ textAlign: "left" }}>
                 <WktButton
-                  icon={faEye}
+                  icon={faArrowsAltH}
                   status={this.state.show_right}
                   tooltip="Show/Hide Column"
                   onClick={() => {
                     this.setState({ show_right: !this.state.show_right });
                   }}
                 />
-              </center>
+              </div>
               {this.state.show_right && <DayViewRight />}
             </Col>
           </Row>
