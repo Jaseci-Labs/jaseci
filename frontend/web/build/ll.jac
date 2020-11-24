@@ -1,28 +1,28 @@
 node life {
-    has anchor owner, note;
+    has anchor owner, note, order;
     can infer.year_from_date;
 }
 
 node year {
-    has anchor year, note;
+    has anchor year, note, order;
     can infer.month_from_date;
 }
 
 node month {
-    has anchor month, note;
+    has anchor month, note, order;
     can infer.year_from_date;
     can infer.week_from_date;
 }
 
 node week {
-    has anchor week, note;
+    has anchor week, note, order;
     can infer.month_from_date;
     can infer.day_from_date;
 }
 
 node day {
-    has anchor day, note;
-    has order, ll_version;
+    has anchor day, note, order;
+    has ll_version;
     can infer.day_from_date;
 }
 
@@ -213,7 +213,7 @@ walker cleanse_all {
 walker create_workette {
     has title;
     has wtype, note;
-    day, workette {
+    day, week, month, year, life, workette {
         new = spawn here -[parent]->
             node::workette(name=title, wtype=wtype, note=note);
         report new;
