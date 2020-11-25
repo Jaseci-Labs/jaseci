@@ -8,37 +8,37 @@ class WktButton extends Component {
 
   state = {
     isTooltipActive: false,
-    delayHandler: null
+    delayHandler: null,
   };
 
   showTooltip() {
     this.setState({
       delayHandler: setTimeout(() => {
         this.setState({ isTooltipActive: true });
-      }, 400)
-    })
+      }, 1400),
+    });
   }
   hideTooltip() {
-    clearTimeout(this.delayHandler)
+    clearTimeout(this.delayHandler);
     this.setState({ isTooltipActive: false });
   }
 
   render() {
     let style = {
       style: {
-        background: 'white',
+        background: "white",
         padding: 5,
-        boxShadow: '0 0 8px rgba(0,0,0,.3)',
-        borderRadius: '3px',
+        boxShadow: "0 0 8px rgba(0,0,0,.3)",
+        borderRadius: "3px",
         transition: `${this.state.transition} .1s ease-in-out, visibility .1s ease-in-out`,
-        fontSize: '12px'
+        fontSize: "12px",
       },
       arrowStyle: {
-        position: 'absolute',
+        position: "absolute",
         content: '""',
-        transition: null
-      }
-    }
+        transition: null,
+      },
+    };
     return (
       <span
         ref={(element) => {

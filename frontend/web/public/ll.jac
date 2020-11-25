@@ -32,6 +32,24 @@ node workette {
     has run_start, run_time;
 }
 
+node summary {
+    has all_mit, all_rituals, all_running, all_complete, all_canceled;
+}
+
+walker summerizer {
+    has start_node;
+    summary {
+        if(!start_node)
+        {
+            start_node = here;
+            take <--;
+        }
+    }
+    life, year, month, week, day, workette {
+
+    }
+}
+
 edge past;
 edge parent;
 
@@ -125,7 +143,7 @@ walker get_gen_day {
 }
 
 walker load_workette {
-    day, workette {
+     day, week, month, year, life,  workette {
         for i in  -[parent]-> node::workette {
             report [&here, i];
         }
@@ -140,7 +158,10 @@ walker get_week {
         life: take --> node::year == infer.year_from_date(date);
         year: take --> node::month == infer.month_from_date(date);
         month: take --> node::week == infer.week_from_date(date);
-        week: report [ "", here ];
+        week {
+            report [ "", here ];
+            spawn here walker::load_workette;
+        }
     }
 }
 
@@ -150,7 +171,10 @@ walker get_month {
         root: take --> node::life;
         life: take --> node::year == infer.year_from_date(date);
         year: take --> node::month == infer.month_from_date(date);
-        month: report [ "", here ];
+        month {
+            report [ "", here ];
+            spawn here walker::load_workette;
+        }
     }
 }
 
@@ -159,7 +183,10 @@ walker get_year {
     if(date){
         root: take --> node::life;
         life: take --> node::year == infer.year_from_date(date);
-        year: report [ "", here ];
+        year {
+            report [ "", here ];
+            spawn here walker::load_workette;
+        }
     }
 }
 
@@ -167,7 +194,10 @@ walker get_life {
         has date;
     if(date){
         root: take --> node::life;
-        life: report [ "", here ];
+        life {
+            report [ "", here ];
+            spawn here walker::load_workette;
+        }
     }
 }
 
@@ -185,14 +215,6 @@ walker move_workette {
         here !<-[parent]- <-[parent]-;
         here <-[parent]- dest_node;
         report here;
-    }
-}
-
-walker deep_mits {
-    day: take -[parent]-> node::workette;
-    workette {
-        if(here.is_MIT): report here;
-        take -[parent]-> node::workette;
     }
 }
 

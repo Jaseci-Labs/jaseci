@@ -49,25 +49,25 @@ class Day extends Component {
             This <strong>day</strong> I will grind out
             <Workette w_id={current} />
           </Tab>
-          <Tab eventKey="week" title="This Week">
+          <Tab eventKey="week" title="Weekly Goals">
             Things I must accomplish this <strong>week</strong> are
             {workette.weeks[cur_date] && (
               <Workette w_id={workette.weeks[cur_date]} />
             )}
           </Tab>
-          <Tab eventKey="month" title="This Month">
+          <Tab eventKey="month" title="Monthly Goals">
             This <strong>month</strong> my key goals are
             {workette.months[cur_date] && (
               <Workette w_id={workette.months[cur_date]} />
             )}
           </Tab>
-          <Tab eventKey="year" title="This Year">
+          <Tab eventKey="year" title="Yearly Goals">
             By the end of this <strong>year</strong> I want
             {workette.years[cur_date] && (
               <Workette w_id={workette.years[cur_date]} />
             )}
           </Tab>
-          <Tab eventKey="life" title="In my Life">
+          <Tab eventKey="life" title="Life Goals">
             <strong>Life's</strong> Mission/Purpose Statement
             {workette.life[cur_date] && (
               <Workette w_id={workette.life[cur_date]} />
