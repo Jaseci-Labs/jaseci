@@ -7,6 +7,7 @@ import { Provider } from "react-redux";
 import store from "./store/store";
 import NavBar from './components/navbar';
 import LLReflectApp from './LLReflectApp';
+import LLEnvisionApp from './LLEnvisionApp';
 import LLDayApp from './LLDayApp';
 import { StatusBar } from './utils/utils'
 import { LogIn, LogOut } from './components/login';
@@ -30,8 +31,9 @@ function App({ location }) {
                                 <InternalRoute path="/login" component={LogIn} />
                                 <InternalRoute path="/logout" component={LogOut} />
                                 <InternalRoute path="/register" component={Register} />
-                                <InternalRoute path="/reflect" component={LLReflectApp} />
                                 <InternalRoute path="/help" component={HelpPage} />
+                                <InternalRoute path="/envision" component={LLEnvisionApp} />
+                                <InternalRoute path="/reflect" component={LLReflectApp} />
                                 <InternalRoute path="/perform" component={LLDayApp} />
                                 <Route path="/" component={SplashPage} />
                             </Switch>

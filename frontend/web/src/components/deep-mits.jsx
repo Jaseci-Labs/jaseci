@@ -1,13 +1,13 @@
 import React, { Component } from "react";
 import WktItemSingle from "./wkt-item-single";
-import { Container, Row, Col } from "react-bootstrap";
+import { Container, Row, Col, Collapse } from "react-bootstrap";
 import { connect } from "react-redux";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import { apply_ordering, move_arr_item } from "../utils/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 class DeepMITs extends Component {
-  state = { ordered: [] };
+  state = { ordered: [], self_expand: true };
 
   componentDidMount() {
     this.setState({ ordered: this.props.items });
@@ -40,41 +40,46 @@ class DeepMITs extends Component {
     if (!(this.props.items && this.props.items.length > 0)) return <div></div>;
     return (
       <Container fluid className="m-0 p-2 mb-3">
-        <Row className="justify-content-between">
+        <Row className="justify-content-between" onClick={() => {
+          this.setState({
+            self_expand: !this.state.self_expand,
+          });
+        }}>
           <Col
             xs="1"
             className="d-flex flex-column m-0 p-0 justify-content-center align-items-center"
           >
             <FontAwesomeIcon {...this.props.iconProps} />
           </Col>
-          <Col className="m-0 p-0">{this.props.label}</Col>
+          <Col className="m-0 p-0" style={{ cursor: "pointer" }}>{this.props.label}</Col>
         </Row>
 
-        <Row>
-          <Col className="shadow p-0">
-            <DragDropContext onDragEnd={this.handle_drag}>
-              <Droppable droppableId={this.props.w_id}>
-                {(provided) => (
-                  <div {...provided.droppableProps} ref={provided.innerRef}>
-                    {this.props.items.map((i, idx) => (
-                      <React.Fragment key={i}>
-                        {
-                          <WktItemSingle
-                            item={items[i]}
-                            index={idx}
-                            is_workset={false}
-                            color={this.props.color}
-                          />
-                        }
-                      </React.Fragment>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-          </Col>
-        </Row>
+        <Collapse in={this.state.self_expand} unmountOnExit={true}>
+          <Row>
+            <Col className="shadow p-0">
+              <DragDropContext onDragEnd={this.handle_drag}>
+                <Droppable droppableId={this.props.w_id}>
+                  {(provided) => (
+                    <div {...provided.droppableProps} ref={provided.innerRef}>
+                      {this.props.items.map((i, idx) => (
+                        <React.Fragment key={i}>
+                          {
+                            <WktItemSingle
+                              item={items[i]}
+                              index={idx}
+                              is_workset={false}
+                              color={this.props.color}
+                            />
+                          }
+                        </React.Fragment>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            </Col>
+          </Row></Collapse>
       </Container>
     );
   }

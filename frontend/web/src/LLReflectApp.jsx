@@ -25,9 +25,10 @@ class LLReflectApp extends Component {
               style={{
                 minWidth: "300px",
                 height: "100%",
-                maxWidth: "450px",
+                maxWidth: "350px",
                 overflowY: "auto",
               }}
+              className="border-right"
             >
               <Container>
                 <ReflectViewLeft />

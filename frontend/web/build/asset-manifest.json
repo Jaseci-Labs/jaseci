@@ -1,19 +1,19 @@
 {
   "files": {
-    "main.css": "/static/css/main.36465396.chunk.css",
-    "main.js": "/static/js/main.a8d8c0ca.chunk.js",
-    "main.js.map": "/static/js/main.a8d8c0ca.chunk.js.map",
+    "main.css": "/static/css/main.b0bb2ad7.chunk.css",
+    "main.js": "/static/js/main.19ebbc93.chunk.js",
+    "main.js.map": "/static/js/main.19ebbc93.chunk.js.map",
     "runtime-main.js": "/static/js/runtime-main.451c0d4d.js",
     "runtime-main.js.map": "/static/js/runtime-main.451c0d4d.js.map",
-    "static/css/2.dcaccb7f.chunk.css": "/static/css/2.dcaccb7f.chunk.css",
-    "static/js/2.e0fc2c6a.chunk.js": "/static/js/2.e0fc2c6a.chunk.js",
-    "static/js/2.e0fc2c6a.chunk.js.map": "/static/js/2.e0fc2c6a.chunk.js.map",
+    "static/css/2.f5983765.chunk.css": "/static/css/2.f5983765.chunk.css",
+    "static/js/2.71117ebd.chunk.js": "/static/js/2.71117ebd.chunk.js",
+    "static/js/2.71117ebd.chunk.js.map": "/static/js/2.71117ebd.chunk.js.map",
     "index.html": "/index.html",
-    "precache-manifest.51bdc44723c74176de85dac9be41f951.js": "/precache-manifest.51bdc44723c74176de85dac9be41f951.js",
+    "precache-manifest.b1f9ad4ec323a2184ce5c8a66ce00d59.js": "/precache-manifest.b1f9ad4ec323a2184ce5c8a66ce00d59.js",
     "service-worker.js": "/service-worker.js",
-    "static/css/2.dcaccb7f.chunk.css.map": "/static/css/2.dcaccb7f.chunk.css.map",
-    "static/css/main.36465396.chunk.css.map": "/static/css/main.36465396.chunk.css.map",
-    "static/js/2.e0fc2c6a.chunk.js.LICENSE.txt": "/static/js/2.e0fc2c6a.chunk.js.LICENSE.txt",
+    "static/css/2.f5983765.chunk.css.map": "/static/css/2.f5983765.chunk.css.map",
+    "static/css/main.b0bb2ad7.chunk.css.map": "/static/css/main.b0bb2ad7.chunk.css.map",
+    "static/js/2.71117ebd.chunk.js.LICENSE.txt": "/static/js/2.71117ebd.chunk.js.LICENSE.txt",
     "static/media/SplashPage.scss": "/static/media/background_tree_blur.a1360668.jpg",
     "static/media/day_example.png": "/static/media/day_example.d0b5e409.png",
     "static/media/day_move_workette.png": "/static/media/day_move_workette.375ce80d.png",
@@ -31,9 +31,9 @@
   },
   "entrypoints": [
     "static/js/runtime-main.451c0d4d.js",
-    "static/css/2.dcaccb7f.chunk.css",
-    "static/js/2.e0fc2c6a.chunk.js",
-    "static/css/main.36465396.chunk.css",
-    "static/js/main.a8d8c0ca.chunk.js"
+    "static/css/2.f5983765.chunk.css",
+    "static/js/2.71117ebd.chunk.js",
+    "static/css/main.b0bb2ad7.chunk.css",
+    "static/js/main.19ebbc93.chunk.js"
   ]
 }

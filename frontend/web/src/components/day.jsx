@@ -1,8 +1,7 @@
 import React, { Component } from "react";
 import Workette from "./workette";
 import { connect } from "react-redux";
-import WktNoteForm from "./wkt-note";
-import { Container, Row, Col, Tabs, Tab } from "react-bootstrap";
+import { Container, } from "react-bootstrap";
 import { workette_actions as wact } from "../store/workette";
 import ReleaseModal from "../utils/release-modal";
 
@@ -44,36 +43,9 @@ class Day extends Component {
           </center>
           <br />
         </h6>
-        <Tabs defaultActiveKey="day">
-          <Tab eventKey="day" title="This Day">
-            This <strong>day</strong> I will grind out
-            <Workette w_id={current} />
-          </Tab>
-          <Tab eventKey="week" title="Weekly Goals">
-            Things I must accomplish this <strong>week</strong> are
-            {workette.weeks[cur_date] && (
-              <Workette w_id={workette.weeks[cur_date]} />
-            )}
-          </Tab>
-          <Tab eventKey="month" title="Monthly Goals">
-            This <strong>month</strong> my key goals are
-            {workette.months[cur_date] && (
-              <Workette w_id={workette.months[cur_date]} />
-            )}
-          </Tab>
-          <Tab eventKey="year" title="Yearly Goals">
-            By the end of this <strong>year</strong> I want
-            {workette.years[cur_date] && (
-              <Workette w_id={workette.years[cur_date]} />
-            )}
-          </Tab>
-          <Tab eventKey="life" title="Life Goals">
-            <strong>Life's</strong> Mission/Purpose Statement
-            {workette.life[cur_date] && (
-              <Workette w_id={workette.life[cur_date]} />
-            )}
-          </Tab>
-        </Tabs>
+
+        <Workette w_id={current} />
+
         <ReleaseModal />
       </Container>
     );

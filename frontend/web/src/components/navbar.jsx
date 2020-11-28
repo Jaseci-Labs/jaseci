@@ -53,7 +53,12 @@ class NavBar extends Component {
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" to="/reflect">
-                    Reflect (early beta)
+                    Reflect
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/envision">
+                    Envision
                   </Link>
                 </li>
               </ul>
