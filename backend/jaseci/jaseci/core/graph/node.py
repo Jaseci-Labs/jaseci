@@ -53,6 +53,7 @@ class node(element, anchored):
             node_obj.edge_ids.add_obj(use_edge)
         # save and return
         self.save()
+        node_obj.save()
         return use_edge
 
     def attach_inbound(self, node_obj, use_edge=None):
@@ -80,6 +81,7 @@ class node(element, anchored):
             node_obj.edge_ids.add_obj(use_edge)
         # save and return
         self.save()
+        node_obj.save()
         return use_edge
 
     def detach_outbound(self, node_obj):
@@ -228,7 +230,10 @@ class node(element, anchored):
         """Returns list of all nodes connected by edges out"""
         ret_list = []
         for cur_edge in self.edge_ids.obj_list():
-            if(cur_edge.from_node() == self):
+            if (cur_edge.from_node() == self):
+                # TODO: HACK FOR BUG IN JAC's EDGE DISCONNECT
+                if (cur_edge not in cur_edge.to_node().edge_ids.obj_list()):
+                    continue
                 ret_list.append(cur_edge.to_node())
         return ret_list
 
@@ -236,7 +241,10 @@ class node(element, anchored):
         """Returns list of all nodes connected by edges in"""
         ret_list = []
         for cur_edge in self.edge_ids.obj_list():
-            if(cur_edge.to_node() == self):
+            if (cur_edge.to_node() == self):
+                # TODO: HACK FOR BUG IN JAC's EDGE DISCONNECT
+                if (cur_edge not in cur_edge.from_node().edge_ids.obj_list()):
+                    continue
                 ret_list.append(cur_edge.from_node())
         return ret_list
 
