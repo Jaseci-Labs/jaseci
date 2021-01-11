@@ -1,1 +1,0 @@
-kubectl delete daemonsets,replicasets,services,deployments,pods,rc,pvc --all
