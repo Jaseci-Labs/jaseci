@@ -1,5 +1,0 @@
-kubectl apply -f ../jaclusty/jaclusty/jaseci/
-sleep 2
-kubectl logs -l pod=jaseci --follow &
-kubectl port-forward service/jaseci 8000:80 &
-source scripts/script_sync_code_kube &

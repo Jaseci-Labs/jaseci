@@ -1,3 +1,0 @@
-#!/bin/bash
-
-for podname in $(kubectl get pods -l pod=jaseci -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci ${podname}:/; echo "Local jaseci synced to cluster"; kubectl exec -it ${podname} -- sh -c "cd jaseci; python manage.py test --failfast --parallel -v 0 && flake8 --exclude=settings.py,*migrations*,_jac_gen"; done

@@ -1,0 +1,14 @@
+# Django #
+*.log
+*.pot
+*.pyc
+__pycache__
+db.sqlite3
+media
+migrations
+
+# Others #
+.antlr
+_jac_gen
+.DS_Store
+build
