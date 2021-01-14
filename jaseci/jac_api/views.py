@@ -7,6 +7,18 @@ from core.element import element
 import uuid
 
 
+class JResponse(Response):
+    def __init__(self, master, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.master = master
+
+    def close(self):
+        super(JResponse, self).close()
+        # Commit db changes after response to user
+        if self.status_code == 200:
+            self.master._h.commit()
+
+
 class AbstractJacAPIView(APIView):
     """
     The builder set of Jaseci APIs
@@ -36,8 +48,7 @@ class AbstractJacAPIView(APIView):
                 str(f'Unused parameters in API call - '
                     f'got {self.cmd.keys()}, expected {param_map.keys()}'))
         api_result = getattr(self.master, type(self).__name__)(**param_map)
-        self.master._h.commit()
-        return Response(api_result)
+        return JResponse(self.master, api_result)
 
     def proc_request(self, request):
         """Parse request to field set"""

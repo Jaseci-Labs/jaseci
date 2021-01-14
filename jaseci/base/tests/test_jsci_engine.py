@@ -52,8 +52,10 @@ class jaseci_engine_tests_private(TestCaseHelper):
         user = self.user
         self.assertIsNotNone(user._h)
         temp_id = node.node(h=user._h).id
-        del user._h.mem[temp_id]
+
         user._h.commit()
+        del user._h.mem[temp_id]
+        user._h.red.delete(temp_id.urn)
 
         load_test = JaseciObject.objects.filter(jid=temp_id).first()
 
@@ -73,9 +75,11 @@ class jaseci_engine_tests_private(TestCaseHelper):
         user = self.user
         self.assertIsNotNone(user._h)
         temp_id = node.node(h=user._h).id
-        del user._h.mem[temp_id]
 
         user._h.commit()
+        del user._h.mem[temp_id]
+        user._h.red.delete(temp_id.urn)
+
         load_test = JaseciObject.objects.filter(jid=temp_id).first()
 
         load_test.kind = "Fasheezzy!"

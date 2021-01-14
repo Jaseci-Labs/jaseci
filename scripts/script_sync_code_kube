@@ -1,9 +1,4 @@
 #!/bin/bash
 
-echo "Watching for code changes..."
+for podname in $(kubectl get pods -l pod=jaseci -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci ${podname}:/; echo "Copy code to pod and test" | head -n 1; kubectl exec -it ${podname} -- sh -c "cd jaseci; python manage.py test --failfast --parallel -v 0 && flake8 --exclude=settings.py,*migrations*,_jac_gen"; done
 
-while true;do
-event=$(fswatch -1 -x -r -e ".*" -i "\\.py$" -i "\\.g4$" -i "\\.js$" -i "\\.html$" .)
-    for podname in $(kubectl get pods -l pod=jaseci -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci ${podname}:/; echo "Pushing to prod triggered by: $event" | head -n 1; kubectl exec -it ${podname} -- sh -c "cd jaseci; python manage.py test --failfast --parallel -v 0 && flake8 --exclude=settings.py,*migrations*,_jac_gen"; done
-    sleep 1;
-done
