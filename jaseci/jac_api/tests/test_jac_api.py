@@ -182,6 +182,24 @@ class PrivateJacApiTests(TestCaseHelper):
         self.assertEqual(gph.name, "test_app")
         self.assertTrue(snt.is_active)
 
+    def test_jac_api_load_application_no_leak(self):
+        """Test API for loading an application"""
+        enc_str = base64.b64encode(
+            b'node sample { has apple;} ' +
+            b'walker test { new = spawn here --> node::sample; ' +
+            b'report new; }').decode()
+        payload = {'op': 'load_application', 'name': 'test_app',
+                   'code': enc_str}
+        num_objs_a = len(self.master._h.mem.keys())
+        self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        num_objs_b = len(self.master._h.mem.keys())
+        self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        num_objs_c = len(self.master._h.mem.keys())
+        self.assertLess(num_objs_a, num_objs_b)
+        self.assertEqual(num_objs_b, num_objs_c)
+
     def test_jac_api_spawn(self):
         """Test API for spawning a walker"""
         payload = {'op': 'create_graph', 'name': 'Something'}
