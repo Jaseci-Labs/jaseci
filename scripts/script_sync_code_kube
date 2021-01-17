@@ -1,5 +1,4 @@
 #!/bin/bash
-
 PODN=jaseci
 if [[ $1 ]]; then
     PODN=$1

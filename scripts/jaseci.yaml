@@ -17,14 +17,15 @@ metadata:
   namespace: default
 data:
   prod_up: |-
-    apk add --update --no-cache postgresql-client git make openjdk7-jre vim jq
-    apk add --update --no-cache --virtual .tmp-build-deps gcc libc-dev linux-headers postgresql-dev
+    apt update; apt -y upgrade;
+    DEBIAN_FRONTEND=noninteractive apt -y install python3.8 python3-pip git postgresql make openjdk-8-jre vim libc-dev libpq-dev
     mkdir /dl; cd /dl; git clone https://prod:$GITPASS@git.jaseci.org/marsninja/jaseci.git
-    pip install -r jaseci/requirements.txt; apk del .tmp-build-deps; mv jaseci/jaseci /; cd /jaseci;
+    pip3 install -r jaseci/requirements.txt; mv jaseci/jaseci /; cd /jaseci;
     export CLASSPATH="$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH"
     java -Xmx500M -cp \"$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH\" org.antlr.v4.Tool -Dlanguage=Python3 -o $PWD/core/jac/_jac_gen $PWD/core/jac/jac.g4
-    python manage.py wait_for_db && python manage.py makemigrations base &&
-    python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:80
+    while true; do python3 manage.py wait_for_db && python3 manage.py makemigrations base &&
+    python3 manage.py makemigrations && python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:80;
+    sleep 2; done
 ---
 apiVersion: v1
 kind: Secret
@@ -51,9 +52,9 @@ spec:
     spec:
       containers:
         - name: jaseci
-          image: python:3-alpine
-          imagePullPolicy: Always
-          command: [sh, -c, "source script/prod_up"]
+          image: ubuntu:20.04
+          imagePullPolicy: IfNotPresent
+          command: [bash, -c, "source script/prod_up"]
           ports:
             - containerPort: 80
           env:
