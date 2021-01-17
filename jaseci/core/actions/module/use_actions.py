@@ -15,4 +15,4 @@ response_embeddings = module.signatures['response_encoder'](
         input=tf.constant(responses),
         context=tf.constant(response_contexts))
 
-print(np.inner(question_embeddings['outputs'], response_embeddings['outputs'])))
+print(np.inner(question_embeddings['outputs'], response_embeddings['outputs']))
