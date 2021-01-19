@@ -1,3 +1,4 @@
+"""
 import tensorflow as tf
 import tensorflow_hub as hub
 import numpy as np
@@ -16,3 +17,4 @@ response_embeddings = module.signatures['response_encoder'](
         context=tf.constant(response_contexts))
 
 print(np.inner(question_embeddings['outputs'], response_embeddings['outputs']))
+"""
