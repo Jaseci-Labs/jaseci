@@ -12,6 +12,6 @@ tblib
 faker>=4.0.2,<4.1.0
 django-cors-headers
 numpy>=1.19.5,<1.20.0
-tensorflow>=2.4.0,<2.5.0
-tensorflow-hub>=0.11.0,<0.12.0
-tensorflow-text>=2.4.3,<2.5.0
+#tensorflow>=2.4.0,<2.5.0
+#tensorflow-hub>=0.11.0,<0.12.0
+#tensorflow-text>=2.4.3,<2.5.0
