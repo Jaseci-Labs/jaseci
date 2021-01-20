@@ -20,7 +20,16 @@
 
 # from base.apps import USEConfig
 
-# qe = USEConfig.USE.use_question_encode("How old are you?")
-# ae = USEConfig.USE.use_answer_encode("I'm 100 years old.")
 
-# print(USEConfig.USE.use_qa_dot(qe, ae))
+# def use_question(param_list):
+#     print(USEConfig.USE.use_question_encode(param_list[0]))
+#     return USEConfig.USE.use_question_encode(param_list[0])
+
+
+# def use_answer(param_list):
+#     print(USEConfig.USE.use_question_encode(param_list[0]))
+#     return USEConfig.USE.use_answer_encode(param_list[0])
+
+
+# def use_qa_dot(param_list):
+#     print(USEConfig.USE.use_qa_dot(param_list[0], param_list[1]))
