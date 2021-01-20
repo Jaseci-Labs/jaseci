@@ -18,18 +18,18 @@
 
 # print(np.inner(question_embeddings['outputs'], response_embeddings['outputs']))
 
-# from base.apps import USEConfig
+from base.apps import USEConfig
 
 
-# def use_question(param_list):
-#     print(USEConfig.USE.use_question_encode(param_list[0]))
-#     return USEConfig.USE.use_question_encode(param_list[0])
+def use_question(param_list):
+    print(USEConfig.USE.use_question_encode(param_list[0]))
+    return USEConfig.USE.use_question_encode(param_list[0])
 
 
-# def use_answer(param_list):
-#     print(USEConfig.USE.use_question_encode(param_list[0]))
-#     return USEConfig.USE.use_answer_encode(param_list[0])
+def use_answer(param_list):
+    print(USEConfig.USE.use_question_encode(param_list[0]))
+    return USEConfig.USE.use_answer_encode(param_list[0])
 
 
-# def use_qa_dot(param_list):
-#     print(USEConfig.USE.use_qa_dot(param_list[0], param_list[1]))
+def use_qa_dot(param_list):
+    print(USEConfig.USE.use_qa_dot(param_list[0], param_list[1]))
