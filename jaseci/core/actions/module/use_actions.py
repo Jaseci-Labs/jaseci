@@ -1,36 +1,12 @@
-# import tensorflow as tf
-# import tensorflow_hub as hub
-# import numpy as np
-# import tensorflow_text
+from jac_api.apps import JacApiConfig
 
-# questions = ["What is your age?"]
-# responses = ["I am 20 years old.", "good morning"]
-# response_contexts = ["I will be 21 next year.", "great day."]
-
-# module = hub.load(
-#     'https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/3')
-
-# question_embeddings = module.signatures['question_encoder'](
-#     tf.constant(questions))
-# response_embeddings = module.signatures['response_encoder'](
-#     input=tf.constant(responses),
-#     context=tf.constant(response_contexts))
-
-# print(np.inner(question_embeddings['outputs'], response_embeddings['outputs']))
-
-# from base.apps import CoreApiConfig
-
-# def use_question(param_list):
-#     print(CoreApiConfig.USE.use_question_encode(param_list[0]))
-#     return CoreApiConfig.USE.use_question_encode(param_list[0])
+def enc_question(param_list):
+    return JacApiConfig.USE.question_encode(param_list[0])
 
 
-# def use_answer(param_list):
-#     print(CoreApiConfig.USE.use_question_encode(param_list[0]))
-#     return CoreApiConfig.USE.use_answer_encode(param_list[0])
+def enc_answer(param_list):
+    return JacApiConfig.USE.answer_encode(param_list[0])
 
 
-# def use_qa_dot(param_list):
-#     print(CoreApiConfig.USE.use_qa_dot(param_list[0], param_list[1]))
-
-#print(CoreApiConfig.USE.use_question_encode("OK"))
+def qa_dist(param_list):
+    return JacApiConfig.USE.qa_dist(param_list[0], param_list[1]);

@@ -56,5 +56,4 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         """Retrieve and return authenticated user"""
-        print(UserConfig.USE.use_question_encode("OK"))
         return self.request.user

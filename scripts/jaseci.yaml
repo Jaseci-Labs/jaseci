@@ -22,7 +22,8 @@ data:
     export CLASSPATH="$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH"
     java -Xmx500M -cp \"$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH\" org.antlr.v4.Tool -Dlanguage=Python3 -o $PWD/core/jac/_jac_gen $PWD/core/jac/jac.g4
     python3 manage.py wait_for_db && python3 manage.py makemigrations base &&
-    python3 manage.py makemigrations && python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:80 --noreload;
+    python3 manage.py makemigrations && python3 manage.py migrate;
+    while true; do python3 manage.py runserver 0.0.0.0:80; sleep 2; done;
 ---
 apiVersion: v1
 kind: Secret

@@ -285,6 +285,14 @@ prog1 = \
         has note, is_MIT, is_ritual;
     }
 
+    walker use_test {
+        can use.enc_question, use.enc_answer, use.qa_dist;
+        has output;
+        q = use.enc_question(["How old are you?", "which animal is the best?"]);
+        a = use.enc_answer(["I'm 40 years old.", "Elephants rule."]);
+        output=use.qa_dist(q, a);
+    }
+
     walker get_day {
         has date;
         life: take infer.year_from_date(date);

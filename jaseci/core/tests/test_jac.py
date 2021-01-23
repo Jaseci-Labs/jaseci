@@ -188,3 +188,16 @@ class jac_tests(TestCaseHelper):
         """Test preset function loading"""
         from core.actions.global_actions import global_action_ids
         self.assertTrue(global_action_ids.has_obj_by_name('std.log'))
+
+    def test_basic_USE_calls_from_jac(self):
+        """Test the execution of a basic walker building graph"""
+        gph = graph(h=mem_hook())
+        sent = sentinel(h=gph._h)
+        sent.register_code(jtc.prog1)
+        test_node = sent.arch_ids.get_obj_by_name('node.life').run()
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('use_test')
+        test_walker.prime(test_node)
+        test_walker.run()
+        print(type(test_walker.context['output']))
+        print(test_walker.context['output'])
