@@ -198,6 +198,23 @@ class jac_tests(TestCaseHelper):
         test_walker = \
             sent.walker_ids.get_obj_by_name('use_test')
         test_walker.prime(test_node)
-        test_walker.run()
-        print(type(test_walker.context['output']))
-        print(test_walker.context['output'])
+        report = test_walker.run()
+        test_walker.save()
+        test_walker._h.commit()
+        self.assertEqual(len(report[0]), 2)
+        self.assertEqual(len(report[0][1]), 2)
+
+    def test_basic_USE_single_string_calls_from_jac(self):
+        """Test the execution of a basic walker building graph"""
+        gph = graph(h=mem_hook())
+        sent = sentinel(h=gph._h)
+        sent.register_code(jtc.prog1)
+        test_node = sent.arch_ids.get_obj_by_name('node.life').run()
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('use_test_single')
+        test_walker.prime(test_node)
+        report = test_walker.run()
+        test_walker.save()
+        test_walker._h.commit()
+        self.assertEqual(len(report[0]), 1)
+        self.assertEqual(len(report[0][0]), 1)

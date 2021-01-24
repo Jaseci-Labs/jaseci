@@ -11,7 +11,6 @@ from user_api.serializers import send_activation_email
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
 import base64
-from .apps import UserConfig
 
 
 class CreateUserView(generics.CreateAPIView):

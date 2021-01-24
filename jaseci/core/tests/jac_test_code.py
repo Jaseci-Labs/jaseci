@@ -286,11 +286,22 @@ prog1 = \
     }
 
     walker use_test {
-        can use.enc_question, use.enc_answer, use.qa_dist;
+        can use.enc_question, use.enc_answer, use.qa_score;
         has output;
-        q = use.enc_question(["How old are you?", "which animal is the best?"]);
+        q = use.enc_question(["How old are you?",
+                              "which animal is the best?"]);
         a = use.enc_answer(["I'm 40 years old.", "Elephants rule."]);
-        output=use.qa_dist(q, a);
+        output = use.qa_score(q, a);
+        report output;
+    }
+
+    walker use_test_single {
+        can use.enc_question, use.enc_answer, use.qa_score;
+        has output;
+        q = use.enc_question("Who's your daddy?");
+        a = use.enc_answer("I'm your father.");
+        output = use.qa_score(q, a);
+        report output;
     }
 
     walker get_day {

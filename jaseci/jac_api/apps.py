@@ -1,12 +1,12 @@
 from django.apps import AppConfig
-import tensorflow_text
 import numpy as np
 import tensorflow_hub as hub
 import tensorflow as tf
+import tensorflow_text  # noqa
+
 
 class USEBase():
-    module = hub.load(
-        '/models/use')
+    module = hub.load('/models/use')
 
     def question_encode(self, q):
         if(isinstance(q, list)):
@@ -28,7 +28,7 @@ class USEBase():
                 input=tf.constant([a]),
                 context=tf.constant([context]))['outputs']
 
-    def qa_dist(self, q, a):
+    def qa_score(self, q, a):
         return np.inner(q, a)
 
 

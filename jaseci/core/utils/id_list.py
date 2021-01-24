@@ -80,7 +80,8 @@ class id_list(list):
             obj = self.owner_obj._h.get_obj(uuid.UUID(i))
             if (not obj):
                 logger.critical(str(
-                    f'Self healing: {i} not found in id_list!'))
+                    f'Self healing: {i} not found \
+                     in id_list of {self.owner_obj}!'))
                 self.remove(i)
                 self.owner_obj.save()
             else:
