@@ -1,1 +1,0 @@
-mkdir use && tar -xvvzf tarballs/universal-sentence-encoder-multilingual-qa_3.tar.gz -C use
