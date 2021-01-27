@@ -11,10 +11,10 @@ class USEBase():
     def question_encode(self, q):
         if(isinstance(q, list)):
             return self.module.signatures['question_encoder'](
-                tf.constant(q))['outputs']
+                tf.constant(q))['outputs'].numpy().tolist()
         elif (isinstance(q, str)):
             return self.module.signatures['question_encoder'](
-                tf.constant([q]))['outputs']
+                tf.constant([q]))['outputs'].numpy().tolist()
 
     def answer_encode(self, a, context=None):
         if(context is None):
@@ -22,14 +22,14 @@ class USEBase():
         if(isinstance(a, list)):
             return self.module.signatures['response_encoder'](
                 input=tf.constant(a),
-                context=tf.constant(context))['outputs']
+                context=tf.constant(context))['outputs'].numpy().tolist()
         elif(isinstance(a, str)):
             return self.module.signatures['response_encoder'](
                 input=tf.constant([a]),
-                context=tf.constant([context]))['outputs']
+                context=tf.constant([context]))['outputs'].numpy().tolist()
 
     def qa_score(self, q, a):
-        return np.inner(q, a)
+        return np.inner(q, a).tolist()
 
 
 class JacApiConfig(AppConfig):
