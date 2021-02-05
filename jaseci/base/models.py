@@ -19,13 +19,13 @@ class UserManager(BaseUserManager):
 
     def create_user(self, email, password=None, **extra_fields):
         """Creates and saves a new user"""
-        user = self.model(email=self.normalize_email(email), **extra_fields)
+        email = self.normalize_email(email).lower()
+        user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = master.master(h=user._h,
-                                    email=self.normalize_email(email)).id
+        user.master = master.master(h=user._h, email=email).id
         user._h.commit()
 
         user.save(using=self._db)
@@ -33,7 +33,8 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, email, password=None, **extra_fields):
         """Creates and saves a new super user"""
-        user = self.model(email=self.normalize_email(email), **extra_fields)
+        email = self.normalize_email(email).lower()
+        user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.is_staff = True
         user.is_activated = True
@@ -42,8 +43,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = master.master(h=user._h,
-                                    email=self.normalize_email(email)).id
+        user.master = master.master(h=user._h, email=email).id
         user._h.commit()
 
         user.save(using=self._db)

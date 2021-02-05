@@ -29,7 +29,7 @@ class user_api_tests_public(TestCaseHelper):
     def test_create_valid_user_success(self):
         """Test creating user with valid payload is successful"""
         payload = {
-            'email': 'JSCITEST_test2@jaseci.com',
+            'email': 'jscitest_test2@jaseci.com',
             'password': 'testpass',
             'name': 'name'
         }
@@ -46,7 +46,7 @@ class user_api_tests_public(TestCaseHelper):
     def test_create_activated_user_success(self):
         """Test creating user with valid payload is successful"""
         payload = {
-            'email': 'JSCITEST_test2@jaseci.com',
+            'email': 'jscitest_test2@jaseci.com',
             'password': 'testpass',
             'name': 'name',
             'is_activated': True
@@ -65,7 +65,7 @@ class user_api_tests_public(TestCaseHelper):
     def test_user_exists(self):
         """Test creating a user that already exists fails"""
         payload = {
-            'email': 'JSCITEST_test2@jaseci.com',
+            'email': 'jscitest_test2@jaseci.com',
             'password': 'testpass'
         }
         create_user(**payload)
@@ -77,7 +77,7 @@ class user_api_tests_public(TestCaseHelper):
     def test_password_too_short(self):
         """Test that passwords less than 8 characters fail"""
         payload = {
-            'email': 'JSCITEST_test2@jaseci.com',
+            'email': 'jscitest_test2@jaseci.com',
             'password': 'pw'
         }
         res = self.client.post(CREATE_USER_URL, payload)
@@ -90,7 +90,7 @@ class user_api_tests_public(TestCaseHelper):
 
     def test_create_token_for_user(self):
         """Test that a token is created for the user"""
-        payload = {'email': 'JSCITEST_test@jaseci.com', 'password': 'testpass'}
+        payload = {'email': 'jscitest_test@jaseci.com', 'password': 'testpass'}
         user = create_user(**payload)
         user.is_activated = True
         user.save()
@@ -104,8 +104,8 @@ class user_api_tests_public(TestCaseHelper):
 
     def test_create_token_invalid_credentials(self):
         """Test that token is not created if invalid credentials are given"""
-        create_user(email='JSCITEST_test@jaseci.com', password='testpass')
-        payload = {'email': 'JSCITEST_test@jaseci.com', 'password': 'wrong'}
+        create_user(email='jscitest_test@jaseci.com', password='testpass')
+        payload = {'email': 'jscitest_test@jaseci.com', 'password': 'wrong'}
         res = self.client.post(TOKEN_URL, payload)
 
         self.assertNotIn('token', res.data)
@@ -114,7 +114,7 @@ class user_api_tests_public(TestCaseHelper):
 
     def test_create_token_no_user(self):
         """Test that token is not created if user doens't exist"""
-        payload = {'email': 'JSCITEST_test@jaseci.com', 'password': 'testpass'}
+        payload = {'email': 'jscitest_test@jaseci.com', 'password': 'testpass'}
         res = self.client.post(TOKEN_URL, payload)
 
         self.assertNotIn('token', res.data)
@@ -139,7 +139,7 @@ class user_api_tests_private(TestCaseHelper):
     def setUp(self):
         super().setUp()
         self.user = create_user(
-            email='JSCITEST_test@jaseci.com',
+            email='jscitest_test@jaseci.com',
             password='testpass',
             name='some dude',
         )
