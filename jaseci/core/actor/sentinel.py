@@ -45,7 +45,7 @@ class sentinel(element, sentinel_machine):
             logger.error(str(f'{self.name}: Invalid syntax in Jac code!'))
             for i in tree.parse_errors:
                 logger.error(i)
-            return self.is_active
+            return self.is_active  # is False due to .reset()
 
         self.run_start(tree)
 

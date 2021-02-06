@@ -92,11 +92,19 @@ class id_list(list):
         """Remove a Jaseci obj obj by it's name"""
         for i in self.obj_list():
             self.remove_obj(i)
+        if (len(self)):
+            logger.critical(str(
+                f'Removeall all failed in id_list of {self.owner_obj} - \
+                     still has {self}!'))
 
     def destroy_all(self):
         """Remove a Jaseci obj obj by it's name"""
         for i in self.obj_list():
             self.destroy_obj(i)
+        if (len(self)):
+            logger.critical(str(
+                f'Destroy all failed in id_list of {self.owner_obj} - \
+                     still has {self}!'))
 
     def first_obj(self):
         """Get first object in list"""
