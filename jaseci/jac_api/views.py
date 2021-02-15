@@ -15,8 +15,7 @@ class JResponse(Response):
     def close(self):
         super(JResponse, self).close()
         # Commit db changes after response to user
-        if self.status_code == 200:
-            self.master._h.commit()
+        self.master._h.commit()
 
 
 class AbstractJacAPIView(APIView):

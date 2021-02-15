@@ -63,9 +63,9 @@ spec:
           image: registry.jaseci.org/jsystem
           resources:
             requests:
-              memory: "2Gi"
+              memory: "3Gi"
             limits:
-              memory: "2Gi"
+              memory: "3Gi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:
