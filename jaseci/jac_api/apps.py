@@ -28,7 +28,7 @@ class USEBase():
                 input=tf.constant([a]),
                 context=tf.constant([context]))['outputs'].numpy().tolist()
 
-    def qa_score(self, q, a):
+    def dist_score(self, q, a):
         return np.inner(q, a).tolist()
 
 
