@@ -85,7 +85,6 @@ class orm_hook(mem_hook):
         item_from_db.save()
 
     def destroy_obj_from_store(self, item):
-        self.save_list.remove(item)
         self.red.delete(item.id.urn)
         try:
             self.objects.get(user=self.user, jid=item.id).delete()

@@ -32,7 +32,7 @@ class edge(element, anchored):
         ret = self._h.get_obj(uuid.UUID(self.from_node_id))
         if (not ret):
             logger.error(
-                str("{} disconnected from node, self-healing".format(self))
+                str("{} disconnected from node".format(self))
             )
             self.destroy()
         else:
@@ -45,7 +45,7 @@ class edge(element, anchored):
         ret = self._h.get_obj(uuid.UUID(self.to_node_id))
         if (not ret):
             logger.error(
-                str("{} disconnected to node, self-healing".format(self))
+                str("{} disconnected to node".format(self))
             )
             self.destroy()
         else:
@@ -87,4 +87,4 @@ class edge(element, anchored):
             base.edge_ids.remove_obj(self)
         if target and self in target.edge_ids.obj_list():
             target.edge_ids.remove_obj(self)
-        super().destroy()
+        element.destroy(self)
