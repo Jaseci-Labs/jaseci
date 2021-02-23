@@ -7,6 +7,7 @@ and the to node it is pointing to.
 from core.element import element
 from core.element import anchored
 from core.utils.id_list import id_list
+from core.utils.utils import logger
 import uuid
 
 
@@ -30,6 +31,9 @@ class edge(element, anchored):
             return None
         ret = self._h.get_obj(uuid.UUID(self.from_node_id))
         if (not ret):
+            logger.error(
+                str("{} disconnected from node, self-healing".format(self))
+            )
             self.destroy()
         else:
             return ret
@@ -40,6 +44,9 @@ class edge(element, anchored):
             return None
         ret = self._h.get_obj(uuid.UUID(self.to_node_id))
         if (not ret):
+            logger.error(
+                str("{} disconnected to node, self-healing".format(self))
+            )
             self.destroy()
         else:
             return ret
