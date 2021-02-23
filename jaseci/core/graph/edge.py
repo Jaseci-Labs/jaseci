@@ -28,13 +28,21 @@ class edge(element, anchored):
         """Returns node edge is pointing from"""
         if (not self.from_node_id):
             return None
-        return self._h.get_obj(uuid.UUID(self.from_node_id))
+        ret = self._h.get_obj(uuid.UUID(self.from_node_id))
+        if (not ret):
+            self.destroy()
+        else:
+            return ret
 
     def to_node(self):
         """Returns node edge is pointing to"""
         if (not self.to_node_id):
             return None
-        return self._h.get_obj(uuid.UUID(self.to_node_id))
+        ret = self._h.get_obj(uuid.UUID(self.to_node_id))
+        if (not ret):
+            self.destroy()
+        else:
+            return ret
 
     def set_from_node(self, node_obj):
         """Returns node edge is pointing from"""
