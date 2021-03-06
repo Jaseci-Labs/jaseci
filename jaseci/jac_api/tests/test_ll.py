@@ -157,3 +157,40 @@ class test_ll(TestCaseHelper):
         self.assertEqual(len(data), 1)
         len_after = len(self.master._h.mem.keys())
         self.assertEqual(len_before, len_after)
+
+    def test_ll_goal_associations(self):
+        """Test setting categories for a workette"""
+        CATS = [
+                "professional work",
+                "chores",
+                "hobby",
+                "relationship",
+                "personal improvement"
+        ]
+
+        def gen_wkt_with_title(self, title, day_id):
+            return self.run_walker(
+                    'create_workette_with_title',
+                    {'title': title},
+                    prime=day_id)
+
+        # Create a new day
+        data = self.run_walker('get_gen_day', {})
+        jid = data[0]['jid']
+
+        # Create a new workette
+        new_wkt = gen_wkt_with_title(self, 'work on Q2 roadmap', jid)
+        wkt_id = new_wkt[0]['jid']
+
+        # Set categories for that workette
+        self.run_walker(
+                'add_and_associate_goals',
+                {'goals': CATS},
+                prime=wkt_id)
+        updated_wkt = self.run_walker('get_workette', {}, prime=wkt_id)
+
+        # Assert on categories
+        self.assertSetEqual(set(updated_wkt[0]['context']['goals']), set(CATS))
+        self.assertEqual(
+                updated_wkt[0]['context']['sorted_goals'][0][0],
+                'professional work')

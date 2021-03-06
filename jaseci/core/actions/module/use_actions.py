@@ -1,4 +1,6 @@
-from jac_api.apps import JacApiConfig
+from .ai_serving_api import AIServingAPI
+
+USE_API = AIServingAPI('USE')
 
 
 def enc_question(param_list):
@@ -6,7 +8,11 @@ def enc_question(param_list):
     Encode question
     Param 1 - either string, or list of strings
     """
-    return JacApiConfig.USE.question_encode(param_list[0])
+    data = {
+        'op': 'encode_question',
+        'text': param_list[0]
+    }
+    return USE_API.post(data)['encoded']
 
 
 def enc_answer(param_list):
@@ -15,11 +21,14 @@ def enc_answer(param_list):
     Param 1 - either string, or list of strings
     Param 2 - optional context, either string/list matching param 1
     """
-    if (len(param_list) > 1):
-        return JacApiConfig.USE.answer_encode(param_list[0],
-                                              context=param_list[1])
-    else:
-        return JacApiConfig.USE.answer_encode(param_list[0])
+    data = {
+            'op': 'encode_answer',
+            'text': param_list[0]
+    }
+    if(len(param_list) > 1):
+        data['context'] = param_list[1]
+
+    return USE_API.post(data)['encoded']
 
 
 def dist_score(param_list):
@@ -28,7 +37,11 @@ def dist_score(param_list):
     Param 1 - First encoding from text
     Param 2 - Second ecoding from text
     """
-    return JacApiConfig.USE.dist_score(param_list[0], param_list[1])
+    data = {
+            'op': 'dist_score',
+            'encoding': [param_list[0], param_list[1]]
+    }
+    return USE_API.post(data)['score']
 
 
 def qa_score(param_list):

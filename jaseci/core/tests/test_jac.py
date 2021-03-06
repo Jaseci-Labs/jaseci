@@ -231,6 +231,6 @@ class jac_tests(TestCaseHelper):
         report = test_walker.run()
         test_walker.save()
         test_walker._h.commit()
-        #self.assertEqual(len(report[0]), 1)
-        #self.assertEqual(len(report[0][0]), 1)\
+        # self.assertEqual(len(report[0]), 1)
+        # self.assertEqual(len(report[0][0]), 1)\
         print(report)
