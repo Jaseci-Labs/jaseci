@@ -61,11 +61,11 @@ spec:
       containers:
         - name: jaseci
           image: registry.jaseci.org/jsystem
-          resources:
-            requests:
-              memory: "3.5Gi"
-            limits:
-              memory: "3.5Gi"
+          # resources:
+          #   requests:
+          #     memory: "3.5Gi"
+          #   limits:
+          #     memory: "3.5Gi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:
