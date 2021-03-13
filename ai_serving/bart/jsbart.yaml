@@ -62,9 +62,9 @@ spec:
           image: registry.jaseci.org/jsbart:latest
           resources:
             requests:
-              memory: "3.5Gi"
+              memory: "4Gi"
             limits:
-              memory: "3.5Gi"
+              memory: "4Gi"
           command: [bash, -c, "source script/prod_up"]
           ports:
             - containerPort: 4671
