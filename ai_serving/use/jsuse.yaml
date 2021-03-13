@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jsuse
+spec:
+  selector:
+    pod: jsuse
+  ports:
+    - protocol: TCP
+      port: 4672
+      targetPort: 4672
+      name: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jsuse-up
+  namespace: default
+data:
+  prod_up: |-
+    mkdir /dl; cd /dl; git clone https://prod:$GITPASS@git.jaseci.org/marsninja/jaseci.git;
+    cd jaseci; cd /dl;
+    mv jaseci/ai_serving/ /;
+    cd /ai_serving;
+    while true; do python3 -m use.use_app; sleep 2; done;
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jsuse-git-pass
+type: Opaque
+data:
+  password: UHIwZE4xbmo0
+---
+apiVersion: v1
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJyZWdpc3RyeS5qYXNlY2kub3JnIjp7InVzZXJuYW1lIjoiamFzZWNpIiwicGFzc3dvcmQiOiJqNHMzYzEiLCJlbWFpbCI6Imphc29uQG1hcnMubmluamEiLCJhdXRoIjoiYW1GelpXTnBPbW8wY3pOak1RPT0ifX19
+kind: Secret
+metadata:
+  name: jsuseregcred
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jsuse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: jsuse
+  template:
+    metadata:
+      labels:
+        pod: jsuse
+      name: jsuse
+    spec:
+      imagePullSecrets:
+        - name: jsuseregcred
+      containers:
+        - name: jsuse
+          image: registry.jaseci.org/jsuse:latest
+          resources:
+            requests:
+              memory: "2Gi"
+            limits:
+              memory: "2Gi"
+          command: [bash, -c, "source script/prod_up"]
+          ports:
+            - containerPort: 4672
+          env:
+            - name: GITPASS
+              valueFrom:
+                secretKeyRef:
+                  name: jsuse-git-pass
+                  key: password
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+
+      volumes:
+        - name: prod-script
+          configMap:
+            name: jsuse-up

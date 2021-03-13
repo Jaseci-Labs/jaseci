@@ -29,6 +29,7 @@ node day {
 node workette {
     has name, order, date, owner, status, snooze_till;
     has note, is_MIT, is_ritual;
+    has goals, sorted_goals;
 }
 
 edge past;
@@ -148,7 +149,13 @@ walker create_workette {
         report new;
     }
 }
-
+walker create_workette_with_title {
+    has title;
+    day, workette {
+        new = spawn here -[parent]-> node::workette(name=title);
+        report new;
+    }
+}
 walker get_workettes_deep {
     day {
         take --> node::workette;
@@ -211,6 +218,16 @@ walker gen_rand_life {
     }
 }
 
+walker add_and_associate_goals {
+    has goals;
+    can bart.eval_assoc;
+    workette {
+        if(here.goals == goals): disengage;
+        here.sorted_goals = bart.eval_assoc(here.name, goals);
+        here.goals = goals;
+        report here;
+    }
+}
 walker init {
     has owner;
     has anchor life_node;

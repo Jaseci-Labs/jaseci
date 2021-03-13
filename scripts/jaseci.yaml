@@ -60,12 +60,7 @@ spec:
         - name: jsregcred
       containers:
         - name: jaseci
-          image: registry.jaseci.org/jsystem
-          # resources:
-          #   requests:
-          #     memory: "3.5Gi"
-          #   limits:
-          #     memory: "3.5Gi"
+          image: registry.jaseci.org/jsystem:latest
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:
