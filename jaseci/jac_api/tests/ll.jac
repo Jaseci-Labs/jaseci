@@ -221,9 +221,12 @@ walker gen_rand_life {
 
 
 walker eval_relevance {
-    has new_wkt_title, new_wkt_title_emb;
+    has new_wkt_title, new_wkt_title_emb, cur_cand;
     can bart.eval_assoc;
     can use.get_embedding;
+
+    has children;
+    has children_vec;
       
     workette {
       if (here.use_vector_title == None):
@@ -232,34 +235,47 @@ walker eval_relevance {
         here.use_vector_note = use.get_embedding(here.note);
 
       title_mnli_score = bart.eval_assoc(new_wkt_title, here.title)[1];
-      note_sim_score = cosine_sim(new_wkt_title_emb, here.note);
 
       num_children = 0
-      childrens = []
       for sub_wkt in take --> node::workette {
         num_children += 1
-        childrens.append(spawn here walker::eval_relevance)
+        children_ret = spawn here walker::eval_relevance(
+          new_wkt_title, new_wkt_title_emb
+        );
+        children_vec.append(children_ret[0].use_vector_title);
+        children_vec.append(children_ret[0].use_vector_note);
+        children.append(children_ret);
       }
       if (num_children == 0) {
-        report [here, title_mnli_score, note_sim_score, 0]
+        if (title_mnli_score > cure_cand[1]) {
+          report [here, title_mnli_score, [here, title_mnli_score]]
+        } else {
+          report [here, title_mnli_score, cur_cand]
+        }
       } else {
+        centroid, tightness = get_centroid(children_vec)
+        centroid_sim = cosine_sim(new_wkt_title_emb, centroid) * tightness
+        if ()
+        report [here, title_mnli_score, centroid_sim]
       }
-
     }
 }
+
 walker get_suggested_parent {
     has new_wkt_title;
-    can bart.eval_assoc;
+    has candidates;
+
     can use.get_embedding;
 
-    has candidates;
+    new_wkt_title_emb = use.get_embedding(new_wkt_title);
 
     take (<-- node::day) {
       for wkt in --> node::workette :
-        bart_score = bart_eval_assoc(new_wkt_title, wkt.title)[1];
+        candidates.append(spawn here walker::eval_relevance(
+          new_wkt_title, new_wkt_title_emb, [here, 0]
+        ));
     }
 }
-
 
 walker add_and_associate_goals {
     has goals;
