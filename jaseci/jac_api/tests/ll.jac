@@ -30,6 +30,7 @@ node workette {
     has name, order, date, owner, status, snooze_till;
     has note, is_MIT, is_ritual;
     has goals, sorted_goals;
+    has use_vector_title, use_vector_note;
 }
 
 edge past;
@@ -217,6 +218,48 @@ walker gen_rand_life {
         num_workettes -= 1;
     }
 }
+
+
+walker eval_relevance {
+    has new_wkt_title, new_wkt_title_emb;
+    can bart.eval_assoc;
+    can use.get_embedding;
+      
+    workette {
+      if (here.use_vector_title == None):
+        here.use_vector_title = use.get_embedding(here.title);
+      if (here.use_vector_note == None):
+        here.use_vector_note = use.get_embedding(here.note);
+
+      title_mnli_score = bart.eval_assoc(new_wkt_title, here.title)[1];
+      note_sim_score = cosine_sim(new_wkt_title_emb, here.note);
+
+      num_children = 0
+      childrens = []
+      for sub_wkt in take --> node::workette {
+        num_children += 1
+        childrens.append(spawn here walker::eval_relevance)
+      }
+      if (num_children == 0) {
+        report [here, title_mnli_score, note_sim_score, 0]
+      } else {
+      }
+
+    }
+}
+walker get_suggested_parent {
+    has new_wkt_title;
+    can bart.eval_assoc;
+    can use.get_embedding;
+
+    has candidates;
+
+    take (<-- node::day) {
+      for wkt in --> node::workette :
+        bart_score = bart_eval_assoc(new_wkt_title, wkt.title)[1];
+    }
+}
+
 
 walker add_and_associate_goals {
     has goals;

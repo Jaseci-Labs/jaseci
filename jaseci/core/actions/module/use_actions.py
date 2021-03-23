@@ -47,3 +47,17 @@ def dist_score(param_list):
 def qa_score(param_list):
     """Macro for dist_score"""
     return dist_score(param_list)
+
+
+def get_embedding(param_list):
+    """
+    Get the USE embeddings of the input text. (non-qa USE)
+    Param 1 - either string or list of strings
+
+    Return - Embeddings
+    """
+    data = {
+        'op': 'get_embedding',
+        'text': param_list[0]
+    }
+    return USE_API.post(data)['encoded']
