@@ -7,8 +7,8 @@ spec:
     pod: jsuse-encoder
   ports:
     - protocol: TCP
-      port: 4672
-      targetPort: 4672
+      port: 4673
+      targetPort: 4673
       name: http
 ---
 apiVersion: v1
@@ -59,6 +59,7 @@ spec:
         - name: jsuseregcred
       containers:
         - name: jsuse-encoder
+          imagePullPolicy: IfNotPresent
           image: registry.jaseci.org/jsuse-encoder:latest
           resources:
             requests:
@@ -67,7 +68,7 @@ spec:
               memory: "2Gi"
           command: [bash, -c, "source script/prod_up"]
           ports:
-            - containerPort: 4672
+            - containerPort: 4673
           env:
             - name: GITPASS
               valueFrom:

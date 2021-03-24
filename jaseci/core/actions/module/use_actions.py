@@ -1,7 +1,7 @@
 from .ai_serving_api import AIServingAPI
 
 USE_API = AIServingAPI('USE')
-USE_ENCODER_API = AIServiceAPI('USE_ENCODER')
+USE_ENCODER_API = AIServingAPI('USE_ENCODER')
 
 
 def enc_question(param_list):
@@ -61,4 +61,8 @@ def get_embedding(param_list):
         'op': 'encode',
         'text': param_list[0]
     }
-    return USE_ENCODER_API.post(data)['encoded']
+    print(data)
+    ret = USE_ENCODER_API.post(data)
+
+    print(ret)
+    return ret['encoded']

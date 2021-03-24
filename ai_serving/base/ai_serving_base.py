@@ -29,7 +29,7 @@ class AIServiceBase():
         self.app = Flask(name)
 
     def log(self, level='INFO', message=''):
-        self.app.logger(level, message)
+        self.app.logger.log(level, message)
 
     def run(self, host='0.0.0.0', port='80'):
         self.app.run(host=host, port=port)

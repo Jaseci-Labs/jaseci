@@ -13,6 +13,7 @@ class test_ll(TestCaseHelper):
 
     def setUp(self):
         super().setUp()
+        self.logger_on()
         self.user = get_user_model().objects.create_user(
             'JSCITfdfdEST_test@jaseci.com',
             'password'
@@ -32,9 +33,11 @@ class test_ll(TestCaseHelper):
                    'code': ll_file, 'encoded': True}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        print(res.content)
         payload = {'op': 'compile', 'snt': self.snt.id.urn}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload)
+        print(res.content)
         self.run_walker('init', {})
 
     def tearDown(self):
@@ -202,6 +205,7 @@ class test_ll(TestCaseHelper):
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {})
+        print(data)
         w_id = data[0]['jid']
         ret = self.run_walker(
                 'get_suggested_parent', {'new_wkt_title': new_wkt}, prime=w_id)

@@ -2,6 +2,7 @@ from flask import request
 
 from base.ai_serving_base import AIServiceBase, FlaskError
 
+import numpy as np
 import tensorflow_hub as hub
 import tensorflow as tf
 import tensorflow_text # noqa
@@ -9,19 +10,20 @@ import tensorflow_text # noqa
 
 class USEEncoderBase():
     module = hub.load('/models/use')
+
     def encode(self, text):
         if(isinstance(text, str)):
             text = [text]
-            
-        return self.module(text)
+        return self.module(text).numpy().tolist()
 
 
 USE = USEEncoderBase()
 USEEncoderApp = AIServiceBase(name='use_encoder')
 
 
-@USEApp.app.route('/use_encoder/', methods=['POST'])
+@USEEncoderApp.app.route('/use-encoder/', methods=['POST'])
 def __router__():
+    print(request.json)
     if 'op' not in request.json:
         raise FlaskError(
                 message='Required param \'op\' is missing from the request.',
@@ -40,5 +42,5 @@ def __router__():
 
 
 if __name__ == '__main__':
+    print('USE encoder service up and running')
     USEEncoderApp.run(port=4673)
-    USEEncoderApp.log('INFO', 'USE encoder service up and running')
