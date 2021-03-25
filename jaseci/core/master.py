@@ -33,7 +33,6 @@ class master(element):
             self.api_create_graph(name)
             gph = self.graph_ids.get_obj_by_name(name)
         self.api_set_jac_code(snt, code, True)
-        self.api_compile(snt)
         return {'sentinel': snt.id.urn, 'graph': gph.id.urn,
                 'active': snt.is_active}
 
@@ -96,11 +95,12 @@ class master(element):
         Set sentinel implementation with Jac source code
         """
         if (encoded):
-            snt.code = base64.b64decode(code).decode()
+            code = base64.b64decode(code).decode()
+        if (snt.code == code and snt.is_active):
+            return [f'Sentinel {snt.id} already registered and active!']
         else:
             snt.code = code
-        snt.save()
-        return [f'Sentinel {snt.id} code set!']
+            return self.api_compile(snt)
 
     def api_compile(self, snt: sentinel):
         """
