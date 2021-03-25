@@ -6,6 +6,7 @@ from rest_framework.test import APIClient
 from core.utils.utils import TestCaseHelper
 import uuid
 import base64
+from pprint import pprint
 
 
 class test_ll(TestCaseHelper):
@@ -202,11 +203,26 @@ class test_ll(TestCaseHelper):
         """Test generating a suggested parent item for a given item"""
         new_wkt = 'clean up the house'
 
+        def _print_all_names(title, data):
+            print('=====' + title + '=====')
+            for item in data:
+                if 'context' in item:
+                    name = item['context'].get('name', 'NO NAME')
+                    print(item['kind'] + ':' + name)
+                else:
+                    pprint(item)
+            print('')
+
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {})
-        print(data)
+        _print_all_names('day', data)
         w_id = data[0]['jid']
-        ret = self.run_walker(
-                'get_suggested_parent', {'new_wkt_title': new_wkt}, prime=w_id)
-        print(ret)
+        data = self.run_walker('get_children', {}, prime=w_id)
+        _print_all_names('get_children', data)
+        for idx, child in enumerate(data):
+            child_data = self.run_walker('get_children', {}, prime=child['jid'])
+            _print_all_names('child'+str(idx), child_data)
+
+        data = self.run_walker('get_suggested_parent', {'new_wkt_title':new_wkt}, prime=w_id)
+        _print_all_names('wtf', data)

@@ -27,8 +27,7 @@ node day {
 }
 
 node workette {
-    has anchor name;
-    has order, date, owner, status, snooze_till;
+    has name, order, date, owner, status, snooze_till;
     has note, is_MIT, is_ritual;
     has goals, sorted_goals;
     has use_vector_title, use_vector_note;
@@ -169,7 +168,7 @@ walker get_workettes_deep {
 }
 
 walker get_children {
-    for i in  -[parent]-> :
+    for i in  --> :
         report i;
 }
 
@@ -231,76 +230,77 @@ walker add_and_associate_goals {
     }
 }
 
-walker children_experiment {
-  report here;
-}
-
-walker get_embedding {
+walker eval_relevance {
+    has new_wkt_title, new_wkt_title_emb, cur_cand;
+    can bart.eval_assoc;
     can use.get_embedding;
+
+    has children;
+    has children_vec;
+
     workette {
-      here.use_vector_title = use.get_embedding(here.name);
-      # here.use_vector_note = use.get_embedding(here.note);
+      if (here.use_vector_title == None):
+        here.use_vector_title = use.get_embedding(here.name);
+      if (here.use_vector_note == None):
+        here.use_vector_note = use.get_embedding(here.note);
+
+      title_mnli_score = bart.eval_assoc(new_wkt_title, here.name);
+      title_mnli_score = title_mnli_score[1];
+
+      num_children = 0;
+      for subwkt in --> node::workette {
+        take -->;
+        num_children += 1;
+        children_ret = spawn here walker::eval_relevance(
+          new_wkt_title=new_wkt_title,
+          new_wkt_title_emb=new_wkt_title_emb,
+          cur_cand=cur_cand
+        );
+        children_vec += children_ret[1];
+        children_vec += children_ret[2];
+        children += children_ret;
+        cur_cand = children_ret[4];
+      }
+      avg_score = title_mnli_score;
+      if (num_childre > 0) {
+        centroid = get_centroid(children_vec);
+        centroid_sim = cosine_sim(new_wkt_title_emb, centroid[0]) * centroid[1];
+        avg_score = (avg_score + centroid_sim) / 2;
+      }
+      if (avg_score > cure_cand[1]) {
+        report [here, here.use_vector_title, here.use_vector_note, title_mnli_score, [here, avg_score]];
+      } else {
+        report [here, here.use_vector_title, here.use_vector_note, title_mnli_score, cur_cand];
+      }
     }
 }
 
 walker get_suggested_parent {
     has new_wkt_title;
-    has cur_best_match, cur_best_score;
-    has children_embeddings;
-    has has_children;
-    has overall_score;
-    can use.get_embedding, bart.eval_assoc;
+    has candidates;
+    has cur_cand;
+    can use.get_embedding;
 
     new_wkt_title_emb = use.get_embedding(new_wkt_title);
 
+    cur_cand = [here, 0];
+
     day {
-      take --> node::workette;
+      for wkt in --> node::workette :
+        report here;
+        result = spawn wkt walker::eval_relevance(
+          new_wkt_title=new_wkt_title,
+          new_wkt_title_emb=new_wkt_title_emb,
+          cur_cand=cur_cand
+        );
+        if (result[4][1] > cur_cand[1]){
+          cur_cand = result[4];
+        }
     }
-
-    workette {
-      # Re-initialize variables
-      has_children = 0;
-      
-      # Get MNLI score with BART
-      title_mnli_score = bart.eval_assoc(new_wkt_title, here.name);
-      title_mnli_score = title_mnli_score[1];
-       
-      for subwkt in -[parent]-> node::workette {
-        subwkt.use_vector_title = use.get_embedding(subwkt.use_vector_title);
-        if (has_children == 0): children_embeddings = subwkt.use_vector_title;
-        else: children_embeddings += subwkt.use_vector_title;
-        has_children = 1;
-      }
-      if (has_children == 1) {
-        centroid = vector.get_centroid(children_embeddings);
-        centroid_sim = vector.cosine_sim(new_wkt_title_emb, centroid[0]) * centroid[1];
-        overall_score = (title_mnli_score + centroid_sim) / 2;
-      } else {
-        overall_score = title_mnli_score;
-      }
-      if (overall_score > cur_best_score) {
-        cur_best_match = here;
-        cur_best_score = overall_score;
-      }
-      take -[parent]-> node::workette;
-    }
-    report [cur_best_match, cur_best_score];
+    report cur_cand;
 }
 
-walker test_walker {
-    has children_names;
-    has long_name;
-    children_names = [];
-    long_name = "";
-    for wkt in -[parent]-> node::workette {
-      children_names += [wkt.name];
-    }
-    report children_names;
-    for cname in children_names {
-      long_name += cname;
-    } 
-    report long_name;
-}
+
 walker init {
     has owner;
     has anchor life_node;
