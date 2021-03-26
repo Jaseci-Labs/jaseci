@@ -213,6 +213,18 @@ class test_ll(TestCaseHelper):
                     pprint(item)
             print('')
 
+        def _print_all_suggestions(title, data):
+            print('=====' + title + '=====')
+            for item in data:
+                if 'context' in item[0]:
+                    name = item[0]['context'].get('name', 'NO NAME')
+                    print(item[0]['kind'] + ':' + name)
+                    print(item[1])
+                else:
+                    pprint(item)
+            print('')
+
+
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {})
@@ -225,4 +237,4 @@ class test_ll(TestCaseHelper):
             _print_all_names('child'+str(idx), child_data)
 
         data = self.run_walker('get_suggested_parent', {'new_wkt_title':new_wkt}, prime=w_id)
-        _print_all_names('wtf', data)
+        _print_all_suggestions('wtf', data)

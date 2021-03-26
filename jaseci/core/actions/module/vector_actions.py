@@ -12,7 +12,8 @@ def cosine_sim(param_list):
     vec_a = param_list[0]
     vec_b = param_list[1]
 
-    return np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
+    result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
+    return result.astype(float)
 
 
 def dot_product(param_list):
@@ -36,5 +37,5 @@ def get_centroid(param_list):
     """
     vec_list = param_list[0]
     centroid = np.mean(vec_list, axis=0)
-    tightness= np.mean([cosine_sim([vec, centroid]) for vec in vec_list])
+    tightness= np.mean([cosine_sim([vec, centroid]) for vec in vec_list]).astype(float)
     return (centroid, tightness)

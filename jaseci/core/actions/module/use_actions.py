@@ -61,8 +61,5 @@ def get_embedding(param_list):
         'op': 'encode',
         'text': param_list[0]
     }
-    print(data)
     ret = USE_ENCODER_API.post(data)
-
-    print(ret)
     return ret['encoded']

@@ -249,11 +249,13 @@ walker get_suggested_parent {
     has children_embeddings;
     has has_children;
     has overall_score;
+
     can use.get_embedding, bart.eval_assoc;
 
-    new_wkt_title_emb = use.get_embedding(new_wkt_title);
-
     day {
+      cur_best_score = 0.0;
+      new_wkt_title_emb = use.get_embedding(new_wkt_title);
+      new_wkt_title_emb = new_wkt_title_emb[0];
       take --> node::workette;
     }
 
@@ -263,10 +265,10 @@ walker get_suggested_parent {
       
       # Get MNLI score with BART
       title_mnli_score = bart.eval_assoc(new_wkt_title, here.name);
-      title_mnli_score = title_mnli_score[1];
+      title_mnli_score = title_mnli_score[0][1];
        
       for subwkt in -[parent]-> node::workette {
-        subwkt.use_vector_title = use.get_embedding(subwkt.use_vector_title);
+        subwkt.use_vector_title = use.get_embedding(subwkt.name);
         if (has_children == 0): children_embeddings = subwkt.use_vector_title;
         else: children_embeddings += subwkt.use_vector_title;
         has_children = 1;
