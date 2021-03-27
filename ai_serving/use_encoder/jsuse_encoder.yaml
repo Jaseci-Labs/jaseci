@@ -19,7 +19,6 @@ metadata:
 data:
   prod_up: |-
     mkdir /dl; cd /dl; git clone https://prod:$GITPASS@git.jaseci.org/marsninja/jaseci.git;
-    cd jaseci; git checkout next_ai; cd /dl;
     mv jaseci/ai_serving/ /;
     cd /ai_serving;
     while true; do python3 -m use_encoder.use_encoder_app; sleep 2; done;
