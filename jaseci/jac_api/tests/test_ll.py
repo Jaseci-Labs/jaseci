@@ -161,18 +161,18 @@ class test_ll(TestCaseHelper):
     def test_ll_goal_associations(self):
         """Test setting categories for a workette"""
         CATS = [
-                "professional work",
-                "chores",
-                "hobby",
-                "relationship",
-                "personal improvement"
+            "professional work",
+            "chores",
+            "hobby",
+            "relationship",
+            "personal improvement"
         ]
 
         def gen_wkt_with_title(self, title, day_id):
             return self.run_walker(
-                    'create_workette_with_title',
-                    {'title': title},
-                    prime=day_id)
+                'create_workette_with_title',
+                {'title': title},
+                prime=day_id)
 
         # Create a new day
         data = self.run_walker('get_gen_day', {})
@@ -184,13 +184,24 @@ class test_ll(TestCaseHelper):
 
         # Set categories for that workette
         self.run_walker(
-                'add_and_associate_goals',
-                {'goals': CATS},
-                prime=wkt_id)
+            'add_and_associate_goals',
+            {'goals': CATS},
+            prime=wkt_id)
         updated_wkt = self.run_walker('get_workette', {}, prime=wkt_id)
 
         # Assert on categories
         self.assertSetEqual(set(updated_wkt[0]['context']['goals']), set(CATS))
         self.assertEqual(
-                updated_wkt[0]['context']['sorted_goals'][0][0],
-                'professional work')
+            updated_wkt[0]['context']['sorted_goals'][0][0],
+            'professional work')
+
+    def test_parent_suggestion(self):
+        """Test generating a suggested parent item for a given item"""
+        new_wkt = 'clean up the house'
+        self.run_walker('gen_rand_life', {})
+        self.run_walker('get_gen_day', {})
+        data = self.run_walker('get_latest_day', {})
+        w_id = data[0]['jid']
+        data = self.run_walker('get_children', {}, prime=w_id)
+        data = self.run_walker('get_suggested_parent', {
+                               'new_wkt_title': new_wkt}, prime=w_id)

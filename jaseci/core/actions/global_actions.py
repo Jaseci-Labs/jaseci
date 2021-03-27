@@ -15,6 +15,7 @@ def setup_global_actions():
     action_list += get_action_set('std')
     action_list += get_action_set('net')
     action_list += get_action_set('rand')
+    action_list += get_action_set('vector')
 
     for i in action_list:
         global_action_ids.add_obj(

@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jsuse-encoder
+spec:
+  selector:
+    pod: jsuse-encoder
+  ports:
+    - protocol: TCP
+      port: 4673
+      targetPort: 4673
+      name: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jsuse-encoder-up
+  namespace: default
+data:
+  prod_up: |-
+    mkdir /dl; cd /dl; git clone https://prod:$GITPASS@git.jaseci.org/marsninja/jaseci.git;
+    mv jaseci/ai_serving/ /;
+    cd /ai_serving;
+    while true; do python3 -m use_encoder.use_encoder_app; sleep 2; done;
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jsuse-git-pass
+type: Opaque
+data:
+  password: UHIwZE4xbmo0
+---
+apiVersion: v1
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJyZWdpc3RyeS5qYXNlY2kub3JnIjp7InVzZXJuYW1lIjoiamFzZWNpIiwicGFzc3dvcmQiOiJqNHMzYzEiLCJlbWFpbCI6Imphc29uQG1hcnMubmluamEiLCJhdXRoIjoiYW1GelpXTnBPbW8wY3pOak1RPT0ifX19
+kind: Secret
+metadata:
+  name: jsuseregcred
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jsuse-encoder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: jsuse-encoder
+  template:
+    metadata:
+      labels:
+        pod: jsuse-encoder
+      name: jsuse-encoder
+    spec:
+      imagePullSecrets:
+        - name: jsuseregcred
+      containers:
+        - name: jsuse-encoder
+          imagePullPolicy: IfNotPresent
+          image: registry.jaseci.org/jsuse-encoder:latest
+          resources:
+            requests:
+              memory: "2Gi"
+            limits:
+              memory: "2Gi"
+          command: [bash, -c, "source script/prod_up"]
+          ports:
+            - containerPort: 4673
+          env:
+            - name: GITPASS
+              valueFrom:
+                secretKeyRef:
+                  name: jsuse-git-pass
+                  key: password
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+
+      volumes:
+        - name: prod-script
+          configMap:
+            name: jsuse-encoder-up

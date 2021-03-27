@@ -1,6 +1,7 @@
 from .ai_serving_api import AIServingAPI
 
 USE_API = AIServingAPI('USE')
+USE_ENCODER_API = AIServingAPI('USE_ENCODER')
 
 
 def enc_question(param_list):
@@ -47,3 +48,18 @@ def dist_score(param_list):
 def qa_score(param_list):
     """Macro for dist_score"""
     return dist_score(param_list)
+
+
+def get_embedding(param_list):
+    """
+    Get the USE embeddings of the input text. (non-qa USE)
+    Param 1 - either string or list of strings
+
+    Return - Embeddings
+    """
+    data = {
+        'op': 'encode',
+        'text': param_list[0]
+    }
+    ret = USE_ENCODER_API.post(data)
+    return ret['encoded']

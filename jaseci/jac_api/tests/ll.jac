@@ -27,9 +27,11 @@ node day {
 }
 
 node workette {
-    has name, order, date, owner, status, snooze_till;
+    has anchor name;
+    has order, date, owner, status, snooze_till;
     has note, is_MIT, is_ritual;
     has goals, sorted_goals;
+    has use_vector_title, use_vector_note;
 }
 
 edge past;
@@ -167,7 +169,7 @@ walker get_workettes_deep {
 }
 
 walker get_children {
-    for i in  --> :
+    for i in  -[parent]-> :
         report i;
 }
 
@@ -227,6 +229,79 @@ walker add_and_associate_goals {
         here.goals = goals;
         report here;
     }
+}
+
+walker children_experiment {
+  report here;
+}
+
+walker get_embedding {
+    can use.get_embedding;
+    workette {
+      here.use_vector_title = use.get_embedding(here.name);
+      # here.use_vector_note = use.get_embedding(here.note);
+    }
+}
+
+walker get_suggested_parent {
+    has new_wkt_title;
+    has cur_best_match, cur_best_score;
+    has children_embeddings;
+    has has_children;
+    has overall_score;
+
+    can use.get_embedding, bart.eval_assoc;
+
+    day {
+      cur_best_score = 0.0;
+      new_wkt_title_emb = use.get_embedding(new_wkt_title);
+      new_wkt_title_emb = new_wkt_title_emb[0];
+      take --> node::workette;
+    }
+
+    workette {
+      # Re-initialize variables
+      has_children = 0;
+      
+      # Get MNLI score with BART
+      title_mnli_score = bart.eval_assoc(new_wkt_title, here.name);
+      title_mnli_score = title_mnli_score[0][1];
+       
+      for subwkt in -[parent]-> node::workette {
+        subwkt.use_vector_title = use.get_embedding(subwkt.name);
+        if (has_children == 0): children_embeddings = subwkt.use_vector_title;
+        else: children_embeddings += subwkt.use_vector_title;
+        has_children = 1;
+      }
+      if (has_children == 1) {
+        centroid = vector.get_centroid(children_embeddings);
+        centroid_sim = vector.cosine_sim(new_wkt_title_emb, centroid[0]) * centroid[1];
+        overall_score = (title_mnli_score + centroid_sim) / 2;
+      } else {
+        overall_score = title_mnli_score;
+      }
+      if (overall_score > cur_best_score) {
+        cur_best_match = here;
+        cur_best_score = overall_score;
+      }
+      take -[parent]-> node::workette;
+    }
+    report [cur_best_match, cur_best_score];
+}
+
+walker test_walker {
+    has children_names;
+    has long_name;
+    children_names = [];
+    long_name = "";
+    for wkt in -[parent]-> node::workette {
+      children_names += [wkt.name];
+    }
+    report children_names;
+    for cname in children_names {
+      long_name += cname;
+    } 
+    report long_name;
 }
 walker init {
     has owner;
