@@ -55,16 +55,16 @@ class test_ll(TestCaseHelper):
     def test_ll_today_new(self):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('get_gen_day', {})
-        self.assertEqual(data[0]['kind'], 'day')
-        jid = data[0]['jid']
+        self.assertEqual(data[0][1]['kind'], 'day')
+        jid = data[0][1]['jid']
         data = self.run_walker('get_gen_day', {})
-        self.assertEqual(data[0]['jid'], jid)
+        self.assertEqual(data[0][1]['jid'], jid)
 
     def test_ll_create_get_workette(self):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('get_gen_day', {})
-        self.assertEqual(data[0]['kind'], 'day')
-        jid = data[0]['jid']
+        self.assertEqual(data[0][1]['kind'], 'day')
+        jid = data[0][1]['jid']
         data = self.run_walker('create_workette', {}, prime=jid)
         self.assertEqual(data[0]['kind'], 'workette')
         data = self.run_walker('create_workette', {}, prime=jid)
@@ -88,12 +88,13 @@ class test_ll(TestCaseHelper):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('get_gen_day', {})
         data = self.run_walker('gen_rand_life', {})
-        data = self.run_walker('get_latest_day', {})
-        wjid = data[0]['jid']
+        data = self.run_walker('get_latest_day', {'show_report': 1})
+        wjid = data[0][1]['jid']
         data = self.run_walker('get_workettes', {}, prime=wjid)
         self.assertEqual(len(data), 0)
-        data = self.run_walker('get_latest_day', {'before_date': '2020-03-01'})
-        wjid = data[0]['jid']
+        data = self.run_walker('get_latest_day', {'before_date': '2020-03-01',
+                                                  'show_report': 1})
+        wjid = data[0][1]['jid']
         data = self.run_walker('get_workettes', {}, prime=wjid)
         self.assertGreater(len(data), 1)
 
@@ -101,15 +102,15 @@ class test_ll(TestCaseHelper):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('gen_rand_life', {})
         data = self.run_walker('get_gen_day', {})
-        wjid = data[0]['jid']
+        wjid = data[0][1]['jid']
         data = self.run_walker('get_workettes', {}, prime=wjid)
         self.assertGreater(len(data), 1)
 
     def test_ll_delete_workette(self):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('get_gen_day', {})
-        self.assertEqual(data[0]['kind'], 'day')
-        jid = data[0]['jid']
+        self.assertEqual(data[0][1]['kind'], 'day')
+        jid = data[0][1]['jid']
         data = self.run_walker('create_workette', {}, prime=jid)
         self.assertEqual(data[0]['kind'], 'workette')
         data = self.run_walker('create_workette', {}, prime=jid)
@@ -133,8 +134,8 @@ class test_ll(TestCaseHelper):
     def test_ll_delete_workette_no_leaks(self):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('get_gen_day', {})
-        self.assertEqual(data[0]['kind'], 'day')
-        jid = data[0]['jid']
+        self.assertEqual(data[0][1]['kind'], 'day')
+        jid = data[0][1]['jid']
         data = self.run_walker('create_workette', {}, prime=jid)
         self.assertEqual(data[0]['kind'], 'workette')
         len_before = len(self.master._h.mem.keys())
@@ -167,19 +168,13 @@ class test_ll(TestCaseHelper):
             "relationship",
             "personal improvement"
         ]
-
-        def gen_wkt_with_title(self, title, day_id):
-            return self.run_walker(
-                'create_workette_with_title',
-                {'title': title},
-                prime=day_id)
-
         # Create a new day
         data = self.run_walker('get_gen_day', {})
-        jid = data[0]['jid']
+        jid = data[0][1]['jid']
 
         # Create a new workette
-        new_wkt = gen_wkt_with_title(self, 'work on Q2 roadmap', jid)
+        new_wkt = self.run_walker(
+                'create_workette', {'title': 'work on Q2 roadmap'}, prime=jid)
         wkt_id = new_wkt[0]['jid']
 
         # Set categories for that workette
@@ -200,8 +195,10 @@ class test_ll(TestCaseHelper):
         new_wkt = 'clean up the house'
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
-        data = self.run_walker('get_latest_day', {})
-        w_id = data[0]['jid']
+        data = self.run_walker('get_latest_day', {'show_report': 1})
+        w_id = data[0][1]['jid']
         data = self.run_walker('get_children', {}, prime=w_id)
         data = self.run_walker('get_suggested_parent', {
-                               'new_wkt_title': new_wkt}, prime=w_id)
+                               'new_wkt_name': new_wkt}, prime=w_id)
+        from pprint import pprint
+        pprint(data)
