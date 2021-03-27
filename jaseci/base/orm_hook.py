@@ -42,7 +42,7 @@ class orm_hook(mem_hook):
             return ret_obj
         else:
             try:
-                loaded_obj = self.objects.get(jid=item_id)
+                loaded_obj = self.objects.get(user=self.user, jid=item_id)
             except ObjectDoesNotExist:
                 import traceback
                 traceback.print_stack()
