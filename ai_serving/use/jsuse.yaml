@@ -62,9 +62,9 @@ spec:
           image: registry.jaseci.org/jsuse:latest
           resources:
             requests:
-              memory: "2Gi"
+              memory: "3Gi"
             limits:
-              memory: "2Gi"
+              memory: "3Gi"
           command: [bash, -c, "source script/prod_up"]
           ports:
             - containerPort: 4672

@@ -308,6 +308,9 @@ prog1 = \
         a = use.enc_answer("Who are you? You are jon");
         output = use.qa_score(q, a);
         report output;
+        a = use.enc_answer("Who are you? You are jon");
+        output = use.qa_score(q, a);
+        report output;
         q1 = use.enc_question("Who are you?");
         q2 = use.enc_question("Who you be?");
         q3 = use.enc_question("Who I be?");
@@ -323,6 +326,22 @@ prog1 = \
         report output;
         output = use.qa_score(q3, use.enc_answer("I am jason"));
         report output;
+    }
+
+    walker use_test_with_ctx2 {
+        can use.enc_question, use.enc_answer, use.qa_score, use.dist_score;
+
+        q1 = use.enc_question("Who are you?");
+        q2 = use.enc_question("Who you be?");
+        q3 = use.enc_question("Who I be?");
+        report use.dist_score(q1, q2);
+        report use.dist_score(q1, q3);
+        report use.qa_score(q2, use.enc_answer("Who are you? You are jon"));
+        report use.qa_score(q3, use.enc_answer("Who are you? You are jon"));
+        report use.qa_score(q2, use.enc_answer("I am jason"));
+        report use.qa_score(q3, use.enc_answer("I am jason"));
+        report use.qa_score(q3, use.enc_answer("I am jason","Who I be?"));
+        report use.qa_score(q3, use.enc_answer("I am jason Who I be?"));
     }
 
     walker use_test_single {

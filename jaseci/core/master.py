@@ -156,6 +156,12 @@ class master(element):
         wlk.destroy()
         return res
 
+    def api_get_node_context(self, snt: sentinel, nd: node):
+        """
+        Returns value a given node
+        """
+        return nd.serialize()
+
     def api_set_node_context(self, snt: sentinel, nd: node, ctx: dict):
         """
         Assigns values to member variables of a given node using ctx object
