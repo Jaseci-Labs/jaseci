@@ -14,7 +14,6 @@ class test_ll(TestCaseHelper):
 
     def setUp(self):
         super().setUp()
-        self.logger_on()
         self.user = get_user_model().objects.create_user(
             'JSCITfdfdEST_test@jaseci.com',
             'password'
@@ -202,39 +201,9 @@ class test_ll(TestCaseHelper):
     def test_parent_suggestion(self):
         """Test generating a suggested parent item for a given item"""
         new_wkt = 'clean up the house'
-
-        def _print_all_names(title, data):
-            print('=====' + title + '=====')
-            for item in data:
-                if 'context' in item:
-                    name = item['context'].get('name', 'NO NAME')
-                    print(item['kind'] + ':' + name)
-                else:
-                    pprint(item)
-            print('')
-
-        def _print_all_suggestions(title, data):
-            print('=====' + title + '=====')
-            for item in data:
-                if 'context' in item[0]:
-                    name = item[0]['context'].get('name', 'NO NAME')
-                    print(item[0]['kind'] + ':' + name)
-                    print(item[1])
-                else:
-                    pprint(item)
-            print('')
-
-
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {})
-        _print_all_names('day', data)
         w_id = data[0]['jid']
         data = self.run_walker('get_children', {}, prime=w_id)
-        _print_all_names('get_children', data)
-        for idx, child in enumerate(data):
-            child_data = self.run_walker('get_children', {}, prime=child['jid'])
-            _print_all_names('child'+str(idx), child_data)
-
         data = self.run_walker('get_suggested_parent', {'new_wkt_title':new_wkt}, prime=w_id)
-        _print_all_suggestions('wtf', data)
