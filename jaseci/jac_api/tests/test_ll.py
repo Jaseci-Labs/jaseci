@@ -200,3 +200,5 @@ class test_ll(TestCaseHelper):
         data = self.run_walker('get_children', {}, prime=w_id)
         data = self.run_walker('get_suggested_parent', {
                                'new_wkt_name': new_wkt}, prime=w_id)
+        self.assertTrue(len(data) > 0)
+        self.assertTrue(0 < data[-1][1] < 1)

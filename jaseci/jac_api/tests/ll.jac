@@ -31,6 +31,7 @@ node workette {
     has wtype, note, is_MIT, is_ritual;
     has run_start, run_time;
     has goals, sorted_goals;
+    has name_emb, name_used_for_emb, note_emb, note_used_for_emb;
 }
 
 node summary {
@@ -335,8 +336,18 @@ walker add_and_associate_goals {
 walker update_embeddings {
     can use.get_embedding;
     workette {
-        here.name_use_emb = use.get_embedding(here.name);
-        here.note_use_emb = use.get_embedding(here.note);
+        # Update embedding via USE if neccessary
+        if (here.name && here.name != here.name_used_for_emb) {
+            here.name_emb = use.get_embedding(here.name);
+            here.name_emb = here.name_emb[0];
+            here.name_used_for_emb = here.name;
+        }
+        
+        if (here.note && here.note != here.note_used_for_emb) {
+            here.note_emb = use.get_embedding(here.note);
+            here.note_emb = here.note_emb[0];
+            here.note_used_for_emb = here.note;
+        }
     }
 }
 
@@ -353,15 +364,29 @@ walker get_suggested_parent {
     }    
 
     workette {    
-      # Re-initialize variables    
       has_children = 0;    
           
-      # Get similarity via USE
-      name_emb = use.get_embedding(here.name);
-      name_emb = name_emb[0];
-      name_sim = vector.cosine_sim(new_wkt_name_emb, name_emb);
+      spawn here walker::update_embeddings;
+      
+      score_count = 0;
+      overall_score = 0.0;
+
+      if (here.name) {
+          name_sim = vector.cosine_sim(new_wkt_name_emb, here.name_emb);
+          overall_score += name_sim;
+          score_count += 1;
+      }
+      if (here.note) {
+          note_sim = vector.cosine_sim(new_wkt_name_emb, here.note_emb);
+          overall_score += note_sim;
+          score_count += 1;
+      }
+
       for subwkt in -[parent]-> node::workette {    
-        subwkt_vec = use.get_embedding(subwkt.name);    
+        spawn subwkt walker::update_embeddings;
+        subwkt_vec = [];
+        if (subwkt.name_emb): subwkt_vec += [subwkt.name_emb];
+        if (subwkt.note_emb): subwkt_vec += [subwkt.note_emb];
         if (has_children == 0) {
             children_embeddings = subwkt_vec;
             has_children = 1;    
@@ -369,20 +394,21 @@ walker get_suggested_parent {
             children_embeddings += subwkt_vec;
         }
       }    
-      if (has_children == 1) {    
+      if (has_children) {    
         centroid = vector.get_centroid(children_embeddings);    
         centroid_sim = vector.cosine_sim(new_wkt_name_emb, centroid[0]) * centroid[1];    
-        overall_score = (name_sim + centroid_sim) / 2;    
-      } else {    
-        overall_score = name_sim;
+        overall_score += centroid_sim;
+        score_count += 1;
       }    
+      if (score_count > 0): overall_score /= score_count;
+
       if (overall_score > cur_best_score) {    
         cur_best_match = here;    
         cur_best_score = overall_score;    
+        report [cur_best_match, cur_best_score];    
       }    
       take -[parent]-> node::workette;    
     }    
-    report [cur_best_match, cur_best_score];    
 }
 
 walker init {
