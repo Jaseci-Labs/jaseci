@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
 from rest_framework import renderers
+from knox.models import AuthToken
 
 from user_api.serializers import UserSerializer
 from user_api.serializers import AuthTokenSerializer
