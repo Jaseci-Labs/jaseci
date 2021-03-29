@@ -1,45 +1,61 @@
 node life {
-    has anchor owner;
+    has anchor owner, note, order, settings;
     can infer.year_from_date;
 }
 
 node year {
-    has anchor year;
+    has anchor year, note, order;
     can infer.month_from_date;
 }
 
 node month {
-    has anchor month;
+    has anchor month, note, order;
     can infer.year_from_date;
     can infer.week_from_date;
 }
 
 node week {
-    has anchor week;
+    has anchor week, note, order;
     can infer.month_from_date;
     can infer.day_from_date;
 }
 
 node day {
-    has anchor day;
+    has anchor day, note, order, focus_order, ritual_order, expanded_children;
     has ll_version;
     can infer.day_from_date;
 }
 
 node workette {
-    has anchor name;
-    has order, date, owner, status, snooze_till;
-    has note, is_MIT, is_ritual;
+    has name, order, date, status, snooze_till, color, links, expanded_children;
+    has wtype, note, is_MIT, is_ritual;
+    has run_start, run_time;
     has goals, sorted_goals;
-    has use_vector_title, use_vector_note;
+}
+
+node summary {
+    has all_mit, all_rituals, all_running, all_complete, all_canceled;
+}
+
+walker summerizer {
+    has start_node;
+    summary {
+        if(!start_node)
+        {
+            start_node = here;
+            take <--;
+        }
+    }
+    life, year, month, week, day, workette {
+
+    }
 }
 
 edge past;
-
 edge parent;
 
 walker get_latest_day {
-    has before_date;
+    has before_date, show_report;
     has anchor latest_day;
     if(!before_date): before_date = std.time_now();
     if(!latest_day): latest_day = 0;
@@ -74,7 +90,10 @@ walker get_latest_day {
     }
     day {
         latest_day = here;
-        report here;
+        if(show_report) {
+            report [ "", here ];
+            spawn here walker::load_workette;
+        }
     }
 }
 
@@ -82,9 +101,14 @@ walker get_gen_day {
     has date;
     has anchor day_node;
     if(!date): date=std.time_now();
-    root: take --> node::life;
+    root {
+        take --> node::life else {
+            spawn here walker::init();
+            take --> node::life;
+        }
+    }
     life: take --> node::year == infer.year_from_date(date) else {
-            new = spawn here --> node::year ;
+            new = spawn here --> node::year;
             new.year = infer.year_from_date(date);
             take --> node::year == infer.year_from_date(date);
         }
@@ -99,29 +123,23 @@ walker get_gen_day {
             take --> node::week == infer.week_from_date(date);
         }
     week: take --> node::day == infer.day_from_date(date) else {
-            latest_day = spawn here walker::get_latest_day;
+            latest_day = spawn here walker::get_latest_day(before_date=date);
             new = spawn here --> node::day;
             new.day = infer.day_from_date(date);
-            if(latest_day and infer.day_from_date(date) ==
-                infer.day_from_date(std.time_now())) {
+            if(latest_day) {
+                new.order = latest_day.order;
+                new.ll_version = latest_day.ll_version;
                 spawn latest_day walker::carry_forward(parent=new);
+                for i=0 to i<new.order.length by i+=1:
+                    new.order[i] = &(spawn new.order[i] walker::past_to_now);
                 take new;
-            }
-            elif(latest_day) {
-                take latest_day;
             }
             else: take new;
         }
     day {
         day_node = here;
-        report here;
-    }
-}
-
-walker get_workettes {
-    day, workette {
-        for i in  --> node::workette:
-            report i;
+        report [ "", here ];
+        spawn here walker::load_workette;
     }
 }
 
@@ -131,9 +149,102 @@ walker get_workette {
     }
 }
 
+walker get_workettes {
+    day, workette {
+        for i in --> node::workette:
+            report i;
+    }
+}
+
+walker get_workettes_deep {    
+    day {    
+        take --> node::workette;    
+    }    
+    workette {    
+        report here;    
+        take --> node::workette;    
+    }    
+}
+
+walker load_workette {
+     day, week, month, year, life,  workette {
+        for i in  -[parent]-> node::workette {
+            report [&here, i];
+        }
+        take -[parent]-> node::workette;
+    }
+}
+
+walker get_week {
+    has date;
+    if(date){
+        root: take --> node::life;
+        life: take --> node::year == infer.year_from_date(date);
+        year: take --> node::month == infer.month_from_date(date);
+        month: take --> node::week == infer.week_from_date(date);
+        week {
+            report [ "", here ];
+            spawn here walker::load_workette;
+        }
+    }
+}
+
+walker get_month {
+        has date;
+    if(date){
+        root: take --> node::life;
+        life: take --> node::year == infer.year_from_date(date);
+        year: take --> node::month == infer.month_from_date(date);
+        month {
+            report [ "", here ];
+            spawn here walker::load_workette;
+        }
+    }
+}
+
+walker get_year {
+        has date;
+    if(date){
+        root: take --> node::life;
+        life: take --> node::year == infer.year_from_date(date);
+        year {
+            report [ "", here ];
+            spawn here walker::load_workette;
+        }
+    }
+}
+
+walker get_life {
+        has date;
+    if(date){
+        root: take --> node::life;
+        life {
+            report [ "", here ];
+            spawn here walker::load_workette;
+        }
+    }
+}
+
+walker past_to_now {
+    has anchor now;
+    take <-[past]- else {
+        now = here;
+    }
+}
+
+walker move_workette {
+    has dest_node;
+    if(!dest_node): disengage;
+    workette {
+        here !<-[parent]- <-[parent]-;
+        here <-[parent]- dest_node;
+        report here;
+    }
+}
+
 walker delete_workette {
     workette {
-        take --> node::workette;
+        take -[parent]-> node::workette;
         destroy here;
     }
 }
@@ -146,54 +257,44 @@ walker cleanse_all {
 }
 
 walker create_workette {
-    day, workette {
-        new = spawn here -[parent]-> node::workette;
-        report new;
-    }
-}
-walker create_workette_with_title {
     has title;
-    day, workette {
-        new = spawn here -[parent]-> node::workette(name=title);
+    has wtype, note;
+    day, week, month, year, life, workette {
+        new = spawn here -[parent]->
+            node::workette(name=title, wtype=wtype, note=note, is_MIT=is_MIT, snooze_till=snooze_till, date=date, is_ritual=is_ritual, color=color);
         report new;
     }
-}
-walker get_workettes_deep {
-    day {
-        take --> node::workette;
-    }
-    workette {
-        report here;
-        take --> node::workette;
-    }
-}
-
-walker get_children {
-    for i in  -[parent]-> :
-        report i;
 }
 
 walker carry_forward {
     has parent;
     day {
-        take --> node::workette;
+        take -[parent]-> node::workette;
     }
     workette {
-        if(here.status == 'done' or
-        here.status == 'eliminated') {
-            disengage;
-        }
+        if(!(here.is_ritual) and
+           (here.status == 'done' or
+            here.status == 'canceled')): skip;
         new_workette = spawn here <-[past]- node::workette;
         new_workette <-[parent]- parent;
         new_workette := here;
-        spawn --> node::workette
+        if(new_workette.is_ritual): new_workette.status="open";
+        spawn -[parent]-> node::workette
             walker::carry_forward(parent=new_workette);
+        for i=0 to i<new_workette.order.length by i+=1:
+            new_workette.order[i] = &(spawn new_workette.order[i]
+                                      walker::past_to_now);
     }
 }
 
 walker gen_rand_life {
     has num_workettes;
-    root: take --> node::life;
+    root {
+        take --> node::life else {
+            spawn here walker::init();
+            take --> node::life;
+        }
+    }
 
     life {
         num_workettes = 5;
@@ -220,89 +321,70 @@ walker gen_rand_life {
     }
 }
 
-walker add_and_associate_goals {
-    has goals;
-    can bart.eval_assoc;
-    workette {
-        if(here.goals == goals): disengage;
-        here.sorted_goals = bart.eval_assoc(here.name, goals);
-        here.goals = goals;
-        report here;
-    }
+walker add_and_associate_goals {    
+    has goals;    
+    can bart.eval_assoc;    
+    workette {    
+        if(here.goals == goals): disengage;    
+        here.sorted_goals = bart.eval_assoc(here.name, goals);    
+        here.goals = goals;    
+        report here;    
+    }    
 }
 
-walker children_experiment {
-  report here;
-}
-
-walker get_embedding {
+walker update_embeddings {
     can use.get_embedding;
     workette {
-      here.use_vector_title = use.get_embedding(here.name);
-      # here.use_vector_note = use.get_embedding(here.note);
+        here.name_use_emb = use.get_embedding(here.name);
+        here.note_use_emb = use.get_embedding(here.note);
     }
 }
 
-walker get_suggested_parent {
-    has new_wkt_title;
+walker get_suggested_parent {    
+    has new_wkt_name, new_wkt_name_emb;
     has cur_best_match, cur_best_score;
-    has children_embeddings;
-    has has_children;
-    has overall_score;
+    can use.get_embedding;
 
-    can use.get_embedding, bart.eval_assoc;
+    day {    
+      cur_best_score = 0.0;    
+      new_wkt_name_emb = use.get_embedding(new_wkt_name);    
+      new_wkt_name_emb = new_wkt_name_emb[0];    
+      take --> node::workette;    
+    }    
 
-    day {
-      cur_best_score = 0.0;
-      new_wkt_title_emb = use.get_embedding(new_wkt_title);
-      new_wkt_title_emb = new_wkt_title_emb[0];
-      take --> node::workette;
-    }
-
-    workette {
-      # Re-initialize variables
-      has_children = 0;
-      
-      # Get MNLI score with BART
-      title_mnli_score = bart.eval_assoc(new_wkt_title, here.name);
-      title_mnli_score = title_mnli_score[0][1];
-       
-      for subwkt in -[parent]-> node::workette {
-        subwkt.use_vector_title = use.get_embedding(subwkt.name);
-        if (has_children == 0): children_embeddings = subwkt.use_vector_title;
-        else: children_embeddings += subwkt.use_vector_title;
-        has_children = 1;
-      }
-      if (has_children == 1) {
-        centroid = vector.get_centroid(children_embeddings);
-        centroid_sim = vector.cosine_sim(new_wkt_title_emb, centroid[0]) * centroid[1];
-        overall_score = (title_mnli_score + centroid_sim) / 2;
-      } else {
-        overall_score = title_mnli_score;
-      }
-      if (overall_score > cur_best_score) {
-        cur_best_match = here;
-        cur_best_score = overall_score;
-      }
-      take -[parent]-> node::workette;
-    }
-    report [cur_best_match, cur_best_score];
+    workette {    
+      # Re-initialize variables    
+      has_children = 0;    
+          
+      # Get similarity via USE
+      name_emb = use.get_embedding(here.name);
+      name_emb = name_emb[0];
+      name_sim = vector.cosine_sim(new_wkt_name_emb, name_emb);
+      for subwkt in -[parent]-> node::workette {    
+        subwkt_vec = use.get_embedding(subwkt.name);    
+        if (has_children == 0) {
+            children_embeddings = subwkt_vec;
+            has_children = 1;    
+        } else {
+            children_embeddings += subwkt_vec;
+        }
+      }    
+      if (has_children == 1) {    
+        centroid = vector.get_centroid(children_embeddings);    
+        centroid_sim = vector.cosine_sim(new_wkt_name_emb, centroid[0]) * centroid[1];    
+        overall_score = (name_sim + centroid_sim) / 2;    
+      } else {    
+        overall_score = name_sim;
+      }    
+      if (overall_score > cur_best_score) {    
+        cur_best_match = here;    
+        cur_best_score = overall_score;    
+      }    
+      take -[parent]-> node::workette;    
+    }    
+    report [cur_best_match, cur_best_score];    
 }
 
-walker test_walker {
-    has children_names;
-    has long_name;
-    children_names = [];
-    long_name = "";
-    for wkt in -[parent]-> node::workette {
-      children_names += [wkt.name];
-    }
-    report children_names;
-    for cname in children_names {
-      long_name += cname;
-    } 
-    report long_name;
-}
 walker init {
     has owner;
     has anchor life_node;
