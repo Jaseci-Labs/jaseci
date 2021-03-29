@@ -1,8 +1,9 @@
 from rest_framework import generics, authentication, permissions
 from rest_framework.views import APIView
-from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
 from rest_framework import renderers
+from knox.views import LoginView as KnoxLoginView
+from django.contrib.auth import login
 
 from user_api.serializers import UserSerializer
 from user_api.serializers import AuthTokenSerializer
@@ -40,10 +41,18 @@ class ActivateUserView(APIView):
         return Response('User successfully activated!')
 
 
-class CreateTokenView(ObtainAuthToken):
+class CreateTokenView(KnoxLoginView):
     """Create a new auth token for user"""
-    serializer_class = AuthTokenSerializer
-    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+    permission_classes = (permissions.AllowAny,)
+    # serializer_class = AuthTokenSerializer
+    # renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+
+    def post(self, request, format=None):
+        serializer = AuthTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        login(request, user)
+        return super(CreateTokenView, self).post(request, format=None)
 
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
@@ -56,3 +65,6 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         """Retrieve and return authenticated user"""
         return self.request.user
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)

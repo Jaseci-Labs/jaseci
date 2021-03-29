@@ -4,6 +4,8 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 import base64
 from django.urls import reverse
+from django.dispatch import receiver
+from django_rest_passwordreset.signals import reset_password_token_created
 from django.core.mail import send_mail
 
 
@@ -17,9 +19,27 @@ def send_activation_email(request, email):
         f"Please click below to activate:\n{link}"
     send_mail('Please activate your account!',
               body,
-              'prod@lifelogify.com',
+              'noreply@jaseci.org',
               [email],
               fail_silently=False,)
+
+
+@receiver(reset_password_token_created)
+def password_reset_token_created(sender, instance, reset_token, *args, **kwargs):
+
+    email_msg = "{}?token={}".format(
+        reverse('password_reset:reset-password-request'), reset_token.key)
+
+    send_mail(
+        # title:
+        "Password Reset for {title}".format(title="Jaseci"),
+        # message:
+        email_msg,
+        # from:
+        "noreply@jaseci.org",
+        # to:
+        [reset_token.user.email]
+    )
 
 
 class UserSerializer(serializers.ModelSerializer):

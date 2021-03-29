@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 
 from . import views
 
@@ -10,4 +10,7 @@ urlpatterns = [
     path('manage/', views.ManageUserView.as_view(), name='manage'),
     path('activate/<str:code>', views.ActivateUserView.as_view(),
          name='activate'),
+    path('password_reset/',
+         include('django_rest_passwordreset.urls',
+                 namespace='password_reset')),
 ]
