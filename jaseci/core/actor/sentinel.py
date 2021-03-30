@@ -71,6 +71,9 @@ class sentinel(element, sentinel_machine):
         """Spawns a new walker from registered walkers"""
         src_walk = self.walker_ids.get_obj_by_name(name)
         if (not src_walk):
+            logger.error(
+                str(f'{self.name}: Unable to spawn walker {name}!')
+            )
             return None
         new_walk = src_walk.duplicate(persist_dup=False)
         new_walk._jac_ast = src_walk._jac_ast

@@ -44,10 +44,9 @@ class orm_hook(mem_hook):
             try:
                 loaded_obj = self.objects.get(user=self.user, jid=item_id)
             except ObjectDoesNotExist:
-                import traceback
-                traceback.print_stack()
                 logger.error(
-                    str(f"Object {item_id} does not exist in Django ORM!")
+                    str(f"Object {item_id} does not exist in Django ORM!"),
+                    exc_info=True
                 )
                 return None
 
