@@ -74,6 +74,7 @@ class sentinel(element, sentinel_machine):
             logger.error(
                 str(f'{self.name}: Unable to spawn walker {name}!')
             )
+            self.is_active = False
             return None
         new_walk = src_walk.duplicate(persist_dup=False)
         new_walk._jac_ast = src_walk._jac_ast
