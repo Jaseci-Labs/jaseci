@@ -51,6 +51,8 @@ class id_list(list):
     def get_obj_by_name(self, name, silent=False):
         """Returns a Jaseci obj obj by it's name"""
         for i in self:
+            if(not self.owner_obj._h.has_obj(uuid.UUID(i))):
+                break
             if(self.owner_obj._h.get_obj(uuid.UUID(i)).name == name):
                 return self.owner_obj._h.get_obj(uuid.UUID(i))
         if not silent:
@@ -80,8 +82,8 @@ class id_list(list):
             obj = self.owner_obj._h.get_obj(uuid.UUID(i))
             if (not obj):
                 logger.critical(str(
-                    f'Self healing: {i} not found \
-                     in id_list of {self.owner_obj}!'))
+                    f'Self healing: {i} not found ' +
+                    f'in id_list of {self.owner_obj}!'))
                 self.remove(i)
                 self.owner_obj.save()
             else:
@@ -94,8 +96,8 @@ class id_list(list):
             self.remove_obj(i)
         if (len(self)):
             logger.critical(str(
-                f'Removeall all failed in id_list of {self.owner_obj} - \
-                     still has {self}!'))
+                f'Removeall all failed in id_list of {self.owner_obj} - ' +
+                f'still has {self}!'))
 
     def destroy_all(self):
         """Remove a Jaseci obj obj by it's name"""
@@ -103,8 +105,8 @@ class id_list(list):
             self.destroy_obj(i)
         if (len(self)):
             logger.critical(str(
-                f'Destroy all failed in id_list of {self.owner_obj} - \
-                     still has {self}!'))
+                f'Destroy all failed in id_list of {self.owner_obj} - ' +
+                f'still has {self}!'))
 
     def first_obj(self):
         """Get first object in list"""
