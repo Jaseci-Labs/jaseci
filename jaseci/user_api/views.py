@@ -1,9 +1,10 @@
-from rest_framework import generics, authentication, permissions
+from rest_framework import generics, permissions
 from rest_framework.views import APIView
 from rest_framework.settings import api_settings
 from rest_framework import renderers
 from knox.views import LoginView as KnoxLoginView
 from django.contrib.auth import login
+from knox.auth import TokenAuthentication
 
 from user_api.serializers import UserSerializer
 from user_api.serializers import AuthTokenSerializer
@@ -59,7 +60,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     """Manage the authenticated user"""
     # TODO: re-activate when user changes email address or disable email change
     serializer_class = UserSerializer
-    authentication_classes = (authentication.TokenAuthentication,)
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_object(self):
