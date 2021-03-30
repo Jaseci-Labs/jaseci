@@ -34,7 +34,7 @@ class sentinel(element, sentinel_machine):
         self.walker_ids.destroy_all()
         sentinel_machine.reset(self)
 
-    def register_code(self, text=None, init_ctx=None):
+    def register_code(self, text=None):
         """Registers a program written in Jac"""
         logger.info(str(f'{self.name}: Registering Jac code...'))
         self.reset()
@@ -75,6 +75,7 @@ class sentinel(element, sentinel_machine):
                 str(f'{self.name}: Unable to spawn walker {name}!')
             )
             self.is_active = False
+            self.register_code()
             self.save()
             return None
         new_walk = src_walk.duplicate(persist_dup=False)

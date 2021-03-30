@@ -22,8 +22,7 @@ class jac_tests(TestCaseHelper):
     def test_ll_proto_load(self):
         """Test loading/parsing ll prototype"""
         rand_id = uuid.uuid4()
-        init_ctx = {'owner': rand_id.urn}
-        self.sent.register_code(jtc.ll_proto, init_ctx)
+        self.sent.register_code(jtc.ll_proto)
         self.assertTrue(self.sent.is_active)
 
     def test_rand_generation(self):
