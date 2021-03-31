@@ -11,6 +11,8 @@ from core.utils.utils import TestCaseHelper
 CREATE_USER_URL = reverse('user_api:create')
 TOKEN_URL = reverse('user_api:token')
 MANAGE_URL = reverse('user_api:manage')
+PASSWORD_RESET_URL = reverse(
+    'user_api:password_reset:reset-password-request')
 # Alias for create user
 create_user = get_user_model().objects.create_user
 get_user = get_user_model().objects.get
@@ -131,6 +133,38 @@ class user_api_tests_public(TestCaseHelper):
         res = self.client.get(MANAGE_URL)
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_password_reset_endpoint(self):
+        """Test that password resent endpoint succeeds for the user"""
+        payload = {'email': 'jscitest_test@jaseci.com', 'password': 'testpass'}
+        user = create_user(**payload)
+        user.is_activated = True
+        user.save()
+
+        email_pl = {'email': 'jscitest_test@jaseci.com'}
+        from unittest.mock import Mock
+        import django.core.mail as mail
+        mail.send_mail = Mock(return_value=True)
+        res = self.client.post(PASSWORD_RESET_URL, email_pl)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        get_user(email=payload['email']).delete()
+
+    def test_password_reset_endpoint_invalid_email(self):
+        """Test that password resent endpoint succeeds for the user"""
+        payload = {'email': 'jscitest_test@jaseci.com', 'password': 'testpass'}
+        user = create_user(**payload)
+        user.is_activated = True
+        user.save()
+
+        email_pl = {'email': 'jjscitest_test@jaseci.com'}
+        from unittest.mock import Mock
+        import django.core.mail as mail
+        mail.send_mail = Mock(return_value=True)
+        res = self.client.post(PASSWORD_RESET_URL, email_pl)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        get_user(email=payload['email']).delete()
 
 
 class user_api_tests_private(TestCaseHelper):

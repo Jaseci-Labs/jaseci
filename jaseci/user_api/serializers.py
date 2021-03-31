@@ -25,10 +25,12 @@ def send_activation_email(request, email):
 
 
 @receiver(reset_password_token_created)
-def password_reset_token_created(sender, instance, reset_password_token, *args, **kwargs):
+def password_reset_token_created(sender, instance, reset_password_token,
+                                 *args, **kwargs):
 
     # email_msg = "{}?token={}".format(
-    #     reverse('user_api:password_reset:reset-password-request'), reset_password_token.key)
+    #     reverse('user_api:password_reset:reset-password-request'),
+    #     reset_password_token.key)
 
     email_msg = "Your Jaseci password reset token is: {}".format(
         reset_password_token.key)

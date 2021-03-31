@@ -1,6 +1,5 @@
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
-from rest_framework.settings import api_settings
 from rest_framework import renderers
 from knox.views import LoginView as KnoxLoginView
 from django.contrib.auth import login
