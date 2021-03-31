@@ -167,10 +167,10 @@ KW_TAKE: 'take';
 KW_SPAWN: 'spawn';
 KW_WITH: 'with';
 /* Can clean up below 4 rules a bit */
-KW_MOVE: 'entry' | 'activity' | 'exit';
 KW_ENTRY: 'entry';
 KW_EXIT: 'exit';
 KW_ACTIVITY: 'activity';
+KW_MOVE: 'entry' | 'activity' | 'exit';
 COLON: ':';
 DBL_COLON: '::';
 COLON_OUT: '::>';
