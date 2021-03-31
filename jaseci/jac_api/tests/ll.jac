@@ -21,7 +21,7 @@ node week {
 }
 
 node day {
-    has anchor day, note, order, focus_order, ritual_order, expanded_children;
+    has anchor day, note, order, focus_order, ritual_order, expanded_children, focusR;
     has ll_version;
     can infer.day_from_date;
 }
@@ -373,12 +373,12 @@ walker get_suggested_parent {
 
       if (here.name) {
           name_sim = vector.cosine_sim(new_wkt_name_emb, here.name_emb);
-          overall_score += name_sim;
+          overall_score += name_sim * 0.5;
           score_count += 1;
       }
       if (here.note) {
           note_sim = vector.cosine_sim(new_wkt_name_emb, here.note_emb);
-          overall_score += note_sim;
+          overall_score += note_sim * 0.5;
           score_count += 1;
       }
 
@@ -394,21 +394,194 @@ walker get_suggested_parent {
             children_embeddings += subwkt_vec;
         }
       }    
-      if (has_children) {    
-        centroid = vector.get_centroid(children_embeddings);    
-        centroid_sim = vector.cosine_sim(new_wkt_name_emb, centroid[0]) * centroid[1];    
-        overall_score += centroid_sim;
-        score_count += 1;
-      }    
+      if (has_children == 0 && here.wtype != 'workset') {
+          skip;
+      }
+
+      if (has_children) {
+          centroid = vector.get_centroid(children_embeddings);    
+          centroid_sim = vector.cosine_sim(new_wkt_name_emb, centroid[0]) * centroid[1];    
+          overall_score += centroid_sim;
+          score_count += 1;
+      }
+         
       if (score_count > 0): overall_score /= score_count;
 
       if (overall_score > cur_best_score) {    
         cur_best_match = here;    
         cur_best_score = overall_score;    
-        report [cur_best_match, cur_best_score];    
+        report [cur_best_match, cur_best_score];
       }    
       take -[parent]-> node::workette;    
     }    
+
+    with exit {
+        report [cur_best_match, cur_best_score];
+    }
+}
+
+walker get_due_soon {
+  has soon, show_report;
+  has anchor due_soon_list, today_date;
+  can infer.date_day_diff;
+
+  day {
+      due_soon_list = [];
+      today_date = infer.day_from_date(std.time_now());
+      take -[parent]-> node::workette;
+  }
+
+  workette {
+      # ignore workset
+      if (here.wtype == 'workset') {
+          take -[parent]-> node::workette;
+          skip;
+      }
+      # ignore item that is currently snoozed
+      if (here.snooze_till != '') {
+        if (infer.date_day_diff(today_date, here.snooze_till) < 0) {
+          take -[parent]-> node::workette;
+          skip;
+        }
+      }
+      
+      # Select items that are due soon
+      if (here.date != '') {
+          if (infer.date_day_diff(here.date, today_date) < soon): due_soon_list += [here];
+      }
+      take -[parent]-> node::workette;
+  }
+
+  with exit {
+      if (show_report): report due_soon_list;
+  }
+}
+
+walker get_snoozed_till_recent {
+  has show_report;
+  has anchor snoozed_to_active_list;
+  has today_date;
+  can infer.date_day_diff;
+  day {
+      snoozed_to_active_list = [];
+      today_date = infer.day_from_date(std.time_now());
+      take -[parent]-> node::workette;
+  }
+  
+  workette {
+      # ignore workset
+      if (here.wtype == 'workset') {
+          take -[parent]-> node::workette;
+          skip;
+      }
+      # Select items that are snoozed until today or recent past days
+      if (here.snooze_till != '' && (infer.date_day_diff(today_date, here.snooze_till) > 0)) {
+          snoozed_to_active_list += [here];
+      }
+      take -[parent]-> node::workette;
+  }
+
+  with exit {
+      if (show_report): report snoozed_to_active_list;
+  }
+}
+
+walker days_in_backlog {
+    has show_report;
+    has anchor num_days;
+    workette {
+      if (!num_days): num_days = 0;
+      num_days += 1;
+      take -[past]-> node::workette else {
+          if (show_report): report num_days;
+      }
+    }
+}
+
+walker get_long_active_items {
+  has show_report;
+  has anchor old_list;
+  has done;
+
+  day {
+      done = 0;
+      old_list = [];
+      take -[parent]-> node::workette;
+  }
+
+  workette {
+      # only consider workettes
+      if (here.wtype == 'workset') {
+          take -[parent]-> node::workette;
+          skip;
+      }
+      # Select items that have been in backlog for more than a week
+      num_days = spawn here walker::days_in_backlog;
+      if (num_days > 7): old_list += [[here, num_days]];
+      
+      take -[parent]-> node::workette else {done = 1;}
+  }
+
+  with exit {
+      # sort old workettes
+      final_suggestions = [];
+      old_list = vector.sort_by_key(old_list, 1, 1);
+      if (show_report): report old_list;
+  }
+}
+
+walker get_suggested_focus {
+  has max_items;
+  day {
+      suggested = [];
+      #suggested += spawn here walker::get_due_soon(3);
+      #suggested += spawn here walker::get_snooze_till_recent;
+      if (suggested.lenth >= max_items) {
+          report suggested;
+          disengage;
+      }
+      old_list = spawn here walker::get_long_active_items;
+      cur_cnt = suggested.length;
+      for i=cur_cnt to i<max_items by i+=1 {
+          if ((i-cur_cnt) == old_list.length) {
+              report suggested;
+              disengange;
+          }
+          suggested += [old_list[i-cur_cnt]];
+      }
+      report suggested;
+  }
+}
+
+walker get_long_active_items {
+  has show_report;
+  has anchor old_list;
+  has done;
+
+  day {
+      done = 0;
+      old_list = [];
+      take -[parent]-> node::workette;
+  }
+
+  workette {
+      # only consider workettes
+      if (here.wtype == 'workset') {
+          take -[parent]-> node::workette;
+          skip;
+      }
+      # Select items that have been in backlog for more than a week
+      num_days = spawn here walker::days_in_backlog;
+      if (num_days > 7): old_list += [[here, num_days]];
+
+      take -[parent]-> node::workette else {done = 1;}
+  }
+
+  with exit {
+      # sort old workettes
+      old_list = vector.sort_by_key(old_list, 1, 1);
+      if (show_report): report old_list;
+  }
 }
 
 walker init {

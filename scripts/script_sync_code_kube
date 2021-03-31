@@ -5,3 +5,4 @@ if [[ $1 ]]; then
 fi
 
 for podname in $(kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci ${podname}:/; echo "Copy code to pod and test" | head -n 1; kubectl exec -it ${podname} -- sh -c "cd jaseci; python3 manage.py test --parallel --failfast -v 0 && flake8 --exclude=settings.py,*migrations*,_jac_gen"; done
+#for podname in $(kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci ${podname}:/; echo "Copy code to pod and test" | head -n 1; kubectl exec -it ${podname} -- sh -c "cd jaseci; python3 manage.py test jac_api.tests.test_ll.test_ll.test_parent_suggestion --parallel --failfast -v 0 && flake8 --exclude=settings.py,*migrations*,_jac_gen"; done

@@ -61,7 +61,6 @@ spec:
       containers:
         - name: jaseci
           image: registry.jaseci.org/jsystem:latest
-          imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:
             - containerPort: 80
