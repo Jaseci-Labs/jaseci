@@ -49,7 +49,7 @@ def sort_by_key(param_list):
     Sort the given list. Optionally by specific key
     Param 1 - List of items
     Param 2 - if Reverse
-    Param 2 (Optional) - Index of the key to be used for sorting 
+    Param 2 (Optional) - Index of the key to be used for sorting
     if param 1 is a list of tuples.
     """
     data = param_list[0]

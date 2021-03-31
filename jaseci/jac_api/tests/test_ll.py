@@ -8,7 +8,6 @@ import uuid
 import base64
 import datetime
 import random
-from pprint import pprint
 
 
 class test_ll(TestCaseHelper):
@@ -58,7 +57,8 @@ class test_ll(TestCaseHelper):
     def set_node_context(self, nd_id, ctx):
         """Helper to set node context"""
         payload = {'snt': self.snt.id.urn, 'nd': nd_id, 'ctx': ctx}
-        self.client.post(reverse('jac_api:set_node_context'), payload, format='json')
+        self.client.post(
+            reverse('jac_api:set_node_context'), payload, format='json')
 
     def test_ll_today_new(self):
         """Test LifeLogify Jac Implementation"""
@@ -205,8 +205,8 @@ class test_ll(TestCaseHelper):
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {'show_report': 1})
         w_id = data[0][1]['jid']
-        data = self.run_walker('get_suggested_parent',
-                                {'new_wkt_name': new_wkt}, prime=w_id)
+        data = self.run_walker(
+                'get_suggested_parent', {'new_wkt_name': new_wkt}, prime=w_id)
         self.assertTrue(len(data) > 0)
         self.assertTrue(0 < data[-1][1] < 1)
 
@@ -225,15 +225,17 @@ class test_ll(TestCaseHelper):
                     due_item = True
                     due = random.randint(-3, 3)
                     due_date = today_date + datetime.timedelta(days=due)
-                    due_date = due_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                    due_date = due_date.replace(
+                            hour=0, minute=0, second=0, microsecond=0)
                     wkt[1]['context']['date'] = due_date.isoformat()
                     self.set_node_context(wkt[1]['jid'], wkt[1]['context'])
 
-        data = self.run_walker('get_due_soon', {'soon': 4, 'show_report': 1}, prime=w_id)
+        data = self.run_walker(
+                'get_due_soon', {'soon': 4, 'show_report': 1}, prime=w_id)
         self.assertTrue(len(data) > 0)
 
     def test_get_snoozed_until_recent(self):
-        """Test getting items that have been snoozed before and is now active"""
+        """Test getting items that have been snoozed until recently"""
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {'show_report': 1})
@@ -246,10 +248,13 @@ class test_ll(TestCaseHelper):
                     snoozed_item = True
                     delta = random.randint(-3, 0)
                     snoozed_date = today_date + datetime.timedelta(days=delta)
-                    snoozed_date = snoozed_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                    snoozed_date = snoozed_date.replace(
+                            hour=0, minute=0, second=0, microsecond=0)
                     wkt[1]['context']['snooze_till'] = snoozed_date.isoformat()
                     self.set_node_context(wkt[1]['jid'], wkt[1]['context'])
-        result = self.run_walker('get_snoozed_until_recent', {'show_report': 1}, prime=w_id)
+        result = self.run_walker(
+                'get_snoozed_until_recent', {'show_report': 1}, prime=w_id)
+        self.assertTrue(len(result) > 0)
 
     def test_days_in_backlog(self):
         """Test getting the number of days an item has been in the backlog"""
@@ -259,20 +264,24 @@ class test_ll(TestCaseHelper):
         w_id = data[0][1]['jid']
         workettes = self.run_walker('get_workettes', {}, prime=w_id)
         for wkt in workettes:
-            res = self.run_walker('days_in_backlog', {'show_report': 1}, prime=wkt['jid'])
+            res = self.run_walker(
+                    'days_in_backlog', {'show_report': 1}, prime=wkt['jid'])
             self.assertIs(type(res[0]), int)
-    
-    def test_get_long_active_items(self):
-        """Test getting the list of items that have been in the backlog for long"""
-        self.run_walker('gen_rand_life', {})
-        self.run_walker('get_gen_day', {})
-        data = self.run_walker('get_latest_day', {'show_report': 1})
-        w_id = data[0][1]['jid']
-        result = self.run_walker('get_long_active_items', {'show_report': 1}, prime=w_id)
 
-    def test_get_suggested_focus(self):
+    def test_get_long_active_items(self):
+        """Test getting items been in backlog for long"""
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {'show_report': 1})
         w_id = data[0][1]['jid']
-        result = self.run_walker('get_suggested_focus', {'max_items': 5}, prime=w_id)
+        result = self.run_walker(
+                'get_long_active_items', {'show_report': 1}, prime=w_id)
+        self.assertTrue(len(result) > 0)
+
+    # def test_get_suggested_focus(self):
+    #     self.run_walker('gen_rand_life', {})
+    #     self.run_walker('get_gen_day', {})
+    #     data = self.run_walker('get_latest_day', {'show_report': 1})
+    #     w_id = data[0][1]['jid']
+    #     result = self.run_walker(
+    #           'get_suggested_focus', {'max_items': 5}, prime=w_id)

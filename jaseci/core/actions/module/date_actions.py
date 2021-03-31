@@ -34,7 +34,7 @@ def day_from_date(param_list):
 def date_day_diff(param_list):
     date_1 = datetime.fromisoformat(param_list[0])
     date_2 = datetime.fromisoformat(param_list[1])
-    
+
     delta = date_1 - date_2
 
     return delta.days
