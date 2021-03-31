@@ -119,7 +119,8 @@ factor: (PLUS | MINUS) factor | power;
 power: func_call (POW factor)*;
 
 func_call:
-	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?;
+	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
+	| atom DOT KW_LENGTH;
 
 atom:
 	INT
@@ -172,6 +173,7 @@ KW_SPAWN: 'spawn';
 KW_WITH: 'with';
 KW_ENTRY: 'entry';
 KW_EXIT: 'exit';
+KW_LENGTH: 'length';
 KW_ACTIVITY: 'activity';
 COLON: ':';
 DBL_COLON: '::';

@@ -544,13 +544,21 @@ class walker_machine(machine):
     def run_func_call(self, jac_ast):
         """
         func_call:
-            atom (LPAREN (expression (COMMA expression)*)? RPAREN)?;
+        atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
+        | atom DOT KW_LENGTH;
         TODO: Function defintions
         """
         kid = jac_ast.kid
         atom_res = self.run_atom(kid[0])
-        if(len(kid) < 2):
+        if(len(kid) < 3):
             return atom_res
+        elif (kid[2].name == "KW_LENGTH"):
+            if(isinstance(atom_res, list)):
+                return len(atom_res)
+            else:
+                self.rt_error(f'Cannot get length of {atom_res}. Not List!',
+                              kid[0])
+                return 0
         else:
             param_list = []
             kid = kid[2:]
