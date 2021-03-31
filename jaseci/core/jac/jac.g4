@@ -31,8 +31,12 @@ attr_stmt: has_stmt | can_stmt;
 has_stmt: KW_HAS KW_ANCHOR? NAME (COMMA NAME)* SEMI;
 
 can_stmt:
-	KW_CAN dotted_name preset_in_out? (KW_WITH KW_MOVE)? (
-		COMMA dotted_name preset_in_out? (KW_WITH KW_MOVE)?
+	KW_CAN dotted_name preset_in_out? (
+		KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
+	)? (
+		COMMA dotted_name preset_in_out? (
+			KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
+		)?
 	)* SEMI;
 
 preset_in_out:
@@ -166,11 +170,9 @@ KW_IGNORE: 'ignore';
 KW_TAKE: 'take';
 KW_SPAWN: 'spawn';
 KW_WITH: 'with';
-/* Can clean up below 4 rules a bit */
 KW_ENTRY: 'entry';
 KW_EXIT: 'exit';
 KW_ACTIVITY: 'activity';
-KW_MOVE: 'entry' | 'activity' | 'exit';
 COLON: ':';
 DBL_COLON: '::';
 COLON_OUT: '::>';
