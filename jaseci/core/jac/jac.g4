@@ -34,9 +34,12 @@ code_block: LBRACE statement* RBRACE | COLON statement;
 
 node_ctx_block: NAME (COMMA NAME)* code_block;
 
+walk_ctx_block: KW_WITH KW_MOVE code_block;
+
 statement:
 	code_block
 	| node_ctx_block
+	| walk_ctx_block
 	| expression SEMI
 	| if_stmt
 	| for_stmt

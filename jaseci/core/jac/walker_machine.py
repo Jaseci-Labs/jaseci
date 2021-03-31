@@ -61,16 +61,32 @@ class walker_machine(machine):
                 return
             kid = kid[1:]
 
+    def run_walk_ctx_block(self, jac_ast):
+        """
+        walk_ctx_block: KW_WITH KW_MOVE code_block;
+        """
+        kid = jac_ast.kid
+        if (kid[1].token_text() == 'entry'):
+            if (self.current_step == 0):
+                self.run_code_block(kid[2])
+        if (kid[1].token_text() == 'exit'):
+            if (len(self.next_node_ids) == 0):
+                self.run_code_block(kid[2])
+        if (kid[1].token_text() == 'activity'):
+            self.run_code_block(kid[2])
+
     def run_statement(self, jac_ast):
         """
         statement:
             code_block
             | node_ctx_block
+            | walk_ctx_block
             | expression SEMI
             | if_stmt
             | for_stmt
             | while_stmt
-            | take_action_stmt;
+            | ctrl_stmt SEMI
+            | action_stmt;
         """
         if(self.stopped):
             return
