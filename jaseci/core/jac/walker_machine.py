@@ -70,7 +70,7 @@ class walker_machine(machine):
             if (self.current_step == 0):
                 self.run_code_block(kid[2])
         if (kid[1].token_text() == 'exit'):
-            if (len(self.next_node_ids) == 0):
+            if (len(self.next_node_ids) == 0 and self.current_step != 0):
                 self.run_code_block(kid[2])
         if (kid[1].token_text() == 'activity'):
             self.run_code_block(kid[2])
