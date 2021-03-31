@@ -21,7 +21,11 @@ class walker_machine(machine):
 
     def run_walker(self, jac_ast):
         """
-        walker: KW_WALKER NAME LBRACE (attr_stmt)* statement* RBRACE;
+        walker:
+            KW_WALKER NAME LBRACE attr_stmt* walk_entry_block? (
+                statement
+                | walk_activity_block
+            )* walk_exit_block? RBRACE;
         """
         self.scope['here'] = self.current_node.id.urn
         self.trigger_entry_actions()
@@ -31,10 +35,40 @@ class walker_machine(machine):
                 if(i.name == 'attr_stmt'):
                     self.run_attr_stmt(jac_ast=i, obj=self)
         for i in kid:
+            if(i.name == 'walk_entry_block'):
+                self.run_walk_entry_block(i)
             if(i.name == 'statement'):
                 self.run_statement(i)
+            if(i.name == 'walk_activity_block'):
+                self.run_walk_activity_block(i)
+            if(i.name == 'walk_exit_block'):
+                self.run_walk_exit_block(i)
+
         # self.trigger_activity_actions()
         self.trigger_exit_actions()
+
+    def run_walk_entry_block(self, jac_ast):
+        """
+        walk_entry_block: KW_WITH KW_ENTRY code_block;
+        """
+        kid = jac_ast.kid
+        if (self.current_step == 0):
+            self.run_code_block(kid[2])
+
+    def run_walk_exit_block(self, jac_ast):
+        """
+        walk_exit_block: KW_WITH KW_EXIT code_block;
+        """
+        kid = jac_ast.kid
+        if (len(self.next_node_ids) == 0):
+            self.run_code_block(kid[2])
+
+    def run_walk_activity_block(self, jac_ast):
+        """
+        walk_activity_block: KW_WITH KW_ACTIVITY code_block;
+        """
+        kid = jac_ast.kid
+        self.run_code_block(kid[2])
 
     def run_code_block(self, jac_ast):
         """
@@ -61,26 +95,11 @@ class walker_machine(machine):
                 return
             kid = kid[1:]
 
-    def run_walk_ctx_block(self, jac_ast):
-        """
-        walk_ctx_block: KW_WITH KW_MOVE code_block;
-        """
-        kid = jac_ast.kid
-        if (kid[1].token_text() == 'entry'):
-            if (self.current_step == 0):
-                self.run_code_block(kid[2])
-        if (kid[1].token_text() == 'exit'):
-            if (len(self.next_node_ids) == 0):
-                self.run_code_block(kid[2])
-        if (kid[1].token_text() == 'activity'):
-            self.run_code_block(kid[2])
-
     def run_statement(self, jac_ast):
         """
         statement:
             code_block
             | node_ctx_block
-            | walk_ctx_block
             | expression SEMI
             | if_stmt
             | for_stmt

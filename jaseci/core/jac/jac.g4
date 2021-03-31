@@ -9,7 +9,17 @@ architype:
 	KW_NODE NAME (COLON INT)? attr_block
 	| KW_EDGE NAME attr_block;
 
-walker: KW_WALKER NAME LBRACE (attr_stmt)* statement* RBRACE;
+walker:
+	KW_WALKER NAME LBRACE attr_stmt* walk_entry_block? (
+		statement
+		| walk_activity_block
+	)* walk_exit_block? RBRACE;
+
+walk_entry_block: KW_WITH KW_ENTRY code_block;
+
+walk_exit_block: KW_WITH KW_EXIT code_block;
+
+walk_activity_block: KW_WITH KW_ACTIVITY code_block;
 
 attr_block:
 	LBRACE (attr_stmt)* RBRACE
@@ -34,12 +44,9 @@ code_block: LBRACE statement* RBRACE | COLON statement;
 
 node_ctx_block: NAME (COMMA NAME)* code_block;
 
-walk_ctx_block: KW_WITH KW_MOVE code_block;
-
 statement:
 	code_block
 	| node_ctx_block
-	| walk_ctx_block
 	| expression SEMI
 	| if_stmt
 	| for_stmt
@@ -157,9 +164,13 @@ spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
 KW_NODE: 'node';
 KW_IGNORE: 'ignore';
 KW_TAKE: 'take';
-KW_MOVE: 'entry' | 'activity' | 'exit';
 KW_SPAWN: 'spawn';
 KW_WITH: 'with';
+/* Can clean up below 4 rules a bit */
+KW_MOVE: 'entry' | 'activity' | 'exit';
+KW_ENTRY: 'entry';
+KW_EXIT: 'exit';
+KW_ACTIVITY: 'activity';
 COLON: ':';
 DBL_COLON: '::';
 COLON_OUT: '::>';
