@@ -254,7 +254,7 @@ class walker_machine(machine):
         self.report.append(report)
         self.log_history('reports',
                          {'from': self.current_node.id.urn,
-                             'index': len(report)})
+                             'index': len(self.report)})
 
     def run_destroy_action(self, jac_ast):
         """
