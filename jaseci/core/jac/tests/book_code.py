@@ -232,6 +232,32 @@ pre_post_walking = \
     }
     """
 
+pre_post_walking_dis = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init {
+        has count;
+
+        with entry {
+            count = 5;
+            spawn here --> node::test;
+            spawn here --> node::test;
+            spawn here --> node::test;
+            take -->;
+        }
+
+        test {
+            count += 1;
+            disengage;
+        }
+
+        with exit {std.out("count:",count);}
+    }
+    """
+
 length = \
     """
     node test {

@@ -370,7 +370,8 @@ class PrivateJacApiTests(TestCaseHelper):
         payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
                    'code':
                    'node a { has b, c; } walker test ' +
-                   '{ with entry {take -->;} a { here.c=7; std.log(here.c); }}',
+                   '{ with entry {take -->;} ' +
+                   'a { here.c=7; std.log(here.c); }}',
                    'encoded': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
