@@ -31,6 +31,7 @@ class walker(element, walker_machine, anchored):
         self.stopped = None
         self.loop_ctrl = None
         self.current_step = 0
+        self.in_entry_exit = False
         self.scope = {}
         # Runtime limitations
         self.step_limit = 10000

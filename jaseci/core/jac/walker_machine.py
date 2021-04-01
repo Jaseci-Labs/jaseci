@@ -53,7 +53,9 @@ class walker_machine(machine):
         """
         kid = jac_ast.kid
         if (self.current_step == 0):
+            self.in_entry_exit = True
             self.run_code_block(kid[2])
+            self.in_entry_exit = False
 
     def run_walk_exit_block(self, jac_ast):
         """
@@ -61,7 +63,9 @@ class walker_machine(machine):
         """
         kid = jac_ast.kid
         if (len(self.next_node_ids) == 0):
+            self.in_entry_exit = True
             self.run_code_block(kid[2])
+            self.in_entry_exit = False
 
     def run_walk_activity_block(self, jac_ast):
         """
@@ -107,7 +111,7 @@ class walker_machine(machine):
             | ctrl_stmt SEMI
             | action_stmt;
         """
-        if(self.stopped):
+        if (self.stopped and not self.in_entry_exit):
             return
         kid = jac_ast.kid
         stmt_func = getattr(self, f'run_{kid[0].name}')
