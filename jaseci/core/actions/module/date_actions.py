@@ -32,8 +32,14 @@ def day_from_date(param_list):
 
 
 def date_day_diff(param_list):
-    date_1 = datetime.fromisoformat(param_list[0])
-    date_2 = datetime.fromisoformat(param_list[1])
+    # Try to deal with some incompatible date in old nodes
+    # Due date has not been saving in isoformat so this doesn't work
+    # for example,'2021-03-31T04:00:00.000Z'
+    param_1 = param_list[0].split('T')[0]
+    param_2 = param_list[1].split('T')[0]
+
+    date_1 = datetime.fromisoformat(param_1)
+    date_2 = datetime.fromisoformat(param_2)
 
     delta = date_1 - date_2
 
