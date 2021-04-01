@@ -32,6 +32,9 @@ def day_from_date(param_list):
 
 
 def date_day_diff(param_list):
+    print("-----in date_day_diff---------")
+    print(param_list)
+    print("-----in date_day_diff---------")
     date_1 = datetime.fromisoformat(param_list[0])
     date_2 = datetime.fromisoformat(param_list[1])
 
