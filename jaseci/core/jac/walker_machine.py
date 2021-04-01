@@ -270,22 +270,7 @@ class walker_machine(machine):
         """
         kid = jac_ast.kid
         report = self.run_expression(kid[1])
-        if (isinstance(report, element)):
-            report = report.serialize()
-        elif (isinstance(report, jac_set)):
-            blobs = []
-            for i in report.obj_list():
-                blobs.append(i.serialize())
-            report = blobs
-        # TODO: Need to make this list unwind recursive
-        elif (isinstance(report, list)):
-            blobs = []
-            for i in report:
-                if (isinstance(i, element)):
-                    blobs.append(i.serialize())
-                else:
-                    blobs.append(i)
-            report = blobs
+        report = self.report_deep_serialize(report)
         self.report.append(report)
         self.log_history('reports',
                          {'from': self.current_node.id.urn,
@@ -429,11 +414,12 @@ class walker_machine(machine):
         result = self.run_compare(kid[0])
         kid = kid[1:]
         while (kid):
-            other_res = self.run_compare(kid[1])
-            if(kid[0].name == 'KW_AND'):
-                result = result and other_res
-            elif(kid[0].name == 'KW_OR'):
-                result = result or other_res
+            if (kid[0].name == 'KW_AND'):
+                if (result):
+                    result = result and self.run_compare(kid[1])
+            elif (kid[0].name == 'KW_OR'):
+                if (not result):
+                    result = result or self.run_compare(kid[1])
             kid = kid[2:]
             if(not kid):
                 break
@@ -544,8 +530,8 @@ class walker_machine(machine):
     def run_func_call(self, jac_ast):
         """
         func_call:
-        atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
-        | atom DOT KW_LENGTH;
+            atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
+            | atom DOT KW_LENGTH;
         TODO: Function defintions
         """
         kid = jac_ast.kid
@@ -857,6 +843,22 @@ class walker_machine(machine):
                 self.run_assignment(i, assign_scope=obj.context)
 
     # Helper Functions ##################
+
+    def report_deep_serialize(self, report):
+        """Performs JSON serialization for lists of lists of lists etc"""
+        if (isinstance(report, element)):
+            report = report.serialize()
+        elif (isinstance(report, jac_set)):
+            blobs = []
+            for i in report.obj_list():
+                blobs.append(i.serialize())
+            report = blobs
+        elif (isinstance(report, list)):
+            blobs = []
+            for i in report:
+                blobs.append(self.report_deep_serialize(i))
+            report = blobs
+        return report
 
     def viable_nodes(self):
         """Returns all nodes that shouldnt be ignored"""

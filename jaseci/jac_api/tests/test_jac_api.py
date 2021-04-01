@@ -309,3 +309,30 @@ class PrivateJacApiTests(TestCaseHelper):
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertGreater(walk.current_step, 0)
         self.assertEqual(res.data['context']['apple'], 'TEST')
+
+    def test_deep_serialize_report(self):
+        """Test API for running a walker"""
+        payload = {'op': 'create_graph', 'name': 'Something'}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
+        payload = {'op': 'create_sentinel', 'name': 'Something'}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
+        payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
+                   'code': 'walker test { report [[[[[here, here], here], here]]]; }',
+                   'encoded': False}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'compile', 'snt': sent.id.urn}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {'op': 'spawn_walker', 'snt': sent.id.urn,
+                   'name': 'test'}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        walk = self.master._h.get_obj(uuid.UUID(res.data['jid']))
+        payload = {'op': 'prime_walker', 'wlk': walk.id.urn,
+                   'nd': gph.id.urn, 'ctx': {}}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'run_walker', 'wlk': walk.id.urn}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        self.assertGreater(walk.current_step, 0)

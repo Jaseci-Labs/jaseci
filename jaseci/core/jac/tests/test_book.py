@@ -166,3 +166,19 @@ class jac_book_tests(TestCaseHelper):
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue()[:9],
                          "urn:uuid:")
+
+    def test_pre_post_walk(self):
+        self.sent.register_code(jtc.pre_post_walking)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "count: 8\n")
+
+    def test_length(self):
+        self.sent.register_code(jtc.length)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "3\n3\n")

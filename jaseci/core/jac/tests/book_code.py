@@ -206,3 +206,55 @@ dereference = \
         }
     }
     """
+
+pre_post_walking = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init {
+        has count; 
+
+        with entry {
+            count = 5;
+            spawn here --> node::test;
+            spawn here --> node::test;
+            spawn here --> node::test;
+            take -->;
+        }
+
+        test {
+            count += 1; 
+        }   
+      
+        with exit {std.out("count:",count);}
+    }
+    """
+
+length = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init {
+        spawn here --> node::test;
+        spawn here --> node::test;
+        spawn here --> node::test;
+        std.out((-->).length);
+        var = -->;
+        std.out(var.length);
+    }
+    """
+
+# ---Delete Belwo---
+quick_test = \
+    """
+
+    walker init {
+        a=[[here],[here]];
+        report [a];
+        std.out(a);
+    }
+    """
