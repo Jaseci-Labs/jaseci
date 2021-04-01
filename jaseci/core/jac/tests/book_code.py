@@ -214,7 +214,7 @@ pre_post_walking = \
     }
 
     walker init {
-        has count; 
+        has count;
 
         with entry {
             count = 5;
@@ -225,9 +225,9 @@ pre_post_walking = \
         }
 
         test {
-            count += 1; 
-        }   
-      
+            count += 1;
+        }
+
         with exit {std.out("count:",count);}
     }
     """

@@ -899,14 +899,9 @@ class walker_machine(machine):
                 # return node if it's a node
                 if is_urn(found):
                     head_obj = self._h.get_obj(uuid.UUID(found))
-                    # NOTE: There's got to be a better place to insert builtin
                     # head_obj.context['id'] = head_obj.jid
-                    if (subname[1] in head_obj.context.keys()):
-                        if (len(subname) > 2 and subname[2] == 'length'):
-                            if(isinstance(head_obj.context[subname[1]], list)):
-                                return len(head_obj.context[subname[1]])
-                            else:
-                                return 0
+                    if (subname[1] in head_obj.context.keys() or
+                            self.try_sync_to_arch(head_obj, subname[1])):
                         return ctx_value(head_obj, subname[1])
                 # other types in scope can go here
             # check if dotted var is builtin action (of walker)
@@ -926,6 +921,15 @@ class walker_machine(machine):
             if(name in self.context.keys()):
                 return ctx_value(self, name)
         return None
+
+    def try_sync_to_arch(self, obj, varname):
+        """Checks if latest Architype has variable"""
+        # TODO: Only supports node types
+        if (varname in self.owner().arch_ids.get_obj_by_name(
+                'node.' + obj.kind).run().context.keys()):
+            obj.context[varname] = None
+            return True
+        return False
 
     def get_live_var(self, name, jac_ast):
         """Returns live variable, to support builtins in the future"""

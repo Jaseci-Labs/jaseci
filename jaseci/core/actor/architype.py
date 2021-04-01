@@ -14,6 +14,7 @@ class architype(element, architype_machine):
 
     def __init__(self, code=None, *args, **kwargs):
         self.code = code
+        self._obj = None
         element.__init__(self, *args, **kwargs)
         architype_machine.__init__(self)
 
@@ -27,13 +28,22 @@ class architype(element, architype_machine):
         new.owner_id = self.owner_id
         self.element_ids.add_obj(new)
 
-    def run(self):
+    def gen(self):
         """
         Create set of new object instances from architype
         """
         jac_ast = ast(jac_text=self.code,
                       parse_rule='architype')
         return self.run_architype(jac_ast=jac_ast)
+
+    def run(self):
+        """
+        Create set of new object instances from architype if needed
+        """
+        # if (not self._obj):
+        #     self._obj = self.gen()
+        # return self._obj
+        return self.gen()
 
     def destroy(self):
         """
