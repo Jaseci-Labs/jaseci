@@ -1,4 +1,5 @@
 import numpy as np
+from operator import itemgetter
 
 
 def cosine_sim(param_list):
@@ -41,3 +42,21 @@ def get_centroid(param_list):
     tightness = np.mean([cosine_sim([vec, centroid])
                          for vec in vec_list]).astype(float)
     return (centroid, tightness)
+
+
+def sort_by_key(param_list):
+    """
+    Sort the given list. Optionally by specific key
+    Param 1 - List of items
+    Param 2 - if Reverse
+    Param 2 (Optional) - Index of the key to be used for sorting
+    if param 1 is a list of tuples.
+    """
+    data = param_list[0]
+    if_reverse = param_list[1]
+
+    if (len(param_list) > 2):
+        key_pos = param_list[2]
+        return sorted(data, key=itemgetter(key_pos), reverse=if_reverse)
+    else:
+        return sorted(data, reverse=if_reverse)
