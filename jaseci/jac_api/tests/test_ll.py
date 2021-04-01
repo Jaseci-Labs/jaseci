@@ -275,13 +275,16 @@ class test_ll(TestCaseHelper):
         data = self.run_walker('get_latest_day', {'show_report': 1})
         w_id = data[0][1]['jid']
         result = self.run_walker(
-                'get_long_active_items', {'show_report': 1}, prime=w_id)
+                'get_long_active_items',
+                {'show_report': 1, 'long_days': 1}, prime=w_id)
         self.assertTrue(len(result) > 0)
 
-    # def test_get_suggested_focus(self):
-    #     self.run_walker('gen_rand_life', {})
-    #     self.run_walker('get_gen_day', {})
-    #     data = self.run_walker('get_latest_day', {'show_report': 1})
-    #     w_id = data[0][1]['jid']
-    #     result = self.run_walker(
-    #           'get_suggested_focus', {'max_items': 5}, prime=w_id)
+    def test_get_suggested_focus(self):
+        self.run_walker('gen_rand_life', {})
+        self.run_walker('get_gen_day', {})
+        data = self.run_walker('get_latest_day', {'show_report': 1})
+        w_id = data[0][1]['jid']
+        result = self.run_walker(
+            'get_suggested_focus',
+            {'max_items': 5, 'long_days': 1}, prime=w_id)
+        self.assertTrue(len(result) > 0)

@@ -318,10 +318,11 @@ class PrivateJacApiTests(TestCaseHelper):
         payload = {'op': 'create_sentinel', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
-                   'code':
-                   'walker test { report [[[[[here, here], here], here]]]; }',
-                   'encoded': False}
+        payload = {
+            'op': 'set_jac_code', 'snt': sent.id.urn,
+            'code': 'walker test { report [[[[[here, here], here], here]]]; }',
+            'encoded': False
+        }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         payload = {'op': 'compile', 'snt': sent.id.urn}

@@ -364,6 +364,7 @@ walker get_suggested_parent {
     }    
 
     workette {    
+      if (here.name == new_wkt_name): skip;
       has_children = 0;    
           
       spawn here walker::update_embeddings;
@@ -475,8 +476,10 @@ walker get_snoozed_till_recent {
           skip;
       }
       # Select items that are snoozed until today or recent past days
-      if (here.snooze_till != '' && (infer.date_day_diff(today_date, here.snooze_till) > 0)) {
-          snoozed_to_active_list += [here];
+      if (here.snooze_till != '') {
+          if (infer.date_day_diff(today_date, here.snooze_till) > 0) {
+              snoozed_to_active_list += [here];
+          }
       }
       take -[parent]-> node::workette;
   }
@@ -499,12 +502,12 @@ walker days_in_backlog {
 }
 
 walker get_long_active_items {
-  has show_report;
+  has long_days, show_report;
   has anchor old_list;
-  has done;
 
   day {
-      done = 0;
+      # default to a week
+      if (!long_days): long_days = 7;
       old_list = [];
       take -[parent]-> node::workette;
   }
@@ -517,70 +520,44 @@ walker get_long_active_items {
       }
       # Select items that have been in backlog for more than a week
       num_days = spawn here walker::days_in_backlog;
-      if (num_days > 7): old_list += [[here, num_days]];
-      
-      take -[parent]-> node::workette else {done = 1;}
+      if (num_days >= long_days): old_list += [[here, num_days]];
+
+      take -[parent]-> node::workette;
   }
 
   with exit {
       # sort old workettes
-      final_suggestions = [];
       old_list = vector.sort_by_key(old_list, 1, 1);
       if (show_report): report old_list;
   }
 }
 
 walker get_suggested_focus {
-  has max_items;
+  has max_items, long_days, soon_delta;
+  with entry {
+      if (!long_days): long_days = 7;
+      if (!soon_delta): soon_delta = 3;
+  }
   day {
       suggested = [];
-      #suggested += spawn here walker::get_due_soon(3);
-      #suggested += spawn here walker::get_snooze_till_recent;
-      if (suggested.lenth >= max_items) {
+      suggested += spawn here walker::get_due_soon(soon=soon_delta);
+      suggested += spawn here walker::get_snoozed_till_recent;
+      if (suggested.length >= max_items) {
           report suggested;
           disengage;
       }
-      old_list = spawn here walker::get_long_active_items;
+      old_list = spawn here walker::get_long_active_items(long_days=long_days);
       cur_cnt = suggested.length;
       for i=cur_cnt to i<max_items by i+=1 {
-          if ((i-cur_cnt) == old_list.length) {
+          lidx = i - cur_cnt;
+          if (lidx == old_list.length) {
               report suggested;
-              disengange;
+              disengage;
           }
-          suggested += [old_list[i-cur_cnt]];
+          old_item = old_list[lidx];
+          suggested += [old_item];
       }
       report suggested;
-  }
-}
-
-walker get_long_active_items {
-  has show_report;
-  has anchor old_list;
-  has done;
-
-  day {
-      done = 0;
-      old_list = [];
-      take -[parent]-> node::workette;
-  }
-
-  workette {
-      # only consider workettes
-      if (here.wtype == 'workset') {
-          take -[parent]-> node::workette;
-          skip;
-      }
-      # Select items that have been in backlog for more than a week
-      num_days = spawn here walker::days_in_backlog;
-      if (num_days > 7): old_list += [[here, num_days]];
-
-      take -[parent]-> node::workette else {done = 1;}
-  }
-
-  with exit {
-      # sort old workettes
-      old_list = vector.sort_by_key(old_list, 1, 1);
-      if (show_report): report old_list;
   }
 }
 
