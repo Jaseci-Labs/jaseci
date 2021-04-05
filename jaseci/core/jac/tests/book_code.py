@@ -274,13 +274,14 @@ length = \
     }
     """
 
-# ---Delete Belwo---
-quick_test = \
+sort_by_col = \
     """
-
     walker init {
-        a=[[here],[here]];
-        report [a];
-        std.out(a);
+        lst=[['b', 333],['c',245],['a', 56]];
+        std.out(lst);
+        std.sort_by_col(lst, 0);
+        std.out(lst);
+        std.sort_by_col(lst, 0, 'reverse');
+        std.out(lst);
     }
     """

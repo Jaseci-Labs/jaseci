@@ -22,7 +22,7 @@ data:
     cd jaseci; cd /dl;
     mv jaseci/ai_serving/ /;
     cd /ai_serving;
-    while true; do python3 -m use.use_app; sleep 2; done;
+    python3 -m use.use_app;
 ---
 apiVersion: v1
 kind: Secret

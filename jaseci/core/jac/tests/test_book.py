@@ -190,3 +190,13 @@ class jac_book_tests(TestCaseHelper):
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(),
                          "3\n3\n")
+
+    def test_sort_by_col(self):
+        self.sent.register_code(jtc.sort_by_col)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "[['b', 333], ['c', 245], ['a', 56]]\n"
+                         "[['a', 56], ['b', 333], ['c', 245]]\n"
+                         "[['c', 245], ['b', 333], ['a', 56]]\n")
