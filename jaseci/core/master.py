@@ -9,6 +9,7 @@ from core.graph.node import node
 from core.actor.sentinel import sentinel
 from core.actor.walker import walker
 from core.utils.id_list import id_list
+from core.utils.utils import logger
 
 
 class master(element):
@@ -26,10 +27,13 @@ class master(element):
         """
         snt = self.sentinel_ids.get_obj_by_name(name, True)
         gph = self.graph_ids.get_obj_by_name(name, True)
-        if (snt is None):
+        if (not snt):
             self.api_create_sentinel(name)
             snt = self.sentinel_ids.get_obj_by_name(name)
-        if (gph is None):
+            logger.info(f'{snt}')
+            if (not snt):
+                logger.critical("SUPERFUCT")
+        if (not gph):
             self.api_create_graph(name)
             gph = self.graph_ids.get_obj_by_name(name)
         self.api_set_jac_code(snt, code, True)
