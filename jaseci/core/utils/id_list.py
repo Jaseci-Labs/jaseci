@@ -51,8 +51,13 @@ class id_list(list):
     def get_obj_by_name(self, name, silent=False):
         """Returns a Jaseci obj obj by it's name"""
         for i in self:
-            if(not self.owner_obj._h.has_obj(uuid.UUID(i))):
-                break
+            if (not self.owner_obj._h.has_obj(uuid.UUID(i))):
+                logger.critical(str(
+                    f'Self healing: {i} not found ' +
+                    f'in id_list of {self.owner_obj}!'))
+                self.remove(i)
+                self.owner_obj.save()
+                continue
             if(self.owner_obj._h.get_obj(uuid.UUID(i)).name == name):
                 return self.owner_obj._h.get_obj(uuid.UUID(i))
         if not silent:
