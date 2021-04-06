@@ -28,7 +28,7 @@ class master(element):
         # Force recompile of sentinel every time application loaded
         if (snt):
             snt.destroy()
-            snt = None
+        snt = None
         gph = self.graph_ids.get_obj_by_name(name, True)
         if (not snt):
             self.api_create_sentinel(name)
