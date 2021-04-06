@@ -206,7 +206,7 @@ class test_ll(TestCaseHelper):
         data = self.run_walker('get_latest_day', {'show_report': 1})
         w_id = data[0][1]['jid']
         data = self.run_walker(
-                'get_suggested_parent', {'new_wkt_name': new_wkt}, prime=w_id)
+            'get_suggested_parent', {'new_wkt_name': new_wkt}, prime=w_id)
         self.assertTrue(len(data) > 0)
         self.assertTrue(0 < data[-1][1] < 1)
 
@@ -226,12 +226,12 @@ class test_ll(TestCaseHelper):
                     due = random.randint(-3, 3)
                     due_date = today_date + datetime.timedelta(days=due)
                     due_date = due_date.replace(
-                            hour=0, minute=0, second=0, microsecond=0)
+                        hour=0, minute=0, second=0, microsecond=0)
                     wkt[1]['context']['date'] = due_date.isoformat()
                     self.set_node_context(wkt[1]['jid'], wkt[1]['context'])
 
         data = self.run_walker(
-                'get_due_soon', {'soon': 4, 'show_report': 1}, prime=w_id)
+            'get_due_soon', {'soon': 4, 'show_report': 1}, prime=w_id)
         self.assertTrue(len(data) > 0)
 
     def test_get_snoozed_until_recent(self):
@@ -249,11 +249,11 @@ class test_ll(TestCaseHelper):
                     delta = random.randint(-3, 0)
                     snoozed_date = today_date + datetime.timedelta(days=delta)
                     snoozed_date = snoozed_date.replace(
-                            hour=0, minute=0, second=0, microsecond=0)
+                        hour=0, minute=0, second=0, microsecond=0)
                     wkt[1]['context']['snooze_till'] = snoozed_date.isoformat()
                     self.set_node_context(wkt[1]['jid'], wkt[1]['context'])
         result = self.run_walker(
-                'get_snoozed_until_recent', {'show_report': 1}, prime=w_id)
+            'get_snoozed_until_recent', {'show_report': 1}, prime=w_id)
         self.assertTrue(len(result) > 0)
 
     def test_days_in_backlog(self):
@@ -265,7 +265,7 @@ class test_ll(TestCaseHelper):
         workettes = self.run_walker('get_workettes', {}, prime=w_id)
         for wkt in workettes:
             res = self.run_walker(
-                    'days_in_backlog', {'show_report': 1}, prime=wkt['jid'])
+                'days_in_backlog', {'show_report': 1}, prime=wkt['jid'])
             self.assertIs(type(res[0]), int)
 
     def test_get_long_active_items(self):
@@ -275,8 +275,8 @@ class test_ll(TestCaseHelper):
         data = self.run_walker('get_latest_day', {'show_report': 1})
         w_id = data[0][1]['jid']
         result = self.run_walker(
-                'get_long_active_items',
-                {'show_report': 1, 'long_days': 1}, prime=w_id)
+            'get_long_active_items',
+            {'show_report': 1, 'long_days': 1}, prime=w_id)
         self.assertTrue(len(result) > 0)
 
     def test_get_suggested_focus(self):

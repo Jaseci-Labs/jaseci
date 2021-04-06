@@ -9,9 +9,6 @@ import logging
 from time import time
 from datetime import datetime
 from django.test import TestCase
-TY = '\033[33m'
-TG = '\033[32m'
-EC = '\033[m'  # noqa
 
 
 # Get an instance of a logger
@@ -111,6 +108,9 @@ class TestCaseHelper(TestCase):
         return super().setUp()
 
     def tearDown(self):
+        TY = '\033[33m'
+        TG = '\033[32m'
+        EC = '\033[m'  # noqa
         td = super().tearDown()
         print(f'Time: {TY}{time()-self.stime:.3f} ' +
               f'- {EC}{self.id().split(".")[-1]}: {TG}[passed]{EC}')

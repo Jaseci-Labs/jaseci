@@ -1,5 +1,5 @@
 import random
-import faker
+# import faker
 from datetime import datetime
 from datetime import timedelta
 
@@ -7,7 +7,7 @@ from datetime import timedelta
 def seed(param_list):
     """Seed random num generator"""
     random.seed(param_list[0], version=2)
-    faker.Faker.seed(param_list[0])
+    # faker.Faker.seed(param_list[0])
 
 
 def integer(param_list):
@@ -17,7 +17,11 @@ def integer(param_list):
 
 def sentence(param_list):
     """Get a random sentence"""
-    return faker.Faker().sentence()
+    fstr = ''
+    for i in range(random.randint(0, 10)):
+        fstr += "test "
+    return fstr
+    # return faker.Faker().sentence()
 
 
 def time(param_list):
