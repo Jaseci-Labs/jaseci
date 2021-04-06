@@ -9,7 +9,6 @@ from core.graph.node import node
 from core.actor.sentinel import sentinel
 from core.actor.walker import walker
 from core.utils.id_list import id_list
-from core.utils.utils import logger
 
 
 class master(element):
@@ -25,12 +24,14 @@ class master(element):
         Get or create then return application sentinel and graph pairing
         Code must be encoded in base64
         """
-        snt = self.sentinel_ids.get_obj_by_name(name, True)
+        # TODO: Do better recompilation here
+        self.sentinel_ids.destroy_obj_by_name(name, True)
+        snt = None
+        # snt = self.sentinel_ids.get_obj_by_name(name, True)
         gph = self.graph_ids.get_obj_by_name(name, True)
         if (not snt):
             self.api_create_sentinel(name)
             snt = self.sentinel_ids.get_obj_by_name(name)
-            logger.info(f'c{self.sentinel_ids}')
         if (not gph):
             self.api_create_graph(name)
             gph = self.graph_ids.get_obj_by_name(name)
@@ -51,10 +52,7 @@ class master(element):
         Create blank sentinel and return object
         """
         snt = sentinel(h=self._h, name=name, code='# Jac Code')
-        logger.info(f'a{snt}')
         self.sentinel_ids.add_obj(snt)
-        logger.info(f'b{self.sentinel_ids}')
-
         return snt.serialize()
 
     def api_list_graphs(self):
