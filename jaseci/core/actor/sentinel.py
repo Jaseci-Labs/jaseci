@@ -93,5 +93,5 @@ class sentinel(element, sentinel_machine):
         """
         for i in self.arch_ids.obj_list() + \
                 self.walker_ids.obj_list() + self.live_walker_ids.obj_list():
-            self._h.get_obj(i).destroy()
+            i.destroy()
         super().destroy()
