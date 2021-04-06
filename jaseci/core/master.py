@@ -30,9 +30,6 @@ class master(element):
         if (not snt):
             self.api_create_sentinel(name)
             snt = self.sentinel_ids.get_obj_by_name(name)
-            logger.info(f'{snt}')
-            if (not snt):
-                logger.critical("SUPERFUCT")
         if (not gph):
             self.api_create_graph(name)
             gph = self.graph_ids.get_obj_by_name(name)
@@ -53,7 +50,10 @@ class master(element):
         Create blank sentinel and return object
         """
         snt = sentinel(h=self._h, name=name, code='# Jac Code')
+        logger.info(f'{snt}')
         self.sentinel_ids.add_obj(snt)
+        logger.info(f'{self.sentinel_ids}')
+
         return snt.serialize()
 
     def api_list_graphs(self):
