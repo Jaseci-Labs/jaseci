@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from core.utils.utils import logger
 from core.element import element
+from time import time
 import uuid
 
 
@@ -47,12 +48,25 @@ class AbstractJacAPIView(APIView):
                 str(f'Unused parameters in API call - '
                     f'got {self.cmd.keys()}, expected {param_map.keys()}'))
         api_result = getattr(self.master, type(self).__name__)(**param_map)
+        self.log_request_time()
         return JResponse(self.master, api_result)
+
+    def log_request_time(self):
+        """Api call preamble"""
+        TY = '\033[33m'
+        TG = '\033[32m'
+        EC = '\033[m'  # noqa
+        tot_time = time()-self.start_time
+        logger.info(str(
+            f'API call to {TG}{type(self).__name__}{EC}'
+            f' completed in {TY}{tot_time:.3f} seconds.{EC}'))
 
     def proc_request(self, request):
         """Parse request to field set"""
+        pl_peek = str(dict(request.data))[:256]
         logger.info(str(
-            f'Incoming call to {type(self).__name__} with {request.data}'))
+            f'Incoming call to {type(self).__name__} with {pl_peek}'))
+        self.start_time = time()
         self.cmd = request.data
         self.master = request.user.get_master()
         self.res = "Not valid interaction!"
