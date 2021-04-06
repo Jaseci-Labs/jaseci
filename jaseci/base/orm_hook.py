@@ -31,7 +31,7 @@ class orm_hook(mem_hook):
         super().__init__()
 
     def get_obj_from_store(self, item_id):
-        loaded_obj = self.red.get(item_id.urn)
+        loaded_obj = self.red.get(item_id)
         if (loaded_obj):
             j_type = json.loads(loaded_obj)['j_type']
             class_for_type = \
