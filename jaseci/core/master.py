@@ -25,10 +25,6 @@ class master(element):
         Code must be encoded in base64
         """
         snt = self.sentinel_ids.get_obj_by_name(name, True)
-        # Force recompile of sentinel every time application loaded
-        if (snt):
-            snt.destroy()
-        snt = None
         gph = self.graph_ids.get_obj_by_name(name, True)
         if (not snt):
             self.api_create_sentinel(name)
