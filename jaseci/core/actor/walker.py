@@ -10,15 +10,15 @@ from core.element import element
 from core.element import anchored
 from core.utils.id_list import id_list
 from core.jac.walker_machine import walker_machine
-from core.jac.ast import ast
 import uuid
+import pickle
 
 
 class walker(element, walker_machine, anchored):
     """Walker class for Jaseci"""
 
     def __init__(self, code=None, *args, **kwargs):
-        self.code = code
+        self.code = pickle.dumps(code, 0).decode()
         self.activity_action_ids = id_list(self)
         self.context = {}
         # Process state
@@ -39,17 +39,17 @@ class walker(element, walker_machine, anchored):
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
         walker_machine.__init__(self)
-        self._jac_ast = ast(jac_text=self.code,
-                            parse_rule='walker') if code else None
+        self._jac_ast = pickle.loads(
+            self.code.encode()) if code else None
 
-    @property
+    @ property
     def current_node(self):
         if(not self.current_node_id):
             return None
         else:
             return self._h.get_obj(uuid.UUID(self.current_node_id))
 
-    @current_node.setter
+    @ current_node.setter
     def current_node(self, obj):
         if(obj):
             self.current_node_id = obj.id.urn
@@ -62,7 +62,7 @@ class walker(element, walker_machine, anchored):
         if no ast provided, will be generated from code
         """
         if(not self.next_node_ids):
-            logger.info(str(f'Walker {self.name} is disengaged'))
+            logger.debug(str(f'Walker {self.name} is disengaged'))
             return False
         if(self.current_step > self.step_limit):
             logger.error(
@@ -71,7 +71,7 @@ class walker(element, walker_machine, anchored):
             )
             return False
         if (self.code and not self._jac_ast):
-            self._jac_ast = ast(jac_text=self.code, parse_rule='walker')
+            self._jac_ast = pickle.loads(self.code.encode())
 
         self.current_node = self.next_node_ids.pop_first_obj()
         self.run_walker(jac_ast=self._jac_ast)
@@ -81,11 +81,11 @@ class walker(element, walker_machine, anchored):
         if (self.stopped == 'skip'):
             self.stopped = None
         if(self.next_node_ids):
-            logger.info(str(f'Step complete, Walker {self.name} next node: ' +
-                            f'- {self.next_node_ids.first_obj()}'))
+            logger.debug(str(f'Step complete, Walker {self.name} next node: ' +
+                             f'- {self.next_node_ids.first_obj()}'))
             return self.next_node_ids.first_obj()
         else:
-            logger.info(
+            logger.debug(
                 str(f'Final step of walker {self.name} complete' +
                     f'- disengaging from {self.current_node}'))
             for i in self.destroy_node_ids.obj_list():
@@ -100,7 +100,7 @@ class walker(element, walker_machine, anchored):
             for i in prime_ctx.keys():
                 self.context[str(i)] = prime_ctx[i]
         self.profile['steps'] = self.current_step
-        logger.info(str(f'Walker {self.name} primed - {start_node}'))
+        logger.debug(str(f'Walker {self.name} primed - {start_node}'))
 
     def run(self, start_node=None, prime_ctx=None):
         """Executes Walker to completion"""
@@ -112,7 +112,7 @@ class walker(element, walker_machine, anchored):
         self.save()
 
         if(not self.report):
-            logger.warning(
+            logger.debug(
                 str(f'Walker {self.name} did not arrive at report state')
             )
         return self.report

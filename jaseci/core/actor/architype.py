@@ -6,44 +6,26 @@ abstractions or collections of instances (e.g., subgraphs, etc)
 """
 from core.element import element
 from core.jac.architype_machine import architype_machine
-from core.jac.ast import ast
+import pickle
 
 
 class architype(element, architype_machine):
     """Architype class for Jaseci"""
 
     def __init__(self, code=None, *args, **kwargs):
-        self.code = code
-        self._obj = None
+        self.code = pickle.dumps(code, 0).decode()
         element.__init__(self, *args, **kwargs)
         architype_machine.__init__(self)
-
-    def register(self, obj):
-        """
-        Registers element in architype by creating copy
-
-        TODO: Known bug, copying objects with linked objects needs handling
-        """
-        new = obj.duplicate()
-        new.owner_id = self.owner_id
-        self.element_ids.add_obj(new)
-
-    def gen(self):
-        """
-        Create set of new object instances from architype
-        """
-        jac_ast = ast(jac_text=self.code,
-                      parse_rule='architype')
-        return self.run_architype(jac_ast=jac_ast)
+        self._jac_ast = pickle.loads(
+            self.code.encode()) if code else None
 
     def run(self):
         """
         Create set of new object instances from architype if needed
         """
-        # if (not self._obj):
-        #     self._obj = self.gen()
-        # return self._obj
-        return self.gen()
+        if (self.code and not self._jac_ast):
+            self._jac_ast = pickle.loads(self.code.encode())
+        return self.run_architype(jac_ast=self._jac_ast)
 
     def destroy(self):
         """

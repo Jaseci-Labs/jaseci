@@ -40,7 +40,7 @@ class sentinel_machine(machine):
             | KW_EDGE NAME LBRACE (attr_stmt)* RBRACE;
         """
         kid = jac_ast.kid
-        arch = architype(h=self._h, code=jac_ast.get_text())
+        arch = architype(h=self._h, code=jac_ast)
         arch.name = (f"{kid[0].token_text()}.{kid[1].token_text()}")
         arch.save()
         self.arch_ids.add_obj(arch)
@@ -51,7 +51,7 @@ class sentinel_machine(machine):
         walker: KW_WALKER NAME LBRACE (attr_stmt)* statement* RBRACE;
         """
         kid = jac_ast.kid
-        walk = walker(h=self._h, code=jac_ast.get_text())
+        walk = walker(h=self._h, code=jac_ast)
         walk.name = kid[1].token_text()
         walk.save()
         self.walker_ids.add_obj(walk)

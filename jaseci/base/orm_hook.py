@@ -86,11 +86,13 @@ class orm_hook(mem_hook):
         item_from_db.save()
 
     def destroy_obj_from_store(self, item):
-        self.red.delete(item.id.urn)
         try:
             self.objects.get(user=self.user, jid=item.id).delete()
         except ObjectDoesNotExist:
-            logger.error("Object does not exists so delete aborted!")
+            # NOTE: Should look at this at some point
+            # logger.error("Object does not exists so delete aborted!")
+            pass
+        self.red.delete(item.id.urn)
 
     def commit(self):
         """Write through all saves to store"""
