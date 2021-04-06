@@ -32,6 +32,7 @@ class master(element):
         if (not gph):
             self.api_create_graph(name)
             gph = self.graph_ids.get_obj_by_name(name)
+        print(snt)
         self.api_set_jac_code(snt, code, True)
         return {'sentinel': snt.id.urn, 'graph': gph.id.urn,
                 'active': snt.is_active}
@@ -94,6 +95,7 @@ class master(element):
         """
         Set sentinel implementation with Jac source code
         """
+        print(snt)
         if (encoded):
             code = base64.b64decode(code).decode()
         if (snt.code == code and snt.is_active):
