@@ -96,11 +96,11 @@ class master(element):
         """
         if (encoded):
             code = base64.b64decode(code).decode()
-        if (snt.code == code and snt.is_active):
-            return [f'Sentinel {snt.id} already registered and active!']
-        else:
-            snt.code = code
-            return self.api_compile(snt)
+        # if (snt.code == code and snt.is_active):
+        #     return [f'Sentinel {snt.id} already registered and active!']
+        # else:
+        snt.code = code
+        return self.api_compile(snt)
 
     def api_compile(self, snt: sentinel):
         """
