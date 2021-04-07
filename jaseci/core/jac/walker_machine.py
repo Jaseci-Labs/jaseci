@@ -397,9 +397,10 @@ class walker_machine(machine):
             else:
                 target = self.run_edge_ref(
                     kid[2]) * jac_set(self, [target.id.urn])
-            target = target.obj_list()[0]
-            base.detach_outbound(target) if base.is_attached_out(
-                target) else base.detach_inbound(target)
+            if(target):  # HACK: if should always eval true REview later
+                target = target.obj_list()[0]
+                base.detach_outbound(target) if base.is_attached_out(
+                    target) else base.detach_inbound(target)
             target = base
         else:
             use_edge = self.run_edge_ref(kid[1], is_spawn=True)

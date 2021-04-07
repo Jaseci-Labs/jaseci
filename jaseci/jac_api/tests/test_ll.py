@@ -205,8 +205,10 @@ class test_ll(TestCaseHelper):
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {'show_report': 1})
         w_id = data[0][1]['jid']
+        self.start_perf_test()
         data = self.run_walker(
             'get_suggested_parent', {'new_wkt_name': new_wkt}, prime=w_id)
+        self.stop_perf_test()
         self.assertTrue(len(data) > 0)
         self.assertTrue(0 < data[-1][1] < 1)
 
