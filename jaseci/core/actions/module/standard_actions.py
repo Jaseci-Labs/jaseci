@@ -1,3 +1,4 @@
+from operator import itemgetter
 from core.utils.utils import logger
 from datetime import datetime
 
@@ -40,10 +41,11 @@ def sort_by_col(param_list):
             not isinstance(param_list[1], int)):
         logger.error(f'Parameter list {param_list} is not of expected types')
     lst = param_list[0]
-    num = int(param_list[1])
+    num = param_list[1]
     reverse = False if len(param_list) < 3 or param_list[2] == 'asc' else True
 
-    lst.sort(key=lambda k: (k[num], -k[1]), reverse=reverse)
+    #lst.sort(key=lambda k: (k[num], -k[1]), reverse=reverse)
+    return sorted(lst, key=itemgetter(num), reverse=reverse)
 
 
 def time_now(param_list):
