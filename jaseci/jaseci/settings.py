@@ -167,6 +167,10 @@ REST_FRAMEWORK = {
     ]
 }
 
+REST_KNOX = {
+    'TOKEN_TTL': None,
+}
+
 LOGIN_URL = '/ui/login'
 LOGIN_REDIRECT_URL = '/ui'
 LOGOUT_REDIRECT_URL = '/ui'
