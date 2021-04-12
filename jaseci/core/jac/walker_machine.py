@@ -553,7 +553,7 @@ class walker_machine(machine):
                 return 0
         elif (kid[2].name == "KW_DESTROY"):
             idx = self.run_expression(kid[4])
-            if (isinstance(atom_res, list) and isinstance(atom_res, int)):
+            if (isinstance(atom_res, list) and isinstance(idx, int)):
                 del atom_res[idx]
                 return atom_res
             else:

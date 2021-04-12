@@ -291,9 +291,8 @@ list_remove = \
     walker init {
         lst=[['b', 333],['c',245],['a', 56]];
         std.out(lst);
-        lst.destroy(2);
+        lst.destroy(1);
         std.out(lst);
-        lst.destroy(2);
-        std.out(lst);
+        std.out(lst.destroy(1));
     }
     """
