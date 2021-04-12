@@ -120,7 +120,8 @@ power: func_call (POW factor)*;
 
 func_call:
 	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
-	| atom DOT KW_LENGTH;
+	| atom DOT KW_LENGTH
+	| atom DOT KW_DESTROY LPAREN expression RPAREN;
 
 atom:
 	INT

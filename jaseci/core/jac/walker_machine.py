@@ -536,7 +536,8 @@ class walker_machine(machine):
         """
         func_call:
             atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
-            | atom DOT KW_LENGTH;
+            | atom DOT KW_LENGTH
+            | atom DOT KW_DESTROY LPAREN expression RPAREN;
         TODO: Function defintions
         """
         kid = jac_ast.kid
@@ -550,6 +551,15 @@ class walker_machine(machine):
                 self.rt_error(f'Cannot get length of {atom_res}. Not List!',
                               kid[0])
                 return 0
+        elif (kid[2].name == "KW_DESTROY"):
+            idx = self.run_expression(kid[4])
+            if (isinstance(atom_res, list) and isinstance(atom_res, int)):
+                del atom_res[idx]
+                return atom_res
+            else:
+                self.rt_error(f'Cannot remove index {idx} from {atom_res}.',
+                              kid[0])
+                return atom_res
         else:
             param_list = []
             kid = kid[2:]

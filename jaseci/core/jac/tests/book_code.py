@@ -285,3 +285,15 @@ sort_by_col = \
         std.out(std.sort_by_col(lst, 1, 'reverse'));
     }
     """
+
+list_remove = \
+    """
+    walker init {
+        lst=[['b', 333],['c',245],['a', 56]];
+        std.out(lst);
+        lst.destroy(2);
+        std.out(lst);
+        lst.destroy(2);
+        std.out(lst);
+    }
+    """
