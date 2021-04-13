@@ -1,4 +1,5 @@
 from core.utils.utils import TestCaseHelper
+from django.test import TestCase
 from django.contrib.auth import get_user_model
 from base import models
 from obj_api.views import JaseciObjectSerializer
@@ -12,7 +13,7 @@ def sample_user(email='JSCITEST_user@jaseci.com', password='whatever'):
     return get_user_model().objects.create_user(email, password)
 
 
-class model_tests(TestCaseHelper):
+class model_tests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
 

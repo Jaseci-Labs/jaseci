@@ -4,11 +4,12 @@ from core.actor.sentinel import sentinel
 from core.graph.graph import graph
 
 from core.utils.utils import TestCaseHelper
+from unittest import TestCase
 import core.tests.jac_test_code as jtc
 import uuid
 
 
-class jac_tests(TestCaseHelper):
+class jac_tests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):

@@ -1,4 +1,5 @@
 from core.utils.utils import TestCaseHelper
+from unittest import TestCase
 from core.graph.node import node
 from core.attr import action
 from core.graph.edge import edge
@@ -6,7 +7,7 @@ from core import element
 from core.utils.mem_hook import mem_hook
 
 
-class node_tests(TestCaseHelper):
+class node_tests(TestCaseHelper, TestCase):
     """Tests for the funcationality of Jaseci node class"""
 
     def setUp(self):

@@ -1,10 +1,11 @@
 from core.utils.utils import TestCaseHelper
+from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.test import Client
 
 
-class admin_test(TestCaseHelper):
+class admin_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         """Creates test client, admin user and user for this test case"""

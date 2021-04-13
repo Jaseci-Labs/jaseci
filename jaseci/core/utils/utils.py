@@ -8,7 +8,6 @@ import pkgutil
 import logging
 from time import time
 from datetime import datetime
-from django.test import TestCase
 
 
 # Get an instance of a logger
@@ -99,7 +98,7 @@ def find_class_and_import(class_name, from_where):
     return res
 
 
-class TestCaseHelper(TestCase):
+class TestCaseHelper():
     """Helper to pretty print test results"""
 
     def setUp(self):

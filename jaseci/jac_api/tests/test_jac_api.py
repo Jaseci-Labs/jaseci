@@ -7,10 +7,12 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from core.utils.utils import TestCaseHelper
+from django.test import TestCase
+
 import uuid
 
 
-class PublicJacApiTests(TestCaseHelper):
+class PublicJacApiTests(TestCaseHelper, TestCase):
     """Test the publicly available node API"""
 
     def setUp(self):
@@ -27,7 +29,7 @@ class PublicJacApiTests(TestCaseHelper):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class PrivateJacApiTests(TestCaseHelper):
+class PrivateJacApiTests(TestCaseHelper, TestCase):
     """Test the authorized user node API"""
 
     def setUp(self):

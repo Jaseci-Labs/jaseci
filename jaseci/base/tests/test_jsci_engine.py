@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 
 from core.utils.utils import TestCaseHelper
+from django.test import TestCase
 
 from base.models import JaseciObject
 from core.graph import node
@@ -20,7 +21,7 @@ create_user = get_user_model().objects.create_user
 get_user = get_user_model().objects.get
 
 
-class jaseci_engine_tests_private(TestCaseHelper):
+class jaseci_engine_tests_private(TestCaseHelper, TestCase):
     """Test Jaseci Engine when authenticated"""
 
     def setUp(self):

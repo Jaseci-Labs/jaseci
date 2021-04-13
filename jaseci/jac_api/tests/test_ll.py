@@ -4,13 +4,14 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from core.utils.utils import TestCaseHelper
+from django.test import TestCase
 import uuid
 import base64
 import datetime
 import random
 
 
-class test_ll(TestCaseHelper):
+class test_ll(TestCaseHelper, TestCase):
     """Test the authorized user node API"""
 
     def setUp(self):

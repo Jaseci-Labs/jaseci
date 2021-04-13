@@ -3,13 +3,14 @@ from core.utils.mem_hook import mem_hook
 from core.actor.sentinel import sentinel
 from core.graph.graph import graph
 
-from core.utils.utils import TestCaseHelper
 import core.jac.tests.book_code as jtc
 import sys
 import io
+from unittest import TestCase
+from core.utils.utils import TestCaseHelper
 
 
-class jac_book_tests(TestCaseHelper):
+class jac_book_tests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):

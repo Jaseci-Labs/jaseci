@@ -1,4 +1,5 @@
 from core.utils.utils import TestCaseHelper
+from unittest import TestCase
 
 from core.graph.node import node
 from core.master import master
@@ -10,7 +11,7 @@ from core.utils.utils import get_all_subclasses
 import core.tests.jac_test_code as jtc
 
 
-class architype_tests(TestCaseHelper):
+class architype_tests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
 

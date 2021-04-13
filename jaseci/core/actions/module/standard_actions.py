@@ -44,7 +44,6 @@ def sort_by_col(param_list):
     num = param_list[1]
     reverse = False if len(param_list) < 3 or param_list[2] == 'asc' else True
 
-    #lst.sort(key=lambda k: (k[num], -k[1]), reverse=reverse)
     return sorted(lst, key=itemgetter(num), reverse=reverse)
 
 

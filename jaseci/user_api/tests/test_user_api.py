@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from core.utils.utils import TestCaseHelper
+from django.test import TestCase
 
 
 # Consts for url
@@ -18,7 +19,7 @@ create_user = get_user_model().objects.create_user
 get_user = get_user_model().objects.get
 
 
-class user_api_tests_public(TestCaseHelper):
+class user_api_tests_public(TestCaseHelper, TestCase):
     """Tests for user API (public)"""
 
     def setUp(self):
@@ -167,7 +168,7 @@ class user_api_tests_public(TestCaseHelper):
         get_user(email=payload['email']).delete()
 
 
-class user_api_tests_private(TestCaseHelper):
+class user_api_tests_private(TestCaseHelper, TestCase):
     """Test API requests that are authenticated"""
 
     def setUp(self):

@@ -6,6 +6,7 @@ from core.actor.sentinel import sentinel
 from core.graph.graph import graph
 
 from core.utils.utils import TestCaseHelper
+from unittest import TestCase
 import core.tests.jac_test_code as jtc
 
 
@@ -20,7 +21,7 @@ class rule_print_listener(ParseTreeListener):
         self.rule_list.append(jacParser.symbolicNames[node.getSymbol().type])
 
 
-class jac_tests(TestCaseHelper):
+class jac_tests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):

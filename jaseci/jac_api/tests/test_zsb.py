@@ -4,11 +4,12 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from core.utils.utils import TestCaseHelper
+from django.test import TestCase
 import uuid
 import base64
 
 
-class test_zsb(TestCaseHelper):
+class test_zsb(TestCaseHelper, TestCase):
     """Test the authorized user node API"""
 
     def setUp(self):
