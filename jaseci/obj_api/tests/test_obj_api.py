@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from core.utils.utils import TestCaseHelper
+from django.test import TestCase
 
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -12,7 +13,7 @@ from base.models import JaseciObject
 NODE_URL = reverse('obj_api:jaseciobject-list')
 
 
-class PublicNodeApiTests(TestCaseHelper):
+class PublicNodeApiTests(TestCaseHelper, TestCase):
     """Test the publicly available node API"""
 
     def setUp(self):
@@ -29,7 +30,7 @@ class PublicNodeApiTests(TestCaseHelper):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class PrivateNodeApiTests(TestCaseHelper):
+class PrivateNodeApiTests(TestCaseHelper, TestCase):
     """Test the authorized user node API"""
 
     def setUp(self):

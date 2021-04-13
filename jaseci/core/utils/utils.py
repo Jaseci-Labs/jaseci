@@ -109,12 +109,23 @@ class TestCaseHelper():
     def tearDown(self):
         TY = '\033[33m'
         TG = '\033[32m'
+        TR = '\033[31m'
         EC = '\033[m'  # noqa
         td = super().tearDown()
-        print(f'Time: {TY}{time()-self.stime:.3f} ' +
-              f'- {EC}{self.id().split(".")[-1]}: {TG}[passed]{EC}')
+        result = f'Time: {TY}{time()-self.stime:.3f} ' + \
+                 f'- {EC}{self.id().split(".")[-1]}: '
+        get_outcome = self.defaultTestResult()
+        self._feedErrorsToResult(get_outcome, self._outcome.errors)
+        if (not len(get_outcome.errors)):
+            result += f'{TG}[passed]{EC}'
+        else:
+            result += f'{TR}[failed]{EC}'
+        print(result)
         self.logger_on()
         return td
+
+    def tearDownWithError(self):
+        print(f'{TG}[passed]{EC}')
 
     def logger_off(self):
         """Turn off logging output"""
