@@ -21,10 +21,7 @@ walk_exit_block: KW_WITH KW_EXIT code_block;
 
 walk_activity_block: KW_WITH KW_ACTIVITY code_block;
 
-attr_block:
-	LBRACE (attr_stmt)* RBRACE
-	| COLON (attr_stmt)* SEMI
-	| SEMI;
+attr_block: LBRACE (attr_stmt)* RBRACE | COLON attr_stmt | SEMI;
 
 attr_stmt: has_stmt | can_stmt;
 

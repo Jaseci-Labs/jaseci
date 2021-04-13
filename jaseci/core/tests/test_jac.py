@@ -1,4 +1,4 @@
-from antlr4 import InputStream, CommonTokenStream, ParseTreeListener
+from antlr4 import InputStream, CommonTokenStream
 from core.jac._jac_gen.jacLexer import jacLexer
 from core.jac._jac_gen.jacParser import jacParser
 from core.utils.mem_hook import mem_hook

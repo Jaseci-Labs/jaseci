@@ -22,12 +22,10 @@ ll_proto = \
         can infer.day_from_date;
     }
 
-    node day {
-        has anchor day;
-    }
+    node day: has anchor day;
 
     node workette {
-        has name, order, date, owner, status, snooze_till;
+        has  name, order, date, owner, status, snooze_till;
         has note, is_MIT, is_ritual;
     }
 

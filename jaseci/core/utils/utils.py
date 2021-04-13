@@ -124,9 +124,6 @@ class TestCaseHelper():
         self.logger_on()
         return td
 
-    def tearDownWithError(self):
-        print(f'{TG}[passed]{EC}')
-
     def logger_off(self):
         """Turn off logging output"""
         logging.getLogger('core').disabled = True
