@@ -3,8 +3,7 @@ Command line tool for Jaseci
 """
 
 import click
-import sys
-from inspect import signature, getmembers, isfunction
+from inspect import signature
 
 from core.utils.mem_hook import mem_hook
 from core.master import master as master_class
@@ -13,17 +12,17 @@ from core.master import master as master_class
 master = master_class(h=mem_hook())
 
 
-def test():
-    print('a')
-    pass
+def api_to_cmd(**kwargs):
+    print(kwargs)
 
 
 # Introspection on master interface to generate view class for master apis
+api_funcs = {}
 for i in dir(master):
     if (i.startswith('api_')):
         func_sig = signature(getattr(master, i))
-        globals()[i] = func_sig
+        api_funcs[i] = func_sig
 
 
 def main():
-    print(getmembers(sys.modules[__name__], isfunction))
+    print(api_funcs)

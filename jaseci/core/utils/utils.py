@@ -6,6 +6,8 @@ import uuid
 import importlib
 import pkgutil
 import logging
+import types
+import functools
 from time import time
 from datetime import datetime
 
@@ -96,6 +98,19 @@ def find_class_and_import(class_name, from_where):
             if(res2):
                 res = res2
     return res
+
+
+def copy_func(f):
+    """
+    Utility to duplicate function in python.
+    Can be used to programatically add methods to classes
+    """
+    g = types.FunctionType(f.__code__, f.__globals__, name=f.__name__,
+                           argdefs=f.__defaults__,
+                           closure=f.__closure__)
+    g = functools.update_wrapper(g, f)
+    g.__kwdefaults__ = f.__kwdefaults__
+    return g
 
 
 class TestCaseHelper():

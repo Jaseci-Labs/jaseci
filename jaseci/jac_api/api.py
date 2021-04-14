@@ -2,24 +2,10 @@ from .views import AbstractJacAPIView
 from core.element import element
 from core.master import master
 from core.utils.mem_hook import mem_hook
+from core.utils.utils import copy_func
 from inspect import signature
-import types
-import functools
 import uuid
 import json
-
-
-def copy_func(f):
-    """
-    Utility to duplicate function in python.
-    Can be used to programatically add methods to classes
-    """
-    g = types.FunctionType(f.__code__, f.__globals__, name=f.__name__,
-                           argdefs=f.__defaults__,
-                           closure=f.__closure__)
-    g = functools.update_wrapper(g, f)
-    g.__kwdefaults__ = f.__kwdefaults__
-    return g
 
 
 def rest_api_auto_doc(endpoint: str, fsig: signature):
