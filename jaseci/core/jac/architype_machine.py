@@ -24,9 +24,10 @@ class architype_machine(machine):
             item = node(h=self._h, kind=kid[1].token_text())
             if(kid[2].name == 'COLON'):
                 item.dimension = int(kid[3].token_text())
+            self.run_attr_block(kid[-1], item)
         elif(kid[0].name == 'KW_EDGE'):
             item = edge(h=self._h, kind=kid[1].token_text())
-        self.run_attr_block(kid[-1], item)
+            self.run_attr_block(kid[-1], item)
         item.owner_id = self.owner().id
         return item
 

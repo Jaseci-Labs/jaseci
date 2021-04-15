@@ -7,7 +7,8 @@ element: architype | walker;
 
 architype:
 	KW_NODE NAME (COLON INT)? attr_block
-	| KW_EDGE NAME attr_block;
+	| KW_EDGE NAME attr_block
+	| KW_GRAPH NAME dot_block;
 
 walker:
 	KW_WALKER NAME LBRACE attr_stmt* walk_entry_block? (
@@ -145,11 +146,11 @@ node_ref: KW_NODE (DBL_COLON NAME)?;
 
 edge_ref: edge_to | edge_from | edge_any;
 
-edge_to: '-' ('[' NAME ']')? '->';
+edge_to: '-->' | '-' ('[' NAME ']')? '->';
 
-edge_from: '<-' ('[' NAME ']')? '-';
+edge_from: '<--' | '<-' ('[' NAME ']')? '-';
 
-edge_any: '<-' ('[' NAME ']')? '->';
+edge_any: '<-->' | '<-' ('[' NAME ']')? '->';
 
 list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
 
@@ -163,7 +164,48 @@ walker_spawn: KW_WALKER DBL_COLON NAME spawn_ctx?;
 
 spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
 
+/* DOT grammar below */
+dot_block: LBRACE dot_graph RBRACE | COLON dot_graph SEMI;
+
+dot_graph:
+	KW_STRICT? (KW_GRAPH | KW_DIGRAPH) dot_id? '{' dot_stmt_list '}';
+
+dot_stmt_list: ( dot_stmt ';'?)*;
+
+dot_stmt:
+	dot_node_stmt
+	| dot_edge_stmt
+	| dot_attr_stmt
+	| dot_id '=' dot_id
+	| dot_subgraph;
+
+dot_attr_stmt: ( KW_GRAPH | KW_NODE | KW_EDGE) dot_attr_list;
+
+dot_attr_list: ( '[' dot_a_list? ']')+;
+
+dot_a_list: ( dot_id ( '=' dot_id)? ','?)+;
+
+dot_edge_stmt: (dot_node_id | dot_subgraph) dot_edgeRHS dot_attr_list?;
+
+dot_edgeRHS: ( dot_edgeop ( dot_node_id | dot_subgraph))+;
+
+dot_edgeop: '->' | '--';
+
+dot_node_stmt: dot_node_id dot_attr_list?;
+
+dot_node_id: dot_id dot_port?;
+
+dot_port: ':' dot_id ( ':' dot_id)?;
+
+dot_subgraph: ( KW_SUBGRAPH dot_id?)? '{' dot_stmt_list '}';
+
+dot_id: NAME | STRING | INT | FLOAT;
+
 /* Lexer rules */
+KW_GRAPH: 'graph';
+KW_STRICT: 'strict';
+KW_DIGRAPH: 'digraph';
+KW_SUBGRAPH: 'subgraph';
 KW_NODE: 'node';
 KW_IGNORE: 'ignore';
 KW_TAKE: 'take';

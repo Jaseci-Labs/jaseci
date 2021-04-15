@@ -84,8 +84,7 @@ class hookable():
 
 class element(hookable):
     """
-    Base class for Jaseci for stan
-    dard info shared across all objects types in
+    Base class for Jaseci for standard info shared across all objects types in
     Jaseci. This class also includes a method for dumping the non-general items
     as a single dictionary. The :meth:`jsci_payload` function automatically
     finds relevant non general fields and returns a dictionary of them.

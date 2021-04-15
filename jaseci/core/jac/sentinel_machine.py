@@ -36,8 +36,9 @@ class sentinel_machine(machine):
     def run_architype(self, jac_ast):
         """
         architype:
-            KW_NODE NAME (COLON INT)? LBRACE (attr_stmt)* RBRACE
-            | KW_EDGE NAME LBRACE (attr_stmt)* RBRACE;
+            KW_NODE NAME (COLON INT)? attr_block
+            | KW_EDGE NAME attr_block
+            | KW_GRAPH NAME dot_block;
         """
         kid = jac_ast.kid
         arch = architype(h=self._h, code=jac_ast)

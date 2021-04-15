@@ -24,6 +24,6 @@ class jsctl_test(TestCaseHelper, TestCase):
         sys.stdout = self.new_stdout
 
     def test_jsctl_main(self):
-        self.logger_on()
+        # self.logger_on()
         jsctl.main()
-        self.to_screen()
+        # self.to_screen()
