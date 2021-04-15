@@ -3,12 +3,15 @@ Main master handler for each user of Jaseci, serves as main interface between
 between user and Jaseci
 """
 import base64
+import uuid
+from inspect import signature
 from core.element import element
 from core.graph.graph import graph
 from core.graph.node import node
 from core.actor.sentinel import sentinel
 from core.actor.walker import walker
 from core.utils.id_list import id_list
+from core.utils.utils import logger
 
 
 class master(element):
@@ -18,6 +21,12 @@ class master(element):
         self.graph_ids = id_list(self)
         self.sentinel_ids = id_list(self)
         super().__init__(name=email, kind="Jaseci Master", *args, **kwargs)
+
+    def api_load_app(self, name: str, code: str):
+        """
+        Short for api_load_application
+        """
+        return self.api_load_application(name, code)
 
     def api_load_application(self, name: str, code: str):
         """
@@ -100,18 +109,12 @@ class master(element):
             return [f'Sentinel {snt.id} already registered and active!']
         else:
             snt.code = code
-            return self.api_compile(snt)
-
-    def api_compile(self, snt: sentinel):
-        """
-        Compile and register sentinel (ready to run if successful)
-        """
-        snt.register_code()
-        snt.save()
-        if(snt.is_active):
-            return [f'Sentinel {snt.id} registered and active!']
-        else:
-            return [f'Sentinel {snt.id} code issues encountered!']
+            snt.register_code()
+            snt.save()
+            if(snt.is_active):
+                return [f'Sentinel {snt.id} registered and active!']
+            else:
+                return [f'Sentinel {snt.id} code issues encountered!']
 
     def api_spawn_walker(self, snt: sentinel, name: str):
         """
@@ -177,3 +180,54 @@ class master(element):
         for i in self.sentinel_ids.obj_list() + self.graph_ids.obj_list():
             i.destroy()
         super().destroy()
+
+    def general_interface_to_api(self, params, api_name):
+        """
+        A mapper utility to interface to master class
+        Assumptions:
+            params is a dictionary of parameter names and values in UUID
+            api_name is the name of the api being mapped to
+        """
+        param_map = {}
+        if (not hasattr(self, api_name)):
+            logger.error(f'{api_name} not a valid API')
+            return False
+        func_sig = signature(getattr(self, api_name))
+        for i in func_sig.parameters.keys():
+            if (i == 'self'):
+                continue
+            p_name = i
+            p_type = func_sig.parameters[i].annotation
+            param_map[i] = None
+            if (p_name in params.keys()):  # TODO: BETTER ERROR REPORTING
+                val = params[p_name]
+                if (issubclass(p_type, element)):
+                    val = self._h.get_obj(uuid.UUID(val))
+                    if (isinstance(val, p_type)):
+                        param_map[i] = val
+                    else:
+                        logger.error(f'{type(val)} is not {p_type}')
+                        param_map[i] = None
+                else:  # TODO: Can do type checks here too
+                    param_map[i] = val
+            else:
+                param_map[i] = None
+
+            if (param_map[i] is None):
+                logger.error(f'Invalid API parameter set - {params}')
+                return False
+        if (len(param_map) < len(params)-1):
+            logger.warning(
+                str(f'Unused parameters in API call - '
+                    f'got {params.keys()}, expected {param_map.keys()}'))
+        return getattr(self, api_name)(**param_map)
+
+    def get_api_signature(self, api_name):
+        """
+        Checks for valid api name and returns signature
+        """
+        if (not hasattr(self, api_name)):
+            logger.error(f'{api_name} not a valid API')
+            return False
+        else:
+            return signature(getattr(master, api_name))

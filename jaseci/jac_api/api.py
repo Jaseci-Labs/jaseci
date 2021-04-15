@@ -46,7 +46,7 @@ for i in dir(master(h=mem_hook())):
         func_sig = signature(getattr(master, i))
         gen_cls = type(i,
                        (AbstractJacAPIView,),
-                       {'api_sig': func_sig})
+                       {})
         gen_cls.post = copy_func(gen_cls.post)
         gen_cls.post.__doc__ = getattr(master, i).__doc__ + '\n\n' + \
             rest_api_auto_doc(f'/jac/{i[4:]}', func_sig)

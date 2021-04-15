@@ -24,6 +24,10 @@ class jsctl_test(TestCaseHelper, TestCase):
         sys.stdout = self.new_stdout
 
     def test_jsctl_main(self):
-        # self.logger_on()
-        jsctl.main()
-        # self.to_screen()
+        self.logger_on()
+        out = jsctl.extract_api_tree()
+        self.assertIn("create", out)
+        self.assertIn("get", out)
+        self.assertIn("load", out)
+        self.assertIn("set", out)
+        self.assertNotIn("jac", out)

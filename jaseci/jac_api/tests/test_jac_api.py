@@ -22,9 +22,9 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
     def tearDown(self):
         super().tearDown()
 
-    def test_login_required(self):
+    def test_login_required_jac_api(self):
         """Test that login required for retrieving nodes"""
-        res = self.client.get(reverse('jac_api:compile'))
+        res = self.client.get(reverse('jac_api:list_graphs'))
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -164,9 +164,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                    'encoded': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'compile', 'snt': sent.id.urn}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload)
         self.assertTrue(sent.is_active)
         self.assertEqual(sent.walker_ids.obj_list()[0].name, 'test')
 
@@ -215,8 +212,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                    'encoded': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'compile', 'snt': sent.id.urn}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         payload = {'op': 'spawn_walker', 'snt': sent.id.urn,
                    'name': 'test'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
@@ -237,8 +232,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                    'encoded': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'compile', 'snt': sent.id.urn}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         payload = {'op': 'spawn_walker', 'snt': sent.id.urn,
                    'name': 'test'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
@@ -263,8 +256,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                    'encoded': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'compile', 'snt': sent.id.urn}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         payload = {'op': 'spawn_walker', 'snt': sent.id.urn,
                    'name': 'test'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
@@ -292,8 +283,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                    'encoded': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'compile', 'snt': sent.id.urn}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         payload = {'op': 'spawn_walker', 'snt': sent.id.urn,
                    'name': 'test'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
@@ -327,8 +316,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'compile', 'snt': sent.id.urn}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         payload = {'op': 'spawn_walker', 'snt': sent.id.urn,
                    'name': 'test'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
@@ -356,8 +343,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                    'encoded': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'compile', 'snt': sent.id.urn}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         payload = {'op': 'spawn_walker', 'snt': sent.id.urn,
                    'name': 'test'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
@@ -378,8 +363,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                    'encoded': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'compile', 'snt': sent.id.urn}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         payload = {'op': 'spawn_walker', 'snt': sent.id.urn,
                    'name': 'test'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)

@@ -33,9 +33,6 @@ class test_zsb(TestCaseHelper, TestCase):
                    'code': ll_file, 'encoded': True}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'compile', 'snt': self.snt.id.urn}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload)
         self.run_walker('init', {})
 
     def tearDown(self):

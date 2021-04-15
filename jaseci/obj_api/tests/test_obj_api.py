@@ -23,7 +23,7 @@ class PublicNodeApiTests(TestCaseHelper, TestCase):
     def tearDown(self):
         super().tearDown()
 
-    def test_login_required(self):
+    def test_login_required_obj_api(self):
         """Test that login required for retrieving nodes"""
         res = self.client.get(NODE_URL)
 

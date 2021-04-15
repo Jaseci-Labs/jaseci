@@ -288,24 +288,27 @@ sort_by_col = \
 
 list_remove = \
     """
+    node test { has lst; }
+
     walker init {
-        lst=[['b', 333],['c',245],['a', 56]];
-        std.out(lst);
-        lst.destroy(1);
-        std.out(lst);
-        std.out(lst.destroy(1));
+        nd=spawn here --> node::test;
+        nd.lst=[['b', 333],['c',245],['a', 56]];
+        std.out(nd.lst);
+        nd.lst.destroy(1);
+        std.out(nd.lst);
+        std.out(nd.lst.destroy(1));
     }
     """
 
 dot_graph = \
     """
-    graph test { 
+    graph test {
         digraph G {
         nodesep=0.05;
         rankdir=LR;
         node [shape=record,width=0.1,height=0.1];
 
-        node0 [label = "<f0> |<f1> |<f2> |<f3> |<f4> |<f5> |<f6> | ",height=2.5];
+        node0 [label = "<f0> |<f1> |<f2> |<f3> |<f4> |<f5> |<f6> | "];
         node [width = 1.5];
         node1 [label = "{<n> n14 | 719 |<p> }"];
         node2 [label = "{<n> a1 | 805 |<p> }"];

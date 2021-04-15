@@ -3,9 +3,7 @@ from knox.auth import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from core.utils.utils import logger
-from core.element import element
 from time import time
-import uuid
 
 
 class JResponse(Response):
@@ -33,21 +31,9 @@ class AbstractJacAPIView(APIView):
         bodies accordingly
         """
         self.proc_request(request)
-        param_map = {}
-        for i in self.api_sig.parameters.keys():
-            if (i == 'self'):
-                continue
-            p_name = i
-            p_type = self.api_sig.parameters[i].annotation
-            param_map[i] = self.get_param(name=p_name, typ=p_type)
-            if (param_map[i] is None):
-                logger.error(self.res)
-                return Response(self.res)
-        if (len(param_map) < len(self.cmd)-1):
-            logger.warning(
-                str(f'Unused parameters in API call - '
-                    f'got {self.cmd.keys()}, expected {param_map.keys()}'))
-        api_result = getattr(self.master, type(self).__name__)(**param_map)
+
+        api_result = self.master.general_interface_to_api(
+            self.cmd, type(self).__name__)
         self.log_request_time()
         return JResponse(self.master, api_result)
 
@@ -70,21 +56,3 @@ class AbstractJacAPIView(APIView):
         self.cmd = request.data
         self.master = request.user.get_master()
         self.res = "Not valid interaction!"
-
-    def get_param(self, name, typ):
-        """Parse request to field set, req flags if required"""
-        if (name in self.cmd.keys()):  # TODO: BETTER ERROR REPORTING IF ISSUE
-            val = self.cmd[name]
-            if (issubclass(typ, element)):
-                val = self.master._h.get_obj(uuid.UUID(val))
-                if (isinstance(val, typ)):
-                    return val
-                else:
-                    self.res += f'{type(val)} is not {typ}'
-                    return None
-            else:
-                return val
-        else:
-            self.res += f'\nInvalid API parameter set - {self.cmd}'
-            logger.error(self.res)
-            return None

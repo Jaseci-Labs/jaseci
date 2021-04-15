@@ -100,16 +100,18 @@ def find_class_and_import(class_name, from_where):
     return res
 
 
-def copy_func(f):
+def copy_func(f, name=None):
     """
     Utility to duplicate function in python.
     Can be used to programatically add methods to classes
     """
-    g = types.FunctionType(f.__code__, f.__globals__, name=f.__name__,
+    g = types.FunctionType(f.__code__, f.__globals__,
+                           name=f.__name__,
                            argdefs=f.__defaults__,
                            closure=f.__closure__)
     g = functools.update_wrapper(g, f)
     g.__kwdefaults__ = f.__kwdefaults__
+    g.__name__ = name if name else g.__name__
     return g
 
 
