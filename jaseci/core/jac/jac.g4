@@ -1,7 +1,7 @@
 grammar jac;
 
 /* Sentinels handle these top rules */
-start: element*;
+start: element* EOF;
 
 element: architype | walker;
 
