@@ -31,7 +31,7 @@ class edge(element, anchored):
             return None
         ret = self._h.get_obj(uuid.UUID(self.from_node_id))
         if (not ret):
-            logger.error(
+            logger.critical(
                 str("{} disconnected from node".format(self))
             )
             element.destroy(self)
@@ -44,7 +44,7 @@ class edge(element, anchored):
             return None
         ret = self._h.get_obj(uuid.UUID(self.to_node_id))
         if (not ret):
-            logger.error(
+            logger.critical(
                 str("{} disconnected to node".format(self))
             )
             element.destroy(self)
