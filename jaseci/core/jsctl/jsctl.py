@@ -3,35 +3,46 @@ Command line tool for Jaseci
 """
 
 import click
+import os.path
+import pickle
 from inspect import signature
 
 from core.utils.mem_hook import mem_hook
 from core.utils.utils import copy_func
 from core.master import master as master_class
 
-master = master_class(h=mem_hook())
+session = {
+    "filename": "js.session",
+    "master": master_class(h=mem_hook()),
+}
 
 
 def blank_func():
     pass
 
 
-cli = click.group()(blank_func)
+@click.group()
+@click.option('--filename', '-f', default="js.session")
+def cli(filename):
+    session['filename'] = filename
+    if (os.path.isfile(filename)):
+        session['master'] = pickle.load(open(filename, 'rb'))
 
 
 def interface_api(**kwargs):
     api_name = kwargs.pop('api')
-    print(master.general_interface_to_api(kwargs, api_name))
+    print(session['master'].general_interface_to_api(kwargs, api_name))
+    pickle.dump(session['master'], open(session['filename'], 'wb'))
 
 
 def extract_api_tree():
     api_funcs = {}
-    for i in dir(master):
+    for i in dir(session['master']):
         if (i.startswith('api_')):
             # Get function names and signatures
             func_str = i[4:]
             cmd_groups = func_str.split('_')
-            func_sig = signature(getattr(master, i))
+            func_sig = signature(getattr(session['master'], i))
 
             # Build hierarchy of command groups
             api_root = api_funcs
@@ -46,7 +57,7 @@ def extract_api_tree():
 def build_cmd(group_func, func_name, api_name):
     f = click.option(
         f'-api', default=api_name)(copy_func(interface_api, func_name))
-    func_sig = master.get_api_signature(api_name)
+    func_sig = session['master'].get_api_signature(api_name)
     for i in func_sig.parameters.keys():
         if(i == 'self'):
             continue

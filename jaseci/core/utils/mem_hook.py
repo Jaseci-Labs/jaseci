@@ -53,14 +53,18 @@ class mem_hook():
         else:
             return self.has_obj_in_store(item_id)
 
-    def save_obj(self, item):
+    def save_obj(self, item, persist=False):
         """Save item to session cache, then to store"""
         self.mem[item.id] = item
+        if (persist):
+            self.save_obj_to_store(item)
 
-    def destroy_obj(self, item):
+    def destroy_obj(self, item, persist=False):
         """Destroy item from session cache then  store"""
         self.mem[item.id] = None
         del self.mem[item.id]
+        if(persist):
+            self.destroy_obj_from_store(item)
 
     def clear_mem_cache(self):
         """

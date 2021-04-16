@@ -60,9 +60,7 @@ class hookable():
         """
         Write self through hook to persistent storage
         """
-        self._h.save_obj(self)
-        if (self._persist):
-            self._h.save_obj_to_store(self)
+        self._h.save_obj(self, self._persist)
 
     def destroy(self):
         """
@@ -70,9 +68,7 @@ class hookable():
 
         Note that the object will still exist in python until GC'd
         """
-        self._h.destroy_obj(self)
-        if(self._persist):
-            self._h.destroy_obj_from_store(self)
+        self._h.destroy_obj(self, self._persist)
         del self
 
     def owner(self):
