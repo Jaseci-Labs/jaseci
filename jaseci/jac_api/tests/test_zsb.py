@@ -4,6 +4,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from core.utils.utils import TestCaseHelper
+from core.element import element
 from django.test import TestCase
 import uuid
 import base64
@@ -73,3 +74,23 @@ class test_zsb(TestCaseHelper, TestCase):
         data = self.run_walker(
             'get_log', {}, prime=bot_jid)
         self.assertEqual(data[0][0][1], 'Who says yep?')
+
+    def test_dangling_edge_corruption_healing_non_block(self):
+        """Test ZSB Create Answer call USE api"""
+        data = self.run_walker('add_bot', {'name': "Bot"})
+        self.assertEqual(data[0]['kind'], 'bot')
+        bot_jid = data[0]['jid']
+        data = self.run_walker('create_answer', {'text': "Yep"}, prime=bot_jid)
+        data = self.run_walker(
+            'create_answer', {'text': "Nope"}, prime=bot_jid)
+        lostnode_jid = data[0]['jid']
+        element.destroy(self.master._h.get_obj(uuid.UUID(lostnode_jid)))
+        data = self.run_walker(
+            'create_answer', {'text': "Maybe"}, prime=bot_jid)
+        data = self.run_walker(
+            'ask_question', {'text': "Who says yep?"}, prime=bot_jid)
+        data = self.run_walker(
+            'get_log', {}, prime=bot_jid)
+        self.assertEqual(data[0][0][1], 'Who says yep?')
+        data = self.run_walker(
+            'delete_bot', {}, prime=bot_jid)
