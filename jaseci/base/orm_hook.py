@@ -77,7 +77,18 @@ class orm_hook(mem_hook):
         self.save_list.add(item)
 
     def commit_obj(self, item):
-        self.red.set(item.id.urn, item.json())
+        try:
+            self.red.set(item.id.urn, item.json())
+        except TypeError:
+            logger.error(
+                str(f"Item {item} is not JSON serializable for redis store!"),
+                exc_info=True
+            )
+        except:
+            logger.error(
+                str(f"Couldn't save {item} to redis!"),
+                exc_info=True
+            )
         item_from_db, created = self.objects.get_or_create(
             user=self.user, jid=item.id
         )
