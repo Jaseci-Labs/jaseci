@@ -14,10 +14,10 @@ class sentinel_machine(machine):
 
     def run_start(self, jac_ast):
         """
-        start: element*;
+        start: element+ EOF;
         """
         kid = jac_ast.kid
-        for i in kid:
+        for i in kid[:-1]:
             self.run_element(i)
 
     def run_element(self, jac_ast):

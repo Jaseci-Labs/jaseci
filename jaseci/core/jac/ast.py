@@ -72,7 +72,7 @@ class ast():
         builder = self.jac_tree_builder(self)
         walker = ParseTreeWalker()
         walker.walk(builder, tree)
-        logger.critical(f"{self.parse_errors}")
+
         if(self.parse_errors):
             for i in self.parse_errors:
                 logger.error(
