@@ -215,7 +215,6 @@ class jac_book_tests(TestCaseHelper, TestCase):
                          "[['b', 333]]\n")
 
     def test_dot_graph_parses(self):
-        self.logger_on()
         self.sent.register_code(jtc.dot_graph)
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)

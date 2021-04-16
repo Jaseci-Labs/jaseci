@@ -18,8 +18,8 @@ class ast():
     """
 
     def __init__(self, jac_text=None, parse_errors=None):
-        self.name = None
-        self.kind = None
+        self.name = 'unparsed'
+        self.kind = 'unparsed'
         self.context = {}
         self.parse_errors = parse_errors if parse_errors else []
         self.line = 0
@@ -163,6 +163,6 @@ class ast():
                         line, column, msg, e):
             """Add error to error list"""
             self.tree_root.parse_errors.append(
-                f"{self.tree_root}: line {str(line)}: "
+                f"{self.tree_root}: line {str(line)}:"
                 f"{str(column)} - {msg}"
             )
