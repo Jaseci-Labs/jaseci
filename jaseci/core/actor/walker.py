@@ -5,6 +5,7 @@ Each walker has an id, name, timestamp and it's owner sentinel.
 TODO: Perhaps  I should have walker state (context ids) in mem only with
 default hooks to save db read/writes
 """
+
 from core.utils.utils import logger
 from core.element import element
 from core.element import anchored
@@ -32,7 +33,7 @@ class walker(element, walker_machine, anchored):
         self.loop_ctrl = None
         self.current_step = 0
         self.in_entry_exit = False
-        self.scope = {}
+        self.local_scope = {}
         # Runtime limitations
         self.step_limit = 10000
         self.loop_limit = 10000
@@ -139,7 +140,7 @@ class walker(element, walker_machine, anchored):
         self.ignore_node_ids.remove_all()
         self.destroy_node_ids.remove_all()
         self.current_node = None
-        self.scope = {}
+        self.local_scope = {}
         self.activity_action_ids.destroy_all()
         self.context = {}
 

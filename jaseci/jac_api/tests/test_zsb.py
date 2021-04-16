@@ -54,6 +54,22 @@ class test_zsb(TestCaseHelper, TestCase):
         """Test ZSB Create Answer call USE api"""
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['kind'], 'bot')
-        jid = data[0]['jid']
-        data = self.run_walker('create_answer', {'text': "Yep"}, prime=jid)
+        bot_jid = data[0]['jid']
+        data = self.run_walker('create_answer', {'text': "Yep"}, prime=bot_jid)
         self.assertEqual(data[0]['kind'], 'answer')
+
+    def test_zsb_ask_question(self):
+        """Test ZSB Create Answer call USE api"""
+        data = self.run_walker('add_bot', {'name': "Bot"})
+        self.assertEqual(data[0]['kind'], 'bot')
+        bot_jid = data[0]['jid']
+        data = self.run_walker('create_answer', {'text': "Yep"}, prime=bot_jid)
+        data = self.run_walker(
+            'create_answer', {'text': "Nope"}, prime=bot_jid)
+        data = self.run_walker(
+            'create_answer', {'text': "Maybe"}, prime=bot_jid)
+        data = self.run_walker(
+            'ask_question', {'text': "Who says yep?"}, prime=bot_jid)
+        data = self.run_walker(
+            'get_log', {}, prime=bot_jid)
+        self.assertEqual(data[0][0][1], 'Who says yep?')

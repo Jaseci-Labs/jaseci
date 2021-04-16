@@ -1,9 +1,15 @@
 node botset;
-node bot { has anchor name; }
-node answer { has text, encoding; }
 
+node bot { has anchor name; }
+node log_chunk { has history; }
+
+node answer {
+    has text, encoding;
+    has qlinks;
+}
 
 walker get_bots {
+
     root { take --> node::botset; }
     botset { report -->; disengage; }
 }
@@ -14,9 +20,16 @@ walker add_bot {
     botset {
         bot=spawn here --> node::bot(name=name);
         report bot;
-        disengage;
     }
 }
+
+walker delete_bot {
+    bot, answer {
+        take --> node;
+        destroy here;
+    }
+}
+
 
 walker get_answers {
     bot {
@@ -26,36 +39,143 @@ walker get_answers {
 }
 
 walker create_answer {
-    has text;
+    has text, show_text;
     can use.enc_answer;
 
     bot {
-        ans = spawn here --> node::answer(text=text);
+        ans = spawn here --> node::answer(text=text, show_text=show_text);
         ans.encoding = use.enc_answer(text);
-        std.log(ans);
         report ans;
-        std.log("again: ",ans);
+        disengage;
+    }
+}
+
+walker link_question {
+    has text;
+    can use.enc_answer, use.dist_score;
+
+    answer {
+        if(here.qlinks): here.qlinks += [text];
+        else: here.qlinks = [text];
+        pretext="";
+        if(here.qlinks){for i in here.qlinks: pretext+=i;}
+        old_enc = here.encoding;
+        here.encoding = use.enc_answer(pretext+text);
+        report use.dist_score(old_enc, here.encoding);
+    }
+}
+
+walker unlink_question {
+    has idx;
+    can use.enc_answer, use.dist_score;
+
+    answer {
+        if(not here.qlinks or here.qlinks.length < idx): 
+            report "Index out of range!";
+        else {
+            here.qlinks.destroy(idx);
+            pretext="";
+            for i in here.qlinks: pretext+=i;
+            old_enc = here.encoding;
+            here.encoding = use.enc_answer(pretext+text);
+            report use.dist_score(old_enc, here.encoding);
+        }
+    }
+}
+
+walker delete_answer {
+    answer {
+        destroy here;
+    }
+}
+
+walker change_answer {
+    has text;
+    can use.enc_answer;
+
+    answer {
+        here.text = text;
+        pretext="";
+        if(here.qlinks){for i in here.qlinks: pretext+=i;}
+        here.encoding = use.enc_answer(pretext+text);
+        report here;
         disengage;
     }
 }
 
 walker ask_question {
-    has text;
+    has text, selected;
     can use.enc_question, use.qa_score;
 
-    bot {
+    with entry {
         enc=use.enc_question(text);
         selected = false;
+    }
+
+    bot {
         max_score = 0;
         for i in --> {
-            score=use.qa_score();
+            score=use.qa_score(enc, i.encoding);
             if(score[0][0]>max_score){
                 selected = i;
                 max_score=score[0][0];
             }
         }
+        take --> node::log_chunk else { 
+            spawn here --> node::log_chunk;
+            take --> node::log_chunk;
+        }
+    }
+
+    log_chunk {
+        if(not here.history): here.history=[];
+        here.history = [[std.time_now(), text, selected]] + here.history;
+    }
+
+    with exit {
         report selected;
-        disengage;
+    }
+}
+
+walker get_log {
+    bot {
+        take --> node::log_chunk;
+    }
+    log_chunk {
+        report here.history;
+    }
+}
+
+walker drain_log {
+    bot {
+        take --> node::log_chunk;
+    }
+    log_chunk {
+        report here.history;
+        here.history=[];
+    }
+}
+
+walker get_question_matches {
+    has text, num_matches, matches;
+    can use.enc_question, use.qa_score;
+
+    with entry {matches=[];}
+
+    bot {
+        enc=use.enc_question(text);
+        for i in --> {
+            score=use.qa_score(enc, i.encoding);
+            matches += [[score[0][0], &i]];
+        }
+    }
+
+    with exit {
+        if(num_matches>matches.length):
+            num_matches=matches.length;
+        matches=std.sort_by_col(matches, 0, 'reverse');
+        for i=0 to i<num_matches by i+=1:
+            report matches[i];
     }
 }
 

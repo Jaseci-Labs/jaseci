@@ -4,15 +4,14 @@ Walker machine for jac code in AST form
 This machine should be inhereted from the class that manages state referenced
 through self.
 """
+from core.actions.global_actions import global_action_ids
+from core.element import element
 from core.attr.action import action
 from core.graph.node import node
 from core.graph.edge import edge
 from core.jac.machine import machine
-from core.element import element, ctx_value
-from core.utils.utils import is_urn
-from core.actions.global_actions import global_action_ids
-from .jac_set import jac_set
-import uuid
+from core.jac.jac_set import jac_set
+from core.jac.jac_scope import jac_scope
 
 
 class walker_machine(machine):
@@ -27,7 +26,14 @@ class walker_machine(machine):
                 | walk_activity_block
             )* walk_exit_block? RBRACE;
         """
-        self.scope['here'] = self.current_node.id.urn
+        self._jac_scope = jac_scope(self,
+                                    self.local_scope,
+                                    self.context,
+                                    [global_action_ids,
+                                     self.activity_action_ids,
+                                     self.current_node.activity_action_ids])
+        self.local_scope['here'] = self.current_node.id.urn
+
         self.trigger_entry_actions()
         kid = jac_ast.kid
         if(self.current_step == 0):
@@ -180,7 +186,7 @@ class walker_machine(machine):
             lst = self.run_expression(kid[3])
             # should check that lst is list here
             for i in lst:
-                self.set_live_var(var_name, i, [], kid[3])
+                self._jac_scope.set_live_var(var_name, i, [], kid[3])
                 self.run_code_block(kid[4])
                 loops += 1
                 if (self.loop_ctrl == 'break'):
@@ -274,7 +280,7 @@ class walker_machine(machine):
         """
         kid = jac_ast.kid
         report = self.run_expression(kid[1])
-        report = self.report_deep_serialize(report)
+        report = self._jac_scope.report_deep_serialize(report)
         self.report.append(report)
         self.log_history('reports',
                          {'from': self.current_node.id.urn,
@@ -326,7 +332,7 @@ class walker_machine(machine):
                 arr_idx.append(self.run_array_idx(i))
         result = self.run_expression(kid[-1])
         if (assign_scope is None):
-            self.set_live_var(var_name, result, arr_idx, kid[0])
+            self._jac_scope.set_live_var(var_name, result, arr_idx, kid[0])
         else:
             if(isinstance(result, element)):
                 result = result.id.urn
@@ -344,7 +350,7 @@ class walker_machine(machine):
         for i in kid:
             if(i.name == 'array_idx'):
                 arr_idx.append(self.run_array_idx(i))
-        result = self.get_live_var(var_name, kid[0])
+        result = self._jac_scope.get_live_var(var_name, kid[0])
         if(kid[1].name == 'PEQ'):
             result = result + self.run_expression(kid[2])
         elif(kid[1].name == 'MEQ'):
@@ -353,7 +359,7 @@ class walker_machine(machine):
             result = result * self.run_expression(kid[2])
         elif(kid[1].name == 'DEQ'):
             result = result / self.run_expression(kid[2])
-        self.set_live_var(var_name, result, arr_idx, kid[0])
+        self._jac_scope.set_live_var(var_name, result, arr_idx, kid[0])
         return result
 
     def run_copy_assign(self, jac_ast):
@@ -362,7 +368,7 @@ class walker_machine(machine):
         """
         kid = jac_ast.kid
         var_name = self.run_dotted_name(kid[0])
-        dest = self.get_live_var(var_name, kid[0])
+        dest = self._jac_scope.get_live_var(var_name, kid[0])
         for i in kid:
             if(i.name == 'array_idx'):
                 dest = dest[self.run_array_idx(i)]
@@ -607,8 +613,8 @@ class walker_machine(machine):
             res = self.run_edge_ref(kid[0]) * self.run_node_ref(kid[1])
             return res
         elif(kid[0].name == 'dotted_name'):
-            return self.get_live_var(self.run_dotted_name(kid[0]),
-                                     kid[0])
+            return self._jac_scope.get_live_var(self.run_dotted_name(kid[0]),
+                                                kid[0])
         elif(kid[0].name == 'LPAREN'):
             return self.run_expression(kid[1])
         elif (kid[0].name == 'DEREF'):
@@ -624,13 +630,13 @@ class walker_machine(machine):
         array_ref: dotted_name array_idx+;
         """
         kid = jac_ast.kid
-        item = self.get_live_var(self.run_dotted_name(kid[0]),
-                                 kid[0])
+        item = self._jac_scope.get_live_var(self.run_dotted_name(kid[0]),
+                                            kid[0])
         result = item
         for i in kid:
             if(i.name == 'array_idx'):
                 result = result[self.run_array_idx(i)]
-        return self.reference_to_value(result)
+        return self._jac_scope.reference_to_value(result)
 
     def run_array_idx(self, jac_ast):
         """
@@ -644,8 +650,8 @@ class walker_machine(machine):
         attr_ref: dotted_name DBL_COLON dotted_name;
         """
         kid = jac_ast.kid
-        item = self.get_live_var(self.run_dotted_name(kid[0]),
-                                 kid[0])
+        item = self._jac_flow.get_live_var(self.run_dotted_name(kid[0]),
+                                           kid[0])
         attr = self.run_dotted_name(kid[3])
         found = None
         if (isinstance(item, node) or isinstance(item, edge)):
@@ -843,7 +849,7 @@ class walker_machine(machine):
         if(len(kid) > 3):
             self.run_spawn_ctx(kid[3], walk)
         walk.run()
-        ret = self.reference_to_value(walk.anchor_value())
+        ret = self._jac_scope.reference_to_value(walk.anchor_value())
         self.report = self.report + walk.report
         walk.destroy()
         return ret
@@ -858,30 +864,6 @@ class walker_machine(machine):
                 self.run_assignment(i, assign_scope=obj.context)
 
     # Helper Functions ##################
-
-    def report_deep_serialize(self, report):
-        """Performs JSON serialization for lists of lists of lists etc"""
-        if (isinstance(report, element)):
-            report = report.serialize()
-        elif (isinstance(report, jac_set)):
-            blobs = []
-            for i in report.obj_list():
-                blobs.append(i.serialize())
-            report = blobs
-        elif (isinstance(report, list)):
-            blobs = []
-            for i in report:
-                blobs.append(self.report_deep_serialize(i))
-            report = blobs
-        return report
-
-    def viable_nodes(self):
-        """Returns all nodes that shouldnt be ignored"""
-        ret = jac_set(self.owner())
-        for i in self.current_node.attached_nodes():
-            if (i not in self.ignore_node_ids.obj_list()):
-                ret.add_obj(i)
-        return ret
 
     def trigger_entry_actions(self):
         """Trigger current node actions on entry"""
@@ -898,105 +880,10 @@ class walker_machine(machine):
         for i in self.current_node.exit_action_ids.obj_list():
             i.trigger()
 
-    def find_live_attr(self, name, allow_read_only=True):
-        """Finds binding for variable if not in standard scope"""
-        if '.' in name:  # Handles node attr references
-            subname = name.split('.')
-            found = None
-            # check if dotted var in current scope (node, etc)
-            if subname[0] in self.scope.keys():
-                found = self.scope[subname[0]]
-            # check if dotted var in walkers context (node, etc)
-            else:
-                if(subname[0] in self.context.keys()):
-                    found = self.context[subname[0]]
-            if(found is not None):
-                # return node if it's a node
-                if is_urn(found):
-                    head_obj = self._h.get_obj(uuid.UUID(found))
-                    # head_obj.context['id'] = head_obj.jid
-                    if (subname[1] in head_obj.context.keys() or
-                            self.try_sync_to_arch(head_obj, subname[1])):
-                        return ctx_value(head_obj, subname[1])
-                # other types in scope can go here
-            # check if dotted var is builtin action (of walker)
-            if(allow_read_only):
-                found = self.activity_action_ids.get_obj_by_name(
-                    name, silent=True)
-                if (not found):
-                    found = self.current_node.activity_action_ids. \
-                        get_obj_by_name(name, silent=True)
-                if (not found):
-                    found = global_action_ids.get_obj_by_name(
-                        name, silent=True)
-                if(found):
-                    return found
-        else:
-            # check if var is in walker's context
-            if(name in self.context.keys()):
-                return ctx_value(self, name)
-        return None
-
-    def try_sync_to_arch(self, obj, varname):
-        """Checks if latest Architype has variable"""
-        # TODO: Only supports node types
-        if (varname in self.owner().arch_ids.get_obj_by_name(
-                'node.' + obj.kind).run().context.keys()):
-            obj.context[varname] = None
-            return True
-        return False
-
-    def get_live_var(self, name, jac_ast):
-        """Returns live variable, to support builtins in the future"""
-        found = None
-        # First look for variable in various locations
-        if (name in self.scope.keys()):
-            found = self.scope[name]
-        else:
-            found = self.find_live_attr(name)
-        if (found is None):
-            self.rt_error(f"Variable not defined - {name}", jac_ast)
-            return None
-        return self.reference_to_value(found)
-
-    def reference_to_value(self, val):
-        """Reference to variables value"""
-        while (is_urn(val) or type(val) == ctx_value):
-            if(is_urn(val)):
-                val = self._h.get_obj(uuid.UUID(val))
-            if (type(val) == ctx_value):
-                val = val.obj.context[val.name]
-        return val
-
-    def set_live_var(self, name, value, md_array_idx, jac_ast):
-        """Returns live variable, to support builtins in the future"""
-        if(isinstance(value, element)):
-            value = value.id.urn
-        if name not in self.scope.keys():
-            look = self.find_live_attr(name, allow_read_only=False)
-            if (look):
-                if(not md_array_idx):
-                    look.obj.context[look.name] = value
-                else:
-                    self.set_array_live_var(look.obj.context[look.name],
-                                            value, md_array_idx, jac_ast)
-                return
-            elif '.' in name:
-                self.rt_error(f"Arbitrary dotted names not allowed - {name}",
-                              jac_ast)
-                return
-        if(not md_array_idx):
-            self.scope[name] = value
-        else:
-            self.set_array_live_var(self.scope[name], value,
-                                    md_array_idx, jac_ast)
-
-    def set_array_live_var(self, item, value, md_array_idx, jac_ast):
-        """Helper for setting array values"""
-        for i in md_array_idx[:-1]:
-            if (i >= len(item)):
-                self.rt_error(f"Array index out of bounds!", jac_ast)
-            item = item[i]
-        if (md_array_idx[-1] >= len(item)):
-            self.rt_error(f"Array index out of bounds!", jac_ast)
-        item[md_array_idx[-1]] = value
+    def viable_nodes(self):
+        """Returns all nodes that shouldnt be ignored"""
+        ret = jac_set(self.owner())
+        for i in self.current_node.attached_nodes():
+            if (i not in self.ignore_node_ids.obj_list()):
+                ret.add_obj(i)
+        return ret
