@@ -34,7 +34,6 @@ class edge(element, anchored):
             logger.error(
                 str("{} disconnected from node".format(self))
             )
-            self.destroy()
         else:
             return ret
 
@@ -47,7 +46,6 @@ class edge(element, anchored):
             logger.error(
                 str("{} disconnected to node".format(self))
             )
-            self.destroy()
         else:
             return ret
 
