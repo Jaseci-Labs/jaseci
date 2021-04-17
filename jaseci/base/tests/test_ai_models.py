@@ -1,4 +1,5 @@
 from core.utils.mem_hook import mem_hook
+from core.actions.module.ai_serving_api import check_model_live
 from core.actor.sentinel import sentinel
 from core.graph.graph import graph
 
@@ -18,6 +19,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_basic_USE_calls_from_jac(self):
         """Test the execution of a basic walker building graph"""
+        if (not check_model_live('USE')):
+            return
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
@@ -33,6 +36,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_basic_USE_single_string_calls_from_jac(self):
         """Test the execution of a basic walker building graph"""
+        if (not check_model_live('USE')):
+            return
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
@@ -48,6 +53,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_USE_qa_with_ctx(self):
         """Test the execution of a basic walker building graph"""
+        if (not check_model_live('USE')):
+            return
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
@@ -63,6 +70,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_USE_qa_with_ctx_clean(self):
         """Test the execution of a basic walker building graph"""
+        if (not check_model_live('USE')):
+            return
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)

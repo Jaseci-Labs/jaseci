@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from rest_framework.test import APIClient
-
+from core.actions.module.ai_serving_api import check_model_live
 from core.utils.utils import TestCaseHelper
 from django.test import TestCase
 import uuid
@@ -167,6 +167,8 @@ class test_ll(TestCaseHelper, TestCase):
 
     def test_ll_goal_associations(self):
         """Test setting categories for a workette"""
+        if (not check_model_live('BART')):
+            return
         CATS = [
             "professional work",
             "chores",
@@ -197,6 +199,8 @@ class test_ll(TestCaseHelper, TestCase):
             'professional work')
 
     def test_parent_suggestion(self):
+        if (not check_model_live('USE_ENCODER')):
+            return
         """Test generating a suggested parent item for a given item"""
         new_wkt = 'clean up the house'
         self.run_walker('gen_rand_life', {})

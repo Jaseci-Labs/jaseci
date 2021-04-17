@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from rest_framework.test import APIClient
-
+from core.actions.module.ai_serving_api import check_model_live
 from core.utils.utils import TestCaseHelper
 from core.element import element
 from django.test import TestCase
@@ -53,6 +53,8 @@ class test_zsb(TestCaseHelper, TestCase):
 
     def test_zsb_create_answer(self):
         """Test ZSB Create Answer call USE api"""
+        if (not check_model_live('USE')):
+            return
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['kind'], 'bot')
         bot_jid = data[0]['jid']
@@ -61,6 +63,8 @@ class test_zsb(TestCaseHelper, TestCase):
 
     def test_zsb_ask_question(self):
         """Test ZSB Create Answer call USE api"""
+        if (not check_model_live('USE')):
+            return
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['kind'], 'bot')
         bot_jid = data[0]['jid']
@@ -77,6 +81,8 @@ class test_zsb(TestCaseHelper, TestCase):
 
     def test_dangling_edge_corruption_healing_non_block(self):
         """Test ZSB Create Answer call USE api"""
+        if (not check_model_live('USE')):
+            return
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['kind'], 'bot')
         bot_jid = data[0]['jid']

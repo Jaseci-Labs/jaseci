@@ -17,3 +17,15 @@ class AIServingAPI():
     def post(self, data):
         response = requests.post(self.url, headers=self.header, json=data)
         return response.json()
+
+    def is_alive(self):
+        try:
+            requests.post(self.url, headers=self.header, json={})
+        except:
+            return False
+        return True
+
+
+def check_model_live(model_str):
+    """Simple check to see if model is connected and live"""
+    return AIServingAPI(model_str).is_alive()
