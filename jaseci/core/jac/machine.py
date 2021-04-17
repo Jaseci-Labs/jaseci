@@ -147,6 +147,14 @@ class machine():
             msg = f'{msg}'
         return msg
 
+    def rt_warn(self, error, jac_ast=None):
+        """Prints runtime error to screen"""
+        error = self.rt_log_str(error, jac_ast)
+        logger.warning(
+            str(error)
+        )
+        self.runtime_errors.append(error)
+
     def rt_error(self, error, jac_ast=None):
         """Prints runtime error to screen"""
         error = self.rt_log_str(error, jac_ast)

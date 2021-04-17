@@ -303,6 +303,7 @@ list_remove = \
 dot_graph = \
     """
     graph test {
+        has anchor node0;
         digraph G {
         nodesep=0.05;
         rankdir=LR;
@@ -325,6 +326,31 @@ dot_graph = \
         node0:f6 -> node5:n;
         node2:p -> node6:n;
         node4:p -> node7:n;
+        }
+    }
+
+    walker init {
+        lst=[['b', 333],['c',245],['a', 56]];
+        std.out(lst);
+        lst.destroy(1);
+        std.out(lst);
+        std.out(lst.destroy(1));
+    }
+    """
+dot_graph_simple = \
+    """
+    graph test {
+        has anchor A;
+        strict graph G {
+            A -> B // Basic directional edge
+            B -- H // Basic non-directional edge
+            B -> C [kind="parent"] // Edge with attribute
+            C -> D -> E [kind="child"] // Chain edge
+            E -> {F G} // One-to-many edges
+
+            A [color=red] // Node with DOT builtin graphing attr
+            B [kind="month", count=2] // Node with Jac attr
+            A [kind="year"] // Multiple attr statement per node
         }
     }
 

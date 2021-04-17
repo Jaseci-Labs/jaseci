@@ -70,7 +70,7 @@ def cmd_tree_builder(location, group_func=cli):
         loc = location[i]
         if ('leaf' in loc):
             build_cmd(group_func, i, loc['leaf'][0])
-            return
+            continue
         else:
             new_func = group_func.group()(copy_func(blank_func, i))
         cmd_tree_builder(loc, new_func)

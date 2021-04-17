@@ -8,7 +8,7 @@ element: architype | walker;
 architype:
 	KW_NODE NAME (COLON INT)? attr_block
 	| KW_EDGE NAME attr_block
-	| KW_GRAPH NAME dot_block;
+	| KW_GRAPH NAME graph_block;
 
 walker:
 	KW_WALKER NAME LBRACE attr_stmt* walk_entry_block? (
@@ -25,6 +25,12 @@ walk_activity_block: KW_WITH KW_ACTIVITY code_block;
 attr_block: LBRACE (attr_stmt)* RBRACE | COLON attr_stmt | SEMI;
 
 attr_stmt: has_stmt | can_stmt;
+
+graph_block:
+	LBRACE has_root dot_graph RBRACE
+	| COLON has_root dot_graph SEMI;
+
+has_root: KW_HAS KW_ANCHOR NAME SEMI;
 
 has_stmt: KW_HAS KW_ANCHOR? NAME (COMMA NAME)* SEMI;
 
@@ -165,8 +171,6 @@ walker_spawn: KW_WALKER DBL_COLON NAME spawn_ctx?;
 spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
 
 /* DOT grammar below */
-dot_block: LBRACE dot_graph RBRACE | COLON dot_graph SEMI;
-
 dot_graph:
 	KW_STRICT? (KW_GRAPH | KW_DIGRAPH) dot_id? '{' dot_stmt_list '}';
 

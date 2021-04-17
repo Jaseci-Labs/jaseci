@@ -38,7 +38,7 @@ class sentinel_machine(machine):
         architype:
             KW_NODE NAME (COLON INT)? attr_block
             | KW_EDGE NAME attr_block
-            | KW_GRAPH NAME dot_block;
+            | KW_GRAPH NAME graph_block;
         """
         kid = jac_ast.kid
         arch = architype(h=self._h, code=jac_ast)

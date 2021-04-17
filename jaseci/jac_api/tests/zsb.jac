@@ -114,7 +114,7 @@ walker ask_question {
 
     bot {
         max_score = 0;
-        for i in --> {
+        for i in --> node::answer {
             score=use.qa_score(enc, i.encoding);
             if(score[0][0]>max_score){
                 selected = i;
