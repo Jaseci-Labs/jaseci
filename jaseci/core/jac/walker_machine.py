@@ -854,6 +854,16 @@ class walker_machine(machine):
         walk.destroy()
         return ret
 
+    # TODO: check this with JM
+    def run_graph_spawn(self, jac_ast, location):
+        """
+        graph_spawn: KW_GRAPH DBL_COLON NAME;
+        """
+        kid = jac_ast.kid
+        result = self.owner().arch_ids.get_obj_by_name('graph.' + kid[2].token_text()).run()
+        self.log_history('spawned', result)
+        return result
+
     def run_spawn_ctx(self, jac_ast, obj):
         """
         spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;

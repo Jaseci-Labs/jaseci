@@ -162,9 +162,11 @@ list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
 
 spawn: KW_SPAWN expression spawn_object;
 
-spawn_object: node_spawn | walker_spawn;
+spawn_object: node_spawn | walker_spawn | graph_spawn;
 
 node_spawn: edge_ref node_ref spawn_ctx?;
+
+graph_spawn: KW_GRAPH DBL_COLON NAME;
 
 walker_spawn: KW_WALKER DBL_COLON NAME spawn_ctx?;
 

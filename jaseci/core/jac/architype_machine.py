@@ -8,6 +8,9 @@ from core.graph.node import node
 from core.graph.edge import edge
 from core.jac.machine import machine
 
+from core.utils.utils import logger
+
+import pprint
 
 class architype_machine(machine):
     """Jac machine mixin for objects that will execute Jac code"""
@@ -52,19 +55,65 @@ class architype_machine(machine):
             | COLON has_root dot_graph SEMI;
         """
         kid = jac_ast.kid
-        graph_state = {'root_name': self.run_has_root(kid[1]),
-                       'root_node': None,
-                       'strict': False,
-                       'digraph': True,
-                       'node': [],
-                       'edge': [],
-                       'subgraph': []}
+        graph_state = {
+                'strict': False,
+                'digraph': True,
+                'node_ops': [],
+                'edge_ops': []
+        }
+        root_node = self.run_has_root(kid[1])
         self.run_dot_graph(kid[2], graph_state)
-        gph = graph_state['root_node']
-        if (not gph):
+
+        nodes_def = {}
+        for op in graph_state['node_ops']:
+            if (op['name'] not in nodes_def):
+                nodes_def[op['name']] = {
+                        'name': op['name']
+                }
+            nodes_def[op['name']].update(op)
+
+        # Create node objects
+        node_objs = {}
+        for node_name, node_def in nodes_def.items():
+            node_def.pop('name')
+            node_kind = node_def.pop('kind', None)
+            if(node_kind is None):
+                self.rt_warn('Missing "kind" attribute for node.')
+                continue
+            node_obj = self.owner().arch_ids.get_obj_by_name(
+                    'node.' + node_kind).run()
+            node_obj.set_context(node_def)
+            # TODO: This is definitely not the right way to do this
+            node_obj.name = node_name
+            node_objs[node_name] = node_obj
+
+        if (root_node not in node_objs):
             self.rt_error(f"Graph didn't produce root node!",
-                          kid[0])
-        return gph
+                          jac_ast)
+
+        # Create edge objects
+        for op in graph_state['edge_ops']:
+            edge_kind = op.pop('kind', None)
+            if(edge_kind):
+                edge_obj = self.owner().arch_ids.get_obj_by_name(
+                        'edge.' + edge_kind).run()
+            else:
+                edge_obj = edge(h=self._h)
+            lhs_node = node_objs.get(op['lhs_node'], None)
+            if(lhs_node is None):
+                self.rt_error('Invalid from node for edge')
+            rhs_node = node_objs.get(op['rhs_node'], None)
+            if(rhs_node is None):
+                self.rt_error('Invalid to node for edge')
+
+            lhs_node.attach_outbound(rhs_node, use_edge=edge_obj)
+            # TODO: check this is the right way to handle non/bi-directional edge
+            # DOT has non-directional edge
+            # JAC has bi-directional edge
+            if (not op['is_directional']):
+                lhs_node.attach_inbound(rhs_node, use_edge=edge_obj)
+
+        return node_objs[root_node]
 
     def run_has_root(self, jac_ast):
         """
@@ -78,6 +127,7 @@ class architype_machine(machine):
         dot_graph:
             KW_STRICT? (KW_GRAPH | KW_DIGRAPH) dot_id? '{' dot_stmt_list '}';
         """
+        # TODO: I think we have to support non strict graph. Double check here.
         kid = jac_ast.kid
         if (kid[0].name == 'KW_STRICT'):
             graph_state['strict'] = True
@@ -124,12 +174,36 @@ class architype_machine(machine):
         dot_attr_list: ('[' dot_a_list? ']')+
         """
         kid = jac_ast.kid
+        attrs = {}
+        while (len(kid) > 0):
+            attrs.update(self.run_dot_a_list(kid[1]))
+            kid = kid[3:]
+        return attrs
 
-    def run_dot_a_list(self, jac_ast, graph_state):
+    def run_dot_a_list(self, jac_ast):
         """
         dot_a_list: (dot_id('=' dot_id)? ','?)+
         """
         kid = jac_ast.kid
+        a_list = {}
+        while (len(kid) > 0):
+            lhs_id = self.run_dot_id(kid[0])
+            kid = kid[1:]
+            # TODO: the next few lines is YUCK...
+            if (len(kid) == 0 or kid[0].token_text() != '='):
+                # TODO: figure out in what case RHS can be optional
+                self.rt_warn('attr requires a right hand value', jac_ast)
+                if (kid[0].token_text() == ','): kid = kid[1:]
+                continue
+
+            rhs_id = self.run_dot_id(kid[1])
+            a_list[lhs_id] = rhs_id
+
+            kid = kid[2:]
+            # deal with the optional comma
+            if (len(kid) > 0 and kid[0].token_text() == ','): kid = kid[1:]
+        
+        return a_list
 
     def run_dot_edge_stmt(self, jac_ast, graph_state):
         """
@@ -140,42 +214,50 @@ class architype_machine(machine):
             self.rt_error('Subgraphs not supported!', kid[0])
             return
         lhs_name = str(self.run_dot_node_id(kid[0]))
-        attrs = {}
+        graph_state['node_ops'].append({
+            'op': 'create',
+            'name': lhs_name
+        })
+        edge_attrs = {}
         if(kid[-1].name == 'dot_attr_list'):
-            attrs = self.run_dot_attr_list(kid[-1])
-        edges = self.run_dot_edgeRHS(kid[1], graph_state, lhs_name)
-        for edge in edges:
-            edge['attrs'] = attrs
-        graph_state['edge'] += edges
+            edge_attrs = self.run_dot_attr_list(kid[-1])
+        self.run_dot_edgeRHS(kid[1], graph_state, lhs_name, edge_attrs)
 
-    def run_dot_edgeRHS(self, jac_ast, graph_state, lhs):
+    def run_dot_edgeRHS(self, jac_ast, graph_state, lhs, edge_attrs):
         """
         dot_edgeRHS: (dot_edgeop(dot_node_id | dot_subgraph))+
         """
         kid = jac_ast.kid
         cur_lhs = lhs
-        edges = []
         while (len(kid) > 0):
             is_directional = self.run_dot_edgeop(kid[0])
             if (kid[1] == 'dot_subgraph'):
                 self.rt_error('Subgraphs not supported!', kid[1])
                 return
             rhs_name = str(self.run_dot_node_id(kid[1]))
-            edges.append({
-                'lhs': cur_lhs,
-                'rhs': rhs_name,
-                'is_directional': is_directional
+            # Add create node rhs
+            graph_state['node_ops'].append({
+                'op': 'create',
+                'name': rhs_name
             })
+            # Add create edge
+            edge_op = {
+                'op': 'create',
+                'is_directional': is_directional,
+                'lhs_node': cur_lhs,
+                'rhs_node': rhs_name
+            }
+            edge_op.update(edge_attrs)
+            graph_state['edge_ops'].append(edge_op)
             cur_lhs = rhs_name
-            kid = kid[2:0]
-        return edges
+            kid = kid[2:]
 
     def run_dot_edgeop(self, jac_ast):
         """
         dot_edgeop: '->' | '--'
         """
         kid = jac_ast.kid
-        if (kid[0].token_text == '->'):
+        if (kid[0].token_text() == '->'):
             return True
         else:
             return False
@@ -185,6 +267,22 @@ class architype_machine(machine):
         dot_node_stmt: dot_node_id dot_attr_list?
         """
         kid = jac_ast.kid
+        node_name = self.run_dot_node_id(kid[0])
+        node_attrs = {}
+        if (kid[-1].name == 'dot_attr_list'):
+            node_attrs = self.run_dot_attr_list(kid[-1])
+        node_create_op = {
+                'op' : 'create',
+                'name': node_name,
+        }
+        graph_state['node_ops'].append(node_create_op)
+
+        node_update_op = {
+                'op' : 'update',
+                'name': node_name,
+        }
+        node_update_op.update(node_attrs)
+        graph_state['node_ops'].append(node_update_op)
 
     def run_dot_node_id(self, jac_ast):
         """
@@ -206,6 +304,7 @@ class architype_machine(machine):
         dot_subgraph: (KW_SUBGRAPH dot_id?)? '{' dot_stmt_list '}'
         """
         kid = jac_ast.kid
+        pass
 
     def run_dot_id(self, jac_ast):
         """

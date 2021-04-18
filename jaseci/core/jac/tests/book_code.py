@@ -337,28 +337,44 @@ dot_graph = \
         std.out(lst.destroy(1));
     }
     """
+
 dot_graph_simple = \
     """
+    node year {
+        has color;
+    }
+    node month {
+        has count, season;
+    }
+    node week;
+    node day;
+    edge parent;
+    edge child;
     graph test {
         has anchor A;
         strict graph G {
+            H [kind=year]
+            C [kind=week]
+            E [kind=day]
+            D [kind=day]
+
             A -> B // Basic directional edge
             B -- H // Basic non-directional edge
-            B -> C [kind="parent"] // Edge with attribute
-            C -> D -> E [kind="child"] // Chain edge
-            E -> {F G} // One-to-many edges
+            B -> C [kind=parent] // Edge with attribute
+            C -> D -> E [kind=child] // Chain edge
 
             A [color=red] // Node with DOT builtin graphing attr
-            B [kind="month", count=2] // Node with Jac attr
-            A [kind="year"] // Multiple attr statement per node
+            B [kind=month, count=2] [season=spring]// Node with Jac attr
+            A [kind=year] // Multiple attr statement per node
         }
     }
 
+    walker get_all {
+       take -->;
+       report here;
+    }
     walker init {
-        lst=[['b', 333],['c',245],['a', 56]];
-        std.out(lst);
-        lst.destroy(1);
-        std.out(lst);
-        std.out(lst.destroy(1));
+        root_node = spawn here graph::test;
+        spawn root_node walker::get_all;
     }
     """
