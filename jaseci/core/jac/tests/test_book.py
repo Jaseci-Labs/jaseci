@@ -9,9 +9,6 @@ import io
 from unittest import TestCase
 from core.utils.utils import TestCaseHelper
 
-from core.utils.utils import logger
-import pprint
-
 
 class jac_book_tests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
@@ -233,8 +230,6 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         result = gen_walker.run()
-
-        logger.info(pprint.pformat(result))
         # self.assertEqual(self.new_stdout.getvalue(),
         #                  "[['b', 333], ['c', 245], ['a', 56]]\n"
         #                  "[['b', 333], ['a', 56]]\n"

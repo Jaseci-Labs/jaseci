@@ -374,7 +374,9 @@ dot_graph_simple = \
        report here;
     }
     walker init {
-        root_node = spawn here graph::test;
+        root {
+            spawn here --> graph::test;
+        }
         spawn root_node walker::get_all;
     }
     """

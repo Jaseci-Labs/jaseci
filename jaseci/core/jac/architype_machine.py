@@ -69,6 +69,11 @@ class architype_machine(machine):
                 }
             nodes_def[op['name']].update(op)
 
+        if (root_node not in nodes_def):
+            del nodes_def
+            self.rt_error(f"Graph didn't produce root node!",
+                          kid[1])
+
         # Create node objects
         node_objs = {}
         for node_name, node_def in nodes_def.items():
@@ -80,15 +85,11 @@ class architype_machine(machine):
             node_obj = self.owner().arch_ids.get_obj_by_name(
                     'node.' + node_kind).run()
             node_obj.set_context(node_def)
-            # TODO: This is definitely not the right way to do this
             node_obj.name = node_name
             node_objs[node_name] = node_obj
 
-        if (root_node not in node_objs):
-            self.rt_error(f"Graph didn't produce root node!",
-                          jac_ast)
-
         # Create edge objects
+        edge_objs = []
         for op in graph_state['edge_ops']:
             edge_kind = op.pop('kind', None)
             if(edge_kind):
@@ -98,17 +99,21 @@ class architype_machine(machine):
                 edge_obj = edge(h=self._h)
             lhs_node = node_objs.get(op['lhs_node'], None)
             if(lhs_node is None):
+                del nodes_def
+                del node_objs
+                del edge_objs
                 self.rt_error('Invalid from node for edge')
             rhs_node = node_objs.get(op['rhs_node'], None)
             if(rhs_node is None):
+                del nodes_def
+                del node_objs
+                del edge_objs
                 self.rt_error('Invalid to node for edge')
 
             lhs_node.attach_outbound(rhs_node, use_edge=edge_obj)
-            # TODO: check this is the right way to handle non/bi-directional edge
-            # DOT has non-directional edge
-            # JAC has bi-directional edge
-            if (not op['is_directional']):
-                lhs_node.attach_inbound(rhs_node, use_edge=edge_obj)
+            edge_objs.append(edge_obj)
+
+            # TODO: handle non-directional edge once that's supported in jac 
 
         return node_objs[root_node]
 
@@ -124,7 +129,9 @@ class architype_machine(machine):
         dot_graph:
             KW_STRICT? (KW_GRAPH | KW_DIGRAPH) dot_id? '{' dot_stmt_list '}';
         """
-        # TODO: I think we have to support non strict graph. Double check here.
+        # TODO: jac should support multiple edges between the same node but it
+        # currently does not. once that's updates, need to update here 
+        # accordingly. We will only support non strict graph.
         kid = jac_ast.kid
         if (kid[0].name == 'KW_STRICT'):
             graph_state['strict'] = True
@@ -186,20 +193,20 @@ class architype_machine(machine):
         while (len(kid) > 0):
             lhs_id = self.run_dot_id(kid[0])
             kid = kid[1:]
-            # TODO: the next few lines is YUCK...
             if (len(kid) == 0 or kid[0].token_text() != '='):
-                # TODO: figure out in what case RHS can be optional
-                self.rt_warn('attr requires a right hand value', jac_ast)
-                if (kid[0].token_text() == ','): kid = kid[1:]
-                continue
+                # If there is rhs, treat it as a boolean value of True
+                # e.g. [is_active, color=red] sets the attributes
+                # is_active as True and color as "red"
+                rhs_id = True
+            else:
+                rhs_id = self.run_dot_id(kid[1])
+                kid = kid[2:]
 
-            rhs_id = self.run_dot_id(kid[1])
             a_list[lhs_id] = rhs_id
 
-            kid = kid[2:]
             # deal with the optional comma
             if (len(kid) > 0 and kid[0].token_text() == ','): kid = kid[1:]
-        
+
         return a_list
 
     def run_dot_edge_stmt(self, jac_ast, graph_state):

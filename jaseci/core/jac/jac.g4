@@ -166,7 +166,7 @@ spawn_object: node_spawn | walker_spawn | graph_spawn;
 
 node_spawn: edge_ref node_ref spawn_ctx?;
 
-graph_spawn: KW_GRAPH DBL_COLON NAME;
+graph_spawn: edge_ref KW_GRAPH DBL_COLON NAME;
 
 walker_spawn: KW_WALKER DBL_COLON NAME spawn_ctx?;
 
