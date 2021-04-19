@@ -233,3 +233,10 @@ class jac_book_tests(TestCaseHelper, TestCase):
         #                  "[['b', 333], ['c', 245], ['a', 56]]\n"
         #                  "[['b', 333], ['a', 56]]\n"
         #                  "[['b', 333]]\n")
+
+    def test_can_action(self):
+        self.logger_on()
+        self.sent.register_code(jtc.can_action)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()

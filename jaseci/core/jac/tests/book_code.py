@@ -362,3 +362,17 @@ dot_graph_simple = \
         std.out(lst.destroy(1));
     }
     """
+
+can_action = \
+    """
+    node test {
+        has anchor A;
+        can ptest {
+            std.out(A,b);
+        }
+    }
+
+    walker init {
+        spawn here --> node::test;
+    }
+    """

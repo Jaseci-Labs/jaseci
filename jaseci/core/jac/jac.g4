@@ -41,7 +41,10 @@ can_stmt:
 		COMMA dotted_name preset_in_out? (
 			KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
 		)?
-	)* SEMI;
+	)* SEMI
+	| KW_CAN NAME preset_in_out? preset_in_out? (
+		KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
+	)? code_block;
 
 preset_in_out:
 	DBL_COLON NAME (COMMA NAME)* (DBL_COLON | COLON_OUT NAME)?;

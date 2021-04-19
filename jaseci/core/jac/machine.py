@@ -9,6 +9,7 @@ from core.actions.find_action import find_action
 from core.graph.node import node
 from core.element import ctx_value
 from core.attr.action import action
+# import pickle
 
 
 class machine():
@@ -16,9 +17,19 @@ class machine():
 
     def __init__(self):
         self.runtime_errors = []
+        self._scope_stack = [None]
+        self._jac_scope = None
 
     def reset(self):
         self.runtime_errors = []
+
+    def push_scope(self, scope):
+        self._scope_stack.append(scope)
+        self._jac_scope = scope
+
+    def pop_scope(self):
+        self._scope_stack.pop()
+        self._jac_scope = self._scope_stack[-1]
 
     def run_attr_stmt(self, jac_ast, obj):
         """
@@ -57,16 +68,26 @@ class machine():
     def run_can_stmt(self, jac_ast, obj):
         """
         can_stmt:
-            KW_CAN dotted_name preset_in_out? (KW_WITH KW_MOVE)? (
-                COMMA dotted_name preset_in_out? (KW_WITH KW_MOVE)?
-            )* SEMI;
+            KW_CAN dotted_name preset_in_out? (
+                KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
+            )? (
+                COMMA dotted_name preset_in_out? (
+                    KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
+                )?
+            )* SEMI
+            | KW_CAN NAME preset_in_out? preset_in_out? (
+                KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
+            )? code_block;
         """
         kid = jac_ast.kid
         kid = kid[1:]
         while True:
             action_type = 'activity'
             preset_in_out = {'input': [], 'output': None}
-            action_name = self.run_dotted_name(kid[0])
+            if (kid[0].name == 'NAME'):
+                action_name = kid[0].token_text()
+            else:
+                action_name = self.run_dotted_name(kid[0])
             kid = kid[1:]
             if(len(kid) > 0 and kid[0].name == 'preset_in_out'):
                 preset_in_out = self.run_preset_in_out(kid[0], obj)
@@ -74,19 +95,31 @@ class machine():
             if(len(kid) > 0 and kid[0].name == 'KW_WITH'):
                 action_type = kid[1].token_text()
                 kid = kid[2:]
-            if(not isinstance(obj, node)):  # only nodes have on entry/exit
+            if (not isinstance(obj, node)):  # only nodes have on entry/exit
                 action_type = 'activity'
-            func_link = \
-                self.get_builtin_action(action_name, jac_ast)
-            if(func_link):
+            if (kid[0].name == 'codeblock'):
                 getattr(obj, f"{action_type}_action_ids").add_obj(
                     action(
                         h=self._h,
                         name=action_name,
-                        value=func_link,
-                        preset_in_out=preset_in_out
+                        value=kid[0],
+                        preset_in_out=preset_in_out,
+                        is_lib=False
                     )
                 )
+                break
+            else:
+                func_link = \
+                    self.get_builtin_action(action_name, jac_ast)
+                if(func_link):
+                    getattr(obj, f"{action_type}_action_ids").add_obj(
+                        action(
+                            h=self._h,
+                            name=action_name,
+                            value=func_link,
+                            preset_in_out=preset_in_out
+                        )
+                    )
             if(not len(kid) or kid[0].name != 'COMMA'):
                 break
             else:

@@ -26,12 +26,12 @@ class walker_machine(machine):
                 | walk_activity_block
             )* walk_exit_block? RBRACE;
         """
-        self._jac_scope = jac_scope(self,
-                                    self.local_scope,
-                                    self.context,
-                                    [global_action_ids,
-                                     self.activity_action_ids,
-                                     self.current_node.activity_action_ids])
+        self.push_scope(jac_scope(self,
+                                  self.local_scope,
+                                  self.context,
+                                  [global_action_ids,
+                                   self.activity_action_ids,
+                                   self.current_node.activity_action_ids]))
         self.local_scope['here'] = self.current_node.id.urn
 
         self.trigger_entry_actions()
@@ -52,6 +52,7 @@ class walker_machine(machine):
 
         # self.trigger_activity_actions()
         self.trigger_exit_actions()
+        self.pop_scope()
 
     def run_walk_entry_block(self, jac_ast):
         """

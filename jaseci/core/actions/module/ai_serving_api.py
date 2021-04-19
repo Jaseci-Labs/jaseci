@@ -21,7 +21,7 @@ class AIServingAPI():
     def is_alive(self):
         try:
             requests.post(self.url, headers=self.header, json={})
-        except ConnectionError:
+        except requests.exceptions.ConnectionError:
             return False
         return True
 
