@@ -13,3 +13,4 @@ migrations
 _jac_gen
 .DS_Store
 build
+.vscode

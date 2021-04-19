@@ -854,6 +854,23 @@ class walker_machine(machine):
         walk.destroy()
         return ret
 
+    def run_graph_spawn(self, jac_ast, location):
+        """
+        graph_spawn: edge_ref KW_GRAPH DBL_COLON NAME;
+        """
+        kid = jac_ast.kid
+        use_edge = self.run_edge_ref(kid[0], is_spawn=True)
+        graph_ret_node = self.owner().arch_ids.get_obj_by_name(
+            'graph.' + kid[3].token_text()).run()
+        direction = kid[0].kid[0].name
+        if (direction == 'edge_from'):
+            location.attach_inbound(graph_ret_node, use_edge)
+        else:
+            location.attach_outbound(graph_ret_node, use_edge)
+        self.log_history('spawned', graph_ret_node)
+
+        return graph_ret_node
+
     def run_spawn_ctx(self, jac_ast, obj):
         """
         spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
