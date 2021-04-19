@@ -8,7 +8,6 @@ from core.actor.architype import architype
 from core.actor.walker import walker
 from core.jac.machine import machine
 
-from core.utils.utils import logger
 
 class sentinel_machine(machine):
     """Jac machine mixin for objects that will execute Jac code"""

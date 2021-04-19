@@ -47,7 +47,6 @@ class sentinel(element, sentinel_machine):
                 logger.error(i)
             return self.is_active  # is False due to .reset()
 
-        logger.info('calling run_start')
         self.run_start(tree)
 
         if(self.runtime_errors):

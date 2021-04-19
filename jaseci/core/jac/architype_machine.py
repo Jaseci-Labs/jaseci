@@ -8,9 +8,6 @@ from core.graph.node import node
 from core.graph.edge import edge
 from core.jac.machine import machine
 
-from core.utils.utils import logger
-
-import pprint
 
 class architype_machine(machine):
     """Jac machine mixin for objects that will execute Jac code"""
