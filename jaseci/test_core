@@ -1,3 +1,3 @@
 export CLASSPATH="$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH"
 java -Xmx500M -cp \"$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH\" org.antlr.v4.Tool -Dlanguage=Python3 -o $PWD/core/jac/_jac_gen $PWD/core/jac/jac.g4
-python3 -m unittest core.jac.tests.test_book.jac_book_tests.test_dot_graph_parses_simple
+python3 -m unittest discover core/

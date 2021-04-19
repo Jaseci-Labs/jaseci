@@ -860,7 +860,8 @@ class walker_machine(machine):
         """
         kid = jac_ast.kid
         use_edge = self.run_edge_ref(kid[0], is_spawn=True)
-        graph_ret_node = self.owner().arch_ids.get_obj_by_name('graph.' + kid[3].token_text()).run()
+        graph_ret_node = self.owner().arch_ids.get_obj_by_name(
+            'graph.' + kid[3].token_text()).run()
         direction = kid[0].kid[0].name
         if (direction == 'edge_from'):
             location.attach_inbound(graph_ret_node, use_edge)
