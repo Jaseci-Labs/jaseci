@@ -29,8 +29,7 @@ class walker(element, walker_machine, anchored):
         self.next_node_ids = id_list(self)
         self.ignore_node_ids = id_list(self)
         self.destroy_node_ids = id_list(self)
-        self.stopped = None
-        self.loop_ctrl = None
+
         self.current_step = 0
         self.in_entry_exit = False
         self.local_scope = {}

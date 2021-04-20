@@ -128,7 +128,8 @@ power: func_call (POW factor)*;
 func_call:
 	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
 	| atom DOT KW_LENGTH
-	| atom DOT KW_DESTROY LPAREN expression RPAREN;
+	| atom DOT KW_DESTROY LPAREN expression RPAREN
+	| atom? DBL_COLON NAME;
 
 atom:
 	INT
@@ -136,7 +137,6 @@ atom:
 	| STRING
 	| BOOL
 	| array_ref
-	| attr_ref
 	| node_ref
 	| edge_ref (node_ref)? /* Returns nodes even if edge */
 	| list_val
@@ -148,8 +148,6 @@ atom:
 array_ref: dotted_name array_idx+;
 
 array_idx: LSQUARE expression RSQUARE;
-
-attr_ref: dotted_name DBL_COLON dotted_name;
 
 node_ref: KW_NODE (DBL_COLON NAME)?;
 
@@ -165,9 +163,11 @@ list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
 
 spawn: KW_SPAWN expression spawn_object;
 
-spawn_object: node_spawn | walker_spawn;
+spawn_object: node_spawn | walker_spawn | graph_spawn;
 
 node_spawn: edge_ref node_ref spawn_ctx?;
+
+graph_spawn: edge_ref KW_GRAPH DBL_COLON NAME;
 
 walker_spawn: KW_WALKER DBL_COLON NAME spawn_ctx?;
 

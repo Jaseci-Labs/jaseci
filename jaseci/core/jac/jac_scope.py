@@ -3,6 +3,7 @@ Variable scope manager for Jac
 
 Utility for all runtime interaction with variables in different scopes
 """
+from core.actions.global_actions import global_action_ids
 from core.jac.jac_set import jac_set
 from core.element import element, ctx_value
 from core.utils.utils import is_urn
@@ -10,11 +11,11 @@ import uuid
 
 
 class jac_scope():
-    def __init__(self, owner, local_scope, broader_scope, action_sets):
+    def __init__(self, owner, local_scope, has_obj, action_sets):
         self.owner = owner
         self.local_scope = local_scope
-        self.broader_scope = broader_scope
-        self.action_sets = action_sets
+        self.has_obj = has_obj
+        self.action_sets = [global_action_ids] + action_sets
 
     def add_actions(self, actions):
         self.action_sets.append(actions)
@@ -29,8 +30,8 @@ class jac_scope():
                 found = self.local_scope[subname[0]]
             # check if dotted var in walkers context (node, etc)
             else:
-                if(subname[0] in self.broader_scope.keys()):
-                    found = self.broader_scope[subname[0]]
+                if(subname[0] in self.has_obj.context.keys()):
+                    found = self.has_obj.context[subname[0]]
             if(found is not None):
                 # return node if it's a node
                 if is_urn(found):
@@ -49,8 +50,8 @@ class jac_scope():
                         return found
         else:
             # check if var is in walker's context
-            if(name in self.broader_scope.keys()):
-                return ctx_value(self.owner, name)
+            if(name in self.has_obj.context.keys()):
+                return ctx_value(self.has_obj, name)
         return None
 
     def get_live_var(self, name, jac_ast):

@@ -22,20 +22,17 @@ class action(item):
         self.is_lib = is_lib
         super().__init__(*args, **kwargs)
 
-    def trigger(self, param_list=None, ctx=None):
+    def trigger(self, param_list=None):
         """
         param_list should be passed as list of values to lib functions
         Also note that Jac stores preset_in_out as input/output list of hex
         ids since preset_in_out doesn't use _ids convention
-        Also ctx is used for has elelemtns in non lib can objects
         """
         use_params = param_list
         if(not use_params and self.preset_in_out):
             use_params = []
             for i in self.preset_in_out['input']:
                 use_params.append(i.obj.context[i.name])
-        if (self.is_lib):
-            pass
         result = getattr(
             importlib.import_module(self.value[0]),
             self.value[1]

@@ -1,4 +1,3 @@
-
 from core.utils.mem_hook import mem_hook
 from core.actor.sentinel import sentinel
 from core.graph.graph import graph
@@ -214,29 +213,11 @@ class jac_book_tests(TestCaseHelper, TestCase):
                          "[['b', 333], ['a', 56]]\n"
                          "[['b', 333]]\n")
 
-    def test_dot_graph_parses(self):
-        self.sent.register_code(jtc.dot_graph)
-        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
-        gen_walker.prime(self.gph)
-        gen_walker.run()
-        # self.assertEqual(self.new_stdout.getvalue(),
-        #                  "[['b', 333], ['c', 245], ['a', 56]]\n"
-        #                  "[['b', 333], ['a', 56]]\n"
-        #                  "[['b', 333]]\n")
-
-    def test_dot_graph_parses_simple(self):
-        self.sent.register_code(jtc.dot_graph_simple)
-        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
-        gen_walker.prime(self.gph)
-        gen_walker.run()
-        # self.assertEqual(self.new_stdout.getvalue(),
-        #                  "[['b', 333], ['c', 245], ['a', 56]]\n"
-        #                  "[['b', 333], ['a', 56]]\n"
-        #                  "[['b', 333]]\n")
-
     def test_can_action(self):
-        self.logger_on()
         self.sent.register_code(jtc.can_action)
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "56 7\n"
+                         "56 8\n")
