@@ -419,3 +419,24 @@ class node(element, anchored):
         for i in des:
             i.destroy()
         super().destroy()
+
+    def dot_str(self):
+        """
+        DOT representation
+        """
+        dstr = self.__str__()
+        dstr += f'[kind={self.kind}'
+        num_items = 0
+        for k, v in self.context.items():
+            if (num_items == 0):
+                dstr += ', '
+            else:
+                dstr += ' '
+            dstr += f'{k}={v}'
+
+            num_items += 1
+            if (num_items < len(self.context)):
+                dstr += ','
+        dstr += ']'
+
+        return dstr

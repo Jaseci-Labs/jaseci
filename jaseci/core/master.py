@@ -86,6 +86,12 @@ class master(element):
         self.graph_ids.destroy_obj(gph)
         return [f'Graph {gph.id} successfully deleted']
 
+    def api_dump_graph(self, gph: graph):
+        """
+        Dump the content of the graph
+        """
+        return self._h.get_obj(gph.id).dump()
+
     def api_delete_sentinel(self, snt: sentinel):
         """
         Permanently delete sentinel with given id
