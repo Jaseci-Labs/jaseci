@@ -570,6 +570,7 @@ class machine():
                                    [atom_res.activity_action_ids]))
             m.run_code_block(atom_res.activity_action_ids.get_obj_by_name(
                 kid[1].token_text()).value)
+            return atom_res
         else:
             param_list = []
             kid = kid[1:]
