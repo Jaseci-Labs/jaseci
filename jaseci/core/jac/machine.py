@@ -25,9 +25,14 @@ class machine():
         self._jac_scope = None
         self._loop_ctrl = None
         self._stopped = None
+        self._loop_limit = 10000
 
     def reset(self):
         self.runtime_errors = []
+        self._scope_stack = [None]
+        self._jac_scope = None
+        self._loop_ctrl = None
+        self._stopped = None
 
     def push_scope(self, scope):
         self._scope_stack.append(scope)
@@ -189,6 +194,12 @@ class machine():
         if (self._stopped and not self.in_entry_exit):
             return
         kid = jac_ast.kid
+        if(not hasattr(self, f'run_{kid[0].name}')):
+            self.rt_error(
+                f'This scope cannot execute the statement '
+                f'"{kid[0].get_text()}" of type {kid[0].name}',
+                kid[0])
+            return
         stmt_func = getattr(self, f'run_{kid[0].name}')
         stmt_func(kid[0])
 
@@ -248,7 +259,7 @@ class machine():
                     self._loop_ctrl = None
                     break
                 self.run_expression(kid[5])
-                if(loops > self.loop_limit):
+                if(loops > self._loop_limit):
                     self.rt_error(f'Hit loop limit, breaking...', kid[0])
         else:
             var_name = kid[1].token_text()
@@ -261,7 +272,7 @@ class machine():
                 if (self._loop_ctrl == 'break'):
                     self._loop_ctrl = None
                     break
-                if(loops > self.loop_limit):
+                if(loops > self._loop_limit):
                     self.rt_error(f'Hit loop limit, breaking...', kid[0])
 
     def run_while_stmt(self, jac_ast):
@@ -276,7 +287,7 @@ class machine():
             if (self._loop_ctrl == 'break'):
                 self._loop_ctrl = None
                 break
-            if(loops > self.loop_limit):
+            if(loops > self._loop_limit):
                 self.rt_error(f'Hit loop limit, breaking...', kid[0])
 
     def run_ctrl_stmt(self, jac_ast):
@@ -570,6 +581,7 @@ class machine():
                                    [atom_res.activity_action_ids]))
             m.run_code_block(atom_res.activity_action_ids.get_obj_by_name(
                 kid[1].token_text()).value)
+            return atom_res
         else:
             param_list = []
             kid = kid[1:]
@@ -884,8 +896,9 @@ class machine():
 
     def rt_log_str(self, msg, jac_ast=None):
         """Generates string for screen output"""
+        name = self.name if hasattr(self, 'name') else 'blank'
         if(jac_ast):
-            msg = f'{self.name} - line {jac_ast.line}, ' + \
+            msg = f'{name} - line {jac_ast.line}, ' + \
                 f'col {jac_ast.column} - rule {jac_ast.name} - {msg}'
         else:
             msg = f'{msg}'

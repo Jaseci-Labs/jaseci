@@ -29,13 +29,10 @@ class walker(element, walker_machine, anchored):
         self.next_node_ids = id_list(self)
         self.ignore_node_ids = id_list(self)
         self.destroy_node_ids = id_list(self)
-
         self.current_step = 0
         self.in_entry_exit = False
         self.local_scope = {}
-        # Runtime limitations
         self.step_limit = 10000
-        self.loop_limit = 10000
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
         walker_machine.__init__(self)
@@ -78,8 +75,8 @@ class walker(element, walker_machine, anchored):
         self.log_history('visited', self.current_node.id)
         self.current_step += 1
         self.profile['steps'] = self.current_step
-        if (self.stopped == 'skip'):
-            self.stopped = None
+        if (self._stopped == 'skip'):
+            self._stopped = None
         if(self.next_node_ids):
             logger.debug(str(f'Step complete, Walker {self.name} next node: ' +
                              f'- {self.next_node_ids.first_obj()}'))
@@ -133,8 +130,6 @@ class walker(element, walker_machine, anchored):
         self.report = []
         self.profile = {}
         self.current_step = 0
-        self.stopped = None
-        self.loop_ctrl = None
         self.next_node_ids.remove_all()
         self.ignore_node_ids.remove_all()
         self.destroy_node_ids.remove_all()
@@ -142,6 +137,7 @@ class walker(element, walker_machine, anchored):
         self.local_scope = {}
         self.activity_action_ids.destroy_all()
         self.context = {}
+        self.reset()
 
     def destroy(self):
         """
