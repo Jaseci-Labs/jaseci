@@ -76,7 +76,6 @@ class test_dot(TestCaseHelper, TestCase):
         gen_walker.run()
 
     def test_dot_graph_dump(self):
-        self.logger_on()
         self.sent.register_code(dtc.dot_graph)
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
