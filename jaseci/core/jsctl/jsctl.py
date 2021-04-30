@@ -27,12 +27,20 @@ def blank_func():
 @click.option('--filename', '-f', default="js.session")
 @click.option('--mem-only', '-m', default=False)
 def cli(filename, mem_only):
+    """
+    Primary entry point for CLI,
+    checks for and loads session file
+    """
     session['filename'] = filename if not mem_only else None
     if (os.path.isfile(filename)):
         session['master'] = pickle.load(open(filename, 'rb'))
 
 
 def interface_api(api_name, **kwargs):
+    """
+    Interfaces Master apis after processing arguments/parameters
+    from cli
+    """
     if('code' in kwargs):
         if (os.path.isfile(kwargs['code'])):
             with open(kwargs['code'], 'r') as file:
@@ -44,6 +52,10 @@ def interface_api(api_name, **kwargs):
 
 
 def extract_api_tree():
+    """
+    Generates a tree of command group names and function 
+    signatures in leaves from API function names in Master
+    """
     api_funcs = {}
     for i in dir(session['master']):
         if (i.startswith('api_')):
@@ -63,6 +75,10 @@ def extract_api_tree():
 
 
 def build_cmd(group_func, func_name, api_name):
+    """
+    Generates Click function with options for each command
+    group and leaf signatures
+    """
     f = functools.partial(
         copy_func(interface_api, func_name), api_name=api_name)
     f.__name__ = func_name
@@ -75,6 +91,9 @@ def build_cmd(group_func, func_name, api_name):
 
 
 def cmd_tree_builder(location, group_func=cli):
+    """
+    Generates Click command groups from API tree recursively
+    """
     for i in location.keys():
         loc = location[i]
         if ('leaf' in loc):
