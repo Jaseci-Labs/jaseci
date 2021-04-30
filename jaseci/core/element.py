@@ -101,13 +101,16 @@ class element(hookable):
     """
 
     def __init__(self, h, owner_id=None, name='basic', kind='generic',
-                 auto_save=True, *args, **kwargs):
+                 user='Anonymous', has_access=[], auto_save=True, *args,
+                 **kwargs):
         self.name = name
         self.kind = kind
         self.jid = uuid.uuid4().urn
         self.j_owner = owner_id.urn if owner_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
         self.j_type = type(self).__name__
+        # self.j_user = user  # TODO: Finish this permissions approach
+        # self.j_has_access = has_access
         hookable.__init__(self, h,  *args, **kwargs)
         if(auto_save):
             self.save()

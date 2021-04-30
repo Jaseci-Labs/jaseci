@@ -101,6 +101,8 @@ class JaseciObject(models.Model):
     name = models.CharField(max_length=255, blank=True)
     kind = models.CharField(max_length=255, blank=True)
     j_timestamp = models.DateTimeField(default=datetime.utcnow)
+    # j_user = models.CharField(max_length=255, blank=True)
+    # j_has_access = models.CharField(max_length=255, blank=True)
 
     # j_type keeps track of the type of the object
     j_type = models.CharField(max_length=15, default='node')
