@@ -5,6 +5,8 @@ Command line tool for Jaseci
 import click
 import os.path
 import pickle
+import functools
+import json
 from inspect import signature
 
 from core.utils.mem_hook import mem_hook
@@ -23,14 +25,20 @@ def blank_func():
 
 @click.group()
 @click.option('--filename', '-f', default="js.session")
-def cli(filename):
-    session['filename'] = filename
+@click.option('--mem-only', '-m', default=False)
+def cli(filename, mem_only):
+    session['filename'] = filename if not mem_only else None
     if (os.path.isfile(filename)):
         session['master'] = pickle.load(open(filename, 'rb'))
 
 
-def interface_api(**kwargs):
-    api_name = kwargs.pop('api')
+def interface_api(api_name, **kwargs):
+    if('code' in kwargs):
+        if (os.path.isfile(kwargs['code'])):
+            with open(kwargs['code'], 'r') as file:
+                kwargs['code'] = file.read()
+    if('ctx' in kwargs):
+        kwargs['ctx'] = json.loads(kwargs['ctx'])
     print(session['master'].general_interface_to_api(kwargs, api_name))
     pickle.dump(session['master'], open(session['filename'], 'wb'))
 
@@ -55,8 +63,9 @@ def extract_api_tree():
 
 
 def build_cmd(group_func, func_name, api_name):
-    f = click.option(
-        f'-api', default=api_name)(copy_func(interface_api, func_name))
+    f = functools.partial(
+        copy_func(interface_api, func_name), api_name=api_name)
+    f.__name__ = func_name
     func_sig = session['master'].get_api_signature(api_name)
     for i in func_sig.parameters.keys():
         if(i == 'self'):
