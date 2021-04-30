@@ -85,8 +85,9 @@ class architype_machine(machine):
                 continue
             node_obj = self.owner().arch_ids.get_obj_by_name(
                 'node.' + node_kind).run()
+            node_obj.name = node_def.pop('_n_name_', node_id)
             node_obj.set_context(node_def)
-            node_obj.name = node_id
+            # Overwrite node name with _n_name_ in the attrs if defined
             node_objs[node_id] = node_obj
 
         # Create edge objects

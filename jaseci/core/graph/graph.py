@@ -4,7 +4,6 @@ Graph  class for Jaseci
 """
 from core.graph.node import node
 from core.utils.id_list import id_list
-import io
 
 
 class graph(node):
@@ -30,12 +29,12 @@ class graph(node):
         edge_list = self.get_network_paths()
 
         # Construct the graph string
-        with io.StringIO() as output:
-            print(f'strict digraph {self.name} {{', file=output)
-            for n in node_list:
-                print(f'    {n.dot_str()}', file=output)
-            for e_list in edge_list:
-                for e in e_list:
-                    print(f'    {e.dot_str()}', file=output)
-            print('}', file=output)
-            return output.getvalue()
+        dstr = ''
+        dstr += f'strict digraph {self.name} {{'
+        for n in node_list:
+            dstr += f'    {n.dot_str()}'
+        for e_list in edge_list:
+            for e in e_list:
+                dstr += f'    {e.dot_str()}'
+        dstr += '}'
+        return dstr

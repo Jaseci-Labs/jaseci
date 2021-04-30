@@ -18,6 +18,31 @@ dot_node = \
     }
     """
 
+dot_node_overwrite_name = \
+    """
+    node test_node {has name;}
+    node subnode;
+    graph test_graph {
+        has anchor graph_root;
+        graph G {
+            graph_root [kind=test_node, name=graph_root_node_name]
+            placeholder [_n_name_=real_name, kind=subnode]
+            graph_root -> placeholder
+        }
+    }
+    walker init {
+        root, test_node {
+            spawn here --> graph::test_graph;
+            take -->;
+        }
+        subnode {
+            std.out(here);
+            disengage;
+        }
+    }
+    """
+
+
 dot_node_multi_stmts = \
     """
     node test_node {
