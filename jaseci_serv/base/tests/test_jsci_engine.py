@@ -11,7 +11,7 @@ from jaseci.utils import graph_gen
 from jaseci.utils.mem_hook import mem_hook
 from base.redis_hook import redis_hook
 from jaseci.settings import REDIS_HOST
-import core.tests.jac_test_code as jtc
+import jaseci.tests.jac_test_code as jtc
 
 import redis
 

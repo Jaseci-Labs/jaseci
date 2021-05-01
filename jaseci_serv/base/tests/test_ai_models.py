@@ -5,7 +5,7 @@ from jaseci.graph.graph import graph
 
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
-import core.tests.jac_test_code as jtc
+import jaseci.tests.jac_test_code as jtc
 
 
 class jac_tests(TestCaseHelper, TestCase):

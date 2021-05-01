@@ -4,7 +4,7 @@ core engine.
 """
 from jaseci.utils import utils
 from jaseci.utils.utils import logger
-import core as core_mod
+import jaseci as core_mod
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.settings import REDIS_HOST
 from redis import Redis
