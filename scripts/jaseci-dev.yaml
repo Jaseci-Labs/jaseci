@@ -18,10 +18,10 @@ metadata:
 data:
   prod_up: |-
     mkdir /dl; cd /dl; git clone https://prod:$GITPASS@git.jaseci.org/marsninja/jaseci.git;
-    cd jaseci/jaseci_core; pip3 install .; cd -
-    mv jaseci/jaseci_serv /jaseci; cd /jaseci;
-    export CLASSPATH="$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH"
-    java -Xmx500M -cp \"$PWD/core/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH\" org.antlr.v4.Tool -Dlanguage=Python3 -o $PWD/core/jac/_jac_gen $PWD/core/jac/jac.g4
+    cd jaseci/jaseci_core; pip3 install .; 
+    export CLASSPATH="$PWD/jaseci/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH"
+    java -Xmx500M -cp \"$PWD/jaseci/jac/antlr4-tool/antlr-4.8-complete.jar:$CLASSPATH\" org.antlr.v4.Tool -Dlanguage=Python3 -o $PWD/jaseci/jac/_jac_gen $PWD/jaseci/jac/jac.g4
+    cd -; mv jaseci/jaseci_serv /jaseci; cd /jaseci;
     python3 manage.py wait_for_db && python3 manage.py makemigrations base &&
     python3 manage.py makemigrations && python3 manage.py migrate;
     while true; do python3 manage.py runserver 0.0.0.0:80; sleep 2; done;

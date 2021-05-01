@@ -64,7 +64,7 @@ MIDDLEWARE = [
 
 CORS_ORIGIN_ALLOW_ALL = True
 
-ROOT_URLCONF = 'jaseci.urls'
+ROOT_URLCONF = 'jaseci_serv.urls'
 
 TEMPLATES = [
     {
@@ -82,7 +82,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'jaseci.wsgi.application'
+WSGI_APPLICATION = 'jaseci_serv.wsgi.application'
 
 
 # Database
