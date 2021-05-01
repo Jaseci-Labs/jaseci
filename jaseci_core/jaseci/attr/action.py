@@ -5,6 +5,7 @@ Each action has an id, name, timestamp and it's set of edges.
 """
 from .item import item
 import importlib
+from jaseci.utils import logger
 
 
 class action(item):
@@ -33,6 +34,7 @@ class action(item):
             use_params = []
             for i in self.preset_in_out['input']:
                 use_params.append(i.obj.context[i.name])
+        logger.error(f'{self.value}')
         result = getattr(
             importlib.import_module(self.value[0]),
             self.value[1]
