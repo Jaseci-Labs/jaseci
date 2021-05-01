@@ -5,7 +5,7 @@ Each action has an id, name, timestamp and it's set of edges.
 """
 from .item import item
 import importlib
-from jaseci.utils import logger
+from jaseci.utils.utils import logger
 
 
 class action(item):
