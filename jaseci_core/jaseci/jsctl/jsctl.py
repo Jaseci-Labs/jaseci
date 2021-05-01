@@ -104,6 +104,9 @@ def cmd_tree_builder(location, group_func=cli):
         cmd_tree_builder(loc, new_func)
 
 
-if __name__ == '__main__':
+def main():
     cmd_tree_builder(extract_api_tree())
     cli()
+
+if __name__ == '__main__':
+    main()
