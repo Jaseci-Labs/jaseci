@@ -7,6 +7,8 @@ from .item import item
 import importlib
 from jaseci.utils.utils import logger
 
+ACTION_PACKAGE = 'jaseci.actions'
+
 
 class action(item):
     """
@@ -34,9 +36,9 @@ class action(item):
             use_params = []
             for i in self.preset_in_out['input']:
                 use_params.append(i.obj.context[i.name])
-        logger.error(f'{self.value}')
         result = getattr(
-            importlib.import_module(self.value[0]),
+            importlib.import_module(
+                ACTION_PACKAGE+self.value[0].split('.')[-1]),
             self.value[1]
         )(use_params)
         if(not param_list and self.preset_in_out and
