@@ -7,7 +7,7 @@ from .item import item
 import importlib
 from jaseci.utils.utils import logger
 
-ACTION_PACKAGE = 'jaseci.actions'
+ACTION_PACKAGE = 'jaseci.actions.'
 
 
 class action(item):
