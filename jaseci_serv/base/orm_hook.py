@@ -8,7 +8,7 @@ from jaseci.utils import utils
 from jaseci.utils.utils import logger
 import jaseci as core_mod
 from jaseci.utils.mem_hook import mem_hook, json_str_to_jsci_dict
-from jaseci.settings import REDIS_HOST
+from jaseci_serv.settings import REDIS_HOST
 from redis import Redis
 import uuid
 import json
