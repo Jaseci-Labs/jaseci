@@ -16,22 +16,26 @@ from jaseci.master import master as master_class
 session = {
     "filename": "js.session",
     "master": master_class(h=mem_hook()),
+    "mem-only": False
 }
 
 
 def blank_func():
+    """No help provided"""
     pass
 
 
 @click.group()
-@click.option('--filename', '-f', default="js.session")
-@click.option('--mem-only', '-m', default=False)
+@click.option('--filename', '-f', default="js.session",
+              help="Specify filename for session state.")
+@click.option('--mem-only', '-m', type=bool, default=False,
+              help="Set true to not save file for session.")
 def cli(filename, mem_only):
     """
-    Primary entry point for CLI,
-    checks for and loads session file
+    The Jaseci Command Line Interface
     """
-    session['filename'] = filename if not mem_only else None
+    session['mem-only'] = mem_only
+    session['filename'] = filename if not session['mem-only'] else None
     if (os.path.isfile(filename)):
         session['master'] = pickle.load(open(filename, 'rb'))
 
@@ -48,7 +52,8 @@ def interface_api(api_name, **kwargs):
     if('ctx' in kwargs):
         kwargs['ctx'] = json.loads(kwargs['ctx'])
     print(session['master'].general_interface_to_api(kwargs, api_name))
-    pickle.dump(session['master'], open(session['filename'], 'wb'))
+    if not session['mem-only']:
+        pickle.dump(session['master'], open(session['filename'], 'wb'))
 
 
 def extract_api_tree():
@@ -107,6 +112,7 @@ def cmd_tree_builder(location, group_func=cli):
 def main():
     cmd_tree_builder(extract_api_tree())
     cli()
+
 
 if __name__ == '__main__':
     main()

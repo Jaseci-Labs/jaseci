@@ -168,7 +168,7 @@ class test_ll(TestCaseHelper, TestCase):
     def test_ll_goal_associations(self):
         """Test setting categories for a workette"""
         if (not check_model_live('BART')):
-            return
+            self.skipTest("external resource not available")
         CATS = [
             "professional work",
             "chores",
@@ -200,7 +200,7 @@ class test_ll(TestCaseHelper, TestCase):
 
     def test_parent_suggestion(self):
         if (not check_model_live('USE_ENCODER')):
-            return
+            self.skipTest("external resource not available")
         """Test generating a suggested parent item for a given item"""
         new_wkt = 'clean up the house'
         self.run_walker('gen_rand_life', {})

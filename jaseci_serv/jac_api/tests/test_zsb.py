@@ -54,7 +54,7 @@ class test_zsb(TestCaseHelper, TestCase):
     def test_zsb_create_answer(self):
         """Test ZSB Create Answer call USE api"""
         if (not check_model_live('USE')):
-            return
+            self.skipTest("external resource not available")
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['kind'], 'bot')
         bot_jid = data[0]['jid']
@@ -64,7 +64,7 @@ class test_zsb(TestCaseHelper, TestCase):
     def test_zsb_ask_question(self):
         """Test ZSB Create Answer call USE api"""
         if (not check_model_live('USE')):
-            return
+            self.skipTest("external resource not available")
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['kind'], 'bot')
         bot_jid = data[0]['jid']
@@ -82,7 +82,7 @@ class test_zsb(TestCaseHelper, TestCase):
     def test_zsb_ask_question_multi(self):
         """Test ZSB Create Answer call USE api"""
         if (not check_model_live('USE')):
-            return
+            self.skipTest("external resource not available")
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['kind'], 'bot')
         bot_jid = data[0]['jid']
@@ -104,7 +104,7 @@ class test_zsb(TestCaseHelper, TestCase):
     def test_dangling_edge_corruption_healing_non_block(self):
         """Test ZSB Create Answer call USE api"""
         if (not check_model_live('USE')):
-            return
+            self.skipTest("external resource not available")
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['kind'], 'bot')
         bot_jid = data[0]['jid']
