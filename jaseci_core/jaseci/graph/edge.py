@@ -88,3 +88,31 @@ class edge(element, anchored):
         if target and self in target.edge_ids.obj_list():
             target.edge_ids.remove_obj(self)
         element.destroy(self)
+
+    def dot_str(self):
+        """
+        DOT representation
+        from_node -> to_node [context_key=contect_value]
+        """
+        dstr = ''
+
+        dstr += f'{self.from_node().__str__()} -> {self.to_node().__str__()}'
+
+        edge_dict = self.context
+        if (self.kind != 'generic'):
+            edge_dict['kind'] = self.kind
+
+        if (edge_dict):
+            dstr += '['
+            num_items = 0
+            for k, v in edge_dict.items():
+                if (num_items != 0):
+                    dstr += ' '
+                dstr += f'{k}={v}'
+
+                num_items += 1
+                if (num_items != len(edge_dict)):
+                    dstr += ','
+            dstr += ']'
+
+        return dstr

@@ -95,6 +95,15 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.assertNotIn(gph.id, gph._h.mem.keys())
 
+    def test_jac_api_get_graph_dot(self):
+        """Test API for getting graph in dot str"""
+        payload = {'op': 'create_graph', 'name': 'Something'}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
+        payload = {'op': 'get_graph_dot', 'gph': gph.id.urn}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        self.assertTrue('graph Something' in res.json())
+
     def test_jac_api_delete_sentinel(self):
         """Test API for deleting a sentinel"""
         payload = {'op': 'create_graph', 'name': 'Something'}
