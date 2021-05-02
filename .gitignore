@@ -7,6 +7,10 @@ db.sqlite3
 media
 migrations
 
+# General # 
+*.egg-info/
+*.egg
+
 # Others #
 .antlr
 .session
