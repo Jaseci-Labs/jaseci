@@ -7,7 +7,7 @@ from jaseci.utils.id_list import id_list
 
 
 class graph(node):
-    """Node class for Jaseci"""
+    """Graph class for Jaseci"""
 
     def __init__(self, *args, **kwargs):
         self.hd_node_ids = id_list(self)
@@ -21,9 +21,11 @@ class graph(node):
             i.destroy()
         super().destroy()
 
-    def dump(self):
+    def graph_dot_str(self):
         """
-        Dump the content of the graph in a file
+        DOT representation for graph.
+        NOTE: This is different from the dot_str method for node intentionally
+        because graph inherits node.
         """
         node_list = self.get_network_nodes()
         edge_list = self.get_network_paths()
