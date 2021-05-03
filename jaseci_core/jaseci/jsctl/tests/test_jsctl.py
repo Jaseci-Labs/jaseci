@@ -36,5 +36,4 @@ class jsctl_test(TestCaseHelper, TestCase):
     def test_help_screen(self):
         runner = CliRunner()
         result = runner.invoke(jsctl.cli, [])
-        self.skipTest("external resource not available")
         self.assertIn('Specify filename', result.output)

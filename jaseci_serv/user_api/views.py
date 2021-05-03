@@ -48,7 +48,8 @@ class CreateTokenView(KnoxLoginView):
     # renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
 
     def post(self, request, format=None):
-        serializer = AuthTokenSerializer(data=request.data)
+        serializer = AuthTokenSerializer(
+            data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         login(request, user)
