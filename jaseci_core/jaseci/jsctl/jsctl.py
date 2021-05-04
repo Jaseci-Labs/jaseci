@@ -3,6 +3,7 @@ Command line tool for Jaseci
 """
 
 import click
+from click_shell import shell
 import os.path
 import pickle
 import functools
@@ -26,7 +27,7 @@ def blank_func():
     pass
 
 
-@click.group()
+@shell(prompt='jaseci > ', intro='Starting Jaseci Shell...')
 @click.option('--filename', '-f', default="js.session",
               help="Specify filename for session state.")
 @click.option('--mem-only', '-m', type=bool, default=False,
@@ -93,7 +94,10 @@ def build_cmd(group_func, func_name, api_name):
     for i in func_sig.parameters.keys():
         if(i == 'self'):
             continue
-        f = click.option(f'-{i}')(f)
+        p_default = func_sig.parameters[i].default
+        f = click.option(
+            f'-{i}', default=p_default if p_default is not
+            func_sig.parameters[i].empty else None)(f)
     return group_func.command()(f)
 
 
