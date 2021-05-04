@@ -39,13 +39,13 @@ class master(element, master_legacy_api):
         self.sentinel_ids.add_obj(snt)
         return snt.serialize()
 
-    def api_list_graphs(self):
+    def api_list_graphs(self, detailed: bool = False):
         """
         Provide complete list of all graph objects (list of root node objects)
         """
         gphs = []
         for i in self.graph_ids.obj_list():
-            gphs.append(i.serialize())
+            gphs.append(i.serialize(detailed=detailed))
         return gphs
 
     def api_list_sentinels(self):
@@ -182,7 +182,9 @@ class master(element, master_legacy_api):
                 continue
             p_name = i
             p_type = func_sig.parameters[i].annotation
-            param_map[i] = None
+            p_default = func_sig.parameters[i].default
+            param_map[i] = p_default if p_default is not \
+                func_sig.parameters[i].empty else None
             if (p_name in params.keys()):  # TODO: BETTER ERROR REPORTING
                 val = params[p_name]
                 if (issubclass(p_type, element)):
@@ -194,8 +196,6 @@ class master(element, master_legacy_api):
                         param_map[i] = None
                 else:  # TODO: Can do type checks here too
                     param_map[i] = val
-            else:
-                param_map[i] = None
 
             if (param_map[i] is None):
                 logger.error(f'Invalid API parameter set - {params}')
