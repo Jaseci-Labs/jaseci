@@ -152,7 +152,7 @@ class element(hookable):
 
         dup = type(self)(h=self._h, persist=persist_dup)
         id_save = dup.id
-        dup.json_load(self.json())
+        dup.json_load(self.json(detailed=True))
         dup.id = id_save
         dup.timestamp = datetime.utcnow()
         dup.save()
@@ -187,13 +187,17 @@ class element(hookable):
             obj_dict[i] = getattr(self, i)
         return json.dumps(obj_dict)
 
-    def serialize(self, deep=0):
+    def serialize(self, deep=0, detailed=False):
         """
         Serialize Jaseci object
         """
         jdict = {}
+        key_fields = ['name', 'kind', 'jid', 'j_type', 'context',
+                      'anchor']
         for i in vars(self).keys():
             if not i.startswith('_'):
+                if(not detailed and i not in key_fields):
+                    continue
                 jdict[i] = copy.copy(vars(self)[i])
                 if (deep > 0 and isinstance(jdict[i], id_list)):
                     for j in range(len(jdict[i])):
@@ -201,13 +205,14 @@ class element(hookable):
                             jdict[i][j])).serialize(deep - 1))
         return jdict
 
-    def json(self, deep=0):
+    def json(self, deep=0, detailed=False):
         """
         Returns entire self object as Json string
 
         deep indicates number of levels to unwind uuids
         """
-        return json.dumps(self.serialize(deep), indent=4)
+        return json.dumps(self.serialize(deep, detailed=detailed),
+                          indent=4)
 
     def json_load(self, blob):
         """Loads self from json blob"""

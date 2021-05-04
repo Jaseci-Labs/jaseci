@@ -61,7 +61,7 @@ class orm_hook(mem_hook):
             for i in obj_fields.keys():
                 setattr(ret_obj, i, obj_fields[i])
 
-            self.red.set(ret_obj.id.urn, ret_obj.json())
+            self.red.set(ret_obj.id.urn, ret_obj.json(detailed=True))
             return ret_obj
 
     def has_obj_in_store(self, item_id):
@@ -78,7 +78,7 @@ class orm_hook(mem_hook):
 
     def commit_obj(self, item):
         try:
-            self.red.set(item.id.urn, item.json())
+            self.red.set(item.id.urn, item.json(detailed=True))
         except TypeError:
             logger.error(
                 str(f"Item {item} is not JSON serializable for redis store!"),

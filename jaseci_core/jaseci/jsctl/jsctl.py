@@ -7,6 +7,7 @@ import os.path
 import pickle
 import functools
 import json
+import pprint
 from inspect import signature
 
 from jaseci.utils.mem_hook import mem_hook
@@ -51,7 +52,8 @@ def interface_api(api_name, **kwargs):
                 kwargs['code'] = file.read()
     if('ctx' in kwargs):
         kwargs['ctx'] = json.loads(kwargs['ctx'])
-    print(session['master'].general_interface_to_api(kwargs, api_name))
+    pp = pprint.PrettyPrinter(indent=4, width=80, depth=6)
+    pp.pprint(session['master'].general_interface_to_api(kwargs, api_name))
     if not session['mem-only']:
         pickle.dump(session['master'], open(session['filename'], 'wb'))
 

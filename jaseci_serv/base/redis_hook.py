@@ -41,7 +41,7 @@ class redis_hook(mem_hook):
 
     def save_obj_to_store(self, item):
         # import traceback as tb; tb.print_stack();  # noqa
-        self.red.set(item.id.urn, item.json())
+        self.red.set(item.id.urn, item.json(detailed=True))
 
     def destroy_obj_from_store(self, item):
         self.red.delete(item.id.urn)
