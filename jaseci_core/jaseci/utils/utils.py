@@ -133,7 +133,7 @@ class TestCaseHelper():
                  f'- {EC}{self.id().split(".")[-1]}: '
         get_outcome = self.defaultTestResult()
         self._feedErrorsToResult(get_outcome, self._outcome.errors)
-        if (len(get_outcome.errors)):
+        if (len(get_outcome.errors) or len(get_outcome.failures)):
             result += f'{TR}[failed]{EC}'
         elif (len(self._outcome.skipped)):
             result += f'{TY}[skipped]{EC}'

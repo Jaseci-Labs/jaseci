@@ -5,6 +5,7 @@ between user and Jaseci
 import base64
 import uuid
 from inspect import signature
+from inspect import getdoc
 from jaseci.element import element
 from jaseci.graph.graph import graph
 from jaseci.graph.node import node
@@ -48,13 +49,13 @@ class master(element, master_legacy_api):
             gphs.append(i.serialize(detailed=detailed))
         return gphs
 
-    def api_list_sentinels(self):
+    def api_list_sentinels(self, detailed: bool = False):
         """
         Provide complete list of all sentinel objects
         """
         snts = []
         for i in self.sentinel_ids.obj_list():
-            snts.append(i.serialize())
+            snts.append(i.serialize(detailed=detailed))
         return snts
 
     def api_delete_graph(self, gph: graph):
@@ -88,7 +89,12 @@ class master(element, master_legacy_api):
         Set sentinel implementation with Jac source code
         """
         if (encoded):
-            code = base64.b64decode(code).decode()
+            try:
+                code = base64.b64decode(code).decode()
+            except UnicodeDecodeError:
+                logger.error(
+                    f'Code encoding invalid for Sentinel {snt.id}!')
+                return [f'Code encoding invalid for Sentinel {snt.id}!']
         if (snt.code == code and snt.is_active):
             return [f'Sentinel {snt.id} already registered and active!']
         else:
@@ -215,3 +221,13 @@ class master(element, master_legacy_api):
             return False
         else:
             return signature(getattr(master, api_name))
+
+    def get_api_doc(self, api_name):
+        """
+        Checks for valid api name and returns signature
+        """
+        if (not hasattr(self, api_name)):
+            logger.error(f'{api_name} not a valid API')
+            return False
+        else:
+            return getdoc(getattr(master, api_name))

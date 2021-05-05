@@ -14,6 +14,7 @@ from inspect import signature
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
 from jaseci.master import master as master_class
+from jaseci.element import element
 
 session = {
     "filename": "js.session",
@@ -30,7 +31,7 @@ def blank_func():
 @shell(prompt='jaseci > ', intro='Starting Jaseci Shell...')
 @click.option('--filename', '-f', default="js.session",
               help="Specify filename for session state.")
-@click.option('--mem-only', '-m', type=bool, default=False,
+@click.option('--mem-only', '-m', is_flag=True,
               help="Set true to not save file for session.")
 def cli(filename, mem_only):
     """
@@ -90,18 +91,22 @@ def build_cmd(group_func, func_name, api_name):
     f = functools.partial(
         copy_func(interface_api, func_name), api_name=api_name)
     f.__name__ = func_name
+    f.__doc__ = session['master'].get_api_doc(api_name)
     func_sig = session['master'].get_api_signature(api_name)
     for i in func_sig.parameters.keys():
         if(i == 'self'):
             continue
         p_default = func_sig.parameters[i].default
+        p_type = func_sig.parameters[i].annotation
+        if(issubclass(p_type, element)):
+            p_type = str
         f = click.option(
             f'-{i}', default=p_default if p_default is not
-            func_sig.parameters[i].empty else None)(f)
+            func_sig.parameters[i].empty else None, type=p_type)(f)
     return group_func.command()(f)
 
 
-def cmd_tree_builder(location, group_func=cli):
+def cmd_tree_builder(location, group_func=cli, cmd_str=''):
     """
     Generates Click command groups from API tree recursively
     """
@@ -111,12 +116,16 @@ def cmd_tree_builder(location, group_func=cli):
             build_cmd(group_func, i, loc['leaf'][0])
             continue
         else:
-            new_func = group_func.group()(copy_func(blank_func, i))
-        cmd_tree_builder(loc, new_func)
+            f = copy_func(blank_func, i)
+            f.__doc__ = f'Group of `{(cmd_str+" "+i).lstrip()}` commands'
+            new_func = group_func.group()(f)
+        cmd_tree_builder(loc, new_func, cmd_str+' '+i)
+
+
+cmd_tree_builder(extract_api_tree())
 
 
 def main():
-    cmd_tree_builder(extract_api_tree())
     cli()
 
 
