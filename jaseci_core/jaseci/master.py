@@ -49,6 +49,15 @@ class master(element, master_legacy_api):
             gphs.append(i.serialize(detailed=detailed))
         return gphs
 
+    def api_list_walkers(self, snt: sentinel, detailed: bool = False):
+        """
+        List walkers known to sentinel
+        """
+        walks = []
+        for i in snt.walker_ids.obj_list():
+            walks.append(i.serialize(detailed=detailed))
+        return walks
+
     def api_list_sentinels(self, detailed: bool = False):
         """
         Provide complete list of all sentinel objects

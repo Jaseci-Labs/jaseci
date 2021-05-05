@@ -38,8 +38,10 @@ def cli(filename, mem_only):
     The Jaseci Command Line Interface
     """
     session['mem-only'] = mem_only
-    session['filename'] = filename if not session['mem-only'] else None
-    if (os.path.isfile(filename)):
+    if (mem_only):
+        print('[In memory mode]')
+    session['filename'] = filename if not mem_only else None
+    if (not mem_only and os.path.isfile(filename)):
         session['master'] = pickle.load(open(filename, 'rb'))
 
 
@@ -62,7 +64,7 @@ def interface_api(api_name, **kwargs):
 
 def extract_api_tree():
     """
-    Generates a tree of command group names and function 
+    Generates a tree of command group names and function
     signatures in leaves from API function names in Master
     """
     api_funcs = {}

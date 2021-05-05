@@ -275,7 +275,7 @@ LPAREN: '(';
 RPAREN: ')';
 LSQUARE: '[';
 RSQUARE: ']';
-FLOAT: [0-9]+ '.' [0-9]+;
+FLOAT: ([0-9]+)? '.' [0-9]+;
 STRING: '"' ~ ["\r\n]* '"' | '\'' ~ ['\r\n]* '\'';
 BOOL: 'true' | 'false';
 INT: [0-9]+;
