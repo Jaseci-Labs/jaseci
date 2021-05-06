@@ -84,9 +84,9 @@ class orm_hook(mem_hook):
                 str(f"Item {item} is not JSON serializable for redis store!"),
                 exc_info=True
             )
-        except:
+        except Exception as e:
             logger.error(
-                str(f"Couldn't save {item} to redis!"),
+                str(f"Couldn't save {item} to redis! {e}"),
                 exc_info=True
             )
         item_from_db, created = self.objects.get_or_create(
