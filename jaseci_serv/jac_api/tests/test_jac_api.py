@@ -127,11 +127,11 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'create_sentinel', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'get_jac_code', 'snt': sent.id.urn}
+        payload = {'op': 'get_jac', 'snt': sent.id.urn}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.assertEqual(res.data[0], '# Jac Code')
 
-    def test_jac_api_set_jac_code(self):
+    def test_jac_api_set_jac(self):
         """Test API for deleting a sentinel"""
         payload = {'op': 'create_graph', 'name': 'Whatevewr'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
@@ -139,13 +139,13 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'create_sentinel', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
+        payload = {'op': 'set_jac', 'snt': sent.id.urn,
                    'code': '# Something awesome!!', 'encoded': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(sent.code, '# Something awesome!!')
 
-    def test_jac_api_set_jac_code_encoded(self):
+    def test_jac_api_set_jac_encoded(self):
         """Test API for deleting a sentinel"""
         payload = {'op': 'create_graph', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
@@ -154,7 +154,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         enc_str = base64.b64encode(b'# Something awesome!!').decode()
-        payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
+        payload = {'op': 'set_jac', 'snt': sent.id.urn,
                    'code': enc_str, 'encoded': True}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
@@ -168,7 +168,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'create_sentinel', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
+        payload = {'op': 'set_jac', 'snt': sent.id.urn,
                    'code': 'walker test { std.log("hello"); }',
                    'encoded': False}
         res = self.client.post(
@@ -216,7 +216,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'create_sentinel', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
+        payload = {'op': 'set_jac', 'snt': sent.id.urn,
                    'code': 'walker test { std.log("hello"); }',
                    'encoded': False}
         res = self.client.post(
@@ -236,7 +236,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'create_sentinel', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
+        payload = {'op': 'set_jac', 'snt': sent.id.urn,
                    'code': 'walker test { std.log("hello"); }',
                    'encoded': False}
         res = self.client.post(
@@ -260,7 +260,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'create_sentinel', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
+        payload = {'op': 'set_jac', 'snt': sent.id.urn,
                    'code': 'walker test { std.log("hello"); }',
                    'encoded': False}
         res = self.client.post(
@@ -285,7 +285,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'create_sentinel', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
+        payload = {'op': 'set_jac', 'snt': sent.id.urn,
                    'code': 'node sample { has apple;} ' +
                    'walker test { new = spawn here --> node::sample; ' +
                    'report new; }',
@@ -319,7 +319,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {
-            'op': 'set_jac_code', 'snt': sent.id.urn,
+            'op': 'set_jac', 'snt': sent.id.urn,
             'code': 'walker test { report [[[[[here, here], here], here]]]; }',
             'encoded': False
         }
@@ -345,7 +345,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'create_sentinel', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
+        payload = {'op': 'set_jac', 'snt': sent.id.urn,
                    'code':
                    'node a { has b; } walker test ' +
                    '{ r = spawn here --> node::a; r.b = 6; }',
@@ -364,7 +364,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.assertGreater(walk.current_step, 0)
 
-        payload = {'op': 'set_jac_code', 'snt': sent.id.urn,
+        payload = {'op': 'set_jac', 'snt': sent.id.urn,
                    'code':
                    'node a { has b, c; } walker test ' +
                    '{ with entry {take -->;} ' +

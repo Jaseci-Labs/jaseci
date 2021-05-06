@@ -14,7 +14,8 @@ class jac_scope():
     def __init__(self, owner, local_scope, has_obj, action_sets):
         self.owner = owner
         self.local_scope = local_scope
-        self.has_obj = has_obj
+        self.has_obj = has_obj if has_obj else self
+        self.context = {}
         self.action_sets = [global_action_ids] + action_sets
 
     def add_actions(self, actions):

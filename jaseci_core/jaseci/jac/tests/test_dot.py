@@ -38,6 +38,22 @@ class test_dot(TestCaseHelper, TestCase):
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "graph_root_node_name\n")
 
+    def test_dot_node_no_dot_id(self):
+        """Test node in dot with no do graph name"""
+        self.sent.register_code(dtc.dot_node_no_dot_id)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(), "graph_root_node_name\n")
+
+    def test_spawn_graph_node(self):
+        """Test node in using spawn graphs instead of dot"""
+        self.sent.register_code(dtc.spawn_graph_node)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(), "graph_root_node_name\n")
+
     def test_dot_node_overwrite_name(self):
         """Test node in dot with name overwrite"""
         self.sent.register_code(dtc.dot_node_overwrite_name)

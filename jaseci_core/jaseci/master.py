@@ -87,13 +87,13 @@ class master(element, master_legacy_api):
         self.sentinel_ids.destroy_obj(snt)
         return [f'Sentinel {snt.id} successfully deleted']
 
-    def api_get_jac_code(self, snt: sentinel):
+    def api_get_jac(self, snt: sentinel):
         """
         Get sentinel implementation in form of Jac source code
         """
         return [snt.code]
 
-    def api_set_jac_code(self, snt: sentinel, code: str, encoded: bool):
+    def api_set_jac(self, snt: sentinel, code: str, encoded: bool):
         """
         Set sentinel implementation with Jac source code
         """
@@ -129,6 +129,7 @@ class master(element, master_legacy_api):
         """
         Delete instance of walker (not implemented yet)
         """
+
         return []
 
     def api_prime_walker(self, wlk: walker, nd: node, ctx: dict):

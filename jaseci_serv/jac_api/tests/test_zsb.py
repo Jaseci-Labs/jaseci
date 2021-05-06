@@ -30,7 +30,7 @@ class test_zsb(TestCaseHelper, TestCase):
         self.snt = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         ll_file = base64.b64encode(
             open("jac_api/tests/zsb.jac").read().encode())
-        payload = {'op': 'set_jac_code', 'snt': self.snt.id.urn,
+        payload = {'op': 'set_jac', 'snt': self.snt.id.urn,
                    'code': ll_file, 'encoded': True}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')

@@ -4,9 +4,12 @@ Sentinel machine for jac code in AST form
 This machine should be inhereted from the class that manages state referenced
 through self.
 """
+from jaseci.utils.utils import logger
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
 from jaseci.jac.machine import machine
+from jaseci.jac.jac_scope import jac_scope
+import uuid
 
 
 class architype_machine(machine):
@@ -47,7 +50,40 @@ class architype_machine(machine):
 
     def run_graph_block(self, jac_ast):
         """
-        graph_block:
+        graph_block: graph_block_spawn | graph_block_dot;
+        """
+        kid = jac_ast.kid
+        return getattr(self, f'run_{kid[0].name}')(kid[0])
+
+    def run_graph_block_spawn(self, jac_ast):
+        """
+        graph_block_spawn:
+            LBRACE has_root KW_SPAWN code_block RBRACE
+            | COLON has_root KW_SPAWN code_block SEMI;
+        """
+        kid = jac_ast.kid
+        root_node_id = self.run_has_root(kid[1])
+        m = machine(owner_override=self.owner())
+        local_state = {}
+        m.push_scope(jac_scope(self,
+                               local_state,
+                               None,
+                               []))
+        m.run_code_block(kid[3])
+        if(root_node_id in local_state.keys()):
+            obj = self._h.get_obj(uuid.UUID(local_state[root_node_id]))
+            if(not isinstance(obj, node)):
+                self.rt_error(f"{root_node_id} is {type(obj)} not node!",
+                              kid[2])
+            return obj
+        else:
+            self.rt_error(f"Graph didn't produce root node!",
+                          kid[2])
+            return None
+
+    def run_graph_block_dot(self, jac_ast):
+        """
+        graph_block_dot:
             LBRACE has_root dot_graph RBRACE
             | COLON has_root dot_graph SEMI;
         """
@@ -74,7 +110,7 @@ class architype_machine(machine):
             del nodes_def
             self.rt_error(f"Graph didn't produce root node!",
                           kid[1])
-            return 0
+            return None
 
         # Create node objects
         node_objs = {}

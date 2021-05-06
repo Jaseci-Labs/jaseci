@@ -19,13 +19,20 @@ from jaseci.jac.jac_scope import jac_scope
 class machine():
     """Shared machine class across both sentinels and walkers"""
 
-    def __init__(self):
+    def __init__(self, owner_override=None):
+        self.owner_override = owner_override
         self.runtime_errors = []
         self._scope_stack = [None]
         self._jac_scope = None
         self._loop_ctrl = None
         self._stopped = None
         self._loop_limit = 10000
+
+    def owner(self):
+        if(self.owner_override):
+            return self.owner_override
+        else:
+            return element.owner(self)
 
     def reset(self):
         self.runtime_errors = []
@@ -574,7 +581,7 @@ class machine():
                               kid[0])
                 return atom_res
         elif (kid[0].name == 'DBL_COLON'):
-            m = machine()
+            m = machine(owner_override=self.owner())
             m.push_scope(jac_scope(self,
                                    {},
                                    atom_res,
@@ -682,7 +689,6 @@ class machine():
                     'node.' + kid[2].token_text()).run()
             else:
                 result = node(h=self._h)
-            self.log_history('spawned', result)
         return result
 
     def run_edge_ref(self, jac_ast, is_spawn=False):
@@ -714,8 +720,6 @@ class machine():
                     'edge.' + kid[2].token_text()).run()
             else:
                 result = edge(h=self._h)
-            self.log_history('spawned', result)
-
         return result
 
     def run_edge_from(self, jac_ast, is_spawn=False):
@@ -739,7 +743,6 @@ class machine():
                     'edge.' + kid[2].token_text()).run()
             else:
                 result = edge(h=self._h)
-            self.log_history('spawned', result)
         return result
 
     def run_edge_any(self, jac_ast, is_spawn=False):
@@ -763,7 +766,6 @@ class machine():
                     'edge.' + kid[2].token_text()).run()
             else:
                 result = edge(h=self._h)
-            self.log_history('spawned', result)
 
         return result
 
@@ -786,17 +788,20 @@ class machine():
         jac_sets
         """
         kid = jac_ast.kid
-        location = self.run_expression(kid[1])
-        if(isinstance(location, node)):
-            return self.run_spawn_object(kid[2], location)
-        elif(isinstance(location, jac_set)):
-            res = []
-            for i in location.obj_list():
-                res.append(self.run_spawn_object(kid[2], i))
-            return res
+        if(kid[1].name == 'expression'):
+            location = self.run_expression(kid[1])
+            if(isinstance(location, node)):
+                return self.run_spawn_object(kid[2], location)
+            elif(isinstance(location, jac_set)):
+                res = []
+                for i in location.obj_list():
+                    res.append(self.run_spawn_object(kid[2], i))
+                return res
+            else:
+                self.rt_error(
+                    f'Spawn can not occur on {type(location)}!', kid[1])
         else:
-            self.rt_error(f'Spawn can not occur on {type(location)}!', kid[1])
-            return None
+            return self.run_spawn_object(kid[1], None)
 
     def run_spawn_object(self, jac_ast, location):
         """
@@ -808,18 +813,21 @@ class machine():
 
     def run_node_spawn(self, jac_ast, location):
         """
-        node_spawn: edge_ref node_ref spawn_ctx?;
+        node_spawn: edge_ref? node_ref spawn_ctx?;
         """
         kid = jac_ast.kid
-        use_edge = self.run_edge_ref(kid[0], is_spawn=True)
-        ret_node = self.run_node_ref(kid[1], is_spawn=True)
-        direction = kid[0].kid[0].name
-        if (direction == 'edge_from'):
-            location.attach_inbound(ret_node, use_edge)
+        if(kid[0].name == 'node_ref'):
+            ret_node = self.run_node_ref(kid[0], is_spawn=True)
         else:
-            location.attach_outbound(ret_node, use_edge)
-        if (len(kid) > 2):
-            self.run_spawn_ctx(kid[2], ret_node)
+            use_edge = self.run_edge_ref(kid[0], is_spawn=True)
+            ret_node = self.run_node_ref(kid[1], is_spawn=True)
+            direction = kid[0].kid[0].name
+            if (direction == 'edge_from'):
+                location.attach_inbound(ret_node, use_edge)
+            else:
+                location.attach_outbound(ret_node, use_edge)
+        if (kid[-1].name == 'spawn_ctx'):
+            self.run_spawn_ctx(kid[-1], ret_node)
         return ret_node
 
     def run_walker_spawn(self, jac_ast, location):
@@ -846,16 +854,14 @@ class machine():
         """
         kid = jac_ast.kid
         use_edge = self.run_edge_ref(kid[0], is_spawn=True)
-        graph_ret_node = self.owner().arch_ids.get_obj_by_name(
+        result = self.owner().arch_ids.get_obj_by_name(
             'graph.' + kid[3].token_text()).run()
         direction = kid[0].kid[0].name
         if (direction == 'edge_from'):
-            location.attach_inbound(graph_ret_node, use_edge)
+            location.attach_inbound(result, use_edge)
         else:
-            location.attach_outbound(graph_ret_node, use_edge)
-        self.log_history('spawned', graph_ret_node)
-
-        return graph_ret_node
+            location.attach_outbound(result, use_edge)
+        return result
 
     def run_spawn_ctx(self, jac_ast, obj):
         """

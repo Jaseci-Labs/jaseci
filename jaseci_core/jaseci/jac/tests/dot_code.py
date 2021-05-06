@@ -18,6 +18,47 @@ dot_node = \
     }
     """
 
+dot_node_no_dot_id = \
+    """
+    node test_node {has name;}
+    graph test_graph {
+        has anchor graph_root;
+        graph {
+            graph_root [kind=test_node, name=graph_root_node_name];
+        }
+    }
+    walker init {
+        root {
+            spawn here --> graph::test_graph;
+            take --> node::test_node;
+        }
+        test_node {
+            std.out(here.name);
+        }
+    }
+    """
+
+spawn_graph_node = \
+    """
+    node test_node {has name;}
+    graph test_graph {
+        has anchor graph_root;
+        spawn {
+            graph_root = 
+                spawn node::test_node(name="graph_root_node_name");
+        }
+    }
+    walker init {
+        root {
+            spawn here --> graph::test_graph;
+            take --> node::test_node;
+        }
+        test_node {
+            std.out(here.name);
+        }
+    }
+    """
+
 dot_node_overwrite_name = \
     """
     node test_node {has name;}

@@ -26,7 +26,13 @@ attr_block: LBRACE (attr_stmt)* RBRACE | COLON attr_stmt | SEMI;
 
 attr_stmt: has_stmt | can_stmt;
 
-graph_block:
+graph_block: graph_block_spawn | graph_block_dot;
+
+graph_block_spawn:
+	LBRACE has_root KW_SPAWN code_block RBRACE
+	| COLON has_root KW_SPAWN code_block SEMI;
+
+graph_block_dot:
 	LBRACE has_root dot_graph RBRACE
 	| COLON has_root dot_graph SEMI;
 
@@ -161,11 +167,11 @@ edge_any: '<-->' | '<-' ('[' NAME ']')? '->';
 
 list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
 
-spawn: KW_SPAWN expression spawn_object;
+spawn: KW_SPAWN expression? spawn_object;
 
 spawn_object: node_spawn | walker_spawn | graph_spawn;
 
-node_spawn: edge_ref node_ref spawn_ctx?;
+node_spawn: edge_ref? node_ref spawn_ctx?;
 
 graph_spawn: edge_ref KW_GRAPH DBL_COLON NAME;
 
