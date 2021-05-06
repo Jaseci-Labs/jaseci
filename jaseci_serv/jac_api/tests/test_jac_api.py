@@ -100,7 +100,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'create_graph', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'get_graph_dot', 'gph': gph.id.urn}
+        payload = {'op': 'get_graph', 'gph': gph.id.urn, 'dot': True}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.assertTrue('graph Something' in res.json())
 

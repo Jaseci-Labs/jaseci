@@ -2,11 +2,14 @@ import requests
 import configparser
 import os
 
+ai_config_file = './ai-serving.config.ini' if os.path.exists('./ai-serving.config.ini') \
+    else os.path.dirname(__file__) + '/ai-serving.config.ini'
+
 
 class AIServingAPI():
     def __init__(self, API):
         config = configparser.ConfigParser()
-        config.read(os.path.dirname(__file__) + '/ai-serving.config.ini')
+        config.read(ai_config_file)
         self.url = config.get(API, 'url')
         self.header = {'content-type': 'application/json'}
 

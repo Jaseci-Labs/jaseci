@@ -74,18 +74,31 @@ class master(element, master_legacy_api):
         self.graph_ids.destroy_obj(gph)
         return [f'Graph {gph.id} successfully deleted']
 
-    def api_get_graph_dot(self, gph: graph):
-        """
-        Return the content of the graph, in DOT representation
-        """
-        return self._h.get_obj(gph.id).graph_dot_str()
-
     def api_delete_sentinel(self, snt: sentinel):
         """
         Permanently delete sentinel with given id
         """
         self.sentinel_ids.destroy_obj(snt)
         return [f'Sentinel {snt.id} successfully deleted']
+
+    def api_get_graph(self, gph: graph, detailed: bool = False,
+                      dot: bool = False):
+        """
+        Return the content of the graph
+        """
+        if(dot):
+            return gph.graph_dot_str()
+        else:
+            nds = []
+            for i in gph.get_network_nodes():
+                nds.append(i.serialize(detailed=detailed))
+            return nds
+
+    def api_get_object(self, obj: element, detailed: bool = False):
+        """
+        Return the content of the graph
+        """
+        return obj.serialize(detailed=detailed)
 
     def api_get_jac(self, snt: sentinel):
         """
@@ -159,11 +172,17 @@ class master(element, master_legacy_api):
         wlk.destroy()
         return res
 
-    def api_get_node_context(self, snt: sentinel, nd: node):
+    def api_get_node_context(self, nd: node, ctx: list):
         """
         Returns value a given node
         """
-        return nd.serialize()
+        ret = {}
+        nd_ctx = nd.serialize()['context']
+        if(ctx):
+            for i in nd_ctx.keys():
+                if i in ctx:
+                    ret[i] = nd_ctx[i]
+        return ret
 
     def api_set_node_context(self, snt: sentinel, nd: node, ctx: dict):
         """

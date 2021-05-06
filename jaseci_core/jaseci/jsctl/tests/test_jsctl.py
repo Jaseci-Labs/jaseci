@@ -38,8 +38,8 @@ class jsctl_test(TestCaseHelper, TestCase):
         result = runner.invoke(jsctl.cli, ['--help'])
         self.assertIn('Specify filename', result.output)
         self.assertIn("Group of `list` commands", result.output)
-        result = runner.invoke(jsctl.cli, ['get', 'graph', '--help'])
-        self.assertIn("Group of `get graph` commands", result.output)
+        result = runner.invoke(jsctl.cli, ['get', '--help'])
+        self.assertIn("Group of `get node` commands", result.output)
 
     def test_jsctl_create_graph_mem_only(self):
         runner = CliRunner()

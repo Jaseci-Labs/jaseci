@@ -100,11 +100,14 @@ def build_cmd(group_func, func_name, api_name):
             continue
         p_default = func_sig.parameters[i].default
         p_type = func_sig.parameters[i].annotation
-        if(issubclass(p_type, element)):
+        if(issubclass(p_type, element) or p_type == dict or p_type == list):
             p_type = str
-        f = click.option(
-            f'-{i}', default=p_default if p_default is not
-            func_sig.parameters[i].empty else None, type=p_type)(f)
+        if(p_default is not func_sig.parameters[i].empty):
+            f = click.option(
+                f'-{i}', default=p_default, required=False, type=p_type)(f)
+        else:
+            f = click.option(
+                f'-{i}', required=True, type=p_type)(f)
     return group_func.command()(f)
 
 
