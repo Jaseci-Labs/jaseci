@@ -844,7 +844,8 @@ class machine():
             self.run_spawn_ctx(kid[3], walk)
         walk.run()
         ret = self._jac_scope.reference_to_value(walk.anchor_value())
-        self.report = self.report + walk.report
+        if(hasattr(self, 'report')):
+            self.report = self.report + walk.report  # TODO: HAVE REPORTS TRICKLE BACK
         walk.destroy()
         return ret
 
