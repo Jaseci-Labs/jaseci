@@ -199,6 +199,10 @@ class element(hookable):
                 if(not detailed and i not in key_fields):
                     continue
                 jdict[i] = copy.copy(vars(self)[i])
+                if(not detailed and i == 'context'):
+                    if('_private' in jdict[i].keys()):
+                        for j in jdict[i]['_private']:
+                            del jdict[i][j]
                 if (deep > 0 and isinstance(jdict[i], id_list)):
                     for j in range(len(jdict[i])):
                         jdict[i][j] = copy.copy(self._h.get_obj(uuid.UUID(

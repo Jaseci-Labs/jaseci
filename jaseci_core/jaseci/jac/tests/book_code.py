@@ -320,3 +320,23 @@ can_action = \
         a::ptest;
     }
     """
+
+
+has_private = \
+    """
+    node test {
+        has apple;
+        has private banana, grape; 
+    }
+
+    walker init {
+        root {
+            spawn here --> node::test(apple=5, banana=6, grape=1);
+            take -->;
+        }
+        test {
+            here.apple+=here.banana+here.grape;
+            report here;
+        }
+    }
+    """

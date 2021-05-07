@@ -61,11 +61,15 @@ class machine():
 
     def run_has_stmt(self, jac_ast, obj):
         """
-        has_stmt: KW_HAS KW_ANCHOR? NAME (COMMA NAME)* SEMI;
+        has_stmt: KW_HAS KW_PRIVATE? KW_ANCHOR? NAME (COMMA NAME)* SEMI;
         """
         kid = jac_ast.kid
         kid = kid[1:]
+        private = False
         while True:
+            if(kid[0].name == 'KW_PRIVATE'):
+                kid = kid[1:]
+                private = True
             if(kid[0].name == 'KW_ANCHOR'):
                 kid = kid[1:]
                 if('anchor' in dir(obj)):
@@ -74,8 +78,16 @@ class machine():
                 else:
                     self.rt_error('anchors not allowed for this type',
                                   kid[0])
+            if(private):
+                if('_private' in obj.context.keys()):
+                    obj.context['_private'].add(kid[0].token_text())
+                else:
+                    obj.context['_private'] = {kid[0].token_text()}
             ctx_name = kid[0].token_text()
-            if (ctx_name not in obj.context.keys()):
+            if(ctx_name == '_private'):
+                self.rt_error(
+                    f'Has variable name of `_private` not allowed!', kid[0])
+            elif (ctx_name not in obj.context.keys()):
                 obj.context[ctx_name] = ""
             kid = kid[1:]
             if(not len(kid) or kid[0].name != 'COMMA'):

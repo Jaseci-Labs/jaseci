@@ -221,3 +221,12 @@ class jac_book_tests(TestCaseHelper, TestCase):
         self.assertEqual(self.new_stdout.getvalue(),
                          "56 7\n"
                          "56 8\n")
+
+    def test_has_private(self):
+        self.sent.register_code(jtc.has_private)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        print(gen_walker.report)
+        self.assertTrue(self.new_stdout.getvalue().startswith(
+            "[{'context': {'apple': 12,"))
