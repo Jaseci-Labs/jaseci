@@ -2,7 +2,8 @@ import requests
 import configparser
 import os
 
-ai_config_file = './ai-serving.config.ini' if os.path.exists('./ai-serving.config.ini') \
+ai_config_file = './ai-serving.config.ini' if \
+    os.path.exists('./ai-serving.config.ini') \
     else os.path.dirname(__file__) + '/ai-serving.config.ini'
 
 

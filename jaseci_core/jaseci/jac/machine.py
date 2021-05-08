@@ -20,8 +20,9 @@ class machine():
     """Shared machine class across both sentinels and walkers"""
 
     def __init__(self, owner_override=None):
-        self.owner_override = owner_override
+        self.report = []
         self.runtime_errors = []
+        self._owner_override = owner_override
         self._scope_stack = [None]
         self._jac_scope = None
         self._loop_ctrl = None
@@ -29,12 +30,13 @@ class machine():
         self._loop_limit = 10000
 
     def owner(self):
-        if(self.owner_override):
-            return self.owner_override
+        if(self._owner_override):
+            return self._owner_override
         else:
             return element.owner(self)
 
     def reset(self):
+        self.report = []
         self.runtime_errors = []
         self._scope_stack = [None]
         self._jac_scope = None
@@ -208,7 +210,8 @@ class machine():
             | for_stmt
             | while_stmt
             | ctrl_stmt SEMI
-            | action_stmt;
+            | report_action
+            | walker_action;
         """
         if (self._stopped and not self.in_entry_exit):
             return
@@ -323,6 +326,15 @@ class machine():
             self._loop_ctrl = 'break'
         elif (kid[0].name == 'KW_CONTINUE'):
             self._loop_ctrl = 'continue'
+
+    def run_report_action(self, jac_ast):
+        """
+        report_action: KW_REPORT expression SEMI;
+        """
+        kid = jac_ast.kid
+        report = self.run_expression(kid[1])
+        report = self._jac_scope.report_deep_serialize(report)
+        self.report.append(report)
 
     def run_expression(self, jac_ast):
         """
@@ -600,6 +612,7 @@ class machine():
                                    [atom_res.activity_action_ids]))
             m.run_code_block(atom_res.activity_action_ids.get_obj_by_name(
                 kid[1].token_text()).value)
+            self.report = self.report + m.report
             return atom_res
         else:
             param_list = []
@@ -856,8 +869,7 @@ class machine():
             self.run_spawn_ctx(kid[3], walk)
         walk.run()
         ret = self._jac_scope.reference_to_value(walk.anchor_value())
-        if(hasattr(self, 'report')):
-            self.report = self.report + walk.report  # TODO: HAVE REPORTS TRICKLE BACK
+        self.report = self.report + walk.report
         walk.destroy()
         return ret
 

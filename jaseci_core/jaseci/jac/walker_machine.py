@@ -76,13 +76,9 @@ class walker_machine(machine):
         kid = jac_ast.kid
         self.run_code_block(kid[2])
 
-    def run_action_stmt(self, jac_ast):
+    def run_walker_action(self, jac_ast):
         """
-        action_stmt:
-            ignore_action
-            | take_action
-            | report_action
-            | destroy_action;
+        walker_action: ignore_action | take_action | destroy_action;
         """
         kid = jac_ast.kid
         expr_func = getattr(self, f'run_{kid[0].name}')
@@ -124,18 +120,6 @@ class walker_machine(machine):
         # if(before >= after and not self.stopped == 'stop'):
         #     self.rt_info(f"Walker was unable to take any edge" +
         #                  f" - {self.current_node}", kid[0])
-
-    def run_report_action(self, jac_ast):
-        """
-        report_action: KW_REPORT expression SEMI;
-        """
-        kid = jac_ast.kid
-        report = self.run_expression(kid[1])
-        report = self._jac_scope.report_deep_serialize(report)
-        self.report.append(report)
-        self.log_history('reports',
-                         {'from': self.current_node.id.urn,
-                             'index': len(self.report)})
 
     def run_destroy_action(self, jac_ast):
         """

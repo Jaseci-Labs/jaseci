@@ -40,6 +40,7 @@ has_root: KW_HAS KW_ANCHOR NAME SEMI;
 
 has_stmt: KW_HAS KW_PRIVATE? KW_ANCHOR? NAME (COMMA NAME)* SEMI;
 
+/* Need to be heavily simplified */
 can_stmt:
 	KW_CAN dotted_name preset_in_out? (
 		KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
@@ -69,7 +70,8 @@ statement:
 	| for_stmt
 	| while_stmt
 	| ctrl_stmt SEMI
-	| action_stmt;
+	| report_action
+	| walker_action;
 
 if_stmt: KW_IF expression code_block (elif_stmt)* (else_stmt)?;
 
@@ -85,17 +87,13 @@ while_stmt: KW_WHILE expression code_block;
 
 ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_DISENGAGE | KW_SKIP;
 
-action_stmt:
-	ignore_action
-	| take_action
-	| report_action
-	| destroy_action;
+report_action: KW_REPORT expression SEMI;
+
+walker_action: ignore_action | take_action | destroy_action;
 
 ignore_action: KW_IGNORE expression SEMI;
 
 take_action: KW_TAKE expression (SEMI | else_stmt);
-
-report_action: KW_REPORT expression SEMI;
 
 destroy_action: KW_DESTROY expression SEMI;
 

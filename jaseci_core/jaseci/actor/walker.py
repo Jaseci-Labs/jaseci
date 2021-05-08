@@ -23,7 +23,6 @@ class walker(element, walker_machine, anchored):
         self.activity_action_ids = id_list(self)
         self.context = {}
         # Process state
-        self.report = []
         self.profile = {}
         self.current_node_id = None
         self.next_node_ids = id_list(self)
@@ -127,7 +126,6 @@ class walker(element, walker_machine, anchored):
 
     def clear_state(self):
         """Clears walker state after report"""
-        self.report = []
         self.profile = {}
         self.current_step = 0
         self.next_node_ids.remove_all()

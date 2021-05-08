@@ -424,7 +424,7 @@ class node(element, anchored):
         """
         DOT representation
         """
-        # _n_name is a reserved key for node name. Note that this is 
+        # _n_name is a reserved key for node name. Note that this is
         # different than the name you could set in context
         dstr = self.__str__()
         dstr += f'[_n_name_={self.name}, kind={self.kind}'

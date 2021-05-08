@@ -4,7 +4,6 @@ Sentinel machine for jac code in AST form
 This machine should be inhereted from the class that manages state referenced
 through self.
 """
-from jaseci.utils.utils import logger
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
 from jaseci.jac.machine import machine
@@ -70,6 +69,7 @@ class architype_machine(machine):
                                None,
                                []))
         m.run_code_block(kid[3])
+        self.report = self.report + m.report
         if(root_node_id in local_state.keys()):
             obj = self._h.get_obj(uuid.UUID(local_state[root_node_id]))
             if(not isinstance(obj, node)):

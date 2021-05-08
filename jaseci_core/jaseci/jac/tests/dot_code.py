@@ -44,7 +44,7 @@ spawn_graph_node = \
     graph test_graph {
         has anchor graph_root;
         spawn {
-            graph_root = 
+            graph_root =
                 spawn node::test_node(name="graph_root_node_name");
         }
     }

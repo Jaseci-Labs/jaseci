@@ -321,12 +321,35 @@ can_action = \
     }
     """
 
+cross_scope_report = \
+    """
+    node test {
+        has anchor A;
+        can ptest {
+            b=7;
+            std.out(A,b);
+            report A;
+            ::ppp;
+        }
+        can ppp {
+            b=8;
+            std.out(A,b);
+            report b;
+        }
+    }
+
+    walker init {
+        a= spawn here --> node::test(A=56);
+        a::ptest;
+        report here;
+    }
+    """
 
 has_private = \
     """
     node test {
         has apple;
-        has private banana, grape; 
+        has private banana, grape;
     }
 
     walker init {

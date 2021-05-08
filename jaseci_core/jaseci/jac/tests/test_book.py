@@ -222,6 +222,17 @@ class jac_book_tests(TestCaseHelper, TestCase):
                          "56 7\n"
                          "56 8\n")
 
+    def test_cross_scope_report(self):
+        self.sent.register_code(jtc.cross_scope_report)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertIn(56, gen_walker.report)
+        self.assertIn(8, gen_walker.report)
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "56 7\n"
+                         "56 8\n")
+
     def test_has_private(self):
         self.sent.register_code(jtc.has_private)
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
