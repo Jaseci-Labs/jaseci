@@ -63,12 +63,11 @@ class architype_machine(machine):
         kid = jac_ast.kid
         root_node_id = self.run_has_root(kid[1])
         m = machine(owner_override=self.owner())
-        local_state = {}
-        m.push_scope(jac_scope(self,
-                               local_state,
-                               None,
-                               []))
+        m.push_scope(jac_scope(owner=self,
+                               has_obj=None,
+                               action_sets=[]))
         m.run_code_block(kid[3])
+        local_state = m._jac_scope.local_scope
         self.report = self.report + m.report
         if(root_node_id in local_state.keys()):
             obj = self._h.get_obj(uuid.UUID(local_state[root_node_id]))

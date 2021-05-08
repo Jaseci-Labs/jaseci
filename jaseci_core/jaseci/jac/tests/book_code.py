@@ -252,6 +252,7 @@ pre_post_walking_dis = \
         test {
             count += 1;
             disengage;
+            std.out("test");
         }
 
         with exit {std.out("count:",count);}
@@ -330,6 +331,8 @@ cross_scope_report = \
             std.out(A,b);
             report A;
             ::ppp;
+            skip;
+            std.out("shouldnt show this");
         }
         can ppp {
             b=8;

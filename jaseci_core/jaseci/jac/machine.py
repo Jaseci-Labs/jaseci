@@ -213,7 +213,7 @@ class machine():
             | report_action
             | walker_action;
         """
-        if (self._stopped and not self.in_entry_exit):
+        if (self._stopped):
             return
         kid = jac_ast.kid
         if(not hasattr(self, f'run_{kid[0].name}')):
@@ -314,13 +314,10 @@ class machine():
 
     def run_ctrl_stmt(self, jac_ast):
         """
-        ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_DISENGAGE | KW_SKIP;
+        ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_SKIP;
         """
         kid = jac_ast.kid
-        if (kid[0].name == 'KW_DISENGAGE'):
-            self._stopped = 'stop'
-            self.next_node_ids.remove_all()
-        elif (kid[0].name == 'KW_SKIP'):
+        if (kid[0].name == 'KW_SKIP'):
             self._stopped = 'skip'
         elif (kid[0].name == 'KW_BREAK'):
             self._loop_ctrl = 'break'
@@ -606,10 +603,9 @@ class machine():
                 return atom_res
         elif (kid[0].name == 'DBL_COLON'):
             m = machine(owner_override=self.owner())
-            m.push_scope(jac_scope(self,
-                                   {},
-                                   atom_res,
-                                   [atom_res.activity_action_ids]))
+            m.push_scope(jac_scope(owner=self,
+                                   has_obj=atom_res,
+                                   action_sets=[atom_res.activity_action_ids]))
             m.run_code_block(atom_res.activity_action_ids.get_obj_by_name(
                 kid[1].token_text()).value)
             self.report = self.report + m.report

@@ -85,11 +85,15 @@ for_stmt:
 
 while_stmt: KW_WHILE expression code_block;
 
-ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_DISENGAGE | KW_SKIP;
+ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_SKIP;
 
 report_action: KW_REPORT expression SEMI;
 
-walker_action: ignore_action | take_action | destroy_action;
+walker_action:
+	ignore_action
+	| take_action
+	| destroy_action
+	| KW_DISENGAGE SEMI;
 
 ignore_action: KW_IGNORE expression SEMI;
 

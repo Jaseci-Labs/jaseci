@@ -22,15 +22,14 @@ class walker(element, walker_machine, anchored):
         self.code = pickle.dumps(code, 0).decode()
         self.activity_action_ids = id_list(self)
         self.context = {}
-        # Process state
         self.profile = {}
+        # Process state
         self.current_node_id = None
         self.next_node_ids = id_list(self)
         self.ignore_node_ids = id_list(self)
         self.destroy_node_ids = id_list(self)
         self.current_step = 0
         self.in_entry_exit = False
-        self.local_scope = {}
         self.step_limit = 10000
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
@@ -132,7 +131,6 @@ class walker(element, walker_machine, anchored):
         self.ignore_node_ids.remove_all()
         self.destroy_node_ids.remove_all()
         self.current_node = None
-        self.local_scope = {}
         self.activity_action_ids.destroy_all()
         self.context = {}
         self.reset()

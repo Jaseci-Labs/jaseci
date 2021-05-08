@@ -22,12 +22,14 @@ class walker_machine(machine):
                 | walk_activity_block
             )* walk_exit_block? RBRACE;
         """
-        self.push_scope(jac_scope(self,
-                                  self.local_scope,
-                                  self,
-                                  [self.activity_action_ids,
-                                   self.current_node.activity_action_ids]))
-        self.local_scope['here'] = self.current_node.id.urn
+        self.push_scope(
+            jac_scope(
+                owner=self,
+                has_obj=self,
+                action_sets=[self.activity_action_ids,
+                             self.current_node.activity_action_ids]))
+        self._jac_scope.set_live_var(
+            'here', self.current_node.id.urn, [], jac_ast)
 
         self.trigger_entry_actions()
         kid = jac_ast.kid
@@ -43,6 +45,7 @@ class walker_machine(machine):
             if(i.name == 'walk_activity_block'):
                 self.run_walk_activity_block(i)
             if(i.name == 'walk_exit_block'):
+                self._stopped = None
                 self.run_walk_exit_block(i)
 
         # self.trigger_activity_actions()
@@ -78,11 +81,19 @@ class walker_machine(machine):
 
     def run_walker_action(self, jac_ast):
         """
-        walker_action: ignore_action | take_action | destroy_action;
+        walker_action:
+            ignore_action
+            | take_action
+            | destroy_action
+            | KW_DISENGAGE SEMI;
         """
         kid = jac_ast.kid
-        expr_func = getattr(self, f'run_{kid[0].name}')
-        return expr_func(kid[0])
+        if (kid[0].name == 'KW_DISENGAGE'):
+            self._stopped = 'stop'
+            self.next_node_ids.remove_all()
+        else:
+            expr_func = getattr(self, f'run_{kid[0].name}')
+            expr_func(kid[0])
 
     def run_ignore_action(self, jac_ast):
         """
