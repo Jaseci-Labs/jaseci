@@ -148,7 +148,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
                          "[[0, 0], [0, 0]]\n"
                          "[[1, 1], [0, 0]]\n"
                          "[[1, 2], [3, 4]]\n"
-                         "[[4, 5], [3, 4]]\n")
+                         "[[1, 2], [1, 2]]\n")
 
     def test_md_array_assign(self):
         self.sent.register_code(jtc.array_md_assign)
@@ -157,7 +157,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(),
                          "[[1, 2], [3, 4]]\n"
-                         "[[1, 76], [3, 4]]\n")
+                         "[[1, 1], [3, 4]]\n")
 
     def test_dereference(self):
         self.sent.register_code(jtc.dereference)
@@ -241,3 +241,11 @@ class jac_book_tests(TestCaseHelper, TestCase):
         print(gen_walker.report)
         self.assertTrue(self.new_stdout.getvalue().startswith(
             "[{'context': {'apple': 12,"))
+
+    def test_array_idx_of_expr(self):
+        self.sent.register_code(jtc.array_idx_of_expr)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "3\n1\n")

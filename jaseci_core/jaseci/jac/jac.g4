@@ -137,14 +137,14 @@ func_call:
 	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
 	| atom DOT KW_LENGTH
 	| atom DOT KW_DESTROY LPAREN expression RPAREN
-	| atom? DBL_COLON NAME;
+	| atom? DBL_COLON NAME
+	| atom array_idx+;
 
 atom:
 	INT
 	| FLOAT
 	| STRING
 	| BOOL
-	| array_ref
 	| node_ref
 	| edge_ref (node_ref)? /* Returns nodes even if edge */
 	| list_val
@@ -152,8 +152,6 @@ atom:
 	| LPAREN expression RPAREN
 	| spawn
 	| DEREF expression;
-
-array_ref: dotted_name array_idx+;
 
 array_idx: LSQUARE expression RSQUARE;
 

@@ -576,24 +576,27 @@ class machine():
             atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
             | atom DOT KW_LENGTH
             | atom DOT KW_DESTROY LPAREN expression RPAREN
-            | atom? DBL_COLON NAME;
+            | atom? DBL_COLON NAME
+            | atom array_idx+;
         """
         kid = jac_ast.kid
         atom_res = self._jac_scope.has_obj
         if (kid[0].name == 'atom'):
             atom_res = self.run_atom(kid[0])
             kid = kid[1:]
-        if(len(kid) < 2):
+        if(len(kid) < 1):
             return atom_res
-        elif (kid[1].name == "KW_LENGTH"):
+        elif(kid[0].name == 'DOT'):
+            kid = kid[1:]
+        if (kid[0].name == "KW_LENGTH"):
             if(isinstance(atom_res, list)):
                 return len(atom_res)
             else:
                 self.rt_error(f'Cannot get length of {atom_res}. Not List!',
                               kid[0])
                 return 0
-        elif (kid[1].name == "KW_DESTROY"):
-            idx = self.run_expression(kid[3])
+        elif (kid[0].name == "KW_DESTROY"):
+            idx = self.run_expression(kid[2])
             if (isinstance(atom_res, list) and isinstance(idx, int)):
                 del atom_res[idx]
                 return atom_res
@@ -610,7 +613,19 @@ class machine():
                 kid[1].token_text()).value)
             self.report = self.report + m.report
             return atom_res
-        else:
+        elif (kid[0].name == "array_idx"):
+            if(isinstance(atom_res, list) or isinstance(atom_res, dict)):
+                for i in kid:
+                    if(i.name == 'array_idx'):
+                        atom_res = atom_res[self.run_array_idx(i)]
+                atom_res = self._jac_scope.reference_to_value(atom_res)
+                return atom_res
+            else:
+                self.rt_error(f'Cannot index into {atom_res}'
+                              f' of type {type(atom_res)}!',
+                              kid[0])
+                return 0
+        elif(kid[0].name == "LPAREN"):
             param_list = []
             kid = kid[1:]
             while True:
@@ -667,19 +682,6 @@ class machine():
             return result
         else:
             return getattr(self, f'run_{kid[0].name}')(kid[0])
-
-    def run_array_ref(self, jac_ast):
-        """
-        array_ref: dotted_name array_idx+;
-        """
-        kid = jac_ast.kid
-        item = self._jac_scope.get_live_var(self.run_dotted_name(kid[0]),
-                                            kid[0])
-        result = item
-        for i in kid:
-            if(i.name == 'array_idx'):
-                result = result[self.run_array_idx(i)]
-        return self._jac_scope.reference_to_value(result)
 
     def run_array_idx(self, jac_ast):
         """

@@ -167,7 +167,7 @@ array_assign = \
             a[0] = [1,1];
             std.out(a);
             std.out(here.apple);
-            here.apple[0] = [4,5];
+            here.apple[1] = here.apple[0];
             std.out(here.apple);
         }
     }
@@ -187,7 +187,7 @@ array_md_assign = \
         }
         test {
             std.out(here.apple);
-            here.apple[0][1] = 76;
+            here.apple[0][1] = here.apple[0][0];
             std.out(here.apple);
         }
     }
@@ -364,5 +364,21 @@ has_private = \
             here.apple+=here.banana+here.grape;
             report here;
         }
+    }
+    """
+
+array_idx_of_expr = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init {
+        spawn here --> node::test;
+        spawn here --> node::test;
+        spawn here --> node::test;
+        std.out((-->).length);
+        var = -->[0];
+        std.out([var].length);
     }
     """
