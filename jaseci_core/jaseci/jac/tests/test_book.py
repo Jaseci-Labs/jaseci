@@ -270,3 +270,13 @@ class jac_book_tests(TestCaseHelper, TestCase):
                          "{'one': {'inner': 44}, 'two': 2}\n"
                          "{'inner': 2}\n"
                          "2\n")
+
+    def test_dict_keys(self):
+        self.sent.register_code(jtc.dict_keys)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "{'one': {'inner': 44}, 'two': 2}\n"
+                         "{'inner': 2}\n"
+                         "2\n")

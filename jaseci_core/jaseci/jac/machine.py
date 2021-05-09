@@ -575,6 +575,7 @@ class machine():
         func_call:
             atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
             | atom DOT KW_LENGTH
+            | atom DOT KW_KEYS
             | atom DOT KW_DESTROY LPAREN expression RPAREN
             | atom? DBL_COLON NAME
             | atom index+;
@@ -595,6 +596,13 @@ class machine():
                 self.rt_error(f'Cannot get length of {atom_res}. Not List!',
                               kid[0])
                 return 0
+        if (kid[0].name == "KW_KEYS"):
+            if(isinstance(atom_res, dict)):
+                return atom_res.keys()
+            else:
+                self.rt_error(f'Cannot get keys of {atom_res}. '
+                              f'Not Dictionary!', kid[0])
+                return []
         elif (kid[0].name == "KW_DESTROY"):
             idx = self.run_expression(kid[2])
             if (isinstance(atom_res, list) and isinstance(idx, int)):

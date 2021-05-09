@@ -427,3 +427,28 @@ dict_md_assign = \
         }
     }
     """
+
+dict_keys = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init{
+        root {
+            node1 = spawn here --> node::test;
+            node1.apple = {"one": {"inner": 44}, "two": 2};
+            take node1;
+        }
+        test {
+            std.out(here.apple);
+            for i in here.apple.keys:
+                if(i == 'one'):
+                    for j in here.apple.keys:
+                        if(j == 'two'):
+                            here.apple[i]["inner"] = here.apple[j];
+            std.out(here.apple["one"]);
+            std.out(here.apple["one"]['inner']);
+        }
+    }
+    """
