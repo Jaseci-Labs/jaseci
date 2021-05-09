@@ -249,3 +249,24 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(),
                          "3\n1\n")
+
+    def test_dict_assign(self):
+        self.sent.register_code(jtc.dict_assign)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "{'three': 3, 'four': 4}\n"
+                         "{'three': 3, 'four': 55}\n"
+                         "{'one': 1, 'two': 2}\n"
+                         "2\n")
+
+    def test_dict_md_assign(self):
+        self.sent.register_code(jtc.dict_md_assign)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "{'one': {'inner': 44}, 'two': 2}\n"
+                         "{'inner': 2}\n"
+                         "2\n")

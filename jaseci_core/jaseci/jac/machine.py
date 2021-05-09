@@ -344,7 +344,7 @@ class machine():
     def run_assignment(self, jac_ast, assign_scope=None):
         """
         assignment:
-            dotted_name array_idx* EQ expression
+            dotted_name index* EQ expression
             | inc_assign
             | copy_assign;
 
@@ -360,8 +360,8 @@ class machine():
         var_name = self.run_dotted_name(kid[0])
         arr_idx = []
         for i in kid:
-            if(i.name == 'array_idx'):
-                arr_idx.append(self.run_array_idx(i))
+            if(i.name == 'index'):
+                arr_idx.append(self.run_index(i))
         result = self.run_expression(kid[-1])
         if (assign_scope is None):
             self._jac_scope.set_live_var(var_name, result, arr_idx, kid[0])
@@ -374,14 +374,14 @@ class machine():
     def run_inc_assign(self, jac_ast):
         """
         inc_assign:
-                dotted_name array_idx* (PEQ | MEQ | TEQ | DEQ) expression;
+                dotted_name index* (PEQ | MEQ | TEQ | DEQ) expression;
         """
         kid = jac_ast.kid
         var_name = self.run_dotted_name(kid[0])
         arr_idx = []
         for i in kid:
-            if(i.name == 'array_idx'):
-                arr_idx.append(self.run_array_idx(i))
+            if(i.name == 'index'):
+                arr_idx.append(self.run_index(i))
         result = self._jac_scope.get_live_var(var_name, kid[0])
         if(kid[1].name == 'PEQ'):
             result = result + self.run_expression(kid[2])
@@ -396,14 +396,14 @@ class machine():
 
     def run_copy_assign(self, jac_ast):
         """
-        copy_assign: dotted_name array_idx* CPY_EQ expression;
+        copy_assign: dotted_name index* CPY_EQ expression;
         """
         kid = jac_ast.kid
         var_name = self.run_dotted_name(kid[0])
         dest = self._jac_scope.get_live_var(var_name, kid[0])
         for i in kid:
-            if(i.name == 'array_idx'):
-                dest = dest[self.run_array_idx(i)]
+            if(i.name == 'index'):
+                dest = dest[self.run_index(i)]
         src = self.run_expression(kid[2])
         if (not self.rt_check_type(dest, node, kid[0]) or not
                 self.rt_check_type(dest, node, kid[0])):
@@ -577,7 +577,7 @@ class machine():
             | atom DOT KW_LENGTH
             | atom DOT KW_DESTROY LPAREN expression RPAREN
             | atom? DBL_COLON NAME
-            | atom array_idx+;
+            | atom index+;
         """
         kid = jac_ast.kid
         atom_res = self._jac_scope.has_obj
@@ -613,11 +613,11 @@ class machine():
                 kid[1].token_text()).value)
             self.report = self.report + m.report
             return atom_res
-        elif (kid[0].name == "array_idx"):
+        elif (kid[0].name == "index"):
             if(isinstance(atom_res, list) or isinstance(atom_res, dict)):
                 for i in kid:
-                    if(i.name == 'array_idx'):
-                        atom_res = atom_res[self.run_array_idx(i)]
+                    if(i.name == 'index'):
+                        atom_res = atom_res[self.run_index(i)]
                 atom_res = self._jac_scope.reference_to_value(atom_res)
                 return atom_res
             else:
@@ -663,8 +663,7 @@ class machine():
         elif(kid[0].name == 'FLOAT'):
             return float(kid[0].token_text())
         elif(kid[0].name == 'STRING'):
-            return str(bytes(kid[0].token_text(), "utf-8").
-                       decode("unicode_escape")[1:-1])
+            return self.parse_str_token(kid[0].token_text())
         elif(kid[0].name == 'BOOL'):
             return bool(kid[0].token_text() == 'true')
         elif (kid[0].name == 'edge_ref' and len(kid) > 1):
@@ -683,12 +682,17 @@ class machine():
         else:
             return getattr(self, f'run_{kid[0].name}')(kid[0])
 
-    def run_array_idx(self, jac_ast):
+    def run_index(self, jac_ast):
         """
-        array_idx: LSQUARE expression RSQUARE;
+        index: LSQUARE expression RSQUARE;
         """
         kid = jac_ast.kid
-        return self.run_expression(kid[1])
+        idx = self.run_expression(kid[1])
+        if(not isinstance(idx, int) and not isinstance(idx, str)):
+            self.rt_error(f'Index of type {type(idx)} not valid. '
+                          f'Indicies must be an integer or string!', kid[1])
+            return None
+        return idx
 
     def run_node_ref(self, jac_ast, is_spawn=False):
         """
@@ -803,6 +807,25 @@ class machine():
                 list_res.append(self.run_expression(i))
         return list_res
 
+    def run_dict_val(self, jac_ast):
+        """
+        dict_val: LBRACE (kv_pair (COMMA kv_pair)*)? RBRACE;
+        """
+        kid = jac_ast.kid
+        dict_res = {}
+        for i in kid:
+            if(i.name == 'kv_pair'):
+                self.run_kv_pair(i, dict_res)
+        return dict_res
+
+    def run_kv_pair(self, jac_ast, obj):
+        """
+        kv_pair: STRING COLON expression;
+        """
+        kid = jac_ast.kid
+        obj[self.parse_str_token(kid[0].token_text())
+            ] = self.run_expression(kid[2])
+
     def run_spawn(self, jac_ast):
         """
         spawn: KW_SPAWN expression spawn_object;
@@ -912,6 +935,10 @@ class machine():
         return ret
 
     # Helper Functions ##################
+
+    def parse_str_token(self, s):
+        return str(bytes(s, "utf-8").
+                   decode("unicode_escape")[1:-1])
 
     def get_builtin_action(self, func_name, jac_ast=None):
         """

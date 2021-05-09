@@ -77,37 +77,46 @@ class jac_scope():
                 val = val.obj.context[val.name]
         return val
 
-    def set_live_var(self, name, value, md_array_idx, jac_ast):
+    def set_live_var(self, name, value, md_index, jac_ast):
         """Returns live variable, to support builtins in the future"""
         value = self.deep_element_deserialize(value)
         if name not in self.local_scope.keys():
             look = self.find_live_attr(name, allow_read_only=False)
             if (look):
-                if(not md_array_idx):
+                if(not md_index):
                     look.obj.context[look.name] = value
                 else:
                     self.set_array_live_var(look.obj.context[look.name],
-                                            value, md_array_idx, jac_ast)
+                                            value, md_index, jac_ast)
                 return
             elif '.' in name:
                 self.owner.rt_error(
                     f"Arbitrary dotted names not allowed - {name}", jac_ast)
                 return
-        if(not md_array_idx):
+        if(not md_index):
             self.local_scope[name] = value
         else:
             self.set_array_live_var(self.local_scope[name], value,
-                                    md_array_idx, jac_ast)
+                                    md_index, jac_ast)
 
-    def set_array_live_var(self, item, value, md_array_idx, jac_ast):
+    def set_array_live_var(self, item, value, md_index, jac_ast):
         """Helper for setting array values"""
-        for i in md_array_idx[:-1]:
-            if (i >= len(item)):
-                self.owner.rt_error(f"Array index out of bounds!", jac_ast)
+        for i in md_index[:-1]:
+            self.check_index_in_bounds(i, item, jac_ast)
             item = item[i]
-        if (md_array_idx[-1] >= len(item)):
-            self.owner.rt_error(f"Array index out of bounds!", jac_ast)
-        item[md_array_idx[-1]] = value
+        self.check_index_in_bounds(md_index[-1], item, jac_ast)
+        item[md_index[-1]] = value
+
+    def check_index_in_bounds(self, index, item, jac_ast):
+        if (isinstance(index, int) and index >= len(item)):
+            self.owner.rt_error(f"Array index {index} out of bounds!", jac_ast)
+            return False
+        elif (isinstance(index, str) and index not in item.keys()):
+            from jaseci.utils.utils import logger
+            logger.error(f'{item}')
+            self.owner.rt_error(f"Object has no member {index}!", jac_ast)
+            return False
+        return True
 
     def try_sync_to_arch(self, obj, varname):
         """Checks if latest Architype has variable"""

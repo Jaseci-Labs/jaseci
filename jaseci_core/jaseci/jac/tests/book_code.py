@@ -382,3 +382,48 @@ array_idx_of_expr = \
         std.out([var].length);
     }
     """
+
+dict_assign = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init{
+        root {
+            node1 = spawn here --> node::test;
+            node1.apple = {"one": 1, "two": 2};
+            take node1;
+        }
+        test {
+            a =  {"three": 3, "four": 4};
+            std.out(a);
+            a["four"] = 55;
+            std.out(a);
+            std.out(here.apple);
+            here.apple["one"] = here.apple["two"];
+            std.out(here.apple["one"]);
+        }
+    }
+    """
+
+dict_md_assign = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init{
+        root {
+            node1 = spawn here --> node::test;
+            node1.apple = {"one": {"inner": 44}, "two": 2};
+            take node1;
+        }
+        test {
+            std.out(here.apple);
+            here.apple["one"]["inner"] = here.apple["two"];
+            std.out(here.apple["one"]);
+            std.out(here.apple["one"]['inner']);
+        }
+    }
+    """
