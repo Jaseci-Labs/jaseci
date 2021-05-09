@@ -8,13 +8,11 @@ import os.path
 import pickle
 import functools
 import json
-import pprint
 from inspect import signature
 
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
 from jaseci.master import master as master_class
-from jaseci.element import element
 
 session = {
     "filename": "js.session",
@@ -38,8 +36,6 @@ def cli(filename, mem_only):
     The Jaseci Command Line Interface
     """
     session['mem-only'] = mem_only
-    if (mem_only):
-        print('[In memory mode]')
     session['filename'] = filename if not mem_only else None
     if (not mem_only and os.path.isfile(filename)):
         session['master'] = pickle.load(open(filename, 'rb'))
@@ -54,10 +50,14 @@ def interface_api(api_name, **kwargs):
         if (os.path.isfile(kwargs['code'])):
             with open(kwargs['code'], 'r') as file:
                 kwargs['code'] = file.read()
+        else:
+            print(f"Code file {kwargs['code']} not found!")
+            return
     if('ctx' in kwargs):
         kwargs['ctx'] = json.loads(kwargs['ctx'])
-    pp = pprint.PrettyPrinter(indent=4, width=80, depth=6)
-    pp.pprint(session['master'].general_interface_to_api(kwargs, api_name))
+    print(json.dumps(
+        session['master'].general_interface_to_api(kwargs, api_name), indent=2
+    ))
     if not session['mem-only']:
         pickle.dump(session['master'], open(session['filename'], 'wb'))
 
@@ -100,11 +100,12 @@ def build_cmd(group_func, func_name, api_name):
             continue
         p_default = func_sig.parameters[i].default
         p_type = func_sig.parameters[i].annotation
-        if(issubclass(p_type, element) or p_type == dict or p_type == list):
+        if(p_type != int and p_type != bool):
             p_type = str
         if(p_default is not func_sig.parameters[i].empty):
             f = click.option(
-                f'-{i}', default=p_default, required=False, type=p_type)(f)
+                f'-{i}', default=p_type(p_default), required=False,
+                type=p_type)(f)
         else:
             f = click.option(
                 f'-{i}', required=True, type=p_type)(f)

@@ -22,6 +22,7 @@ class master(element, master_legacy_api):
     def __init__(self, email="Anonymous", *args, **kwargs):
         self.graph_ids = id_list(self)
         self.sentinel_ids = id_list(self)
+        self.alias_map = {}
         super().__init__(name=email, kind="Jaseci Master", *args, **kwargs)
 
     def api_create_graph(self, name: str):
@@ -39,6 +40,15 @@ class master(element, master_legacy_api):
         snt = sentinel(h=self._h, name=name, code='# Jac Code')
         self.sentinel_ids.add_obj(snt)
         return snt.serialize()
+
+    def api_create_alias(self, name: str, value: str):
+        """
+        Creates a string to string alias to be used by client
+        """
+        if(name in self.alias_map):
+            return [f'Aliase {name} already created, please delete first']
+        self.alias_map[name] = value
+        return [f"Alias from '{name}' to '{value}' created!"]
 
     def api_list_graphs(self, detailed: bool = False):
         """
@@ -67,6 +77,12 @@ class master(element, master_legacy_api):
             snts.append(i.serialize(detailed=detailed))
         return snts
 
+    def api_list_alias(self):
+        """
+        List all string to string alias that client can use
+        """
+        return self.alias_map
+
     def api_delete_graph(self, gph: graph):
         """
         Permanently delete graph with given id
@@ -80,6 +96,22 @@ class master(element, master_legacy_api):
         """
         self.sentinel_ids.destroy_obj(snt)
         return [f'Sentinel {snt.id} successfully deleted']
+
+    def api_delete_alias(self, name: str = None, all: bool = False):
+        """
+        Remove string to string alias that client can use
+        """
+        if(all):
+            n = len(self.alias_map.keys())
+            self.alias_map = {}
+            return [f'All {n} aliases deleted']
+        elif(name):
+            if(name in self.alias_map.keys()):
+                del self.alias_map[name]
+                return [f'Alias {name} successfully deleted']
+            else:
+                return [f'Alias {name} not present']
+        return ['Please enter alias to delete or specify all']
 
     def api_get_graph(self, gph: graph, detailed: bool = False,
                       dot: bool = False):
@@ -145,7 +177,7 @@ class master(element, master_legacy_api):
 
         return []
 
-    def api_prime_walker(self, wlk: walker, nd: node, ctx: dict):
+    def api_prime_walker(self, wlk: walker, nd: node, ctx: dict = {}):
         """
         Assigns walker to a graph node and primes walker for execution
         """
@@ -159,7 +191,8 @@ class master(element, master_legacy_api):
         wlk.run()
         return wlk.report
 
-    def api_prime_run(self, snt: sentinel, name: str, nd: node, ctx: dict):
+    def api_prime_run(self, snt: sentinel, name: str,
+                      nd: node, ctx: dict = {}):
         """
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.
@@ -177,7 +210,7 @@ class master(element, master_legacy_api):
         Returns value a given node
         """
         ret = {}
-        nd_ctx = nd.serialize()['context']
+        nd_ctx = nd.serialize(detailed=True)['context']
         if(ctx):
             for i in nd_ctx.keys():
                 if i in ctx:
@@ -220,8 +253,10 @@ class master(element, master_legacy_api):
             p_default = func_sig.parameters[i].default
             param_map[i] = p_default if p_default is not \
                 func_sig.parameters[i].empty else None
-            if (p_name in params.keys()):  # TODO: BETTER ERROR REPORTING
+            if (p_name in params.keys()):
                 val = params[p_name]
+                if(str(val) in self.alias_map.keys()):
+                    val = self.alias_map[val]
                 if (issubclass(p_type, element)):
                     val = self._h.get_obj(uuid.UUID(val))
                     if (isinstance(val, p_type)):

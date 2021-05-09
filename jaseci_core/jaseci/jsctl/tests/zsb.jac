@@ -36,7 +36,7 @@ walker add_bot {
 
 walker delete_bot {
     bot, category, answer {
-        take --> node;
+        take --> ;
         destroy here;
     }
 }

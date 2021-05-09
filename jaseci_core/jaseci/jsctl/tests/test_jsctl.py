@@ -2,6 +2,7 @@ from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
 from jaseci.jsctl import jsctl
 from click.testing import CliRunner
+import json
 
 
 class jsctl_test(TestCaseHelper, TestCase):
@@ -9,12 +10,15 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.call("load app -name zsb -code jsctl/tests/zsb.jac")
+        self.call("load app -name zsb -code jaseci/jsctl/tests/zsb.jac")
 
     def call(self, cmd):
         runner = CliRunner()
         return runner.invoke(jsctl.cli,
                              ["-m"]+cmd.split(' ')).output
+
+    def call_cast(self, cmd):
+        return json.loads(self.call(cmd))
 
     def tearDown(self):
         jsctl.session["master"]._h.mem = {}
@@ -45,3 +49,13 @@ class jsctl_test(TestCaseHelper, TestCase):
     def test_jsctl_load_app(self):
         r = self.call('list graphs')
         self.assertIn('zsb', r)
+
+    def test_jsctl_aliases(self):
+        """Tests that alias mapping api works"""
+        gph_id = self.call_cast('list graphs')[0]['jid']
+        snt_id = self.call_cast('list sentinels')[0]['jid']
+        self.call(f'create alias -name s -value {snt_id}')
+        self.call(f'create alias -name g -value {gph_id}')
+        self.assertEqual(len(self.call_cast('get graph -gph g')), 1)
+        self.call(f'prime run -snt s -nd g -name init')
+        self.assertEqual(len(self.call_cast('get graph -gph g')), 2)
