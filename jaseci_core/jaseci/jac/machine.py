@@ -100,16 +100,10 @@ class machine():
     def run_can_stmt(self, jac_ast, obj):
         """
         can_stmt:
-            KW_CAN dotted_name preset_in_out? (
-                KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
-            )? (
-                COMMA dotted_name preset_in_out? (
-                    KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
-                )?
+            KW_CAN dotted_name preset_in_out? event_clause? (
+                COMMA dotted_name preset_in_out? event_clause?
             )* SEMI
-            | KW_CAN NAME preset_in_out? preset_in_out? (
-                KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
-            )? code_block;
+            | KW_CAN NAME event_clause? code_block;
         """
         kid = jac_ast.kid
         kid = kid[1:]
@@ -124,9 +118,9 @@ class machine():
             if(len(kid) > 0 and kid[0].name == 'preset_in_out'):
                 preset_in_out = self.run_preset_in_out(kid[0], obj)
                 kid = kid[1:]
-            if(len(kid) > 0 and kid[0].name == 'KW_WITH'):
-                action_type = kid[1].token_text()
-                kid = kid[2:]
+            if(len(kid) > 0 and kid[0].name == 'event_clause'):
+                action_type = self.run_event_clause(kid[0])
+                kid = kid[1:]
             if (not isinstance(obj, node)):  # only nodes have on entry/exit
                 action_type = 'activity'
             if (kid[0].name == 'code_block'):
@@ -156,6 +150,13 @@ class machine():
                 break
             else:
                 kid = kid[1:]
+
+    def run_event_clause(self, jac_ast):
+        """
+        event_clause: KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
+        """
+        kid = jac_ast.kid
+        return kid[1].token_text()
 
     def run_preset_in_out(self, jac_ast, obj):
         """
@@ -704,10 +705,7 @@ class machine():
 
     def run_node_ref(self, jac_ast, is_spawn=False):
         """
-        node_ref: KW_NODE (DBL_COLON NAME)?;
-
-        NOTE: is_spawn is used to determine whehter this is being called from
-        a rule to generate new nodes, or describe nodes to grab from a location
+        node_ref: KW_NODE DBL_COLON NAME;
         """
         kid = jac_ast.kid
         if(not is_spawn):
@@ -725,6 +723,25 @@ class machine():
             else:
                 result = node(h=self._h)
         return result
+
+    def run_walker_ref(self, jac_ast):
+        """
+        walker_ref: KW_WALKER DBL_COLON NAME;
+        """
+        kid = jac_ast.kid
+        src_walk = self.owner().walker_ids.get_obj_by_name(kid[2].token_text())
+        walk = src_walk.duplicate(persist_dup=False)
+        walk._jac_ast = src_walk._jac_ast
+        return walk
+
+    def run_graph_ref(self, jac_ast):
+        """
+        graph_ref: KW_GRAPH DBL_COLON NAME;
+        """
+        kid = jac_ast.kid
+        gph = self.owner().arch_ids.get_obj_by_name(
+            'graph.' + kid[2].token_text()).run()
+        return gph
 
     def run_edge_ref(self, jac_ast, is_spawn=False):
         """
@@ -886,16 +903,13 @@ class machine():
 
     def run_walker_spawn(self, jac_ast, location):
         """
-        walker_spawn: KW_WALKER DBL_COLON NAME spawn_ctx?;
+        walker_spawn: walker_ref spawn_ctx?;
         """
         kid = jac_ast.kid
-        src_walk = self.owner().walker_ids.get_obj_by_name(kid[2].token_text())
-        self.rt_check_type(src_walk, type(self), kid[2])
-        walk = src_walk.duplicate(persist_dup=False)
-        walk._jac_ast = src_walk._jac_ast
+        walk = self.run_walker_ref(kid[0])
         walk.prime(location)
-        if(len(kid) > 3):
-            self.run_spawn_ctx(kid[3], walk)
+        if(len(kid) > 1):
+            self.run_spawn_ctx(kid[1], walk)
         walk.run()
         ret = self._jac_scope.reference_to_value(walk.anchor_value())
         self.report = self.report + walk.report
@@ -904,12 +918,11 @@ class machine():
 
     def run_graph_spawn(self, jac_ast, location):
         """
-        graph_spawn: edge_ref KW_GRAPH DBL_COLON NAME;
+        graph_spawn: edge_ref graph_ref;
         """
         kid = jac_ast.kid
         use_edge = self.run_edge_ref(kid[0], is_spawn=True)
-        result = self.owner().arch_ids.get_obj_by_name(
-            'graph.' + kid[3].token_text()).run()
+        result = self.run_graph_ref(kid[1])
         direction = kid[0].kid[0].name
         if (direction == 'edge_from'):
             location.attach_inbound(result, use_edge)

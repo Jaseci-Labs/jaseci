@@ -42,16 +42,12 @@ has_stmt: KW_HAS KW_PRIVATE? KW_ANCHOR? NAME (COMMA NAME)* SEMI;
 
 /* Need to be heavily simplified */
 can_stmt:
-	KW_CAN dotted_name preset_in_out? (
-		KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
-	)? (
-		COMMA dotted_name preset_in_out? (
-			KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
-		)?
+	KW_CAN dotted_name preset_in_out? event_clause? (
+		COMMA dotted_name preset_in_out? event_clause?
 	)* SEMI
-	| KW_CAN NAME preset_in_out? preset_in_out? (
-		KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY)
-	)? code_block;
+	| KW_CAN NAME event_clause? code_block;
+
+event_clause: KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
 
 preset_in_out:
 	DBL_COLON NAME (COMMA NAME)* (DBL_COLON | COLON_OUT NAME)?;
@@ -157,7 +153,11 @@ atom:
 
 index: LSQUARE expression RSQUARE;
 
-node_ref: KW_NODE (DBL_COLON NAME)?;
+node_ref: KW_NODE DBL_COLON NAME;
+
+walker_ref: KW_WALKER DBL_COLON NAME;
+
+graph_ref: KW_GRAPH DBL_COLON NAME;
 
 edge_ref: edge_to | edge_from | edge_any;
 
@@ -179,9 +179,9 @@ spawn_object: node_spawn | walker_spawn | graph_spawn;
 
 node_spawn: edge_ref? node_ref spawn_ctx?;
 
-graph_spawn: edge_ref KW_GRAPH DBL_COLON NAME;
+graph_spawn: edge_ref graph_ref;
 
-walker_spawn: KW_WALKER DBL_COLON NAME spawn_ctx?;
+walker_spawn: walker_ref spawn_ctx?;
 
 spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
 

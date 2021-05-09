@@ -252,7 +252,7 @@ walker delete_workette {
 
 walker cleanse_all {
     life, root, workette, year, month, week, day {
-        take --> node;
+        take --> ;
         destroy here;
     }
 }
