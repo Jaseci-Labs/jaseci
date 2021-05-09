@@ -7,6 +7,12 @@ ai_config_file = './ai-serving.config.ini' if \
     else os.path.dirname(__file__) + '/ai-serving.config.ini'
 
 
+def set_ai_model_config(path):
+    global ai_config_file
+    if(os.path.exists(path)):
+        ai_config_file = path
+
+
 class AIServingAPI():
     def __init__(self, API):
         config = configparser.ConfigParser()
