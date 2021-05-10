@@ -3,7 +3,8 @@ node bot { has anchor name, description, metadata; }
 node log_chunk { has history; }
 node category { has name; }
 node answer {
-    has text, show_text, encoding;
+    has text, show_text;
+    has private encoding;
     has qlinks, hitcount;
 }
 

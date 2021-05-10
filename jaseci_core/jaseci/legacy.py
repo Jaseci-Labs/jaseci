@@ -3,6 +3,7 @@ Legacy Master api function as a mixin should be Deprecated
 """
 from jaseci.actor.walker import walker
 from jaseci.graph.node import node
+from jaseci.actor.sentinel import sentinel
 
 
 class master_legacy_api():
@@ -30,7 +31,7 @@ class master_legacy_api():
         return {'sentinel': snt.id.urn, 'graph': gph.id.urn,
                 'active': snt.is_active}
 
-    def api_prime_walker(self, wlk: walker, nd: node, ctx: dict):
+    def api_prime_walker(self, wlk: walker, nd: node, ctx: dict = {}):
         """
         Assigns walker to a graph node and primes walker for execution
         """
@@ -43,3 +44,11 @@ class master_legacy_api():
         """
         wlk.run()
         return wlk.report
+
+    def api_prime_run(self, snt: sentinel, name: str,
+                      nd: node, ctx: dict = {}):
+        """
+        Creates walker instance, primes walker on node, executes walker,
+        reports results, and cleans up walker instance.
+        """
+        return self.api_run(snt, name, nd, ctx)

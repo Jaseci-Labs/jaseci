@@ -80,17 +80,18 @@ class machine():
                 else:
                     self.rt_error('anchors not allowed for this type',
                                   kid[0])
-            if(private):
-                if('_private' in obj.context.keys()):
-                    obj.context['_private'].add(kid[0].token_text())
-                else:
-                    obj.context['_private'] = {kid[0].token_text()}
-            ctx_name = kid[0].token_text()
-            if(ctx_name == '_private'):
+            var_name = kid[0].token_text()
+            if(var_name == '_private'):
                 self.rt_error(
                     f'Has variable name of `_private` not allowed!', kid[0])
-            elif (ctx_name not in obj.context.keys()):
-                obj.context[ctx_name] = ""
+            elif (var_name not in obj.context.keys()):
+                obj.context[var_name] = ""
+            if(private):
+                if('_private' in obj.context.keys()):
+                    if(var_name not in obj.context['_private']):
+                        obj.context['_private'].append(var_name)
+                else:
+                    obj.context['_private'] = [var_name]
             kid = kid[1:]
             if(not len(kid) or kid[0].name != 'COMMA'):
                 break

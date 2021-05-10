@@ -30,8 +30,8 @@ class AIServingAPI():
 
     def is_alive(self):
         try:
-            requests.post(self.url, headers=self.header, json={})
-        except requests.exceptions.ConnectionError:
+            requests.get(self.url, timeout=0.1)
+        except Exception:
             return False
         return True
 

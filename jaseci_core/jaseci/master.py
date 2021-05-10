@@ -177,22 +177,8 @@ class master(element, master_legacy_api):
 
         return []
 
-    def api_prime_walker(self, wlk: walker, nd: node, ctx: dict = {}):
-        """
-        Assigns walker to a graph node and primes walker for execution
-        """
-        wlk.prime(nd, prime_ctx=ctx)
-        return [f'Walker primed on node {nd.id}']
-
-    def api_run_walker(self, wlk: walker):
-        """
-        Executes walker (assumes walker is primed)
-        """
-        wlk.run()
-        return wlk.report
-
-    def api_prime_run(self, snt: sentinel, name: str,
-                      nd: node, ctx: dict = {}):
+    def api_run(self, snt: sentinel, name: str,
+                nd: node, ctx: dict = {}):
         """
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.
