@@ -23,7 +23,8 @@ class master(element, legacy_api, alias_api):
     def __init__(self, email="Anonymous", *args, **kwargs):
         self.graph_ids = id_list(self)
         self.sentinel_ids = id_list(self)
-        super().__init__(name=email, kind="Jaseci Master", *args, **kwargs)
+        element.__init__(self, name=email,
+                         kind="Jaseci Master", *args, **kwargs)
         alias_api.__init__(self)
 
     def api_create_graph(self, name: str):
@@ -42,7 +43,7 @@ class master(element, legacy_api, alias_api):
         self.sentinel_ids.add_obj(snt)
         return snt.serialize()
 
-    def api_list_graphs(self, detailed: bool = False):
+    def api_list_graph(self, detailed: bool = False):
         """
         Provide complete list of all graph objects (list of root node objects)
         """
@@ -51,7 +52,7 @@ class master(element, legacy_api, alias_api):
             gphs.append(i.serialize(detailed=detailed))
         return gphs
 
-    def api_list_walkers(self, snt: sentinel, detailed: bool = False):
+    def api_list_walker(self, snt: sentinel, detailed: bool = False):
         """
         List walkers known to sentinel
         """
@@ -60,7 +61,7 @@ class master(element, legacy_api, alias_api):
             walks.append(i.serialize(detailed=detailed))
         return walks
 
-    def api_list_sentinels(self, detailed: bool = False):
+    def api_list_sentinel(self, detailed: bool = False):
         """
         Provide complete list of all sentinel objects
         """

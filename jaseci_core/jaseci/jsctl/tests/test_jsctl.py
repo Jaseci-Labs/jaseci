@@ -43,16 +43,16 @@ class jsctl_test(TestCaseHelper, TestCase):
     def test_jsctl_create_graph_mem_only(self):
         r = self.call('create graph -name test')
         self.assertIn('test', r)
-        r = self.call('list graphs')
+        r = self.call('list graph')
         self.assertIn('test', r)
 
     def test_jsctl_load_app(self):
-        r = self.call('list graphs')
+        r = self.call('list graph')
         self.assertIn('zsb', r)
 
     def test_jsctl_aliases(self):
         """Tests that alias mapping api works"""
-        gph_id = self.call_cast('list graphs')[0]['jid']
+        gph_id = self.call_cast('list graph')[0]['jid']
         snt_id = self.call_cast('list sentinels')[0]['jid']
         self.call(f'create alias -name s -value {snt_id}')
         self.call(f'create alias -name g -value {gph_id}')

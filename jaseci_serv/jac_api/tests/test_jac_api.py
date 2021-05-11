@@ -24,7 +24,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
 
     def test_login_required_jac_api(self):
         """Test that login required for retrieving nodes"""
-        res = self.client.get(reverse('jac_api:list_graphs'))
+        res = self.client.get(reverse('jac_api:list_graph'))
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -68,14 +68,14 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         """Test API for creating a sentinel"""
         payload = {'op': 'create_graph', 'name': 'SomeGraph'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        payload = {'op': 'list_graphs'}
+        payload = {'op': 'list_graph'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         glist = res.data
         payload = {'op': 'create_sentinel', 'name': 'SomeSent'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         payload = {'op': 'create_sentinel', 'name': 'SomeSent2'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        payload = {'op': 'list_sentinels'}
+        payload = {'op': 'list_sentinel'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         slist = res.data
         self.assertEqual(len(glist), 1)
