@@ -1,12 +1,16 @@
 """
-Legacy Master api function as a mixin should be Deprecated
+Legacy Master api function as a mixin, should be Deprecated
 """
 from jaseci.actor.walker import walker
 from jaseci.graph.node import node
 from jaseci.actor.sentinel import sentinel
 
 
-class master_legacy_api():
+class legacy_api():
+    """
+    APIs that should be deprecated
+    """
+
     def api_load_app(self, name: str, code: str, encoded: bool = False):
         """
         Short for api_load_application

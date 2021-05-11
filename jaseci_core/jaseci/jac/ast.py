@@ -5,8 +5,8 @@ from antlr4 import InputStream, CommonTokenStream, ParseTreeListener
 from antlr4.error.ErrorListener import ErrorListener
 
 from jaseci.utils.utils import logger
-from jaseci.jac._jac_gen.jacLexer import jacLexer
-from jaseci.jac._jac_gen.jacParser import jacParser, ParseTreeWalker
+from jaseci.jac.jac_parse.jacLexer import jacLexer
+from jaseci.jac.jac_parse.jacParser import jacParser, ParseTreeWalker
 
 
 class ast():

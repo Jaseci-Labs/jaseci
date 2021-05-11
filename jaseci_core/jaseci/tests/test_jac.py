@@ -1,6 +1,6 @@
 from antlr4 import InputStream, CommonTokenStream
-from jaseci.jac._jac_gen.jacLexer import jacLexer
-from jaseci.jac._jac_gen.jacParser import jacParser
+from jaseci.jac.jac_parse.jacLexer import jacLexer
+from jaseci.jac.jac_parse.jacParser import jacParser
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph

@@ -13,17 +13,18 @@ from jaseci.actor.sentinel import sentinel
 from jaseci.actor.walker import walker
 from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
-from jaseci.legacy import master_legacy_api
+from jaseci.api.legacy import legacy_api
+from jaseci.api.alias import alias_api
 
 
-class master(element, master_legacy_api):
+class master(element, legacy_api, alias_api):
     """Main class for master functions for user"""
 
     def __init__(self, email="Anonymous", *args, **kwargs):
         self.graph_ids = id_list(self)
         self.sentinel_ids = id_list(self)
-        self.alias_map = {}
         super().__init__(name=email, kind="Jaseci Master", *args, **kwargs)
+        alias_api.__init__(self)
 
     def api_create_graph(self, name: str):
         """
@@ -40,15 +41,6 @@ class master(element, master_legacy_api):
         snt = sentinel(h=self._h, name=name, code='# Jac Code')
         self.sentinel_ids.add_obj(snt)
         return snt.serialize()
-
-    def api_create_alias(self, name: str, value: str):
-        """
-        Creates a string to string alias to be used by client
-        """
-        if(name in self.alias_map):
-            return [f'Aliase {name} already created, please delete first']
-        self.alias_map[name] = value
-        return [f"Alias from '{name}' to '{value}' created!"]
 
     def api_list_graphs(self, detailed: bool = False):
         """
@@ -77,12 +69,6 @@ class master(element, master_legacy_api):
             snts.append(i.serialize(detailed=detailed))
         return snts
 
-    def api_list_alias(self):
-        """
-        List all string to string alias that client can use
-        """
-        return self.alias_map
-
     def api_delete_graph(self, gph: graph):
         """
         Permanently delete graph with given id
@@ -96,22 +82,6 @@ class master(element, master_legacy_api):
         """
         self.sentinel_ids.destroy_obj(snt)
         return [f'Sentinel {snt.id} successfully deleted']
-
-    def api_delete_alias(self, name: str = None, all: bool = False):
-        """
-        Remove string to string alias that client can use
-        """
-        if(all):
-            n = len(self.alias_map.keys())
-            self.alias_map = {}
-            return [f'All {n} aliases deleted']
-        elif(name):
-            if(name in self.alias_map.keys()):
-                del self.alias_map[name]
-                return [f'Alias {name} successfully deleted']
-            else:
-                return [f'Alias {name} not present']
-        return ['Please enter alias to delete or specify all']
 
     def api_get_graph(self, gph: graph, detailed: bool = False,
                       dot: bool = False):

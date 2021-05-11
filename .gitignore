@@ -14,7 +14,6 @@ migrations
 # Others #
 .antlr
 .session
-_jac_gen
 .DS_Store
 build
 .vscode
