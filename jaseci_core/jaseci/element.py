@@ -12,70 +12,13 @@ import uuid
 from datetime import datetime
 import copy
 import json
-from jaseci.utils.utils import logger
 from jaseci.utils.id_list import id_list
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.mem_hook import json_str_to_jsci_dict
+from jaseci.utils.obj_mixins import hookable
 
 
 __version__ = '1.0.0'
-
-
-class ctx_value():
-    """A reference into the context dict that is common for elements"""
-
-    def __init__(self, obj, name):
-        self.obj = obj
-        self.name = name
-
-
-class anchored():
-    """Utility class for objects that hold anchor values"""
-
-    def __init__(self):
-        self.anchor = None
-
-    def anchor_value(self):
-        """Returns value of anchor context object"""
-        if(self.anchor):
-            return self.context[self.anchor]
-        return None
-
-
-class hookable():
-    """Utility class for objects that are savable to DBs and other stores"""
-
-    def __init__(self, h: mem_hook, persist: bool = True):
-        self._h = h  # hook for storing and loading to persistent store
-        self._persist = persist
-
-    def check_hooks_match(self, target, silent=False):
-        """Checks whether target object hook matches self's hook"""
-        if(not silent and target._h != self._h):
-            logger.critical(str("Hook for {} does not match {}".
-                                format(target, self)))
-        return target._h == self._h
-
-    def save(self):
-        """
-        Write self through hook to persistent storage
-        """
-        self._h.save_obj(self, self._persist)
-
-    def destroy(self):
-        """
-        Destroys self from persistent storage
-
-        Note that the object will still exist in python until GC'd
-        """
-        self._h.destroy_obj(self, self._persist)
-        del self
-
-    def owner(self):
-        """
-        Returns the objects for list of owners of this element
-        """
-        return self._h.get_obj(self.owner_id)
 
 
 class element(hookable):
@@ -109,8 +52,8 @@ class element(hookable):
         self.j_owner = owner_id.urn if owner_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
         self.j_type = type(self).__name__
-        # self.j_user = user  # TODO: Finish this permissions approach
-        # self.j_has_access = has_access
+        self.j_user = user
+        self.j_has_access = has_access
         hookable.__init__(self, h,  *args, **kwargs)
         if(auto_save):
             self.save()
