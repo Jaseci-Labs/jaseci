@@ -9,10 +9,9 @@ from jaseci.actions.find_action import find_action
 from jaseci.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
-from jaseci.element import ctx_value
 from jaseci.attr.action import action
 from jaseci.jac.jac_set import jac_set
-from jaseci.jac.jac_scope import jac_scope
+from jaseci.jac.jac_scope import jac_scope, ctx_value
 # import pickle
 
 

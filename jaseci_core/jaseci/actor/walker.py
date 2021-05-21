@@ -8,7 +8,7 @@ default hooks to save db read/writes
 
 from jaseci.utils.utils import logger
 from jaseci.element import element
-from jaseci.element import anchored
+from jaseci.utils.obj_mixins import anchored
 from jaseci.utils.id_list import id_list
 from jaseci.jac.walker_machine import walker_machine
 import uuid

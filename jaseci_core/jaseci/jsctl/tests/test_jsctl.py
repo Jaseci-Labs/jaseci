@@ -53,7 +53,7 @@ class jsctl_test(TestCaseHelper, TestCase):
     def test_jsctl_aliases(self):
         """Tests that alias mapping api works"""
         gph_id = self.call_cast('list graph')[0]['jid']
-        snt_id = self.call_cast('list sentinels')[0]['jid']
+        snt_id = self.call_cast('list sentinel')[0]['jid']
         self.call(f'create alias -name s -value {snt_id}')
         self.call(f'create alias -name g -value {gph_id}')
         self.assertEqual(len(self.call_cast('get graph -gph g')), 1)
