@@ -2,3 +2,4 @@ flake8>=3.7.9,<3.8.0
 flask==1.1.2
 transformers==4.3.3
 torch==1.8.0
+sentencepiece==0.1.95
