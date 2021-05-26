@@ -60,7 +60,6 @@ spec:
       containers:
         - name: jst5
           image: registry.jaseci.org/jst5:latest
-          imagePullPolicy: IfNotPresent
           resources:
             requests:
               memory: "4Gi"

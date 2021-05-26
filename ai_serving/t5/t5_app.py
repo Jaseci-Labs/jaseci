@@ -5,8 +5,8 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Config
 
 
 class T5Base():
-    tokenizer = T5Tokenizer.from_pretrained('/t5-small/')
-    model = T5ForConditionalGeneration.from_pretrained('/t5-small/')
+    tokenizer = T5Tokenizer.from_pretrained('/t5/t5-small/')
+    model = T5ForConditionalGeneration.from_pretrained('/t5/t5-small/')
     device = torch.device('cpu')
 
     def summarize(self, text_in, min_length=10, max_length=20):
