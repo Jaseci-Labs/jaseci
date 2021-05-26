@@ -66,7 +66,7 @@ class T5RouteTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue('summary' in response.json)
         self.assertTrue(
-               10 < len(response.json['summary'][0][0]) < 20)
+               10 <= len(response.json['summary'].split(' ')) <= 20)
 
     def test_text_with_min_max(self):
         """Test valid request with text and min, max length"""
@@ -84,8 +84,8 @@ class T5RouteTest(unittest.TestCase):
             'efficacy in younger age groups, following Pfizer, which received an '
             'FDA emergency use authorization for adolescents earlier this '
             'month.',
-            'min_length': 5,
-            'max_length': 10
+            'min_length': 20,
+            'max_length': 30
         }
         response = self.client.post(
                 '/t5/',
@@ -95,4 +95,4 @@ class T5RouteTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue('summary' in response.json)
         self.assertTrue(
-               5 < len(response.json['summary'][0][0]) < 10)
+               20 <= len(response.json['summary'].split(' ')) <= 30)

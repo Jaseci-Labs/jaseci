@@ -15,7 +15,7 @@ class T5Base():
         length between min and max
         """
         tokenized_text = self.tokenizer.encode(
-            f'summarize: {text_in}', return_tensor='pt').to(device)
+            f'summarize: {text_in}', return_tensors='pt').to(self.device)
         
         summary_ids = self.model.generate(
             tokenized_text,
@@ -30,7 +30,8 @@ class T5Base():
             early_stopping=True
         )
 
-        text_out = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+        text_out = \
+            self.tokenizer.decode(summary_ids[0], skip_special_tokens=True)
         return text_out
         
 T5 = T5Base()
