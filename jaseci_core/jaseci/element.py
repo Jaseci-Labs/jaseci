@@ -52,8 +52,6 @@ class element(hookable):
         self.j_owner = owner_id.urn if owner_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
         self.j_type = type(self).__name__
-        self.j_user = user
-        self.j_has_access = has_access
         hookable.__init__(self, h,  *args, **kwargs)
         if(auto_save):
             self.save()

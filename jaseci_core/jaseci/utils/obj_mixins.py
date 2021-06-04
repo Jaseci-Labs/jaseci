@@ -4,6 +4,7 @@ Jaseci object mixins
 Various mixins to define properties of Jaseci objects
 """
 from jaseci.utils.mem_hook import mem_hook
+from jaseci.utils.utils import logger
 
 
 class anchored():
@@ -17,6 +18,16 @@ class anchored():
         if(self.anchor):
             return self.context[self.anchor]
         return None
+
+
+class sharable():
+    """Utility class for objects that are sharable between users"""
+    # TODO: Finish this implementation, make node/edges sharable and
+    # manage access accordingly
+
+    def __init__(self, user=None, has_access=None):
+        self.j_user = user
+        self.j_has_access = has_access
 
 
 class hookable():
