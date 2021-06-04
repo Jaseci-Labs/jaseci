@@ -5,7 +5,7 @@ Each edge has an id, name, timestamp, the from node at the element of the edge
 and the to node it is pointing to.
 """
 from jaseci.element import element
-from jaseci.element import anchored
+from jaseci.utils.obj_mixins import anchored
 from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
 import uuid
