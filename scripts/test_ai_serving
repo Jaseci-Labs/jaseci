@@ -1,8 +1,8 @@
 #!/bin/bash
-PODN=jsbart
+PODN=jst5
 if [[ $1 ]]; then
     PODN=$1
 fi
 
 #for podname in $(kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci ${podname}:/; echo "Copy code to pod and test" | head -n 1; kubectl exec -it ${podname} -- sh -c "cd jaseci; python3 manage.py test --failfast -v 0 && flake8 --exclude=settings.py,*migrations*,jac_parse"; done
-for podname in $(kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name'); do kubectl cp ai_serving ${podname}:/; echo "Copy code to pod and test" | head -n 1; kubectl exec -it ${podname} -- sh -c "cd ai_serving; python3 -m unittest bart.tests.test_bart_route -v"; done
+for podname in $(kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name'); do kubectl cp ai_serving ${podname}:/; echo "Copy code to pod and test" | head -n 1; kubectl exec -it ${podname} -- sh -c "cd ai_serving; python3 -m unittest t5.tests.test_t5_route -v"; done
