@@ -452,3 +452,14 @@ dict_keys = \
         }
     }
     """
+
+soft_max = \
+    """
+    walker init{
+        can vector.softmax;
+        scores = [3.0, 1.0, 0.2];
+        a=vector.softmax(scores);
+        report a;
+        std.out(a);
+    }
+    """

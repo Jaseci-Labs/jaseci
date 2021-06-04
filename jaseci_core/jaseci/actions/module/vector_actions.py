@@ -44,7 +44,19 @@ def get_centroid(param_list):
     return (centroid, tightness)
 
 
-def sort_by_key(param_list):
+def softmax(param_list):
+    """
+    Calculate the centroid of the given list of vectors
+    Param 1 - List of vectors
+
+    Return - (centroid vector, cluster tightness)
+    """
+    vec_list = param_list[0]
+    e_x = np.exp(vec_list - np.max(vec_list))
+    return e_x / e_x.sum()
+
+
+def sort_by_key(param_list):  # TODO: Should be in std lib
     """
     Sort the given list. Optionally by specific key
     Param 1 - List of items
