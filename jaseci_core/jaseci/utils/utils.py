@@ -7,6 +7,7 @@ import importlib
 import pkgutil
 import logging
 import types
+import json
 import functools
 from time import time
 from datetime import datetime
@@ -43,6 +44,15 @@ def dummy_bp(inspect):
 def is_urn(s: str):
     """Test if is uuid string in urn format"""
     return type(s) == str and s.startswith("urn:uuid:")
+
+
+def is_jsonable(x):
+    """Test if object can be json serialized"""
+    try:
+        json.dumps(x)
+        return True
+    except (TypeError, OverflowError):
+        return False
 
 
 def get_all_subclasses(cls):

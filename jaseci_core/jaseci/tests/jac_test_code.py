@@ -19,7 +19,7 @@ ll_proto = \
     node week {
         has anchor week;
         can infer.month_from_date;
-        can infer.day_from_date;
+        can infer.day_from_date, date.day_from_date;
     }
 
     node day: has anchor day;
@@ -38,7 +38,7 @@ ll_proto = \
         life: take --> node::year == infer.year_from_date(date);
         year: take --> node::month == infer.month_from_date(date);
         month: take --> node::week == infer.week_from_date(date);
-        week: take --> node::day == infer.day_from_date(date);
+        week: take --> node::day == date.day_from_date(date);
         day: report here;
         report false;
     }

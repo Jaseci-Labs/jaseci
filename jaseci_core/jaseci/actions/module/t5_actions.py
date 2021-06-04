@@ -10,10 +10,10 @@ def summarize(param_list):
     Param 2 (Optional) - [min length, max length]
     """
     data = {
-            'op': 'summary',
-            'text': param_list[0]
+        'op': 'summary',
+        'text': param_list[0]
     }
     if len(param_list) > 1:
         data['min_length'] = param_list[1][0]
         data['max_length'] = param_list[1][1]
-    return BART_API.post(data)['summary']
+    return T5_API.post(data)['summary']

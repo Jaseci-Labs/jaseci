@@ -4,15 +4,14 @@ machine for jac code in AST form
 This machine should be inhereted from the class that manages state referenced
 through self.
 """
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import is_jsonable, logger
 from jaseci.actions.find_action import find_action
 from jaseci.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
-from jaseci.element import ctx_value
 from jaseci.attr.action import action
 from jaseci.jac.jac_set import jac_set
-from jaseci.jac.jac_scope import jac_scope
+from jaseci.jac.jac_scope import jac_scope, ctx_value
 # import pickle
 
 
@@ -333,6 +332,8 @@ class machine():
         kid = jac_ast.kid
         report = self.run_expression(kid[1])
         report = self._jac_scope.report_deep_serialize(report)
+        if(not is_jsonable(report)):
+            self.rt_error(f'Report not Json serializable', kid[0])
         self.report.append(report)
 
     def run_expression(self, jac_ast):
