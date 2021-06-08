@@ -53,7 +53,7 @@ def softmax(param_list):
     """
     vec_list = param_list[0]
     e_x = np.exp(vec_list - np.max(vec_list))
-    return e_x / e_x.sum()
+    return list(e_x / e_x.sum())
 
 
 def sort_by_key(param_list):  # TODO: Should be in std lib

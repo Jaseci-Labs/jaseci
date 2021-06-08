@@ -286,5 +286,6 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         gen_walker.run()
-        self.assertEqual(self.new_stdout.getvalue(),
-                         "[0.8360188  0.11314284 0.05083836]\n")
+        self.assertEqual(
+            self.new_stdout.getvalue(),
+            "[0.8360188027814407, 0.11314284146556013, 0.05083835575299916]\n")
