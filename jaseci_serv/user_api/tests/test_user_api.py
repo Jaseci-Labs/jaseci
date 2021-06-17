@@ -12,10 +12,12 @@ from django.test import TestCase
 CREATE_USER_URL = reverse('user_api:create')
 TOKEN_URL = reverse('user_api:token')
 MANAGE_URL = reverse('user_api:manage')
+LOGOUT_EVERYONE_URL = reverse('user_api:logout_everyone')
 PASSWORD_RESET_URL = reverse(
     'user_api:password_reset:reset-password-request')
 # Alias for create user
 create_user = get_user_model().objects.create_user
+create_superuser = get_user_model().objects.create_superuser
 get_user = get_user_model().objects.get
 
 
@@ -90,6 +92,67 @@ class user_api_tests_public(TestCaseHelper, TestCase):
             email=payload['email']
         ).exists()
         self.assertFalse(user_exists)
+
+    def test_logout_everyone(self):
+        """Test admin level logout everyone"""
+        payload = {'email': 'jscitest_test@jaseci.com', 'password': 'testpass'}
+        user = create_user(**payload)
+        user.is_activated = True
+        user.save()
+        payload2 = {'email': 'super@jaseci.com', 'password': 'testpass'}
+        superuser = create_superuser(**payload2)
+        superuser.save()
+
+        res = self.client.post(TOKEN_URL, payload)
+        token = res.data['token']
+        res = self.client.post(TOKEN_URL, payload2)
+        stoken = res.data['token']
+        res = self.client.get(MANAGE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        res = self.client.get(MANAGE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        res = self.client.get(MANAGE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + stoken)
+        self.client.post(LOGOUT_EVERYONE_URL, {})
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        res = self.client.get(MANAGE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        get_user(email=payload['email']).delete()
+        get_user(email=payload2['email']).delete()
+
+    def test_logout_everyone_requires_admin(self):
+        """Test admin level logout everyone"""
+        payload = {'email': 'jscitest_test@jaseci.com', 'password': 'testpass'}
+        user = create_user(**payload)
+        user.is_activated = True
+        user.save()
+        payload2 = {'email': 'super@jaseci.com', 'password': 'testpass'}
+        superuser = create_superuser(**payload2)
+        superuser.save()
+
+        res = self.client.post(TOKEN_URL, payload)
+        token = res.data['token']
+        res = self.client.post(TOKEN_URL, payload2)
+        #stoken = res.data['token']
+        res = self.client.get(MANAGE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        res = self.client.get(MANAGE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        res = self.client.get(MANAGE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        res = self.client.post(LOGOUT_EVERYONE_URL, {})
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        res = self.client.get(MANAGE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        get_user(email=payload['email']).delete()
+        get_user(email=payload2['email']).delete()
 
     def test_create_token_for_user(self):
         """Test that a token is created for the user"""

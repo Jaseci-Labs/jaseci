@@ -108,3 +108,9 @@ class JaseciObject(models.Model):
     j_type = models.CharField(max_length=15, default='node')
     # jsci_obj is json dump of entire object data beyond base
     jsci_obj = models.TextField(blank=True)
+
+
+# class GlobalConfig(models.Model):
+#     """Global configuration item"""
+#     name = models.CharField(max_length=31, default='')
+#     blob = models.TextField(blank=True)

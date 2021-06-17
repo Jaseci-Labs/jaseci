@@ -1,15 +1,15 @@
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
-from rest_framework import renderers
+from rest_framework import renderers, status
 from knox.views import LoginView as KnoxLoginView
-from django.contrib.auth import login
+from django.contrib.auth import login, get_user_model
+from django.contrib.auth.signals import user_logged_out
 from knox.auth import TokenAuthentication
 
 from user_api.serializers import UserSerializer
 from user_api.serializers import AuthTokenSerializer
 from user_api.serializers import send_activation_email
 
-from django.contrib.auth import get_user_model
 from rest_framework.response import Response
 import base64
 
@@ -69,3 +69,20 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class LogoutAllUsersView(APIView):
+    '''
+    Log out of all user sessions across all users
+    I.E. deletes all auth tokens for the user
+    '''
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated, permissions.IsAdminUser)
+
+    def post(self, request, format=None):
+        users = get_user_model().objects.all()
+        for u in users:
+            u.auth_token_set.all().delete()
+            user_logged_out.send(sender=u.__class__,
+                                 request=request, user=u)
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
