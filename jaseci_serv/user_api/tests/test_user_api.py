@@ -136,7 +136,7 @@ class user_api_tests_public(TestCaseHelper, TestCase):
         res = self.client.post(TOKEN_URL, payload)
         token = res.data['token']
         res = self.client.post(TOKEN_URL, payload2)
-        #stoken = res.data['token']
+        # stoken = res.data['token']
         res = self.client.get(MANAGE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)

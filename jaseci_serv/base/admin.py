@@ -45,3 +45,11 @@ class JaseciObjectAdmin (admin.ModelAdmin):
 
 
 admin.site.register(models.JaseciObject, JaseciObjectAdmin)
+
+
+class GlobalConfigAdmin (admin.ModelAdmin):
+    ordering = ['name']
+    list_display = ('name', 'value')
+
+
+admin.site.register(models.GlobalConfig, GlobalConfigAdmin)

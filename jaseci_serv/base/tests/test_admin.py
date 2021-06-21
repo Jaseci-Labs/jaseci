@@ -45,3 +45,19 @@ class admin_test(TestCaseHelper, TestCase):
         url = reverse('admin:base_user_add')
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
+
+    def test_base_has_global_config(self):
+        """Tests that global config show up on admin page"""
+        url = reverse('admin:base_globalconfig_changelist')
+        res = self.client.get(url)
+
+        self.assertTrue("Global config" in str(res.content))
+        self.assertEqual(res.status_code, 200)
+
+    def test_base_has_jaseci_objs(self):
+        """Tests that jaseci objects show up on admin page"""
+        url = reverse('admin:base_jaseciobject_changelist')
+        res = self.client.get(url)
+
+        self.assertTrue("Jaseci objects" in str(res.content))
+        self.assertEqual(res.status_code, 200)

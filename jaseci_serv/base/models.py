@@ -110,7 +110,7 @@ class JaseciObject(models.Model):
     jsci_obj = models.TextField(blank=True)
 
 
-# class GlobalConfig(models.Model):
-#     """Global configuration item"""
-#     name = models.CharField(max_length=31, default='')
-#     blob = models.TextField(blank=True)
+class GlobalConfig(models.Model):
+    """Global configuration item"""
+    name = models.CharField(max_length=31, unique=True)
+    value = models.TextField(blank=True)

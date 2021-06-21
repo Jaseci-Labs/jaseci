@@ -7,10 +7,11 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from base.models import JaseciObject
+from base.models import JaseciObject, GlobalConfig
 
 
 NODE_URL = reverse('obj_api:jaseciobject-list')
+CONFIG_URL = reverse('obj_api:globalconfig-list')
 
 
 class PublicNodeApiTests(TestCaseHelper, TestCase):
@@ -80,3 +81,53 @@ class PrivateNodeApiTests(TestCaseHelper, TestCase):
             name=payload['name']
         ).exists()
         self.assertTrue(exists)
+
+
+class ConfigApiTests(TestCaseHelper, TestCase):
+    """Test the authorized user node API"""
+
+    def setUp(self):
+        super().setUp()
+        self.user = get_user_model().objects.create_superuser(
+            'JSCITfdfdEST_test@jaseci.com',
+            'password'
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+
+    def tearDown(self):
+        super().tearDown()
+
+    def test_retrieve_configs(self):
+        """Test retrieving config list"""
+        GlobalConfig.objects.create(name='Vegan', value='46')
+        GlobalConfig.objects.create(name='Dessert', value='446')
+
+        res = self.client.get(CONFIG_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_create_config_successful(self):
+        """Test creating a new config"""
+        payload = {'name': 'Simple', 'value': 'Peezzy'}
+        self.client.post(CONFIG_URL, payload)
+
+        exists = GlobalConfig.objects.filter(
+            name=payload['name'],
+            value=payload['value']
+        ).exists()
+        self.assertTrue(exists)
+
+    def test_configs_limited_to_admin_user(self):
+        """Test that configs only available to admin user"""
+        user2 = get_user_model().objects.create_user(
+            'JSCITEST_other@jaseci.com',
+            'testpass'
+        )
+        client = APIClient()
+        client.force_authenticate(user2)
+
+        payload = {'name': 'Simple', 'value': 'Peezzy'}
+        res = client.post(CONFIG_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)

@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from knox.auth import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework import serializers as slzrs
 from rest_framework.serializers import HyperlinkedIdentityField
 from django.contrib.auth.models import AnonymousUser
@@ -48,3 +48,25 @@ class ObjectViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Create a new object"""
         serializer.save(user=self.request.user)
+
+
+class GlobalConfigSerializer(slzrs.ModelSerializer):
+    """Serializer for Global Config model"""
+
+    class Meta:
+        model = models.GlobalConfig
+        fields = (
+            'name', 'value'
+        )
+
+
+class ConfigViewSet(viewsets.ModelViewSet):
+    """Edit Global Config through the api"""
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated, IsAdminUser)
+    queryset = models.GlobalConfig.objects.all()
+    serializer_class = GlobalConfigSerializer
+
+    def get_queryset(self):
+        """Return objects for the current authenticated user only"""
+        return self.queryset.all().order_by('-name')
