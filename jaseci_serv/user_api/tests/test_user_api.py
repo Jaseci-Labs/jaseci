@@ -206,9 +206,10 @@ class user_api_tests_public(TestCaseHelper, TestCase):
         user.save()
 
         email_pl = {'email': 'jscitest_test@jaseci.com'}
-        from unittest.mock import Mock
-        import django.core.mail as mail
-        mail.send_mail = Mock(return_value=True)
+        from base.mail import email_defaults
+        email_defaults['EMAIL_BACKEND'] = \
+            'django.core.mail.backends.locmem.EmailBackend'
+
         res = self.client.post(PASSWORD_RESET_URL, email_pl)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -222,9 +223,10 @@ class user_api_tests_public(TestCaseHelper, TestCase):
         user.save()
 
         email_pl = {'email': 'jjscitest_test@jaseci.com'}
-        from unittest.mock import Mock
-        import django.core.mail as mail
-        mail.send_mail = Mock(return_value=True)
+        from base.mail import email_defaults
+        email_defaults['EMAIL_BACKEND'] = \
+            'django.core.mail.backends.locmem.EmailBackend'
+
         res = self.client.post(PASSWORD_RESET_URL, email_pl)
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

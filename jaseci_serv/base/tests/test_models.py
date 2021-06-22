@@ -84,3 +84,10 @@ class model_tests(TestCaseHelper, TestCase):
         self.assertFalse(
             models.JaseciObject.objects.filter(name=newname).exists()
         )
+
+    def test_lookup_global_config(self):
+        """Test look up config returns right value"""
+        models.GlobalConfig.objects.create(name='testname', value="testval")
+        self.assertEqual(models.lookup_global_config('testname'), 'testval')
+        self.assertEqual(models.lookup_global_config(
+            'nonsense', 'apple'), 'apple')

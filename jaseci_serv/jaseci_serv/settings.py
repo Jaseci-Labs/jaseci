@@ -173,10 +173,3 @@ REST_KNOX = {
 LOGIN_URL = '/ui/login'
 LOGIN_REDIRECT_URL = '/ui'
 LOGOUT_REDIRECT_URL = '/ui'
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'prod@lifelogify.com'
-EMAIL_HOST_PASSWORD = 'pwzaijgtrupomcjy'
-EMAIL_PORT = 587

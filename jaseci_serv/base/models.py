@@ -114,3 +114,11 @@ class GlobalConfig(models.Model):
     """Global configuration item"""
     name = models.CharField(max_length=31, unique=True)
     value = models.TextField(blank=True)
+
+
+def lookup_global_config(name, default=None):
+    """Helper for looking up GlobalConfig, returns default if not found"""
+    try:
+        return GlobalConfig.objects.get(name=name).value
+    except GlobalConfig.DoesNotExist:
+        return default
