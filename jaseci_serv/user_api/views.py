@@ -74,7 +74,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 class LogoutAllUsersView(APIView):
     '''
     Log out of all user sessions across all users
-    I.E. deletes all auth tokens for the user
+    I.E. deletes all auth tokens for all users
     '''
     authentication_classes = (TokenAuthentication,)
     permission_classes = (permissions.IsAuthenticated, permissions.IsAdminUser)

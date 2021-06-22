@@ -5,6 +5,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
     PermissionsMixin
+from django.contrib.auth import get_user_model
 from base.orm_hook import orm_hook
 from jaseci import master
 
@@ -19,6 +20,8 @@ class UserManager(BaseUserManager):
 
     def create_user(self, email, password=None, **extra_fields):
         """Creates and saves a new user"""
+        if(not get_user_model().objects.filter(is_admin=True).exists()):
+            return self.create_superuser(email, password, **extra_fields)
         email = self.normalize_email(email).lower()
         user = self.model(email=email, **extra_fields)
         user.set_password(password)

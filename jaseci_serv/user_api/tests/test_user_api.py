@@ -48,6 +48,31 @@ class user_api_tests_public(TestCaseHelper, TestCase):
         self.assertNotIn('password', res.data)
         user.delete()
 
+    def test_first_user_is_super(self):
+        """Test first user created its superuser"""
+        payload = {
+            'email': 'jscitest_test2@jaseci.com',
+            'password': 'testpass',
+            'name': 'name'
+        }
+        res = self.client.post(CREATE_USER_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(**res.data)
+        self.assertTrue(user.is_admin)
+        payload = {
+            'email': 'jscitest_test4@jaseci.com',
+            'password': 'testpass',
+            'name': 'name'
+        }
+        res = self.client.post(CREATE_USER_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        user2 = get_user_model().objects.get(**res.data)
+        self.assertFalse(user2.is_admin)
+        user.delete()
+        user2.delete()
+
     def test_create_activated_user_success(self):
         """Test creating user with valid payload is successful"""
         payload = {
@@ -125,13 +150,13 @@ class user_api_tests_public(TestCaseHelper, TestCase):
 
     def test_logout_everyone_requires_admin(self):
         """Test admin level logout everyone"""
+        payload2 = {'email': 'super@jaseci.com', 'password': 'testpass'}
+        superuser = create_superuser(**payload2)
+        superuser.save()
         payload = {'email': 'jscitest_test@jaseci.com', 'password': 'testpass'}
         user = create_user(**payload)
         user.is_activated = True
         user.save()
-        payload2 = {'email': 'super@jaseci.com', 'password': 'testpass'}
-        superuser = create_superuser(**payload2)
-        superuser.save()
 
         res = self.client.post(TOKEN_URL, payload)
         token = res.data['token']
