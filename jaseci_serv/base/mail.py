@@ -20,10 +20,10 @@ def load_email_connection():
         return lookup_global_config(name=name, default=email_defaults[name])
     backend = resolve('EMAIL_BACKEND')
     host = resolve('EMAIL_HOST')
-    port = resolve('EMAIL_PORT')
+    port = int(resolve('EMAIL_PORT'))
     username = resolve('EMAIL_HOST_USER')
     password = resolve('EMAIL_HOST_PASSWORD')
-    use_tls = resolve('EMAIL_USE_TLS')
+    use_tls = bool(resolve('EMAIL_USE_TLS'))
 
     return mail.get_connection(backend=backend, host=host, port=port,
                                username=username, password=password,
