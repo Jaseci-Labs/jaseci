@@ -120,7 +120,8 @@ class master(element, legacy_api, alias_api):
                 logger.error(
                     f'Code encoding invalid for Sentinel {snt.id}!')
                 return [f'Code encoding invalid for Sentinel {snt.id}!']
-        if (snt.code == code and snt.is_active):
+        # TODO: HOTFIX to force recompile jac code everytime
+        if (snt.code == code and snt.is_active and False):
             return [f'Sentinel {snt.id} already registered and active!']
         else:
             snt.code = code
