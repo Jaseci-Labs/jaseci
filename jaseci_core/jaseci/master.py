@@ -119,7 +119,7 @@ class master(element, legacy_api, alias_api):
             try:
                 code = base64.b64decode(code).decode()
                 # TODO: HOTFIX for mobile jac file
-                # code = code.replace("take --> node;", "take -->;")
+                code = code.replace("take --> node;", "take -->;")
             except UnicodeDecodeError:
                 logger.error(
                     f'Code encoding invalid for Sentinel {snt.id}!')
