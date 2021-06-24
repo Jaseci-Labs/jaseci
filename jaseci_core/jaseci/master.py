@@ -113,9 +113,13 @@ class master(element, legacy_api, alias_api):
         """
         Set sentinel implementation with Jac source code
         """
+        # TODO: HOTFIX for mobile jac file
+        code = code.replace("take --> node;", "take -->;")
         if (encoded):
             try:
                 code = base64.b64decode(code).decode()
+                # TODO: HOTFIX for mobile jac file
+                code = code.replace("take --> node;", "take -->;")
             except UnicodeDecodeError:
                 logger.error(
                     f'Code encoding invalid for Sentinel {snt.id}!')
