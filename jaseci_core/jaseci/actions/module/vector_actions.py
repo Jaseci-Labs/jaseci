@@ -41,7 +41,7 @@ def get_centroid(param_list):
     centroid = np.mean(vec_list, axis=0)
     tightness = np.mean([cosine_sim([vec, centroid])
                          for vec in vec_list]).astype(float)
-    return (centroid, tightness)
+    return [centroid, tightness]
 
 
 def softmax(param_list):
