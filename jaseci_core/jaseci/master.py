@@ -12,7 +12,7 @@ from jaseci.graph.node import node
 from jaseci.actor.sentinel import sentinel
 from jaseci.actor.walker import walker
 from jaseci.utils.id_list import id_list
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import logger, is_jsonable
 from jaseci.api.legacy import legacy_api
 from jaseci.api.alias import alias_api
 
@@ -236,7 +236,11 @@ class master(element, legacy_api, alias_api):
             logger.warning(
                 str(f'Unused parameters in API call - '
                     f'got {params.keys()}, expected {param_map.keys()}'))
-        return getattr(self, api_name)(**param_map)
+        ret = getattr(self, api_name)(**param_map)
+        if(not is_jsonable(ret)):
+            logger.error(
+                str(f'API returns non json object {type(ret)}: {ret}'))
+        return ret
 
     def get_api_signature(self, api_name):
         """

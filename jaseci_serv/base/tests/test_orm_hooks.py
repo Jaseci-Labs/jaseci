@@ -21,7 +21,7 @@ create_user = get_user_model().objects.create_user
 get_user = get_user_model().objects.get
 
 
-class jaseci_engine_tests_private(TestCaseHelper, TestCase):
+class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
     """Test Jaseci Engine when authenticated"""
 
     def setUp(self):

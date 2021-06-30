@@ -72,7 +72,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __init__(self, *args, **kwargs):
         self._h = orm_hook(
-            user=self, objects=JaseciObject.objects
+            user=self,
+            objects=JaseciObject.objects,
+            configs=GlobalConfig.objects
         )
         AbstractBaseUser.__init__(self, *args, **kwargs)
         PermissionsMixin.__init__(self, *args, **kwargs)

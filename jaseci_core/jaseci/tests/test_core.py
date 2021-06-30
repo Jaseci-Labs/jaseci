@@ -20,7 +20,6 @@ class architype_tests(TestCaseHelper, TestCase):
 
     def test_object_creation_basic_no_side_creation(self):
         """
-
         """
         mast = master(h=mem_hook())
         num_objs = len(mast._h.mem.keys())
@@ -41,7 +40,6 @@ class architype_tests(TestCaseHelper, TestCase):
 
     def test_edge_removal_updates_nodes_edgelist(self):
         """
-
         """
         mast = master(h=mem_hook())
         node1 = node(h=mast._h)
@@ -75,6 +73,9 @@ class architype_tests(TestCaseHelper, TestCase):
         self.assertEqual(num_objs, new_num)
 
     def test_json_blob_of_objects(self):
+        """
+        Test saving object to json and back to python dict
+        """
         for i in get_all_subclasses(element):
             orig = i(h=mem_hook())
             blob1 = orig.json()

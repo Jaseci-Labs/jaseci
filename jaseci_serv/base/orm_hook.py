@@ -22,12 +22,14 @@ class orm_hook(mem_hook):
     lives in :class:`User` class as per :field:`User.orm_hook`.
     """
 
-    def __init__(self, user, objects, red=Redis(host=REDIS_HOST,
-                                                decode_responses=True)):
+    def __init__(self, user, objects, configs,
+                 red=Redis(host=REDIS_HOST, decode_responses=True)):
         self.user = user
         self.objects = objects
+        self.configs = configs
         self.red = red
-        self.save_list = set()
+        self.save_obj_list = set()
+        self.save_cfg_list = []
         super().__init__()
 
     def get_obj_from_store(self, item_id):
@@ -74,7 +76,7 @@ class orm_hook(mem_hook):
 
     def save_obj_to_store(self, item):
         # import traceback as tb; tb.print_stack();  # noqa
-        self.save_list.add(item)
+        self.save_obj_list.add(item)
 
     def commit_obj(self, item):
         try:
@@ -105,15 +107,70 @@ class orm_hook(mem_hook):
             pass
         self.red.delete(item.id.urn)
 
+    def get_cfg_from_store(self, name):
+        """
+        Get global config from externally hooked general store by name
+        """
+        loaded_val = self.red.get(name)
+        if (loaded_val):
+            return loaded_val
+        else:
+            try:
+                loaded_val = self.configs.get(name=name).value
+            except ObjectDoesNotExist:
+                logger.error(
+                    str(f"Config {name} does not exist in Django ORM!"),
+                    exc_info=True
+                )
+                return None
+
+            self.red.set(name, loaded_val)
+            return loaded_val
+
+    def has_cfg_in_store(self, name):
+        """
+        Checks for global config existance in store
+        """
+        if (self.red.get(name)):
+            return True
+        return self.configs.filter(name=name).count()
+
+    def save_cfg_to_store(self, name, value):
+        """Save global config to externally hooked general store"""
+        self.save_cfg_list.append([name, value])
+
+    def destroy_cfg_from_store(self, name):
+        """Destroy global config to externally hooked general store"""
+        try:
+            self.configs.get(name=name).delete()
+        except ObjectDoesNotExist:
+            pass
+        self.red.delete(name)
+
+    def commit_cfg(self, name, value):
+        try:
+            self.red.set(name, value)
+        except Exception as e:
+            logger.error(
+                str(f"Couldn't save {name} to redis! {e}"),
+                exc_info=True
+            )
+        item_from_db, created = self.configs.get_or_create(name=name)
+        item_from_db.value = value
+        item_from_db.save()
+
     def commit(self):
         """Write through all saves to store"""
         # dist = {}
-        # for i in self.save_list:
+        # for i in self.save_obj_list:
         #     if (type(i).__name__ in dist.keys()):
         #         dist[type(i).__name__] += 1
         #     else:
         #         dist[type(i).__name__] = 1
         # print(dist)
-        for i in self.save_list:
+        for i in self.save_obj_list:
             self.commit_obj(i)
-        self.save_list = set()
+        self.save_obj_list = set()
+        for i in self.save_cfg_list:
+            self.commit_cfg(name=i[0], value=i[1])
+        self.save_cfg_list = []

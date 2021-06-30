@@ -1,6 +1,9 @@
 """
 This module includes code related to hooking Jaseci's Redis to the
 core engine.
+
+TODO: Does not support configs yet as orm_hook subsumes redis hook
+utility
 """
 from jaseci.utils import utils
 from jaseci.utils.utils import logger
