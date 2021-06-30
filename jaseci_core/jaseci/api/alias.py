@@ -11,7 +11,7 @@ class alias_api():
     def __init__(self):
         self.alias_map = {}
 
-    def api_create_alias(self, name: str, value: str):
+    def api_alias_create(self, name: str, value: str):
         """
         Creates a string to string alias to be used by client
         """
@@ -20,13 +20,13 @@ class alias_api():
         self.alias_map[name] = value
         return [f"Alias from '{name}' to '{value}' created!"]
 
-    def api_list_alias(self):
+    def api_alias_list(self):
         """
         List all string to string alias that client can use
         """
         return self.alias_map
 
-    def api_delete_alias(self, name: str = None, all: bool = False):
+    def api_alias_delete(self, name: str = None, all: bool = False):
         """
         Remove string to string alias that client can use
         """
