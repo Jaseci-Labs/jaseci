@@ -110,7 +110,7 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         then deleting
         """
         graph_gen.randomized_graph(h=self._h)
-        self.assertEqual(len(self._h.mem), 31)
+        self.assertEqual(len(self._h.mem), 32)
 
     def test_jsci_walker_writes_through_graph_updates(self):
         """

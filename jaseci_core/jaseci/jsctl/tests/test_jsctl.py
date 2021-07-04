@@ -21,16 +21,16 @@ class jsctl_test(TestCaseHelper, TestCase):
         return json.loads(self.call(cmd))
 
     def tearDown(self):
-        jsctl.session["master"]._h.mem = {}
+        jsctl.session["master"]._h.clear_mem_cache()
         super().tearDown()
 
     def test_jsctl_extract_tree(self):
-        self.logger_on()
         out = jsctl.extract_api_tree()
         self.assertIn("create", out)
         self.assertIn("get", out)
         self.assertIn("load", out)
         self.assertIn("set", out)
+        self.assertIn("config", out)
         self.assertNotIn("jadc", out)
 
     def test_help_screen(self):
@@ -59,3 +59,14 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertEqual(len(self.call_cast('get graph -gph g')), 1)
         self.call(f'prime run -snt s -nd g -name init')
         self.assertEqual(len(self.call_cast('get graph -gph g')), 2)
+
+    def test_jsctl_config_cmds(self):
+        """Tests that config commands works"""
+        self.call(f'config set -name APPLE -value TEST')
+        self.call(f'config set -name APPLE -value Grape2')
+        self.call(f'config set -name "Banana" -value "Grape"')
+        self.call(f'config set -name "Pear" -value "Banana"')
+        r = self.call_cast('config get -name APPLE')
+        self.assertEqual(r, 'Grape2')
+        r = self.call_cast('config list')
+        self.assertEqual(len(r), 3)

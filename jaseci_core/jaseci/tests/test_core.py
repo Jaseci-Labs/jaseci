@@ -57,7 +57,7 @@ class architype_tests(TestCaseHelper, TestCase):
         """
         mast = master(h=mem_hook())
         num_objs = len(mast._h.mem.keys())
-        self.assertEqual(num_objs, 1)
+        self.assertEqual(num_objs, 2)
         new_graph = graph(h=mast._h)
         sent = sentinel(h=mast._h)
         sent.code = jtc.prog1

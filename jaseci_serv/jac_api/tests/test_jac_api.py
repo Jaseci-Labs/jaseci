@@ -34,6 +34,10 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
+        get_user_model().objects.create_user(
+            'throwawayJSCITfdfdEST_test@jaseci.com',
+            'password'
+        )
         self.user = get_user_model().objects.create_user(
             'JSCITfdfdEST_test@jaseci.com',
             'password'

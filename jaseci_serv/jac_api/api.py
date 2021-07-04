@@ -1,4 +1,4 @@
-from .views import AbstractJacAPIView
+from .views import AbstractJacAPIView, AbstractAdminJacAPIView
 from jaseci.element import element
 from jaseci.master import master
 from jaseci.utils.mem_hook import mem_hook
@@ -50,4 +50,13 @@ for i in dir(master(h=mem_hook())):
         gen_cls.post = copy_func(gen_cls.post)
         gen_cls.post.__doc__ = getattr(master, i).__doc__ + '\n\n' + \
             rest_api_auto_doc(f'/jac/{i[4:]}', func_sig)
+        globals()[i] = gen_cls
+    elif (i.startswith('admin_api_')):
+        func_sig = signature(getattr(master, i))
+        gen_cls = type(i,
+                       (AbstractAdminJacAPIView,),
+                       {})
+        gen_cls.post = copy_func(gen_cls.post)
+        gen_cls.post.__doc__ = getattr(master, i).__doc__ + '\n\n' + \
+            rest_api_auto_doc(f'/admin/{i[10:]}', func_sig)
         globals()[i] = gen_cls

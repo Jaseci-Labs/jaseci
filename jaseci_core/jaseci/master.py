@@ -17,10 +17,11 @@ from jaseci.api.graph import graph_api
 from jaseci.api.sentinel import sentinel_api
 from jaseci.api.app import app_api
 from jaseci.api.walker import walker_api
+from jaseci.api.config import config_api
 
 
 class master(element, legacy_api, alias_api, graph_api, sentinel_api,
-             walker_api, app_api):
+             walker_api, app_api, config_api):
     """Main class for master functions for user"""
 
     def __init__(self, email="Anonymous", *args, **kwargs):

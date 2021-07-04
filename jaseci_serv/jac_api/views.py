@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from knox.auth import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from jaseci.utils.utils import logger
 from time import time
@@ -56,3 +56,10 @@ class AbstractJacAPIView(APIView):
         self.cmd = request.data
         self.master = request.user.get_master()
         self.res = "Not valid interaction!"
+
+
+class AbstractAdminJacAPIView(AbstractJacAPIView):
+    """
+    The abstract base for Jaseci Admin APIs
+    """
+    permission_classes = (IsAuthenticated, IsAdminUser)

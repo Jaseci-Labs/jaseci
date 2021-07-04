@@ -69,9 +69,9 @@ def extract_api_tree():
     """
     api_funcs = {}
     for i in dir(session['master']):
-        if (i.startswith('api_')):
+        if (i.startswith('api_') or i.startswith('admin_api_')):
             # Get function names and signatures
-            func_str = i[4:]
+            func_str = i[4:] if i.startswith('api_') else i[10:]
             cmd_groups = func_str.split('_')
             func_sig = signature(getattr(session['master'], i))
 

@@ -139,6 +139,10 @@ class orm_hook(mem_hook):
         """Save global config to externally hooked general store"""
         self.save_cfg_list.append([name, value])
 
+    def list_cfg_from_store(self):
+        """Get list of global config to externally hooked general store"""
+        return [entry['name'] for entry in self.configs.values('name')]
+
     def destroy_cfg_from_store(self, name):
         """Destroy global config to externally hooked general store"""
         try:
