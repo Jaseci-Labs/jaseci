@@ -17,7 +17,8 @@ class AIServingAPI():
     def __init__(self, API):
         config = configparser.ConfigParser()
         config.read(ai_config_file)
-        self.url = config.get(API, 'url')
+        self.url = config.get(API, 'url') if config.has_option(
+            API, 'url') else None
         self.header = {'content-type': 'application/json'}
 
     def get(self):
