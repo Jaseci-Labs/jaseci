@@ -7,6 +7,7 @@ import uuid
 from inspect import signature
 from inspect import getdoc
 
+
 from jaseci.element import element
 
 from jaseci.utils.utils import logger, is_jsonable
@@ -14,9 +15,12 @@ from jaseci.api.legacy import legacy_api
 from jaseci.api.alias import alias_api
 from jaseci.api.graph import graph_api
 from jaseci.api.sentinel import sentinel_api
+from jaseci.api.app import app_api
+from jaseci.api.walker import walker_api
 
 
-class master(element, legacy_api, alias_api, graph_api, sentinel_api):
+class master(element, legacy_api, alias_api, graph_api, sentinel_api,
+             walker_api, app_api):
     """Main class for master functions for user"""
 
     def __init__(self, email="Anonymous", *args, **kwargs):
@@ -25,6 +29,12 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api):
         alias_api.__init__(self)
         graph_api.__init__(self)
         sentinel_api.__init__(self)
+
+    def api_object_get(self, obj: element, detailed: bool = False):
+        """
+        Print the details of arbitrary jaseci object
+        """
+        return obj.serialize(detailed=detailed)
 
     def destroy(self):
         """

@@ -1,5 +1,5 @@
 """
-Legacy Master api function as a mixin, should be Deprecated
+Alias api as a mixin
 """
 
 
