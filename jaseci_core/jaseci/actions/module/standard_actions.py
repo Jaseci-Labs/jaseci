@@ -1,6 +1,7 @@
 from operator import itemgetter
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import logger, app_logger
 from datetime import datetime
+import sys
 
 
 def log(param_list):
@@ -13,7 +14,7 @@ def log(param_list):
             else:
                 param_list[i] = 'false'
         result += str(param_list[i])
-    logger.info(result)
+    app_logger.info(result)
     return result
 
 
@@ -26,6 +27,17 @@ def out(param_list):
             else:
                 param_list[i] = 'false'
     print(*param_list)
+
+
+def err(param_list):
+    """Standard built in for printing to stderr"""
+    for i in range(len(param_list)):
+        if (type(param_list[i]) == bool):
+            if (param_list[i]):
+                param_list[i] = 'true'
+            else:
+                param_list[i] = 'false'
+    print(*param_list, file=sys.stderr)
 
 
 def sort_by_col(param_list):

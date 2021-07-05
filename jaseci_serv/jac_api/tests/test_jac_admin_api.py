@@ -33,36 +33,64 @@ class PrivateJacAdminApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_create_config(self):
         """Test API for creating a config"""
-        payload = {'op': 'config_set', 'name': 'test1', 'value': 'val1'}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {'op': 'config_set', 'name': 'test1',
+                   'value': 'val1', 'do_check': False}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         payload = {'op': 'config_get', 'name': 'test1'}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, "val1")
+
+    def test_jac_api_create_config_needs_force(self):
+        """Test API for creating a config"""
+        payload = {'op': 'config_delete', 'name': 'test1'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'config_set', 'name': 'test1', 'value': 'val1'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        payload = {'op': 'config_get', 'name': 'test1'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertNotEqual(res.data, "val1")
 
     def test_jac_api_create_config_nonadmin_fails(self):
         """Test API for creating a config"""
         payload = {'op': 'config_set', 'name': 'test1', 'value': 'val1'}
-        res = self.notadminc.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        res = self.notadminc.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_jac_api_create_config_list(self):
         """Test API for creating a config"""
-        payload = {'op': 'config_set', 'name': 'test1', 'value': 'val1'}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {'op': 'config_set', 'name': 'test1',
+                   'value': 'val1', 'do_check': False}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        payload = {'op': 'config_set', 'name': 'test2', 'value': 'val2'}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {'op': 'config_set', 'name': 'test2',
+                   'value': 'val2', 'do_check': False}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        payload = {'op': 'config_set', 'name': 'test3', 'value': 'val3'}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {'op': 'config_set', 'name': 'test3',
+                   'value': 'val3', 'do_check': False}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        payload = {'op': 'config_set', 'name': 'test4', 'value': 'val4'}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {'op': 'config_set', 'name': 'test4',
+                   'value': 'val4', 'do_check': False}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         payload = {'op': 'config_list'}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 4)
         self.assertEqual(res.data[2], 'test3')

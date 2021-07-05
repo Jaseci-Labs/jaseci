@@ -86,6 +86,15 @@ class mem_hook():
         else:
             return self.has_cfg_in_store(name)
 
+    def resolve_cfg(self, name, default=None):
+        """
+        Util function for returning config if exists otherwise default
+        """
+        if(self.has_cfg(name)):
+            return self.get_cfg(name)
+        else:
+            return default
+
     def save_cfg(self, name, value, persist=True):
         """Save global config to session cache, then to store"""
         self.mem['config'][name] = value
@@ -101,7 +110,7 @@ class mem_hook():
             return list(self.mem['config'].keys())
 
     def destroy_cfg(self, name, persist=True):
-        """Destroy global config from session cache then  store"""
+        """Destroy global config from session cache then store"""
         self.mem['config'][name] = None
         del self.mem['config'][name]
         if(persist):

@@ -62,10 +62,10 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_config_cmds(self):
         """Tests that config commands works"""
-        self.call(f'config set -name APPLE -value TEST')
-        self.call(f'config set -name APPLE -value Grape2')
-        self.call(f'config set -name "Banana" -value "Grape"')
-        self.call(f'config set -name "Pear" -value "Banana"')
+        self.call(f'config set -name APPLE -value TEST -do_check False')
+        self.call(f'config set -name APPLE -value Grape2 -do_check False')
+        self.call(f'config set -name "Banana" -value "Grape" -do_check False')
+        self.call(f'config set -name "Pear" -value "Banana" -do_check False')
         r = self.call_cast('config get -name APPLE')
         self.assertEqual(r, 'Grape2')
         r = self.call_cast('config list')

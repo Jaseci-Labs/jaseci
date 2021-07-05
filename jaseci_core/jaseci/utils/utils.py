@@ -9,24 +9,44 @@ import logging
 import types
 import json
 import functools
+import logstash
 from time import time
 from datetime import datetime
 
 
 # Get an instance of a logger
+def connect_logger_handler(target_logger, handler):
+    """Attaches standard formatting and adds handler to logger"""
+    target_logger.setLevel(logging.INFO)
+    handler.setFormatter(
+        logging.Formatter(
+            '%(asctime)s - %(levelname)s - %(funcName)s: %(message)s')
+    )
+    target_logger.addHandler(handler)
+
+
+def connect_logger_logstash(target_logger, host, port=5959):
+    for i in target_logger.handlers:
+        if(i.__class__.__name__ == 'LogstashHandler'):
+            target_logger.removeHandler(i)
+    connect_logger_handler(
+        target_logger, logstash.LogstashHandler(host, port, version=1))
+
+
+def connect_logger_logstash_check(target_logger):
+    for i in target_logger.handlers:
+        if(i.__class__.__name__ == 'LogstashHandler'):
+            return True
+    return False
+
+
 logger = logging.getLogger('core')
-logger.jaseci_console = io.StringIO()
-loggerch = logging.StreamHandler()
-loggerch.setFormatter(
-    logging.Formatter('%(levelname)s - %(funcName)s: %(message)s')
-)
-loggerconsole = logging.StreamHandler(logger.jaseci_console)
-loggerconsole.setFormatter(
-    logging.Formatter('%(message)s')
-)
-logger.addHandler(loggerch)
-logger.addHandler(loggerconsole)
-logger.setLevel(logging.INFO)
+if(len(logger.handlers) < 1):
+    connect_logger_handler(logger, logging.StreamHandler())
+
+app_logger = logging.getLogger('app')
+if(len(app_logger.handlers) < 1):
+    connect_logger_handler(app_logger, logging.StreamHandler())
 
 
 def bp():
@@ -157,10 +177,12 @@ class TestCaseHelper():
     def logger_off(self):
         """Turn off logging output"""
         logging.getLogger('core').disabled = True
+        logging.getLogger('app').disabled = True
 
     def logger_on(self):
         """Turn on logging output"""
         logging.getLogger('core').disabled = False
+        logging.getLogger('app').disabled = False
 
     def start_perf_test(self):
         self.pr = cProfile.Profile()

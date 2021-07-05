@@ -8,7 +8,6 @@ from jaseci.graph.edge import edge
 from jaseci.graph.graph import graph
 from jaseci.actor.sentinel import sentinel
 from django.contrib.auth import get_user_model
-from jaseci.utils.utils import logger
 import uuid
 import json
 
@@ -128,4 +127,4 @@ class ui():
         return HttpResponse(res)
 
     def get_console(self):
-        return HttpResponse(logger.jaseci_console.getvalue()[-10000:])
+        return HttpResponse('deprecated')
