@@ -62,9 +62,18 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api,
         Connect logger to logstash
         """
         host = self._h.resolve_cfg('LOGSTASH_HOST', 'localhost')
-        port = int(self._h.resovle_cfg('LOGSTASH_PORT', 5959))
+        port = int(self._h.resolve_cfg('LOGSTASH_PORT', 8080))
         connect_logger_logstash(logger, host, port)
         connect_logger_logstash(app_logger, host, port)
+
+    def api_checklogstash(self):
+        """
+        Check ls
+        """
+        ls = []
+        for i in logger.handlers + app_logger.handlers:
+            ls.append(str(type(i)))
+        return ls
 
     def general_interface_to_api(self, params, api_name):
         """

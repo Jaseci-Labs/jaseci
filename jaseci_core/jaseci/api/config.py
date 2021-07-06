@@ -8,6 +8,7 @@ VALID_CONFIGS = ['EMAIL_BACKEND',
                  'EMAIL_HOST_USER',
                  'EMAIL_HOST_PASSWORD',
                  'EMAIL_PORT',
+                 'EMAIL_DEFAULT_FROM',
                  'LOGSTASH_HOST',
                  'LOGSTASH_PORT',
                  ]

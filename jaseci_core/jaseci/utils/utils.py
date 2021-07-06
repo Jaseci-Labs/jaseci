@@ -18,24 +18,25 @@ from datetime import datetime
 def connect_logger_handler(target_logger, handler):
     """Attaches standard formatting and adds handler to logger"""
     target_logger.setLevel(logging.INFO)
-    handler.setFormatter(
-        logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(funcName)s: %(message)s')
-    )
+    # handler.setFormatter(
+    #     logging.Formatter(
+    #         '%(asctime)s - %(levelname)s - %(funcName)s: %(message)s')
+    # )
     target_logger.addHandler(handler)
 
 
 def connect_logger_logstash(target_logger, host, port=5959):
     for i in target_logger.handlers:
-        if(i.__class__.__name__ == 'LogstashHandler'):
+        if(i.__class__.__name__ == 'TCPLogstashHandler'):
             target_logger.removeHandler(i)
+
     connect_logger_handler(
-        target_logger, logstash.LogstashHandler(host, port, version=1))
+        target_logger, logstash.TCPLogstashHandler(host, port, version=1))
 
 
 def connect_logger_logstash_check(target_logger):
     for i in target_logger.handlers:
-        if(i.__class__.__name__ == 'LogstashHandler'):
+        if(i.__class__.__name__ == 'TCPLogstashHandler'):
             return True
     return False
 

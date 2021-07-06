@@ -8,6 +8,7 @@ from django.dispatch import receiver
 from django_rest_passwordreset.signals import reset_password_token_created
 from django.core import mail
 from base.mail import load_email_connection
+from base.models import lookup_global_config
 
 
 def send_activation_email(request, email):
@@ -22,7 +23,7 @@ def send_activation_email(request, email):
         mail.EmailMessage(
             'Please activate your account!',
             body,
-            None,
+            lookup_global_config('EMAIL_DEFAULT_FROM'),
             [email],
             connection=connection,
         ).send(fail_silently=False)
@@ -46,7 +47,7 @@ def password_reset_token_created(sender, instance, reset_password_token,
             # message:
             email_msg,
             # from:
-            None,
+            lookup_global_config('EMAIL_DEFAULT_FROM'),
             # to:
             [reset_password_token.user.email],
             connection=connection,
