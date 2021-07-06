@@ -21,7 +21,7 @@ session = {
     "mem-only": False
 }
 
-connection = {'url': None, 'token': None, 'header': None}
+connection = {'url': None, 'token': None, 'headers': None}
 
 
 def blank_func():
@@ -44,26 +44,20 @@ def cli(filename, mem_only):
         session['master'] = pickle.load(open(filename, 'rb'))
 
 
-@click.command()
-@click.argument("url", type=str, required=True)
-@click.option('--username', '-u', required=True, prompt=True,
-              help="Username to be used for login.")
-@click.password_option(help="Password to be used for login.",
-                       confirmation_prompt=False)
-def login(url, username, password):
-    payload = {'email': username, 'password': password}
-    r = requests.post(url+'/user/token/', data=payload).json()
-    if('token' in r.keys()):
-        connection['token'] = r['token']
-        connection['url'] = url
-        connection['header'] = {
-            'Authorization': 'token ' + r['token']}
-        click.echo("Login successful!")
+def remote_api_call(payload, api_name):
+    """Constructs and issues call to remote server"""
+    if(api_name.startswith('api_')):
+        path = '/jac/'+api_name[4:]
+    elif(api_name.startswith('admin_api_')):
+        path = '/admin/'+api_name[10:]
+    ret = requests.post(connection['url']+path,
+                        data=payload,
+                        headers=connection['headers'])
+    if ret.status_code > 205:
+        ret = f"Status Code Error {ret.status_code}"
     else:
-        click.echo(f"Login failed!\n{r.json()}")
-
-
-cli.add_command(login)
+        ret = ret.json()
+    return ret
 
 
 def interface_api(api_name, **kwargs):
@@ -80,9 +74,14 @@ def interface_api(api_name, **kwargs):
             return
     if('ctx' in kwargs):
         kwargs['ctx'] = json.loads(kwargs['ctx'])
-    click.echo(json.dumps(
-        session['master'].general_interface_to_api(kwargs, api_name), indent=2
-    ))
+    if(connection['token'] and connection['url']):
+        click.echo(json.dumps(
+            remote_api_call(kwargs, api_name), indent=2
+        ))
+    else:
+        click.echo(json.dumps(
+            session['master'].general_interface_to_api(kwargs, api_name), indent=2
+        ))
     if not session['mem-only']:
         pickle.dump(session['master'], open(session['filename'], 'wb'))
 
@@ -153,6 +152,26 @@ def cmd_tree_builder(location, group_func=cli, cmd_str=''):
         cmd_tree_builder(loc, new_func, cmd_str+' '+i)
 
 
+@click.command()
+@click.argument("url", type=str, required=True)
+@click.option('--username', '-u', required=True, prompt=True,
+              help="Username to be used for login.")
+@click.password_option(help="Password to be used for login.",
+                       confirmation_prompt=False)
+def login(url, username, password):
+    payload = {'email': username, 'password': password}
+    r = requests.post(url+'/user/token/', data=payload).json()
+    if('token' in r.keys()):
+        connection['token'] = r['token']
+        connection['url'] = url
+        connection['headers'] = {
+            'Authorization': 'token ' + r['token']}
+        click.echo("Login successful!")
+    else:
+        click.echo(f"Login failed!\n{r.json()}")
+
+
+cli.add_command(login)
 cmd_tree_builder(extract_api_tree())
 
 
