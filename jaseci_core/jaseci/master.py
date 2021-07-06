@@ -11,8 +11,8 @@ from inspect import getdoc
 from jaseci.element import element
 
 from jaseci.utils.utils import logger, app_logger
-from jaseci.utils.utils import connect_logger_logstash_check
-from jaseci.utils.utils import is_jsonable, connect_logger_logstash
+from jaseci.utils.utils import connect_http_logging_check
+from jaseci.utils.utils import is_jsonable, connect_http_logging
 from jaseci.api.legacy import legacy_api
 from jaseci.api.alias import alias_api
 from jaseci.api.graph import graph_api
@@ -47,33 +47,36 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api,
         sentinel_api.destroy(self)
         super().destroy()
 
-    def check_logger_logstash(self):
+    def check_http_logging(self):
         """
         Checks for connection between logger and logstash if configured
         """
-        if(self._h.has_cfg('LOGSTASH_HOST') or
-           self._h.has_cfg('LOGSTASH_PORT')):
-            return connect_logger_logstash_check(logger) and \
-                connect_logger_logstash_check(app_logger)
+        if(self._h.has_cfg('HTTP_LOGGING_HOST') or
+           self._h.has_cfg('HTTP_LOGGING_PORT')):
+            return connect_http_logging_check(logger) and \
+                connect_http_logging_check(app_logger)
         return True
 
-    def reconnect_logger_logstash(self):
+    def reconnect_http_logging(self):
         """
         Connect logger to logstash
         """
-        host = self._h.resolve_cfg('LOGSTASH_HOST', 'localhost')
-        port = int(self._h.resolve_cfg('LOGSTASH_PORT', 8080))
-        connect_logger_logstash(logger, host, port)
-        connect_logger_logstash(app_logger, host, port)
+        host = self._h.resolve_cfg('HTTP_LOGGING_HOST', 'localhost')
+        port = int(self._h.resolve_cfg('HTTP_LOGGING_PORT', 8080))
+        connect_http_logging(logger, host, port)
+        connect_http_logging(app_logger, host, port)
 
-    def api_checklogstash(self):
+    def admin_api_check_loggers(self):
         """
-        Check ls
+        Check active loggers
         """
-        ls = []
-        for i in logger.handlers + app_logger.handlers:
-            ls.append(str(type(i)))
-        return ls
+        core = []
+        app = []
+        for i in logger.handlers:
+            core.append(str(type(i)))
+        for i in app_logger.handlers:
+            app.append(str(type(i)))
+        return {'core': core, 'app': app}
 
     def general_interface_to_api(self, params, api_name):
         """
@@ -82,8 +85,8 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api,
             params is a dictionary of parameter names and values in UUID
             api_name is the name of the api being mapped to
         """
-        if(not self.check_logger_logstash()):
-            self.reconnect_logger_logstash()
+        if(not self.check_http_logging()):
+            self.reconnect_http_logging()
         param_map = {}
         if (not hasattr(self, api_name)):
             logger.error(f'{api_name} not a valid API')

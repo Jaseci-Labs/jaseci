@@ -8,6 +8,7 @@ import os.path
 import pickle
 import functools
 import json
+import requests
 from inspect import signature
 
 from jaseci.utils.mem_hook import mem_hook
@@ -19,6 +20,8 @@ session = {
     "master": master_class(h=mem_hook()),
     "mem-only": False
 }
+
+connection = {'url': None, 'token': None}
 
 
 def blank_func():
@@ -41,6 +44,19 @@ def cli(filename, mem_only):
         session['master'] = pickle.load(open(filename, 'rb'))
 
 
+@click.command()
+@click.argument("url", type=str, required=True)
+@click.option('--username', '-u', required=True, prompt=True,
+              help="Username to be used for login.")
+@click.password_option(help="Password to be used for login.",
+                       confirmation_prompt=False)
+def login(url, username, password):
+    click.echo(f"{requests.post(url, data = {})}")
+
+
+cli.add_command(login)
+
+
 def interface_api(api_name, **kwargs):
     """
     Interfaces Master apis after processing arguments/parameters
@@ -51,11 +67,11 @@ def interface_api(api_name, **kwargs):
             with open(kwargs['code'], 'r') as file:
                 kwargs['code'] = file.read()
         else:
-            print(f"Code file {kwargs['code']} not found!")
+            click.echo(f"Code file {kwargs['code']} not found!")
             return
     if('ctx' in kwargs):
         kwargs['ctx'] = json.loads(kwargs['ctx'])
-    print(json.dumps(
+    click.echo(json.dumps(
         session['master'].general_interface_to_api(kwargs, api_name), indent=2
     ))
     if not session['mem-only']:

@@ -6,10 +6,10 @@ import uuid
 import importlib
 import pkgutil
 import logging
+from logging.handlers import HTTPHandler
 import types
 import json
 import functools
-import logstash
 from time import time
 from datetime import datetime
 
@@ -18,25 +18,25 @@ from datetime import datetime
 def connect_logger_handler(target_logger, handler):
     """Attaches standard formatting and adds handler to logger"""
     target_logger.setLevel(logging.INFO)
-    # handler.setFormatter(
-    #     logging.Formatter(
-    #         '%(asctime)s - %(levelname)s - %(funcName)s: %(message)s')
-    # )
+    handler.setFormatter(
+        logging.Formatter(
+            '%(asctime)s - %(levelname)s - %(funcName)s: %(message)s')
+    )
     target_logger.addHandler(handler)
 
 
-def connect_logger_logstash(target_logger, host, port=5959):
+def connect_http_logging(target_logger, host, port=5959):
     for i in target_logger.handlers:
-        if(i.__class__.__name__ == 'TCPLogstashHandler'):
+        if(i.__class__.__name__ == 'HTTPHandler'):
             target_logger.removeHandler(i)
 
     connect_logger_handler(
-        target_logger, logstash.TCPLogstashHandler(host, port, version=1))
+        target_logger, HTTPHandler(f'{host}:{port}'))
 
 
-def connect_logger_logstash_check(target_logger):
+def connect_http_logging_check(target_logger):
     for i in target_logger.handlers:
-        if(i.__class__.__name__ == 'TCPLogstashHandler'):
+        if(i.__class__.__name__ == 'HTTPHandler'):
             return True
     return False
 

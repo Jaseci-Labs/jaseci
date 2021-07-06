@@ -9,8 +9,8 @@ VALID_CONFIGS = ['EMAIL_BACKEND',
                  'EMAIL_HOST_PASSWORD',
                  'EMAIL_PORT',
                  'EMAIL_DEFAULT_FROM',
-                 'LOGSTASH_HOST',
-                 'LOGSTASH_PORT',
+                 'HTTP_LOGGING_HOST',
+                 'HTTP_LOGGING_PORT',
                  ]
 
 
@@ -34,8 +34,8 @@ class config_api():
             return [
                 f"Config {name} not recognized, must be in {VALID_CONFIGS}!"]
         self._h.save_cfg(name, value)
-        if(name.startswith('LOGSTASH')):
-            self.reconnect_logger_logstash()
+        if(name.startswith('HTTP_LOGGING')):
+            self.reconnect_http_logging()
         return [f"Config of '{name}' to '{value}' set!"]
 
     def admin_api_config_list(self):
