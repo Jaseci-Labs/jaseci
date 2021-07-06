@@ -10,7 +10,7 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.call("load app -name zsb -code jaseci/jsctl/tests/zsb.jac")
+        self.call("app load -name zsb -code jaseci/jsctl/tests/zsb.jac")
 
     def call(self, cmd):
         runner = CliRunner()

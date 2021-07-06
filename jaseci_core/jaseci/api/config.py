@@ -9,7 +9,7 @@ VALID_CONFIGS = ['EMAIL_BACKEND',
                  'EMAIL_HOST_PASSWORD',
                  'EMAIL_PORT',
                  'LOGSTASH_HOST',
-                 'LOGSTASH_PORT'
+                 'LOGSTASH_PORT',
                  ]
 
 
@@ -31,7 +31,7 @@ class config_api():
         """
         if(do_check and name not in VALID_CONFIGS):
             return [
-                f"This config {name} not valid, must be in {VALID_CONFIGS}!"]
+                f"Config {name} not recognized, must be in {VALID_CONFIGS}!"]
         self._h.save_cfg(name, value)
         if(name.startswith('LOGSTASH')):
             self.reconnect_logger_logstash()

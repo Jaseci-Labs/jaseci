@@ -16,11 +16,11 @@ class app_api():
         snt = self.sentinel_ids.get_obj_by_name(name, True)
         gph = self.graph_ids.get_obj_by_name(name, True)
         if (not snt):
-            self.api_create_sentinel(name)
+            self.api_sentinel_create(name)
             snt = self.sentinel_ids.get_obj_by_name(name)
         if (not gph):
             self.api_create_graph(name)
             gph = self.graph_ids.get_obj_by_name(name)
-        self.api_set_jac(snt, code, encoded)
+        self.api_sentinel_code_set(snt, code, encoded)
         return {'sentinel': snt.id.urn, 'graph': gph.id.urn,
                 'active': snt.is_active}

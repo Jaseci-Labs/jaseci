@@ -20,7 +20,7 @@ class walker_api():
             walks.append(i.serialize(detailed=detailed))
         return walks
 
-    def api_spawn_walker(self, snt: sentinel, name: str):
+    def api_walker_spawn(self, snt: sentinel, name: str):
         """
         Creates new instance of walker and returns new walker object
         """
@@ -30,7 +30,7 @@ class walker_api():
         else:
             return [f'Walker not found!']
 
-    def api_unspawn(self, wlk: walker):
+    def api_walker_unspawn(self, wlk: walker):
         """
         Delete instance of walker (not implemented yet)
         """

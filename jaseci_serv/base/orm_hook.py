@@ -1,6 +1,8 @@
 """
 This module includes code related to hooking Jaseci's django models to the
 core engine.
+
+FIX: Serious permissions work needed
 """
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -44,7 +46,9 @@ class orm_hook(mem_hook):
             return ret_obj
         else:
             try:
-                loaded_obj = self.objects.get(user=self.user, jid=item_id)
+                loaded_obj = self.objects.get(
+                    user=self.user,
+                    jid=item_id)
             except ObjectDoesNotExist:
                 logger.error(
                     str(f"Object {item_id} does not exist in Django ORM!"),
