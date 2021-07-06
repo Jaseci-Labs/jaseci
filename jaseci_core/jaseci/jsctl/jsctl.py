@@ -21,7 +21,7 @@ session = {
     "mem-only": False
 }
 
-connection = {'url': None, 'token': None}
+connection = {'url': None, 'token': None, 'header': None}
 
 
 def blank_func():
@@ -51,7 +51,16 @@ def cli(filename, mem_only):
 @click.password_option(help="Password to be used for login.",
                        confirmation_prompt=False)
 def login(url, username, password):
-    click.echo(f"{requests.post(url, data = {})}")
+    payload = {'email': username, 'password': password}
+    r = requests.post(url+'/user/token/', data=payload).json()
+    if('token' in r.keys()):
+        connection['token'] = r['token']
+        connection['url'] = url
+        connection['header'] = {
+            'Authorization': 'token ' + r['token']}
+        click.echo("Login successful!")
+    else:
+        click.echo(f"Login failed!\n{r.json()}")
 
 
 cli.add_command(login)
