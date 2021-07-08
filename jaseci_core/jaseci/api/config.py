@@ -10,8 +10,8 @@ VALID_CONFIGS = ['EMAIL_BACKEND',
                  'EMAIL_PORT',
                  'EMAIL_DEFAULT_FROM',
                  'HTTP_LOGGING_HOST',
-                 'HTTP_LOGGING_URL',
                  'HTTP_LOGGING_PORT',
+                 'HTTP_LOGGING_URL',
                  ]
 
 

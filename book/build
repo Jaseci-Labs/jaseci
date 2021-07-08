@@ -1,6 +1,0 @@
-# latexmk -synctex=1 -interaction=nonstopmode -file-line-error -pdf main
-lualatex main
-biber main
-lualatex main
-lualatex main
-source clean
