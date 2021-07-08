@@ -31,7 +31,8 @@ def connect_http_logging(target_logger, host, port, url):
             target_logger.removeHandler(i)
 
     connect_logger_handler(
-        target_logger, HTTPHandler(host=f'{host}:{port}', url=url))
+        target_logger, HTTPHandler(host=f'{host}:{port}',
+                                   url=url, method='POST'))
 
 
 def connect_http_logging_check(target_logger):
