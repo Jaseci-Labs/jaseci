@@ -159,6 +159,7 @@ def cmd_tree_builder(location, group_func=cli, cmd_str=''):
 @click.password_option(help="Password to be used for login.",
                        confirmation_prompt=False)
 def login(url, username, password):
+    url = url[:-1] if url[-1] == '/' else url
     payload = {'email': username, 'password': password}
     r = requests.post(url+'/user/token/', data=payload).json()
     if('token' in r.keys()):

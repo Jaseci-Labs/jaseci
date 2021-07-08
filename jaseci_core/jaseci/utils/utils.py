@@ -25,13 +25,13 @@ def connect_logger_handler(target_logger, handler):
     target_logger.addHandler(handler)
 
 
-def connect_http_logging(target_logger, host, port=5959):
+def connect_http_logging(target_logger, host, port, url):
     for i in target_logger.handlers:
         if(i.__class__.__name__ == 'HTTPHandler'):
             target_logger.removeHandler(i)
 
     connect_logger_handler(
-        target_logger, HTTPHandler(f'{host}:{port}'))
+        target_logger, HTTPHandler(host=f'{host}:{port}', url=url))
 
 
 def connect_http_logging_check(target_logger):

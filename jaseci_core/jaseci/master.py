@@ -61,10 +61,11 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api,
         """
         Connect logger to logstash
         """
+        url = self._h.resolve_cfg('HTTP_LOGGING_URL', '/')
         host = self._h.resolve_cfg('HTTP_LOGGING_HOST', 'localhost')
         port = int(self._h.resolve_cfg('HTTP_LOGGING_PORT', 8080))
-        connect_http_logging(logger, host, port)
-        connect_http_logging(app_logger, host, port)
+        connect_http_logging(logger, host, port, url)
+        connect_http_logging(app_logger, host, port, url)
 
     def admin_api_check_loggers(self):
         """

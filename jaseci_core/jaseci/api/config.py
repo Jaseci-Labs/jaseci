@@ -10,6 +10,7 @@ VALID_CONFIGS = ['EMAIL_BACKEND',
                  'EMAIL_PORT',
                  'EMAIL_DEFAULT_FROM',
                  'HTTP_LOGGING_HOST',
+                 'HTTP_LOGGING_URL',
                  'HTTP_LOGGING_PORT',
                  ]
 
@@ -54,4 +55,5 @@ class config_api():
         """
         Delete a config
         """
-        return self._h.destroy_cfg(name)
+        self._h.destroy_cfg(name)
+        return [f"{name} Deleted."]
