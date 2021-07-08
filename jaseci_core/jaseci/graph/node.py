@@ -11,6 +11,7 @@ from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
 
 import copy
+import uuid
 
 
 class node(element, anchored):
@@ -426,19 +427,28 @@ class node(element, anchored):
         """
         # _n_name is a reserved key for node name. Note that this is
         # different than the name you could set in context
-        dstr = self.__str__()
-        dstr += f'[_n_name_={self.name}, kind={self.kind}'
-        num_items = 0
-        for k, v in self.context.items():
-            if (num_items == 0):
-                dstr += ', '
-            else:
-                dstr += ' '
-            dstr += f'{k}={v}'
+        dstr = uuid.UUID(self.jid).hex+' '
 
-            num_items += 1
-            if (num_items < len(self.context)):
-                dstr += ','
-        dstr += ']'
+        node_dict = self.context
+        if (self.kind != 'generic'):
+            node_dict['_kind_'] = self.kind
+        if (self.name != 'basic'):
+            node_dict['_name_'] = self.name
 
-        return dstr
+        if (node_dict):
+            dstr += '['
+            num_items = 0
+            for k, v in node_dict.items():
+                if(v is None or v == ""):
+                    num_items += 1
+                    continue
+                if (num_items != 0):
+                    dstr += ' '
+                dstr += f'{k}={v}'
+
+                num_items += 1
+                if (num_items < len(node_dict)):
+                    dstr += ','
+            dstr += ']'
+
+        return dstr+'\n'

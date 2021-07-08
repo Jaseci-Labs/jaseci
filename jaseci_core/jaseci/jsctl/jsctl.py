@@ -80,7 +80,8 @@ def interface_api(api_name, **kwargs):
         ))
     else:
         click.echo(json.dumps(
-            session['master'].general_interface_to_api(kwargs, api_name), indent=2
+            session['master'].general_interface_to_api(kwargs, api_name),
+            indent=2
         ))
     if not session['mem-only']:
         pickle.dump(session['master'], open(session['filename'], 'wb'))
