@@ -178,3 +178,51 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test preset function loading"""
         from jaseci.actions.global_actions import global_action_ids
         self.assertTrue(global_action_ids.has_obj_by_name('std.log'))
+
+    def test_multiple_edged_between_nodes_work(self):
+        """Test that multiple edges between the same two nodes are allowed"""
+        self.logger_on()
+        gph = graph(h=mem_hook())
+        sent = sentinel(h=gph._h)
+        sent.register_code(jtc.edgey)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        print(gph.get_network_paths())
+
+    def test_multiple_edged_between_nodes_delete_all(self):
+        """Test that multiple edges deleted correctly if delete all"""
+        self.logger_on()
+        gph = graph(h=mem_hook())
+        sent = sentinel(h=gph._h)
+        sent.register_code(jtc.edgey2)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        print(gph.get_network_paths())
+
+    def test_multiple_edged_between_nodes_delete_filtered(self):
+        """Test that multiple edges deleted correctly if delete filtered"""
+        self.logger_on()
+        gph = graph(h=mem_hook())
+        sent = sentinel(h=gph._h)
+        sent.register_code(jtc.edgey3)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        print(gph.get_network_paths())
+
+    def test_generic_can_be_used_to_specify_generic_edges(self):
+        """Test that generic edge tag works"""
+        self.logger_on()
+        gph = graph(h=mem_hook())
+        sent = sentinel(h=gph._h)
+        sent.register_code(jtc.edgey4)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        print(gph.get_network_paths())

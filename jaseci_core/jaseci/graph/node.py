@@ -36,13 +36,13 @@ class node(element, anchored):
         If edge already exists, this function logs a warning and returns the
         edge anyway.
         """
-        # check if connection already exists
-        if(self.is_attached_out(node_obj)):
-            logger.warning(
-                str("{} node already is connected to {} node".
-                    format(self, node_obj))
-            )
-            return self.outbound_edge(node_obj)
+        # # check if connection already exists
+        # if(self.is_attached_out(node_obj)):
+        #     logger.warning(
+        #         str("{} node already is connected to {} node".
+        #             format(self, node_obj))
+        #     )
+        #     return self.outbound_edge(node_obj)
         # create edge
         if(not use_edge):
             use_edge = edge(h=self._h)
@@ -64,13 +64,13 @@ class node(element, anchored):
         If edge already exists, this function logs a warning and returns the
         edge anyway.
         """
-        # check if connection already exists
-        if(self.is_attached_in(node_obj)):
-            logger.warning(
-                str("{} already has connection from {}".
-                    format(self, node_obj))
-            )
-            return self.inbound_edge(node_obj)
+        # # check if connection already exists
+        # if(self.is_attached_in(node_obj)):
+        #     logger.warning(
+        #         str("{} already has connection from {}".
+        #             format(self, node_obj))
+        #     )
+        #     return self.inbound_edge(node_obj)
         # create edge (check for matching dims at edge class)
         if(not use_edge):
             use_edge = edge(h=self._h)
@@ -85,14 +85,14 @@ class node(element, anchored):
         node_obj.save()
         return use_edge
 
-    def detach_outbound(self, node_obj):
+    def detach_outbound(self, node_obj, edge_set=None):
         """
         Destroy edge to a node
 
         If edge already exists, this function logs an error.
         """
         # validate connection already exists
-        if(not self.is_attached_out(node_obj)):
+        if(not self.is_attached_out(node_obj, edge_set)):
             logger.error(
                 str("{} already is not connected to {}".
                     format(self, node_obj))
