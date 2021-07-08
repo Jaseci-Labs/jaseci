@@ -175,7 +175,7 @@ class architype_machine(machine):
             kid = kid[1:]
         if (kid[0].name == 'KW_GRAPH'):
             graph_state['digraph'] = False
-            kid = kid[1:]
+        kid = kid[1:]
         if (kid[0].name == 'dot_id'):
             kid = kid[1:]
         self.run_dot_stmt_list(kid[1], graph_state)
