@@ -94,25 +94,30 @@ class edge(element, anchored):
         DOT representation
         from_node -> to_node [context_key=contect_value]
         """
-        dstr = ''
-
-        dstr += f'{self.from_node().__str__()} -> {self.to_node().__str__()}'
+        from_name = uuid.UUID(self.from_node().jid).hex
+        to_name = uuid.UUID(self.to_node().jid).hex
+        dstr = f'{from_name} -> {to_name} '
 
         edge_dict = self.context
         if (self.kind != 'generic'):
-            edge_dict['kind'] = self.kind
+            edge_dict['_kind_'] = self.kind
+        if (self.name != 'basic'):
+            edge_dict['_name_'] = self.name
 
         if (edge_dict):
             dstr += '['
             num_items = 0
             for k, v in edge_dict.items():
+                if(v is None or v == ""):
+                    num_items += 1
+                    continue
                 if (num_items != 0):
                     dstr += ' '
                 dstr += f'{k}={v}'
 
                 num_items += 1
-                if (num_items != len(edge_dict)):
+                if (num_items < len(edge_dict)):
                     dstr += ','
             dstr += ']'
 
-        return dstr
+        return dstr+'\n'

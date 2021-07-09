@@ -27,14 +27,14 @@ class graph(node):
         NOTE: This is different from the dot_str method for node intentionally
         because graph inherits node.
         """
-        node_list = self.get_network_nodes()
+        # node_list = self.get_network_nodes()
         edge_list = self.get_network_paths()
 
         # Construct the graph string
         dstr = ''
         dstr += f'strict digraph {self.name} {{'
-        for n in node_list:
-            dstr += f'    {n.dot_str()}'
+        # for n in node_list:
+        #     dstr += f'    {n.dot_str()}'
         for e_list in edge_list:
             for e in e_list:
                 dstr += f'    {e.dot_str()}'
