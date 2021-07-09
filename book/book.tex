@@ -1,6 +1,8 @@
 
 \documentclass{book}
 \usepackage[utf8]{inputenc}
+\usepackage{subcaption}
+\usepackage{graphicx}
 \usepackage[toc]{glossaries}
 \newglossary[tlg]{technical}{tld}{tdn}{Techinical Terms}
 \makeglossaries
@@ -64,6 +66,46 @@ For the former question, I counter with two points. First, the core design of a 
 \paragraph{}
 For the latter question, I'd respond, ``Have you SEEN the kind of abstractions in modern languages!?!? It's rediculous, lets look at python dictionaries, actually scratch that, lets keep it simple and look at dynamic typing in general. The runtime complexity to support dynamic typing is most certainly hgiher than a graph abstraction. Duh right back at'ya!''
 \subsection{Yes, But What Kind of Graphs}
+\begin{figure}
+    \begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=.8\linewidth]{assets/images/Undirected.svg.pdf}
+        \caption{1a}
+        \label{fig:sfig1}
+    \end{subfigure}%
+    \begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=.8\linewidth]{assets/images/Directed.svg.pdf}
+        \caption{1b}
+        \label{fig:sfig2}
+    \end{subfigure}
+    \begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=.8\linewidth]{assets/images/6n-graf.svg.pdf}
+        \caption{1a}
+        \label{fig:sfig1}
+    \end{subfigure}%
+    \begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=.8\linewidth]{assets/images/Multi-pseudograph.svg.pdf}
+        \caption{1b}
+        \label{fig:sfig2}
+    \end{subfigure}
+    \begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=.8\linewidth]{assets/images/Hypergraph-wikipedia.svg.pdf}
+        \caption{1a}
+        \label{fig:sfig1}
+    \end{subfigure}%
+    \begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=.8\linewidth]{assets/images/6n-graf.svg.pdf}
+        \caption{1b}
+        \label{fig:sfig2}
+    \end{subfigure}
+    \caption{plots of....}
+    \label{fig:fig}
+\end{figure}
 There are many categories of graphs to consider when thinking about the abstraction to add to Jaseci. There are \gls{directed graphs}, \gls{undirected graphs}, \gls{multigraphs}, non-multigraphs, \gls{hypergraphs}, and any combination of the lot.
 \subsection{Nodes}
 \subsection{Edges}
@@ -111,7 +153,7 @@ Fine, I'll tell you.
 \end{enumerate}
 Don't get me wrong, we have to use libraries. I'm not saying go reimplement the wheel 15 thousand times over. But that doesn't mean they don't suck and should be avoided if possible. The best is to know your library inside and out so the moment you hit some suckitude you can pull in the library's source code into your own codebase and \gls{pwn} it as your own.
 
-\include{glossary.tex}
+\input{glossary.tex}
 
 \bibliographystyle{plain}
 \bibliography{book}
