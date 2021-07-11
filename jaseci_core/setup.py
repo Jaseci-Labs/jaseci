@@ -5,9 +5,10 @@ setup(
     packages=find_packages(include=['jaseci', 'jaseci.*']),
     install_requires=[
         'click>=7.1.0,<7.2.0', 'click-shell>=2.0,<3.0',
-        'numpy >= 1.19.5, < 1.20.0',
+        'numpy >= 1.21.0, < 1.22.0',
         'antlr4-python3-runtime>=4.9.0,<4.10.0',
         'pydot>=1.4.2<1.5.0',
+        'requests',
         'flake8',
     ],
     package_data={"": ["*.ini"], },
