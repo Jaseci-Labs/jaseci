@@ -67,10 +67,21 @@ For the former question, I counter with two points. First, the core design of a 
 \paragraph{}
 For the latter question, I'd respond, ``Have you SEEN the kind of abstractions in modern languages!?!? It's rediculous, lets look at python dictionaries, actually scratch that, lets keep it simple and look at dynamic typing in general. The runtime complexity to support dynamic typing is most certainly hgiher than a graph abstraction. Duh right back at'ya!''
 \subsection{Yes, But What Kind of Graphs}
-
 \printfigTypes
+There are many categories of graphs to consider when thinking about the abstractions to add to Jaseci. There are rules to be defined as to the availabe semantics of the graphs. Should all graphs be \gls{directed graphs}, should we allow the creation of \gls{undirected graphs}, what about parallel edges or \gls{multigraphs}, are those explicitly expressible, can we express \gls{hypergraphs}, and what combination of these graphical sematics can be manifested and manipulated through the programming model. At this point I can feel your eyes getting droopy and your mind moving into that intermediary state between concious and sleeping, so let me cut to the answer.
+\paragraph{}
+In Jaseci, we elect to assume the following semantics:
+\begin{enumerate}
+    \item Graphs are directed with a special case of a doubly directed edge type (which can be utilized practically as an undirected edge).
+    \item Both nodes and edges have their own distinct identities (i,e. an edge isn't representable as a pairing of two nodes). This point is important as both nodes and edges can have a context.
+    \item Multigraphs (i.e., parallel edges) are allowed, including self-loop edges.
+    \item No hypergraphs as I wouldn't want my programmers heads to explode.
+    \item As an aside, I would describe Jaseci graphs as strictly directed multigraphs  for which that leverages the semantics of parallel edges to create a laymans `undirected edge' by shorthanding two directed edges pointed in opposite directions between the same two nodes.
+\end{enumerate}
+[NERD ALERT] I'd formally describe a Jaseci Graph as,
+[END NERD ALERT]
 
-There are many categories of graphs to consider when thinking about the abstraction to add to Jaseci. There are \gls{directed graphs}, \gls{undirected graphs}, \gls{multigraphs}, non-multigraphs, \gls{hypergraphs}, and any combination of the lot.
+\subsection{Contexts}
 \subsection{Nodes}
 \subsection{Edges}
 
