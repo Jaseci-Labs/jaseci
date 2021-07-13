@@ -4,6 +4,7 @@ Edge class for Jaseci
 Each edge has an id, name, timestamp, the from node at the element of the edge
 and the to node it is pointing to.
 """
+from logging import fatal
 from jaseci.element import element
 from jaseci.utils.obj_mixins import anchored
 from jaseci.utils.id_list import id_list
@@ -17,6 +18,7 @@ class edge(element, anchored):
     def __init__(self, from_node=None, to_node=None, *args, **kwargs):
         self.from_node_id = None
         self.to_node_id = None
+        self.bidirected: bool = False
         self.context = {}
         self.activity_action_ids = id_list(self)
         super().__init__(*args, **kwargs)
@@ -32,7 +34,7 @@ class edge(element, anchored):
         ret = self._h.get_obj(uuid.UUID(self.from_node_id))
         if (not ret):
             logger.critical(
-                str("{} disconnected from node".format(self))
+                str(f"{self} disconnected from node")
             )
             element.destroy(self)
         else:
@@ -45,7 +47,7 @@ class edge(element, anchored):
         ret = self._h.get_obj(uuid.UUID(self.to_node_id))
         if (not ret):
             logger.critical(
-                str("{} disconnected to node".format(self))
+                str(f"{self} disconnected to node")
             )
             element.destroy(self)
         else:
@@ -69,11 +71,31 @@ class edge(element, anchored):
         self.to_node_id = node_obj.id.urn
         self.save()
 
-    def switch_direction(self):
-        """
-        Switches direction of edge, does not allow if such an edge
-        already exists
-        """
+    def set_bidirected(self, bidirected: bool):
+        """Sets/unsets edge to be bidirected"""
+        self.bidirected = bidirected
+
+    def is_bidirected(self):
+        """Check if edge is bidirected"""
+        return self.bidirected
+
+    def connects(self, source=None, target=None):
+        """Test if a node or nodes are connected by edge"""
+        if(not source and not target):
+            return False
+        if(self.bidirected):
+            if(source and source.id.urn not in
+               [self.from_node_id, self.to_node_id]):
+                return False
+            if(target and target.id.urn not in
+               [self.from_node_id, self.to_node_id]):
+                return False
+        else:
+            if(source and source.id.urn != self.from_node_id):
+                return False
+            if(target and target.id.urn != self.to_node_id):
+                return False
+        return True
 
     def destroy(self):
         """
@@ -96,7 +118,8 @@ class edge(element, anchored):
         """
         from_name = uuid.UUID(self.from_node().jid).hex
         to_name = uuid.UUID(self.to_node().jid).hex
-        dstr = f'{from_name} -> {to_name} '
+        arrow = '--' if self.bidirected else '->'
+        dstr = f'{from_name} {arrow} {to_name} '
 
         edge_dict = self.context
         if (self.kind != 'generic'):

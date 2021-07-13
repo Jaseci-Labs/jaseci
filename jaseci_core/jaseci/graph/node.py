@@ -29,230 +29,285 @@ class node(element, anchored):
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
 
-    def attach_outbound(self, node_obj, use_edge=None):
+    def attach_outbound(self, node_obj, edge_set: list = []):
         """
         Creates edge to a node and returns the edge
-
-        If edge already exists, this function logs a warning and returns the
-        edge anyway.
+        edge_set is the list of edges to be used to make connections
+        new edge is created if edge_set is empty
         """
-        # # check if connection already exists
-        # if(self.is_attached_out(node_obj)):
-        #     logger.warning(
-        #         str("{} node already is connected to {} node".
-        #             format(self, node_obj))
-        #     )
-        #     return self.outbound_edge(node_obj)
-        # create edge
-        if(not use_edge):
-            use_edge = edge(h=self._h)
-        use_edge.set_from_node(self)
-        use_edge.set_to_node(node_obj)
-        # add edge to nodes
-        self.edge_ids.add_obj(use_edge)
-        if(self is not node_obj):
-            node_obj.edge_ids.add_obj(use_edge)
-        # save and return
+        if(not len(edge_set)):
+            edge_set.append(edge(h=self._h))
+        for e in edge_set:
+            e.set_from_node(self)
+            e.set_to_node(node_obj)
+            e.set_bidirected(False)
+            # add edge to nodes
+            self.edge_ids.add_obj(e)
+            if(self is not node_obj):
+                node_obj.edge_ids.add_obj(e)
+            # save and return
         self.save()
         node_obj.save()
-        return use_edge
+        return edge_set
 
-    def attach_inbound(self, node_obj, use_edge=None):
+    def attach_inbound(self, node_obj, edge_set: list = []):
         """
         Creates edge from a node and returns the edge
-
-        If edge already exists, this function logs a warning and returns the
-        edge anyway.
+        edge_set is the list of edges to be used to make connections
+        new edge is created if edge_set is empty
         """
-        # # check if connection already exists
-        # if(self.is_attached_in(node_obj)):
-        #     logger.warning(
-        #         str("{} already has connection from {}".
-        #             format(self, node_obj))
-        #     )
-        #     return self.inbound_edge(node_obj)
-        # create edge (check for matching dims at edge class)
-        if(not use_edge):
-            use_edge = edge(h=self._h)
-        use_edge.set_from_node(node_obj)
-        use_edge.set_to_node(self)
-        # add edge to nodes
-        self.edge_ids.add_obj(use_edge)
-        if(self is not node_obj):
-            node_obj.edge_ids.add_obj(use_edge)
-        # save and return
+        if(not len(edge_set)):
+            edge_set.append(edge(h=self._h))
+        for e in edge_set:
+            e.set_from_node(node_obj)
+            e.set_to_node(self)
+            e.set_bidirected(False)
+            # add edge to nodes
+            self.edge_ids.add_obj(e)
+            if(self is not node_obj):
+                node_obj.edge_ids.add_obj(e)
+            # save and return
         self.save()
         node_obj.save()
-        return use_edge
+        return edge_set
 
-    def detach_outbound(self, node_obj, edge_set=None):
+    def attach_bidirected(self, node_obj, edge_set: list = []):
         """
-        Destroy edge to a node
-
-        If edge already exists, this function logs an error.
+        Creates bidirected edge to node returns the edge
+        edge_set is the list of edges to be used to make connections
+        new edge is created if edge_set is empty
         """
-        # validate connection already exists
-        if(not self.is_attached_out(node_obj, edge_set)):
-            logger.error(
-                str("{} already is not connected to {}".
-                    format(self, node_obj))
-            )
-            return
-        target = self.outbound_edge(node_obj)
-        # remove edge from nodes
-        self.edge_ids.remove_obj(target)
-        if(self is not node_obj):
-            node_obj.edge_ids.remove_obj(target)
-        # destroy edge
-        target.destroy()
+        if(not len(edge_set)):
+            edge_set.append(edge(h=self._h))
+        for e in edge_set:
+            e.set_from_node(self)
+            e.set_to_node(node_obj)
+            e.set_bidirected(True)
+            # add edge to nodes
+            self.edge_ids.add_obj(e)
+            if(self is not node_obj):
+                node_obj.edge_ids.add_obj(e)
+            # save and return
+        self.save()
+        node_obj.save()
+        return edge_set
 
-    def detach_inbound(self, node_obj):
+    def detach_outbound(self, node_obj, edge_set: list = []):
         """
-        Destroy edge from a node
-
-        If edge already exists, this function logs an error.
+        Destroy edges to a node
+        edge_set is the list of edges to be detached (and distroyed)
+        all edges are deteached and destroyed if edge_set empty
+        returns number of detachments
         """
-        # validate connection already exists
-        if(not self.is_attached_in(node_obj)):
-            logger.warning(
-                str("{} already is not connected from {}".
-                    format(self, node_obj))
-            )
-            return
-        target = self.inbound_edge(node_obj)
-        # remove edge from nodes
-        self.edge_ids.remove_obj(target)
-        if(self is not node_obj):
-            node_obj.edge_ids.remove_obj(target)
-        # destroy edge
-        target.destroy()
+        if(not len(edge_set)):
+            edge_set = self.outbound_edges(node_obj)
+        num_detached = 0
+        for e in edge_set:
+            # validate edge connection exists
+            if(not e.connects(self, node_obj)):
+                logger.error(
+                    str(f"{e} does not connect {self} to {node_obj}")
+                )
+                continue
+            # remove edge from nodes
+            num_detached += 1
+            self.edge_ids.remove_obj(e)
+            if(self is not node_obj):
+                node_obj.edge_ids.remove_obj(e)
+            # destroy edge
+            e.destroy()
+        return num_detached
 
-    def destroy_outbound(self, node_obj):
+    def detach_inbound(self, node_obj, edge_set: list = []):
         """
-        Destroy edge and node
-
-        If edge already exists, this function logs an error.
+        Destroy edges from a node
+        edge_set is the list of edges to be detached (and distroyed)
+        all edges are deteached and destroyed if edge_set empty
+        returns number of detachments
         """
-        self.detach_outbound(node_obj)
-        node_obj.destroy()
+        if(not len(edge_set)):
+            edge_set = self.inbound_edges(node_obj)
+        num_detached = 0
+        for e in edge_set:
+            # validate edge connection exists
+            if(not e.connects(node_obj, self)):
+                logger.error(
+                    str(f"{e} does not connect {node_obj} to {self}")
+                )
+                continue
+            # remove edge from nodes
+            num_detached += 1
+            self.edge_ids.remove_obj(e)
+            if(self is not node_obj):
+                node_obj.edge_ids.remove_obj(e)
+            # destroy edge
+            e.destroy()
+        return num_detached
 
-    def destroy_inbound(self, node_obj):
+    def detach_bidirected(self, node_obj, edge_set: list = []):
         """
-        Destroy edge and node
-
-        If edge already exists, this function logs an error.
+        Destroy bidirected edges between nodes
+        edge_set is the list of edges to be detached (and distroyed)
+        all edges are deteached and destroyed if edge_set empty
+        returns number of detachments
         """
-        self.detach_inbound(node_obj)
-        node_obj.destroy()
+        if(not len(edge_set)):
+            edge_set = self.bidirected_edges(node_obj)
+        num_detached = 0
+        for e in edge_set:
+            # validate edge connection exists
+            if(not e.connects(self, node_obj) and e.is_bidirected()):
+                logger.error(
+                    str(f"{e} does not connect {self} and {node_obj}")
+                )
+                continue
+            # remove edge from nodes
+            num_detached += 1
+            self.edge_ids.remove_obj(e)
+            if(self is not node_obj):
+                node_obj.edge_ids.remove_obj(e)
+            # destroy edge
+            e.destroy()
+        return num_detached
 
-    def is_attached_out(self, node_obj):
-        """Tests whether edge exists to a node"""
-        return self.outbound_edge(node_obj, silent=True) is not None
-
-    def is_attached_in(self, node_obj):
-        """Tests whether edge exists from a node"""
-        return self.inbound_edge(node_obj, silent=True) is not None
-
-    def is_attached(self, node_obj):
-        """Tests whether edge exists either to or from a node"""
-        return self.is_attached_out(node_obj) or \
-            self.is_attached_in(node_obj)
-
-    def get_edge(self, node_obj, silent=False):
+    def destroy_outbound(self, node_obj, edge_set: list = []):
         """
-        Returns the edge connecting self to or from a node
+        Destroys attached node and all relevant edges
+        Node and all edges are destroyed if edge_set empty
+        """
+        if(not len(edge_set)):
+            edge_set = self.outbound_edges(node_obj)
+        if(self.detach_outbound(node_obj, edge_set)):
+            node_obj.destroy()
+
+    def destroy_inbound(self, node_obj, edge_set: list = []):
+        """
+        Destroys attached node and all relevant edges
+        Node and all edges are destroyed if edge_set empty
+        """
+        if(not len(edge_set)):
+            edge_set = self.inbound_edges(node_obj)
+        if(self.detach_inbound(node_obj, edge_set)):
+            node_obj.destroy()
+
+    def destroy_bidirected(self, node_obj, edge_set: list = []):
+        """
+        Destroys attached node and all relevant edges
+        Node and all edges are destroyed if edge_set empty
+        """
+        if(not len(edge_set)):
+            edge_set = self.bidirected_edges(node_obj)
+        if(self.detach_bidirected(node_obj, edge_set)):
+            node_obj.destroy()
+
+    def is_attached_out(self, node_obj, edge_set: list = []):
+        """
+        Tests whether edges attach to a node
+        """
+        out_set = self.outbound_edges(node_obj, silent=True)
+        if(not len(edge_set)):
+            return out_set is not None
+        else:
+            for e in edge_set:
+                if(e not in out_set):
+                    return False
+        return True
+
+    def is_attached_in(self, node_obj, edge_set: list = []):
+        """
+        Tests whether edges attach from a node
+        """
+        in_set = self.inbound_edges(node_obj, silent=True)
+        if(not len(edge_set)):
+            return in_set is not None
+        else:
+            for e in edge_set:
+                if(e not in in_set):
+                    return False
+        return True
+
+    def is_attached_bi(self, node_obj, edge_set: list = []):
+        """
+        Tests whether edges attach either to or from a node
+        """
+        bi_set = self.bidirected_edges(node_obj, silent=True)
+        if(not len(edge_set)):
+            return bi_set is not None
+        else:
+            for e in edge_set:
+                if(e not in bi_set):
+                    return False
+        return True
+
+    def get_edges(self, node_obj, silent=False):
+        """
+        Returns the edges connecting self to or from a node
 
         silent is used to indicate whther the edge is intened to be used.
         (effectively turns off error checking when false)
         """
-        use_edge = self.outbound_edge(node_obj, silent=True)
-        if(not use_edge):
-            use_edge = self.inbound_edge(node_obj, silent)
-        return use_edge
-
-    def outbound_edge(self, node_obj, silent=False):
-        """
-        Returns the edge connecting self to a node
-
-        silent is used to indicate whther the edge is intened to be used.
-        (effectively turns off error checking when false)
-        """
-        for cur_edge in self.edge_ids.obj_list():
-            if(cur_edge.from_node() == self and
-               cur_edge.to_node() == node_obj):
-                return cur_edge
-        if(not silent):
+        edge_set = self.outbound_edges(node_obj) + \
+            self.inbound_edges(node_obj) + \
+            self.bidirected_edges(node_obj)
+        if(not silent and not len(edge_set)):
             logger.error(
-                str("Edge does not exists from {} to {}!".
-                    format(self, node_obj))
+                str(f"No edges found between {self} and {node_obj}")
             )
-        return None
-
-    def inbound_edge(self, node_obj, silent=False):
-        """
-        Returns the edge connecting self from a node
-
-        silent is used to indicate whther the edge is intened to be used.
-        (effectively turns off error checking when false)
-        """
-        for cur_edge in self.edge_ids.obj_list():
-            if(cur_edge.from_node() == node_obj and
-               cur_edge.to_node() == self):
-                return cur_edge
-        if(not silent):
-            logger.error(
-                str("Edge does not exists from {} to {}!".
-                    format(node_obj, self))
-            )
-        return None
+        return edge_set
 
     def outbound_edges(self):
         """Returns list of all edges out of node"""
         ret_list = []
-        for cur_edge in self.edge_ids.obj_list():
-            if(cur_edge.from_node() == self):
-                ret_list.append(cur_edge)
+        for e in self.edge_ids.obj_list():
+            if(not e.is_bidirected() and e.from_node() == self):
+                ret_list.append(e)
         return ret_list
 
     def inbound_edges(self):
         """Returns list of all edges in to node"""
         ret_list = []
-        for cur_edge in self.edge_ids.obj_list():
-            if(cur_edge.to_node() == self):
-                ret_list.append(cur_edge)
+        for e in self.edge_ids.obj_list():
+            if(not e.is_bidirected() and e.to_node() == self):
+                ret_list.append(e)
         return ret_list
 
-    def attached_edges(self):
-        """Returns list of all edges connected"""
-        return self.outbound_edges() + \
-            self.inbound_edges()
+    def bidirected_edges(self):
+        """Returns list of all edges between nodes"""
+        ret_list = []
+        for e in self.edge_ids.obj_list():
+            if(e.is_bidirected()):
+                ret_list.append(e)
+        return ret_list
 
     def outbound_nodes(self):
         """Returns list of all nodes connected by edges out"""
         ret_list = []
-        for cur_edge in self.edge_ids.obj_list():
-            if (cur_edge.from_node() == self):
-                # TODO: HACK FOR BUG IN JAC's EDGE DISCONNECT
-                if (cur_edge not in cur_edge.to_node().edge_ids.obj_list()):
-                    continue
-                ret_list.append(cur_edge.to_node())
+        for e in self.edge_ids.obj_list():
+            if (not e.is_bidirected() and e.from_node() == self):
+                ret_list.append(e.to_node())
         return ret_list
 
     def inbound_nodes(self):
         """Returns list of all nodes connected by edges in"""
         ret_list = []
-        for cur_edge in self.edge_ids.obj_list():
-            if (cur_edge.to_node() == self):
-                # TODO: HACK FOR BUG IN JAC's EDGE DISCONNECT
-                if (cur_edge not in cur_edge.from_node().edge_ids.obj_list()):
-                    continue
-                ret_list.append(cur_edge.from_node())
+        for e in self.edge_ids.obj_list():
+            if (not e.is_bidirected() and e.to_node() == self):
+                ret_list.append(e.from_node())
+        return ret_list
+
+    def bidirected_nodes(self):
+        """Returns list of all nodes connected by edges"""
+        ret_list = []
+        for e in self.edge_ids.obj_list():
+            if (e.is_bidirected()):
+                ret_list.append(e.from_node())
         return ret_list
 
     def attached_nodes(self):
         """Returns list of all nodes connected"""
         return self.outbound_nodes() + \
-            self.inbound_nodes()
+            self.inbound_nodes() + \
+            self.bidirected_nodes()
 
     def dimension_matches(self, node_obj, silent=True):
         """Test if dimension matches another node"""
@@ -295,9 +350,9 @@ class node(element, anchored):
         """Remove node from higher dimension node"""
         node_obj.leave_membership_of(self)
 
-    def set_context(self, ctx, arch=None):
+    def set_context(self, ctx, arch: list = []):
         """Assign values to context fields of node, arch is node architype"""
-        if(not arch):
+        if(not len(arch)):
             arch = self
         for i in ctx.keys():
             if (i not in arch.context.keys()):
