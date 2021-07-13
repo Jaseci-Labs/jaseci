@@ -432,6 +432,7 @@ class machine():
         self.rt_check_type(base, node, kid[0])
         self.rt_check_type(target, node, kid[-1])
         if (kid[1].name == 'NOT'):
+            # TODO: IF JACSET IS TARGET APLLY TO ALL MEMEBERS OF JACSET
             # Line below PARTIALLY generalizes disconnect NEEDS REVIEW
             if (isinstance(target, jac_set)):
                 target = self.run_edge_ref(kid[2]) * target
