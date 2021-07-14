@@ -448,9 +448,11 @@ class machine():
             use_edge = self.run_edge_ref(kid[1], is_spawn=True)
             direction = kid[1].kid[0].name
             if (direction == 'edge_from'):
-                base.attach_inbound(target, use_edge)
+                base.attach_inbound(target, [use_edge])
+            elif (direction == 'edge_to'):
+                base.attach_outbound(target, [use_edge])
             else:
-                base.attach_outbound(target, use_edge)
+                base.attach_bidirected(target, [use_edge])
         return target
 
     def run_logical(self, jac_ast):
@@ -762,10 +764,9 @@ class machine():
         if (not is_spawn):
             result = jac_set(self.owner())
             if(len(kid) > 2):
-                for i in self.current_node.outbound_nodes():
-                    if (i.get_edge(self.current_node).kind ==
-                            kid[2].token_text()):
-                        result.add_obj(i)
+                for i in self.current_node.outbound_edges():
+                    if (i.kind == kid[2].token_text()):
+                        result.add_obj(i.to_node())
             else:
                 for i in self.current_node.outbound_nodes():
                     result.add_obj(i)
@@ -785,10 +786,9 @@ class machine():
         if (not is_spawn):
             result = jac_set(self.owner())
             if(len(kid) > 2):
-                for i in self.current_node.inbound_nodes():
-                    if (i.get_edge(self.current_node).kind ==
-                            kid[2].token_text()):
-                        result.add_obj(i)
+                for i in self.current_node.inbound_edges():
+                    if (i.kind == kid[2].token_text()):
+                        result.add_obj(i.from_node())
             else:
                 for i in self.current_node.inbound_nodes():
                     result.add_obj(i)
@@ -803,15 +803,15 @@ class machine():
     def run_edge_any(self, jac_ast, is_spawn=False):
         """
         edge_any: '<-' ('[' NAME ']')? '->';
+        NOTE: these do not use strict bidirected semantic but any edge
         """
         kid = jac_ast.kid
         if (not is_spawn):
             result = jac_set(self.owner())
             if(len(kid) > 2):
-                for i in self.current_node.attached_nodes():
-                    if (i.get_edge(self.current_node).kind ==
-                            kid[2].token_text()):
-                        result.add_obj(i)
+                for i in self.current_node.all_edges():
+                    if (i.kind == kid[2].token_text()):
+                        result.add_obj(i.opposing_node(self.current_node))
             else:
                 for i in self.current_node.attached_nodes():
                     result.add_obj(i)
@@ -897,9 +897,11 @@ class machine():
             ret_node = self.run_node_ref(kid[1], is_spawn=True)
             direction = kid[0].kid[0].name
             if (direction == 'edge_from'):
-                location.attach_inbound(ret_node, use_edge)
+                location.attach_inbound(ret_node, [use_edge])
+            elif (direction == 'edge_to'):
+                location.attach_outbound(ret_node, [use_edge])
             else:
-                location.attach_outbound(ret_node, use_edge)
+                location.attach_bidirected(ret_node, [use_edge])
         if (kid[-1].name == 'spawn_ctx'):
             self.run_spawn_ctx(kid[-1], ret_node)
         return ret_node
@@ -928,9 +930,11 @@ class machine():
         result = self.run_graph_ref(kid[1])
         direction = kid[0].kid[0].name
         if (direction == 'edge_from'):
-            location.attach_inbound(result, use_edge)
+            location.attach_inbound(result, [use_edge])
+        elif (direction == 'edge_to'):
+            location.attach_outbound(result, [use_edge])
         else:
-            location.attach_outbound(result, use_edge)
+            location.attach_bidirected(result, [use_edge])
         return result
 
     def run_spawn_ctx(self, jac_ast, obj):

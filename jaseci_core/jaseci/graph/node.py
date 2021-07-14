@@ -204,7 +204,7 @@ class node(element, anchored):
         """
         Tests whether edges attach to a node
         """
-        out_set = self.outbound_edges(node_obj, silent=True)
+        out_set = self.outbound_edges(node_obj)
         if(not len(edge_set)):
             return out_set is not None
         else:
@@ -217,7 +217,7 @@ class node(element, anchored):
         """
         Tests whether edges attach from a node
         """
-        in_set = self.inbound_edges(node_obj, silent=True)
+        in_set = self.inbound_edges(node_obj)
         if(not len(edge_set)):
             return in_set is not None
         else:
@@ -230,7 +230,7 @@ class node(element, anchored):
         """
         Tests whether edges attach either to or from a node
         """
-        bi_set = self.bidirected_edges(node_obj, silent=True)
+        bi_set = self.bidirected_edges(node_obj)
         if(not len(edge_set)):
             return bi_set is not None
         else:
@@ -239,7 +239,7 @@ class node(element, anchored):
                     return False
         return True
 
-    def get_edges(self, node_obj, silent=False):
+    def all_edges(self, node_obj, silent=False):
         """
         Returns the edges connecting self to or from a node
 
@@ -255,52 +255,58 @@ class node(element, anchored):
             )
         return edge_set
 
-    def outbound_edges(self):
+    def outbound_edges(self, node_obj=None):
         """Returns list of all edges out of node"""
-        ret_list = []
+        edge_set = []
         for e in self.edge_ids.obj_list():
-            if(not e.is_bidirected() and e.from_node() == self):
-                ret_list.append(e)
-        return ret_list
+            if(not e.is_bidirected() and e.connects(self, node_obj)):
+                edge_set.append(e)
+        return edge_set
 
-    def inbound_edges(self):
+    def inbound_edges(self, node_obj=None):
         """Returns list of all edges in to node"""
-        ret_list = []
+        edge_set = []
         for e in self.edge_ids.obj_list():
-            if(not e.is_bidirected() and e.to_node() == self):
-                ret_list.append(e)
-        return ret_list
+            if(not e.is_bidirected() and e.connects(node_obj, self)):
+                edge_set.append(e)
+        return edge_set
 
-    def bidirected_edges(self):
+    def bidirected_edges(self, node_obj=None):
         """Returns list of all edges between nodes"""
-        ret_list = []
+        edge_set = []
         for e in self.edge_ids.obj_list():
-            if(e.is_bidirected()):
-                ret_list.append(e)
-        return ret_list
+            if(e.is_bidirected() and e.connects(node_obj)):
+                edge_set.append(e)
+        return edge_set
 
-    def outbound_nodes(self):
+    def outbound_nodes(self, edge_set: list = []):
         """Returns list of all nodes connected by edges out"""
+        if(not len(edge_set)):
+            edge_set = self.edge_ids.obj_list()
         ret_list = []
-        for e in self.edge_ids.obj_list():
-            if (not e.is_bidirected() and e.from_node() == self):
+        for e in edge_set:
+            if (not e.is_bidirected() and e.connects(source=self)):
                 ret_list.append(e.to_node())
         return ret_list
 
-    def inbound_nodes(self):
+    def inbound_nodes(self, edge_set: list = []):
         """Returns list of all nodes connected by edges in"""
+        if(not len(edge_set)):
+            edge_set = self.edge_ids.obj_list()
         ret_list = []
-        for e in self.edge_ids.obj_list():
-            if (not e.is_bidirected() and e.to_node() == self):
+        for e in edge_set:
+            if (not e.is_bidirected() and e.connects(target=self)):
                 ret_list.append(e.from_node())
         return ret_list
 
-    def bidirected_nodes(self):
+    def bidirected_nodes(self, edge_set: list = []):
         """Returns list of all nodes connected by edges"""
+        if(not len(edge_set)):
+            edge_set = self.edge_ids.obj_list()
         ret_list = []
-        for e in self.edge_ids.obj_list():
+        for e in edge_set:
             if (e.is_bidirected()):
-                ret_list.append(e.from_node())
+                ret_list.append(e.opposing_node(self))
         return ret_list
 
     def attached_nodes(self):
@@ -362,108 +368,105 @@ class node(element, anchored):
                 self.context[i] = ctx[i]
         self.save()
 
-    def get_network(self, inward=False, g_list=None):
-        """
-        Walk network of node and return all reachable nodes
+    # def get_network(self, inward=False, g_list=None):
+    #     """
+    #     Walk network of node and return all reachable nodes
 
-        inward is a flag for whether to return paths pointing into node
-        path_list and touched are used internally for recursion
-        TODO: Not fully tested, also redundant with get_network_nodes
-        """
-        if(not isinstance(g_list, list)):
-            g_list = []
+    #     inward is a flag for whether to return paths pointing into node
+    #     path_list and touched are used internally for recursion
+    #     TODO: Not fully tested, also redundant with get_network_nodes
+    #     """
+    #     if(not isinstance(g_list, list)):
+    #         g_list = []
 
-        # if cycle detected in path
-        if(self in g_list):
-            return g_list
+    #     # if cycle detected in path
+    #     if(self in g_list):
+    #         return g_list
 
-        g_list.append(self)
+    #     g_list.append(self)
 
-        get_edges_func = self.outbound_edges
-        if(inward):
-            get_edges_func = self.inbound_edges
-        child_list = get_edges_func()
-        for i in child_list:
-            g_list.append(i)
+    #     get_edges_func = self.outbound_edges
+    #     if(inward):
+    #         get_edges_func = self.inbound_edges
+    #     child_list = get_edges_func()
+    #     for i in child_list:
+    #         g_list.append(i)
 
-        for i in child_list:
-            next_node = i.to_node()
-            if(next_node == self):
-                next_node = i.from_node()
-            next_node.get_network(inward, g_list)
+    #     for i in child_list:
+    #         next_node = i.to_node()
+    #         if(next_node == self):
+    #             next_node = i.from_node()
+    #         next_node.get_network(inward, g_list)
 
-        return g_list
+    #     return g_list
 
-    def get_network_nodes(self, inward=False, node_list=None):
-        """
-        Walk network of node and return all reachable nodes
+    # def get_network_nodes(self, inward=False, node_list=None):
+    #     """
+    #     Walk network of node and return all reachable nodes
 
-        inward is a flag for whether to return paths pointing into node
-        path_list and touched are used internally for recursion
-        TODO: Not fully tested
-        """
-        if(not isinstance(node_list, list)):
-            node_list = []
+    #     inward is a flag for whether to return paths pointing into node
+    #     path_list and touched are used internally for recursion
+    #     TODO: Not fully tested
+    #     """
+    #     if(not isinstance(node_list, list)):
+    #         node_list = []
 
-        # if cycle detected in path
-        if(self in node_list):
-            return node_list
+    #     # if cycle detected in path
+    #     if(self in node_list):
+    #         return node_list
 
-        node_list.append(self)
+    #     node_list.append(self)
 
-        get_nodes_func = self.outbound_nodes
-        if(inward):
-            get_nodes_func = self.inbound_nodes
-        child_list = get_nodes_func()
+    #     get_nodes_func = self.outbound_nodes
+    #     if(inward):
+    #         get_nodes_func = self.inbound_nodes
+    #     child_list = get_nodes_func()
 
-        for i in child_list:
-            i.get_network_nodes(inward, node_list)
+    #     for i in child_list:
+    #         i.get_network_nodes(inward, node_list)
 
-        return node_list
+    #     return node_list
 
-    def get_network_paths(self, inward=False, nodes_only=False, path_list=None,
-                          touched=None):
-        """
-        Detect all paths directed out and pretty print to string
+    # def get_network_paths(self, nodes_only=False, path_list=None,
+    #                       touched=None):
+    #     """
+    #     Detect all paths directed out and pretty print to string
 
-        inward is a flag for whether to return paths pointing into node
-        path_list and touched are used internally for recursion
-        TODO: Not fully tested
-        """
-        if(not isinstance(touched, list)):
-            touched = []
-        if(not isinstance(path_list, list)):
-            path_list = []
+    #     inward is a flag for whether to return paths pointing into node
+    #     path_list and touched are used internally for recursion
+    #     TODO: Not fully tested
+    #     """
+    #     if(not isinstance(touched, list)):
+    #         touched = []
+    #     if(not isinstance(path_list, list)):
+    #         path_list = []
 
-        # if cycle detected in path
-        if(self in touched):
-            touched.append(self)
-            path_list.append(copy.copy(touched))
-            touched.pop()
-            if(not nodes_only and len(touched)):
-                touched.pop()
-            return path_list
+    #     # if cycle detected in path
+    #     if(self in touched):
+    #         touched.append(self)
+    #         path_list.append(copy.copy(touched))
+    #         touched.pop()
+    #         if(not nodes_only and len(touched)):
+    #             touched.pop()
+    #         return path_list
 
-        touched.append(self)
+    #     touched.append(self)
 
-        get_nodes_func = self.outbound_nodes
-        if(inward):
-            get_nodes_func = self.inbound_nodes
-        child_list = get_nodes_func()
+    #     child_list = self.attached_nodes()
 
-        for i in child_list:
-            if(not nodes_only):
-                touched.append(self.get_edge(i))
-            i.get_network_paths(inward, nodes_only, path_list, touched)
+    #     for i in child_list:
+    #         if(not nodes_only):
+    #             touched.append(self.all_edges(i))
+    #         i.get_network_paths(nodes_only, path_list, touched)
 
-        if(not len(child_list)):
-            path_list.append(copy.copy(touched))
+    #     if(not len(child_list)):
+    #         path_list.append(copy.copy(touched))
 
-        touched.pop()
-        if(not nodes_only and len(touched)):
-            touched.pop()
+    #     touched.pop()
+    #     if(not nodes_only and len(touched)):
+    #         touched.pop()
 
-        return path_list
+    #     return path_list
 
     def destroy(self):
         """

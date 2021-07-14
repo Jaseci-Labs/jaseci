@@ -29,14 +29,11 @@ class edge(element, anchored):
 
     def from_node(self):
         """Returns node edge is pointing from"""
-        if (not self.from_node_id):
-            return None
-        ret = self._h.get_obj(uuid.UUID(self.from_node_id))
+        ret = self._h.get_obj(uuid.UUID(self.from_node_id)
+                              ) if self.from_node_id else None
         if (not ret):
-            logger.critical(
-                str(f"{self} disconnected from node")
-            )
-            element.destroy(self)
+            logger.critical(str(f"{self} disconnected from source node"))
+            return None
         else:
             return ret
 
@@ -44,12 +41,25 @@ class edge(element, anchored):
         """Returns node edge is pointing to"""
         if (not self.to_node_id):
             return None
-        ret = self._h.get_obj(uuid.UUID(self.to_node_id))
+        ret = self._h.get_obj(uuid.UUID(self.to_node_id)
+                              ) if self.to_node_id else None
+        if (not ret):
+            logger.critical(str(f"{self} disconnected to target node"))
+            return None
+        else:
+            return ret
+
+    def opposing_node(self, node_obj):
+        """Returns node edge is pointing to"""
+        node_set = ([self.to_node_id, self.from_node_id]
+                    ).remove(node_obj.id.urn)
+        ret = self._h.get_obj(uuid.UUID(node_set[0])) if len(
+            node_set) == 1 and node_set[0] else None
         if (not ret):
             logger.critical(
-                str(f"{self} disconnected to node")
+                str(f"{self} disconnected to node {node_obj}")
             )
-            element.destroy(self)
+            return None
         else:
             return ret
 

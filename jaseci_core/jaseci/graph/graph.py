@@ -28,7 +28,7 @@ class graph(node):
         because graph inherits node.
         """
         # node_list = self.get_network_nodes()
-        edge_list = self.get_network_paths()
+        edge_list = []  # self.get_network_paths()
 
         # Construct the graph string
         dstr = ''
