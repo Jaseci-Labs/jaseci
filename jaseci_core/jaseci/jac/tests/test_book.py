@@ -136,7 +136,6 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         out = self.new_stdout.getvalue()
-        self.to_screen()
         self.assertEqual(out.count("'"), 10)
 
     def test_array_assign(self):

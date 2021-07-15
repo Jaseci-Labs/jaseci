@@ -457,6 +457,44 @@ edgey2 = \
     }
     """
 
+edgey2b = \
+    """
+    node test;
+
+    edge apple;
+    edge banana;
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            b = spawn here --> node::test;
+            here -[apple]-> a;
+            here -[banana]-> a;
+
+            here !--> a;
+        }
+    }
+    """
+
+edgey2c = \
+    """
+    node test;
+
+    edge apple;
+    edge banana;
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            b = spawn here --> node::test;
+            here -[apple]-> a;
+            here -[banana]-> a;
+
+            here !-[apple]-> a;
+        }
+    }
+    """
+
 edgey3 = \
     """
     node test;
@@ -467,8 +505,12 @@ edgey3 = \
     walker init {
         root {
             a = spawn here --> node::test;
+            b = spawn here --> node::test;
             here -[apple]-> a;
-            here -[banana]->a;
+            here -[apple]-> a;
+            here -[banana]-> a;
+            here -[banana]-> a;
+            here -[banana]-> a;
 
             here !-[apple]-> a;
         }

@@ -197,7 +197,6 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_delete_all(self):
         """Test that multiple edges deleted correctly if delete all"""
-        self.logger_on()
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.edgey2)
@@ -208,9 +207,32 @@ class jac_tests(TestCaseHelper, TestCase):
         edges = gph.get_all_edges()
         self.assertEqual(len(edges), 0)
 
+    def test_multiple_edged_between_nodes_delete_all_specific(self):
+        """Test that multiple edges deleted correctly if delete all"""
+        gph = graph(h=mem_hook())
+        sent = sentinel(h=gph._h)
+        sent.register_code(jtc.edgey2b)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        edges = gph.get_all_edges()
+        self.assertEqual(len(edges), 1)
+
+    def test_multiple_edged_between_nodes_delete_all_labeled(self):
+        """Test that multiple edges deleted correctly if delete all"""
+        gph = graph(h=mem_hook())
+        sent = sentinel(h=gph._h)
+        sent.register_code(jtc.edgey2c)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        edges = gph.get_all_edges()
+        self.assertEqual(len(edges), 3)
+
     def test_multiple_edged_between_nodes_delete_filtered(self):
         """Test that multiple edges deleted correctly if delete filtered"""
-        self.logger_on()
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.edgey3)
@@ -218,16 +240,17 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
         test_walker.run()
-        print(gph.get_all_edges())
+        edges = gph.get_all_edges()
+        self.assertEqual(len(edges), 5)
 
-    # def test_generic_can_be_used_to_specify_generic_edges(self):
-    #     """Test that generic edge tag works"""
-    #     self.logger_on()
-    #     gph = graph(h=mem_hook())
-    #     sent = sentinel(h=gph._h)
-    #     sent.register_code(jtc.edgey4)
-    #     test_walker = \
-    #         sent.walker_ids.get_obj_by_name('init')
-    #     test_walker.prime(gph)
-    #     test_walker.run()
-    #     print(gph.get_all_edges())
+    def test_generic_can_be_used_to_specify_generic_edges(self):
+        """Test that generic edge tag works"""
+        gph = graph(h=mem_hook())
+        sent = sentinel(h=gph._h)
+        sent.register_code(jtc.edgey4)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        edges = gph.get_all_edges()
+        self.assertEqual(len(edges), 2)
