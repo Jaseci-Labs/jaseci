@@ -181,7 +181,6 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_work(self):
         """Test that multiple edges between the same two nodes are allowed"""
-        self.logger_on()
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.edgey)
@@ -189,7 +188,12 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
         test_walker.run()
-        print(gph.get_all_edges())
+        edges = gph.get_all_edges()
+        self.assertEqual(len(edges), 3)
+        edge_names = [edges[0].kind, edges[1].kind, edges[2].kind]
+        self.assertIn('generic', edge_names)
+        self.assertIn('apple', edge_names)
+        self.assertIn('banana', edge_names)
 
     def test_multiple_edged_between_nodes_delete_all(self):
         """Test that multiple edges deleted correctly if delete all"""
@@ -201,7 +205,8 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
         test_walker.run()
-        print(gph.get_all_edges())
+        edges = gph.get_all_edges()
+        self.assertEqual(len(edges), 0)
 
     def test_multiple_edged_between_nodes_delete_filtered(self):
         """Test that multiple edges deleted correctly if delete filtered"""
@@ -215,14 +220,14 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         print(gph.get_all_edges())
 
-    def test_generic_can_be_used_to_specify_generic_edges(self):
-        """Test that generic edge tag works"""
-        self.logger_on()
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
-        sent.register_code(jtc.edgey4)
-        test_walker = \
-            sent.walker_ids.get_obj_by_name('init')
-        test_walker.prime(gph)
-        test_walker.run()
-        print(gph.get_all_edges())
+    # def test_generic_can_be_used_to_specify_generic_edges(self):
+    #     """Test that generic edge tag works"""
+    #     self.logger_on()
+    #     gph = graph(h=mem_hook())
+    #     sent = sentinel(h=gph._h)
+    #     sent.register_code(jtc.edgey4)
+    #     test_walker = \
+    #         sent.walker_ids.get_obj_by_name('init')
+    #     test_walker.prime(gph)
+    #     test_walker.run()
+    #     print(gph.get_all_edges())

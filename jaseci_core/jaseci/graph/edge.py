@@ -73,7 +73,9 @@ class edge(element, anchored):
             if(not self.to_node().dimension_matches(node_obj,
                                                     silent=False)):
                 return False
-        self.from_node_id = node_obj.id.urn
+        self.from_node_id = node_obj.jid
+        if(self.jid not in node_obj.edge_ids):
+            node_obj.edge_ids.add_obj(self)
         self.save()
         return True
 
@@ -86,7 +88,9 @@ class edge(element, anchored):
             if(not self.from_node().dimension_matches(node_obj,
                                                       silent=False)):
                 return False
-        self.to_node_id = node_obj.id.urn
+        self.to_node_id = node_obj.jid
+        if(self.jid not in node_obj.edge_ids):
+            node_obj.edge_ids.add_obj(self)
         self.save()
         return True
 
@@ -98,11 +102,11 @@ class edge(element, anchored):
         """Check if edge is bidirected"""
         return self.bidirected
 
-    def connects(self, source=None, target=None):
+    def connects(self, source=None, target=None, ignore_direction=False):
         """Test if a node or nodes are connected by edge"""
         if(not source and not target):
             return False
-        if(self.bidirected):
+        if(self.bidirected or ignore_direction):
             if(source and source.id.urn not in
                [self.from_node_id, self.to_node_id]):
                 return False
@@ -124,9 +128,9 @@ class edge(element, anchored):
             i.destroy()
         base = self.from_node()
         target = self.to_node()
-        if base and self in base.edge_ids.obj_list():
+        if base and self.jid in base.edge_ids:
             base.edge_ids.remove_obj(self)
-        if target and self in target.edge_ids.obj_list():
+        if target and self.jid in target.edge_ids:
             target.edge_ids.remove_obj(self)
         element.destroy(self)
 

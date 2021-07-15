@@ -135,9 +135,9 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         gen_walker.run()
-        # self.assertEqual(self.new_stdout.getvalue(),
-        #                  "Hello 5 times!\nHello 4 times!\n"
-        #                  "Hello 2 times!\nHello 1 times!\n")
+        out = self.new_stdout.getvalue()
+        self.to_screen()
+        self.assertEqual(out.count("'"), 10)
 
     def test_array_assign(self):
         self.sent.register_code(jtc.array_assign)

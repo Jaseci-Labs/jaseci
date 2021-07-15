@@ -434,15 +434,9 @@ class machine():
         if (kid[1].name == 'NOT'):
             # TODO: IF JACSET IS TARGET APLLY TO ALL MEMEBERS OF JACSET
             # Line below PARTIALLY generalizes disconnect NEEDS REVIEW
-            if (isinstance(target, jac_set)):
-                target = self.run_edge_ref(kid[2]) * target
-            else:
-                target = self.run_edge_ref(
-                    kid[2]) * jac_set(self, [target.id.urn])
+            edge_set = self.run_edge_ref(kid[2])
             if(target):  # HACK: if should always eval true REview later
-                target = target.obj_list()[0]
-                base.detach_outbound(target) if base.is_attached_out(
-                    target) else base.detach_inbound(target)
+                base.detach_edges(target, edge_set.obj_list())
             target = base
         else:
             use_edge = self.run_edge_ref(kid[1], is_spawn=True)
@@ -680,9 +674,11 @@ class machine():
             return self.parse_str_token(kid[0].token_text())
         elif(kid[0].name == 'BOOL'):
             return bool(kid[0].token_text() == 'true')
-        elif (kid[0].name == 'edge_ref' and len(kid) > 1):
-            res = self.run_edge_ref(kid[0]) * self.run_node_ref(kid[1])
-            return res
+        elif (kid[0].name == 'edge_ref'):
+            result = self.edge_to_node_jac_set(self.run_edge_ref(kid[0]))
+            if(len(kid) > 1):
+                result = result * self.run_node_ref(kid[1])
+            return result
         elif(kid[0].name == 'dotted_name'):
             return self._jac_scope.get_live_var(self.run_dotted_name(kid[0]),
                                                 kid[0])
@@ -763,13 +759,10 @@ class machine():
         kid = jac_ast.kid
         if (not is_spawn):
             result = jac_set(self.owner())
-            if(len(kid) > 2):
-                for i in self.current_node.outbound_edges():
-                    if (i.kind == kid[2].token_text()):
-                        result.add_obj(i.to_node())
-            else:
-                for i in self.current_node.outbound_nodes():
-                    result.add_obj(i)
+            for i in self.current_node.outbound_edges():
+                if (len(kid) > 2 and i.kind != kid[2].token_text()):
+                    continue
+                result.add_obj(i)
         else:
             if(len(kid) > 2):
                 result = self.owner().arch_ids.get_obj_by_name(
@@ -785,13 +778,10 @@ class machine():
         kid = jac_ast.kid
         if (not is_spawn):
             result = jac_set(self.owner())
-            if(len(kid) > 2):
-                for i in self.current_node.inbound_edges():
-                    if (i.kind == kid[2].token_text()):
-                        result.add_obj(i.from_node())
-            else:
-                for i in self.current_node.inbound_nodes():
-                    result.add_obj(i)
+            for i in self.current_node.inbound_edges():
+                if (len(kid) > 2 and i.kind != kid[2].token_text()):
+                    continue
+                result.add_obj(i)
         else:
             if(len(kid) > 2):
                 result = self.owner().arch_ids.get_obj_by_name(
@@ -808,13 +798,10 @@ class machine():
         kid = jac_ast.kid
         if (not is_spawn):
             result = jac_set(self.owner())
-            if(len(kid) > 2):
-                for i in self.current_node.attached_edges():
-                    if (i.kind == kid[2].token_text()):
-                        result.add_obj(i.opposing_node(self.current_node))
-            else:
-                for i in self.current_node.attached_nodes():
-                    result.add_obj(i)
+            for i in self.current_node.attached_edges():
+                if (len(kid) > 2 and i.kind != kid[2].token_text()):
+                    continue
+                result.add_obj(i)
         else:
             if(len(kid) > 2):
                 result = self.owner().arch_ids.get_obj_by_name(
@@ -967,6 +954,15 @@ class machine():
     def parse_str_token(self, s):
         return str(bytes(s, "utf-8").
                    decode("unicode_escape")[1:-1])
+
+    def edge_to_node_jac_set(self, edge_set):
+        """
+        Returns nodes jac_set from edge jac_set from current node
+        """
+        ret = jac_set(edge_set.owner_obj)
+        for i in edge_set.obj_list():
+            ret.add_obj(i.opposing_node(self.current_node))
+        return ret
 
     def get_builtin_action(self, func_name, jac_ast=None):
         """

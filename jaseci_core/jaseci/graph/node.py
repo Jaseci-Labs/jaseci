@@ -28,26 +28,32 @@ class node(element, anchored):
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
 
+    def attach(self, node_obj, edge_set=None, as_outbound=True,
+               as_bidirected=False):
+        """
+        Generalized attach function for attaching nodes with edges
+        """
+        if(edge_set is None):
+            edge_set = [edge(h=self._h)]
+        link_order = [self, node_obj] if as_outbound else [node_obj, self]
+        for e in edge_set:
+            if(not e.set_from_node(link_order[0]) or
+               not e.set_to_node(link_order[1])):
+                # Node not found error logged in set node function
+                return []
+            e.set_bidirected(as_bidirected)
+        # save and return
+        self.save()
+        node_obj.save()
+        return edge_set
+
     def attach_outbound(self, node_obj, edge_set=None):
         """
         Creates edge to a node and returns the edge
         edge_set is the list of edges to be used to make connections
         new edge is created if edge_set is empty
         """
-        if(edge_set is None):
-            edge_set = [edge(h=self._h)]
-        for e in edge_set:
-            if(not e.set_from_node(self) or not e.set_to_node(node_obj)):
-                return []
-            e.set_bidirected(False)
-            # add edge to nodes
-            self.edge_ids.add_obj(e)
-            if(self is not node_obj):
-                node_obj.edge_ids.add_obj(e)
-        # save and return
-        self.save()
-        node_obj.save()
-        return edge_set
+        return self.attach(node_obj, edge_set, as_outbound=True)
 
     def attach_inbound(self, node_obj, edge_set=None):
         """
@@ -55,20 +61,7 @@ class node(element, anchored):
         edge_set is the list of edges to be used to make connections
         new edge is created if edge_set is empty
         """
-        if(edge_set is None):
-            edge_set = [edge(h=self._h)]
-        for e in edge_set:
-            if(not e.set_from_node(node_obj) or not e.set_to_node(self)):
-                return []
-            e.set_bidirected(False)
-            # add edge to nodes
-            self.edge_ids.add_obj(e)
-            if(self is not node_obj):
-                node_obj.edge_ids.add_obj(e)
-        # save and return
-        self.save()
-        node_obj.save()
-        return edge_set
+        return self.attach(node_obj, edge_set, as_outbound=False)
 
     def attach_bidirected(self, node_obj, edge_set=None):
         """
@@ -76,98 +69,74 @@ class node(element, anchored):
         edge_set is the list of edges to be used to make connections
         new edge is created if edge_set is empty
         """
-        if(edge_set is None):
-            edge_set = [edge(h=self._h)]
-        for e in edge_set:
-            if(not e.set_from_node(self) or not e.set_to_node(node_obj)):
-                return []
-            e.set_bidirected(True)
-            # add edge to nodes
-            self.edge_ids.add_obj(e)
-            if(self is not node_obj):
-                node_obj.edge_ids.add_obj(e)
-        # save and return
-        self.save()
-        node_obj.save()
-        return edge_set
+        return self.attach(node_obj, edge_set, as_bidirected=True)
 
-    def detach_outbound(self, node_obj, edge_set=None):
+    def detach(self, node_obj, edge_set=None, as_outbound=True,
+               as_bidirected=False, ignore_direction=False, silent=True):
+        """
+        Generalized detach function for detaching nodes with edges
+        """
+        if(edge_set is None):
+            edge_set = self.attached_edges(node_obj)
+        link_order = [self, node_obj] if as_outbound else [node_obj, self]
+        num_detached = 0
+        for e in edge_set:
+            # validate edge connection exists
+            if(not e.connects(link_order[0], link_order[1],
+                              ignore_direction=ignore_direction)):
+                if(not silent):
+                    logger.warning(
+                        str(
+                            f"{e} does not connect "
+                            f"{link_order[0]} to {link_order[1]}")
+                    )
+                continue
+            if(as_bidirected and not ignore_direction
+               and not e.is_bidirected()):
+                if(not silent):
+                    logger.warning(
+                        str(f"{e} is not a bidirected edge "))
+                continue
+            # destroy edge
+            num_detached += 1
+            e.destroy()
+        return num_detached
+
+    def detach_outbound(self, node_obj, edge_set=None, silent=True):
         """
         Destroy edges to a node
         edge_set is the list of edges to be detached (and distroyed)
         all edges are deteached and destroyed if edge_set empty
         returns number of detachments
         """
-        if(edge_set is None):
-            edge_set = self.outbound_edges(node_obj)
-        num_detached = 0
-        for e in edge_set:
-            # validate edge connection exists
-            if(not e.connects(self, node_obj)):
-                logger.error(
-                    str(f"{e} does not connect {self} to {node_obj}")
-                )
-                continue
-            # remove edge from nodes
-            num_detached += 1
-            self.edge_ids.remove_obj(e)
-            if(self is not node_obj):
-                node_obj.edge_ids.remove_obj(e)
-            # destroy edge
-            e.destroy()
-        return num_detached
+        return self.detach(node_obj, edge_set, as_outbound=True)
 
-    def detach_inbound(self, node_obj, edge_set=None):
+    def detach_inbound(self, node_obj, edge_set=None, silent=True):
         """
         Destroy edges from a node
         edge_set is the list of edges to be detached (and distroyed)
         all edges are deteached and destroyed if edge_set empty
         returns number of detachments
         """
-        if(edge_set is None):
-            edge_set = self.inbound_edges(node_obj)
-        num_detached = 0
-        for e in edge_set:
-            # validate edge connection exists
-            if(not e.connects(node_obj, self)):
-                logger.error(
-                    str(f"{e} does not connect {node_obj} to {self}")
-                )
-                continue
-            # remove edge from nodes
-            num_detached += 1
-            self.edge_ids.remove_obj(e)
-            if(self is not node_obj):
-                node_obj.edge_ids.remove_obj(e)
-            # destroy edge
-            e.destroy()
-        return num_detached
+        return self.detach(node_obj, edge_set, as_outbound=False)
 
-    def detach_bidirected(self, node_obj, edge_set=None):
+    def detach_bidirected(self, node_obj, edge_set=None, silent=True):
         """
         Destroy bidirected edges between nodes
         edge_set is the list of edges to be detached (and distroyed)
         all edges are deteached and destroyed if edge_set empty
         returns number of detachments
         """
-        if(edge_set is None):
-            edge_set = self.bidirected_edges(node_obj)
-        num_detached = 0
-        for e in edge_set:
-            # validate edge connection exists
-            if(not e.connects(self, node_obj) and e.is_bidirected()):
-                logger.error(
-                    str(f"{e} does not connect {self} and {node_obj}")
-                )
-                continue
-            # remove edge from nodes
-            num_detached += 1
-            self.edge_ids.remove_obj(e)
-            if(self is not node_obj):
-                node_obj.edge_ids.remove_obj(e)
-            # destroy edge
-            e.destroy()
-        return num_detached
+        return self.detach(node_obj, edge_set, as_bidirected=True)
+
+    def detach_edges(self, node_obj, edge_set=None, silent=True):
+        """
+        Destroy given edges between nodes without checking orientation
+        edge_set is the list of edges to be detached (and distroyed)
+        all edges are deteached and destroyed if edge_set empty
+        returns number of detachments
+        """
+        return self.detach(node_obj, edge_set, ignore_direction=True)
 
     def destroy_outbound(self, node_obj, edge_set=None):
         """
