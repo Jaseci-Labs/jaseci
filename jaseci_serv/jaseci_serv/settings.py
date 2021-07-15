@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'user_api',
     'obj_api',
     'jac_api',
-    'ui',
     'corsheaders',
 ]
 

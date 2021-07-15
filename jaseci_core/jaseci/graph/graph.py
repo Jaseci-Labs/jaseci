@@ -11,7 +11,58 @@ class graph(node):
 
     def __init__(self, *args, **kwargs):
         self.hd_node_ids = id_list(self)
-        super().__init__(kind='root', *args, **kwargs)
+        node.__init__(self, kind='root', *args, **kwargs)
+
+    def get_all_nodes(self, node_list=None):
+        """
+        Returns all reachable nodes
+        node_list is used internally for recursion
+        """
+        if(not isinstance(node_list, list)):
+            node_list = []
+
+        # if cycle detected in path
+        if(self in node_list):
+            return node_list
+
+        node_list.append(self)
+
+        for i in self.attached_nodes():
+            graph.get_all_nodes(i, node_list)
+
+        return node_list
+
+    def get_all_edges(self):
+        """
+        Returns all reachable edges
+        """
+        edge_set = set()
+        node_list = self.get_all_nodes()
+
+        for i in node_list:
+            for e in i.attached_edges():
+                edge_set.add(e)
+
+        return list(edge_set)
+
+    def graph_dot_str(self):
+        """
+        DOT representation for graph.
+        NOTE: This is different from the dot_str method for node intentionally
+        because graph inherits node.
+        """
+        node_list = self.get_all_nodes()
+        edge_list = self.get_all_edges()
+
+        # Construct the graph string
+        dstr = ''
+        dstr += f'strict digraph {self.name} {{'
+        for n in node_list:
+            dstr += f'    {n.dot_str()}'
+        for e in edge_list:
+            dstr += f'    {e.dot_str()}'
+        dstr += '}'
+        return dstr
 
     def destroy(self):
         """
@@ -20,23 +71,3 @@ class graph(node):
         for i in self.hd_node_ids.obj_list():
             i.destroy()
         super().destroy()
-
-    def graph_dot_str(self):
-        """
-        DOT representation for graph.
-        NOTE: This is different from the dot_str method for node intentionally
-        because graph inherits node.
-        """
-        # node_list = self.get_network_nodes()
-        edge_list = self.get_network_paths()
-
-        # Construct the graph string
-        dstr = ''
-        dstr += f'strict digraph {self.name} {{'
-        # for n in node_list:
-        #     dstr += f'    {n.dot_str()}'
-        for e_list in edge_list:
-            for e in e_list:
-                dstr += f'    {e.dot_str()}'
-        dstr += '}'
-        return dstr

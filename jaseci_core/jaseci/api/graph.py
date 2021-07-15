@@ -48,7 +48,7 @@ class graph_api():
             return gph.graph_dot_str()
         else:
             nds = []
-            for i in gph.get_network_nodes():
+            for i in gph.get_all_nodes():
                 nds.append(i.serialize(detailed=detailed))
             return nds
 

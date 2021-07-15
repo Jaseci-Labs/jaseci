@@ -143,6 +143,8 @@ destroy_disconn = \
         node1 --> node2;
         std.out(-->);
         destroy node1;
+        # All node destroys queue'd after walk
+        # may not be a good idea, must think about it
         std.out(-->);
         here !--> node2;
         std.out('1', -->);

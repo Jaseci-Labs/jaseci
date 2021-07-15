@@ -422,3 +422,117 @@ prog1 = \
         report new_day;
     }
     """
+
+edgey = \
+    """
+    node test;
+
+    edge apple;
+    edge banana;
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            here -[apple]-> a;
+            here -[banana]-> a;
+        }
+    }
+    """
+
+edgey2 = \
+    """
+    node test;
+
+    edge apple;
+    edge banana;
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            here -[apple]-> a;
+            here -[banana]-> a;
+
+            here !--> a;
+        }
+    }
+    """
+
+edgey2b = \
+    """
+    node test;
+
+    edge apple;
+    edge banana;
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            b = spawn here --> node::test;
+            here -[apple]-> a;
+            here -[banana]-> a;
+
+            here !--> a;
+        }
+    }
+    """
+
+edgey2c = \
+    """
+    node test;
+
+    edge apple;
+    edge banana;
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            b = spawn here --> node::test;
+            here -[apple]-> a;
+            here -[banana]-> a;
+
+            here !-[apple]-> a;
+        }
+    }
+    """
+
+edgey3 = \
+    """
+    node test;
+
+    edge apple;
+    edge banana;
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            b = spawn here --> node::test;
+            here -[apple]-> a;
+            here -[apple]-> a;
+            here -[banana]-> a;
+            here -[banana]-> a;
+            here -[banana]-> a;
+
+            here !-[apple]-> a;
+        }
+    }
+    """
+
+
+edgey4 = \
+    """
+    node test;
+
+    edge apple;
+    edge banana;
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            here --> a;
+            here -[apple]-> a;
+            here -[banana]-> a;
+
+            here !-[generic]-> a;
+        }
+    }
+    """

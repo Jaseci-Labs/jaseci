@@ -17,9 +17,11 @@ class edge(element, anchored):
     def __init__(self, from_node=None, to_node=None, *args, **kwargs):
         self.from_node_id = None
         self.to_node_id = None
+        self.bidirected: bool = False
         self.context = {}
         self.activity_action_ids = id_list(self)
-        super().__init__(*args, **kwargs)
+        anchored.__init__(self)
+        element.__init__(self, *args, **kwargs)
         if from_node:
             self.set_from_node(from_node)
         if to_node:
@@ -27,14 +29,12 @@ class edge(element, anchored):
 
     def from_node(self):
         """Returns node edge is pointing from"""
-        if (not self.from_node_id):
-            return None
-        ret = self._h.get_obj(uuid.UUID(self.from_node_id))
+        ret = self._h.get_obj(uuid.UUID(self.from_node_id)
+                              ) if self.from_node_id else None
         if (not ret):
             logger.critical(
-                str("{} disconnected from node".format(self))
-            )
-            element.destroy(self)
+                str(f"{self} disconnected from source node"))
+            return None
         else:
             return ret
 
@@ -42,38 +42,83 @@ class edge(element, anchored):
         """Returns node edge is pointing to"""
         if (not self.to_node_id):
             return None
-        ret = self._h.get_obj(uuid.UUID(self.to_node_id))
+        ret = self._h.get_obj(uuid.UUID(self.to_node_id)
+                              ) if self.to_node_id else None
+        if (not ret):
+            logger.critical(str(f"{self} disconnected to target node"))
+            return None
+        else:
+            return ret
+
+    def opposing_node(self, node_obj):
+        """Returns node edge is pointing to"""
+        node_set = [self.to_node_id, self.from_node_id]
+        node_set.remove(node_obj.id.urn)
+        ret = self._h.get_obj(uuid.UUID(node_set[0])) if len(
+            node_set) == 1 and node_set[0] else None
         if (not ret):
             logger.critical(
-                str("{} disconnected to node".format(self))
+                str(f"{self} disconnected to node {node_obj}")
             )
-            element.destroy(self)
+            return None
         else:
             return ret
 
     def set_from_node(self, node_obj):
-        """Returns node edge is pointing from"""
+        """
+        Returns node edge is pointing from
+        TODO: should check prior nodes edge_ids if is a reset
+        """
         if self.to_node_id:
             if(not self.to_node().dimension_matches(node_obj,
                                                     silent=False)):
-                return
-        self.from_node_id = node_obj.id.urn
+                return False
+        self.from_node_id = node_obj.jid
+        if(self.jid not in node_obj.edge_ids):
+            node_obj.edge_ids.add_obj(self)
         self.save()
+        return True
 
     def set_to_node(self, node_obj):
-        """Returns node edge is pointing to"""
+        """
+        Returns node edge is pointing to
+        TODO: should check prior nodes edge_ids if is a reset
+        """
         if self.from_node_id:
             if(not self.from_node().dimension_matches(node_obj,
                                                       silent=False)):
-                return
-        self.to_node_id = node_obj.id.urn
+                return False
+        self.to_node_id = node_obj.jid
+        if(self.jid not in node_obj.edge_ids):
+            node_obj.edge_ids.add_obj(self)
         self.save()
+        return True
 
-    def switch_direction(self):
-        """
-        Switches direction of edge, does not allow if such an edge
-        already exists
-        """
+    def set_bidirected(self, bidirected: bool):
+        """Sets/unsets edge to be bidirected"""
+        self.bidirected = bidirected
+
+    def is_bidirected(self):
+        """Check if edge is bidirected"""
+        return self.bidirected
+
+    def connects(self, source=None, target=None, ignore_direction=False):
+        """Test if a node or nodes are connected by edge"""
+        if(not source and not target):
+            return False
+        if(self.bidirected or ignore_direction):
+            if(source and source.id.urn not in
+               [self.from_node_id, self.to_node_id]):
+                return False
+            if(target and target.id.urn not in
+               [self.from_node_id, self.to_node_id]):
+                return False
+        else:
+            if(source and source.id.urn != self.from_node_id):
+                return False
+            if(target and target.id.urn != self.to_node_id):
+                return False
+        return True
 
     def destroy(self):
         """
@@ -83,9 +128,9 @@ class edge(element, anchored):
             i.destroy()
         base = self.from_node()
         target = self.to_node()
-        if base and self in base.edge_ids.obj_list():
+        if base and self.jid in base.edge_ids:
             base.edge_ids.remove_obj(self)
-        if target and self in target.edge_ids.obj_list():
+        if target and self.jid in target.edge_ids:
             target.edge_ids.remove_obj(self)
         element.destroy(self)
 
@@ -96,7 +141,8 @@ class edge(element, anchored):
         """
         from_name = uuid.UUID(self.from_node().jid).hex
         to_name = uuid.UUID(self.to_node().jid).hex
-        dstr = f'{from_name} -> {to_name} '
+        arrow = '--' if self.bidirected else '->'
+        dstr = f'{from_name} {arrow} {to_name} '
 
         edge_dict = self.context
         if (self.kind != 'generic'):

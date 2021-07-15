@@ -53,7 +53,7 @@ Everything here is based on my opinion and intution. That suffices for me, and I
 \section{Compute via The Collective, The Worker Bee Model}
 
 \chapter{Abstrations of Jaseci}
-\section{Graphs, the Good Friend that Never Gets Invited to the Party}
+\section{Graphs, the Friend that Never Gets Invited to the Party}
 There's something quite strange that has happend with our \gls{common languages} over the years, ...decades. When you look at it, almost every data structure we programmers use to solve problems can be modeled formally as a graph, or a special case of a graph, (save perhaps hash tables). Think about it, stacks, lists, queues, trees, heaps, and yes, even graphs, can be modeled with graphs. But, low and behold, no common language ustilizes the formal semantics of a graph as its first order abstraction for data or memory. I mean, isn't it a bit odd that practically every data structure covered in the language-agnostic classic foundational work \textit{Introduction to Algorithms}~\cite{intro_to_algo} can most naturally be be reasoned about as a graph, yet none of the common languages have built in and be designed around this primitive. I submit that the graph semantic is stupidly rich, very nice for us humans to reason about, and, most importantly for the purpose of Jaseci, is inherently well suited for the conceptualization and reasoning about computational problems.
 \paragraph{}
 There are a few arguments that may pop into mind at this point of my conjecture.
@@ -74,17 +74,15 @@ There are many categories of graphs to consider when thinking about the abstract
 In Jaseci, we elect to assume the following semantics:
 \begin{enumerate}
     \item Graphs are directed (as per Figure~\ref{fig:directedgraph}) with a special case of a doubly directed edge type which can be utilized practically as an undirected edge (imagine fusing the two edges between nodes 3 and 4 in the figure).
-    \item Both nodes and edges have their own distinct identities (i,e. an edge isn't representable as a pairing of two nodes). This point is important as both nodes and edges can have context.
+    \item Both nodes and edges have their own distinct identities (i,e. an edge isn't representable as a pairing of two nodes). This point is important as both nodes and edges can have \gls{contexts}.
     \item Multigraphs (i.e., parallel edges) are allowed, including self-loop edges (as per Figure~\ref{fig:multigraph}).
     \item Graphs are not required to be acyclic.
     \item No hypergraphs, as I wouldn't want Jaseci programmers heads to explode.
 
 \end{enumerate}
 \emph{As an aside, I would describe Jaseci graphs as strictly unstrict directed multigraphs that leverages the semantics of parallel edges to create a laymans `undirected edge' by shorthanding two directed edges pointed in opposite directions between the same two nodes.}
-\paragraph{}
-
-[NERD ALERT, skip if needed]
-\noindent I'd formally describe a Jaseci Graph as an $7$-tuple $(N,E,C,s,t,c_N,c_E)$, where
+\noindent\paragraph{[START NERD ALERT]}
+I'd formally describe a Jaseci Graph as an $7$-tuple $(N,E,C,s,t,c_N,c_E)$, where
 \begin{enumerate}
     \item $N$ is the set of nodes in a graph
     \item $E$ is the set of edges in a graph
@@ -94,22 +92,20 @@ In Jaseci, we elect to assume the following semantics:
     \item $c_N$: $N \rightarrow C$, maps nodes to contexts
     \item $c_E$: $E \rightarrow C$, maps edges to contexts
 \end{enumerate}
-An undriected edge can then be formed with a pair of edges $(x, y)$ if four conditions are met,
+An undriected edge can then be formed with a pair of edges $(x, y)$ if three conditions are met,
 \begin{enumerate}
     \item $x, y \in E$
-    \item $s(x) = t(y)$
-    \item $s(y) = t(x)$
-    \item $c(x) = c(y)$
+    \item $s(x) = t(y)$, and $s(y) = t(x)$
+    \item $c_E(x) = c_E(y)$
 \end{enumerate}
-
-[END NERD ALERT]
-
+\noindent\paragraph{[END NERD ALERT]}
+\paragraph{}
 If you happend to have read that formal definition and didn't enter deep comatose you may be wondering ``Whoa, what was that context stuff that came outta nowhere! What's this guy trying to do here, sneaking a new concept in as if it was already introduced and described.''
 \paragraph{}
-Worry not friend, lets chat about it.
+Worry not friend, lets discuss.
 \subsection{Putting it All Into Context}
 
-A key principle of Jaseci is to reshape and reimagine how we view data and memory. We do so add the intuitive and rich semantics of graphs.
+A key principle of Jaseci is to reshape and reimagine how we view data and memory. We do so by fusing the concept of data wit the intuitive and rich semantics of graphs as the lowest level primitive to view memory.
 
 A context is a representation of data that can be expressed simply as a $3$-tuple $(\sum_K,\sum_V,p_K)$, where
 \begin{enumerate}

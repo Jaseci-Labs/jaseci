@@ -18,6 +18,7 @@ class node_tests(TestCaseHelper, TestCase):
 
     def test_node_connections(self):
         """Test connecting and disconnecting etc of nodes"""
+        self.logger_on()
         node1 = node(h=mem_hook())
         node2 = node(h=node1._h)
         node3 = node(h=node1._h)
@@ -36,6 +37,7 @@ class node_tests(TestCaseHelper, TestCase):
         node2.detach_inbound(node3)
         node2.detach_outbound(node1)
         node2.detach_outbound(node3)
+
         self.assertTrue(node4.is_equivalent(node2))
         self.assertTrue(node3.is_equivalent(node1))
         self.assertTrue(node3.is_equivalent(node2))

@@ -47,7 +47,8 @@ class architype_tests(TestCaseHelper, TestCase):
         edge = node1.attach_outbound(node2)
         self.assertEqual(len(node1.edge_ids), 1)
         self.assertEqual(len(node2.edge_ids), 1)
-        edge.destroy()
+        self.assertEqual(len(edge), 1)
+        edge[0].destroy()
         self.assertEqual(len(node1.edge_ids), 0)
         self.assertEqual(len(node2.edge_ids), 0)
 

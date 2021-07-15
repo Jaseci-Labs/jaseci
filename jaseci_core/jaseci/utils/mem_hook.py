@@ -120,7 +120,6 @@ class mem_hook():
         """
         Get item from externally hooked general store by id
         """
-        return None
 
     def has_obj_in_store(self, item_id):
         """
@@ -138,7 +137,6 @@ class mem_hook():
         """
         Get global config from externally hooked general store by name
         """
-        return None
 
     def has_cfg_in_store(self, name):
         """

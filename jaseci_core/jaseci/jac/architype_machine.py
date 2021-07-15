@@ -147,7 +147,7 @@ class architype_machine(machine):
                 del edge_objs
                 self.rt_error('Invalid to node for edge')
 
-            lhs_node.attach_outbound(rhs_node, use_edge=edge_obj)
+            lhs_node.attach_outbound(rhs_node, [edge_obj])
             edge_objs.append(edge_obj)
 
             # TODO: handle non-directional edge once that's supported in jac
