@@ -809,7 +809,7 @@ class machine():
         if (not is_spawn):
             result = jac_set(self.owner())
             if(len(kid) > 2):
-                for i in self.current_node.all_edges():
+                for i in self.current_node.attached_edges():
                     if (i.kind == kid[2].token_text()):
                         result.add_obj(i.opposing_node(self.current_node))
             else:

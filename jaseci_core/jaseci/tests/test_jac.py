@@ -189,7 +189,7 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
         test_walker.run()
-        print(gph.get_network_paths())
+        print(gph.get_all_edges())
 
     def test_multiple_edged_between_nodes_delete_all(self):
         """Test that multiple edges deleted correctly if delete all"""
@@ -201,7 +201,7 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
         test_walker.run()
-        print(gph.get_network_paths())
+        print(gph.get_all_edges())
 
     def test_multiple_edged_between_nodes_delete_filtered(self):
         """Test that multiple edges deleted correctly if delete filtered"""
@@ -213,7 +213,7 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
         test_walker.run()
-        print(gph.get_network_paths())
+        print(gph.get_all_edges())
 
     def test_generic_can_be_used_to_specify_generic_edges(self):
         """Test that generic edge tag works"""
@@ -225,4 +225,4 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
         test_walker.run()
-        print(gph.get_network_paths())
+        print(gph.get_all_edges())

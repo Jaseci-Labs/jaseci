@@ -4,7 +4,6 @@ Edge class for Jaseci
 Each edge has an id, name, timestamp, the from node at the element of the edge
 and the to node it is pointing to.
 """
-from logging import fatal
 from jaseci.element import element
 from jaseci.utils.obj_mixins import anchored
 from jaseci.utils.id_list import id_list
@@ -21,7 +20,8 @@ class edge(element, anchored):
         self.bidirected: bool = False
         self.context = {}
         self.activity_action_ids = id_list(self)
-        super().__init__(*args, **kwargs)
+        anchored.__init__(self)
+        element.__init__(self, *args, **kwargs)
         if from_node:
             self.set_from_node(from_node)
         if to_node:
@@ -32,7 +32,8 @@ class edge(element, anchored):
         ret = self._h.get_obj(uuid.UUID(self.from_node_id)
                               ) if self.from_node_id else None
         if (not ret):
-            logger.critical(str(f"{self} disconnected from source node"))
+            logger.critical(
+                str(f"{self} disconnected from source node"))
             return None
         else:
             return ret
@@ -51,8 +52,8 @@ class edge(element, anchored):
 
     def opposing_node(self, node_obj):
         """Returns node edge is pointing to"""
-        node_set = ([self.to_node_id, self.from_node_id]
-                    ).remove(node_obj.id.urn)
+        node_set = [self.to_node_id, self.from_node_id]
+        node_set.remove(node_obj.id.urn)
         ret = self._h.get_obj(uuid.UUID(node_set[0])) if len(
             node_set) == 1 and node_set[0] else None
         if (not ret):
@@ -64,22 +65,30 @@ class edge(element, anchored):
             return ret
 
     def set_from_node(self, node_obj):
-        """Returns node edge is pointing from"""
+        """
+        Returns node edge is pointing from
+        TODO: should check prior nodes edge_ids if is a reset
+        """
         if self.to_node_id:
             if(not self.to_node().dimension_matches(node_obj,
                                                     silent=False)):
-                return
+                return False
         self.from_node_id = node_obj.id.urn
         self.save()
+        return True
 
     def set_to_node(self, node_obj):
-        """Returns node edge is pointing to"""
+        """
+        Returns node edge is pointing to
+        TODO: should check prior nodes edge_ids if is a reset
+        """
         if self.from_node_id:
             if(not self.from_node().dimension_matches(node_obj,
                                                       silent=False)):
-                return
+                return False
         self.to_node_id = node_obj.id.urn
         self.save()
+        return True
 
     def set_bidirected(self, bidirected: bool):
         """Sets/unsets edge to be bidirected"""

@@ -42,6 +42,4 @@ urlpatterns = [
     path('user/', include('user_api.urls')),
     path('', include('jac_api.urls')),
     path('', include('obj_api.urls')),
-    path('ui/', include('ui.urls')),
-    path('ui/', include('django.contrib.auth.urls')),
 ]
