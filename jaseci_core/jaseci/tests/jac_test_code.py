@@ -536,3 +536,62 @@ edgey4 = \
         }
     }
     """
+
+edgey5 = \
+    """
+    node test;
+
+    edge apple;
+    edge banana;
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            here --> a;
+            here --> a;
+            here -[apple]-> a;
+            here -[banana]-> a;
+
+            here !-[generic]-> -[generic]->;
+        }
+    }
+    """
+
+edgey6 = \
+    """
+    node test;
+
+    edge apple;
+    edge banana;
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            b = spawn here --> node::test;
+
+            here -[apple]-> -[generic]->;
+        }
+    }
+    """
+
+# edgey7 = \
+#     """
+#     node test;
+
+#     edge apple;
+#     edge banana;
+
+#     walker init {
+#         root {
+#             a = spawn here --> node::test;
+#             b = spawn here --> node::test;
+#             here --> a;
+#             here --> a;
+#             here -[apple]-> a;
+#             here -[apple]-> b;
+#             here -[banana]-> a;
+
+#             here !-[generic]-> -[apple]->;
+#         }
+#     }
+#     """

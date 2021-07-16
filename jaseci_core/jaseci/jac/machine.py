@@ -435,18 +435,28 @@ class machine():
             # TODO: IF JACSET IS TARGET APLLY TO ALL MEMEBERS OF JACSET
             # Line below PARTIALLY generalizes disconnect NEEDS REVIEW
             edge_set = self.run_edge_ref(kid[2])
-            if(target):  # HACK: if should always eval true REview later
+            if(isinstance(target, node)):
                 base.detach_edges(target, edge_set.obj_list())
+            elif(isinstance(target, jac_set)):
+                for i in target.obj_list():
+                    base.detach_edges(i, edge_set.obj_list())
+            else:
+                logger.critical(
+                    f'Cannot connect to {target} of type {type(target)}!')
             target = base
         else:
-            use_edge = self.run_edge_ref(kid[1], is_spawn=True)
             direction = kid[1].kid[0].name
-            if (direction == 'edge_from'):
-                base.attach_inbound(target, [use_edge])
-            elif (direction == 'edge_to'):
-                base.attach_outbound(target, [use_edge])
-            else:
-                base.attach_bidirected(target, [use_edge])
+            if(isinstance(target, node)):
+                target = jac_set(self, in_list=[target.jid])
+            if(isinstance(target, jac_set)):
+                for i in target.obj_list():
+                    use_edge = self.run_edge_ref(kid[1], is_spawn=True)
+                    if (direction == 'edge_from'):
+                        base.attach_inbound(i, [use_edge])
+                    elif (direction == 'edge_to'):
+                        base.attach_outbound(i, [use_edge])
+                    else:
+                        base.attach_bidirected(i, [use_edge])
         return target
 
     def run_logical(self, jac_ast):
