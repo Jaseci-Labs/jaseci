@@ -434,12 +434,11 @@ class machine():
         if (kid[1].name == 'NOT'):
             # TODO: IF JACSET IS TARGET APLLY TO ALL MEMEBERS OF JACSET
             # Line below PARTIALLY generalizes disconnect NEEDS REVIEW
-            edge_set = self.run_edge_ref(kid[2])
             if(isinstance(target, node)):
-                base.detach_edges(target, edge_set.obj_list())
+                base.detach_edges(target, self.run_edge_ref(kid[2]).obj_list())
             elif(isinstance(target, jac_set)):
                 for i in target.obj_list():
-                    base.detach_edges(i, edge_set.obj_list())
+                    base.detach_edges(i, self.run_edge_ref(kid[2]).obj_list())
             else:
                 logger.critical(
                     f'Cannot connect to {target} of type {type(target)}!')

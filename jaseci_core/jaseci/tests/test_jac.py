@@ -279,15 +279,15 @@ class jac_tests(TestCaseHelper, TestCase):
         edges = gph.get_all_edges()
         self.assertEqual(len(edges), 4)
 
-    # def test_can_disconnect_multi_nodes_advanced(self):
-    #     """Test disconnecting mutilpe nodes advanced"""
-    #     self.logger_on()
-    #     gph = graph(h=mem_hook())
-    #     sent = sentinel(h=gph._h)
-    #     sent.register_code(jtc.edgey7)
-    #     test_walker = \
-    #         sent.walker_ids.get_obj_by_name('init')
-    #     test_walker.prime(gph)
-    #     test_walker.run()
-    #     edges = gph.get_all_edges()
-    #     self.assertEqual(len(edges), 3)
+    def test_can_disconnect_multi_nodes_advanced(self):
+        """Test disconnecting mutilpe nodes advanced"""
+        self.logger_on()
+        gph = graph(h=mem_hook())
+        sent = sentinel(h=gph._h)
+        sent.register_code(jtc.edgey7)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        edges = gph.get_all_edges()
+        self.assertEqual(len(edges), 3)

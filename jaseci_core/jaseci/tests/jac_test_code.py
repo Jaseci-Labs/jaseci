@@ -574,24 +574,24 @@ edgey6 = \
     }
     """
 
-# edgey7 = \
-#     """
-#     node test;
+edgey7 = \
+    """
+    node test;
 
-#     edge apple;
-#     edge banana;
+    edge apple;
+    edge banana;
 
-#     walker init {
-#         root {
-#             a = spawn here --> node::test;
-#             b = spawn here --> node::test;
-#             here --> a;
-#             here --> a;
-#             here -[apple]-> a;
-#             here -[apple]-> b;
-#             here -[banana]-> a;
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            b = spawn here --> node::test;
+            here --> a;
+            here --> a;
+            here -[apple]-> a;
+            here -[apple]-> b;
+            here -[banana]-> a;
 
-#             here !-[generic]-> -[apple]->;
-#         }
-#     }
-#     """
+            here !-[generic]-> -[apple]->;
+        }
+    }
+    """
