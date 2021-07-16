@@ -430,7 +430,7 @@ class machine():
         base = self.run_logical(kid[0])
         target = self.run_expression(kid[-1])
         self.rt_check_type(base, node, kid[0])
-        self.rt_check_type(target, node, kid[-1])
+        self.rt_check_type(target, [node, jac_set], kid[-1])
         if (kid[1].name == 'NOT'):
             # TODO: IF JACSET IS TARGET APLLY TO ALL MEMEBERS OF JACSET
             # Line below PARTIALLY generalizes disconnect NEEDS REVIEW
@@ -666,8 +666,7 @@ class machine():
             | STRING
             | BOOL
             | array_ref
-            | node_ref
-            | edge_ref (node_ref)? /* Returns nodes even if edge */
+                | node_edge_ref
             | list_val
             | dotted_name
             | LPAREN expression RPAREN
@@ -683,11 +682,7 @@ class machine():
             return self.parse_str_token(kid[0].token_text())
         elif(kid[0].name == 'BOOL'):
             return bool(kid[0].token_text() == 'true')
-        elif (kid[0].name == 'edge_ref'):
-            result = self.edge_to_node_jac_set(self.run_edge_ref(kid[0]))
-            if(len(kid) > 1):
-                result = result * self.run_node_ref(kid[1])
-            return result
+
         elif(kid[0].name == 'dotted_name'):
             return self._jac_scope.get_live_var(self.run_dotted_name(kid[0]),
                                                 kid[0])
@@ -701,17 +696,44 @@ class machine():
         else:
             return getattr(self, f'run_{kid[0].name}')(kid[0])
 
-    def run_index(self, jac_ast):
+    def run_node_edge_ref(self, jac_ast):
         """
-        index: LSQUARE expression RSQUARE;
+        node_edge_ref:
+            node_ref
+            | edge_ref (node_ref)?
+            | (KW_NODE | KW_EDGE) LSQUARE node_ref RSQUARE
+            | (KW_NODE | KW_EDGE) LSQUARE edge_ref (node_ref)? RSQUARE;
         """
         kid = jac_ast.kid
-        idx = self.run_expression(kid[1])
-        if(not isinstance(idx, int) and not isinstance(idx, str)):
-            self.rt_error(f'Index of type {type(idx)} not valid. '
-                          f'Indicies must be an integer or string!', kid[1])
-            return None
-        return idx
+        is_nodeset = True
+        if(kid[0].name == 'KW_NODE'):
+            kid = kid[2:]
+        if(kid[0].name == 'KW_EDGE'):
+            kid = kid[2:]
+            is_nodeset = False
+
+        if(kid[0].name == 'node_ref'):
+            if(is_nodeset):
+                return self.run_node_ref(kid[0])
+            else:
+                return self.obj_set_to_jac_set(
+                    self.current_node.attached_edges(
+                        self.run_node_ref(kid[0])))
+        elif (kid[0].name == 'edge_ref'):
+            if(is_nodeset):
+                result = self.edge_to_node_jac_set(self.run_edge_ref(kid[0]))
+                if(len(kid) > 1 and kid[1].name == 'node_ref'):
+                    result = result * self.run_node_ref(kid[1])
+                return result
+            else:
+                result = self.run_edge_ref(kid[0])
+                if(kid[1].name == 'node_ref'):
+                    result = jac_set(
+                        self, inlist=[i for i in result if i in
+                                      self.obj_set_to_jac_set(
+                                          self.current_node.attached_edges(
+                                              self.run_node_ref(kid[1])))])
+                return result
 
     def run_node_ref(self, jac_ast, is_spawn=False):
         """
@@ -830,6 +852,18 @@ class machine():
             if(i.name == 'expression'):
                 list_res.append(self.run_expression(i))
         return list_res
+
+    def run_index(self, jac_ast):
+        """
+        index: LSQUARE expression RSQUARE;
+        """
+        kid = jac_ast.kid
+        idx = self.run_expression(kid[1])
+        if(not isinstance(idx, int) and not isinstance(idx, str)):
+            self.rt_error(f'Index of type {type(idx)} not valid. '
+                          f'Indicies must be an integer or string!', kid[1])
+            return None
+        return idx
 
     def run_dict_val(self, jac_ast):
         """
@@ -964,6 +998,15 @@ class machine():
         return str(bytes(s, "utf-8").
                    decode("unicode_escape")[1:-1])
 
+    def obj_set_to_jac_set(self, obj_set):
+        """
+        Returns nodes jac_set from edge jac_set from current node
+        """
+        ret = jac_set(self)
+        for i in obj_set:
+            ret.add_obj(i)
+        return ret
+
     def edge_to_node_jac_set(self, edge_set):
         """
         Returns nodes jac_set from edge jac_set from current node
@@ -1017,9 +1060,12 @@ class machine():
 
     def rt_check_type(self, obj, typ, jac_ast=None):
         """Prints error if type mismatach"""
-        if (not isinstance(obj, typ)):
-            self.rt_error(f'Incompatible type {typ.__name__} for object ' +
-                          f'{obj} - {type(obj).__name__}', jac_ast)
-            return False
-        else:
-            return True
+        if(not isinstance(typ, list)):
+            typ = [typ]
+        for i in typ:
+            if (isinstance(obj, i)):
+                return True
+        self.rt_error(f'Incompatible type for object '
+                      f'{obj} - {type(obj).__name__}, '
+                      f'expecting {typ}', jac_ast)
+        return False

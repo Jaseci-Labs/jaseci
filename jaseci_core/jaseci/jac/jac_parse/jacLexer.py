@@ -1,4 +1,4 @@
-# Generated from /home/ninja/kode/jaseci/jaseci_core/jaseci/jac/jac.g4 by ANTLR 4.9.2
+# Generated from jac.g4 by ANTLR 4.9.2
 from antlr4 import *
 from io import StringIO
 import sys

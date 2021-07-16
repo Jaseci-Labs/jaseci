@@ -142,8 +142,7 @@ atom:
 	| FLOAT
 	| STRING
 	| BOOL
-	| node_ref
-	| edge_ref (node_ref)? /* Returns nodes even if edge */
+	| node_edge_ref
 	| list_val
 	| dict_val
 	| dotted_name
@@ -151,7 +150,11 @@ atom:
 	| spawn
 	| DEREF expression;
 
-index: LSQUARE expression RSQUARE;
+node_edge_ref:
+	node_ref
+	| edge_ref (node_ref)?
+	| KW_NODE LSQUARE node_ref RSQUARE
+	| KW_EDGE LSQUARE edge_ref (node_ref)? RSQUARE;
 
 node_ref: KW_NODE DBL_COLON NAME;
 
@@ -168,6 +171,8 @@ edge_from: '<--' | '<-' ('[' NAME ']')? '-';
 edge_any: '<-->' | '<-' ('[' NAME ']')? '->';
 
 list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
+
+index: LSQUARE expression RSQUARE;
 
 dict_val: LBRACE (kv_pair (COMMA kv_pair)*)? RBRACE;
 

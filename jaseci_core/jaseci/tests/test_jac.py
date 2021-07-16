@@ -281,7 +281,6 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_can_disconnect_multi_nodes_advanced(self):
         """Test disconnecting mutilpe nodes advanced"""
-        self.logger_on()
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.edgey7)

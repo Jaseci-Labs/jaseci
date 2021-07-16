@@ -1,4 +1,4 @@
-# Generated from /home/ninja/kode/jaseci/jaseci_core/jaseci/jac/jac.g4 by ANTLR 4.9.2
+# Generated from jac.g4 by ANTLR 4.9.2
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .jacParser import jacParser
@@ -422,12 +422,12 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#index.
-    def enterIndex(self, ctx:jacParser.IndexContext):
+    # Enter a parse tree produced by jacParser#node_edge_ref.
+    def enterNode_edge_ref(self, ctx:jacParser.Node_edge_refContext):
         pass
 
-    # Exit a parse tree produced by jacParser#index.
-    def exitIndex(self, ctx:jacParser.IndexContext):
+    # Exit a parse tree produced by jacParser#node_edge_ref.
+    def exitNode_edge_ref(self, ctx:jacParser.Node_edge_refContext):
         pass
 
 
@@ -500,6 +500,15 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#list_val.
     def exitList_val(self, ctx:jacParser.List_valContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#index.
+    def enterIndex(self, ctx:jacParser.IndexContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#index.
+    def exitIndex(self, ctx:jacParser.IndexContext):
         pass
 
 
