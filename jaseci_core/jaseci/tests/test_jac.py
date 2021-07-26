@@ -293,7 +293,6 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_accessing_edges_basic(self):
         """Test accessing Edges"""
-        self.logger_on()
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.edge_access)

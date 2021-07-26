@@ -613,9 +613,9 @@ edge_access = \
             a = spawn here -[apple]-> node::test;
             b = spawn here -[banana]-> node::test;
 
-            e = edge[-[apple]->][0];
+            e = -[apple]->.edge[0];
             e.v1 = 7;
-            e = edge[--> node::test][1];
+            e = --> node::test.edge[1];
             e.x1=8;
         }
     }

@@ -567,27 +567,39 @@ class machine():
 
     def run_power(self, jac_ast):
         """
-        power: func_call (POW factor)*;
+        power: func_call (POW factor)* | func_call index+;
         """
         kid = jac_ast.kid
         result = self.run_func_call(kid[0])
         kid = kid[1:]
-        while (kid):
-            result = result ** self.run_factor(kid[1])
-            kid = kid[2:]
-            if(not kid):
-                break
-        return result
+        if(len(kid) < 1):
+            return result
+        elif(kid[0].name == 'POW'):
+            while (kid):
+                result = result ** self.run_factor(kid[1])
+                kid = kid[2:]
+                if(not kid):
+                    break
+            return result
+        elif (kid[0].name == "index"):
+            if(isinstance(result, list) or isinstance(result, dict)):
+                for i in kid:
+                    if(i.name == 'index'):
+                        result = result[self.run_index(i)]
+                result = self._jac_scope.reference_to_value(result)
+                return result
+            else:
+                self.rt_error(f'Cannot index into {result}'
+                              f' of type {type(result)}!',
+                              kid[0])
+                return 0
 
     def run_func_call(self, jac_ast):
         """
         func_call:
             atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
-            | atom DOT KW_LENGTH
-            | atom DOT KW_KEYS
-            | atom DOT KW_DESTROY LPAREN expression RPAREN
-            | atom? DBL_COLON NAME
-            | atom index+;
+            | atom DOT func_built_in
+            | atom? DBL_COLON NAME;
         """
         kid = jac_ast.kid
         atom_res = self._jac_scope.has_obj
@@ -597,30 +609,7 @@ class machine():
         if(len(kid) < 1):
             return atom_res
         elif(kid[0].name == 'DOT'):
-            kid = kid[1:]
-        if (kid[0].name == "KW_LENGTH"):
-            if(isinstance(atom_res, list)):
-                return len(atom_res)
-            else:
-                self.rt_error(f'Cannot get length of {atom_res}. Not List!',
-                              kid[0])
-                return 0
-        if (kid[0].name == "KW_KEYS"):
-            if(isinstance(atom_res, dict)):
-                return atom_res.keys()
-            else:
-                self.rt_error(f'Cannot get keys of {atom_res}. '
-                              f'Not Dictionary!', kid[0])
-                return []
-        elif (kid[0].name == "KW_DESTROY"):
-            idx = self.run_expression(kid[2])
-            if (isinstance(atom_res, list) and isinstance(idx, int)):
-                del atom_res[idx]
-                return atom_res
-            else:
-                self.rt_error(f'Cannot remove index {idx} from {atom_res}.',
-                              kid[0])
-                return atom_res
+            return self.run_func_built_in(atom_res, kid[1])
         elif (kid[0].name == 'DBL_COLON'):
             m = machine(owner_override=self.owner())
             m.push_scope(jac_scope(owner=self,
@@ -630,18 +619,6 @@ class machine():
                 kid[1].token_text()).value)
             self.report = self.report + m.report
             return atom_res
-        elif (kid[0].name == "index"):
-            if(isinstance(atom_res, list) or isinstance(atom_res, dict)):
-                for i in kid:
-                    if(i.name == 'index'):
-                        atom_res = atom_res[self.run_index(i)]
-                atom_res = self._jac_scope.reference_to_value(atom_res)
-                return atom_res
-            else:
-                self.rt_error(f'Cannot index into {atom_res}'
-                              f' of type {type(atom_res)}!',
-                              kid[0])
-                return 0
         elif(kid[0].name == "LPAREN"):
             param_list = []
             kid = kid[1:]
@@ -658,6 +635,78 @@ class machine():
                 self.rt_error(f'Unable to execute function {atom_res}',
                               kid[0])
 
+    def run_func_built_in(self, atom_res, jac_ast):
+        """
+        func_built_in:
+            | KW_LENGTH
+            | KW_KEYS
+            | KW_EDGE
+            | KW_NODE
+            | KW_DESTROY LPAREN expression RPAREN;
+        """
+        kid = jac_ast.kid
+        if (kid[0].name == "KW_LENGTH"):
+            if(isinstance(atom_res, list)):
+                return len(atom_res)
+            else:
+                self.rt_error(f'Cannot get length of {atom_res}. Not List!',
+                              kid[0])
+                return 0
+        elif (kid[0].name == "KW_KEYS"):
+            if(isinstance(atom_res, dict)):
+                return atom_res.keys()
+            else:
+                self.rt_error(f'Cannot get keys of {atom_res}. '
+                              f'Not Dictionary!', kid[0])
+                return []
+        elif (kid[0].name == "KW_EDGE"):
+            if(isinstance(atom_res, node)):
+                return self.obj_set_to_jac_set(
+                    self.current_node.attached_edges(atom_res))
+            elif(isinstance(atom_res, edge)):
+                return atom_res
+            elif(isinstance(atom_res, jac_set)):
+                res = jac_set(self)
+                for i in atom_res.obj_list():
+                    if(isinstance(i, edge)):
+                        res.add_obj(i)
+                    elif(isinstance(i, node)):
+                        res += self.obj_set_to_jac_set(
+                            self.current_node.attached_edges(i))
+                return res
+            else:
+                self.rt_error(f'Cannot get edges from {atom_res}. '
+                              f'Type {type(atom_res)} invalid', kid[0])
+                return atom_res
+        # may want to remove 'here" node from return below
+        elif (kid[0].name == "KW_NODE"):
+            if(isinstance(atom_res, node)):
+                return atom_res
+            elif(isinstance(atom_res, edge)):
+                return self.obj_set_to_jac_set(atom_res.nodes())
+            elif(isinstance(atom_res, jac_set)):
+                res = jac_set(self)
+                for i in atom_res.obj_list():
+                    if(isinstance(i, edge)):
+                        res.add_obj(i.to_node())
+                        res.add_obj(i.from_node())
+                    elif(isinstance(i, node)):
+                        res.add_obj(i)
+                return res
+            else:
+                self.rt_error(f'Cannot get edges from {atom_res}. '
+                              f'Type {type(atom_res)} invalid', kid[0])
+                return atom_res
+        elif (kid[0].name == "KW_DESTROY"):
+            idx = self.run_expression(kid[2])
+            if (isinstance(atom_res, list) and isinstance(idx, int)):
+                del atom_res[idx]
+                return atom_res
+            else:
+                self.rt_error(f'Cannot remove index {idx} from {atom_res}.',
+                              kid[0])
+                return atom_res
+
     def run_atom(self, jac_ast):
         """
         atom:
@@ -666,7 +715,7 @@ class machine():
             | STRING
             | BOOL
             | array_ref
-                | node_edge_ref
+            | node_edge_ref
             | list_val
             | dotted_name
             | LPAREN expression RPAREN
@@ -698,11 +747,7 @@ class machine():
 
     def run_node_edge_ref(self, jac_ast):
         """
-        node_edge_ref:
-            node_ref
-            | edge_ref (node_ref)?
-            | (KW_NODE | KW_EDGE) LSQUARE node_ref RSQUARE
-            | (KW_NODE | KW_EDGE) LSQUARE edge_ref (node_ref)? RSQUARE;
+        node_edge_ref: node_ref | edge_ref (node_ref)?;
         """
         kid = jac_ast.kid
         is_nodeset = True

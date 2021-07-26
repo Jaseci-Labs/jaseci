@@ -127,15 +127,19 @@ term: factor ((MUL | DIV | MOD) factor)*;
 
 factor: (PLUS | MINUS) factor | power;
 
-power: func_call (POW factor)*;
+power: func_call (POW factor)* | func_call index+;
 
 func_call:
 	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
-	| atom DOT KW_LENGTH
-	| atom DOT KW_KEYS
-	| atom DOT KW_DESTROY LPAREN expression RPAREN
-	| atom? DBL_COLON NAME
-	| atom index+;
+	| atom DOT func_built_in
+	| atom? DBL_COLON NAME;
+
+func_built_in:
+	| KW_LENGTH
+	| KW_KEYS
+	| KW_EDGE
+	| KW_NODE
+	| KW_DESTROY LPAREN expression RPAREN;
 
 atom:
 	INT
@@ -150,11 +154,7 @@ atom:
 	| spawn
 	| DEREF expression;
 
-node_edge_ref:
-	node_ref
-	| edge_ref (node_ref)?
-	| KW_NODE LSQUARE node_ref RSQUARE
-	| KW_EDGE LSQUARE edge_ref (node_ref)? RSQUARE;
+node_edge_ref: node_ref | edge_ref (node_ref)?;
 
 node_ref: KW_NODE DBL_COLON NAME;
 

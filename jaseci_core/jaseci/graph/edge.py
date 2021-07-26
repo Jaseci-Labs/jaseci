@@ -50,19 +50,21 @@ class edge(element, anchored):
         else:
             return ret
 
+    def nodes(self):
+        """Returns both nodes connected to edge in a list"""
+        return [self.to_node(), self.from_node()]
+
     def opposing_node(self, node_obj):
-        """Returns node edge is pointing to"""
+        """Returns opposite node edge is pointing from node_obj"""
         node_set = [self.to_node_id, self.from_node_id]
-        node_set.remove(node_obj.id.urn)
-        ret = self._h.get_obj(uuid.UUID(node_set[0])) if len(
-            node_set) == 1 and node_set[0] else None
-        if (not ret):
+        try:
+            node_set.remove(node_obj.id.urn)
+            return self._h.get_obj(uuid.UUID(node_set[0]))
+        except ValueError:
             logger.critical(
                 str(f"{self} disconnected to node {node_obj}")
             )
             return None
-        else:
-            return ret
 
     def set_from_node(self, node_obj):
         """
