@@ -1,5 +1,5 @@
 pdflatex book
-bibtex book
 makeglossaries book
+bibtex book
 pdflatex book
-pdflatex book
+

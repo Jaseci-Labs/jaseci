@@ -3,6 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{subcaption}
 \usepackage{graphicx}
+\usepackage{grffile}
 \usepackage[toc]{glossaries}
 \newglossary[tlg]{technical}{tld}{tdn}{Techinical Terms}
 \makeglossaries
@@ -15,11 +16,12 @@
     urlcolor=black
 }
 
- 
+
 \title{Jaseci and Jac}
 \author{Jason Mars}
 
 \input{figures.tex}
+\input{glossary.tex}
 \begin{document}
 
 % \chapter*{Copyright}
@@ -158,7 +160,7 @@ Fine, I'll tell you.
 \end{enumerate}
 Don't get me wrong, we have to use libraries. I'm not saying go reimplement the wheel 15 thousand times over. But that doesn't mean they don't suck and should be avoided if possible. The best is to know your library inside and out so the moment you hit some suckitude you can pull in the library's source code into your own codebase and \gls{pwn} it as your own.
 
-\input{glossary.tex}
+
 
 \bibliographystyle{plain}
 \bibliography{book}
