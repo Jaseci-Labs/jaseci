@@ -14,27 +14,26 @@
 \newpagecolor{black}
 \vspace{\fill}
 \addtolength{\topmargin}{1in}
-\bf
+
 
 
 \setstretch{10.0}
 
 
-
-\begin{center}
-    {\color{title_white} \scalebox{4}[4]{\JJ}}\\
-    {\color{title_grey} \scalebox{7}[7]{\BB}}\\
-    {\color{title_white} \scalebox{2}[2]{\Me}}\par
-    {\color{title_white} \scalebox{2}[2]{\VER}}
-\end{center}
-
+\begingroup
+\bf\centering
+{\color{title_white} \scalebox{4}[4]{\JJ}}\\
+{\color{title_grey} \scalebox{7}[7]{\BB}}\\
+{\color{title_white} \scalebox{2}[2]{\Me}}\par
+{\color{title_white} \scalebox{2}[2]{\VER}}
+\endgroup
 
 
 \pagebreak
 \restorepagecolor
 
 %After title we restore all margins. 
-\newgeometry{top=1in,bottom=1in}
+\newgeometry{margin=1in}
 \setstretch{1.0}
 
 
