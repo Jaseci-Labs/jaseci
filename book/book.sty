@@ -1,0 +1,37 @@
+\ProvidesPackage{book}
+\usepackage[utf8]{inputenc}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage[toc]{glossaries}
+\newglossary[tlg]{technical}{tld}{tdn}{Techinical Terms}
+\makeglossaries
+\usepackage{hyperref}
+\hypersetup{
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black,
+    hyperindex=true,
+    bookmarks=true,
+    pdfa,
+    colorlinks=true,
+    breaklinks=true,
+    bookmarksopen=true,
+    unicode=true
+}
+
+% Set the dimensions of the pages.
+\usepackage[margin=1in]{geometry}
+\setlength\paperwidth{7.5in}
+\setlength\paperheight{9.25in}
+\setlength\textwidth{5.2in}
+\setlength\textheight{7.2in}
+
+
+\setlength\parindent{0pt}
+
+% To fix table of content spacing 
+\usepackage{tocloft}
+\raggedbottom
+\setlength{\parskip}{1em}

@@ -1,22 +1,6 @@
 
 \documentclass{book}
-\usepackage[utf8]{inputenc}
-\usepackage{subcaption}
-\usepackage{graphicx}
-\usepackage{grffile}
-\usepackage[toc]{glossaries}
-\newglossary[tlg]{technical}{tld}{tdn}{Techinical Terms}
-\makeglossaries
-\usepackage{hyperref}
-\hypersetup{
-    colorlinks,
-    citecolor=black,
-    filecolor=black,
-    linkcolor=black,
-    urlcolor=black
-}
-
-
+\usepackage{book}
 \title{Jaseci and Jac}
 \author{Jason Mars}
 
@@ -41,9 +25,9 @@
 \addcontentsline{toc}{chapter}{Preface}
 
 The way we design and write software to do computation and AI today sucks. It's a vat of boiling poop, mixed with pee, slowly swirling and bubbling toward that dehydrated semi-solid state of goop that serves to repel and repulse most normal people only attracting the few unfortunate-fortunate folks that happen to be obsessed with \gls{scat}.
-\paragraph{}
+\par
 Hrm, too much? Probably. I guess you'd expect me to use concrete examples and cite evidence to make my points, me being a professor and all. I mean, I could write something like \textit{``The fundamental imperative programming model utilized in near all of the production software produced in the last four decades has not changed since blah blah blah..."} to meet expections. I'd certainly sound more credible and perhaps super smart. Well, I'm not going to do that here. Let's have fun. Afterall, Jaseci has never been work for me, its play. Very ambitious play granted, but play at it's core.
-\paragraph{}
+\par
 Everything here is based on my opinion and intution. That suffices for me, and I hope it does for you. I have spent many decades coding and leading teams who code, but its my gut that tells me that we can do better. This book describes my attempt at better. I hope you find value in it. If you do, awesome! If you don't, also awesome.
 
 
@@ -57,21 +41,21 @@ Everything here is based on my opinion and intution. That suffices for me, and I
 \chapter{Abstrations of Jaseci}
 \section{Graphs, the Friend that Never Gets Invited to the Party}
 There's something quite strange that has happend with our \gls{common languages} over the years, ...decades. When you look at it, almost every data structure we programmers use to solve problems can be modeled formally as a graph, or a special case of a graph, (save perhaps hash tables). Think about it, stacks, lists, queues, trees, heaps, and yes, even graphs, can be modeled with graphs. But, low and behold, no common language ustilizes the formal semantics of a graph as its first order abstraction for data or memory. I mean, isn't it a bit odd that practically every data structure covered in the language-agnostic classic foundational work \textit{Introduction to Algorithms}~\cite{intro_to_algo} can most naturally be be reasoned about as a graph, yet none of the common languages have built in and be designed around this primitive. I submit that the graph semantic is stupidly rich, very nice for us humans to reason about, and, most importantly for the purpose of Jaseci, is inherently well suited for the conceptualization and reasoning about computational problems.
-\paragraph{}
+\par
 There are a few arguments that may pop into mind at this point of my conjecture.
 \begin{itemize}
     \item ``Well there are graph libraries in my favorite language that implement graph symantics, why would I need a language to force the concept upon me?''
           or
     \item ``Duh! Interacting with all data and memory through graphical abstractions will make the language ssllooowww as hell since memory in hardware is essitially a big array, what is this dude talking about!?!?''
 \end{itemize}
-\paragraph{}
+\par
 For the former of these two challenges, I counter with two points. First, the core design of a language are always based upon its inherent abstractions, and with graphs not being one such abstraction the language's design will not be optimized to empower programmers to nimbly do gymnastics with the rich symantics that graphs offer. And second, libraries suck (See~\ref{rant:librariessuck}).
-\paragraph{}
+\par
 For the latter question, I'd respond, ``Have you SEEN the kind of abstractions in modern languages!?!? It's rediculous, lets look at python dictionaries, actually scratch that, lets keep it simple and look at dynamic typing in general. The runtime complexity to support dynamic typing is most certainly hgiher than what would be needed to support graph symantics. Duh right back at'ya!''
 \subsection{Yes, But What Kind of Graphs}
 
 There are many categories of graphs to consider when thinking about the abstractions to support in Jaseci. There are rules to be defined as to the availabe semantics of the graphs. Should all graphs be \gls{directed graphs}, should we allow the creation of \gls{undirected graphs}, what about parallel edges or \gls{multigraphs}, are those explicitly expressible or discouraged / banned, can we express \gls{hypergraphs}, and what combination of these graphical sematics should be able to be manifested and manipulated through the programming model. At this point I can feel your eyes getting droopy and your mind moving into that intermediary state between concious and sleeping, so let me cut to the answer.
-\paragraph{}
+\par
 \printfigGraphTypes
 In Jaseci, we elect to assume the following semantics:
 \begin{enumerate}
@@ -83,7 +67,8 @@ In Jaseci, we elect to assume the following semantics:
 
 \end{enumerate}
 \emph{As an aside, I would describe Jaseci graphs as strictly unstrict directed multigraphs that leverages the semantics of parallel edges to create a laymans `undirected edge' by shorthanding two directed edges pointed in opposite directions between the same two nodes.}
-\noindent\paragraph{[START NERD ALERT]}
+\paragraph{[START NERD ALERT]}
+\par
 I'd formally describe a Jaseci Graph as an $7$-tuple $(N,E,C,s,t,c_N,c_E)$, where
 \begin{enumerate}
     \item $N$ is the set of nodes in a graph
@@ -100,10 +85,10 @@ An undriected edge can then be formed with a pair of edges $(x, y)$ if three con
     \item $s(x) = t(y)$, and $s(y) = t(x)$
     \item $c_E(x) = c_E(y)$
 \end{enumerate}
-\noindent\paragraph{[END NERD ALERT]}
-\paragraph{}
+\paragraph{[END NERD ALERT]}
+\par
 If you happend to have read that formal definition and didn't enter deep comatose you may be wondering ``Whoa, what was that context stuff that came outta nowhere! What's this guy trying to do here, sneaking a new concept in as if it was already introduced and described.''
-\paragraph{}
+\par
 Worry not friend, lets discuss.
 \subsection{Putting it All Into Context}
 
@@ -145,13 +130,13 @@ A context is a representation of data that can be expressed simply as a $3$-tupl
 \chapter{Rants}
 \section{Why Libraries Suck}
 \label{rant:librariessuck}
-\paragraph{}
+\par
 Because they do.
-\paragraph{}
+\par
 Still need more reasons?
-\paragraph{}
+\par
 Well, if you dont already know, I'm not going to tell you.
-\paragraph{}
+\par
 Fine, I'll tell you.
 \begin{enumerate}
     \item They suck because they create dependancies for which you must have faith in the implementer of the library to maintain and keep bug free.
