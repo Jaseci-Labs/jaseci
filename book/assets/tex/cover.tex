@@ -1,0 +1,40 @@
+
+\def\JJ{JASECI \& JAC} % Title
+\def\BB{The Bible} % Title
+\title{\JJ \BB}
+
+\def\Me{Jason Mars} % Author
+\author\Me
+
+\def\VER{v1.0}
+\definecolor{title_white}{rgb}{1,1,1}
+\definecolor{title_grey}{rgb}{0.6,0.6,0.6}
+
+
+\newpagecolor{black}
+\vspace{\fill}
+\addtolength{\topmargin}{1in}
+\bf
+
+
+\setstretch{10.0}
+
+
+
+\begin{center}
+    {\color{title_white} \scalebox{4}[4]{\JJ}}\\
+    {\color{title_grey} \scalebox{7}[7]{\BB}}\\
+    {\color{title_white} \scalebox{2}[2]{\Me}}\par
+    {\color{title_white} \scalebox{2}[2]{\VER}}
+\end{center}
+
+
+
+\pagebreak
+\restorepagecolor
+
+%After title we restore all margins. 
+\newgeometry{top=1in,bottom=1in}
+\setstretch{1.0}
+
+
