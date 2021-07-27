@@ -1,1 +1,33 @@
 \chapter{The Jac Programming Language}
+\section{Getting the Basics Out of the Way}
+\subsection{Basic Arithmetic Operations}
+The simplest math operations in Jac.
+
+
+\begin{lstlisting}[caption={Basic arithmetic operations}]
+walker init {
+    a = 4 + 4;
+    b = 4 * -5;
+    c = 4 / 4;  # Evaluates to a floating point number
+    d = 4 - 6;
+    e = a + b + c + d;
+    std.out(a, b, c, d, e);
+}
+    \end{lstlisting}
+
+\begin{lstlisting}[language=shell]
+8 -20 1.0 -2 -13.0
+        \end{lstlisting}
+
+
+Additionally, Jac supports power and modulo operations.
+
+\begin{lstlisting}[caption={Additional arithmetic operations}]
+walker init {
+    a = 4 ^ 4; b = 9 % 5; std.out(a, b);
+}
+    \end{lstlisting}
+
+\begin{lstlisting}[language=shell]
+256 4
+        \end{lstlisting}
