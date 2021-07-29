@@ -1,33 +1,44 @@
 \chapter{The Jac Programming Language}
+
+To articulate the sourcer spells made possible by the wand that is Jaseci (like that Harry Potter~\cite{harrypotter} simile there? Cool, I know ;-) ), I bestow upon thee, the Jac programming language. The name Jac take was chosen for a few reasons.
+\begin{itemize}
+    \item ``Jac'' is three characters long, so its well suited for the file name extention \texttt{.jac} for Jac programs.
+    \item It pulls its letters from the phrase \textbf{JA}seci \textbf{C}ode.
+    \item And it sounds oh so sweet to say ``Did you \gls{grok} that \gls{sick} Jac code yet!'' Rolls right off the tongue.
+\end{itemize}
+\par
+This chapter provides the full deep dive into the language. By the end, you will be fully empowerd with Jaseci wizardry and get a view into the key insights and novelty in the coding style.
+
 \section{Getting the Basics Out of the Way}
+First lets quickly dispense with the mundane. This section covers the standard table stakes fodder present in pretty much all languages. This stuff must be included for completeness, however you should be able to speed read this section.  If you are unable to speed read this, perhaps you should give visual basic a try.
+\subsection{The Obligatory Hello World}\printfigHelloWorldBaby
+Let's begin with what has become the unofficial official starting point for any introduction to a new language, the ``hello world'' program. Thank you Canada for providing one of the most impactful contributions in computer science with ``hello world'' becaming a meme both technically and socially. We have such love for this contribution we even tag or newborns with the phrase as per Fig.~\ref{fig:hello_baby}. I digress. Lets now \gls{christen} our baby, Jaseci, with its ``Hello World'' expression.
+
+\jaccode{hello_world.jac}{Jaseci says Hello!}
+
+Simple enough right? Well let's walk through it. What we have here is a valid Jac program with a single walker defined. Remember a walker is our little robot friend that walks the nodes and edges of a graph and does stuff. In the currly braces, we articulate what our walker should do. Here we instruct our walker to utilize the standard library to call a print function denoted as \texttt{std.out} to print a single string, our star and esteemed string, ``Hello World.'' The output to the screen (or wherever the OS is routing it's standard stream output) is simply,
+
+\shellout{hello_world.jac.output}
+
+And there we have the most useless program in the world. Though technically this program is AI, not as intelligent as the machine depicted in Figure~\ref{fig:hello_baby}, but one that we can understand much better (unless you speak ``\gls{goo goo gaa gaa}'' of course). Let's move on.
+
 \subsection{Basic Arithmetic Operations}
-The simplest math operations in Jac.
+Next we should cover the he simplest math operations in Jac. We'll build upon what we've learned so far with our little conversational AI above.
 
+\jaccode{jac_arith.jac}{Basic arithmetic operations}
 
-\begin{lstlisting}[caption={Basic arithmetic operations}]
-walker init {
-    a = 4 + 4;
-    b = 4 * -5;
-    c = 4 / 4;  # Evaluates to a floating point number
-    d = 4 - 6;
-    e = a + b + c + d;
-    std.out(a, b, c, d, e);
-}
-    \end{lstlisting}
+The output of this groundbreaking program is,
 
-\begin{lstlisting}[language=shell]
-8 -20 1.0 -2 -13.0
-        \end{lstlisting}
+\shellout{jac_arith.jac.output}
 
-
+Here in Jac Code~\ref{jac:jac_arith.jac} we show basic math operations. The semantics of these experisions are pretty much the same as anything you may have seen before, and pretty much match the semantics we have in the Python language. In this Example, we also observe that Jac is an untyped langauge and variables can be delcared via a direct assignment. The comma separated list of the defined variables \texttt{a} - \texttt{e} in the call to \texttt{std.out} illustrate multiple values being printed to screen from a single call.
+\par
 Additionally, Jac supports power and modulo operations.
 
-\begin{lstlisting}[caption={Additional arithmetic operations}]
-walker init {
-    a = 4 ^ 4; b = 9 % 5; std.out(a, b);
-}
-    \end{lstlisting}
+\jaccode{jac_more_arith.jac}{Additional arithmetic operations}
 
-\begin{lstlisting}[language=shell]
-256 4
-        \end{lstlisting}
+Jac Code~\ref{jac:jac_more_arith.jac} outputs,
+
+\shellout{jac_more_arith.jac.output}
+
+Here, we can also observe that, unlike Python, whitespace does not mater whatsoever. A corollary to this feature is every statement must end with a ``\texttt{;}''. Languages that utilize whitespace to express scoping should be illegal.

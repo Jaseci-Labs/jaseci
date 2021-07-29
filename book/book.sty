@@ -40,6 +40,7 @@
 \usepackage{pagecolor}
 \usepackage{setspace}
 
+
 %----------------------------------- LISTINGS  ------------------------------
 \usepackage{listings}
 
@@ -83,20 +84,44 @@ keywordstyle={\color{black}},%                         and format them in black
 \renewcommand{\lstlistlistingname}{List of \lstlistingname s}% List of Listings -> List of Algorithms
 
 \DeclareCaptionFont{white}{\color{white}\footnotesize\upshape\ttfamily}
-\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\linewidth}{#1#2#3}}}
-\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white,margin=0pt}
+% \DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{#1#2#3}}}
+\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white,margin=2pt}
 \lstset{ %
     language=jac,                                     % choose the language of the code
     frame=single,	                                % adds a frame around the code
+    columns=fullflexible,
+    backgroundcolor=\color{gray!10},
     captionpos=t,
     basicstyle=\footnotesize\upshape\ttfamily,      % the size of the fonts that are used for the code
     numbers=none,                    % where to put the line-numbers; possible values are (none, left, right)
     numbersep=10pt,                   % how far the line-numbers are from the code
-    numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+    numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
     keywordstyle=\bfseries\color{green!55!black},
     commentstyle=\itshape\color{purple!70!black},
     identifierstyle=\color{blue!60!black},
     stringstyle=\color{orange},
-    xleftmargin=3.5pt,
-    xrightmargin=-2.5pt,
+    xleftmargin=5.8pt,
+    xrightmargin=5.8pt,
 }
+
+\newcommand{\jaccode}[2]{\par\lstinputlisting[label=jac:#1, language=jac, numbers=left, caption={#2}]{assets/code/#1}\par}
+\newcommand{\shellout}[1]{\par\lstinputlisting[language=shell]{assets/code/#1}\par}
+%----------------------------------- NERD ALERT BOX  ------------------------------
+\usepackage[many]{tcolorbox}
+\usepackage{wrapfig}
+
+\newcounter{nerd}
+\newtcolorbox[use counter=nerd]
+  {nerd}[1][]
+  {title=Nerd Alert~\thetcbcounter~\emph{\footnotesize (time to let your eyes glaze over)},
+   left=0pt,
+   right=0pt,
+   fonttitle=\bfseries,
+   coltitle=black,
+   colframe=orange!40,
+   colback=orange!10,
+   #1
+}    
+
+
