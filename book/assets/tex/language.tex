@@ -12,8 +12,10 @@ The name Jac take was chosen for a few reasons.
 This chapter provides the full deep dive into the language. By the end, you will be fully empowerd with Jaseci wizardry and get a view into the key insights and novelty in the coding style.
 
 \section{Getting the Basics Out of the Way}
+
 First lets quickly dispense with the mundane. This section covers the standard table stakes fodder present in pretty much all languages. This stuff must be included for completeness, however you should be able to speed read this section.  If you are unable to speed read this, perhaps you should give visual basic a try.
-\subsection{The Obligatory Hello World}\printfigHelloWorldBaby
+\subsection{The Obligatory Hello World}
+\printfigHelloWorldBaby
 Let's begin with what has become the unofficial official starting point for any introduction to a new language, the ``hello world'' program. Thank you Canada for providing one of the most impactful contributions in computer science with ``hello world'' becaming a meme both technically and socially. We have such love for this contribution we even tag or newborns with the phrase as per Fig.~\ref{fig:hello_baby}. I digress. Lets now \gls{christen} our baby, Jaseci, with its ``Hello World'' expression.
 
 \jaccode{hello_world.jac}{Jaseci says Hello!}
@@ -43,4 +45,55 @@ Jac Code~\ref{jac:jac_more_arith.jac} outputs,
 
 \shellout{jac_more_arith.jac.output}
 
-Here, we can also observe that, unlike Python, whitespace does not mater whatsoever.Languages utilizing whitespace to express static scoping should be criminalized. Yeah, I said it, see Rant~\ref{rant:whitespacesucks}. Anyway, A corollary to this design decision is that every statement must end with a ``\texttt{;}''. The wonderful \texttt{;}: A nod to \texttt{C/C++/JavaScript} for bringing this beautiful coder punctuation to fame. Of course the \texttt{;} as code punctuation was first introduced with \texttt{ALGOL 58}, but who the heck knows that language. It sounds like some kind of plant species. \Gls{bleh}.
+Here, we can also observe that, unlike Python, whitespace does not mater whatsoever. Languages utilizing whitespace to express static scoping should be criminalized. Yeah, I said it, see Rant~\ref{rant:whitespacesucks}. Anyway, A corollary to this design decision is that every statement must end with a ``\texttt{;}''. The wonderful \texttt{;}, A nod of respect goes to \texttt{C/C++/JavaScript} for bringing this beautiful code punctuation to the masses. Of course the \texttt{;} as code punctuation was first introduced with \texttt{ALGOL 58}, but who the heck knows that language. It sounds like some kind of plant species. \Gls{bleh}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Comparison Operations}
+\jaccode{jac_compare.jac}{Comparision operations}
+\shellout{jac_compare.jac.output}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Logical Operations}
+\jaccode{jac_logical.jac}{Logical operations}
+\shellout{jac_logical.jac.output}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Assignment Operations}
+\jaccode{jac_assign.jac}{Assignment operations}
+\shellout{jac_assign.jac.output}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Foreshadowing Unique Graph Operations}
+\jaccode{jac_assign.jac}{Preview of graph operators}
+
+\subsection{Precedence in Jac}
+
+\begin{table}[h]
+    \small
+    \centering
+    \begin{tabular}{l l l}
+        \toprule
+        \textbf{Rank} & \textbf{Symbol}                   & \textbf{Description}                           \\
+        \midrule
+        1             & \texttt{() [] . :: --> <-- spawn} & Parenthetical/grouping, node/edge manipulation \\
+        2             & \texttt{\textasciicircum}         & Exponent                                       \\
+        3             & \texttt{* / \%  }                 & Multiplication, division, modulo               \\
+        4             & \texttt{+ -    }                  & Addition, subtraction                          \\
+        5             & \texttt{== != >= <= > <  }        & Comparison                                     \\
+        6             & \texttt{\&\& || and or  }         & Logical                                        \\
+        7             & \texttt{= += -= *= /= := }        & Assignment                                     \\
+        \bottomrule
+    \end{tabular}
+    \caption{Precedence of operations in Jac}
+    \label{tab:jacprecedence} % Unique label used for referencing the table in-text
+    %\addcontentsline{toc}{table}{Table \ref{tab:jacprecedence}} % Uncomment to add the table to the table of contents
+\end{table}
+
+
+
+
+
