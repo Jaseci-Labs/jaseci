@@ -1,6 +1,8 @@
 \chapter{The Jac Programming Language}
 
-To articulate the sourcer spells made possible by the wand that is Jaseci (like that Harry Potter~\cite{harrypotter} simile there? Cool, I know ;-) ), I bestow upon thee, the Jac programming language. The name Jac take was chosen for a few reasons.
+To articulate the sourcer spells made possible by the wand that is Jaseci, I bestow upon thee, the Jac programming language. (Like the Harry Potter~\cite{harrypotter} simile there? Cool, I know ;-) )
+\par
+The name Jac take was chosen for a few reasons.
 \begin{itemize}
     \item ``Jac'' is three characters long, so its well suited for the file name extention \texttt{.jac} for Jac programs.
     \item It pulls its letters from the phrase \textbf{JA}seci \textbf{C}ode.
@@ -20,10 +22,10 @@ Simple enough right? Well let's walk through it. What we have here is a valid Ja
 
 \shellout{hello_world.jac.output}
 
-And there we have the most useless program in the world. Though technically this program is AI, not as intelligent as the machine depicted in Figure~\ref{fig:hello_baby}, but one that we can understand much better (unless you speak ``\gls{goo goo gaa gaa}'' of course). Let's move on.
+And there we have the most useless program in the world. Though\dots technically this program is AI. Its not as intelligent as the machine depicted in Figure~\ref{fig:hello_baby}, but one that we can understand much better (unless you speak ``\gls{goo goo gaa gaa}'' of course). Let's move on.
 
 \subsection{Basic Arithmetic Operations}
-Next we should cover the he simplest math operations in Jac. We'll build upon what we've learned so far with our little conversational AI above.
+Next we should cover the he simplest math operations in Jac. We build upon what we've learned so far with our conversational AI above.
 
 \jaccode{jac_arith.jac}{Basic arithmetic operations}
 
@@ -31,7 +33,7 @@ The output of this groundbreaking program is,
 
 \shellout{jac_arith.jac.output}
 
-Here in Jac Code~\ref{jac:jac_arith.jac} we show basic math operations. The semantics of these experisions are pretty much the same as anything you may have seen before, and pretty much match the semantics we have in the Python language. In this Example, we also observe that Jac is an untyped langauge and variables can be delcared via a direct assignment. The comma separated list of the defined variables \texttt{a} - \texttt{e} in the call to \texttt{std.out} illustrate multiple values being printed to screen from a single call.
+Jac Code~\ref{jac:jac_arith.jac} is comprised of basic math operations. The semantics of these experisions are pretty much the same as anything you may have seen before, and pretty much match the semantics we have in the Python language. In this Example, we also observe that Jac is an untyped langauge and variables can be delcared via a direct assignment; also very Python'y. The comma separated list of the defined variables \texttt{a} - \texttt{e} in the call to \texttt{std.out} illustrate multiple values being printed to screen from a single call.
 \par
 Additionally, Jac supports power and modulo operations.
 
@@ -41,4 +43,4 @@ Jac Code~\ref{jac:jac_more_arith.jac} outputs,
 
 \shellout{jac_more_arith.jac.output}
 
-Here, we can also observe that, unlike Python, whitespace does not mater whatsoever. A corollary to this feature is every statement must end with a ``\texttt{;}''. Languages utilizing whitespace to express static scoping should be criminalized. Yeah, I said it, see Rant~\ref{rant:whitespacesucks}.
+Here, we can also observe that, unlike Python, whitespace does not mater whatsoever.Languages utilizing whitespace to express static scoping should be criminalized. Yeah, I said it, see Rant~\ref{rant:whitespacesucks}. Anyway, A corollary to this design decision is that every statement must end with a ``\texttt{;}''. The wonderful \texttt{;}: A nod to \texttt{C/C++/JavaScript} for bringing this beautiful coder punctuation to fame. Of course the \texttt{;} as code punctuation was first introduced with \texttt{ALGOL 58}, but who the heck knows that language. It sounds like some kind of plant species. \Gls{bleh}.
