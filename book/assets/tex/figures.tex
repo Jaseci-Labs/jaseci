@@ -29,3 +29,27 @@
     \end{figure}
     \footnotetext{Image credit to wiki contributer~\cite{wiki:hello_world_baby.jpg}}
 }
+
+\newcommand{\printtabPrecedence}{
+    \begin{table}[t]
+        \footnotesize
+        \centering
+        \begin{tabular}{l l l}
+            \toprule
+            \textbf{Rank} & \textbf{Symbol}                            & \textbf{Description}                           \\
+            \midrule
+            1             & \texttt{( ), [ ], ., ::, spawn}            & Parenthetical/grouping, node/edge manipulation \\
+            2             & \texttt{\textasciicircum, []}              & Exponent,  Index                               \\
+            3             & \texttt{*, /, \%  }                        & Multiplication, division, modulo               \\
+            4             & \texttt{+, -}                              & Addition, subtraction                          \\
+            5             & \texttt{==, !=, >=, <=, >, <, in, not in } & Comparison                                     \\
+            6             & \texttt{\&\&, ||, and, or  }               & Logical                                        \\
+            7             & \texttt{-->, <--, -[]->, <-[]-}            & Connect                                        \\
+            8             & \texttt{=, +=, -=, *=, /=, := }            & Assignment                                     \\
+            \bottomrule
+        \end{tabular}
+        \caption{Precedence of operations in Jac}
+        \label{tab:jacprecedence} % Unique label used for referencing the table in-text
+        %\addcontentsline{toc}{table}{Table \ref{tab:jacprecedence}} % Uncomment to add the table to the table of contents
+    \end{table}
+}

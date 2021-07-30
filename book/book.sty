@@ -3,6 +3,8 @@
 \usepackage{subcaption}
 \usepackage{graphicx}
 \usepackage{grffile}
+\usepackage{booktabs}
+\usepackage{footnote}
 \usepackage[toc]{glossaries}
 \newglossary[tlg]{technical}{tld}{tdn}{Techinical Terms}
 \makeglossaries
@@ -39,8 +41,7 @@
 % For front page
 \usepackage{pagecolor}
 \usepackage{setspace}
-\usepackage{booktabs}
-\usepackage{footnote}
+
 
 %----------------------------------- LISTINGS  ------------------------------
 \usepackage{listings}
@@ -81,7 +82,7 @@ alsoletter={:,|,;},%
 morekeywords={:,|,;},%                                 define the special characters
 keywordstyle={\color{black}},%                         and format them in black
 }
-\renewcommand{\lstlistingname}{Jac Code}% Listing -> Jac Code
+
 \renewcommand{\lstlistlistingname}{List of \lstlistingname s}% List of Listings -> List of Algorithms
 
 \DeclareCaptionFont{white}{\color{white}\footnotesize\upshape\ttfamily}
@@ -95,7 +96,7 @@ keywordstyle={\color{black}},%                         and format them in black
     backgroundcolor=\color{gray!10},
     captionpos=t,
     basicstyle=\footnotesize\upshape\ttfamily,      % the size of the fonts that are used for the code
-    numbers=none,                    % where to put the line-numbers; possible values are (none, left, right)
+     numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
     numbersep=10pt,                   % how far the line-numbers are from the code
     numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
     keywordstyle=\bfseries\color{green!55!black},
@@ -106,7 +107,9 @@ keywordstyle={\color{black}},%                         and format them in black
     xrightmargin=5.8pt,
 }
 
-\newcommand{\jaccode}[2]{\par\lstinputlisting[label=jac:#1, language=jac, numbers=left, caption={#2}]{assets/code/#1}\par}
+\newcommand{\jaccode}[2]{\renewcommand{\lstlistingname}{Jac Code}\par\lstinputlisting[label=jac:#1, language=jac, caption={#2}]{assets/code/#1}\par}
+\newcommand{\gramcode}[2]{\renewcommand{\lstlistingname}{Grammar}\par\lstinputlisting[label=gram:#1, language=shell, style=gram, numbers=left, caption={#2}]{assets/code/#1}\par}
+\newcommand{\gramcoderange}[4]{\renewcommand{\lstlistingname}{Grammar}\par\lstinputlisting[label=gram:#1:#3:#4, language=shell, style=gram, numbers=left, caption={#2}, firstline=#3, lastline=#4, firstnumber=#3]{assets/code/#1}\footnotesize{(full grammar in Appendix~\ref{fullgrammar})}\par}
 \newcommand{\shellout}[1]{\par\lstinputlisting[language=shell]{assets/code/#1}\par}
 %----------------------------------- NERD ALERT BOX  ------------------------------
 \usepackage[many]{tcolorbox}

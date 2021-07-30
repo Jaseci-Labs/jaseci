@@ -11,9 +11,11 @@ The name Jac take was chosen for a few reasons.
 \par
 This chapter provides the full deep dive into the language. By the end, you will be fully empowerd with Jaseci wizardry and get a view into the key insights and novelty in the coding style.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Getting the Basics Out of the Way}
-
 First lets quickly dispense with the mundane. This section covers the standard table stakes fodder present in pretty much all languages. This stuff must be included for completeness, however you should be able to speed read this section.  If you are unable to speed read this, perhaps you should give visual basic a try.
+
+%%%%
 \subsection{The Obligatory Hello World}
 \printfigHelloWorldBaby
 Let's begin with what has become the unofficial official starting point for any introduction to a new language, the ``hello world'' program. Thank you Canada for providing one of the most impactful contributions in computer science with ``hello world'' becaming a meme both technically and socially. We have such love for this contribution we even tag or newborns with the phrase as per Fig.~\ref{fig:hello_baby}. I digress. Lets now \gls{christen} our baby, Jaseci, with its ``Hello World'' expression.
@@ -26,6 +28,7 @@ Simple enough right? Well let's walk through it. What we have here is a valid Ja
 
 And there we have the most useless program in the world. Though\dots technically this program is AI. Its not as intelligent as the machine depicted in Figure~\ref{fig:hello_baby}, but one that we can understand much better (unless you speak ``\gls{goo goo gaa gaa}'' of course). Let's move on.
 
+%%%%
 \subsection{Basic Arithmetic Operations}
 Next we should cover the he simplest math operations in Jac. We build upon what we've learned so far with our conversational AI above.
 
@@ -45,55 +48,52 @@ Jac Code~\ref{jac:jac_more_arith.jac} outputs,
 
 \shellout{jac_more_arith.jac.output}
 
-Here, we can also observe that, unlike Python, whitespace does not mater whatsoever. Languages utilizing whitespace to express static scoping should be criminalized. Yeah, I said it, see Rant~\ref{rant:whitespacesucks}. Anyway, A corollary to this design decision is that every statement must end with a ``\texttt{;}''. The wonderful \texttt{;}, A nod of respect goes to \texttt{C/C++/JavaScript} for bringing this beautiful code punctuation to the masses. Of course the \texttt{;} as code punctuation was first introduced with \texttt{ALGOL 58}, but who the heck knows that language. It sounds like some kind of plant species. \Gls{bleh}.
+Here, we can also observe that, unlike Python, whitespace does not mater whatsoever. Languages utilizing whitespace to express static scoping should be criminalized. Yeah, I said it, see Rant~\ref{rant:whitespacesucks}. Anyway, A corollary to this design decision is that every statement must end with a ``\texttt{;}''. The wonderful \texttt{;}, A nod of respect goes to \texttt{C/C++/JavaScript} for bringing this beautiful code punctuation to the masses. Of course the \texttt{;} as code punctuation was first introduced with \texttt{ALGOL 58}, but who the heck knows that language. It sounds like some kind of plant species. \Gls{bleh}. Onwards.
 
+\begin{nerd}
+    Grammar~\ref{gram:jac.g4:124:130} shows  the lines from the formal grammar for Jac that corresponds to the parsing of arithmetic.
+    \gramcoderange{jac.g4}{Jac grammar clip relevant to arithmetic}{124}{130}
+\end{nerd}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Comparison Operations}
+%%%%
+\subsection{Comparison, Logical, and Membership Operations}
+Next we review the comparison and logical operations supported in Jac. This is relatively straight forward if you've programmed before. Let's summarize quickly for completeness.
 \jaccode{jac_compare.jac}{Comparision operations}
 \shellout{jac_compare.jac.output}
+In order of appearnce, we have tests for equality, non equality, less than, greater than, less than or equal, and greater than or equal. These tools prove indispensible when expressing functionality through conditionals and loops. Additionally,
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Logical Operations}
 \jaccode{jac_logical.jac}{Logical operations}
 \shellout{jac_logical.jac.output}
+Jac Code~\ref{jac:jac_logical.jac} presents the logical operations supported by Jac. In oder of appearnce we have, boolean complement, logical and, logical or, another way to express and and or (thank you Python) and some combinations. These are also indispensible when using conditionals.
 
+    [NEED EXAMPLE FOR MEMBERSHIP OPERATIONS]
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Assignment Operations}
+\begin{nerd}
+    Grammar~\ref{gram:jac.g4:114:122} shows the lines from the formal grammar for Jac that corresponds to the parsing of comparison, logical, and membership operations.
+    \gramcoderange{jac.g4}{Jac grammar clip relevant to comparison, logic, and membership}{114}{122}
+\end{nerd}
+
+%%%%
+\subsection{Assignment Operations}
+Next, lets take a look at assingment in Jac. In contrast to equality tests of \texttt{==}, assignment operations copy the value of the right hand side of the assignment to the variable or object on the left hand side.
 \jaccode{jac_assign.jac}{Assignment operations}
 \shellout{jac_assign.jac.output}
+As shown in Jac Code~\ref{jac:jac_assign.jac}, there are a number of ways we can articulate an assinment. Of course we can simply set a variable equal to a particular value, however, we can go beyond that to set that assinment relative to its original value. In particular, we can use the short hand \texttt{a += 4 + 4;} to represent \texttt{a = a + 4 + 4;}. We will describe later an additional assignment type we call the copy assign. If you're simply dying of curiousity, I'll throw you a bone. This \texttt{:=} assignment only applies to nodes and edges and has the semantic of copying the member values of a node or edge as opposed to the particular node or edge a variable is pointing to. In a nutshell this assignment uses pass by value semantics vs pass by reference semantics which is default for nodes and edges.
+
+\begin{nerd}
+    Grammar~\ref{gram:jac.g4:114:122} shows the lines from the formal grammar for Jac that corresponds to the parsing of assignment operations.
+    \gramcoderange{jac.g4}{Jac grammar clip relevant to assignment}{102}{110}
+\end{nerd}
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Foreshadowing Unique Graph Operations}
-\jaccode{jac_assign.jac}{Preview of graph operators}
 
+%%%%
 \subsection{Precedence in Jac}
-
-\begin{table}[h]
-    \small
-    \centering
-    \begin{tabular}{l l l}
-        \toprule
-        \textbf{Rank} & \textbf{Symbol}                   & \textbf{Description}                           \\
-        \midrule
-        1             & \texttt{() [] . :: --> <-- spawn} & Parenthetical/grouping, node/edge manipulation \\
-        2             & \texttt{\textasciicircum}         & Exponent                                       \\
-        3             & \texttt{* / \%  }                 & Multiplication, division, modulo               \\
-        4             & \texttt{+ -    }                  & Addition, subtraction                          \\
-        5             & \texttt{== != >= <= > <  }        & Comparison                                     \\
-        6             & \texttt{\&\& || and or  }         & Logical                                        \\
-        7             & \texttt{= += -= *= /= := }        & Assignment                                     \\
-        \bottomrule
-    \end{tabular}
-    \caption{Precedence of operations in Jac}
-    \label{tab:jacprecedence} % Unique label used for referencing the table in-text
-    %\addcontentsline{toc}{table}{Table \ref{tab:jacprecedence}} % Uncomment to add the table to the table of contents
-\end{table}
+\printtabPrecedence
+At this point in our discussion its important to note the precedence of opperations in Jac. Table~\ref{tab:jacprecedence} summarizes this precedence. There are a number of new and perhaps interesting things that appear in this table that you may not have seen before. [JOKE] For now, don't hurt yourself trying to understand what they are and mean, we'll get there.
 
 
 
-
-
+%%%%
+\subsection{Foreshadowing Unique Graph Operations}
+\jaccode{jac_preview.jac}{Preview of graph operators}
