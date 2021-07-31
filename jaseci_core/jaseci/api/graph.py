@@ -5,6 +5,7 @@ from jaseci.utils.id_list import id_list
 from jaseci.graph.graph import graph
 from jaseci.graph.node import node
 from jaseci.actor.sentinel import sentinel
+import uuid
 
 
 class graph_api():
@@ -13,14 +14,17 @@ class graph_api():
     """
 
     def __init__(self):
+        self.active_gph_id = None
         self.graph_ids = id_list(self)
 
-    def api_graph_create(self, name: str):
+    def api_graph_create(self, name: str, set_active: bool = False):
         """
         Create a graph instance and return root node graph object
         """
         gph = graph(h=self._h, name=name)
         self.graph_ids.add_obj(gph)
+        if(set_active):
+            self.active_gph_id = gph.jid
         return gph.serialize()
 
     def api_graph_list(self, detailed: bool = False):
@@ -30,7 +34,27 @@ class graph_api():
         gphs = []
         for i in self.graph_ids.obj_list():
             gphs.append(i.serialize(detailed=detailed))
+        if(self.active_gph_id not in self.graph_ids):
+            default = self._h.get_obj(uuid.UUID(self.active_gph_id))
+            gphs.append(default.serialize(detailed=detailed))
         return gphs
+
+    def api_graph_active_set(self, gph: graph):
+        """
+        Sets the default graph master should use
+        """
+        self.active_gph_id = gph.jid
+        return [f'Graph {gph.id} set as default']
+
+    def api_graph_active_get(self, detailed: bool = False):
+        """
+        Returns the default graph master is using
+        """
+        if(self.active_gph_id):
+            default = self._h.get_obj(uuid.UUID(self.active_gph_id))
+            return default.serialize(detailed=detailed)
+        else:
+            return ['No default graph is selected!']
 
     def api_graph_delete(self, gph: graph):
         """
@@ -39,7 +63,7 @@ class graph_api():
         self.graph_ids.destroy_obj(gph)
         return [f'Graph {gph.id} successfully deleted']
 
-    def api_graph_get(self, gph: graph, detailed: bool = False,
+    def api_graph_get(self, gph: graph = None, detailed: bool = False,
                       dot: bool = False):
         """
         Return the content of the graph
@@ -64,7 +88,7 @@ class graph_api():
                     ret[i] = nd_ctx[i]
         return ret
 
-    def api_graph_node_set(self, snt: sentinel, nd: node, ctx: dict):
+    def api_graph_node_set(self, nd: node, ctx: dict, snt: sentinel = None):
         """
         Assigns values to member variables of a given node using ctx object
         """

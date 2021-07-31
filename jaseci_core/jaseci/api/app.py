@@ -21,6 +21,6 @@ class app_api():
         if (not gph):
             self.api_create_graph(name)
             gph = self.graph_ids.get_obj_by_name(name)
-        self.api_sentinel_code_set(snt, code, encoded)
+        self.api_sentinel_code_set(code=code, snt=snt, encoded=encoded)
         return {'sentinel': snt.id.urn, 'graph': gph.id.urn,
                 'active': snt.is_active}

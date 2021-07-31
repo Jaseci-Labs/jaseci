@@ -301,5 +301,9 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.prime(gph)
         test_walker.run()
         edges = gph.get_all_edges()
-        self.assertEqual(edges[0].context['v1'], 7)
-        self.assertEqual(edges[1].context['x1'], 8)
+        if(edges[0].kind == 'apple'):
+            self.assertEqual(edges[0].context['v1'], 7)
+            self.assertEqual(edges[1].context['x1'], 8)
+        else:
+            self.assertEqual(edges[1].context['v1'], 7)
+            self.assertEqual(edges[0].context['x1'], 8)

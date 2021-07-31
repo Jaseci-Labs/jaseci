@@ -79,12 +79,15 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api,
             app.append(str(type(i)))
         return {'core': core, 'app': app}
 
-    def provide_default(self, param):
+    def provide_internal_default(self, param):
         """
-        Applies default sentinel if none pass and default is present
+        Applies internal defaults for sentinel and graphs
         """
         if(param == 'snt'):
-            pass
+            return self.active_snt_id
+        if(param == 'gph'):
+            return self.active_gph_id
+        return 'None'  # Meke me more elegant one day
 
     def general_interface_to_api(self, params, api_name):
         """
@@ -110,6 +113,8 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api,
                 func_sig.parameters[i].empty else None
             if (p_name in params.keys()):
                 val = params[p_name]
+                if(val == 'None'):  # Used to patch internal defaults
+                    val = self.provide_internal_default(p_name)
                 if(str(val) in self.alias_map.keys()):
                     val = self.alias_map[val]
                 if (issubclass(p_type, element)):

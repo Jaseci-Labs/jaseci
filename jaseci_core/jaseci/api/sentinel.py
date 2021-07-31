@@ -54,7 +54,7 @@ class sentinel_api():
             default = self._h.get_obj(uuid.UUID(self.active_snt_id))
             return default.serialize(detailed=detailed)
         else:
-            return ['No default sentinel is set!']
+            return ['No default sentinel is selected!']
 
     def api_sentinel_delete(self, snt: sentinel):
         """

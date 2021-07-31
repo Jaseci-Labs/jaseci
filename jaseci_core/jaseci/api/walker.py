@@ -11,7 +11,7 @@ class walker_api():
     Walker APIs
     """
 
-    def api_walker_list(self, snt: sentinel, detailed: bool = False):
+    def api_walker_list(self, detailed: bool = False, snt: sentinel = None):
         """
         List walkers known to sentinel
         """
@@ -20,7 +20,7 @@ class walker_api():
             walks.append(i.serialize(detailed=detailed))
         return walks
 
-    def api_walker_spawn(self, snt: sentinel, name: str):
+    def api_walker_spawn(self, name: str, snt: sentinel = None):
         """
         Creates new instance of walker and returns new walker object
         """
@@ -51,8 +51,8 @@ class walker_api():
         wlk.run()
         return wlk.report
 
-    def api_walker_primerun(self, snt: sentinel, name: str,
-                            nd: node, ctx: dict = {}):
+    def api_walker_primerun(self, name: str, nd: node, ctx: dict = {},
+                            snt: sentinel = None):
         """
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.

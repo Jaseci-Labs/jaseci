@@ -59,6 +59,8 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertEqual(len(self.call_cast('get graph -gph g')), 1)
         self.call(f'prime run -snt s -nd g -name init')
         self.assertEqual(len(self.call_cast('get graph -gph g')), 2)
+        self.call(f'alias delete -all true')
+        self.assertEqual(len(self.call_cast(f'alias list').keys()), 0)
 
     def test_jsctl_config_cmds(self):
         """Tests that config commands works"""
@@ -70,3 +72,11 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertEqual(r, 'Grape2')
         r = self.call_cast('config list')
         self.assertEqual(len(r), 3)
+
+    def test_jsctl_default_snt_setting(self):
+        """Tests that alias mapping api works"""
+        self.logger_on()
+        snt_id = self.call_cast('list sentinel')[0]['jid']
+        self.call(f'sentinel active set -snt {snt_id}')
+        self.call(f'sentinel active get')
+        self.assertEqual(len(self.call_cast(f'walker list')), 21)
