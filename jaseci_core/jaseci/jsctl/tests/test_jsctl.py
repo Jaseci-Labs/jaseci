@@ -80,3 +80,13 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(f'sentinel active set -snt {snt_id}')
         self.call(f'sentinel active get')
         self.assertEqual(len(self.call_cast(f'walker list')), 21)
+
+    def test_jsctl_master_defaults(self):
+        """Tests that alias mapping api works"""
+        gph_id = self.call_cast('graph list')[0]['jid']
+        snt_id = self.call_cast('sentinel list')[0]['jid']
+        self.call(f'sentinel active set -snt {snt_id}')
+        self.call(f'graph active set -gph {gph_id}')
+        self.assertEqual(len(self.call_cast('graph get')), 1)
+        self.call(f'walker primerun -name init')
+        self.assertEqual(len(self.call_cast('graph get')), 2)

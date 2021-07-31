@@ -83,9 +83,11 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api,
         """
         Applies internal defaults for sentinel and graphs
         """
-        if(param == 'snt'):
+        if(param == 'snt' and self.active_snt_id):
             return self.active_snt_id
-        if(param == 'gph'):
+        if(param == 'gph' and self.active_gph_id):
+            return self.active_gph_id
+        if(param == 'nd' and self.active_gph_id):
             return self.active_gph_id
         return 'None'  # Meke me more elegant one day
 

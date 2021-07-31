@@ -34,9 +34,6 @@ class graph_api():
         gphs = []
         for i in self.graph_ids.obj_list():
             gphs.append(i.serialize(detailed=detailed))
-        if(self.active_gph_id not in self.graph_ids):
-            default = self._h.get_obj(uuid.UUID(self.active_gph_id))
-            gphs.append(default.serialize(detailed=detailed))
         return gphs
 
     def api_graph_active_set(self, gph: graph):

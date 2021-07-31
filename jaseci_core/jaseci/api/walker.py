@@ -37,7 +37,7 @@ class walker_api():
 
         return []
 
-    def api_walker_prime(self, wlk: walker, nd: node, ctx: dict = {}):
+    def api_walker_prime(self, wlk: walker, nd: node = None, ctx: dict = {}):
         """
         Assigns walker to a graph node and primes walker for execution
         """
@@ -51,7 +51,7 @@ class walker_api():
         wlk.run()
         return wlk.report
 
-    def api_walker_primerun(self, name: str, nd: node, ctx: dict = {},
+    def api_walker_primerun(self, name: str, nd: node = None, ctx: dict = {},
                             snt: sentinel = None):
         """
         Creates walker instance, primes walker on node, executes walker,

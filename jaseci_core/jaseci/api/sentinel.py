@@ -34,9 +34,6 @@ class sentinel_api():
         snts = []
         for i in self.sentinel_ids.obj_list():
             snts.append(i.serialize(detailed=detailed))
-        if(self.active_snt_id not in self.sentinel_ids):
-            default = self._h.get_obj(uuid.UUID(self.active_snt_id))
-            snts.append(default.serialize(detailed=detailed))
         return snts
 
     def api_sentinel_active_set(self, snt: sentinel):
