@@ -14,6 +14,7 @@ from inspect import signature
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
 from jaseci.master import master as master_class
+from .ci_app import ci_program
 
 session = {
     "filename": "js.session",
@@ -173,7 +174,13 @@ def login(url, username, password):
         click.echo(f"Login failed!\n{r.json()}")
 
 
+@click.command()
+def edit():
+    ci_program.run_ci()
+
+
 cli.add_command(login)
+cli.add_command(edit)
 cmd_tree_builder(extract_api_tree())
 
 
