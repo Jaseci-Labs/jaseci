@@ -71,19 +71,16 @@ class sentinel_api():
         """
         Set sentinel implementation with Jac source code
         """
-        # TODO: HOTFIX for mobile jac file
-        code = code.replace("take --> node;", "take -->;")
         if (encoded):
             try:
                 code = base64.b64decode(code).decode()
-                # TODO: HOTFIX for mobile jac file
-                code = code.replace("take --> node;", "take -->;")
             except UnicodeDecodeError:
                 logger.error(
                     f'Code encoding invalid for Sentinel {snt.id}!')
                 return [f'Code encoding invalid for Sentinel {snt.id}!']
-        # TODO: HOTFIX to force recompile jac code everytime
-        if (snt.code == code and snt.is_active and False):
+        # TODO: HOTFIX for mobile jac file
+        code = code.replace("take --> node;", "take -->;")
+        if (snt.code == code and snt.is_active):
             return [f'Sentinel {snt.id} already registered and active!']
         else:
             snt.code = code
