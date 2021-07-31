@@ -22,7 +22,7 @@ import curses
 import unittest
 import unicodedata
 
-from . import curses_util
+from .. import curses_util
 
 
 class CursesUtilTestCases(unittest.TestCase):

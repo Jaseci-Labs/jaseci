@@ -19,7 +19,7 @@ from __future__ import print_function
 import curses
 import unittest
 
-from . import string
+from .. import string
 
 
 class StringTestCases(unittest.TestCase):

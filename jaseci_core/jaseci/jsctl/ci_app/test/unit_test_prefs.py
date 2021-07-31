@@ -18,9 +18,9 @@ from __future__ import print_function
 
 import unittest
 
-from .curses_util import *
-from . import fake_curses_testing
-from . import prefs
+from ..curses_util import *
+from .. import fake_curses_testing
+from .. import prefs
 
 
 class PrefsTestCases(fake_curses_testing.FakeCursesTestCase):

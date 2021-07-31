@@ -42,7 +42,7 @@ from . import history
 from . import log
 from . import mutator
 from . import parser
-from . import selectable
+from . import selectable, regex
 
 
 class Actions(mutator.Mutator):

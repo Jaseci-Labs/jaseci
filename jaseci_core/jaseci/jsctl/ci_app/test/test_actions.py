@@ -18,9 +18,10 @@ from __future__ import print_function
 
 import os
 import unittest
+from jaseci.utils.utils import TestCaseHelper
 
-from . import log
-from . import text_buffer
+from .. import ci_program, log
+from .. import text_buffer, selectable
 
 
 class FakeCursorWindow:
@@ -50,7 +51,7 @@ def check_row(test, text_buffer, row, expected):
         )
 
 
-class ActionsTestCase(unittest.TestCase):
+class ActionsTestCase(TestCaseHelper, unittest.TestCase):
     def current_row_text(self):
         return self.textBuffer.parser.row_text(self.textBuffer.penRow)
 
@@ -81,6 +82,7 @@ class ActionsTestCase(unittest.TestCase):
 
 class MouseTestCases(ActionsTestCase):
     def setUp(self):
+        TestCaseHelper.setUp(self)
         log.shouldWritePrintLog = False
         self.prg = ci_program.CiProgram()
         self.textBuffer = text_buffer.TextBuffer(self.prg)
@@ -100,6 +102,7 @@ void blah();
 
     def tearDown(self):
         self.textBuffer = None
+        TestCaseHelper.tearDown(self)
 
     def test_mouse_selection(self):
         self.textBuffer.mouse_click(3, 9, False, False, False)
@@ -183,6 +186,7 @@ void blah();
 
 class SelectionTestCases(ActionsTestCase):
     def setUp(self):
+        TestCaseHelper.setUp(self)
         log.shouldWritePrintLog = False
         self.prg = ci_program.CiProgram()
         self.textBuffer = text_buffer.TextBuffer(self.prg)
@@ -319,6 +323,7 @@ a\twith tab
 
 class TextIndentTestCases(ActionsTestCase):
     def setUp(self):
+        TestCaseHelper.setUp(self)
         log.shouldWritePrintLog = False
         self.prg = ci_program.CiProgram()
         self.textBuffer = text_buffer.TextBuffer(self.prg)
@@ -328,6 +333,7 @@ class TextIndentTestCases(ActionsTestCase):
 
     def tearDown(self):
         self.textBuffer = None
+        TestCaseHelper.tearDown(self)
 
     def test_auto_indent(self):
         self.prg.prefs.editor["autoInsertClosingCharacter"] = False
@@ -543,6 +549,7 @@ class TextIndentTestCases(ActionsTestCase):
 
 class TextInsertTestCases(ActionsTestCase):
     def setUp(self):
+        TestCaseHelper.setUp(self)
         log.shouldWritePrintLog = False
         self.prg = ci_program.CiProgram()
         self.textBuffer = text_buffer.TextBuffer(self.prg)
@@ -552,6 +559,7 @@ class TextInsertTestCases(ActionsTestCase):
 
     def tearDown(self):
         self.textBuffer = None
+        TestCaseHelper.tearDown(self)
 
     def test_auto_insert_pair_disable(self):
         self.prg.prefs.editor["autoInsertClosingCharacter"] = False
@@ -608,6 +616,7 @@ class TextInsertTestCases(ActionsTestCase):
 
 class GrammarDeterminationTestCases(ActionsTestCase):
     def setUp(self):
+        TestCaseHelper.setUp(self)
         log.shouldWritePrintLog = False
         self.prg = ci_program.CiProgram()
         self.textBuffer = text_buffer.TextBuffer(self.prg)
@@ -615,6 +624,7 @@ class GrammarDeterminationTestCases(ActionsTestCase):
 
     def tearDown(self):
         self.textBuffer = None
+        TestCaseHelper.tearDown(self)
 
     def test_message_backspace(self):
         tb = self.textBuffer

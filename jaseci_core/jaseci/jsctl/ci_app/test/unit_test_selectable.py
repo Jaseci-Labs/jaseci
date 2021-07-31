@@ -19,9 +19,9 @@ from __future__ import print_function
 
 import unittest
 
-from . import log
-from . import ci_program
-from . import selectable
+from .. import log
+from .. import ci_program
+from .. import selectable
 
 
 class SelectableTestCases(unittest.TestCase):

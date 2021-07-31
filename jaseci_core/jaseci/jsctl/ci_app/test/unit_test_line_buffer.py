@@ -18,9 +18,9 @@ from __future__ import print_function
 
 import unittest
 
-from . import log
-from . import ci_program
-from . import line_buffer
+from .. import log
+from .. import ci_program
+from .. import line_buffer
 
 
 class LineBufferTestCases(unittest.TestCase):

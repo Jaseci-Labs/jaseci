@@ -21,11 +21,11 @@ import sys
 import unittest
 
 from bookmark import Bookmark
-from .curses_util import *
-from . import fake_curses_testing
-from . import prefs
-from . import text_buffer
-from . import window
+from ..curses_util import *
+from .. import fake_curses_testing
+from .. import prefs
+from .. import text_buffer
+from .. import window
 
 kTestFile = "#bookmarks_test_file_with_unlikely_file_name~"
 

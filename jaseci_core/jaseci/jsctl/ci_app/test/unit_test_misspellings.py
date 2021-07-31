@@ -18,8 +18,8 @@ from __future__ import print_function
 
 import curses
 
-from .curses_util import *
-from . import fake_curses_testing
+from ..curses_util import *
+from .. import fake_curses_testing
 
 
 class MisspellingsTestCases(fake_curses_testing.FakeCursesTestCase):

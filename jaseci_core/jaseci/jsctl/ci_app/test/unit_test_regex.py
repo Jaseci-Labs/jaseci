@@ -19,7 +19,7 @@ from __future__ import print_function
 # import re
 import unittest
 
-from . import regex
+from .. import regex
 
 
 class RegexTestCases(unittest.TestCase):

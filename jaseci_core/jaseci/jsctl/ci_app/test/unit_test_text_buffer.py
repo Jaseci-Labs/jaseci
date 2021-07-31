@@ -18,8 +18,8 @@ from __future__ import print_function
 
 import unittest
 
-from .curses_util import *
-from . import fake_curses_testing
+from ..curses_util import *
+from .. import fake_curses_testing
 
 
 class DrawTestCases(fake_curses_testing.FakeCursesTestCase):

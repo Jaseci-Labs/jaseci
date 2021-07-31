@@ -31,7 +31,7 @@ except ImportError:
     print("\nWarning: import unittest.mock failed. Some tests will be skipped.")
     pass
 
-from . import buffer_file as test_buffer_file
+from .. import buffer_file as test_buffer_file
 
 
 class pathRowColumnTestCases(unittest.TestCase):

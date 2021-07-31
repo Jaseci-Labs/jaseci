@@ -21,8 +21,8 @@ from __future__ import print_function
 import curses
 import sys
 
-from .curses_util import *
-from . import fake_curses_testing
+from ..curses_util import *
+from .. import fake_curses_testing
 
 
 class FileManagerTestCases(fake_curses_testing.FakeCursesTestCase):

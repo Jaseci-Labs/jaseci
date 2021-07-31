@@ -19,7 +19,7 @@ from __future__ import print_function
 from timeit import timeit
 import unittest
 
-from . import parser
+from .. import parser
 
 
 class PerformanceTestCases(unittest.TestCase):

@@ -22,9 +22,9 @@ import curses
 import os
 import sys
 
-from .curses_util import *
-from . import ci_program
-from . import fake_curses_testing
+from ..curses_util import *
+from .. import ci_program
+from .. import fake_curses_testing
 
 kTestFile = u"#undo_redo_test_file_with_unlikely_file_name~"
 

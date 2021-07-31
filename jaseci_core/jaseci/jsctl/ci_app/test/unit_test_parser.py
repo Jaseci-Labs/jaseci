@@ -24,8 +24,8 @@ import sys
 from timeit import timeit
 import unittest
 
-from . import parser, curses_util
-from . import prefs
+from .. import parser, curses_util
+from .. import prefs
 
 
 class ParserTestCases(unittest.TestCase):
