@@ -28,14 +28,14 @@ import sys
 import types
 import curses
 
-from . import config
+from . import config, bookmark
 from . import controller
 from . import cu_editor
 from . import em_editor
 from . import string
 from . import text_buffer
 from . import vi_editor
-from . import log
+from . import log, selectable
 
 # The terminal area that the curses can draw to.
 mainCursesWindow = None

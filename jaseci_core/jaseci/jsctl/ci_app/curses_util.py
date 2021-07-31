@@ -34,7 +34,7 @@ import sys
 import termios
 import unicodedata
 
-from . import config
+from . import config, regex
 
 # Strings are found using the curses_key_name() function.
 # Constants are found using the curses.getch() function.

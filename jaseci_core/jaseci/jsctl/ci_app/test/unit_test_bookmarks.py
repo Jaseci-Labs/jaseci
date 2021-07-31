@@ -20,12 +20,12 @@ import os
 import sys
 import unittest
 
-from bookmark import Bookmark
+from ..bookmark import Bookmark
 from ..curses_util import *
-from .. import fake_curses_testing
+from . import fake_curses_testing
 from .. import prefs
 from .. import text_buffer
-from .. import window
+from .. import window, ci_program
 
 kTestFile = "#bookmarks_test_file_with_unlikely_file_name~"
 
@@ -285,24 +285,14 @@ class BookmarkTestCases(fake_curses_testing.FakeCursesTestCase):
 
     def test_get_next_bookmark_color(self):
         try:
-            import mock
+            import unittest.mock as mock
         except ImportError:
             startYellow = "\033[93m"
             disableColor = "\033[0m"
-            startBlue = "\033[94m"
             exceptionMessage = (
                 startYellow
                 + "This test could "
-                + "not execute because the 'mock' module could not be found. If "
-                + "you would like to run this test, please install the mock "
-                + "module for python 2.7. You can visit their website at "
-                + startBlue
-                + "https://pypi.python.org/pypi/mock "
-                + startYellow
-                + "or you can "
-                + "try running "
-                + startBlue
-                + "pip install mock."
+                + "not execute because the 'mock' module could not be found. "
                 + disableColor
             )
             # raise Exception(exceptionMessage)

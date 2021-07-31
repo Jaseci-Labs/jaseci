@@ -18,11 +18,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import curses
+from . import curses
 import sys
 
 from ..curses_util import *
-from .. import fake_curses_testing
+from . import fake_curses_testing
 
 
 class FindWindowTestCases(fake_curses_testing.FakeCursesTestCase):

@@ -24,6 +24,7 @@ except NameError:
 
 import os
 import unittest
+from jaseci.utils.utils import TestCaseHelper
 
 try:
     import unittest.mock
@@ -34,12 +35,12 @@ except ImportError:
 from .. import buffer_file as test_buffer_file
 
 
-class pathRowColumnTestCases(unittest.TestCase):
+class pathRowColumnTestCases(TestCaseHelper, unittest.TestCase):
     def setUp(self):
-        pass
+        TestCaseHelper.setUp(self)
 
     def tearDown(self):
-        pass
+        TestCaseHelper.tearDown(self)
 
     def test_path_row_column(self):
         if not hasattr(unittest, "mock"):

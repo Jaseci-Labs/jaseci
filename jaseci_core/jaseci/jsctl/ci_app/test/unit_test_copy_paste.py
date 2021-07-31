@@ -18,14 +18,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import curses
+from . import curses
 import os
 import sys
 
 from ..curses_util import *
 from .. import ci_program
 from .. import curses_util
-from .. import fake_curses_testing
+from . import fake_curses_testing
 
 kTestFile = u"#application_test_file_with_unlikely_file_name~"
 
@@ -34,6 +34,7 @@ class CopyPasteTestCases(fake_curses_testing.FakeCursesTestCase):
     def setUp(self):
         self.longMessage = True
         fake_curses_testing.FakeCursesTestCase.set_up(self)
+        fake_curses_testing.TestCaseHelper.setUp(self)
 
     def test_bracketed_paste(self):
         self.assertEqual(curses_util.char_width(u"ế", 0), 1)

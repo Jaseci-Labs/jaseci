@@ -18,11 +18,18 @@ from __future__ import print_function
 
 # import re
 import unittest
+from jaseci.utils.utils import TestCaseHelper
 
 from .. import regex
 
 
-class RegexTestCases(unittest.TestCase):
+class RegexTestCases(TestCaseHelper, unittest.TestCase):
+    def setUp(self):
+        TestCaseHelper.setUp(self)
+
+    def tearDown(self):
+        TestCaseHelper.tearDown(self)
+
     def test_common_numbers(self):
         def test_number(strInput, reg):
             sre = regex.kReNumbers.search(strInput)

@@ -18,11 +18,16 @@ from __future__ import print_function
 
 from timeit import timeit
 import unittest
+from jaseci.utils.utils import TestCaseHelper
 
-from .. import parser
 
+class PerformanceTestCases(TestCaseHelper, unittest.TestCase):
+    def setUp(self):
+        TestCaseHelper.setUp(self)
 
-class PerformanceTestCases(unittest.TestCase):
+    def tearDown(self):
+        TestCaseHelper.tearDown(self)
+
     def test_array_vs_getter(self):
         setup = """data = ['a'] * 100\n"""
         setup += """def get(n):\n"""
@@ -66,7 +71,7 @@ class PerformanceTestCases(unittest.TestCase):
         setup += """  if b is not None: return b\n"""
         setup += """  return a*a\n"""
         setup += """def without_default(a, b):\n"""
-        setup += """  if b is -1: return b\n"""
+        setup += """  if b == -1: return b\n"""
         setup += """  return a*b\n"""
         a = timeit("""with_default(5);""" * 100, setup=setup, number=10000)
         b = timeit("""without_default(5, 0);""" *

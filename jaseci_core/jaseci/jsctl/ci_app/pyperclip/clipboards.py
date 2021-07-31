@@ -12,11 +12,13 @@ text_type = unicode if PY2 else str
 
 def init_osx_clipboard():
     def copy_osx(text):
-        p = subprocess.Popen(["pbcopy", "w"], stdin=subprocess.PIPE, close_fds=True)
+        p = subprocess.Popen(
+            ["pbcopy", "w"], stdin=subprocess.PIPE, close_fds=True)
         p.communicate(input=text.encode("utf-8"))
 
     def paste_osx():
-        p = subprocess.Popen(["pbpaste", "r"], stdout=subprocess.PIPE, close_fds=True)
+        p = subprocess.Popen(
+            ["pbpaste", "r"], stdout=subprocess.PIPE, close_fds=True)
         stdout, stderr = p.communicate()
         return stdout.decode("utf-8")
 
@@ -50,11 +52,11 @@ def init_qt_clipboard():
     app = QApplication([])
 
     def copy_qt(text):
-        cb = app.clipboard()
+        cb = clipboard()
         cb.setText(text)
 
     def paste_qt():
-        cb = app.clipboard()
+        cb = clipboard()
         return text_type(cb.text())
 
     return copy_qt, paste_qt

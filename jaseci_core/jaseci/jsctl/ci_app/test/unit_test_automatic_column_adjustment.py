@@ -20,7 +20,7 @@ import os
 import sys
 
 from ..curses_util import *
-from .. import fake_curses_testing
+from . import fake_curses_testing
 
 kTestFile = u"#automatic_column_adjustment_test_file_with_unlikely_file_name~"
 

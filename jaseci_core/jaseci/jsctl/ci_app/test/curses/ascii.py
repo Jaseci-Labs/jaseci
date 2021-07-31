@@ -1,4 +1,4 @@
-# Copyright 2019 Google Inc.
+# Copyright 2017 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,28 +16,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
-from jaseci.utils.utils import TestCaseHelper
-
-from .. import log
-from .. import ci_program
-from .. import line_buffer
+ESC = 27
+BS = 2
+DEL = 3
 
 
-class LineBufferTestCases(TestCaseHelper, unittest.TestCase):
-    def setUp(self):
-        TestCaseHelper.setUp(self)
-        self.line_buffer = line_buffer.LineBuffer(
-            ci_program.CiProgram())
-        log.shouldWritePrintLog = True
-
-    def tearDown(self):
-        self.line_buffer = None
-        TestCaseHelper.tearDown(self)
-
-    def test_create(self):
-        self.assertTrue(self.line_buffer is not None)
-
-
-if __name__ == "__main__":
-    unittest.main()
+def isprint(*args):
+    return 31 < args[0] <= 127

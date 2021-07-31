@@ -24,15 +24,17 @@ except NameError:
     unicode = str
     unichr = chr
 
-import curses
+from . import curses
 import inspect
 import os
 import sys
-import tempfile
 import unittest
+from jaseci.utils.utils import TestCaseHelper
 
-from . import ci_program
-from . import curses_util
+from .. import ci_program
+from .. import curses_util
+from .. import controller
+ci_program.curses = ci_program.color.curses = curses_util.curses = controller.curses = curses
 
 # from .curses_util import *
 
@@ -49,9 +51,11 @@ def debug_print_stack(*args):
     print(u"\n".join(lines))
 
 
-class FakeCursesTestCase(unittest.TestCase):
+class FakeCursesTestCase(TestCaseHelper, unittest.TestCase):
     def set_up(self):
+        TestCaseHelper.setUp(self)
         self.cursesScreen = curses.StandardScreen()
+
         self.prg = ci_program.CiProgram()
         self.prg.set_up_curses(self.cursesScreen)
         # For testing, use the internal clipboard. Using the system clipboard
@@ -529,3 +533,4 @@ class FakeCursesTestCase(unittest.TestCase):
         sys.stdout.write(u"\033[?1002l")
         # Disable Bracketed Paste Mode.
         sys.stdout.write(u"\033[?2004l")
+        TestCaseHelper.tearDown(self)

@@ -18,17 +18,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import curses
+from . import curses
 import sys
 
 from ..curses_util import *
-from .. import fake_curses_testing
+from . import fake_curses_testing
 
 
 class ExecutePromptTestCases(fake_curses_testing.FakeCursesTestCase):
     def setUp(self):
         self.longMessage = True
         fake_curses_testing.FakeCursesTestCase.set_up(self)
+        fake_curses_testing.TestCaseHelper.setUp(self)
 
     def test_execute(self):
         # self.set_movie_mode(True)

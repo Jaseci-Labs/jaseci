@@ -17,19 +17,21 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import curses
+from . import curses
 import os
 import sys
 
 from ..curses_util import *
 from .. import ci_program
-from .. import fake_curses_testing
+from . import fake_curses_testing
+from jaseci.utils.utils import TestCaseHelper
 
 kTestFile = u"#application_test_file_with_unlikely_file_name~"
 
 
 class ApplicationTestCases(fake_curses_testing.FakeCursesTestCase):
     def setUp(self):
+        TestCaseHelper.setUp(self)
         self.longMessage = True
         fake_curses_testing.FakeCursesTestCase.set_up(self)
 

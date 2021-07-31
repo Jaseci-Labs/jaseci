@@ -35,7 +35,7 @@ import traceback
 
 from . import config, curses_util
 from . import log
-from . import selectable
+from . import regex
 
 # Keys to tuples within |parserNodes|.
 # Reference to a prefs grammar dictionary.

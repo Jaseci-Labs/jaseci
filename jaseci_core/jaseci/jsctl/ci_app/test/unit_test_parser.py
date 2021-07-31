@@ -23,17 +23,20 @@ import pstats
 import sys
 from timeit import timeit
 import unittest
+from jaseci.utils.utils import TestCaseHelper
 
 from .. import parser, curses_util
 from .. import prefs
 
 
-class ParserTestCases(unittest.TestCase):
+class ParserTestCases(TestCaseHelper, unittest.TestCase):
     def setUp(self):
+        TestCaseHelper.setUp(self)
         self.parser = parser.Parser(prefs.Prefs())
 
     def tearDown(self):
         self.parser = None
+        TestCaseHelper.tearDown(self)
 
     def check_parser_nodes(self, expected, actual, startIndex=None):
         kGrammar = parser.kGrammar

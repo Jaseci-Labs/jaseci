@@ -18,13 +18,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import curses
+from . import curses
 import os
 import sys
 
 from ..curses_util import *
 from .. import ci_program
-from .. import fake_curses_testing
+from . import fake_curses_testing
 
 kTestFile = u"#undo_redo_test_file_with_unlikely_file_name~"
 
@@ -44,12 +44,12 @@ class UndoRedoTestCases(fake_curses_testing.FakeCursesTestCase):
             [
                 self.display_check(2, 7, [u"      "]),
                 curses.ascii.ESC,
-                curses_util.BRACKETED_PASTE_BEGIN,
+                BRACKETED_PASTE_BEGIN,
                 u"a",
                 u"b",
                 u"c",
                 curses.ascii.ESC,
-                curses_util.BRACKETED_PASTE_END,
+                BRACKETED_PASTE_END,
                 self.display_check(2, 7, [u"abc "]),
                 CTRL_Z,
                 self.display_check(2, 7, [u"                "]),

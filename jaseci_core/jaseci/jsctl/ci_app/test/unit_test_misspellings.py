@@ -16,10 +16,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import curses
+from . import curses
 
 from ..curses_util import *
-from .. import fake_curses_testing
+from . import fake_curses_testing
 
 
 class MisspellingsTestCases(fake_curses_testing.FakeCursesTestCase):

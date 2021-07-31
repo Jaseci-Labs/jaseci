@@ -18,14 +18,21 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import curses
+from . import curses
 import unittest
+from jaseci.utils.utils import TestCaseHelper
 import unicodedata
 
 from .. import curses_util
 
 
-class CursesUtilTestCases(unittest.TestCase):
+class CursesUtilTestCases(TestCaseHelper, unittest.TestCase):
+    def setUp(self):
+        TestCaseHelper.setUp(self)
+
+    def tearDown(self):
+        TestCaseHelper.tearDown(self)
+
     def test_curses_key_name(self):
         # These actually test the fake curses.
         def test1():

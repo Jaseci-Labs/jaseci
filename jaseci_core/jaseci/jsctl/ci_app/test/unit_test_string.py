@@ -16,13 +16,20 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import curses
+from . import curses
 import unittest
+from jaseci.utils.utils import TestCaseHelper
 
 from .. import string
 
 
-class StringTestCases(unittest.TestCase):
+class StringTestCases(TestCaseHelper, unittest.TestCase):
+    def setUp(self):
+        TestCaseHelper.setUp(self)
+
+    def tearDown(self):
+        TestCaseHelper.tearDown(self)
+
     def test_path_encode(self):
         tests = [
             (u"abcd", u"abcd"),
