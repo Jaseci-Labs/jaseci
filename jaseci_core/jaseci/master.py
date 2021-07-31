@@ -160,4 +160,7 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api,
             logger.error(f'{api_name} not a valid API')
             return False
         else:
-            return getdoc(getattr(master, api_name))
+            doc = getdoc(getattr(master, api_name))
+            if(api_name in dir(legacy_api)):
+                doc = "Deprecated!\n" + doc
+            return doc
