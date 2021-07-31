@@ -5,6 +5,7 @@ from jaseci.utils.id_list import id_list
 from jaseci.actor.sentinel import sentinel
 from jaseci.utils.utils import logger
 import base64
+import uuid
 
 
 class sentinel_api():
@@ -13,14 +14,17 @@ class sentinel_api():
     """
 
     def __init__(self):
+        self.active_snt_id = None
         self.sentinel_ids = id_list(self)
 
-    def api_sentinel_create(self, name: str):
+    def api_sentinel_create(self, name: str, set_active: bool = False):
         """
         Create blank sentinel and return object
         """
         snt = sentinel(h=self._h, name=name, code='# Jac Code')
         self.sentinel_ids.add_obj(snt)
+        if(set_active):
+            self.active_snt_id = snt.jid
         return snt.serialize()
 
     def api_sentinel_list(self, detailed: bool = False):
@@ -30,22 +34,43 @@ class sentinel_api():
         snts = []
         for i in self.sentinel_ids.obj_list():
             snts.append(i.serialize(detailed=detailed))
+        if(self.active_snt_id not in self.sentinel_ids):
+            default = self._h.get_obj(uuid.UUID(self.active_snt_id))
+            snts.append(default.serialize(detailed=detailed))
         return snts
+
+    def api_sentinel_active_set(self, snt: sentinel):
+        """
+        Sets the default sentinel master should use
+        """
+        self.active_snt_id = snt.jid
+        return [f'Sentinel {snt.id} set as default']
+
+    def api_sentinel_active_get(self, detailed: bool = False):
+        """
+        Returns the default sentinel master is using
+        """
+        if(self.active_snt_id):
+            default = self._h.get_obj(uuid.UUID(self.active_snt_id))
+            return default.serialize(detailed=detailed)
+        else:
+            return ['No default sentinel is set!']
 
     def api_sentinel_delete(self, snt: sentinel):
         """
         Permanently delete sentinel with given id
         """
         self.sentinel_ids.destroy_obj(snt)
-        return [f'Sentinel {snt.id} successfully deleted']
+        return [f'Sentin el {snt.id} successfully deleted']
 
-    def api_sentinel_code_get(self, snt: sentinel):
+    def api_sentinel_code_get(self, snt: sentinel = None):
         """
         Get sentinel implementation in form of Jac source code
         """
         return [snt.code]
 
-    def api_sentinel_code_set(self, snt: sentinel, code: str, encoded: bool):
+    def api_sentinel_code_set(self, code: str, snt: sentinel = None,
+                              encoded: bool = False):
         """
         Set sentinel implementation with Jac source code
         """

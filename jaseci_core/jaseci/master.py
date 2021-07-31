@@ -79,6 +79,13 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api,
             app.append(str(type(i)))
         return {'core': core, 'app': app}
 
+    def provide_default(self, param):
+        """
+        Applies default sentinel if none pass and default is present
+        """
+        if(param == 'snt'):
+            pass
+
     def general_interface_to_api(self, params, api_name):
         """
         A mapper utility to interface to master class
