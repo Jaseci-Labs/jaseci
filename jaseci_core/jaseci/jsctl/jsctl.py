@@ -175,7 +175,9 @@ def login(url, username, password):
 
 
 @click.command()
-def edit():
+@click.argument("file", type=str, required=True)
+def edit(file):
+    ci_program.set_args([file])
     ci_program.run_ci()
 
 

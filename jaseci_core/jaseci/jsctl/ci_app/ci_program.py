@@ -46,19 +46,26 @@ import cProfile
 unicode = str
 unichr = chr
 
+argv = []
+
+
+def set_args(args: list):
+    global argv
+    argv = args
+
+
+def get_args():
+    global argv
+    ret = argv
+    argv = []
+    return ret
+
 
 def bytes_to_unicode(values):
     return bytes(values).decode("utf-8")
 
 
 assert bytes_to_unicode((226, 143, 176)) == u"⏰"
-
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
 
 userConsoleMessage = None
 
@@ -342,7 +349,7 @@ class CiProgram:
         numColors = min(curses.COLORS, 256)
         if os.getenv(u"CI_EDIT_SINGLE_THREAD"):
             self.prefs.editor["useBgThread"] = False
-        for i in sys.argv[1:]:
+        for i in get_args():
             if not takeAll and i[:1] == "+":
                 openToLine = int(i[1:])
                 continue
@@ -394,7 +401,9 @@ class CiProgram:
             if i == "-":
                 read_stdin = True
             else:
+
                 cliFiles.append({"path": unicode(i)})
+
         # If there's no line specified, try to reinterpret the paths.
         if openToLine is None:
             decodedPaths = []
