@@ -11,15 +11,14 @@ from jaseci.element import element
 from jaseci.utils.obj_mixins import anchored
 from jaseci.utils.id_list import id_list
 from jaseci.jac.walker_machine import walker_machine
+from jaseci.utils.jac_code import jac_code
 import uuid
-import pickle
 
 
 class walker(element, walker_machine, anchored):
     """Walker class for Jaseci"""
 
     def __init__(self, code=None, *args, **kwargs):
-        self.code = pickle.dumps(code, 0).decode()
         self.activity_action_ids = id_list(self)
         self.context = {}
         self.profile = {}
@@ -32,10 +31,9 @@ class walker(element, walker_machine, anchored):
         self.in_entry_exit = False
         self.step_limit = 10000
         anchored.__init__(self)
+        jac_code.__init__(self, code=code)
         element.__init__(self, *args, **kwargs)
         walker_machine.__init__(self)
-        self._jac_ast = pickle.loads(
-            self.code.encode()) if code else None
 
     @ property
     def current_node(self):
@@ -65,8 +63,6 @@ class walker(element, walker_machine, anchored):
                     f'- {self.step_limit}')
             )
             return False
-        if (self.code and not self._jac_ast):
-            self._jac_ast = pickle.loads(self.code.encode())
 
         self.current_node = self.next_node_ids.pop_first_obj()
         self.run_walker(jac_ast=self._jac_ast)
