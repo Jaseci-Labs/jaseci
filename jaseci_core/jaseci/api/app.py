@@ -13,8 +13,8 @@ class app_api():
         Get or create then return application sentinel and graph pairing
         Code must be encoded in base64
         """
-        snt = self.sentinel_ids.get_obj_by_name(name, True)
-        gph = self.graph_ids.get_obj_by_name(name, True)
+        snt = self.sentinel_ids.get_obj_by_name(name, silent=True)
+        gph = self.graph_ids.get_obj_by_name(name, silent=True)
         if (not snt):
             self.api_sentinel_create(name)
             snt = self.sentinel_ids.get_obj_by_name(name)

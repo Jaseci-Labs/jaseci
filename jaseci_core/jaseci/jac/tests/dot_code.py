@@ -4,7 +4,7 @@ dot_node = \
     graph test_graph {
         has anchor graph_root;
         graph G {
-            graph_root [kind=test_node, name=graph_root_node_name];
+            graph_root [node=test_node, name=graph_root_node_name];
         }
     }
     walker init {
@@ -24,7 +24,7 @@ dot_node_no_dot_id = \
     graph test_graph {
         has anchor graph_root;
         graph {
-            graph_root [kind=test_node, name=graph_root_node_name];
+            graph_root [node=test_node, name=graph_root_node_name];
         }
     }
     walker init {
@@ -59,31 +59,6 @@ spawn_graph_node = \
     }
     """
 
-dot_node_overwrite_name = \
-    """
-    node test_node {has name;}
-    node subnode;
-    graph test_graph {
-        has anchor graph_root;
-        graph G {
-            graph_root [kind=test_node, name=graph_root_node_name]
-            placeholder [_n_name_=real_name, kind=subnode]
-            graph_root -> placeholder
-        }
-    }
-    walker init {
-        root, test_node {
-            spawn here --> graph::test_graph;
-            take -->;
-        }
-        subnode {
-            std.out(here);
-            disengage;
-        }
-    }
-    """
-
-
 dot_node_multi_stmts = \
     """
     node test_node {
@@ -92,7 +67,7 @@ dot_node_multi_stmts = \
     graph test_graph {
         has anchor graph_root;
         graph G {
-            graph_root [kind=test_node]
+            graph_root [node=test_node]
             graph_root [name=test_node, date=2021]
             graph_root [name=real_test_node]
         }
@@ -117,9 +92,9 @@ dot_edge = \
     graph test_graph {
         has anchor graph_root;
         graph G {
-            graph_root [kind=test_node, name=root]
-            node_1 [kind=test_node, name=node_1]
-            node_2 [kind=test_node, name=node_2]
+            graph_root [node=test_node, name=root]
+            node_1 [node=test_node, name=node_1]
+            node_2 [node=test_node, name=node_2]
             graph_root -> node_1
             graph_root -> node_2
         }
@@ -154,10 +129,10 @@ dot_edge_with_attrs = \
     graph test_graph {
         has anchor graph_root;
         graph G {
-            graph_root [kind=test_node, name=root]
-            node_1 [kind=test_node, name=node_1]
-            node_2 [kind=test_node, name=node_2]
-            graph_root -> node_1 [kind=special]
+            graph_root [node=test_node, name=root]
+            node_1 [node=test_node, name=node_1]
+            node_2 [node=test_node, name=node_2]
+            graph_root -> node_1 [edge=special]
             graph_root -> node_2
         }
     }
@@ -197,19 +172,19 @@ dot_graph = \
     graph test {
         has anchor A;
         strict graph G {
-            H [kind=year]
-            C [kind=week]
-            E [kind=day]
-            D [kind=day]
+            H [node=year]
+            C [node=week]
+            E [node=day]
+            D [node=day]
 
             A -> B // Basic directional edge
             B -- H // Basic non-directional edge
-            B -> C [kind=parent] // Edge with attribute
-            C -> D -> E [kind=child] // Chain edge
+            B -> C [edge=parent] // Edge with attribute
+            C -> D -> E [edge=child] // Chain edge
 
             A [color=red] // Node with DOT builtin graphing attr
-            B [kind=month, count=2] [season=spring]// Node with Jac attr
-            A [kind=year] // Multiple attr statement per node
+            B [node=month, count=2] [season=spring]// Node with Jac attr
+            A [node=year] // Multiple attr statement per node
         }
     }
     walker init {

@@ -223,7 +223,14 @@ dot_port: ':' dot_id ( ':' dot_id)?;
 
 dot_subgraph: ( KW_SUBGRAPH dot_id?)? '{' dot_stmt_list '}';
 
-dot_id: NAME | STRING | INT | FLOAT;
+dot_id:
+	NAME
+	| STRING
+	| INT
+	| FLOAT
+	| KW_GRAPH
+	| KW_NODE
+	| KW_EDGE;
 
 /* Lexer rules */
 KW_GRAPH: 'graph';

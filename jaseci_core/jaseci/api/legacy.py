@@ -27,8 +27,8 @@ class legacy_api():
         Get or create then return application sentinel and graph pairing
         Code must be encoded in base64
         """
-        snt = self.sentinel_ids.get_obj_by_name(name, True)
-        gph = self.graph_ids.get_obj_by_name(name, True)
+        snt = self.sentinel_ids.get_obj_by_name(name, silent=True)
+        gph = self.graph_ids.get_obj_by_name(name, silent=True)
         if (not snt):
             self.api_create_sentinel(name)
             snt = self.sentinel_ids.get_obj_by_name(name)
@@ -218,7 +218,8 @@ class legacy_api():
         Assigns values to member variables of a given node using ctx object
         """
         nd.set_context(
-            ctx=ctx, arch=snt.arch_ids.get_obj_by_name('node.'+nd.kind).run())
+            ctx=ctx, arch=snt.arch_ids.get_obj_by_name(
+                nd.name, kind='node').run())
         return nd.serialize()
 
     def api_create_alias(self, name: str, value: str):

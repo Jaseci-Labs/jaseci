@@ -12,6 +12,7 @@ import json
 import functools
 from time import time
 from datetime import datetime
+from pprint import pformat
 
 
 # Get an instance of a logger
@@ -186,9 +187,9 @@ class TestCaseHelper():
         logging.getLogger('core').disabled = False
         logging.getLogger('app').disabled = False
 
-    def log(self, s):
+    def log(self, val):
         """Print to log"""
-        logger.info(s)
+        logger.info(pformat(val))
 
     def start_perf_test(self):
         self.pr = cProfile.Profile()

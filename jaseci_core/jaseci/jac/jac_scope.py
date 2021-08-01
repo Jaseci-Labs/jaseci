@@ -129,8 +129,10 @@ class jac_scope():
     def try_sync_to_arch(self, obj, varname):
         """Checks if latest Architype has variable"""
         # TODO: Only supports node types
+        # from jaseci.utils.utils import logger
+        # logger.info(f'{obj}')
         if (varname in self.owner.owner().arch_ids.get_obj_by_name(
-                'node.' + obj.kind).run().context.keys()):
+                obj.name, kind='node').run().context.keys()):
             obj.context[varname] = None
             return True
         return False

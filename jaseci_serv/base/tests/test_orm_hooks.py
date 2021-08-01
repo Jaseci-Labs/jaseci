@@ -120,7 +120,7 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         gph = graph(h=user._h)
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
-        test_node = sent.arch_ids.get_obj_by_name('node.life').run()
+        test_node = sent.arch_ids.get_obj_by_name('life', kind='node').run()
         test_walker = \
             sent.walker_ids.get_obj_by_name('get_gen_day')
         test_walker.prime(test_node)

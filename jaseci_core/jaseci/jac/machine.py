@@ -196,7 +196,7 @@ class machine():
         """
         kid = jac_ast.kid
         while(kid[0].name != 'code_block'):
-            if (self.current_node.kind == kid[0].token_text()):
+            if (self.current_node.name == kid[0].token_text()):
                 self.run_code_block(kid[-1])
                 return
             kid = kid[1:]
@@ -412,7 +412,7 @@ class machine():
                 self.rt_check_type(dest, node, kid[0])):
             self.rt_error("':=' only applies to nodes", kid[0])
             return dest
-        if (dest.kind != src.kind):
+        if (dest.name != src.name):
             self.rt_error(f"Node arch {dest} don't match {src}!", kid[0])
             return dest
         for i in src.context.keys():
@@ -789,14 +789,14 @@ class machine():
             result = jac_set(self.owner())
             if (len(kid) > 1):
                 for i in self.viable_nodes().obj_list():
-                    if (i.kind == kid[2].token_text()):
+                    if (i.name == kid[2].token_text()):
                         result.add_obj(i)
             else:
                 result += self.viable_nodes()
         else:
             if(len(kid) > 1):
                 result = self.owner().arch_ids.get_obj_by_name(
-                    'node.' + kid[2].token_text()).run()
+                    kid[2].token_text(), kind='node').run()
             else:
                 result = node(h=self._h)
         return result
@@ -817,7 +817,7 @@ class machine():
         """
         kid = jac_ast.kid
         gph = self.owner().arch_ids.get_obj_by_name(
-            'graph.' + kid[2].token_text()).run()
+            kid[2].token_text(), kind='graph').run()
         return gph
 
     def run_edge_ref(self, jac_ast, is_spawn=False):
@@ -836,13 +836,13 @@ class machine():
         if (not is_spawn):
             result = jac_set(self.owner())
             for i in self.current_node.outbound_edges():
-                if (len(kid) > 2 and i.kind != kid[2].token_text()):
+                if (len(kid) > 2 and i.name != kid[2].token_text()):
                     continue
                 result.add_obj(i)
         else:
             if(len(kid) > 2):
                 result = self.owner().arch_ids.get_obj_by_name(
-                    'edge.' + kid[2].token_text()).run()
+                    kid[2].token_text(), kind='edge').run()
             else:
                 result = edge(h=self._h)
         return result
@@ -855,13 +855,13 @@ class machine():
         if (not is_spawn):
             result = jac_set(self.owner())
             for i in self.current_node.inbound_edges():
-                if (len(kid) > 2 and i.kind != kid[2].token_text()):
+                if (len(kid) > 2 and i.name != kid[2].token_text()):
                     continue
                 result.add_obj(i)
         else:
             if(len(kid) > 2):
                 result = self.owner().arch_ids.get_obj_by_name(
-                    'edge.' + kid[2].token_text()).run()
+                    kid[2].token_text(), kind='edge').run()
             else:
                 result = edge(h=self._h)
         return result
@@ -875,13 +875,13 @@ class machine():
         if (not is_spawn):
             result = jac_set(self.owner())
             for i in self.current_node.attached_edges():
-                if (len(kid) > 2 and i.kind != kid[2].token_text()):
+                if (len(kid) > 2 and i.name != kid[2].token_text()):
                     continue
                 result.add_obj(i)
         else:
             if(len(kid) > 2):
                 result = self.owner().arch_ids.get_obj_by_name(
-                    'edge.' + kid[2].token_text()).run()
+                    kid[2].token_text(), kind='edge').run()
             else:
                 result = edge(h=self._h)
 

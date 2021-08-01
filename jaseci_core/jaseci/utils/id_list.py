@@ -48,7 +48,7 @@ class id_list(list):
         self.remove_obj(obj)
         obj.destroy()
 
-    def get_obj_by_name(self, name, silent=False):
+    def get_obj_by_name(self, name, kind=None, silent=False):
         """Returns a Jaseci obj obj by it's name"""
         for i in self:
             if (not self.owner_obj._h.has_obj(uuid.UUID(i))):
@@ -58,7 +58,10 @@ class id_list(list):
                 self.remove(i)
                 self.owner_obj.save()
                 continue
-            if(self.owner_obj._h.get_obj(uuid.UUID(i)).name == name):
+            obj = self.owner_obj._h.get_obj(uuid.UUID(i))
+            if(obj.name == name):
+                if(kind and obj.kind != kind):
+                    continue
                 return self.owner_obj._h.get_obj(uuid.UUID(i))
         if not silent:
             logger.error(
@@ -66,19 +69,19 @@ class id_list(list):
             )
         return None
 
-    def has_obj_by_name(self, name):
+    def has_obj_by_name(self, name, kind=None):
         """Returns whether a Jaseci obj exists by it's name"""
         return self.get_obj_by_name(
-            name, silent=True
+            name, kind, silent=True
         ) is not None
 
-    def remove_obj_by_name(self, name):
+    def remove_obj_by_name(self, name, kind=None):
         """Remove a Jaseci obj by it's name"""
-        self.remove_obj(self.get_obj_by_name(name))
+        self.remove_obj(self.get_obj_by_name(name, kind))
 
-    def destroy_obj_by_name(self, name):
+    def destroy_obj_by_name(self, name, kind=None):
         """Destroy a Jaseci obj by it's name"""
-        self.destroy_obj(self.get_obj_by_name(name))
+        self.destroy_obj(self.get_obj_by_name(name, kind))
 
     def obj_list(self):
         """Return list of objects from ids"""

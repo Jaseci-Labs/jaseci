@@ -203,10 +203,11 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'load_application', 'name': 'test_app',
                    'code': enc_str}
         num_objs_a = len(self.master._h.mem.keys())
-        self.client.post(
+        res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         num_objs_b = len(self.master._h.mem.keys())
-        self.client.post(
+        snt = self.master._h.get_obj(uuid.UUID(res.data['sentinel']))
+        res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         num_objs_c = len(self.master._h.mem.keys())
         self.assertLess(num_objs_a, num_objs_b)

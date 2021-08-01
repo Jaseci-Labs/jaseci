@@ -11,7 +11,7 @@ class graph(node):
 
     def __init__(self, *args, **kwargs):
         self.hd_node_ids = id_list(self)
-        node.__init__(self, kind='root', *args, **kwargs)
+        node.__init__(self, name='root', *args, **kwargs)
 
     def get_all_nodes(self, node_list=None):
         """

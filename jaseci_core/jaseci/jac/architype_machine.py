@@ -23,12 +23,14 @@ class architype_machine(machine):
         """
         kid = jac_ast.kid
         if(kid[0].name == 'KW_NODE'):
-            item = node(h=self._h, kind=kid[1].token_text())
+            item = node(
+                h=self._h, kind=kid[0].token_text(), name=kid[1].token_text())
             if(kid[2].name == 'COLON'):
                 item.dimension = int(kid[3].token_text())
             self.run_attr_block(kid[-1], item)
         elif(kid[0].name == 'KW_EDGE'):
-            item = edge(h=self._h, kind=kid[1].token_text())
+            item = edge(
+                h=self._h, kind=kid[0].token_text(), name=kid[1].token_text())
             self.run_attr_block(kid[-1], item)
         elif (kid[0].name == 'KW_GRAPH'):
             item = self.run_graph_block(kid[-1])
@@ -114,24 +116,24 @@ class architype_machine(machine):
         # Create node objects
         node_objs = {}
         for node_id, node_def in nodes_def.items():
-            node_kind = node_def.pop('kind', None)
-            if(node_kind is None):
-                self.rt_warn('Missing "kind" attribute for node.')
+            node_name = node_def.pop('node', None)
+            if(node_name is None):
+                self.rt_error('Missing "node" attribute for node.')
                 continue
             node_obj = self.owner().arch_ids.get_obj_by_name(
-                'node.' + node_kind).run()
-            node_obj.name = node_def.pop('_n_name_', node_id)
+                node_name, kind='node').run()
             node_obj.set_context(node_def)
+
             # Overwrite node name with _n_name_ in the attrs if defined
             node_objs[node_id] = node_obj
 
         # Create edge objects
         edge_objs = []
         for op in graph_state['edge_ops']:
-            edge_kind = op.pop('kind', None)
+            edge_kind = op.pop('edge', None)
             if(edge_kind):
                 edge_obj = self.owner().arch_ids.get_obj_by_name(
-                    'edge.' + edge_kind).run()
+                    edge_kind, kind='edge').run()
             else:
                 edge_obj = edge(h=self._h)
             lhs_node = node_objs.get(op['lhs_node_id'], None)
@@ -140,6 +142,7 @@ class architype_machine(machine):
                 del node_objs
                 del edge_objs
                 self.rt_error('Invalid from node for edge')
+                return None
             rhs_node = node_objs.get(op['rhs_node_id'], None)
             if(rhs_node is None):
                 del nodes_def
@@ -349,7 +352,14 @@ class architype_machine(machine):
 
     def run_dot_id(self, jac_ast):
         """
-        dot_id: NAME | STRING | INT | FLOAT
+        dot_id:
+            NAME
+            | STRING
+            | INT
+            | FLOAT
+            | KW_GRAPH
+            | KW_NODE
+            | KW_EDGE;
         """
         kid = jac_ast.kid
         if(kid[0].name == 'INT'):

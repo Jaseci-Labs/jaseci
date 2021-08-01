@@ -33,8 +33,10 @@ class jac_tests(TestCaseHelper, TestCase):
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
-        self.assertIsNotNone(sent.walker_ids.get_obj_by_name('get_gen_day'))
-        self.assertIsNotNone(sent.arch_ids.get_obj_by_name('node.week'))
+        self.assertIsNotNone(
+            sent.walker_ids.get_obj_by_name('get_gen_day'))
+        self.assertIsNotNone(
+            sent.arch_ids.get_obj_by_name('week', kind='node'))
 
     def test_sentinel_loading_jac_code_multiple_times(self):
         """Test registering resets correctly for multiple attempts"""
@@ -74,14 +76,15 @@ class jac_tests(TestCaseHelper, TestCase):
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
         self.assertGreater(
-            len(sent.arch_ids.get_obj_by_name('node.month').code), 5)
+            len(sent.arch_ids.get_obj_by_name('month', kind='node').code), 5)
 
     def test_sentinel_running_basic_walker(self):
         """Test the execution of a basic walker building graph"""
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
-        test_node = sent.arch_ids.get_obj_by_name('node.life').run()
+        test_node = sent.arch_ids.get_obj_by_name(
+            'life', kind='node').run()
         test_walker = \
             sent.walker_ids.get_obj_by_name('get_gen_day')
         test_walker.prime(test_node)
@@ -97,7 +100,8 @@ class jac_tests(TestCaseHelper, TestCase):
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
-        test_node = sent.arch_ids.get_obj_by_name('node.life').run()
+        test_node = sent.arch_ids.get_obj_by_name(
+            'life', kind='node').run()
         test_walker = \
             sent.walker_ids.get_obj_by_name('get_gen_day')
         test_walker.prime(test_node)
@@ -122,7 +126,8 @@ class jac_tests(TestCaseHelper, TestCase):
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
-        test_node = sent.arch_ids.get_obj_by_name('node.life').run()
+        test_node = sent.arch_ids.get_obj_by_name(
+            'life', kind='node').run()
         test_walker = \
             sent.walker_ids.get_obj_by_name('get_gen_day')
         test_walker.prime(test_node)
@@ -146,7 +151,7 @@ class jac_tests(TestCaseHelper, TestCase):
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
-        test_node = sent.arch_ids.get_obj_by_name('node.life').run()
+        test_node = sent.arch_ids.get_obj_by_name('life', kind='node').run()
         test_walker = \
             sent.walker_ids.get_obj_by_name('get_gen_day')
         test_walker.prime(test_node)
@@ -166,7 +171,7 @@ class jac_tests(TestCaseHelper, TestCase):
         gph = graph(h=mem_hook())
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
-        test_node = sent.arch_ids.get_obj_by_name('node.test').run()
+        test_node = sent.arch_ids.get_obj_by_name('test', kind='node').run()
         test_walker = \
             sent.walker_ids.get_obj_by_name('test')
         test_walker.prime(test_node)

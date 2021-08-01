@@ -18,7 +18,8 @@ class jsctl_test(TestCaseHelper, TestCase):
                              ["-m"]+cmd.split(' ')).output
 
     def call_cast(self, cmd):
-        return json.loads(self.call(cmd))
+        ret = self.call(cmd)
+        return json.loads(ret)
 
     def tearDown(self):
         jsctl.session["master"]._h.clear_mem_cache()
@@ -52,12 +53,13 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_aliases(self):
         """Tests that alias mapping api works"""
+        self.logger_on()
         gph_id = self.call_cast('list graph')[0]['jid']
         snt_id = self.call_cast('list sentinel')[0]['jid']
         self.call(f'create alias -name s -value {snt_id}')
         self.call(f'create alias -name g -value {gph_id}')
         self.assertEqual(len(self.call_cast('get graph -gph g')), 1)
-        self.call(f'prime run -snt s -nd g -name init')
+        self.call(f'walker primerun -snt s -nd g -name init')
         self.assertEqual(len(self.call_cast('get graph -gph g')), 2)
         self.call(f'alias delete -all true')
         self.assertEqual(len(self.call_cast(f'alias list').keys()), 0)
@@ -75,7 +77,6 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_default_snt_setting(self):
         """Tests that alias mapping api works"""
-        self.logger_on()
         snt_id = self.call_cast('list sentinel')[0]['jid']
         self.call(f'sentinel active set -snt {snt_id}')
         self.call(f'sentinel active get')

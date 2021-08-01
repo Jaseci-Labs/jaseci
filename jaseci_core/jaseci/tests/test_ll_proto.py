@@ -31,7 +31,8 @@ class jac_tests(TestCaseHelper, TestCase):
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         gen_walker.run()
-        gen_walker = self.sent.walker_ids.get_obj_by_name('gen_rand_life')
+        gen_walker = self.sent.walker_ids.get_obj_by_name(
+            'gen_rand_life', kind='walker')
         gen_walker.prime(self.gph.outbound_nodes()[0])
         gen_walker.run()
         self.assertGreater(len(self.gph._h.mem.keys()), 70)
@@ -42,7 +43,8 @@ class jac_tests(TestCaseHelper, TestCase):
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         gen_walker.run()
-        gen_walker = self.sent.walker_ids.get_obj_by_name('gen_rand_life')
+        gen_walker = self.sent.walker_ids.get_obj_by_name(
+            'gen_rand_life', kind='walker')
         gen_walker.prime(self.gph.outbound_nodes()[0])
         gen_walker.run()
         for i in self.gph._h.mem.keys():
@@ -56,7 +58,8 @@ class jac_tests(TestCaseHelper, TestCase):
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         gen_walker.run()
-        gen_walker = self.sent.walker_ids.get_obj_by_name('gen_rand_life')
+        gen_walker = self.sent.walker_ids.get_obj_by_name(
+            'gen_rand_life', kind='walker')
         gen_walker.prime(self.gph.outbound_nodes()[0])
         gen_walker.run()
         lday_walk = self.sent.walker_ids.get_obj_by_name(
@@ -72,7 +75,8 @@ class jac_tests(TestCaseHelper, TestCase):
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         gen_walker.run()
-        gen_walker = self.sent.walker_ids.get_obj_by_name('gen_rand_life')
+        gen_walker = self.sent.walker_ids.get_obj_by_name(
+            'gen_rand_life', kind='walker')
         gen_walker.prime(self.gph)
         gen_walker.run()
         lday_walk = self.sent.walker_ids.get_obj_by_name(

@@ -18,7 +18,6 @@ class node_tests(TestCaseHelper, TestCase):
 
     def test_node_connections(self):
         """Test connecting and disconnecting etc of nodes"""
-        self.logger_on()
         node1 = node(h=mem_hook())
         node2 = node(h=node1._h)
         node3 = node(h=node1._h)
