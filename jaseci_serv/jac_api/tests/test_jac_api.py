@@ -51,11 +51,11 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_create_graph(self):
         """Test API for creating a graph"""
-        payload = {'op': 'create_graph', 'name': 'Untitled Graph'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        self.assertEqual(gph.name, "Untitled Graph")
+        self.assertEqual(gph.name, "root")
 
     def test_jac_api_create_sentinel(self):
         """Test API for creating a sentinel"""
@@ -101,12 +101,12 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_get_graph_dot(self):
         """Test API for getting graph in dot str"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'get_graph', 'gph': gph.id.urn, 'dot': True}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.assertTrue('graph Something' in res.json())
+        self.assertTrue('graph root' in res.json())
 
     def test_jac_api_delete_sentinel(self):
         """Test API for deleting a sentinel"""

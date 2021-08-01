@@ -42,18 +42,15 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertIn("Group of `get node` commands", r)
 
     def test_jsctl_create_graph_mem_only(self):
-        r = self.call('create graph -name test')
-        self.assertIn('test', r)
-        r = self.call('list graph')
-        self.assertIn('test', r)
+        self.assertEqual(len(self.call_cast('graph list')), 1)
+        self.call('graph create')
+        self.assertEqual(len(self.call_cast('graph list')), 2)
 
     def test_jsctl_load_app(self):
-        r = self.call('list graph')
-        self.assertIn('zsb', r)
+        self.assertEqual(len(self.call_cast('graph list')), 1)
 
     def test_jsctl_aliases(self):
         """Tests that alias mapping api works"""
-        self.logger_on()
         gph_id = self.call_cast('list graph')[0]['jid']
         snt_id = self.call_cast('list sentinel')[0]['jid']
         self.call(f'create alias -name s -value {snt_id}')

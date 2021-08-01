@@ -17,11 +17,11 @@ class graph_api():
         self.active_gph_id = None
         self.graph_ids = id_list(self)
 
-    def api_graph_create(self, name: str, set_active: bool = False):
+    def api_graph_create(self, set_active: bool = False):
         """
         Create a graph instance and return root node graph object
         """
-        gph = graph(h=self._h, name=name)
+        gph = graph(h=self._h)
         self.graph_ids.add_obj(gph)
         if(set_active):
             self.active_gph_id = gph.jid

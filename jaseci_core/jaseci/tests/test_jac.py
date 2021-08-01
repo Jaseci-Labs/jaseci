@@ -91,9 +91,9 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.context['date'] = '2010-08-03T03:00:00.000000'
         test_walker.run()
         self.assertEqual(len(test_node.outbound_nodes()), 1)
-        self.assertEqual(test_node.outbound_nodes()[0].kind, 'year')
+        self.assertEqual(test_node.outbound_nodes()[0].name, 'year')
         self.assertEqual(test_node.outbound_nodes()[0].
-                         outbound_nodes()[0].outbound_nodes()[0].kind, 'week')
+                         outbound_nodes()[0].outbound_nodes()[0].name, 'week')
 
     def test_sentinel_setp_running_walker(self):
         """Test the execution of a basic walker building graph"""
@@ -111,7 +111,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(test_node.outbound_nodes()[0], next)
         next = test_walker.step()
         next = test_walker.step()
-        self.assertEqual(next.kind, 'week')
+        self.assertEqual(next.name, 'week')
         next = test_walker.step()
         next = test_walker.step()
         self.assertEqual(test_walker.current_step, 5)
@@ -195,7 +195,7 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         edges = gph.get_all_edges()
         self.assertEqual(len(edges), 3)
-        edge_names = [edges[0].kind, edges[1].kind, edges[2].kind]
+        edge_names = [edges[0].name, edges[1].name, edges[2].name]
         self.assertIn('generic', edge_names)
         self.assertIn('apple', edge_names)
         self.assertIn('banana', edge_names)
@@ -306,7 +306,7 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.prime(gph)
         test_walker.run()
         edges = gph.get_all_edges()
-        if(edges[0].kind == 'apple'):
+        if(edges[0].name == 'apple'):
             self.assertEqual(edges[0].context['v1'], 7)
             self.assertEqual(edges[1].context['x1'], 8)
         else:

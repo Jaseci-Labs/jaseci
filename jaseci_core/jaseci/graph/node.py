@@ -34,7 +34,7 @@ class node(element, anchored):
         Generalized attach function for attaching nodes with edges
         """
         if(edge_set is None):
-            edge_set = [edge(h=self._h)]
+            edge_set = [edge(h=self._h, kind='edge', name='generic')]
         link_order = [self, node_obj] if as_outbound else [node_obj, self]
         for e in edge_set:
             if(not e.set_from_node(link_order[0]) or

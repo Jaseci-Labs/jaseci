@@ -65,7 +65,7 @@ class legacy_api():
         """
         Create a graph instance and return root node graph object
         """
-        gph = graph(h=self._h, name=name)
+        gph = graph(h=self._h)
         self.graph_ids.add_obj(gph)
         return gph.serialize()
 

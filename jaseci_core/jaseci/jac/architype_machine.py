@@ -135,7 +135,7 @@ class architype_machine(machine):
                 edge_obj = self.owner().arch_ids.get_obj_by_name(
                     edge_kind, kind='edge').run()
             else:
-                edge_obj = edge(h=self._h)
+                edge_obj = edge(h=self._h, kind='edge', name='generic')
             lhs_node = node_objs.get(op['lhs_node_id'], None)
             if(lhs_node is None):
                 del nodes_def

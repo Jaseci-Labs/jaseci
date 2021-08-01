@@ -844,7 +844,7 @@ class machine():
                 result = self.owner().arch_ids.get_obj_by_name(
                     kid[2].token_text(), kind='edge').run()
             else:
-                result = edge(h=self._h)
+                result = edge(h=self._h, kind='edge', name='generic')
         return result
 
     def run_edge_from(self, jac_ast, is_spawn=False):
@@ -863,7 +863,7 @@ class machine():
                 result = self.owner().arch_ids.get_obj_by_name(
                     kid[2].token_text(), kind='edge').run()
             else:
-                result = edge(h=self._h)
+                result = edge(h=self._h, kind='edge', name='generic')
         return result
 
     def run_edge_any(self, jac_ast, is_spawn=False):
@@ -883,7 +883,7 @@ class machine():
                 result = self.owner().arch_ids.get_obj_by_name(
                     kid[2].token_text(), kind='edge').run()
             else:
-                result = edge(h=self._h)
+                result = edge(h=self._h, kind='edge', name='generic')
 
         return result
 
