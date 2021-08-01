@@ -11,3 +11,7 @@ class jac_code():
         self.code = pickle.dumps(code, 0).decode()
         self._jac_ast = pickle.loads(
             self.code.encode()) if code else None
+        if(self._jac_ast):
+            kid = self._jac_ast.kid
+            self.name = f"{kid[0].token_text()}.{kid[1].token_text()}"
+        self.save()

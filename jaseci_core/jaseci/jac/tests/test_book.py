@@ -37,8 +37,10 @@ class jac_book_tests(TestCaseHelper, TestCase):
         self.assertEqual(self.new_stdout.getvalue(), "8 -20 1.0 -2 -13.0\n")
 
     def test_additional_arith(self):
+        self.logger_on()
         self.sent.register_code(jtc.more_arith)
-        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker = self.sent.walker_ids.get_obj_by_name('walker.init')
+        self.log(f"{self.sent.walker_ids.obj_list()}")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "256 4\n")

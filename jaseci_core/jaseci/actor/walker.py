@@ -31,8 +31,8 @@ class walker(element, walker_machine, anchored):
         self.in_entry_exit = False
         self.step_limit = 10000
         anchored.__init__(self)
-        jac_code.__init__(self, code=code)
         element.__init__(self, *args, **kwargs)
+        jac_code.__init__(self, code=code)
         walker_machine.__init__(self)
 
     @ property

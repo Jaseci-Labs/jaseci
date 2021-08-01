@@ -13,8 +13,8 @@ class architype(element, jac_code, architype_machine):
     """Architype class for Jaseci"""
 
     def __init__(self, code=None, *args, **kwargs):
-        jac_code.__init__(self, code)
         element.__init__(self, *args, **kwargs)
+        jac_code.__init__(self, code)
         architype_machine.__init__(self)
 
     def run(self):

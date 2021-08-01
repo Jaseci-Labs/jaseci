@@ -186,6 +186,10 @@ class TestCaseHelper():
         logging.getLogger('core').disabled = False
         logging.getLogger('app').disabled = False
 
+    def log(self, s):
+        """Print to log"""
+        logger.info(s)
+
     def start_perf_test(self):
         self.pr = cProfile.Profile()
         self.pr.enable()
