@@ -564,6 +564,8 @@ prefs = {
         },
     },
     "editor": {
+        # Set spell checking as false by default
+        "spellChecking": False,
         # Whether to automatically indent after pressing carriage return.
         "autoIndent": True,
         # E.g. When key "(" is pressed, "()" is typed.

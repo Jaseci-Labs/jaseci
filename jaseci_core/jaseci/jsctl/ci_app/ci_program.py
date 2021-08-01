@@ -401,7 +401,6 @@ class CiProgram:
             if i == "-":
                 read_stdin = True
             else:
-
                 cliFiles.append({"path": unicode(i)})
 
         # If there's no line specified, try to reinterpret the paths.

@@ -4,7 +4,7 @@ Command line tool for Jaseci
 
 import click
 from click_shell import shell
-import os.path
+import os
 import pickle
 import functools
 import json
@@ -181,8 +181,15 @@ def edit(file):
     ci_program.run_ci()
 
 
+@click.command()
+def ls():
+    for i in os.listdir():
+        click.echo(f"{i} ")
+
+
 cli.add_command(login)
 cli.add_command(edit)
+cli.add_command(ls)
 cmd_tree_builder(extract_api_tree())
 
 

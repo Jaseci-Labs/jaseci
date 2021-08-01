@@ -27,7 +27,7 @@ from . import file_manager_window
 from . import log
 from . import prediction_window
 from . import window
-from . import config
+from . import config, ci_program
 
 
 class ProgramWindow(window.ActiveWindow):
