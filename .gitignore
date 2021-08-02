@@ -17,3 +17,4 @@ migrations
 .DS_Store
 build
 .vscode
+js.session
