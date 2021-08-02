@@ -154,6 +154,9 @@ class edge(element, anchored):
 
         if (edge_dict):
             for k, v in edge_dict.items():
+                # Workaround for known bug in Pydot https://github.com/pydot/pydot/issues/83
+                if(k == 'name'):
+                    k = 'nname'
                 if(not isinstance(v, str) or v == ""):
                     continue
                 dstr += f'{k}="{v[:32]}"'

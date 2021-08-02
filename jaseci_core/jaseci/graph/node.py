@@ -364,6 +364,9 @@ class node(element, anchored):
 
         if (node_dict):
             for k, v in node_dict.items():
+                # Workaround for known bug in Pydot https://github.com/pydot/pydot/issues/83
+                if(k == 'name'):
+                    k = 'nname'
                 if(not isinstance(v, str) or v == ""):
                     continue
                 dstr += f', {k}="{v[:32]}"'

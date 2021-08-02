@@ -120,6 +120,9 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api,
                 if(str(val) in self.alias_map.keys()):
                     val = self.alias_map[val]
                 if (issubclass(p_type, element)):
+                    if(val == 'None'):
+                        logger.error(
+                            f'No {p_type} value for {p_name} provided!')
                     val = self._h.get_obj(uuid.UUID(val))
                     if (isinstance(val, p_type)):
                         param_map[i] = val
