@@ -4,6 +4,7 @@ Graph  class for Jaseci
 """
 from jaseci.graph.node import node
 from jaseci.utils.id_list import id_list
+import pydot
 
 
 class graph(node):
@@ -53,16 +54,24 @@ class graph(node):
         """
         node_list = self.get_all_nodes()
         edge_list = self.get_all_edges()
+        node_map = [i.jid for i in node_list]
 
         # Construct the graph string
         dstr = ''
-        dstr += f'strict digraph {self.name} {{'
+        dstr += f'strict digraph {self.name} {{\n'
         for n in node_list:
-            dstr += f'    {n.dot_str()}'
+            dstr += f'    {n.dot_str(node_map)}'
         for e in edge_list:
-            dstr += f'    {e.dot_str()}'
+            dstr += f'    {e.dot_str(node_map)}'
         dstr += '}'
         return dstr
+
+    def graph_dot_svg(self):
+        """
+        SVG image of DOT representation for graph.
+        """
+        dotgph = pydot.graph_from_dot_data(self.graph_dot_str())[0]
+        return dotgph.create_svg()
 
     def destroy(self):
         """

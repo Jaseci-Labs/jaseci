@@ -42,7 +42,8 @@ def cli(filename, mem_only):
     session['mem-only'] = mem_only
     session['filename'] = filename if not mem_only else None
     if (not mem_only and os.path.isfile(filename)):
-        session['master'] = pickle.load(open(filename, 'rb'))
+        with open(filename, 'rb') as f:
+            session['master'] = pickle.load(f)
 
 
 def remote_api_call(payload, api_name):
@@ -85,7 +86,8 @@ def interface_api(api_name, **kwargs):
             indent=2
         ))
     if not session['mem-only']:
-        pickle.dump(session['master'], open(session['filename'], 'wb'))
+        with open(session['filename'], 'wb') as f:
+            pickle.dump(session['master'], f)
 
 
 def extract_api_tree():

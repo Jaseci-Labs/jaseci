@@ -136,36 +136,28 @@ class edge(element, anchored):
             target.edge_ids.remove_obj(self)
         element.destroy(self)
 
-    def dot_str(self):
+    def dot_str(self, node_map=None):
         """
         DOT representation
         from_node -> to_node [context_key=contect_value]
         """
-        from_name = uuid.UUID(self.from_node().jid).hex
-        to_name = uuid.UUID(self.to_node().jid).hex
+        from_name = uuid.UUID(self.from_node(
+        ).jid).hex if node_map is None else node_map.index(self.from_node().jid)
+        to_name = uuid.UUID(self.to_node(
+        ).jid).hex if node_map is None else node_map.index(self.to_node().jid)
         arrow = '--' if self.bidirected else '->'
-        dstr = f'{from_name} {arrow} {to_name} '
+        dstr = f'"n{from_name}" {arrow} "n{to_name}" '
+
+        dstr += f'[ id="{uuid.UUID(self.jid).hex}"'
 
         edge_dict = self.context
-        if (self.kind != 'generic'):
-            edge_dict['_kind_'] = self.kind
-        if (self.name != 'basic'):
-            edge_dict['_name_'] = self.name
 
         if (edge_dict):
-            dstr += '['
-            num_items = 0
             for k, v in edge_dict.items():
-                if(v is None or v == ""):
-                    num_items += 1
+                if(not isinstance(v, str) or v == ""):
                     continue
-                if (num_items != 0):
-                    dstr += ' '
-                dstr += f'{k}={v}'
+                dstr += f'{k}="{v[:32]}"'
 
-                num_items += 1
-                if (num_items < len(edge_dict)):
-                    dstr += ','
-            dstr += ']'
+        dstr += ' ]'
 
         return dstr+'\n'

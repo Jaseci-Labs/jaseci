@@ -349,34 +349,25 @@ class node(element, anchored):
             i.destroy()
         super().destroy()
 
-    def dot_str(self):
+    def dot_str(self, node_map=None):
         """
         DOT representation
         """
-        # _n_name is a reserved key for node name. Note that this is
-        # different than the name you could set in context
-        dstr = uuid.UUID(self.jid).hex+' '
+        if(node_map is None):
+            dstr = f'"n{uuid.UUID(self.jid).hex}" '
+        else:
+            dstr = f'"n{node_map.index(self.jid)}" '
+
+        dstr += f'[ id="{uuid.UUID(self.jid).hex}"'
 
         node_dict = self.context
-        if (self.kind != 'generic'):
-            node_dict['_kind_'] = self.kind
-        if (self.name != 'basic'):
-            node_dict['_name_'] = self.name
 
         if (node_dict):
-            dstr += '['
-            num_items = 0
             for k, v in node_dict.items():
-                if(v is None or v == ""):
-                    num_items += 1
+                if(not isinstance(v, str) or v == ""):
                     continue
-                if (num_items != 0):
-                    dstr += ' '
-                dstr += f'{k}={v}'
+                dstr += f', {k}="{v[:32]}"'
 
-                num_items += 1
-                if (num_items < len(node_dict)):
-                    dstr += ','
-            dstr += ']'
+        dstr += ' ]'
 
         return dstr+'\n'

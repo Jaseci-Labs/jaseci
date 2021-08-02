@@ -49,6 +49,15 @@ class jsctl_test(TestCaseHelper, TestCase):
     def test_jsctl_load_app(self):
         self.assertEqual(len(self.call_cast('graph list')), 1)
 
+    def test_jsctl_carry_forward(self):
+        self.call("sentinel create -name ll -set_active true")
+        self.call("sentinel code set -code jaseci/jsctl/tests/ll.jac")
+        self.call("graph create -set_active true")
+        self.call("walker primerun -name init")
+        self.call("walker primerun -name gen_rand_life")
+        r = self.call_cast("walker primerun -name get_gen_day")
+        self.assertGreater(len(r), 3)
+
     def test_jsctl_aliases(self):
         """Tests that alias mapping api works"""
         gph_id = self.call_cast('list graph')[0]['jid']
