@@ -41,6 +41,8 @@ class sentinel_machine(machine):
             | KW_GRAPH NAME graph_block;
         """
         arch = architype(h=self._h, code=jac_ast)
+        if(self.arch_ids.has_obj_by_name(arch.name)):
+            self.arch_ids.remove_obj_by_name(arch.name)
         self.arch_ids.add_obj(arch)
 
     # Note: Sentinels only registers the attr_stmts
@@ -49,4 +51,6 @@ class sentinel_machine(machine):
         walker: KW_WALKER NAME LBRACE (attr_stmt)* statement* RBRACE;
         """
         walk = walker(h=self._h, code=jac_ast)
+        if(self.walker_ids.has_obj_by_name(walk.name)):
+            self.walker_ids.remove_obj_by_name(walk.name)
         self.walker_ids.add_obj(walk)

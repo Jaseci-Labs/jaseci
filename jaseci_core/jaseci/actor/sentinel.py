@@ -34,17 +34,27 @@ class sentinel(element, sentinel_machine):
         self.walker_ids.destroy_all()
         sentinel_machine.reset(self)
 
-    def register_code(self, text=None):
-        """Registers a program written in Jac"""
-        logger.info(str(f'{self.name}: Registering Jac code...'))
-        self.reset()
-        self.code = text if text else self.code
-        tree = ast(jac_text=self.code)
+    def parse_jac_code(self, text, start_rule='start'):
+        """Generate AST tree from Jac code text"""
+        logger.info(str(f'{self.name}: Processing Jac code...'))
+        tree = ast(jac_text=self.code, start_rule=start_rule)
 
         if(tree.parse_errors):
             logger.error(str(f'{self.name}: Invalid syntax in Jac code!'))
             for i in tree.parse_errors:
                 logger.error(i)
+            return None
+        return tree
+
+    def register_code(self, text=None):
+        """
+        Registers a program (set of walkers and architypes) written in Jac
+        """
+        self.reset()
+        self.code = text if text else self.code
+        tree = self.parse_jac_code(self.code)
+
+        if(not tree):
             return self.is_active  # is False due to .reset()
 
         self.run_start(tree)
@@ -67,8 +77,27 @@ class sentinel(element, sentinel_machine):
 
         return self.is_active
 
+    def register_walker(self, code):
+        """Adds a walker based on jac code"""
+        tree = self.parse_jac_code(code, start_rule='walker')
+        if(not tree):
+            return False
+        self.load_walker(tree)
+        return True
+
+    def register_architype(self, code):
+        """Adds a walker based on jac code"""
+        tree = self.parse_jac_code(code, start_rule='architype')
+        if(not tree):
+            return False
+        self.load_walker(tree)
+        return True
+
     def spawn(self, name):
-        """Spawns a new walker from registered walkers"""
+        """
+        Spawns a new walker from registered walkers and adds to
+        live walkers
+        """
         src_walk = self.walker_ids.get_obj_by_name(name)
         if (not src_walk):
             logger.error(

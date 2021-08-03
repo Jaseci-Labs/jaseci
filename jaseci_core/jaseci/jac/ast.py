@@ -17,11 +17,12 @@ class ast():
     TODO: Error handling if jac program has errors
     """
 
-    def __init__(self, jac_text=None, parse_errors=None):
+    def __init__(self, jac_text=None, parse_errors=None, start_rule='start'):
         self.name = 'unparsed'
         self.kind = 'unparsed'
         self.context = {}
         self.parse_errors = parse_errors if parse_errors else []
+        self.start_rule = start_rule
         self.line = 0
         self.column = 0
         self.kid = []
@@ -68,7 +69,7 @@ class ast():
         parser = jacParser(stream)
         parser.removeErrorListeners()
         parser.addErrorListener(errors)
-        tree = parser.start()
+        tree = getattr(parser, self.start_rule)()
         builder = self.jac_tree_builder(self)
         walker = ParseTreeWalker()
         walker.walk(builder, tree)
