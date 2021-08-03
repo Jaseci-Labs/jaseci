@@ -20,7 +20,7 @@ class sentinel_api():
     def api_sentinel_create(self, name: str, code: str = '',
                             encoded: bool = False, set_active: bool = False):
         """
-        Create blank sentinel and return object
+        Create blank or code loaded sentinel and return object
         """
         snt = self.sentinel_ids.get_obj_by_name(name, silent=True)
         if(not snt):

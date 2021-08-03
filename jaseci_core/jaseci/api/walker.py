@@ -11,6 +11,11 @@ class walker_api():
     Walker APIs
     """
 
+    def api_walker_create(self, code: str = '', encoded: bool = False):
+        """
+        Create blank or code loaded walker and return object
+        """
+
     def api_walker_list(self, detailed: bool = False, snt: sentinel = None):
         """
         List walkers known to sentinel
@@ -19,6 +24,22 @@ class walker_api():
         for i in snt.walker_ids.obj_list():
             walks.append(i.serialize(detailed=detailed))
         return walks
+
+    def api_walker_delete(self, snt: sentinel):
+        """
+        Permanently delete sentinel with given id
+        """
+
+    def api_walker_code_get(self, snt: sentinel = None):
+        """
+        Get sentinel implementation in form of Jac source code
+        """
+
+    def api_walker_code_set(self, code: str, snt: sentinel = None,
+                            encoded: bool = False):
+        """
+        Set sentinel implementation with Jac source code
+        """
 
     def api_walker_spawn(self, name: str, snt: sentinel = None):
         """

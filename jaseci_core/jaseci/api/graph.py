@@ -73,12 +73,6 @@ class graph_api():
                 nds.append(i.serialize(detailed=detailed))
             return nds
 
-    def api_graph_render(self, gph: graph = None):
-        """
-        Return the content of the graph as SVG
-        """
-        return gph.graph_dot_svg()
-
     def api_graph_node_get(self, nd: node, ctx: list = None):
         """
         Returns value a given node
