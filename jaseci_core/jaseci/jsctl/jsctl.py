@@ -67,7 +67,7 @@ def interface_api(api_name, **kwargs):
     Interfaces Master apis after processing arguments/parameters
     from cli
     """
-    if('code' in kwargs):
+    if('code' in kwargs and kwargs['code']):
         if (os.path.isfile(kwargs['code'])):
             with open(kwargs['code'], 'r') as file:
                 kwargs['code'] = file.read()
@@ -77,14 +77,13 @@ def interface_api(api_name, **kwargs):
     if('ctx' in kwargs):
         kwargs['ctx'] = json.loads(kwargs['ctx'])
     if(connection['token'] and connection['url']):
-        click.echo(json.dumps(
-            remote_api_call(kwargs, api_name), indent=2
-        ))
+        out = remote_api_call(kwargs, api_name)
     else:
-        click.echo(json.dumps(
-            session['master'].general_interface_to_api(kwargs, api_name),
-            indent=2
-        ))
+        out = session['master'].general_interface_to_api(kwargs, api_name)
+    if(isinstance(out, dict) or isinstance(out, list)):
+        click.echo(json.dumps(out, indent=2))
+    else:
+        click.echo(out)
     if not session['mem-only']:
         with open(session['filename'], 'wb') as f:
             pickle.dump(session['master'], f)

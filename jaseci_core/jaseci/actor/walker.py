@@ -15,7 +15,7 @@ from jaseci.utils.jac_code import jac_code
 import uuid
 
 
-class walker(element, walker_machine, anchored):
+class walker(element, jac_code, walker_machine, anchored):
     """Walker class for Jaseci"""
 
     def __init__(self, code=None, *args, **kwargs):

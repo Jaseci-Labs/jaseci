@@ -13,7 +13,7 @@ from jaseci.element import element
 from jaseci.utils.utils import logger, app_logger
 from jaseci.utils.utils import connect_http_logging_check
 from jaseci.utils.utils import is_jsonable, connect_http_logging
-from jaseci.api.legacy import legacy_api
+# from jaseci.api.legacy import legacy_api
 from jaseci.api.alias import alias_api
 from jaseci.api.graph import graph_api
 from jaseci.api.sentinel import sentinel_api
@@ -22,7 +22,7 @@ from jaseci.api.walker import walker_api
 from jaseci.api.config import config_api
 
 
-class master(element, legacy_api, alias_api, graph_api, sentinel_api,
+class master(element, alias_api, graph_api, sentinel_api,
              walker_api, app_api, config_api):
     """Main class for master functions for user"""
 
@@ -164,6 +164,6 @@ class master(element, legacy_api, alias_api, graph_api, sentinel_api,
             return False
         else:
             doc = getdoc(getattr(master, api_name))
-            if(api_name in dir(legacy_api)):
-                doc = "Deprecated!\n" + doc
+            # if(api_name in dir(legacy_api)):
+            #     doc = "Deprecated!\n" + doc
             return doc

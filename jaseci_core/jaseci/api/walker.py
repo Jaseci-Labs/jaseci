@@ -61,6 +61,6 @@ class walker_api():
         if(not wlk):
             return [f'Walker {name} not found!']
         wlk.prime(nd, prime_ctx=ctx)
-        res = self.api_run_walker(wlk)
+        res = self.api_walker_run(wlk)
         wlk.destroy()
         return res

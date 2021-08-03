@@ -142,9 +142,11 @@ class edge(element, anchored):
         from_node -> to_node [context_key=contect_value]
         """
         from_name = uuid.UUID(self.from_node(
-        ).jid).hex if node_map is None else node_map.index(self.from_node().jid)
+        ).jid).hex if node_map is None else node_map.index(
+            self.from_node().jid)
         to_name = uuid.UUID(self.to_node(
-        ).jid).hex if node_map is None else node_map.index(self.to_node().jid)
+        ).jid).hex if node_map is None else node_map.index(
+            self.to_node().jid)
         arrow = '--' if self.bidirected else '->'
         dstr = f'"n{from_name}" {arrow} "n{to_name}" '
 
@@ -154,9 +156,6 @@ class edge(element, anchored):
 
         if (edge_dict):
             for k, v in edge_dict.items():
-                # Workaround for known bug in Pydot https://github.com/pydot/pydot/issues/83
-                if(k == 'name'):
-                    k = 'nname'
                 if(not isinstance(v, str) or v == ""):
                     continue
                 dstr += f'{k}="{v[:32]}"'

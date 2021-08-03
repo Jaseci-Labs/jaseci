@@ -189,7 +189,8 @@ class TestCaseHelper():
 
     def log(self, val):
         """Print to log"""
-        logger.info(pformat(val))
+        if(not logging.getLogger('core').disabled):
+            logger.info(pformat(val))
 
     def start_perf_test(self):
         self.pr = cProfile.Profile()

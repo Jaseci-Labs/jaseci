@@ -50,24 +50,27 @@ class id_list(list):
 
     def get_obj_by_name(self, name, kind=None, silent=False):
         """Returns a Jaseci obj obj by it's name"""
+        healing = []
+        ret = None
         for i in self:
             if (not self.owner_obj._h.has_obj(uuid.UUID(i))):
                 logger.critical(str(
                     f'Self healing: {i} not found ' +
                     f'in id_list of {self.owner_obj}!'))
-                self.remove(i)
-                self.owner_obj.save()
+                healing.append(i)
                 continue
             obj = self.owner_obj._h.get_obj(uuid.UUID(i))
             if(obj.name == name):
                 if(kind and obj.kind != kind):
                     continue
-                return self.owner_obj._h.get_obj(uuid.UUID(i))
+                ret = self.owner_obj._h.get_obj(uuid.UUID(i))
+                break
+        self.heal(healing)
         if not silent:
             logger.error(
                 str(f"object for '{name}' not found in '{self.owner_obj}'!")
             )
-        return None
+        return ret
 
     def has_obj_by_name(self, name, kind=None):
         """Returns whether a Jaseci obj exists by it's name"""
@@ -86,16 +89,17 @@ class id_list(list):
     def obj_list(self):
         """Return list of objects from ids"""
         ret = []
+        healing = []
         for i in self:
             obj = self.owner_obj._h.get_obj(uuid.UUID(i))
             if (not obj):
                 logger.critical(str(
                     f'Self healing: {i} not found ' +
                     f'in id_list of {self.owner_obj}!'))
-                self.remove(i)
-                self.owner_obj.save()
+                healing.append(i)
             else:
                 ret.append(self.owner_obj._h.get_obj(uuid.UUID(i)))
+        self.heal(healing)
         return ret
 
     def remove_all(self):
@@ -115,6 +119,12 @@ class id_list(list):
             logger.critical(str(
                 f'Destroy all failed in id_list of {self.owner_obj} - ' +
                 f'still has {self}!'))
+
+    def heal(self, healing):
+        if(len(healing)):
+            for i in healing:
+                self.remove(i)
+            self.owner_obj.save()
 
     def first_obj(self):
         """Get first object in list"""

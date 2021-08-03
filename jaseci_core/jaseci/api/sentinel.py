@@ -17,12 +17,17 @@ class sentinel_api():
         self.active_snt_id = None
         self.sentinel_ids = id_list(self)
 
-    def api_sentinel_create(self, name: str, set_active: bool = False):
+    def api_sentinel_create(self, name: str, code: str = '',
+                            encoded: bool = False, set_active: bool = False):
         """
         Create blank sentinel and return object
         """
-        snt = sentinel(h=self._h, name=name, code='# Jac Code')
-        self.sentinel_ids.add_obj(snt)
+        snt = self.sentinel_ids.get_obj_by_name(name, silent=True)
+        if(not snt):
+            snt = sentinel(h=self._h, name=name, code='# Jac Code')
+            self.sentinel_ids.add_obj(snt)
+        if(code):
+            self.api_sentinel_code_set(code=code, snt=snt, encoded=encoded)
         if(set_active):
             self.active_snt_id = snt.jid
         return snt.serialize()
