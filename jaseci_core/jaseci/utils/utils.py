@@ -8,6 +8,7 @@ import pkgutil
 import logging
 from logging.handlers import HTTPHandler
 import types
+import base64
 import json
 import functools
 from time import time
@@ -146,6 +147,16 @@ def copy_func(f, name=None):
     g.__kwdefaults__ = f.__kwdefaults__
     g.__name__ = name if name else g.__name__
     return g
+
+
+def b64decode_str(code):
+    """Decode a base 64 encoded string"""
+    try:
+        code = base64.b64decode(code).decode()
+    except UnicodeDecodeError:
+        logger.error(
+            f'Code encoding invalid!')
+    return code
 
 
 class TestCaseHelper():

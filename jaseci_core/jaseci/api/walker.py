@@ -4,6 +4,7 @@ Walker api functions as a mixin
 from jaseci.actor.walker import walker
 from jaseci.graph.node import node
 from jaseci.actor.sentinel import sentinel
+from jaseci.utils.utils import b64decode_str
 
 
 class walker_api():
@@ -11,12 +12,20 @@ class walker_api():
     Walker APIs
     """
 
-    def api_walker_create(self, code: str = '', encoded: bool = False):
+    def api_walker_create(self, snt: sentinel = None,
+                          code: str = '', encoded: bool = False):
         """
         Create blank or code loaded walker and return object
         """
+        if (encoded):
+            code = b64decode_str(code)
+        walk = snt.register_walker(code)
+        if(walk):
+            return walk.serialize()
+        else:
+            return [f'Walker not created, invalid code!']
 
-    def api_walker_list(self, detailed: bool = False, snt: sentinel = None):
+    def api_walker_list(self, snt: sentinel = None, detailed: bool = False):
         """
         List walkers known to sentinel
         """
@@ -25,15 +34,19 @@ class walker_api():
             walks.append(i.serialize(detailed=detailed))
         return walks
 
-    def api_walker_delete(self, snt: sentinel):
+    def api_walker_delete(self, wlk: walker, snt: sentinel = None):
         """
-        Permanently delete sentinel with given id
+        Permanently delete walker with given id
         """
+        wlkid = wlk.id
+        snt.walker_ids.destroy_obj(wlk)
+        return [f'Walker {wlkid} successfully deleted']
 
-    def api_walker_code_get(self, snt: sentinel = None):
+    def api_walker_code_get(self, wlk: walker, snt: sentinel = None):
         """
         Get sentinel implementation in form of Jac source code
         """
+        return wlk._jac_ast.get_text()
 
     def api_walker_code_set(self, code: str, snt: sentinel = None,
                             encoded: bool = False):

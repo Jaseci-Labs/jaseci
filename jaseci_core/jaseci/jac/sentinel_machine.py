@@ -44,6 +44,7 @@ class sentinel_machine(machine):
         if(self.arch_ids.has_obj_by_name(arch.name)):
             self.arch_ids.remove_obj_by_name(arch.name)
         self.arch_ids.add_obj(arch)
+        return arch
 
     # Note: Sentinels only registers the attr_stmts
     def load_walker(self, jac_ast):
@@ -54,3 +55,4 @@ class sentinel_machine(machine):
         if(self.walker_ids.has_obj_by_name(walk.name)):
             self.walker_ids.remove_obj_by_name(walk.name)
         self.walker_ids.add_obj(walk)
+        return walk

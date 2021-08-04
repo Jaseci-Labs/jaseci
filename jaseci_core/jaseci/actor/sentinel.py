@@ -38,7 +38,6 @@ class sentinel(element, sentinel_machine):
         """Generate AST tree from Jac code text"""
         logger.info(str(f'{self.name}: Processing Jac code...'))
         tree = ast(jac_text=self.code, start_rule=start_rule)
-
         if(tree.parse_errors):
             logger.error(str(f'{self.name}: Invalid syntax in Jac code!'))
             for i in tree.parse_errors:
@@ -81,17 +80,15 @@ class sentinel(element, sentinel_machine):
         """Adds a walker based on jac code"""
         tree = self.parse_jac_code(code, start_rule='walker')
         if(not tree):
-            return False
-        self.load_walker(tree)
-        return True
+            return None
+        return self.load_walker(tree)
 
     def register_architype(self, code):
         """Adds a walker based on jac code"""
         tree = self.parse_jac_code(code, start_rule='architype')
         if(not tree):
-            return False
-        self.load_walker(tree)
-        return True
+            return None
+        return self.load_walker(tree)
 
     def spawn(self, name):
         """

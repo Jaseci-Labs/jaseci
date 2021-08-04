@@ -3,8 +3,7 @@ Sentinel api functions as a mixin
 """
 from jaseci.utils.id_list import id_list
 from jaseci.actor.sentinel import sentinel
-from jaseci.utils.utils import logger
-import base64
+from jaseci.utils.utils import b64decode_str
 import uuid
 
 
@@ -77,12 +76,7 @@ class sentinel_api():
         Set sentinel implementation with Jac source code
         """
         if (encoded):
-            try:
-                code = base64.b64decode(code).decode()
-            except UnicodeDecodeError:
-                logger.error(
-                    f'Code encoding invalid for Sentinel {snt.id}!')
-                return [f'Code encoding invalid for Sentinel {snt.id}!']
+            code = b64decode_str(code)
         # TODO: HOTFIX for mobile jac file
         code = code.replace("take --> node;", "take -->;")
         if (snt.code == code and snt.is_active):
