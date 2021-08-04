@@ -134,6 +134,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#has_assign.
+    def enterHas_assign(self, ctx:jacParser.Has_assignContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#has_assign.
+    def exitHas_assign(self, ctx:jacParser.Has_assignContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#can_stmt.
     def enterCan_stmt(self, ctx:jacParser.Can_stmtContext):
         pass

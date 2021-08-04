@@ -312,3 +312,21 @@ class jac_tests(TestCaseHelper, TestCase):
         else:
             self.assertEqual(edges[1].context['v1'], 7)
             self.assertEqual(edges[0].context['x1'], 8)
+
+    def test_has_assign(self):
+        """Test assignment on definition"""
+        gph = graph(h=mem_hook())
+        sent = sentinel(h=gph._h)
+        sent.register_code(jtc.has_assign)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        nodes = gph.get_all_nodes()
+        self.assertEqual(len(nodes), 3)
+        num = 0
+        for i in nodes:
+            if(i.name == 'test'):
+                self.assertEqual(i.context['a'], 8)
+                num += 1
+        self.assertEqual(num, 2)

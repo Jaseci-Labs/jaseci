@@ -56,7 +56,6 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(
             "sentinel register -name ll -code "
             "jaseci/jsctl/tests/ll.jac -set_active true")
-        self.call("sentinel code set ")
         self.call("graph create -set_active true")
         self.call("walker primerun -name init")
         self.call("walker primerun -name gen_rand_life")

@@ -22,6 +22,11 @@ class architype_machine(machine):
             | KW_GRAPH NAME graph_block;
         """
         kid = jac_ast.kid
+        self.push_scope(
+            jac_scope(
+                owner=self,
+                has_obj=self,
+                action_sets=[]))
         if(kid[0].name == 'KW_NODE'):
             item = node(
                 h=self._h, kind=kid[0].token_text(), name=kid[1].token_text())
@@ -35,6 +40,7 @@ class architype_machine(machine):
         elif (kid[0].name == 'KW_GRAPH'):
             item = self.run_graph_block(kid[-1])
         item.owner_id = self.owner().id
+        self.pop_scope()
         return item
 
     def run_attr_block(self, jac_ast, obj):

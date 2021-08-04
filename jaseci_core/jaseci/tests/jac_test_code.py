@@ -620,3 +620,20 @@ edge_access = \
         }
     }
     """
+
+has_assign = \
+    """
+    node test {
+        has a=8;
+    }
+
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            b = spawn here --> node::test;
+
+            std.log(a.a, b.a);
+        }
+    }
+    """
