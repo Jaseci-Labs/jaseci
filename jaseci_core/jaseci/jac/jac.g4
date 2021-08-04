@@ -40,8 +40,9 @@ has_root: KW_HAS KW_ANCHOR NAME SEMI;
 
 has_stmt: KW_HAS KW_PRIVATE? KW_ANCHOR? NAME (COMMA NAME)* SEMI;
 
-/* Need to be heavily simplified */
-can_stmt:
+def_assign: NAME | NAME EQ expression;
+
+/* Need to be heavily simplified */ can_stmt:
 	KW_CAN dotted_name preset_in_out? event_clause? (
 		COMMA dotted_name preset_in_out? event_clause?
 	)* SEMI

@@ -151,6 +151,8 @@ class edge(element, anchored):
         dstr = f'"n{from_name}" {arrow} "n{to_name}" '
 
         dstr += f'[ id="{uuid.UUID(self.jid).hex}"'
+        if(self.name != 'generic'):
+            dstr += f', label="{self.name}"'
 
         edge_dict = self.context
 
