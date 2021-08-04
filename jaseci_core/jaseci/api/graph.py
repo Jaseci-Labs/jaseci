@@ -27,6 +27,20 @@ class graph_api():
             self.active_gph_id = gph.jid
         return gph.serialize()
 
+    def api_graph_get(self, gph: graph = None,
+                      format: str = 'default', detailed: bool = False):
+        """
+        Return the content of the graph with format
+        Valid Formats: {default, dot, }
+        """
+        if(format == 'dot'):
+            return gph.graph_dot_str()
+        else:
+            nds = []
+            for i in gph.get_all_nodes():
+                nds.append(i.serialize(detailed=detailed))
+            return nds
+
     def api_graph_list(self, detailed: bool = False):
         """
         Provide complete list of all graph objects (list of root node objects)
@@ -59,19 +73,6 @@ class graph_api():
         """
         self.graph_ids.destroy_obj(gph)
         return [f'Graph {gph.id} successfully deleted']
-
-    def api_graph_get(self, gph: graph = None, detailed: bool = False,
-                      dot: bool = False):
-        """
-        Return the content of the graph
-        """
-        if(dot):
-            return gph.graph_dot_str()
-        else:
-            nds = []
-            for i in gph.get_all_nodes():
-                nds.append(i.serialize(detailed=detailed))
-            return nds
 
     def api_graph_node_get(self, nd: node, ctx: list = None):
         """

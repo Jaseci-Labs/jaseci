@@ -10,7 +10,9 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.call("sentinel create -name zsb -code jaseci/jsctl/tests/zsb.jac")
+        self.call(
+            "sentinel register -name zsb -code "
+            "jaseci/jsctl/tests/zsb.jac -set_active true")
 
     def call(self, cmd):
         out = CliRunner().invoke(jsctl.cli,
@@ -41,7 +43,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertIn('Specify filename', r)
         self.assertIn("Group of `graph` commands", r)
         r = self.call('sentinel --help')
-        self.assertIn("Group of `sentinel code` commands", r)
+        self.assertIn("Group of `sentinel active` commands", r)
 
     def test_jsctl_create_graph_mem_only(self):
         self.assertEqual(len(self.call_cast('graph list')), 0)
@@ -51,8 +53,10 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertEqual(len(self.call_cast('graph list')), 3)
 
     def test_jsctl_carry_forward(self):
-        self.call("sentinel create -name ll -set_active true")
-        self.call("sentinel code set -code jaseci/jsctl/tests/ll.jac")
+        self.call(
+            "sentinel register -name ll -code "
+            "jaseci/jsctl/tests/ll.jac -set_active true")
+        self.call("sentinel code set ")
         self.call("graph create -set_active true")
         self.call("walker primerun -name init")
         self.call("walker primerun -name gen_rand_life")
@@ -60,12 +64,13 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertGreater(len(r), 3)
 
     def test_jsctl_dot(self):
-        self.call("sentinel create -name ll -set_active true")
-        self.call("sentinel code set -code jaseci/jsctl/tests/ll.jac")
+        self.call(
+            "sentinel register -name ll -code "
+            "jaseci/jsctl/tests/ll.jac -set_active true")
         self.call("graph create -set_active true")
         self.call("walker primerun -name init")
         self.call("walker primerun -name gen_rand_life")
-        r = self.call("graph get -dot true")
+        r = self.call("graph get -format dot")
         self.assertIn("test test test", r)
         self.assertIn('"n0" -> "n', r)
         self.assertIn('week="', r)
@@ -74,13 +79,30 @@ class jsctl_test(TestCaseHelper, TestCase):
         """Tests that alias mapping api works"""
         gph_id = self.call_cast('graph create')['jid']
         snt_id = self.call_cast('sentinel list')[0]['jid']
-        self.call(f'alias create -name s -value {snt_id}')
-        self.call(f'alias create -name g -value {gph_id}')
+        self.call(f'alias register -name s -value {snt_id}')
+        self.call(f'alias register -name g -value {gph_id}')
         self.assertEqual(len(self.call_cast('graph get -gph g')), 1)
         self.call(f'walker primerun -snt s -nd g -name init')
         self.assertEqual(len(self.call_cast('graph get -gph g')), 2)
-        self.call(f'alias delete -all true')
+        self.call(f'alias clear')
         self.assertEqual(len(self.call_cast(f'alias list').keys()), 0)
+
+    def test_jsctl_auto_aliases(self):
+        """Tests that auto alias mapping api works"""
+        aliases = self.call_cast('alias list')
+        self.assertGreater(len(aliases), 20)
+        self.assertIn('zsb:architype:bot', aliases.keys())
+        self.assertIn('zsb:walker:similar_questions', aliases.keys())
+        self.assertIn('sentinel:zsb', aliases.keys())
+        self.assertIn('zsb:walker:create_nugget', aliases.keys())
+
+    def test_jsctl_auto_aliases_delete(self):
+        """Tests that auto removing alias mapping api works"""
+        num = len(self.call_cast('alias list'))
+        self.call('architype delete -arch zsb:architype:bot')
+        self.call('walker delete -wlk zsb:walker:similar_questions')
+        self.call('walker delete -wlk zsb:walker:create_nugget')
+        self.assertEqual(num-3, len(self.call_cast('alias list')))
 
     def test_jsctl_config_cmds(self):
         """Tests that config commands works"""

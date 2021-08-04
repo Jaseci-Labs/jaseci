@@ -12,8 +12,8 @@ class walker_api():
     Walker APIs
     """
 
-    def api_walker_create(self, snt: sentinel = None,
-                          code: str = '', encoded: bool = False):
+    def api_walker_register(self, snt: sentinel = None,
+                            code: str = '', encoded: bool = False):
         """
         Create blank or code loaded walker and return object
         """
@@ -21,9 +21,21 @@ class walker_api():
             code = b64decode_str(code)
         walk = snt.register_walker(code)
         if(walk):
+            self.extract_wlk_aliases(snt, walk)
             return walk.serialize()
         else:
             return [f'Walker not created, invalid code!']
+
+    def api_walker_get(self, wlk: walker, format: str = 'default',
+                       detailed: bool = False):
+        """
+        Get a walker rendered with specific format
+        Valid Formats: {default, code, }
+        """
+        if(format == 'code'):
+            return wlk._jac_ast.get_text()
+        else:
+            return wlk.serialize(detailed=detailed)
 
     def api_walker_list(self, snt: sentinel = None, detailed: bool = False):
         """
@@ -38,21 +50,10 @@ class walker_api():
         """
         Permanently delete walker with given id
         """
+        self.remove_wlk_aliases(snt, wlk)
         wlkid = wlk.id
         snt.walker_ids.destroy_obj(wlk)
         return [f'Walker {wlkid} successfully deleted']
-
-    def api_walker_code_get(self, wlk: walker, snt: sentinel = None):
-        """
-        Get sentinel implementation in form of Jac source code
-        """
-        return wlk._jac_ast.get_text()
-
-    def api_walker_code_set(self, code: str, snt: sentinel = None,
-                            encoded: bool = False):
-        """
-        Set sentinel implementation with Jac source code
-        """
 
     def api_walker_spawn(self, name: str, snt: sentinel = None):
         """
@@ -68,7 +69,6 @@ class walker_api():
         """
         Delete instance of walker (not implemented yet)
         """
-
         return []
 
     def api_walker_prime(self, wlk: walker, nd: node = None, ctx: dict = {}):

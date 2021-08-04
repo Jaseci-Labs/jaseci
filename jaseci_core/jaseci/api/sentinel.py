@@ -16,8 +16,8 @@ class sentinel_api():
         self.active_snt_id = None
         self.sentinel_ids = id_list(self)
 
-    def api_sentinel_create(self, name: str, code: str = '',
-                            encoded: bool = False, set_active: bool = False):
+    def api_sentinel_register(self, name: str, code: str = '',
+                              encoded: bool = False, set_active: bool = False):
         """
         Create blank or code loaded sentinel and return object
         """
@@ -26,10 +26,26 @@ class sentinel_api():
             snt = sentinel(h=self._h, name=name, code='# Jac Code')
             self.sentinel_ids.add_obj(snt)
         if(code):
-            self.api_sentinel_code_set(code=code, snt=snt, encoded=encoded)
+            if (encoded):
+                code = b64decode_str(code)
+            if (snt.code != code or not snt.is_active):
+                snt.code = code
+                snt.register_code()
         if(set_active):
             self.active_snt_id = snt.jid
+        self.extract_snt_aliases(snt)
         return snt.serialize()
+
+    def api_sentinel_get(self, snt: sentinel = None,
+                         format: str = 'default', detailed: bool = False):
+        """
+        Get a sentinel rendered with specific format
+        Valid Formats: {default, code, }
+        """
+        if(format == 'code'):
+            return [snt.code]
+        else:
+            return snt.serialize(detailed=detailed)
 
     def api_sentinel_list(self, detailed: bool = False):
         """
@@ -61,34 +77,9 @@ class sentinel_api():
         """
         Permanently delete sentinel with given id
         """
+        self.remove_snt_aliases(snt)
         self.sentinel_ids.destroy_obj(snt)
-        return [f'Sentin el {snt.id} successfully deleted']
-
-    def api_sentinel_code_get(self, snt: sentinel = None):
-        """
-        Get sentinel implementation in form of Jac source code
-        """
-        return [snt.code]
-
-    def api_sentinel_code_set(self, code: str, snt: sentinel = None,
-                              encoded: bool = False):
-        """
-        Set sentinel implementation with Jac source code
-        """
-        if (encoded):
-            code = b64decode_str(code)
-        # TODO: HOTFIX for mobile jac file
-        code = code.replace("take --> node;", "take -->;")
-        if (snt.code == code and snt.is_active):
-            return [f'Sentinel {snt.id} already registered and active!']
-        else:
-            snt.code = code
-            snt.register_code()
-            snt.save()
-            if(snt.is_active):
-                return [f'Sentinel {snt.id} registered and active!']
-            else:
-                return [f'Sentinel {snt.id} code issues encountered!']
+        return [f'Sentinel {snt.id} successfully deleted']
 
     def destroy(self):
         """

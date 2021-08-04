@@ -73,7 +73,7 @@ class sentinel(element, sentinel_machine):
             logger.info(str(f'{self.name}: Successfully registered code'))
         else:
             logger.info(str(f'{self.name}: Code not registered'))
-
+        self.save()
         return self.is_active
 
     def register_walker(self, code):
