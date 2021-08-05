@@ -66,7 +66,7 @@ In order of appearnce, we have tests for equality, non equality, less than, grea
 \shellout{jac_logical.jac.output}
 Jac Code~\ref{jac:jac_logical.jac} presents the logical operations supported by Jac. In oder of appearnce we have, boolean complement, logical and, logical or, another way to express and and or (thank you Python) and some combinations. These are also indispensible when using conditionals.
 
-[NEED EXAMPLE FOR MEMBERSHIP OPERATIONS]
+    [NEED EXAMPLE FOR MEMBERSHIP OPERATIONS]
 
 \begin{nerd}
     Grammar~\ref{gram:jac.g4:116:124} shows the lines from the formal grammar for Jac that corresponds to the parsing of comparison, logical, and membership operations.
@@ -96,10 +96,37 @@ At this point in our discussion its important to note the precedence of opperati
 
 %%%%
 \subsection{Foreshadowing Unique Graph Operations}
+\jacdot{trivial}{.3}{Graph in memory for simple Hello World program (JC~\ref{jac:hello_world.jac})}
+Before we move on to more mundane basics that will continue to neutralize any kind of caffine or methamphetamine buzz an experienced \gls{coder} might have as they read this, lets enjoy a \gls{Jaseci jolt}!
+\par
+As described before, all data in Jaseci lives in either a graph, or within the scope of a \gls{walker}. A walker, executes when it is \emph{engaged} to the graph, meaning it is located on a particalar node of the graph. In the case of the Jac programs we've looked at so far, each progam has specified one walker for which I've happend to choose the name \texttt{init}. By default these init walkers are invoked from the default root node of an empty graph. Figure~\ref{dot:trivial} shows the complete state of memory for all of the Jac programs discussed thus far. The \texttt{init} walker in these cases does not \emph{walk} anywhere and has only executed a set of operations on this default root node \texttt{n0}.
+\par
+Let's have a quick peek at some slick language syntax for building this graph and traveling to new nodes.
+\par
 \jaccode{jac_preview.jac}{Preview of graph operators}
-\begin{figure}
-    \centering
-    \includegraphics[width=.5\linewidth]{assets/dot/jac_preview.dot.pdf}
-    \caption[]{A preview of whats to come in Jac Land!}
-    \label{dot:jac_preview}
-\end{figure}
+\par
+\jacdot{jac_preview}{.3}{Graph in memory for JC~\ref{jac:jac_preview.jac}}
+Jac Code~\ref{jac:jac_preview.jac} presents a sequence of operations that creates nodes and edges and produces a relatively simple complex graph. There is a bunch of new syntactic goodness presented in these 10 lines of code and I certainly won't describe them all here. The goal is to simply whet your appitite on whats to come. But lets look at the state of our data (memory) shown in Figure~\ref{dot:jac_preview}.
+
+
+Yep, there a good bit going on here. in just 10 lines of code we've done the following things:
+\begin{enumerate}[itemsep=0mm]
+    \footnotesize
+    \item Specified a new type of node we call a simple node.
+    \item Specified a new type of edge we call a back edge.
+    \item Specified a walker \texttt{kewl\_graph\_creator} and its behavior
+    \item Instantiated a outward pointing edge from the \texttt{n0:root} node.
+    \item Instantiated an instance of node type \texttt{simple}
+    \item Connected edge from from \texttt{root} to \texttt{n1}
+    \item Instantiated a \texttt{back} edge
+    \item Connected \texttt{back} edge from \texttt{n1} to \texttt{n0}
+    \item Instantiated another instance of node type \texttt{simple}, \texttt{n2}
+    \item Instantiated an undirected edge from the \texttt{n0:root} node.
+    \item Connected edge from \texttt{root} to \texttt{n2}
+    \item Instntiated an outward pointing edge from \texttt{n2}
+    \item Connected edge from \texttt{n2} to \texttt{n1}
+    \item Travel to \texttt{n1} (and do nothing)
+    \item Travel to \texttt{n2} (and do nothing)
+\end{enumerate}
+
+Ok, I'll wait until you pick your jaw up off the floor. \dots I told you. Yessiree, this is going to get very interesting indeed\dots
