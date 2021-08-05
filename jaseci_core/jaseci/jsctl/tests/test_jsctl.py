@@ -46,20 +46,20 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertIn("Group of `sentinel active` commands", r)
 
     def test_jsctl_create_graph_mem_only(self):
-        self.assertEqual(len(self.call_cast('graph list')), 0)
+        self.assertEqual(len(self.call_cast('graph list')), 1)
         self.call('graph create')
         self.call('graph create')
         self.call('graph create')
-        self.assertEqual(len(self.call_cast('graph list')), 3)
+        self.assertEqual(len(self.call_cast('graph list')), 4)
 
     def test_jsctl_carry_forward(self):
         self.call(
             "sentinel register -name ll -code "
             "jaseci/jsctl/tests/ll.jac -set_active true")
         self.call("graph create -set_active true")
-        self.call("walker primerun -name init")
-        self.call("walker primerun -name gen_rand_life")
-        r = self.call_cast("walker primerun -name get_gen_day")
+        self.call("walker run -name init")
+        self.call("walker run -name gen_rand_life")
+        r = self.call_cast("walker run -name get_gen_day")
         self.assertGreater(len(r), 3)
 
     def test_jsctl_dot(self):
@@ -67,8 +67,8 @@ class jsctl_test(TestCaseHelper, TestCase):
             "sentinel register -name ll -code "
             "jaseci/jsctl/tests/ll.jac -set_active true")
         self.call("graph create -set_active true")
-        self.call("walker primerun -name init")
-        self.call("walker primerun -name gen_rand_life")
+        self.call("walker run -name init")
+        self.call("walker run -name gen_rand_life")
         r = self.call("graph get -format dot")
         self.assertIn("test test test", r)
         self.assertIn('"n0" -> "n', r)
@@ -81,8 +81,8 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(f'alias register -name s -value {snt_id}')
         self.call(f'alias register -name g -value {gph_id}')
         self.assertEqual(len(self.call_cast('graph get -gph g')), 1)
-        self.call(f'walker primerun -snt s -nd g -name init')
-        self.assertEqual(len(self.call_cast('graph get -gph g')), 2)
+        self.call(f'walker run -snt s -nd g -name init')
+        self.assertEqual(len(self.call_cast('graph get -gph g')), 3)
         self.call(f'alias clear')
         self.assertEqual(len(self.call_cast(f'alias list').keys()), 0)
 
@@ -128,5 +128,5 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(f'sentinel active set -snt {snt_id}')
         self.call(f'graph active set -gph {gph_id}')
         self.assertEqual(len(self.call_cast('graph get')), 1)
-        self.call(f'walker primerun -name init')
-        self.assertEqual(len(self.call_cast('graph get')), 2)
+        self.call(f'walker run -name init')
+        self.assertEqual(len(self.call_cast('graph get')), 3)

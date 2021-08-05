@@ -81,9 +81,12 @@ def interface_api(api_name, **kwargs):
     else:
         out = session['master'].general_interface_to_api(kwargs, api_name)
     if(isinstance(out, dict) or isinstance(out, list)):
-        click.echo(json.dumps(out, indent=2))
-    else:
-        click.echo(out)
+        out = json.dumps(out, indent=2)
+    click.echo(out)
+    if('output' in kwargs and kwargs['output']):
+        with open(kwargs['output'], 'w') as f:
+            f.write(out)
+        click.echo(f'[saved to {kwargs["output"]}]')
     if not session['mem-only']:
         with open(session['filename'], 'wb') as f:
             pickle.dump(session['master'], f)
@@ -136,6 +139,10 @@ def build_cmd(group_func, func_name, api_name):
         else:
             f = click.option(
                 f'-{i}', required=True, type=p_type)(f)
+    # to file option to dump response to a file
+    f = click.option(
+        '--output', '-o', default='', required=False, type=str,
+        help="Filename to dump output of this command call.")(f)
     return group_func.command()(f)
 
 

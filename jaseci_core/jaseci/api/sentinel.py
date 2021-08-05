@@ -17,7 +17,7 @@ class sentinel_api():
         self.sentinel_ids = id_list(self)
 
     def api_sentinel_register(self, name: str, code: str = '',
-                              encoded: bool = False, set_active: bool = False):
+                              encoded: bool = False, set_active: bool = True):
         """
         Create blank or code loaded sentinel and return object
         """
@@ -25,6 +25,7 @@ class sentinel_api():
         if(not snt):
             snt = sentinel(h=self._h, name=name, code='# Jac Code')
             self.sentinel_ids.add_obj(snt)
+            self.api_graph_create(set_active=True)
         if(code):
             if (encoded):
                 code = b64decode_str(code)

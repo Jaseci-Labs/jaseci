@@ -17,7 +17,7 @@ class graph_api():
         self.active_gph_id = None
         self.graph_ids = id_list(self)
 
-    def api_graph_create(self, set_active: bool = False):
+    def api_graph_create(self, set_active: bool = True):
         """
         Create a graph instance and return root node graph object
         """
@@ -36,10 +36,12 @@ class graph_api():
         if(format == 'dot'):
             return gph.graph_dot_str()
         else:
-            nds = []
+            items = []
             for i in gph.get_all_nodes():
-                nds.append(i.serialize(detailed=detailed))
-            return nds
+                items.append(i.serialize(detailed=detailed))
+            for i in gph.get_all_edges():
+                items.append(i.serialize(detailed=detailed))
+            return items
 
     def api_graph_list(self, detailed: bool = False):
         """

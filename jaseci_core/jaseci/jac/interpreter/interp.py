@@ -841,66 +841,54 @@ class interp():
         edge_ref: edge_to | edge_from | edge_any;
         """
         kid = jac_ast.kid
-        expr_func = getattr(self, f'run_{kid[0].name}')
-        return expr_func(kid[0], is_spawn)
+        if(not is_spawn):
+            expr_func = getattr(self, f'run_{kid[0].name}')
+            return expr_func(kid[0])
+        else:
+            if(len(kid[0].kid) > 2):
+                result = self.owner().arch_ids.get_obj_by_name(
+                    kid[0].kid[2].token_text(), kind='edge').run()
+            else:
+                result = edge(h=self._h, kind='edge', name='generic')
+            return result
 
-    def run_edge_to(self, jac_ast, is_spawn=False):
+    def run_edge_to(self, jac_ast):
         """
         edge_to: '-' ('[' NAME ']')? '->';
         """
         kid = jac_ast.kid
-        if (not is_spawn):
-            result = jac_set(self.owner())
-            for i in self.current_node.outbound_edges():
-                if (len(kid) > 2 and i.name != kid[2].token_text()):
-                    continue
-                result.add_obj(i)
-        else:
-            if(len(kid) > 2):
-                result = self.owner().arch_ids.get_obj_by_name(
-                    kid[2].token_text(), kind='edge').run()
-            else:
-                result = edge(h=self._h, kind='edge', name='generic')
+        result = jac_set(self.owner())
+        for i in self.current_node.outbound_edges() + \
+                self.current_node.bidirected_edges():
+            if (len(kid) > 2 and i.name != kid[2].token_text()):
+                continue
+            result.add_obj(i)
         return result
 
-    def run_edge_from(self, jac_ast, is_spawn=False):
+    def run_edge_from(self, jac_ast):
         """
         edge_from: '<-' ('[' NAME ']')? '-';
         """
         kid = jac_ast.kid
-        if (not is_spawn):
-            result = jac_set(self.owner())
-            for i in self.current_node.inbound_edges():
-                if (len(kid) > 2 and i.name != kid[2].token_text()):
-                    continue
-                result.add_obj(i)
-        else:
-            if(len(kid) > 2):
-                result = self.owner().arch_ids.get_obj_by_name(
-                    kid[2].token_text(), kind='edge').run()
-            else:
-                result = edge(h=self._h, kind='edge', name='generic')
+        result = jac_set(self.owner())
+        for i in self.current_node.inbound_edges() + \
+                self.current_node.bidirected_edges():
+            if (len(kid) > 2 and i.name != kid[2].token_text()):
+                continue
+            result.add_obj(i)
         return result
 
-    def run_edge_any(self, jac_ast, is_spawn=False):
+    def run_edge_any(self, jac_ast):
         """
         edge_any: '<-' ('[' NAME ']')? '->';
         NOTE: these do not use strict bidirected semantic but any edge
         """
         kid = jac_ast.kid
-        if (not is_spawn):
-            result = jac_set(self.owner())
-            for i in self.current_node.attached_edges():
-                if (len(kid) > 2 and i.name != kid[2].token_text()):
-                    continue
-                result.add_obj(i)
-        else:
-            if(len(kid) > 2):
-                result = self.owner().arch_ids.get_obj_by_name(
-                    kid[2].token_text(), kind='edge').run()
-            else:
-                result = edge(h=self._h, kind='edge', name='generic')
-
+        result = jac_set(self.owner())
+        for i in self.current_node.attached_edges():
+            if (len(kid) > 2 and i.name != kid[2].token_text()):
+                continue
+            result.add_obj(i)
         return result
 
     def run_list_val(self, jac_ast):

@@ -227,7 +227,7 @@ class node(element, anchored):
         """Returns list of all edges between nodes"""
         edge_set = []
         for e in self.edge_ids.obj_list():
-            if(e.is_bidirected() and e.connects(node_obj)):
+            if(e.is_bidirected() and e.connects(self, node_obj)):
                 edge_set.append(e)
         return edge_set
 
@@ -354,11 +354,12 @@ class node(element, anchored):
         DOT representation
         """
         if(node_map is None):
-            dstr = f'"n{uuid.UUID(self.jid).hex}" '
+            nid = f'{uuid.UUID(self.jid).hex}'
         else:
-            dstr = f'"n{node_map.index(self.jid)}" '
+            nid = f'{node_map.index(self.jid)}'
 
-        dstr += f'[ id="{uuid.UUID(self.jid).hex}", label="{self.name}"'
+        dstr = f'"n{nid}" [ id="{uuid.UUID(self.jid).hex}", '
+        dstr += f'label="n{nid}:{self.name}" '
 
         node_dict = self.context
 

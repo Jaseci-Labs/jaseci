@@ -99,6 +99,7 @@ class edge(element, anchored):
     def set_bidirected(self, bidirected: bool):
         """Sets/unsets edge to be bidirected"""
         self.bidirected = bidirected
+        self.save()
 
     def is_bidirected(self):
         """Check if edge is bidirected"""
@@ -147,12 +148,13 @@ class edge(element, anchored):
         to_name = uuid.UUID(self.to_node(
         ).jid).hex if node_map is None else node_map.index(
             self.to_node().jid)
-        arrow = '--' if self.bidirected else '->'
-        dstr = f'"n{from_name}" {arrow} "n{to_name}" '
+        dstr = f'"n{from_name}" -> "n{to_name}" '
 
         dstr += f'[ id="{uuid.UUID(self.jid).hex}"'
         if(self.name != 'generic'):
             dstr += f', label="{self.name}"'
+        if(self.bidirected):
+            dstr += f', dir="both"'
 
         edge_dict = self.context
 

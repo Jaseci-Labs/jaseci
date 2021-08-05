@@ -78,15 +78,15 @@ class walker_api():
         wlk.prime(nd, prime_ctx=ctx)
         return [f'Walker primed on node {nd.id}']
 
-    def api_walker_run(self, wlk: walker):
+    def api_walker_execute(self, wlk: walker):
         """
         Executes walker (assumes walker is primed)
         """
         wlk.run()
         return wlk.report
 
-    def api_walker_primerun(self, name: str, nd: node = None, ctx: dict = {},
-                            snt: sentinel = None):
+    def api_walker_run(self, name: str, nd: node = None, ctx: dict = {},
+                       snt: sentinel = None):
         """
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.
@@ -95,6 +95,6 @@ class walker_api():
         if(not wlk):
             return [f'Walker {name} not found!']
         wlk.prime(nd, prime_ctx=ctx)
-        res = self.api_walker_run(wlk)
+        res = self.api_walker_execute(wlk)
         wlk.destroy()
         return res

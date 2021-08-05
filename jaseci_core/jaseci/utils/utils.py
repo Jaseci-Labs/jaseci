@@ -11,6 +11,7 @@ import types
 import base64
 import json
 import functools
+import traceback
 from time import time
 from datetime import datetime
 from pprint import pformat
@@ -59,10 +60,14 @@ def bp():
 
 
 def dummy_bp(inspect):
-    import traceback
     traceback.print_stack()
     print(inspect)
     input()
+
+
+def print_stack_to_log():
+    tb = traceback.extract_stack()
+    logger.error(f'{tb}')
 
 
 def is_urn(s: str):

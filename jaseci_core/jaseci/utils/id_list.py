@@ -66,7 +66,7 @@ class id_list(list):
                 ret = self.owner_obj._h.get_obj(uuid.UUID(i))
                 break
         self.heal(healing)
-        if not silent:
+        if (not ret and not silent):
             logger.error(
                 str(f"object for '{name}' not found in '{self.owner_obj}'!")
             )

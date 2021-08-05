@@ -51,8 +51,8 @@ Jac Code~\ref{jac:jac_more_arith.jac} outputs,
 Here, we can also observe that, unlike Python, whitespace does not mater whatsoever. Languages utilizing whitespace to express static scoping should be criminalized. Yeah, I said it, see Rant~\ref{rant:whitespacesucks}. Anyway, A corollary to this design decision is that every statement must end with a ``\texttt{;}''. The wonderful \texttt{;}, A nod of respect goes to \texttt{C/C++/JavaScript} for bringing this beautiful code punctuation to the masses. Of course the \texttt{;} as code punctuation was first introduced with \texttt{ALGOL 58}, but who the heck knows that language. It sounds like some kind of plant species. \Gls{bleh}. Onwards.
 
 \begin{nerd}
-    Grammar~\ref{gram:jac.g4:124:130} shows  the lines from the formal grammar for Jac that corresponds to the parsing of arithmetic.
-    \gramcoderange{jac.g4}{Jac grammar clip relevant to arithmetic}{124}{130}
+    Grammar~\ref{gram:jac.g4:126:132} shows  the lines from the formal grammar for Jac that corresponds to the parsing of arithmetic.
+    \gramcoderange{jac.g4}{Jac grammar clip relevant to arithmetic}{126}{132}
 \end{nerd}
 
 %%%%
@@ -66,11 +66,11 @@ In order of appearnce, we have tests for equality, non equality, less than, grea
 \shellout{jac_logical.jac.output}
 Jac Code~\ref{jac:jac_logical.jac} presents the logical operations supported by Jac. In oder of appearnce we have, boolean complement, logical and, logical or, another way to express and and or (thank you Python) and some combinations. These are also indispensible when using conditionals.
 
-    [NEED EXAMPLE FOR MEMBERSHIP OPERATIONS]
+[NEED EXAMPLE FOR MEMBERSHIP OPERATIONS]
 
 \begin{nerd}
-    Grammar~\ref{gram:jac.g4:114:122} shows the lines from the formal grammar for Jac that corresponds to the parsing of comparison, logical, and membership operations.
-    \gramcoderange{jac.g4}{Jac grammar clip relevant to comparison, logic, and membership}{114}{122}
+    Grammar~\ref{gram:jac.g4:116:124} shows the lines from the formal grammar for Jac that corresponds to the parsing of comparison, logical, and membership operations.
+    \gramcoderange{jac.g4}{Jac grammar clip relevant to comparison, logic, and membership}{116}{124}
 \end{nerd}
 
 %%%%
@@ -81,8 +81,8 @@ Next, lets take a look at assingment in Jac. In contrast to equality tests of \t
 As shown in Jac Code~\ref{jac:jac_assign.jac}, there are a number of ways we can articulate an assinment. Of course we can simply set a variable equal to a particular value, however, we can go beyond that to set that assinment relative to its original value. In particular, we can use the short hand \texttt{a += 4 + 4;} to represent \texttt{a = a + 4 + 4;}. We will describe later an additional assignment type we call the copy assign. If you're simply dying of curiousity, I'll throw you a bone. This \texttt{:=} assignment only applies to nodes and edges and has the semantic of copying the member values of a node or edge as opposed to the particular node or edge a variable is pointing to. In a nutshell this assignment uses pass by value semantics vs pass by reference semantics which is default for nodes and edges.
 
 \begin{nerd}
-    Grammar~\ref{gram:jac.g4:114:122} shows the lines from the formal grammar for Jac that corresponds to the parsing of assignment operations.
-    \gramcoderange{jac.g4}{Jac grammar clip relevant to assignment}{102}{110}
+    Grammar~\ref{gram:jac.g4:104:112} shows the lines from the formal grammar for Jac that corresponds to the parsing of assignment operations.
+    \gramcoderange{jac.g4}{Jac grammar clip relevant to assignment}{104}{112}
 \end{nerd}
 
 
@@ -97,3 +97,9 @@ At this point in our discussion its important to note the precedence of opperati
 %%%%
 \subsection{Foreshadowing Unique Graph Operations}
 \jaccode{jac_preview.jac}{Preview of graph operators}
+\begin{figure}
+    \centering
+    \includegraphics[width=.5\linewidth]{assets/dot/jac_preview.dot.pdf}
+    \caption[]{A preview of whats to come in Jac Land!}
+    \label{dot:jac_preview}
+\end{figure}
