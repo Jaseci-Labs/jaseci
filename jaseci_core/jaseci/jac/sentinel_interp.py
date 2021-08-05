@@ -1,16 +1,16 @@
 """
-Sentinel machine for jac code in AST form
+Sentinel interpreter for jac code in AST form
 
-This machine should be inhereted from the class that manages state referenced
+This interpreter should be inhereted from the class that manages state referenced
 through self.
 """
 from jaseci.actor.architype import architype
 from jaseci.actor.walker import walker
-from jaseci.jac.machine import machine
+from jaseci.jac.interp import interp
 
 
-class sentinel_machine(machine):
-    """Jac machine mixin for objects that will execute Jac code"""
+class sentinel_interp(interp):
+    """Jac interpreter mixin for objects that will execute Jac code"""
 
     def run_start(self, jac_ast):
         """

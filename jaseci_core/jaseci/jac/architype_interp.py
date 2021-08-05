@@ -1,18 +1,18 @@
 """
-Sentinel machine for jac code in AST form
+Sentinel interpreter for jac code in AST form
 
-This machine should be inhereted from the class that manages state referenced
+This interpreter should be inhereted from the class that manages state referenced
 through self.
 """
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
-from jaseci.jac.machine import machine
+from jaseci.jac.interp import interp
 from jaseci.jac.jac_scope import jac_scope
 import uuid
 
 
-class architype_machine(machine):
-    """Jac machine mixin for objects that will execute Jac code"""
+class architype_interp(interp):
+    """Jac interpreter mixin for objects that will execute Jac code"""
 
     def run_architype(self, jac_ast):
         """
@@ -70,7 +70,7 @@ class architype_machine(machine):
         """
         kid = jac_ast.kid
         root_node_id = self.run_has_root(kid[1])
-        m = machine(owner_override=self.owner())
+        m = interp(owner_override=self.owner())
         m.push_scope(jac_scope(owner=self,
                                has_obj=None,
                                action_sets=[]))

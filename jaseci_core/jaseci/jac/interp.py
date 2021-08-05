@@ -1,7 +1,7 @@
 """
-machine for jac code in AST form
+Interpreter for jac code in AST form
 
-This machine should be inhereted from the class that manages state referenced
+This interpreter should be inhereted from the class that manages state referenced
 through self.
 """
 from jaseci.utils.utils import is_jsonable, logger
@@ -15,8 +15,8 @@ from jaseci.jac.jac_scope import jac_scope, ctx_value
 # import pickle
 
 
-class machine():
-    """Shared machine class across both sentinels and walkers"""
+class interp():
+    """Shared interpreter class across both sentinels and walkers"""
 
     def __init__(self, owner_override=None):
         self.report = []
@@ -63,7 +63,8 @@ class machine():
     def run_has_stmt(self, jac_ast, obj):
         """
         has_stmt:
-                KW_HAS KW_PRIVATE? KW_ANCHOR? has_assign (COMMA has_assign)* SEMI;
+                KW_HAS KW_PRIVATE? KW_ANCHOR? has_assign 
+                (COMMA has_assign)* SEMI;
         """
         kid = jac_ast.kid
         kid = kid[1:]
@@ -626,7 +627,7 @@ class machine():
         elif(kid[0].name == 'DOT'):
             return self.run_func_built_in(atom_res, kid[1])
         elif (kid[0].name == 'DBL_COLON'):
-            m = machine(owner_override=self.owner())
+            m = interp(owner_override=self.owner())
             m.push_scope(jac_scope(owner=self,
                                    has_obj=atom_res,
                                    action_sets=[atom_res.activity_action_ids]))

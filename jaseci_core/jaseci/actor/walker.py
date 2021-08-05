@@ -10,12 +10,12 @@ from jaseci.utils.utils import logger
 from jaseci.element import element
 from jaseci.utils.obj_mixins import anchored
 from jaseci.utils.id_list import id_list
-from jaseci.jac.walker_machine import walker_machine
+from jaseci.jac.walker_interp import walker_interp
 from jaseci.utils.jac_code import jac_code
 import uuid
 
 
-class walker(element, jac_code, walker_machine, anchored):
+class walker(element, jac_code, walker_interp, anchored):
     """Walker class for Jaseci"""
 
     def __init__(self, code=None, *args, **kwargs):
@@ -33,7 +33,7 @@ class walker(element, jac_code, walker_machine, anchored):
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
         jac_code.__init__(self, code=code)
-        walker_machine.__init__(self)
+        walker_interp.__init__(self)
 
     @ property
     def current_node(self):

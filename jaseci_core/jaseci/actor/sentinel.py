@@ -7,10 +7,10 @@ from jaseci.element import element
 from jaseci.utils.utils import logger
 from jaseci.utils.id_list import id_list
 from jaseci.jac.ast import ast
-from jaseci.jac.sentinel_machine import sentinel_machine
+from jaseci.jac.sentinel_interp import sentinel_interp
 
 
-class sentinel(element, sentinel_machine):
+class sentinel(element, sentinel_interp):
     """
     Sentinel class for Jaseci
 
@@ -25,14 +25,14 @@ class sentinel(element, sentinel_machine):
         self.walker_ids = id_list(self)
         self.live_walker_ids = id_list(self)
         element.__init__(self, *args, **kwargs)
-        sentinel_machine.__init__(self)
+        sentinel_interp.__init__(self)
 
     def reset(self):
         """Resets state of sentinel and unregister's code"""
         self.is_active = False
         self.arch_ids.destroy_all()
         self.walker_ids.destroy_all()
-        sentinel_machine.reset(self)
+        sentinel_interp.reset(self)
 
     def parse_jac_code(self, text, start_rule='start'):
         """Generate AST tree from Jac code text"""

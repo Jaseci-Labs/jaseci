@@ -1,17 +1,17 @@
 """
-Walker machine for jac code in AST form
+Walker interpreter for jac code in AST form
 
-This machine should be inhereted from the class that manages state referenced
+This interpreter should be inhereted from the class that manages state referenced
 through self.
 """
 from jaseci.graph.node import node
-from jaseci.jac.machine import machine
+from jaseci.jac.interp import interp
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.jac_scope import jac_scope
 
 
-class walker_machine(machine):
-    """Jac machine mixin for objects that will execute Jac code"""
+class walker_interp(interp):
+    """Jac interpreter mixin for objects that will execute Jac code"""
     # Walker only executes statements, sentinels handle attr_stmts
 
     def run_walker(self, jac_ast):
