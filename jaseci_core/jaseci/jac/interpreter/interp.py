@@ -1,8 +1,8 @@
 """
 Interpreter for jac code in AST form
 
-This interpreter should be inhereted from the class that manages state referenced
-through self.
+This interpreter should be inhereted from the class that manages state
+referenced through self.
 """
 from jaseci.utils.utils import is_jsonable, logger
 from jaseci.actions.find_action import find_action
@@ -63,7 +63,7 @@ class interp():
     def run_has_stmt(self, jac_ast, obj):
         """
         has_stmt:
-                KW_HAS KW_PRIVATE? KW_ANCHOR? has_assign 
+                KW_HAS KW_PRIVATE? KW_ANCHOR? has_assign
                 (COMMA has_assign)* SEMI;
         """
         kid = jac_ast.kid

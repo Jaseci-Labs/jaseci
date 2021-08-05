@@ -7,7 +7,7 @@ from jaseci.element import element
 from jaseci.utils.utils import logger
 from jaseci.utils.id_list import id_list
 from jaseci.jac.ast import ast
-from jaseci.jac.sentinel_interp import sentinel_interp
+from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
 
 
 class sentinel(element, sentinel_interp):

@@ -1,11 +1,11 @@
 """
 Walker interpreter for jac code in AST form
 
-This interpreter should be inhereted from the class that manages state referenced
-through self.
+This interpreter should be inhereted from the class that manages state
+referenced through self.
 """
 from jaseci.graph.node import node
-from jaseci.jac.interp import interp
+from jaseci.jac.interpreter.interp import interp
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.jac_scope import jac_scope
 

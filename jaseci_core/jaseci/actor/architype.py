@@ -5,7 +5,7 @@ Each architype is a registered templatized version of instances of any Jaseci
 abstractions or collections of instances (e.g., subgraphs, etc)
 """
 from jaseci.element import element
-from jaseci.jac.architype_interp import architype_interp
+from jaseci.jac.interpreter.architype_interp import architype_interp
 from jaseci.utils.jac_code import jac_code
 
 
