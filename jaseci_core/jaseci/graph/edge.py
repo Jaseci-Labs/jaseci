@@ -137,7 +137,7 @@ class edge(element, anchored):
             target.edge_ids.remove_obj(self)
         element.destroy(self)
 
-    def dot_str(self, node_map=None):
+    def dot_str(self, node_map=None, edge_map=None):
         """
         DOT representation
         from_node -> to_node [context_key=contect_value]
@@ -151,8 +151,13 @@ class edge(element, anchored):
         dstr = f'"n{from_name}" -> "n{to_name}" '
 
         dstr += f'[ id="{uuid.UUID(self.jid).hex}"'
+        label = ''
+        if(edge_map):
+            label = f'e{edge_map.index(self.jid)}'
         if(self.name != 'generic'):
-            dstr += f', label="{self.name}"'
+            label += f':{self.name}'
+        if(label):
+            dstr += f', label="{label}"'
         if(self.bidirected):
             dstr += f', dir="both"'
 

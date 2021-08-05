@@ -54,6 +54,7 @@ class graph(node):
         node_list = self.get_all_nodes()
         edge_list = self.get_all_edges()
         node_map = [i.jid for i in node_list]
+        edge_map = [i.jid for i in edge_list]
 
         # Construct the graph string
         dstr = ''
@@ -61,7 +62,7 @@ class graph(node):
         for n in node_list:
             dstr += f'    {n.dot_str(node_map)}'
         for e in edge_list:
-            dstr += f'    {e.dot_str(node_map)}'
+            dstr += f'    {e.dot_str(node_map, edge_map)}'
         dstr += '}'
         return dstr
 

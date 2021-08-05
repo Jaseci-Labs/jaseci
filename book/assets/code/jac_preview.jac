@@ -6,5 +6,4 @@ walker kewl_graph_creator {
     here <-[back]- node_a;
     node_b = spawn here <--> node::simple;
     node_b --> node_a;
-    take --> node::simple; 
 }
