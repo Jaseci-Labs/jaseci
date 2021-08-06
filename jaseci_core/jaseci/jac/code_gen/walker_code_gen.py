@@ -38,13 +38,37 @@ class walker_code_gen(code_gen):
         self.g_ins([op_code.POP_SCOPE])
         self.g_ins([op_code.END])
 
-    def run_walk_entry_block(self, jac_ast):
+    def gen_walk_entry_block(self, jac_ast):
         """
         walk_entry_block: KW_WITH KW_ENTRY code_block;
         """
         kid = jac_ast.kid
-        self.g_ins([op_code.B_NEQ, w_ref.STEP, 0, w_lab.SKIP_ATTR])
-        if (self.current_step == 0):
-            self.in_entry_exit = True
-            self.run_code_block(kid[2])
-            self.in_entry_exit = False
+        l_skip = self.next_lab()
+        self.g_ins([op_code.B_NEQ, w_ref.STEP, 0, l_skip])
+        self.g_ins([op_code.SET_REF_VAR, w_ref.IN_ENT_EXIT, True])
+        self.gen_code_block(kid[2])
+        self.g_ins([op_code.SET_REF_VAR, w_ref.IN_ENT_EXIT, False])
+        self.g_lab(l_skip)
+
+    def gen_walk_activity_block(self, jac_ast):
+        """
+        walk_activity_block: KW_WITH KW_ACTIVITY code_block;
+        """
+        kid = jac_ast.kid
+        self.gen_code_block(kid[2])
+
+    def gen_walker_action(self, jac_ast):
+        """
+        walker_action:
+            ignore_action
+            | take_action
+            | destroy_action
+            | KW_DISENGAGE SEMI;
+        """
+        kid = jac_ast.kid
+        if (kid[0].name == 'KW_DISENGAGE'):
+            self.g_ins([op_code.SET_REF_VAR, w_ref.STOPPED, 'stop'])
+            self.g_ins([op_code.CLEAR_IDS, w_ref.NEXT_NODE_IDS])
+        else:
+            expr_func = getattr(self, f'gen_{kid[0].name}')
+            expr_func(kid[0])
