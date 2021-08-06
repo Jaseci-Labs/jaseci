@@ -7,7 +7,7 @@ referenced through self.
 from jaseci.graph.node import node
 from jaseci.jac.interpreter.interp import interp
 from jaseci.jac.jac_set import jac_set
-from jaseci.jac.jac_scope import jac_scope
+from jaseci.jac.machine.jac_scope import jac_scope
 
 
 class walker_interp(interp):

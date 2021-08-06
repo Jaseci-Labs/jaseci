@@ -7,7 +7,7 @@ referenced through self.
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
 from jaseci.jac.interpreter.interp import interp
-from jaseci.jac.jac_scope import jac_scope
+from jaseci.jac.machine.jac_scope import jac_scope
 import uuid
 
 
