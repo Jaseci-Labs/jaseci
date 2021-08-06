@@ -8,6 +8,7 @@ class code_gen():
 
     def __init__(self):
         self.machine_code = []
+        self.label = []
 
     def g_ins(self, ins):
         """Generates op with specified parameters"""
@@ -16,3 +17,9 @@ class code_gen():
     def g_lab(self, name):
         """Inserts label in code"""
         self.machine_code.append(name)
+
+    def next_lab(self):
+        """Generate and return new label"""
+        lab = f'L{len(self.label)}'
+        self.label.append(lab)
+        return lab
