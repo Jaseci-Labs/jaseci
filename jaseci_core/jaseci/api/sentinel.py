@@ -17,7 +17,8 @@ class sentinel_api():
         self.sentinel_ids = id_list(self)
 
     def api_sentinel_register(self, name: str, code: str = '',
-                              encoded: bool = False, set_active: bool = True):
+                              encoded: bool = False, auto_run: str = 'init',
+                              ctx: dict = {}, set_active: bool = True):
         """
         Create blank or code loaded sentinel and return object
         """
@@ -32,6 +33,10 @@ class sentinel_api():
             if (snt.code != code or not snt.is_active):
                 snt.code = code
                 snt.register_code()
+        if(snt.walker_ids.has_obj_by_name(auto_run) and self.active_gph_id):
+            nd = self._h.get_obj(uuid.UUID(self.active_gph_id))
+            self.api_walker_run(name=auto_run, nd=nd, ctx=ctx,
+                                snt=snt)
         if(set_active):
             self.active_snt_id = snt.jid
         self.extract_snt_aliases(snt)
@@ -79,6 +84,8 @@ class sentinel_api():
         Permanently delete sentinel with given id
         """
         self.remove_snt_aliases(snt)
+        if(self.active_snt_id == snt.jid):
+            self.active_snt_id = None
         self.sentinel_ids.destroy_obj(snt)
         return [f'Sentinel {snt.id} successfully deleted']
 

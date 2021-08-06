@@ -121,6 +121,11 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(f'sentinel active get')
         self.assertEqual(len(self.call_cast(f'walker list')), 21)
 
+    def test_jsctl_init_auto_called(self):
+        """Tests that alias mapping api works"""
+        num = len(self.call_cast('graph get'))
+        self.assertEqual(num, 3)
+
     def test_jsctl_master_defaults(self):
         """Tests that alias mapping api works"""
         gph_id = self.call_cast('graph create')['jid']

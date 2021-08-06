@@ -73,6 +73,8 @@ class graph_api():
         """
         Permanently delete graph with given id
         """
+        if(self.active_gph_id == gph.jid):
+            self.active_gph_id = None
         self.graph_ids.destroy_obj(gph)
         return [f'Graph {gph.id} successfully deleted']
 
