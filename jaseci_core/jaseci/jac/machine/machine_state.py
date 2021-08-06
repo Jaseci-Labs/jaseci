@@ -10,7 +10,6 @@ from jaseci.element import element
 
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.machine.jac_scope import jac_scope
-# import pickle
 
 
 class machine_state():

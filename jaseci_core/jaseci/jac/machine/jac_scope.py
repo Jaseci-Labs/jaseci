@@ -108,7 +108,10 @@ class jac_scope():
                                     md_index, jac_ast)
 
     def set_array_live_var(self, item, value, md_index, jac_ast):
-        """Helper for setting array values"""
+        """
+        Helper for setting array values
+        md_index list of [1, 2, 3, 4] corresponds to [1][2][3][4] in jac code
+        """
         for i in md_index[:-1]:
             self.check_index_in_bounds(i, item, jac_ast)
             item = item[i]

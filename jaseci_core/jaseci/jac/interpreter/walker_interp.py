@@ -45,7 +45,6 @@ class walker_interp(interp):
             if(i.name == 'walk_activity_block'):
                 self.run_walk_activity_block(i)
             if(i.name == 'walk_exit_block'):
-                self._stopped = None
                 self.run_walk_exit_block(i)
 
         # self.trigger_activity_actions()
@@ -67,6 +66,7 @@ class walker_interp(interp):
         walk_exit_block: KW_WITH KW_EXIT code_block;
         """
         kid = jac_ast.kid
+        self._stopped = None
         if (len(self.next_node_ids) == 0):
             self.in_entry_exit = True
             self.run_code_block(kid[2])
