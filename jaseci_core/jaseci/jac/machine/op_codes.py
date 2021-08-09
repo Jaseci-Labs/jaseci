@@ -2,18 +2,19 @@ from enum import Enum, auto
 
 
 class op(Enum):
-    # NOOP = auto()  # Params:
-    IDS_CLEAR = auto()  # Params: [id_list / jac_set]
-    IDS_ADD_OBJ = auto()  # [ids, obj]
-    IDS_GET_LEN = auto()  # [dest, ids]
-    PUSH_SCOPE_W = auto()  # Params:
-    POP_SCOPE = auto()  # Params:
-    SET_LIVE_VAR = auto()  # Params: [dest name, value]
-    SET_REF_VAR = auto()  # Params: [dest var, value]
-    CREATE_CTX_VAR = auto()  # Params: [obj, dest name, value, is_private]
-    SET_ANCHOR = auto()  # Assign anchor - [obj, name]
-    B_NEQ = auto()  # Branch not equal: [src1, src2, label]
-    B_NIT = auto()  # Branch not is type - [src1, src2, label]
-    B_A = auto()  # Branch always - [label]
-    PLUS = auto()  # Plus - [dest, src, src]
-    END = auto()   # End execution
+    # NOOP = auto()
+    IDS_CLEAR = auto()  # [ref id_list]
+    IDS_ADD_OBJ = auto()  # [ref ids, ref obj]
+    IDS_GET_LEN = auto()  # [ref dest, ref ids]
+    PUSH_SCOPE_W = auto()  # []
+    POP_SCOPE = auto()  # []
+    SET_LIVE_VAR = auto()  # [str dest, ref value, md_index]
+    SET_REF_VARI = auto()  # [ref dest, imm value]
+    CREATE_CTX_VAR = auto()  # [ref obj, str dest, ref val, bool is_private]
+    SET_ANCHOR = auto()  # [ref obj, str name]
+    B_NEQ = auto()  # [ref src1, ref src2, label]
+    B_NEQI = auto()  # [ref src1, imm val, label]
+    B_NIT = auto()  # [ref src1, typ, label]
+    B_A = auto()  # [label]
+    PLUS = auto()  # [dest, src, src]
+    END = auto()   # []

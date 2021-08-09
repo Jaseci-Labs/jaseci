@@ -21,9 +21,9 @@ class walker_code_gen(code_gen):
         """
         kid = jac_ast.kid
         self.g_ins([op.PUSH_SCOPE_W])
-        self.g_ins([op.SET_LIVE_VAR, 'here', ref.HERE_ID])
+        self.g_ins([op.SET_LIVE_VAR, 'here', ref.HERE_ID, []])
         l_skip_attr = self.next_lab()
-        self.g_ins([op.B_NEQ, ref.STEP, 0, l_skip_attr])
+        self.g_ins([op.B_NEQI, ref.STEP, 0, l_skip_attr])
         for i in kid:
             if(i.name == 'attr_stmt'):
                 self.gen_attr_stmt(jac_ast=i, obj=ref.SELF)
@@ -46,10 +46,10 @@ class walker_code_gen(code_gen):
         """
         kid = jac_ast.kid
         l_skip = self.next_lab()
-        self.g_ins([op.B_NEQ, ref.STEP, 0, l_skip])
-        self.g_ins([op.SET_REF_VAR, ref.IN_ENT_EXIT, True])
+        self.g_ins([op.B_NEQI, ref.STEP, 0, l_skip])
+        self.g_ins([op.SET_REF_VARI, ref.IN_ENT_EXIT, True])
         self.gen_code_block(kid[2])
-        self.g_ins([op.SET_REF_VAR, ref.IN_ENT_EXIT, False])
+        self.g_ins([op.SET_REF_VARI, ref.IN_ENT_EXIT, False])
         self.g_lab(l_skip)
 
     def gen_walk_activity_block(self, jac_ast):
@@ -69,8 +69,8 @@ class walker_code_gen(code_gen):
         """
         kid = jac_ast.kid
         if (kid[0].name == 'KW_DISENGAGE'):
-            self.g_ins([op.SET_REF_VAR, ref.STOPPED, 'stop'])
-            self.g_ins([op.CLEAR_IDS, ref.NEXT_N_IDS])
+            self.g_ins([op.SET_REF_VARI, ref.STOPPED, 'stop'])
+            self.g_ins([op.IDS_CLEAR, ref.NEXT_N_IDS])
         else:
             expr_func = getattr(self, f'gen_{kid[0].name}')
             expr_func(kid[0])

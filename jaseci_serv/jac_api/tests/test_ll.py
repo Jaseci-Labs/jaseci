@@ -23,19 +23,15 @@ class test_ll(TestCaseHelper, TestCase):
         self.client = APIClient()
         self.client.force_authenticate(self.user)
         self.master = self.user.get_master()
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'create_sentinel', 'name': 'Something'}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.snt = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         ll_file = base64.b64encode(
             open("jac_api/tests/ll.jac").read().encode())
-        payload = {'op': 'set_jac', 'snt': self.snt.id.urn,
-                   'code': ll_file, 'encoded': True}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.run_walker('init', {})
+        payload = {'op': 'sentinel_register',
+                   'name': 'Something', 'code': ll_file, 'encoded': True}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        self.snt = self.master._h.get_obj(uuid.UUID(res.data['jid']))
 
     def tearDown(self):
         super().tearDown()

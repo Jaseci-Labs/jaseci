@@ -24,7 +24,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
 
     def test_login_required_jac_api(self):
         """Test that login required for retrieving nodes"""
-        res = self.client.get(reverse('jac_api:list_graph'))
+        res = self.client.get(reverse('jac_api:graph_list'))
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -59,7 +59,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_create_sentinel(self):
         """Test API for creating a sentinel"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Untitled Sentinel'}
@@ -89,7 +89,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_delete_graph(self):
         """Test API for deleteing a graph"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Something'}
@@ -110,7 +110,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_delete_sentinel(self):
         """Test API for deleting a sentinel"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Something'}
@@ -125,7 +125,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_get_jac_code(self):
         """Test API for deleting a sentinel"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Something'}
@@ -151,7 +151,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_set_jac_encoded(self):
         """Test API for deleting a sentinel"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Something'}
@@ -166,7 +166,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_compile(self):
         """Test API for compiling a sentinel"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Something'}
@@ -215,7 +215,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_spawn(self):
         """Test API for spawning a walker"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Something'}
@@ -235,7 +235,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_prime(self):
         """Test API for priming a walker"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Something'}
@@ -259,7 +259,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_run(self):
         """Test API for running a walker"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Something'}
@@ -284,7 +284,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_set_node_context(self):
         """Test API for setting context variables of node"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Something'}
@@ -317,7 +317,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_deep_serialize_report(self):
         """Test API for running a walker"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Something'}
@@ -344,7 +344,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_create_new_fields_auto_on_old_data(self):
         """Test API for running a walker"""
-        payload = {'op': 'create_graph', 'name': 'Something'}
+        payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         payload = {'op': 'create_sentinel', 'name': 'Something'}
