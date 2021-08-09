@@ -72,7 +72,7 @@ class interp(machine_state):
         if(var_name == '_private'):
             self.rt_error(
                 f'Has variable name of `_private` not allowed!', kid[0])
-        elif (var_name not in obj.context.keys()):
+        elif (var_name not in obj.context.keys()):  # Runs has once per walk
             obj.context[var_name] = var_val
         if(is_private):
             if('_private' in obj.context.keys()):

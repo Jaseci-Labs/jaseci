@@ -141,8 +141,7 @@ class walker_interp(interp):
         if (isinstance(result, node)):
             self.destroy_node_ids.add_obj(result)
         elif (isinstance(result, jac_set)):
-            for i in result:
-                self.destroy_node_ids.add_obj(i)
+            self.destroy_node_ids += result
         else:
             self.rt_error(f'{result} is not destroyable type (i.e., nodes)',
                           kid[1])
