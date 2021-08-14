@@ -9,6 +9,7 @@ import pickle
 import functools
 import json
 import requests
+import pprint
 from inspect import signature
 
 from jaseci.utils.mem_hook import mem_hook
@@ -195,9 +196,32 @@ def ls():
         click.echo(f"{i} ")
 
 
+def all_help(root, out=None, str=""):
+    if(out is None):
+        out = []
+    if('leaf' in root.keys()):
+        out.append(str+f'& {root["leaf"][1]} &\n')
+        return
+    for i in root.keys():
+        all_help(root[i], out, str+f'{i} ')
+    ret = ''
+    for i in out:
+        ret += i
+    return ret
+
+
+@click.command()
+@click.argument("op", type=str, default='all_help', required=True)
+def dev(op):
+    if(op == 'all_help'):
+        click.echo(
+            f"{all_help(extract_api_tree())}")
+
+
 cli.add_command(login)
 cli.add_command(edit)
 cli.add_command(ls)
+cli.add_command(dev)
 cmd_tree_builder(extract_api_tree())
 
 
