@@ -9,7 +9,6 @@ import pickle
 import functools
 import json
 import requests
-import pprint
 from inspect import signature
 
 from jaseci.utils.mem_hook import mem_hook
@@ -163,7 +162,7 @@ def cmd_tree_builder(location, group_func=cli, cmd_str=''):
         cmd_tree_builder(loc, new_func, cmd_str+' '+i)
 
 
-@click.command()
+@click.command(help="Command to log into live Jaseci server")
 @click.argument("url", type=str, required=True)
 @click.option('--username', '-u', required=True, prompt=True,
               help="Username to be used for login.")
@@ -183,17 +182,22 @@ def login(url, username, password):
         click.echo(f"Login failed!\n{r.json()}")
 
 
-@click.command()
+@click.command(help="Edit a file")
 @click.argument("file", type=str, required=True)
 def edit(file):
     ci_program.set_args([file])
     ci_program.run_ci()
 
 
-@click.command()
-def ls():
+@click.command(help="List relevant files")
+@click.option('--all', '-a', is_flag=True,
+              help="Flag for listing all files, not just relevant files")
+def ls(all):
     for i in os.listdir():
-        click.echo(f"{i} ")
+        if(all):
+            click.echo(f"{i}")
+        else:
+            click.echo(f"{i}") if i.endswith('.jac') else False
 
 
 def all_help(root, out=None, str=""):
@@ -210,7 +214,7 @@ def all_help(root, out=None, str=""):
     return ret
 
 
-@click.command()
+@click.command(help="Internal dev operations")
 @click.argument("op", type=str, default='all_help', required=True)
 def dev(op):
     if(op == 'all_help'):

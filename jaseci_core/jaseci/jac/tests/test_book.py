@@ -288,3 +288,12 @@ class jac_book_tests(TestCaseHelper, TestCase):
         self.assertEqual(
             self.new_stdout.getvalue(),
             "[0.8360188027814407, 0.11314284146556013, 0.05083835575299916]\n")
+
+    def test_book_fam_example(self):
+        self.sent.register_code(jtc.fam_example)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('create_fam')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(
+            self.new_stdout.getvalue(),
+            "I didn't do any of the hard work.\n")

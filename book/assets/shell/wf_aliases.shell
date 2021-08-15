@@ -1,0 +1,11 @@
+jaseci > alias list
+{
+  "sentinel:fam": "urn:uuid:cfc9f017-cb6c-4d06-bc45-758289c96d3f",
+  "fam:walker:create_fam": "urn:uuid:17598be7-e14f-4000-9d85-66b439fa7421",
+  "fam:architype:man": "urn:uuid:c366518d-3b1e-41a3-b1ba-0b9a3ce6e1d6",
+  "fam:architype:woman": "urn:uuid:7eb1c510-73ca-49eb-96aa-34357f77b4cb",
+  "fam:architype:mom": "urn:uuid:8c9d2a66-4954-4d11-8109-a36b961eeea1",
+  "fam:architype:dad": "urn:uuid:d80111e4-62e2-4694-bfaa-f3294d9520d8",
+  "fam:architype:married": "urn:uuid:dc4974df-ea57-406e-9468-a1aa5260d306"
+}
+jaseci > 

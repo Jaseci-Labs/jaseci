@@ -17,11 +17,11 @@ Commands:
   architype  Group of `architype` commands
   check      Group of `check` commands
   config     Group of `config` commands
-  dev
-  edit
+  dev        Internal dev operations
+  edit       Edit a file
   graph      Group of `graph` commands
-  login
-  ls
+  login      Command to log into live Jaseci server
+  ls         List relevant files
   object     Group of `object` commands
   sentinel   Group of `sentinel` commands
   walker     Group of `walker` commands

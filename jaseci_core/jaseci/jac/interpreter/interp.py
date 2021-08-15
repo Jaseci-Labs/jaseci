@@ -412,33 +412,28 @@ class interp(machine_state):
             return self.run_logical(kid[0])
         base = self.run_logical(kid[0])
         target = self.run_expression(kid[-1])
-        self.rt_check_type(base, node, kid[0])
+        self.rt_check_type(base, [node, jac_set], kid[0])
         self.rt_check_type(target, [node, jac_set], kid[-1])
+        if(isinstance(base, node)):
+            base = jac_set(owner_obj=self, in_list=[base.jid])
+        if(isinstance(target, node)):
+            target = jac_set(owner_obj=self, in_list=[target.jid])
         if (kid[1].name == 'NOT'):
-            # TODO: IF JACSET IS TARGET APLLY TO ALL MEMEBERS OF JACSET
-            # Line below PARTIALLY generalizes disconnect NEEDS REVIEW
-            if(isinstance(target, node)):
-                base.detach_edges(target, self.run_edge_ref(kid[2]).obj_list())
-            elif(isinstance(target, jac_set)):
-                for i in target.obj_list():
-                    base.detach_edges(i, self.run_edge_ref(kid[2]).obj_list())
-            else:
-                logger.critical(
-                    f'Cannot connect to {target} of type {type(target)}!')
-            target = base
+            for i in target.obj_list():
+                for j in base.obj_list():
+                    j.detach_edges(i, self.run_edge_ref(kid[2]).obj_list())
+            return base
         else:
             direction = kid[1].kid[0].name
-            if(isinstance(target, node)):
-                target = jac_set(self, in_list=[target.jid])
-            if(isinstance(target, jac_set)):
-                for i in target.obj_list():
+            for i in target.obj_list():
+                for j in base.obj_list():
                     use_edge = self.run_edge_ref(kid[1], is_spawn=True)
                     if (direction == 'edge_from'):
-                        base.attach_inbound(i, [use_edge])
+                        j.attach_inbound(i, [use_edge])
                     elif (direction == 'edge_to'):
-                        base.attach_outbound(i, [use_edge])
+                        j.attach_outbound(i, [use_edge])
                     else:
-                        base.attach_bidirected(i, [use_edge])
+                        j.attach_bidirected(i, [use_edge])
         return target
 
     def run_logical(self, jac_ast):

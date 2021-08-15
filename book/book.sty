@@ -112,13 +112,15 @@ keywordstyle={\color{black}},%                         and format them in black
     xrightmargin=5.8pt,
 }
 
+\newcommand{\pycode}[2]{\renewcommand{\lstlistingname}{Python Code}\par\lstinputlisting[label=py:#1, language=Python, caption={#2}]{assets/code/#1}\par}
+
 \newcommand{\jaccode}[2]{\renewcommand{\lstlistingname}{Jac Code}\par\lstinputlisting[label=jac:#1, language=jac, caption={#2}]{assets/code/#1}\par}
 
 \newcommand{\gramcode}[2]{\renewcommand{\lstlistingname}{Grammar}\par\lstinputlisting[label=gram:#1, language=shell, style=gram, numbers=left, caption={#2}]{assets/code/#1}\par}
 
 \newcommand{\gramcoderange}[4]{\renewcommand{\lstlistingname}{Grammar}\par\lstinputlisting[label=gram:#1:#3:#4, language=shell, style=gram, numbers=left, caption={#2}, firstline=#3, lastline=#4, firstnumber=#3]{assets/code/#1}\footnotesize{(full grammar in Appendix~\ref{fullgrammar})}\par}
 
-\newcommand{\shellout}[1]{\par\lstinputlisting[language=shell,numbers=none]{assets/code/#1}\par}
+\newcommand{\shellout}[1]{\par\lstinputlisting[language=shell,numbers=none]{assets/shell/#1}\par}
 
 %----------------------------------- NERD ALERT BOX  ------------------------------
 \usepackage[many]{tcolorbox}
