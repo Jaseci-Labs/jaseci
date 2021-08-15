@@ -1,0 +1,14 @@
+haxor@linux:~/jaseci# jsctl
+Starting Jaseci Shell...
+jaseci > graph create
+{
+  "context": {},
+  "anchor": null,
+  "name": "root",
+  "kind": "generic",
+  "jid": "urn:uuid:123b7724-ed8c-4d9c-b9c3-a19901e699c0",
+  "j_timestamp": "2021-08-15T15:15:50.903960",
+  "j_type": "graph"
+}
+jaseci > exit
+haxor@linux:~/jaseci#

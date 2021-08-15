@@ -1,0 +1,11 @@
+haxor@linux:~/jaseci# jsctl graph create
+{
+  "context": {},
+  "anchor": null,
+  "name": "root",
+  "kind": "generic",
+  "jid": "urn:uuid:f688c4a1-724e-49b6-a368-d8e942ccd6ac",
+  "j_timestamp": "2021-08-15T15:40:12.163954",
+  "j_type": "graph"
+}
+haxor@linux:~/jaseci#
