@@ -1,0 +1,24 @@
+haxor@linux:~/jaseci# ls *.session
+js.session
+haxor@linux:~/jaseci# jsctl graph list
+[
+  {
+    "context": {},
+    "anchor": null,
+    "name": "root",
+    "kind": "generic",
+    "jid": "urn:uuid:ef1eb3e4-91c3-40ba-ae7b-14c496f5ced1",
+    "j_timestamp": "2021-08-15T15:55:15.030643",
+    "j_type": "graph"
+  },
+  {
+    "context": {},
+    "anchor": null,
+    "name": "root",
+    "kind": "generic",
+    "jid": "urn:uuid:91dd8c79-24e4-4a54-8d48-15bee52c340b",
+    "j_timestamp": "2021-08-15T15:55:46.419701",
+    "j_type": "graph"
+  }
+]
+haxor@linux:~/jaseci# 

@@ -1,0 +1,5 @@
+haxor@linux:~/jaseci# jsctl -f mynew.session graph list
+[]
+haxor@linux:~/jaseci# ls *.session
+js.session      mynew.session
+haxor@linux:~/jaseci#  
