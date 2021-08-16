@@ -49,27 +49,32 @@ As you get to know Jaseci and Jac, you'll want to try things and tinker a bit. I
 \paragraph{Install Graphvis}
 Before we jump right in, let me strongly encourage you install Graphviz. Graphviz is open source graph visualization software package that includes a handy dandy command line tool call \texttt{dot}. Dot is also a standardized and open graph description language that is a key primitive of Graphviz. The \texttt{dot} tool in Graphviz takes dot code and renders it nicely. Graphviz is super easy to install. In Ubuntu simply type \texttt{sudo apt install graphviz}, or on mac type \texttt{brew install graphviz} and you're done! You should be able to call \texttt{dot} from the command line.
 \par
-Ok, lets start with a scenario. Say you'd like to write your first Jac program which will include some nodes, edges, and walkers and you'd like to see some standard output and what the graph looks like after you run an interesting walker. Let role play.
+Ok, lets start with a scenario. Say you'd like to write your first Jac program which will include some nodes, edges, and walkers and you'd like to print to standard output and see what the graph looks like after you run an interesting walker. Let role play.
 \par
 Lets hop into a \texttt{jsctl} shell.
 \par
 \shellout{wf_init.shell}
 \par
-Good, we're in! And we've set the session to be an in-memory session so no session file will be saved. At the moment we only care about the Jac program we write, which will be saved, but the state of the Jaseci machine we'll run it on doesn't really matter to us.
+Good, we're in! And we've set the session to be an in-memory session so no session file will be created or saved. For this play session we only care about the Jac program we write, which will be saved. The state of the Jaseci machine we run our toy program on doesn't really matter to us.
 \par
-Now that we've got our shell running, we first want to create a blank graph. Remember, all walkers, Jaseci's primary unit of computation, must run on a node. By default we can use the root node of a freshly created graph, so we need to create a base graph. But oh no! We're a bit rusty and have forgotten how create our initial graph. Let's navigate the help menu to jog our memories.
+Now that we've got our shell running, we first want to create a blank graph. Remember, all walkers, Jaseci's primary unit of computation, must run on a node. As default, we can use the root node of a freshly created graph, hence we need to create a base graph. But oh no! We're a bit rusty and have forgotten how create our initial graph using \texttt{jsctl}. Let's navigate the help menu to jog our memories.
 \par
 \shellout{wf_help_nav.shell}
 \par
-Ohhh yeah! That's it. After simply using \texttt{help} from the shell we were able to navigate to the info for \texttt{graph create}. Let's use our newly gotten wisdom.
+Ohhh yeah! That's it. After simply using \texttt{help} from the shell we were able to navigate to the relevant info for \texttt{graph create}. Let's use this newly gotten wisdom.
 \par
 \shellout{wf_graph.shell}
 \par
 Great! With this command a graph is created and a single root node is born. \texttt{jsctl} shares with us the details of this root graph node. In Jaseci, graphs are referenced by their root nodes and every graph has a single root node.
-\par 
-Next, lets write some Jac code for our little program.
+\par
+Notice we've also set the \texttt{-set\_active} parameter to true. This parameter informs Jaseci to use the root node of this graph (in particular the UUID of this root node) as the default parameter to all future calls to Jaseci Core APIs that have a parameter specifying a graph or node to operate on. This global designation that this graph is the `active' graph is a convenience feature so we the user doesn't have to specify this parameter for future calls. Of course this can be overridden, more on that later.
+\par
+Next, lets write some Jac code for our little program. \texttt{jsctl} has a built in editor that is simple yet powerful. You can use either this built in editor, or your favorite editor to create the \texttt{.jac} file for our toy program. Let's use the built in editor.
 \par
 \shellout{wf_edit_jac.shell}
+\par
+The \texttt{edit} command invokes the built in editor. Though it's a terminal editor based on \texttt{ncurses}, you can basically use it much like you'd use any wysiwyg editor with features like standard cut and paste, mouse text selection, etc. It's based on the phenomenal pure python project from Google called \texttt{ci\_edit}. For more detailed help cheat sheet see Appendix~\ref{ci_help}.
+\par
 \jaccode{fam.jac}{Jac Family Toy Program}
 \par
 Now, Lets create a sentinel for our Jac.
