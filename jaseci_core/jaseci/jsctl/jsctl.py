@@ -197,7 +197,8 @@ def ls(all):
         if(all):
             click.echo(f"{i}")
         else:
-            click.echo(f"{i}") if i.endswith('.jac') else False
+            click.echo(f"{i}") if i.endswith(
+                '.jac') or i.endswith('.dot') else False
 
 
 def all_help(root, out=None, str=""):
