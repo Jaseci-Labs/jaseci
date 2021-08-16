@@ -40,13 +40,17 @@ class jsx_machine(machine_state):
         self.pop_scope()
 
     def SET_LIVE_VAR(self, *args):
-        """PUSH_SCOPE_W op code"""
+        """SET_LIVE_VAR op code"""
         self._jac_scope.set_live_var(
             name=args[0], value=self.get_ref(args[1]),
             md_index=args[2], jac_ast=None)
 
+    def SET_REF_VAR(self, *args):
+        """SET_REF_VAR op code"""
+        self.set_ref(args[0], self.get_ref(args[1]))
+
     def SET_REF_VARI(self, *args):
-        """PUSH_SCOPE_W op code"""
+        """SET_REF_VARI op code"""
         self.set_ref(args[0], args[1])
 
     def CREATE_CTX_VAR(self, *args):

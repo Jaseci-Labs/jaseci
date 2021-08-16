@@ -9,6 +9,7 @@ class op(Enum):
     PUSH_SCOPE_W = auto()  # []
     POP_SCOPE = auto()  # []
     SET_LIVE_VAR = auto()  # [str dest, ref value, md_index]
+    SET_REF_VAR = auto()  # [ref dest, ref src]
     SET_REF_VARI = auto()  # [ref dest, imm value]
     CREATE_CTX_VAR = auto()  # [ref obj, str dest, ref val, bool is_private]
     SET_ANCHOR = auto()  # [ref obj, str name]

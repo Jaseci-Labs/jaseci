@@ -63,7 +63,7 @@ class code_gen():
             self.g_ins([op.CREATE_CTX_VAR, obj, var_name,
                        ref.RESULT_OUT, is_private])
 
-    def run_can_stmt(self, jac_ast, obj):
+    def gen_can_stmt(self, jac_ast, obj):
         """
         can_stmt:
             KW_CAN dotted_name preset_in_out? event_clause? (
@@ -73,23 +73,29 @@ class code_gen():
         """
         kid = jac_ast.kid
         kid = kid[1:]
+        l_out = self.next_lab()
+        self.g_ins([op.B_A, l_out])
         while True:
+            l_act_code = self.next_lab()
+            self.g_lab(l_act_code)
             action_type = 'activity'
             preset_in_out = {'input': [], 'output': None}
             if (kid[0].name == 'NAME'):
                 action_name = kid[0].token_text()
             else:
-                action_name = self.run_dotted_name(kid[0])
+                action_name = self.gen_dotted_name(kid[0])
             kid = kid[1:]
             if(len(kid) > 0 and kid[0].name == 'preset_in_out'):
-                preset_in_out = self.run_preset_in_out(kid[0], obj)
+                self.gen_preset_in_out(kid[0], obj)
+                self.g_ins([op.SET_REF_VAR, ref.TMP1, ref.RESULT_OUT])
                 kid = kid[1:]
             if(len(kid) > 0 and kid[0].name == 'event_clause'):
-                action_type = self.run_event_clause(kid[0])
+                action_type = self.gen_event_clause(kid[0])
                 kid = kid[1:]
             if (not isinstance(obj, node)):  # only nodes have on entry/exit
                 action_type = 'activity'
             if (kid[0].name == 'code_block'):
+
                 getattr(obj, f"{action_type}_action_ids").add_obj(
                     action(
                         h=self._h,
@@ -116,8 +122,9 @@ class code_gen():
                 break
             else:
                 kid = kid[1:]
+        self.g_lab(l_out)
 
-    def run_event_clause(self, jac_ast):
+    def gen_event_clause(self, jac_ast):
         """
         event_clause: KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
         """
@@ -975,7 +982,7 @@ class code_gen():
             if (i.name == 'assignment'):
                 self.run_assignment(i, assign_scope=obj.context)
 
-    def run_dotted_name(self, jac_ast):
+    def gen_dotted_name(self, jac_ast):
         """
         dotted_name: NAME (DOT NAME)*;
         """

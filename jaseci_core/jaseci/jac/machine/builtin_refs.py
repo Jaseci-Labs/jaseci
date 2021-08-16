@@ -3,6 +3,9 @@ from enum import Enum, auto
 
 class ref(Enum):
     SELF = auto()
+    ENTRY_ACT_IDS = auto()
+    EXIT_ACT_IDS = auto()
+    ACTIV_ACT_IDS = auto()
     STOPPED = auto()
     RESULT_OUT = auto()
     TMP1 = auto()
