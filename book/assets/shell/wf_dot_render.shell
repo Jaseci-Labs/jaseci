@@ -1,4 +1,4 @@
-jaseci > graph get -format dot
+jaseci > graph get -format dot -o fam.dot
 strict digraph root {
     "n0" [ id="550ce1bb405c4477947e019d1e8428eb", label="n0:root"  ]
     "n1" [ id="e5c0a9b28f134313a28794a0c061bff1", label="n1:man"  ]
@@ -10,4 +10,5 @@ strict digraph root {
     "n0" -> "n2" [ id="03fcfb60667b4631b46ee589d982e1ce", label="e3" ]
     "n0" -> "n1" [ id="d1713ac5792e4272b9b20917b0c3ec33", label="e4" ]
 }
+[saved to fam.dot]
 jaseci >

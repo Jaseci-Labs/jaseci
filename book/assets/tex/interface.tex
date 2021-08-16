@@ -83,32 +83,36 @@ Ok, now we should have a \texttt{fam.jac} file saved in our working directory. W
 \par
 \shellout{wf_ls.shell}
 \par
-We can list files from the shell prompt. By default the \texttt{ls} command only lists files relevant to Jaseci (i.e., \texttt{*.jac}, \texttt{*.dot}, etc). To list all files simply add a \texttt{--all} or \texttt{-a}. 
+We can list files from the shell prompt. By default the \texttt{ls} command only lists files relevant to Jaseci (i.e., \texttt{*.jac}, \texttt{*.dot}, etc). To list all files simply add a \texttt{--all} or \texttt{-a}.
 \par
-Now, on to what is on of the key operations. Lets ``register'' a \gls{sentinel} based on our Jac program. A sentinel is the abstraction Jaseci uses to encapsulate compiled walkers and architype nodes and edges. You can think of registering a sentinel as compiling your jac program. The walkers of a given sentinel can then be invoked and run on arbitrary nodes of any graph. Let's register our Jac toy program.  
+Now, on to what is on of the key operations. Lets ``register'' a \gls{sentinel} based on our Jac program. A sentinel is the abstraction Jaseci uses to encapsulate compiled walkers and architype nodes and edges. You can think of registering a sentinel as compiling your jac program. The walkers of a given sentinel can then be invoked and run on arbitrary nodes of any graph. Let's register our Jac toy program.
 \par
 \shellout{wf_sent_reg.shell}
 \par
 Ok, theres a lot that just happened there. First, we see some logging output that informs us that the Jac code is being processed (which really means the Jac program is being parsed and IR being generated). If there are any syntax errors or other issues, this is where the error output will be printed along with any problematic lines of code and such. If all goes well, we see the next logging output that the code has been successfully registered. The formal output is the relevant details of the successfully created sentinel. Note, that we've also made this the ``active'' sentinel meaning it will be used as the default setting for any calls to Jaseci Core APIs that require a sentinel be specified. At this point, Jaseci has registered our code and we are ready to run walkers!
 \par
-But first, lets take a quick look at some of the objects loaded into our Jaseci machine. For this I'll briefly introduce the \texttt{alias} group of APIs. 
+But first, lets take a quick look at some of the objects loaded into our Jaseci machine. For this I'll briefly introduce the \texttt{alias} group of APIs.
 \par
 \shellout{wf_aliases.shell}
 \par
-The \texttt{alias} set of APIs are designed as an additional set of convenience tools to simplify the referencing of various objects (walkers, architypes, etc) in Jaseci. Instead of having to use the UUIDs to reference each object, an alias can be used to refer to any object. These aliases can be created or removed utilizing the \texttt{alias} APIs. 
+The \texttt{alias} set of APIs are designed as an additional set of convenience tools to simplify the referencing of various objects (walkers, architypes, etc) in Jaseci. Instead of having to use the UUIDs to reference each object, an alias can be used to refer to any object. These aliases can be created or removed utilizing the \texttt{alias} APIs.
 \par
-Upon registering a sentinel, a set of aliases are automatically created for each object produced from processing the corresponding Jac program. The call to \texttt{alias list} lists all available aliases in the session. Here, we're using this call to see the objects that were created for our toy program and validate it corresponds to the ones we would expect from the Jac Program represented in JC~\ref{jac:fam.jac}. Everything looks good! 
+Upon registering a sentinel, a set of aliases are automatically created for each object produced from processing the corresponding Jac program. The call to \texttt{alias list} lists all available aliases in the session. Here, we're using this call to see the objects that were created for our toy program and validate it corresponds to the ones we would expect from the Jac Program represented in JC~\ref{jac:fam.jac}. Everything looks good!
 \par
 Now, for the big moment! lets run our walker on the root node of the graph we created and see what happens!
 \par
 \shellout{wf_run_walker.shell}
 \par
-Sweet!! We see the standard output we'd expect from our toy program. Hrm, as we'd expect, when it comes to the family, the man doesn't do much it seems. 
+Sweet!! We see the standard output we'd expect from our toy program. Hrm, as we'd expect, when it comes to the family, the man doesn't do much it seems.
 \par
 But there were many semantics to what our toy program does. How do we visualize that the graph produced by or program is right. Well we're in luck! We can use Jaseci `dot' features to take a look at our graph!!
 \par
 \shellout{wf_dot_render.shell}
-\shellout{wf_dot_render_save.shell}
+\par
+\jacdot{fam}{.3}{Graph for \texttt{fam.jac}}
+Here we've used the \texttt{graph get} core API to get a print out of the graph in dot format. By default \texttt{graph get} dumps out a list of all edge and node objects of the graph, however with the \texttt{-format dot} parameter we've specified that the graph should be printed in dot. The \texttt{-o} flag specifies a file to dump the output of the command. Note that the \texttt{-o} flag for \texttt{jsctl} commands only outputs the formal returned data (json payload, or string) from a Jaseci Core API. Logging output, standard output, etc will not be saved to the file though anything reported by a walker using \texttt{report} will be saved. This output file directive is \texttt{jsctl} specific and work with any command given to \texttt{jsctl}.
+\par
+To see a pretty visual of the graph itself, we can use the \texttt{dot} command from Graphviz. Simply type \texttt{dot -Tpdf fam.dot -o fam.pdf} and Voila! We can see the beautiful graph our toy Jac program has produced on its way to the standard output.
 \par
 Awesomeness! We are Jac \Gls{haxor}s now!
 
