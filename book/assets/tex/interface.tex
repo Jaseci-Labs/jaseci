@@ -73,9 +73,15 @@ Next, lets write some Jac code for our little program. \texttt{jsctl} has a buil
 \par
 \shellout{wf_edit_jac.shell}
 \par
-The \texttt{edit} command invokes the built in editor. Though it's a terminal editor based on \texttt{ncurses}, you can basically use it much like you'd use any wysiwyg editor with features like standard cut and paste, mouse text selection, etc. It's based on the phenomenal pure python project from Google called \texttt{ci\_edit}. For more detailed help cheat sheet see Appendix~\ref{ci_help}.
+The \texttt{edit} command invokes the built in editor. Though it's a terminal editor based on \texttt{ncurses}, you can basically use it much like you'd use any wysiwyg editor with features like standard cut \texttt{ctrl-c} and paste \texttt{ctrl-v}, mouse text selection, etc. It's based on the phenomenal pure python project from Google called \texttt{ci\_edit}. For more detailed help cheat sheet see Appendix~\ref{ci_help}. If you must use your own favorite editor, simply be sure that you save the fam.jac file in the same working directory from which you are running the Jaseci shell. Now type out the toy program in Jac Code~\ref{jac:fam.jac}.
 \par
 \jaccode{fam.jac}{Jac Family Toy Program}
+\par
+Don't worry if that looks like the most cryptic \gls{gobbledygook} you've ever seen in your life. As you learn the Jac language, all will become clear. For now, lets tinker around. Now save and quit the editor. If you are using the built in editor thats simply a \texttt{ctrl-s, ctrl-q} combo.
+\par
+Ok, now we should have a \texttt{fam.jac} file saved in our working directory. We can check from the shell!
+\par
+
 \par
 Now, Lets create a sentinel for our Jac.
 \par
