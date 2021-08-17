@@ -6,11 +6,11 @@ Each sentinel has an id, name, timestamp and it's set of walkers.
 from jaseci.element import element
 from jaseci.utils.utils import logger
 from jaseci.utils.id_list import id_list
-from jaseci.jac.code_gen.ast import ast
+from jaseci.utils.jac_code import jac_code
 from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
 
 
-class sentinel(element, sentinel_interp):
+class sentinel(element, jac_code, sentinel_interp):
     """
     Sentinel class for Jaseci
 
@@ -18,13 +18,12 @@ class sentinel(element, sentinel_interp):
     register_code succeeded
     """
 
-    def __init__(self, code='', *args, **kwargs):
-        self.code = code
-        self.is_active = False
+    def __init__(self, *args, **kwargs):
         self.arch_ids = id_list(self)
         self.walker_ids = id_list(self)
         self.live_walker_ids = id_list(self)
         element.__init__(self, *args, **kwargs)
+        jac_code.__init__(self, code_ir=None)
         sentinel_interp.__init__(self)
 
     def reset(self):
@@ -34,61 +33,42 @@ class sentinel(element, sentinel_interp):
         self.walker_ids.destroy_all()
         sentinel_interp.reset(self)
 
-    def parse_jac_code(self, text, start_rule='start'):
-        """Generate AST tree from Jac code text"""
-        logger.info(str(f'{self.name}: Processing Jac code...'))
-        tree = ast(jac_text=self.code, start_rule=start_rule)
-        if(tree.parse_errors):
-            logger.error(str(f'{self.name}: Invalid syntax in Jac code!'))
-            for i in tree.parse_errors:
-                logger.error(i)
-            return None
-        return tree
-
-    def register_code(self, text=None):
+    def register_code(self, text):
         """
         Registers a program (set of walkers and architypes) written in Jac
         """
         self.reset()
-        self.code = text if text else self.code
-        tree = self.parse_jac_code(self.code)
+        self.register(text)
 
-        if(not tree):
-            return self.is_active  # is False due to .reset()
-
-        self.run_start(tree)
+        if(self.is_active):
+            self.run_start(self._jac_ast)
 
         if(self.runtime_errors):
             logger.error(
-                str(f'{self.name}: Runtime problem registering code!')
+                str(f'{self.name}: Runtime problem processing sentinel!')
             )
+            self.is_active = False
         elif(not self.walker_ids and not self.arch_ids):
             logger.error(
                 str(f'{self.name}: No walkers nor architypes created!')
             )
-        else:
-            self.is_active = True
+            self.is_active = False
 
-        if(self.is_active):
-            logger.info(str(f'{self.name}: Successfully registered code'))
-        else:
-            logger.info(str(f'{self.name}: Code not registered'))
-        self.save()
         return self.is_active
 
     def register_walker(self, code):
         """Adds a walker based on jac code"""
-        tree = self.parse_jac_code(code, start_rule='walker')
+        tree = self.parse_jac(code, start_rule='walker')
         if(not tree):
             return None
         return self.load_walker(tree)
 
     def register_architype(self, code):
         """Adds a walker based on jac code"""
-        tree = self.parse_jac_code(code, start_rule='architype')
+        tree = self.parse_jac(code, start_rule='architype')
         if(not tree):
             return None
-        return self.load_walker(tree)
+        return self.load_architype(tree)
 
     def spawn(self, name):
         """
@@ -100,9 +80,6 @@ class sentinel(element, sentinel_interp):
             logger.error(
                 str(f'{self.name}: Unable to spawn walker {name}!')
             )
-            self.is_active = False
-            self.register_code()
-            self.save()
             return None
         new_walk = src_walk.duplicate(persist_dup=False)
         new_walk._jac_ast = src_walk._jac_ast

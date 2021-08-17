@@ -24,15 +24,14 @@ class sentinel_api():
         """
         snt = self.sentinel_ids.get_obj_by_name(name, silent=True)
         if(not snt):
-            snt = sentinel(h=self._h, name=name, code='# Jac Code')
+            snt = sentinel(h=self._h, name=name)
             self.sentinel_ids.add_obj(snt)
             self.api_graph_create(set_active=True)
         if(code):
             if (encoded):
                 code = b64decode_str(code)
-            if (snt.code != code or not snt.is_active):
-                snt.code = code
-                snt.register_code()
+            if (not snt.is_active):
+                snt.register_code(code)
         if(snt.walker_ids.has_obj_by_name(auto_run) and self.active_gph_id):
             nd = self._h.get_obj(uuid.UUID(self.active_gph_id))
             self.api_walker_run(name=auto_run, nd=nd, ctx=ctx,
@@ -49,7 +48,7 @@ class sentinel_api():
         Valid Formats: {default, code, }
         """
         if(format == 'code'):
-            return [snt.code]
+            return []
         else:
             return snt.serialize(detailed=detailed)
 

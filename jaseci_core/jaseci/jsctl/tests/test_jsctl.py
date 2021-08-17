@@ -15,9 +15,11 @@ class jsctl_test(TestCaseHelper, TestCase):
             "jaseci/jsctl/tests/zsb.jac -set_active true")
 
     def call(self, cmd):
-        out = CliRunner().invoke(jsctl.cli,
-                                 ["-m"]+cmd.split(' ')).output
+        res = CliRunner(mix_stderr=False).invoke(jsctl.cli,
+                                                 ["-m"]+cmd.split(' '))
+        out = res.stdout
         self.log(out)
+        self.log(res.stderr)
         return out
 
     def call_cast(self, cmd):

@@ -61,15 +61,15 @@ class architype_tests(TestCaseHelper, TestCase):
         self.assertEqual(num_objs, 2)
         new_graph = graph(h=mast._h)
         sent = sentinel(h=mast._h)
-        sent.code = jtc.prog1
+        code = jtc.prog1
         mast.sentinel_ids.add_obj(sent)
         mast.graph_ids.add_obj(new_graph)
         num_new = len(mast._h.mem.keys())
         self.assertEqual(num_new, num_objs+2)
 
-        sent.register_code()
+        sent.register_code(code)
         num_objs = len(mast._h.mem.keys())
-        sent.register_code()
+        sent.register_code(code)
         new_num = len(mast._h.mem.keys())
         self.assertEqual(num_objs, new_num)
 

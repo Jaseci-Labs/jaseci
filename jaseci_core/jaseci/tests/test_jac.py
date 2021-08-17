@@ -66,8 +66,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertTrue(sent.is_active)
         sent.register_code(wrong1)
         self.assertFalse(sent.is_active)
-        sent.code = correct
-        sent.register_code()
+        sent.register_code(correct)
         self.assertTrue(sent.is_active)
 
     def test_sentinel_loading_arhitype(self):
