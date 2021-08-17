@@ -46,10 +46,10 @@ class jac_json_dec(json.JSONDecoder):
 class jac_code():
     """Obj mixin to code pickling"""
 
-    def __init__(self, code=None):
-        self.code = json.dumps(cls=jac_json_enc, obj=code)
+    def __init__(self, code_ir=None):
+        self.code_ir = json.dumps(cls=jac_json_enc, obj=code_ir)
         self._jac_ast = json.loads(
-            cls=jac_json_dec, s=self.code) if code else None
+            cls=jac_json_dec, s=self.code_ir) if code_ir else None
         if(self._jac_ast):
             kid = self._jac_ast.kid
             self.kind = f"{kid[0].token_text()}"

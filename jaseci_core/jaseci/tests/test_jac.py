@@ -76,7 +76,8 @@ class jac_tests(TestCaseHelper, TestCase):
         sent = sentinel(h=gph._h)
         sent.register_code(jtc.prog1)
         self.assertGreater(
-            len(sent.arch_ids.get_obj_by_name('month', kind='node').code), 5)
+            len(sent.arch_ids.get_obj_by_name('month', kind='node').code_ir),
+            5)
 
     def test_sentinel_running_basic_walker(self):
         """Test the execution of a basic walker building graph"""

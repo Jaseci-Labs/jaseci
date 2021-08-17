@@ -12,9 +12,9 @@ from jaseci.utils.jac_code import jac_code
 class architype(element, jac_code, architype_interp):
     """Architype class for Jaseci"""
 
-    def __init__(self, code=None, *args, **kwargs):
+    def __init__(self, code_ir=None, *args, **kwargs):
         element.__init__(self, *args, **kwargs)
-        jac_code.__init__(self, code)
+        jac_code.__init__(self, code_ir)
         architype_interp.__init__(self)
 
     def run(self):

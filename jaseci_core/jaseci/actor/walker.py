@@ -18,7 +18,7 @@ import uuid
 class walker(element, jac_code, walker_interp, anchored):
     """Walker class for Jaseci"""
 
-    def __init__(self, code=None, *args, **kwargs):
+    def __init__(self, code_ir=None, *args, **kwargs):
         self.activity_action_ids = id_list(self)
         self.context = {}
         self.profile = {}
@@ -32,7 +32,7 @@ class walker(element, jac_code, walker_interp, anchored):
         self.step_limit = 10000
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
-        jac_code.__init__(self, code=code)
+        jac_code.__init__(self, code_ir=code_ir)
         walker_interp.__init__(self)
 
     @ property
