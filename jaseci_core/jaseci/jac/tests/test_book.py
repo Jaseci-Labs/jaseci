@@ -222,7 +222,6 @@ class jac_book_tests(TestCaseHelper, TestCase):
                          "56 8\n")
 
     def test_can_action_param(self):
-        self.logger_on()
         self.sent.register_code(jtc.can_action_params)
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
