@@ -577,7 +577,7 @@ class interp(machine_state):
         func_call:
             atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
             | atom DOT func_built_in
-            | atom? DBL_COLON NAME;
+            | atom? DBL_COLON NAME spawn_ctx?;
         """
         kid = jac_ast.kid
         atom_res = self._jac_scope.has_obj
@@ -593,6 +593,8 @@ class interp(machine_state):
             m.push_scope(jac_scope(owner=self,
                                    has_obj=atom_res,
                                    action_sets=[atom_res.activity_action_ids]))
+            if(len(kid) > 2):
+                self.run_spawn_ctx(kid[2], atom_res)
             m.run_code_block(atom_res.activity_action_ids.get_obj_by_name(
                 kid[1].token_text()).value)
             self.report = self.report + m.report

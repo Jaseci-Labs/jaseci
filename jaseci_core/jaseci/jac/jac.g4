@@ -134,7 +134,7 @@ power: func_call (POW factor)* | func_call index+;
 func_call:
 	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
 	| atom DOT func_built_in
-	| atom? DBL_COLON NAME;
+	| atom? DBL_COLON NAME spawn_ctx?;
 
 func_built_in:
 	| KW_LENGTH

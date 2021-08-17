@@ -221,6 +221,18 @@ class jac_book_tests(TestCaseHelper, TestCase):
                          "56 7\n"
                          "56 8\n")
 
+    def test_can_action_param(self):
+        self.logger_on()
+        self.sent.register_code(jtc.can_action_params)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "43 7\n"
+                         "43 8\n"
+                         "48 7\n"
+                         "48 8\n")
+
     def test_cross_scope_report(self):
         self.sent.register_code(jtc.cross_scope_report)
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')

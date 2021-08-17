@@ -324,6 +324,28 @@ can_action = \
     }
     """
 
+can_action_params = \
+    """
+    node test {
+        has anchor A;
+        can ptest {
+            b=7;
+            std.out(A,b);
+            ::ppp;
+        }
+        can ppp {
+            b=8;
+            std.out(A,b);
+        }
+    }
+
+    walker init {
+        a= spawn here --> node::test(A=56);
+        a::ptest(A=43);
+        a::ptest(A=a.A+5);
+    }
+    """
+
 cross_scope_report = \
     """
     node test {
