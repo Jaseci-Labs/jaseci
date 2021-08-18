@@ -107,14 +107,15 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_config_cmds(self):
         """Tests that config commands works"""
-        self.call(f'config set -name APPLE -value TEST -do_check False')
+        self.call(
+            f'config set -name EMAIL_HOST_USER -value TEST -do_check False')
         self.call(f'config set -name APPLE -value Grape2 -do_check False')
         self.call(f'config set -name "Banana" -value "Grape" -do_check False')
         self.call(f'config set -name "Pear" -value "Banana" -do_check False')
-        r = self.call('config get -name APPLE')
+        r = self.call('config get -name APPLE -do_check False')
         self.assertEqual(r.strip(), 'Grape2')
         r = self.call_cast('config list')
-        self.assertEqual(len(r), 3)
+        self.assertEqual(len(r), 1)
 
     def test_jsctl_default_snt_setting(self):
         """Tests that alias mapping api works"""

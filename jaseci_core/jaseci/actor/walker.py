@@ -129,7 +129,7 @@ class walker(element, jac_code, walker_interp, anchored):
         self.current_node = None
         self.activity_action_ids.destroy_all()
         self.context = {}
-        self.reset()
+        walker_interp.reset(self)
 
     def destroy(self):
         """

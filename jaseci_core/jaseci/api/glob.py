@@ -1,9 +1,7 @@
 """
 Admin Global api functions as a mixin
 """
-VALID_GLOBALS = ['GLOB_SENTINEL',
-                 'GLOB_VARS'
-                 ]
+from jaseci.actor.sentinel import sentinel
 
 
 class global_api():
@@ -11,40 +9,40 @@ class global_api():
     Admin global APIs
     """
 
-    # def admin_api_config_get(self, name: str):
-    #     """
-    #     Get a config
-    #     """
-    #     return self._h.get_cfg(name)
+    def admin_api_global_get(self, name: str):
+        """
+        Get a global var
+        """
+        return self._h.get_glob(name)
 
-    # def admin_api_config_set(self, name: str, value: str,
-    #                          do_check: bool = True):
-    #     """
-    #     Set a config
-    #     """
-    #     if(do_check and name not in VALID_CONFIGS):
-    #         return [
-    #             f"Config {name} not recognized, must be in {VALID_CONFIGS}!"]
-    #     self._h.save_cfg(name, value)
-    #     if(name.startswith('HTTP_LOGGING')):
-    #         self.reconnect_http_logging()
-    #     return [f"Config of '{name}' to '{value}' set!"]
+    def admin_api_global_set(self, name: str, value: str):
+        """
+        Set a config
+        """
+        if(name == 'GLOB_SENTINEL'):
+            return [f"{name} is sacred!"]
+        self._h.save_glob(name, value)
+        return [f"Global variable '{name}' to '{value}' set!"]
 
-    # def admin_api_config_list(self):
-    #     """
-    #     Check a config is present
-    #     """
-    #     return self._h.list_cfg()
+    def admin_api_global_delete(self, name: str):
+        """
+        Delete a config
+        """
+        if(name == 'GLOB_SENTINEL'):
+            return [f"{name} is sacred!"]
+        self._h.destroy_glob(name)
+        return [f"Global {name} deleted."]
 
-    # def admin_api_config_exists(self, name: str):
-    #     """
-    #     Check a config is present
-    #     """
-    #     return self._h.has_cfg(name)
+    def admin_api_global_sentinel_set(self, snt: sentinel = None):
+        """
+        Set sentinel as globally accessible
+        """
+        self._h.save_glob('GLOB_SENTINEL', snt.jid)
+        return [f"Global sentinel set to '{snt}'!"]
 
-    # def admin_api_config_delete(self, name: str):
-    #     """
-    #     Delete a config
-    #     """
-    #     self._h.destroy_cfg(name)
-    #     return [f"{name} Deleted."]
+    def admin_api_global_sentinel_unset(self):
+        """
+        Set sentinel as globally accessible
+        """
+        self._h.save_glob('GLOB_SENTINEL', None)
+        return [f"Global sentinel cleared!"]

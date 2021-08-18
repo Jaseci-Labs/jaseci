@@ -50,8 +50,8 @@ class master(element, alias_api, graph_api, sentinel_api,
         """
         Checks for connection between logger and logstash if configured
         """
-        if(self._h.has_cfg('HTTP_LOGGING_HOST') or
-           self._h.has_cfg('HTTP_LOGGING_PORT')):
+        if(self._h.has_glob('HTTP_LOGGING_HOST') or
+           self._h.has_glob('HTTP_LOGGING_PORT')):
             return connect_http_logging_check(logger) and \
                 connect_http_logging_check(app_logger)
         return True
@@ -60,9 +60,9 @@ class master(element, alias_api, graph_api, sentinel_api,
         """
         Connect logger to logstash
         """
-        url = self._h.resolve_cfg('HTTP_LOGGING_URL', '/')
-        host = self._h.resolve_cfg('HTTP_LOGGING_HOST', 'localhost')
-        port = int(self._h.resolve_cfg('HTTP_LOGGING_PORT', 8080))
+        url = self._h.resolve_glob('HTTP_LOGGING_URL', '/')
+        host = self._h.resolve_glob('HTTP_LOGGING_HOST', 'localhost')
+        port = int(self._h.resolve_glob('HTTP_LOGGING_PORT', 8080))
         connect_http_logging(logger, host, port, url)
         connect_http_logging(app_logger, host, port, url)
 

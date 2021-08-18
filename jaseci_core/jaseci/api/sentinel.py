@@ -21,6 +21,8 @@ class sentinel_api():
                               ctx: dict = {}, set_active: bool = True):
         """
         Create blank or code loaded sentinel and return object
+        Auto_run is the walker to execute on register (assumes active graph
+        is selected)
         """
         snt = self.sentinel_ids.get_obj_by_name(name, silent=True)
         if(not snt):
@@ -40,6 +42,21 @@ class sentinel_api():
             self.active_snt_id = snt.jid
         self.extract_snt_aliases(snt)
         return snt.serialize()
+
+    def api_sentinel_pull(self, set_active: bool = True):
+        """
+        Copies global sentinel to local master
+        """
+        glob_id = self._h.get_glob('GLOB_SENTINEL')
+        if(not glob_id):
+            return ['No global sentinel is available!']
+        g_snt = self._h.get_obj(uuid.UUID(glob_id)).duplicate()
+
+        snt = self.sentinel_ids.get_obj_by_name(g_snt.name, silent=True)
+        if(not snt):
+            snt = sentinel(h=self._h, name=g_snt.name)
+            self.sentinel_ids.add_obj(snt)
+        return self.api_sentinel_set(code=g_snt.code_ir, snt=snt, format='ir')
 
     def api_sentinel_get(self, snt: sentinel = None,
                          format: str = 'default', detailed: bool = False):
@@ -70,6 +87,7 @@ class sentinel_api():
         else:
             return [f'Invalid format to set {snt}']
         if(snt.is_active):
+            self.extract_snt_aliases(snt)
             return [f'{snt} registered and active!']
         else:
             return [f'{snt} code issues encountered!']
@@ -89,6 +107,23 @@ class sentinel_api():
         """
         self.active_snt_id = snt.jid
         return [f'Sentinel {snt.id} set as default']
+
+    def api_sentinel_active_unset(self):
+        """
+        Unsets the default sentinel master should use
+        """
+        self.active_snt_id = None
+        return [f'Default sentinel unset']
+
+    def api_sentinel_active_global(self):
+        """
+        Sets the default master sentinel to the global sentinel
+        """
+        glob_id = self._h.get_glob('GLOB_SENTINEL')
+        if(not glob_id):
+            return ['No global sentinel is available!']
+        self.active_snt_id = glob_id
+        return [f'Global sentinel {glob_id} set as default']
 
     def api_sentinel_active_get(self, detailed: bool = False):
         """

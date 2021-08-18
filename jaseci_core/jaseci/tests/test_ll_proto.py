@@ -48,7 +48,7 @@ class jac_tests(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph.outbound_nodes()[0])
         gen_walker.run()
         for i in self.gph._h.mem.keys():
-            if(i == 'config'):
+            if(i == 'global'):
                 continue
             self.gph._h.mem[i].json()
 

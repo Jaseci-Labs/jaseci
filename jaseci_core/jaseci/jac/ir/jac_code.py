@@ -55,8 +55,6 @@ class jac_code():
 
     def reset(self):
         self.is_active = False
-        self.code_ir = None
-        self._jac_ast = None
 
     def apply_ir(self, ir):
         """Apply's IR to object"""
