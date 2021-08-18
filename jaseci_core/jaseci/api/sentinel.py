@@ -45,10 +45,12 @@ class sentinel_api():
                          format: str = 'default', detailed: bool = False):
         """
         Get a sentinel rendered with specific format
-        Valid Formats: {default, code, }
+        Valid Formats: {default, code, ir, }
         """
         if(format == 'code'):
-            return []
+            return snt._jac_ast.get_text()
+        elif(format == 'ir'):
+            return snt.ir_dict()
         else:
             return snt.serialize(detailed=detailed)
 

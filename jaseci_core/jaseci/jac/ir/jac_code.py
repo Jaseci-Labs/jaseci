@@ -3,7 +3,7 @@ Mix in for jac code object in Jaseci
 """
 import json
 from jaseci.utils.utils import logger
-from jaseci.jac.code_gen.ast import ast
+from jaseci.jac.ir.ast import ast
 
 
 class jac_json_enc(json.JSONEncoder):
@@ -51,17 +51,20 @@ class jac_code():
         self.is_active = False
         self.code_ir = None
         self._jac_ast = None
-        self.load_ir(code_ir)
+        self.apply_ir(code_ir)
 
-    def load_ir(self, code_ir):
-        self.code_ir = json.dumps(cls=jac_json_enc, obj=code_ir)
+    def apply_ir(self, jac_ast):
+        """Apply's IR to object"""
+        self.code_ir = json.dumps(cls=jac_json_enc, obj=jac_ast)
         self._jac_ast = json.loads(
-            cls=jac_json_dec, s=self.code_ir) if code_ir else None
+            cls=jac_json_dec, s=self.code_ir) if jac_ast else None
         if(self._jac_ast):
             kid = self._jac_ast.kid
             if(self.__class__.__name__ != 'sentinel'):
                 self.kind = f"{kid[0].token_text()}"
                 self.name = f"{kid[1].token_text()}"
+                if(self.__class__.__name__ != self.name):
+                    logger.error(str(f'Invalid IR {self.name} for {self}'))
         self.save()
 
     def parse_jac(self, code, start_rule='start'):
@@ -86,7 +89,7 @@ class jac_code():
         if(not tree):
             self.is_active = False
         else:
-            self.load_ir(tree)
+            self.apply_ir(tree)
             self.is_active = True
 
         if(self.is_active):
@@ -94,3 +97,7 @@ class jac_code():
         else:
             logger.info(str(f'{self.name}: Code not registered'))
         return self.is_active
+
+    def ir_dict(self):
+        """Return IR as dictionary"""
+        return json.loads(self.code_ir)

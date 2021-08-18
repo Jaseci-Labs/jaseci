@@ -29,10 +29,12 @@ class architype_api():
                           detailed: bool = False):
         """
         Get an architype rendered with specific format
-        Valid Formats: {default, code, }
+        Valid Formats: {default, code, ir, }
         """
         if(format == 'code'):
             return arch._jac_ast.get_text()
+        elif(format == 'ir'):
+            return arch.ir_dict()
         else:
             return arch.serialize(detailed=detailed)
 

@@ -6,7 +6,7 @@ abstractions or collections of instances (e.g., subgraphs, etc)
 """
 from jaseci.element import element
 from jaseci.jac.interpreter.architype_interp import architype_interp
-from jaseci.utils.jac_code import jac_code
+from jaseci.jac.ir.jac_code import jac_code
 
 
 class architype(element, jac_code, architype_interp):

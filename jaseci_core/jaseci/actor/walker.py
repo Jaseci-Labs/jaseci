@@ -11,7 +11,7 @@ from jaseci.element import element
 from jaseci.utils.obj_mixins import anchored
 from jaseci.utils.id_list import id_list
 from jaseci.jac.interpreter.walker_interp import walker_interp
-from jaseci.utils.jac_code import jac_code
+from jaseci.jac.ir.jac_code import jac_code
 import uuid
 
 

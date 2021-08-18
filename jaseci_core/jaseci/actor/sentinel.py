@@ -6,7 +6,7 @@ Each sentinel has an id, name, timestamp and it's set of walkers.
 from jaseci.element import element
 from jaseci.utils.utils import logger
 from jaseci.utils.id_list import id_list
-from jaseci.utils.jac_code import jac_code
+from jaseci.jac.ir.jac_code import jac_code
 from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
 
 
