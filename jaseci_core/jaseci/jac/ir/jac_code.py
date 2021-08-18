@@ -53,6 +53,11 @@ class jac_code():
         self._jac_ast = None
         self.apply_ir(code_ir)
 
+    def reset(self):
+        self.is_active = False
+        self.code_ir = None
+        self._jac_ast = None
+
     def apply_ir(self, ir):
         """Apply's IR to object"""
         self.code_ir = ir if(isinstance(ir, str)) else \
@@ -64,8 +69,8 @@ class jac_code():
             if(self.__class__.__name__ != 'sentinel'):
                 self.kind = f"{kid[0].token_text()}"
                 self.name = f"{kid[1].token_text()}"
-                if(self.__class__.__name__ != self.name):
-                    logger.error(str(f'Invalid IR {self.name} for {self}'))
+                if(self.__class__.__name__ != self.j_type):
+                    logger.error(str(f'Invalid IR {self.j_type} for {self}'))
         self.save()
 
     def parse_jac(self, code, start_rule='start'):

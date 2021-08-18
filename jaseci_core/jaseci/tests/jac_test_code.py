@@ -167,7 +167,7 @@ ll_proto = \
         year, month, week { take -->; }
         day, workette {
             if(num_workettes == 0): disengage;
-            gen_num = rand.integer(3, 5);
+            gen_num = rand.integer(5, 8);
             for i=0 to i<gen_num by i+=1 {
                 spawn here -[parent]-> node::workette(name=rand.sentence());
             }

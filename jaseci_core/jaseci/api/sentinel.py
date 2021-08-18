@@ -54,6 +54,26 @@ class sentinel_api():
         else:
             return snt.serialize(detailed=detailed)
 
+    def api_sentinel_set(self, code: str, snt: sentinel = None,
+                         format: str = 'default'):
+        """
+        Set code/ir for a sentinel, only replaces walkers/archs in sentinel
+        Valid Formats: {code, ir, }
+        """
+        if(format == 'code' or format == 'default'):
+            snt.register_code(code)
+        elif(format == 'ir'):
+            snt.apply_ir(code)
+            snt.run_start(self._jac_ast)
+            if(snt.runtime_errors):
+                snt.is_active = False
+        else:
+            return [f'Invalid format to set {snt}']
+        if(snt.is_active):
+            return [f'{snt} registered and active!']
+        else:
+            return [f'{snt} code issues encountered!']
+
     def api_sentinel_list(self, detailed: bool = False):
         """
         Provide complete list of all sentinel objects

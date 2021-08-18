@@ -7,6 +7,7 @@ import uuid
 from inspect import signature
 from inspect import getdoc
 
+
 from jaseci.element import element
 from jaseci.utils.utils import logger, app_logger
 from jaseci.utils.utils import connect_http_logging_check
@@ -17,10 +18,11 @@ from jaseci.api.sentinel import sentinel_api
 from jaseci.api.walker import walker_api
 from jaseci.api.architype import architype_api
 from jaseci.api.config import config_api
+from jaseci.api.glob import global_api
 
 
 class master(element, alias_api, graph_api, sentinel_api,
-             walker_api, architype_api, config_api):
+             walker_api, architype_api, config_api, global_api):
     """Main class for master functions for user"""
 
     def __init__(self, email="Anonymous", *args, **kwargs):

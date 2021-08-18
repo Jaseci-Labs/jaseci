@@ -21,16 +21,15 @@ class sentinel(element, jac_code, sentinel_interp):
     def __init__(self, *args, **kwargs):
         self.arch_ids = id_list(self)
         self.walker_ids = id_list(self)
-        self.live_walker_ids = id_list(self)
         element.__init__(self, *args, **kwargs)
         jac_code.__init__(self, code_ir=None)
         sentinel_interp.__init__(self)
 
     def reset(self):
         """Resets state of sentinel and unregister's code"""
-        self.is_active = False
         self.arch_ids.destroy_all()
         self.walker_ids.destroy_all()
+        jac_code.reset(self)
         sentinel_interp.reset(self)
 
     def register_code(self, text):
@@ -70,7 +69,7 @@ class sentinel(element, jac_code, sentinel_interp):
             return None
         return self.load_architype(tree)
 
-    def spawn(self, name):
+    def spawn_walker(self, name):
         """
         Spawns a new walker from registered walkers and adds to
         live walkers
@@ -81,20 +80,30 @@ class sentinel(element, jac_code, sentinel_interp):
                 str(f'{self.name}: Unable to spawn walker {name}!')
             )
             return None
-        new_walk = src_walk.duplicate(persist_dup=False)
+        new_walk = src_walk.duplicate()
         new_walk._jac_ast = src_walk._jac_ast
-        self.live_walker_ids.add_obj(new_walk)
         return new_walk
 
-    def unspawn(self, obj):
-        """Destroys spawned walker based on ID"""
-        self.live_walker_ids.destroy_obj(obj)
+    def spawn_architype(self, name, kind=None):
+        """
+        Spawns a new architype from registered architypes and adds to
+        live walkers
+        """
+        src_arch = self.arch_ids.get_obj_by_name(name, kind=kind)
+        if (not src_arch):
+            logger.error(
+                str(f'{self.name}: Unable to spawn architype {[name, kind]}!')
+            )
+            return None
+        new_arch = src_arch.duplicate()
+        new_arch._jac_ast = src_arch._jac_ast
+        return new_arch
 
     def destroy(self):
         """
         Destroys self from memory and persistent storage
         """
         for i in self.arch_ids.obj_list() + \
-                self.walker_ids.obj_list() + self.live_walker_ids.obj_list():
+                self.walker_ids.obj_list():
             i.destroy()
         super().destroy()

@@ -4,7 +4,7 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
-from jaseci.utils.utils import is_jsonable, logger
+from jaseci.utils.utils import is_jsonable
 from jaseci.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
@@ -775,7 +775,7 @@ class interp(machine_state):
                 result += self.viable_nodes()
         else:
             if(len(kid) > 1):
-                result = self.owner().arch_ids.get_obj_by_name(
+                result = self.owner().spawn_architype(
                     kid[2].token_text(), kind='node').run()
             else:
                 result = node(h=self._h)
@@ -786,17 +786,14 @@ class interp(machine_state):
         walker_ref: KW_WALKER DBL_COLON NAME;
         """
         kid = jac_ast.kid
-        src_walk = self.owner().walker_ids.get_obj_by_name(kid[2].token_text())
-        walk = src_walk.duplicate(persist_dup=False)
-        walk._jac_ast = src_walk._jac_ast
-        return walk
+        return self.owner().spawn_walker(kid[2].token_text())
 
     def run_graph_ref(self, jac_ast):
         """
         graph_ref: KW_GRAPH DBL_COLON NAME;
         """
         kid = jac_ast.kid
-        gph = self.owner().arch_ids.get_obj_by_name(
+        gph = self.owner().spawn_architype(
             kid[2].token_text(), kind='graph').run()
         return gph
 
@@ -810,7 +807,7 @@ class interp(machine_state):
             return expr_func(kid[0])
         else:
             if(len(kid[0].kid) > 2):
-                result = self.owner().arch_ids.get_obj_by_name(
+                result = self.owner().spawn_architype(
                     kid[0].kid[2].token_text(), kind='edge').run()
             else:
                 result = edge(h=self._h, kind='edge', name='generic')

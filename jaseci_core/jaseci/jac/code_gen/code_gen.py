@@ -779,10 +779,7 @@ class code_gen():
         walker_ref: KW_WALKER DBL_COLON NAME;
         """
         kid = jac_ast.kid
-        src_walk = self.owner().walker_ids.get_obj_by_name(kid[2].token_text())
-        walk = src_walk.duplicate(persist_dup=False)
-        walk._jac_ast = src_walk._jac_ast
-        return walk
+        return self.owner().spawn_walker(kid[2].token_text())
 
     def run_graph_ref(self, jac_ast):
         """

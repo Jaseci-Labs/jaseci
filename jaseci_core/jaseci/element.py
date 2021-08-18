@@ -85,7 +85,7 @@ class element(hookable):
     def timestamp(self, obj):
         self.j_timestamp = obj.isoformat()
 
-    def duplicate(self, persist_dup: bool = True):
+    def duplicate(self, persist_dup: bool = False):
         """
         Duplicates elements by creating copy with new id
         Hook override to duplicate into mem / another store
@@ -93,7 +93,12 @@ class element(hookable):
 
         dup = type(self)(h=self._h, persist=persist_dup)
         id_save = dup.id
-        dup.json_load(self.json(detailed=True))
+        for i in dup.__dict__.keys():
+            if(type(dup.__dict__[i]) == id_list):
+                setattr(dup, i, id_list(
+                    owner_obj=dup, in_list=self.__dict__[i]))
+            else:
+                setattr(dup, i, self.__dict__[i])
         dup.id = id_save
         dup.timestamp = datetime.utcnow()
         dup.save()
@@ -169,8 +174,7 @@ class element(hookable):
         """
         String representation is of the form type:name:kind
         """
-        return self.j_type + ':' + self.kind + ':' + self.name + \
-            ':' + self.jid
+        return self.j_type + ':' + self.kind + ':' + self.name + ':' + self.jid
 
     def __repr__(self):
         return self.__str__()
