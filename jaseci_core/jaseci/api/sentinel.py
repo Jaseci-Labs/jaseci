@@ -118,6 +118,7 @@ class sentinel_api():
     def api_sentinel_active_global(self):
         """
         Sets the default master sentinel to the global sentinel
+        Exclusive OR with pull strategy
         """
         glob_id = self._h.get_glob('GLOB_SENTINEL')
         if(not glob_id):
