@@ -38,6 +38,23 @@ class architype_api():
         else:
             return arch.serialize(detailed=detailed)
 
+    def api_architype_set(self, arch: architype, code: str,
+                          format: str = 'default'):
+        """
+        Set code/ir for a architype
+        Valid Formats: {code, ir, }
+        """
+        if(format == 'code' or format == 'default'):
+            arch.register(code)
+        elif(format == 'ir'):
+            arch.apply_ir(code)
+        else:
+            return [f'Invalid format to set {arch}']
+        if(arch.is_active):
+            return [f'{arch} registered and active!']
+        else:
+            return [f'{arch} code issues encountered!']
+
     def api_architype_list(self, snt: sentinel = None, detailed: bool = False):
         """
         List architypes known to sentinel

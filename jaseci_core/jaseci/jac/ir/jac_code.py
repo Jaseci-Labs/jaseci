@@ -53,11 +53,12 @@ class jac_code():
         self._jac_ast = None
         self.apply_ir(code_ir)
 
-    def apply_ir(self, jac_ast):
+    def apply_ir(self, ir):
         """Apply's IR to object"""
-        self.code_ir = json.dumps(cls=jac_json_enc, obj=jac_ast)
+        self.code_ir = ir if(isinstance(ir, str)) else \
+            json.dumps(cls=jac_json_enc, obj=ir)
         self._jac_ast = json.loads(
-            cls=jac_json_dec, s=self.code_ir) if jac_ast else None
+            cls=jac_json_dec, s=self.code_ir) if ir else None
         if(self._jac_ast):
             kid = self._jac_ast.kid
             if(self.__class__.__name__ != 'sentinel'):

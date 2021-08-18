@@ -39,6 +39,23 @@ class walker_api():
         else:
             return wlk.serialize(detailed=detailed)
 
+    def api_walker_set(self, wlk: walker, code: str,
+                       format: str = 'default'):
+        """
+        Set code/ir for a walker
+        Valid Formats: {code, ir, }
+        """
+        if(format == 'code' or format == 'default'):
+            wlk.register(code)
+        elif(format == 'ir'):
+            wlk.apply_ir(code)
+        else:
+            return [f'Invalid format to set {wlk}']
+        if(wlk.is_active):
+            return [f'{wlk} registered and active!']
+        else:
+            return [f'{wlk} code issues encountered!']
+
     def api_walker_list(self, snt: sentinel = None, detailed: bool = False):
         """
         List walkers known to sentinel
