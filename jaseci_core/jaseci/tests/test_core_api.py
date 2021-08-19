@@ -56,3 +56,19 @@ class core_api_test(TestCaseHelper, TestCase):
         r = self.call(self.mast2, api)
         self.assertIn('jid', r.keys())
         self.assertEqual(r['name'], 'test')
+
+    def test_global_set_get_delete(self):
+        """Test setting global sentinel"""
+        api = ['admin_api_global_get', {'name': 'apple'}]
+        r = self.call(self.mast, api)
+        self.assertIsNone(r)
+        api = ['admin_api_global_set', {'name': 'apple', 'value': '56'}]
+        r = self.call(self.mast, api)
+        api = ['admin_api_global_get', {'name': 'apple'}]
+        r = self.call(self.mast2, api)
+        self.assertEqual(r, '56')
+        api = ['admin_api_global_delete', {'name': 'apple'}]
+        r = self.call(self.mast2, api)
+        api = ['admin_api_global_get', {'name': 'apple'}]
+        r = self.call(self.mast, api)
+        self.assertIsNone(r)

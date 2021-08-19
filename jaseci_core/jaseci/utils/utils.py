@@ -208,6 +208,10 @@ class TestCaseHelper():
         if(not logging.getLogger('core').disabled):
             logger.info(pformat(val))
 
+    def stopper(self):
+        """Force test to fail"""
+        self.assertTrue(False)
+
     def start_perf_test(self):
         self.pr = cProfile.Profile()
         self.pr.enable()
