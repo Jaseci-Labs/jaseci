@@ -56,7 +56,10 @@ class sentinel_api():
         if(not snt):
             snt = sentinel(h=self._h, name=g_snt.name)
             self.sentinel_ids.add_obj(snt)
-        return self.api_sentinel_set(code=g_snt.code_ir, snt=snt, format='ir')
+        if(set_active):
+            self.active_snt_id = snt.jid
+        return self.api_sentinel_set(code=g_snt.code_ir, snt=snt,
+                                     format='ir')
 
     def api_sentinel_get(self, snt: sentinel = None,
                          format: str = 'default', detailed: bool = False):
@@ -81,7 +84,7 @@ class sentinel_api():
             snt.register_code(code)
         elif(format == 'ir'):
             snt.apply_ir(code)
-            snt.run_start(self._jac_ast)
+            snt.run_start(snt._jac_ast)
             if(snt.runtime_errors):
                 snt.is_active = False
         else:
@@ -113,7 +116,7 @@ class sentinel_api():
         Unsets the default sentinel master should use
         """
         self.active_snt_id = None
-        return [f'Default sentinel unset']
+        return ['Default sentinel unset']
 
     def api_sentinel_active_global(self):
         """
