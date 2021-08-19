@@ -4,6 +4,7 @@ Jaseci object mixins
 Various mixins to define properties of Jaseci objects
 """
 from jaseci.utils.mem_hook import mem_hook
+from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
 
 
@@ -22,20 +23,51 @@ class anchored():
 
 class sharable():
     """Utility class for objects that are sharable between users"""
-    # TODO: Finish this implementation, make node/edges sharable and
-    # manage access accordingly
 
-    def __init__(self, user=None, has_access=None):
-        self.j_user = user
-        self.j_has_access = has_access
+    def __init__(self, m, mode='private'):
+        self.j_master = m
+        self._m = self.j_master
+        self.j_mode = mode
+        self.j_r_acc_ids = []  # id_list(self)
+        self.j_rw_acc_ids = []  # id_list(self)
+
+    def make_public(self):
+        """Make element publically accessible"""
+        self.j_mode = 'public'
+
+    def make_private(self):
+        """Make element private"""
+        self.j_mode = 'private'
+
+    def give_access(self, m, read_only=True):
+        """Give access to a master (user)"""
+        if(m.j_type != 'master'):
+            logger.error(f'{m} is not master!')
+            return False
+        if(read_only):
+            self.j_r_acc_ids.add_obj(m)
+        else:
+            self.j_rw_acc_ids.add_obj(m)
+        return True
+
+    def remove_access(self, m):
+        """Remove access from a master (user)"""
+        if(m.jid in self.j_r_acc_ids):
+            self.j_r_acc_ids.remove_obj(m)
+            return True
+        if(m.jid in self.j_rw_acc_ids):
+            self.j_rw_acc_ids.remove_obj(m)
+            return True
+        return False
 
 
 class hookable():
     """Utility class for objects that are savable to DBs and other stores"""
 
-    def __init__(self, h: mem_hook, persist: bool = True):
+    def __init__(self, h, persist: bool = True, *args, **kwargs):
         self._h = h  # hook for storing and loading to persistent store
         self._persist = persist
+        #sharable.__init__(self, m,  *args, **kwargs)
 
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""

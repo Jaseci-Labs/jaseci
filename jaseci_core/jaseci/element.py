@@ -43,9 +43,8 @@ class element(hookable):
     json serializable types
     """
 
-    def __init__(self, h, parent_id=None, name='basic', kind='generic',
-                 user='Anonymous', has_access=[], auto_save=True, *args,
-                 **kwargs):
+    def __init__(self, h, parent_id=None, name='basic',
+                 kind='generic', auto_save=True, *args, **kwargs):
         self.name = name
         self.kind = kind
         self.jid = uuid.uuid4().urn

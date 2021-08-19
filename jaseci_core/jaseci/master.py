@@ -114,7 +114,7 @@ class master(element, alias_api, graph_api, sentinel_api,
                 func_sig.parameters[i].empty else None
             if (p_name in params.keys()):
                 val = params[p_name]
-                if(val is None or val == 'None'):  # Used to patch internal defaults
+                if(val is None or val == 'None'):  # Used to patch defaults
                     val = self.provide_internal_default(p_name)
                 if(str(val) in self.alias_map.keys()):
                     val = self.alias_map[val]
