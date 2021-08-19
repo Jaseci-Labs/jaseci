@@ -1,7 +1,7 @@
 from jaseci.utils.id_list import id_list
 from jaseci.attr.action import action
-from jaseci.actions.find_action import find_action
-from jaseci.actions.find_action import get_action_set
+from jaseci.actions.utils.find_action import find_action
+from jaseci.actions.utils.find_action import get_action_set
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.element import element
 

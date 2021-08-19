@@ -10,6 +10,7 @@ from jaseci.graph.node import node
 from jaseci.graph.edge import edge
 from jaseci.attr.action import action
 from jaseci.jac.jac_set import jac_set
+from jaseci.jac.ir.jac_code import jac_ast_to_ir, jac_ir_to_ast
 from jaseci.jac.machine.jac_scope import jac_scope, ctx_value
 from jaseci.jac.machine.machine_state import machine_state
 
@@ -111,7 +112,7 @@ class interp(machine_state):
                     action(
                         h=self._h,
                         name=action_name,
-                        value=kid[0],
+                        value=jac_ast_to_ir(kid[0]),
                         preset_in_out=preset_in_out,
                         is_lib=False
                     )
@@ -595,8 +596,9 @@ class interp(machine_state):
                                    action_sets=[atom_res.activity_action_ids]))
             if(len(kid) > 2):
                 self.run_spawn_ctx(kid[2], atom_res)
-            m.run_code_block(atom_res.activity_action_ids.get_obj_by_name(
-                kid[1].token_text()).value)
+            m.run_code_block(jac_ir_to_ast(
+                atom_res.activity_action_ids.get_obj_by_name(
+                    kid[1].token_text()).value))
             self.report = self.report + m.report
             return atom_res
         elif(kid[0].name == "LPAREN"):

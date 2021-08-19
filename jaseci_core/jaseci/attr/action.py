@@ -39,7 +39,7 @@ class action(item):
             importlib.import_module(
                 ACTION_PACKAGE+self.value[0].split('.')[-1]),
             self.value[1]
-        )(use_params)
+        )(use_params, {'hook': self._h})
         if(not param_list and self.preset_in_out and
            self.preset_in_out['output']):
             # uses tuple for the output variable name and owning obj id

@@ -2,7 +2,7 @@ import numpy as np
 from operator import itemgetter
 
 
-def cosine_sim(param_list):
+def cosine_sim(param_list, meta):
     """
     Caculate the cosine similarity score of two given vectors
     Param 1 - First vector
@@ -18,7 +18,7 @@ def cosine_sim(param_list):
     return result.astype(float)
 
 
-def dot_product(param_list):
+def dot_product(param_list, meta):
     """
     Caculate the dot product of two given vectors
     Param 1 - First vector
@@ -30,7 +30,7 @@ def dot_product(param_list):
     return np.inner(param_list[0], param_list[1])
 
 
-def get_centroid(param_list):
+def get_centroid(param_list, meta):
     """
     Calculate the centroid of the given list of vectors
     Param 1 - List of vectors
@@ -44,7 +44,7 @@ def get_centroid(param_list):
     return [centroid, tightness]
 
 
-def softmax(param_list):
+def softmax(param_list, meta):
     """
     Calculate the centroid of the given list of vectors
     Param 1 - List of vectors
@@ -56,7 +56,7 @@ def softmax(param_list):
     return list(e_x / e_x.sum())
 
 
-def sort_by_key(param_list):  # TODO: Should be in std lib
+def sort_by_key(param_list, meta):  # TODO: Should be in std lib
     """
     Sort the given list. Optionally by specific key
     Param 1 - List of items

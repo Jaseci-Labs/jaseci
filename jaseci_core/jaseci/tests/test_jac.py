@@ -181,7 +181,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_availabilty_of_global_functions(self):
         """Test preset function loading"""
-        from jaseci.actions.global_actions import global_action_ids
+        from jaseci.actions.utils.global_actions import global_action_ids
         self.assertTrue(global_action_ids.has_obj_by_name('std.log'))
 
     def test_multiple_edged_between_nodes_work(self):

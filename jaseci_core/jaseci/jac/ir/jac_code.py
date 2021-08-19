@@ -44,6 +44,16 @@ class jac_json_dec(json.JSONDecoder):
         return obj
 
 
+def jac_ast_to_ir(jac_ast):
+    """Convert AST to IR string"""
+    return json.dumps(cls=jac_json_enc, obj=jac_ast)
+
+
+def jac_ir_to_ast(ir):
+    """Convert AST to IR string"""
+    return json.loads(cls=jac_json_dec, s=ir)
+
+
 class jac_code():
     """Obj mixin to code pickling"""
 
@@ -59,15 +69,13 @@ class jac_code():
     def apply_ir(self, ir):
         """Apply's IR to object"""
         self.code_ir = ir if(isinstance(ir, str)) else \
-            json.dumps(cls=jac_json_enc, obj=ir)
-        self._jac_ast = json.loads(
-            cls=jac_json_dec, s=self.code_ir) if ir else None
+            jac_ast_to_ir(ir)
+        self._jac_ast = jac_ir_to_ast(self.code_ir) if ir else None
         if(self._jac_ast):
             kid = self._jac_ast.kid
-            if(self.j_type != 'sentinel'):
+            if(self.j_type == 'architype' or self.j_type == 'walker'):
                 self.kind = f"{kid[0].token_text()}"
                 self.name = f"{kid[1].token_text()}"
-        self.save()
 
     def parse_jac(self, code, start_rule='start'):
         """Generate AST tree from Jac code text"""
@@ -84,8 +92,7 @@ class jac_code():
         """
         Parses Jac code and saves IR
         """
-        start_rule = 'start' if self.j_type == 'sentinel' \
-            else self.j_type
+        start_rule = 'start' if self.j_type == 'sentinel' else self.j_type
         tree = self.parse_jac(code, start_rule=start_rule)
 
         if(not tree):
