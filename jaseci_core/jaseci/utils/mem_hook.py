@@ -3,7 +3,7 @@ from .utils import logger
 import json
 
 
-def json_str_to_jsci_dict(input_str, owner_obj=None):
+def json_str_to_jsci_dict(input_str, parent_obj=None):
     """
     Helper function to convert JSON strings to dictionarys with _ids list
     conversions from hex to UUID
@@ -14,11 +14,11 @@ def json_str_to_jsci_dict(input_str, owner_obj=None):
         obj_fields = json.loads(input_str)
     except ValueError:
         logger.error(
-            str(f'Invalid jsci_obj string {input_str} on {owner_obj.id.urn}'))
+            str(f'Invalid jsci_obj string {input_str} on {parent_obj.id.urn}'))
         obj_fields = {}
     for i in obj_fields.keys():
         if(str(i).endswith("_ids") and isinstance(obj_fields[i], list)):
-            obj_fields[i] = id_list(owner_obj, obj_fields[i])
+            obj_fields[i] = id_list(parent_obj, obj_fields[i])
     return obj_fields
 
 

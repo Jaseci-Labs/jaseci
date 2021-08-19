@@ -19,8 +19,8 @@ class ctx_value():
 
 
 class jac_scope():
-    def __init__(self, owner, has_obj, action_sets):
-        self.owner = owner
+    def __init__(self, parent, has_obj, action_sets):
+        self.parent = parent
         self.local_scope = {}
         self.has_obj = has_obj if has_obj else self
         self.context = {}
@@ -44,7 +44,7 @@ class jac_scope():
             if(found is not None):
                 # return node if it's a node
                 if is_urn(found):
-                    head_obj = self.owner._h.get_obj(uuid.UUID(found))
+                    head_obj = self.parent._h.get_obj(uuid.UUID(found))
                     # head_obj.context['id'] = head_obj.jid
                     if (subname[1] in head_obj.context.keys() or
                             self.try_sync_to_arch(head_obj, subname[1])):
@@ -72,7 +72,7 @@ class jac_scope():
         else:
             found = self.find_live_attr(name)
         if (found is None):
-            self.owner.rt_error(f"Variable not defined - {name}", jac_ast)
+            self.parent.rt_error(f"Variable not defined - {name}", jac_ast)
             return None
         return self.reference_to_value(found)
 
@@ -80,7 +80,7 @@ class jac_scope():
         """Reference to variables value"""
         while (is_urn(val) or type(val) == ctx_value):
             if(is_urn(val)):
-                val = self.owner._h.get_obj(uuid.UUID(val))
+                val = self.parent._h.get_obj(uuid.UUID(val))
             if (type(val) == ctx_value):
                 val = val.obj.context[val.name]
         return val
@@ -98,7 +98,7 @@ class jac_scope():
                                             value, md_index, jac_ast)
                 return
             elif '.' in name:
-                self.owner.rt_error(
+                self.parent.rt_error(
                     f"Arbitrary dotted names not allowed - {name}", jac_ast)
                 return
         if(not md_index):
@@ -120,12 +120,13 @@ class jac_scope():
 
     def check_index_in_bounds(self, index, item, jac_ast):
         if (isinstance(index, int) and index >= len(item)):
-            self.owner.rt_error(f"Array index {index} out of bounds!", jac_ast)
+            self.parent.rt_error(
+                f"Array index {index} out of bounds!", jac_ast)
             return False
         elif (isinstance(index, str) and index not in item.keys()):
             from jaseci.utils.utils import logger
             logger.error(f'{item}')
-            self.owner.rt_error(f"Object has no member {index}!", jac_ast)
+            self.parent.rt_error(f"Object has no member {index}!", jac_ast)
             return False
         return True
 
@@ -134,7 +135,7 @@ class jac_scope():
         # TODO: Only supports node types
         # from jaseci.utils.utils import logger
         # logger.info(f'{obj}')
-        if (varname in self.owner.owner().arch_ids.get_obj_by_name(
+        if (varname in self.parent.parent().arch_ids.get_obj_by_name(
                 obj.name, kind='node').run().context.keys()):
             obj.context[varname] = None
             return True

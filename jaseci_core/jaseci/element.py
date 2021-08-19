@@ -43,13 +43,13 @@ class element(hookable):
     json serializable types
     """
 
-    def __init__(self, h, owner_id=None, name='basic', kind='generic',
+    def __init__(self, h, parent_id=None, name='basic', kind='generic',
                  user='Anonymous', has_access=[], auto_save=True, *args,
                  **kwargs):
         self.name = name
         self.kind = kind
         self.jid = uuid.uuid4().urn
-        self.j_owner = owner_id.urn if owner_id else None  # member of
+        self.j_parent = parent_id.urn if parent_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
         self.j_type = type(self).__name__
         hookable.__init__(self, h,  *args, **kwargs)
@@ -65,17 +65,17 @@ class element(hookable):
         self.jid = obj.urn
 
     @property
-    def owner_id(self) -> uuid.UUID:
-        if (not self.j_owner):
+    def parent_id(self) -> uuid.UUID:
+        if (not self.j_parent):
             return None
-        return uuid.UUID(self.j_owner)
+        return uuid.UUID(self.j_parent)
 
-    @owner_id.setter
-    def owner_id(self, obj: uuid.UUID):
+    @parent_id.setter
+    def parent_id(self, obj: uuid.UUID):
         if (not obj):
-            self.j_owner = None
+            self.j_parent = None
         else:
-            self.j_owner = obj.urn
+            self.j_parent = obj.urn
 
     @property
     def timestamp(self):
@@ -96,7 +96,7 @@ class element(hookable):
         for i in dup.__dict__.keys():
             if(type(dup.__dict__[i]) == id_list):
                 setattr(dup, i, id_list(
-                    owner_obj=dup, in_list=self.__dict__[i]))
+                    parent_obj=dup, in_list=self.__dict__[i]))
             else:
                 setattr(dup, i, self.__dict__[i])
         dup.id = id_save
@@ -166,7 +166,7 @@ class element(hookable):
 
     def json_load(self, blob):
         """Loads self from json blob"""
-        jdict = json_str_to_jsci_dict(blob, owner_obj=self)
+        jdict = json_str_to_jsci_dict(blob, parent_obj=self)
         for i in jdict.keys():
             setattr(self, i, jdict[i])
 

@@ -15,21 +15,21 @@ from jaseci.jac.machine.jac_scope import jac_scope
 class machine_state():
     """Shared interpreter class across both sentinels and walkers"""
 
-    def __init__(self, owner_override=None):
+    def __init__(self, parent_override=None):
         self.report = []
         self.runtime_errors = []
-        self._owner_override = owner_override
+        self._parent_override = parent_override
         self._scope_stack = [None]
         self._jac_scope = None
         self._loop_ctrl = None
         self._stopped = None
         self._loop_limit = 10000
 
-    def owner(self):
-        if(self._owner_override):
-            return self._owner_override
+    def parent(self):
+        if(self._parent_override):
+            return self._parent_override
         else:
-            return element.owner(self)
+            return element.parent(self)
 
     def reset(self):
         self.report = []
@@ -66,7 +66,7 @@ class machine_state():
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set(edge_set.owner_obj)
+        ret = jac_set(edge_set.parent_obj)
         for i in edge_set.obj_list():
             ret.add_obj(i.opposing_node(self.current_node))
         return ret

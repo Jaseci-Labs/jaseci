@@ -18,7 +18,7 @@ class node(element, anchored):
 
     def __init__(self, dimension=0, *args, **kwargs):
         self.edge_ids = id_list(self)
-        self.owner_node_ids = id_list(self)
+        self.parent_node_ids = id_list(self)
         self.member_node_ids = id_list(self)
         self.dimension = dimension  # Nodes are always hdgd 0
         self.context = {}
@@ -309,7 +309,7 @@ class node(element, anchored):
         # adds self to hdgd and hdgd to list of owners
         else:
             node_obj.member_node_ids.add_obj(self)
-            self.owner_node_ids.add_obj(node_obj)
+            self.parent_node_ids.add_obj(node_obj)
 
     def make_owner_of(self, node_obj):
         """
@@ -320,7 +320,7 @@ class node(element, anchored):
     def leave_memebership_of(self, node_obj):
         """Remove node from higher dimension node"""
         node_obj.member_node_ids.remove_obj(self)
-        self.owner_node_ids.remove_obj(node_obj)
+        self.parent_node_ids.remove_obj(node_obj)
 
     def disown(self, node_obj):
         """Remove node from higher dimension node"""

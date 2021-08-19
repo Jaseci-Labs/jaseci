@@ -59,8 +59,8 @@ class hookable():
         self._h.destroy_obj(self, self._persist)
         del self
 
-    def owner(self):
+    def parent(self):
         """
         Returns the objects for list of owners of this element
         """
-        return self._h.get_obj(self.owner_id)
+        return self._h.get_obj(self.parent_id)

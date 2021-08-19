@@ -1,7 +1,7 @@
 """
 Walker class for Jaseci
 
-Each walker has an id, name, timestamp and it's owner sentinel.
+Each walker has an id, name, timestamp and it's parent sentinel.
 TODO: Perhaps  I should have walker state (context ids) in mem only with
 default hooks to save db read/writes
 """

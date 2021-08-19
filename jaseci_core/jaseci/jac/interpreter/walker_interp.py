@@ -24,7 +24,7 @@ class walker_interp(interp):
         """
         self.push_scope(
             jac_scope(
-                owner=self,
+                parent=self,
                 has_obj=self,
                 action_sets=[self.activity_action_ids,
                              self.current_node.activity_action_ids]))
@@ -165,7 +165,7 @@ class walker_interp(interp):
 
     def viable_nodes(self):
         """Returns all nodes that shouldnt be ignored"""
-        ret = jac_set(self.owner())
+        ret = jac_set(self.parent())
         for i in self.current_node.attached_nodes():
             if (i not in self.ignore_node_ids.obj_list()):
                 ret.add_obj(i)

@@ -17,13 +17,13 @@ class jac_set(id_list):
         for i in self.obj_list():
             if ('anchored' not in dir()):
                 logger.error(
-                    str(f'{type(i)} in {self.owner_obj} not anchored'))
+                    str(f'{type(i)} in {self.parent_obj} not anchored'))
                 return False
             return True
 
     def __lt__(self, other):
         """Returns reduced set where anchor value evals to other"""
-        ret = jac_set(self.owner_obj)
+        ret = jac_set(self.parent_obj)
         for i in self.obj_list():
             if (i.anchor_value() < other):
                 ret.add_obj(i)
@@ -31,7 +31,7 @@ class jac_set(id_list):
 
     def __gt__(self, other):
         """Returns reduced set where anchor value evals to other"""
-        ret = jac_set(self.owner_obj)
+        ret = jac_set(self.parent_obj)
         for i in self.obj_list():
             if (i.anchor_value() > other):
                 ret.add_obj(i)
@@ -39,7 +39,7 @@ class jac_set(id_list):
 
     def __le__(self, other):
         """Returns reduced set where anchor value evals to other"""
-        ret = jac_set(self.owner_obj)
+        ret = jac_set(self.parent_obj)
         for i in self.obj_list():
             if (i.anchor_value() <= other):
                 ret.add_obj(i)
@@ -47,7 +47,7 @@ class jac_set(id_list):
 
     def __ge__(self, other):
         """Returns reduced set where anchor value evals to other"""
-        ret = jac_set(self.owner_obj)
+        ret = jac_set(self.parent_obj)
         for i in self.obj_list():
             if (i.anchor_value() >= other):
                 ret.add_obj(i)
@@ -55,7 +55,7 @@ class jac_set(id_list):
 
     def __eq__(self, other):
         """Returns reduced set where anchor value evals to other"""
-        ret = jac_set(self.owner_obj)
+        ret = jac_set(self.parent_obj)
         for i in self.obj_list():
             if (i.anchor_value() == other):
                 ret.add_obj(i)
@@ -63,7 +63,7 @@ class jac_set(id_list):
 
     def __ne__(self, other):
         """Returns reduced set where anchor value evals to other"""
-        ret = jac_set(self.owner_obj)
+        ret = jac_set(self.parent_obj)
         for i in self.obj_list():
             if (i.anchor_value() != other):
                 ret.add_obj(i)
@@ -71,7 +71,7 @@ class jac_set(id_list):
 
     def __add__(self, other):
         """Returns new set with operation applied"""
-        ret = jac_set(self.owner_obj)
+        ret = jac_set(self.parent_obj)
         for i in self.obj_list():
             ret.add_obj(i)
         for i in other.obj_list():
@@ -81,7 +81,7 @@ class jac_set(id_list):
 
     def __sub__(self, other):
         """Returns new set with operation applied"""
-        ret = jac_set(self.owner_obj)
+        ret = jac_set(self.parent_obj)
         for i in self.obj_list():
             if(i not in other.obj_list()):
                 ret.add_obj(i)
@@ -89,7 +89,7 @@ class jac_set(id_list):
 
     def __mul__(self, other):
         """Returns new set with operation applied, mul is intersection"""
-        ret = jac_set(self.owner_obj)
+        ret = jac_set(self.parent_obj)
         for i in self.obj_list():
             if(i in other.obj_list()):
                 ret.add_obj(i)
@@ -97,7 +97,7 @@ class jac_set(id_list):
 
     def __truediv__(self, other):
         """Returns new set with operation applied, div is 'outersection'"""
-        ret = jac_set(self.owner_obj)
+        ret = jac_set(self.parent_obj)
         for i in self.obj_list():
             if(i not in other.obj_list()):
                 ret.add_obj(i)

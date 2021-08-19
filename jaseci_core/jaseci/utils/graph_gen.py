@@ -21,4 +21,4 @@ def randomized_graph(num_nodes=10, num_edges=20,  h=mem_hook()):
 
     hd_node = node.node(h=h, dimension=1)
     for i in nodes:
-        hd_node.make_owner_of(i)
+        hd_node.make_parent_of(i)

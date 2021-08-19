@@ -30,7 +30,7 @@ class jsx_machine(machine_state):
         """PUSH_SCOPE_W op code"""
         self.push_scope(
             jac_scope(
-                owner=self,
+                parent=self,
                 has_obj=self,
                 action_sets=[self.activity_action_ids,
                              self.current_node.activity_action_ids]))

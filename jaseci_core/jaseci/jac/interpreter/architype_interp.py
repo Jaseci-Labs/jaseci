@@ -24,7 +24,7 @@ class architype_interp(interp):
         kid = jac_ast.kid
         self.push_scope(
             jac_scope(
-                owner=self,
+                parent=self,
                 has_obj=self,
                 action_sets=[]))
         if(kid[0].name == 'KW_NODE'):
@@ -39,7 +39,7 @@ class architype_interp(interp):
             self.run_attr_block(kid[-1], item)
         elif (kid[0].name == 'KW_GRAPH'):
             item = self.run_graph_block(kid[-1])
-        item.owner_id = self.owner().id
+        item.parent_id = self.parent().id
         self.pop_scope()
         return item
 
@@ -70,8 +70,8 @@ class architype_interp(interp):
         """
         kid = jac_ast.kid
         root_node_id = self.run_has_root(kid[1])
-        m = interp(owner_override=self.owner())
-        m.push_scope(jac_scope(owner=self,
+        m = interp(parent_override=self.parent())
+        m.push_scope(jac_scope(parent=self,
                                has_obj=None,
                                action_sets=[]))
         m.run_code_block(kid[3])
@@ -126,7 +126,7 @@ class architype_interp(interp):
             if(node_name is None):
                 self.rt_error('Missing "node" attribute for node.')
                 continue
-            node_obj = self.owner().arch_ids.get_obj_by_name(
+            node_obj = self.parent().arch_ids.get_obj_by_name(
                 node_name, kind='node').run()
             node_obj.set_context(node_def)
 
@@ -138,7 +138,7 @@ class architype_interp(interp):
         for op in graph_state['edge_ops']:
             edge_kind = op.pop('edge', None)
             if(edge_kind):
-                edge_obj = self.owner().arch_ids.get_obj_by_name(
+                edge_obj = self.parent().arch_ids.get_obj_by_name(
                     edge_kind, kind='edge').run()
             else:
                 edge_obj = edge(h=self._h, kind='edge', name='generic')

@@ -79,7 +79,7 @@ class node_tests(TestCaseHelper, TestCase):
         hdgd1 = node(h=node1._h, name="yeah dude", dimension=1)
         node1.make_member_of(hdgd1)
         self.assertEqual(
-            node1.owner_node_ids.obj_list()[0], hdgd1
+            node1.parent_node_ids.obj_list()[0], hdgd1
         )
         self.assertEqual(
             hdgd1.member_node_ids.obj_list()[0], node1
@@ -87,7 +87,7 @@ class node_tests(TestCaseHelper, TestCase):
 
         hdgd2 = node(h=node1._h, dimension=2)
         node1.make_member_of(hdgd2)
-        self.assertNotIn(hdgd2.id, node1.owner_node_ids)
+        self.assertNotIn(hdgd2.id, node1.parent_node_ids)
 
         node1.leave_memebership_of(hdgd1)
         self.assertEqual(len(hdgd1.member_node_ids), 0)

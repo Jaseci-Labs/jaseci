@@ -416,9 +416,9 @@ class interp(machine_state):
         self.rt_check_type(base, [node, jac_set], kid[0])
         self.rt_check_type(target, [node, jac_set], kid[-1])
         if(isinstance(base, node)):
-            base = jac_set(owner_obj=self, in_list=[base.jid])
+            base = jac_set(parent_obj=self, in_list=[base.jid])
         if(isinstance(target, node)):
-            target = jac_set(owner_obj=self, in_list=[target.jid])
+            target = jac_set(parent_obj=self, in_list=[target.jid])
         if (kid[1].name == 'NOT'):
             for i in target.obj_list():
                 for j in base.obj_list():
@@ -590,8 +590,8 @@ class interp(machine_state):
         elif(kid[0].name == 'DOT'):
             return self.run_func_built_in(atom_res, kid[1])
         elif (kid[0].name == 'DBL_COLON'):
-            m = interp(owner_override=self.owner())
-            m.push_scope(jac_scope(owner=self,
+            m = interp(parent_override=self.parent())
+            m.push_scope(jac_scope(parent=self,
                                    has_obj=atom_res,
                                    action_sets=[atom_res.activity_action_ids]))
             if(len(kid) > 2):
@@ -768,7 +768,7 @@ class interp(machine_state):
         """
         kid = jac_ast.kid
         if(not is_spawn):
-            result = jac_set(self.owner())
+            result = jac_set(self.parent())
             if (len(kid) > 1):
                 for i in self.viable_nodes().obj_list():
                     if (i.name == kid[2].token_text()):
@@ -777,7 +777,7 @@ class interp(machine_state):
                 result += self.viable_nodes()
         else:
             if(len(kid) > 1):
-                result = self.owner().spawn_architype(
+                result = self.parent().spawn_architype(
                     kid[2].token_text(), kind='node').run()
             else:
                 result = node(h=self._h)
@@ -788,14 +788,14 @@ class interp(machine_state):
         walker_ref: KW_WALKER DBL_COLON NAME;
         """
         kid = jac_ast.kid
-        return self.owner().spawn_walker(kid[2].token_text())
+        return self.parent().spawn_walker(kid[2].token_text())
 
     def run_graph_ref(self, jac_ast):
         """
         graph_ref: KW_GRAPH DBL_COLON NAME;
         """
         kid = jac_ast.kid
-        gph = self.owner().spawn_architype(
+        gph = self.parent().spawn_architype(
             kid[2].token_text(), kind='graph').run()
         return gph
 
@@ -809,7 +809,7 @@ class interp(machine_state):
             return expr_func(kid[0])
         else:
             if(len(kid[0].kid) > 2):
-                result = self.owner().spawn_architype(
+                result = self.parent().spawn_architype(
                     kid[0].kid[2].token_text(), kind='edge').run()
             else:
                 result = edge(h=self._h, kind='edge', name='generic')
@@ -820,7 +820,7 @@ class interp(machine_state):
         edge_to: '-' ('[' NAME ']')? '->';
         """
         kid = jac_ast.kid
-        result = jac_set(self.owner())
+        result = jac_set(self.parent())
         for i in self.current_node.outbound_edges() + \
                 self.current_node.bidirected_edges():
             if (len(kid) > 2 and i.name != kid[2].token_text()):
@@ -833,7 +833,7 @@ class interp(machine_state):
         edge_from: '<-' ('[' NAME ']')? '-';
         """
         kid = jac_ast.kid
-        result = jac_set(self.owner())
+        result = jac_set(self.parent())
         for i in self.current_node.inbound_edges() + \
                 self.current_node.bidirected_edges():
             if (len(kid) > 2 and i.name != kid[2].token_text()):
@@ -847,7 +847,7 @@ class interp(machine_state):
         NOTE: these do not use strict bidirected semantic but any edge
         """
         kid = jac_ast.kid
-        result = jac_set(self.owner())
+        result = jac_set(self.parent())
         for i in self.current_node.attached_edges():
             if (len(kid) > 2 and i.name != kid[2].token_text()):
                 continue
