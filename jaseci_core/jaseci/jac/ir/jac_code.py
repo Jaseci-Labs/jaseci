@@ -64,11 +64,9 @@ class jac_code():
             cls=jac_json_dec, s=self.code_ir) if ir else None
         if(self._jac_ast):
             kid = self._jac_ast.kid
-            if(self.__class__.__name__ != 'sentinel'):
+            if(self.j_type != 'sentinel'):
                 self.kind = f"{kid[0].token_text()}"
                 self.name = f"{kid[1].token_text()}"
-                if(self.__class__.__name__ != self.j_type):
-                    logger.error(str(f'Invalid IR {self.j_type} for {self}'))
         self.save()
 
     def parse_jac(self, code, start_rule='start'):
@@ -86,8 +84,8 @@ class jac_code():
         """
         Parses Jac code and saves IR
         """
-        start_rule = 'start' if self.__class__.__name__ == 'sentinel' \
-            else self.__class__.__name__
+        start_rule = 'start' if self.j_type == 'sentinel' \
+            else self.j_type
         tree = self.parse_jac(code, start_rule=start_rule)
 
         if(not tree):
