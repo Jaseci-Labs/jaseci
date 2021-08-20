@@ -172,6 +172,18 @@ class element(hookable):
         for i in jdict.keys():
             setattr(self, i, jdict[i])
 
+    def get_deep_obj_list(self, objs=None):
+        """Recursively get all contained Jaseci objects and return id_list"""
+        if(objs is None):
+            objs = []
+        for i in self.__dict__.keys():
+            if(str(i).endswith("_ids") and
+               isinstance(self.__dict__[i], id_list)):
+                for j in self.__dict__[i].obj_list():
+                    j.get_deep_obj_list(objs=objs)
+        objs.append(self)
+        return objs
+
     def __str__(self):
         """
         String representation is of the form type:name:kind
