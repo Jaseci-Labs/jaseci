@@ -176,12 +176,13 @@ class element(hookable):
         """Recursively get all contained Jaseci objects and return id_list"""
         if(objs is None):
             objs = []
+        objs.append(self)
         for i in self.__dict__.keys():
             if(str(i).endswith("_ids") and
                isinstance(self.__dict__[i], id_list)):
                 for j in self.__dict__[i].obj_list():
-                    j.get_deep_obj_list(objs=objs)
-        objs.append(self)
+                    if(j not in objs):
+                        j.get_deep_obj_list(objs=objs)
         return objs
 
     def __str__(self):
