@@ -110,6 +110,7 @@ class interp(machine_state):
             if (kid[0].name == 'code_block'):
                 getattr(obj, f"{action_type}_action_ids").add_obj(
                     action(
+                        m_id=self._m_id,
                         h=self._h,
                         name=action_name,
                         value=jac_ast_to_ir(kid[0]),
@@ -124,6 +125,7 @@ class interp(machine_state):
                 if(func_link):
                     getattr(obj, f"{action_type}_action_ids").add_obj(
                         action(
+                            m_id=self._m_id,
                             h=self._h,
                             name=action_name,
                             value=func_link,
@@ -780,7 +782,7 @@ class interp(machine_state):
                 result = self.parent().spawn_architype(
                     kid[2].token_text(), kind='node').run()
             else:
-                result = node(h=self._h)
+                result = node(m_id=self._m_id, h=self._h)
         return result
 
     def run_walker_ref(self, jac_ast):
@@ -812,7 +814,8 @@ class interp(machine_state):
                 result = self.parent().spawn_architype(
                     kid[0].kid[2].token_text(), kind='edge').run()
             else:
-                result = edge(h=self._h, kind='edge', name='generic')
+                result = edge(m_id=self._m_id, h=self._h,
+                              kind='edge', name='generic')
             return result
 
     def run_edge_to(self, jac_ast):

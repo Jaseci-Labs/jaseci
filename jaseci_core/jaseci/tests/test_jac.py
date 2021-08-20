@@ -30,8 +30,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_sentinel_loading_jac_code(self):
         """Test the generation of jaseci trees for programs in grammar"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.prog1)
         self.assertIsNotNone(
             sent.walker_ids.get_obj_by_name('get_gen_day'))
@@ -40,8 +40,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_sentinel_loading_jac_code_multiple_times(self):
         """Test registering resets correctly for multiple attempts"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.prog0)
         num_walkers = len(sent.walker_ids)
         num_arch = len(sent.arch_ids)
@@ -54,8 +54,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_sentinel_register_dep_on_static_errors(self):
         """Test Jac registering is dependant on correct static/dynamic code"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         correct = "node b { has anchor a; }"
         wrong1 = "adfdsf"
         sent.register_code(correct)
@@ -71,8 +71,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_sentinel_loading_arhitype(self):
         """Test the generation of jaseci trees for programs in grammar"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.prog1)
         self.assertGreater(
             len(sent.arch_ids.get_obj_by_name('month', kind='node').code_ir),
@@ -80,8 +80,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_sentinel_running_basic_walker(self):
         """Test the execution of a basic walker building graph"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name(
             'life', kind='node').run()
@@ -97,8 +97,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_sentinel_setp_running_walker(self):
         """Test the execution of a basic walker building graph"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name(
             'life', kind='node').run()
@@ -123,8 +123,8 @@ class jac_tests(TestCaseHelper, TestCase):
         """
         Test that  no loss or gain of data on second trak on second trek
         """
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name(
             'life', kind='node').run()
@@ -148,8 +148,8 @@ class jac_tests(TestCaseHelper, TestCase):
         Test that arch_ids in sents bind contents to actual nodes
         scalably (node contexts dont get deleted when arch_ids deleted)
         """
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name('life', kind='node').run()
         test_walker = \
@@ -168,8 +168,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_sent_loads_complex_walker_and_arch(self):
         """Test loading attributes of arch and walkers"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name('test', kind='node').run()
         test_walker = \
@@ -186,8 +186,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_work(self):
         """Test that multiple edges between the same two nodes are allowed"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.edgey)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
@@ -202,8 +202,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_delete_all(self):
         """Test that multiple edges deleted correctly if delete all"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.edgey2)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
@@ -214,8 +214,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_delete_all_specific(self):
         """Test that multiple edges deleted correctly if delete all"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.edgey2b)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
@@ -226,8 +226,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_delete_all_labeled(self):
         """Test that multiple edges deleted correctly if delete all"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.edgey2c)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
@@ -238,8 +238,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_delete_filtered(self):
         """Test that multiple edges deleted correctly if delete filtered"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.edgey3)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
@@ -250,8 +250,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_generic_can_be_used_to_specify_generic_edges(self):
         """Test that generic edge tag works"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.edgey4)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
@@ -262,8 +262,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_can_disconnect_multi_nodes_simultaneously(self):
         """Test disconnecting mutilpe nodes"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.edgey5)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
@@ -274,8 +274,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_can_connect_multi_nodes_simultaneously(self):
         """Test connecting mutilpe nodes"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.edgey6)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
@@ -286,8 +286,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_can_disconnect_multi_nodes_advanced(self):
         """Test disconnecting mutilpe nodes advanced"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.edgey7)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
@@ -298,8 +298,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_accessing_edges_basic(self):
         """Test accessing Edges"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.edge_access)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
@@ -315,8 +315,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_has_assign(self):
         """Test assignment on definition"""
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.has_assign)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')

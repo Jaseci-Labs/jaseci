@@ -24,12 +24,15 @@ class anchored():
 class sharable():
     """Utility class for objects that are sharable between users"""
 
-    def __init__(self, m, mode='private'):
-        self.j_master = m
-        self._m = self.j_master
+    def __init__(self, m_id, mode='private'):
+        self.j_master = m_id
         self.j_mode = mode
-        self.j_r_acc_ids = []  # id_list(self)
-        self.j_rw_acc_ids = []  # id_list(self)
+        self.j_r_acc_ids = id_list(self)
+        self.j_rw_acc_ids = id_list(self)
+
+    @property
+    def _m_id(self) -> str:
+        return self.j_master
 
     def make_public(self):
         """Make element publically accessible"""
@@ -61,13 +64,13 @@ class sharable():
         return False
 
 
-class hookable():
+class hookable(sharable):
     """Utility class for objects that are savable to DBs and other stores"""
 
-    def __init__(self, h, persist: bool = True, *args, **kwargs):
+    def __init__(self, h, m_id, persist: bool = True, *args, **kwargs):
         self._h = h  # hook for storing and loading to persistent store
         self._persist = persist
-        #sharable.__init__(self, m,  *args, **kwargs)
+        sharable.__init__(self, m_id, *args, **kwargs)
 
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""

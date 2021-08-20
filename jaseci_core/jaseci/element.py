@@ -43,7 +43,7 @@ class element(hookable):
     json serializable types
     """
 
-    def __init__(self, h, parent_id=None, name='basic',
+    def __init__(self, m_id, h, parent_id=None, name='basic',
                  kind='generic', auto_save=True, *args, **kwargs):
         self.name = name
         self.kind = kind
@@ -51,7 +51,9 @@ class element(hookable):
         self.j_parent = parent_id.urn if parent_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
         self.j_type = type(self).__name__
-        hookable.__init__(self, h,  *args, **kwargs)
+        if(self.j_type == 'master'):
+            m_id = self.jid
+        hookable.__init__(self, h, m_id,  *args, **kwargs)
         if(auto_save):
             self.save()
 
@@ -90,7 +92,7 @@ class element(hookable):
         Hook override to duplicate into mem / another store
         """
 
-        dup = type(self)(h=self._h, persist=persist_dup)
+        dup = type(self)(m_id=self._m_id, h=self._h, persist=persist_dup)
         id_save = dup.id
         for i in dup.__dict__.keys():
             if(type(dup.__dict__[i]) == id_list):
@@ -123,7 +125,7 @@ class element(hookable):
         saving and loading item.
         """
         obj_fields = []
-        element_fields = dir(element(h=mem_hook()))
+        element_fields = dir(element(m_id=self._m_id, h=mem_hook()))
         for i in vars(self).keys():
             if not i.startswith('_') and i not in element_fields:
                 obj_fields.append(i)

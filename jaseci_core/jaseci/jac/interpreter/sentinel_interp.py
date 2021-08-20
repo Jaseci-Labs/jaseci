@@ -40,7 +40,7 @@ class sentinel_interp(interp):
             | KW_EDGE NAME attr_block
             | KW_GRAPH NAME graph_block;
         """
-        arch = architype(h=self._h, code_ir=jac_ast)
+        arch = architype(m_id=self._m_id, h=self._h, code_ir=jac_ast)
         if(self.arch_ids.has_obj_by_name(arch.name)):
             self.arch_ids.remove_obj_by_name(arch.name)
         self.arch_ids.add_obj(arch)
@@ -51,7 +51,7 @@ class sentinel_interp(interp):
         """
         walker: KW_WALKER NAME LBRACE (attr_stmt)* statement* RBRACE;
         """
-        walk = walker(h=self._h, code_ir=jac_ast)
+        walk = walker(m_id=self._m_id, h=self._h, code_ir=jac_ast)
         if(self.walker_ids.has_obj_by_name(walk.name)):
             self.walker_ids.remove_obj_by_name(walk.name)
         self.walker_ids.add_obj(walk)

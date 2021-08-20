@@ -18,7 +18,8 @@ def json_str_to_jsci_dict(input_str, parent_obj=None):
         obj_fields = {}
     for i in obj_fields.keys():
         if(str(i).endswith("_ids") and isinstance(obj_fields[i], list)):
-            obj_fields[i] = id_list(parent_obj, obj_fields[i])
+            obj_fields[i] = id_list(
+                parent_obj=parent_obj, in_list=obj_fields[i])
     return obj_fields
 
 

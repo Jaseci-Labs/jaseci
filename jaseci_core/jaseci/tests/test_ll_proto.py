@@ -14,8 +14,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.gph = graph(h=mem_hook())
-        self.sent = sentinel(h=self.gph._h)
+        self.gph = graph(m_id='anon', h=mem_hook())
+        self.sent = sentinel(m_id='anon', h=self.gph._h)
 
     def tearDown(self):
         super().tearDown()

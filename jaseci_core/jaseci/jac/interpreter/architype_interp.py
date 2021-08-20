@@ -28,14 +28,14 @@ class architype_interp(interp):
                 has_obj=self,
                 action_sets=[]))
         if(kid[0].name == 'KW_NODE'):
-            item = node(
-                h=self._h, kind=kid[0].token_text(), name=kid[1].token_text())
+            item = node(m_id=self._m_id, h=self._h,
+                        kind=kid[0].token_text(), name=kid[1].token_text())
             if(kid[2].name == 'COLON'):
                 item.dimension = int(kid[3].token_text())
             self.run_attr_block(kid[-1], item)
         elif(kid[0].name == 'KW_EDGE'):
-            item = edge(
-                h=self._h, kind=kid[0].token_text(), name=kid[1].token_text())
+            item = edge(m_id=self._m_id, h=self._h,
+                        kind=kid[0].token_text(), name=kid[1].token_text())
             self.run_attr_block(kid[-1], item)
         elif (kid[0].name == 'KW_GRAPH'):
             item = self.run_graph_block(kid[-1])
@@ -141,7 +141,8 @@ class architype_interp(interp):
                 edge_obj = self.parent().arch_ids.get_obj_by_name(
                     edge_kind, kind='edge').run()
             else:
-                edge_obj = edge(h=self._h, kind='edge', name='generic')
+                edge_obj = edge(m_id=self._m_id, h=self._h,
+                                kind='edge', name='generic')
             lhs_node = node_objs.get(op['lhs_node_id'], None)
             if(lhs_node is None):
                 del nodes_def

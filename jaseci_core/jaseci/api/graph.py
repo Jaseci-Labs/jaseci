@@ -21,7 +21,7 @@ class graph_api():
         """
         Create a graph instance and return root node graph object
         """
-        gph = graph(h=self._h)
+        gph = graph(m_id=self._m_id, h=self._h)
         self.graph_ids.add_obj(gph)
         if(set_active):
             self.active_gph_id = gph.jid

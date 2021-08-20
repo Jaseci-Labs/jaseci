@@ -9,7 +9,7 @@ def randomized_graph(num_nodes=10, num_edges=20,  h=mem_hook()):
     nodes = []
     edges = []
     for i in range(num_nodes):
-        nodes.append(node.node(h=h))
+        nodes.append(node.node(m_id='anon', h=h))
 
     while(len(edges) < num_edges):
         node1 = nodes[rand.randrange(num_nodes)]
@@ -19,6 +19,6 @@ def randomized_graph(num_nodes=10, num_edges=20,  h=mem_hook()):
         else:
             edges.append(node1.attach_outbound(node2))
 
-    hd_node = node.node(h=h, dimension=1)
+    hd_node = node.node(m_id='anon', h=h, dimension=1)
     for i in nodes:
         hd_node.make_parent_of(i)

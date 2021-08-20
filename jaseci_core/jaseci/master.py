@@ -26,6 +26,7 @@ class master(element, alias_api, graph_api, sentinel_api,
     """Main class for master functions for user"""
 
     def __init__(self, email="Anonymous", *args, **kwargs):
+        kwargs['m_id'] = 'auto'
         element.__init__(self, name=email,
                          kind="Jaseci Master", *args, **kwargs)
         alias_api.__init__(self)

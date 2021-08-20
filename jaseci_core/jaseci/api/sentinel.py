@@ -26,7 +26,7 @@ class sentinel_api():
         """
         snt = self.sentinel_ids.get_obj_by_name(name, silent=True)
         if(not snt):
-            snt = sentinel(h=self._h, name=name)
+            snt = sentinel(m_id=self._m_id, h=self._h, name=name)
             self.sentinel_ids.add_obj(snt)
             self.api_graph_create(set_active=True)
         if(code):
@@ -54,7 +54,7 @@ class sentinel_api():
 
         snt = self.sentinel_ids.get_obj_by_name(g_snt.name, silent=True)
         if(not snt):
-            snt = sentinel(h=self._h, name=g_snt.name)
+            snt = sentinel(m_id=self._m_id, h=self._h, name=g_snt.name)
             self.sentinel_ids.add_obj(snt)
         if(set_active):
             self.active_snt_id = snt.jid
