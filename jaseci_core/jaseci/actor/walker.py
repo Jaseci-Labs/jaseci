@@ -40,7 +40,7 @@ class walker(element, jac_code, walker_interp, anchored):
         if(not self.current_node_id):
             return None
         else:
-            return self._h.get_obj(uuid.UUID(self.current_node_id))
+            return self._h.get_obj(self, uuid.UUID(self.current_node_id))
 
     @ current_node.setter
     def current_node(self, obj):

@@ -44,7 +44,8 @@ class jac_scope():
             if(found is not None):
                 # return node if it's a node
                 if is_urn(found):
-                    head_obj = self.parent._h.get_obj(uuid.UUID(found))
+                    head_obj = self.parent._h.get_obj(
+                        self.parent, uuid.UUID(found))
                     # head_obj.context['id'] = head_obj.jid
                     if (subname[1] in head_obj.context.keys() or
                             self.try_sync_to_arch(head_obj, subname[1])):
@@ -80,7 +81,7 @@ class jac_scope():
         """Reference to variables value"""
         while (is_urn(val) or type(val) == ctx_value):
             if(is_urn(val)):
-                val = self.parent._h.get_obj(uuid.UUID(val))
+                val = self.parent._h.get_obj(self.parent, uuid.UUID(val))
             if (type(val) == ctx_value):
                 val = val.obj.context[val.name]
         return val

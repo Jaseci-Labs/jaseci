@@ -25,6 +25,7 @@ class core_api_test(TestCaseHelper, TestCase):
 
     def test_sent_global_active(self):
         """Test setting global sentinel"""
+        self.logger_on()
         api = ['admin_api_global_sentinel_set', {'snt': None}]
         self.call(self.mast, api)
         api = ['api_sentinel_active_global', {}]

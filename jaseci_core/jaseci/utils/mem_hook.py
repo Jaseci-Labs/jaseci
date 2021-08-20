@@ -35,16 +35,20 @@ class mem_hook():
         self.mem = {'global': {'GLOB_SENTINEL': None,
                                'GLOB_VARS': {}}, }
 
-    def get_obj(self, item_id):
+    def get_obj(self, caller, item_id):
         """
         Get item from session cache by id, then try store
+        TODO: May need to make this an object copy so you cant do mem writes
         """
         if(item_id in self.mem.keys()):
-            return self.mem[item_id]
+            ret = self.mem[item_id]
+            if(ret.check_read_access(caller)):
+                return ret
         else:
             ret = self.get_obj_from_store(item_id)
             self.mem[item_id] = ret
-            return ret
+            if(ret is not None and ret.check_read_access(caller)):
+                return ret
 
     def has_obj(self, item_id):
         """
@@ -55,18 +59,20 @@ class mem_hook():
         else:
             return self.has_obj_in_store(item_id)
 
-    def save_obj(self, item, persist=False):
+    def save_obj(self, caller, item, persist=False):
         """Save item to session cache, then to store"""
-        self.mem[item.id] = item
-        if (persist):
-            self.save_obj_to_store(item)
+        if(item.check_write_access(caller)):
+            self.mem[item.id] = item
+            if (persist):
+                self.save_obj_to_store(item)
 
-    def destroy_obj(self, item, persist=False):
+    def destroy_obj(self, caller, item, persist=False):
         """Destroy item from session cache then  store"""
-        self.mem[item.id] = None
-        del self.mem[item.id]
-        if(persist):
-            self.destroy_obj_from_store(item)
+        if(item.check_write_access(caller)):
+            self.mem[item.id] = None
+            del self.mem[item.id]
+            if(persist):
+                self.destroy_obj_from_store(item)
 
     def get_glob(self, name):
         """
@@ -160,7 +166,7 @@ class mem_hook():
         Clears memory, should only be used if underlying store is modified
         through other means than methods of this class
         """
-        self.mem = {'global': {}, }
+        self.__init__()
 
     def commit(self):
         """Write through all saves to store"""

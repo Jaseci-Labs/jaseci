@@ -3,7 +3,6 @@ Jaseci object mixins
 
 Various mixins to define properties of Jaseci objects
 """
-from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
 
@@ -38,9 +37,48 @@ class sharable():
         """Make element publically accessible"""
         self.j_mode = 'public'
 
+    def make_read_only(self):
+        """Make element publically readable"""
+        self.j_mode = 'read_only'
+
     def make_private(self):
         """Make element private"""
         self.j_mode = 'private'
+
+    def is_public(self):
+        """Check if element is publically accessible"""
+        return self.j_mode == 'public' or self.j_master == 'anon'
+
+    def is_read_only(self):
+        """Check if element is publically readable"""
+        return self.j_mode == 'read_only'
+
+    def is_readable(self):
+        """Check if element is publically readable"""
+        return self.j_mode == 'read_only' or self.is_public()
+
+    def is_private(self):
+        """Check if element is private"""
+        return self.j_mode == 'private'
+
+    def check_read_access(self, accessor, silent=False):
+        if(accessor._m_id == self._m_id or self.is_readable() or
+           accessor.jid in self.j_r_acc_ids or
+           accessor.jid in self.j_rw_acc_ids):
+            return True
+        if(not silent):
+            logger.error(str(
+                f'{accessor} does not have permission to access {self}'))
+        return False
+
+    def check_write_access(self, accessor, silent=False):
+        if(accessor._m_id == self._m_id or self.is_public() or
+           accessor.jid in self.j_rw_acc_ids):
+            return True
+        if(not silent):
+            logger.error(str(
+                f'{accessor} does not have permission to access {self}'))
+        return False
 
     def give_access(self, m, read_only=True):
         """Give access to a master (user)"""
@@ -83,7 +121,7 @@ class hookable(sharable):
         """
         Write self through hook to persistent storage
         """
-        self._h.save_obj(self, self._persist)
+        self._h.save_obj(self, self, self._persist)
 
     def destroy(self):
         """
@@ -91,11 +129,11 @@ class hookable(sharable):
 
         Note that the object will still exist in python until GC'd
         """
-        self._h.destroy_obj(self, self._persist)
+        self._h.destroy_obj(self, self, self._persist)
         del self
 
     def parent(self):
         """
         Returns the objects for list of owners of this element
         """
-        return self._h.get_obj(self.parent_id)
+        return self._h.get_obj(self, self.parent_id)

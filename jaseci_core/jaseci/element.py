@@ -152,8 +152,9 @@ class element(hookable):
                             del jdict[i][j]
                 if (deep > 0 and isinstance(jdict[i], id_list)):
                     for j in range(len(jdict[i])):
-                        jdict[i][j] = copy.copy(self._h.get_obj(uuid.UUID(
-                            jdict[i][j])).serialize(deep - 1))
+                        jdict[i][j] = copy.copy(
+                            self._h.get_obj(self, uuid.UUID(
+                                jdict[i][j])).serialize(deep - 1))
         return jdict
 
     def json(self, deep=0, detailed=False):

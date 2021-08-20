@@ -35,7 +35,7 @@ class sentinel_api():
             if (not snt.is_active):
                 snt.register_code(code)
         if(snt.walker_ids.has_obj_by_name(auto_run) and self.active_gph_id):
-            nd = self._h.get_obj(uuid.UUID(self.active_gph_id))
+            nd = self._h.get_obj(self, uuid.UUID(self.active_gph_id))
             self.api_walker_run(name=auto_run, nd=nd, ctx=ctx,
                                 snt=snt)
         if(set_active):
@@ -50,7 +50,7 @@ class sentinel_api():
         glob_id = self._h.get_glob('GLOB_SENTINEL')
         if(not glob_id):
             return ['No global sentinel is available!']
-        g_snt = self._h.get_obj(uuid.UUID(glob_id)).duplicate()
+        g_snt = self._h.get_obj(self, uuid.UUID(glob_id)).duplicate()
 
         snt = self.sentinel_ids.get_obj_by_name(g_snt.name, silent=True)
         if(not snt):
@@ -134,7 +134,7 @@ class sentinel_api():
         Returns the default sentinel master is using
         """
         if(self.active_snt_id):
-            default = self._h.get_obj(uuid.UUID(self.active_snt_id))
+            default = self._h.get_obj(self, uuid.UUID(self.active_snt_id))
             return default.serialize(detailed=detailed)
         else:
             return ['No default sentinel is selected!']

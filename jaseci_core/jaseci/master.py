@@ -123,7 +123,7 @@ class master(element, alias_api, graph_api, sentinel_api,
                     if(val is None or val == 'None'):
                         logger.error(
                             f'No {p_type} value for {p_name} provided!')
-                    val = self._h.get_obj(uuid.UUID(val))
+                    val = self._h.get_obj(self, uuid.UUID(val))
                     if (isinstance(val, p_type)):
                         param_map[i] = val
                     else:
