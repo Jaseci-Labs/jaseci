@@ -5,7 +5,7 @@ from obj_api import views
 
 router = DefaultRouter()
 router.register('obj', views.ObjectViewSet)
-router.register('config', views.ConfigViewSet)
+router.register('global', views.ConfigViewSet)
 
 app_name = 'obj_api'
 

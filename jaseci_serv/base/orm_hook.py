@@ -31,7 +31,7 @@ class orm_hook(mem_hook):
         self.configs = configs
         self.red = red
         self.save_obj_list = set()
-        self.save_cfg_list = []
+        self.save_glob_list = []
         super().__init__()
 
     def get_obj_from_store(self, item_id):
@@ -111,7 +111,7 @@ class orm_hook(mem_hook):
             pass
         self.red.delete(item.id.urn)
 
-    def get_cfg_from_store(self, name):
+    def get_glob_from_store(self, name):
         """
         Get global config from externally hooked general store by name
         """
@@ -131,7 +131,7 @@ class orm_hook(mem_hook):
             self.red.set(name, loaded_val)
             return loaded_val
 
-    def has_cfg_in_store(self, name):
+    def has_glob_in_store(self, name):
         """
         Checks for global config existance in store
         """
@@ -139,15 +139,15 @@ class orm_hook(mem_hook):
             return True
         return self.configs.filter(name=name).count()
 
-    def save_cfg_to_store(self, name, value):
+    def save_glob_to_store(self, name, value):
         """Save global config to externally hooked general store"""
-        self.save_cfg_list.append([name, value])
+        self.save_glob_list.append([name, value])
 
-    def list_cfg_from_store(self):
+    def list_glob_from_store(self):
         """Get list of global config to externally hooked general store"""
         return [entry['name'] for entry in self.configs.values('name')]
 
-    def destroy_cfg_from_store(self, name):
+    def destroy_glob_from_store(self, name):
         """Destroy global config to externally hooked general store"""
         try:
             self.configs.get(name=name).delete()
@@ -155,7 +155,7 @@ class orm_hook(mem_hook):
             pass
         self.red.delete(name)
 
-    def commit_cfg(self, name, value):
+    def commit_glob(self, name, value):
         try:
             self.red.set(name, value)
         except Exception as e:
@@ -179,6 +179,6 @@ class orm_hook(mem_hook):
         for i in self.save_obj_list:
             self.commit_obj(i)
         self.save_obj_list = set()
-        for i in self.save_cfg_list:
-            self.commit_cfg(name=i[0], value=i[1])
-        self.save_cfg_list = []
+        for i in self.save_glob_list:
+            self.commit_glob(name=i[0], value=i[1])
+        self.save_glob_list = []
