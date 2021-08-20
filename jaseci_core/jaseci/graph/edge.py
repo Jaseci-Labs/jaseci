@@ -29,7 +29,7 @@ class edge(element, anchored):
 
     def from_node(self):
         """Returns node edge is pointing from"""
-        ret = self._h.get_obj(self, uuid.UUID(self.from_node_id)
+        ret = self._h.get_obj(self._m_id, uuid.UUID(self.from_node_id)
                               ) if self.from_node_id else None
         if (not ret):
             logger.critical(
@@ -42,7 +42,7 @@ class edge(element, anchored):
         """Returns node edge is pointing to"""
         if (not self.to_node_id):
             return None
-        ret = self._h.get_obj(self, uuid.UUID(self.to_node_id)
+        ret = self._h.get_obj(self._m_id, uuid.UUID(self.to_node_id)
                               ) if self.to_node_id else None
         if (not ret):
             logger.critical(str(f"{self} disconnected to target node"))
@@ -59,7 +59,7 @@ class edge(element, anchored):
         node_set = [self.to_node_id, self.from_node_id]
         try:
             node_set.remove(node_obj.id.urn)
-            return self._h.get_obj(self, uuid.UUID(node_set[0]))
+            return self._h.get_obj(self._m_id, uuid.UUID(node_set[0]))
         except ValueError:
             logger.critical(
                 str(f"{self} disconnected to node {node_obj}")

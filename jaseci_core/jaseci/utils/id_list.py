@@ -59,11 +59,13 @@ class id_list(list):
                     f'in id_list of {self.parent_obj}!'))
                 healing.append(i)
                 continue
-            obj = self.parent_obj._h.get_obj(self.parent_obj, uuid.UUID(i))
+            obj = self.parent_obj._h.get_obj(
+                self.parent_obj._m_id, uuid.UUID(i))
             if(obj.name == name):
                 if(kind and obj.kind != kind):
                     continue
-                ret = self.parent_obj._h.get_obj(self.parent_obj, uuid.UUID(i))
+                ret = self.parent_obj._h.get_obj(
+                    self.parent_obj._m_id, uuid.UUID(i))
                 break
         self.heal(healing)
         if (not ret and not silent):
@@ -91,7 +93,8 @@ class id_list(list):
         ret = []
         healing = []
         for i in self:
-            obj = self.parent_obj._h.get_obj(self.parent_obj, uuid.UUID(i))
+            obj = self.parent_obj._h.get_obj(
+                self.parent_obj._m_id, uuid.UUID(i))
             if (not obj):
                 logger.critical(str(
                     f'Self healing: {i} not found ' +
@@ -99,7 +102,7 @@ class id_list(list):
                 healing.append(i)
             else:
                 ret.append(self.parent_obj._h.get_obj(
-                    self.parent_obj, uuid.UUID(i)))
+                    self.parent_obj._m_id, uuid.UUID(i)))
         self.heal(healing)
         return ret
 
@@ -134,7 +137,8 @@ class id_list(list):
                 str(f"List in '{self.parent_obj}' is empty!")
             )
             return None
-        return self.parent_obj._h.get_obj(self.parent_obj, uuid.UUID(self[0]))
+        return self.parent_obj._h.get_obj(
+            self.parent_obj._m_id, uuid.UUID(self[0]))
 
     def pop_first_obj(self):
         """Get first object in list"""

@@ -64,7 +64,8 @@ class graph_api():
         Returns the default graph master is using
         """
         if(self.active_gph_id):
-            default = self._h.get_obj(self, uuid.UUID(self.active_gph_id))
+            default = self._h.get_obj(
+                self._m_id, uuid.UUID(self.active_gph_id))
             return default.serialize(detailed=detailed)
         else:
             return ['No default graph is selected!']

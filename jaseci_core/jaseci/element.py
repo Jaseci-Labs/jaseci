@@ -153,7 +153,7 @@ class element(hookable):
                 if (deep > 0 and isinstance(jdict[i], id_list)):
                     for j in range(len(jdict[i])):
                         jdict[i][j] = copy.copy(
-                            self._h.get_obj(self, uuid.UUID(
+                            self._h.get_obj(self._m_id, uuid.UUID(
                                 jdict[i][j])).serialize(deep - 1))
         return jdict
 

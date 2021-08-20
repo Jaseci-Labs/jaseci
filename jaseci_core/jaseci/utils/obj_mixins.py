@@ -61,23 +61,23 @@ class sharable():
         """Check if element is private"""
         return self.j_mode == 'private'
 
-    def check_read_access(self, accessor, silent=False):
-        if(accessor._m_id == self._m_id or self.is_readable() or
-           accessor.jid in self.j_r_acc_ids or
-           accessor.jid in self.j_rw_acc_ids):
+    def check_read_access(self, caller_id, silent=False):
+        if(caller_id == self._m_id or self.is_readable() or
+           caller_id in self.j_r_acc_ids or
+           caller_id in self.j_rw_acc_ids):
             return True
         if(not silent):
             logger.error(str(
-                f'{accessor} does not have permission to access {self}'))
+                f'{caller_id} does not have permission to access {self}'))
         return False
 
-    def check_write_access(self, accessor, silent=False):
-        if(accessor._m_id == self._m_id or self.is_public() or
-           accessor.jid in self.j_rw_acc_ids):
+    def check_write_access(self, caller_id, silent=False):
+        if(caller_id == self._m_id or self.is_public() or
+           caller_id in self.j_rw_acc_ids):
             return True
         if(not silent):
             logger.error(str(
-                f'{accessor} does not have permission to access {self}'))
+                f'{caller_id} does not have permission to access {self}'))
         return False
 
     def give_access(self, m, read_only=True):
@@ -121,7 +121,7 @@ class hookable(sharable):
         """
         Write self through hook to persistent storage
         """
-        self._h.save_obj(self, self, self._persist)
+        self._h.save_obj(self._m_id, self, self._persist)
 
     def destroy(self):
         """
@@ -129,11 +129,11 @@ class hookable(sharable):
 
         Note that the object will still exist in python until GC'd
         """
-        self._h.destroy_obj(self, self, self._persist)
+        self._h.destroy_obj(self._m_id, self, self._persist)
         del self
 
     def parent(self):
         """
         Returns the objects for list of owners of this element
         """
-        return self._h.get_obj(self, self.parent_id)
+        return self._h.get_obj(self._m_id, self.parent_id)

@@ -2,6 +2,7 @@ from operator import itemgetter
 from jaseci.utils.utils import logger, app_logger
 from datetime import datetime
 import sys
+import uuid
 
 
 def log(param_list, meta):
@@ -73,16 +74,18 @@ def set_env(param_list, meta):
 
     Return - Sorted list
     """
-    meta['master'].admin_api_global_set(param_list[0], param_list[1])
-    return meta['master'].admin_api_global_get(param_list[0])
+    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    mast.admin_api_global_set(param_list[0], param_list[1])
+    return mast.admin_api_global_get(param_list[0])
 
 
 def get_env(param_list, meta):
     """Get utc date time for now in iso format"""
-    return meta['master'].admin_api_global_get(param_list[0])
+    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    return mast.admin_api_global_get(param_list[0])
 
 
 def destroy_env(param_list, meta):
     """Get utc date time for now in iso format"""
-
-    return meta['master'].admin_api_global_delete(param_list[0])
+    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    return mast.admin_api_global_delete(param_list[0])

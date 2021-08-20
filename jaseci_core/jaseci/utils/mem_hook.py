@@ -35,19 +35,19 @@ class mem_hook():
         self.mem = {'global': {'GLOB_SENTINEL': None,
                                'GLOB_VARS': {}}, }
 
-    def get_obj(self, caller, item_id):
+    def get_obj(self, caller_id, item_id):
         """
         Get item from session cache by id, then try store
         TODO: May need to make this an object copy so you cant do mem writes
         """
         if(item_id in self.mem.keys()):
             ret = self.mem[item_id]
-            if(ret.check_read_access(caller)):
+            if(ret.check_read_access(caller_id)):
                 return ret
         else:
             ret = self.get_obj_from_store(item_id)
             self.mem[item_id] = ret
-            if(ret is not None and ret.check_read_access(caller)):
+            if(ret is not None and ret.check_read_access(caller_id)):
                 return ret
 
     def has_obj(self, item_id):
@@ -59,16 +59,16 @@ class mem_hook():
         else:
             return self.has_obj_in_store(item_id)
 
-    def save_obj(self, caller, item, persist=False):
+    def save_obj(self, caller_id, item, persist=False):
         """Save item to session cache, then to store"""
-        if(item.check_write_access(caller)):
+        if(item.check_write_access(caller_id)):
             self.mem[item.id] = item
             if (persist):
                 self.save_obj_to_store(item)
 
-    def destroy_obj(self, caller, item, persist=False):
+    def destroy_obj(self, caller_id, item, persist=False):
         """Destroy item from session cache then  store"""
-        if(item.check_write_access(caller)):
+        if(item.check_write_access(caller_id)):
             self.mem[item.id] = None
             del self.mem[item.id]
             if(persist):

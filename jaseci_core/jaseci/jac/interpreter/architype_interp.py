@@ -78,7 +78,8 @@ class architype_interp(interp):
         local_state = m._jac_scope.local_scope
         self.report = self.report + m.report
         if(root_node_id in local_state.keys()):
-            obj = self._h.get_obj(self, uuid.UUID(local_state[root_node_id]))
+            obj = self._h.get_obj(
+                self._m_id, uuid.UUID(local_state[root_node_id]))
             if(not isinstance(obj, node)):
                 self.rt_error(f"{root_node_id} is {type(obj)} not node!",
                               kid[2])

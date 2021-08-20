@@ -68,7 +68,7 @@ class jac_tests(TestCaseHelper, TestCase):
         lday_walk.run()
         ret = lday_walk.context['latest_day']
         self.assertEqual(self.gph._h.get_obj(
-            self.gph, uuid.UUID(ret)).name, 'day')
+            self.gph._m_id, uuid.UUID(ret)).name, 'day')
 
     def test_carry_forward(self):
         """Test loading/parsing ll prototype"""
@@ -85,5 +85,5 @@ class jac_tests(TestCaseHelper, TestCase):
         lday_walk.prime(self.gph)
         lday_walk.run()
         day = self.gph._h.get_obj(
-            self.gph, uuid.UUID(lday_walk.context['day_node']))
+            self.gph._m_id, uuid.UUID(lday_walk.context['day_node']))
         self.assertGreater(len(day.edge_ids), 3)
