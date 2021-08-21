@@ -3,6 +3,7 @@ from jaseci.utils.utils import logger, app_logger
 from datetime import datetime
 import sys
 import uuid
+import json
 
 
 def log(param_list, meta):
@@ -66,26 +67,32 @@ def time_now(param_list, meta):
     return datetime.utcnow().isoformat()
 
 
-def set_env(param_list, meta):
+def set_global(param_list, meta):
     """
-    Set global variable visiable to all walkers/users
+    Set global variable visible to all walkers/users
     Param 1 - name
     Param 2 - value
 
     Return - Sorted list
     """
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    mast.admin_api_global_set(param_list[0], param_list[1])
-    return mast.admin_api_global_get(param_list[0])
+    mast.admin_api_global_set(param_list[0], json.dumps(param_list[1]))
+    return json.loads(mast.admin_api_global_get(param_list[0]))
 
 
-def get_env(param_list, meta):
-    """Get utc date time for now in iso format"""
+def get_global(param_list, meta):
+    """
+    Set global variable visible to all walkers/users
+    Param 1 - name
+    Param 2 - value
+
+    Return - Sorted list
+    """
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    return mast.admin_api_global_get(param_list[0])
+    return json.loads(mast.admin_api_global_get(param_list[0]))
 
 
-def destroy_env(param_list, meta):
+def destroy_global(param_list, meta):
     """Get utc date time for now in iso format"""
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
     return mast.admin_api_global_delete(param_list[0])

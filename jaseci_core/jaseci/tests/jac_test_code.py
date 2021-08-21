@@ -637,3 +637,21 @@ has_assign = \
         }
     }
     """
+
+
+set_get_global = \
+    """
+    walker setter {
+        root {
+            std.set_global('globby', 59);
+        }
+    }
+
+    walker getter {
+        has a;
+        root {
+            a=std.get_global('globby');
+            std.log(std.get_global('globby'));
+        }
+    }
+    """

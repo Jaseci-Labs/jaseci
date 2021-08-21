@@ -4,6 +4,7 @@ from jaseci.jac.jac_parse.jacParser import jacParser
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
+from jaseci.master import master
 
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
@@ -123,6 +124,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """
         Test that  no loss or gain of data on second trak on second trek
         """
+        self.logger_on()
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.prog1)
@@ -136,10 +138,12 @@ class jac_tests(TestCaseHelper, TestCase):
                          '2010-08-03T03:00:00.000000')
         test_walker.run()
         after_gen = len(gph._h.mem)
+        self.log(gph._h.mem)
         test_walker.prime(test_node)
         test_walker.context['date'] = '2010-08-03T03:00:00.000000'
         test_walker.run()
         after_track = len(gph._h.mem)
+        self.log(gph._h.mem)
         # Tests that more items were created the first time through
         self.assertEqual(after_gen, after_track)
 
@@ -181,8 +185,9 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_availabilty_of_global_functions(self):
         """Test preset function loading"""
-        from jaseci.actions.utils.global_actions import global_action_ids
-        self.assertTrue(global_action_ids.has_obj_by_name('std.log'))
+        from jaseci.actions.utils.global_actions import get_global_actions
+        mast = master(h=mem_hook())
+        self.assertTrue(get_global_actions(mast).has_obj_by_name('std.log'))
 
     def test_multiple_edged_between_nodes_work(self):
         """Test that multiple edges between the same two nodes are allowed"""
@@ -330,3 +335,19 @@ class jac_tests(TestCaseHelper, TestCase):
                 self.assertEqual(i.context['a'], 8)
                 num += 1
         self.assertEqual(num, 2)
+
+    def test_global_get_set(self):
+        """Test assignment on definition"""
+        mast = master(h=mem_hook())
+        gph = graph(m_id=mast.jid, h=mast._h)
+        sent = sentinel(m_id=mast.jid, h=gph._h)
+        sent.register_code(jtc.set_get_global)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('setter')
+        test_walker.prime(gph)
+        test_walker.run()
+        test_walker2 = \
+            sent.walker_ids.get_obj_by_name('getter')
+        test_walker2.prime(gph)
+        test_walker2.run()
+        self.assertEqual(test_walker2.context['a'], 59)

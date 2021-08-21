@@ -5,6 +5,7 @@ Various mixins to define properties of Jaseci objects
 """
 from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
+import uuid
 
 
 class anchored():
@@ -24,6 +25,8 @@ class sharable():
     """Utility class for objects that are sharable between users"""
 
     def __init__(self, m_id, mode='private'):
+        if(m_id == 'anon'):
+            m_id = uuid.UUID(int=0).urn
         self.j_master = m_id
         self.j_mode = mode
         self.j_r_acc_ids = id_list(self)
@@ -47,7 +50,7 @@ class sharable():
 
     def is_public(self):
         """Check if element is publically accessible"""
-        return self.j_mode == 'public' or self.j_master == 'anon'
+        return self.j_mode == 'public' or self.j_master == uuid.UUID(int=0)
 
     def is_read_only(self):
         """Check if element is publically readable"""

@@ -3,7 +3,7 @@ Variable scope manager for Jac
 
 Utility for all runtime interaction with variables in different scopes
 """
-from jaseci.actions.utils.global_actions import global_action_ids
+from jaseci.actions.utils.global_actions import get_global_actions
 from jaseci.jac.jac_set import jac_set
 from jaseci.element import element
 from jaseci.utils.utils import is_urn
@@ -24,7 +24,7 @@ class jac_scope():
         self.local_scope = {}
         self.has_obj = has_obj if has_obj else self
         self.context = {}
-        self.action_sets = [global_action_ids] + action_sets
+        self.action_sets = [get_global_actions(parent)] + action_sets
 
     def add_actions(self, actions):
         self.action_sets.append(actions)
