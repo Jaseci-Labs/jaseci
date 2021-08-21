@@ -116,8 +116,8 @@ class hookable(sharable):
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""
         if(not silent and target._h != self._h):
-            logger.critical(str("Hook for {} does not match {}".
-                                format(target, self)))
+            logger.critical(str("Hook for {} does not match {}, {} != {}".
+                                format(target, self, target._h, self._h)))
         return target._h == self._h
 
     def save(self):

@@ -124,7 +124,6 @@ class jac_tests(TestCaseHelper, TestCase):
         """
         Test that  no loss or gain of data on second trak on second trek
         """
-        self.logger_on()
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.prog1)
