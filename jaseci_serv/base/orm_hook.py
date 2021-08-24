@@ -31,7 +31,7 @@ class orm_hook(mem_hook):
         self.configs = configs
         self.red = red
         self.save_obj_list = set()
-        self.save_glob_list = []
+        self.save_glob_dict = {}
         super().__init__()
 
     def get_obj_from_store(self, item_id):
@@ -110,6 +110,8 @@ class orm_hook(mem_hook):
             # logger.error("Object does not exists so delete aborted!")
             pass
         self.red.delete(item.id.urn)
+        if(item in self.save_obj_list):
+            self.save_obj_list.remove(item)
 
     def get_glob_from_store(self, name):
         """
@@ -123,7 +125,7 @@ class orm_hook(mem_hook):
                 loaded_val = self.configs.get(name=name).value
             except ObjectDoesNotExist:
                 logger.error(
-                    str(f"Config {name} does not exist in Django ORM!"),
+                    str(f"Global {name} does not exist in Django ORM!"),
                     exc_info=True
                 )
                 return None
@@ -141,7 +143,7 @@ class orm_hook(mem_hook):
 
     def save_glob_to_store(self, name, value):
         """Save global config to externally hooked general store"""
-        self.save_glob_list.append([name, value])
+        self.save_glob_dict[name] = value
 
     def list_glob_from_store(self):
         """Get list of global config to externally hooked general store"""
@@ -154,6 +156,8 @@ class orm_hook(mem_hook):
         except ObjectDoesNotExist:
             pass
         self.red.delete(name)
+        if(name in self.save_glob_dict.keys()):
+            del self.save_glob_dict[name]
 
     def commit_glob(self, name, value):
         try:
@@ -179,6 +183,6 @@ class orm_hook(mem_hook):
         for i in self.save_obj_list:
             self.commit_obj(i)
         self.save_obj_list = set()
-        for i in self.save_glob_list:
-            self.commit_glob(name=i[0], value=i[1])
-        self.save_glob_list = []
+        for i in self.save_glob_dict.keys():
+            self.commit_glob(name=i, value=self.save_glob_dict[i])
+        self.save_glob_dict = {}

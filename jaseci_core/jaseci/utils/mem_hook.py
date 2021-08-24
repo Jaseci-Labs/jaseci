@@ -124,6 +124,13 @@ class mem_hook():
         if(persist):
             self.destroy_glob_from_store(name)
 
+    def clear_mem_cache(self):
+        """
+        Clears memory, should only be used if underlying store is modified
+        through other means than methods of this class
+        """
+        self.__init__()
+
     def get_obj_from_store(self, item_id):
         """
         Get item from externally hooked general store by id
@@ -160,13 +167,6 @@ class mem_hook():
 
     def destroy_glob_from_store(self, name):
         """Destroy global config to externally hooked general store"""
-
-    def clear_mem_cache(self):
-        """
-        Clears memory, should only be used if underlying store is modified
-        through other means than methods of this class
-        """
-        self.__init__()
 
     def commit(self):
         """Write through all saves to store"""
