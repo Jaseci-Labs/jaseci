@@ -35,19 +35,20 @@ class mem_hook():
         self.mem = {'global': {'GLOB_SENTINEL': None,
                                'GLOB_VARS': {}}, }
 
-    def get_obj(self, caller_id, item_id):
+    def get_obj(self, caller_id, item_id, override=False):
         """
         Get item from session cache by id, then try store
         TODO: May need to make this an object copy so you cant do mem writes
         """
         if(item_id in self.mem.keys()):
             ret = self.mem[item_id]
-            if(ret.check_read_access(caller_id)):
+            if(ret.check_read_access(caller_id) and not override):
                 return ret
         else:
             ret = self.get_obj_from_store(item_id)
             self.mem[item_id] = ret
-            if(ret is not None and ret.check_read_access(caller_id)):
+            if(ret is not None and ret.check_read_access(caller_id) and
+               not override):
                 return ret
 
     def has_obj(self, item_id):

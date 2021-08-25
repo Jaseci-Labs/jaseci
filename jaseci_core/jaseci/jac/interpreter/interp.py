@@ -997,12 +997,10 @@ class interp(machine_state):
         """
         kid = jac_ast.kid
         ret = ''
-        while True:
-            ret += kid[0].token_text()
-            kid = kid[1:]
-            if(not len(kid) or kid[0].name != 'DOT'):
-                break
-            if(kid[0].name == 'DOT'):
+        for i in kid:
+            if(i.name == 'NAME'):
+                ret += i.token_text()
+                if(i == kid[-1]):
+                    break
                 ret += '.'
-                kid = kid[1:]
         return ret

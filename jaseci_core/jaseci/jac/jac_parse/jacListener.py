@@ -44,6 +44,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#namespace_list.
+    def enterNamespace_list(self, ctx:jacParser.Namespace_listContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#namespace_list.
+    def exitNamespace_list(self, ctx:jacParser.Namespace_listContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#walk_entry_block.
     def enterWalk_entry_block(self, ctx:jacParser.Walk_entry_blockContext):
         pass

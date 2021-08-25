@@ -33,11 +33,12 @@ class master(element, alias_api, graph_api, sentinel_api,
         graph_api.__init__(self)
         sentinel_api.__init__(self)
 
-    def api_object_get(self, obj: element, detailed: bool = False):
+    def api_object_get(self, obj: element, depth: int = 0,
+                       detailed: bool = False):
         """
         Print the details of arbitrary jaseci object
         """
-        return obj.serialize(detailed=detailed)
+        return obj.serialize(deep=depth, detailed=detailed)
 
     def destroy(self):
         """

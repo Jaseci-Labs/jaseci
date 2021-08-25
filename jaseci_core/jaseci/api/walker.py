@@ -30,12 +30,14 @@ class walker_api():
                        detailed: bool = False):
         """
         Get a walker rendered with specific format
-        Valid Formats: {default, code, ir, }
+        Valid Formats: {default, code, ir, keys, }
         """
         if(format == 'code'):
             return wlk._jac_ast.get_text()
         elif(format == 'ir'):
             return wlk.ir_dict()
+        elif(format == 'keys'):
+            return wlk.namespaces
         else:
             return wlk.serialize(detailed=detailed)
 

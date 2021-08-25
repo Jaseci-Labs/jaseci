@@ -20,6 +20,7 @@ class walker(element, jac_code, walker_interp, anchored):
 
     def __init__(self, code_ir=None, *args, **kwargs):
         self.activity_action_ids = id_list(self)
+        self.namespaces = {}
         self.context = {}
         self.profile = {}
         # Process state
@@ -48,6 +49,10 @@ class walker(element, jac_code, walker_interp, anchored):
             self.current_node_id = obj.id.urn
         else:
             self.current_node_id = None
+
+    def namespace_keys(self):
+        """Return list of md5 keys for namespaces"""
+        return self.namespaces.keys()
 
     def step(self):
         """

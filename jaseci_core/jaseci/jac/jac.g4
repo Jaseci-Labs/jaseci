@@ -11,10 +11,12 @@ architype:
 	| KW_GRAPH NAME graph_block;
 
 walker:
-	KW_WALKER NAME LBRACE attr_stmt* walk_entry_block? (
+	KW_WALKER NAME namespace_list LBRACE attr_stmt* walk_entry_block? (
 		statement
 		| walk_activity_block
 	)* walk_exit_block? RBRACE;
+
+namespace_list: COLON NAME (COMMA NAME)* |;
 
 walk_entry_block: KW_WITH KW_ENTRY code_block;
 

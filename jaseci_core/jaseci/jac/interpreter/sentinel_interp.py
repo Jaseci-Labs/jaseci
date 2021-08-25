@@ -49,7 +49,11 @@ class sentinel_interp(interp):
     # Note: Sentinels only registers the attr_stmts
     def load_walker(self, jac_ast):
         """
-        walker: KW_WALKER NAME LBRACE (attr_stmt)* statement* RBRACE;
+        walker:
+            KW_WALKER NAME namespace_list LBRACE attr_stmt* walk_entry_block? (
+                statement
+                | walk_activity_block
+            )* walk_exit_block? RBRACE;
         """
         walk = walker(m_id=self._m_id, h=self._h, code_ir=jac_ast)
         if(self.walker_ids.has_obj_by_name(walk.name)):
