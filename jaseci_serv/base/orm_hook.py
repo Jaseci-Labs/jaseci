@@ -40,7 +40,8 @@ class orm_hook(mem_hook):
             j_type = json.loads(loaded_obj)['j_type']
             class_for_type = \
                 utils.find_class_and_import(j_type, core_mod)
-            ret_obj = class_for_type(h=self, auto_save=False)
+            ret_obj = class_for_type(
+                h=self, m_id=loaded_obj['j_master'], auto_save=False)
             ret_obj.json_load(loaded_obj)
 
             return ret_obj
@@ -58,7 +59,8 @@ class orm_hook(mem_hook):
 
             class_for_type = \
                 utils.find_class_and_import(loaded_obj.j_type, core_mod)
-            ret_obj = class_for_type(h=self, auto_save=False)
+            ret_obj = class_for_type(
+                h=self, m_id=loaded_obj.j_master, auto_save=False)
             utils.map_assignment_of_matching_fields(ret_obj, loaded_obj)
             assert(uuid.UUID(ret_obj.jid) == loaded_obj.jid)
 
