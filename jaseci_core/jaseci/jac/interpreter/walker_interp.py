@@ -8,7 +8,6 @@ from jaseci.graph.node import node
 from jaseci.jac.interpreter.interp import interp
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.machine.jac_scope import jac_scope
-import hashlib
 
 
 class walker_interp(interp):
@@ -34,9 +33,7 @@ class walker_interp(interp):
 
         self.trigger_entry_actions()
         kid = jac_ast.kid
-        for i in self.run_namespace_list(kid[2]):
-            name = self._m_id+i
-            self.namespaces[hashlib.md5(name.encode())] = i
+
         if(self.current_step == 0):
             for i in kid:
                 if(i.name == 'attr_stmt'):
@@ -54,17 +51,6 @@ class walker_interp(interp):
         # self.trigger_activity_actions()
         self.trigger_exit_actions()
         self.pop_scope()
-
-    def run_namespace_list(self, jac_ast):
-        """
-        namespace_list: NAME (COMMA NAME)* |;
-        """
-        kid = jac_ast.kid
-        ret = []
-        for i in kid:
-            if(i.name == 'NAME'):
-                ret.append(i.token_text())
-        return ret
 
     def run_walk_entry_block(self, jac_ast):
         """

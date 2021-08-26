@@ -122,7 +122,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         snt_id = self.call_cast('sentinel list')[0]['jid']
         self.call(f'sentinel active set -snt {snt_id}')
         self.call(f'sentinel active get')
-        self.assertEqual(len(self.call_cast(f'walker list')), 21)
+        self.assertEqual(len(self.call_cast(f'walker list')), 22)
 
     def test_jsctl_init_auto_called(self):
         """Tests that alias mapping api works"""
@@ -143,3 +143,15 @@ class jsctl_test(TestCaseHelper, TestCase):
         r = self.call('walker --help')
         self.assertIn('summon', r)
         self.assertIn('namespace key', r)
+
+    def test_public_apis_walker_summon_auth(self):
+        r = self.call_cast('walker get -format keys -wlk zsb:walker:pubinit')
+        key = list(r.keys())[0]
+        r = self.call_cast('alias list')
+        walk = r['zsb:walker:pubinit']
+        nd = r['active:graph']
+        r = self.call_cast(f'walker summon -key {key} -walk {walk} -nd {nd}')
+        self.assertEqual(len(r), 0)
+        key = 'aaaaaaaa'
+        r = self.call_cast(f'walker summon -key {key} -walk {walk} -nd {nd}')
+        self.assertEqual(len(r), 1)

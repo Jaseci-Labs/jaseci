@@ -212,6 +212,16 @@ walker init {
     }
 }
 
+walker pubinit:anyone {
+    root {
+        take (--> node::botset) else {
+            spawn here --> node::botset;
+            std.log(-->);
+            disengage;
+        }
+    }
+}
+
 
 node data_nugget { has anchor name, data; }
 walker create_nugget { has name, data; spawn here --> node::data_nugget(name=name, data=data); }

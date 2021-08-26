@@ -39,7 +39,7 @@ class sentinel_api():
             self.api_walker_run(name=auto_run, nd=nd, ctx=ctx,
                                 snt=snt)
         if(set_active):
-            self.active_snt_id = snt.jid
+            self.api_sentinel_active_set(snt)
         self.extract_snt_aliases(snt)
         return snt.serialize()
 
@@ -57,7 +57,7 @@ class sentinel_api():
             snt = sentinel(m_id=self._m_id, h=self._h, name=g_snt.name)
             self.sentinel_ids.add_obj(snt)
         if(set_active):
-            self.active_snt_id = snt.jid
+            self.api_sentinel_active_set(snt)
         return self.api_sentinel_set(code=g_snt.code_ir, snt=snt,
                                      format='ir')
 
@@ -109,6 +109,7 @@ class sentinel_api():
         Sets the default sentinel master should use
         """
         self.active_snt_id = snt.jid
+        self.api_alias_register('active:sentinel', snt.jid)
         return [f'Sentinel {snt.id} set as default']
 
     def api_sentinel_active_unset(self):
@@ -116,6 +117,7 @@ class sentinel_api():
         Unsets the default sentinel master should use
         """
         self.active_snt_id = None
+        self.api_alias_delete('active:sentinel')
         return ['Default sentinel unset']
 
     def api_sentinel_active_global(self):
@@ -127,6 +129,7 @@ class sentinel_api():
         if(not glob_id):
             return ['No global sentinel is available!']
         self.active_snt_id = glob_id
+        self.api_alias_register('active:sentinel', glob_id)
         return [f'Global sentinel {glob_id} set as default']
 
     def api_sentinel_active_get(self, detailed: bool = False):
@@ -146,7 +149,7 @@ class sentinel_api():
         """
         self.remove_snt_aliases(snt)
         if(self.active_snt_id == snt.jid):
-            self.active_snt_id = None
+            self.api_sentinel_active_unset()
         self.sentinel_ids.destroy_obj(snt)
         return [f'Sentinel {snt.id} successfully deleted']
 

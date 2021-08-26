@@ -54,6 +54,12 @@ class walker(element, jac_code, walker_interp, anchored):
         """Return list of md5 keys for namespaces"""
         return self.namespaces.keys()
 
+    def get_ns_key(self, ns):
+        """Return key for specific namespace"""
+        for i in self.namespaces.keys():
+            if(self.namespaces[i] == ns):
+                return i
+
     def step(self):
         """
         Take single step through program
