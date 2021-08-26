@@ -138,3 +138,8 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertEqual(len(self.call_cast('graph get')), 1)
         self.call(f'walker run -name init')
         self.assertEqual(len(self.call_cast('graph get')), 3)
+
+    def test_public_apis_present(self):
+        r = self.call('walker --help')
+        self.assertIn('summon', r)
+        self.assertIn('namespace key', r)

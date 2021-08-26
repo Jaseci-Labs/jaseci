@@ -9,11 +9,11 @@ import pickle
 import functools
 import json
 import requests
-from inspect import signature
 
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
 from jaseci.master import master as master_class
+from jaseci.api.public import public_api
 from .ci_app import ci_program
 
 session = {
@@ -52,6 +52,8 @@ def remote_api_call(payload, api_name):
         path = '/jac/'+api_name[4:]
     elif(api_name.startswith('admin_api_')):
         path = '/admin/'+api_name[10:]
+    elif(api_name.startswith('public_api_')):
+        path = '/public/'+api_name[11:]
     ret = requests.post(connection['url']+path,
                         data=payload,
                         headers=connection['headers'])
@@ -62,7 +64,7 @@ def remote_api_call(payload, api_name):
     return ret
 
 
-def interface_api(api_name, **kwargs):
+def interface_api(api_name, is_public, **kwargs):
     """
     Interfaces Master apis after processing arguments/parameters
     from cli
@@ -78,6 +80,9 @@ def interface_api(api_name, **kwargs):
         kwargs['ctx'] = json.loads(kwargs['ctx'])
     if(connection['token'] and connection['url']):
         out = remote_api_call(kwargs, api_name)
+    elif(is_public):
+        hook = session['master']._h
+        out = public_api().general_interface_to_api(hook, kwargs, api_name)
     else:
         out = session['master'].general_interface_to_api(kwargs, api_name)
     if(isinstance(out, dict) or isinstance(out, list)):
@@ -98,12 +103,20 @@ def extract_api_tree():
     signatures in leaves from API function names in Master
     """
     api_funcs = {}
-    for i in dir(session['master']):
-        if (i.startswith('api_') or i.startswith('admin_api_')):
+    for i in dir(session['master'])+dir(public_api()):
+        if (i.startswith('api_') or i.startswith('admin_api_') or
+                i.startswith('public_api_')):
+            is_public = False
             # Get function names and signatures
             func_str = i[4:] if i.startswith('api_') else i[10:]
+            if(func_str[0] == '_'):  # is public api
+                func_str = func_str[1:]
+                is_public = True
             cmd_groups = func_str.split('_')
-            func_sig = signature(getattr(session['master'], i))
+            func_sig = session['master'].get_api_signature(
+                i) if not is_public else public_api().get_api_signature(i)
+            func_doc = session['master'].get_api_doc(
+                i) if not is_public else public_api().get_api_doc(i)
 
             # Build hierarchy of command groups
             api_root = api_funcs
@@ -111,20 +124,24 @@ def extract_api_tree():
                 if (j not in api_root.keys()):
                     api_root[j] = {}
                 api_root = api_root[j]
-            api_root['leaf'] = [i, func_sig]
+            api_root['leaf'] = [i, func_sig, is_public, func_doc]
     return api_funcs
 
 
-def build_cmd(group_func, func_name, api_name):
+def build_cmd(group_func, func_name, leaf):
     """
     Generates Click function with options for each command
     group and leaf signatures
+    leaf is format: [api_name, func_sig, is_public, func_doc]
     """
+
     f = functools.partial(
-        copy_func(interface_api, func_name), api_name=api_name)
+        copy_func(interface_api, func_name),
+        api_name=leaf[0], is_public=leaf[2])
     f.__name__ = func_name
-    f.__doc__ = session['master'].get_api_doc(api_name)
-    func_sig = session['master'].get_api_signature(api_name)
+    f.__doc__ = leaf[3]
+
+    func_sig = leaf[1]
     for i in func_sig.parameters.keys():
         if(i == 'self'):
             continue
@@ -153,7 +170,7 @@ def cmd_tree_builder(location, group_func=cli, cmd_str=''):
     for i in location.keys():
         loc = location[i]
         if ('leaf' in loc):
-            build_cmd(group_func, i, loc['leaf'][0])
+            build_cmd(group_func, i, loc['leaf'])
             continue
         else:
             f = copy_func(blank_func, i)
