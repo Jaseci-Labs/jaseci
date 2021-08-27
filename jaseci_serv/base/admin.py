@@ -41,15 +41,16 @@ admin.site.register(models.User, UserAdmin)
 
 class JaseciObjectAdmin (admin.ModelAdmin):
     ordering = ['j_timestamp']
-    list_display = ('jid', 'name', 'j_type', 'j_owner', 'j_timestamp')
+    list_display = ('jid', 'name', 'j_type', 'j_parent',
+                    'j_master', 'j_timestamp')
 
 
 admin.site.register(models.JaseciObject, JaseciObjectAdmin)
 
 
-class GlobalConfigAdmin (admin.ModelAdmin):
+class GlobalVarsAdmin (admin.ModelAdmin):
     ordering = ['name']
     list_display = ('name', 'value')
 
 
-admin.site.register(models.GlobalConfig, GlobalConfigAdmin)
+admin.site.register(models.GlobalVars, GlobalVarsAdmin)

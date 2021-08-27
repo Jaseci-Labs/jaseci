@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 
-from base.models import GlobalConfig
+from base.models import GlobalVars
 from jaseci.utils.mem_hook import mem_hook
 
 # Alias for create user
@@ -34,7 +34,7 @@ class jaseci_engine_orm_config_tests_private(TestCaseHelper, TestCase):
         h.save_glob('GOOBY', 'MOOBY')
         h.commit()
 
-        load_test = GlobalConfig.objects.get(name='GOOBY')
+        load_test = GlobalVars.objects.get(name='GOOBY')
         self.assertEqual(load_test.value, 'MOOBY')
 
     def test_jsci_db_to_engine_hook_loading(self):
@@ -49,8 +49,8 @@ class jaseci_engine_orm_config_tests_private(TestCaseHelper, TestCase):
         user._h.red.delete('GOOBY1')
         self.assertNotIn('GOOBY1', user._h.mem['global'].keys())
 
-        load_test = GlobalConfig.objects.filter(name='GOOBY1').first()
-        self.assertIsInstance(load_test, GlobalConfig)
+        load_test = GlobalVars.objects.filter(name='GOOBY1').first()
+        self.assertIsInstance(load_test, GlobalVars)
 
         user._h.get_glob('GOOBY1')
         self.assertEqual(user._h.mem['global']['GOOBY1'], 'MOOBY1')
@@ -67,11 +67,11 @@ class jaseci_engine_orm_config_tests_private(TestCaseHelper, TestCase):
 
         user._h.clear_mem_cache()
         user._h.red.delete('GOOBY1')
-        self.assertEqual(len(user._h.mem['global'].keys()), 0)
+        self.assertEqual(len(user._h.mem['global'].keys()), 1)
         self.assertNotIn('GOOBY1', user._h.mem['global'].keys())
 
         li = user._h.list_glob()
         self.assertEqual(len(li), 3)
-        self.assertEqual(len(user._h.mem['global'].keys()), 0)
+        self.assertEqual(len(user._h.mem['global'].keys()), 1)
         user._h.get_glob('GOOBY1')
         self.assertEqual(user._h.mem['global']['GOOBY1'], 'MOOBY1')

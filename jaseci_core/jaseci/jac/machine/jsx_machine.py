@@ -2,7 +2,6 @@
 The Jaseci Jac virtual machine for jsx bytecode
 """
 
-from jaseci.jac.machine.op_codes import op
 from jaseci.jac.machine.machine_state import machine_state
 from jaseci.jac.machine.jac_scope import jac_scope
 

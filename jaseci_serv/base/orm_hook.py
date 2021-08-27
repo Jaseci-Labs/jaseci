@@ -24,11 +24,11 @@ class orm_hook(mem_hook):
     lives in :class:`User` class as per :field:`User.orm_hook`.
     """
 
-    def __init__(self, user, objects, configs,
+    def __init__(self, user, objects, globs,
                  red=Redis(host=REDIS_HOST, decode_responses=True)):
         self.user = user
         self.objects = objects
-        self.configs = configs
+        self.globs = globs
         self.red = red
         self.save_obj_list = set()
         self.save_glob_dict = {}
@@ -124,7 +124,7 @@ class orm_hook(mem_hook):
             return loaded_val
         else:
             try:
-                loaded_val = self.configs.get(name=name).value
+                loaded_val = self.globs.get(name=name).value
             except ObjectDoesNotExist:
                 logger.error(
                     str(f"Global {name} does not exist in Django ORM!"),
@@ -141,7 +141,7 @@ class orm_hook(mem_hook):
         """
         if (self.red.get(name)):
             return True
-        return self.configs.filter(name=name).count()
+        return self.globs.filter(name=name).count()
 
     def save_glob_to_store(self, name, value):
         """Save global config to externally hooked general store"""
@@ -149,12 +149,12 @@ class orm_hook(mem_hook):
 
     def list_glob_from_store(self):
         """Get list of global config to externally hooked general store"""
-        return [entry['name'] for entry in self.configs.values('name')]
+        return [entry['name'] for entry in self.globs.values('name')]
 
     def destroy_glob_from_store(self, name):
         """Destroy global config to externally hooked general store"""
         try:
-            self.configs.get(name=name).delete()
+            self.globs.get(name=name).delete()
         except ObjectDoesNotExist:
             pass
         self.red.delete(name)
@@ -169,7 +169,7 @@ class orm_hook(mem_hook):
                 str(f"Couldn't save {name} to redis! {e}"),
                 exc_info=True
             )
-        item_from_db, created = self.configs.get_or_create(name=name)
+        item_from_db, created = self.globs.get_or_create(name=name)
         item_from_db.value = value
         item_from_db.save()
 

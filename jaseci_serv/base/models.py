@@ -74,7 +74,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         self._h = orm_hook(
             user=self,
             objects=JaseciObject.objects,
-            configs=GlobalConfig.objects
+            globs=GlobalVars.objects
         )
         AbstractBaseUser.__init__(self, *args, **kwargs)
         PermissionsMixin.__init__(self, *args, **kwargs)
@@ -83,7 +83,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_master(self):
         """Returns main user Jaseci node"""
-        return self._h.get_obj(self.master)
+        return self._h.get_obj(caller_id=self.master.urn, item_id=self.master)
 
 
 class JaseciObject(models.Model):
@@ -102,28 +102,25 @@ class JaseciObject(models.Model):
                              on_delete=models.CASCADE)
     jid = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
-    j_owner = models.UUIDField(null=True, blank=True)
+    j_parent = models.UUIDField(null=True, blank=True)
+    j_master = models.UUIDField(null=True, blank=True)
     name = models.CharField(max_length=255, blank=True)
     kind = models.CharField(max_length=255, blank=True)
     j_timestamp = models.DateTimeField(default=datetime.utcnow)
-    # j_user = models.CharField(max_length=255, blank=True)
-    # j_has_access = models.CharField(max_length=255, blank=True)
-
-    # j_type keeps track of the type of the object
     j_type = models.CharField(max_length=15, default='node')
-    # jsci_obj is json dump of entire object data beyond base
+    j_access = models.CharField(max_length=15, default='private')
     jsci_obj = models.TextField(blank=True)
 
 
-class GlobalConfig(models.Model):
+class GlobalVars(models.Model):
     """Global configuration item"""
     name = models.CharField(max_length=31, unique=True)
     value = models.TextField(blank=True)
 
 
 def lookup_global_config(name, default=None):
-    """Helper for looking up GlobalConfig, returns default if not found"""
+    """Helper for looking up GlobalVars, returns default if not found"""
     try:
-        return GlobalConfig.objects.get(name=name).value
-    except GlobalConfig.DoesNotExist:
+        return GlobalVars.objects.get(name=name).value
+    except GlobalVars.DoesNotExist:
         return default

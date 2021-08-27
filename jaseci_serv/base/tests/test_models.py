@@ -52,9 +52,9 @@ class model_tests(TestCaseHelper, TestCase):
         user.delete()
         self.assertFalse(get_user_model().objects.filter(id=user.id).exists())
 
-    def test_jaseci_obj_model_has_relevant_fields(self):
+    def test_jaseci_obj_accessl_has_relevant_fields(self):
         """Test that Jaseci ORM models has all element class fields"""
-        element_obj = element.element(element.mem_hook())
+        element_obj = element.element(m_id='anon', h=element.mem_hook())
         orm_obj = models.JaseciObject()
         for a in vars(element_obj).keys():
             if not a.startswith('_') and not callable(getattr(element_obj, a)):
@@ -62,12 +62,12 @@ class model_tests(TestCaseHelper, TestCase):
 
     def test_jaseci_json_has_relevant_fields(self):
         """Test that Jaseci ORM models has all element class fields"""
-        element_obj = element.element(element.mem_hook())
+        element_obj = element.element(m_id='anon', h=element.mem_hook())
         for a in vars(element_obj).keys():
             if not a.startswith('_') and not callable(getattr(element_obj, a)):
                 self.assertIn(a, JaseciObjectSerializer.Meta.fields)
 
-    def test_jaseci_obj_model_create_delete(self):
+    def test_jaseci_obj_accessl_create_delete(self):
         """Test that we can create and delete jaseci object models"""
         orm_obj = models.JaseciObject.objects.create(name='test Obj',
                                                      user=sample_user())
@@ -87,7 +87,7 @@ class model_tests(TestCaseHelper, TestCase):
 
     def test_lookup_global_config(self):
         """Test look up config returns right value"""
-        models.GlobalConfig.objects.create(name='testname', value="testval")
+        models.GlobalVars.objects.create(name='testname', value="testval")
         self.assertEqual(models.lookup_global_config('testname'), 'testval')
         self.assertEqual(models.lookup_global_config(
             'nonsense', 'apple'), 'apple')

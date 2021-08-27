@@ -21,8 +21,8 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if (not check_model_live('USE')):
             self.skipTest("external resource not available")
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name('life', kind='node').run()
         test_walker = \
@@ -38,8 +38,8 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if (not check_model_live('USE')):
             self.skipTest("external resource not available")
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name('life', kind='node').run()
         test_walker = \
@@ -55,8 +55,8 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if (not check_model_live('USE')):
             self.skipTest("external resource not available")
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name('life', kind='node').run()
         test_walker = \
@@ -72,8 +72,8 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if (not check_model_live('USE')):
             self.skipTest("external resource not available")
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name('life', kind='node').run()
         test_walker = \

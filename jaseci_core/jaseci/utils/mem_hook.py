@@ -32,8 +32,7 @@ class mem_hook():
     """
 
     def __init__(self):
-        self.mem = {'global': {'GLOB_SENTINEL': None,
-                               'GLOB_VARS': {}}, }
+        self.mem = {'global': {'GLOB_SENTINEL': None}}
 
     def get_obj(self, caller_id, item_id, override=False):
         """
@@ -130,7 +129,7 @@ class mem_hook():
         Clears memory, should only be used if underlying store is modified
         through other means than methods of this class
         """
-        self.__init__()
+        mem_hook.__init__(self)
 
     def get_obj_from_store(self, item_id):
         """

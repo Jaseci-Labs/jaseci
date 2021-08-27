@@ -7,11 +7,11 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from base.models import JaseciObject, GlobalConfig
+from base.models import JaseciObject, GlobalVars
 
 
 NODE_URL = reverse('obj_api:jaseciobject-list')
-CONFIG_URL = reverse('obj_api:globalconfig-list')
+CONFIG_URL = reverse('obj_api:globalvars-list')
 
 
 class PublicNodeApiTests(TestCaseHelper, TestCase):
@@ -100,8 +100,8 @@ class ConfigApiTests(TestCaseHelper, TestCase):
 
     def test_retrieve_configs(self):
         """Test retrieving config list"""
-        GlobalConfig.objects.create(name='Vegan', value='46')
-        GlobalConfig.objects.create(name='Dessert', value='446')
+        GlobalVars.objects.create(name='Vegan', value='46')
+        GlobalVars.objects.create(name='Dessert', value='446')
 
         res = self.client.get(CONFIG_URL)
 
@@ -112,7 +112,7 @@ class ConfigApiTests(TestCaseHelper, TestCase):
         payload = {'name': 'Simple', 'value': 'Peezzy'}
         self.client.post(CONFIG_URL, payload)
 
-        exists = GlobalConfig.objects.filter(
+        exists = GlobalVars.objects.filter(
             name=payload['name'],
             value=payload['value']
         ).exists()

@@ -28,7 +28,7 @@ class sharable():
         if(m_id == 'anon'):
             m_id = uuid.UUID(int=0).urn
         self.j_master = m_id
-        self.j_mode = mode
+        self.j_access = mode
         self.j_r_acc_ids = id_list(self)
         self.j_rw_acc_ids = id_list(self)
 
@@ -38,31 +38,31 @@ class sharable():
 
     def make_public(self):
         """Make element publically accessible"""
-        self.j_mode = 'public'
+        self.j_access = 'public'
 
     def make_read_only(self):
         """Make element publically readable"""
-        self.j_mode = 'read_only'
+        self.j_access = 'read_only'
 
     def make_private(self):
         """Make element private"""
-        self.j_mode = 'private'
+        self.j_access = 'private'
 
     def is_public(self):
         """Check if element is publically accessible"""
-        return self.j_mode == 'public' or self.j_master == uuid.UUID(int=0)
+        return self.j_access == 'public' or self.j_master == uuid.UUID(int=0)
 
     def is_read_only(self):
         """Check if element is publically readable"""
-        return self.j_mode == 'read_only'
+        return self.j_access == 'read_only'
 
     def is_readable(self):
         """Check if element is publically readable"""
-        return self.j_mode == 'read_only' or self.is_public()
+        return self.j_access == 'read_only' or self.is_public()
 
     def is_private(self):
         """Check if element is private"""
-        return self.j_mode == 'private'
+        return self.j_access == 'private'
 
     def check_read_access(self, caller_id, silent=False):
         if(caller_id == self._m_id or self.is_readable() or
