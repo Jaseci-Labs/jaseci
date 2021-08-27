@@ -63,11 +63,11 @@ class config_api():
         self._h.destroy_glob(name)
         return [f"{name} Deleted."]
 
-    def name_error(name):
+    def name_error(self, name):
         """Much used error output"""
         return [
             f"Config {name} not recognized, must be in {VALID_CONFIGS}!"]
 
-    def name_check(name):
+    def name_check(self, name):
         """Much used name check"""
         return (name in VALID_CONFIGS)
