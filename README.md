@@ -192,7 +192,7 @@
 - Hack LL Jac code to report what I need in client
 - PLAN - In LL check outbound is workette
 
-- Make owner_id in item type an id_list
+- Make parent_id in item type an id_list
 - Have ID list class auto delete items from store when owner id's go to zero
 - ID list class should add and remove owner ids as it is used to record membership of items to other jaseci objects
 - If we enforce the rule that all object membership is done through id_lists then this will stay conherent/consistent

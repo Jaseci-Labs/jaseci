@@ -7,7 +7,6 @@ from base.models import JaseciObject
 from jaseci.graph import node
 from jaseci.graph.graph import graph
 from jaseci.actor.sentinel import sentinel
-from jaseci.utils import graph_gen
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.redis_hook import redis_hook
 from jaseci_serv.settings import REDIS_HOST
@@ -87,7 +86,7 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         load_test.kind = "Fasheezzy!"
         load_test.save()  # Jaseci model save
 
-        otnode = user._h.get_obj(load_test.jid)
+        otnode = user._h.get_obj(load_test.j_master.urn, load_test.jid)
         self.assertEqual(load_test.kind, otnode.kind)
 
         otnode.name = "Rizzoou"
@@ -106,14 +105,6 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
             JaseciObject.objects.filter(jid=oload_test.jid).exists(), False
         )
 
-    def test_jsci_node_class_methods_writes_edges_through(self):
-        """
-        Test that db hooks are set up correctly for loading then saving back
-        then deleting
-        """
-        graph_gen.randomized_graph(m_id='anon', h=self._h)
-        self.assertEqual(len(self._h.mem), 32)
-
     def test_jsci_walker_writes_through_graph_updates(self):
         """
         Test that db hooks handle walkers ok
@@ -131,18 +122,18 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         next = test_walker.step()
         self.assertEqual(test_node.outbound_nodes()[0], next)
 
-    def test_owner_ids_stored_and_loaded_as_uuid(self):
+    def test_parent_ids_stored_and_loaded_as_uuid(self):
         """
         Test that UUIDs function correctly for store adn loads
         """
         user = self.user
         node1 = node.node(m_id='anon', h=user._h)
-        node2 = node.node(m_id='anon', h=user._h, owner_id=node1.id)
+        node2 = node.node(m_id='anon', h=user._h, parent_id=node1.id)
         user._h.commit()
         new_node = JaseciObject.objects.filter(j_parent=node1.id).first()
         new_jsci_node = user._h.get_obj_from_store(new_node.jid)
         self.assertEqual(node2.id, new_node.jid)
-        self.assertEqual(node1.id, new_jsci_node.owner_id)
+        self.assertEqual(node1.id, new_jsci_node.parent_id)
 
     def test_redis_connection(self):
         """Test redis connection"""
@@ -166,12 +157,12 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         """
         temp_id = node.node(m_id='anon', h=redis_hook()).id
 
-        load_test = redis_hook().get_obj(temp_id)
+        load_test = redis_hook().get_obj('anon', temp_id)
 
         load_test.kind = "Fasho!"
         load_test.save()  # Jaseci model save
 
-        otnode = redis_hook().get_obj(load_test.id)
+        otnode = redis_hook().get_obj(load_test._m_id, load_test.id)
         self.assertEqual(load_test.kind, otnode.kind)
 
     def test_redis_transacting(self):
@@ -182,12 +173,12 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         """
         temp_id = node.node(m_id='anon', h=redis_hook()).id
 
-        load_test = redis_hook().get_obj(temp_id)
+        load_test = redis_hook().get_obj('anon', temp_id)
 
         load_test.kind = "Fasheezzy!"
         load_test.save()  # Jaseci model save
 
-        otnode = redis_hook().get_obj(load_test.id)
+        otnode = redis_hook().get_obj(load_test._m_id, load_test.id)
         self.assertEqual(load_test.kind, otnode.kind)
 
         otnode.name = "Rizzoou"
@@ -201,5 +192,5 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
 
         otnode.destroy()
         self.assertIsNone(
-            redis_hook().get_obj(oload_test.id)
+            redis_hook().get_obj(oload_test._m_id, oload_test.id)
         )

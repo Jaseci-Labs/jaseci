@@ -109,6 +109,8 @@ class JaseciObject(models.Model):
     j_timestamp = models.DateTimeField(default=datetime.utcnow)
     j_type = models.CharField(max_length=15, default='node')
     j_access = models.CharField(max_length=15, default='private')
+    j_r_acc_ids = models.TextField(blank=True)
+    j_rw_acc_ids = models.TextField(blank=True)
     jsci_obj = models.TextField(blank=True)
 
 

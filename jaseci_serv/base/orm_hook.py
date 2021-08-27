@@ -37,11 +37,13 @@ class orm_hook(mem_hook):
     def get_obj_from_store(self, item_id):
         loaded_obj = self.red.get(item_id.urn)
         if (loaded_obj):
-            j_type = json.loads(loaded_obj)['j_type']
+            jdict = json.loads(loaded_obj)
+            j_type = jdict['j_type']
+            j_master = jdict['j_master']
             class_for_type = \
                 utils.find_class_and_import(j_type, core_mod)
             ret_obj = class_for_type(
-                h=self, m_id=loaded_obj['j_master'], auto_save=False)
+                h=self, m_id=j_master, auto_save=False)
             ret_obj.json_load(loaded_obj)
 
             return ret_obj

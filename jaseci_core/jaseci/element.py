@@ -169,6 +169,10 @@ class element(hookable):
     def json_load(self, blob):
         """Loads self from json blob"""
         jdict = json_str_to_jsci_dict(blob, parent_obj=self)
+        self.dict_load(jdict=jdict)
+
+    def dict_load(self, jdict):
+        """Loads self from dict"""
         for i in jdict.keys():
             setattr(self, i, jdict[i])
 
