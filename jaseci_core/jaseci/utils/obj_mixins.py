@@ -25,7 +25,7 @@ class sharable():
     """Utility class for objects that are sharable between users"""
 
     def __init__(self, m_id, mode='private'):
-        if(m_id == 'anon'):
+        if(m_id is None or m_id == 'anon'):
             m_id = uuid.UUID(int=0).urn
         self.j_master = m_id
         self.j_access = mode
@@ -50,7 +50,8 @@ class sharable():
 
     def is_public(self):
         """Check if element is publically accessible"""
-        return self.j_access == 'public' or self.j_master == uuid.UUID(int=0)
+        return self.j_access == 'public' or \
+            self.j_master == uuid.UUID(int=0).urn
 
     def is_read_only(self):
         """Check if element is publically readable"""

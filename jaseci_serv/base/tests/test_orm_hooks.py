@@ -155,14 +155,18 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         """
         Test that redis hooks are set up correctly for loading single server
         """
-        temp_id = node.node(m_id='anon', h=redis_hook()).id
-
-        load_test = redis_hook().get_obj('anon', temp_id)
+        self.logger_on()
+        r = redis.Redis(host=REDIS_HOST, decode_responses=True)
+        nd = node.node(m_id='anon', h=redis_hook(red=r))
+        temp_id = nd.id
+        nd._h.commit()
+        new_hook = redis_hook(red=r)
+        load_test = new_hook.get_obj('anon', temp_id)
 
         load_test.kind = "Fasho!"
-        load_test.save()  # Jaseci model save
-
-        otnode = redis_hook().get_obj(load_test._m_id, load_test.id)
+        load_test.save()
+        new_hook.commit()
+        otnode = redis_hook(red=r).get_obj(load_test._m_id, load_test.id)
         self.assertEqual(load_test.kind, otnode.kind)
 
     def test_redis_transacting(self):
