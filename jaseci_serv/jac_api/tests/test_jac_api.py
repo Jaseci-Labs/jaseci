@@ -67,7 +67,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'sentinel_register', 'name': 'Untitled Sentinel'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(
-            self.master.j_master, uuid.UUID(res.data['jid']))
+            self.master.j_master, uuid.UUID(res.data[0]['jid']))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(sent.name, "Untitled Sentinel")
 
@@ -123,7 +123,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'sentinel_register', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(
-            self.master.j_master, uuid.UUID(res.data['jid']))
+            self.master.j_master, uuid.UUID(res.data[0]['jid']))
         self.assertIn(gph.id, gph._h.mem.keys())
         self.assertIn(sent.id, gph._h.mem.keys())
         payload = {'op': 'sentinel_delete', 'snt': sent.id.urn}
@@ -206,9 +206,9 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         snt = self.master._h.get_obj(
-            self.master.j_master, uuid.UUID(res.data['sentinel']))
+            self.master.j_master, uuid.UUID(res.data[0]['jid']))
         gph = self.master._h.get_obj(
-            self.master.j_master, uuid.UUID(res.data['graph']))
+            self.master.j_master, uuid.UUID(res.data[1]['jid']))
         self.assertEqual(snt.name, "test_app")
         self.assertEqual(gph.name, "root")
         self.assertTrue(snt.is_active)
@@ -386,7 +386,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'sentinel_register', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(
-            self.master.j_master, uuid.UUID(res.data['jid']))
+            self.master.j_master, uuid.UUID(res.data[0]['jid']))
         payload = {'op': 'sentinel_set', 'snt': sent.id.urn,
                    'code':
                    'node a { has b; } walker test ' +

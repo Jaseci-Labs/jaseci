@@ -25,10 +25,11 @@ class sentinel_api():
         is selected)
         """
         snt = self.sentinel_ids.get_obj_by_name(name, silent=True)
+        new_gph = None
         if(not snt):
             snt = sentinel(m_id=self._m_id, h=self._h, name=name)
             self.sentinel_ids.add_obj(snt)
-            self.api_graph_create(set_active=True)
+            new_gph = self.api_graph_create(set_active=True)
         if(code):
             if (encoded):
                 code = b64decode_str(code)
@@ -41,7 +42,9 @@ class sentinel_api():
         if(set_active):
             self.api_sentinel_active_set(snt)
         self.extract_snt_aliases(snt)
-        return snt.serialize()
+        if(new_gph):
+            return [snt.serialize(), new_gph]
+        return [snt.serialize()]
 
     def api_sentinel_pull(self, set_active: bool = True):
         """
