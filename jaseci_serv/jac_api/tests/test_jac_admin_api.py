@@ -46,15 +46,15 @@ class PrivateJacAdminApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_create_config_needs_force(self):
         """Test API for creating a config"""
-        payload = {'op': 'config_delete', 'name': 'EMAIL_HOST_USER'}
+        payload = {'op': 'config_delete', 'name': 'TEST'}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         payload = {'op': 'config_set',
-                   'name': 'EMAIL_HOST_USER', 'value': 'val1'}
+                   'name': 'TEST', 'value': 'val1'}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        payload = {'op': 'config_get', 'name': 'EMAIL_HOST_USER'}
+        payload = {'op': 'config_get', 'name': 'TEST'}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -95,4 +95,4 @@ class PrivateJacAdminApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 4)
-        self.assertEqual(res.data[2], 'EMAIL_DEFAULT_FROM')
+        self.assertIn('EMAIL_DEFAULT_FROM', res.data)
