@@ -71,7 +71,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call("graph create -set_active true")
         self.call("walker run -name init")
         self.call("walker run -name gen_rand_life")
-        r = self.call("graph get -format dot")
+        r = self.call("graph get -mode dot")
         self.assertIn("test test test", r)
         self.assertIn('"n0" -> "n', r)
         self.assertIn('week="', r)
@@ -145,7 +145,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertIn('namespace key', r)
 
     def test_public_apis_walker_summon_auth(self):
-        r = self.call_cast('walker get -format keys -wlk zsb:walker:pubinit')
+        r = self.call_cast('walker get -mode keys -wlk zsb:walker:pubinit')
         key = list(r.keys())[0]
         r = self.call_cast('alias list')
         walk = r['zsb:walker:pubinit']

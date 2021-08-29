@@ -25,31 +25,31 @@ class architype_api():
         else:
             return [f'Architype not created, invalid code!']
 
-    def api_architype_get(self, arch: architype, format: str = 'default',
+    def api_architype_get(self, arch: architype, mode: str = 'default',
                           detailed: bool = False):
         """
-        Get an architype rendered with specific format
+        Get an architype rendered with specific mode
         Valid Formats: {default, code, ir, }
         """
-        if(format == 'code'):
+        if(mode == 'code'):
             return arch._jac_ast.get_text()
-        elif(format == 'ir'):
+        elif(mode == 'ir'):
             return arch.ir_dict()
         else:
             return arch.serialize(detailed=detailed)
 
     def api_architype_set(self, arch: architype, code: str,
-                          format: str = 'default'):
+                          mode: str = 'default'):
         """
         Set code/ir for a architype
         Valid Formats: {code, ir, }
         """
-        if(format == 'code' or format == 'default'):
+        if(mode == 'code' or mode == 'default'):
             arch.register(code)
-        elif(format == 'ir'):
+        elif(mode == 'ir'):
             arch.apply_ir(code)
         else:
-            return [f'Invalid format to set {arch}']
+            return [f'Invalid mode to set {arch}']
         if(arch.is_active):
             return [f'{arch} registered and active!']
         else:

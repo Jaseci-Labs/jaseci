@@ -26,33 +26,33 @@ class walker_api():
         else:
             return [f'Walker not created, invalid code!']
 
-    def api_walker_get(self, wlk: walker, format: str = 'default',
+    def api_walker_get(self, wlk: walker, mode: str = 'default',
                        detailed: bool = False):
         """
-        Get a walker rendered with specific format
+        Get a walker rendered with specific mode
         Valid Formats: {default, code, ir, keys, }
         """
-        if(format == 'code'):
+        if(mode == 'code'):
             return wlk._jac_ast.get_text()
-        elif(format == 'ir'):
+        elif(mode == 'ir'):
             return wlk.ir_dict()
-        elif(format == 'keys'):
+        elif(mode == 'keys'):
             return wlk.namespaces
         else:
             return wlk.serialize(detailed=detailed)
 
     def api_walker_set(self, wlk: walker, code: str,
-                       format: str = 'default'):
+                       mode: str = 'default'):
         """
         Set code/ir for a walker
         Valid Formats: {code, ir, }
         """
-        if(format == 'code' or format == 'default'):
+        if(mode == 'code' or mode == 'default'):
             wlk.register(code)
-        elif(format == 'ir'):
+        elif(mode == 'ir'):
             wlk.apply_ir(code)
         else:
-            return [f'Invalid format to set {wlk}']
+            return [f'Invalid mode to set {wlk}']
         if(wlk.is_active):
             return [f'{wlk} registered and active!']
         else:

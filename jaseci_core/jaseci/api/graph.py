@@ -28,12 +28,12 @@ class graph_api():
         return gph.serialize()
 
     def api_graph_get(self, gph: graph = None,
-                      format: str = 'default', detailed: bool = False):
+                      mode: str = 'default', detailed: bool = False):
         """
-        Return the content of the graph with format
+        Return the content of the graph with mode
         Valid Formats: {default, dot, }
         """
-        if(format == 'dot'):
+        if(mode == 'dot'):
             return gph.graph_dot_str()
         else:
             items = []
