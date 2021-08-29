@@ -30,7 +30,7 @@ class walker_api():
                        detailed: bool = False):
         """
         Get a walker rendered with specific mode
-        Valid Formats: {default, code, ir, keys, }
+        Valid modes: {default, code, ir, keys, }
         """
         if(mode == 'code'):
             return wlk._jac_ast.get_text()
@@ -45,7 +45,7 @@ class walker_api():
                        mode: str = 'default'):
         """
         Set code/ir for a walker
-        Valid Formats: {code, ir, }
+        Valid modes: {code, ir, }
         """
         if(mode == 'code' or mode == 'default'):
             wlk.register(code)

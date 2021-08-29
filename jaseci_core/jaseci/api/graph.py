@@ -31,7 +31,7 @@ class graph_api():
                       mode: str = 'default', detailed: bool = False):
         """
         Return the content of the graph with mode
-        Valid Formats: {default, dot, }
+        Valid modes: {default, dot, }
         """
         if(mode == 'dot'):
             return gph.graph_dot_str()

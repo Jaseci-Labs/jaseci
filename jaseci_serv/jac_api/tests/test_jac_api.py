@@ -157,10 +157,10 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         sent = self.master._h.get_obj(
             self.master.j_master, uuid.UUID(res.data[0]['jid']))
         payload = {'op': 'sentinel_set', 'snt': sent.id.urn,
-                   'code': '# Something awesome!!', 'encoded': False}
+                   'code': 'node awesome;', 'encoded': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.assertEqual(sent.code, '# Something awesome!!')
+        self.assertTrue(sent.code_ir.startswith('{"name": "start"'))
 
     def test_jac_api_sentinel_set_encoded(self):
         """Test API for deleting a sentinel"""
@@ -171,13 +171,13 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'sentinel_register', 'name': 'Something'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         sent = self.master._h.get_obj(
-            self.master.j_master, uuid.UUID(res.data['jid']))
-        enc_str = base64.b64encode(b'# Something awesome!!').decode()
+            self.master.j_master, uuid.UUID(res.data[0]['jid']))
+        enc_str = base64.b64encode(b'node awesome;').decode()
         payload = {'op': 'sentinel_set', 'snt': sent.id.urn,
                    'code': enc_str, 'encoded': True}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.assertEqual(sent.code, '# Something awesome!!')
+        self.assertTrue(sent.code_ir.startswith('{"name": "start"'))
 
     def test_jac_api_compile(self):
         """Test API for compiling a sentinel"""
@@ -311,7 +311,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.assertGreater(walk.current_step, 0)
 
-    def test_jac_api_set_node_context(self):
+    def test_jac_api_graph_node_set(self):
         """Test API for setting context variables of node"""
         payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
@@ -340,7 +340,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'walker_execute', 'wlk': walk.id.urn}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         nid = res.data[0]['jid']
-        payload = {'op': 'set_node_context', 'snt': sent.id.urn, 'nd': nid,
+        payload = {'op': 'graph_node_set', 'snt': sent.id.urn, 'nd': nid,
                    'ctx': {'apple': 'TEST'}}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')

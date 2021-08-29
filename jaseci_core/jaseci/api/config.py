@@ -9,9 +9,6 @@ VALID_CONFIGS = ['EMAIL_BACKEND',
                  'EMAIL_HOST_PASSWORD',
                  'EMAIL_PORT',
                  'EMAIL_DEFAULT_FROM',
-                 'HTTP_LOGGING_HOST',
-                 'HTTP_LOGGING_PORT',
-                 'HTTP_LOGGING_URL',
                  ]
 
 
@@ -37,8 +34,6 @@ class config_api():
         if(do_check and not self.name_check(name)):
             return self.name_error(name)
         self._h.save_glob(name, value)
-        if(name.startswith('HTTP_LOGGING')):
-            self.reconnect_http_logging()
         return [f"Config of '{name}' to '{value}' set!"]
 
     def admin_api_config_list(self):

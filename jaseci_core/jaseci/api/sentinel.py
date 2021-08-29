@@ -33,8 +33,7 @@ class sentinel_api():
         if(code):
             if (encoded):
                 code = b64decode_str(code)
-            if (not snt.is_active):
-                snt.register_code(code)
+            snt.register_code(code)
         if(snt.walker_ids.has_obj_by_name(auto_run) and self.active_gph_id):
             nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
             self.api_walker_run(name=auto_run, nd=nd, ctx=ctx,
@@ -68,7 +67,7 @@ class sentinel_api():
                          mode: str = 'default', detailed: bool = False):
         """
         Get a sentinel rendered with specific mode
-        Valid Formats: {default, code, ir, }
+        Valid modes: {default, code, ir, }
         """
         if(mode == 'code'):
             return snt._jac_ast.get_text()
@@ -77,12 +76,14 @@ class sentinel_api():
         else:
             return snt.serialize(detailed=detailed)
 
-    def api_sentinel_set(self, code: str, snt: sentinel = None,
-                         mode: str = 'default'):
+    def api_sentinel_set(self, code: str, encoded: bool = False,
+                         snt: sentinel = None, mode: str = 'default'):
         """
         Set code/ir for a sentinel, only replaces walkers/archs in sentinel
-        Valid Formats: {code, ir, }
+        Valid modes: {code, ir, }
         """
+        if (encoded):
+            code = b64decode_str(code)
         if(mode == 'code' or mode == 'default'):
             snt.register_code(code)
         elif(mode == 'ir'):

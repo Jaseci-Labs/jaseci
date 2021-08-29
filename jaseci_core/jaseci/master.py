@@ -9,10 +9,10 @@ from inspect import getdoc
 
 
 from jaseci.element import element
-from jaseci.utils.utils import logger, app_logger
-from jaseci.utils.utils import connect_http_logging_check
-from jaseci.utils.utils import is_jsonable, connect_http_logging
+from jaseci.utils.utils import logger
+from jaseci.utils.utils import is_jsonable
 from jaseci.api.alias import alias_api
+from jaseci.api.logger import logger_api
 from jaseci.api.graph import graph_api
 from jaseci.api.sentinel import sentinel_api
 from jaseci.api.walker import walker_api
@@ -21,8 +21,8 @@ from jaseci.api.config import config_api
 from jaseci.api.glob import global_api
 
 
-class master(element, alias_api, graph_api, sentinel_api,
-             walker_api, architype_api, config_api, global_api):
+class master(element, alias_api, logger_api, graph_api,
+             sentinel_api, walker_api, architype_api, config_api, global_api):
     """Main class for master functions for user"""
 
     def __init__(self, email="Anonymous", *args, **kwargs):
@@ -48,38 +48,6 @@ class master(element, alias_api, graph_api, sentinel_api,
         sentinel_api.destroy(self)
         super().destroy()
 
-    def check_http_logging(self):
-        """
-        Checks for connection between logger and logstash if configured
-        """
-        if(self._h.has_glob('HTTP_LOGGING_HOST') or
-           self._h.has_glob('HTTP_LOGGING_PORT')):
-            return connect_http_logging_check(logger) and \
-                connect_http_logging_check(app_logger)
-        return True
-
-    def reconnect_http_logging(self):
-        """
-        Connect logger to logstash
-        """
-        url = self._h.resolve_glob('HTTP_LOGGING_URL', '/')
-        host = self._h.resolve_glob('HTTP_LOGGING_HOST', 'localhost')
-        port = int(self._h.resolve_glob('HTTP_LOGGING_PORT', 8080))
-        connect_http_logging(logger, host, port, url)
-        connect_http_logging(app_logger, host, port, url)
-
-    def admin_api_check_loggers(self):
-        """
-        Check active loggers
-        """
-        core = []
-        app = []
-        for i in logger.handlers:
-            core.append(str(type(i)))
-        for i in app_logger.handlers:
-            app.append(str(type(i)))
-        return {'core': core, 'app': app}
-
     def provide_internal_default(self, param):
         """
         Applies internal defaults for sentinel and graphs
@@ -99,8 +67,6 @@ class master(element, alias_api, graph_api, sentinel_api,
             params is a dictionary of parameter names and values in UUID
             api_name is the name of the api being mapped to
         """
-        if(not self.check_http_logging()):
-            self.reconnect_http_logging()
         param_map = {}
         if (not hasattr(self, api_name)):
             logger.error(f'{api_name} not a valid API')

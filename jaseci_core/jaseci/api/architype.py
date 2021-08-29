@@ -29,7 +29,7 @@ class architype_api():
                           detailed: bool = False):
         """
         Get an architype rendered with specific mode
-        Valid Formats: {default, code, ir, }
+        Valid modes: {default, code, ir, }
         """
         if(mode == 'code'):
             return arch._jac_ast.get_text()
@@ -42,7 +42,7 @@ class architype_api():
                           mode: str = 'default'):
         """
         Set code/ir for a architype
-        Valid Formats: {code, ir, }
+        Valid modes: {code, ir, }
         """
         if(mode == 'code' or mode == 'default'):
             arch.register(code)

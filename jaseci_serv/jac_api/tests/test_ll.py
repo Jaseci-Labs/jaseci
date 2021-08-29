@@ -48,11 +48,11 @@ class test_ll(TestCaseHelper, TestCase):
             reverse(f'jac_api:prime_run'), payload, format='json')
         return res.data
 
-    def set_node_context(self, nd_id, ctx):
+    def graph_node_set(self, nd_id, ctx):
         """Helper to set node context"""
         payload = {'snt': self.snt.id.urn, 'nd': nd_id, 'ctx': ctx}
         self.client.post(
-            reverse('jac_api:set_node_context'), payload, format='json')
+            reverse('jac_api:graph_node_set'), payload, format='json')
 
     def test_ll_today_new(self):
         """Test LifeLogify Jac Implementation"""
@@ -226,7 +226,7 @@ class test_ll(TestCaseHelper, TestCase):
                     due_date = due_date.replace(
                         hour=0, minute=0, second=0, microsecond=0)
                     wkt[1]['context']['date'] = due_date.isoformat()
-                    self.set_node_context(wkt[1]['jid'], wkt[1]['context'])
+                    self.graph_node_set(wkt[1]['jid'], wkt[1]['context'])
 
         data = self.run_walker(
             'get_due_soon', {'soon': 4, 'show_report': 1}, prime=w_id)
@@ -249,7 +249,7 @@ class test_ll(TestCaseHelper, TestCase):
                     snoozed_date = snoozed_date.replace(
                         hour=0, minute=0, second=0, microsecond=0)
                     wkt[1]['context']['snooze_till'] = snoozed_date.isoformat()
-                    self.set_node_context(wkt[1]['jid'], wkt[1]['context'])
+                    self.graph_node_set(wkt[1]['jid'], wkt[1]['context'])
         result = self.run_walker(
             'get_snoozed_until_recent', {'show_report': 1}, prime=w_id)
         self.assertTrue(len(result) > 0)

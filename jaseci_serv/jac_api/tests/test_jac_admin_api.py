@@ -85,7 +85,7 @@ class PrivateJacAdminApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        payload = {'op': 'config_set', 'name': 'HTTP_LOGGING_HOST',
+        payload = {'op': 'config_set', 'name': 'EMAIL_BACKEND',
                    'value': 'val4', 'do_check': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
