@@ -145,7 +145,6 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
 
     def test_redis_saving(self):
         """Test that redis hooks are set up correctly for saving"""
-        r = self.r
         tnode = node.node(m_id='anon', h=redis_hook(red=self.r))
         tnode.name = "GOBBY"
         tnode.save()  # Jaseci object save

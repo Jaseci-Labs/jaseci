@@ -6,7 +6,6 @@ import uuid
 import importlib
 import pkgutil
 import logging
-from logging.handlers import HTTPHandler
 import types
 import base64
 import json

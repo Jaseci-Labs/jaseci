@@ -170,3 +170,14 @@ class mem_hook():
 
     def commit(self):
         """Write through all saves to store"""
+
+    # Utilities
+    def get_object_distribution(self):
+        dist = {}
+        for i in self.mem.keys():
+            t = type(self.mem[i])
+            if(t in dist.keys()):
+                dist[t] += 1
+            else:
+                dist[t] = 1
+        return dist

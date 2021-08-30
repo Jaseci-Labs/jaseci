@@ -324,8 +324,6 @@ class code_gen():
     #         | inc_assign
     #         | copy_assign;
 
-    #     NOTE: assign_scope used to override normal behavior for special assigns
-    #     such as walker spawns. assign_scope must be id_list of contexts
     #     """
     #     kid = jac_ast.kid
     #     if (len(kid) < 2):
@@ -408,10 +406,12 @@ class code_gen():
     #         # TODO: IF JACSET IS TARGET APLLY TO ALL MEMEBERS OF JACSET
     #         # Line below PARTIALLY generalizes disconnect NEEDS REVIEW
     #         if(isinstance(target, node)):
-    #             base.detach_edges(target, self.run_edge_ref(kid[2]).obj_list())
+    #             base.detach_edges(target,
+    #                               self.run_edge_ref(kid[2]).obj_list())
     #         elif(isinstance(target, jac_set)):
     #             for i in target.obj_list():
-    #                 base.detach_edges(i, self.run_edge_ref(kid[2]).obj_list())
+    #                 base.detach_edges(i,
+    #                                   self.run_edge_ref(kid[2]).obj_list())
     #         else:
     #             logger.critical(
     #                 f'Cannot connect to {target} of type {type(target)}!')

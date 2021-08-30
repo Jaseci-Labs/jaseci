@@ -24,13 +24,15 @@ class test_zsb(TestCaseHelper, TestCase):
         self.master = self.user.get_master()
         payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
+        self.gph = self.master._h.get_obj(
+            self.master.jid, uuid.UUID(res.data['jid']))
         ll_file = base64.b64encode(
-            open("jac_api/tests/ll.jac").read().encode())
+            open("jac_api/tests/ll.jac").read().encode()).decode()
         payload = {'op': 'sentinel_register',
                    'name': 'Something', 'code': ll_file, 'encoded': True}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.snt = self.master._h.get_obj(uuid.UUID(res.data['jid']))
+        self.snt = self.master._h.get_obj(
+            self.master.jid, uuid.UUID(res.data[0]['jid']))
 
     def tearDown(self):
         super().tearDown()

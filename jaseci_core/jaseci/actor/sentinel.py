@@ -95,9 +95,8 @@ class sentinel(element, jac_code, sentinel_interp):
                 str(f'{self.name}: Unable to spawn architype {[name, kind]}!')
             )
             return None
-        new_arch = src_arch.duplicate()
-        new_arch._jac_ast = src_arch._jac_ast
-        return new_arch
+        # No need to dup architypes as they are stateless generators
+        return src_arch
 
     def destroy(self):
         """
