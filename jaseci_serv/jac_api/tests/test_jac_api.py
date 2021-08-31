@@ -443,7 +443,12 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         walk = res.data['zsb:walker:pubinit']
         nd = res.data['active:graph']
-        payload = {'op': 'walker_summon', 'key': key, 'walk': walk, 'nd': nd}
+        payload = {'op': 'walker_summon', 'key': key, 'wlk': walk, 'nd': nd}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(len(res.data), 0)
+        key = 'aaaaaaa'
+        payload = {'op': 'walker_summon', 'key': key, 'wlk': walk, 'nd': nd}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 1)

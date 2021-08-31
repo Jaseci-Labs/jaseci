@@ -99,17 +99,17 @@ class public_api():
             doc = getdoc(getattr(public_api, api_name))
             return doc
 
-    def public_api_walker_summon(self, key: str, walk: walker, nd: node,
+    def public_api_walker_summon(self, key: str, wlk: walker, nd: node,
                                  ctx: dict = {}):
         """
         Public api for running walkers, namespace key must be provided
         along with the walker id and node id
         """
-        if(key not in walk.namespace_keys()):
+        if(key not in wlk.namespace_keys()):
             return ['Not authorized to execute this walker']
-        wlk = walk.duplicate()
-        wlk.refresh()
-        wlk.prime(nd, prime_ctx=ctx)
-        res = wlk.run()
-        wlk.destroy()
+        walk = wlk.duplicate()
+        walk.refresh()
+        walk.prime(nd, prime_ctx=ctx)
+        res = walk.run()
+        walk.destroy()
         return res

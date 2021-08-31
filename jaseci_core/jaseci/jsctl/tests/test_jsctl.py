@@ -150,8 +150,8 @@ class jsctl_test(TestCaseHelper, TestCase):
         r = self.call_cast('alias list')
         walk = r['zsb:walker:pubinit']
         nd = r['active:graph']
-        r = self.call_cast(f'walker summon -key {key} -walk {walk} -nd {nd}')
+        r = self.call_cast(f'walker summon -key {key} -wlk {walk} -nd {nd}')
         self.assertEqual(len(r), 0)
         key = 'aaaaaaaa'
-        r = self.call_cast(f'walker summon -key {key} -walk {walk} -nd {nd}')
+        r = self.call_cast(f'walker summon -key {key} -wlk {walk} -nd {nd}')
         self.assertEqual(len(r), 1)
