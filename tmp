@@ -1,0 +1,607 @@
+commit 68c8220c39e2e64b4cdbb72dac679601874d2bc0
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Thu Aug 26 19:28:29 2021 -0400
+
+    Updating serve
+
+commit 655d29e2e3e331375d645f3611ae722d7cbf1198
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 26 15:11:22 2021 -0400
+
+    Requests passthrough library complete
+
+commit ae900249ee7e1daabde49468bb2d7cec01331252
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 26 13:17:15 2021 -0400
+
+    Public api Key auth tested, and namespaces validated
+
+commit 7400a1c823801af7b912946f10902b89607b4f0f
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 26 12:14:31 2021 -0400
+
+    REmoving silly yarn trash files
+
+commit 31d73b7d569eda39d9bfa2ae093fed6bf7c21809
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 26 12:13:44 2021 -0400
+
+    public apis created and integrated to jsctl, initial test
+
+commit 22e524156b41f5623c510d8a45624b12b43dcc4b
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 25 18:55:26 2021 -0400
+
+    Public apis and namespaces untested
+
+commit 729281691cff90bff62690ca77ffac33f43614fe
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Aug 24 12:34:38 2021 -0400
+
+    Updated redis hook implementation, on path to redis queues for concurrency. Untested.
+
+commit caf9f26fa554af2f2ce1e442493a01332073e7e5
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sat Aug 21 15:18:59 2021 -0400
+
+    Big fix for global actions with permissions and global actions test passing
+
+commit 6011b0e0b98462780269d8007e079fbb6c29fbf7
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Sat Aug 21 02:34:28 2021 -0400
+
+    Tests and changes for global actions
+
+commit 0c381942d86556d10a1b932beda3c02856bce652
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Aug 20 12:57:53 2021 -0400
+
+    Global actions implemented Untested
+
+commit d93e10a50950b0c7656622d52ca674c17802d7aa
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Aug 20 12:37:26 2021 -0400
+
+    For the love of glob!
+
+commit a76273075ce4184dd3656a2133dfb99c0d041345
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Aug 20 12:36:58 2021 -0400
+
+    For the love of glob!
+
+commit 526db50bf4accc15aee519db56baa17a07f7ac57
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Aug 20 01:02:12 2021 -0400
+
+    Updated setting global sent to update permissions
+
+commit cb271ea831bd62f988fbe61ad4a7b98e5f62e864
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 19 22:21:29 2021 -0400
+
+    Very beauitiful permissions architecture stitched into deep jaseci object model, very elegant
+
+commit 04c8953194dee582ee3e0c7a3aa9f37e74173e62
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 19 20:57:22 2021 -0400
+
+    Added master ids to all object, and sharable permissions to each object
+
+commit 411f251ccf5e4e8a7494a4ddcdd26e88a5cf3b2a
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 19 19:42:25 2021 -0400
+
+    Mid implementation of permissions foundation
+
+commit 2645e052721a49523b36c91f73d557f2c0efb25d
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 19 17:06:11 2021 -0400
+
+    Renaming 'owner' with 'parent' for clarity
+
+commit 98f9ef296a105e9faf6abed158d6b141afb1baf9
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 19 16:51:02 2021 -0400
+
+    Mid global actions, doing permissions
+
+commit 27848f6ad66809273cb668c1fb4ecaf5752928b8
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Thu Aug 19 02:11:42 2021 -0400
+
+    tweak
+
+commit 9fc6eeafb359ba7def4bfbd4201a382fb2921ff5
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 18 21:10:01 2021 -0400
+
+    Testing of globals get set and deleteing
+
+commit 01b29be384f423443b818aa4a4d789fddca4d164
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 18 20:58:28 2021 -0400
+
+    Testing for backend sentinels in and passing
+
+commit 34db3e446737f38867c057e8ff2675fd35b19081
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 18 19:01:01 2021 -0400
+
+    First test for new backend jac passes
+
+commit ea5f1e0d62d0bd2577786ece28446470ce8f87e2
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 18 17:54:02 2021 -0400
+
+    serverside jac support added Untested!
+
+commit 1dae78765a773cc6ac5490330803deeb9bb20ffe
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 18 16:14:10 2021 -0400
+
+    Spawn centralization and tweaks
+
+commit 947a5d24fc045ffc13bd6906ab10ed8c231ad16b
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 18 10:01:02 2021 -0400
+
+    Added set code ability for walkers and archittypes Untested
+
+commit d1ddf958a3fbe8b879d657206baaf6714f89b08c
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Aug 17 20:49:12 2021 -0400
+
+    IR print out apis added
+
+commit ff73a9275affe9ac1a16b83757fdd731450d112a
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Aug 17 17:07:00 2021 -0400
+
+    Partial refactor
+
+commit b2c10f0393252a4c914d2df98f96d5039a19524d
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Aug 17 16:05:30 2021 -0400
+
+    Pre big refactor
+
+commit 96b0d5e90a0bfe54b70fd8859dc58d76a90d03b5
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Aug 17 15:35:14 2021 -0400
+
+    Switch from pickle to json for IR representation
+
+commit 6ecd222e78794ac3a2acbb627c1caad3760baeac
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Aug 17 14:40:35 2021 -0400
+
+    Parameter passing for can action calls done and tested
+
+commit 30ed757c49619f7eac17e683310c230304cb3818
+Author: Jason Mars <jason@mars.ninja>
+Date:   Mon Aug 16 13:50:44 2021 -0400
+
+    JSCTL interface first first first draft done
+
+commit a0930d0eccad3ba435d09bae57c8fc504dc9904c
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Mon Aug 16 13:29:00 2021 -0400
+
+    More book
+
+commit 3f6be83b5034961c45c314189cb72f267ab7db2e
+Author: Jason Mars <jason@mars.ninja>
+Date:   Mon Aug 16 12:38:29 2021 -0400
+
+    More book of course
+
+commit 869a8047e73c89fabe7a99451f0761d81454589b
+Merge: 332fc36 ce2133a
+Author: Jason Mars <jason@mars.ninja>
+Date:   Mon Aug 16 09:47:56 2021 -0400
+
+    Merge branch 'jm/newstuff' of https://git.jaseci.org/marsninja/jaseci into jm/newstuff
+
+commit 332fc36f956f9294de9a89d5e94c578df76f36a8
+Author: Jason Mars <jason@mars.ninja>
+Date:   Mon Aug 16 09:47:53 2021 -0400
+
+    Old changes need to go in
+
+commit ce2133a55b1a554c985cd6d53a6412b16a05bd48
+Author: Jason Mars <jason@mars.ninja>
+Date:   Mon Aug 16 09:45:55 2021 -0400
+
+    More book
+
+commit 7bdae4c0a5b2ec8bb178aaf5c38dc788be056495
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Sun Aug 15 23:26:26 2021 -0400
+
+    More book
+
+commit 06cfbbc7709f8edb8946e0e01229afa07f5efc9d
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Sun Aug 15 23:25:39 2021 -0400
+
+    More book
+
+commit 386b3055db36f0ae40f406ef92671c8d95ce5222
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sun Aug 15 22:05:18 2021 -0400
+
+    fixing .output routing
+
+commit b0d6f0ac67cc50b465f4ca9390fcf526202f4ef7
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sun Aug 15 19:25:58 2021 -0400
+
+    more book
+
+commit 024a6d5030c6e0781e69fdc1cd51147603a44118
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Sun Aug 15 14:52:12 2021 -0400
+
+    more book
+
+commit 30e3a9bad977d297e35e64ab0c000698bba89ce7
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sun Aug 15 11:49:33 2021 -0400
+
+    more book
+
+commit 92ab897924416127f26f3d444494e211549c8ae4
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sat Aug 14 17:51:02 2021 -0400
+
+    More book
+
+commit cf520cc33f943c1653bca800f95f66eddb962ef9
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sat Aug 14 13:47:38 2021 -0400
+
+    More book and a starter tool for tex output in jsctl
+
+commit 34da3640bc56ea3ac8945d30870292f5859f148e
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 11 16:06:08 2021 -0400
+
+    clearing book.pdf out of repo
+
+commit 8998f9d74227bde2fa3dfe76843221c131423aac
+Author: Jason Mars <jason@mars.ninja>
+Date:   Mon Aug 9 18:25:55 2021 -0400
+
+    More code gen, started the jsx execution engine
+
+commit b47ea28ecd2b92c03f3f97edba7b1a364348c9b4
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Sun Aug 8 21:03:38 2021 -0400
+
+    Code gen progress
+
+commit 7c330c4a0d588bf6e8baebf762f22b69473f5da0
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Fri Aug 6 16:59:54 2021 -0700
+
+    codegen makes my brain hurt sometimes
+
+commit b952e672b0f41f232276017dd6d058a78512c4fe
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Fri Aug 6 14:31:48 2021 -0700
+
+    more code gen
+
+commit 2ac91da9abcf0bac92953f5b8939fe659f4fba5b
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Fri Aug 6 16:15:47 2021 -0400
+
+    More scaffolding for codegen
+
+commit 57bacf57825c57e200ee375e616c5d7dcbfbca78
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Fri Aug 6 16:01:49 2021 -0400
+
+    Bytecode and virtual machine underway
+
+commit 0dffb6fc4cea87416e35649939ae4c613c99b925
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Fri Aug 6 14:29:22 2021 -0400
+
+    Code gen project started
+
+commit bd32b930c44d6cc02e6229fe09e9a50d016b35b3
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Aug 6 10:00:30 2021 -0400
+
+    Repo reorg
+
+commit 65b5191455cd891ae99ff2580089aaac76d2ba06
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Aug 6 09:38:21 2021 -0400
+
+    Added auto run capability on sentinel register
+
+commit ff19c0bf0367b1ceb54bf6daca7b4b6e2d26b2b7
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Aug 6 01:14:54 2021 -0400
+
+    tweak
+
+commit c7bcbb72e83a77649ce512dccb310be8b0e1b4dd
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 5 17:20:45 2021 -0400
+
+    more book
+
+commit 8cb10b9e660ff9893491224f5e8fd0bdf7c94518
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 5 15:48:50 2021 -0400
+
+    More book
+
+commit 446c285254cf9bd51a4a39bc0e56ccd14fa52e0e
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 5 13:11:38 2021 -0400
+
+    Bugfix and tweaks
+
+commit 5103913a9a0db7aedf71d0f24120b674c42e38e6
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Aug 5 09:13:59 2021 -0400
+
+    Moving interpreter to own folder
+
+commit 7d87b864d1267f4cdfb797150d356797d34d9e82
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Wed Aug 4 21:57:58 2021 -0400
+
+    Changed machine name to better named interp for interpreter which is more accurate
+
+commit 4314009015ffc14fd77352976050c16bba84dd45
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 4 18:37:31 2021 -0400
+
+    can now assign variables on has definition
+
+commit f1d0256a217b0d214a5c633a53abe58536e90033
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 4 16:23:08 2021 -0400
+
+    Better dot graphs
+
+commit cacaa6d5faef274d66717d64bb346b27d6627417
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 4 14:26:05 2021 -0400
+
+    New API upgrades and auto alias generation mechanism added
+
+commit 66be5de6c2f002c82cd84f17efc4e5d68bef18f8
+Author: Jason Mars <jason@mars.ninja>
+Date:   Wed Aug 4 08:57:46 2021 -0400
+
+    Mid hack of new api's
+
+commit 898fb4311300cbcd827a9d8bb327cb7d29100341
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Aug 3 14:29:58 2021 -0400
+
+    Prep work for new walker and architype apis
+
+commit aa8d283b821ee4db94c4cdef51436e83899500ef
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Aug 3 09:16:15 2021 -0400
+
+    mid code change
+
+commit f07df69784f102e71e3454eb99a0aa4a34d4670a
+Author: Jason Mars <jason@mars.ninja>
+Date:   Mon Aug 2 23:00:11 2021 -0400
+
+    Major deprecation elimination and core refactor
+
+commit 88803648fd4db9a5cc4c0247faddd7369fea9e04
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Sun Aug 1 23:55:31 2021 -0400
+
+    Tweaks
+
+commit 2fbbf70f6c5e85d2b361a87e6acea48a39426e87
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Sun Aug 1 21:10:30 2021 -0400
+
+    removing session file
+
+commit 1f7fab3e790b980bf8b15c30d8465314fc3cce0e
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Sun Aug 1 21:09:22 2021 -0400
+
+    much progress, rearchitected dot engagement, will probably depercate things and call this phase 2.0
+
+commit 9ad276631e2a0df3286068bd8d3553d8444de67f
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sun Aug 1 18:11:04 2021 -0400
+
+    mid overhaul
+
+commit 0f4b0d059d57b1e26899ddce3b75ac5b17416193
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sun Aug 1 16:19:00 2021 -0400
+
+    Mid big refactor, new semantics, brain fried
+
+commit 5b031f418497eb76f19e5f5a6a75d111e4b97df7
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sun Aug 1 12:43:15 2021 -0400
+
+    Mid refactor
+
+commit fc4517f04ae9b923406858a7584aeb005ab9edeb
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sun Aug 1 12:06:29 2021 -0400
+
+    Pulling out jac_code refactor
+
+commit 4b37034f797d065fb3d4771c3e1c1954d37eca9e
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sun Aug 1 11:21:59 2021 -0400
+
+    Change default for spell checking to false
+
+commit bedb5284e214ec30cdf8cffac88597f67d978244
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Sat Jul 31 23:11:18 2021 -0400
+
+    Editor fusion project continues
+
+commit 8292f8b598f95bfe43516bb34bcfddf8a2e2a2eb
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sat Jul 31 18:22:55 2021 -0400
+
+    Tests merged
+
+commit e09a0ecd54b4a586ae713f9712fb3cf9b729c854
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sat Jul 31 13:29:58 2021 -0400
+
+    Integrating ci_edit third party test in testing echo system to prep for customization
+
+commit aa0bebc03035f9b5ba661a148906819f9b6f1678
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sat Jul 31 12:52:10 2021 -0400
+
+    Introducing jsctl editor thanks to Google's pure elegant ci_editor project
+
+commit b59dd74fa6530a98ea2fba19e926e86ffb43bb92
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sat Jul 31 11:13:46 2021 -0400
+
+    Tweak and opt back
+
+commit 1dc70abaa9e0293859e7d5556ada480b922bb3f9
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Sat Jul 31 10:33:22 2021 -0400
+
+    Print deprecation itmes
+
+commit 97ecf05652a8e2580f4b5c1a9411cf1c8951b0a1
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Jul 30 23:51:19 2021 -0400
+
+    New test and tweaks
+
+commit de827efe6c9dec9c3085e45699bd47206e7a6abf
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Jul 30 23:34:55 2021 -0400
+
+    Enhanced api to allow for selected sentinels and graphs
+
+commit 07c901511a3c0c5844ae0165ab27ab2058e1046f
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Jul 30 20:49:53 2021 -0400
+
+    Mid Coding
+
+commit 725e8040fb219df3617e14446943e7a973ab64cb
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Jul 30 17:31:48 2021 -0400
+
+    More book
+
+commit 93dd4ecce705788b04cf9aaa3c7ba5c93dd210de
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Jul 29 20:10:46 2021 -0400
+
+    tweak
+
+commit e2ec10d27c0b0cad2d65f5beff85d805ee2be320
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Jul 29 19:50:43 2021 -0400
+
+    More Book
+
+commit 50507f06183f06b5fe122bd0430b2cad38743895
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Jul 29 17:10:31 2021 -0400
+
+    More book
+
+commit 4975458965203368d88108ae1041c8dacddb403d
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Jul 29 16:49:43 2021 -0400
+
+    Hilarious rant added
+
+commit 2cccea58a6720aad168de770afb9819d8b67c12d
+Author: Jason Mars <jason@mars.ninja>
+Date:   Thu Jul 29 16:32:17 2021 -0400
+
+    More book
+
+commit f6f08315669eaa82cc87b07ad3e98f0943d1c567
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Jul 27 19:11:50 2021 -0400
+
+    Listings working
+
+commit a5cbf5c02fbd8663d09bdebe1a3af673949e18e5
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Jul 27 19:04:17 2021 -0400
+
+    Listings and reorg
+
+commit 98cb0c1f9e5d382d0702cd8e4a32d44568061ba3
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Jul 27 18:25:58 2021 -0400
+
+    tweaks
+
+commit 987d5664e18110e74d0eb1b1e4bf4ff1eea2cb59
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Jul 27 18:17:30 2021 -0400
+
+    Book foundation
+
+commit ce4c2f55bfdf29daf47b3e8091d5e70afb061fff
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Jul 27 17:13:53 2021 -0400
+
+    Book base tweaks
+
+commit 84e3ea70cddf0a8a7c590bd3fa0f546217178fe1
+Author: Jason Mars <jason@mars.ninja>
+Date:   Tue Jul 27 15:37:37 2021 -0400
+
+    Book harness
+
+commit ece4a73344f3f286f791c5190db2af899af08d04
+Author: Jason Mars <jason@mars.ninja>
+Date:   Mon Jul 26 21:36:50 2021 -0400
+
+    book build scripts
+
+commit 0d4e148120589b2fd7372353595de9fa5aed8e36
+Author: Jason Mars <jason@mars.ninja>
+Date:   Sun Jul 25 22:24:52 2021 -0400
+
+    New edge referencing syntax
+
+commit 51b2375d070dcf78ac1949cc8a61d78b0ef92542
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Thu Jul 22 09:01:29 2021 -0400
+
+    Exposed new issue
+
+commit bc63bc44b2edfe7722836c232aaa09dceea988cc
+Author: Jason Mars <ninja@Jasons-MacBook-Pro.local>
+Date:   Sat Jul 17 15:33:15 2021 -0400
+
+    Added test for new edge/node semantic
+
+commit 0dfec7e52b36f4acd7bf07ff768e258d2b0b3ed9
+Author: Jason Mars <jason@mars.ninja>
+Date:   Fri Jul 16 15:14:01 2021 -0400
+
+    Added new node/edge accessors not tested yet though
+
