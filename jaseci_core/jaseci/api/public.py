@@ -19,6 +19,15 @@ class public_api():
         self.committer = None
         self.hook = hook
 
+    def seek_committer(self, obj):
+        """Opportunistically assign a committer"""
+        if(not self.committer):
+            self.committer = obj._h.get_obj(obj._m_id, uuid.UUID(obj._m_id))
+
+    def clear_committer(self):
+        """Unset committer"""
+        self.committer = None
+
     def general_interface_to_api(self, params, api_name):
         """
         A mapper utility to interface to public
@@ -47,6 +56,7 @@ class public_api():
                             f'No {p_type} value for {p_name} provided!')
                     val = self.hook.get_obj(
                         'override', uuid.UUID(val), override=True)
+                    self.seek_committer(val)
                     if (isinstance(val, p_type)):
                         param_map[i] = val
                     else:
@@ -101,6 +111,5 @@ class public_api():
         wlk.refresh()
         wlk.prime(nd, prime_ctx=ctx)
         res = wlk.run()
-        self.committer = wlk._h.get_obj(wlk._m_id, uuid.UUID(wlk._m_id))
         wlk.destroy()
         return res

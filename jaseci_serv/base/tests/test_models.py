@@ -20,25 +20,26 @@ class model_tests(TestCaseHelper, TestCase):
     def tearDown(self):
         super().tearDown()
 
-    # TODO: BRING ME BACK FOR CASCADE DELETE TEST
-    # def test_users_based_on_email(self):
-    #     """Tests that users are created based on valid emails"""
+    def test_users_creation_and_deletion(self):
+        """
+        Tests that users are created based on valid emails and
+        objects are deleted with user
+        """
+        email = 'JSCITEST_blah@BlaB.com'
+        password = 'passW123'
+        num_nodes = models.JaseciObject.objects.count()
+        user = get_user_model().objects.create_user(
+            email=email,
+            password=password
+        )
+        # This tests that nodes are created/destroyed along side users
+        self.assertEqual(num_nodes+1, models.JaseciObject.objects.count())
 
-    #     email = 'JSCITEST_blah@BlaB.com'
-    #     password = 'passW123'
-    #     num_nodes = models.JaseciObject.objects.count()
-    #     user = get_user_model().objects.create_user(
-    #         email=email,
-    #         password=password
-    #     )
-    #     # This tests that nodes are created/destroyed along side users
-    #     self.assertEqual(num_nodes+1, models.JaseciObject.objects.count())
-
-    #     self.assertEqual(user.email.split('@')[1], email.split('@')[1].lower())
-    #     self.assertTrue(user.check_password(password))
-    #     user.delete()
-    #     self.assertFalse(get_user_model().objects.filter(id=user.id).exists())
-    #     self.assertEqual(num_nodes, models.JaseciObject.objects.count())
+        self.assertEqual(user.email.split('@')[1], email.split('@')[1].lower())
+        self.assertTrue(user.check_password(password))
+        user.delete()
+        self.assertFalse(get_user_model().objects.filter(id=user.id).exists())
+        self.assertEqual(num_nodes, models.JaseciObject.objects.count())
 
     def test_create_super_user(self):
         """Tests that superuser is created and has the right permissions"""

@@ -428,7 +428,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_public_jac_apis_walker_summon_auth(self):
         """Test public API for summoning walker"""
-        self.logger_on()
         zsb_file = open("jac_api/tests/zsb.jac").read()
         payload = {'op': 'sentinel_register', 'name': 'zsb',
                    'code': zsb_file}
@@ -444,7 +443,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         walk = res.data['zsb:walker:pubinit']
         nd = res.data['active:graph']
-        self.log([walk, nd, key])
         payload = {'op': 'walker_summon', 'key': key, 'walk': walk, 'nd': nd}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')

@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime
 
 from django.db import models
-from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
     PermissionsMixin
 from django.contrib.auth import get_user_model
@@ -83,6 +82,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_master(self):
         """Returns main user Jaseci node"""
         return self._h.get_obj(caller_id=self.master.urn, item_id=self.master)
+
+    def delete(self):
+        JaseciObject.objects.filter(j_master=self.master.urn).delete()
+        JaseciObject.objects.filter(jid=self.master.urn).delete()
+        super().delete()
 
 
 class JaseciObject(models.Model):

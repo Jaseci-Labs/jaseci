@@ -50,7 +50,6 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
 
     def test_jsci_db_to_engine_hook_on_authenticate_loading(self):
         """Test that db hooks are set up correctly for loading"""
-        self.logger_on()
         user = self.user
         self.assertIsNotNone(user._h)
         temp_id = node.node(m_id=user.master.urn, h=user._h).id

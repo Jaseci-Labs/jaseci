@@ -137,12 +137,10 @@ class jac_tests(TestCaseHelper, TestCase):
                          '2010-08-03T03:00:00.000000')
         test_walker.run()
         after_gen = len(gph._h.mem)
-        self.log(gph._h.mem)
         test_walker.prime(test_node)
         test_walker.context['date'] = '2010-08-03T03:00:00.000000'
         test_walker.run()
         after_track = len(gph._h.mem)
-        self.log(gph._h.mem)
         # Tests that more items were created the first time through
         self.assertEqual(after_gen, after_track)
 

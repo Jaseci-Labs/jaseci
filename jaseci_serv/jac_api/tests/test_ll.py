@@ -25,7 +25,6 @@ class test_ll(TestCaseHelper, TestCase):
         self.master = self.user.get_master()
         payload = {'op': 'graph_create'}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.log(res)
         self.gph = self.master._h.get_obj(
             self.master.jid, uuid.UUID(res.data['jid']))
         ll_file = base64.b64encode(
