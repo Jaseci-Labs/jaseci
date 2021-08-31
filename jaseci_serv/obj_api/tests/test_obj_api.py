@@ -48,8 +48,8 @@ class PrivateNodeApiTests(TestCaseHelper, TestCase):
 
     def test_retrieve_nodes(self):
         """Test retrieving node list"""
-        JaseciObject.objects.create(user=self.user, name='Vegan')
-        JaseciObject.objects.create(user=self.user, name='Dessert')
+        JaseciObject.objects.create(name='Vegan')
+        JaseciObject.objects.create(name='Dessert')
 
         res = self.client.get(NODE_URL)
 
@@ -61,8 +61,8 @@ class PrivateNodeApiTests(TestCaseHelper, TestCase):
     #         'JSCITEST_other@jaseci.com',
     #         'testpass'
     #     )
-    #     JaseciObject.objects.create(user=user2, name='Fruity')
-    #     node = JaseciObject.objects.create(user=self.user, name='Comfort Food')
+    #     JaseciObject.objects.create(name='Fruity')
+    #     node = JaseciObject.objects.create(name='Comfort Food')
 
     #     res = self.client.get(NODE_URL)
 
@@ -77,7 +77,6 @@ class PrivateNodeApiTests(TestCaseHelper, TestCase):
         self.client.post(NODE_URL, payload)
 
         exists = JaseciObject.objects.filter(
-            user=self.user,
             name=payload['name']
         ).exists()
         self.assertTrue(exists)

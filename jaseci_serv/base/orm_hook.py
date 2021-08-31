@@ -19,14 +19,10 @@ import json
 class orm_hook(mem_hook):
     """
     Hooks Django ORM database for Jaseci objects to Jaseci's core engine.
-
-    Sets user on initialization to route calls to correct user. This hook
-    lives in :class:`User` class as per :field:`User.orm_hook`.
     """
 
-    def __init__(self, user, objects, globs,
+    def __init__(self, objects, globs,
                  red=Redis(host=REDIS_HOST, decode_responses=True)):
-        self.user = user
         self.objects = objects
         self.globs = globs
         self.red = red
@@ -50,7 +46,6 @@ class orm_hook(mem_hook):
         else:
             try:
                 loaded_obj = self.objects.get(
-                    user=self.user,
                     jid=item_id)
             except ObjectDoesNotExist:
                 logger.error(
@@ -99,16 +94,15 @@ class orm_hook(mem_hook):
                 str(f"Couldn't save {item} to redis! {e}"),
                 exc_info=True
             )
-        item_from_db, created = self.objects.get_or_create(
-            user=self.user, jid=item.id
-        )
+        item_from_db, created = self.objects.get_or_create(jid=item.id
+                                                           )
         utils.map_assignment_of_matching_fields(item_from_db, item)
         item_from_db.jsci_obj = item.jsci_payload()
         item_from_db.save()
 
     def destroy_obj_from_store(self, item):
         try:
-            self.objects.get(user=self.user, jid=item.id).delete()
+            self.objects.get(jid=item.id).delete()
         except ObjectDoesNotExist:
             # NOTE: Should look at this at some point
             # logger.error("Object does not exists so delete aborted!")

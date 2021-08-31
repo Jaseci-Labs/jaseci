@@ -72,7 +72,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __init__(self, *args, **kwargs):
         self._h = orm_hook(
-            user=self,
             objects=JaseciObject.objects,
             globs=GlobalVars.objects
         )
@@ -98,8 +97,6 @@ class JaseciObject(models.Model):
     between recursive schema's which may be useful if necessary in the
     future.
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, editable=False,
-                             on_delete=models.CASCADE)
     jid = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
     j_parent = models.UUIDField(null=True, blank=True)

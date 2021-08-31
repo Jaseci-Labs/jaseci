@@ -66,11 +66,14 @@ class jac_code():
     def reset(self):
         self.is_active = False
 
+    def refresh(self):
+        self._jac_ast = jac_ir_to_ast(self.code_ir) if self.code_ir else None
+
     def apply_ir(self, ir):
         """Apply's IR to object"""
         self.code_ir = ir if(isinstance(ir, str)) else \
             jac_ast_to_ir(ir)
-        self._jac_ast = jac_ir_to_ast(self.code_ir) if ir else None
+        self.refresh()
         if(self._jac_ast):
             kid = self._jac_ast.kid
             if(self.j_type == 'architype' or self.j_type == 'walker'):

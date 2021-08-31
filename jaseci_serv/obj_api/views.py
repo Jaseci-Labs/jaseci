@@ -43,12 +43,12 @@ class ObjectViewSet(viewsets.ModelViewSet):
             return None
         else:
             return self.queryset.filter(
-                user=self.request.user
+                j_master=self.request.user.master.urn
             ).order_by('-name')
 
     def perform_create(self, serializer):
         """Create a new object"""
-        serializer.save(user=self.request.user)
+        serializer.save(j_master=self.request.user.master.urn)
 
 
 class GlobalVarsSerializer(slzrs.ModelSerializer):

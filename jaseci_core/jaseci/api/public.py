@@ -98,7 +98,7 @@ class public_api():
         if(key not in walk.namespace_keys()):
             return ['Not authorized to execute this walker']
         wlk = walk.duplicate()
-        wlk._jac_ast = walk._jac_ast
+        wlk.refresh()
         wlk.prime(nd, prime_ctx=ctx)
         res = wlk.run()
         self.committer = wlk._h.get_obj(wlk._m_id, uuid.UUID(wlk._m_id))
