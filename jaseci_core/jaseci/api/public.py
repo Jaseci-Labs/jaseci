@@ -11,7 +11,15 @@ class public_api():
     Public  APIs
     """
 
-    def general_interface_to_api(self, hook, params, api_name):
+    def __init__(self, hook):
+        """
+        self.committer is set by api implementaiton if intent
+        is to commit changes enacted by public call
+        """
+        self.committer = None
+        self.hook = hook
+
+    def general_interface_to_api(self, params, api_name):
         """
         A mapper utility to interface to public
         Assumptions:
@@ -37,7 +45,7 @@ class public_api():
                     if(val is None or val == 'None'):
                         logger.error(
                             f'No {p_type} value for {p_name} provided!')
-                    val = hook.get_obj(
+                    val = self.hook.get_obj(
                         'override', uuid.UUID(val), override=True)
                     if (isinstance(val, p_type)):
                         param_map[i] = val
@@ -93,5 +101,6 @@ class public_api():
         wlk._jac_ast = walk._jac_ast
         wlk.prime(nd, prime_ctx=ctx)
         res = wlk.run()
+        self.committer = wlk._h.get_obj(wlk._m_id, uuid.UUID(wlk._m_id))
         wlk.destroy()
         return res

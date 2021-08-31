@@ -1,8 +1,11 @@
 from rest_framework.views import APIView
 from knox.auth import TokenAuthentication
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from jaseci.utils.utils import logger
+from jaseci.api.public import public_api
+from base.orm_hook import orm_hook
+from base.models import JaseciObject, GlobalVars
 from time import time
 
 
@@ -32,11 +35,10 @@ class AbstractJacAPIView(APIView):
         """
         self.proc_request(request)
 
-        api_result = self.master.general_interface_to_api(
+        api_result = self.caller.general_interface_to_api(
             self.cmd, type(self).__name__)
         self.log_request_time()
-        self.master._h.commit()
-        return Response(api_result)
+        return self.issue_response(api_result)
 
     def log_request_time(self):
         """Api call preamble"""
@@ -55,8 +57,16 @@ class AbstractJacAPIView(APIView):
             f'Incoming call to {type(self).__name__} with {pl_peek}'))
         self.start_time = time()
         self.cmd = request.data
-        self.master = request.user.get_master()
+        self.set_caller(request)
         self.res = "Not valid interaction!"
+
+    def set_caller(self, request):
+        """Assigns the calling api interface obj"""
+        self.caller = request.user.get_master()
+
+    def issue_response(self, api_result):
+        """Issue response from call"""
+        return JResponse(self.caller, api_result)
 
 
 class AbstractAdminJacAPIView(AbstractJacAPIView):
@@ -64,3 +74,25 @@ class AbstractAdminJacAPIView(AbstractJacAPIView):
     The abstract base for Jaseci Admin APIs
     """
     permission_classes = (IsAuthenticated, IsAdminUser)
+
+
+class AbstractPublicJacAPIView(AbstractJacAPIView):
+    """
+    The abstract base for Jaseci Admin APIs
+    """
+    permission_classes = (AllowAny,)
+
+    def set_caller(self, request):
+        """Assigns the calling api interface obj"""
+        self.caller = public_api(orm_hook(
+            objects=JaseciObject.objects,
+            globs=GlobalVars.objects
+        ))
+
+    def issue_response(self, api_result):
+        """Issue response from call"""
+        # If committer set, results should be saved back
+        if(self.caller.committer):
+            return JResponse(self.caller.committer, api_result)
+        else:
+            return Response(api_result)

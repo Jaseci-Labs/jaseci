@@ -425,3 +425,27 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'walker_execute', 'wlk': walk.id.urn}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.assertEqual(gph.outbound_nodes()[0].context['c'], 7)
+
+    def test_public_jac_apis_walker_summon_auth(self):
+        """Test public API for summoning walker"""
+        self.logger_on()
+        zsb_file = open("jac_api/tests/zsb.jac").read()
+        payload = {'op': 'sentinel_register', 'name': 'zsb',
+                   'code': zsb_file}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'walker_get', 'mode': 'keys',
+                   'wlk': 'zsb:walker:pubinit'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        key = list(res.data.keys())[0]
+        payload = {'op': 'alias_list'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        walk = res.data['zsb:walker:pubinit']
+        nd = res.data['active:graph']
+        self.log([walk, nd, key])
+        payload = {'op': 'walker_summon', 'key': key, 'walk': walk, 'nd': nd}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 0)

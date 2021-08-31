@@ -13,3 +13,7 @@ for i in dir(api):
         urlpatterns.append(
             path(f'admin/{i[10:]}', getattr(api, i).as_view(),
                  name=f'{i[10:]}'))
+    elif (i.startswith('public_api_')):
+        urlpatterns.append(
+            path(f'public/{i[11:]}', getattr(api, i).as_view(),
+                 name=f'{i[11:]}'))

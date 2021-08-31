@@ -1,6 +1,8 @@
-from .views import AbstractJacAPIView, AbstractAdminJacAPIView
+from .views import AbstractJacAPIView
+from .views import AbstractAdminJacAPIView, AbstractPublicJacAPIView
 from jaseci.element import element
 from jaseci.master import master
+from jaseci.api.public import public_api
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
 from inspect import signature
@@ -41,22 +43,28 @@ def rest_api_auto_doc(endpoint: str, fsig: signature):
 
 
 # Introspection on master interface to generate view class for master apis
-for i in dir(master(h=mem_hook())):
-    if (i.startswith('api_')):
-        func_sig = signature(getattr(master, i))
+def generate_apis(M):
+    for i in dir(M):
+        if (i.startswith('api_')):
+            cls = AbstractJacAPIView
+            apidocstr = f'/jac/{i[4:]}'
+        elif (i.startswith('admin_api_')):
+            cls = AbstractAdminJacAPIView
+            apidocstr = f'/admin/{i[10:]}'
+        elif (i.startswith('public_api_')):
+            cls = AbstractPublicJacAPIView
+            apidocstr = f'/public/{i[11:]}'
+        else:
+            continue
+        func_sig = M.get_api_signature(i)
         gen_cls = type(i,
-                       (AbstractJacAPIView,),
+                       (cls,),
                        {})
         gen_cls.post = copy_func(gen_cls.post)
-        gen_cls.post.__doc__ = getattr(master, i).__doc__ + '\n\n' + \
-            rest_api_auto_doc(f'/jac/{i[4:]}', func_sig)
+        gen_cls.post.__doc__ = M.get_api_doc(i) + '\n\n' + \
+            rest_api_auto_doc(apidocstr, func_sig)
         globals()[i] = gen_cls
-    elif (i.startswith('admin_api_')):
-        func_sig = signature(getattr(master, i))
-        gen_cls = type(i,
-                       (AbstractAdminJacAPIView,),
-                       {})
-        gen_cls.post = copy_func(gen_cls.post)
-        gen_cls.post.__doc__ = getattr(master, i).__doc__ + '\n\n' + \
-            rest_api_auto_doc(f'/admin/{i[10:]}', func_sig)
-        globals()[i] = gen_cls
+
+
+generate_apis(master(h=mem_hook()))
+generate_apis(public_api(None))

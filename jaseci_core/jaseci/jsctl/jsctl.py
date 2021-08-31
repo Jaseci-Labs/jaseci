@@ -81,8 +81,8 @@ def interface_api(api_name, is_public, **kwargs):
     if(connection['token'] and connection['url']):
         out = remote_api_call(kwargs, api_name)
     elif(is_public):
-        hook = session['master']._h
-        out = public_api().general_interface_to_api(hook, kwargs, api_name)
+        out = public_api(session['master']._h).general_interface_to_api(
+            kwargs, api_name)
     else:
         out = session['master'].general_interface_to_api(kwargs, api_name)
     if(isinstance(out, dict) or isinstance(out, list)):
@@ -103,7 +103,7 @@ def extract_api_tree():
     signatures in leaves from API function names in Master
     """
     api_funcs = {}
-    for i in dir(session['master'])+dir(public_api()):
+    for i in dir(session['master'])+dir(public_api(None)):
         if (i.startswith('api_') or i.startswith('admin_api_') or
                 i.startswith('public_api_')):
             is_public = False
@@ -114,9 +114,9 @@ def extract_api_tree():
                 is_public = True
             cmd_groups = func_str.split('_')
             func_sig = session['master'].get_api_signature(
-                i) if not is_public else public_api().get_api_signature(i)
+                i) if not is_public else public_api(None).get_api_signature(i)
             func_doc = session['master'].get_api_doc(
-                i) if not is_public else public_api().get_api_doc(i)
+                i) if not is_public else public_api(None).get_api_doc(i)
 
             # Build hierarchy of command groups
             api_root = api_funcs

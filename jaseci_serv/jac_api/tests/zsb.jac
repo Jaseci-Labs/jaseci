@@ -188,3 +188,13 @@ walker init {
         }
     }
 }
+
+walker pubinit:anyone {
+    root {
+        take (--> node::botset) else {
+            spawn here --> node::botset;
+            std.log(-->);
+            disengage;
+        }
+    }
+}

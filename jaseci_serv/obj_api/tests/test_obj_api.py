@@ -55,21 +55,21 @@ class PrivateNodeApiTests(TestCaseHelper, TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    def test_nodes_limited_to_user(self):
-        """Test that nodes returned are for authenticated user"""
-        user2 = get_user_model().objects.create_user(
-            'JSCITEST_other@jaseci.com',
-            'testpass'
-        )
-        JaseciObject.objects.create(user=user2, name='Fruity')
-        node = JaseciObject.objects.create(user=self.user, name='Comfort Food')
+    # def test_nodes_limited_to_user(self):
+    #     """Test that nodes returned are for authenticated user"""
+    #     user2 = get_user_model().objects.create_user(
+    #         'JSCITEST_other@jaseci.com',
+    #         'testpass'
+    #     )
+    #     JaseciObject.objects.create(user=user2, name='Fruity')
+    #     node = JaseciObject.objects.create(user=self.user, name='Comfort Food')
 
-        res = self.client.get(NODE_URL)
+    #     res = self.client.get(NODE_URL)
 
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data['results']), 2)
-        self.assertEqual(res.data['results'][1]['name'], node.name)
-        user2.delete()
+    #     self.assertEqual(res.status_code, status.HTTP_200_OK)
+    #     self.assertEqual(len(res.data['results']), 2)
+    #     self.assertEqual(res.data['results'][1]['name'], node.name)
+    #     user2.delete()
 
     def test_create_node_successful(self):
         """Test creating a new node"""
