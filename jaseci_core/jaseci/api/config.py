@@ -2,20 +2,16 @@
 Admin config api functions as a mixin
 """
 
-VALID_CONFIGS = ['EMAIL_BACKEND',
-                 'EMAIL_USE_TLS',
-                 'EMAIL_HOST',
-                 'EMAIL_HOST_USER',
-                 'EMAIL_HOST_PASSWORD',
-                 'EMAIL_PORT',
-                 'EMAIL_DEFAULT_FROM',
-                 ]
-
 
 class config_api():
     """
     Admin config APIs
+    Abstracted since there are no valid configs in core atm, see jaseci_serv
+    to see how used.
     """
+
+    def __init__(self, *args, **kwargs):
+        self.valid_configs = ['CONFIG_EXAMPLE']
 
     def admin_api_config_get(self, name: str,
                              do_check: bool = True):
@@ -40,7 +36,7 @@ class config_api():
         """
         Check a config is present
         """
-        return [v for v in self._h.list_glob() if v in VALID_CONFIGS]
+        return [v for v in self._h.list_glob() if v in self.valid_configs]
 
     def admin_api_config_exists(self, name: str):
         """
@@ -61,8 +57,8 @@ class config_api():
     def name_error(self, name):
         """Much used error output"""
         return [
-            f"Config {name} not recognized, must be in {VALID_CONFIGS}!"]
+            f"Config {name} not recognized, must be in {self.valid_configs}!"]
 
     def name_check(self, name):
         """Much used name check"""
-        return (name in VALID_CONFIGS)
+        return (name in self.valid_configs)

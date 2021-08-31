@@ -4,9 +4,16 @@ from datetime import datetime
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
     PermissionsMixin
+from jaseci_serv.settings import JASECI_CONFIGS
 from django.contrib.auth import get_user_model
 from base.orm_hook import orm_hook
-from jaseci import master
+from jaseci.master import master as core_master
+
+
+class master(core_master):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.valid_configs = JASECI_CONFIGS
 
 
 class UserManager(BaseUserManager):
@@ -27,7 +34,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = master.master(h=user._h, email=email).id
+        user.master = master(h=user._h, email=email).id
         user._h.commit()
 
         user.save(using=self._db)
@@ -45,7 +52,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = master.master(h=user._h, email=email).id
+        user.master = master(h=user._h, email=email).id
         user._h.commit()
 
         user.save(using=self._db)

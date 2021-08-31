@@ -2,7 +2,6 @@
 Admin Global api functions as a mixin
 """
 from jaseci.actor.sentinel import sentinel
-from .config import VALID_CONFIGS
 
 
 class global_api():
@@ -20,7 +19,7 @@ class global_api():
         """
         Set a config
         """
-        if(name == 'GLOB_SENTINEL' or name in VALID_CONFIGS):
+        if(name == 'GLOB_SENTINEL' or name in self.valid_configs):
             return [f"{name} is sacred!"]
         self._h.save_glob(name, value)
         return [f"Global variable '{name}' to '{value}' set!"]
@@ -29,7 +28,7 @@ class global_api():
         """
         Delete a config
         """
-        if(name == 'GLOB_SENTINEL' or name in VALID_CONFIGS):
+        if(name == 'GLOB_SENTINEL' or name in self.valid_configs):
             return [f"{name} is sacred!"]
         self._h.destroy_glob(name)
         return [f"Global {name} deleted."]

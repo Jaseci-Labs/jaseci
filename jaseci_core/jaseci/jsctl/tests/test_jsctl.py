@@ -108,7 +108,7 @@ class jsctl_test(TestCaseHelper, TestCase):
     def test_jsctl_config_cmds(self):
         """Tests that config commands works"""
         self.call(
-            f'config set -name EMAIL_HOST_USER -value TEST -do_check False')
+            f'config set -name CONFIG_EXAMPLE -value TEST -do_check False')
         self.call(f'config set -name APPLE -value Grape2 -do_check False')
         self.call(f'config set -name "Banana" -value "Grape" -do_check False')
         self.call(f'config set -name "Pear" -value "Banana" -do_check False')

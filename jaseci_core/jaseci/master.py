@@ -30,6 +30,7 @@ class master(element, alias_api, logger_api, graph_api,
         element.__init__(self, name=email,
                          kind="Jaseci Master", *args, **kwargs)
         alias_api.__init__(self)
+        config_api.__init__(self)
         graph_api.__init__(self)
         sentinel_api.__init__(self)
 
