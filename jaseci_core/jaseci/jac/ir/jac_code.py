@@ -73,7 +73,7 @@ class jac_code():
         """Apply's IR to object"""
         self.code_ir = ir if(isinstance(ir, str)) else \
             jac_ast_to_ir(ir)
-        self.refresh()
+        jac_code.refresh(self)  # should disregard overloaded versions
         if(self._jac_ast):
             kid = self._jac_ast.kid
             if(self.j_type == 'architype' or self.j_type == 'walker'):

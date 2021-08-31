@@ -19,6 +19,7 @@ class sentinel(element, jac_code, sentinel_interp):
     """
 
     def __init__(self, *args, **kwargs):
+        self.version = None
         self.arch_ids = id_list(self)
         self.walker_ids = id_list(self)
         element.__init__(self, *args, **kwargs)
@@ -32,15 +33,25 @@ class sentinel(element, jac_code, sentinel_interp):
         jac_code.reset(self)
         sentinel_interp.reset(self)
 
+    def refresh(self):
+        super().refresh()
+        self.ir_load()
+
     def register_code(self, text):
         """
         Registers a program (set of walkers and architypes) written in Jac
         """
         self.reset()
         self.register(text)
-
         if(self.is_active):
-            self.run_start(self._jac_ast)
+            self.ir_load()
+        return self.is_active
+
+    def ir_load(self):
+        """
+        Load walkers and architypes from IR
+        """
+        self.run_start(self._jac_ast)
 
         if(self.runtime_errors):
             logger.error(
@@ -52,7 +63,6 @@ class sentinel(element, jac_code, sentinel_interp):
                 str(f'{self.name}: No walkers nor architypes created!')
             )
             self.is_active = False
-
         return self.is_active
 
     def register_walker(self, code):

@@ -17,6 +17,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#ver_label.
+    def enterVer_label(self, ctx:jacParser.Ver_labelContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#ver_label.
+    def exitVer_label(self, ctx:jacParser.Ver_labelContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#element.
     def enterElement(self, ctx:jacParser.ElementContext):
         pass

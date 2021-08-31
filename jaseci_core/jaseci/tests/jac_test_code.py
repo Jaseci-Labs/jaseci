@@ -655,3 +655,22 @@ set_get_global = \
         }
     }
     """
+
+version_label = \
+    """
+    version: "alpha-1.0"
+
+    walker setter {
+        root {
+            std.set_global('globby', 59);
+        }
+    }
+
+    walker getter {
+        has a;
+        root {
+            a=std.get_global('globby');
+            std.log(std.get_global('globby'));
+        }
+    }
+    """

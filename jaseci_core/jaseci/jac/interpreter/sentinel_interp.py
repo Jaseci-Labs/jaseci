@@ -15,11 +15,20 @@ class sentinel_interp(interp):
 
     def run_start(self, jac_ast):
         """
-        start: element+ EOF;
+        start: ver_label? element+ EOF;
         """
         kid = jac_ast.kid
+        if(kid[0].name == 'ver_label'):
+            self.run_ver_label(kid[0])
         for i in kid[:-1]:
             self.run_element(i)
+
+    def run_ver_label(self, jac_ast):
+        """
+        ver_label: 'version' COLON STRING;
+        """
+        kid = jac_ast.kid
+        self.version = self.parse_str_token(kid[2].token_text())
 
     def run_element(self, jac_ast):
         """

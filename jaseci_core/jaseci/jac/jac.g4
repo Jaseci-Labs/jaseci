@@ -1,7 +1,9 @@
 grammar jac;
 
 /* Sentinels handle these top rules */
-start: element+ EOF;
+start: ver_label? element+ EOF;
+
+ver_label: 'version' COLON STRING;
 
 element: architype | walker;
 

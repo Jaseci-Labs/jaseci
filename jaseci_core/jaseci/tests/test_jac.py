@@ -348,3 +348,11 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker2.prime(gph)
         test_walker2.run()
         self.assertEqual(test_walker2.context['a'], 59)
+
+    def test_sentinel_version_label(self):
+        """Test sentinel version labeling"""
+        mast = master(h=mem_hook())
+        gph = graph(m_id=mast.jid, h=mast._h)
+        sent = sentinel(m_id=mast.jid, h=gph._h)
+        sent.register_code(jtc.version_label)
+        self.assertEqual(sent.version, 'alpha-1.0')

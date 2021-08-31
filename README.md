@@ -1,8 +1,11 @@
 # Jaseci Release Notes
 
-## Version 1.2
+## Version 1.2.0
 
-- New Custom action for nodes and edges
+### Features
+
+- New version labels for Jac programs
+- New custom action for nodes and edges
 - New Jaseci server support for new API and Jaseci architecture
 - New namespaces for public walker permissions management with key access
 - New object sharing across users and access control APIs
