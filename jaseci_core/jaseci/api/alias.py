@@ -6,10 +6,10 @@ Alias api as a mixin
 class alias_api():
     """Alias APIs for creating nicknames for UUIDs and other long strings
 
-    This set of APIs provide a set of `alias' management functions for creating
-    and managing aliases for long strings such as UUIDs. If an alias' name is
-    used as a parameter value in any API call, that parameter will see the
-    alias' value instead. Given that references to all sentinels, walkers,
+    The alias set of APIs provide a set of `alias' management functions for
+    creating and managing aliases for long strings such as UUIDs. If an alias'
+    name is used as a parameter value in any API call, that parameter will see
+    the alias' value instead. Given that references to all sentinels, walkers,
     nodes, etc. utilize UUIDs, it becomes quite useful to create pneumonic
     names for them. Also, when registering   sentinels, walkers, architype
     handy aliases are automatically generated. These generated aliases can

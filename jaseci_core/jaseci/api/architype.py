@@ -7,23 +7,55 @@ from jaseci.utils.utils import b64decode_str
 
 
 class architype_api():
-    """
-    Architype APIs
+    """Architype APIs for creating and managing Jaseci architypes
+
+    The architype set of APIs allow for the addition and removing of
+    architypes. Given a Jac implementation of an architype these APIs are
+    designed for creating, compiling, and managing architypes that can be
+    used by Jaseci. There are two ways to add an architype to Jaseci, either
+    through the management of sentinels using the sentinel API, or by
+    registering independent architypes with these architype APIs. These
+    APIs are also used for inspecting and managing existing arichtypes that
+    a Jaseci instance is aware of.
     """
 
-    def api_architype_register(self, snt: sentinel = None,
-                               code: str = '', encoded: bool = False):
+    def api_architype_register(self, code: str, encoded: bool = False,
+                               snt: sentinel = None):
+        """Create an architype based on the code passed and return object.
+
+        This register API allows for the creation or replacement/update of
+        an architype that can then be used by walkers in their interactions
+        of graphs. The code argument takes Jac source code for the single
+        architype. To load multiple architypes and walkers at the same time,
+        use sentinel register API.
+
+        Args:
+            code (str): The text (or filename) for an architypes Jac code
+            encoded (bool): True/False flag as to whether code is encode
+                in base64
+            snt (uuid): The UUID of the sentinel to be the owner of this
+                architype
+
+        Returns:
+            json: Fields include
+                'architype': Architype object if created otherwise null
+                'success': True/False whether register was successful\
+                'errors': List of errors if register failed
+                'response': Message on outcome of register call
         """
-        Create blank or code loaded architype and return object
-        """
+        ret = {'architype': None, 'success': False, 'errors': []}
         if (encoded):
             code = b64decode_str(code)
         arch = snt.register_architype(code)
         if(arch):
             self.extract_arch_aliases(snt, arch)
-            return arch.serialize()
+            ret['architype'] = arch.serialize()
+            ret['success'] = True
+            ret['response'] = f'Successfully created {arch.name} architype'
         else:
-            return [f'Architype not created, invalid code!']
+            ret['errors'] = snt.errors
+            ret['response'] = f'Errors occured'
+        return ret
 
     def api_architype_get(self, arch: architype, mode: str = 'default',
                           detailed: bool = False):

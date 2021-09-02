@@ -18,9 +18,10 @@ def get_global_actions(parent_obj):
     # NOTE: Regenerating global_actions based on hooks changing
     if(parent_obj._m_id not in registered_globals.keys() or
        registered_globals[parent_obj._m_id][-1] != parent_obj._h):
-        registered_globals[parent_obj._m_id] = []
+        registered_globals[parent_obj._m_id] = [
+            [], parent_obj._h]
         for i in action_list:
-            registered_globals[parent_obj._m_id].append(
+            registered_globals[parent_obj._m_id][0].append(
                 action(
                     m_id=parent_obj._m_id,
                     h=parent_obj._h,
@@ -30,8 +31,7 @@ def get_global_actions(parent_obj):
                     persist=False
                 )
             )
-        registered_globals[parent_obj._m_id].append(parent_obj._h)
     global_action_ids = id_list(parent_obj)
-    for i in registered_globals[parent_obj._m_id][:-1]:
+    for i in registered_globals[parent_obj._m_id][0]:
         global_action_ids.add_obj(i)
     return global_action_ids

@@ -61,6 +61,7 @@ class jac_code():
         self.is_active = False
         self.code_ir = None
         self._jac_ast = None
+        self.errors = []
         self.apply_ir(code_ir)
 
     def reset(self):
@@ -84,6 +85,7 @@ class jac_code():
         """Generate AST tree from Jac code text"""
         logger.info(str(f'{self.name}: Processing Jac code...'))
         tree = ast(jac_text=code, start_rule=start_rule)
+        self.errors = tree.parse_errors
         if(tree.parse_errors):
             logger.error(str(f'{self.name}: Invalid syntax in Jac code!'))
             for i in tree.parse_errors:
