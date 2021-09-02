@@ -96,3 +96,54 @@ def destroy_global(param_list, meta):
     """Get utc date time for now in iso format"""
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
     return mast.admin_api_global_delete(param_list[0])
+
+
+def set_perms(param_list, meta):
+    """
+    Sets object access mode for any Jaseci object
+    Param 1 - target element
+    Param 2 - valid permission (public, private, read_only)
+
+    Return - true/false whether successful
+    """
+    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    return mast.api_object_perms_set(obj=param_list[0],
+                                     mode=param_list[1])['success']
+
+
+def get_perms(param_list, meta):
+    """
+    Returns object access mode for any Jaseci object
+    Param 1 - target element
+
+    Return - Sorted list
+    """
+    return param_list[0].j_access
+
+
+def grant_perms(param_list, meta):
+    """
+    Grants another user permissions to access a Jaseci object
+    Param 1 - target element
+    Param 2 - master to be granted permission
+    Param 3 - Boolean read_only flag
+
+    Return - Sorted list
+    """
+    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    return mast.api_object_perms_grant(obj=param_list[0],
+                                       mast=param_list[1],
+                                       read_only=param_list[3])['success']
+
+
+def revoke_perms(param_list, meta):
+    """
+    Remove permissions for user to access a Jaseci object
+    Param 1 - target element
+    Param 2 - master to be revoked permission
+
+    Return - Sorted list
+    """
+    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    return mast.api_object_perms_revoke(obj=param_list[0],
+                                        mast=param_list[1])['success']

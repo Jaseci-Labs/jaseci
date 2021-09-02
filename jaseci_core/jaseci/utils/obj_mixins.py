@@ -39,14 +39,17 @@ class sharable():
     def make_public(self):
         """Make element publically accessible"""
         self.j_access = 'public'
+        self.save()
 
     def make_read_only(self):
         """Make element publically readable"""
         self.j_access = 'read_only'
+        self.save()
 
     def make_private(self):
         """Make element private"""
         self.j_access = 'private'
+        self.save()
 
     def is_public(self):
         """Check if element is publically accessible"""
@@ -89,21 +92,22 @@ class sharable():
         if(m.j_type != 'master'):
             logger.error(f'{m} is not master!')
             return False
-        if(read_only):
+        if(read_only and m.jid not in self.j_r_acc_ids):
             self.j_r_acc_ids.add_obj(m)
-        else:
+        elif(m.jid not in self.j_rw_acc_ids):
             self.j_rw_acc_ids.add_obj(m)
         return True
 
     def remove_access(self, m):
         """Remove access from a master (user)"""
+        ret = False
         if(m.jid in self.j_r_acc_ids):
             self.j_r_acc_ids.remove_obj(m)
-            return True
+            ret = True
         if(m.jid in self.j_rw_acc_ids):
             self.j_rw_acc_ids.remove_obj(m)
-            return True
-        return False
+            ret = True
+        return ret
 
 
 class hookable(sharable):
