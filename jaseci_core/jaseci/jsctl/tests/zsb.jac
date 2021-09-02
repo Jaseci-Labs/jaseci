@@ -212,7 +212,7 @@ walker init {
     }
 }
 
-walker pubinit:anyone {
+walker pubinit:anyone,yiping,jason {
     root {
         take (--> node::botset) else {
             spawn here --> node::botset;

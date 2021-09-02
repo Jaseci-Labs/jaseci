@@ -39,7 +39,7 @@ def get_centroid(param_list, meta):
     """
     vec_list = param_list[0]
     centroid = np.mean(vec_list, axis=0)
-    tightness = np.mean([cosine_sim([vec, centroid])
+    tightness = np.mean([cosine_sim([vec, centroid], meta)
                          for vec in vec_list]).astype(float)
     return [centroid, tightness]
 

@@ -31,7 +31,6 @@ class AIServingAPI():
 
     def is_alive(self):
         try:
-            return False
             requests.get(self.url, timeout=0.1)
         except Exception:
             return False
