@@ -32,7 +32,7 @@ class mem_hook():
     """
 
     def __init__(self):
-        self.mem = {'global': {'GLOB_SENTINEL': None}}
+        self.mem = {'global': {}}
 
     def get_obj(self, caller_id, item_id, override=False):
         """

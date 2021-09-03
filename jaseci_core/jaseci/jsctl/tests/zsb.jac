@@ -206,7 +206,6 @@ walker init {
     root {
         take (--> node::botset) else {
             spawn here --> node::botset;
-            std.log(-->);
             disengage;
         }
     }
