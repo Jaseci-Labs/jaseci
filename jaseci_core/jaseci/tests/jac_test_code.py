@@ -189,19 +189,6 @@ ll_proto = \
 
     """
 
-prog3 = \
-    """
-    has date;
-    node life {
-    }
-
-    walker init {
-        new = spawn here --> node::life;
-        root.date = std.time_now();
-        banana = std.log(root.date);
-    }
-    """
-
 prog0 = \
     """
     node test:0 {
@@ -671,6 +658,22 @@ version_label = \
         root {
             a=std.get_global('globby');
             std.log(std.get_global('globby'));
+        }
+    }
+    """
+
+sharable = \
+    """
+    node life {
+    }
+
+    walker init {
+        root {
+            new = spawn here --> node::life;
+            take -->;
+        }
+        life {
+            std.out(here);
         }
     }
     """

@@ -1,7 +1,6 @@
 """
 Object api as a mixin
 """
-from logging import fatal
 from jaseci.element import element
 
 
