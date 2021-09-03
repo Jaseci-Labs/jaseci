@@ -20,14 +20,13 @@ from jaseci.api.config import config_api
 from jaseci.api.glob import global_api
 
 
-class master(element, alias_api, logger_api, graph_api, object_api,
-             sentinel_api, walker_api, architype_api, config_api, global_api):
+class master(element, alias_api, graph_api, object_api,
+             sentinel_api, walker_api, architype_api):
     """Main class for master functions for user"""
 
-    def __init__(self, email="Anonymous", *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs['m_id'] = None
-        element.__init__(self, name=email,
-                         kind="Jaseci Master", *args, **kwargs)
+        element.__init__(self, kind="Jaseci Master", *args, **kwargs)
         alias_api.__init__(self)
         config_api.__init__(self)
         graph_api.__init__(self)
@@ -113,7 +112,7 @@ class master(element, alias_api, logger_api, graph_api, object_api,
             logger.error(f'{api_name} not a valid API')
             return False
         else:
-            return signature(getattr(master, api_name))
+            return signature(getattr(self, api_name))
 
     def get_api_doc(self, api_name):
         """
@@ -123,7 +122,11 @@ class master(element, alias_api, logger_api, graph_api, object_api,
             logger.error(f'{api_name} not a valid API')
             return False
         else:
-            doc = getdoc(getattr(master, api_name))
+            doc = getdoc(getattr(self, api_name))
             # if(api_name in dir(legacy_api)):
             #     doc = "Deprecated!\n" + doc
             return doc
+
+
+class master_admin(master, logger_api, config_api, global_api):
+    """Master with admin APIs"""

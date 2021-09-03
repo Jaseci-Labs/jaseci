@@ -1,7 +1,7 @@
 from .views import AbstractJacAPIView
 from .views import AbstractAdminJacAPIView, AbstractPublicJacAPIView
 from jaseci.element import element
-from base.models import master
+from base.models import master_admin
 from jaseci.api.public import public_api
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
@@ -66,5 +66,5 @@ def generate_apis(M):
         globals()[i] = gen_cls
 
 
-generate_apis(master(h=mem_hook()))
+generate_apis(master_admin(h=mem_hook()))
 generate_apis(public_api(None))

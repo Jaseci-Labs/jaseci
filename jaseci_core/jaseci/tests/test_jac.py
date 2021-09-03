@@ -4,7 +4,7 @@ from jaseci.jac.jac_parse.jacParser import jacParser
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
-from jaseci.master import master
+from jaseci.master import master, master_admin
 
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
@@ -335,7 +335,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_global_get_set(self):
         """Test assignment on definition"""
-        mast = master(h=mem_hook())
+        mast = master_admin(h=mem_hook())
         gph = graph(m_id=mast.jid, h=mast._h)
         sent = sentinel(m_id=mast.jid, h=gph._h)
         sent.register_code(jtc.set_get_global)
@@ -348,6 +348,22 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker2.prime(gph)
         test_walker2.run()
         self.assertEqual(test_walker2.context['a'], 59)
+
+    def test_global_set_requires_admin(self):
+        """Test assignment on definition"""
+        mast = master(h=mem_hook())
+        gph = graph(m_id=mast.jid, h=mast._h)
+        sent = sentinel(m_id=mast.jid, h=gph._h)
+        sent.register_code(jtc.set_get_global)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('setter')
+        test_walker.prime(gph)
+        test_walker.run()
+        test_walker2 = \
+            sent.walker_ids.get_obj_by_name('getter')
+        test_walker2.prime(gph)
+        test_walker2.run()
+        self.assertEqual(test_walker2.context['a'], None)
 
     def test_sentinel_version_label(self):
         """Test sentinel version labeling"""

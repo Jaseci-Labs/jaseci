@@ -7,10 +7,16 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
 from jaseci_serv.settings import JASECI_CONFIGS
 from django.contrib.auth import get_user_model
 from base.orm_hook import orm_hook
-from jaseci.master import master as core_master
+from jaseci.master import master as core_master, master_admin as core_admin
 
 
 class master(core_master):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.valid_configs = JASECI_CONFIGS
+
+
+class master_admin(core_admin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_configs = JASECI_CONFIGS
@@ -34,7 +40,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = master(h=user._h, email=email).id
+        user.master = master(h=user._h, name=email).id
         user._h.commit()
 
         user.save(using=self._db)
@@ -52,7 +58,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = master(h=user._h, email=email).id
+        user.master = master_admin(h=user._h, name=email).id
         user._h.commit()
 
         user.save(using=self._db)

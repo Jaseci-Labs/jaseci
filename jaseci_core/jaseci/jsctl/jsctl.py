@@ -12,15 +12,16 @@ import requests
 
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
-from jaseci.master import master as master_class
+from jaseci.master import master, master_admin
 from jaseci.api.public import public_api
 from .ci_app import ci_program
 
 session = {
     "filename": "js.session",
-    "master": master_class(h=mem_hook()),
+    "user": [master_admin(h=mem_hook(), name='admin')],
     "mem-only": False
 }
+session['master'] = session['user'][0]
 
 connection = {'url': None, 'token': None, 'headers': None}
 

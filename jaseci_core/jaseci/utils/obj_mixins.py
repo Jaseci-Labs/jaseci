@@ -89,7 +89,7 @@ class sharable():
 
     def give_access(self, m, read_only=True):
         """Give access to a master (user)"""
-        if(m.j_type != 'master'):
+        if(not m.is_master()):
             logger.error(f'{m} is not master!')
             return False
         if(read_only and m.jid not in self.j_r_acc_ids):

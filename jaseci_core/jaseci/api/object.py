@@ -10,6 +10,12 @@ class object_api():
     ...
     """
 
+    def api_global_get(self, name: str):
+        """
+        Get a global var
+        """
+        return {'value': self._h.get_glob(name)}
+
     def api_object_get(self, obj: element, depth: int = 0,
                        detailed: bool = False):
         """Returns object details for any Jaseci object.

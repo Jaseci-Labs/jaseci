@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from jaseci.master import master
+from jaseci.master import master_admin
 from jaseci.utils.mem_hook import mem_hook
 import jaseci.tests.jac_test_code as jtc
 
@@ -10,8 +10,8 @@ class core_api_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.mast = master(h=mem_hook())
-        self.mast2 = master(h=self.mast._h)
+        self.mast = master_admin(h=mem_hook())
+        self.mast2 = master_admin(h=self.mast._h)
         self.mast.api_sentinel_register(name='test', code=jtc.ll_proto)
 
     def tearDown(self):
@@ -59,16 +59,16 @@ class core_api_test(TestCaseHelper, TestCase):
 
     def test_global_set_get_delete(self):
         """Test setting global sentinel"""
-        api = ['admin_api_global_get', {'name': 'apple'}]
+        api = ['api_global_get', {'name': 'apple'}]
         r = self.call(self.mast, api)
-        self.assertIsNone(r)
+        self.assertIsNone(r['value'])
         api = ['admin_api_global_set', {'name': 'apple', 'value': '56'}]
         r = self.call(self.mast, api)
-        api = ['admin_api_global_get', {'name': 'apple'}]
+        api = ['api_global_get', {'name': 'apple'}]
         r = self.call(self.mast2, api)
-        self.assertEqual(r, '56')
+        self.assertEqual(r['value'], '56')
         api = ['admin_api_global_delete', {'name': 'apple'}]
         r = self.call(self.mast2, api)
-        api = ['admin_api_global_get', {'name': 'apple'}]
+        api = ['api_global_get', {'name': 'apple'}]
         r = self.call(self.mast, api)
-        self.assertIsNone(r)
+        self.assertIsNone(r['value'])

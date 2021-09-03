@@ -67,11 +67,11 @@ class jaseci_engine_orm_config_tests_private(TestCaseHelper, TestCase):
 
         user._h.clear_mem_cache()
         user._h.red.delete('GOOBY1')
-        self.assertEqual(len(user._h.mem['global'].keys()), 1)
+        self.assertEqual(len(user._h.mem['global'].keys()), 0)
         self.assertNotIn('GOOBY1', user._h.mem['global'].keys())
 
         li = user._h.list_glob()
         self.assertEqual(len(li), 3)
-        self.assertEqual(len(user._h.mem['global'].keys()), 1)
+        self.assertEqual(len(user._h.mem['global'].keys()), 0)
         user._h.get_glob('GOOBY1')
         self.assertEqual(user._h.mem['global']['GOOBY1'], 'MOOBY1')

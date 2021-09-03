@@ -13,6 +13,7 @@ from datetime import datetime
 import copy
 import json
 from jaseci.utils.id_list import id_list
+from jaseci.utils.utils import logger
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.mem_hook import json_str_to_jsci_dict
 from jaseci.utils.obj_mixins import hookable
@@ -51,7 +52,7 @@ class element(hookable):
         self.j_parent = parent_id.urn if parent_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
         self.j_type = type(self).__name__
-        if(self.j_type == 'master'):
+        if(self.is_master()):
             m_id = self.jid
         hookable.__init__(self, h, m_id,  *args, **kwargs)
         if(auto_save):
@@ -85,6 +86,20 @@ class element(hookable):
     @timestamp.setter
     def timestamp(self, obj):
         self.j_timestamp = obj.isoformat()
+
+    def is_master(self, admin_check=False, silent=True):
+        """Check if self is a master"""
+        ret = True
+        if('master' not in self.j_type):
+            ret = False
+            if(not silent):
+                logger.error(f'{self} is not master')
+            return ret
+        if(admin_check and 'admin' not in self.j_type):
+            ret = False
+            if(not silent):
+                logger.error(f'{self} does not have admin master status')
+        return ret
 
     def duplicate(self, persist_dup: bool = False):
         """
