@@ -76,7 +76,7 @@ def set_global(param_list, meta):
     Return - Sorted list
     """
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    if(not mast.is_master(admin_check=True, silent=False)):
+    if(not mast.is_master(super_check=True, silent=False)):
         return False
     mast.admin_api_global_set(param_list[0], json.dumps(param_list[1]))
     return json.loads(mast.api_global_get(param_list[0])['value'])
@@ -101,7 +101,7 @@ def get_global(param_list, meta):
 def destroy_global(param_list, meta):
     """Get utc date time for now in iso format"""
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    if(not mast.is_master(admin_check=True, silent=False)):
+    if(not mast.is_master(super_check=True, silent=False)):
         return False
     return mast.admin_api_global_delete(param_list[0])
 

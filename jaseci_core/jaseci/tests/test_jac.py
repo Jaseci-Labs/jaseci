@@ -4,7 +4,7 @@ from jaseci.jac.jac_parse.jacParser import jacParser
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
-from jaseci.master import master, master_admin
+from jaseci.master import master, super_master
 
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
@@ -335,7 +335,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_global_get_set(self):
         """Test assignment on definition"""
-        mast = master_admin(h=mem_hook())
+        mast = super_master(h=mem_hook())
         gph = graph(m_id=mast.jid, h=mast._h)
         sent = sentinel(m_id=mast.jid, h=gph._h)
         sent.register_code(jtc.set_get_global)

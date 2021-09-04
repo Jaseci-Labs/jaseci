@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from jaseci.master import master_admin
+from jaseci.master import super_master
 from jaseci.utils.mem_hook import mem_hook
 import jaseci.tests.jac_test_code as jtc
 
@@ -10,8 +10,8 @@ class core_api_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.mast = master_admin(h=mem_hook())
-        self.mast2 = master_admin(h=self.mast._h)
+        self.mast = super_master(h=mem_hook())
+        self.mast2 = super_master(h=self.mast._h)
         self.mast.api_sentinel_register(name='test', code=jtc.ll_proto)
 
     def tearDown(self):

@@ -87,7 +87,7 @@ class element(hookable):
     def timestamp(self, obj):
         self.j_timestamp = obj.isoformat()
 
-    def is_master(self, admin_check=False, silent=True):
+    def is_master(self, super_check=False, silent=True):
         """Check if self is a master"""
         ret = True
         if('master' not in self.j_type):
@@ -95,10 +95,10 @@ class element(hookable):
             if(not silent):
                 logger.error(f'{self} is not master')
             return ret
-        if(admin_check and 'admin' not in self.j_type):
+        if(super_check and 'super' not in self.j_type):
             ret = False
             if(not silent):
-                logger.error(f'{self} does not have admin master status')
+                logger.error(f'{self} does not have super master status')
         return ret
 
     def duplicate(self, persist_dup: bool = False):

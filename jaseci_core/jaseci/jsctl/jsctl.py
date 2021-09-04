@@ -12,13 +12,13 @@ import requests
 
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
-from jaseci.master import master, master_admin
+from jaseci.master import master, super_master
 from jaseci.api.public import public_api
 from .ci_app import ci_program
 
 session = {
     "filename": "js.session",
-    "user": [master_admin(h=mem_hook(), name='admin')],
+    "user": [super_master(h=mem_hook(), name='admin')],
     "mem-only": False
 }
 session['master'] = session['user'][0]

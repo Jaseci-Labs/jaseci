@@ -10,15 +10,18 @@ class master_api():
 
     """
 
-    def __init__(self):
-        self.head_master_id = None
+    def __init__(self, head_master):
+        self._caller = self
+        self.head_master_id = head_master
         self.sub_master_ids = id_list(self)
 
     def api_master_create(self, name: str, set_active: bool = True):
         """
         Create a master instance and return root node master object
         """
-        mas = type(self)(h=self._h, name=name)
+        mas = self.spawn_master(name)
+        if(self.sub_master_ids.has_obj_by_name(name)):
+            return {'response': f"{name} already exists"}
         self.sub_master_ids.add_obj(mas)
         return mas.serialize()
 
@@ -26,33 +29,55 @@ class master_api():
                        detailed: bool = False):
         """
         Return the content of the master with mode
-        Valid modes: {default, dot, }
+        Valid modes: {default, }
         """
+        mas = self.sub_master_ids.get_obj_by_name(name)
+        if(not mas):
+            return {'response': f"{name} not found"}
+        else:
+            return mas.serialize(detailed=detailed)
 
     def api_master_list(self, detailed: bool = False):
         """
         Provide complete list of all master objects (list of root node objects)
         """
+        masts = []
+        for i in self.sub_master_ids.obj_list():
+            masts.append(i.serialize(detailed=detailed))
+        return masts
 
     def api_master_active_set(self, name: str):
         """
         Sets the default master master should use
+        NOTE: Specail handler included in general_interface_to_api
         """
+        mas = self.sub_master_ids.get_obj_by_name(name)
+        if(not mas):
+            return {'response': f"{name} not found"}
+        self._caller = mas
+        return {'response': f'You are now {mas.name}'}
 
     def api_master_active_unset(self):
         """
         Unsets the default sentinel master should use
         """
+        self._caller = self
+        return {'response': f'You are now {self.name}'}
 
     def api_master_active_get(self, detailed: bool = False):
         """
         Returns the default master master is using
         """
+        return self._caller.serialize(detailed=detailed)
 
     def api_master_delete(self, name: str):
         """
         Permanently delete master with given id
         """
+        if(not self.sub_master_ids.has_obj_by_name(name)):
+            return {'response': f"{name} not found"}
+        self.sub_master_ids.destroy_obj_by_name(name)
+        return {'response': f"{name} has been destroyed"}
 
     def destroy(self):
         """
