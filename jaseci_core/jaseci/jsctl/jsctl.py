@@ -12,8 +12,8 @@ import requests
 
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
-from jaseci.master import master, super_master
-from jaseci.api.public import public_api
+from jaseci.master import super_master
+from jaseci.api.public_api import public_api
 from .ci_app import ci_program
 
 session = {

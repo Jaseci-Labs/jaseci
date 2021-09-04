@@ -4,18 +4,18 @@ between user and Jaseci
 """
 
 from jaseci.element import element
-from jaseci.api.alias import alias_api
-from jaseci.api.object import object_api
-from jaseci.api.logger import logger_api
-from jaseci.api.graph import graph_api
-from jaseci.api.sentinel import sentinel_api
-from jaseci.api.walker import walker_api
-from jaseci.api.architype import architype_api
-from jaseci.api.config import config_api
-from jaseci.api.glob import global_api
+from jaseci.api.alias_api import alias_api
+from jaseci.api.object_api import object_api
+from jaseci.api.logger_api import logger_api
+from jaseci.api.graph_api import graph_api
+from jaseci.api.sentinel_api import sentinel_api
+from jaseci.api.walker_api import walker_api
+from jaseci.api.architype_api import architype_api
+from jaseci.api.config_api import config_api
+from jaseci.api.global_api import global_api
 from jaseci.api.interface import interface
-from jaseci.api.master import master_api
-from jaseci.api.super import super_api
+from jaseci.api.master_api import master_api
+from jaseci.api.super_api import super_api
 
 
 class master(element, interface, master_api, alias_api, graph_api, object_api,

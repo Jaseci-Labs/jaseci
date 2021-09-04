@@ -3,7 +3,7 @@ from knox.auth import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from jaseci.utils.utils import logger
-from jaseci.api.public import public_api
+from jaseci.api.public_api import public_api
 from base.orm_hook import orm_hook
 from base.models import JaseciObject, GlobalVars
 from time import time
