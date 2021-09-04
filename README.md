@@ -4,6 +4,7 @@
 
 ### Features
 
+- New Hierarchal user creation and management through core Jaseci
 - New version labels for Jac programs
 - New custom action for nodes and edges
 - New Jaseci server support for new API and Jaseci architecture
