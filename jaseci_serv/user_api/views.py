@@ -6,7 +6,7 @@ from django.contrib.auth import login, get_user_model
 from django.contrib.auth.signals import user_logged_out
 from knox.auth import TokenAuthentication
 
-from user_api.serializers import UserSerializer
+from user_api.serializers import UserSerializer, SuperUserSerializer
 from user_api.serializers import AuthTokenSerializer
 from user_api.serializers import send_activation_email
 
@@ -23,6 +23,11 @@ class CreateUserView(generics.CreateAPIView):
         created_object = serializer.save()
         if(not created_object.is_activated):
             send_activation_email(self.request, created_object.email)
+
+
+class CreateSuperUserView(generics.CreateAPIView):
+    """Create a new user in the system"""
+    serializer_class = SuperUserSerializer
 
 
 class ActivateUserView(APIView):

@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from base import models
 from obj_api.views import JaseciObjectSerializer
 from jaseci import element
+from jaseci.master import super_master
 
 
 def sample_user(email='JSCITEST_user@jaseci.com', password='whatever'):
@@ -48,9 +49,7 @@ class model_tests(TestCaseHelper, TestCase):
             password='135jj'
         )
 
-        self.assertTrue(user.is_superuser)
-        self.assertTrue(user.is_staff)
-        self.assertTrue(user.is_admin)
+        self.assertIsInstance(user.get_master(), super_master)
         user.delete()
         self.assertFalse(get_user_model().objects.filter(id=user.id).exists())
 

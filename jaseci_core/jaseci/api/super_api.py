@@ -8,9 +8,13 @@ class super_api():
 
     """
 
-    def admin_api_master_createsuper(self, name: str, set_active: bool = True):
+    def admin_api_master_createsuper(self, name: str, set_active: bool = True,
+                                     other_fields: dict = {}):
         """
         Create a super instance and return root node super object
+
+        other_fields used for additional feilds for overloaded interfaces
+        (i.e., Dango interface)
         """
         mas = self.spawn_super(name)
         if(self.sub_master_ids.has_obj_by_name(name)):

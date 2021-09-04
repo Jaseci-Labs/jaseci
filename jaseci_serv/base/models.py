@@ -7,7 +7,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
 from jaseci_serv.settings import JASECI_CONFIGS
 from django.contrib.auth import get_user_model
 from base.orm_hook import orm_hook
-from jaseci.master import master as core_master, super_master as core_admin
+from jaseci.master import master as core_master, super_master as core_super
 
 
 class master(core_master):
@@ -15,11 +15,48 @@ class master(core_master):
         super().__init__(*args, **kwargs)
         self.valid_configs = JASECI_CONFIGS
 
+    def api_master_create(self, name: str, set_active: bool = True,
+                          other_fields: dict = {}):
+        """
+        Create a master instance and return root node master object
 
-class super_master(core_admin):
+        other_fields used for additional feilds for overloaded interfaces
+        (i.e., Dango interface)
+        """
+        data = {'email': name}
+        for i in other_fields.keys():
+            data[i] = other_fields[i]
+        from user_api.serializers import UserSerializer
+        serializer = UserSerializer(data=data)
+        if(serializer.is_valid(raise_exception=False)):
+            mas = serializer.save().get_master()
+            return mas.serialize()
+        else:
+            return {'response': f"Errors occurred",
+                    'errors': serializer.errors}
+
+
+class super_master(core_super):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_configs = JASECI_CONFIGS
+
+    def admin_api_master_createsuper(self, name: str, set_active: bool = True,
+                                     other_fields: dict = {}):
+        """
+        Create a super instance and return root node super object
+        """
+        data = {'email': name}
+        for i in other_fields.keys():
+            data[i] = other_fields[i]
+        from user_api.serializers import SuperUserSerializer
+        serializer = SuperUserSerializer(data=data)
+        if(serializer.is_valid(raise_exception=False)):
+            mas = serializer.save().get_master()
+            return mas.serialize()
+        else:
+            return {'response': f"Errors occurred",
+                    'errors': serializer.errors}
 
 
 class UserManager(BaseUserManager):
@@ -32,6 +69,7 @@ class UserManager(BaseUserManager):
 
     def create_user(self, email, password=None, **extra_fields):
         """Creates and saves a new user"""
+        # Makes first user admin
         if(not get_user_model().objects.filter(is_admin=True).exists()):
             return self.create_superuser(email, password, **extra_fields)
         email = self.normalize_email(email).lower()
@@ -72,13 +110,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     Root node  is attached to each User and created at user creation
     """
     email = models.EmailField(max_length=255, unique=True)
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, blank=True)
     time_created = models.DateTimeField(auto_now_add=True)
     time_modified = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     is_activated = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
     master = models.UUIDField(default=uuid.uuid4)
     objects = UserManager()
 

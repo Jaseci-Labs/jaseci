@@ -42,8 +42,14 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             'JSCITfdfdEST_test@jaseci.com',
             'password'
         )
+        self.suser = get_user_model().objects.create_superuser(
+            'JSCITfdfdEST_test2@jaseci.com',
+            'password'
+        )
         self.client = APIClient()
         self.client.force_authenticate(self.user)
+        self.sclient = APIClient()
+        self.sclient.force_authenticate(self.suser)
         self.master = self.user.get_master()
 
     def tearDown(self):
@@ -452,3 +458,72 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(len(res.data), 1)
+
+    def test_master_create_linked_to_django_users(self):
+        """Test master create operation"""
+        payload = {'op': 'master_create', 'name': 'yo@gmail.com',
+                   'other_fields': {'password': 'yoyoyoyoyoyo', 'name': '',
+                                    'is_activated': True}}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertIn('j_type', res.data)
+        self.assertEqual(res.data['j_type'], 'master')
+
+    def test_master_create_linked_error_out(self):
+        """Test master create operation"""
+        payload = {'op': 'master_create', 'name': 'yo@gmail.com',
+                   'other_fields': {'password': 'yoyoyoyoyoyo', 'name': '',
+                                    'is_activated': True}}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'master_create', 'name': 'yo@gmail.com',
+                   'other_fields': {'password': 'yoyo', 'name': '',
+                                    'is_activated': True}}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertIn('errors', res.data)
+        self.assertIn('email', res.data['errors'])
+        self.assertIn('password', res.data['errors'])
+
+    def test_master_create_linked_cant_override(self):
+        """Test master create operation"""
+        payload = {'op': 'master_create', 'name': 'yo2@gmail.com',
+                   'other_fields': {'password': 'yoyoyoyoyo', 'name': '',
+                                    'is_activated': True, 'is_admin': True,
+                                    'is_staff': True, 'is_superuser': True}}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(res.data['j_type'], 'master')
+
+    def test_master_create_linked_super_limited(self):
+        """Test master create operation"""
+        payload = {'op': 'master_createsuper', 'name': 'yo3@gmail.com',
+                   'other_fields': {'password': 'yoyoyoyoyo', 'name': '',
+                                    'is_activated': True, 'is_admin': True,
+                                    'is_staff': True, 'is_superuser': True}}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(res.status_code, 403)
+
+    def test_master_create_linked_super_master_create(self):
+        """Test master create operation"""
+        payload = {'op': 'master_createsuper', 'name': 'yo3@gmail.com',
+                   'other_fields': {'password': 'yoyoyoyoyo', 'name': '',
+                                    'is_activated': True, 'is_admin': True,
+                                    'is_staff': True, 'is_superuser': True}}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertIn('j_type', res.data)
+        self.assertEqual(res.data['j_type'], 'super_master')
+
+    def test_master_create_linked_to_django_users_login(self):
+        """Test master create operation"""
+        payload = {'op': 'master_create', 'name': 'yo@gmail.com',
+                   'other_fields': {'password': 'yoyoyoyoyoyo', 'name': '',
+                                    'is_activated': True}}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        login_client = APIClient()
+        payload = {'email': 'yo@gmail.com', 'password': 'yoyoyoyoyoyo'}
+        res = login_client.post(reverse('user_api:token'), payload)
+        self.assertIn('token', res.data)

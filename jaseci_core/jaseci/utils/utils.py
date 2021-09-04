@@ -205,3 +205,8 @@ class TestCaseHelper():
         ps = pstats.Stats(self.pr, stream=s).sort_stats(sortby)
         ps.print_stats(100)
         print(s.getvalue())
+
+
+class bunch:
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)

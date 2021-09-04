@@ -15,9 +15,13 @@ class master_api():
         self.head_master_id = head_master
         self.sub_master_ids = id_list(self)
 
-    def api_master_create(self, name: str, set_active: bool = True):
+    def api_master_create(self, name: str, set_active: bool = True,
+                          other_fields: dict = {}):
         """
         Create a master instance and return root node master object
+
+        other_fields used for additional feilds for overloaded interfaces
+        (i.e., Dango interface)
         """
         mas = self.spawn_master(name)
         if(self.sub_master_ids.has_obj_by_name(name)):
