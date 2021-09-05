@@ -14,7 +14,6 @@ from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
 from jaseci.element.master import super_master
 from jaseci.api.public_api import public_api
-from jaseci.element.element import element
 from .ci_app import ci_program
 
 session = {
@@ -198,7 +197,7 @@ def login(url, username, password):
             'Authorization': 'token ' + r['token']}
         click.echo("Login successful!")
     else:
-        click.echo(f"Login failed!\n{r.json()}")
+        click.echo(f"Login failed!\n{r}")
 
 
 @click.command(help="Edit a file")

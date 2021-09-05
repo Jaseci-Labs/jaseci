@@ -105,26 +105,37 @@ def map_assignment_of_matching_fields(dest, source):
             setattr(dest, i, getattr(source, i))
 
 
+obj_class_cache = None
+
+
+def build_class_dict(from_where):
+    global obj_class_cache
+    prefix = from_where.__name__ + "."
+    for importer, modname, ispkg in \
+            pkgutil.iter_modules(from_where.__path__, prefix):
+        if(not ispkg):
+            cls = modname.split('.')[-1]
+            if(hasattr(importlib.import_module(modname), cls)):
+                obj_class_cache[cls] = getattr(
+                    importlib.import_module(modname), cls)
+        else:
+            if hasattr(from_where, modname.split('.')[-1]):
+                build_class_dict(
+                    getattr(from_where, modname.split('.')[-1])
+                )
+
+
 def find_class_and_import(class_name, from_where):
     """
     Search for class through all core packages
 
     Classes assumed to have same name as module file
     """
-    prefix = from_where.__name__ + "."
-    res = None
-    for importer, modname, ispkg in \
-            pkgutil.iter_modules(from_where.__path__, prefix):
-        if(not ispkg and modname.split('.')[-1] == class_name):
-            res = getattr(importlib.import_module(modname), class_name)
-            break
-        if(ispkg):
-            res2 = find_class_and_import(
-                class_name, getattr(from_where, modname.split('.')[-1])
-            ) if hasattr(from_where, modname.split('.')[-1]) else None
-            if(res2):
-                res = res2
-    return res
+    global obj_class_cache
+    if(obj_class_cache is None):
+        obj_class_cache = {}
+        build_class_dict(from_where)
+    return obj_class_cache[class_name]
 
 
 def copy_func(f, name=None):
