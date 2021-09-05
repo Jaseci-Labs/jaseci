@@ -77,8 +77,10 @@ def interface_api(api_name, is_public, **kwargs):
         else:
             click.echo(f"Code file {kwargs['code']} not found!")
             return
-    if('ctx' in kwargs):
+    if('ctx' in kwargs):  # can replace these checs with a dict check
         kwargs['ctx'] = json.loads(kwargs['ctx'])
+    if('other_fields' in kwargs):
+        kwargs['other_fields'] = json.loads(kwargs['other_fields'])
     if(connection['token'] and connection['url']):
         out = remote_api_call(kwargs, api_name)
     elif(is_public):
