@@ -677,3 +677,18 @@ sharable = \
         }
     }
     """
+
+basic = \
+    """
+    node life {
+    }
+
+    walker init {
+        root {
+            new = spawn here --> node::life;
+            take -->;
+        }
+        life {
+        }
+    }
+    """

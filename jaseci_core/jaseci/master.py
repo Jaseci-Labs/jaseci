@@ -32,13 +32,6 @@ class master(element, interface, master_api, alias_api, graph_api, object_api,
         graph_api.__init__(self)
         sentinel_api.__init__(self)
 
-    def spawn_master(self, name: str):
-        """Helper to create sub masters"""
-        new_m = master(h=self._h, name=name)
-        new_m.head_master_id = self.jid
-        new_m.give_access(self)
-        return new_m
-
     def destroy(self):
         """
         Destroys self from memory and persistent storage
@@ -51,10 +44,3 @@ class master(element, interface, master_api, alias_api, graph_api, object_api,
 
 class super_master(master, logger_api, config_api, global_api, super_api):
     """Master with admin APIs"""
-
-    def spawn_super(self, name: str):
-        """Helper to create sub masters"""
-        new_m = super_master(h=self._h, name=name)
-        new_m.head_master_id = self.jid
-        new_m.give_access(self)
-        return new_m

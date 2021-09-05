@@ -36,6 +36,12 @@ if(len(app_logger.handlers) < 1):
     connect_logger_handler(app_logger, logging.StreamHandler())
 
 
+def log_var_out(val):
+    """Print to log"""
+    if(not logging.getLogger('core').disabled):
+        logger.info(pformat(val))
+
+
 def bp():
     pdb.set_trace()
     breakpoint()
@@ -187,8 +193,7 @@ class TestCaseHelper():
 
     def log(self, val):
         """Print to log"""
-        if(not logging.getLogger('core').disabled):
-            logger.info(pformat(val))
+        log_var_out(val)
 
     def stopper(self):
         """Force test to fail"""

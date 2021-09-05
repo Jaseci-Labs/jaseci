@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from jaseci.master import super_master
+from jaseci.master import super_master, master
 from jaseci.utils.mem_hook import mem_hook
 import jaseci.tests.jac_test_code as jtc
 
@@ -12,7 +12,11 @@ class core_api_test(TestCaseHelper, TestCase):
         super().setUp()
         self.mast = super_master(h=mem_hook())
         self.mast2 = super_master(h=self.mast._h)
-        self.mast.api_sentinel_register(name='test', code=jtc.ll_proto)
+        self.mast.api_sentinel_register(name='test', code=jtc.basic)
+
+        self.lms = master(h=mem_hook())
+        self.lms2 = master(h=self.lms._h)
+        self.lms.api_sentinel_register(name='test', code=jtc.basic)
 
     def tearDown(self):
         super().tearDown()
@@ -72,3 +76,33 @@ class core_api_test(TestCaseHelper, TestCase):
         api = ['api_global_get', {'name': 'apple'}]
         r = self.call(self.mast, api)
         self.assertIsNone(r['value'])
+
+    def test_master_create(self):
+        """Test master create operation"""
+        api = ['api_master_create', {'name': 'yo@gmail.com'}]
+        r = self.call(self.lms, api)
+        self.assertIn('j_type', r)
+        self.assertEqual(r['j_type'], 'master')
+
+    def test_master_create_error_out(self):
+        """Test master create operation"""
+        api = ['api_master_create', {'name': 'yo@gmail.com'}]
+        r = self.call(self.lms, api)
+        api = ['api_master_create', {'name': 'yo@gmail.com'}]
+        r = self.call(self.lms, api)
+        self.assertIn('response', r)
+        self.assertIn('already exists', r['response'])
+
+    def test_master_create_super_limited(self):
+        """Test master create operation"""
+        api = ['admin_api_master_createsuper', {'name': 'yo3@gmail.com'}]
+        r = self.call(self.lms, api)
+        self.assertIn('response', r)
+        self.assertIn('not a valid', r['response'])
+
+    def test_master_create_linked_super_master_create(self):
+        """Test master create operation"""
+        api = ['admin_api_master_createsuper', {'name': 'yo3@gmail.com'}]
+        r = self.call(self.mast, api)
+        self.assertIn('j_type', r)
+        self.assertEqual(r['j_type'], 'super_master')

@@ -115,4 +115,3 @@ class graph_api():
         """
         for i in self.graph_ids.obj_list():
             i.destroy()
-        super().destroy()

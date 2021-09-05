@@ -30,13 +30,24 @@ class master(core_master):
         serializer = UserSerializer(data=data)
         if(serializer.is_valid(raise_exception=False)):
             mas = serializer.save().get_master()
-            return mas.serialize()
+            mas._h = self._h
+            return self.make_me_head_master_or_destroy(mas)
         else:
             return {'response': f"Errors occurred",
                     'errors': serializer.errors}
 
+    def api_master_delete(self, name: str):
+        """
+        Permanently delete master with given id
+        """
+        if(not self.sub_master_ids.has_obj_by_name(name)):
+            return {'response': f"{name} not found"}
+        self.sub_master_ids.destroy_obj_by_name(name)
+        get_user_model().objects.get(email=name).delete()
+        return {'response': f"{name} has been destroyed"}
 
-class super_master(core_super):
+
+class super_master(master, core_super):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_configs = JASECI_CONFIGS
@@ -53,7 +64,8 @@ class super_master(core_super):
         serializer = SuperUserSerializer(data=data)
         if(serializer.is_valid(raise_exception=False)):
             mas = serializer.save().get_master()
-            return mas.serialize()
+            mas._h = self._h
+            return self.make_me_head_master_or_destroy(mas)
         else:
             return {'response': f"Errors occurred",
                     'errors': serializer.errors}

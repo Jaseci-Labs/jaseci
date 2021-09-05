@@ -527,3 +527,34 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'email': 'yo@gmail.com', 'password': 'yoyoyoyoyoyo'}
         res = login_client.post(reverse('user_api:token'), payload)
         self.assertIn('token', res.data)
+
+    def test_master_create_super_inherets_from_django(self):
+        """Test master create operation"""
+        payload = {'op': 'master_create', 'name': 'yo@gmail.com',
+                   'other_fields': {'password': 'yoyoyoyoyoyo', 'name': '',
+                                    'is_activated': True}}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        login_client = APIClient()
+        payload = {'email': 'yo@gmail.com', 'password': 'yoyoyoyoyoyo'}
+        res = login_client.post(reverse('user_api:token'), payload)
+        self.assertIn('token', res.data)
+
+    def test_master_delete_linked_to_django(self):
+        """Test master delete operation"""
+        payload = {'op': 'master_create', 'name': 'yo@gmail.com',
+                   'other_fields': {'password': 'yoyoyoyoyoyo', 'name': '',
+                                    'is_activated': True}}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        login_client = APIClient()
+        payload = {'email': 'yo@gmail.com', 'password': 'yoyoyoyoyoyo'}
+        res = login_client.post(reverse('user_api:token'), payload)
+        self.assertIn('token', res.data)
+        payload = {'op': 'master_delete', 'name': 'yo@gmail.com'}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        login_client = APIClient()
+        payload = {'email': 'yo@gmail.com', 'password': 'yoyoyoyoyoyo'}
+        res = login_client.post(reverse('user_api:token'), payload)
+        self.assertNotIn('token', res.data)

@@ -23,11 +23,9 @@ class master_api():
         other_fields used for additional feilds for overloaded interfaces
         (i.e., Dango interface)
         """
-        mas = self.spawn_master(name)
-        if(self.sub_master_ids.has_obj_by_name(name)):
-            return {'response': f"{name} already exists"}
-        self.sub_master_ids.add_obj(mas)
-        return mas.serialize()
+        from jaseci.master import master
+        new_m = master(h=self._h, name=name)
+        return self.make_me_head_master_or_destroy(new_m)
 
     def api_master_get(self, name: str, mode: str = 'default',
                        detailed: bool = False):
@@ -83,10 +81,23 @@ class master_api():
         self.sub_master_ids.destroy_obj_by_name(name)
         return {'response': f"{name} has been destroyed"}
 
+    def make_me_head_master_or_destroy(self, m):
+        """
+        Utility to bring an object into sub masters
+        """
+        m.head_master_id = self.jid
+        m.give_access(self)
+        if(self.sub_master_ids.has_obj_by_name(m.name)):
+            name = m.name
+            m.destroy()
+            return {'response': f"{name} already exists"}
+        m.save()
+        self.sub_master_ids.add_obj(m)
+        return m.serialize()
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage
         """
         for i in self.sub_master_ids.obj_list():
             i.destroy()
-        super().destroy()

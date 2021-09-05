@@ -13,7 +13,7 @@ from datetime import datetime
 import copy
 import json
 from jaseci.utils.id_list import id_list
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import logger, log_var_out
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.mem_hook import json_str_to_jsci_dict
 from jaseci.utils.obj_mixins import hookable
@@ -203,6 +203,12 @@ class element(hookable):
                     if(j not in objs):
                         j.get_deep_obj_list(objs=objs)
         return objs
+
+    def log_out(self, val):
+        """
+        Utility to log out variable in pretty format
+        """
+        log_var_out(val)
 
     def __str__(self):
         """

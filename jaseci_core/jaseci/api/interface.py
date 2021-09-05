@@ -26,6 +26,11 @@ class interface():
             return self._caller.active_gph_id
         return 'None'  # Meke me more elegant one day
 
+    def interface_error(self, err):
+        """Standard error output to logger and api response"""
+        logger.error(err)
+        return {'response': err}
+
     def general_interface_to_api(self, params, api_name):
         """
         A mapper utility to interface to master class
@@ -37,8 +42,7 @@ class interface():
         if(api_name.startswith('api_master_active_unset')):
             self._caller = self
         if (not hasattr(self._caller, api_name)):
-            logger.error(f'{api_name} not a valid API')
-            return False
+            return self.interface_error(f'{api_name} not a valid API')
         func_sig = signature(getattr(self._caller, api_name))
         for i in func_sig.parameters.keys():
             if (i == 'self'):
@@ -69,16 +73,14 @@ class interface():
                     param_map[i] = val
 
             if (param_map[i] is None):
-                logger.error(f'Invalid API parameter set - {params}')
-                return False
+                return self.interface_error(f'Invalid API args - {params}')
         if (len(param_map) < len(params)-1):
             logger.warning(
                 str(f'Unused parameters in API call - '
                     f'got {params.keys()}, expected {param_map.keys()}'))
         ret = getattr(self._caller, api_name)(**param_map)
         if(not is_jsonable(ret)):
-            logger.error(
-                str(f'API returns non json object {type(ret)}: {ret}'))
+            return self.interface_error(f'Non-JSON API ret {type(ret)}: {ret}')
         return ret
 
     def get_api_signature(self, api_name):

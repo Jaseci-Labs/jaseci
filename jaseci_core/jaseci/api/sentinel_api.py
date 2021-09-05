@@ -163,4 +163,3 @@ class sentinel_api():
         """
         for i in self.sentinel_ids.obj_list():
             i.destroy()
-        super().destroy()

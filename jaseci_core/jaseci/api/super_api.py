@@ -16,8 +16,6 @@ class super_api():
         other_fields used for additional feilds for overloaded interfaces
         (i.e., Dango interface)
         """
-        mas = self.spawn_super(name)
-        if(self.sub_master_ids.has_obj_by_name(name)):
-            return {'response': f"{name} already exists"}
-        self.sub_master_ids.add_obj(mas)
-        return mas.serialize()
+        from jaseci.master import super_master
+        new_m = super_master(h=self._h, name=name)
+        return self.make_me_head_master_or_destroy(new_m)
