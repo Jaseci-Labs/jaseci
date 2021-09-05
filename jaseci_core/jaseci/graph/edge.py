@@ -4,8 +4,8 @@ Edge class for Jaseci
 Each edge has an id, name, timestamp, the from node at the element of the edge
 and the to node it is pointing to.
 """
-from jaseci.element import element
-from jaseci.utils.obj_mixins import anchored
+from jaseci.element.element import element
+from jaseci.element.obj_mixins import anchored
 from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
 import uuid

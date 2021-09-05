@@ -1,6 +1,6 @@
 from jaseci.actor.walker import walker
 from jaseci.graph.node import node
-from jaseci.element import element
+from jaseci.element.element import element
 from jaseci.utils.utils import logger, is_jsonable
 from inspect import signature, getdoc
 import uuid

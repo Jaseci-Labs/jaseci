@@ -4,8 +4,8 @@ Node class for Jaseci
 Each node has an id, name, timestamp and it's set of edges.
 First node in list of 'member_node_ids' is designated root node
 """
-from jaseci.element import element
-from jaseci.utils.obj_mixins import anchored
+from jaseci.element.element import element
+from jaseci.element.obj_mixins import anchored
 from jaseci.graph.edge import edge
 from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger

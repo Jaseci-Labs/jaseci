@@ -16,7 +16,7 @@ from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger, log_var_out
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.mem_hook import json_str_to_jsci_dict
-from jaseci.utils.obj_mixins import hookable
+from jaseci.element.obj_mixins import hookable
 
 
 __version__ = '1.0.0'

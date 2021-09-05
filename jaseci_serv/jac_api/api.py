@@ -1,6 +1,6 @@
 from .views import AbstractJacAPIView
 from .views import AbstractAdminJacAPIView, AbstractPublicJacAPIView
-from jaseci.element import element
+from jaseci.element.element import element
 from base.models import super_master
 from jaseci.api.public_api import public_api
 from jaseci.utils.mem_hook import mem_hook

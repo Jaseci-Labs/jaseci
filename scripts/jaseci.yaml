@@ -18,11 +18,12 @@ metadata:
 data:
   prod_up: |-
     mkdir /dl; cd /dl; git clone https://prod:$GITPASS@git.jaseci.org/marsninja/jaseci.git;
-    cd jaseci/jaseci_core; source install.sh; 
-    cd -; mv jaseci/jaseci_serv /; cd /jaseci_serv;
+    cd jaseci; git checkout 1.2;
+    cd jaseci_core; source install.sh;
+    cd ../../; mv jaseci/jaseci_serv /; cd /jaseci_serv;
     python3 manage.py wait_for_db && python3 manage.py makemigrations base &&
     python3 manage.py makemigrations && python3 manage.py migrate;
-    while true; do python3 manage.py runserver 0.0.0.0:80; sleep 2; done;
+    python3 manage.py runserver 0.0.0.0:80;
 ---
 apiVersion: v1
 kind: Secret

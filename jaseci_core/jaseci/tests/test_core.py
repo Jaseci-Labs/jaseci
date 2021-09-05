@@ -2,8 +2,8 @@ from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
 
 from jaseci.graph.node import node
-from jaseci.master import master
-from jaseci.element import element
+from jaseci.element.master import master
+from jaseci.element.element import element
 from jaseci.graph.graph import graph
 from jaseci.actor.sentinel import sentinel
 from jaseci.utils.mem_hook import mem_hook

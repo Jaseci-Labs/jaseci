@@ -3,7 +3,7 @@ from unittest import TestCase
 from jaseci.graph.node import node
 from jaseci.attr import action
 from jaseci.graph.edge import edge
-from jaseci import element
+from jaseci.element import element
 from jaseci.utils.mem_hook import mem_hook
 
 

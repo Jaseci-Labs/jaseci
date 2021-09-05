@@ -23,7 +23,7 @@ class master_api():
         other_fields used for additional feilds for overloaded interfaces
         (i.e., Dango interface)
         """
-        from jaseci.master import master
+        from jaseci.element.master import master
         new_m = master(h=self._h, name=name)
         return self.make_me_head_master_or_destroy(new_m)
 

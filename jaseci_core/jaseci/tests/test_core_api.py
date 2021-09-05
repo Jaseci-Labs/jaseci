@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from jaseci.master import super_master, master
+from jaseci.element.master import super_master, master
 from jaseci.utils.mem_hook import mem_hook
 import jaseci.tests.jac_test_code as jtc
 

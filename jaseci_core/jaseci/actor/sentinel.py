@@ -3,7 +3,7 @@ Sentinel class for Jaseci
 
 Each sentinel has an id, name, timestamp and it's set of walkers.
 """
-from jaseci.element import element
+from jaseci.element.element import element
 from jaseci.utils.utils import logger
 from jaseci.utils.id_list import id_list
 from jaseci.jac.ir.jac_code import jac_code

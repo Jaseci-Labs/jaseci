@@ -5,7 +5,7 @@ from jaseci.actor.walker import walker
 from jaseci.graph.node import node
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
-from jaseci.element import element
+from jaseci.element.element import element
 from jaseci.utils.utils import logger
 import base64
 

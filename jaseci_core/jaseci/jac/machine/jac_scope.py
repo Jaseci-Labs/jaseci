@@ -5,7 +5,7 @@ Utility for all runtime interaction with variables in different scopes
 """
 from jaseci.actions.utils.global_actions import get_global_actions
 from jaseci.jac.jac_set import jac_set
-from jaseci.element import element
+from jaseci.element.element import element
 from jaseci.utils.utils import is_urn
 import uuid
 

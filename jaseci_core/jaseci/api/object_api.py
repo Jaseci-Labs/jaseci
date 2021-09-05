@@ -1,7 +1,7 @@
 """
 Object api as a mixin
 """
-from jaseci.element import element
+from jaseci.element.element import element
 
 
 class object_api():

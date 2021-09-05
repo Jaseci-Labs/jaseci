@@ -6,7 +6,7 @@ from inspect import signature
 from inspect import getdoc
 from jaseci.utils.utils import logger
 from jaseci.utils.utils import is_jsonable
-from jaseci.element import element
+from jaseci.element.element import element
 
 
 class interface():

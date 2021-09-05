@@ -6,7 +6,7 @@ referenced through self.
 """
 from jaseci.utils.utils import logger
 from jaseci.actions.utils.find_action import find_action
-from jaseci.element import element
+from jaseci.element.element import element
 
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.machine.jac_scope import jac_scope

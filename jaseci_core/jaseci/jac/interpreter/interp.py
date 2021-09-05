@@ -5,7 +5,7 @@ This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
 from jaseci.utils.utils import is_jsonable
-from jaseci.element import element
+from jaseci.element.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
 from jaseci.attr.action import action
