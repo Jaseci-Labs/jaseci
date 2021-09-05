@@ -39,9 +39,10 @@ class interface():
             api_name is the name of the api being mapped to
         """
         param_map = {}
-        _caller = self._caller
         if(api_name.startswith('api_master_active')):
             _caller = self
+        else:
+            _caller = self._caller
         if (not hasattr(_caller, api_name)):
             return self.interface_error(f'{api_name} not a valid API')
         func_sig = signature(getattr(_caller, api_name))

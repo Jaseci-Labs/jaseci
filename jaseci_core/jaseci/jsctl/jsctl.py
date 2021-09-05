@@ -14,6 +14,7 @@ from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
 from jaseci.element.master import super_master
 from jaseci.api.public_api import public_api
+from jaseci.element.element import element
 from .ci_app import ci_program
 
 session = {
@@ -56,7 +57,7 @@ def remote_api_call(payload, api_name):
     elif(api_name.startswith('public_api_')):
         path = '/public/'+api_name[11:]
     ret = requests.post(connection['url']+path,
-                        data=payload,
+                        json=payload,
                         headers=connection['headers'])
     if ret.status_code > 205:
         ret = f"Status Code Error {ret.status_code}"
@@ -148,7 +149,7 @@ def build_cmd(group_func, func_name, leaf):
             continue
         p_default = func_sig.parameters[i].default
         p_type = func_sig.parameters[i].annotation
-        if(p_type != int and p_type != bool):
+        if(p_type not in [int, bool, float]):
             p_type = str
         if(p_default is not func_sig.parameters[i].empty):
             f = click.option(
