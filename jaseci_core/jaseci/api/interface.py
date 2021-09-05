@@ -34,7 +34,7 @@ class interface():
             api_name is the name of the api being mapped to
         """
         param_map = {}
-        if(api_name.startswith('api_master_active')):
+        if(api_name.startswith('api_master_active_unset')):
             self._caller = self
         if (not hasattr(self._caller, api_name)):
             logger.error(f'{api_name} not a valid API')

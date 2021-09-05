@@ -68,18 +68,6 @@ class master_api():
         self._caller = self
         return {'response': f'You are now {self.name}'}
 
-    def api_master_become(self, name: str):
-        """
-        Alias for master active set
-        """
-        return self.api_master_active_set(name)
-
-    def api_master_unbecome(self):
-        """
-        Alias for master active unset
-        """
-        return self.api_master_active_unset()
-
     def api_master_active_get(self, detailed: bool = False):
         """
         Returns the default master master is using
