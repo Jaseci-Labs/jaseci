@@ -39,11 +39,12 @@ class interface():
             api_name is the name of the api being mapped to
         """
         param_map = {}
-        if(api_name.startswith('api_master_active_unset')):
-            self._caller = self
-        if (not hasattr(self._caller, api_name)):
+        _caller = self._caller
+        if(api_name.startswith('api_master_active')):
+            _caller = self
+        if (not hasattr(_caller, api_name)):
             return self.interface_error(f'{api_name} not a valid API')
-        func_sig = signature(getattr(self._caller, api_name))
+        func_sig = signature(getattr(_caller, api_name))
         for i in func_sig.parameters.keys():
             if (i == 'self'):
                 continue
@@ -55,15 +56,15 @@ class interface():
             if (p_name in params.keys()):
                 val = params[p_name]
                 if(val is None or val == 'None'):  # Used to patch defaults
-                    val = self._caller.provide_internal_default(p_name)
-                if(str(val) in self._caller.alias_map.keys()):
-                    val = self._caller.alias_map[val]
+                    val = _caller.provide_internal_default(p_name)
+                if(str(val) in _caller.alias_map.keys()):
+                    val = _caller.alias_map[val]
                 if (issubclass(p_type, element)):
                     if(val is None or val == 'None'):
                         logger.error(
                             f'No {p_type} value for {p_name} provided!')
-                    val = self._caller._h.get_obj(
-                        self._caller._m_id, uuid.UUID(val))
+                    val = _caller._h.get_obj(
+                        _caller._m_id, uuid.UUID(val))
                     if (isinstance(val, p_type)):
                         param_map[i] = val
                     else:
@@ -78,7 +79,7 @@ class interface():
             logger.warning(
                 str(f'Unused parameters in API call - '
                     f'got {params.keys()}, expected {param_map.keys()}'))
-        ret = getattr(self._caller, api_name)(**param_map)
+        ret = getattr(_caller, api_name)(**param_map)
         if(not is_jsonable(ret)):
             return self.interface_error(f'Non-JSON API ret {type(ret)}: {ret}')
         return ret
