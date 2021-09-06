@@ -653,3 +653,41 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(len(res.data), 1)
+
+    def test_serverside_sentinel_register_pull(self):
+        """Test master delete operation"""
+        zsb_file = open("jac_api/tests/zsb.jac").read()
+        payload = {'op': 'sentinel_register', 'name': 'zsb',
+                   'code': zsb_file}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 2)
+        payload = {'op': 'global_sentinel_set'}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'sentinel_pull'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertTrue(res.data['success'])
+        payload = {'op': 'sentinel_active_get'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertIn('jid', res.data)
+        payload = {'op': 'graph_list'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 0)
+        payload = {'op': 'graph_create'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'graph_get'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 1)
+        payload = {'op': 'walker_run', 'name': 'init'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'graph_get'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 3)

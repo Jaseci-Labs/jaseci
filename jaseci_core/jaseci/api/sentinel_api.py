@@ -45,19 +45,24 @@ class sentinel_api():
             return [snt.serialize(), new_gph]
         return [snt.serialize()]
 
-    def api_sentinel_pull(self, set_active: bool = True):
+    def api_sentinel_pull(self, set_active: bool = True,
+                          on_demand: bool = True):
         """
         Copies global sentinel to local master
         """
         glob_id = self._h.get_glob('GLOB_SENTINEL')
         if(not glob_id):
-            return ['No global sentinel is available!']
+            return {'response': 'No global sentinel is available!',
+                    'success': False}
         g_snt = self._h.get_obj(self._m_id, uuid.UUID(glob_id)).duplicate()
 
         snt = self.sentinel_ids.get_obj_by_name(g_snt.name, silent=True)
         if(not snt):
             snt = sentinel(m_id=self._m_id, h=self._h, name=g_snt.name)
             self.sentinel_ids.add_obj(snt)
+        elif(on_demand and snt.is_active):
+            return {'response': f'{snt} already active!',
+                    'success': True}
         if(set_active):
             self.api_sentinel_active_set(snt)
         return self.api_sentinel_set(code=g_snt.code_ir, snt=snt,
@@ -92,12 +97,16 @@ class sentinel_api():
             if(snt.runtime_errors):
                 snt.is_active = False
         else:
-            return [f'Invalid mode to set {snt}']
+            return {'response': f'Invalid mode to set {snt}',
+                    'success': False}
         if(snt.is_active):
             self.extract_snt_aliases(snt)
-            return [f'{snt} registered and active!']
+            return {'response': f'{snt} registered and active!',
+                    'success': True}
         else:
-            return [f'{snt} code issues encountered!']
+            return {'response': f'{snt} code issues encountered!',
+                    'success': False,
+                    'errors': snt.errors+snt.runtime_errors}
 
     def api_sentinel_list(self, detailed: bool = False):
         """

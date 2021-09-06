@@ -69,6 +69,10 @@ class jac_code():
 
     def refresh(self):
         self._jac_ast = jac_ir_to_ast(self.code_ir) if self.code_ir else None
+        if(self._jac_ast):
+            self.is_active = True
+        else:
+            self.is_active = False
 
     def apply_ir(self, ir):
         """Apply's IR to object"""
@@ -104,7 +108,6 @@ class jac_code():
             self.is_active = False
         else:
             self.apply_ir(tree)
-            self.is_active = True
 
         if(self.is_active):
             logger.info(str(f'{self.name}: Successfully registered code'))
