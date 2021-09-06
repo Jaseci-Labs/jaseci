@@ -15,10 +15,12 @@ from jaseci.jac.machine.jac_scope import jac_scope
 class machine_state():
     """Shared interpreter class across both sentinels and walkers"""
 
-    def __init__(self, parent_override=None):
+    def __init__(self, parent_override=None, m_id=None):
         self.report = []
         self.runtime_errors = []
         self._parent_override = parent_override
+        if(not isinstance(self, element)):
+            self._m_id = m_id
         self._scope_stack = [None]
         self._jac_scope = None
         self._loop_ctrl = None

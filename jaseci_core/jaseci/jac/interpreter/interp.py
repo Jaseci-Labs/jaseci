@@ -592,7 +592,7 @@ class interp(machine_state):
         elif(kid[0].name == 'DOT'):
             return self.run_func_built_in(atom_res, kid[1])
         elif (kid[0].name == 'DBL_COLON'):
-            m = interp(parent_override=self.parent())
+            m = interp(parent_override=self.parent(), m_id=self._m_id)
             m.push_scope(jac_scope(parent=atom_res,
                                    has_obj=atom_res,
                                    action_sets=[atom_res.activity_action_ids]))

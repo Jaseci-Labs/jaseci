@@ -70,7 +70,7 @@ class architype_interp(interp):
         """
         kid = jac_ast.kid
         root_node_id = self.run_has_root(kid[1])
-        m = interp(parent_override=self.parent())
+        m = interp(parent_override=self.parent(), m_id=self._m_id)
         m.push_scope(jac_scope(parent=self,
                                has_obj=None,
                                action_sets=[]))
