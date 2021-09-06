@@ -55,7 +55,7 @@ def dummy_bp(inspect):
 
 def print_stack_to_log():
     tb = traceback.extract_stack()
-    logger.error(f'{tb}')
+    log_var_out(tb)
 
 
 def is_urn(s: str):

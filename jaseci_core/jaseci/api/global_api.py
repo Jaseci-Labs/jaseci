@@ -2,6 +2,7 @@
 Admin Global api functions as a mixin
 """
 from jaseci.actor.sentinel import sentinel
+import uuid
 
 
 class global_api():
@@ -11,7 +12,7 @@ class global_api():
 
     def admin_api_global_set(self, name: str, value: str):
         """
-        Set a config
+        Set a global
         """
         ret = {'success': True}
         if(name == 'GLOB_SENTINEL' or name in self.valid_configs):
@@ -24,7 +25,7 @@ class global_api():
 
     def admin_api_global_delete(self, name: str):
         """
-        Delete a config
+        Delete a global
         """
         ret = {'success': True}
         if(name == 'GLOB_SENTINEL' or name in self.valid_configs):
@@ -48,5 +49,10 @@ class global_api():
         """
         Set sentinel as globally accessible
         """
+        current = self.api_global_get('GLOB_SENTINEL')['value']
+        if(current):
+            snt = self._h.get_obj(self._m_id, uuid.UUID(current))
+            for i in snt.get_deep_obj_list():
+                i.make_private()
         self._h.destroy_glob('GLOB_SENTINEL')
         return {'response': f"Global sentinel cleared!"}

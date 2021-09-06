@@ -609,3 +609,47 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(len(res.data), 3)
+
+    def test_serverside_sentinel_unregister_global(self):
+        """Test master delete operation"""
+        zsb_file = open("jac_api/tests/zsb.jac").read()
+        payload = {'op': 'sentinel_register', 'name': 'zsb',
+                   'code': zsb_file}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 2)
+        payload = {'op': 'global_sentinel_set'}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'sentinel_active_global'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertTrue(res.data['success'])
+        payload = {'op': 'graph_create'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'walker_run', 'name': 'init'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'graph_get'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 3)
+        payload = {'op': 'graph_create'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'graph_get'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 1)
+        payload = {'op': 'global_sentinel_unset'}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.user._h.clear_mem_cache()
+        payload = {'op': 'walker_run', 'name': 'init'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'graph_get'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 1)

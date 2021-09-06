@@ -166,7 +166,7 @@ class walker_interp(interp):
 
     def viable_nodes(self):
         """Returns all nodes that shouldnt be ignored"""
-        ret = jac_set(self.parent())
+        ret = jac_set(self)
         for i in self.current_node.attached_nodes():
             if (i not in self.ignore_node_ids.obj_list()):
                 ret.add_obj(i)

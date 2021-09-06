@@ -770,7 +770,7 @@ class interp(machine_state):
         """
         kid = jac_ast.kid
         if(not is_spawn):
-            result = jac_set(self.parent())
+            result = jac_set(self)
             if (len(kid) > 1):
                 for i in self.viable_nodes().obj_list():
                     if (i.name == kid[2].token_text()):
@@ -824,7 +824,7 @@ class interp(machine_state):
         edge_to: '-' ('[' NAME ']')? '->';
         """
         kid = jac_ast.kid
-        result = jac_set(self.parent())
+        result = jac_set(self)
         for i in self.current_node.outbound_edges() + \
                 self.current_node.bidirected_edges():
             if (len(kid) > 2 and i.name != kid[2].token_text()):
@@ -837,7 +837,7 @@ class interp(machine_state):
         edge_from: '<-' ('[' NAME ']')? '-';
         """
         kid = jac_ast.kid
-        result = jac_set(self.parent())
+        result = jac_set(self)
         for i in self.current_node.inbound_edges() + \
                 self.current_node.bidirected_edges():
             if (len(kid) > 2 and i.name != kid[2].token_text()):
@@ -851,7 +851,7 @@ class interp(machine_state):
         NOTE: these do not use strict bidirected semantic but any edge
         """
         kid = jac_ast.kid
-        result = jac_set(self.parent())
+        result = jac_set(self)
         for i in self.current_node.attached_edges():
             if (len(kid) > 2 and i.name != kid[2].token_text()):
                 continue
