@@ -25,9 +25,7 @@ class sharable():
     """Utility class for objects that are sharable between users"""
 
     def __init__(self, m_id, mode='private'):
-        if(m_id is None or m_id == 'anon'):
-            m_id = uuid.UUID(int=0).urn
-        self.j_master = m_id
+        self.set_master(m_id)
         self.j_access = mode
         self.j_r_acc_ids = id_list(self)
         self.j_rw_acc_ids = id_list(self)
@@ -35,6 +33,11 @@ class sharable():
     @property
     def _m_id(self) -> str:
         return self.j_master
+
+    def set_master(self, m_id):
+        if(m_id is None or m_id == 'anon'):
+            m_id = uuid.UUID(int=0).urn
+        self.j_master = m_id
 
     def make_public(self):
         """Make element publically accessible"""

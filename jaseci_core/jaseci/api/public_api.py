@@ -46,32 +46,32 @@ class public_api():
             p_name = i
             p_type = func_sig.parameters[i].annotation
             p_default = func_sig.parameters[i].default
-            param_map[i] = p_default if p_default is not \
+            val = p_default if p_default is not \
                 func_sig.parameters[i].empty else None
             if (p_name in params.keys()):
                 val = params[p_name]
-                if (issubclass(p_type, element)):
-                    if(val is None or val == 'None'):
-                        logger.error(
-                            f'No {p_type} value for {p_name} provided!')
-                    val = self.hook.get_obj(
-                        'override', uuid.UUID(val), override=True)
-                    self.seek_committer(val)
-                    if (isinstance(val, p_type)):
-                        param_map[i] = val
-                    else:
-                        logger.error(f'{type(val)} is not {p_type}')
-                        param_map[i] = None
-                else:  # TODO: Can do type checks here too
+            if (issubclass(p_type, element)):
+                if(val is None or val == 'None'):
+                    logger.error(
+                        f'No {p_type} value for {p_name} provided!')
+                val = self.hook.get_obj(
+                    'override', uuid.UUID(val), override=True)
+                self.seek_committer(val)
+                if (isinstance(val, p_type)):
                     param_map[i] = val
+                else:
+                    logger.error(f'{type(val)} is not {p_type}')
+                    param_map[i] = None
+            else:  # TODO: Can do type checks here too
+                param_map[i] = val
 
             if (param_map[i] is None):
                 logger.error(f'Invalid API parameter set - {params}')
                 return False
-        if (len(param_map) < len(params)-1):
-            logger.warning(
-                str(f'Unused parameters in API call - '
-                    f'got {params.keys()}, expected {param_map.keys()}'))
+        # if (len(param_map) < len(params)-1):
+        #     logger.warning(
+        #         str(f'Unused parameters in API call - '
+        #             f'got {params.keys()}, expected {param_map.keys()}'))
         ret = getattr(self, api_name)(**param_map)
         if(not is_jsonable(ret)):
             logger.error(

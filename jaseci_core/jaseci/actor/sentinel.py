@@ -79,7 +79,7 @@ class sentinel(element, jac_code, sentinel_interp):
             return None
         return self.load_architype(tree)
 
-    def spawn_walker(self, name):
+    def spawn_walker(self, name, m_id=None):
         """
         Spawns a new walker from registered walkers and adds to
         live walkers
@@ -91,10 +91,14 @@ class sentinel(element, jac_code, sentinel_interp):
             )
             return None
         new_walk = src_walk.duplicate()
+        if(m_id):
+            new_walk.set_master(m_id)
         new_walk._jac_ast = src_walk._jac_ast
+        if(new_walk._jac_ast is None):
+            new_walk.refresh()
         return new_walk
 
-    def spawn_architype(self, name, kind=None):
+    def spawn_architype(self, name, kind=None, m_id=None):
         """
         Spawns a new architype from registered architypes and adds to
         live walkers
@@ -105,8 +109,30 @@ class sentinel(element, jac_code, sentinel_interp):
                 str(f'{self.name}: Unable to spawn architype {[name, kind]}!')
             )
             return None
-        # No need to dup architypes as they are stateless generators
-        return src_arch
+
+        if(m_id and m_id != src_arch._m_id):
+            new_arch = src_arch.duplicate()
+            new_arch.set_master(m_id)
+            new_arch._jac_ast = src_arch._jac_ast
+            if(new_arch._jac_ast is None):
+                new_arch.refresh()
+            return new_arch
+        else:
+            return src_arch
+
+    def run_architype(self, name, kind=None, m_id=None):
+        """
+        Spawn, run, then destroy architype if m_id's are different
+        """
+        arch = self.spawn_architype(name, kind, m_id)
+        if(arch is None):
+            return None
+        if(arch.jid in self.arch_ids):
+            return arch.run()
+        else:
+            ret = arch.run()
+            arch.destroy()
+            return ret
 
     def destroy(self):
         """

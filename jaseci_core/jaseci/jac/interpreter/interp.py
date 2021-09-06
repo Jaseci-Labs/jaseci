@@ -779,8 +779,8 @@ class interp(machine_state):
                 result += self.viable_nodes()
         else:
             if(len(kid) > 1):
-                result = self.parent().spawn_architype(
-                    kid[2].token_text(), kind='node').run()
+                result = self.parent().run_architype(
+                    kid[2].token_text(), kind='node', m_id=self._m_id)
             else:
                 result = node(m_id=self._m_id, h=self._h)
         return result
@@ -790,15 +790,15 @@ class interp(machine_state):
         walker_ref: KW_WALKER DBL_COLON NAME;
         """
         kid = jac_ast.kid
-        return self.parent().spawn_walker(kid[2].token_text())
+        return self.parent().spawn_walker(kid[2].token_text(), m_id=self._m_id)
 
     def run_graph_ref(self, jac_ast):
         """
         graph_ref: KW_GRAPH DBL_COLON NAME;
         """
         kid = jac_ast.kid
-        gph = self.parent().spawn_architype(
-            kid[2].token_text(), kind='graph').run()
+        gph = self.parent().run_architype(
+            kid[2].token_text(), kind='graph', m_id=self._m_id)
         return gph
 
     def run_edge_ref(self, jac_ast, is_spawn=False):
@@ -811,8 +811,9 @@ class interp(machine_state):
             return expr_func(kid[0])
         else:
             if(len(kid[0].kid) > 2):
-                result = self.parent().spawn_architype(
-                    kid[0].kid[2].token_text(), kind='edge').run()
+                result = self.parent().run_architype(
+                    kid[0].kid[2].token_text(), kind='edge',
+                    m_id=self._m_id)
             else:
                 result = edge(m_id=self._m_id, h=self._h,
                               kind='edge', name='generic')

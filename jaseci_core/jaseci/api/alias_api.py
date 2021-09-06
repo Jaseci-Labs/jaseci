@@ -38,6 +38,7 @@ class alias_api():
                 'response': Message of mapping that was created
         """
         self.alias_map[name] = value
+        self.save()
         return {'response': f"Alias from '{name}' to '{value}' set!"}
 
     def api_alias_list(self):
@@ -72,6 +73,7 @@ class alias_api():
         """
         if(name in self.alias_map.keys()):
             del self.alias_map[name]
+            self.save()
             return {'response': f'Alias {name} successfully deleted'}
         else:
             return {'response': f'Alias {name} not present'}
@@ -90,6 +92,7 @@ class alias_api():
         """
         n = len(self.alias_map.keys())
         self.alias_map = {}
+        self.save()
         return {'response': f'All {n} aliases deleted', 'removed': n}
 
     def extract_snt_aliases(self, snt):
@@ -101,6 +104,7 @@ class alias_api():
             self.extract_wlk_aliases(snt, i)
         for i in snt.arch_ids.obj_list():
             self.extract_arch_aliases(snt, i)
+        self.save()
 
     def extract_wlk_aliases(self, snt, wlk):
         """
@@ -123,6 +127,7 @@ class alias_api():
             self.remove_wlk_aliases(snt, i)
         for i in snt.arch_ids.obj_list():
             self.remove_arch_aliases(snt, i)
+        self.save()
 
     def remove_wlk_aliases(self, snt, wlk):
         """

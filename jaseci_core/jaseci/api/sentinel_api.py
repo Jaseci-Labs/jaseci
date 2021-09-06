@@ -129,12 +129,16 @@ class sentinel_api():
         Sets the default master sentinel to the global sentinel
         Exclusive OR with pull strategy
         """
+        ret = {'success': False}
         glob_id = self._h.get_glob('GLOB_SENTINEL')
         if(not glob_id):
-            return ['No global sentinel is available!']
-        self.active_snt_id = glob_id
-        self.api_alias_register('active:sentinel', glob_id)
-        return [f'Global sentinel {glob_id} set as default']
+            ret['response'] = 'No global sentinel is available!'
+        else:
+            self.active_snt_id = glob_id
+            self.api_alias_register('active:sentinel', glob_id)
+            ret['success'] = True
+            ret['repsonse'] = f'Global sentinel {glob_id} set as default'
+        return ret
 
     def api_sentinel_active_get(self, detailed: bool = False):
         """
@@ -145,7 +149,7 @@ class sentinel_api():
                 self._m_id, uuid.UUID(self.active_snt_id))
             return default.serialize(detailed=detailed)
         else:
-            return ['No default sentinel is selected!']
+            return {'response': 'No default sentinel is selected!'}
 
     def api_sentinel_delete(self, snt: sentinel):
         """

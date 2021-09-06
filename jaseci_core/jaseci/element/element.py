@@ -204,7 +204,7 @@ class element(hookable):
                         j.get_deep_obj_list(objs=objs)
         return objs
 
-    def log_out(self, val):
+    def log_output(self, val):
         """
         Utility to log out variable in pretty format
         """
