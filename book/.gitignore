@@ -295,3 +295,6 @@ TSWLatexianTemp*
 *.tdn
 *.ist
 book.pdf
+book.py
+book.py.err
+latex.py
