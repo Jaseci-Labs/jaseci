@@ -70,13 +70,16 @@ class alias_api():
         Returns:
             dictionary: Fields include
                 'response': Message of success/failure to remove alias
+                'success': True/False based on delete actually happening
         """
         if(name in self.alias_map.keys()):
             del self.alias_map[name]
             self.save()
-            return {'response': f'Alias {name} successfully deleted'}
+            return {'response': f'Alias {name} successfully deleted',
+                    'success': True}
         else:
-            return {'response': f'Alias {name} not present'}
+            return {'response': f'Alias {name} not present',
+                    'success': False}
 
     def api_alias_clear(self):
         """Remove all string to string alias that client can use.

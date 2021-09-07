@@ -39,7 +39,7 @@ class architype_api():
         Returns:
             json: Fields include
                 'architype': Architype object if created otherwise null
-                'success': True/False whether register was successful\
+                'success': True/False whether register was successful
                 'errors': List of errors if register failed
                 'response': Message on outcome of register call
         """
@@ -59,37 +59,65 @@ class architype_api():
 
     def api_architype_get(self, arch: architype, mode: str = 'default',
                           detailed: bool = False):
-        """
-        Get an architype rendered with specific mode
-        Valid modes: {default, code, ir, }
+        """Get an architype rendered with specific mode
+
+        Args:
+            arch (uuid): The architype being accessed
+            mode (str): Valid modes: {default, code, ir, }
+            detailed (bool): Flag to give summary or complete set of fields
+
+        Returns:
+            json: Fields include (depends on mode)
+                'code': Formal source code for architype
+                'ir': Intermediate representation of architype
+                'architype': Architype object print
         """
         if(mode == 'code'):
-            return arch._jac_ast.get_text()
+            return {'code': arch._jac_ast.get_text()}
         elif(mode == 'ir'):
-            return arch.ir_dict()
+            return {'ir': arch.ir_dict()}
         else:
-            return arch.serialize(detailed=detailed)
+            return {'architype': arch.serialize(detailed=detailed)}
 
     def api_architype_set(self, arch: architype, code: str,
                           mode: str = 'default'):
-        """
-        Set code/ir for a architype
-        Valid modes: {code, ir, }
+        """Set code/ir for a architype
+
+        Args:
+            arch (uuid): The architype being set
+            code (str): The text (or filename) for an architypes Jac code/ir
+            mode (str): Valid modes: {default, code, ir, }
+
+        Returns:
+            json: Fields include (depends on mode)
+                'success': True/False whether set was successful
+                'errors': List of errors if set failed
+                'response': Message on outcome of set call
         """
         if(mode == 'code' or mode == 'default'):
             arch.register(code)
         elif(mode == 'ir'):
             arch.apply_ir(code)
         else:
-            return [f'Invalid mode to set {arch}']
+            return {'response': f'Invalid mode to set {arch}',
+                    'success': False, 'errors': []}
         if(arch.is_active):
-            return [f'{arch} registered and active!']
+            return {'response': f'{arch} registered and active!',
+                    'success': True, 'errors': []}
         else:
-            return [f'{arch} code issues encountered!']
+            return {'response': f'{arch} registered and active!',
+                    'success': True,
+                    'errors': arch.errors}
 
     def api_architype_list(self, snt: sentinel = None, detailed: bool = False):
-        """
-        List architypes known to sentinel
+        """List architypes known to sentinel
+
+        Args:
+            snt (uuid): The sentinel for which to list its architypes
+            detailed (bool): Flag to give summary or complete set of fields
+
+        Returns:
+            json: List of architype objects
         """
         archs = []
         for i in snt.arch_ids.obj_list():
@@ -97,10 +125,23 @@ class architype_api():
         return archs
 
     def api_architype_delete(self, arch: architype, snt: sentinel = None):
+        """Permanently delete sentinel with given id
+
+        Args:
+            arch (uuid): The architype being set
+            snt (uuid): The sentinel for which to list its architypes
+
+        Returns:
+            json: Fields include (depends on mode)
+                'success': True/False whether command was successful
+                'response': Message on outcome of command
         """
-        Permanently delete sentinel with given id
-        """
+
+        if(arch.jid not in snt.arch_ids):
+            return {'response': f'Architype {arch} not in sentinel {snt}',
+                    'success': False}
         self.remove_arch_aliases(snt, arch)
-        archid = arch.id
+        archid = arch.jid
         snt.arch_ids.destroy_obj(arch)
-        return [f'Architype {archid} successfully deleted']
+        return {'response': f'Architype {archid} successfully deleted',
+                'success': True}
