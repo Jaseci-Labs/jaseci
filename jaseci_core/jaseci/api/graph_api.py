@@ -105,8 +105,8 @@ class graph_api():
         Assigns values to member variables of a given node using ctx object
         """
         nd.set_context(
-            ctx=ctx, arch=snt.arch_ids.get_obj_by_name(
-                nd.name, kind='node').run())
+            ctx=ctx, arch=snt.run_architype(
+                nd.name, kind='node', caller=self))
         return nd.serialize()
 
     def destroy(self):

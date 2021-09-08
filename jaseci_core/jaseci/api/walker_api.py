@@ -80,7 +80,7 @@ class walker_api():
         """
         Creates new instance of walker and returns new walker object
         """
-        wlk = snt.spawn_walker(name, m_id=self._m_id)
+        wlk = snt.spawn_walker(name, caller=self)
         if(wlk):
             return wlk.serialize()
         else:
@@ -112,7 +112,7 @@ class walker_api():
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.
         """
-        wlk = snt.spawn_walker(name, m_id=self._m_id)
+        wlk = snt.spawn_walker(name, caller=self)
         if(not wlk):
             return [f'Walker {name} not found!']
         wlk.prime(nd, prime_ctx=ctx)

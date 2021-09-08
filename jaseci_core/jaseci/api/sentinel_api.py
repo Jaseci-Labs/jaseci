@@ -133,7 +133,7 @@ class sentinel_api():
         self.api_alias_delete('active:sentinel')
         return ['Default sentinel unset']
 
-    def api_sentinel_active_global(self):
+    def api_sentinel_active_global(self, detailed: bool = False):
         """
         Sets the default master sentinel to the global sentinel
         Exclusive OR with pull strategy
@@ -145,6 +145,8 @@ class sentinel_api():
         else:
             self.active_snt_id = glob_id
             self.api_alias_register('active:sentinel', glob_id)
+            ret['sentinel'] = self._h.get_obj(
+                self._m_id, uuid.UUID(glob_id)).serialize(detailed=detailed)
             ret['success'] = True
             ret['repsonse'] = f'Global sentinel {glob_id} set as default'
         return ret

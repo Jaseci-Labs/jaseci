@@ -127,8 +127,8 @@ class architype_interp(interp):
             if(node_name is None):
                 self.rt_error('Missing "node" attribute for node.')
                 continue
-            node_obj = self.parent().arch_ids.get_obj_by_name(
-                node_name, kind='node').run()
+            node_obj = self.parent().run_architype(
+                node_name, kind='node', caller=self)
             node_obj.set_context(node_def)
 
             # Overwrite node name with _n_name_ in the attrs if defined
@@ -139,8 +139,8 @@ class architype_interp(interp):
         for op in graph_state['edge_ops']:
             edge_kind = op.pop('edge', None)
             if(edge_kind):
-                edge_obj = self.parent().arch_ids.get_obj_by_name(
-                    edge_kind, kind='edge').run()
+                edge_obj = self.parent().run_architype(
+                    edge_kind, kind='edge', caller=self)
             else:
                 edge_obj = edge(m_id=self._m_id, h=self._h,
                                 kind='edge', name='generic')

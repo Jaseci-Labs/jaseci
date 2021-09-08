@@ -22,18 +22,30 @@ class test_ll(TestCaseHelper, TestCase):
         )
         self.client = APIClient()
         self.client.force_authenticate(self.user)
-        self.master = self.user.get_master()
-        payload = {'op': 'graph_create'}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.gph = self.master._h.get_obj(
-            self.master.jid, uuid.UUID(res.data['jid']))
         ll_file = base64.b64encode(
             open("jac_api/tests/ll.jac").read().encode()).decode()
         payload = {'op': 'sentinel_register',
                    'name': 'Something', 'code': ll_file, 'encoded': True}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {'op': 'global_sentinel_set'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.user = get_user_model().objects.create_user(
+            'J2SCITfdfdEST_test@jaseci.com',
+            'password'
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+        self.master = self.user.get_master()
+        payload = {'op': 'sentinel_active_global'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'graph_create'}
         self.snt = self.master._h.get_obj(
-            self.master.jid, uuid.UUID(res.data[0]['jid']))
+            self.master.jid, uuid.UUID(res.data['sentinel']['jid']))
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        self.gph = self.master._h.get_obj(
+            self.master.jid, uuid.UUID(res.data['jid']))
 
     def tearDown(self):
         super().tearDown()
