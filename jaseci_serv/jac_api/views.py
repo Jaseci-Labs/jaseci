@@ -35,7 +35,8 @@ class AbstractJacAPIView(APIView):
         api_result = self.master.general_interface_to_api(
             self.cmd, type(self).__name__)
         self.log_request_time()
-        return JResponse(self.master, api_result)
+        self.master._h.commit()
+        return Response(api_result)
 
     def log_request_time(self):
         """Api call preamble"""
