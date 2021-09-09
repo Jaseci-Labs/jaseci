@@ -66,7 +66,9 @@ class AbstractJacAPIView(APIView):
 
     def issue_response(self, api_result):
         """Issue response from call"""
-        return JResponse(self.caller, api_result)
+        self.caller._h.commit()
+        return Response(api_result)
+        # return JResponse(self.caller, api_result)
 
 
 class AbstractAdminJacAPIView(AbstractJacAPIView):
