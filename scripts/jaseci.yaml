@@ -46,7 +46,7 @@ kind: Deployment
 metadata:
   name: jaseci
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       pod: jaseci
@@ -61,6 +61,11 @@ spec:
       containers:
         - name: jaseci
           image: registry.jaseci.org/jsystem:latest
+          resources:
+            requests:
+              memory: "350Mi"
+            limits:
+              memory: "700Mi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:

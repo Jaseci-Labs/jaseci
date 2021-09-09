@@ -21,8 +21,8 @@ class master(core_master):
         """
         Create a master instance and return root node master object
 
-        other_fields used for additional feilds for overloaded interfaces
-        (i.e., Dango interface)
+        other_fields used for additional fields for overloaded interfaces
+        (i.e., Django interface)
         """
         data = {'email': name}
         for i in other_fields.keys():
