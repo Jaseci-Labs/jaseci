@@ -3,7 +3,7 @@
 Now that we know what Jaseci is all about, next lets roll up our sleeves and jump in. One of the best ways to jump into Jaseci world is to gather some sample Jac programs and start tinkering with them.
 \par
 Before we jump right into it, it's important to have a bit of an understanding of the the way the interface itself is architected from in the implementation of the Jaseci stack. Jaseci has a module that serves as its  the core interface (summarized in Table~\ref{tab:jsAPI}) to the Jaseci machine. This interface is expressed as a set of method functions within a python class in Jaseci  called \texttt{master}. (By the way, don't worry, it's ok to use ``master'', its not racialist, see Rant~\ref{rant:racistmaster} for more context). The `client' expressions of that interface in the forms of a command line tool \texttt{jsctl} and a server-side REST API built using Django~\footnote{Django ~\cite{django} is a Python web framework for rapid development and clean, pragmatic design}. Figure~\ref{dot:dia_api_server_client} illustrates this architecture representing the relationship between core APIs and client side expressions.
-\printtabJSAPI
+
 If I may say so myself the code architecture of interface generation from function signatures is elegant, sexy, and takes advantage of the best python has to offer in terms of its support for introspection. With this approach, as the set of functions and their semantics change in the \texttt{master} API class, both the JSCTL Cli tool and the REST Server-side API changes. We dig into this and tons more in the Part~\ref{part:crafting}, so we'll leave the discussion on implementation architecture there for the moment. Lets jump right into how we get started playing with some \gls{leet} Jaseci \gls{haxor}ing. First we start with JSCTL then dive into the REST API.
 
 
@@ -119,15 +119,81 @@ Awesomeness! We are Jac \Gls{haxor}s now!
 \section{Jaseci REST API}
 
 \section{Full Spec of Jaseci Core APIs}
+\printtabJSAPI
 
-\begin{python}
-    print("hello this works!")
-\end{python}
+\subsection{alias APIs}
+
+Alias APIs for creating nicknames for UUIDs and other long strings
+\par
+The alias set of APIs provide a set of `alias' management functions for
+creating and managing aliases for long strings such as UUIDs. If an alias'
+name is used as a parameter value in any API call, that parameter will see
+the alias' value instead. Given that references to all sentinels, walkers,
+nodes, etc. utilize UUIDs, it becomes quite useful to create pneumonic
+names for them. Also, when registering   sentinels, walkers, architype
+handy aliases are automatically generated. These generated aliases can
+then be managed using the alias APIs. Keep in mind that whenever an alias
+is created, all parameter values submitted to any API with the alias name
+will be replaced internally by its value. If you get in a bind, simply use
+the clear or delete alias APIs.
+
+\subsection{architype APIs}
+
+Architype APIs for creating and managing Jaseci architypes
+\par
+The architype set of APIs allow for the addition and removing of
+architypes. Given a Jac implementation of an architype these APIs are
+designed for creating, compiling, and managing architypes that can be
+used by Jaseci. There are two ways to add an architype to Jaseci, either
+through the management of sentinels using the sentinel API, or by
+registering independent architypes with these architype APIs. These
+APIs are also used for inspecting and managing existing arichtypes that
+a Jaseci instance is aware of.
 
 \subsection{config APIs}
-\subsection{alias APIs}
-\subsection{architype APIs}
+
+Admin config APIs
+Abstracted since there are no valid configs in core atm, see jaseci\_serv
+to see how used.
+
+\subsection{global APIs}
+
+Admin global APIs
+
 \subsection{graph APIs}
+
+Graph APIs
+
+\subsection{logger APIs}
+
+APIs for Jaseci Logging configuration
+
+\subsection{master APIs}
+
+Master APIs for creating nicknames for UUIDs and other long strings
+\par
+    
+
+\subsection{object APIs}
+
+Object APIs for generalized operations on Jaseci objects
+\par
+...
+
+\subsection{public APIs}
+
+Public  APIs
+
 \subsection{sentinel APIs}
+
+Sentinel APIs
+
+\subsection{super APIs}
+
+Super APIs for creating nicknames for UUIDs and other long strings
+\par
+    
+
 \subsection{walker APIs}
-\subsection{Miscellaneous APIs}
+
+Walker APIs

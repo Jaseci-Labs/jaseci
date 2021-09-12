@@ -105,7 +105,7 @@ def map_assignment_of_matching_fields(dest, source):
             setattr(dest, i, getattr(source, i))
 
 
-obj_class_cache = None
+obj_class_cache = {}
 
 
 def build_class_dict(from_where):
@@ -132,8 +132,7 @@ def find_class_and_import(class_name, from_where):
     Classes assumed to have same name as module file
     """
     global obj_class_cache
-    if(obj_class_cache is None):
-        obj_class_cache = {}
+    if(not obj_class_cache.keys()):
         build_class_dict(from_where)
     return obj_class_cache[class_name]
 

@@ -14,7 +14,7 @@ from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
 from jaseci.element.master import super_master
 from jaseci.api.public_api import public_api
-from .ci_app import ci_program
+from .book_tools import book
 
 session = {
     "filename": "js.session",
@@ -111,9 +111,12 @@ def extract_api_tree():
                 i.startswith('public_api_')):
             is_public = False
             # Get function names and signatures
-            func_str = i[4:] if i.startswith('api_') else i[10:]
-            if(func_str[0] == '_'):  # is public api
-                func_str = func_str[1:]
+            if i.startswith('api_'):
+                func_str = i[4:]
+            elif i.startswith('admin_'):
+                func_str = i[10:]
+            else:  # is public api
+                func_str = i[11:]
                 is_public = True
             cmd_groups = func_str.split('_')
             func_sig = session['master'].get_api_signature(
@@ -205,8 +208,7 @@ def login(url, username, password):
 @click.command(help="Edit a file")
 @click.argument("file", type=str, required=True)
 def edit(file):
-    ci_program.set_args([file])
-    ci_program.run_ci()
+    click.edit(filename=file)
 
 
 @click.command(help="List relevant files")
@@ -221,32 +223,26 @@ def ls(all):
                 '.jac') or i.endswith('.dot') else False
 
 
-def all_help(root, out=None, str=""):
-    if(out is None):
-        out = []
-    if('leaf' in root.keys()):
-        out.append(str+f'& {root["leaf"][1]} &\n')
-        return
-    for i in root.keys():
-        all_help(root[i], out, str+f'{i} ')
-    ret = ''
-    for i in out:
-        ret += i
-    return ret
+@click.command(help="Clear terminal")
+def clear():
+    click.clear()
 
 
-@click.command(help="Internal dev operations")
-@click.argument("op", type=str, default='all_help', required=True)
-def dev(op):
-    if(op == 'all_help'):
+@click.command(help="Internal book generation tools")
+@click.argument("op", type=str, default='cheatsheet', required=True)
+def tool(op):
+    if(op == 'cheatsheet'):
         click.echo(
-            f"{all_help(extract_api_tree())}")
+            f"{book().api_cheatsheet(extract_api_tree())}")
+    elif(op == 'classes'):
+        click.echo(book().print_classes())
 
 
 cli.add_command(login)
 cli.add_command(edit)
 cli.add_command(ls)
-cli.add_command(dev)
+cli.add_command(clear)
+cli.add_command(tool)
 cmd_tree_builder(extract_api_tree())
 
 

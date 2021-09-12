@@ -1,8 +1,13 @@
 \ProvidesPackage{book}
+\usepackage[table]{xcolor}
+\definecolor{light-gray}{HTML}{E5E4E2}
+\definecolor{light-cyan}{HTML}{FFFEFD}
+
 \usepackage[utf8]{inputenc}
 \usepackage{subcaption}
 \usepackage[font={footnotesize, it}]{caption}
 \usepackage{graphicx}
+\usepackage{longtable}
 \usepackage[export]{adjustbox}
 \usepackage{grffile}
 \usepackage{booktabs}
@@ -45,7 +50,7 @@
 \usepackage{pagecolor}
 \usepackage{setspace}
 
-
+%Table colors
 
 
 %----------------------------------- LISTINGS  ------------------------------
@@ -158,3 +163,4 @@ keywordstyle={\color{black}},%                         and format them in black
 \renewcommand{\texttt}[1]{\OldTexttt{\hl{#1}}}
 
 \usepackage{python}
+
