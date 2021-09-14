@@ -476,6 +476,26 @@ dict_keys = \
         }
     }
     """
+cond_dict_keys = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init{
+        root {
+            node1 = spawn here --> node::test;
+            node1.apple = {"one": {"inner": 44}, "two": 2};
+            take node1;
+        }
+        test {
+            std.out(here.apple);
+            if('one' in here.apple.keys) {std.out('is here');}
+            if('three' not in here.apple.keys) {std.out('also not here'); }
+            if('three' in here.apple.keys) {std.out('SHOULD NOT PRINT'); }
+        }
+    }
+    """
 
 soft_max = \
     """

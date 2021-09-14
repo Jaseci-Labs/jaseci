@@ -291,6 +291,16 @@ class jac_book_tests(TestCaseHelper, TestCase):
                          "{'inner': 2}\n"
                          "2\n")
 
+    def test_cond_dict_keys(self):
+        self.sent.register_code(jtc.cond_dict_keys)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "{'one': {'inner': 44}, 'two': 2}\n"
+                         "is here\n"
+                         "also not here\n")
+
     def test_vector_softmax(self):
         self.sent.register_code(jtc.soft_max)
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')

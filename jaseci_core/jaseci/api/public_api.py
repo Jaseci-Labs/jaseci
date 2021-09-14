@@ -68,10 +68,6 @@ class public_api():
             if (param_map[i] is None):
                 logger.error(f'Invalid API parameter set - {params}')
                 return False
-        # if (len(param_map) < len(params)-1):
-        #     logger.warning(
-        #         str(f'Unused parameters in API call - '
-        #             f'got {params.keys()}, expected {param_map.keys()}'))
         ret = getattr(self, api_name)(**param_map)
         if(not is_jsonable(ret)):
             logger.error(
