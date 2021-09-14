@@ -101,7 +101,7 @@ class public_api():
         Public api for running walkers, namespace key must be provided
         along with the walker id and node id
         """
-        if(key not in wlk.namespace_keys()):
+        if(key not in wlk.namespace_keys().keys()):
             return ['Not authorized to execute this walker']
         walk = wlk.duplicate()
         walk.refresh()

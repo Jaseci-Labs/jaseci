@@ -13,6 +13,7 @@ from jaseci.utils.id_list import id_list
 from jaseci.jac.interpreter.walker_interp import walker_interp
 from jaseci.jac.ir.jac_code import jac_code
 import uuid
+import hashlib
 
 
 class walker(element, jac_code, walker_interp, anchored):
@@ -20,7 +21,7 @@ class walker(element, jac_code, walker_interp, anchored):
 
     def __init__(self, code_ir=None, *args, **kwargs):
         self.activity_action_ids = id_list(self)
-        self.namespaces = {}
+        self.namespaces = []
         self.context = {}
         self.profile = {}
         # Process state
@@ -52,13 +53,10 @@ class walker(element, jac_code, walker_interp, anchored):
 
     def namespace_keys(self):
         """Return list of md5 keys for namespaces"""
-        return self.namespaces.keys()
-
-    def get_ns_key(self, ns):
-        """Return key for specific namespace"""
-        for i in self.namespaces.keys():
-            if(self.namespaces[i] == ns):
-                return i
+        ret = {}
+        for i in self.namespaces:
+            ret[hashlib.md5((self._m_id+i).encode()).hexdigest()] = i
+        return ret
 
     def step(self):
         """

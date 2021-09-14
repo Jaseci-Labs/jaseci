@@ -30,6 +30,7 @@ class master(element, interface, master_api, alias_api, graph_api, object_api,
         alias_api.__init__(self)
         config_api.__init__(self)
         graph_api.__init__(self)
+        walker_api.__init__(self)
         sentinel_api.__init__(self)
 
     def destroy(self):
@@ -39,6 +40,7 @@ class master(element, interface, master_api, alias_api, graph_api, object_api,
         graph_api.destroy(self)
         sentinel_api.destroy(self)
         master_api.destroy(self)
+        walker_api.destroy(self)
         super().destroy()
 
 

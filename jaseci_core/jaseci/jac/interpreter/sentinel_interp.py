@@ -7,7 +7,6 @@ referenced through self.
 from jaseci.actor.architype import architype
 from jaseci.actor.walker import walker
 from jaseci.jac.interpreter.interp import interp
-import hashlib
 
 
 class sentinel_interp(interp):
@@ -52,7 +51,7 @@ class sentinel_interp(interp):
         """
         arch = architype(m_id=self._m_id, h=self._h, code_ir=jac_ast)
         if(self.arch_ids.has_obj_by_name(arch.name)):
-            self.arch_ids.remove_obj_by_name(arch.name)
+            self.arch_ids.destroy_obj_by_name(arch.name)
         self.arch_ids.add_obj(arch)
         return arch
 
@@ -66,11 +65,9 @@ class sentinel_interp(interp):
             )* walk_exit_block? RBRACE;
         """
         walk = walker(m_id=self._m_id, h=self._h, code_ir=jac_ast)
-        for i in self.run_namespace_list(jac_ast.kid[2]):
-            name = walk._m_id+i
-            walk.namespaces[hashlib.md5(name.encode()).hexdigest()] = i
+        walk.namespaces = self.run_namespace_list(jac_ast.kid[2])
         if(self.walker_ids.has_obj_by_name(walk.name)):
-            self.walker_ids.remove_obj_by_name(walk.name)
+            self.walker_ids.destroy_obj_by_name(walk.name)
         self.walker_ids.add_obj(walk)
         return walk
 

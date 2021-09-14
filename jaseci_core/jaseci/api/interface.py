@@ -62,8 +62,9 @@ class interface():
                 val = _caller.alias_map[val]
             if (issubclass(p_type, element)):
                 if(val is None or val == 'None'):
-                    return self.interface_error(
-                        f'No {p_type} value for {p_name} provided!')
+                    break
+                    # return self.interface_error(
+                    #     f'No {p_type} value for {p_name} provided!')
                 val = _caller._h.get_obj(
                     _caller._m_id, uuid.UUID(val))
                 if (isinstance(val, p_type)):

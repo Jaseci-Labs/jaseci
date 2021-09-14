@@ -5,12 +5,16 @@ from jaseci.actor.walker import walker
 from jaseci.graph.node import node
 from jaseci.actor.sentinel import sentinel
 from jaseci.utils.utils import b64decode_str
+from jaseci.utils.id_list import id_list
 
 
 class walker_api():
     """
     Walker APIs
     """
+
+    def __init__(self):
+        self.spawned_walker_ids = id_list(self)
 
     def api_walker_register(self, snt: sentinel = None,
                             code: str = '', encoded: bool = False):
@@ -37,7 +41,7 @@ class walker_api():
         elif(mode == 'ir'):
             return wlk.ir_dict()
         elif(mode == 'keys'):
-            return wlk.namespaces
+            return wlk.namespace_keys()
         else:
             return wlk.serialize(detailed=detailed)
 
@@ -76,21 +80,37 @@ class walker_api():
         snt.walker_ids.destroy_obj(wlk)
         return [f'Walker {wlkid} successfully deleted']
 
-    def api_walker_spawn(self, name: str, snt: sentinel = None):
+    def api_walker_spawn_create(self, name: str, snt: sentinel = None):
         """
         Creates new instance of walker and returns new walker object
         """
         wlk = snt.spawn_walker(name, caller=self)
         if(wlk):
+            if(self.spawned_walker_ids.has_obj_by_name(name)):
+                self.spawned_walker_ids.destroy_obj_by_name(name)
+            self.spawned_walker_ids.add_obj(wlk)
             return wlk.serialize()
         else:
             return [f'Walker not found!']
 
-    def api_walker_unspawn(self, wlk: walker):
+    def api_walker_spawn_delete(self, name: str):
         """
-        Delete instance of walker (not implemented yet)
+        Delete instance of walker
         """
-        return []
+        if(self.spawned_walker_ids.has_obj_by_name(name)):
+            self.spawned_walker_ids.destroy_obj_by_name(name)
+            return [f'Walker {name} deteled!']
+        else:
+            return [f'Walker {name} not found!']
+
+    def api_walker_spawn_list(self, detailed: bool = False):
+        """
+        List walkers spawned by master
+        """
+        walks = []
+        for i in self.spawned_walker_ids.obj_list():
+            walks.append(i.serialize(detailed=detailed))
+        return walks
 
     def api_walker_prime(self, wlk: walker, nd: node = None, ctx: dict = {}):
         """
@@ -99,10 +119,13 @@ class walker_api():
         wlk.prime(nd, prime_ctx=ctx)
         return [f'Walker primed on node {nd.id}']
 
-    def api_walker_execute(self, wlk: walker):
+    def api_walker_execute(self, wlk: walker, prime: node = None,
+                           ctx: dict = {}):
         """
         Executes walker (assumes walker is primed)
         """
+        if(prime):
+            self.api_walker_prime(wlk=wlk, nd=prime, ctx=ctx)
         wlk.run()
         return wlk.report
 
@@ -119,3 +142,10 @@ class walker_api():
         res = self.api_walker_execute(wlk)
         wlk.destroy()
         return res
+
+    def destroy(self):
+        """
+        Destroys self from memory and persistent storage
+        """
+        for i in self.spawned_walker_ids.obj_list():
+            i.destroy()
