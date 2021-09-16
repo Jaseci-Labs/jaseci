@@ -187,4 +187,5 @@ JASECI_CONFIGS = ['EMAIL_BACKEND',
                   'EMAIL_RESETPASS_SUBJ',
                   'EMAIL_RESETPASS_BODY',
                   'EMAIL_RESETPASS_HTML_BODY',
+                  'LOGIN_TOKEN_TTL_HOURS'
                   ]

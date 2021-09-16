@@ -9,6 +9,8 @@ from knox.auth import TokenAuthentication
 from user_api.serializers import UserSerializer, SuperUserSerializer
 from user_api.serializers import AuthTokenSerializer
 from user_api.serializers import send_activation_email
+from base.models import lookup_global_config
+from datetime import timedelta
 
 from rest_framework.response import Response
 import base64
@@ -49,8 +51,14 @@ class ActivateUserView(APIView):
 class CreateTokenView(KnoxLoginView):
     """Create a new auth token for user"""
     permission_classes = (permissions.AllowAny,)
-    # serializer_class = AuthTokenSerializer
-    # renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+
+    def get_token_ttl(self):
+        ttl = lookup_global_config(
+            'LOGIN_TOKEN_TTL_HOURS', None)
+        if(not ttl):
+            return super(CreateTokenView, self).get_token_ttl()
+        else:
+            return timedelta(hours=int(ttl))
 
     def post(self, request, format=None):
         serializer = AuthTokenSerializer(
