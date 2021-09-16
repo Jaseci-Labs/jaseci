@@ -32,7 +32,7 @@ class sentinel_api():
             new_gph = self.api_graph_create(set_active=True)
         if(code):
             if (encoded):
-                code = b64decode_str(code)
+                code = b64decode_str(str(code))
             snt.register_code(code)
         if(snt.walker_ids.has_obj_by_name(auto_run) and self.active_gph_id):
             nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))

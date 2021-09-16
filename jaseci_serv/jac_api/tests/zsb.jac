@@ -70,7 +70,7 @@ walker unlink_question {
     can use.enc_answer, use.dist_score;
 
     answer {
-        if(not here.qlinks or here.qlinks.length < idx): 
+        if(not here.qlinks or here.qlinks.length < idx):
             report "Index out of range!";
         else {
             here.qlinks.destroy(idx);
@@ -121,7 +121,7 @@ walker ask_question {
                 max_score=score[0][0];
             }
         }
-        take --> node::log_chunk else { 
+        take --> node::log_chunk else {
             spawn here --> node::log_chunk;
             take --> node::log_chunk;
         }
