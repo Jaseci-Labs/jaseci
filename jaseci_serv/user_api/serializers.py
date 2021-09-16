@@ -6,9 +6,7 @@ import base64
 from django.urls import reverse
 from django.dispatch import receiver
 from django_rest_passwordreset.signals import reset_password_token_created
-from django.core import mail
-from base.mail import load_email_connection
-from base.models import lookup_global_config
+from base.mail import email_config
 
 
 def send_activation_email(request, email):
@@ -16,42 +14,16 @@ def send_activation_email(request, email):
     code = base64.b64encode(email.encode()).decode()
     link = request.build_absolute_uri(
         reverse('user_api:activate', kwargs={'code': code}))
-    body = "Thank you for creating an account!\n\n" + \
-        f"Activation Code: {code}\n" + \
-        f"Please click below to activate:\n{link}"
-    with load_email_connection() as connection:
-        mail.EmailMessage(
-            'Please activate your account!',
-            body,
-            lookup_global_config('EMAIL_DEFAULT_FROM'),
-            [email],
-            connection=connection,
-        ).send(fail_silently=False)
+    jsmail = email_config()
+    jsmail.send_activation_email(email, code, link)
 
 
 @receiver(reset_password_token_created)
 def password_reset_token_created(sender, instance, reset_password_token,
                                  *args, **kwargs):
-
-    # email_msg = "{}?token={}".format(
-    #     reverse('user_api:password_reset:reset-password-request'),
-    #     reset_password_token.key)
-
-    email_msg = "Your Jaseci password reset token is: {}".format(
-        reset_password_token.key)
-
-    with load_email_connection() as connection:
-        mail.EmailMessage(
-            # title:
-            "Password Reset for {title}".format(title="Jaseci Account"),
-            # message:
-            email_msg,
-            # from:
-            lookup_global_config('EMAIL_DEFAULT_FROM'),
-            # to:
-            [reset_password_token.user.email],
-            connection=connection,
-        ).send(fail_silently=False)
+    jsmail = email_config()
+    jsmail.send_reset_email(
+        reset_password_token.user.email, reset_password_token.key)
 
 
 class UserSerializer(serializers.ModelSerializer):
