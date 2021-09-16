@@ -235,7 +235,7 @@ def tool(op):
         click.echo(
             f"{book().api_cheatsheet(extract_api_tree())}")
     elif(op == 'classes'):
-        click.echo(book().print_classes())
+        click.echo(book().api_spec())
 
 
 cli.add_command(login)

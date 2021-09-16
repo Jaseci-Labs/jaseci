@@ -89,6 +89,7 @@ class walker_api():
             if(self.spawned_walker_ids.has_obj_by_name(name)):
                 self.spawned_walker_ids.destroy_obj_by_name(name)
             self.spawned_walker_ids.add_obj(wlk)
+            self.api_alias_register(f'spawned:walker:{name}', wlk.jid)
             return wlk.serialize()
         else:
             return [f'Walker not found!']
@@ -99,6 +100,7 @@ class walker_api():
         """
         if(self.spawned_walker_ids.has_obj_by_name(name)):
             self.spawned_walker_ids.destroy_obj_by_name(name)
+            self.api_alias_delete(f'spawned:walker:{name}')
             return [f'Walker {name} deteled!']
         else:
             return [f'Walker {name} not found!']

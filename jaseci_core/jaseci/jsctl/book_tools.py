@@ -18,14 +18,18 @@ class book():
             ret += i
         return ret
 
-    def print_classes(self):
+    def api_spec(self):
         ret = ''
         build_class_dict(jaseci)
         for i in obj_class_cache.keys():
             if(not i.endswith('_api')):
                 continue
             ret += f'\\subsection{{{i[:-4]} APIs}}\n\n'
+            ret += self.api_call_spec(obj_class_cache[i])
             doc = getdoc(obj_class_cache[i]).replace("\n\n", "\n\\par\n")
-            doc = doc.replace('_', '\_')
+            doc = doc.replace('_', '\\_')
             ret += f'{doc}\n\n'
         return ret
+
+    def api_call_spec(self, cls):
+        pass

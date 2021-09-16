@@ -18,6 +18,22 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
         self.client = APIClient()
+        get_user_model().objects.create_user(
+            'throwawayJSCITfdfdEST_test@jaseci.com',
+            'password'
+        )
+        self.user = get_user_model().objects.create_user(
+            'JSCITfdfdEST_test@jaseci.com',
+            'password'
+        )
+        self.auth_client = APIClient()
+        self.auth_client.force_authenticate(self.user)
+        self.suser = get_user_model().objects.create_superuser(
+            'JSCITfdfdEST_test2@jaseci.com',
+            'password'
+        )
+        self.sauth_client = APIClient()
+        self.sauth_client.force_authenticate(self.suser)
 
     def tearDown(self):
         super().tearDown()
@@ -27,6 +43,69 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         res = self.client.get(reverse('jac_api:graph_list'))
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_public_jac_apis_walker_summon_auth(self):
+        """Test public API for summoning walker"""
+        zsb_file = open("jac_api/tests/zsb.jac").read()
+        payload = {'op': 'sentinel_register', 'name': 'zsb',
+                   'code': zsb_file}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'walker_get', 'mode': 'keys',
+                   'wlk': 'zsb:walker:pubinit'}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        key = list(res.data.keys())[0]
+        payload = {'op': 'alias_list'}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        walk = res.data['zsb:walker:pubinit']
+        nd = res.data['active:graph']
+        payload = {'op': 'walker_summon', 'key': key, 'wlk': walk, 'nd': nd}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 0)
+        key = 'aaaaaaa'
+        payload = {'op': 'walker_summon', 'key': key, 'wlk': walk, 'nd': nd}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 1)
+
+    def test_serverside_sentinel_global_public_access_summon(self):
+        """Test master delete operation"""
+        zsb_file = open("jac_api/tests/zsb.jac").read()
+        payload = {'op': 'sentinel_register', 'name': 'zsb',
+                   'code': zsb_file}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 2)
+        payload = {'op': 'global_sentinel_set'}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'sentinel_active_global'}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertTrue(res.data['success'])
+        payload = {'op': 'graph_create'}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'walker_spawn_create', 'name': 'pubinit'}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'walker_get', 'mode': 'keys',
+                   'wlk': 'spawned:walker:pubinit'}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        key = list(res.data.keys())[0]
+        payload = {'op': 'alias_list'}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        walk = res.data['spawned:walker:pubinit']
+        nd = res.data['active:graph']
+        payload = {'op': 'walker_summon', 'key': key, 'wlk': walk, 'nd': nd}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(len(res.data), 0)
 
 
 class PrivateJacApiTests(TestCaseHelper, TestCase):
@@ -431,33 +510,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'walker_execute', 'wlk': walk.id.urn}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.assertEqual(gph.outbound_nodes()[0].context['c'], 7)
-
-    def test_public_jac_apis_walker_summon_auth(self):
-        """Test public API for summoning walker"""
-        zsb_file = open("jac_api/tests/zsb.jac").read()
-        payload = {'op': 'sentinel_register', 'name': 'zsb',
-                   'code': zsb_file}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'walker_get', 'mode': 'keys',
-                   'wlk': 'zsb:walker:pubinit'}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        key = list(res.data.keys())[0]
-        payload = {'op': 'alias_list'}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        walk = res.data['zsb:walker:pubinit']
-        nd = res.data['active:graph']
-        payload = {'op': 'walker_summon', 'key': key, 'wlk': walk, 'nd': nd}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.assertEqual(len(res.data), 0)
-        key = 'aaaaaaa'
-        payload = {'op': 'walker_summon', 'key': key, 'wlk': walk, 'nd': nd}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.assertEqual(len(res.data), 1)
 
     def test_master_create_linked_to_django_users(self):
         """Test master create operation"""
