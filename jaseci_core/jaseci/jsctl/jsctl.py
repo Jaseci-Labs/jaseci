@@ -230,12 +230,19 @@ def clear():
 
 @click.command(help="Internal book generation tools")
 @click.argument("op", type=str, default='cheatsheet', required=True)
-def tool(op):
+@click.option('--output', '-o', default='', required=False, type=str,
+              help="Filename to dump output of this command call.")
+def tool(op, output):
+    out = ''
     if(op == 'cheatsheet'):
-        click.echo(
-            f"{book().api_cheatsheet(extract_api_tree())}")
+        out = f"{book().api_cheatsheet(extract_api_tree())}"
     elif(op == 'classes'):
-        click.echo(book().api_spec())
+        out = book().api_spec()
+    click.echo(out)
+    if(output):
+        with open(output, 'w') as f:
+            f.write(out)
+        click.echo(f'[saved to {output}]')
 
 
 cli.add_command(login)

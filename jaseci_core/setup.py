@@ -8,6 +8,7 @@ setup(
         'numpy >= 1.21.0, < 1.22.0',
         'antlr4-python3-runtime>=4.9.0,<4.10.0',
         'requests',
+        'redis',
         'flake8',
     ],
     package_data={"": ["*.ini"], },

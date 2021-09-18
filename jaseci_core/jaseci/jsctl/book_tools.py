@@ -25,11 +25,25 @@ class book():
             if(not i.endswith('_api')):
                 continue
             ret += f'\\subsection{{{i[:-4]} APIs}}\n\n'
-            ret += self.api_call_spec(obj_class_cache[i])
             doc = getdoc(obj_class_cache[i]).replace("\n\n", "\n\\par\n")
             doc = doc.replace('_', '\\_')
             ret += f'{doc}\n\n'
+            ret += self.api_call_spec(obj_class_cache[i])
         return ret
 
     def api_call_spec(self, cls):
-        pass
+        ret = ''
+        for i in dir(cls):
+            access = 'master'
+            if (i.startswith('api_')):
+                api = i[4:].replace('_', ' ')
+            elif (i.startswith('admin_api_')):
+                access = 'super'
+                api = i[10:].replace('_', ' ')
+            elif (i.startswith('public_api_')):
+                access = 'public'
+                api = i[11:].replace('_', ' ')
+            else:
+                continue
+            ret += f'\\subsubsection{{{api}}}\n\n'
+        return ret
