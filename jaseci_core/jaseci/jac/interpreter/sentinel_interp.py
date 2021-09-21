@@ -28,7 +28,6 @@ class sentinel_interp(interp):
         """
         kid = jac_ast.kid
         self.version = self.parse_str_token(kid[2].token_text())
-        self.save()
 
     def run_element(self, jac_ast):
         """
