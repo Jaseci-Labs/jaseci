@@ -19,6 +19,13 @@ class interface():
         Applies internal defaults for sentinel and graphs
         """
         if(param == 'snt' and self.active_snt_id):
+            if(self.active_snt_id == 'global'):
+                glob_id = self._h.get_glob('GLOB_SENTINEL')
+                if(not glob_id):
+                    return self.interface_error(
+                        'No global sentinel is available!')
+                else:
+                    return glob_id
             return self.active_snt_id
         if(param == 'gph' and self.active_gph_id):
             return self.active_gph_id
@@ -58,6 +65,8 @@ class interface():
                 val = params[p_name]
             if(val is None or val == 'None'):  # Used to patch defaults
                 val = _caller.provide_internal_default(p_name)
+                if('errors' in val):
+                    return val
             if(str(val) in _caller.alias_map.keys()):
                 val = _caller.alias_map[val]
             if (issubclass(p_type, element)):

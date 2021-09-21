@@ -143,24 +143,27 @@ class sentinel_api():
         if(not glob_id):
             ret['response'] = 'No global sentinel is available!'
         else:
-            self.active_snt_id = glob_id
+            self.active_snt_id = "global"  # Resolved in interface
             self.api_alias_register('active:sentinel', glob_id)
             ret['sentinel'] = self._h.get_obj(
                 self._m_id, uuid.UUID(glob_id)).serialize(detailed=detailed)
             ret['success'] = True
-            ret['repsonse'] = f'Global sentinel {glob_id} set as default'
+            ret['response'] = f'Global sentinel {glob_id} set as default'
         return ret
 
     def api_sentinel_active_get(self, detailed: bool = False):
         """
         Returns the default sentinel master is using
         """
-        if(self.active_snt_id):
-            default = self._h.get_obj(
-                self._m_id, uuid.UUID(self.active_snt_id))
-            return default.serialize(detailed=detailed)
-        else:
+        id = self.active_snt_id
+        if(id == 'global'):
+            id = self._h.get_glob('GLOB_SENTINEL')
+        if(not id):
             return {'response': 'No default sentinel is selected!'}
+        else:
+            default = self._h.get_obj(
+                self._m_id, uuid.UUID(id))
+            return default.serialize(detailed=detailed)
 
     def api_sentinel_delete(self, snt: sentinel):
         """
