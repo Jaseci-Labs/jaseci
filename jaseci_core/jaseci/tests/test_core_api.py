@@ -106,3 +106,27 @@ class core_api_test(TestCaseHelper, TestCase):
         r = self.call(self.mast, api)
         self.assertIn('j_type', r)
         self.assertEqual(r['j_type'], 'super_master')
+
+    def test_global_sentinel_set_unset(self):
+        api = ['admin_api_global_sentinel_set', {}]
+        r = self.call(self.mast, api)
+        self.assertIn('response', r)
+        self.assertNotIn('error', r)
+        api = ['admin_api_global_sentinel_unset', {}]
+        r = self.call(self.mast, api)
+        self.assertIn('response', r)
+        self.assertNotIn('error', r)
+
+    def test_global_sentinel_double_unset(self):
+        api = ['admin_api_global_sentinel_set', {}]
+        r = self.call(self.mast, api)
+        self.assertIn('response', r)
+        self.assertNotIn('error', r)
+        api = ['admin_api_global_sentinel_unset', {}]
+        r = self.call(self.mast, api)
+        self.assertIn('response', r)
+        self.assertNotIn('error', r)
+        api = ['admin_api_global_sentinel_unset', {}]
+        r = self.call(self.mast, api)
+        self.assertIn('response', r)
+        self.assertNotIn('error', r)
