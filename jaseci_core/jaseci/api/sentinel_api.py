@@ -138,7 +138,7 @@ class sentinel_api():
         Sets the default master sentinel to the global sentinel
         Exclusive OR with pull strategy
         """
-        ret = {'success': False}
+        ret = {'success': False, 'sentinel': None}
         glob_id = self._h.get_glob('GLOB_SENTINEL')
         if(not glob_id):
             ret['response'] = 'No global sentinel is available!'

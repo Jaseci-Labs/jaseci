@@ -155,7 +155,7 @@ class element(hookable):
         """
         jdict = {}
         key_fields = ['name', 'kind', 'jid', 'j_type', 'context',
-                      'anchor', 'j_timestamp']
+                      'anchor', 'j_timestamp', 'version']
         for i in vars(self).keys():
             if not i.startswith('_'):
                 if(not detailed and i not in key_fields):
