@@ -51,7 +51,7 @@ class public_api():
             if (p_name in params.keys()):
                 val = params[p_name]
             if (issubclass(p_type, element)):
-                if(val is None or val == 'None'):
+                if(val is None):
                     logger.error(
                         f'No {p_type} value for {p_name} provided!')
                 val = self.hook.get_obj(

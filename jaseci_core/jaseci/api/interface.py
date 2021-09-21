@@ -31,7 +31,7 @@ class interface():
             return self.active_gph_id
         if(param == 'nd' and self.active_gph_id):
             return self.active_gph_id
-        return 'None'  # Meke me more elegant one day
+        return None
 
     def interface_error(self, err):
         """Standard error output to logger and api response"""
@@ -63,14 +63,14 @@ class interface():
                 func_sig.parameters[i].empty else None
             if (p_name in params.keys()):
                 val = params[p_name]
-            if(val is None or val == 'None'):  # Used to patch defaults
+            if(val is None):  # Used to patch defaults
                 val = _caller.provide_internal_default(p_name)
-                if('errors' in val):
+                if(val is not None and 'errors' in val):
                     return val
             if(str(val) in _caller.alias_map.keys()):
                 val = _caller.alias_map[val]
             if (issubclass(p_type, element)):
-                if(val is None or val == 'None'):
+                if(val is None):
                     break
                     # return self.interface_error(
                     #     f'No {p_type} value for {p_name} provided!')

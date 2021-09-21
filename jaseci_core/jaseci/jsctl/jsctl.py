@@ -65,6 +65,12 @@ def remote_api_call(payload, api_name):
     return ret
 
 
+def resolve_none_type(kwargs):
+    for i in kwargs.keys():
+        if(kwargs[i] == 'None'):
+            kwargs[i] = None
+
+
 def interface_api(api_name, is_public, **kwargs):
     """
     Interfaces Master apis after processing arguments/parameters
@@ -81,6 +87,7 @@ def interface_api(api_name, is_public, **kwargs):
         kwargs['ctx'] = json.loads(kwargs['ctx'])
     if('other_fields' in kwargs):
         kwargs['other_fields'] = json.loads(kwargs['other_fields'])
+    resolve_none_type(kwargs)
     if(connection['token'] and connection['url']):
         out = remote_api_call(kwargs, api_name)
     elif(is_public):
