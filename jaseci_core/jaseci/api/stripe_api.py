@@ -1,173 +1,92 @@
+import json
+import sys
 import stripe
-from datetime import datetime
-from datetime import timedelta
-
-from stripe.api_resources import subscription
+from django.http import JsonResponse
 
 stripe.api_key = "sk_test_51JZeGHDiHeCtNB1DdakkFaCUm89tDWmE6zA0qjZAoxZ1GqGHIyvur4t4yjlGITUfUHQgmurQKvzRyFCbWa3eRviU003YmENmVD"
 
 
 class stripe_api():
 
-    def admin_api_stripe_create_product(self, name: str = "VIP Plan",
-                                        description: str = "Plan description"):
-        """ create product """
+    """ create product """
+
+    def admin_api_create_product(self, name="VIP Plan", description="Plan description"):
         try:
-            return stripe.Product.create(
+            product = stripe.Product.create(
                 namex=name,
                 descriptionx=description
             )
-        except Exception as e:
-            return {"message": str(e)}
 
-    def admin_api_stripe_creat_price(self, productId: str, amount: float = 50,
-                                     interval: str = "month"):
-        """ modify product price """
+            return json.dumps({"data": product})
+        except Exception as e:
+            return json.dumps({"message": str(e)})
+
+    """ modify product price """
+
+    def admin_api_modify_price(self, productId, amount=50, interval="month"):
         try:
-            return stripe.Price.create(
+            price = stripe.Price.create(
                 unit_amount=amount,
                 currency="usd",
                 recurring={"interval": interval},
                 product=productId,
             )
-        except Exception as e:
-            return {"message": str(e)}
 
-    def admin_api_stripe_create_customer(self, paymentId: str,
-                                         name: str = "cristopher evangelista",
-                                         email: str = "imurbatman12@gmail.com",
-                                         description: str = "Myca subscriber"):
-        """ create customer """
+            return json.dumps({"data": price})
+        except Exception as e:
+            return json.dumps({"message": str(e)})
+
+    """ create customer """
+
+    def admin_api_create_customer(self, methodId, name="cristopher evangelista", email="imurbatman12@gmail.com", description="Myca subscriber"):
         try:
-            return stripe.Customer.create(
+            customer = stripe.Customer.create(
                 name=name,
                 email=email,
                 description=description,
-                payment_method=paymentId,
-                invoice_settings={"default_payment_method": paymentId}
+                payment_method=methodId,
+                invoice_settings={"default_payment_method": methodId}
             )
+
+            return json.dumps({"data": customer})
         except Exception as e:
-            return {"message": str(e)}
+            return json.dumps({"message": str(e)})
 
-    def admin_api_stripe_retrieve_customer_info(self, customerId: str):
-        """ retrieve customer information """
+    """ create customer subscription """
+
+    def admin_api_customer_subscription(self, customerId, priceId):
         try:
-            return stripe.Customer.retrieve(customerId)
-        except Exception as e:
-            return {"message": str(e)}
-
-    def admin_api_stripe_add_customer_payment_methods(self, paymentMethodId: str, customerId: str):
-        """ add customer payment method """
-        try:
-            paymentMethods = self.admin_api_stripe_retrieve_customer_payment_methods(
-                customerId)
-
-            paymentMethod = stripe.PaymentMethod.attach(
-                paymentMethodId, customer=customerId)
-
-            if(len(paymentMethods.data) == 0):
-                self.admin_api_stripe_update_default_payment_method(
-                    customerId, paymentMethodId)
-
-            paymentMethod.is_default = len(paymentMethods.data) == 0
-
-            return paymentMethod
-
-        except Exception as e:
-            return {"message": str(e)}
-
-    def admin_api_stripe_remove_customer_payment_methods(self, paymentMethodId: str):
-        """ add customer payment method """
-        try:
-            return stripe.PaymentMethod.detach(paymentMethodId)
-        except Exception as e:
-            return {"message": str(e)}
-
-    def admin_api_stripe_retrieve_customer_payment_methods(self, customerId: str):
-        """ get customer list of payment methods """
-        try:
-            return stripe.PaymentMethod.list(
-                customer=customerId,
-                type="card",
-            )
-        except Exception as e:
-            return {"message": str(e)}
-
-    def admin_api_stripe_update_default_payment_method(self, customerId: str, paymentMethodId: str):
-        """ update default payment method of customer """
-        try:
-            return stripe.Customer.modify(customerId, invoice_settings={"default_payment_method": paymentMethodId})
-        except Exception as e:
-            return {"message": str(e)}
-
-    def admin_api_stripe_customer_subscription(self, paymentId: str, name: str, email: str, priceId: str, customerId: str):
-        """ create customer subscription """
-        try:
-            # attach payment method to customer
-            self.admin_api_stripe_add_customer_payment_methods(
-                paymentId, customerId)
-
-            # set card to default payment method
-            self.admin_api_stripe_update_default_payment_method(
-                customerId, paymentId)
-
             subscription = stripe.Subscription.create(
                 customer=customerId,
                 items=[
                     {"price": priceId},
                 ],
-                trial_period_days=30
             )
 
-            return subscription
+            return json.dumps({"data": subscription})
         except Exception as e:
-            return {"message": str(e)}
+            return json.dumps({"message": str(e)})
 
-    def admin_api_stripe_cancel_subscription(self, subscriptionId: str):
-        """ cancel customer subscription """
+    """ cancel customer subscription """
+
+    def admin_api_cancel_subscription(self, subscriptionId):
         try:
-            return stripe.Subscription.delete(subscriptionId)
+            subscription = stripe.Subscription.delete(subscriptionId)
+
+            return json.dumps({"data": subscription})
         except Exception as e:
-            return {"message": str(e)}
+            return json.dumps({"message": str(e)})
 
-    def admin_api_stripe_retrieve_products(self):
-        """ retrieve all producs """
-        try:
-            return stripe.Product.list(active=True)
-        except Exception as e:
-            return {"message": str(e)}
 
-    def admin_api_stripe_retrieve_price(self):
-        """ retrieve product price """
-        try:
-            return stripe.Product.list()
-        except Exception as e:
-            return {"message": str(e)}
+PAYMENT = stripe_api()
 
-    def admin_api_stripe_retrieve_customer_subscription(self, customerId: str):
-        """ retrieve customer subcription """
+if __name__ == '__main__':
+    # id = sys.argv[1]
+    # amount = int(sys.argv[2])
 
-        try:
-            subscription = stripe.Subscription.list(customer=customerId)
-
-            if (len(subscription.data) == 0):
-                return {"status": "inactive", "message": "Customer has no subscription"}
-
-            subscription.pop("items", None)
-
-            return subscription.data[0]
-        except Exception as e:
-            return {"message": str(e)}
-
-    def admin_api_stripe_retrieve_customer_invoices(self, customerId: str, lastItem: str = ""):
-        """ retrieve customer list of invoices """
-        try:
-            if(lastItem != ''):
-                invoices = stripe.Invoice.list(
-                    customer=customerId, limit=10, starting_after=lastItem)
-            else:
-                invoices = stripe.Invoice.list(customer=customerId, limit=10)
-
-            return invoices
-        except Exception as e:
-            return {"message": str(e)}
+    # PAYMENT.admin_api_create_payment(id, amount)
+    PAYMENT.admin_api_create_customer(sys.argv[1])
+    # PAYMENT.admin_api_create_product(sys.argv[1])
+    # PAYMENT.admin_api_modify_price(sys.argv[1])
+    # PAYMENT.admin_api_customer_subscription(sys.argv[1], sys.argv[2])
+    # PAYMENT.admin_api_cancel_subscription(sys.argv[1])
