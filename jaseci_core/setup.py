@@ -10,6 +10,7 @@ setup(
         'requests',
         'redis',
         'flake8',
+        'stripe'
     ],
     package_data={"": ["*.ini"], },
     entry_points={
