@@ -7,8 +7,8 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
 from jaseci_serv.settings import JASECI_CONFIGS
 from django.contrib.auth import get_user_model
 from base.orm_hook import orm_hook
-from jaseci.element.master import master as core_master,\
-    super_master as core_super
+from jaseci.element.master import master as core_master
+from jaseci.element.super_master import super_master as core_super
 
 
 class master(core_master):

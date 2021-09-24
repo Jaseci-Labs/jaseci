@@ -12,7 +12,7 @@ import requests
 
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
-from jaseci.element.master import super_master
+from jaseci.element.super_master import super_master
 from jaseci.api.public_api import public_api
 from .book_tools import book
 

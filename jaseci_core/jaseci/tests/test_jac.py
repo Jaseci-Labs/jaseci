@@ -4,7 +4,8 @@ from jaseci.jac.jac_parse.jacParser import jacParser
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
-from jaseci.element.master import master, super_master
+from jaseci.element.super_master import super_master
+from jaseci.element.master import master
 
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase

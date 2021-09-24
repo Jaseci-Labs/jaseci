@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from base import models
 from obj_api.views import JaseciObjectSerializer
 from jaseci.element import element
-from jaseci.element.master import super_master
+from jaseci.element.super_master import super_master
 
 
 def sample_user(email='JSCITEST_user@jaseci.com', password='whatever'):

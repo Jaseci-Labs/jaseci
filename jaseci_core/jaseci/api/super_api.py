@@ -16,6 +16,6 @@ class super_api():
         other_fields used for additional feilds for overloaded interfaces
         (i.e., Dango interface)
         """
-        from jaseci.element.master import super_master
+        from jaseci.element.super_master import super_master
         new_m = super_master(h=self._h, name=name)
         return self.make_me_head_master_or_destroy(new_m)
