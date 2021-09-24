@@ -73,16 +73,3 @@ class stripe_api():
             return {"data": subscription}
         except Exception as e:
             return {"message": str(e)}
-
-
-if __name__ == '__main__':
-    PAYMENT = stripe_api()
-    # id = sys.argv[1]
-    # amount = int(sys.argv[2])
-
-    # PAYMENT.admin_api_stripe_create_payment(id, amount)
-    PAYMENT.admin_api_stripe_create_customer(sys.argv[1])
-    # PAYMENT.admin_api_stripe_create_product(sys.argv[1])
-    # PAYMENT.admin_api_stripe_modify_price(sys.argv[1])
-    # PAYMENT.admin_api_stripe_customer_subscription(sys.argv[1], sys.argv[2])
-    # PAYMENT.admin_api_stripe_cancel_subscription(sys.argv[1])
