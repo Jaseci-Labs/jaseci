@@ -1,5 +1,13 @@
 # Jaseci Release Notes
 
+## Version 1.2.1
+
+### Features
+
+- EMails can be templated
+- Token expiry time can be set as config through live api
+- FIX: Global sentinels cascade to all users on change
+
 ## Version 1.2.0
 
 ### Features

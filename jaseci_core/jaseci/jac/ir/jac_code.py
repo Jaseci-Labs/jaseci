@@ -4,6 +4,7 @@ Mix in for jac code object in Jaseci
 import json
 from jaseci.utils.utils import logger
 from jaseci.jac.ir.ast import ast
+import hashlib
 
 
 class jac_json_enc(json.JSONEncoder):
@@ -60,6 +61,7 @@ class jac_code():
     def __init__(self, code_ir=None):
         self.is_active = False
         self.code_ir = None
+        self.signature = None
         self._jac_ast = None
         self.errors = []
         self.apply_ir(code_ir)
@@ -78,6 +80,7 @@ class jac_code():
         """Apply's IR to object"""
         self.code_ir = ir if(isinstance(ir, str)) else \
             jac_ast_to_ir(ir)
+        self.signature = hashlib.md5(self.code_ir.encode()).hexdigest()
         jac_code.refresh(self)  # should disregard overloaded versions
         if(self._jac_ast):
             kid = self._jac_ast.kid
