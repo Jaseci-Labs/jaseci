@@ -95,14 +95,25 @@ class public_api():
             doc = getdoc(getattr(public_api, api_name))
             return doc
 
+    def sync_walker_from_global_sent(self, wlk):
+        """Checks for matching code ir between global and spawned walker"""
+        glob_id = wlk._h.get_glob('GLOB_SENTINEL')
+        if(glob_id):
+            snt = wlk._h.get_obj(wlk._m_id, uuid.UUID(glob_id))
+            glob_wlk = snt.walker_ids.get_obj_by_name(wlk.name)
+            if(glob_wlk and glob_wlk.code_sig != wlk.code_sig):
+                wlk.apply_ir(glob_wlk.code_ir)
+
     def public_api_walker_summon(self, key: str, wlk: walker, nd: node,
-                                 ctx: dict = {}):
+                                 ctx: dict = {}, global_sync: bool = True):
         """
         Public api for running walkers, namespace key must be provided
         along with the walker id and node id
         """
         if(key not in wlk.namespace_keys().keys()):
             return ['Not authorized to execute this walker']
+        if(global_sync):  # Test needed
+            self.sync_walker_from_global_sent(wlk)
         walk = wlk.duplicate()
         walk.refresh()
         walk.prime(nd, prime_ctx=ctx)
