@@ -66,11 +66,11 @@ class AbstractJacAPIView(APIView):
 
     def issue_response(self, api_result):
         """Issue response from call"""
-        # self.caller._h.commit()
-        # return Response(api_result)
-        for i in self.caller._h.save_obj_list:
-            self.caller._h.commit_obj_to_redis(i)
-        return JResponse(self.caller, api_result)
+        self.caller._h.commit()
+        return Response(api_result)
+        # for i in self.caller._h.save_obj_list:
+        #     self.caller._h.commit_obj_to_redis(i)
+        # return JResponse(self.caller, api_result)
 
 
 class AbstractAdminJacAPIView(AbstractJacAPIView):
