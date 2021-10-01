@@ -94,7 +94,6 @@ class element(hookable):
             ret = False
             if(not silent):
                 logger.error(f'{self} is not master')
-            return ret
         if(super_check and 'super' not in self.j_type):
             ret = False
             if(not silent):

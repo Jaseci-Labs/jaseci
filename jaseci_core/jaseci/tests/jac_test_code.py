@@ -643,6 +643,29 @@ set_get_global = \
     }
     """
 
+set_get_global_dict = \
+    """
+    walker setter {
+        root {
+            std.set_global('globby',
+            { "max_bot_count": 10, "max_ans_count": 100,
+              "max_txn_count": 50000, "max_test_suite": 5,
+              "max_test_cases": 50, "export_import": true,
+              "analytics": true, "integration": "All"
+            });
+        }
+    }
+
+    walker getter {
+        has a;
+        root {
+            a=std.get_global('globby');
+            std.log(std.get_global('globby'));
+            report std.get_global('globby');
+        }
+    }
+    """
+
 version_label = \
     """
     version: "alpha-1.0"

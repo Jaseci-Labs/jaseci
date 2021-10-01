@@ -743,3 +743,18 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(len(res.data), 3)
+
+    def test_check_json_global_dict(self):
+        """Test set get global objects (as json)"""
+        from jaseci.tests.jac_test_code import set_get_global_dict
+        payload = {'op': 'sentinel_register', 'name': 'zsb',
+                   'code': set_get_global_dict}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'walker_run', 'name': 'setter'}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'walker_run', 'name': 'getter'}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(res.data[0]['max_bot_count'], 10)
