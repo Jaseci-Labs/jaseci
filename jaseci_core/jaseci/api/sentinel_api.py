@@ -34,8 +34,6 @@ class sentinel_api():
             if (encoded):
                 code = b64decode_str(code)
             snt.register_code(code)
-            if(not snt.is_active):
-                return {'response': 'Error in jac code', 'errors': snt.errors}
         if(snt.walker_ids.has_obj_by_name(auto_run) and self.active_gph_id):
             nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
             self.api_walker_run(name=auto_run, nd=nd, ctx=ctx,

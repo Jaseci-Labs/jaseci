@@ -92,7 +92,7 @@ class orm_hook(mem_hook):
         # import traceback as tb; tb.print_stack();  # noqa
         self.save_obj_list.add(item)
 
-    def commit_obj_to_redis(self, item):
+    def commit_obj(self, item):
         try:
             self.red.set(item.id.urn, item.json(detailed=True))
         except TypeError:
@@ -105,9 +105,6 @@ class orm_hook(mem_hook):
                 str(f"Couldn't save {item} to redis! {e}"),
                 exc_info=True
             )
-
-    def commit_obj(self, item):
-        self.commit_obj_to_redis(item)
         item_from_db, created = self.objects.get_or_create(jid=item.id
                                                            )
         utils.map_assignment_of_matching_fields(item_from_db, item)
