@@ -142,3 +142,18 @@ class stripe_api():
             return stripe.Product.list()
         except Exception as e:
             return {"message": str(e)}
+
+    def admin_api_stripe_retrieve_customer_subscription(self, customerId: str):
+        """ retrieve customer subcription """
+
+        try:
+            subscription = stripe.Subscription.list(customer=customerId)
+
+            if (len(subscription.data) == 0):
+                return {"active": "inactive", "message": "Customer has no subscription"}
+
+            subscription.pop("items", None)
+
+            return subscription.data[0]
+        except Exception as e:
+            return {"message": str(e)}
