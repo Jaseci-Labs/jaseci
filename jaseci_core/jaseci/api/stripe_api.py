@@ -100,25 +100,26 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_customer_subscription(self, paymentId: str, name: str, email: str, priceId: str):
+    def admin_api_stripe_customer_subscription(self, paymentId: str, name: str, email: str, priceId: str, customerId: str):
         """ create customer subscription """
         try:
-            customer = self.admin_api_stripe_create_customer(
-                paymentId, name, email)
+            # attach payment method to customer
+            self.admin_api_stripe_add_customer_payment_methods(
+                paymentId, customerId)
 
-            billing_cycle_anchor = round(datetime.timestamp(
-                datetime.now() + timedelta(days=30)))
-            trial_start = round(datetime.timestamp(datetime.now()))
-            # print(billing_cycle_anchor)
+            # set card to default payment method
+            self.admin_api_stripe_update_default_payment_method(
+                customerId, paymentId)
+
             subscription = stripe.Subscription.create(
-                customer=customer.id,
+                customer=customerId,
                 items=[
                     {"price": priceId},
                 ],
                 trial_period_days=30
             )
 
-            return {"tuper": billing_cycle_anchor}
+            return subscription
         except Exception as e:
             return {"message": str(e)}
 
@@ -132,7 +133,7 @@ class stripe_api():
     def admin_api_stripe_retrieve_products(self):
         """ retrieve all producs """
         try:
-            return stripe.Product.list()
+            return stripe.Product.list(active=True)
         except Exception as e:
             return {"message": str(e)}
 
@@ -150,10 +151,23 @@ class stripe_api():
             subscription = stripe.Subscription.list(customer=customerId)
 
             if (len(subscription.data) == 0):
-                return {"active": "inactive", "message": "Customer has no subscription"}
+                return {"status": "inactive", "message": "Customer has no subscription"}
 
             subscription.pop("items", None)
 
             return subscription.data[0]
+        except Exception as e:
+            return {"message": str(e)}
+
+    def admin_api_stripe_retrieve_customer_invoices(self, customerId: str, lastItem: str = ""):
+        """ retrieve customer list of invoices """
+        try:
+            if(lastItem != ''):
+                invoices = stripe.Invoice.list(
+                    customer=customerId, limit=10, starting_after=lastItem)
+            else:
+                invoices = stripe.Invoice.list(customer=customerId, limit=10)
+
+            return invoices
         except Exception as e:
             return {"message": str(e)}
