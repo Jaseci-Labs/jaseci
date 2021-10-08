@@ -115,9 +115,9 @@ class stripe_api():
                 trial_period_days=30
             )
 
-            customer = self.admin_api_stripe_retrieve_customer_info(customerId)
+            subscription.payment_method = paymentId
 
-            return customer
+            return subscription
         except Exception as e:
             return {"message": str(e)}
 
@@ -157,14 +157,15 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_retrieve_customer_invoices(self, customerId: str, lastItem: str = ""):
+    def admin_api_stripe_retrieve_customer_invoices(self, customerId: str, subscriptionId: str, limit: int = 10, lastItem: str = ""):
         """ retrieve customer list of invoices """
         try:
             if(lastItem != ''):
                 invoices = stripe.Invoice.list(
-                    customer=customerId, limit=10, starting_after=lastItem)
+                    customer=customerId, limit=limit, starting_after=lastItem, subscription=subscriptionId)
             else:
-                invoices = stripe.Invoice.list(customer=customerId, limit=10)
+                invoices = stripe.Invoice.list(
+                    customer=customerId, limit=limit, subscription=subscriptionId)
 
             return invoices
         except Exception as e:
