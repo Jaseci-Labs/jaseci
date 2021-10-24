@@ -13,7 +13,7 @@ def get(param_list, meta):
     url = param_list[0]
     data = param_list[1]
     header = param_list[2]
-    res = requests.get(url, data=data, headers=header)
+    res = requests.get(url, json=data, headers=header)
     ret = {'status_code': res.status_code}
     try:
         ret['response'] = res.json()
@@ -34,7 +34,7 @@ def post(param_list, meta):
     url = param_list[0]
     data = param_list[1]
     header = param_list[2]
-    res = requests.post(url, data=data, headers=header)
+    res = requests.post(url, json=data, headers=header)
     ret = {'status_code': res.status_code}
     try:
         ret['response'] = res.json()
@@ -55,7 +55,7 @@ def put(param_list, meta):
     url = param_list[0]
     data = param_list[1]
     header = param_list[2]
-    res = requests.put(url, data=data, headers=header)
+    res = requests.put(url, json=data, headers=header)
     ret = {'status_code': res.status_code}
     try:
         ret['response'] = res.json()
@@ -76,7 +76,7 @@ def delete(param_list, meta):
     url = param_list[0]
     data = param_list[1]
     header = param_list[2]
-    res = requests.delete(url, data=data, headers=header)
+    res = requests.delete(url, json=data, headers=header)
     ret = {'status_code': res.status_code}
     try:
         ret['response'] = res.json()
@@ -97,7 +97,7 @@ def head(param_list, meta):
     url = param_list[0]
     data = param_list[1]
     header = param_list[2]
-    res = requests.head(url, data=data, headers=header)
+    res = requests.head(url, json=data, headers=header)
     ret = {'status_code': res.status_code}
     try:
         ret['response'] = res.json()
@@ -118,7 +118,7 @@ def options(param_list, meta):
     url = param_list[0]
     data = param_list[1]
     header = param_list[2]
-    res = requests.options(url, data=data, headers=header)
+    res = requests.options(url, json=data, headers=header)
     ret = {'status_code': res.status_code}
     try:
         ret['response'] = res.json()
