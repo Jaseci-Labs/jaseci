@@ -1,11 +1,18 @@
 import stripe
 
-stripe.api_key = "sk_test_51JZeGHDiHeCtNB1DdakkFaCUm89tDWmE6zA0qjZAoxZ1GqGHIyvur4t4yjlGITUfUHQgmurQKvzRyFCbWa3eRviU003YmENmVD"
+stripe_test_key = "sk_test_4eC39HqLyjWDarjtT1zdp7dc"
 
 
 class stripe_api():
+    """
+    Stripe APIs
+    Set of APIs to expose jaseci stripe management
+    """
 
-    def admin_api_stripe_create_product(self, name: str = "VIP Plan",
+    def __init__(self):
+        stripe.api_key = self._h.resolve_glob('STRIPE_KEY', stripe_test_key)
+
+    def admin_api_stripe_product_create(self, name: str = "VIP Plan",
                                         description: str = "Plan description"):
         """ create product """
         try:
@@ -16,8 +23,9 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_creat_price(self, productId: str, amount: float = 50,
-                                     interval: str = "month"):
+    def admin_api_stripe_product_price_set(self, productId: str,
+                                           amount: float = 50,
+                                           interval: str = "month"):
         """ modify product price """
         try:
             return stripe.Price.create(
@@ -29,7 +37,20 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_create_customer(self, paymentId: str,
+    def admin_api_stripe_product_list(self, detalied: bool = True):
+        """ retrieve all producs """
+        if(not detalied):
+            try:
+                return stripe.Product.list(active=True)
+            except Exception as e:
+                return {"message": str(e)}
+        else:  # retrieve product price
+            try:
+                return stripe.Product.list()
+            except Exception as e:
+                return {"message": str(e)}
+
+    def admin_api_stripe_customer_create(self, paymentId: str,
                                          name: str = "cristopher evangelista",
                                          email: str = "imurbatman12@gmail.com",
                                          description: str = "Myca subscriber"):
@@ -45,18 +66,20 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_retrieve_customer_info(self, customerId: str):
+    def admin_api_stripe_customer_get(self, customerId: str):
         """ retrieve customer information """
         try:
             return stripe.Customer.retrieve(customerId)
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_add_customer_payment_methods(self, paymentMethodId: str, customerId: str):
+    def admin_api_stripe_customer_payment_add(self, paymentMethodId: str,
+                                              customerId: str):
         """ add customer payment method """
         try:
-            paymentMethods = self.admin_api_stripe_retrieve_customer_payment_methods(
-                customerId)
+            paymentMethods = \
+                self.admin_api_stripe_retrieve_customer_payment_methods(
+                    customerId)
 
             paymentMethod = stripe.PaymentMethod.attach(
                 paymentMethodId, customer=customerId)
@@ -72,14 +95,14 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_remove_customer_payment_methods(self, paymentMethodId: str):
-        """ add customer payment method """
+    def admin_api_stripe_customer_payment_delete(self, paymentMethodId: str):
+        """ remove customer payment method """
         try:
             return stripe.PaymentMethod.detach(paymentMethodId)
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_retrieve_customer_payment_methods(self, customerId: str):
+    def admin_api_stripe_customer_payment_get(self, customerId: str):
         """ get customer list of payment methods """
         try:
             return stripe.PaymentMethod.list(
@@ -89,15 +112,23 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_update_default_payment_method(self, customerId: str, paymentMethodId: str):
+    def admin_api_stripe_customer_payment_default(self, customerId: str,
+                                                  paymentMethodId: str):
         """ update default payment method of customer """
         try:
-            return stripe.Customer.modify(customerId, invoice_settings={"default_payment_method": paymentMethodId})
+            setting = {"default_payment_method": paymentMethodId}
+            return stripe.Customer.modify(customerId,
+                                          invoice_settings=setting)
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_customer_subscription(self, paymentId: str, name: str, email: str, priceId: str, customerId: str):
-        """ create customer subscription """
+    def admin_api_stripe_subscription_create(self, paymentId: str,
+                                             name: str, email: str,
+                                             priceId: str, customerId: str):
+        """
+        create customer subscription
+        TODO: name and email parameters not used!
+        """
         try:
             # attach payment method to customer
             self.admin_api_stripe_add_customer_payment_methods(
@@ -121,35 +152,21 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_cancel_subscription(self, subscriptionId: str):
+    def admin_api_stripe_subscription_delete(self, subscriptionId: str):
         """ cancel customer subscription """
         try:
             return stripe.Subscription.delete(subscriptionId)
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_retrieve_products(self):
-        """ retrieve all producs """
-        try:
-            return stripe.Product.list(active=True)
-        except Exception as e:
-            return {"message": str(e)}
-
-    def admin_api_stripe_retrieve_price(self):
-        """ retrieve product price """
-        try:
-            return stripe.Product.list()
-        except Exception as e:
-            return {"message": str(e)}
-
-    def admin_api_stripe_retrieve_customer_subscription(self, customerId: str):
+    def admin_api_stripe_subscription_get(self, customerId: str):
         """ retrieve customer subcription """
-
         try:
             subscription = stripe.Subscription.list(customer=customerId)
 
             if (len(subscription.data) == 0):
-                return {"status": "inactive", "message": "Customer has no subscription"}
+                return {"status": "inactive", "message":
+                        "Customer has no subscription"}
 
             subscription.pop("items", None)
 
@@ -157,16 +174,20 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    def admin_api_stripe_retrieve_customer_invoices(self, customerId: str, subscriptionId: str, limit: int = 10, lastItem: str = ""):
+    def admin_api_stripe_invoices_list(self, customerId: str,
+                                       subscriptionId: str,
+                                       limit: int = 10,
+                                       lastItem: str = ""):
         """ retrieve customer list of invoices """
         try:
             if(lastItem != ''):
                 invoices = stripe.Invoice.list(
-                    customer=customerId, limit=limit, starting_after=lastItem, subscription=subscriptionId)
+                    customer=customerId, limit=limit, starting_after=lastItem,
+                    subscription=subscriptionId)
             else:
                 invoices = stripe.Invoice.list(
-                    customer=customerId, limit=limit, subscription=subscriptionId)
-
+                    customer=customerId, limit=limit,
+                    subscription=subscriptionId)
             return invoices
         except Exception as e:
             return {"message": str(e)}

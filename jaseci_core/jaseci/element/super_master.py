@@ -14,3 +14,7 @@ from jaseci.api.stripe_api import stripe_api
 class super_master(master, logger_api, config_api, global_api,
                    super_api, stripe_api):
     """Master with admin APIs"""
+
+    def __init__(self, *args, **kwargs):
+        master.__init__(self, *args, **kwargs)
+        stripe_api.__init__(self)

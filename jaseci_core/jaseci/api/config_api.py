@@ -11,7 +11,7 @@ class config_api():
     """
 
     def __init__(self, *args, **kwargs):
-        self.valid_configs = ['CONFIG_EXAMPLE']
+        self.valid_configs = ['CONFIG_EXAMPLE', 'STRIPE_KEY']
 
     def admin_api_config_get(self, name: str,
                              do_check: bool = True):

@@ -14,7 +14,7 @@ from jaseci.element.super_master import super_master as core_super
 class master(core_master):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.valid_configs = JASECI_CONFIGS
+        self.valid_configs += JASECI_CONFIGS
 
     def api_master_create(self, name: str, set_active: bool = True,
                           other_fields: dict = {}):
