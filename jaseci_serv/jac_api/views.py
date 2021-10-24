@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from jaseci.utils.utils import logger
 from jaseci.api.public_api import public_api
+from jaseci.element.element import element
 from base.orm_hook import orm_hook
 from base.models import JaseciObject, GlobalVars
 from time import time
@@ -13,6 +14,8 @@ class JResponse(Response):
     def __init__(self, master, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.master = master
+        for i in self.master._h.save_obj_list:
+            self.master._h.commit_obj_to_redis(i)
 
     def close(self):
         super(JResponse, self).close()
@@ -46,9 +49,13 @@ class AbstractJacAPIView(APIView):
         TG = '\033[32m'
         EC = '\033[m'  # noqa
         tot_time = time()-self.start_time
+        save_count = 0
+        if(isinstance(self.caller, element)):
+            save_count = len(self.caller._h.save_obj_list)
         logger.info(str(
             f'API call to {TG}{type(self).__name__}{EC}'
-            f' completed in {TY}{tot_time:.3f} seconds.{EC}'))
+            f' completed in {TY}{tot_time:.3f} seconds{EC}'
+            f' saving {TY}{save_count}{EC} objects.'))
 
     def proc_request(self, request):
         """Parse request to field set"""
@@ -66,11 +73,11 @@ class AbstractJacAPIView(APIView):
 
     def issue_response(self, api_result):
         """Issue response from call"""
-        self.caller._h.commit()
-        return Response(api_result)
+        # self.caller._h.commit()
+        # return Response(api_result)
         # for i in self.caller._h.save_obj_list:
         #     self.caller._h.commit_obj_to_redis(i)
-        # return JResponse(self.caller, api_result)
+        return JResponse(self.caller, api_result)
 
 
 class AbstractAdminJacAPIView(AbstractJacAPIView):
