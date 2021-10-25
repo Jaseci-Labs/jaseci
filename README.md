@@ -4,9 +4,12 @@
 
 ### Features
 
-- EMails can be templated
+- Stripe API integrated
+- EMails can be templated with HTML content
 - Token expiry time can be set as config through live api
+- Added auto sync to global sentinel for spawned walkers
 - FIX: Global sentinels cascade to all users on change
+- FIX: Multi pod concurrency issue corrected
 
 ## Version 1.2.0
 
