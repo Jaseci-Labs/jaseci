@@ -724,7 +724,7 @@ class interp(machine_state):
         elif (kid[0].name == 'DEREF'):
             result = self.run_expression(kid[1])
             if (self.rt_check_type(result, element, kid[1])):
-                result = result.jid[9:]  # result.jid
+                result = result.jid
             return result
         else:
             return getattr(self, f'run_{kid[0].name}')(kid[0])

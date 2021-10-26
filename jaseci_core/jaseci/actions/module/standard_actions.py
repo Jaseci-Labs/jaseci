@@ -1,4 +1,5 @@
 from operator import itemgetter
+from jaseci.element.element import element
 from jaseci.utils.utils import logger, app_logger
 from datetime import datetime
 import sys
@@ -40,6 +41,15 @@ def err(param_list, meta):
             else:
                 param_list[i] = 'false'
     print(*param_list, file=sys.stderr)
+
+
+def get_uuid(param_list, meta):
+    """Standard built in for grabbing uuid from element type objects"""
+    obj = param_list[0]
+    if(not isinstance(obj, element)):
+        logger.error(f'Object {obj} is not an element (node, edge, etc)')
+        return obj
+    return obj.jid[9:]
 
 
 def sort_by_col(param_list, meta):
