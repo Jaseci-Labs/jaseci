@@ -715,3 +715,14 @@ basic = \
         }
     }
     """
+
+
+get_uuid = \
+    """
+    node test {has a;}
+
+    walker init {
+        nd= spawn here --> node::test;
+        nd.a = std.get_uuid(nd);
+    }
+    """

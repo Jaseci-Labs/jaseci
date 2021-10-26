@@ -373,3 +373,20 @@ class jac_tests(TestCaseHelper, TestCase):
         sent = sentinel(m_id=mast.jid, h=gph._h)
         sent.register_code(jtc.version_label)
         self.assertEqual(sent.version, 'alpha-1.0')
+
+    def test_get_uuid(self):
+        """Test sentinel version labeling"""
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.get_uuid)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        nodes = gph.get_all_nodes()
+        num = 0
+        for i in nodes:
+            if(i.name == 'test'):
+                self.assertEqual(len(i.context['a'].split('-')[0]), 8)
+                num += 1
+        self.assertEqual(num, 1)
