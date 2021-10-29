@@ -4,27 +4,25 @@ Architype class for Jaseci
 Each architype is a registered templatized version of instances of any Jaseci
 abstractions or collections of instances (e.g., subgraphs, etc)
 """
-from jaseci.element import element
-from jaseci.jac.architype_machine import architype_machine
-import pickle
+from jaseci.element.element import element
+from jaseci.jac.interpreter.architype_interp import architype_interp
+from jaseci.jac.ir.jac_code import jac_code
 
 
-class architype(element, architype_machine):
+class architype(element, jac_code, architype_interp):
     """Architype class for Jaseci"""
 
-    def __init__(self, code=None, *args, **kwargs):
-        self.code = pickle.dumps(code, 0).decode()
+    def __init__(self, code_ir=None, *args, **kwargs):
         element.__init__(self, *args, **kwargs)
-        architype_machine.__init__(self)
-        self._jac_ast = pickle.loads(
-            self.code.encode()) if code else None
+        jac_code.__init__(self, code_ir)
+        architype_interp.__init__(self)
 
     def run(self):
         """
         Create set of new object instances from architype if needed
         """
-        if (self.code and not self._jac_ast):
-            self._jac_ast = pickle.loads(self.code.encode())
+        if(not self._jac_ast):
+            self.refresh()
         return self.run_architype(jac_ast=self._jac_ast)
 
     def destroy(self):

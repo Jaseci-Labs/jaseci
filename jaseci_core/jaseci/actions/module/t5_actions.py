@@ -3,7 +3,7 @@ from .ai_serving_api import AIServingAPI
 T5_API = AIServingAPI('T5')
 
 
-def summarize(param_list):
+def summarize(param_list, meta):
     """
     Summarize input text using T5 transformer models
     Param 1 - string, the text to be summarized

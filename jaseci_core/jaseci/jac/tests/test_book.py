@@ -14,8 +14,8 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.gph = graph(h=mem_hook())
-        self.sent = sentinel(h=self.gph._h)
+        self.gph = graph(m_id='anon', h=mem_hook())
+        self.sent = sentinel(m_id=self.gph._m_id, h=self.gph._h)
         self.old_stdout = sys.stdout
         self.new_stdout = io.StringIO()
         sys.stdout = self.new_stdout
@@ -221,6 +221,17 @@ class jac_book_tests(TestCaseHelper, TestCase):
                          "56 7\n"
                          "56 8\n")
 
+    def test_can_action_param(self):
+        self.sent.register_code(jtc.can_action_params)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "43 7\n"
+                         "43 8\n"
+                         "48 7\n"
+                         "48 8\n")
+
     def test_cross_scope_report(self):
         self.sent.register_code(jtc.cross_scope_report)
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
@@ -280,6 +291,16 @@ class jac_book_tests(TestCaseHelper, TestCase):
                          "{'inner': 2}\n"
                          "2\n")
 
+    def test_cond_dict_keys(self):
+        self.sent.register_code(jtc.cond_dict_keys)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "{'one': {'inner': 44}, 'two': 2}\n"
+                         "is here\n"
+                         "also not here\n")
+
     def test_vector_softmax(self):
         self.sent.register_code(jtc.soft_max)
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
@@ -288,3 +309,12 @@ class jac_book_tests(TestCaseHelper, TestCase):
         self.assertEqual(
             self.new_stdout.getvalue(),
             "[0.8360188027814407, 0.11314284146556013, 0.05083835575299916]\n")
+
+    def test_book_fam_example(self):
+        self.sent.register_code(jtc.fam_example)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('create_fam')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(
+            self.new_stdout.getvalue(),
+            "I didn't do any of the hard work.\n")

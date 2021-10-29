@@ -6,12 +6,14 @@ import uuid
 import importlib
 import pkgutil
 import logging
-from logging.handlers import HTTPHandler
 import types
+import base64
 import json
 import functools
+import traceback
 from time import time
 from datetime import datetime
+from pprint import pformat
 
 
 # Get an instance of a logger
@@ -25,23 +27,6 @@ def connect_logger_handler(target_logger, handler):
     target_logger.addHandler(handler)
 
 
-def connect_http_logging(target_logger, host, port, url):
-    for i in target_logger.handlers:
-        if(i.__class__.__name__ == 'HTTPHandler'):
-            target_logger.removeHandler(i)
-
-    connect_logger_handler(
-        target_logger, HTTPHandler(host=f'{host}:{port}',
-                                   url=url, method='POST'))
-
-
-def connect_http_logging_check(target_logger):
-    for i in target_logger.handlers:
-        if(i.__class__.__name__ == 'HTTPHandler'):
-            return True
-    return False
-
-
 logger = logging.getLogger('core')
 if(len(logger.handlers) < 1):
     connect_logger_handler(logger, logging.StreamHandler())
@@ -51,16 +36,26 @@ if(len(app_logger.handlers) < 1):
     connect_logger_handler(app_logger, logging.StreamHandler())
 
 
+def log_var_out(val):
+    """Print to log"""
+    if(not logging.getLogger('core').disabled):
+        logger.info(pformat(val))
+
+
 def bp():
     pdb.set_trace()
     breakpoint()
 
 
 def dummy_bp(inspect):
-    import traceback
     traceback.print_stack()
     print(inspect)
     input()
+
+
+def print_stack_to_log():
+    tb = traceback.extract_stack()
+    log_var_out(tb)
 
 
 def is_urn(s: str):
@@ -110,26 +105,36 @@ def map_assignment_of_matching_fields(dest, source):
             setattr(dest, i, getattr(source, i))
 
 
+obj_class_cache = {}
+
+
+def build_class_dict(from_where):
+    global obj_class_cache
+    prefix = from_where.__name__ + "."
+    for importer, modname, ispkg in \
+            pkgutil.iter_modules(from_where.__path__, prefix):
+        if(not ispkg):
+            cls = modname.split('.')[-1]
+            if(hasattr(importlib.import_module(modname), cls)):
+                obj_class_cache[cls] = getattr(
+                    importlib.import_module(modname), cls)
+        else:
+            if hasattr(from_where, modname.split('.')[-1]):
+                build_class_dict(
+                    getattr(from_where, modname.split('.')[-1])
+                )
+
+
 def find_class_and_import(class_name, from_where):
     """
     Search for class through all core packages
 
     Classes assumed to have same name as module file
     """
-    prefix = from_where.__name__ + "."
-    res = None
-    for importer, modname, ispkg in \
-            pkgutil.iter_modules(from_where.__path__, prefix):
-        if(not ispkg and modname.split('.')[-1] == class_name):
-            res = getattr(importlib.import_module(modname), class_name)
-            break
-        if(ispkg):
-            res2 = find_class_and_import(
-                class_name, getattr(from_where, modname.split('.')[-1])
-            ) if hasattr(from_where, modname.split('.')[-1]) else None
-            if(res2):
-                res = res2
-    return res
+    global obj_class_cache
+    if(not obj_class_cache.keys()):
+        build_class_dict(from_where)
+    return obj_class_cache[class_name]
 
 
 def copy_func(f, name=None):
@@ -145,6 +150,16 @@ def copy_func(f, name=None):
     g.__kwdefaults__ = f.__kwdefaults__
     g.__name__ = name if name else g.__name__
     return g
+
+
+def b64decode_str(code):
+    """Decode a base 64 encoded string"""
+    try:
+        code = base64.b64decode(code).decode()
+    except UnicodeDecodeError:
+        logger.error(
+            f'Code encoding invalid!')
+    return code
 
 
 class TestCaseHelper():
@@ -186,6 +201,14 @@ class TestCaseHelper():
         logging.getLogger('core').disabled = False
         logging.getLogger('app').disabled = False
 
+    def log(self, val):
+        """Print to log"""
+        log_var_out(val)
+
+    def stopper(self):
+        """Force test to fail"""
+        self.assertTrue(False)
+
     def start_perf_test(self):
         self.pr = cProfile.Profile()
         self.pr.enable()
@@ -197,3 +220,8 @@ class TestCaseHelper():
         ps = pstats.Stats(self.pr, stream=s).sort_stats(sortby)
         ps.print_stats(100)
         print(s.getvalue())
+
+
+class bunch:
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)

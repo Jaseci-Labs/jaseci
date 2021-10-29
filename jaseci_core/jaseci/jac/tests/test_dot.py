@@ -15,8 +15,8 @@ class test_dot(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.gph = graph(h=mem_hook())
-        self.sent = sentinel(h=self.gph._h)
+        self.gph = graph(m_id='anon', h=mem_hook())
+        self.sent = sentinel(m_id=self.gph._m_id, h=self.gph._h)
         self.old_stdout = sys.stdout
         self.new_stdout = io.StringIO()
         sys.stdout = self.new_stdout
@@ -53,14 +53,6 @@ class test_dot(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "graph_root_node_name\n")
-
-    def test_dot_node_overwrite_name(self):
-        """Test node in dot with name overwrite"""
-        self.sent.register_code(dtc.dot_node_overwrite_name)
-        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
-        gen_walker.prime(self.gph)
-        gen_walker.run()
-        self.assertTrue("node:subnode:real_name" in self.new_stdout.getvalue())
 
     def test_dot_node_multi_stmts(self):
         """Test node in dot, defined with multiple statements."""
@@ -105,4 +97,4 @@ class test_dot(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         dot_str = self.gph.graph_dot_str()
-        self.assertTrue('strict digraph basic' in dot_str)
+        self.assertTrue('strict digraph root' in dot_str)

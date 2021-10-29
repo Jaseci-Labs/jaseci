@@ -1,4 +1,4 @@
-def max(param_list):
+def max(param_list, meta):
     ret = None
     if (not len(param_list)):
         return None

@@ -21,10 +21,10 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if (not check_model_live('USE')):
             self.skipTest("external resource not available")
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
-        test_node = sent.arch_ids.get_obj_by_name('node.life').run()
+        test_node = sent.arch_ids.get_obj_by_name('life', kind='node').run()
         test_walker = \
             sent.walker_ids.get_obj_by_name('use_test')
         test_walker.prime(test_node)
@@ -38,10 +38,10 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if (not check_model_live('USE')):
             self.skipTest("external resource not available")
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
-        test_node = sent.arch_ids.get_obj_by_name('node.life').run()
+        test_node = sent.arch_ids.get_obj_by_name('life', kind='node').run()
         test_walker = \
             sent.walker_ids.get_obj_by_name('use_test_single')
         test_walker.prime(test_node)
@@ -55,10 +55,10 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if (not check_model_live('USE')):
             self.skipTest("external resource not available")
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
-        test_node = sent.arch_ids.get_obj_by_name('node.life').run()
+        test_node = sent.arch_ids.get_obj_by_name('life', kind='node').run()
         test_walker = \
             sent.walker_ids.get_obj_by_name('use_test_with_ctx')
         test_walker.prime(test_node)
@@ -72,10 +72,10 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if (not check_model_live('USE')):
             self.skipTest("external resource not available")
-        gph = graph(h=mem_hook())
-        sent = sentinel(h=gph._h)
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
-        test_node = sent.arch_ids.get_obj_by_name('node.life').run()
+        test_node = sent.arch_ids.get_obj_by_name('life', kind='node').run()
         test_walker = \
             sent.walker_ids.get_obj_by_name('use_test_with_ctx2')
         test_walker.prime(test_node)

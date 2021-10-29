@@ -4,8 +4,8 @@ Edge class for Jaseci
 Each edge has an id, name, timestamp, the from node at the element of the edge
 and the to node it is pointing to.
 """
-from jaseci.element import element
-from jaseci.utils.obj_mixins import anchored
+from jaseci.element.element import element
+from jaseci.element.obj_mixins import anchored
 from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
 import uuid
@@ -29,7 +29,7 @@ class edge(element, anchored):
 
     def from_node(self):
         """Returns node edge is pointing from"""
-        ret = self._h.get_obj(uuid.UUID(self.from_node_id)
+        ret = self._h.get_obj(self._m_id, uuid.UUID(self.from_node_id)
                               ) if self.from_node_id else None
         if (not ret):
             logger.critical(
@@ -42,7 +42,7 @@ class edge(element, anchored):
         """Returns node edge is pointing to"""
         if (not self.to_node_id):
             return None
-        ret = self._h.get_obj(uuid.UUID(self.to_node_id)
+        ret = self._h.get_obj(self._m_id, uuid.UUID(self.to_node_id)
                               ) if self.to_node_id else None
         if (not ret):
             logger.critical(str(f"{self} disconnected to target node"))
@@ -50,19 +50,21 @@ class edge(element, anchored):
         else:
             return ret
 
+    def nodes(self):
+        """Returns both nodes connected to edge in a list"""
+        return [self.to_node(), self.from_node()]
+
     def opposing_node(self, node_obj):
-        """Returns node edge is pointing to"""
+        """Returns opposite node edge is pointing from node_obj"""
         node_set = [self.to_node_id, self.from_node_id]
-        node_set.remove(node_obj.id.urn)
-        ret = self._h.get_obj(uuid.UUID(node_set[0])) if len(
-            node_set) == 1 and node_set[0] else None
-        if (not ret):
+        try:
+            node_set.remove(node_obj.id.urn)
+            return self._h.get_obj(self._m_id, uuid.UUID(node_set[0]))
+        except ValueError:
             logger.critical(
                 str(f"{self} disconnected to node {node_obj}")
             )
             return None
-        else:
-            return ret
 
     def set_from_node(self, node_obj):
         """
@@ -97,6 +99,7 @@ class edge(element, anchored):
     def set_bidirected(self, bidirected: bool):
         """Sets/unsets edge to be bidirected"""
         self.bidirected = bidirected
+        self.save()
 
     def is_bidirected(self):
         """Check if edge is bidirected"""
@@ -134,36 +137,38 @@ class edge(element, anchored):
             target.edge_ids.remove_obj(self)
         element.destroy(self)
 
-    def dot_str(self):
+    def dot_str(self, node_map=None, edge_map=None):
         """
         DOT representation
         from_node -> to_node [context_key=contect_value]
         """
-        from_name = uuid.UUID(self.from_node().jid).hex
-        to_name = uuid.UUID(self.to_node().jid).hex
-        arrow = '--' if self.bidirected else '->'
-        dstr = f'{from_name} {arrow} {to_name} '
+        from_name = uuid.UUID(self.from_node(
+        ).jid).hex if node_map is None else node_map.index(
+            self.from_node().jid)
+        to_name = uuid.UUID(self.to_node(
+        ).jid).hex if node_map is None else node_map.index(
+            self.to_node().jid)
+        dstr = f'"n{from_name}" -> "n{to_name}" '
+
+        dstr += f'[ id="{uuid.UUID(self.jid).hex}"'
+        label = ''
+        if(edge_map):
+            label = f'e{edge_map.index(self.jid)}'
+        if(self.name != 'generic'):
+            label += f':{self.name}'
+        if(label):
+            dstr += f', label="{label}"'
+        if(self.bidirected):
+            dstr += f', dir="both"'
 
         edge_dict = self.context
-        if (self.kind != 'generic'):
-            edge_dict['_kind_'] = self.kind
-        if (self.name != 'basic'):
-            edge_dict['_name_'] = self.name
 
         if (edge_dict):
-            dstr += '['
-            num_items = 0
             for k, v in edge_dict.items():
-                if(v is None or v == ""):
-                    num_items += 1
+                if(not isinstance(v, str) or v == ""):
                     continue
-                if (num_items != 0):
-                    dstr += ' '
-                dstr += f'{k}={v}'
+                dstr += f'{k}="{v[:32]}"'
 
-                num_items += 1
-                if (num_items < len(edge_dict)):
-                    dstr += ','
-            dstr += ']'
+        dstr += ' ]'
 
         return dstr+'\n'

@@ -6,6 +6,8 @@ app_name = 'user_api'
 
 urlpatterns = [
     path('create/', views.CreateUserView.as_view(), name='create'),
+    path('create_super/', views.CreateSuperUserView.as_view(),
+         name='create_super'),
     path('token/', views.CreateTokenView.as_view(), name='token'),
     path('manage/', views.ManageUserView.as_view(), name='manage'),
     path('logout_everyone/', views.LogoutAllUsersView.as_view(),

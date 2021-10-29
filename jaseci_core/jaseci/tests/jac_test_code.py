@@ -167,7 +167,7 @@ ll_proto = \
         year, month, week { take -->; }
         day, workette {
             if(num_workettes == 0): disengage;
-            gen_num = rand.integer(3, 5);
+            gen_num = rand.integer(5, 8);
             for i=0 to i<gen_num by i+=1 {
                 spawn here -[parent]-> node::workette(name=rand.sentence());
             }
@@ -187,19 +187,6 @@ ll_proto = \
     }
 
 
-    """
-
-prog3 = \
-    """
-    has date;
-    node life {
-    }
-
-    walker init {
-        new = spawn here --> node::life;
-        root.date = std.time_now();
-        banana = std.log(root.date);
-    }
     """
 
 prog0 = \
@@ -593,5 +580,149 @@ edgey7 = \
 
             here !-[generic]-> -[apple]->;
         }
+    }
+    """
+
+edge_access = \
+    """
+    node test;
+
+    edge apple {
+        has v1, v2;
+    }
+
+    edge banana {
+        has x1, x2;
+    }
+
+    walker init {
+        root {
+            a = spawn here -[apple]-> node::test;
+            b = spawn here -[banana]-> node::test;
+
+            e = -[apple]->.edge[0];
+            e.v1 = 7;
+            e = --> node::test.edge[1];
+            e.x1=8;
+        }
+    }
+    """
+
+has_assign = \
+    """
+    node test {
+        has a=8;
+    }
+
+
+    walker init {
+        root {
+            a = spawn here --> node::test;
+            b = spawn here --> node::test;
+
+            std.log(a.a, b.a);
+        }
+    }
+    """
+
+
+set_get_global = \
+    """
+    walker setter {
+        root {
+            std.set_global('globby', 59);
+        }
+    }
+
+    walker getter {
+        has a;
+        root {
+            a=std.get_global('globby');
+            std.log(std.get_global('globby'));
+        }
+    }
+    """
+
+set_get_global_dict = \
+    """
+    walker setter {
+        root {
+            std.set_global('globby',
+            { "max_bot_count": 10, "max_ans_count": 100,
+              "max_txn_count": 50000, "max_test_suite": 5,
+              "max_test_cases": 50, "export_import": true,
+              "analytics": true, "integration": "All"
+            });
+        }
+    }
+
+    walker getter {
+        has a;
+        root {
+            a=std.get_global('globby');
+            std.log(std.get_global('globby'));
+            report std.get_global('globby');
+        }
+    }
+    """
+
+version_label = \
+    """
+    version: "alpha-1.0"
+
+    walker setter {
+        root {
+            std.set_global('globby', 59);
+        }
+    }
+
+    walker getter {
+        has a;
+        root {
+            a=std.get_global('globby');
+            std.log(std.get_global('globby'));
+        }
+    }
+    """
+
+sharable = \
+    """
+    node life {
+    }
+
+    walker init {
+        root {
+            new = spawn here --> node::life;
+            take -->;
+        }
+        life {
+            std.out(here);
+        }
+    }
+    """
+
+basic = \
+    """
+    node life {
+    }
+
+    walker init {
+        root {
+            new = spawn here --> node::life;
+            take -->;
+        }
+        life {
+        }
+    }
+    """
+
+
+get_uuid = \
+    """
+    node test {has a;}
+
+    walker init {
+        nd= spawn here --> node::test;
+        nd.a = std.get_uuid(nd);
     }
     """

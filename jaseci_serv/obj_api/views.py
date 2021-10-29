@@ -16,8 +16,9 @@ class JaseciObjectSerializer(slzrs.HyperlinkedModelSerializer):
     class Meta:
         model = models.JaseciObject
         fields = (
-            'jid', 'j_owner', 'url', 'j_type', 'name', 'kind',
-            'j_timestamp', 'jsci_obj'
+            'jid', 'j_parent', 'j_master', 'j_access', 'j_r_acc_ids',
+            'j_rw_acc_ids', 'j_type', 'url',
+            'j_type', 'name', 'kind', 'j_timestamp', 'jsci_obj'
         )
         read_only_Fields = ('id', 'j_type', 'timestamp')
 
@@ -42,19 +43,19 @@ class ObjectViewSet(viewsets.ModelViewSet):
             return None
         else:
             return self.queryset.filter(
-                user=self.request.user
+                j_master=self.request.user.master.urn
             ).order_by('-name')
 
     def perform_create(self, serializer):
         """Create a new object"""
-        serializer.save(user=self.request.user)
+        serializer.save(j_master=self.request.user.master.urn)
 
 
-class GlobalConfigSerializer(slzrs.ModelSerializer):
+class GlobalVarsSerializer(slzrs.ModelSerializer):
     """Serializer for Global Config model"""
 
     class Meta:
-        model = models.GlobalConfig
+        model = models.GlobalVars
         fields = (
             'name', 'value'
         )
@@ -64,8 +65,8 @@ class ConfigViewSet(viewsets.ModelViewSet):
     """Edit Global Config through the api"""
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, IsAdminUser)
-    queryset = models.GlobalConfig.objects.all()
-    serializer_class = GlobalConfigSerializer
+    queryset = models.GlobalVars.objects.all()
+    serializer_class = GlobalVarsSerializer
 
     def get_queryset(self):
         """Return objects for the current authenticated user only"""

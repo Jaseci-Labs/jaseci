@@ -4,22 +4,24 @@ Command line tool for Jaseci
 
 import click
 from click_shell import shell
-import os.path
+import os
 import pickle
 import functools
 import json
 import requests
-from inspect import signature
 
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
-from jaseci.master import master as master_class
+from jaseci.element.super_master import super_master
+from jaseci.api.public_api import public_api
+from .book_tools import book
 
 session = {
     "filename": "js.session",
-    "master": master_class(h=mem_hook()),
+    "user": [super_master(h=mem_hook(), name='admin')],
     "mem-only": False
 }
+session['master'] = session['user'][0]
 
 connection = {'url': None, 'token': None, 'headers': None}
 
@@ -41,7 +43,8 @@ def cli(filename, mem_only):
     session['mem-only'] = mem_only
     session['filename'] = filename if not mem_only else None
     if (not mem_only and os.path.isfile(filename)):
-        session['master'] = pickle.load(open(filename, 'rb'))
+        with open(filename, 'rb') as f:
+            session['master'] = pickle.load(f)
 
 
 def remote_api_call(payload, api_name):
@@ -50,8 +53,10 @@ def remote_api_call(payload, api_name):
         path = '/jac/'+api_name[4:]
     elif(api_name.startswith('admin_api_')):
         path = '/admin/'+api_name[10:]
+    elif(api_name.startswith('public_api_')):
+        path = '/public/'+api_name[11:]
     ret = requests.post(connection['url']+path,
-                        data=payload,
+                        json=payload,
                         headers=connection['headers'])
     if ret.status_code > 205:
         ret = f"Status Code Error {ret.status_code}"
@@ -60,31 +65,46 @@ def remote_api_call(payload, api_name):
     return ret
 
 
-def interface_api(api_name, **kwargs):
+def resolve_none_type(kwargs):
+    for i in kwargs.keys():
+        if(kwargs[i] == 'None'):
+            kwargs[i] = None
+
+
+def interface_api(api_name, is_public, **kwargs):
     """
     Interfaces Master apis after processing arguments/parameters
     from cli
     """
-    if('code' in kwargs):
+    if('code' in kwargs and kwargs['code']):
         if (os.path.isfile(kwargs['code'])):
             with open(kwargs['code'], 'r') as file:
                 kwargs['code'] = file.read()
         else:
             click.echo(f"Code file {kwargs['code']} not found!")
             return
-    if('ctx' in kwargs):
+    if('ctx' in kwargs):  # can replace these checs with a dict check
         kwargs['ctx'] = json.loads(kwargs['ctx'])
+    if('other_fields' in kwargs):
+        kwargs['other_fields'] = json.loads(kwargs['other_fields'])
+    resolve_none_type(kwargs)
     if(connection['token'] and connection['url']):
-        click.echo(json.dumps(
-            remote_api_call(kwargs, api_name), indent=2
-        ))
+        out = remote_api_call(kwargs, api_name)
+    elif(is_public):
+        out = public_api(session['master']._h).general_interface_to_api(
+            kwargs, api_name)
     else:
-        click.echo(json.dumps(
-            session['master'].general_interface_to_api(kwargs, api_name),
-            indent=2
-        ))
+        out = session['master'].general_interface_to_api(kwargs, api_name)
+    if(isinstance(out, dict) or isinstance(out, list)):
+        out = json.dumps(out, indent=2)
+    click.echo(out)
+    if('output' in kwargs and kwargs['output']):
+        with open(kwargs['output'], 'w') as f:
+            f.write(out)
+        click.echo(f'[saved to {kwargs["output"]}]')
     if not session['mem-only']:
-        pickle.dump(session['master'], open(session['filename'], 'wb'))
+        with open(session['filename'], 'wb') as f:
+            pickle.dump(session['master'], f)
 
 
 def extract_api_tree():
@@ -93,12 +113,23 @@ def extract_api_tree():
     signatures in leaves from API function names in Master
     """
     api_funcs = {}
-    for i in dir(session['master']):
-        if (i.startswith('api_') or i.startswith('admin_api_')):
+    for i in dir(session['master'])+dir(public_api(None)):
+        if (i.startswith('api_') or i.startswith('admin_api_') or
+                i.startswith('public_api_')):
+            is_public = False
             # Get function names and signatures
-            func_str = i[4:] if i.startswith('api_') else i[10:]
+            if i.startswith('api_'):
+                func_str = i[4:]
+            elif i.startswith('admin_'):
+                func_str = i[10:]
+            else:  # is public api
+                func_str = i[11:]
+                is_public = True
             cmd_groups = func_str.split('_')
-            func_sig = signature(getattr(session['master'], i))
+            func_sig = session['master'].get_api_signature(
+                i) if not is_public else public_api(None).get_api_signature(i)
+            func_doc = session['master'].get_api_doc(
+                i) if not is_public else public_api(None).get_api_doc(i)
 
             # Build hierarchy of command groups
             api_root = api_funcs
@@ -106,26 +137,30 @@ def extract_api_tree():
                 if (j not in api_root.keys()):
                     api_root[j] = {}
                 api_root = api_root[j]
-            api_root['leaf'] = [i, func_sig]
+            api_root['leaf'] = [i, func_sig, is_public, func_doc]
     return api_funcs
 
 
-def build_cmd(group_func, func_name, api_name):
+def build_cmd(group_func, func_name, leaf):
     """
     Generates Click function with options for each command
     group and leaf signatures
+    leaf is format: [api_name, func_sig, is_public, func_doc]
     """
+
     f = functools.partial(
-        copy_func(interface_api, func_name), api_name=api_name)
+        copy_func(interface_api, func_name),
+        api_name=leaf[0], is_public=leaf[2])
     f.__name__ = func_name
-    f.__doc__ = session['master'].get_api_doc(api_name)
-    func_sig = session['master'].get_api_signature(api_name)
+    f.__doc__ = leaf[3]
+
+    func_sig = leaf[1]
     for i in func_sig.parameters.keys():
         if(i == 'self'):
             continue
         p_default = func_sig.parameters[i].default
         p_type = func_sig.parameters[i].annotation
-        if(p_type != int and p_type != bool):
+        if(p_type not in [int, bool, float]):
             p_type = str
         if(p_default is not func_sig.parameters[i].empty):
             f = click.option(
@@ -134,6 +169,10 @@ def build_cmd(group_func, func_name, api_name):
         else:
             f = click.option(
                 f'-{i}', required=True, type=p_type)(f)
+    # to file option to dump response to a file
+    f = click.option(
+        '--output', '-o', default='', required=False, type=str,
+        help="Filename to dump output of this command call.")(f)
     return group_func.command()(f)
 
 
@@ -144,7 +183,7 @@ def cmd_tree_builder(location, group_func=cli, cmd_str=''):
     for i in location.keys():
         loc = location[i]
         if ('leaf' in loc):
-            build_cmd(group_func, i, loc['leaf'][0])
+            build_cmd(group_func, i, loc['leaf'])
             continue
         else:
             f = copy_func(blank_func, i)
@@ -153,7 +192,7 @@ def cmd_tree_builder(location, group_func=cli, cmd_str=''):
         cmd_tree_builder(loc, new_func, cmd_str+' '+i)
 
 
-@click.command()
+@click.command(help="Command to log into live Jaseci server")
 @click.argument("url", type=str, required=True)
 @click.option('--username', '-u', required=True, prompt=True,
               help="Username to be used for login.")
@@ -170,10 +209,54 @@ def login(url, username, password):
             'Authorization': 'token ' + r['token']}
         click.echo("Login successful!")
     else:
-        click.echo(f"Login failed!\n{r.json()}")
+        click.echo(f"Login failed!\n{r}")
+
+
+@click.command(help="Edit a file")
+@click.argument("file", type=str, required=True)
+def edit(file):
+    click.edit(filename=file)
+
+
+@click.command(help="List relevant files")
+@click.option('--all', '-a', is_flag=True,
+              help="Flag for listing all files, not just relevant files")
+def ls(all):
+    for i in os.listdir():
+        if(all):
+            click.echo(f"{i}")
+        else:
+            click.echo(f"{i}") if i.endswith(
+                '.jac') or i.endswith('.dot') else False
+
+
+@click.command(help="Clear terminal")
+def clear():
+    click.clear()
+
+
+@click.command(help="Internal book generation tools")
+@click.argument("op", type=str, default='cheatsheet', required=True)
+@click.option('--output', '-o', default='', required=False, type=str,
+              help="Filename to dump output of this command call.")
+def tool(op, output):
+    out = ''
+    if(op == 'cheatsheet'):
+        out = f"{book().api_cheatsheet(extract_api_tree())}"
+    elif(op == 'classes'):
+        out = book().api_spec()
+    click.echo(out)
+    if(output):
+        with open(output, 'w') as f:
+            f.write(out)
+        click.echo(f'[saved to {output}]')
 
 
 cli.add_command(login)
+cli.add_command(edit)
+cli.add_command(ls)
+cli.add_command(clear)
+cli.add_command(tool)
 cmd_tree_builder(extract_api_tree())
 
 

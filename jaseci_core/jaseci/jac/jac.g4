@@ -1,7 +1,9 @@
 grammar jac;
 
 /* Sentinels handle these top rules */
-start: element+ EOF;
+start: ver_label? element+ EOF;
+
+ver_label: 'version' COLON STRING;
 
 element: architype | walker;
 
@@ -11,10 +13,12 @@ architype:
 	| KW_GRAPH NAME graph_block;
 
 walker:
-	KW_WALKER NAME LBRACE attr_stmt* walk_entry_block? (
+	KW_WALKER NAME namespace_list LBRACE attr_stmt* walk_entry_block? (
 		statement
 		| walk_activity_block
 	)* walk_exit_block? RBRACE;
+
+namespace_list: COLON NAME (COMMA NAME)* |;
 
 walk_entry_block: KW_WITH KW_ENTRY code_block;
 
@@ -38,10 +42,12 @@ graph_block_dot:
 
 has_root: KW_HAS KW_ANCHOR NAME SEMI;
 
-has_stmt: KW_HAS KW_PRIVATE? KW_ANCHOR? NAME (COMMA NAME)* SEMI;
+has_stmt:
+	KW_HAS KW_PRIVATE? KW_ANCHOR? has_assign (COMMA has_assign)* SEMI;
 
-/* Need to be heavily simplified */
-can_stmt:
+has_assign: NAME | NAME EQ expression;
+
+/* Need to be heavily simplified */ can_stmt:
 	KW_CAN dotted_name preset_in_out? event_clause? (
 		COMMA dotted_name preset_in_out? event_clause?
 	)* SEMI
@@ -127,23 +133,26 @@ term: factor ((MUL | DIV | MOD) factor)*;
 
 factor: (PLUS | MINUS) factor | power;
 
-power: func_call (POW factor)*;
+power: func_call (POW factor)* | func_call index+;
 
 func_call:
 	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
-	| atom DOT KW_LENGTH
-	| atom DOT KW_KEYS
-	| atom DOT KW_DESTROY LPAREN expression RPAREN
-	| atom? DBL_COLON NAME
-	| atom index+;
+	| atom DOT func_built_in
+	| atom? DBL_COLON NAME spawn_ctx?;
+
+func_built_in:
+	| KW_LENGTH
+	| KW_KEYS
+	| KW_EDGE
+	| KW_NODE
+	| KW_DESTROY LPAREN expression RPAREN;
 
 atom:
 	INT
 	| FLOAT
 	| STRING
 	| BOOL
-	| node_ref
-	| edge_ref (node_ref)? /* Returns nodes even if edge */
+	| node_edge_ref
 	| list_val
 	| dict_val
 	| dotted_name
@@ -151,7 +160,7 @@ atom:
 	| spawn
 	| DEREF expression;
 
-index: LSQUARE expression RSQUARE;
+node_edge_ref: node_ref | edge_ref (node_ref)?;
 
 node_ref: KW_NODE DBL_COLON NAME;
 
@@ -168,6 +177,8 @@ edge_from: '<--' | '<-' ('[' NAME ']')? '-';
 edge_any: '<-->' | '<-' ('[' NAME ']')? '->';
 
 list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
+
+index: LSQUARE expression RSQUARE;
 
 dict_val: LBRACE (kv_pair (COMMA kv_pair)*)? RBRACE;
 
@@ -218,7 +229,14 @@ dot_port: ':' dot_id ( ':' dot_id)?;
 
 dot_subgraph: ( KW_SUBGRAPH dot_id?)? '{' dot_stmt_list '}';
 
-dot_id: NAME | STRING | INT | FLOAT;
+dot_id:
+	NAME
+	| STRING
+	| INT
+	| FLOAT
+	| KW_GRAPH
+	| KW_NODE
+	| KW_EDGE;
 
 /* Lexer rules */
 KW_GRAPH: 'graph';

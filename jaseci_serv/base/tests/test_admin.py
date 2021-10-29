@@ -48,10 +48,10 @@ class admin_test(TestCaseHelper, TestCase):
 
     def test_base_has_global_config(self):
         """Tests that global config show up on admin page"""
-        url = reverse('admin:base_globalconfig_changelist')
+        url = reverse('admin:base_globalvars_changelist')
         res = self.client.get(url)
 
-        self.assertTrue("Global config" in str(res.content))
+        self.assertTrue("Global vars" in str(res.content))
         self.assertEqual(res.status_code, 200)
 
     def test_base_has_jaseci_objs(self):

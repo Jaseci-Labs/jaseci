@@ -172,3 +172,20 @@ REST_KNOX = {
 LOGIN_URL = '/ui/login'
 LOGIN_REDIRECT_URL = '/ui'
 LOGOUT_REDIRECT_URL = '/ui'
+
+# Configs to Manage by Jaseci
+JASECI_CONFIGS = ['EMAIL_BACKEND',
+                  'EMAIL_USE_TLS',
+                  'EMAIL_HOST',
+                  'EMAIL_HOST_USER',
+                  'EMAIL_HOST_PASSWORD',
+                  'EMAIL_PORT',
+                  'EMAIL_DEFAULT_FROM',
+                  'EMAIL_ACTIVATION_SUBJ',
+                  'EMAIL_ACTIVATION_BODY',
+                  'EMAIL_ACTIVATION_HTML_BODY',
+                  'EMAIL_RESETPASS_SUBJ',
+                  'EMAIL_RESETPASS_BODY',
+                  'EMAIL_RESETPASS_HTML_BODY',
+                  'LOGIN_TOKEN_TTL_HOURS'
+                  ]

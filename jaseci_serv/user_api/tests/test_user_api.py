@@ -231,8 +231,8 @@ class user_api_tests_public(TestCaseHelper, TestCase):
         user.save()
 
         email_pl = {'email': 'jscitest_test@jaseci.com'}
-        from base.mail import email_defaults
-        email_defaults['EMAIL_BACKEND'] = \
+        from base.mail import email_config_defaults
+        email_config_defaults['EMAIL_BACKEND'] = \
             'django.core.mail.backends.locmem.EmailBackend'
 
         res = self.client.post(PASSWORD_RESET_URL, email_pl)
@@ -248,8 +248,8 @@ class user_api_tests_public(TestCaseHelper, TestCase):
         user.save()
 
         email_pl = {'email': 'jjscitest_test@jaseci.com'}
-        from base.mail import email_defaults
-        email_defaults['EMAIL_BACKEND'] = \
+        from base.mail import email_config_defaults
+        email_config_defaults['EMAIL_BACKEND'] = \
             'django.core.mail.backends.locmem.EmailBackend'
 
         res = self.client.post(PASSWORD_RESET_URL, email_pl)

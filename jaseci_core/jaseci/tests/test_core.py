@@ -2,8 +2,8 @@ from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
 
 from jaseci.graph.node import node
-from jaseci.master import master
-from jaseci.element import element
+from jaseci.element.master import master
+from jaseci.element.element import element
 from jaseci.graph.graph import graph
 from jaseci.actor.sentinel import sentinel
 from jaseci.utils.mem_hook import mem_hook
@@ -23,12 +23,12 @@ class architype_tests(TestCaseHelper, TestCase):
         """
         mast = master(h=mem_hook())
         num_objs = len(mast._h.mem.keys())
-        node1 = node(h=mast._h)
-        node2 = node(h=mast._h, owner_id=node1.id)
+        node1 = node(m_id=mast._m_id, h=mast._h)
+        node2 = node(m_id=mast._m_id, h=mast._h, parent_id=node1.id)
         num_new = len(mast._h.mem.keys())
         self.assertEqual(num_new, num_objs+2)
 
-        new_graph = graph(h=mast._h)
+        new_graph = graph(m_id=mast._m_id, h=mast._h)
         mast.graph_ids.add_obj(new_graph)
         num_new = len(mast._h.mem.keys())
         self.assertEqual(num_new, num_objs+3)
@@ -42,8 +42,8 @@ class architype_tests(TestCaseHelper, TestCase):
         """
         """
         mast = master(h=mem_hook())
-        node1 = node(h=mast._h)
-        node2 = node(h=mast._h)
+        node1 = node(m_id=mast._m_id, h=mast._h)
+        node2 = node(m_id=mast._m_id, h=mast._h)
         edge = node1.attach_outbound(node2)
         self.assertEqual(len(node1.edge_ids), 1)
         self.assertEqual(len(node2.edge_ids), 1)
@@ -59,17 +59,17 @@ class architype_tests(TestCaseHelper, TestCase):
         mast = master(h=mem_hook())
         num_objs = len(mast._h.mem.keys())
         self.assertEqual(num_objs, 2)
-        new_graph = graph(h=mast._h)
-        sent = sentinel(h=mast._h)
-        sent.code = jtc.prog1
+        new_graph = graph(m_id=mast._m_id, h=mast._h)
+        sent = sentinel(m_id=mast._m_id, h=mast._h)
+        code = jtc.prog1
         mast.sentinel_ids.add_obj(sent)
         mast.graph_ids.add_obj(new_graph)
         num_new = len(mast._h.mem.keys())
         self.assertEqual(num_new, num_objs+2)
 
-        sent.register_code()
+        sent.register_code(code)
         num_objs = len(mast._h.mem.keys())
-        sent.register_code()
+        sent.register_code(code)
         new_num = len(mast._h.mem.keys())
         self.assertEqual(num_objs, new_num)
 
@@ -77,10 +77,11 @@ class architype_tests(TestCaseHelper, TestCase):
         """
         Test saving object to json and back to python dict
         """
+        self.logger_on()
         for i in get_all_subclasses(element):
-            orig = i(h=mem_hook())
-            blob1 = orig.json()
-            new = i(h=mem_hook())
+            orig = i(m_id='anon', h=mem_hook())
+            blob1 = orig.json(detailed=True)
+            new = i(m_id='anon', h=mem_hook())
             self.assertNotEqual(orig.id, new.id)
             new.json_load(blob1)
             self.assertEqual(orig.id, new.id)

@@ -3,7 +3,8 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from base import models
 from obj_api.views import JaseciObjectSerializer
-from jaseci import element
+from jaseci.element import element
+from jaseci.element.super_master import super_master
 
 
 def sample_user(email='JSCITEST_user@jaseci.com', password='whatever'):
@@ -20,9 +21,11 @@ class model_tests(TestCaseHelper, TestCase):
     def tearDown(self):
         super().tearDown()
 
-    def test_users_based_on_email(self):
-        """Tests that users are created based on valid emails"""
-
+    def test_users_creation_and_deletion(self):
+        """
+        Tests that users are created based on valid emails and
+        objects are deleted with user
+        """
         email = 'JSCITEST_blah@BlaB.com'
         password = 'passW123'
         num_nodes = models.JaseciObject.objects.count()
@@ -46,15 +49,13 @@ class model_tests(TestCaseHelper, TestCase):
             password='135jj'
         )
 
-        self.assertTrue(user.is_superuser)
-        self.assertTrue(user.is_staff)
-        self.assertTrue(user.is_admin)
+        self.assertIsInstance(user.get_master(), super_master)
         user.delete()
         self.assertFalse(get_user_model().objects.filter(id=user.id).exists())
 
-    def test_jaseci_obj_model_has_relevant_fields(self):
+    def test_jaseci_obj_accessl_has_relevant_fields(self):
         """Test that Jaseci ORM models has all element class fields"""
-        element_obj = element.element(element.mem_hook())
+        element_obj = element.element(m_id='anon', h=element.mem_hook())
         orm_obj = models.JaseciObject()
         for a in vars(element_obj).keys():
             if not a.startswith('_') and not callable(getattr(element_obj, a)):
@@ -62,15 +63,14 @@ class model_tests(TestCaseHelper, TestCase):
 
     def test_jaseci_json_has_relevant_fields(self):
         """Test that Jaseci ORM models has all element class fields"""
-        element_obj = element.element(element.mem_hook())
+        element_obj = element.element(m_id='anon', h=element.mem_hook())
         for a in vars(element_obj).keys():
             if not a.startswith('_') and not callable(getattr(element_obj, a)):
                 self.assertIn(a, JaseciObjectSerializer.Meta.fields)
 
-    def test_jaseci_obj_model_create_delete(self):
+    def test_jaseci_obj_accessl_create_delete(self):
         """Test that we can create and delete jaseci object models"""
-        orm_obj = models.JaseciObject.objects.create(name='test Obj',
-                                                     user=sample_user())
+        orm_obj = models.JaseciObject.objects.create(name='test Obj')
         oid = orm_obj.jid
         newname = 'TESTING new Name'
         orm_obj.name = newname
@@ -87,7 +87,7 @@ class model_tests(TestCaseHelper, TestCase):
 
     def test_lookup_global_config(self):
         """Test look up config returns right value"""
-        models.GlobalConfig.objects.create(name='testname', value="testval")
+        models.GlobalVars.objects.create(name='testname', value="testval")
         self.assertEqual(models.lookup_global_config('testname'), 'testval')
         self.assertEqual(models.lookup_global_config(
             'nonsense', 'apple'), 'apple')

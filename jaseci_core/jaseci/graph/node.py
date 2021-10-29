@@ -4,8 +4,8 @@ Node class for Jaseci
 Each node has an id, name, timestamp and it's set of edges.
 First node in list of 'member_node_ids' is designated root node
 """
-from jaseci.element import element
-from jaseci.utils.obj_mixins import anchored
+from jaseci.element.element import element
+from jaseci.element.obj_mixins import anchored
 from jaseci.graph.edge import edge
 from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
@@ -18,7 +18,7 @@ class node(element, anchored):
 
     def __init__(self, dimension=0, *args, **kwargs):
         self.edge_ids = id_list(self)
-        self.owner_node_ids = id_list(self)
+        self.parent_node_ids = id_list(self)
         self.member_node_ids = id_list(self)
         self.dimension = dimension  # Nodes are always hdgd 0
         self.context = {}
@@ -34,7 +34,8 @@ class node(element, anchored):
         Generalized attach function for attaching nodes with edges
         """
         if(edge_set is None):
-            edge_set = [edge(h=self._h)]
+            edge_set = [edge(m_id=self._m_id, h=self._h,
+                             kind='edge', name='generic')]
         link_order = [self, node_obj] if as_outbound else [node_obj, self]
         for e in edge_set:
             if(not e.set_from_node(link_order[0]) or
@@ -227,7 +228,7 @@ class node(element, anchored):
         """Returns list of all edges between nodes"""
         edge_set = []
         for e in self.edge_ids.obj_list():
-            if(e.is_bidirected() and e.connects(node_obj)):
+            if(e.is_bidirected() and e.connects(self, node_obj)):
                 edge_set.append(e)
         return edge_set
 
@@ -309,7 +310,7 @@ class node(element, anchored):
         # adds self to hdgd and hdgd to list of owners
         else:
             node_obj.member_node_ids.add_obj(self)
-            self.owner_node_ids.add_obj(node_obj)
+            self.parent_node_ids.add_obj(node_obj)
 
     def make_owner_of(self, node_obj):
         """
@@ -320,7 +321,7 @@ class node(element, anchored):
     def leave_memebership_of(self, node_obj):
         """Remove node from higher dimension node"""
         node_obj.member_node_ids.remove_obj(self)
-        self.owner_node_ids.remove_obj(node_obj)
+        self.parent_node_ids.remove_obj(node_obj)
 
     def disown(self, node_obj):
         """Remove node from higher dimension node"""
@@ -349,34 +350,26 @@ class node(element, anchored):
             i.destroy()
         super().destroy()
 
-    def dot_str(self):
+    def dot_str(self, node_map=None):
         """
         DOT representation
         """
-        # _n_name is a reserved key for node name. Note that this is
-        # different than the name you could set in context
-        dstr = uuid.UUID(self.jid).hex+' '
+        if(node_map is None):
+            nid = f'{uuid.UUID(self.jid).hex}'
+        else:
+            nid = f'{node_map.index(self.jid)}'
+
+        dstr = f'"n{nid}" [ id="{uuid.UUID(self.jid).hex}", '
+        dstr += f'label="n{nid}:{self.name}" '
 
         node_dict = self.context
-        if (self.kind != 'generic'):
-            node_dict['_kind_'] = self.kind
-        if (self.name != 'basic'):
-            node_dict['_name_'] = self.name
 
         if (node_dict):
-            dstr += '['
-            num_items = 0
             for k, v in node_dict.items():
-                if(v is None or v == ""):
-                    num_items += 1
+                if(not isinstance(v, str) or v == ""):
                     continue
-                if (num_items != 0):
-                    dstr += ' '
-                dstr += f'{k}={v}'
+                dstr += f', {k}="{v[:32]}"'
 
-                num_items += 1
-                if (num_items < len(node_dict)):
-                    dstr += ','
-            dstr += ']'
+        dstr += ' ]'
 
         return dstr+'\n'

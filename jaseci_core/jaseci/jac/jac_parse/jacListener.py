@@ -1,4 +1,4 @@
-# Generated from /home/ninja/kode/jaseci/jaseci_core/jaseci/jac/jac.g4 by ANTLR 4.9.2
+# Generated from jac.g4 by ANTLR 4.9.2
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .jacParser import jacParser
@@ -14,6 +14,15 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#start.
     def exitStart(self, ctx:jacParser.StartContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#ver_label.
+    def enterVer_label(self, ctx:jacParser.Ver_labelContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#ver_label.
+    def exitVer_label(self, ctx:jacParser.Ver_labelContext):
         pass
 
 
@@ -41,6 +50,15 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#walker.
     def exitWalker(self, ctx:jacParser.WalkerContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#namespace_list.
+    def enterNamespace_list(self, ctx:jacParser.Namespace_listContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#namespace_list.
+    def exitNamespace_list(self, ctx:jacParser.Namespace_listContext):
         pass
 
 
@@ -131,6 +149,15 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#has_stmt.
     def exitHas_stmt(self, ctx:jacParser.Has_stmtContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#has_assign.
+    def enterHas_assign(self, ctx:jacParser.Has_assignContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#has_assign.
+    def exitHas_assign(self, ctx:jacParser.Has_assignContext):
         pass
 
 
@@ -413,6 +440,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#func_built_in.
+    def enterFunc_built_in(self, ctx:jacParser.Func_built_inContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#func_built_in.
+    def exitFunc_built_in(self, ctx:jacParser.Func_built_inContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#atom.
     def enterAtom(self, ctx:jacParser.AtomContext):
         pass
@@ -422,12 +458,12 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#index.
-    def enterIndex(self, ctx:jacParser.IndexContext):
+    # Enter a parse tree produced by jacParser#node_edge_ref.
+    def enterNode_edge_ref(self, ctx:jacParser.Node_edge_refContext):
         pass
 
-    # Exit a parse tree produced by jacParser#index.
-    def exitIndex(self, ctx:jacParser.IndexContext):
+    # Exit a parse tree produced by jacParser#node_edge_ref.
+    def exitNode_edge_ref(self, ctx:jacParser.Node_edge_refContext):
         pass
 
 
@@ -500,6 +536,15 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#list_val.
     def exitList_val(self, ctx:jacParser.List_valContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#index.
+    def enterIndex(self, ctx:jacParser.IndexContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#index.
+    def exitIndex(self, ctx:jacParser.IndexContext):
         pass
 
 

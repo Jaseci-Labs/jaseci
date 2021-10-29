@@ -14,8 +14,8 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.gph = graph(h=mem_hook())
-        self.sent = sentinel(h=self.gph._h)
+        self.gph = graph(m_id='anon', h=mem_hook())
+        self.sent = sentinel(m_id='anon', h=self.gph._h)
 
     def tearDown(self):
         super().tearDown()
@@ -31,7 +31,8 @@ class jac_tests(TestCaseHelper, TestCase):
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         gen_walker.run()
-        gen_walker = self.sent.walker_ids.get_obj_by_name('gen_rand_life')
+        gen_walker = self.sent.walker_ids.get_obj_by_name(
+            'gen_rand_life', kind='walker')
         gen_walker.prime(self.gph.outbound_nodes()[0])
         gen_walker.run()
         self.assertGreater(len(self.gph._h.mem.keys()), 70)
@@ -42,11 +43,12 @@ class jac_tests(TestCaseHelper, TestCase):
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         gen_walker.run()
-        gen_walker = self.sent.walker_ids.get_obj_by_name('gen_rand_life')
+        gen_walker = self.sent.walker_ids.get_obj_by_name(
+            'gen_rand_life', kind='walker')
         gen_walker.prime(self.gph.outbound_nodes()[0])
         gen_walker.run()
         for i in self.gph._h.mem.keys():
-            if(i == 'config'):
+            if(i == 'global'):
                 continue
             self.gph._h.mem[i].json()
 
@@ -56,7 +58,8 @@ class jac_tests(TestCaseHelper, TestCase):
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         gen_walker.run()
-        gen_walker = self.sent.walker_ids.get_obj_by_name('gen_rand_life')
+        gen_walker = self.sent.walker_ids.get_obj_by_name(
+            'gen_rand_life', kind='walker')
         gen_walker.prime(self.gph.outbound_nodes()[0])
         gen_walker.run()
         lday_walk = self.sent.walker_ids.get_obj_by_name(
@@ -64,7 +67,8 @@ class jac_tests(TestCaseHelper, TestCase):
         lday_walk.prime(self.gph.outbound_nodes()[0])
         lday_walk.run()
         ret = lday_walk.context['latest_day']
-        self.assertEqual(self.gph._h.get_obj(uuid.UUID(ret)).kind, 'day')
+        self.assertEqual(self.gph._h.get_obj(
+            self.gph._m_id, uuid.UUID(ret)).name, 'day')
 
     def test_carry_forward(self):
         """Test loading/parsing ll prototype"""
@@ -72,7 +76,8 @@ class jac_tests(TestCaseHelper, TestCase):
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
         gen_walker.run()
-        gen_walker = self.sent.walker_ids.get_obj_by_name('gen_rand_life')
+        gen_walker = self.sent.walker_ids.get_obj_by_name(
+            'gen_rand_life', kind='walker')
         gen_walker.prime(self.gph)
         gen_walker.run()
         lday_walk = self.sent.walker_ids.get_obj_by_name(
@@ -80,5 +85,5 @@ class jac_tests(TestCaseHelper, TestCase):
         lday_walk.prime(self.gph)
         lday_walk.run()
         day = self.gph._h.get_obj(
-            uuid.UUID(lday_walk.context['day_node']))
+            self.gph._m_id, uuid.UUID(lday_walk.context['day_node']))
         self.assertGreater(len(day.edge_ids), 3)

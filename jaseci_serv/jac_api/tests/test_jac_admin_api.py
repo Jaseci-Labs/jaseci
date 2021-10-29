@@ -33,12 +33,12 @@ class PrivateJacAdminApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_create_config(self):
         """Test API for creating a config"""
-        payload = {'op': 'config_set', 'name': 'test1',
+        payload = {'op': 'config_set', 'name': 'EMAIL_HOST_USER',
                    'value': 'val1', 'do_check': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        payload = {'op': 'config_get', 'name': 'test1'}
+        payload = {'op': 'config_get', 'name': 'EMAIL_HOST_USER'}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -46,14 +46,15 @@ class PrivateJacAdminApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_create_config_needs_force(self):
         """Test API for creating a config"""
-        payload = {'op': 'config_delete', 'name': 'test1'}
+        payload = {'op': 'config_delete', 'name': 'TEST'}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'config_set', 'name': 'test1', 'value': 'val1'}
+        payload = {'op': 'config_set',
+                   'name': 'TEST', 'value': 'val1'}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        payload = {'op': 'config_get', 'name': 'test1'}
+        payload = {'op': 'config_get', 'name': 'TEST'}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -61,29 +62,30 @@ class PrivateJacAdminApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_create_config_nonadmin_fails(self):
         """Test API for creating a config"""
-        payload = {'op': 'config_set', 'name': 'test1', 'value': 'val1'}
+        payload = {'op': 'config_set',
+                   'name': 'EMAIL_HOST_USER', 'value': 'val1'}
         res = self.notadminc.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_jac_api_create_config_list(self):
         """Test API for creating a config"""
-        payload = {'op': 'config_set', 'name': 'test1',
+        payload = {'op': 'config_set', 'name': 'EMAIL_HOST_USER',
                    'value': 'val1', 'do_check': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        payload = {'op': 'config_set', 'name': 'test2',
+        payload = {'op': 'config_set', 'name': 'EMAIL_HOST_PASSWORD',
                    'value': 'val2', 'do_check': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        payload = {'op': 'config_set', 'name': 'test3',
+        payload = {'op': 'config_set', 'name': 'EMAIL_DEFAULT_FROM',
                    'value': 'val3', 'do_check': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        payload = {'op': 'config_set', 'name': 'test4',
+        payload = {'op': 'config_set', 'name': 'EMAIL_BACKEND',
                    'value': 'val4', 'do_check': False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
@@ -93,4 +95,4 @@ class PrivateJacAdminApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 4)
-        self.assertEqual(res.data[2], 'test3')
+        self.assertIn('EMAIL_DEFAULT_FROM', res.data)

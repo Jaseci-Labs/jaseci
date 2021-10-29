@@ -206,6 +206,15 @@ walker init {
     root {
         take (--> node::botset) else {
             spawn here --> node::botset;
+            disengage;
+        }
+    }
+}
+
+walker pubinit:anyone,yiping,jason {
+    root {
+        take (--> node::botset) else {
+            spawn here --> node::botset;
             std.log(-->);
             disengage;
         }

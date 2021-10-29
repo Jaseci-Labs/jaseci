@@ -11,7 +11,7 @@ class graph(node):
 
     def __init__(self, *args, **kwargs):
         self.hd_node_ids = id_list(self)
-        node.__init__(self, kind='root', *args, **kwargs)
+        node.__init__(self, name='root', *args, **kwargs)
 
     def get_all_nodes(self, node_list=None):
         """
@@ -53,14 +53,16 @@ class graph(node):
         """
         node_list = self.get_all_nodes()
         edge_list = self.get_all_edges()
+        node_map = [i.jid for i in node_list]
+        edge_map = [i.jid for i in edge_list]
 
         # Construct the graph string
         dstr = ''
-        dstr += f'strict digraph {self.name} {{'
+        dstr += f'strict digraph {self.name} {{\n'
         for n in node_list:
-            dstr += f'    {n.dot_str()}'
+            dstr += f'    {n.dot_str(node_map)}'
         for e in edge_list:
-            dstr += f'    {e.dot_str()}'
+            dstr += f'    {e.dot_str(node_map, edge_map)}'
         dstr += '}'
         return dstr
 

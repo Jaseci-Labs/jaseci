@@ -22,20 +22,30 @@ class test_ll(TestCaseHelper, TestCase):
         )
         self.client = APIClient()
         self.client.force_authenticate(self.user)
-        self.master = self.user.get_master()
-        payload = {'op': 'create_graph', 'name': 'Something'}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.gph = self.master._h.get_obj(uuid.UUID(res.data['jid']))
-        payload = {'op': 'create_sentinel', 'name': 'Something'}
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.snt = self.master._h.get_obj(uuid.UUID(res.data['jid']))
         ll_file = base64.b64encode(
-            open("jac_api/tests/ll.jac").read().encode())
-        payload = {'op': 'set_jac', 'snt': self.snt.id.urn,
-                   'code': ll_file, 'encoded': True}
+            open("jac_api/tests/ll.jac").read().encode()).decode()
+        payload = {'op': 'sentinel_register',
+                   'name': 'Something', 'code': ll_file, 'encoded': True}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {'op': 'global_sentinel_set'}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.run_walker('init', {})
+        self.user = get_user_model().objects.create_user(
+            'J2SCITfdfdEST_test@jaseci.com',
+            'password'
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+        self.master = self.user.get_master()
+        payload = {'op': 'sentinel_active_global'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'graph_create'}
+        self.snt = self.master._h.get_obj(
+            self.master.jid, uuid.UUID(res.data['sentinel']['jid']))
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        self.gph = self.master._h.get_obj(
+            self.master.jid, uuid.UUID(res.data['jid']))
 
     def tearDown(self):
         super().tearDown()
@@ -49,19 +59,19 @@ class test_ll(TestCaseHelper, TestCase):
             payload = {'snt': self.snt.id.urn, 'name': w_name,
                        'nd': prime, 'ctx': ctx}
         res = self.client.post(
-            reverse(f'jac_api:prime_run'), payload, format='json')
+            reverse(f'jac_api:walker_run'), payload, format='json')
         return res.data
 
-    def set_node_context(self, nd_id, ctx):
+    def graph_node_set(self, nd_id, ctx):
         """Helper to set node context"""
         payload = {'snt': self.snt.id.urn, 'nd': nd_id, 'ctx': ctx}
         self.client.post(
-            reverse('jac_api:set_node_context'), payload, format='json')
+            reverse('jac_api:graph_node_set'), payload, format='json')
 
     def test_ll_today_new(self):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('get_gen_day', {})
-        self.assertEqual(data[0][1]['kind'], 'day')
+        self.assertEqual(data[0][1]['name'], 'day')
         jid = data[0][1]['jid']
         data = self.run_walker('get_gen_day', {})
         self.assertEqual(data[0][1]['jid'], jid)
@@ -69,16 +79,16 @@ class test_ll(TestCaseHelper, TestCase):
     def test_ll_create_get_workette(self):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('get_gen_day', {})
-        self.assertEqual(data[0][1]['kind'], 'day')
+        self.assertEqual(data[0][1]['name'], 'day')
         jid = data[0][1]['jid']
         data = self.run_walker('create_workette', {}, prime=jid)
-        self.assertEqual(data[0]['kind'], 'workette')
+        self.assertEqual(data[0]['name'], 'workette')
         data = self.run_walker('create_workette', {}, prime=jid)
-        self.assertEqual(data[0]['kind'], 'workette')
+        self.assertEqual(data[0]['name'], 'workette')
         data = self.run_walker('get_workettes', {}, prime=jid)
         self.assertEqual(len(data), 2)
-        self.assertEqual(data[0]['kind'], 'workette')
-        self.assertEqual(data[1]['kind'], 'workette')
+        self.assertEqual(data[0]['name'], 'workette')
+        self.assertEqual(data[1]['name'], 'workette')
         wjid = data[0]['jid']
         data = self.run_walker('create_workette', {}, prime=wjid)
         data = self.run_walker('create_workette', {}, prime=wjid)
@@ -115,16 +125,16 @@ class test_ll(TestCaseHelper, TestCase):
     def test_ll_delete_workette(self):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('get_gen_day', {})
-        self.assertEqual(data[0][1]['kind'], 'day')
+        self.assertEqual(data[0][1]['name'], 'day')
         jid = data[0][1]['jid']
         data = self.run_walker('create_workette', {}, prime=jid)
-        self.assertEqual(data[0]['kind'], 'workette')
+        self.assertEqual(data[0]['name'], 'workette')
         data = self.run_walker('create_workette', {}, prime=jid)
-        self.assertEqual(data[0]['kind'], 'workette')
+        self.assertEqual(data[0]['name'], 'workette')
         data = self.run_walker('get_workettes', {}, prime=jid)
         self.assertEqual(len(data), 2)
-        self.assertEqual(data[0]['kind'], 'workette')
-        self.assertEqual(data[1]['kind'], 'workette')
+        self.assertEqual(data[0]['name'], 'workette')
+        self.assertEqual(data[1]['name'], 'workette')
         wjid = data[0]['jid']
         data = self.run_walker('create_workette', {}, prime=wjid)
         data = self.run_walker('create_workette', {}, prime=wjid)
@@ -140,29 +150,32 @@ class test_ll(TestCaseHelper, TestCase):
     def test_ll_delete_workette_no_leaks(self):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('get_gen_day', {})
-        self.assertEqual(data[0][1]['kind'], 'day')
+        self.assertEqual(data[0][1]['name'], 'day')
         jid = data[0][1]['jid']
         data = self.run_walker('create_workette', {}, prime=jid)
-        self.assertEqual(data[0]['kind'], 'workette')
-        len_before = len(self.master._h.mem.keys())
+        self.assertEqual(data[0]['name'], 'workette')
+        len_before = self.master._h.get_object_distribution()
         data = self.run_walker('create_workette', {}, prime=jid)
-        self.assertEqual(data[0]['kind'], 'workette')
+        self.assertEqual(data[0]['name'], 'workette')
         data = self.run_walker('get_workettes', {}, prime=jid)
         self.assertEqual(len(data), 2)
-        self.assertEqual(data[0]['kind'], 'workette')
-        self.assertEqual(data[1]['kind'], 'workette')
+        self.assertEqual(data[0]['name'], 'workette')
+        self.assertEqual(data[1]['name'], 'workette')
         wjid = data[1]['jid']
         data = self.run_walker('create_workette', {}, prime=wjid)
+        exjid = data[0]['jid']
         data = self.run_walker('create_workette', {}, prime=wjid)
         data = self.run_walker('create_workette', {}, prime=wjid)
         data = self.run_walker('get_workettes', {}, prime=wjid)
         self.assertEqual(len(data), 3)
         data = self.run_walker('delete_workette', {}, prime=wjid)
+        self.assertNotIn(uuid.UUID(exjid), self.master._h.mem.keys())
+        self.assertIn(uuid.UUID(jid), self.master._h.mem.keys())
         data = self.run_walker('get_workettes', {}, prime=jid)
         self.assertEqual(len(data), 1)
         data = self.run_walker('get_workettes_deep', {}, prime=jid)
         self.assertEqual(len(data), 1)
-        len_after = len(self.master._h.mem.keys())
+        len_after = self.master._h.get_object_distribution()
         self.assertEqual(len_before, len_after)
 
     def test_ll_goal_associations(self):
@@ -222,7 +235,7 @@ class test_ll(TestCaseHelper, TestCase):
         today_date = datetime.datetime.today()
         due_item = False
         for wkt in data:
-            if wkt[1]['kind'] == 'workette':
+            if wkt[1]['name'] == 'workette':
                 if random.choice([0, 1]) or not due_item:
                     due_item = True
                     due = random.randint(-3, 3)
@@ -230,7 +243,7 @@ class test_ll(TestCaseHelper, TestCase):
                     due_date = due_date.replace(
                         hour=0, minute=0, second=0, microsecond=0)
                     wkt[1]['context']['date'] = due_date.isoformat()
-                    self.set_node_context(wkt[1]['jid'], wkt[1]['context'])
+                    self.graph_node_set(wkt[1]['jid'], wkt[1]['context'])
 
         data = self.run_walker(
             'get_due_soon', {'soon': 4, 'show_report': 1}, prime=w_id)
@@ -245,7 +258,7 @@ class test_ll(TestCaseHelper, TestCase):
         today_date = datetime.datetime.today()
         snoozed_item = False
         for wkt in data:
-            if wkt[1]['kind'] == 'workette':
+            if wkt[1]['name'] == 'workette':
                 if random.choice([0, 1]) or not snoozed_item:
                     snoozed_item = True
                     delta = random.randint(-3, 0)
@@ -253,7 +266,7 @@ class test_ll(TestCaseHelper, TestCase):
                     snoozed_date = snoozed_date.replace(
                         hour=0, minute=0, second=0, microsecond=0)
                     wkt[1]['context']['snooze_till'] = snoozed_date.isoformat()
-                    self.set_node_context(wkt[1]['jid'], wkt[1]['context'])
+                    self.graph_node_set(wkt[1]['jid'], wkt[1]['context'])
         result = self.run_walker(
             'get_snoozed_until_recent', {'show_report': 1}, prime=w_id)
         self.assertTrue(len(result) > 0)

@@ -7,11 +7,11 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from base.models import JaseciObject, GlobalConfig
+from base.models import JaseciObject, GlobalVars
 
 
 NODE_URL = reverse('obj_api:jaseciobject-list')
-CONFIG_URL = reverse('obj_api:globalconfig-list')
+CONFIG_URL = reverse('obj_api:globalvars-list')
 
 
 class PublicNodeApiTests(TestCaseHelper, TestCase):
@@ -48,28 +48,28 @@ class PrivateNodeApiTests(TestCaseHelper, TestCase):
 
     def test_retrieve_nodes(self):
         """Test retrieving node list"""
-        JaseciObject.objects.create(user=self.user, name='Vegan')
-        JaseciObject.objects.create(user=self.user, name='Dessert')
+        JaseciObject.objects.create(name='Vegan')
+        JaseciObject.objects.create(name='Dessert')
 
         res = self.client.get(NODE_URL)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    def test_nodes_limited_to_user(self):
-        """Test that nodes returned are for authenticated user"""
-        user2 = get_user_model().objects.create_user(
-            'JSCITEST_other@jaseci.com',
-            'testpass'
-        )
-        JaseciObject.objects.create(user=user2, name='Fruity')
-        node = JaseciObject.objects.create(user=self.user, name='Comfort Food')
+    # def test_nodes_limited_to_user(self):
+    #     """Test that nodes returned are for authenticated user"""
+    #     user2 = get_user_model().objects.create_user(
+    #         'JSCITEST_other@jaseci.com',
+    #         'testpass'
+    #     )
+    #     JaseciObject.objects.create(name='Fruity')
+    #     node = JaseciObject.objects.create(name='Comfort Food')
 
-        res = self.client.get(NODE_URL)
+    #     res = self.client.get(NODE_URL)
 
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data['results']), 2)
-        self.assertEqual(res.data['results'][1]['name'], node.name)
-        user2.delete()
+    #     self.assertEqual(res.status_code, status.HTTP_200_OK)
+    #     self.assertEqual(len(res.data['results']), 2)
+    #     self.assertEqual(res.data['results'][1]['name'], node.name)
+    #     user2.delete()
 
     def test_create_node_successful(self):
         """Test creating a new node"""
@@ -77,7 +77,6 @@ class PrivateNodeApiTests(TestCaseHelper, TestCase):
         self.client.post(NODE_URL, payload)
 
         exists = JaseciObject.objects.filter(
-            user=self.user,
             name=payload['name']
         ).exists()
         self.assertTrue(exists)
@@ -100,8 +99,8 @@ class ConfigApiTests(TestCaseHelper, TestCase):
 
     def test_retrieve_configs(self):
         """Test retrieving config list"""
-        GlobalConfig.objects.create(name='Vegan', value='46')
-        GlobalConfig.objects.create(name='Dessert', value='446')
+        GlobalVars.objects.create(name='Vegan', value='46')
+        GlobalVars.objects.create(name='Dessert', value='446')
 
         res = self.client.get(CONFIG_URL)
 
@@ -112,7 +111,7 @@ class ConfigApiTests(TestCaseHelper, TestCase):
         payload = {'name': 'Simple', 'value': 'Peezzy'}
         self.client.post(CONFIG_URL, payload)
 
-        exists = GlobalConfig.objects.filter(
+        exists = GlobalVars.objects.filter(
             name=payload['name'],
             value=payload['value']
         ).exists()

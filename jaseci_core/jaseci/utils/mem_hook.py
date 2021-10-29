@@ -3,7 +3,7 @@ from .utils import logger
 import json
 
 
-def json_str_to_jsci_dict(input_str, owner_obj=None):
+def json_str_to_jsci_dict(input_str, parent_obj=None):
     """
     Helper function to convert JSON strings to dictionarys with _ids list
     conversions from hex to UUID
@@ -14,11 +14,12 @@ def json_str_to_jsci_dict(input_str, owner_obj=None):
         obj_fields = json.loads(input_str)
     except ValueError:
         logger.error(
-            str(f'Invalid jsci_obj string {input_str} on {owner_obj.id.urn}'))
+            str(f'Invalid jsci_obj string {input_str} on {parent_obj.id.urn}'))
         obj_fields = {}
     for i in obj_fields.keys():
         if(str(i).endswith("_ids") and isinstance(obj_fields[i], list)):
-            obj_fields[i] = id_list(owner_obj, obj_fields[i])
+            obj_fields[i] = id_list(
+                parent_obj=parent_obj, in_list=obj_fields[i])
     return obj_fields
 
 
@@ -31,18 +32,23 @@ class mem_hook():
     """
 
     def __init__(self):
-        self.mem = {'config': {}, }
+        self.mem = {'global': {}}
 
-    def get_obj(self, item_id):
+    def get_obj(self, caller_id, item_id, override=False):
         """
         Get item from session cache by id, then try store
+        TODO: May need to make this an object copy so you cant do mem writes
         """
         if(item_id in self.mem.keys()):
-            return self.mem[item_id]
+            ret = self.mem[item_id]
+            if(override or ret.check_read_access(caller_id)):
+                return ret
         else:
             ret = self.get_obj_from_store(item_id)
             self.mem[item_id] = ret
-            return ret
+            if(override or (ret is not None and
+               ret.check_read_access(caller_id))):
+                return ret
 
     def has_obj(self, item_id):
         """
@@ -53,68 +59,77 @@ class mem_hook():
         else:
             return self.has_obj_in_store(item_id)
 
-    def save_obj(self, item, persist=False):
+    def save_obj(self, caller_id, item, persist=False):
         """Save item to session cache, then to store"""
-        self.mem[item.id] = item
-        if (persist):
-            self.save_obj_to_store(item)
+        if(item.check_write_access(caller_id)):
+            self.mem[item.id] = item
+            if (persist):
+                self.save_obj_to_store(item)
 
-    def destroy_obj(self, item, persist=False):
+    def destroy_obj(self, caller_id, item, persist=False):
         """Destroy item from session cache then  store"""
-        self.mem[item.id] = None
-        del self.mem[item.id]
-        if(persist):
-            self.destroy_obj_from_store(item)
+        if(item.check_write_access(caller_id)):
+            self.mem[item.id] = None
+            del self.mem[item.id]
+            if(persist):
+                self.destroy_obj_from_store(item)
 
-    def get_cfg(self, name):
+    def get_glob(self, name):
         """
         Get global config from session cache by id, then try store
         """
-        if(name in self.mem['config'].keys()):
-            return self.mem['config'][name]
+        if(name in self.mem['global'].keys()):
+            return self.mem['global'][name]
         else:
-            ret = self.get_cfg_from_store(name)
-            self.mem['config'][name] = ret
+            ret = self.get_glob_from_store(name)
+            self.mem['global'][name] = ret
             return ret
 
-    def has_cfg(self, name):
+    def has_glob(self, name):
         """
         Checks for global config existance
         """
-        if(name in self.mem['config'].keys()):
+        if(name in self.mem['global'].keys()):
             return True
         else:
-            return self.has_cfg_in_store(name)
+            return self.has_glob_in_store(name)
 
-    def resolve_cfg(self, name, default=None):
+    def resolve_glob(self, name, default=None):
         """
         Util function for returning config if exists otherwise default
         """
-        if(self.has_cfg(name)):
-            return self.get_cfg(name)
+        if(self.has_glob(name)):
+            return self.get_glob(name)
         else:
             return default
 
-    def save_cfg(self, name, value, persist=True):
+    def save_glob(self, name, value, persist=True):
         """Save global config to session cache, then to store"""
-        self.mem['config'][name] = value
+        self.mem['global'][name] = value
         if (persist):
-            self.save_cfg_to_store(name, value)
+            self.save_glob_to_store(name, value)
 
-    def list_cfg(self):
+    def list_glob(self):
         """Lists all configs present"""
-        cfg_list = self.list_cfg_from_store()
-        if(cfg_list):
-            return cfg_list
+        glob_list = self.list_glob_from_store()
+        if(glob_list):
+            return glob_list
         else:
-            return list(self.mem['config'].keys())
+            return list(self.mem['global'].keys())
 
-    def destroy_cfg(self, name, persist=True):
+    def destroy_glob(self, name, persist=True):
         """Destroy global config from session cache then store"""
-        self.mem['config'][name] = None
-        del self.mem['config'][name]
+        self.mem['global'][name] = None
+        del self.mem['global'][name]
         if(persist):
-            self.destroy_cfg_from_store(name)
+            self.destroy_glob_from_store(name)
+
+    def clear_mem_cache(self):
+        """
+        Clears memory, should only be used if underlying store is modified
+        through other means than methods of this class
+        """
+        mem_hook.__init__(self)
 
     def get_obj_from_store(self, item_id):
         """
@@ -133,32 +148,36 @@ class mem_hook():
     def destroy_obj_from_store(self, item):
         """Destroy item to externally hooked general store"""
 
-    def get_cfg_from_store(self, name):
+    def get_glob_from_store(self, name):
         """
         Get global config from externally hooked general store by name
         """
 
-    def has_cfg_in_store(self, name):
+    def has_glob_in_store(self, name):
         """
         Checks for global config existance in store
         """
         return False
 
-    def save_cfg_to_store(self, name, value):
+    def save_glob_to_store(self, name, value):
         """Save global config to externally hooked general store"""
 
-    def list_cfg_from_store(self):
+    def list_glob_from_store(self):
         """Get list of global config to externally hooked general store"""
 
-    def destroy_cfg_from_store(self, name):
+    def destroy_glob_from_store(self, name):
         """Destroy global config to externally hooked general store"""
-
-    def clear_mem_cache(self):
-        """
-        Clears memory, should only be used if underlying store is modified
-        through other means than methods of this class
-        """
-        self.mem = {'config': {}, }
 
     def commit(self):
         """Write through all saves to store"""
+
+    # Utilities
+    def get_object_distribution(self):
+        dist = {}
+        for i in self.mem.keys():
+            t = type(self.mem[i])
+            if(t in dist.keys()):
+                dist[t] += 1
+            else:
+                dist[t] = 1
+        return dist

@@ -324,6 +324,28 @@ can_action = \
     }
     """
 
+can_action_params = \
+    """
+    node test {
+        has anchor A;
+        can ptest {
+            b=7;
+            std.out(A,b);
+            ::ppp;
+        }
+        can ppp {
+            b=8;
+            std.out(A,b);
+        }
+    }
+
+    walker init {
+        a= spawn here --> node::test(A=56);
+        a::ptest(A=43);
+        a::ptest(A=a.A+5);
+    }
+    """
+
 cross_scope_report = \
     """
     node test {
@@ -454,6 +476,26 @@ dict_keys = \
         }
     }
     """
+cond_dict_keys = \
+    """
+    node test {
+        has apple;
+    }
+
+    walker init{
+        root {
+            node1 = spawn here --> node::test;
+            node1.apple = {"one": {"inner": 44}, "two": 2};
+            take node1;
+        }
+        test {
+            std.out(here.apple);
+            if('one' in here.apple.keys) {std.out('is here');}
+            if('three' not in here.apple.keys) {std.out('also not here'); }
+            if('three' in here.apple.keys) {std.out('SHOULD NOT PRINT'); }
+        }
+    }
+    """
 
 soft_max = \
     """
@@ -463,5 +505,31 @@ soft_max = \
         a=vector.softmax(scores);
         report a;
         std.out(a);
+    }
+    """
+
+fam_example = \
+    """
+    node man;
+    node woman;
+
+    edge mom;
+    edge dad;
+    edge married;
+
+    walker create_fam {
+        root {
+            spawn here --> node::man;
+            spawn here --> node::woman;
+            --> node::man <-[married]-> --> node::woman;
+            take -->;
+        }
+        woman {
+            son = spawn here <-[mom]- node::man;
+            son <-[dad]- <-[married]->;
+        }
+        man {
+            std.out("I didn't do any of the hard work.");
+        }
     }
     """

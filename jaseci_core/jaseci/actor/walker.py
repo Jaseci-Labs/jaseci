@@ -1,26 +1,27 @@
 """
 Walker class for Jaseci
 
-Each walker has an id, name, timestamp and it's owner sentinel.
+Each walker has an id, name, timestamp and it's parent sentinel.
 TODO: Perhaps  I should have walker state (context ids) in mem only with
 default hooks to save db read/writes
 """
 
 from jaseci.utils.utils import logger
-from jaseci.element import element
-from jaseci.utils.obj_mixins import anchored
+from jaseci.element.element import element
+from jaseci.element.obj_mixins import anchored
 from jaseci.utils.id_list import id_list
-from jaseci.jac.walker_machine import walker_machine
+from jaseci.jac.interpreter.walker_interp import walker_interp
+from jaseci.jac.ir.jac_code import jac_code
 import uuid
-import pickle
+import hashlib
 
 
-class walker(element, walker_machine, anchored):
+class walker(element, jac_code, walker_interp, anchored):
     """Walker class for Jaseci"""
 
-    def __init__(self, code=None, *args, **kwargs):
-        self.code = pickle.dumps(code, 0).decode()
+    def __init__(self, code_ir=None, *args, **kwargs):
         self.activity_action_ids = id_list(self)
+        self.namespaces = []
         self.context = {}
         self.profile = {}
         # Process state
@@ -33,16 +34,15 @@ class walker(element, walker_machine, anchored):
         self.step_limit = 10000
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
-        walker_machine.__init__(self)
-        self._jac_ast = pickle.loads(
-            self.code.encode()) if code else None
+        jac_code.__init__(self, code_ir=code_ir)
+        walker_interp.__init__(self)
 
     @ property
     def current_node(self):
         if(not self.current_node_id):
             return None
         else:
-            return self._h.get_obj(uuid.UUID(self.current_node_id))
+            return self._h.get_obj(self._m_id, uuid.UUID(self.current_node_id))
 
     @ current_node.setter
     def current_node(self, obj):
@@ -50,6 +50,13 @@ class walker(element, walker_machine, anchored):
             self.current_node_id = obj.id.urn
         else:
             self.current_node_id = None
+
+    def namespace_keys(self):
+        """Return list of md5 keys for namespaces"""
+        ret = {}
+        for i in self.namespaces:
+            ret[hashlib.md5((self._m_id+i).encode()).hexdigest()] = i
+        return ret
 
     def step(self):
         """
@@ -65,8 +72,6 @@ class walker(element, walker_machine, anchored):
                     f'- {self.step_limit}')
             )
             return False
-        if (self.code and not self._jac_ast):
-            self._jac_ast = pickle.loads(self.code.encode())
 
         self.current_node = self.next_node_ids.pop_first_obj()
         self.run_walker(jac_ast=self._jac_ast)
@@ -133,7 +138,7 @@ class walker(element, walker_machine, anchored):
         self.current_node = None
         self.activity_action_ids.destroy_all()
         self.context = {}
-        self.reset()
+        walker_interp.reset(self)
 
     def destroy(self):
         """
