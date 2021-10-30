@@ -28,7 +28,7 @@ data:
     python3 manage.py wait_for_db && python3 manage.py makemigrations base &&
     python3 manage.py makemigrations && python3 manage.py migrate;
     python3 manage.py runserver 0.0.0.0:80;
-    sleep 3600
+    while true; do sleep 3600; done
 ---
 apiVersion: apps/v1
 kind: Deployment
