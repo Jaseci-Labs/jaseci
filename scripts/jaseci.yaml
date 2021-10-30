@@ -17,29 +17,15 @@ metadata:
   namespace: default
 data:
   prod_up: |-
-    mkdir /dl; cd /dl; git clone https://prod:$GITPASS@git.jaseci.org/marsninja/jaseci.git;
-    cd jaseci; git checkout 1.2;
+    apt update; apt -y upgrade; apt -y install git;
+    git clone https://github.com/Jaseci-Labs/jaseci.git
+    cd jaseci;
     cd jaseci_core; source install.sh;
-    cd ../../; mv jaseci/jaseci_serv /; cd /jaseci_serv;
+    mv ../jaseci_serv /; cd /jaseci_serv
+    pip3 install -r requirements.txt;
     python3 manage.py wait_for_db && python3 manage.py makemigrations base &&
     python3 manage.py makemigrations && python3 manage.py migrate;
     python3 manage.py runserver 0.0.0.0:80;
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: jaseci-git-pass
-type: Opaque
-data:
-  password: UHIwZE4xbmo0
----
-apiVersion: v1
-data:
-  .dockerconfigjson: eyJhdXRocyI6eyJyZWdpc3RyeS5qYXNlY2kub3JnIjp7InVzZXJuYW1lIjoiamFzZWNpIiwicGFzc3dvcmQiOiJqNHMzYzEiLCJlbWFpbCI6Imphc29uQG1hcnMubmluamEiLCJhdXRoIjoiYW1GelpXTnBPbW8wY3pOak1RPT0ifX19
-kind: Secret
-metadata:
-  name: jsregcred
-type: kubernetes.io/dockerconfigjson
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -56,16 +42,14 @@ spec:
         pod: jaseci
       name: jaseci
     spec:
-      imagePullSecrets:
-        - name: jsregcred
       containers:
         - name: jaseci
-          image: registry.jaseci.org/jsystem:latest
+          image: python:3-slim
           resources:
             requests:
               memory: "350Mi"
             limits:
-              memory: "700Mi"
+              memory: "1Gi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:
@@ -88,12 +72,6 @@ spec:
 
             - name: REDIS_HOST
               value: jaseci-redis
-
-            - name: GITPASS
-              valueFrom:
-                secretKeyRef:
-                  name: jaseci-git-pass
-                  key: password
 
           volumeMounts:
             - name: prod-script
