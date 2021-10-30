@@ -23,7 +23,7 @@ data:
     git clone https://github.com/Jaseci-Labs/jaseci.git
     cd jaseci; git checkout dedockerize
     cd jaseci_core; source install.sh;
-    cd ../../; mv jaseci/jaseci_serv /; cd /jaseci_serv;
+    cd ../jaseci_serv;
     pip3 install -r requirements.txt;
     python3 manage.py wait_for_db && python3 manage.py makemigrations base &&
     python3 manage.py makemigrations && python3 manage.py migrate;
