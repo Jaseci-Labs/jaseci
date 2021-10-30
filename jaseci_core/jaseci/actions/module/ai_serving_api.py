@@ -39,5 +39,4 @@ class AIServingAPI():
 
 def check_model_live(model_str):
     """Simple check to see if model is connected and live"""
-    return False
     return AIServingAPI(model_str).is_alive()

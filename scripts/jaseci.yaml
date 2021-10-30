@@ -19,7 +19,7 @@ data:
   prod_up: |-
     apt update; apt -y upgrade; apt -y install git;
     git clone https://github.com/Jaseci-Labs/jaseci.git
-    cd jaseci; git checkout dedockerize
+    cd jaseci;
     cd jaseci_core; source install.sh;
     mv ../jaseci_serv /; cd /jaseci_serv
     pip3 install -r requirements.txt;
@@ -49,7 +49,7 @@ spec:
             requests:
               memory: "350Mi"
             limits:
-              memory: "700Mi"
+              memory: "1Gi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:
