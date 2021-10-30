@@ -4,5 +4,5 @@ if [[ $1 ]]; then
     PODN=$1
 fi
 
-for podname in $(kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci_serv ${podname}:/; echo "Copy code to pod and test"; kubectl cp jaseci_core ${podname}:/;  kubectl exec -it ${podname} -- bash -c "cd jaseci_core; source install_live.sh"; kubectl exec -it ${podname} -- bash -c "cd jaseci_serv; python3 manage.py test --parallel --failfast -v 0 && flake8 --exclude=settings.py,*migrations*,jac_parse"; done
+for podname in $(kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci_serv ${podname}:/; echo "Copy code to pod and test"; kubectl cp jaseci_core ${podname}:/;  kubectl exec -it ${podname} -- bash -c "cd jaseci_core; source install_live.sh"; kubectl exec -it ${podname} -- bash -c "cd jaseci_serv; python3 manage.py test --parallel 8 --failfast -v 2 && flake8 --exclude=settings.py,*migrations*,jac_parse"; done
 #for podname in $(kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci_serv ${podname}:/; echo "Copy code to pod and test"; kubectl cp jaseci_core ${podname}:/;  kubectl exec -it ${podname} -- bash -c "cd jaseci_core; source install_live.sh"; kubectl exec -it ${podname} -- bash -c "cd jaseci_serv; python3 manage.py test --failfast -v 0 && flake8 --exclude=settings.py,*migrations*,jac_parse"; done
