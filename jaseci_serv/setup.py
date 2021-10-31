@@ -20,6 +20,6 @@ setup(
     # package_data={"": ["*.ini"], },
     entry_points={
         'console_scripts': [
-            'jsserv = jaseci_serv.manage:main'
+            'jsserv = jaseci_serv.jsserv:main'
         ]
     })
