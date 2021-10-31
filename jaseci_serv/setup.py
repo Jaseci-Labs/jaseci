@@ -3,6 +3,7 @@ setup(
     name='jaseci_serv',
     version='1.2.1',
     packages=find_packages(include=['jaseci_serv', 'jaseci_serv.*']),
+    scripts=['manage.py'],
     install_requires=[
         'jaseci',
         'Django>=3.0.3,<3.1.0',
@@ -20,6 +21,6 @@ setup(
     # package_data={"": ["*.ini"], },
     entry_points={
         'console_scripts': [
-            'jsserv = jaseci_serv.jsserv:main'
+            'jsserv = jaseci_serv.manage:main'
         ]
     })
