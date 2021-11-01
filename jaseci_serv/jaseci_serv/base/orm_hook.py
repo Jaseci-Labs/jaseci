@@ -10,7 +10,7 @@ from jaseci.utils import utils
 from jaseci.utils.utils import logger
 import jaseci as core_mod
 from jaseci.utils.mem_hook import mem_hook, json_str_to_jsci_dict
-from jaseci_serv.settings import REDIS_HOST
+from jaseci_serv. jaseci_serv.settings import REDIS_HOST
 from redis import Redis
 import uuid
 import json
@@ -18,10 +18,10 @@ import json
 
 def find_class_and_import(j_type, core_mod):
     if(j_type == 'master'):
-        from base.models import master
+        from jaseci_serv.base.models import master
         return master
     elif(j_type == 'super_master'):
-        from base.models import super_master
+        from jaseci_serv.base.models import super_master
         return super_master
     else:
         return utils.find_class_and_import(j_type, core_mod)

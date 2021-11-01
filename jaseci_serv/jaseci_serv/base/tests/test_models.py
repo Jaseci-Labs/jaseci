@@ -1,8 +1,8 @@
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from base import models
-from obj_api.views import JaseciObjectSerializer
+from jaseci_serv.base import models
+from jaseci_serv.obj_api.views import JaseciObjectSerializer
 from jaseci.element import element
 from jaseci.element.super_master import super_master
 

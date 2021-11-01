@@ -4,9 +4,9 @@ from datetime import datetime
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, \
     PermissionsMixin
-from jaseci_serv.settings import JASECI_CONFIGS
+from jaseci_serv.jaseci_serv.settings import JASECI_CONFIGS
 from django.contrib.auth import get_user_model
-from base.orm_hook import orm_hook
+from jaseci_serv.base.orm_hook import orm_hook
 from jaseci.element.master import master as core_master
 from jaseci.element.super_master import super_master as core_super
 
@@ -27,7 +27,7 @@ class master(core_master):
         data = {'email': name}
         for i in other_fields.keys():
             data[i] = other_fields[i]
-        from user_api.serializers import UserSerializer
+        from jaseci_serv.user_api.serializers import UserSerializer
         serializer = UserSerializer(data=data)
         if(serializer.is_valid(raise_exception=False)):
             mas = serializer.save().get_master()
@@ -61,7 +61,7 @@ class super_master(master, core_super):
         data = {'email': name}
         for i in other_fields.keys():
             data[i] = other_fields[i]
-        from user_api.serializers import SuperUserSerializer
+        from jaseci_serv.user_api.serializers import SuperUserSerializer
         serializer = SuperUserSerializer(data=data)
         if(serializer.is_valid(raise_exception=False)):
             mas = serializer.save().get_master()

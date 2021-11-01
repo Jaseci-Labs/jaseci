@@ -1,7 +1,7 @@
 """
 This module includes code related to configuring Jaseci's mail serving
 """
-from base.models import lookup_global_config
+from jaseci_serv.base.models import lookup_global_config
 from django.core import mail
 from jaseci.utils.utils import logger
 

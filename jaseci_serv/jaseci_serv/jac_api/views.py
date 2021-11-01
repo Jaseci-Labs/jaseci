@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from jaseci.utils.utils import logger
 from jaseci.api.public_api import public_api
 from jaseci.element.element import element
-from base.orm_hook import orm_hook
-from base.models import JaseciObject, GlobalVars
+from jaseci_serv.base.orm_hook import orm_hook
+from jaseci_serv.base.models import JaseciObject, GlobalVars
 from time import time
 
 

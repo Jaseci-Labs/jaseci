@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 
-from base.models import GlobalVars
+from jaseci_serv.base.models import GlobalVars
 from jaseci.utils.mem_hook import mem_hook
 
 # Alias for create user
