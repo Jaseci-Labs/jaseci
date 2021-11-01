@@ -3,7 +3,6 @@ setup(
     name='jaseci_serv',
     version='1.2.1',
     packages=find_packages(include=['jaseci_serv', 'jaseci_serv.*']),
-    scripts=['manage.py'],
     install_requires=[
         'jaseci',
         'Django>=3.0.3,<3.1.0',
