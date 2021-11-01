@@ -21,11 +21,10 @@ data:
     git clone https://github.com/Jaseci-Labs/jaseci.git
     cd jaseci;
     cd jaseci_core; source install.sh;
-    mv ../jaseci_serv /; cd /jaseci_serv
-    pip3 install -r requirements.txt;
-    python3 manage.py wait_for_db && python3 manage.py makemigrations base &&
-    python3 manage.py makemigrations && python3 manage.py migrate;
-    python3 manage.py runserver 0.0.0.0:80;
+    cd ../jaseci_serv; source install.sh;
+    jsserv wait_for_db && jsserv makemigrations base &&
+    jsserv makemigrations && jsserv migrate;
+    jsserv runserver 0.0.0.0:80;
 ---
 apiVersion: apps/v1
 kind: Deployment
