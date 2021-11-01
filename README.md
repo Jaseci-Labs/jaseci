@@ -2,8 +2,9 @@
 
 ## Version 1.2.1
 
-### Features
+### Updates
 
+- Both jaseci and jaseci_serv are architected to be standalone packages
 - Stripe API integrated
 - EMails can be templated with HTML content
 - Token expiry time can be set as config through live api
@@ -13,7 +14,7 @@
 
 ## Version 1.2.0
 
-### Features
+### Updates
 
 - New Hierarchal user creation and management through core Jaseci
 - New version labels for Jac programs

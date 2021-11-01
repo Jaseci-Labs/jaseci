@@ -80,7 +80,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'jaseci_serv.wsgi.application'
+WSGI_APPLICATION = 'jaseci_serv.jaseci_serv.wsgi.application'
 
 
 # Database
