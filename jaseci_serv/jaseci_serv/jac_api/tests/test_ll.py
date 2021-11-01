@@ -9,6 +9,7 @@ import uuid
 import base64
 import datetime
 import random
+import os
 
 
 class test_ll(TestCaseHelper, TestCase):
@@ -22,8 +23,9 @@ class test_ll(TestCaseHelper, TestCase):
         )
         self.client = APIClient()
         self.client.force_authenticate(self.user)
+        ll_loc = os.path.dirname(__file__) + '/ll.jac'
         ll_file = base64.b64encode(
-            open("jac_api/tests/ll.jac").read().encode()).decode()
+            open(ll_loc).read().encode()).decode()
         payload = {'op': 'sentinel_register',
                    'name': 'Something', 'code': ll_file, 'encoded': True}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)

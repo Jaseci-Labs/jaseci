@@ -15,9 +15,9 @@ setup(
         'sphinx>=2.4.3,<2.5.0',
         'sphinx_rtd_theme',
         'django-cors-headers',
-
+        'tblib'
     ],
-    # package_data={"": ["*.ini"], },
+    package_data={"": ["*.jac"], },
     entry_points={
         'console_scripts': [
             'jsserv = jaseci_serv.manage:main'

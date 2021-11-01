@@ -10,6 +10,7 @@ from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 
 import uuid
+import os
 
 
 class PublicJacApiTests(TestCaseHelper, TestCase):
@@ -46,7 +47,8 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
 
     def test_public_jac_apis_walker_summon_auth(self):
         """Test public API for summoning walker"""
-        zsb_file = open("jac_api/tests/zsb.jac").read()
+        zsb_file = open(os.path.dirname(__file__) +
+                        "/zsb.jac").read()
         payload = {'op': 'sentinel_register', 'name': 'zsb',
                    'code': zsb_file}
         res = self.auth_client.post(
@@ -73,7 +75,8 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
 
     def test_serverside_sentinel_global_public_access_summon(self):
         """Test master delete operation"""
-        zsb_file = open("jac_api/tests/zsb.jac").read()
+        zsb_file = open(os.path.dirname(__file__) +
+                        "/zsb.jac").read()
         payload = {'op': 'sentinel_register', 'name': 'zsb',
                    'code': zsb_file}
         res = self.sauth_client.post(
@@ -626,7 +629,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_serverside_sentinel_register_global(self):
         """Test master delete operation"""
-        zsb_file = open("jac_api/tests/zsb.jac").read()
+        zsb_file = open(os.path.dirname(__file__) +
+                        "/zsb.jac").read()
         payload = {'op': 'sentinel_register', 'name': 'zsb',
                    'code': zsb_file}
         res = self.sclient.post(
@@ -664,7 +668,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_serverside_sentinel_unregister_global(self):
         """Test master delete operation"""
-        zsb_file = open("jac_api/tests/zsb.jac").read()
+        zsb_file = open(os.path.dirname(__file__) +
+                        "/zsb.jac").read()
         payload = {'op': 'sentinel_register', 'name': 'zsb',
                    'code': zsb_file}
         res = self.sclient.post(
@@ -708,7 +713,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_serverside_sentinel_register_pull(self):
         """Test master delete operation"""
-        zsb_file = open("jac_api/tests/zsb.jac").read()
+        zsb_file = open(os.path.dirname(__file__) +
+                        "/zsb.jac").read()
         payload = {'op': 'sentinel_register', 'name': 'zsb',
                    'code': zsb_file}
         res = self.sclient.post(

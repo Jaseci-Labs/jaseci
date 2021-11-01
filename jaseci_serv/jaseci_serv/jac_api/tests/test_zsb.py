@@ -7,6 +7,7 @@ from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 import uuid
 import base64
+import os
 
 
 class test_zsb(TestCaseHelper, TestCase):
@@ -21,8 +22,9 @@ class test_zsb(TestCaseHelper, TestCase):
         self.client = APIClient()
         self.client.force_authenticate(self.user)
         self.master = self.user.get_master()
+        zsb_loc = os.path.dirname(__file__) + '/zsb.jac'
         ll_file = base64.b64encode(
-            open("jac_api/tests/zsb.jac").read().encode()).decode()
+            open(zsb_loc).read().encode()).decode()
         payload = {'op': 'sentinel_register',
                    'name': 'Something', 'code': ll_file, 'encoded': True}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
