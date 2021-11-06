@@ -1,4 +1,5 @@
 from .ai_serving_api import AIServingAPI
+import numpy as np
 
 USE_API = AIServingAPI('USE')
 USE_ENCODER_API = AIServingAPI('USE_ENCODER')
@@ -38,11 +39,13 @@ def dist_score(param_list, meta):
     Param 1 - First encoding from text
     Param 2 - Second ecoding from text
     """
-    data = {
-        'op': 'dist_score',
-        'encoding': [param_list[0], param_list[1]]
-    }
-    return USE_API.post(data)['score']
+    # data = {
+    #     'op': 'dist_score',
+    #     'encoding': [param_list[0], param_list[1]]
+    # }
+    # return USE_API.post(data)['score']
+    return np.inner(
+        param_list[0], param_list[1]).tolist()
 
 
 def qa_score(param_list, meta):
