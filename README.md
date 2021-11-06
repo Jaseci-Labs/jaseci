@@ -1,5 +1,9 @@
 # Jaseci Release Notes
 
+## Version 1.2.2
+
+### Updates
+
 ## Version 1.2.1
 
 ### Updates
