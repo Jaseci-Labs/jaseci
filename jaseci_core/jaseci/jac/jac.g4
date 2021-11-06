@@ -278,6 +278,7 @@ KW_BY: 'by';
 KW_WHILE: 'while';
 KW_CONTINUE: 'continue';
 KW_BREAK: 'break';
+KW_TRY: 'try';
 KW_DISENGAGE: 'disengage';
 KW_SKIP: 'skip';
 KW_REPORT: 'report';
