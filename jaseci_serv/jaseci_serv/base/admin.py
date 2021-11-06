@@ -43,6 +43,8 @@ class JaseciObjectAdmin (admin.ModelAdmin):
     ordering = ['j_timestamp']
     list_display = ('jid', 'name', 'j_type', 'j_parent',
                     'j_master', 'j_timestamp')
+    search_fields = ['jid', 'name', 'j_type', 'j_parent',
+                     'j_master', 'j_timestamp', ]
 
 
 admin.site.register(models.JaseciObject, JaseciObjectAdmin)
@@ -51,6 +53,7 @@ admin.site.register(models.JaseciObject, JaseciObjectAdmin)
 class GlobalVarsAdmin (admin.ModelAdmin):
     ordering = ['name']
     list_display = ('name', 'value')
+    search_fields = ['name', 'value']
 
 
 admin.site.register(models.GlobalVars, GlobalVarsAdmin)
