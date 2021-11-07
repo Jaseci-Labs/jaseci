@@ -16,14 +16,23 @@ from jaseci.element.super_master import super_master
 from jaseci.api.public_api import public_api
 from .book_tools import book
 
-session = {
-    "filename": "js.session",
-    "user": [super_master(h=mem_hook(), name='admin')],
-    "mem-only": False
-}
-session['master'] = session['user'][0]
+session = None
+connection = None
 
-connection = {'url': None, 'token': None, 'headers': None}
+
+def reset_state():
+    global session, connection
+    session = {
+        "filename": "js.session",
+        "user": [super_master(h=mem_hook(), name='admin')],
+        "mem-only": session["mem-only"] if session is not None else False
+    }
+    session['master'] = session['user'][0]
+
+    connection = {'url': None, 'token': None, 'headers': None}
+
+
+reset_state()
 
 
 def blank_func():
@@ -235,6 +244,11 @@ def clear():
     click.clear()
 
 
+@click.command(help="Reset jsctl (clears state)")
+def reset():
+    reset_state()
+
+
 @click.command(help="Internal book generation tools")
 @click.argument("op", type=str, default='cheatsheet', required=True)
 @click.option('--output', '-o', default='', required=False, type=str,
@@ -256,6 +270,7 @@ cli.add_command(login)
 cli.add_command(edit)
 cli.add_command(ls)
 cli.add_command(clear)
+cli.add_command(reset)
 cli.add_command(tool)
 cmd_tree_builder(extract_api_tree())
 

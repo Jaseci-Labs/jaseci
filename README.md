@@ -4,6 +4,8 @@
 
 ### Updates
 
+- Added reset command to jsctl to clear complete state
+
 ## Version 1.2.1
 
 ### Updates

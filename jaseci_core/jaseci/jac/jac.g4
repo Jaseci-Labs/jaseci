@@ -1,9 +1,6 @@
 grammar jac;
 
-/* Sentinels handle these top rules */
 start: ver_label? element+ EOF;
-
-ver_label: 'version' COLON STRING;
 
 element: architype | walker;
 
@@ -17,6 +14,8 @@ walker:
 		statement
 		| walk_activity_block
 	)* walk_exit_block? RBRACE;
+
+ver_label: 'version' COLON STRING SEMI?;
 
 namespace_list: COLON NAME (COMMA NAME)* |;
 
@@ -47,7 +46,7 @@ has_stmt:
 
 has_assign: NAME | NAME EQ expression;
 
-/* Need to be heavily simplified */ can_stmt:
+can_stmt:
 	KW_CAN dotted_name preset_in_out? event_clause? (
 		COMMA dotted_name preset_in_out? event_clause?
 	)* SEMI
@@ -278,7 +277,6 @@ KW_BY: 'by';
 KW_WHILE: 'while';
 KW_CONTINUE: 'continue';
 KW_BREAK: 'break';
-KW_TRY: 'try';
 KW_DISENGAGE: 'disengage';
 KW_SKIP: 'skip';
 KW_REPORT: 'report';
