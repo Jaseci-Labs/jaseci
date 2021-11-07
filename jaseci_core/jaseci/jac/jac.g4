@@ -1,9 +1,6 @@
 grammar jac;
 
-/* Sentinels handle these top rules */
 start: ver_label? element+ EOF;
-
-ver_label: 'version' COLON STRING;
 
 element: architype | walker;
 
@@ -17,6 +14,8 @@ walker:
 		statement
 		| walk_activity_block
 	)* walk_exit_block? RBRACE;
+
+ver_label: 'version' COLON STRING SEMI?;
 
 namespace_list: COLON NAME (COMMA NAME)* |;
 
@@ -47,7 +46,7 @@ has_stmt:
 
 has_assign: NAME | NAME EQ expression;
 
-/* Need to be heavily simplified */ can_stmt:
+can_stmt:
 	KW_CAN dotted_name preset_in_out? event_clause? (
 		COMMA dotted_name preset_in_out? event_clause?
 	)* SEMI
@@ -133,19 +132,11 @@ term: factor ((MUL | DIV | MOD) factor)*;
 
 factor: (PLUS | MINUS) factor | power;
 
-power: func_call (POW factor)* | func_call index+;
+power: func_call (POW factor)*;
 
 func_call:
 	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
-	| atom DOT func_built_in
 	| atom? DBL_COLON NAME spawn_ctx?;
-
-func_built_in:
-	| KW_LENGTH
-	| KW_KEYS
-	| KW_EDGE
-	| KW_NODE
-	| KW_DESTROY LPAREN expression RPAREN;
 
 atom:
 	INT
@@ -158,7 +149,19 @@ atom:
 	| dotted_name
 	| LPAREN expression RPAREN
 	| spawn
+	| atom DOT func_built_in
+	| atom index+
 	| DEREF expression;
+
+func_built_in:
+	| KW_LENGTH
+	| KW_KEYS
+	| KW_EDGE
+	| KW_NODE
+	| KW_CONTEXT
+	| KW_INFO
+	| KW_DETAILS
+	| KW_DESTROY LPAREN expression RPAREN;
 
 node_edge_ref: node_ref | edge_ref (node_ref)?;
 
@@ -252,6 +255,9 @@ KW_ENTRY: 'entry';
 KW_EXIT: 'exit';
 KW_LENGTH: 'length';
 KW_KEYS: 'keys';
+KW_CONTEXT: 'context';
+KW_INFO: 'info';
+KW_DETAILS: 'details';
 KW_ACTIVITY: 'activity';
 COLON: ':';
 DBL_COLON: '::';

@@ -1,5 +1,14 @@
 # Jaseci Release Notes
 
+## Version 1.2.2
+
+### Updates
+
+- Added new built-ins for nodes and edges (context, info, and details)
+- Fixed dot output
+- Added reset command to jsctl to clear complete state
+- Various language grammar tweaks
+
 ## Version 1.2.1
 
 ### Updates

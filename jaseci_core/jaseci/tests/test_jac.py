@@ -390,3 +390,17 @@ class jac_tests(TestCaseHelper, TestCase):
                 self.assertEqual(len(i.context['a'].split('-')[0]), 8)
                 num += 1
         self.assertEqual(num, 1)
+
+    def test_visibility_builtins(self):
+        """Test builtins to see into nodes and edges"""
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.visibility_builtins)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertEqual(2, len(test_walker.report[0][0].keys()))
+        self.assertGreaterEqual(len(test_walker.report[0][1].keys()), 7)
+        self.assertLess(len(test_walker.report[0][1].keys()), 16)
+        self.assertGreaterEqual(len(test_walker.report[0][2].keys()), 16)
