@@ -167,7 +167,7 @@ class edge(element, anchored):
             for k, v in edge_dict.items():
                 if(not isinstance(v, str) or v == ""):
                     continue
-                dstr += f'{k}="{v[:32]}"'
+                dstr += f', {k}="{v[:32]}"'
 
         dstr += ' ]'
 
