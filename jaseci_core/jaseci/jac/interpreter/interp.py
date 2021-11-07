@@ -548,7 +548,7 @@ class interp(machine_state):
 
     def run_power(self, jac_ast):
         """
-        power: func_call (POW factor)* | func_call index+;
+        power: func_call (POW factor)*;
         """
         kid = jac_ast.kid
         result = self.run_func_call(kid[0])
@@ -562,24 +562,11 @@ class interp(machine_state):
                 if(not kid):
                     break
             return result
-        elif (kid[0].name == "index"):
-            if(isinstance(result, list) or isinstance(result, dict)):
-                for i in kid:
-                    if(i.name == 'index'):
-                        result = result[self.run_index(i)]
-                result = self._jac_scope.reference_to_value(result)
-                return result
-            else:
-                self.rt_error(f'Cannot index into {result}'
-                              f' of type {type(result)}!',
-                              kid[0])
-                return 0
 
     def run_func_call(self, jac_ast):
         """
         func_call:
             atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
-            | atom DOT func_built_in
             | atom? DBL_COLON NAME spawn_ctx?;
         """
         kid = jac_ast.kid
@@ -589,8 +576,7 @@ class interp(machine_state):
             kid = kid[1:]
         if(len(kid) < 1):
             return atom_res
-        elif(kid[0].name == 'DOT'):
-            return self.run_func_built_in(atom_res, kid[1])
+
         elif (kid[0].name == 'DBL_COLON'):
             m = interp(parent_override=self.parent(), m_id=self._m_id)
             m.push_scope(jac_scope(parent=atom_res,
@@ -704,6 +690,8 @@ class interp(machine_state):
             | dotted_name
             | LPAREN expression RPAREN
             | spawn
+            | atom DOT func_built_in
+            | atom index+
             | DEREF expression;
         """
         kid = jac_ast.kid
@@ -721,6 +709,23 @@ class interp(machine_state):
                                                 kid[0])
         elif(kid[0].name == 'LPAREN'):
             return self.run_expression(kid[1])
+        elif(kid[0].name == 'atom'):
+            atom_res = self.run_atom(kid[0])
+            kid = kid[1:]
+            if(kid[0].name == 'DOT'):
+                return self.run_func_built_in(atom_res, kid[1])
+            elif (kid[0].name == "index"):
+                if(isinstance(atom_res, list) or isinstance(atom_res, dict)):
+                    for i in kid:
+                        if(i.name == 'index'):
+                            atom_res = atom_res[self.run_index(i)]
+                    atom_res = self._jac_scope.reference_to_value(atom_res)
+                    return atom_res
+                else:
+                    self.rt_error(f'Cannot index into {atom_res}'
+                                  f' of type {type(atom_res)}!',
+                                  kid[0])
+                    return 0
         elif (kid[0].name == 'DEREF'):
             result = self.run_expression(kid[1])
             if (self.rt_check_type(result, element, kid[1])):

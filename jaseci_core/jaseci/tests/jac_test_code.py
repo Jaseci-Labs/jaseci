@@ -608,6 +608,29 @@ edge_access = \
     }
     """
 
+edge_access_subref = \
+    """
+    node test;
+
+    edge apple {
+        has v1, v2;
+    }
+
+    edge banana {
+        has x1, x2;
+    }
+
+    walker init {
+        root {
+            a = spawn here -[apple]-> node::test;
+            b = spawn here -[banana]-> node::test;
+
+            -[apple]->.edge[0].v1 = 7;
+            --> node::test.edge[1].x1=8;
+        }
+    }
+    """
+
 has_assign = \
     """
     node test {

@@ -13,7 +13,6 @@ setup(
         'markdown>=3.2.1,<3.3.0',
         'psycopg2-binary>=2,<3',
         'sphinx>=2.4.3,<2.5.0',
-        'sphinx_rtd_theme',
         'django-cors-headers',
         'tblib'
     ],
