@@ -612,6 +612,9 @@ class interp(machine_state):
             | KW_KEYS
             | KW_EDGE
             | KW_NODE
+            | KW_CONTEXT
+            | KW_INFO
+            | KW_DETAILS
             | KW_DESTROY LPAREN expression RPAREN;
         """
         kid = jac_ast.kid
@@ -647,7 +650,6 @@ class interp(machine_state):
             else:
                 self.rt_error(f'Cannot get edges from {atom_res}. '
                               f'Type {type(atom_res)} invalid', kid[0])
-                return atom_res
         # may want to remove 'here" node from return below
         elif (kid[0].name == "KW_NODE"):
             if(isinstance(atom_res, node)):
@@ -666,7 +668,15 @@ class interp(machine_state):
             else:
                 self.rt_error(f'Cannot get edges from {atom_res}. '
                               f'Type {type(atom_res)} invalid', kid[0])
-                return atom_res
+        elif (kid[0].name == "KW_CONTEXT"):
+            if(self.rt_check_type(atom_res, [node, edge])):
+                return atom_res.context
+        elif (kid[0].name == "KW_INFO"):
+            if(self.rt_check_type(atom_res, [node, edge])):
+                return atom_res.serialize(detailed=False)
+        elif (kid[0].name == "KW_DETAILS"):
+            if(self.rt_check_type(atom_res, [node, edge])):
+                return atom_res.serialize(detailed=True)
         elif (kid[0].name == "KW_DESTROY"):
             idx = self.run_expression(kid[2])
             if (isinstance(atom_res, list) and isinstance(idx, int)):
@@ -675,7 +685,7 @@ class interp(machine_state):
             else:
                 self.rt_error(f'Cannot remove index {idx} from {atom_res}.',
                               kid[0])
-                return atom_res
+        return atom_res
 
     def run_atom(self, jac_ast):
         """

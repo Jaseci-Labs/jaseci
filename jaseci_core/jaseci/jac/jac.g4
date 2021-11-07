@@ -158,6 +158,9 @@ func_built_in:
 	| KW_KEYS
 	| KW_EDGE
 	| KW_NODE
+	| KW_CONTEXT
+	| KW_INFO
+	| KW_DETAILS
 	| KW_DESTROY LPAREN expression RPAREN;
 
 node_edge_ref: node_ref | edge_ref (node_ref)?;
@@ -252,6 +255,9 @@ KW_ENTRY: 'entry';
 KW_EXIT: 'exit';
 KW_LENGTH: 'length';
 KW_KEYS: 'keys';
+KW_CONTEXT: 'context';
+KW_INFO: 'info';
+KW_DETAILS: 'details';
 KW_ACTIVITY: 'activity';
 COLON: ':';
 DBL_COLON: '::';
