@@ -316,6 +316,23 @@ class jac_tests(TestCaseHelper, TestCase):
             self.assertEqual(edges[1].context['v1'], 7)
             self.assertEqual(edges[0].context['x1'], 8)
 
+    def test_accessing_edges_subref(self):
+        """Test accessing Edges"""
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.edge_access_subref)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        edges = gph.get_all_edges()
+        if(edges[0].name == 'apple'):
+            self.assertEqual(edges[0].context['v1'], 7)
+            self.assertEqual(edges[1].context['x1'], 8)
+        else:
+            self.assertEqual(edges[1].context['v1'], 7)
+            self.assertEqual(edges[0].context['x1'], 8)
+
     def test_has_assign(self):
         """Test assignment on definition"""
         gph = graph(m_id='anon', h=mem_hook())
