@@ -173,11 +173,11 @@ graph_ref: KW_GRAPH DBL_COLON NAME;
 
 edge_ref: edge_to | edge_from | edge_any;
 
-edge_to: '-->' | '-' ('[' NAME ']')? '->';
+edge_to: '-->' | '-' ('[' NAME spawn_ctx? ']')? '->';
 
-edge_from: '<--' | '<-' ('[' NAME ']')? '-';
+edge_from: '<--' | '<-' ('[' NAME spawn_ctx? ']')? '-';
 
-edge_any: '<-->' | '<-' ('[' NAME ']')? '->';
+edge_any: '<-->' | '<-' ('[' NAME spawn_ctx? ']')? '->';
 
 list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
 
