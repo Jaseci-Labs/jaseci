@@ -757,3 +757,39 @@ visibility_builtins = \
         }
     }
     """
+
+spawn_ctx_edge_node = \
+    """
+    node person: has name, age, birthday, profession;
+    edge friend: has meeting_place;
+    edge family: has type;
+
+    walker init {
+        person1 = spawn here -[friend(meeting_place = "college")]->
+            node::person(name = "Josh", age = 32);
+        person2 = spawn here -[family(type = "sister")] ->
+            node::person(name = "Jane", age = 30);
+
+        for i in -->{
+            report i.context;
+            report i.edge[0].context;
+        }
+    }
+    """
+
+filter_ctx_edge_node = \
+    """
+    node person: has name, age, birthday, profession;
+    edge friend: has meeting_place;
+    edge family: has type;
+
+    walker init {
+        person1 = spawn here -[friend(meeting_place = "college")]->
+            node::person(name = "Josh", age = 32);
+        person2 = spawn here -[family(type = "sister")] ->
+            node::person(name = "Jane", age = 30);
+
+        report --> node::person(name=='Jane')[0].context;
+        report -[family(type=="brother")]->;
+    }
+    """
