@@ -1096,26 +1096,44 @@ class interp(machine_state):
             self.rt_error(f'{name} not present in object', kid[0])
             return False
 
-    def run_filter_by_ctx(self, jac_ast, obj):
+    def run_filter_ctx(self, jac_ast, obj):
         """
-        spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
+        filter_ctx:
+                LPAREN (filter_compare (COMMA filter_compare)*)? RPAREN;
         """
         kid = jac_ast.kid
         ret = jac_set(self)
-        filter_scope = {}
-        for i in kid:
-            if (i.name == 'assignment'):
-                self.run_assignment(i, assign_scope=filter_scope)
         for i in obj.obj_list():
-            skip = False
-            for j in filter_scope.keys():
-                if(j not in i.context.keys()):
-                    skip = True
-                elif(i.context[j] != filter_scope[j]):
-                    skip = True
-            if(not skip):
-                ret.add_obj()
-        return jac_set(self)
+            for j in kid:
+                if (j.name == 'filter_compare'):
+                    if(self.run_filter_compare(j, i)):
+                        ret.add_obj(i)
+        return ret
+
+    def run_spawn_assign(self, jac_ast, obj):
+        """
+        spawn_assign: NAME EQ expression;
+        """
+        kid = jac_ast.kid
+        name = kid[0].token_text()
+        if(name in obj.context.keys()):
+            result = self.run_expression(kid[-1])
+            obj.context[name] = result
+        else:
+            self.rt_error(f'{name} not present in object', kid[0])
+
+    def run_filter_compare(self, jac_ast, obj):
+        """
+        filter_compare: NAME cmp_op expression;
+        """
+        kid = jac_ast.kid
+        name = kid[0].token_text()
+        if(name in obj.context.keys()):
+            result = self.run_expression(kid[-1])
+            return self.run_cmp_op(kid[1], obj.context[name], result)
+        else:
+            self.rt_error(f'{name} not present in object', kid[0])
+            return False
 
     def run_dotted_name(self, jac_ast):
         """
