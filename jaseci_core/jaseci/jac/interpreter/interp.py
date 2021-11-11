@@ -343,7 +343,7 @@ class interp(machine_state):
         kid = jac_ast.kid
         if (len(kid) < 2):
             if (assign_scope is not None):
-                self.rt_error("Can only use '=' with spawn", kid[0])
+                self.rt_error("Can only use '=' here", kid[0])
             assign_func = getattr(self, f'run_{kid[0].name}')
             return assign_func(kid[0])
         var_name = self.run_dotted_name(kid[0])
@@ -832,11 +832,13 @@ class interp(machine_state):
             else:
                 result = edge(m_id=self._m_id, h=self._h,
                               kind='edge', name='generic')
+                if(kid[0].kid[3].name == 'spawn_ctx'):
+                    self.run_spawn_ctx(kid[0].kid[3], result)
             return result
 
     def run_edge_to(self, jac_ast):
         """
-        edge_to: '-' ('[' NAME ']')? '->';
+        edge_to: '-' ('[' NAME spawn_ctx? ']')? '->';
         """
         kid = jac_ast.kid
         result = jac_set(self)
@@ -845,11 +847,13 @@ class interp(machine_state):
             if (len(kid) > 2 and i.name != kid[2].token_text()):
                 continue
             result.add_obj(i)
+        if(len(kid) > 2 and kid[3].name == 'spawn_ctx'):
+            result = self.run_filter_by_ctx(kid[3], result)
         return result
 
     def run_edge_from(self, jac_ast):
         """
-        edge_from: '<-' ('[' NAME ']')? '-';
+        edge_from: '<-' ('[' NAME spawn_ctx? ']')? '-';
         """
         kid = jac_ast.kid
         result = jac_set(self)
@@ -858,11 +862,13 @@ class interp(machine_state):
             if (len(kid) > 2 and i.name != kid[2].token_text()):
                 continue
             result.add_obj(i)
+        if(len(kid) > 2 and kid[3].name == 'spawn_ctx'):
+            result = self.run_filter_by_ctx(kid[3], result)
         return result
 
     def run_edge_any(self, jac_ast):
         """
-        edge_any: '<-' ('[' NAME ']')? '->';
+        edge_any: '<-' ('[' NAME spawn_ctx? ']')? '->';
         NOTE: these do not use strict bidirected semantic but any edge
         """
         kid = jac_ast.kid
@@ -871,6 +877,8 @@ class interp(machine_state):
             if (len(kid) > 2 and i.name != kid[2].token_text()):
                 continue
             result.add_obj(i)
+        if(len(kid) > 2 and kid[3].name == 'spawn_ctx'):
+            result = self.run_filter_by_ctx(kid[3], result)
         return result
 
     def run_list_val(self, jac_ast):
@@ -998,7 +1006,7 @@ class interp(machine_state):
             location.attach_bidirected(result, [use_edge])
         return result
 
-    def run_spawn_ctx(self, jac_ast, obj):
+    def run_spawn_ctx(self, jac_ast, obj, filter_mode=False):
         """
         spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
         """
@@ -1006,6 +1014,27 @@ class interp(machine_state):
         for i in kid:
             if (i.name == 'assignment'):
                 self.run_assignment(i, assign_scope=obj.context)
+
+    def run_filter_by_ctx(self, jac_ast, obj):
+        """
+        spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
+        """
+        kid = jac_ast.kid
+        ret = jac_set(self)
+        filter_scope = {}
+        for i in kid:
+            if (i.name == 'assignment'):
+                self.run_assignment(i, assign_scope=filter_scope)
+        for i in obj.obj_list():
+            skip = False
+            for j in filter_scope.keys():
+                if(j not in i.context.keys()):
+                    skip = True
+                elif(i.context[j] != filter_scope[j]):
+                    skip = True
+            if(not skip):
+                ret.add_obj()
+        return jac_set(self)
 
     def run_dotted_name(self, jac_ast):
         """
