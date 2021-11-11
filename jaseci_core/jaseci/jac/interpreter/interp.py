@@ -1096,6 +1096,27 @@ class interp(machine_state):
             self.rt_error(f'{name} not present in object', kid[0])
             return False
 
+    def run_filter_by_ctx(self, jac_ast, obj):
+        """
+        spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
+        """
+        kid = jac_ast.kid
+        ret = jac_set(self)
+        filter_scope = {}
+        for i in kid:
+            if (i.name == 'assignment'):
+                self.run_assignment(i, assign_scope=filter_scope)
+        for i in obj.obj_list():
+            skip = False
+            for j in filter_scope.keys():
+                if(j not in i.context.keys()):
+                    skip = True
+                elif(i.context[j] != filter_scope[j]):
+                    skip = True
+            if(not skip):
+                ret.add_obj()
+        return jac_set(self)
+
     def run_dotted_name(self, jac_ast):
         """
         dotted_name: NAME (DOT NAME)*;
