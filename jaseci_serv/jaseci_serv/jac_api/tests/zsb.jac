@@ -4,7 +4,7 @@ node bot { has anchor name; }
 node log_chunk { has history; }
 
 node answer {
-    has text, encoding;
+    has text, show_text, encoding;
     has qlinks;
 }
 

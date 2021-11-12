@@ -801,7 +801,7 @@ class interp(machine_state):
         elif (kid[0].name == 'edge_ref'):
             result = self.edge_to_node_jac_set(self.run_edge_ref(kid[0]))
             if(len(kid) > 1 and kid[1].name == 'node_ref'):
-                nres = self.run_node_ref(kid[0])
+                nres = self.run_node_ref(kid[1])
                 if(len(kid) > 2):
                     nres = self.run_filter_ctx(kid[2], nres)
                 result = result * nres
