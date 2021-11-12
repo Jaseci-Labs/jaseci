@@ -1077,7 +1077,7 @@ class interp(machine_state):
         """
         kid = jac_ast.kid
         name = kid[0].token_text()
-        if(name in obj.context.keys()):
+        if(name in obj.context.keys() or obj.j_type == 'walker'):
             result = self.run_expression(kid[-1])
             obj.context[name] = result
         else:
