@@ -386,6 +386,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#cmp_op.
+    def enterCmp_op(self, ctx:jacParser.Cmp_opContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#cmp_op.
+    def exitCmp_op(self, ctx:jacParser.Cmp_opContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#nin.
     def enterNin(self, ctx:jacParser.NinContext):
         pass
@@ -617,6 +626,33 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#spawn_ctx.
     def exitSpawn_ctx(self, ctx:jacParser.Spawn_ctxContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#filter_ctx.
+    def enterFilter_ctx(self, ctx:jacParser.Filter_ctxContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#filter_ctx.
+    def exitFilter_ctx(self, ctx:jacParser.Filter_ctxContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#spawn_assign.
+    def enterSpawn_assign(self, ctx:jacParser.Spawn_assignContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#spawn_assign.
+    def exitSpawn_assign(self, ctx:jacParser.Spawn_assignContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#filter_compare.
+    def enterFilter_compare(self, ctx:jacParser.Filter_compareContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#filter_compare.
+    def exitFilter_compare(self, ctx:jacParser.Filter_compareContext):
         pass
 
 

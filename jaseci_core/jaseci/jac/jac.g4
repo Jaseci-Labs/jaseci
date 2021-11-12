@@ -118,11 +118,9 @@ connect: logical ( (NOT)? edge_ref expression)?;
 
 logical: compare ((KW_AND | KW_OR) compare)*;
 
-compare:
-	NOT compare
-	| arithmetic (
-		(EE | LT | GT | LTE | GTE | NE | KW_IN | nin) arithmetic
-	)*;
+compare: NOT compare | arithmetic (cmp_op arithmetic)*;
+
+cmp_op: EE | LT | GT | LTE | GTE | NE | KW_IN | nin;
 
 nin: NOT KW_IN;
 
@@ -163,7 +161,9 @@ func_built_in:
 	| KW_DETAILS
 	| KW_DESTROY LPAREN expression RPAREN;
 
-node_edge_ref: node_ref | edge_ref (node_ref)?;
+node_edge_ref:
+	node_ref filter_ctx?
+	| edge_ref (node_ref filter_ctx?)?;
 
 node_ref: KW_NODE DBL_COLON NAME;
 
@@ -173,11 +173,17 @@ graph_ref: KW_GRAPH DBL_COLON NAME;
 
 edge_ref: edge_to | edge_from | edge_any;
 
-edge_to: '-->' | '-' ('[' NAME ']')? '->';
+edge_to:
+	'-->'
+	| '-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
 
-edge_from: '<--' | '<-' ('[' NAME ']')? '-';
+edge_from:
+	'<--'
+	| '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '-';
 
-edge_any: '<-->' | '<-' ('[' NAME ']')? '->';
+edge_any:
+	'<-->'
+	| '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
 
 list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
 
@@ -197,7 +203,14 @@ graph_spawn: edge_ref graph_ref;
 
 walker_spawn: walker_ref spawn_ctx?;
 
-spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
+spawn_ctx: LPAREN (spawn_assign (COMMA spawn_assign)*)? RPAREN;
+
+filter_ctx:
+	LPAREN (filter_compare (COMMA filter_compare)*)? RPAREN;
+
+spawn_assign: NAME EQ expression;
+
+filter_compare: NAME cmp_op expression;
 
 /* DOT grammar below */
 dot_graph:

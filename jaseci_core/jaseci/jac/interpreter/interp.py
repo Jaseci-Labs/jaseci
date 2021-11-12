@@ -343,7 +343,7 @@ class interp(machine_state):
         kid = jac_ast.kid
         if (len(kid) < 2):
             if (assign_scope is not None):
-                self.rt_error("Can only use '=' with spawn", kid[0])
+                self.rt_error("Can only use '=' here", kid[0])
             assign_func = getattr(self, f'run_{kid[0].name}')
             return assign_func(kid[0])
         var_name = self.run_dotted_name(kid[0])
@@ -460,11 +460,7 @@ class interp(machine_state):
 
     def run_compare(self, jac_ast):
         """
-        compare:
-            NOT compare
-            | arithmetic (
-                (EE | LT | GT | LTE | GTE | NE | KW_IN | nin) arithmetic
-            )*;
+        compare: NOT compare | arithmetic (cmp_op arithmetic)*;
         """
         kid = jac_ast.kid
         if(kid[0].name == 'NOT'):
@@ -474,26 +470,33 @@ class interp(machine_state):
             kid = kid[1:]
             while (kid):
                 other_res = self.run_arithmetic(kid[1])
-                if(kid[0].name == 'EE'):
-                    result = result == other_res
-                elif(kid[0].name == 'LT'):
-                    result = result < other_res
-                elif(kid[0].name == 'GT'):
-                    result = result > other_res
-                elif(kid[0].name == 'LTE'):
-                    result = result <= other_res
-                elif(kid[0].name == 'GTE'):
-                    result = result >= other_res
-                elif(kid[0].name == 'NE'):
-                    result = result != other_res
-                elif(kid[0].name == 'KW_IN'):
-                    result = result in other_res
-                elif(kid[0].name == 'nin'):
-                    result = result not in other_res
+                result = self.run_cmp_op(kid[0], result, other_res)
                 kid = kid[2:]
                 if(not kid):
                     break
             return result
+
+    def run_cmp_op(self, jac_ast, val1, val2):
+        """
+        cmp_op: EE | LT | GT | LTE | GTE | NE | KW_IN | nin;
+        """
+        kid = jac_ast.kid
+        if(kid[0].name == 'EE'):
+            return val1 == val2
+        elif(kid[0].name == 'LT'):
+            return val1 < val2
+        elif(kid[0].name == 'GT'):
+            return val1 > val2
+        elif(kid[0].name == 'LTE'):
+            return val1 <= val2
+        elif(kid[0].name == 'GTE'):
+            return val1 >= val2
+        elif(kid[0].name == 'NE'):
+            return val1 != val2
+        elif(kid[0].name == 'KW_IN'):
+            return val1 in val2
+        elif(kid[0].name == 'nin'):
+            return val1 not in val2
 
     def run_arithmetic(self, jac_ast):
         """
@@ -669,13 +672,13 @@ class interp(machine_state):
                 self.rt_error(f'Cannot get edges from {atom_res}. '
                               f'Type {type(atom_res)} invalid', kid[0])
         elif (kid[0].name == "KW_CONTEXT"):
-            if(self.rt_check_type(atom_res, [node, edge])):
+            if(self.rt_check_type(atom_res, [node, edge], kid[0])):
                 return atom_res.context
         elif (kid[0].name == "KW_INFO"):
-            if(self.rt_check_type(atom_res, [node, edge])):
+            if(self.rt_check_type(atom_res, [node, edge], kid[0])):
                 return atom_res.serialize(detailed=False)
         elif (kid[0].name == "KW_DETAILS"):
-            if(self.rt_check_type(atom_res, [node, edge])):
+            if(self.rt_check_type(atom_res, [node, edge], kid[0])):
                 return atom_res.serialize(detailed=True)
         elif (kid[0].name == "KW_DESTROY"):
             idx = self.run_expression(kid[2])
@@ -744,40 +747,65 @@ class interp(machine_state):
         else:
             return getattr(self, f'run_{kid[0].name}')(kid[0])
 
+    # def run_node_edge_ref(self, jac_ast):
+    #     """
+    #     node_edge_ref:
+    #         node_ref filter_ctx?
+    #         | edge_ref (node_ref filter_ctx?)?;
+    #     """
+    #     kid = jac_ast.kid
+    #     is_nodeset = True
+    #     if(kid[0].name == 'KW_NODE'):
+    #         kid = kid[2:]
+    #     if(kid[0].name == 'KW_EDGE'):
+    #         kid = kid[2:]
+    #         is_nodeset = False
+
+    #     if(kid[0].name == 'node_ref'):
+    #         if(is_nodeset):
+    #             return self.run_node_ref(kid[0])
+    #         else:
+    #             return self.obj_set_to_jac_set(
+    #                 self.current_node.attached_edges(
+    #                     self.run_node_ref(kid[0])))
+    #     elif (kid[0].name == 'edge_ref'):
+    #         if(is_nodeset):
+    #             result = self.edge_to_node_jac_set(self.run_edge_ref(kid[0]))
+    #             if(len(kid) > 1 and kid[1].name == 'node_ref'):
+    #                 result = result * self.run_node_ref(kid[1])
+    #             return result
+    #         else:
+    #             result = self.run_edge_ref(kid[0])
+    #             if(kid[1].name == 'node_ref'):
+    #                 result = jac_set(
+    #                     self, inlist=[i for i in result if i in
+    #                                   self.obj_set_to_jac_set(
+    #                                       self.current_node.attached_edges(
+    #                                           self.run_node_ref(kid[1])))])
+    #             return result
+
     def run_node_edge_ref(self, jac_ast):
         """
-        node_edge_ref: node_ref | edge_ref (node_ref)?;
+        node_edge_ref:
+            node_ref filter_ctx?
+            | edge_ref (node_ref filter_ctx?)?;
         """
         kid = jac_ast.kid
-        is_nodeset = True
-        if(kid[0].name == 'KW_NODE'):
-            kid = kid[2:]
-        if(kid[0].name == 'KW_EDGE'):
-            kid = kid[2:]
-            is_nodeset = False
 
         if(kid[0].name == 'node_ref'):
-            if(is_nodeset):
-                return self.run_node_ref(kid[0])
-            else:
-                return self.obj_set_to_jac_set(
-                    self.current_node.attached_edges(
-                        self.run_node_ref(kid[0])))
+            result = self.run_node_ref(kid[0])
+            if(len(kid) > 1):
+                result = self.run_filter_ctx(kid[1], result)
+            return result
+
         elif (kid[0].name == 'edge_ref'):
-            if(is_nodeset):
-                result = self.edge_to_node_jac_set(self.run_edge_ref(kid[0]))
-                if(len(kid) > 1 and kid[1].name == 'node_ref'):
-                    result = result * self.run_node_ref(kid[1])
-                return result
-            else:
-                result = self.run_edge_ref(kid[0])
-                if(kid[1].name == 'node_ref'):
-                    result = jac_set(
-                        self, inlist=[i for i in result if i in
-                                      self.obj_set_to_jac_set(
-                                          self.current_node.attached_edges(
-                                              self.run_node_ref(kid[1])))])
-                return result
+            result = self.edge_to_node_jac_set(self.run_edge_ref(kid[0]))
+            if(len(kid) > 1 and kid[1].name == 'node_ref'):
+                nres = self.run_node_ref(kid[1])
+                if(len(kid) > 2):
+                    nres = self.run_filter_ctx(kid[2], nres)
+                result = result * nres
+            return result
 
     def run_node_ref(self, jac_ast, is_spawn=False):
         """
@@ -829,6 +857,10 @@ class interp(machine_state):
                 result = self.parent().run_architype(
                     kid[0].kid[2].token_text(), kind='edge',
                     caller=self)
+                if(kid[0].kid[3].name == 'spawn_ctx'):
+                    self.run_spawn_ctx(kid[0].kid[3], result)
+                elif(kid[0].kid[3].name == 'filter_ctx'):
+                    self.rt_error("Filtering not allowed here", kid[0].kid[3])
             else:
                 result = edge(m_id=self._m_id, h=self._h,
                               kind='edge', name='generic')
@@ -836,7 +868,9 @@ class interp(machine_state):
 
     def run_edge_to(self, jac_ast):
         """
-        edge_to: '-' ('[' NAME ']')? '->';
+        edge_to:
+            '-->'
+            | '-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
         """
         kid = jac_ast.kid
         result = jac_set(self)
@@ -845,11 +879,17 @@ class interp(machine_state):
             if (len(kid) > 2 and i.name != kid[2].token_text()):
                 continue
             result.add_obj(i)
+        if(len(kid) > 2 and kid[3].name == 'filter_ctx'):
+            result = self.run_filter_ctx(kid[3], result)
+        elif(len(kid) > 2 and kid[3].name == 'spawn_ctx'):
+            self.rt_error("Assigning values not allowed here", kid[3])
         return result
 
     def run_edge_from(self, jac_ast):
         """
-        edge_from: '<-' ('[' NAME ']')? '-';
+        edge_from:
+            '<--'
+            | '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '-';
         """
         kid = jac_ast.kid
         result = jac_set(self)
@@ -858,11 +898,17 @@ class interp(machine_state):
             if (len(kid) > 2 and i.name != kid[2].token_text()):
                 continue
             result.add_obj(i)
+        if(len(kid) > 2 and kid[3].name == 'filter_ctx'):
+            result = self.run_filter_ctx(kid[3], result)
+        elif(len(kid) > 2 and kid[3].name == 'spawn_ctx'):
+            self.rt_error("Assigning values not allowed here", kid[3])
         return result
 
     def run_edge_any(self, jac_ast):
         """
-        edge_any: '<-' ('[' NAME ']')? '->';
+        edge_any:
+            '<-->'
+            | '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
         NOTE: these do not use strict bidirected semantic but any edge
         """
         kid = jac_ast.kid
@@ -871,6 +917,10 @@ class interp(machine_state):
             if (len(kid) > 2 and i.name != kid[2].token_text()):
                 continue
             result.add_obj(i)
+        if(len(kid) > 2 and kid[3].name == 'filter_ctx'):
+            result = self.run_filter_ctx(kid[3], result)
+        elif(len(kid) > 2 and kid[3].name == 'spawn_ctx'):
+            self.rt_error("Assigning values not allowed here", kid[3])
         return result
 
     def run_list_val(self, jac_ast):
@@ -1000,12 +1050,51 @@ class interp(machine_state):
 
     def run_spawn_ctx(self, jac_ast, obj):
         """
-        spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
+        spawn_ctx: LPAREN (spawn_assign (COMMA spawn_assign)*)? RPAREN;
         """
         kid = jac_ast.kid
         for i in kid:
-            if (i.name == 'assignment'):
-                self.run_assignment(i, assign_scope=obj.context)
+            if (i.name == 'spawn_assign'):
+                self.run_spawn_assign(i, obj)
+
+    def run_filter_ctx(self, jac_ast, obj):
+        """
+        filter_ctx:
+                LPAREN (filter_compare (COMMA filter_compare)*)? RPAREN;
+        """
+        kid = jac_ast.kid
+        ret = jac_set(self)
+        for i in obj.obj_list():
+            for j in kid:
+                if (j.name == 'filter_compare'):
+                    if(self.run_filter_compare(j, i)):
+                        ret.add_obj(i)
+        return ret
+
+    def run_spawn_assign(self, jac_ast, obj):
+        """
+        spawn_assign: NAME EQ expression;
+        """
+        kid = jac_ast.kid
+        name = kid[0].token_text()
+        if(name in obj.context.keys() or obj.j_type == 'walker'):
+            result = self.run_expression(kid[-1])
+            obj.context[name] = result
+        else:
+            self.rt_error(f'{name} not present in object', kid[0])
+
+    def run_filter_compare(self, jac_ast, obj):
+        """
+        filter_compare: NAME cmp_op expression;
+        """
+        kid = jac_ast.kid
+        name = kid[0].token_text()
+        if(name in obj.context.keys()):
+            result = self.run_expression(kid[-1])
+            return self.run_cmp_op(kid[1], obj.context[name], result)
+        else:
+            self.rt_error(f'{name} not present in object', kid[0])
+            return False
 
     def run_dotted_name(self, jac_ast):
         """

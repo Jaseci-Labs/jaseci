@@ -404,3 +404,29 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertGreaterEqual(len(test_walker.report[0][1].keys()), 7)
         self.assertLess(len(test_walker.report[0][1].keys()), 16)
         self.assertGreaterEqual(len(test_walker.report[0][2].keys()), 16)
+
+    def test_spawn_ctx_for_edges_nodes(self):
+        """Test builtins to see into nodes and edges"""
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.spawn_ctx_edge_node)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertEqual(test_walker.report[0]['age'], 32)
+        self.assertEqual(test_walker.report[1]['meeting_place'], 'college')
+        self.assertEqual(test_walker.report[2]['name'], 'Jane')
+        self.assertEqual(test_walker.report[3]['type'], 'sister')
+
+    def test_filter_ctx_for_edges_nodes(self):
+        """Test builtins to see into nodes and edges"""
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.filter_ctx_edge_node)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertEqual(test_walker.report[0]['age'], 30)
+        self.assertEqual(len(test_walker.report[1]), 0)
