@@ -1096,45 +1096,6 @@ class interp(machine_state):
             self.rt_error(f'{name} not present in object', kid[0])
             return False
 
-    def run_filter_ctx(self, jac_ast, obj):
-        """
-        filter_ctx:
-                LPAREN (filter_compare (COMMA filter_compare)*)? RPAREN;
-        """
-        kid = jac_ast.kid
-        ret = jac_set(self)
-        for i in obj.obj_list():
-            for j in kid:
-                if (j.name == 'filter_compare'):
-                    if(self.run_filter_compare(j, i)):
-                        ret.add_obj(i)
-        return ret
-
-    def run_spawn_assign(self, jac_ast, obj):
-        """
-        spawn_assign: NAME EQ expression;
-        """
-        kid = jac_ast.kid
-        name = kid[0].token_text()
-        if(name in obj.context.keys()):
-            result = self.run_expression(kid[-1])
-            obj.context[name] = result
-        else:
-            self.rt_error(f'{name} not present in object', kid[0])
-
-    def run_filter_compare(self, jac_ast, obj):
-        """
-        filter_compare: NAME cmp_op expression;
-        """
-        kid = jac_ast.kid
-        name = kid[0].token_text()
-        if(name in obj.context.keys()):
-            result = self.run_expression(kid[-1])
-            return self.run_cmp_op(kid[1], obj.context[name], result)
-        else:
-            self.rt_error(f'{name} not present in object', kid[0])
-            return False
-
     def run_dotted_name(self, jac_ast):
         """
         dotted_name: NAME (DOT NAME)*;
