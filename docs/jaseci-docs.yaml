@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaseci-docs-new
+spec:
+  selector:
+    pod: jaseci-docs-new
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+   name: jasecidocs-up
+   namespace: default
+data:
+   prod_up: |-
+     apk update; apk add git openssh;
+     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci;
+     mkdir /docusaurus/jaseci-docs;
+     cp -r /jaseci/docs/* /docusaurus/jaseci-docs/;
+     WEBSITE_NAME=jaseci-docs /init.sh 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaseci-docs-new
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: jaseci-docs-new
+  template:
+    metadata:
+      labels:
+        pod: jaseci-docs-new
+    spec:
+      containers:
+        - name: docusaurus
+          image: awesometic/docusaurus
+          imagePullPolicy: IfNotPresent
+          command: [bash, -c, "source /script/prod_up"]
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+      volumes:
+        - name: prod-script
+          configMap:
+            name: jasecidocs-up
