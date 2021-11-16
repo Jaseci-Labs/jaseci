@@ -16,7 +16,7 @@ class sentinel_api():
         self.active_snt_id = None
         self.sentinel_ids = id_list(self)
 
-    def api_sentinel_register(self, name: str, code: str = '',
+    def api_sentinel_register(self, name: str = 'default', code: str = '',
                               encoded: bool = False, auto_run: str = 'init',
                               ctx: dict = {}, set_active: bool = True):
         """
