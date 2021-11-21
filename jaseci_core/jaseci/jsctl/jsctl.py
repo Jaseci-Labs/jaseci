@@ -247,6 +247,7 @@ def clear():
 @click.command(help="Reset jsctl (clears state)")
 def reset():
     reset_state()
+    click.echo(f"Jaseci State Cleared!")
 
 
 @click.command(help="Internal book generation tools")

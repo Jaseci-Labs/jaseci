@@ -318,3 +318,13 @@ class jac_book_tests(TestCaseHelper, TestCase):
         self.assertEqual(
             self.new_stdout.getvalue(),
             "I didn't do any of the hard work.\n")
+
+    def test_book_visitor_preset(self):
+        self.logger_on()
+        self.sent.register_code(jtc.visitor_preset)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(
+            self.new_stdout.getvalue(),
+            "I didn't do any of the hard work.\n")
