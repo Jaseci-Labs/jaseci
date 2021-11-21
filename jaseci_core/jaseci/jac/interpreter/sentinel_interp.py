@@ -73,11 +73,10 @@ class sentinel_interp(interp):
 
     def run_namespace_list(self, jac_ast):
         """
-        namespace_list: NAME (COMMA NAME)* |;
+        namespace_list: COLON name_list |;
         """
         kid = jac_ast.kid
-        ret = []
-        for i in kid:
-            if(i.name == 'NAME'):
-                ret.append(i.token_text())
-        return ret
+        if(len(kid) > 1):
+            return self.run_name_list(kid[1])
+        else:
+            return []
