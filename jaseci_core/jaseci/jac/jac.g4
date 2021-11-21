@@ -17,7 +17,9 @@ walker:
 
 ver_label: 'version' COLON STRING SEMI?;
 
-namespace_list: COLON NAME (COMMA NAME)* |;
+namespace_list: COLON name_list |;
+
+name_list: NAME (COMMA NAME)*;
 
 walk_entry_block: KW_WITH KW_ENTRY code_block;
 
@@ -52,16 +54,17 @@ can_stmt:
 	)* SEMI
 	| KW_CAN NAME event_clause? code_block;
 
-event_clause: KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
+event_clause:
+	KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
 
 preset_in_out:
-	DBL_COLON NAME (COMMA NAME)* (DBL_COLON | COLON_OUT NAME)?;
+	DBL_COLON name_list (DBL_COLON | COLON_OUT NAME)?;
 
 dotted_name: NAME (DOT NAME)*;
 
 code_block: LBRACE statement* RBRACE | COLON statement;
 
-node_ctx_block: NAME (COMMA NAME)* code_block;
+node_ctx_block: name_list code_block;
 
 statement:
 	code_block

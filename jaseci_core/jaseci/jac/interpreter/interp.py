@@ -18,6 +18,17 @@ from jaseci.jac.machine.machine_state import machine_state
 class interp(machine_state):
     """Shared interpreter class across both sentinels and walkers"""
 
+    def run_name_list(self, jac_ast):
+        """
+        name_list: NAME (COMMA NAME)*;
+        """
+        kid = jac_ast.kid
+        ret = []
+        for i in kid:
+            if(i.name == 'NAME'):
+                ret.append(i.token_text())
+        return ret
+
     def run_attr_stmt(self, jac_ast, obj):
         """
         attr_stmt: has_stmt | can_stmt;
@@ -146,19 +157,17 @@ class interp(machine_state):
 
     def run_preset_in_out(self, jac_ast, obj):
         """
-        preset_in_out: DBL_COLON NAME (COMMA NAME)* (COLON_OUT NAME)?;
+        preset_in_out: DBL_COLON name_list (COLON_OUT NAME)?;
         """
         kid = jac_ast.kid
         result = {'input': [], 'output': None}
-        for i in kid:
-            if (i.name == 'NAME'):
-                if (i.token_text() not in obj.context.keys()):
-                    self.rt_error(f"No context for preset param {i}", i)
-                else:
-                    prm = ctx_value(obj, i.token_text())
-                    result['input'].append(prm)
-        if (kid[-2].name == 'COLON_OUT'):
-            result['input'].pop()
+        for i in self.run_name_list(kid[1]):
+            if (i not in obj.context.keys()):
+                self.rt_error(f"No context for preset param {i}", kid[1])
+            else:
+                prm = ctx_value(obj, i)
+                result['input'].append(prm)
+        if (len(kid) > 2):
             result['output'] = ctx_value(obj, kid[-1].token_text())
         return result
 
@@ -178,14 +187,13 @@ class interp(machine_state):
 
     def run_node_ctx_block(self, jac_ast):
         """
-        node_ctx_block: NAME (COMMA NAME)* code_block;
+        node_ctx_block: name_list code_block;
         """
         kid = jac_ast.kid
-        while(kid[0].name != 'code_block'):
-            if (self.current_node.name == kid[0].token_text()):
-                self.run_code_block(kid[-1])
+        for i in self.run_name_list(kid[0]):
+            if (self.current_node.name == i):
+                self.run_code_block(kid[1])
                 return
-            kid = kid[1:]
 
     def run_statement(self, jac_ast):
         """
