@@ -197,6 +197,24 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#name_list.
+    def enterName_list(self, ctx:jacParser.Name_listContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#name_list.
+    def exitName_list(self, ctx:jacParser.Name_listContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#expr_list.
+    def enterExpr_list(self, ctx:jacParser.Expr_listContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#expr_list.
+    def exitExpr_list(self, ctx:jacParser.Expr_listContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#code_block.
     def enterCode_block(self, ctx:jacParser.Code_blockContext):
         pass
