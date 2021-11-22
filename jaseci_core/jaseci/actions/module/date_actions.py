@@ -50,20 +50,20 @@ def date_day_diff(param_list, meta):
 # LEGACY Deprecated
 
 def year_from_date(param_list, meta):
-    logger.warn('Deprecated! Use date.quantlize_...')
+    logger.warning('Deprecated! Use date.quantlize_...')
     return quantize_to_year(param_list, meta)
 
 
 def month_from_date(param_list, meta):
-    logger.warn('Deprecated! Use date.quantlize_...')
+    logger.warning('Deprecated! Use date.quantlize_...')
     return quantize_to_month(param_list, meta)
 
 
 def week_from_date(param_list, meta):
-    logger.warn('Deprecated! Use date.quantlize_...')
+    logger.warning('Deprecated! Use date.quantlize_...')
     return quantize_to_week(param_list, meta)
 
 
 def day_from_date(param_list, meta):
-    logger.warn('Deprecated! Use date.quantlize_...')
+    logger.warning('Deprecated! Use date.quantlize_...')
     return quantize_to_day(param_list, meta)

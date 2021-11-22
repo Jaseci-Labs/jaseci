@@ -8,6 +8,7 @@ from jaseci.graph.node import node
 from jaseci.jac.interpreter.interp import interp
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.machine.jac_scope import jac_scope
+from jaseci.jac.ir.jac_code import jac_ir_to_ast
 
 
 class walker_interp(interp):
@@ -151,18 +152,23 @@ class walker_interp(interp):
 
     def trigger_entry_actions(self):
         """Trigger current node actions on entry"""
-        for i in self.current_node.entry_action_ids.obj_list():
-            i.trigger()
+        atom_res = self.current_node
+        for i in atom_res.entry_action_ids.obj_list():
+            self.run_preset_in_out(
+                jac_ir_to_ast(i.preset_in_out), atom_res, i)
 
-    def trigger_activity_actions(self):
-        """Trigger current node actions on activity"""
-        for i in self.current_node.activity_action_ids.obj_list():
-            i.trigger()
+    # RULE: activity actions in nodes must be called by walker
+    # def trigger_activity_actions(self):
+    #     """Trigger current node actions on activity"""
+    #     for i in self.current_node.activity_action_ids.obj_list():
+    #         i.trigger()
 
     def trigger_exit_actions(self):
         """Trigger current node actions on exit"""
-        for i in self.current_node.exit_action_ids.obj_list():
-            i.trigger()
+        atom_res = self.current_node
+        for i in atom_res.exit_action_ids.obj_list():
+            self.run_preset_in_out(
+                jac_ir_to_ast(i.preset_in_out), atom_res, i)
 
     def viable_nodes(self):
         """Returns all nodes that shouldnt be ignored"""
