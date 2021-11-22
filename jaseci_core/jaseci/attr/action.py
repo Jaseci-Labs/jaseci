@@ -34,7 +34,7 @@ class action(item):
         if(not use_params and self.preset_in_out):
             use_params = []
             for i in self.preset_in_out['input']:
-                use_params.append(i.obj.context[i.name])
+                use_params.append(i)
         result = getattr(
             importlib.import_module(
                 ACTION_PACKAGE+self.value[0].split('.')[-1]),

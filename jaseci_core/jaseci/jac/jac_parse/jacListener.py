@@ -62,15 +62,6 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#name_list.
-    def enterName_list(self, ctx:jacParser.Name_listContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#name_list.
-    def exitName_list(self, ctx:jacParser.Name_listContext):
-        pass
-
-
     # Enter a parse tree produced by jacParser#walk_entry_block.
     def enterWalk_entry_block(self, ctx:jacParser.Walk_entry_blockContext):
         pass
@@ -203,6 +194,24 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#dotted_name.
     def exitDotted_name(self, ctx:jacParser.Dotted_nameContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#name_list.
+    def enterName_list(self, ctx:jacParser.Name_listContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#name_list.
+    def exitName_list(self, ctx:jacParser.Name_listContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#expr_list.
+    def enterExpr_list(self, ctx:jacParser.Expr_listContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#expr_list.
+    def exitExpr_list(self, ctx:jacParser.Expr_listContext):
         pass
 
 

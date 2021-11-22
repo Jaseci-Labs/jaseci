@@ -559,6 +559,7 @@ visitor_preset = \
         has year=std.time_now();
     }
     """
+
 visitor_local_aciton = \
     """
     node person {
