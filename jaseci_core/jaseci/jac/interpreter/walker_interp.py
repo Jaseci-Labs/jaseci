@@ -29,8 +29,8 @@ class walker_interp(interp):
                 has_obj=self,
                 action_sets=[self.activity_action_ids,
                              self.current_node.activity_action_ids]))
-        self._jac_scope.set_live_var(
-            'here', self.current_node.id.urn, [], jac_ast)
+        self._jac_scope.set_agent_refs(cur_node=self.current_node,
+                                       cur_walker=self, jac_ast=jac_ast)
 
         self.trigger_entry_actions()
         kid = jac_ast.kid
@@ -154,6 +154,8 @@ class walker_interp(interp):
         """Trigger current node actions on entry"""
         atom_res = self.current_node
         for i in atom_res.entry_action_ids.obj_list():
+            if(i.access_list and self.name not in i.access_list):
+                continue
             self.run_preset_in_out(
                 jac_ir_to_ast(i.preset_in_out), atom_res, i)
 
@@ -167,6 +169,8 @@ class walker_interp(interp):
         """Trigger current node actions on exit"""
         atom_res = self.current_node
         for i in atom_res.exit_action_ids.obj_list():
+            if(i.access_list and self.name not in i.access_list):
+                continue
             self.run_preset_in_out(
                 jac_ir_to_ast(i.preset_in_out), atom_res, i)
 

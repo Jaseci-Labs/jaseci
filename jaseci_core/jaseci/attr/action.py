@@ -19,9 +19,10 @@ class action(item):
     engine to support preset actions in nodes
     """
 
-    def __init__(self, preset_in_out=None, is_lib=True, *args, **kwargs):
+    def __init__(self, preset_in_out=None, access_list=None,
+                 *args, **kwargs):
         self.preset_in_out = preset_in_out  # Not using _ids convention
-        self.is_lib = is_lib
+        self.access_list = access_list
         super().__init__(*args, **kwargs)
 
     def trigger(self, param_list):
