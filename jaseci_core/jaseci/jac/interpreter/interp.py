@@ -146,7 +146,7 @@ class interp(machine_state):
         event_clause: KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
         """
         kid = jac_ast.kid
-        return kid[1].token_text()
+        return kid[-1].token_text()
 
     def run_preset_in_out(self, jac_ast, obj, act):
         """
@@ -159,7 +159,7 @@ class interp(machine_state):
         kid = jac_ast.kid
         param_list = []
         m = interp(parent_override=self.parent(), m_id=self._m_id)
-        m.push_scope(jac_scope(parent=obj,
+        m.push_scope(jac_scope(parent=self,
                                has_obj=obj,
                                action_sets=[
                                    obj.activity_action_ids]))
