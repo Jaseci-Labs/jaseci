@@ -539,7 +539,7 @@ visitor_preset = \
     node person {
         has name;
         has byear;
-        can date.quantize_to_year::bday::>byear with setter entry;
+        can date.quantize_to_year::std.time_now()::>byear with setter entry;
         can std.out::byear," from ",visitor.info:: with exit;
     }
 
