@@ -105,7 +105,10 @@ class interp(machine_state):
             if(len(kid) > 0 and kid[0].name == 'event_clause'):
                 action_type = self.run_event_clause(kid[0])
                 kid = kid[1:]
-            if (not isinstance(obj, node)):  # only nodes have on entry/exit
+            if (not isinstance(obj, node) and action_type != 'activity'):
+                self.rt_warn(
+                    "Only nodes can have on entry/exit, treating as activity",
+                    kid[0])
                 action_type = 'activity'
             if (kid[0].name == 'code_block'):
                 getattr(obj, f"{action_type}_action_ids").add_obj(
