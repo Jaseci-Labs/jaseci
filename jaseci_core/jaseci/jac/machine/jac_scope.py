@@ -29,6 +29,31 @@ class jac_scope():
     def add_actions(self, actions):
         self.action_sets.append(actions)
 
+    def set_agent_refs(self, cur_node=None, cur_walker=None, jac_ast=None):
+        from jaseci.graph.node import node
+        from jaseci.actor.walker import walker
+        if(cur_node):
+            if(not isinstance(cur_node, node)):
+                self.rt_error(f"Unable to set here, invalid type: {cur_node}",
+                              jac_ast)
+            else:
+                self.set_live_var(
+                    'here', cur_node.jid, [], jac_ast)
+        if(cur_walker):
+            if(not isinstance(cur_walker, walker)):
+                self.rt_error(
+                    f"Unable to set visitor, invalid type: {cur_walker}",
+                    jac_ast)
+            else:
+                self.set_live_var(
+                    'visitor', cur_walker.jid, [], jac_ast)
+
+    def inherit_agent_refs(self, src_scope):
+        self.set_live_var(
+            'here', src_scope.get_live_var('here', None), [], None)
+        self.set_live_var(
+            'visitor', src_scope.get_live_var('visitor', None), [], None)
+
     def find_live_attr(self, name, allow_read_only=True):
         """Finds binding for variable if not in standard scope"""
         if '.' in name:  # Handles node attr references

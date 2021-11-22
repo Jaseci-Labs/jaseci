@@ -541,6 +541,7 @@ visitor_preset = \
         has byear;
         can date.quantize_to_year::std.time_now()::>byear with setter entry;
         can std.out::byear," from ",visitor.info:: with exit;
+        can std.out::byear," init only from ",visitor.info:: with init exit;
     }
 
     walker init {

@@ -94,6 +94,7 @@ class interp(machine_state):
         kid = kid[1:]
         while True:
             action_type = 'activity'
+            access_list = None
             preset_in_out = None
             if (kid[0].name == 'NAME'):
                 action_name = kid[0].token_text()
@@ -104,7 +105,7 @@ class interp(machine_state):
                 preset_in_out = jac_ast_to_ir(kid[0])
                 kid = kid[1:]
             if(len(kid) > 0 and kid[0].name == 'event_clause'):
-                action_type = self.run_event_clause(kid[0])
+                action_type, access_list = self.run_event_clause(kid[0])
                 kid = kid[1:]
             if (not isinstance(obj, node) and action_type != 'activity'):
                 self.rt_warn(
@@ -119,7 +120,7 @@ class interp(machine_state):
                         name=action_name,
                         value=jac_ast_to_ir(kid[0]),
                         preset_in_out=preset_in_out,
-                        is_lib=False
+                        access_list=access_list
                     )
                 )
                 break
@@ -133,7 +134,8 @@ class interp(machine_state):
                             h=self._h,
                             name=action_name,
                             value=func_link,
-                            preset_in_out=preset_in_out
+                            preset_in_out=preset_in_out,
+                            access_list=access_list
                         )
                     )
             if(not len(kid) or kid[0].name != 'COMMA'):
@@ -143,10 +145,14 @@ class interp(machine_state):
 
     def run_event_clause(self, jac_ast):
         """
-        event_clause: KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
+        event_clause:
+                KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
         """
         kid = jac_ast.kid
-        return kid[-1].token_text()
+        nl = []
+        if(kid[1].name == "name_list"):
+            nl = self.run_name_list(kid[1])
+        return kid[-1].token_text(), nl
 
     def run_preset_in_out(self, jac_ast, obj, act):
         """
@@ -163,6 +169,9 @@ class interp(machine_state):
                                has_obj=obj,
                                action_sets=[
                                    obj.activity_action_ids]))
+        m._jac_scope.set_agent_refs(cur_node=self.current_node,
+                                    cur_walker=self, jac_ast=jac_ast)
+
         if(kid[1].name == "expr_list"):
             param_list = m.run_expr_list(kid[1])
         result = act.trigger(param_list)
@@ -590,6 +599,7 @@ class interp(machine_state):
             m.push_scope(jac_scope(parent=atom_res,
                                    has_obj=atom_res,
                                    action_sets=[atom_res.activity_action_ids]))
+            m._jac_scope.inherit_agent_refs(self._jac_scope)
             if(len(kid) > 2):
                 self.run_spawn_ctx(kid[2], atom_res)
             m.run_code_block(jac_ir_to_ast(
@@ -619,6 +629,7 @@ class interp(machine_state):
             | KW_DETAILS
             | KW_DESTROY LPAREN expression RPAREN;
         """
+        from jaseci.actor.walker import walker
         kid = jac_ast.kid
         if (kid[0].name == "KW_LENGTH"):
             if(isinstance(atom_res, list)):
@@ -671,13 +682,13 @@ class interp(machine_state):
                 self.rt_error(f'Cannot get edges from {atom_res}. '
                               f'Type {type(atom_res)} invalid', kid[0])
         elif (kid[0].name == "KW_CONTEXT"):
-            if(self.rt_check_type(atom_res, [node, edge], kid[0])):
+            if(self.rt_check_type(atom_res, [node, edge, walker], kid[0])):
                 return atom_res.context
         elif (kid[0].name == "KW_INFO"):
-            if(self.rt_check_type(atom_res, [node, edge], kid[0])):
+            if(self.rt_check_type(atom_res, [node, edge, walker], kid[0])):
                 return atom_res.serialize(detailed=False)
         elif (kid[0].name == "KW_DETAILS"):
-            if(self.rt_check_type(atom_res, [node, edge], kid[0])):
+            if(self.rt_check_type(atom_res, [node, edge, walker], kid[0])):
                 return atom_res.serialize(detailed=True)
         elif (kid[0].name == "KW_DESTROY"):
             idx = self.run_expression(kid[2])
