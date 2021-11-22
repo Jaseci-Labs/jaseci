@@ -11,7 +11,7 @@ from jaseci.graph.edge import edge
 from jaseci.attr.action import action
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.ir.jac_code import jac_ast_to_ir, jac_ir_to_ast
-from jaseci.jac.machine.jac_scope import jac_scope, ctx_value
+from jaseci.jac.machine.jac_scope import jac_scope
 from jaseci.jac.machine.machine_state import machine_state
 
 
@@ -84,10 +84,11 @@ class interp(machine_state):
     def run_can_stmt(self, jac_ast, obj):
         """
         can_stmt:
-            KW_CAN dotted_name preset_in_out? event_clause? (
-                COMMA dotted_name preset_in_out? event_clause?
+            KW_CAN dotted_name (preset_in_out event_clause)? (
+                COMMA dotted_name (preset_in_out event_clause)?
             )* SEMI
             | KW_CAN NAME event_clause? code_block;
+
         """
         kid = jac_ast.kid
         kid = kid[1:]
@@ -147,19 +148,27 @@ class interp(machine_state):
         kid = jac_ast.kid
         return kid[1].token_text()
 
-    def run_preset_in_out(self, jac_ast):
+    def run_preset_in_out(self, jac_ast, obj, act):
         """
         preset_in_out:
-            DBL_COLON expr_list? (DBL_COLON | COLON_OUT NAME)?;
+                DBL_COLON expr_list? (DBL_COLON | COLON_OUT assignable);
+
+        obj: The node or edge with preset
+        act: The action associated with preset
         """
         kid = jac_ast.kid
-        result = {'input': [], 'output': None}
+        param_list = []
+        m = interp(parent_override=self.parent(), m_id=self._m_id)
+        m.push_scope(jac_scope(parent=obj,
+                               has_obj=obj,
+                               action_sets=[
+                                   obj.activity_action_ids]))
         if(kid[1].name == "expr_list"):
-            for i in self.run_expr_list(kid[1]):
-                result['input'].append(i)
-        if (len(kid) > 2):
-            result['output'] = ctx_value(obj, kid[-1].token_text())
-        return result
+            param_list = m.run_expr_list(kid[1])
+        result = act.trigger(param_list)
+        if (kid[-1].name == "assignable"):
+            dest = m.run_assignable(kid[-1])
+            m._jac_scope.set_live_var(dest[0], result, dest[1], kid[-1])
 
     def run_code_block(self, jac_ast):
         """
@@ -330,10 +339,7 @@ class interp(machine_state):
 
     def run_assignment(self, jac_ast, assign_scope=None):
         """
-        assignment:
-            dotted_name index* EQ expression
-            | inc_assign
-            | copy_assign;
+        assignment: assignable EQ expression | inc_assign | copy_assign;
 
         NOTE: assign_scope used to override normal behavior for special assigns
         such as walker spawns. assign_scope must be id_list of contexts
@@ -344,24 +350,19 @@ class interp(machine_state):
                 self.rt_error("Can only use '=' here", kid[0])
             assign_func = getattr(self, f'run_{kid[0].name}')
             return assign_func(kid[0])
-        var_name = self.run_dotted_name(kid[0])
-        arr_idx = []
-        for i in kid:
-            if(i.name == 'index'):
-                arr_idx.append(self.run_index(i))
+        dest = self.run_assignable(kid[0])
         result = self.run_expression(kid[-1])
         if (assign_scope is None):
-            self._jac_scope.set_live_var(var_name, result, arr_idx, kid[0])
+            self._jac_scope.set_live_var(dest[0], result, dest[1], kid[0])
         else:
             if(isinstance(result, element)):
                 result = result.id.urn
-            assign_scope[var_name] = result
+            assign_scope[dest[0]] = result
         return result
 
-    def run_inc_assign(self, jac_ast):
+    def run_assignable(self, jac_ast):
         """
-        inc_assign:
-                dotted_name index* (PEQ | MEQ | TEQ | DEQ) expression;
+        assignable: dotted_name index*;
         """
         kid = jac_ast.kid
         var_name = self.run_dotted_name(kid[0])
@@ -369,7 +370,15 @@ class interp(machine_state):
         for i in kid:
             if(i.name == 'index'):
                 arr_idx.append(self.run_index(i))
-        result = self._jac_scope.get_live_var(var_name, kid[0])
+        return [var_name, arr_idx]
+
+    def run_inc_assign(self, jac_ast):
+        """
+        inc_assign: assignable (PEQ | MEQ | TEQ | DEQ) expression;
+        """
+        kid = jac_ast.kid
+        dest = self.run_assignable(kid[0])
+        result = self._jac_scope.get_live_var(dest[0], kid[0])
         if(kid[1].name == 'PEQ'):
             result = result + self.run_expression(kid[2])
         elif(kid[1].name == 'MEQ'):
@@ -378,26 +387,24 @@ class interp(machine_state):
             result = result * self.run_expression(kid[2])
         elif(kid[1].name == 'DEQ'):
             result = result / self.run_expression(kid[2])
-        self._jac_scope.set_live_var(var_name, result, arr_idx, kid[0])
+        self._jac_scope.set_live_var(dest[0], result, dest[1], kid[0])
         return result
 
     def run_copy_assign(self, jac_ast):
         """
-        copy_assign: dotted_name index* CPY_EQ expression;
+        copy_assign: assignable CPY_EQ expression;
         """
         kid = jac_ast.kid
-        var_name = self.run_dotted_name(kid[0])
-        dest = self._jac_scope.get_live_var(var_name, kid[0])
-        for i in kid:
-            if(i.name == 'index'):
-                dest = dest[self.run_index(i)]
+        d = self.run_assignable(kid[0])
+        dest = self._jac_scope.get_live_var(d[0], kid[0])
+        for i in d[1]:
+            dest = dest[i]
         src = self.run_expression(kid[2])
-        if (not self.rt_check_type(dest, node, kid[0]) or not
-                self.rt_check_type(dest, node, kid[0])):
-            self.rt_error("':=' only applies to nodes", kid[0])
+        if (not self.rt_check_type(dest, [node, edge], kid[0])):
+            self.rt_error("':=' only applies to nodes and edges", kid[0])
             return dest
         if (dest.name != src.name):
-            self.rt_error(f"Node arch {dest} don't match {src}!", kid[0])
+            self.rt_error(f"Node/edge arch {dest} don't match {src}!", kid[0])
             return dest
         for i in src.context.keys():
             if(i in dest.context.keys()):
@@ -594,17 +601,10 @@ class interp(machine_state):
             param_list = []
             if(kid[1].name == 'expr_list'):
                 param_list = self.run_expr_list(kid[1])
-            elif(atom_res.preset_in_out is not None):
-                m = interp(parent_override=self.parent(), m_id=self._m_id)
-                m.push_scope(jac_scope(parent=atom_res,
-                                       has_obj=atom_res,
-                                       action_sets=[atom_res.activity_action_ids]))
-                param_list = m.run_preset_in_out(
-                    jac_ir_to_ast(atom_res.preset_in_out))
             if (isinstance(atom_res, action)):
                 return atom_res.trigger(param_list)
             else:
-                self.rt_error(f'Unable to execute function {atom_res}',
+                self.rt_error(f'Unable to execute ability {atom_res}',
                               kid[0])
 
     def run_func_built_in(self, atom_res, jac_ast):

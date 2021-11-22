@@ -47,8 +47,8 @@ has_stmt:
 has_assign: NAME | NAME EQ expression;
 
 can_stmt:
-	KW_CAN dotted_name preset_in_out? event_clause? (
-		COMMA dotted_name preset_in_out? event_clause?
+	KW_CAN dotted_name (preset_in_out event_clause)? (
+		COMMA dotted_name (preset_in_out event_clause)?
 	)* SEMI
 	| KW_CAN NAME event_clause? code_block;
 
@@ -56,7 +56,7 @@ event_clause:
 	KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
 
 preset_in_out:
-	DBL_COLON expr_list? (DBL_COLON | COLON_OUT NAME)?;
+	DBL_COLON expr_list? (DBL_COLON | COLON_OUT assignable);
 
 dotted_name: NAME (DOT NAME)*;
 
@@ -109,15 +109,13 @@ destroy_action: KW_DESTROY expression SEMI;
 
 expression: assignment | connect;
 
-assignment:
-	dotted_name index* EQ expression
-	| inc_assign
-	| copy_assign;
+assignment: assignable EQ expression | inc_assign | copy_assign;
 
-inc_assign:
-	dotted_name index* (PEQ | MEQ | TEQ | DEQ) expression;
+assignable: dotted_name index*;
 
-copy_assign: dotted_name index* CPY_EQ expression;
+inc_assign: assignable (PEQ | MEQ | TEQ | DEQ) expression;
+
+copy_assign: assignable CPY_EQ expression;
 
 connect: logical ( (NOT)? edge_ref expression)?;
 
