@@ -19,8 +19,6 @@ ver_label: 'version' COLON STRING SEMI?;
 
 namespace_list: COLON name_list |;
 
-name_list: NAME (COMMA NAME)*;
-
 walk_entry_block: KW_WITH KW_ENTRY code_block;
 
 walk_exit_block: KW_WITH KW_EXIT code_block;
@@ -58,9 +56,13 @@ event_clause:
 	KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
 
 preset_in_out:
-	DBL_COLON name_list (DBL_COLON | COLON_OUT NAME)?;
+	DBL_COLON expr_list? (DBL_COLON | COLON_OUT NAME)?;
 
 dotted_name: NAME (DOT NAME)*;
+
+name_list: NAME (COMMA NAME)*;
+
+expr_list: expression (COMMA expression)*;
 
 code_block: LBRACE statement* RBRACE | COLON statement;
 
@@ -136,7 +138,7 @@ factor: (PLUS | MINUS) factor | power;
 power: func_call (POW factor)*;
 
 func_call:
-	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
+	atom (LPAREN expr_list? RPAREN)?
 	| atom? DBL_COLON NAME spawn_ctx?;
 
 atom:
@@ -188,7 +190,7 @@ edge_any:
 	'<-->'
 	| '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
 
-list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
+list_val: LSQUARE expr_list? RSQUARE;
 
 index: LSQUARE expression RSQUARE;
 

@@ -18,17 +18,6 @@ from jaseci.jac.machine.machine_state import machine_state
 class interp(machine_state):
     """Shared interpreter class across both sentinels and walkers"""
 
-    def run_name_list(self, jac_ast):
-        """
-        name_list: NAME (COMMA NAME)*;
-        """
-        kid = jac_ast.kid
-        ret = []
-        for i in kid:
-            if(i.name == 'NAME'):
-                ret.append(i.token_text())
-        return ret
-
     def run_attr_stmt(self, jac_ast, obj):
         """
         attr_stmt: has_stmt | can_stmt;
@@ -104,14 +93,14 @@ class interp(machine_state):
         kid = kid[1:]
         while True:
             action_type = 'activity'
-            preset_in_out = {'input': [], 'output': None}
+            preset_in_out = None
             if (kid[0].name == 'NAME'):
                 action_name = kid[0].token_text()
             else:
                 action_name = self.run_dotted_name(kid[0])
             kid = kid[1:]
             if(len(kid) > 0 and kid[0].name == 'preset_in_out'):
-                preset_in_out = self.run_preset_in_out(kid[0], obj)
+                preset_in_out = jac_ast_to_ir(kid[0])
                 kid = kid[1:]
             if(len(kid) > 0 and kid[0].name == 'event_clause'):
                 action_type = self.run_event_clause(kid[0])
@@ -155,18 +144,16 @@ class interp(machine_state):
         kid = jac_ast.kid
         return kid[1].token_text()
 
-    def run_preset_in_out(self, jac_ast, obj):
+    def run_preset_in_out(self, jac_ast):
         """
-        preset_in_out: DBL_COLON name_list (COLON_OUT NAME)?;
+        preset_in_out:
+            DBL_COLON expr_list? (DBL_COLON | COLON_OUT NAME)?;
         """
         kid = jac_ast.kid
         result = {'input': [], 'output': None}
-        for i in self.run_name_list(kid[1]):
-            if (i not in obj.context.keys()):
-                self.rt_error(f"No context for preset param {i}", kid[1])
-            else:
-                prm = ctx_value(obj, i)
-                result['input'].append(prm)
+        if(kid[1].name == "expr_list"):
+            for i in self.run_expr_list(kid[1]):
+                result['input'].append(i)
         if (len(kid) > 2):
             result['output'] = ctx_value(obj, kid[-1].token_text())
         return result
@@ -577,7 +564,7 @@ class interp(machine_state):
     def run_func_call(self, jac_ast):
         """
         func_call:
-            atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
+            atom (LPAREN expr_list? RPAREN)?
             | atom? DBL_COLON NAME spawn_ctx?;
         """
         kid = jac_ast.kid
@@ -602,14 +589,15 @@ class interp(machine_state):
             return atom_res
         elif(kid[0].name == "LPAREN"):
             param_list = []
-            kid = kid[1:]
-            while True:
-                if(kid[0].name == 'RPAREN'):
-                    break
-                param_list.append(self.run_expression(kid[0]))
-                kid = kid[1:]
-                if (kid[0].name == 'COMMA'):
-                    kid = kid[1:]
+            if(kid[1].name == 'expr_list'):
+                param_list = self.run_expr_list(kid[1])
+            elif(atom_res.preset_in_out is not None):
+                m = interp(parent_override=self.parent(), m_id=self._m_id)
+                m.push_scope(jac_scope(parent=atom_res,
+                                       has_obj=atom_res,
+                                       action_sets=[atom_res.activity_action_ids]))
+                param_list = m.run_preset_in_out(
+                    jac_ir_to_ast(atom_res.preset_in_out))
             if (isinstance(atom_res, action)):
                 return atom_res.trigger(param_list)
             else:
@@ -755,43 +743,6 @@ class interp(machine_state):
         else:
             return getattr(self, f'run_{kid[0].name}')(kid[0])
 
-    # def run_node_edge_ref(self, jac_ast):
-    #     """
-    #     node_edge_ref:
-    #         node_ref filter_ctx?
-    #         | edge_ref (node_ref filter_ctx?)?;
-    #     """
-    #     kid = jac_ast.kid
-    #     is_nodeset = True
-    #     if(kid[0].name == 'KW_NODE'):
-    #         kid = kid[2:]
-    #     if(kid[0].name == 'KW_EDGE'):
-    #         kid = kid[2:]
-    #         is_nodeset = False
-
-    #     if(kid[0].name == 'node_ref'):
-    #         if(is_nodeset):
-    #             return self.run_node_ref(kid[0])
-    #         else:
-    #             return self.obj_set_to_jac_set(
-    #                 self.current_node.attached_edges(
-    #                     self.run_node_ref(kid[0])))
-    #     elif (kid[0].name == 'edge_ref'):
-    #         if(is_nodeset):
-    #             result = self.edge_to_node_jac_set(self.run_edge_ref(kid[0]))
-    #             if(len(kid) > 1 and kid[1].name == 'node_ref'):
-    #                 result = result * self.run_node_ref(kid[1])
-    #             return result
-    #         else:
-    #             result = self.run_edge_ref(kid[0])
-    #             if(kid[1].name == 'node_ref'):
-    #                 result = jac_set(
-    #                     self, inlist=[i for i in result if i in
-    #                                   self.obj_set_to_jac_set(
-    #                                       self.current_node.attached_edges(
-    #                                           self.run_node_ref(kid[1])))])
-    #             return result
-
     def run_node_edge_ref(self, jac_ast):
         """
         node_edge_ref:
@@ -933,14 +884,12 @@ class interp(machine_state):
 
     def run_list_val(self, jac_ast):
         """
-        list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
+        list_val: LSQUARE expr_list? RSQUARE;
         """
         kid = jac_ast.kid
-        list_res = []
-        for i in kid:
-            if(i.name == 'expression'):
-                list_res.append(self.run_expression(i))
-        return list_res
+        if(kid[1].name == "expr_list"):
+            return self.run_expr_list(kid[1])
+        return []
 
     def run_index(self, jac_ast):
         """
@@ -1116,4 +1065,26 @@ class interp(machine_state):
                 if(i == kid[-1]):
                     break
                 ret += '.'
+        return ret
+
+    def run_name_list(self, jac_ast):
+        """
+        name_list: NAME (COMMA NAME)*;
+        """
+        kid = jac_ast.kid
+        ret = []
+        for i in kid:
+            if(i.name == 'NAME'):
+                ret.append(i.token_text())
+        return ret
+
+    def run_expr_list(self, jac_ast):
+        """
+        expr_list: expression (COMMA expression)*;
+        """
+        kid = jac_ast.kid
+        ret = []
+        for i in kid:
+            if(i.name == 'expression'):
+                ret.append(self.run_expression(i))
         return ret
