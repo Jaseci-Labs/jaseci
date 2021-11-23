@@ -21,12 +21,12 @@ The dot tool in Graphviz takes dot code and renders it nicely.
 
 Graphviz is super easy to install. 
 
-##### Ubuntu
+##### Ubuntu:
 ```
 sudo apt install graphviz
 ```
 
-MacOS
+#### MacOS:
 ```
 brew install graphviz
 ```
