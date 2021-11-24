@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # A simple workflow for Tinkering
 
-As you get to know Jaseci and Jac, you’ll want to try things and tinker a bit. 
+As you get to know `Jaseci` and `Jac`, you’ll want to try things and tinker a bit. 
 
 In this section, we’ll get to know how `jsctl` can be used as the main platform for this play. 
 

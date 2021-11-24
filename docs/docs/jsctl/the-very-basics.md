@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## CLI vs Shell-mode, and Session Files
 
-jsctl gives us full access to the Jaseci core APIs via the Command Line of via a shell mode. Lets take a look.
+`jsctl` gives us full access to the Jaseci core APIs via the Command Line of via a shell mode. Lets take a look.
 
 In shell mode, all of the same Jaseci API functionality is available within a single session.
 
@@ -31,7 +31,7 @@ jaseci > exit
 haxor@linux:~/jaseci#
 ```
 
-In the above we launched `jsctl` directly into shell mode for a single session and we can issue various calls to the Jaseci API for that session. In this example we issue a single call to `graph create`, which creates a graph within the Jaseci session with a single root node, then exit the shell with `exit`.
+In the above we launched `jsctl` directly into shell mode for a single session and we can issue various calls to the `Jaseci` API for that session. In this example we issue a single call to `graph create`, which creates a graph within the Jaseci session with a single root node, then exit the shell with `exit`.
 
 But, we don't always need to enter shell mode to execute commands we can use the CLI mode instead, like this:
 
@@ -109,7 +109,7 @@ haxor@linux:~/jaseci#
 
 ```
 
-### Specifying a new `**.session**` file
+### Specifying a new `.session` file
 
 To use a different session file (one of our choice), we can use the following command:
 
