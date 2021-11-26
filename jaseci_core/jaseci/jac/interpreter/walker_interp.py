@@ -161,6 +161,7 @@ class walker_interp(interp):
 
     # RULE: activity actions in nodes must be called by func call
 
+    def trigger_exit_actions(self):
         """Trigger current node actions on exit"""
         atom_res = self.current_node
         for i in atom_res.exit_action_ids.obj_list():
