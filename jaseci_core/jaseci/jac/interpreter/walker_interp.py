@@ -23,6 +23,7 @@ class walker_interp(interp):
                 | walk_activity_block
             )* walk_exit_block? RBRACE;
         """
+        kid = jac_ast.kid
         self.push_scope(
             jac_scope(
                 parent=self,
@@ -32,13 +33,15 @@ class walker_interp(interp):
         self._jac_scope.set_agent_refs(cur_node=self.current_node,
                                        cur_walker=self, jac_ast=jac_ast)
 
-        self.trigger_entry_actions()
-        kid = jac_ast.kid
-
         if(self.current_step == 0):
             for i in kid:
                 if(i.name == 'attr_stmt'):
                     self.run_attr_stmt(jac_ast=i, obj=self)
+
+        self.auto_trigger_node_actions(
+            nd=self.current_node,
+            act_list=self.current_node.entry_action_ids)
+
         for i in kid:
             if(i.name == 'walk_entry_block'):
                 self.run_walk_entry_block(i)
@@ -50,7 +53,9 @@ class walker_interp(interp):
                 self.run_walk_exit_block(i)
 
         # self.trigger_activity_actions()
-        self.trigger_exit_actions()
+        self.auto_trigger_node_actions(
+            nd=self.current_node,
+            act_list=self.current_node.exit_action_ids)
         self.pop_scope()
 
     def run_walk_entry_block(self, jac_ast):
@@ -149,26 +154,15 @@ class walker_interp(interp):
                           kid[1])
 
     # Helper Functions ##################
-
-    def trigger_entry_actions(self):
-        """Trigger current node actions on entry"""
-        atom_res = self.current_node
-        for i in atom_res.entry_action_ids.obj_list():
+    def auto_trigger_node_actions(self, nd, act_list):
+        for i in act_list.obj_list():
             if(i.access_list and self.name not in i.access_list):
                 continue
-            self.run_preset_in_out(
-                jac_ir_to_ast(i.preset_in_out), atom_res, i)
-
-    # RULE: activity actions in nodes must be called by func call
-
-    def trigger_exit_actions(self):
-        """Trigger current node actions on exit"""
-        atom_res = self.current_node
-        for i in atom_res.exit_action_ids.obj_list():
-            if(i.access_list and self.name not in i.access_list):
-                continue
-            self.run_preset_in_out(
-                jac_ir_to_ast(i.preset_in_out), atom_res, i)
+            if(i.preset_in_out):
+                self.run_preset_in_out(
+                    jac_ir_to_ast(i.preset_in_out), nd, i)
+            else:
+                self.call_ability(nd=nd, name=i.name, act_list=act_list)
 
     def viable_nodes(self):
         """Returns all nodes that shouldnt be ignored"""
