@@ -159,13 +159,8 @@ class walker_interp(interp):
             self.run_preset_in_out(
                 jac_ir_to_ast(i.preset_in_out), atom_res, i)
 
-    # RULE: activity actions in nodes must be called by walker
-    # def trigger_activity_actions(self):
-    #     """Trigger current node actions on activity"""
-    #     for i in self.current_node.activity_action_ids.obj_list():
-    #         i.trigger()
+    # RULE: activity actions in nodes must be called by func call
 
-    def trigger_exit_actions(self):
         """Trigger current node actions on exit"""
         atom_res = self.current_node
         for i in atom_res.exit_action_ids.obj_list():

@@ -326,6 +326,11 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.log(self.new_stdout.getvalue())
-        self.assertEqual(
-            self.new_stdout.getvalue(),
-            "I didn't do any of the hard work.\n")
+        outsplit = self.new_stdout.getvalue().split('\n')
+        self.assertIn('from', outsplit[0])
+        self.assertIn('setter', outsplit[0])
+        self.assertIn('walker', outsplit[0])
+        self.assertIn('init', outsplit[1])
+        self.assertIn('walker', outsplit[1])
+        self.assertIn('init only', outsplit[2])
+        self.assertIn("'name': 'init'", outsplit[2])
