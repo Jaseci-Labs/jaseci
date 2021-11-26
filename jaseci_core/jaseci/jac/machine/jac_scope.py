@@ -161,6 +161,8 @@ class jac_scope():
         # TODO: Only supports node types
         # from jaseci.utils.utils import logger
         # logger.info(f'{obj}')
+        if(not obj.j_type == 'node' and not obj.j_type == 'edge'):
+            return False
         if (varname in self.parent.parent().run_architype(
                 obj.name, kind='node', caller=obj).context.keys()):
             obj.context[varname] = None

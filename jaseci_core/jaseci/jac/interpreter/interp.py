@@ -595,17 +595,12 @@ class interp(machine_state):
             return atom_res
 
         elif (kid[0].name == 'DBL_COLON'):
-            m = interp(parent_override=self.parent(), m_id=self._m_id)
-            m.push_scope(jac_scope(parent=atom_res,
-                                   has_obj=atom_res,
-                                   action_sets=[atom_res.activity_action_ids]))
-            m._jac_scope.inherit_agent_refs(self._jac_scope)
             if(len(kid) > 2):
                 self.run_spawn_ctx(kid[2], atom_res)
-            m.run_code_block(jac_ir_to_ast(
-                atom_res.activity_action_ids.get_obj_by_name(
-                    kid[1].token_text()).value))
-            self.report = self.report + m.report
+            self.call_ability(
+                nd=atom_res,
+                name=kid[1].token_text(),
+                act_list=atom_res.activity_action_ids)
             return atom_res
         elif(kid[0].name == "LPAREN"):
             param_list = []
@@ -1102,3 +1097,14 @@ class interp(machine_state):
             if(i.name == 'expression'):
                 ret.append(self.run_expression(i))
         return ret
+
+    # Helper Functions ##################
+    def call_ability(self, nd, name, act_list):
+        m = interp(parent_override=self.parent(), m_id=self._m_id)
+        m.push_scope(jac_scope(parent=nd,
+                               has_obj=nd,
+                               action_sets=[nd.activity_action_ids]))
+        m._jac_scope.inherit_agent_refs(self._jac_scope)
+        m.run_code_block(jac_ir_to_ast(
+            act_list.get_obj_by_name(name).value))
+        self.report = self.report + m.report
