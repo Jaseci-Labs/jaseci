@@ -53,11 +53,11 @@ const config = {
             type: 'doc',
             docId: 'intro',
             position: 'left',
-            label: 'Tutorial',
+            label: 'Docs',
           },
-          {to: '/blog', label: 'Blog', position: 'left'},
+          // {to: '/blog', label: 'Blog', position: 'left'},
           {
-            href: 'https://github.com/Jaseci-Labs',
+            href: 'https://github.com/Jaseci-Labs/jaseci',
             label: 'GitHub',
             position: 'right',
           },
@@ -67,41 +67,30 @@ const config = {
         style: 'dark',
         links: [
           {
-            title: 'Docs',
+            title: 'Tutorial',
             items: [
               {
-                label: 'Tutorial',
+                label: 'Docs',
                 to: '/docs/intro',
               },
             ],
           },
           {
-            title: 'Community',
+            title: 'Forum',
             items: [
               {
-                label: 'Stack Overflow',
-                href: 'https://stackoverflow.com/questions/tagged/jaseci',
+                label: 'Github Discussions',
+                href: 'https://github.com/Jaseci-Labs/jaseci/discussions',
               },
-              {
-                label: 'Discord',
-                href: 'https://discordapp.com/invite/jaseci',
-              },
-              {
-                label: 'Twitter',
-                href: 'https://twitter.com/jaseci',
-              },
+          
             ],
           },
           {
-            title: 'More',
+            title: 'Open source',
             items: [
               {
-                label: 'Blog',
-                to: '/blog',
-              },
-              {
                 label: 'GitHub',
-                href: 'https://github.com/Jaseci-Labs',
+                href: 'https://github.com/Jaseci-Labs/jaseci',
               },
             ],
           },
