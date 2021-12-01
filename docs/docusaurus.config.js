@@ -94,6 +94,15 @@ const config = {
               },
             ],
           },
+          {
+            title: 'Official website',
+            items: [
+              {
+                label: 'Jaseci.org',
+                href: 'https://www.jaseci.org/',
+              },
+            ],
+          },
         ],
         copyright: `Copyright © ${new Date().getFullYear()} Jaseci Labs, Inc. Built with Docusaurus.`,
       },
