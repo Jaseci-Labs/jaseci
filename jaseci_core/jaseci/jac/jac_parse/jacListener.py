@@ -359,12 +359,12 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#assignable.
-    def enterAssignable(self, ctx:jacParser.AssignableContext):
+    # Enter a parse tree produced by jacParser#copy_assign.
+    def enterCopy_assign(self, ctx:jacParser.Copy_assignContext):
         pass
 
-    # Exit a parse tree produced by jacParser#assignable.
-    def exitAssignable(self, ctx:jacParser.AssignableContext):
+    # Exit a parse tree produced by jacParser#copy_assign.
+    def exitCopy_assign(self, ctx:jacParser.Copy_assignContext):
         pass
 
 
@@ -374,15 +374,6 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#inc_assign.
     def exitInc_assign(self, ctx:jacParser.Inc_assignContext):
-        pass
-
-
-    # Enter a parse tree produced by jacParser#copy_assign.
-    def enterCopy_assign(self, ctx:jacParser.Copy_assignContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#copy_assign.
-    def exitCopy_assign(self, ctx:jacParser.Copy_assignContext):
         pass
 
 
