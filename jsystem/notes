@@ -1,8 +1,0 @@
-password for registry (registry.jaseci.org) is 
-user: jaseci
-pass: jaseci in leet
-
-docker build and push commands
-build: docker build -t jsystem -f system.Dockerfile .
-tag: docker tag jsystem registry.jaseci.org/jsystem
-push: docker image push registry.jaseci.org/jsystem

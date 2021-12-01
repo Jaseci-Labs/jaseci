@@ -18,27 +18,10 @@ metadata:
   namespace: default
 data:
   prod_up: |-
-    mkdir /dl; cd /dl; git clone https://prod:$GITPASS@git.jaseci.org/marsninja/jaseci.git;
-    cd jaseci; cd /dl;
-    mv jaseci/ai_serving /;
-    cd /ai_serving/;
+    git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
+    mv /jaseci/ai_serving/ /;
+    cd /ai_serving;
     python3 -m bart.bart_app;
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: jsbart-git-pass
-type: Opaque
-data:
-  password: UHIwZE4xbmo0
----
-apiVersion: v1
-data:
-  .dockerconfigjson: eyJhdXRocyI6eyJyZWdpc3RyeS5qYXNlY2kub3JnIjp7InVzZXJuYW1lIjoiamFzZWNpIiwicGFzc3dvcmQiOiJqNHMzYzEiLCJlbWFpbCI6Imphc29uQG1hcnMubmluamEiLCJhdXRoIjoiYW1GelpXTnBPbW8wY3pOak1RPT0ifX19
-kind: Secret
-metadata:
-  name: jsbartregcred
-type: kubernetes.io/dockerconfigjson
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -55,11 +38,9 @@ spec:
         pod: jsbart
       name: jsbart
     spec:
-      imagePullSecrets:
-        - name: jsbartregcred
       containers:
         - name: jsbart
-          image: registry.jaseci.org/jsbart:latest
+          image: jaseci/ai-service:bart
           resources:
             requests:
               memory: "4Gi"
@@ -68,12 +49,6 @@ spec:
           command: [bash, -c, "source script/prod_up"]
           ports:
             - containerPort: 4671
-          env:
-            - name: GITPASS
-              valueFrom:
-                secretKeyRef:
-                  name: jsbart-git-pass
-                  key: password
           volumeMounts:
             - name: prod-script
               mountPath: /script
