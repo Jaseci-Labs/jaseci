@@ -107,7 +107,7 @@ class walker_interp(interp):
         ignore_action: KW_IGNORE expression SEMI;
         """
         kid = jac_ast.kid
-        result = self.run_expression(kid[1])
+        result = self.run_expression(kid[1]).value
         if (isinstance(result, node)):
             self.ignore_node_ids.add_obj(result)
         elif (isinstance(result, jac_set)):
@@ -122,7 +122,7 @@ class walker_interp(interp):
             KW_TAKE expression (SEMI | else_stmt);
         """
         kid = jac_ast.kid
-        result = self.run_expression(kid[1])
+        result = self.run_expression(kid[1]).value
         before = len(self.next_node_ids)
         if (isinstance(result, node)):
             self.next_node_ids.add_obj(result)
@@ -144,7 +144,7 @@ class walker_interp(interp):
         destroy_action: KW_DESTROY expression SEMI;
         """
         kid = jac_ast.kid
-        result = self.run_expression(kid[1])
+        result = self.run_expression(kid[1]).value
         if (isinstance(result, node)):
             self.destroy_node_ids.add_obj(result)
         elif (isinstance(result, jac_set)):

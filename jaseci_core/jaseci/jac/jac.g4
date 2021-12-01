@@ -56,7 +56,7 @@ event_clause:
 	KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
 
 preset_in_out:
-	DBL_COLON expr_list? (DBL_COLON | COLON_OUT assignable);
+	DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
 
 dotted_name: NAME (DOT NAME)*;
 
@@ -109,13 +109,11 @@ destroy_action: KW_DESTROY expression SEMI;
 
 expression: assignment | connect;
 
-assignment: assignable EQ expression | inc_assign | copy_assign;
+assignment: connect EQ expression | copy_assign | inc_assign;
 
-assignable: dotted_name index*;
+copy_assign: connect CPY_EQ expression;
 
-inc_assign: assignable (PEQ | MEQ | TEQ | DEQ) expression;
-
-copy_assign: assignable CPY_EQ expression;
+inc_assign: connect (PEQ | MEQ | TEQ | DEQ) expression;
 
 connect: logical ( (NOT)? edge_ref expression)?;
 
