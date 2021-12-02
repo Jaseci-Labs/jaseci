@@ -318,3 +318,45 @@ class jac_book_tests(TestCaseHelper, TestCase):
         self.assertEqual(
             self.new_stdout.getvalue(),
             "I didn't do any of the hard work.\n")
+
+    def test_book_visitor_preset(self):
+        self.sent.register_code(jtc.visitor_preset)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        outsplit = self.new_stdout.getvalue().split('\n')
+        self.assertIn('from', outsplit[0])
+        self.assertIn('setter', outsplit[0])
+        self.assertIn('walker', outsplit[0])
+        self.assertIn('init', outsplit[1])
+        self.assertIn('walker', outsplit[1])
+        self.assertIn('init only', outsplit[2])
+        self.assertIn("'name': 'init'", outsplit[2])
+
+    def test_book_visitor_local_aciton(self):
+        self.sent.register_code(jtc.visitor_local_aciton)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        outsplit = self.new_stdout.getvalue().split('\n')
+        self.assertIn("'byear': ''", outsplit[0])
+        self.assertIn('to 1995: {}', outsplit[1])
+        self.assertIn('setter', outsplit[2])
+        self.assertIn("'byear': '1995-01-01'", outsplit[3])
+        self.assertIn("'name': 'init'", outsplit[4])
+
+    def test_book_copy_assign_to_edge(self):
+        self.sent.register_code(jtc.copy_assign_to_edge)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        outsplit = self.new_stdout.getvalue().split('\n')
+        self.log(outsplit)
+        self.assertIn("'Josh', 'age': 32", outsplit[1])
+        self.assertIn('college', outsplit[2])
+        self.assertIn("Jane', 'age': 30", outsplit[3])
+        self.assertIn("sister", outsplit[4])
+        self.assertIn("'Josh', 'age': 32", outsplit[5])
+        self.assertIn("college", outsplit[6])
+        self.assertIn("Jane', 'age': 30", outsplit[7])
+        self.assertIn("sister", outsplit[8])

@@ -53,12 +53,12 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#namespace_list.
-    def enterNamespace_list(self, ctx:jacParser.Namespace_listContext):
+    # Enter a parse tree produced by jacParser#namespaces.
+    def enterNamespaces(self, ctx:jacParser.NamespacesContext):
         pass
 
-    # Exit a parse tree produced by jacParser#namespace_list.
-    def exitNamespace_list(self, ctx:jacParser.Namespace_listContext):
+    # Exit a parse tree produced by jacParser#namespaces.
+    def exitNamespaces(self, ctx:jacParser.NamespacesContext):
         pass
 
 
@@ -194,6 +194,24 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#dotted_name.
     def exitDotted_name(self, ctx:jacParser.Dotted_nameContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#name_list.
+    def enterName_list(self, ctx:jacParser.Name_listContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#name_list.
+    def exitName_list(self, ctx:jacParser.Name_listContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#expr_list.
+    def enterExpr_list(self, ctx:jacParser.Expr_listContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#expr_list.
+    def exitExpr_list(self, ctx:jacParser.Expr_listContext):
         pass
 
 
@@ -341,21 +359,21 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#inc_assign.
-    def enterInc_assign(self, ctx:jacParser.Inc_assignContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#inc_assign.
-    def exitInc_assign(self, ctx:jacParser.Inc_assignContext):
-        pass
-
-
     # Enter a parse tree produced by jacParser#copy_assign.
     def enterCopy_assign(self, ctx:jacParser.Copy_assignContext):
         pass
 
     # Exit a parse tree produced by jacParser#copy_assign.
     def exitCopy_assign(self, ctx:jacParser.Copy_assignContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#inc_assign.
+    def enterInc_assign(self, ctx:jacParser.Inc_assignContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#inc_assign.
+    def exitInc_assign(self, ctx:jacParser.Inc_assignContext):
         pass
 
 

@@ -45,7 +45,7 @@ class test_zsb(TestCaseHelper, TestCase):
             payload = {'snt': self.snt.id.urn, 'name': w_name,
                        'nd': prime, 'ctx': ctx}
         res = self.client.post(
-            reverse(f'jac_api:walker_run'), payload, format='json')
+            reverse('jac_api:walker_run'), payload, format='json')
         return res.data
 
     def test_zsb_create_answer(self):
@@ -97,28 +97,3 @@ class test_zsb(TestCaseHelper, TestCase):
         data = self.run_walker(
             'get_log', {}, prime=bot_jid)
         self.assertEqual(data[0][0][1], 'Who says yep?')
-
-    # def test_dangling_edge_corruption_healing_non_block(self):
-    #     """Test dangling edges don't break everyhthing"""
-    #     self.logger_on()
-    #     if (not check_model_live('USE')):
-    #         self.skipTest("external resource not available")
-    #     data = self.run_walker('add_bot', {'name': "Bot"})
-    #     self.assertEqual(data[0]['name'], 'bot')
-    #     bot_jid = data[0]['jid']
-    #     data = self.run_walker('create_answer', {'text': "Yep"},
-    #                            prime=bot_jid)
-    #     data = self.run_walker(
-    #         'create_answer', {'text': "Nope"}, prime=bot_jid)
-    #     lostnode_jid = data[0]['jid']
-    #     element.destroy(self.master._h.get_obj(
-    #         self.master._m_id, uuid.UUID(lostnode_jid)))
-    #     data = self.run_walker(
-    #         'create_answer', {'text': "Maybe"}, prime=bot_jid)
-    #     data = self.run_walker(
-    #         'ask_question', {'text': "Who says yep?"}, prime=bot_jid)
-    #     data = self.run_walker(
-    #         'get_log', {}, prime=bot_jid)
-    #     self.assertEqual(data[0][0][1], 'Who says yep?')
-    #     data = self.run_walker(
-    #         'delete_bot', {}, prime=bot_jid)

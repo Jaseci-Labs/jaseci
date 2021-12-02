@@ -10,14 +10,14 @@ architype:
 	| KW_GRAPH NAME graph_block;
 
 walker:
-	KW_WALKER NAME namespace_list LBRACE attr_stmt* walk_entry_block? (
+	KW_WALKER NAME namespaces? LBRACE attr_stmt* walk_entry_block? (
 		statement
 		| walk_activity_block
 	)* walk_exit_block? RBRACE;
 
 ver_label: 'version' COLON STRING SEMI?;
 
-namespace_list: COLON NAME (COMMA NAME)* |;
+namespaces: COLON name_list;
 
 walk_entry_block: KW_WITH KW_ENTRY code_block;
 
@@ -47,21 +47,26 @@ has_stmt:
 has_assign: NAME | NAME EQ expression;
 
 can_stmt:
-	KW_CAN dotted_name preset_in_out? event_clause? (
-		COMMA dotted_name preset_in_out? event_clause?
+	KW_CAN dotted_name (preset_in_out event_clause)? (
+		COMMA dotted_name (preset_in_out event_clause)?
 	)* SEMI
 	| KW_CAN NAME event_clause? code_block;
 
-event_clause: KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
+event_clause:
+	KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
 
 preset_in_out:
-	DBL_COLON NAME (COMMA NAME)* (DBL_COLON | COLON_OUT NAME)?;
+	DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
 
 dotted_name: NAME (DOT NAME)*;
 
+name_list: NAME (COMMA NAME)*;
+
+expr_list: expression (COMMA expression)*;
+
 code_block: LBRACE statement* RBRACE | COLON statement;
 
-node_ctx_block: NAME (COMMA NAME)* code_block;
+node_ctx_block: name_list code_block;
 
 statement:
 	code_block
@@ -102,17 +107,13 @@ take_action: KW_TAKE expression (SEMI | else_stmt);
 
 destroy_action: KW_DESTROY expression SEMI;
 
-expression: assignment | connect;
+expression: connect (assignment | copy_assign | inc_assign)?;
 
-assignment:
-	dotted_name index* EQ expression
-	| inc_assign
-	| copy_assign;
+assignment: EQ expression;
 
-inc_assign:
-	dotted_name index* (PEQ | MEQ | TEQ | DEQ) expression;
+copy_assign: CPY_EQ expression;
 
-copy_assign: dotted_name index* CPY_EQ expression;
+inc_assign: (PEQ | MEQ | TEQ | DEQ) expression;
 
 connect: logical ( (NOT)? edge_ref expression)?;
 
@@ -133,7 +134,7 @@ factor: (PLUS | MINUS) factor | power;
 power: func_call (POW factor)*;
 
 func_call:
-	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
+	atom (LPAREN expr_list? RPAREN)?
 	| atom? DBL_COLON NAME spawn_ctx?;
 
 atom:
@@ -185,7 +186,7 @@ edge_any:
 	'<-->'
 	| '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
 
-list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
+list_val: LSQUARE expr_list? RSQUARE;
 
 index: LSQUARE expression RSQUARE;
 

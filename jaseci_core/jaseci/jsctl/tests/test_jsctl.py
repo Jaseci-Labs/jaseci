@@ -25,6 +25,7 @@ class jsctl_test(TestCaseHelper, TestCase):
     def call_cast(self, cmd):
         ret = self.call(cmd)
         self.log(ret)
+        self.log(type(ret))
         return json.loads(ret)
 
     def tearDown(self):

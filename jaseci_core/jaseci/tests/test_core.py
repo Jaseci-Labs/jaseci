@@ -77,7 +77,6 @@ class architype_tests(TestCaseHelper, TestCase):
         """
         Test saving object to json and back to python dict
         """
-        self.logger_on()
         for i in get_all_subclasses(element):
             orig = i(m_id='anon', h=mem_hook())
             blob1 = orig.json(detailed=True)
