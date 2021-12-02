@@ -48,30 +48,24 @@ class jac_scope():
     def add_actions(self, actions):
         self.action_sets.append(actions)
 
-    def set_agent_refs(self, cur_node=None, cur_walker=None, jac_ast=None):
+    def set_agent_refs(self, cur_node=None, cur_walker=None):
         from jaseci.graph.node import node
         from jaseci.actor.walker import walker
         if(cur_node):
             if(not isinstance(cur_node, node)):
-                self.rt_error(f"Unable to set here, invalid type: {cur_node}",
-                              jac_ast)
+                logger.error(f"Unable to set here, invalid type: {cur_node}")
             else:
-                self.set_live_var(
-                    'here', cur_node.jid, [], jac_ast)
+                self.local_scope['here'] = cur_node.jid
         if(cur_walker):
             if(not isinstance(cur_walker, walker)):
-                self.rt_error(
-                    f"Unable to set visitor, invalid type: {cur_walker}",
-                    jac_ast)
+                logger.error(
+                    f"Unable to set visitor, invalid type: {cur_walker}")
             else:
-                self.set_live_var(
-                    'visitor', cur_walker.jid, [], jac_ast)
+                self.local_scope['visitor'] = cur_walker.jid
 
     def inherit_agent_refs(self, src_scope):
-        self.set_live_var(
-            'here', src_scope.get_live_var('here', None), [], None)
-        self.set_live_var(
-            'visitor', src_scope.get_live_var('visitor', None), [], None)
+        self.local_scope['here'] = src_scope.local_scope['here']
+        self.local_scope['visitor'] = src_scope.local_scope['visitor']
 
     def find_live_attr(self, name, allow_read_only=True):
         """Finds binding for variable if not in standard scope"""
@@ -93,6 +87,8 @@ class jac_scope():
                     if (subname[1] in head_obj.context.keys() or
                             self.try_sync_to_arch(head_obj, subname[1])):
                         return ctx_value(ctx=head_obj.context, name=subname[1])
+                else:
+                    logger.error(f'Something went wrong with {found}')
                 # other types in scope can go here
             # check if dotted var is builtin action (of walker)
             if (allow_read_only):
@@ -107,8 +103,8 @@ class jac_scope():
                 return ctx_value(ctx=self.has_obj.context, name=name)
         return None
 
-    def get_live_var(self, name, jac_ast, create_mode=False):
-        """Returns live variable, to support builtins in the future"""
+    def get_live_var(self, name, create_mode=False):
+        """Returns live variable"""
         found = None
         # First look for variable in various locations
         if (name in self.local_scope.keys()):
@@ -119,7 +115,7 @@ class jac_scope():
             if(create_mode):
                 self.local_scope[name] = None
                 return ctx_value(ctx=self.local_scope, name=name)
-            self.parent.rt_error(f"Variable not defined - {name}", jac_ast)
+            logger.error(f"Variable not defined - {name}")
             return None
         found.value = self.reference_to_value(found.value)
         return found
@@ -129,51 +125,6 @@ class jac_scope():
         if(is_urn(val)):
             val = self.parent._h.get_obj(self.parent._m_id, uuid.UUID(val))
         return val
-
-    def set_live_var(self, name, value, md_index, jac_ast):
-        """Returns live variable, to support builtins in the future"""
-        value = self.deep_element_deserialize(value)
-        if name not in self.local_scope.keys():
-            look = self.find_live_attr(name, allow_read_only=False)
-            if (look):
-                if(not md_index):
-                    look.ctx[look.name] = value
-                else:
-                    self.set_array_live_var(look.ctx[look.name],
-                                            value, md_index, jac_ast)
-                return
-            elif '.' in name:
-                self.parent.rt_error(
-                    f"Arbitrary dotted names not allowed - {name}", jac_ast)
-                return
-        if(not md_index):
-            self.local_scope[name] = value
-        else:
-            self.set_array_live_var(self.local_scope[name], value,
-                                    md_index, jac_ast)
-
-    def set_array_live_var(self, item, value, md_index, jac_ast):
-        """
-        Helper for setting array values
-        md_index list of [1, 2, 3, 4] corresponds to [1][2][3][4] in jac code
-        """
-        for i in md_index[:-1]:
-            self.check_index_in_bounds(i, item, jac_ast)
-            item = item[i]
-        self.check_index_in_bounds(md_index[-1], item, jac_ast)
-        item[md_index[-1]] = value
-
-    def check_index_in_bounds(self, index, item, jac_ast):
-        if (isinstance(index, int) and index >= len(item)):
-            self.parent.rt_error(
-                f"Array index {index} out of bounds!", jac_ast)
-            return False
-        elif (isinstance(index, str) and index not in item.keys()):
-            from jaseci.utils.utils import logger
-            logger.error(f'{item}')
-            self.parent.rt_error(f"Object has no member {index}!", jac_ast)
-            return False
-        return True
 
     def try_sync_to_arch(self, obj, varname):
         """Checks if latest Architype has variable"""
@@ -187,28 +138,3 @@ class jac_scope():
             obj.context[varname] = None
             return True
         return False
-
-    def report_deep_serialize(self, report):
-        """Performs JSON serialization for lists of lists of lists etc"""
-        if (isinstance(report, element)):
-            report = report.serialize()
-        elif (isinstance(report, jac_set)):
-            blobs = []
-            for i in report.obj_list():
-                blobs.append(i.serialize())
-            report = blobs
-        elif (isinstance(report, list)):
-            blobs = []
-            for i in report:
-                blobs.append(self.report_deep_serialize(i))
-            report = blobs
-        return report
-
-    def deep_element_deserialize(self, value):
-        """converts all elements to uuids in lists etc"""
-        if (isinstance(value, element)):
-            value = value.id.urn
-        elif (isinstance(value, list)):
-            for i in range(len(value)):
-                value[i] = self.deep_element_deserialize(value[i])
-        return value
