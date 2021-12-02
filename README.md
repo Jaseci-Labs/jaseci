@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Language Feature: can now perform assignments arbitrarily (not just to named variables)
 - New Language Feature: can spawn assign on creation of nodes and edges
 - New Language Feature: can filter references to nodes and edges
 - Added new built-ins for nodes and edges (context, info, and details)
