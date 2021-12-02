@@ -59,24 +59,21 @@ class sentinel_interp(interp):
     def load_walker(self, jac_ast):
         """
         walker:
-            KW_WALKER NAME namespace_list LBRACE attr_stmt* walk_entry_block? (
+            KW_WALKER NAME namespaces? LBRACE attr_stmt* walk_entry_block? (
                 statement
                 | walk_activity_block
             )* walk_exit_block? RBRACE;
         """
         walk = walker(m_id=self._m_id, h=self._h, code_ir=jac_ast)
-        walk.namespaces = self.run_namespace_list(jac_ast.kid[2])
+        if(jac_ast.kid[2].name == 'namespaces'):
+            walk.namespaces = self.run_namespaces(jac_ast.kid[2])
         if(self.walker_ids.has_obj_by_name(walk.name)):
             self.walker_ids.destroy_obj_by_name(walk.name)
         self.walker_ids.add_obj(walk)
         return walk
 
-    def run_namespace_list(self, jac_ast):
+    def run_namespaces(self, jac_ast):
         """
-        namespace_list: COLON name_list |;
+        namespaces: COLON name_list;
         """
-        kid = jac_ast.kid
-        if(len(kid) > 1):
-            return self.run_name_list(kid[1])
-        else:
-            return []
+        return self.run_name_list(jac_ast.kid[1])

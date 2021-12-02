@@ -10,14 +10,14 @@ architype:
 	| KW_GRAPH NAME graph_block;
 
 walker:
-	KW_WALKER NAME namespace_list LBRACE attr_stmt* walk_entry_block? (
+	KW_WALKER NAME namespaces? LBRACE attr_stmt* walk_entry_block? (
 		statement
 		| walk_activity_block
 	)* walk_exit_block? RBRACE;
 
 ver_label: 'version' COLON STRING SEMI?;
 
-namespace_list: COLON name_list |;
+namespaces: COLON name_list;
 
 walk_entry_block: KW_WITH KW_ENTRY code_block;
 
@@ -107,13 +107,13 @@ take_action: KW_TAKE expression (SEMI | else_stmt);
 
 destroy_action: KW_DESTROY expression SEMI;
 
-expression: assignment | connect;
+expression: connect (assignment | copy_assign | inc_assign)?;
 
-assignment: connect EQ expression | copy_assign | inc_assign;
+assignment: EQ expression;
 
-copy_assign: connect CPY_EQ expression;
+copy_assign: CPY_EQ expression;
 
-inc_assign: connect (PEQ | MEQ | TEQ | DEQ) expression;
+inc_assign: (PEQ | MEQ | TEQ | DEQ) expression;
 
 connect: logical ( (NOT)? edge_ref expression)?;
 

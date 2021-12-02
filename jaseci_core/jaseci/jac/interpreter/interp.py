@@ -321,42 +321,47 @@ class interp(machine_state):
 
     def run_expression(self, jac_ast):
         """
-        expression: assignment | connect;
+        expression: connect (assignment | copy_assign | inc_assign)?;
         """
         kid = jac_ast.kid
-        expr_func = getattr(self, f'run_{kid[0].name}')
-        return expr_func(kid[0])
+        if(len(kid) > 1):
+            if(kid[1].name == "assignment"):
+                self._assign_mode = True
+                dest = self.run_connect(kid[0])
+                self._assign_mode = False
+                return self.run_assignment(kid[1], dest=dest)
+            elif(kid[1].name == "copy_assign"):
+                dest = self.run_connect(kid[0])
+                return self.run_copy_assign(kid[1], dest=dest)
+            elif(kid[1].name == "inc_assign"):
+                dest = self.run_connect(kid[0])
+                return self.run_inc_assign(kid[1], dest=dest)
+        else:
+            return self.run_connect(kid[0])
 
-    def run_assignment(self, jac_ast):
+    def run_assignment(self, jac_ast, dest):
         """
-        assignment: connect EQ expression | copy_assign | inc_assign;
+        assignment: EQ expression;
         """
         kid = jac_ast.kid
-        if (len(kid) < 2):
-            assign_func = getattr(self, f'run_{kid[0].name}')
-            return assign_func(kid[0])
-        result = self.run_expression(kid[-1])
-        self._assign_mode = True
-        dest = self.run_expression(kid[0])
-        self._assign_mode = False
+        result = self.run_expression(kid[1])
         dest.value = result.value
         dest.write()
-        return result
+        return dest
 
-    def run_copy_assign(self, jac_ast):
+    def run_copy_assign(self, jac_ast, dest):
         """
-        copy_assign: connect CPY_EQ expression;
+        copy_assign: CPY_EQ expression;
         """
         kid = jac_ast.kid
-        dest = self.run_connect(kid[0])
-        src = self.run_expression(kid[2])
-        if (not self.rt_check_type(dest.value, [node, edge], kid[0])):
-            self.rt_error("':=' only applies to nodes and edges", kid[0])
+        src = self.run_expression(kid[1])
+        if (not self.rt_check_type(dest.value, [node, edge], kid[1])):
+            self.rt_error("':=' only applies to nodes and edges", kid[1])
             return dest
         if (dest.value.name != src.value.name):
             self.rt_error(
                 f"Node/edge arch {dest.value} don't "
-                f"match {src.value}!", kid[0])
+                f"match {src.value}!", kid[1])
             return dest
         for i in src.value.context.keys():
             if(i in dest.value.context.keys()):
@@ -364,20 +369,19 @@ class interp(machine_state):
                           value=src.value.context[i]).write()
         return dest
 
-    def run_inc_assign(self, jac_ast):
+    def run_inc_assign(self, jac_ast, dest):
         """
-        inc_assign: connect (PEQ | MEQ | TEQ | DEQ) expression;
+        inc_assign: (PEQ | MEQ | TEQ | DEQ) expression;
         """
         kid = jac_ast.kid
-        dest = self.run_connect(kid[0])
-        if(kid[1].name == 'PEQ'):
-            dest.value = dest.value + self.run_expression(kid[2]).value
-        elif(kid[1].name == 'MEQ'):
-            dest.value = dest.value - self.run_expression(kid[2]).value
-        elif(kid[1].name == 'TEQ'):
-            dest.value = dest.value * self.run_expression(kid[2]).value
-        elif(kid[1].name == 'DEQ'):
-            dest.value = dest.value / self.run_expression(kid[2]).value
+        if(kid[0].name == 'PEQ'):
+            dest.value = dest.value + self.run_expression(kid[1]).value
+        elif(kid[0].name == 'MEQ'):
+            dest.value = dest.value - self.run_expression(kid[1]).value
+        elif(kid[0].name == 'TEQ'):
+            dest.value = dest.value * self.run_expression(kid[1]).value
+        elif(kid[0].name == 'DEQ'):
+            dest.value = dest.value / self.run_expression(kid[1]).value
         dest.write()
         return dest
 
