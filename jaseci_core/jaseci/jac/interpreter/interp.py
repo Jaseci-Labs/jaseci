@@ -609,9 +609,13 @@ class interp(machine_state):
         elif(kid[0].name == 'BOOL'):
             return ctx_value(value=bool(kid[0].token_text() == 'true'))
         elif(kid[0].name == 'dotted_name'):
-            return self._jac_scope.get_live_var(
-                self.run_dotted_name(kid[0]),
-                create_mode=self._assign_mode)
+            name = self.run_dotted_name(kid[0])
+            val = self._jac_scope.get_live_var(
+                name, create_mode=self._assign_mode)
+            if(val is None):
+                self.rt_error(f"Variable not defined - {name}", kid[0])
+                return ctx_value()
+            return val
         elif(kid[0].name == 'LPAREN'):
             return self.run_expression(kid[1])
         elif(kid[0].name == 'atom'):
