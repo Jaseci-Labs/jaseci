@@ -18,7 +18,7 @@ class walker_interp(interp):
     def run_walker(self, jac_ast):
         """
         walker:
-            KW_WALKER NAME namespace_list LBRACE attr_stmt* walk_entry_block? (
+            KW_WALKER NAME namespaces? LBRACE attr_stmt* walk_entry_block? (
                 statement
                 | walk_activity_block
             )* walk_exit_block? RBRACE;
