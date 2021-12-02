@@ -62,7 +62,7 @@ class interp(machine_state):
         var_name = kid[0].token_text()
         var_val = ""
         if(len(kid) > 1):
-            var_val = self.run_expression(kid[2])
+            var_val = self.run_expression(kid[2]).value
         if(is_anchor):
             if('anchor' in dir(obj)):
                 if(obj.anchor is None):
@@ -75,7 +75,7 @@ class interp(machine_state):
             self.rt_error(
                 f'Has variable name of `_private` not allowed!', kid[0])
         elif (var_name not in obj.context.keys()):  # Runs only once
-            obj.context[var_name] = var_val
+            ctx_value(ctx=obj.context, name=var_name, value=var_val).write()
         if(is_private):
             if('_private' in obj.context.keys()):
                 if(var_name not in obj.context['_private']):
@@ -287,7 +287,7 @@ class interp(machine_state):
         """
         kid = jac_ast.kid
         loops = 0
-        while self.run_expression(kid[1]):
+        while self.run_expression(kid[1]).value:
             self.run_code_block(kid[2])
             loops += 1
             if (self._loop_ctrl == 'break'):
@@ -313,7 +313,7 @@ class interp(machine_state):
         report_action: KW_REPORT expression SEMI;
         """
         kid = jac_ast.kid
-        report = self.run_expression(kid[1])
+        report = self.run_expression(kid[1]).value
         report = self.report_deep_serialize(report)
         if(not is_jsonable(report)):
             self.rt_error(f'Report not Json serializable', kid[0])
@@ -359,7 +359,8 @@ class interp(machine_state):
             return dest
         for i in src.value.context.keys():
             if(i in dest.value.context.keys()):
-                dest.value.context[i] = src.value.context[i]
+                ctx_value(ctx=dest.value.context, name=i,
+                          value=src.value.context[i]).write()
         return dest
 
     def run_inc_assign(self, jac_ast):
@@ -441,7 +442,7 @@ class interp(machine_state):
         """
         kid = jac_ast.kid
         if(kid[0].name == 'NOT'):
-            return ctx_value(value=not self.run_compare(kid[1].value))
+            return ctx_value(value=not self.run_compare(kid[1]).value)
         else:
             result = self.run_arithmetic(kid[0])
             kid = kid[1:]
@@ -654,8 +655,9 @@ class interp(machine_state):
             if(isinstance(atom_res.value, list)):
                 return ctx_value(value=len(atom_res.value))
             else:
-                self.rt_error(f'Cannot get length of {atom_res}. Not List!',
-                              kid[0])
+                self.rt_error(
+                    f'Cannot get length of {atom_res.value}. Not List!',
+                    kid[0])
                 return 0
         elif (kid[0].name == "KW_KEYS"):
             if(isinstance(atom_res.value, dict)):
@@ -895,7 +897,7 @@ class interp(machine_state):
         for i in kid:
             if(i.name == 'kv_pair'):
                 self.run_kv_pair(i, dict_res)
-        return dict_res
+        return ctx_value(value=dict_res)
 
     def run_kv_pair(self, jac_ast, obj):
         """
@@ -903,7 +905,7 @@ class interp(machine_state):
         """
         kid = jac_ast.kid
         obj[self.parse_str_token(kid[0].token_text())
-            ] = self.run_expression(kid[2])
+            ] = self.run_expression(kid[2]).value
 
     def run_spawn(self, jac_ast):
         """
@@ -1019,7 +1021,7 @@ class interp(machine_state):
         name = kid[0].token_text()
         if(name in obj.context.keys() or obj.j_type == 'walker'):
             result = self.run_expression(kid[-1]).value
-            obj.context[name] = result
+            ctx_value(ctx=obj.context, name=name, value=result).write()
         else:
             self.rt_error(f'{name} not present in object', kid[0])
 
@@ -1031,7 +1033,9 @@ class interp(machine_state):
         name = kid[0].token_text()
         if(name in obj.context.keys()):
             result = self.run_expression(kid[-1])
-            return self.run_cmp_op(kid[1], obj.context[name], result)
+            return self.run_cmp_op(
+                kid[1], ctx_value(ctx=obj.context, name=name),
+                result).value
         else:
             self.rt_error(f'{name} not present in object', kid[0])
             return False

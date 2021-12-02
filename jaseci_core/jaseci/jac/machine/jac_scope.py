@@ -34,6 +34,8 @@ class ctx_value():
         elif (isinstance(value, list)):
             for i in range(len(value)):
                 value[i] = self.deep_element_deserialize(value[i])
+        elif (isinstance(value, ctx_value)):
+            logger.error("DGFJOSDGIJSDOGJSDIGJODS")
         return value
 
 
