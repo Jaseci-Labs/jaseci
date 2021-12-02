@@ -25,6 +25,7 @@ class jsctl_test(TestCaseHelper, TestCase):
     def call_cast(self, cmd):
         ret = self.call(cmd)
         self.log(ret)
+        self.log(type(ret))
         return json.loads(ret)
 
     def tearDown(self):
@@ -55,7 +56,6 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertEqual(len(self.call_cast('graph list')), 4)
 
     def test_jsctl_carry_forward(self):
-        self.logger_on()
         self.call(
             "sentinel register -name ll -code "
             "jaseci/jsctl/tests/ll.jac -set_active true")

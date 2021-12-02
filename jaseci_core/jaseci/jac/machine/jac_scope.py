@@ -4,7 +4,6 @@ Variable scope manager for Jac
 Utility for all runtime interaction with variables in different scopes
 """
 from jaseci.actions.utils.global_actions import get_global_actions
-from jaseci.jac.jac_set import jac_set
 from jaseci.element.element import element
 from jaseci.utils.utils import is_urn, logger
 import uuid
@@ -34,8 +33,6 @@ class ctx_value():
         elif (isinstance(value, list)):
             for i in range(len(value)):
                 value[i] = self.deep_element_deserialize(value[i])
-        elif (isinstance(value, ctx_value)):
-            logger.error("DGFJOSDGIJSDOGJSDIGJODS")
         return value
 
 
