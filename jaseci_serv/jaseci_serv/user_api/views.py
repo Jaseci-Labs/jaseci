@@ -6,7 +6,8 @@ from django.contrib.auth import login, get_user_model
 from django.contrib.auth.signals import user_logged_out
 from knox.auth import TokenAuthentication
 
-from jaseci_serv.user_api.serializers import UserSerializer, SuperUserSerializer
+from jaseci_serv.user_api.serializers import UserSerializer
+from jaseci_serv.user_api.serializers import SuperUserSerializer
 from jaseci_serv.user_api.serializers import AuthTokenSerializer
 from jaseci_serv.user_api.serializers import send_activation_email
 from jaseci_serv.base.models import lookup_global_config

@@ -61,7 +61,7 @@ class test_ll(TestCaseHelper, TestCase):
             payload = {'snt': self.snt.id.urn, 'name': w_name,
                        'nd': prime, 'ctx': ctx}
         res = self.client.post(
-            reverse(f'jac_api:walker_run'), payload, format='json')
+            reverse('jac_api:walker_run'), payload, format='json')
         return res.data
 
     def graph_node_set(self, nd_id, ctx):

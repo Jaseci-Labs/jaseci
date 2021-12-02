@@ -22,7 +22,7 @@ class ctx_value():
 
     def write(self):
         if(self.ctx is None or self.name is None):
-            logger.error(
+            logger.critical(
                 f"No valid live variable! ctx: {self.ctx} name: {self.name}")
         self.ctx[self.name] = self.deep_element_deserialize(self.value)
 
@@ -47,20 +47,9 @@ class jac_scope():
     def add_actions(self, actions):
         self.action_sets.append(actions)
 
-    def set_agent_refs(self, cur_node=None, cur_walker=None):
-        from jaseci.graph.node import node
-        from jaseci.actor.walker import walker
-        if(cur_node):
-            if(not isinstance(cur_node, node)):
-                logger.error(f"Unable to set here, invalid type: {cur_node}")
-            else:
-                self.local_scope['here'] = cur_node.jid
-        if(cur_walker):
-            if(not isinstance(cur_walker, walker)):
-                logger.error(
-                    f"Unable to set visitor, invalid type: {cur_walker}")
-            else:
-                self.local_scope['visitor'] = cur_walker.jid
+    def set_agent_refs(self, cur_node, cur_walker):
+        self.local_scope['here'] = cur_node.jid
+        self.local_scope['visitor'] = cur_walker.jid
 
     def inherit_agent_refs(self, src_scope):
         self.local_scope['here'] = src_scope.local_scope['here']
@@ -105,19 +94,18 @@ class jac_scope():
     def get_live_var(self, name, create_mode=False):
         """Returns live variable"""
         found = None
-        # First look for variable in various locations
+        # Lock for variable in various locations
         if (name in self.local_scope.keys()):
             found = ctx_value(ctx=self.local_scope, name=name)
         else:
             found = self.find_live_attr(name)
-        if (found is None):
-            if(create_mode):
-                self.local_scope[name] = None
-                return ctx_value(ctx=self.local_scope, name=name)
-            logger.error(f"Variable not defined - {name}")
-            return None
-        found.value = self.reference_to_value(found.value)
-        return found
+        if (found is None and create_mode):
+            self.local_scope[name] = None
+            return ctx_value(ctx=self.local_scope, name=name)
+        if(found):
+            found.value = self.reference_to_value(found.value)
+            return found
+        return None
 
     def reference_to_value(self, val):
         """Reference to variables value"""
