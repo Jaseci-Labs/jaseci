@@ -25,6 +25,7 @@ class machine_state():
         self._jac_scope = None
         self._loop_ctrl = None
         self._stopped = None
+        self._assign_mode = False
         self._loop_limit = 10000
 
     def parent(self):

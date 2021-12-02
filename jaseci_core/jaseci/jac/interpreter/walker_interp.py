@@ -31,7 +31,7 @@ class walker_interp(interp):
                 action_sets=[self.activity_action_ids,
                              self.current_node.activity_action_ids]))
         self._jac_scope.set_agent_refs(cur_node=self.current_node,
-                                       cur_walker=self, jac_ast=jac_ast)
+                                       cur_walker=self)
 
         if(self.current_step == 0):
             for i in kid:
@@ -57,6 +57,32 @@ class walker_interp(interp):
             nd=self.current_node,
             act_list=self.current_node.exit_action_ids)
         self.pop_scope()
+
+    def run_preset_in_out(self, jac_ast, obj, act):
+        """
+        preset_in_out:
+            DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
+
+        obj: The node or edge with preset
+        act: The action associated with preset
+        """
+        kid = jac_ast.kid
+        param_list = []
+        m = interp(parent_override=self.parent(), m_id=self._m_id)
+        m.push_scope(jac_scope(parent=self,
+                               has_obj=obj,
+                               action_sets=[
+                                   obj.activity_action_ids]))
+        m._jac_scope.set_agent_refs(cur_node=self.current_node,
+                                    cur_walker=self)
+
+        if(kid[1].name == "expr_list"):
+            param_list = m.run_expr_list(kid[1]).value
+        result = act.trigger(param_list)
+        if (kid[-1].name == "expression"):
+            dest = m.run_expression(kid[-1])
+            dest.value = result
+            dest.write()
 
     def run_walk_entry_block(self, jac_ast):
         """
