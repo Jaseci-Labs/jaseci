@@ -355,7 +355,8 @@ class interp(machine_state):
             return dest
         if (dest.value.name != src.value.name):
             self.rt_error(
-                f"Node/edge arch {dest.value} don't match {src.value}!", kid[0])
+                f"Node/edge arch {dest.value} don't "
+                f"match {src.value}!", kid[0])
             return dest
         for i in src.value.context.keys():
             if(i in dest.value.context.keys()):
@@ -658,14 +659,14 @@ class interp(machine_state):
                 self.rt_error(
                     f'Cannot get length of {atom_res.value}. Not List!',
                     kid[0])
-                return 0
+                return ctx_value(value=0)
         elif (kid[0].name == "KW_KEYS"):
             if(isinstance(atom_res.value, dict)):
                 return ctx_value(value=atom_res.value.keys())
             else:
                 self.rt_error(f'Cannot get keys of {atom_res}. '
                               f'Not Dictionary!', kid[0])
-                return []
+                return ctx_value(value=[])
         elif (kid[0].name == "KW_EDGE"):
             if(isinstance(atom_res.value, node)):
                 return ctx_value(value=self.obj_set_to_jac_set(
