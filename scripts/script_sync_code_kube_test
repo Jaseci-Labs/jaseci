@@ -13,4 +13,4 @@ podlist=(`kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name'`
 
 for podname in ${podlist[@]}; do kubectl cp jaseci_serv ${podname}:/; echo "Copy code to pod and test"; kubectl cp jaseci_core ${podname}:/;  kubectl exec -it ${podname} -- bash -c "cd jaseci_core; source install_live.sh"; done
 
- kubectl exec -it ${podlist[0]} -- bash -c "cd jaseci_serv; source install_live.sh; jsserv test --parallel $TREADN --failfast -v 0 && flake8 --exclude=settings.py,*migrations*,jac_parse";
+ kubectl exec -it ${podlist[0]} -- bash -c "cd jaseci_serv; source install_live.sh; jsserv test $3 --parallel $TREADN --failfast -v 0 && flake8 --exclude=settings.py,*migrations*,jac_parse";

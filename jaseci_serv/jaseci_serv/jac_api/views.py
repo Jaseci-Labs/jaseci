@@ -16,6 +16,7 @@ class JResponse(Response):
         self.master = master
         for i in self.master._h.save_obj_list:
             self.master._h.commit_obj_to_redis(i)
+        self.master._h.skip_redis_update = True
 
     def close(self):
         super(JResponse, self).close()
