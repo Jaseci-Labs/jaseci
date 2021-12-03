@@ -426,7 +426,7 @@ walker gen_day_workettes {
         
         for i=0 to i<num_workettes by i+=1 {
             day_workettes = spawn here walker::get_workettes_deep;
-            std.out(day_workettes);
+            #std.out(day_workettes);
             if( day_workettes.length > 0 ) {
                 rand_int = rand.integer(0, day_workettes.length - 1);
                 parent = day_workettes[rand_int];
