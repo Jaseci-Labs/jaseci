@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from rest_framework.test import APIClient
-from jaseci.actions.module.ai_serving_api import check_model_live
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 import uuid
@@ -59,7 +58,7 @@ class test_ll_wall(TestCaseHelper, TestCase):
             payload = {'snt': self.snt.id.urn, 'name': w_name,
                        'nd': prime, 'ctx': ctx}
         res = self.client.post(
-            reverse(f'jac_api:walker_run'), payload, format='json')
+            reverse('jac_api:walker_run'), payload, format='json')
         return res.data
 
     def graph_node_set(self, nd_id, ctx):
@@ -71,7 +70,6 @@ class test_ll_wall(TestCaseHelper, TestCase):
 
     def test_ll_wall_get_gen_day(self):
         """Test get_gen_day walker response time after cerify day"""
-
         num_workettes = 112
 
         # generate random day workettes
