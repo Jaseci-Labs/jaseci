@@ -4,6 +4,9 @@
 
 ### Updates
 
+- New Lang Feature: Field filtering for context, info, details
+- New Lang Feature: Type checking primitives, and type casting primitives
+- New Lang Feature: String library finally present
 - New Language Feature: can now perform assignments arbitrarily (not just to named variables)
 - New Language Feature: can spawn assign on creation of nodes and edges
 - New Language Feature: can filter references to nodes and edges
@@ -11,6 +14,11 @@
 - Fixed dot output
 - Added reset command to jsctl to clear complete state
 - Various language grammar tweaks
+
+### Notes
+
+- type, int, float, str, list, dict, bool, are now keywords, if you used these as variable names in legacy code, must make updates.
+- the destroy built-in uses `destroy::idx` vs `destroy(idx)` now
 
 ## Version 1.2.1
 

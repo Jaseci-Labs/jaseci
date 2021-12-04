@@ -339,7 +339,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         outsplit = self.new_stdout.getvalue().split('\n')
-        self.assertIn("'byear': ''", outsplit[0])
+        self.assertIn("'byear': 'null'", outsplit[0])
         self.assertIn('to 1995: {}', outsplit[1])
         self.assertIn('setter', outsplit[2])
         self.assertIn("'byear': '1995-01-01'", outsplit[3])

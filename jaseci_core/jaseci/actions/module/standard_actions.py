@@ -1,6 +1,6 @@
 from operator import itemgetter
 from jaseci.element.element import element
-from jaseci.utils.utils import logger, app_logger
+from jaseci.utils.utils import logger, app_logger, is_urn
 from datetime import datetime
 import sys
 import uuid
@@ -10,46 +10,29 @@ import json
 def log(param_list, meta):
     """Standard built in for printing output to log"""
     result = ''
-    for i in range(len(param_list)):
-        if (type(param_list[i]) == bool):
-            if (param_list[i]):
-                param_list[i] = 'true'
-            else:
-                param_list[i] = 'false'
-        result += str(param_list[i])
+    for i in param_list:
+        result += str(i)
     app_logger.info(result)
     return result
 
 
 def out(param_list, meta):
     """Standard built in for printing output"""
-    for i in range(len(param_list)):
-        if (type(param_list[i]) == bool):
-            if (param_list[i]):
-                param_list[i] = 'true'
-            else:
-                param_list[i] = 'false'
     print(*param_list)
 
 
 def err(param_list, meta):
     """Standard built in for printing to stderr"""
-    for i in range(len(param_list)):
-        if (type(param_list[i]) == bool):
-            if (param_list[i]):
-                param_list[i] = 'true'
-            else:
-                param_list[i] = 'false'
     print(*param_list, file=sys.stderr)
 
 
 def get_uuid(param_list, meta):
     """Standard built in for grabbing uuid from element type objects"""
     obj = param_list[0]
-    if(not isinstance(obj, element)):
+    if(not is_urn(obj)):
         logger.error(f'Object {obj} is not an element (node, edge, etc)')
         return obj
-    return obj.jid[9:]
+    return obj[9:]
 
 
 def sort_by_col(param_list, meta):
