@@ -58,31 +58,15 @@ class walker_interp(interp):
             act_list=self.current_node.exit_action_ids)
         self.pop_scope()
 
-    def run_preset_in_out(self, jac_ast, obj, act):
+    def run_node_ctx_block(self, jac_ast):
         """
-        preset_in_out:
-            DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
-
-        obj: The node or edge with preset
-        act: The action associated with preset
+        node_ctx_block: name_list code_block;
         """
         kid = jac_ast.kid
-        param_list = []
-        m = interp(parent_override=self.parent(), m_id=self._m_id)
-        m.push_scope(jac_scope(parent=self,
-                               has_obj=obj,
-                               action_sets=[
-                                   obj.activity_action_ids]))
-        m._jac_scope.set_agent_refs(cur_node=self.current_node,
-                                    cur_walker=self)
-
-        if(kid[1].name == "expr_list"):
-            param_list = m.run_expr_list(kid[1]).value
-        result = act.trigger(param_list)
-        if (kid[-1].name == "expression"):
-            dest = m.run_expression(kid[-1])
-            dest.value = result
-            dest.write()
+        for i in self.run_name_list(kid[0]):
+            if (self.current_node.name == i):
+                self.run_code_block(kid[1])
+                return
 
     def run_walk_entry_block(self, jac_ast):
         """
@@ -178,6 +162,32 @@ class walker_interp(interp):
         else:
             self.rt_error(f'{result} is not destroyable type (i.e., nodes)',
                           kid[1])
+
+    def run_preset_in_out(self, jac_ast, obj, act):
+        """
+        preset_in_out:
+            DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
+
+        obj: The node or edge with preset
+        act: The action associated with preset
+        """
+        kid = jac_ast.kid
+        param_list = []
+        m = interp(parent_override=self.parent(), m_id=self._m_id)
+        m.push_scope(jac_scope(parent=self,
+                               has_obj=obj,
+                               action_sets=[
+                                   obj.activity_action_ids]))
+        m._jac_scope.set_agent_refs(cur_node=self.current_node,
+                                    cur_walker=self)
+
+        if(kid[1].name == "expr_list"):
+            param_list = m.run_expr_list(kid[1]).value
+        result = act.trigger(param_list)
+        if (kid[-1].name == "expression"):
+            dest = m.run_expression(kid[-1])
+            dest.value = result
+            dest.write()
 
     # Helper Functions ##################
     def auto_trigger_node_actions(self, nd, act_list):

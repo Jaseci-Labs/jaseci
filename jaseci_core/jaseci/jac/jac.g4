@@ -142,25 +142,40 @@ atom:
 	| FLOAT
 	| STRING
 	| BOOL
+	| NULL
 	| node_edge_ref
 	| list_val
 	| dict_val
 	| dotted_name
 	| LPAREN expression RPAREN
 	| spawn
-	| atom DOT func_built_in
+	| atom DOT built_in
 	| atom index+
-	| DEREF expression;
+	| DEREF expression
+	| type_cast
+	| any_type;
 
-func_built_in:
-	| KW_LENGTH
-	| KW_KEYS
-	| KW_EDGE
-	| KW_NODE
-	| KW_CONTEXT
-	| KW_INFO
-	| KW_DETAILS
-	| KW_DESTROY LPAREN expression RPAREN;
+type_cast: any_type LPAREN expression RPAREN;
+
+built_in:
+	arch_built_in
+	| obj_built_in
+	| dict_built_in
+	| list_built_in
+	| string_built_in;
+
+arch_built_in: KW_EDGE | KW_NODE;
+
+obj_built_in:
+	KW_CONTEXT (DBL_COLON name_list)?
+	| KW_INFO (DBL_COLON name_list)?
+	| KW_DETAILS (DBL_COLON name_list)?;
+
+dict_built_in: KW_KEYS;
+
+list_built_in: KW_LENGTH | KW_DESTROY DBL_COLON expression;
+
+string_built_in: TYP_STRING DOT NAME;
 
 node_edge_ref:
 	node_ref filter_ctx?
@@ -213,6 +228,17 @@ spawn_assign: NAME EQ expression;
 
 filter_compare: NAME cmp_op expression;
 
+any_type:
+	TYP_STRING
+	| TYP_INT
+	| TYP_FLOAT
+	| TYP_LIST
+	| TYP_DICT
+	| TYP_BOOL
+	| KW_NODE
+	| KW_EDGE
+	| KW_TYPE;
+
 /* DOT grammar below */
 dot_graph:
 	KW_STRICT? (KW_GRAPH | KW_DIGRAPH) dot_id? '{' dot_stmt_list '}';
@@ -256,6 +282,13 @@ dot_id:
 	| KW_EDGE;
 
 /* Lexer rules */
+TYP_STRING: 'str';
+TYP_INT: 'int';
+TYP_FLOAT: 'float';
+TYP_LIST: 'list';
+TYP_DICT: 'dict';
+TYP_BOOL: 'bool';
+KW_TYPE: 'type';
 KW_GRAPH: 'graph';
 KW_STRICT: 'strict';
 KW_DIGRAPH: 'digraph';
@@ -331,6 +364,7 @@ FLOAT: ([0-9]+)? '.' [0-9]+;
 STRING: '"' ~ ["\r\n]* '"' | '\'' ~ ['\r\n]* '\'';
 BOOL: 'true' | 'false';
 INT: [0-9]+;
+NULL: 'null';
 NAME: [a-zA-Z_] [a-zA-Z0-9_]*;
 COMMENT: '/*' .*? '*/' -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;

@@ -476,12 +476,66 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#func_built_in.
-    def enterFunc_built_in(self, ctx:jacParser.Func_built_inContext):
+    # Enter a parse tree produced by jacParser#type_cast.
+    def enterType_cast(self, ctx:jacParser.Type_castContext):
         pass
 
-    # Exit a parse tree produced by jacParser#func_built_in.
-    def exitFunc_built_in(self, ctx:jacParser.Func_built_inContext):
+    # Exit a parse tree produced by jacParser#type_cast.
+    def exitType_cast(self, ctx:jacParser.Type_castContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#built_in.
+    def enterBuilt_in(self, ctx:jacParser.Built_inContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#built_in.
+    def exitBuilt_in(self, ctx:jacParser.Built_inContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#arch_built_in.
+    def enterArch_built_in(self, ctx:jacParser.Arch_built_inContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#arch_built_in.
+    def exitArch_built_in(self, ctx:jacParser.Arch_built_inContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#obj_built_in.
+    def enterObj_built_in(self, ctx:jacParser.Obj_built_inContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#obj_built_in.
+    def exitObj_built_in(self, ctx:jacParser.Obj_built_inContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#dict_built_in.
+    def enterDict_built_in(self, ctx:jacParser.Dict_built_inContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#dict_built_in.
+    def exitDict_built_in(self, ctx:jacParser.Dict_built_inContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#list_built_in.
+    def enterList_built_in(self, ctx:jacParser.List_built_inContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#list_built_in.
+    def exitList_built_in(self, ctx:jacParser.List_built_inContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#string_built_in.
+    def enterString_built_in(self, ctx:jacParser.String_built_inContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#string_built_in.
+    def exitString_built_in(self, ctx:jacParser.String_built_inContext):
         pass
 
 
@@ -671,6 +725,15 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#filter_compare.
     def exitFilter_compare(self, ctx:jacParser.Filter_compareContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#any_type.
+    def enterAny_type(self, ctx:jacParser.Any_typeContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#any_type.
+    def exitAny_type(self, ctx:jacParser.Any_typeContext):
         pass
 
 

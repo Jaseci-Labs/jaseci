@@ -762,12 +762,12 @@ spawn_ctx_edge_node = \
     """
     node person: has name, age, birthday, profession;
     edge friend: has meeting_place;
-    edge family: has type;
+    edge family: has kind;
 
     walker init {
         person1 = spawn here -[friend(meeting_place = "college")]->
             node::person(name = "Josh", age = 32);
-        person2 = spawn here -[family(type = "sister")] ->
+        person2 = spawn here -[family(kind = "sister")] ->
             node::person(name = "Jane", age = 30);
 
         for i in -->{
@@ -781,15 +781,51 @@ filter_ctx_edge_node = \
     """
     node person: has name, age, birthday, profession;
     edge friend: has meeting_place;
-    edge family: has type;
+    edge family: has kind;
 
     walker init {
         person1 = spawn here -[friend(meeting_place = "college")]->
             node::person(name = "Josh", age = 32);
-        person2 = spawn here -[family(type = "sister")] ->
+        person2 = spawn here -[family(kind = "sister")] ->
             node::person(name = "Jane", age = 30);
 
         report --> node::person(name=='Jane')[0].context;
-        report -[family(type=="brother")]->;
+        report -[family(kind=="brother")]->;
+    }
+    """
+
+null_handleing = \
+    """
+    node person: has name, age, birthday, profession;
+
+    walker init {
+        person1 = spawn here -->
+            node::person(name = "Josh", age = 32);
+            
+        if(person1.birthday==null): report true;
+        else: report false;
+
+        if(person1.name==null): report true;
+        else: report false;
+
+        person1.name=null;
+        report person1.name==null;
+        person1.name=0;
+        report person1.name==null;
+    }
+    """
+
+bool_type_convert = \
+    """
+    node person: has name;
+
+    walker init {
+        p1 = spawn here -->
+            node::person(name = "Josh");
+            
+        p1.name = true;
+        report p1.name;
+        std.log(p1.name);
+        report p1.context;
     }
     """

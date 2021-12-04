@@ -6,6 +6,7 @@ from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
 from jaseci.element.super_master import super_master
 from jaseci.element.master import master
+from jaseci.jac.machine.jac_scope import JAC_TYPE
 
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
@@ -364,7 +365,7 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('getter')
         test_walker2.prime(gph)
         test_walker2.run()
-        self.assertEqual(test_walker2.context['a'], None)
+        self.assertEqual(test_walker2.context['a'], JAC_TYPE.NULL)
 
     def test_sentinel_version_label(self):
         """Test sentinel version labeling"""
@@ -417,7 +418,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(test_walker.report[0]['age'], 32)
         self.assertEqual(test_walker.report[1]['meeting_place'], 'college')
         self.assertEqual(test_walker.report[2]['name'], 'Jane')
-        self.assertEqual(test_walker.report[3]['type'], 'sister')
+        self.assertEqual(test_walker.report[3]['kind'], 'sister')
 
     def test_filter_ctx_for_edges_nodes(self):
         """Test builtins to see into nodes and edges"""
@@ -430,3 +431,27 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         self.assertEqual(test_walker.report[0]['age'], 30)
         self.assertEqual(len(test_walker.report[1]), 0)
+
+    def test_null_handling(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.null_handleing)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertEqual(test_walker.report[0], JAC_TYPE.TRUE)
+        self.assertEqual(test_walker.report[1], JAC_TYPE.FALSE)
+        self.assertEqual(test_walker.report[2], JAC_TYPE.TRUE)
+        self.assertEqual(test_walker.report[3], JAC_TYPE.FALSE)
+
+    def test_bool_type_convert(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.bool_type_convert)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertEqual(test_walker.report[0], 'true')
+        self.assertEqual("true", test_walker.report[1]['name'])
