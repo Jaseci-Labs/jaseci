@@ -297,9 +297,9 @@ list_remove = \
         nd=spawn here --> node::test;
         nd.lst=[['b', 333],['c',245],['a', 56]];
         std.out(nd.lst);
-        nd.lst.destroy::1;
+        nd.lst.destroy:1:;
         std.out(nd.lst);
-        std.out(nd.lst.destroy::1);
+        std.out(nd.lst.destroy:1:);
     }
     """
 

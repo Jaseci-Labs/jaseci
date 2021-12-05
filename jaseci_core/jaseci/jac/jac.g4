@@ -164,13 +164,13 @@ built_in:
 cast_built_in: any_type;
 
 obj_built_in:
-	KW_CONTEXT (DBL_COLON name_list)?
-	| KW_INFO (DBL_COLON name_list)?
-	| KW_DETAILS (DBL_COLON name_list)?;
+	KW_CONTEXT (COLON name_list COLON)?
+	| KW_INFO (COLON name_list COLON)?
+	| KW_DETAILS (COLON name_list COLON)?;
 
 dict_built_in: KW_KEYS;
 
-list_built_in: KW_LENGTH | KW_DESTROY DBL_COLON expression;
+list_built_in: KW_LENGTH | KW_DESTROY COLON expression COLON;
 
 string_built_in: TYP_STRING DOT NAME;
 
