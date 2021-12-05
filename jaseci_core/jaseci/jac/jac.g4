@@ -152,19 +152,16 @@ atom:
 	| atom DOT built_in
 	| atom index+
 	| DEREF expression
-	| type_cast
 	| any_type;
 
-type_cast: any_type LPAREN expression RPAREN;
-
 built_in:
-	arch_built_in
+	cast_built_in
 	| obj_built_in
 	| dict_built_in
 	| list_built_in
 	| string_built_in;
 
-arch_built_in: KW_EDGE | KW_NODE;
+cast_built_in: any_type;
 
 obj_built_in:
 	KW_CONTEXT (DBL_COLON name_list)?
