@@ -829,3 +829,66 @@ bool_type_convert = \
         report p1.context;
     }
     """
+
+typecasts = \
+    """
+    walker init {
+        a=5.6;
+        report (a+2);
+        report (a+2).int;
+        report (a+2).str;
+        report (a+2).bool;
+        report (a+2).int.float;
+
+        if(a.str.type == str and !(a.int.type == str)
+           and a.int.type == int):
+            report "Types comes back correct";
+    }
+    """
+
+typecasts_error = \
+    """
+    walker init {
+        a=5.6;
+        report (a+2);
+        report (a+2).int;
+        report (a+2).str;
+        report (a+2).edge;
+        report ("a+2").int.float;
+
+        if(a.str.type == str and !(a.int.type == str)
+           and a.int.type == int):
+            report "Types comes back correct";
+    }
+    """
+
+filter_on_context = \
+    """
+    node test {
+        has yo, mama;
+    }
+
+    edge apple {
+        has v1, v2;
+    }
+
+    edge banana {
+        has x1, x2;
+    }
+
+    walker init {
+        root {
+            a = spawn here -[apple]-> node::test;
+            a.yo="Yeah i said";
+            a.mama="Yo Mama Fool!";
+            b = spawn here -[banana]-> node::test;
+
+            e = -[apple]->.edge[0];
+            e.v1 = 7;
+            e = --> node::test.edge[1];
+            e.x1=8;
+
+            report [a.context:yo:, b.info:jid,j_type:, e.details];
+        }
+    }
+    """

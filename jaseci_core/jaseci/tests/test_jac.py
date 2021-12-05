@@ -6,7 +6,7 @@ from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
 from jaseci.element.super_master import super_master
 from jaseci.element.master import master
-from jaseci.jac.machine.jac_scope import JAC_TYPE
+from jaseci.jac.machine.jac_value import JAC_TYPE
 
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
@@ -464,5 +464,37 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
         test_walker.run()
-        self.assertEqual(test_walker.report[0], 'true')
-        self.assertEqual("true", test_walker.report[1]['name'])
+        self.assertEqual(test_walker.report[0], 7.6)
+        self.assertEqual(test_walker.report[1], 7)
+        self.assertEqual(test_walker.report[2], "7.6")
+        self.assertEqual(test_walker.report[3], JAC_TYPE.TRUE)
+        self.assertEqual(test_walker.report[4], 7.0)
+        self.assertEqual(test_walker.report[5], "Types comes back correct")
+
+    def test_typecast_error(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.typecasts_error)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertIn('Cannot get edges from 7.6',
+                      test_walker.runtime_errors[0])
+        self.assertIn('Invalid cast of JAC_TYPE.STR to JAC_TYPE.INT',
+                      test_walker.runtime_errors[1])
+
+    def test_filter_on_context(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.filter_on_context)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertEqual({'yo': 'Yeah i said'},
+                         test_walker.report[0][0])
+        self.assertNotIn("name",
+                         test_walker.report[0][1].keys())
+        self.assertIn("name",
+                      test_walker.report[0][2].keys())

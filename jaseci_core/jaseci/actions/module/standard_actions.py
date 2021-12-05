@@ -1,5 +1,4 @@
 from operator import itemgetter
-from jaseci.element.element import element
 from jaseci.utils.utils import logger, app_logger, is_urn
 from datetime import datetime
 import sys

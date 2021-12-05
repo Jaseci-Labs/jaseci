@@ -476,15 +476,6 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#type_cast.
-    def enterType_cast(self, ctx:jacParser.Type_castContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#type_cast.
-    def exitType_cast(self, ctx:jacParser.Type_castContext):
-        pass
-
-
     # Enter a parse tree produced by jacParser#built_in.
     def enterBuilt_in(self, ctx:jacParser.Built_inContext):
         pass
@@ -494,12 +485,12 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#arch_built_in.
-    def enterArch_built_in(self, ctx:jacParser.Arch_built_inContext):
+    # Enter a parse tree produced by jacParser#cast_built_in.
+    def enterCast_built_in(self, ctx:jacParser.Cast_built_inContext):
         pass
 
-    # Exit a parse tree produced by jacParser#arch_built_in.
-    def exitArch_built_in(self, ctx:jacParser.Arch_built_inContext):
+    # Exit a parse tree produced by jacParser#cast_built_in.
+    def exitCast_built_in(self, ctx:jacParser.Cast_built_inContext):
         pass
 
 
