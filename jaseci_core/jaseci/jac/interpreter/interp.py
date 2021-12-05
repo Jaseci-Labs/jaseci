@@ -157,6 +157,45 @@ class interp(machine_state):
             nl = self.run_name_list(kid[1])
         return kid[-1].token_text(), nl
 
+    def run_dotted_name(self, jac_ast):
+        """
+        dotted_name: NAME (DOT NAME)*;
+        """
+        kid = jac_ast.kid
+        ret = ''
+        for i in kid:
+            if(i.name == 'NAME'):
+                ret += i.token_text()
+                if(i == kid[-1]):
+                    break
+                ret += '.'
+        return ret
+
+    def run_name_list(self, jac_ast):
+        """
+        name_list: NAME (COMMA NAME)*;
+        """
+        kid = jac_ast.kid
+        ret = []
+        for i in kid:
+            if(i.name == 'NAME'):
+                ret.append(i.token_text())
+        return ret
+
+    def run_expr_list(self, jac_ast, wrap=False):
+        """
+        expr_list: expression (COMMA expression)*;
+        """
+        kid = jac_ast.kid
+        ret = []
+        for i in kid:
+            if(i.name == 'expression'):
+                if(wrap):
+                    ret.append(self.run_expression(i).wrap())
+                else:
+                    ret.append(self.run_expression(i).value)
+        return ctx_value(parent=self, value=ret)
+
     def run_code_block(self, jac_ast):
         """
         code_block: LBRACE statement* RBRACE | COLON statement;
@@ -589,7 +628,6 @@ class interp(machine_state):
             | atom DOT built_in
             | atom index+
             | DEREF expression
-            | type_cast
             | any_type;
         """
         kid = jac_ast.kid
@@ -643,7 +681,7 @@ class interp(machine_state):
     def run_built_in(self, jac_ast, atom_res):
         """
         built_in:
-            arch_built_in
+            cast_built_in
             | obj_built_in
             | dict_built_in
             | list_built_in
@@ -651,12 +689,13 @@ class interp(machine_state):
         """
         return self.run_rule(jac_ast.kid[0], atom_res)
 
-    def run_arch_built_in(self, jac_ast, atom_res):
+    def run_cast_built_in(self, jac_ast, atom_res):
         """
-        arch_built_in: KW_EDGE | KW_NODE;
+        arch_built_in: any_type;
         """
         kid = jac_ast.kid
-        if (kid[0].name == "KW_EDGE"):
+        typ = self.run_any_type(kid[0])
+        if (typ == "KW_EDGE"):
             if(isinstance(atom_res.value, node)):
                 return ctx_value(parent=self, value=self.obj_set_to_jac_set(
                     self.current_node.attached_edges(atom_res.value)))
@@ -675,7 +714,7 @@ class interp(machine_state):
                 self.rt_error(f'Cannot get edges from {atom_res.value}. '
                               f'Type {type(atom_res.value)} invalid', kid[0])
         # may want to remove 'here" node from return below
-        elif (kid[0].name == "KW_NODE"):
+        elif (typ == "KW_NODE"):
             if(isinstance(atom_res.value, node)):
                 return atom_res
             elif(isinstance(atom_res.value, edge)):
@@ -1069,46 +1108,23 @@ class interp(machine_state):
             self.rt_error(f'{name} not present in object', kid[0])
             return False
 
-    def run_dotted_name(self, jac_ast):
+    def run_any_type(self, jac_ast):
         """
-        dotted_name: NAME (DOT NAME)*;
+        any_type:
+            TYP_STRING
+            | TYP_INT
+            | TYP_FLOAT
+            | TYP_LIST
+            | TYP_DICT
+            | TYP_BOOL
+            | KW_NODE
+            | KW_EDGE
+            | KW_TYPE;
         """
-        kid = jac_ast.kid
-        ret = ''
-        for i in kid:
-            if(i.name == 'NAME'):
-                ret += i.token_text()
-                if(i == kid[-1]):
-                    break
-                ret += '.'
-        return ret
-
-    def run_name_list(self, jac_ast):
-        """
-        name_list: NAME (COMMA NAME)*;
-        """
-        kid = jac_ast.kid
-        ret = []
-        for i in kid:
-            if(i.name == 'NAME'):
-                ret.append(i.token_text())
-        return ret
-
-    def run_expr_list(self, jac_ast, wrap=False):
-        """
-        expr_list: expression (COMMA expression)*;
-        """
-        kid = jac_ast.kid
-        ret = []
-        for i in kid:
-            if(i.name == 'expression'):
-                if(wrap):
-                    ret.append(self.run_expression(i).wrap())
-                else:
-                    ret.append(self.run_expression(i).value)
-        return ctx_value(parent=self, value=ret)
+        return jac_ast.kid[0].name
 
     # Helper Functions ##################
+
     def call_ability(self, nd, name, act_list):
         m = interp(parent_override=self.parent(), m_id=self._m_id)
         m.push_scope(jac_scope(parent=nd,
