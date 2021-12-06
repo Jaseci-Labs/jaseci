@@ -348,8 +348,8 @@ def serializedATN():
         buf.write("\7\"\2\2\u02aa\u02ab\5L\'\2\u02ab\u02ac\7\"\2\2\u02ac")
         buf.write("\u02ae\3\2\2\2\u02ad\u02a7\3\2\2\2\u02ad\u02a8\3\2\2\2")
         buf.write("\u02aes\3\2\2\2\u02af\u02b0\7\n\2\2\u02b0\u02b1\7@\2\2")
-        buf.write("\u02b1\u02b6\7]\2\2\u02b2\u02b3\7\"\2\2\u02b3\u02b4\5")
-        buf.write(".\30\2\u02b4\u02b5\7\"\2\2\u02b5\u02b7\3\2\2\2\u02b6\u02b2")
+        buf.write("\u02b1\u02b6\7]\2\2\u02b2\u02b3\7T\2\2\u02b3\u02b4\5.")
+        buf.write("\30\2\u02b4\u02b5\7U\2\2\u02b5\u02b7\3\2\2\2\u02b6\u02b2")
         buf.write("\3\2\2\2\u02b6\u02b7\3\2\2\2\u02b7u\3\2\2\2\u02b8\u02ba")
         buf.write("\5x=\2\u02b9\u02bb\5\u009cO\2\u02ba\u02b9\3\2\2\2\u02ba")
         buf.write("\u02bb\3\2\2\2\u02bb\u02c4\3\2\2\2\u02bc\u02c1\5~@\2\u02bd")
@@ -5070,15 +5070,15 @@ class jacParser ( Parser ):
         def NAME(self):
             return self.getToken(jacParser.NAME, 0)
 
-        def COLON(self, i:int=None):
-            if i is None:
-                return self.getTokens(jacParser.COLON)
-            else:
-                return self.getToken(jacParser.COLON, i)
+        def LPAREN(self):
+            return self.getToken(jacParser.LPAREN, 0)
 
         def expr_list(self):
             return self.getTypedRuleContext(jacParser.Expr_listContext,0)
 
+
+        def RPAREN(self):
+            return self.getToken(jacParser.RPAREN, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_string_built_in
@@ -5111,11 +5111,11 @@ class jacParser ( Parser ):
             la_ = self._interp.adaptivePredict(self._input,66,self._ctx)
             if la_ == 1:
                 self.state = 688
-                self.match(jacParser.COLON)
+                self.match(jacParser.LPAREN)
                 self.state = 689
                 self.expr_list()
                 self.state = 690
-                self.match(jacParser.COLON)
+                self.match(jacParser.RPAREN)
 
 
         except RecognitionException as re:
