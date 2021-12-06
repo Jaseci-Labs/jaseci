@@ -498,3 +498,17 @@ class jac_tests(TestCaseHelper, TestCase):
                          test_walker.report[0][1].keys())
         self.assertIn("name",
                       test_walker.report[0][2].keys())
+
+    def test_string_manipulation(self):
+        self.logger_on()
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.string_manipulation)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.log(test_walker.report)
+        self.assertEqual(test_walker.report[0], 'i')
+        self.assertEqual(test_walker.report[1], 'ing')
+        self.assertEqual(test_walker.report[2], "ting ")

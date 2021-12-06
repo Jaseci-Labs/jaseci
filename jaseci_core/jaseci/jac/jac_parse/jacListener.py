@@ -620,6 +620,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#index_range.
+    def enterIndex_range(self, ctx:jacParser.Index_rangeContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#index_range.
+    def exitIndex_range(self, ctx:jacParser.Index_rangeContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#dict_val.
     def enterDict_val(self, ctx:jacParser.Dict_valContext):
         pass

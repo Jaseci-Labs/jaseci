@@ -47,7 +47,7 @@ class jac_scope():
                     # head_obj.context['id'] = head_obj.jid
                     if (subname[1] in head_obj.context.keys() or
                             self.try_sync_to_arch(head_obj, subname[1])):
-                        return jac_value(parent=self.parent, ctx=head_obj.context, name=subname[1])
+                        return jac_value(self.parent, ctx=head_obj.context, name=subname[1])
                 else:
                     logger.error(f'Something went wrong with {found}')
                 # other types in scope can go here
@@ -57,11 +57,11 @@ class jac_scope():
                     found = i.get_obj_by_name(
                         name, silent=True)
                     if(found):
-                        return jac_value(parent=self.parent, value=found)
+                        return jac_value(self.parent, value=found)
         else:
             # check if var is in walker's context
             if(name in self.has_obj.context.keys()):
-                return jac_value(parent=self.parent, ctx=self.has_obj.context, name=name)
+                return jac_value(self.parent, ctx=self.has_obj.context, name=name)
         return None
 
     def get_live_var(self, name, create_mode=False):
@@ -69,15 +69,15 @@ class jac_scope():
         found = None
         # Lock for variable in various locations
         if (name in self.local_scope.keys()):
-            found = jac_value(parent=self.parent,
+            found = jac_value(self.parent,
                               ctx=self.local_scope, name=name)
         else:
             found = self.find_live_attr(name)
         if (found is None and create_mode):
             self.local_scope[name] = None
-            return jac_value(parent=self.parent, ctx=self.local_scope, name=name)
+            return jac_value(self.parent, ctx=self.local_scope, name=name)
         if(found):
-            found.value = found.unwrap()
+            found.unwrap()
             return found
         return None
 

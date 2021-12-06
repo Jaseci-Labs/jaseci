@@ -150,7 +150,8 @@ atom:
 	| LPAREN expression RPAREN
 	| spawn
 	| atom DOT built_in
-	| atom index+
+	| atom index
+	| atom index_range
 	| DEREF expression
 	| any_type;
 
@@ -172,7 +173,7 @@ dict_built_in: KW_KEYS;
 
 list_built_in: KW_LENGTH | KW_DESTROY COLON expression COLON;
 
-string_built_in: TYP_STRING DOT NAME;
+string_built_in: TYP_STRING DOT NAME (COLON expr_list COLON)?;
 
 node_edge_ref:
 	node_ref filter_ctx?
@@ -201,6 +202,8 @@ edge_any:
 list_val: LSQUARE expr_list? RSQUARE;
 
 index: LSQUARE expression RSQUARE;
+
+index_range: LSQUARE expression COLON expression RSQUARE;
 
 dict_val: LBRACE (kv_pair (COMMA kv_pair)*)? RBRACE;
 

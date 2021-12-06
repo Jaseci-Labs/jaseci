@@ -18,7 +18,7 @@
 ### Notes
 
 - type, int, float, str, list, dict, bool, are now keywords, if you used these as variable names in legacy code, must make updates.
-- the destroy built-in uses `destroy::idx` vs `destroy(idx)` now
+- the destroy built-in uses `destroy:idx:` vs `destroy(idx)` now
 
 ## Version 1.2.1
 

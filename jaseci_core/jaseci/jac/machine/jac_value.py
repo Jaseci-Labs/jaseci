@@ -105,11 +105,13 @@ class jac_value():
 
     def wrap(self, serialize_mode=False):
         "Caller for recursive wrap"
-        return self.wrap_value(self.value, serialize_mode)
+        self.value = self.wrap_value(self.value, serialize_mode)
+        return self.value
 
     def unwrap(self):
         "Caller for recursive unwrap"
-        return self.unwrap_value(self.value)
+        self.value = self.unwrap_value(self.value)
+        return self.value
 
     def wrap_value(self, val, serialize_mode):
         """converts all elements to uuids in lists etc"""
