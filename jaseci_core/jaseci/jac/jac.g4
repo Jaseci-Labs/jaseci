@@ -173,7 +173,7 @@ dict_built_in: KW_KEYS;
 
 list_built_in: KW_LENGTH | KW_DESTROY COLON expression COLON;
 
-string_built_in: TYP_STRING DOT NAME (COLON expr_list COLON)?;
+string_built_in: TYP_STRING DOT NAME (LPAREN expr_list RPAREN)?;
 
 node_edge_ref:
 	node_ref filter_ctx?

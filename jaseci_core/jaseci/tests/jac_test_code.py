@@ -896,7 +896,7 @@ filter_on_context = \
 string_manipulation = \
     """
     walker init {
-        a="tEsting me";
+        a=" tEsting me  ";
         report a[4];
         report a[4:7];
         report a[3:-1];
@@ -912,16 +912,20 @@ string_manipulation = \
         report a.str.is_upper;
         report a.str.is_lower;
         report a.str.is_space;
-        # report a.str.count('e'); 
-        # report a.str.find
-        # report a.str.split
-        # report a.str.startswith
-        # report a.str.endswith
-        # report a.str.replace
-        # report a.str.strip
-        # report a.str.lstrip
-        # report a.str.rstrip
-       
+        report a.str.count('t'); 
+        report a.str.find('i');
+        report a.str.split;
+        report a.str.split('E');
+        report a.str.startswith('tEs');
+        report a.str.endswith('me');
+        report a.str.replace('me', 'you');
+        report a.str.strip;
+        report a.str.strip(' t');
+        report a.str.lstrip;
+        report a.str.lstrip(' tE');
+        report a.str.rstrip;
+        report a.str.rstrip(' e');
+        
         report a.str.upper.str.is_upper;
     }
     """

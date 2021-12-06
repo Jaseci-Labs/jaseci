@@ -825,35 +825,81 @@ class interp(machine_state):
 
     def run_string_built_in(self, jac_ast, atom_res):
         """
-        string_built_in: TYP_STRING DOT NAME (COLON expr_list COLON)?;
+        string_built_in: TYP_STRING DOT NAME (LPAREN expr_list RPAREN)?;
         """
         kid = jac_ast.kid
         if(not self.rt_check_type(atom_res.value, [str], kid[0])):
             return atom_res
-        if (kid[2].token_text() == "upper"):
-            atom_res = jac_value(self, value=atom_res.value.upper())
-        elif (kid[2].token_text() == "lower"):
-            atom_res = jac_value(self, value=atom_res.value.lower())
-        elif (kid[2].token_text() == "title"):
-            atom_res = jac_value(self, value=atom_res.value.title())
-        elif (kid[2].token_text() == "capitalize"):
-            atom_res = jac_value(self, value=atom_res.value.capitalize())
-        elif (kid[2].token_text() == "swap_case"):
-            atom_res = jac_value(self, value=atom_res.value.swapcase())
-        elif (kid[2].token_text() == "is_alnum"):
-            atom_res = jac_value(self, value=atom_res.value.isalnum())
-        elif (kid[2].token_text() == "is_alpha"):
-            atom_res = jac_value(self, value=atom_res.value.isalpha())
-        elif (kid[2].token_text() == "is_digit"):
-            atom_res = jac_value(self, value=atom_res.value.isdigit())
-        elif (kid[2].token_text() == "is_title"):
-            atom_res = jac_value(self, value=atom_res.value.istitle())
-        elif (kid[2].token_text() == "is_upper"):
-            atom_res = jac_value(self, value=atom_res.value.isupper())
-        elif (kid[2].token_text() == "is_lower"):
-            atom_res = jac_value(self, value=atom_res.value.islower())
-        elif (kid[2].token_text() == "is_space"):
-            atom_res = jac_value(self, value=atom_res.value.isspace())
+        result = None
+        str_op = kid[2].token_text()
+        try:
+            if (str_op == "upper"):
+                result = jac_value(self, value=atom_res.value.upper())
+            elif (str_op == "lower"):
+                result = jac_value(self, value=atom_res.value.lower())
+            elif (str_op == "title"):
+                result = jac_value(self, value=atom_res.value.title())
+            elif (str_op == "capitalize"):
+                result = jac_value(self, value=atom_res.value.capitalize())
+            elif (str_op == "swap_case"):
+                result = jac_value(self, value=atom_res.value.swapcase())
+            elif (str_op == "is_alnum"):
+                result = jac_value(self, value=atom_res.value.isalnum())
+            elif (str_op == "is_alpha"):
+                result = jac_value(self, value=atom_res.value.isalpha())
+            elif (str_op == "is_digit"):
+                result = jac_value(self, value=atom_res.value.isdigit())
+            elif (str_op == "is_title"):
+                result = jac_value(self, value=atom_res.value.istitle())
+            elif (str_op == "is_upper"):
+                result = jac_value(self, value=atom_res.value.isupper())
+            elif (str_op == "is_lower"):
+                result = jac_value(self, value=atom_res.value.islower())
+            elif (str_op == "is_space"):
+                result = jac_value(self, value=atom_res.value.isspace())
+            elif (len(kid) < 4 and str_op == "split"):
+                result = jac_value(self, value=atom_res.value.split())
+            elif (len(kid) < 4 and str_op == "strip"):
+                result = jac_value(self, value=atom_res.value.strip())
+            elif (len(kid) < 4 and str_op == "lstrip"):
+                result = jac_value(self, value=atom_res.value.lstrip())
+            elif (len(kid) < 4 and str_op == "rstrip"):
+                result = jac_value(self, value=atom_res.value.rstrip())
+            if (result):
+                if(len(kid) > 3):
+                    self.rt_warn(
+                        f"{str_op} does not take parameters, ignoring", kid[4])
+                return result
+            if(len(kid) > 3):
+                args = self.run_expr_list(kid[4]).value
+                if (str_op == "count"):
+                    result = jac_value(self, value=atom_res.value.count(*args))
+                elif (str_op == "find"):
+                    result = jac_value(self, value=atom_res.value.find(*args))
+                elif (str_op == "split"):
+                    result = jac_value(self, value=atom_res.value.split(*args))
+                elif (str_op == "startswith"):
+                    result = jac_value(
+                        self, value=atom_res.value.startswith(*args))
+                elif (str_op == "endswith"):
+                    result = jac_value(
+                        self, value=atom_res.value.endswith(*args))
+                elif (str_op == "replace"):
+                    result = jac_value(
+                        self, value=atom_res.value.replace(*args))
+                elif (str_op == "strip"):
+                    result = jac_value(self, value=atom_res.value.strip(*args))
+                elif (str_op == "lstrip"):
+                    result = jac_value(
+                        self, value=atom_res.value.lstrip(*args))
+                elif (str_op == "rstrip"):
+                    result = jac_value(
+                        self, value=atom_res.value.rstrip(*args))
+                if (result):
+                    return result
+        except Exception as e:
+            self.rt_error(f'{e}', jac_ast)
+        self.rt_error(f'Call to {str_op} is invalid.', jac_ast)
         return atom_res
 
     def run_node_edge_ref(self, jac_ast):
