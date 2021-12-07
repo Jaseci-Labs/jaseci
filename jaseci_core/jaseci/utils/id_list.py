@@ -38,6 +38,10 @@ class id_list(list):
             obj.save()
             self.parent_obj.save()
 
+    def add_obj_list(self, obj_list, silent=False):
+        for i in obj_list:
+            self.add_obj(i, silent=silent)
+
     def remove_obj(self, obj):
         """Remove a Jaseci obj from list"""
         self.remove(obj.jid)

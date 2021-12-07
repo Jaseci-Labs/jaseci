@@ -2,11 +2,11 @@
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
+from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
 import jaseci.tests.jac_test_code as jtc
-import uuid
 
 
 class jac_tests(TestCaseHelper, TestCase):
@@ -67,8 +67,7 @@ class jac_tests(TestCaseHelper, TestCase):
         lday_walk.prime(self.gph.outbound_nodes()[0])
         lday_walk.run()
         ret = lday_walk.context['latest_day']
-        self.assertEqual(self.gph._h.get_obj(
-            self.gph._m_id, uuid.UUID(ret)).name, 'day')
+        self.assertEqual(jeu(ret, self.gph).name, 'day')
 
     def test_carry_forward(self):
         """Test loading/parsing ll prototype"""
@@ -84,6 +83,5 @@ class jac_tests(TestCaseHelper, TestCase):
             'get_gen_day')
         lday_walk.prime(self.gph)
         lday_walk.run()
-        day = self.gph._h.get_obj(
-            self.gph._m_id, uuid.UUID(lday_walk.context['day_node']))
+        day = jeu(lday_walk.context['day_node'], self.gph)
         self.assertGreater(len(day.edge_ids), 3)

@@ -426,16 +426,16 @@ walker gen_day_workettes {
 
         for i=0 to i<num_workettes by i+=1 {
             day_workettes = spawn here walker::get_workettes_deep;
-            #std.out(day_workettes);
+            #std.log(day_workettes);
             if( day_workettes.length > 0 ) {
                 rand_int = rand.integer(0, day_workettes.length - 1);
                 parent = day_workettes[rand_int];
             }
-            else: parent = here;
+            else: parent = &here;
 
-            #std.out(parent);
+            #std.log(parent);
 
-            spawn parent walker::create_workette(title=rand.sentence(), wtype="workette");
+            spawn *parent walker::create_workette(title=rand.sentence(), wtype="workette");
         }
 
         #spawn here walker::get_workettes_deep(show_report=true);
@@ -779,7 +779,7 @@ walker set_day_highlight {
 
             types += [typeObj];
 
-            if( h["id"] ): take h["id"];
+            if( h["id"] ): take *(h["id"]);
         }
     }
 
@@ -860,7 +860,7 @@ walker get_workettes_deep {
         take --> node::workette;
     }
     workette {
-        lst += [here];
+        lst += [&here];
         take --> node::workette;
     }
 

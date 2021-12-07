@@ -214,7 +214,6 @@ class test_ll(TestCaseHelper, TestCase):
             'professional work')
 
     def test_parent_suggestion(self):
-        self.logger_on()
         if (not check_model_live('USE_ENCODER')):
             self.skipTest("external resource not available")
         """Test generating a suggested parent item for a given item"""

@@ -1,6 +1,7 @@
 from operator import itemgetter
-from jaseci.utils.utils import logger, app_logger, is_urn
+from jaseci.utils.utils import logger, app_logger
 from datetime import datetime
+from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 import sys
 import uuid
 import json
@@ -10,28 +11,21 @@ def log(param_list, meta):
     """Standard built in for printing output to log"""
     result = ''
     for i in param_list:
-        result += str(i)
+        result += str(jwv(i))
     app_logger.info(result)
     return result
 
 
 def out(param_list, meta):
     """Standard built in for printing output"""
+    param_list = [jwv(x) for x in param_list]
     print(*param_list)
 
 
 def err(param_list, meta):
     """Standard built in for printing to stderr"""
+    param_list = [jwv(x) for x in param_list]
     print(*param_list, file=sys.stderr)
-
-
-def get_uuid(param_list, meta):
-    """Standard built in for grabbing uuid from element type objects"""
-    obj = param_list[0]
-    if(not is_urn(obj)):
-        logger.error(f'Object {obj} is not an element (node, edge, etc)')
-        return obj
-    return obj[9:]
 
 
 def sort_by_col(param_list, meta):
