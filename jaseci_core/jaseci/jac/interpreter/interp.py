@@ -617,7 +617,12 @@ class interp(machine_state):
             if(kid[1].name == 'expr_list'):
                 param_list = self.run_expr_list(kid[1], wrap=True).value
             if (isinstance(atom_res.value, action)):
-                return jac_value(self, value=atom_res.value.trigger(param_list))
+                try:
+                    ret = atom_res.value.trigger(param_list)
+                except Exception as e:
+                    self.rt_error(f'{e}', jac_ast)
+                    ret = None
+                return jac_value(self, value=ret)
             else:
                 self.rt_error(f'Unable to execute ability {atom_res}',
                               kid[0])
@@ -1068,8 +1073,8 @@ class interp(machine_state):
         kid = jac_ast.kid
         idx1 = self.run_expression(kid[1]).value
         idx2 = self.run_expression(kid[3]).value
-        if(not self.rt_check_type(idx1, [int, str], kid[1]) or
-           not self.rt_check_type(idx2, [int, str], kid[3])):
+        if(not self.rt_check_type(idx1, [int], kid[1]) or
+           not self.rt_check_type(idx2, [int], kid[3])):
             self.rt_error('Index range not valid. '
                           'Indicies must be integers!', kid[1])
             return atom_res
