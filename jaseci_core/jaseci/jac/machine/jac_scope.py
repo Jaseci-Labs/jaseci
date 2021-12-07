@@ -4,9 +4,9 @@ Variable scope manager for Jac
 Utility for all runtime interaction with variables in different scopes
 """
 from jaseci.actions.utils.global_actions import get_global_actions
-from jaseci.jac.machine.jac_value import jac_value
-from jaseci.utils.utils import is_urn, logger
-import uuid
+from jaseci.jac.machine.jac_value import jac_value, is_jac_elem
+from jaseci.jac.machine.jac_value import jac_elem_wrap, jac_elem_unwrap
+from jaseci.utils.utils import logger
 
 
 class jac_scope():
@@ -21,8 +21,8 @@ class jac_scope():
         self.action_sets.append(actions)
 
     def set_agent_refs(self, cur_node, cur_walker):
-        self.local_scope['here'] = cur_node.jid
-        self.local_scope['visitor'] = cur_walker.jid
+        self.local_scope['here'] = jac_elem_wrap(cur_node)
+        self.local_scope['visitor'] = jac_elem_wrap(cur_walker)
 
     def inherit_agent_refs(self, src_scope):
         self.local_scope['here'] = src_scope.local_scope['here']
@@ -41,15 +41,17 @@ class jac_scope():
                 found = self.has_obj.context[subname[0]]
             if(found is not None):
                 # return node if it's a node
-                if is_urn(found):
-                    head_obj = self.parent._h.get_obj(
-                        self.parent._m_id, uuid.UUID(found))
+                if is_jac_elem(found):
+                    head_obj = jac_elem_unwrap(found, self.parent)
                     # head_obj.context['id'] = head_obj.jid
                     if (subname[1] in head_obj.context.keys() or
                             self.try_sync_to_arch(head_obj, subname[1])):
-                        return jac_value(self.parent, ctx=head_obj.context, name=subname[1])
+                        return jac_value(self.parent,
+                                         ctx=head_obj.context,
+                                         name=subname[1])
                 else:
-                    logger.error(f'Something went wrong with {found}')
+                    logger.error(
+                        f'Something went wrong with {found} {subname}')
                 # other types in scope can go here
             # check if dotted var is builtin action (of walker)
             if (allow_read_only):
@@ -61,7 +63,9 @@ class jac_scope():
         else:
             # check if var is in walker's context
             if(name in self.has_obj.context.keys()):
-                return jac_value(self.parent, ctx=self.has_obj.context, name=name)
+                return jac_value(self.parent,
+                                 ctx=self.has_obj.context,
+                                 name=name)
         return None
 
     def get_live_var(self, name, create_mode=False):

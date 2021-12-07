@@ -60,7 +60,7 @@ class machine_state():
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set(self)
+        ret = jac_set()
         for i in obj_set:
             ret.add_obj(i)
         return ret
@@ -69,7 +69,7 @@ class machine_state():
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set(self)
+        ret = jac_set()
         for i in edge_set.obj_list():
             ret.add_obj(i.opposing_node(self.current_node))
         return ret

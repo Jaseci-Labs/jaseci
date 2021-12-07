@@ -4,7 +4,7 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
-from jaseci.utils.utils import is_jsonable
+from jaseci.utils.utils import is_jsonable, is_urn
 from jaseci.element.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
@@ -15,6 +15,7 @@ from jaseci.jac.machine.jac_scope import jac_scope
 from jaseci.jac.machine.machine_state import machine_state
 
 from jaseci.jac.machine.jac_value import jac_value
+from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 
 
 class interp(machine_state):
@@ -343,7 +344,6 @@ class interp(machine_state):
         """
         kid = jac_ast.kid
         report = self.run_expression(kid[1]).wrap(serialize_mode=True)
-        report = self.report_deep_serialize(report)
         if(not is_jsonable(report)):
             self.rt_error(f'Report not Json serializable', kid[0])
         self.report.append(report)
@@ -439,9 +439,9 @@ class interp(machine_state):
         self.rt_check_type(base, [node, jac_set], kid[0])
         self.rt_check_type(target, [node, jac_set], kid[-1])
         if(isinstance(base, node)):
-            base = jac_set(parent_obj=self, in_list=[base.jid])
+            base = jac_set(in_list=[base])
         if(isinstance(target, node)):
-            target = jac_set(parent_obj=self, in_list=[target.jid])
+            target = jac_set(in_list=[target])
         if (kid[1].name == 'NOT'):
             for i in target.obj_list():
                 for j in base.obj_list():
@@ -615,7 +615,7 @@ class interp(machine_state):
         elif(kid[0].name == "LPAREN"):
             param_list = []
             if(kid[1].name == 'expr_list'):
-                param_list = self.run_expr_list(kid[1], wrap=True).value
+                param_list = self.run_expr_list(kid[1]).value
             if (isinstance(atom_res.value, action)):
                 try:
                     ret = atom_res.value.trigger(param_list)
@@ -644,7 +644,8 @@ class interp(machine_state):
             | atom DOT built_in
             | atom index
             | atom index_range
-            | DEREF expression
+            | ref
+            | deref
             | any_type;
         """
         kid = jac_ast.kid
@@ -653,7 +654,8 @@ class interp(machine_state):
         elif(kid[0].name == 'FLOAT'):
             return jac_value(self, value=float(kid[0].token_text()))
         elif(kid[0].name == 'STRING'):
-            return jac_value(self, value=self.parse_str_token(kid[0].token_text()))
+            return jac_value(
+                self, value=self.parse_str_token(kid[0].token_text()))
         elif(kid[0].name == 'BOOL'):
             return jac_value(self, value=bool(kid[0].token_text() == 'true'))
         elif(kid[0].name == 'NULL'):
@@ -682,13 +684,31 @@ class interp(machine_state):
                         atom_res.value, [list, str], kid[0])):
                     return atom_res
                 return self.run_index_range(kid[1], atom_res)
-        elif (kid[0].name == 'DEREF'):
-            result = self.run_expression(kid[1])
-            if (self.rt_check_type(result.value, element, kid[1])):
-                result = jac_value(self, value=result.value.jid)
-            return result
         else:
             return self.run_rule(kid[0])
+
+    def run_ref(self, jac_ast):
+        """
+        ref: '&' expression;
+        """
+        kid = jac_ast.kid
+        result = self.run_expression(kid[1])
+        if (self.rt_check_type(result.value, element, kid[1])):
+            result = jac_value(self, value=result.value.jid)
+        return result
+
+    def run_deref(self, jac_ast):
+        """
+        deref: '*' expression;
+        """
+        kid = jac_ast.kid
+        result = self.run_expression(kid[1])
+        if (is_urn(result.value)):
+            result = jac_value(
+                self, value=jeu(result.value.replace('urn', 'jac'), self))
+        else:
+            self.rt_error(f'{result.value} not valid reference', kid[1])
+        return result
 
     def run_built_in(self, jac_ast, atom_res):
         """
@@ -714,7 +734,7 @@ class interp(machine_state):
             elif(isinstance(atom_res.value, edge)):
                 return atom_res
             elif(isinstance(atom_res.value, jac_set)):
-                res = jac_set(self)
+                res = jac_set()
                 for i in atom_res.value.obj_list():
                     if(isinstance(i, edge)):
                         res.add_obj(i)
@@ -733,7 +753,7 @@ class interp(machine_state):
                 return jac_value(self, value=self.obj_set_to_jac_set(
                     atom_res.nodes()))
             elif(isinstance(atom_res.value, jac_set)):
-                res = jac_set(self)
+                res = jac_set()
                 for i in atom_res.value.obj_list():
                     if(isinstance(i, edge)):
                         res.add_obj(i.to_node())
@@ -935,7 +955,7 @@ class interp(machine_state):
         """
         kid = jac_ast.kid
         if(not is_spawn):
-            result = jac_set(self)
+            result = jac_set()
             if (len(kid) > 1):
                 for i in self.viable_nodes().obj_list():
                     if (i.name == kid[2].token_text()):
@@ -994,7 +1014,7 @@ class interp(machine_state):
             | '-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
         """
         kid = jac_ast.kid
-        result = jac_set(self)
+        result = jac_set()
         for i in self.current_node.outbound_edges() + \
                 self.current_node.bidirected_edges():
             if (len(kid) > 2 and i.name != kid[2].token_text()):
@@ -1013,7 +1033,7 @@ class interp(machine_state):
             | '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '-';
         """
         kid = jac_ast.kid
-        result = jac_set(self)
+        result = jac_set()
         for i in self.current_node.inbound_edges() + \
                 self.current_node.bidirected_edges():
             if (len(kid) > 2 and i.name != kid[2].token_text()):
@@ -1033,7 +1053,7 @@ class interp(machine_state):
         NOTE: these do not use strict bidirected semantic but any edge
         """
         kid = jac_ast.kid
-        result = jac_set(self)
+        result = jac_set()
         for i in self.current_node.attached_edges():
             if (len(kid) > 2 and i.name != kid[2].token_text()):
                 continue
@@ -1164,7 +1184,7 @@ class interp(machine_state):
         ret = jac_value(self, value=walk.anchor_value())
         self.report = self.report + walk.report
         walk.destroy()
-        ret.unwrap()
+        # ret.unwrap()
         return ret
 
     def run_graph_spawn(self, jac_ast, location):
@@ -1198,7 +1218,7 @@ class interp(machine_state):
                 LPAREN (filter_compare (COMMA filter_compare)*)? RPAREN;
         """
         kid = jac_ast.kid
-        ret = jac_set(self)
+        ret = jac_set()
         for i in obj.obj_list():
             for j in kid:
                 if (j.name == 'filter_compare'):
@@ -1280,27 +1300,6 @@ class interp(machine_state):
         m.run_code_block(jac_ir_to_ast(
             act_list.get_obj_by_name(name).value))
         self.report = self.report + m.report
-
-    def report_deep_serialize(self, report):
-        """Performs JSON serialization for lists of lists of lists etc"""
-        if (isinstance(report, element)):
-            report = report.serialize()
-        elif (isinstance(report, jac_set)):
-            blobs = []
-            for i in report.obj_list():
-                blobs.append(i.serialize())
-            report = blobs
-        elif (isinstance(report, list)):
-            blobs = []
-            for i in report:
-                blobs.append(self.report_deep_serialize(i))
-            report = blobs
-        elif (isinstance(report, dict)):
-            blobs = {}
-            for i in report.keys():
-                blobs[i] = self.report_deep_serialize(report[i])
-            report = blobs
-        return report
 
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""

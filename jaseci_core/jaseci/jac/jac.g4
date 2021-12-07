@@ -152,8 +152,13 @@ atom:
 	| atom DOT built_in
 	| atom index
 	| atom index_range
-	| DEREF expression
+	| ref
+	| deref
 	| any_type;
+
+ref: '&' expression;
+
+deref: '*' expression;
 
 built_in:
 	cast_built_in
@@ -335,7 +340,6 @@ KW_DISENGAGE: 'disengage';
 KW_SKIP: 'skip';
 KW_REPORT: 'report';
 KW_DESTROY: 'destroy';
-DEREF: '&';
 DOT: '.';
 NOT: '!' | 'not';
 EE: '==';

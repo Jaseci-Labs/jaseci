@@ -8,7 +8,7 @@ from jaseci.graph.node import node
 from jaseci.graph.edge import edge
 from jaseci.jac.interpreter.interp import interp
 from jaseci.jac.machine.jac_scope import jac_scope
-import uuid
+from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 
 
 class architype_interp(interp):
@@ -69,7 +69,7 @@ class architype_interp(interp):
             | COLON has_root KW_SPAWN code_block SEMI;
         """
         kid = jac_ast.kid
-        root_node_id = self.run_has_root(kid[1])
+        root_name = self.run_has_root(kid[1])
         m = interp(parent_override=self.parent(), m_id=self._m_id)
         m.push_scope(jac_scope(parent=self,
                                has_obj=None,
@@ -77,11 +77,10 @@ class architype_interp(interp):
         m.run_code_block(kid[3])
         local_state = m._jac_scope.local_scope
         self.report = self.report + m.report
-        if(root_node_id in local_state.keys()):
-            obj = self._h.get_obj(
-                self._m_id, uuid.UUID(local_state[root_node_id]))
+        if(root_name in local_state.keys()):
+            obj = jeu(local_state[root_name], parent=self)
             if(not isinstance(obj, node)):
-                self.rt_error(f"{root_node_id} is {type(obj)} not node!",
+                self.rt_error(f"{root_name} is {type(obj)} not node!",
                               kid[2])
             return obj
         else:
@@ -102,7 +101,7 @@ class architype_interp(interp):
             'node_ops': [],
             'edge_ops': []
         }
-        root_node_id = self.run_has_root(kid[1])
+        root_name = self.run_has_root(kid[1])
         self.run_dot_graph(kid[2], graph_state)
 
         nodes_def = {}
@@ -114,7 +113,7 @@ class architype_interp(interp):
                 nodes_def[node_id] = op
             nodes_def[node_id].update(op)
 
-        if (root_node_id not in nodes_def):
+        if (root_name not in nodes_def):
             del nodes_def
             self.rt_error(f"Graph didn't produce root node!",
                           kid[1])
@@ -163,7 +162,7 @@ class architype_interp(interp):
 
             # TODO: handle non-directional edge once that's supported in jac
 
-        return node_objs[root_node_id]
+        return node_objs[root_name]
 
     def run_has_root(self, jac_ast):
         """

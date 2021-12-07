@@ -476,6 +476,24 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#ref.
+    def enterRef(self, ctx:jacParser.RefContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#ref.
+    def exitRef(self, ctx:jacParser.RefContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#deref.
+    def enterDeref(self, ctx:jacParser.DerefContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#deref.
+    def exitDeref(self, ctx:jacParser.DerefContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#built_in.
     def enterBuilt_in(self, ctx:jacParser.Built_inContext):
         pass

@@ -716,17 +716,6 @@ basic = \
     }
     """
 
-
-get_uuid = \
-    """
-    node test {has a;}
-
-    walker init {
-        nd= spawn here --> node::test;
-        nd.a = std.get_uuid(nd);
-    }
-    """
-
 visibility_builtins = \
     """
     node test {
@@ -801,7 +790,7 @@ null_handleing = \
     walker init {
         person1 = spawn here -->
             node::person(name = "Josh", age = 32);
-            
+
         if(person1.birthday==null): report true;
         else: report false;
 
@@ -822,7 +811,7 @@ bool_type_convert = \
     walker init {
         p1 = spawn here -->
             node::person(name = "Josh");
-            
+
         p1.name = true;
         report p1.name;
         std.log(p1.name);
@@ -912,7 +901,7 @@ string_manipulation = \
         report a.str.is_upper;
         report a.str.is_lower;
         report a.str.is_space;
-        report a.str.count('t'); 
+        report a.str.count('t');
         report a.str.find('i');
         report a.str.split;
         report a.str.split('E');
@@ -925,7 +914,15 @@ string_manipulation = \
         report a.str.lstrip(' tE');
         report a.str.rstrip;
         report a.str.rstrip(' e');
-        
+
         report a.str.upper.str.is_upper;
+    }
+    """
+
+sub_list = \
+    """
+    walker init {
+        a=[1,2,3,4,5,6,7,8,9];
+        report a[4:7];
     }
     """

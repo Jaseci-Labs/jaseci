@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Lang Feature: can now explictly reference and dereference graph elements (nodes, edges, etc)
 - New Lang Feature: Field filtering for context, info, details
 - New Lang Feature: Type checking primitives, and type casting primitives
 - New Lang Feature: String library finally present
@@ -19,6 +20,8 @@
 
 - type, int, float, str, list, dict, bool, are now keywords, if you used these as variable names in legacy code, must make updates.
 - the destroy built-in uses `destroy:idx:` vs `destroy(idx)` now
+- get_uuid standard library function is deprecated since we have string manipulation
+- internal representation of element now `jac:uuid:` format
 
 ## Version 1.2.1
 

@@ -121,7 +121,7 @@ class walker_interp(interp):
         if (isinstance(result, node)):
             self.ignore_node_ids.add_obj(result)
         elif (isinstance(result, jac_set)):
-            self.ignore_node_ids += result
+            self.ignore_node_ids.add_obj_list(result)
         else:
             self.rt_error(f'{result} is not ignorable type (i.e., nodes)',
                           kid[1])
@@ -137,7 +137,7 @@ class walker_interp(interp):
         if (isinstance(result, node)):
             self.next_node_ids.add_obj(result)
         elif (isinstance(result, jac_set)):
-            self.next_node_ids += result
+            self.next_node_ids.add_obj_list(result)
         elif(result):
             self.rt_error(f'{result} is not destination type (i.e., nodes)',
                           kid[1])
@@ -145,9 +145,6 @@ class walker_interp(interp):
         if (before >= after and kid[2].name == 'else_stmt'):
             self.run_else_stmt(kid[2])
         after = len(self.next_node_ids)
-        # if(before >= after and not self.stopped == 'stop'):
-        #     self.rt_info(f"Walker was unable to take any edge" +
-        #                  f" - {self.current_node}", kid[0])
 
     def run_destroy_action(self, jac_ast):
         """
@@ -158,7 +155,7 @@ class walker_interp(interp):
         if (isinstance(result, node)):
             self.destroy_node_ids.add_obj(result)
         elif (isinstance(result, jac_set)):
-            self.destroy_node_ids += result
+            self.destroy_node_ids.add_obj_list(result)
         else:
             self.rt_error(f'{result} is not destroyable type (i.e., nodes)',
                           kid[1])
@@ -206,7 +203,7 @@ class walker_interp(interp):
 
     def viable_nodes(self):
         """Returns all nodes that shouldnt be ignored"""
-        ret = jac_set(self)
+        ret = jac_set()
         for i in self.current_node.attached_nodes():
             if (i not in self.ignore_node_ids.obj_list()):
                 ret.add_obj(i)
