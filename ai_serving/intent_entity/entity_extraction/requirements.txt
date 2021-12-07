@@ -1,0 +1,3 @@
+flair
+fastapi
+uvicorn
