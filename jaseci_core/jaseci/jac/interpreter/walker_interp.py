@@ -183,7 +183,11 @@ class walker_interp(interp):
 
         if(kid[1].name == "expr_list"):
             param_list = m.run_expr_list(kid[1]).value
-        result = act.trigger(param_list)
+        try:
+            result = act.trigger(param_list)
+        except Exception as e:
+            self.rt_error(f'{e}', jac_ast)
+            result = None
         if (kid[-1].name == "expression"):
             dest = m.run_expression(kid[-1])
             dest.value = result

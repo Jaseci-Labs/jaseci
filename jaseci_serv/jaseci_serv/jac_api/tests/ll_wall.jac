@@ -328,7 +328,7 @@ walker cleanse_all {
 
 walker create_workette {
     has title, wtype, note, is_MIT, snooze_till, date, is_ritual, color;
-   
+
     day, week, month, year, life, workette {
         new = spawn here -[parent]->
             node::workette(name=title, wtype=wtype, note=note, is_MIT=is_MIT, snooze_till=snooze_till, date=date, is_ritual=is_ritual, color=color);
@@ -407,7 +407,7 @@ walker gen_day_workettes {
 
     root {
         spawn here walker::delete_day(date=date);
-        
+
         take --> node::life else {
             spawn here walker::init();
             take --> node::life;
@@ -423,7 +423,7 @@ walker gen_day_workettes {
     year, month, week { take -->; }
     day {
         if(num_workettes == 0): disengage;
-        
+
         for i=0 to i<num_workettes by i+=1 {
             day_workettes = spawn here walker::get_workettes_deep;
             #std.out(day_workettes);
@@ -435,7 +435,7 @@ walker gen_day_workettes {
 
             #std.out(parent);
 
-            spawn parent walker::create_workette(title=rand.sentence(), wtype=workette);
+            spawn parent walker::create_workette(title=rand.sentence(), wtype="workette");
         }
 
         #spawn here walker::get_workettes_deep(show_report=true);
@@ -723,10 +723,10 @@ walker set_highlight {
     workette {
         if (if_set) {
             # keep walking up the graph to find today's day node
-            take <-[parent]-; 
+            take <-[parent]-;
             skip;
         }
-        
+
         # set the highlight type
         here.highlight_type = highlight_type;
         if_set = true;
@@ -806,7 +806,7 @@ walker get_highlights {
 
         if(!num_days_to_load): num_days_to_load = 7;
     }
-    
+
     day {
         items = [];
         if (loaded_days == num_days_to_load) {
@@ -816,7 +816,7 @@ walker get_highlights {
         for w in -[highlight]-> {
             items += [{"id": &(w), "type": w.highlight_type["type"], "color": w.highlight_type["color"], "icon": w.highlight_type["icon"], "item": w.name}];
         }
-        
+
         highlights += [[[here, here.day], here.note, items]];
 
         loaded_days += 1;
@@ -832,39 +832,39 @@ walker get_highlights {
 # for testing
 walker get_workettes {
     has show_report;
-    has anchor list;
+    has anchor lst;
 
     with entry {
-        list = [];
+        lst = [];
     }
 
     day, workette {
         for i in --> node::workette:
-            list += [i];
+            lst += [i];
     }
 
     with exit {
-        if( show_report ): report list;
+        if( show_report ): report lst;
     }
 }
 
 walker get_workettes_deep {
     has show_report;
-    has anchor list;
+    has anchor lst;
 
     with entry {
-        list = [];
+        lst = [];
     }
 
     day {
         take --> node::workette;
     }
     workette {
-        list += [here];
+        lst += [here];
         take --> node::workette;
     }
 
     with exit {
-        if( show_report ): report list;
+        if( show_report ): report lst;
     }
 }
