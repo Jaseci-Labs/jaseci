@@ -1,3 +1,4 @@
 flair
 fastapi
 uvicorn
+pytest

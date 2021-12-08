@@ -19,14 +19,14 @@ app = FastAPI()
 
 #declaring the request body content for intent classification
 class ParseText(BaseModel):
-    text: str 
-    labels: List
+    text: Optional[str] = None  
+    labels: Optional[List]=None
     is_multi_label: Optional[bool] = True
 
 #declaring the request body for updateDataSet
 class UpdateData(BaseModel):
-    text: str 
-    label: str
+    text: Optional[str] = None  
+    label: Optional[str] = None 
     topic: Optional[str] = "topic"
  
 
@@ -37,18 +37,23 @@ tars = TARSClassifier.load(tars_model_name)
 @app.post("/intentclassification")
 def intentClassification(request_data : ParseText):
     global tars
-    sentence=Sentence(request_data.text)
-    tars.predict_zero_shot(sentence, request_data.labels,multi_label=request_data.is_multi_label)
-    tagged_sentence=sentence.to_dict()
-    json_compatible_data = jsonable_encoder(tagged_sentence)
-    response_data_format={"input_text":json_compatible_data["text"],"intents":[]}
-    for json_data in json_compatible_data["labels"]:
-        temp_dict={}
-        temp_dict["intent"]=json_data["value"]
-        temp_dict["conf_score"]=json_data["confidence"]
-        response_data_format['intents'].append(temp_dict)
-    return JSONResponse(content=response_data_format,status_code=200)
-
+    if request_data.text:
+        if request_data.labels:
+            sentence=Sentence(request_data.text)
+            tars.predict_zero_shot(sentence, request_data.labels,multi_label=request_data.is_multi_label)
+            tagged_sentence=sentence.to_dict()
+            json_compatible_data = jsonable_encoder(tagged_sentence)
+            response_data_format={"input_text":json_compatible_data["text"],"intents":[]}
+            for json_data in json_compatible_data["labels"]:
+                temp_dict={}
+                temp_dict["intent"]=json_data["value"]
+                temp_dict["conf_score"]=json_data["confidence"]
+                response_data_format['intents'].append(temp_dict)
+            return JSONResponse(content=response_data_format,status_code=200)
+        else:
+            return JSONResponse(content={"Exception" :"Intents are missing in request data"},status_code=400)
+    else:
+        return JSONResponse(content={"Exception" :"Text data is missing in request data"},status_code=400)
 
 def trainIntent(text:str,topic:str,label:str):
     global tars
@@ -74,11 +79,15 @@ def trainIntent(text:str,topic:str,label:str):
      # 5. Load few-shot TARS model
     tars = TARSClassifier.load(f'{directory}/final-model.pt')
 
-@app.post("/updatedataset")
+@app.post("/updateintentdataset")
 def updateDataset(request_data : UpdateData,background_tasks:BackgroundTasks):
     print(request_data)
-    if request_data:
+    if request_data and request_data.label and request_data.text:
         background_tasks.add_task(trainIntent,request_data.text,request_data.topic, request_data.label)
         return JSONResponse(content="Model Training is started",status_code=200)
     else:
-        return JSONResponse(content="Need Data for Text and Label",status_code=500)
+        return JSONResponse(content="Need Data for Text and Label",status_code=400)
+
+@app.get("/")
+def healthCheck():
+    return JSONResponse(content={"Health" : "Ok"},status_code=200)
