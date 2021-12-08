@@ -13,9 +13,10 @@
 ### Notes
 
 - type, int, float, str, list, dict, bool, are now keywords, if you used these as variable names in legacy code, must make updates.
-- the destroy built-in uses `destroy:idx:` vs `destroy(idx)` now
+- the destroy built-in is totally revised `lst.destroy(idx)` on lists should be changed to `destroy lst[idx]`.
 - get_uuid standard library function is deprecated since we have string manipulation
 - internal representation of element now `jac:uuid:` format
+- standard, output and logging now will print proper values (e.g. json values for null, true, and false)
 
 ## Version 1.2.2
 
