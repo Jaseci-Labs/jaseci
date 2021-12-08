@@ -169,12 +169,9 @@ built_in:
 
 cast_built_in: any_type;
 
-obj_built_in:
-	KW_CONTEXT (COLON name_list COLON)?
-	| KW_INFO (COLON name_list COLON)?
-	| KW_DETAILS (COLON name_list COLON)?;
+obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
 
-dict_built_in: KW_KEYS;
+dict_built_in: KW_KEYS | LBRACE name_list RBRACE;
 
 list_built_in: KW_LENGTH | KW_DESTROY COLON expression COLON;
 

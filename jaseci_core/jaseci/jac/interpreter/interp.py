@@ -777,42 +777,29 @@ class interp(machine_state):
 
     def run_obj_built_in(self, jac_ast, atom_res):
         """
-        obj_built_in:
-            KW_CONTEXT (COLON name_list COLON)?
-            | KW_INFO (COLON name_list COLON)?
-            | KW_DETAILS (COLON name_list COLON)?;
+        obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
         """
         kid = jac_ast.kid
         from jaseci.actor.walker import walker
-        filter_on = []
-        if(len(kid) > 1):
-            filter_on = self.run_name_list(kid[2])
         if (kid[0].name == "KW_CONTEXT"):
             if(self.rt_check_type(atom_res.value,
                                   [node, edge, walker], kid[0])):
-                d = atom_res.value.context
-                if(len(filter_on)):
-                    d = {k: d[k] for k in d if k in filter_on}
-                return jac_value(self, value=d)
+                return jac_value(self, value=atom_res.value.context)
         elif (kid[0].name == "KW_INFO"):
             if(self.rt_check_type(atom_res.value,
                                   [node, edge, walker], kid[0])):
-                d = atom_res.value.serialize(detailed=False)
-                if(len(filter_on)):
-                    d = {k: d[k] for k in d if k in filter_on}
-                return jac_value(self, value=d)
+                return jac_value(
+                    self, value=atom_res.value.serialize(detailed=False))
         elif (kid[0].name == "KW_DETAILS"):
             if(self.rt_check_type(atom_res.value,
                                   [node, edge, walker], kid[0])):
-                d = atom_res.value.serialize(detailed=True)
-                if(len(filter_on)):
-                    d = {k: d[k] for k in d if k in filter_on}
-                return jac_value(self, value=d)
+                return jac_value(
+                    self, value=atom_res.value.serialize(detailed=True))
         return atom_res
 
     def run_dict_built_in(self, jac_ast, atom_res):
         """
-        dict_built_in: KW_KEYS;
+        dict_built_in: KW_KEYS | COLON name_list COLON;
         """
         kid = jac_ast.kid
         if (kid[0].name == "KW_KEYS"):
@@ -822,6 +809,12 @@ class interp(machine_state):
                 self.rt_error(f'Cannot get keys of {atom_res}. '
                               f'Not Dictionary!', kid[0])
                 return jac_value(self, value=[])
+        elif(len(kid) > 1 and kid[1].name == 'name_list'):
+            filter_on = self.run_name_list(kid[1])
+            d = atom_res.value
+            if(self.rt_check_type(d, [dict], kid[0])):
+                d = {k: d[k] for k in d if k in filter_on}
+                return jac_value(self, value=d)
         return atom_res
 
     def run_list_built_in(self, jac_ast, atom_res):
