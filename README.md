@@ -1,5 +1,23 @@
 # Jaseci Release Notes
 
+## Version 1.3
+
+### Updates
+
+- New Lang Feature: Massively expanded functionality with destroy and list slice management
+- New Lang Feature: can now explicitly reference and dereference graph elements (nodes, edges, etc)
+- New Lang Feature: Field filtering for dictionaries, particularly useful for context, info, details
+- New Lang Feature: Type checking primitives, and type casting primitives
+- New Lang Feature: String library finally present
+
+### Notes
+
+- type, int, float, str, list, dict, bool, are now keywords, if you used these as variable names in legacy code, must make updates.
+- the destroy built-in is totally revised `lst.destroy(idx)` on lists should be changed to `destroy lst[idx]`.
+- get_uuid standard library function is deprecated since we have string manipulation
+- internal representation of element now `jac:uuid:` format
+- standard, output and logging now will print proper values (e.g. json values for null, true, and false)
+
 ## Version 1.2.2
 
 ### Updates

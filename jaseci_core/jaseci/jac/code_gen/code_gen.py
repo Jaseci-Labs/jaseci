@@ -142,11 +142,11 @@ class code_gen():
     #             if (i.token_text() not in obj.context.keys()):
     #                 self.rt_error(f"No context for preset param {i}", i)
     #             else:
-    #                 prm = ctx_value(obj, i.token_text())
+    #                 prm = jac_value(obj, i.token_text())
     #                 result['input'].append(prm)
     #     if (kid[-2].name == 'COLON_OUT'):
     #         result['input'].pop()
-    #         result['output'] = ctx_value(obj, kid[-1].token_text())
+    #         result['output'] = jac_value(obj, kid[-1].token_text())
     #     return result
 
     # def run_code_block(self, jac_ast):

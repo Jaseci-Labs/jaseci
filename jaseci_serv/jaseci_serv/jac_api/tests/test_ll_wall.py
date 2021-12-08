@@ -95,8 +95,7 @@ class test_ll_wall(TestCaseHelper, TestCase):
             {"id": data[0][2], "type": "Required the Most Work",
              "color": "#b926df", "icon": "0x1F4AA"}
         ]}, prime=day_id)
-
-        self.assertEqual(data[0][0][0][0][0], day_id)
+        self.assertEqual(data[0][0][0][0][0]['jid'], day_id)
         self.assertEqual(data[0][0][0][0][1], day_date)
         self.assertEqual(data[0][0][0][1], day_note)
 

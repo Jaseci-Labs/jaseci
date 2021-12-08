@@ -58,31 +58,15 @@ class walker_interp(interp):
             act_list=self.current_node.exit_action_ids)
         self.pop_scope()
 
-    def run_preset_in_out(self, jac_ast, obj, act):
+    def run_node_ctx_block(self, jac_ast):
         """
-        preset_in_out:
-            DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
-
-        obj: The node or edge with preset
-        act: The action associated with preset
+        node_ctx_block: name_list code_block;
         """
         kid = jac_ast.kid
-        param_list = []
-        m = interp(parent_override=self.parent(), m_id=self._m_id)
-        m.push_scope(jac_scope(parent=self,
-                               has_obj=obj,
-                               action_sets=[
-                                   obj.activity_action_ids]))
-        m._jac_scope.set_agent_refs(cur_node=self.current_node,
-                                    cur_walker=self)
-
-        if(kid[1].name == "expr_list"):
-            param_list = m.run_expr_list(kid[1]).value
-        result = act.trigger(param_list)
-        if (kid[-1].name == "expression"):
-            dest = m.run_expression(kid[-1])
-            dest.value = result
-            dest.write()
+        for i in self.run_name_list(kid[0]):
+            if (self.current_node.name == i):
+                self.run_code_block(kid[1])
+                return
 
     def run_walk_entry_block(self, jac_ast):
         """
@@ -137,7 +121,7 @@ class walker_interp(interp):
         if (isinstance(result, node)):
             self.ignore_node_ids.add_obj(result)
         elif (isinstance(result, jac_set)):
-            self.ignore_node_ids += result
+            self.ignore_node_ids.add_obj_list(result)
         else:
             self.rt_error(f'{result} is not ignorable type (i.e., nodes)',
                           kid[1])
@@ -153,7 +137,7 @@ class walker_interp(interp):
         if (isinstance(result, node)):
             self.next_node_ids.add_obj(result)
         elif (isinstance(result, jac_set)):
-            self.next_node_ids += result
+            self.next_node_ids.add_obj_list(result)
         elif(result):
             self.rt_error(f'{result} is not destination type (i.e., nodes)',
                           kid[1])
@@ -161,23 +145,36 @@ class walker_interp(interp):
         if (before >= after and kid[2].name == 'else_stmt'):
             self.run_else_stmt(kid[2])
         after = len(self.next_node_ids)
-        # if(before >= after and not self.stopped == 'stop'):
-        #     self.rt_info(f"Walker was unable to take any edge" +
-        #                  f" - {self.current_node}", kid[0])
 
-    def run_destroy_action(self, jac_ast):
+    def run_preset_in_out(self, jac_ast, obj, act):
         """
-        destroy_action: KW_DESTROY expression SEMI;
+        preset_in_out:
+            DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
+
+        obj: The node or edge with preset
+        act: The action associated with preset
         """
         kid = jac_ast.kid
-        result = self.run_expression(kid[1]).value
-        if (isinstance(result, node)):
-            self.destroy_node_ids.add_obj(result)
-        elif (isinstance(result, jac_set)):
-            self.destroy_node_ids += result
-        else:
-            self.rt_error(f'{result} is not destroyable type (i.e., nodes)',
-                          kid[1])
+        param_list = []
+        m = interp(parent_override=self.parent(), m_id=self._m_id)
+        m.push_scope(jac_scope(parent=self,
+                               has_obj=obj,
+                               action_sets=[
+                                   obj.activity_action_ids]))
+        m._jac_scope.set_agent_refs(cur_node=self.current_node,
+                                    cur_walker=self)
+
+        if(kid[1].name == "expr_list"):
+            param_list = m.run_expr_list(kid[1]).value
+        try:
+            result = act.trigger(param_list)
+        except Exception as e:
+            self.rt_error(f'{e}', jac_ast)
+            result = None
+        if (kid[-1].name == "expression"):
+            dest = m.run_expression(kid[-1])
+            dest.value = result
+            dest.write()
 
     # Helper Functions ##################
     def auto_trigger_node_actions(self, nd, act_list):
@@ -192,7 +189,7 @@ class walker_interp(interp):
 
     def viable_nodes(self):
         """Returns all nodes that shouldnt be ignored"""
-        ret = jac_set(self)
+        ret = jac_set()
         for i in self.current_node.attached_nodes():
             if (i not in self.ignore_node_ids.obj_list()):
                 ret.add_obj(i)

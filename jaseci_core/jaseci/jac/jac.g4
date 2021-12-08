@@ -58,7 +58,7 @@ event_clause:
 preset_in_out:
 	DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
 
-dotted_name: NAME (DOT NAME)*;
+dotted_name: NAME DOT NAME;
 
 name_list: NAME (COMMA NAME)*;
 
@@ -76,6 +76,7 @@ statement:
 	| for_stmt
 	| while_stmt
 	| ctrl_stmt SEMI
+	| destroy_action
 	| report_action
 	| walker_action;
 
@@ -93,19 +94,15 @@ while_stmt: KW_WHILE expression code_block;
 
 ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_SKIP;
 
+destroy_action: KW_DESTROY expression SEMI;
+
 report_action: KW_REPORT expression SEMI;
 
-walker_action:
-	ignore_action
-	| take_action
-	| destroy_action
-	| KW_DISENGAGE SEMI;
+walker_action: ignore_action | take_action | KW_DISENGAGE SEMI;
 
 ignore_action: KW_IGNORE expression SEMI;
 
 take_action: KW_TAKE expression (SEMI | else_stmt);
-
-destroy_action: KW_DESTROY expression SEMI;
 
 expression: connect (assignment | copy_assign | inc_assign)?;
 
@@ -142,25 +139,41 @@ atom:
 	| FLOAT
 	| STRING
 	| BOOL
+	| NULL
+	| NAME
 	| node_edge_ref
 	| list_val
 	| dict_val
-	| dotted_name
 	| LPAREN expression RPAREN
 	| spawn
-	| atom DOT func_built_in
-	| atom index+
-	| DEREF expression;
+	| atom DOT built_in
+	| atom DOT NAME
+	| atom index_slice
+	| ref
+	| deref
+	| any_type;
 
-func_built_in:
-	| KW_LENGTH
-	| KW_KEYS
-	| KW_EDGE
-	| KW_NODE
-	| KW_CONTEXT
-	| KW_INFO
-	| KW_DETAILS
-	| KW_DESTROY LPAREN expression RPAREN;
+ref: '&' expression;
+
+deref: '*' expression;
+
+built_in:
+	cast_built_in
+	| obj_built_in
+	| dict_built_in
+	| list_built_in
+	| string_built_in;
+
+cast_built_in: any_type;
+
+obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
+
+dict_built_in: KW_KEYS | LBRACE name_list RBRACE;
+
+list_built_in: KW_LENGTH | KW_DESTROY COLON expression COLON;
+
+string_built_in:
+	TYP_STRING DBL_COLON NAME (LPAREN expr_list RPAREN)?;
 
 node_edge_ref:
 	node_ref filter_ctx?
@@ -188,7 +201,9 @@ edge_any:
 
 list_val: LSQUARE expr_list? RSQUARE;
 
-index: LSQUARE expression RSQUARE;
+index_slice:
+	LSQUARE expression RSQUARE
+	| LSQUARE expression COLON expression RSQUARE;
 
 dict_val: LBRACE (kv_pair (COMMA kv_pair)*)? RBRACE;
 
@@ -212,6 +227,17 @@ filter_ctx:
 spawn_assign: NAME EQ expression;
 
 filter_compare: NAME cmp_op expression;
+
+any_type:
+	TYP_STRING
+	| TYP_INT
+	| TYP_FLOAT
+	| TYP_LIST
+	| TYP_DICT
+	| TYP_BOOL
+	| KW_NODE
+	| KW_EDGE
+	| KW_TYPE;
 
 /* DOT grammar below */
 dot_graph:
@@ -256,6 +282,13 @@ dot_id:
 	| KW_EDGE;
 
 /* Lexer rules */
+TYP_STRING: 'str';
+TYP_INT: 'int';
+TYP_FLOAT: 'float';
+TYP_LIST: 'list';
+TYP_DICT: 'dict';
+TYP_BOOL: 'bool';
+KW_TYPE: 'type';
 KW_GRAPH: 'graph';
 KW_STRICT: 'strict';
 KW_DIGRAPH: 'digraph';
@@ -302,7 +335,6 @@ KW_DISENGAGE: 'disengage';
 KW_SKIP: 'skip';
 KW_REPORT: 'report';
 KW_DESTROY: 'destroy';
-DEREF: '&';
 DOT: '.';
 NOT: '!' | 'not';
 EE: '==';
@@ -331,6 +363,7 @@ FLOAT: ([0-9]+)? '.' [0-9]+;
 STRING: '"' ~ ["\r\n]* '"' | '\'' ~ ['\r\n]* '\'';
 BOOL: 'true' | 'false';
 INT: [0-9]+;
+NULL: 'null';
 NAME: [a-zA-Z_] [a-zA-Z0-9_]*;
 COMMENT: '/*' .*? '*/' -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
