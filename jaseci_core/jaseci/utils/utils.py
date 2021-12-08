@@ -72,6 +72,15 @@ def is_jsonable(x):
         return False
 
 
+def json_out(val):
+    if(type(val) == str):
+        return val
+    try:
+        return json.dumps(val)
+    except Exception:
+        return val
+
+
 def get_all_subclasses(cls):
     """Return list of all subclasses of cls"""
     return set(cls.__subclasses__()).union(
