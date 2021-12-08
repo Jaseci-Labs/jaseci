@@ -16,9 +16,25 @@ class jac_scope():
         self.has_obj = has_obj if has_obj else self
         self.context = {}
         self.action_sets = [get_global_actions(parent)] + action_sets
+        self.setup_actions()
 
-    def add_actions(self, actions):
-        self.action_sets.append(actions)
+    def setup_actions(self):
+        allactions = []
+        for i in self.action_sets:
+            allactions += i.obj_list()
+        self.action_sets = {}
+        for i in allactions:
+            self.add_action(i)
+
+    def add_action(self, act):
+        group = act.name.split('.')[0]
+        if '.' in act.name:
+            if(group not in self.action_sets.keys()):
+                self.action_sets[group] = {}
+            action = act.name.split('.')[1]
+            self.action_sets[group][action] = act
+        else:
+            self.action_sets[group] = act
 
     def set_agent_refs(self, cur_node, cur_walker):
         self.local_scope['here'] = jac_elem_wrap(cur_node)
@@ -65,6 +81,10 @@ class jac_scope():
             if(name in self.has_obj.context.keys()):
                 return jac_value(self.parent,
                                  ctx=self.has_obj.context,
+                                 name=name)
+            elif(name in self.action_sets.keys()):
+                return jac_value(self.parent,
+                                 ctx=self.action_sets,
                                  name=name)
         return None
 

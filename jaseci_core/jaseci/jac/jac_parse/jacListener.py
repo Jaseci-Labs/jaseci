@@ -296,6 +296,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#destroy_action.
+    def enterDestroy_action(self, ctx:jacParser.Destroy_actionContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#destroy_action.
+    def exitDestroy_action(self, ctx:jacParser.Destroy_actionContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#report_action.
     def enterReport_action(self, ctx:jacParser.Report_actionContext):
         pass
@@ -329,15 +338,6 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#take_action.
     def exitTake_action(self, ctx:jacParser.Take_actionContext):
-        pass
-
-
-    # Enter a parse tree produced by jacParser#destroy_action.
-    def enterDestroy_action(self, ctx:jacParser.Destroy_actionContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#destroy_action.
-    def exitDestroy_action(self, ctx:jacParser.Destroy_actionContext):
         pass
 
 
@@ -629,21 +629,12 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#index.
-    def enterIndex(self, ctx:jacParser.IndexContext):
+    # Enter a parse tree produced by jacParser#index_slice.
+    def enterIndex_slice(self, ctx:jacParser.Index_sliceContext):
         pass
 
-    # Exit a parse tree produced by jacParser#index.
-    def exitIndex(self, ctx:jacParser.IndexContext):
-        pass
-
-
-    # Enter a parse tree produced by jacParser#index_range.
-    def enterIndex_range(self, ctx:jacParser.Index_rangeContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#index_range.
-    def exitIndex_range(self, ctx:jacParser.Index_rangeContext):
+    # Exit a parse tree produced by jacParser#index_slice.
+    def exitIndex_slice(self, ctx:jacParser.Index_sliceContext):
         pass
 
 

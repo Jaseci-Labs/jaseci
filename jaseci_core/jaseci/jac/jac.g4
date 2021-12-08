@@ -58,7 +58,7 @@ event_clause:
 preset_in_out:
 	DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
 
-dotted_name: NAME (DOT NAME)*;
+dotted_name: NAME DOT NAME;
 
 name_list: NAME (COMMA NAME)*;
 
@@ -76,6 +76,7 @@ statement:
 	| for_stmt
 	| while_stmt
 	| ctrl_stmt SEMI
+	| destroy_action
 	| report_action
 	| walker_action;
 
@@ -93,19 +94,15 @@ while_stmt: KW_WHILE expression code_block;
 
 ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_SKIP;
 
+destroy_action: KW_DESTROY expression SEMI;
+
 report_action: KW_REPORT expression SEMI;
 
-walker_action:
-	ignore_action
-	| take_action
-	| destroy_action
-	| KW_DISENGAGE SEMI;
+walker_action: ignore_action | take_action | KW_DISENGAGE SEMI;
 
 ignore_action: KW_IGNORE expression SEMI;
 
 take_action: KW_TAKE expression (SEMI | else_stmt);
-
-destroy_action: KW_DESTROY expression SEMI;
 
 expression: connect (assignment | copy_assign | inc_assign)?;
 
@@ -143,15 +140,15 @@ atom:
 	| STRING
 	| BOOL
 	| NULL
+	| NAME
 	| node_edge_ref
 	| list_val
 	| dict_val
-	| dotted_name
 	| LPAREN expression RPAREN
 	| spawn
 	| atom DOT built_in
-	| atom index
-	| atom index_range
+	| atom DOT NAME
+	| atom index_slice
 	| ref
 	| deref
 	| any_type;
@@ -175,7 +172,8 @@ dict_built_in: KW_KEYS | LBRACE name_list RBRACE;
 
 list_built_in: KW_LENGTH | KW_DESTROY COLON expression COLON;
 
-string_built_in: TYP_STRING DOT NAME (LPAREN expr_list RPAREN)?;
+string_built_in:
+	TYP_STRING DBL_COLON NAME (LPAREN expr_list RPAREN)?;
 
 node_edge_ref:
 	node_ref filter_ctx?
@@ -203,9 +201,9 @@ edge_any:
 
 list_val: LSQUARE expr_list? RSQUARE;
 
-index: LSQUARE expression RSQUARE;
-
-index_range: LSQUARE expression COLON expression RSQUARE;
+index_slice:
+	LSQUARE expression RSQUARE
+	| LSQUARE expression COLON expression RSQUARE;
 
 dict_val: LBRACE (kv_pair (COMMA kv_pair)*)? RBRACE;
 

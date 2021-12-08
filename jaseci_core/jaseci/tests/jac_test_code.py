@@ -889,33 +889,33 @@ string_manipulation = \
         report a[4];
         report a[4:7];
         report a[3:-1];
-        report a.str.upper;
-        report a.str.lower;
-        report a.str.title;
-        report a.str.capitalize;
-        report a.str.swap_case;
-        report a.str.is_alnum;
-        report a.str.is_alpha;
-        report a.str.is_digit;
-        report a.str.is_title;
-        report a.str.is_upper;
-        report a.str.is_lower;
-        report a.str.is_space;
-        report a.str.count('t');
-        report a.str.find('i');
-        report a.str.split;
-        report a.str.split('E');
-        report a.str.startswith('tEs');
-        report a.str.endswith('me');
-        report a.str.replace('me', 'you');
-        report a.str.strip;
-        report a.str.strip(' t');
-        report a.str.lstrip;
-        report a.str.lstrip(' tE');
-        report a.str.rstrip;
-        report a.str.rstrip(' e');
+        report a.str::upper;
+        report a.str::lower;
+        report a.str::title;
+        report a.str::capitalize;
+        report a.str::swap_case;
+        report a.str::is_alnum;
+        report a.str::is_alpha;
+        report a.str::is_digit;
+        report a.str::is_title;
+        report a.str::is_upper;
+        report a.str::is_lower;
+        report a.str::is_space;
+        report a.str::count('t');
+        report a.str::find('i');
+        report a.str::split;
+        report a.str::split('E');
+        report a.str::startswith('tEs');
+        report a.str::endswith('me');
+        report a.str::replace('me', 'you');
+        report a.str::strip;
+        report a.str::strip(' t');
+        report a.str::lstrip;
+        report a.str::lstrip(' tE');
+        report a.str::rstrip;
+        report a.str::rstrip(' e');
 
-        report a.str.upper.str.is_upper;
+        report a.str::upper.str::is_upper;
     }
     """
 
@@ -924,5 +924,41 @@ sub_list = \
     walker init {
         a=[1,2,3,4,5,6,7,8,9];
         report a[4:7];
+    }
+    """
+
+destroy_and_misc = \
+    """
+    node person: has name, age, birthday, profession;
+    edge friend: has meeting_place;
+    edge family: has kind;
+
+    walker init {
+        person1 = spawn here -[friend(meeting_place = "college")]->
+            node::person(name = "Josh", age = 32);
+        person2 = spawn here -[family(kind = "sister")] ->
+            node::person(name = "Jane", age = 30);
+
+        report person1.name;
+        destroy person1.name;
+        report person1.context;
+        person1.name="pete";
+        report person1.context;
+        a=[1,2,3];
+        destroy a[1];
+        report a;
+        b={'a': 'b', 'c':'d'};
+        destroy b['c'];
+        report b;
+        a=[1,2,3,5,6,7,8,9];
+        destroy a[2:4];
+        report a;
+        a[2:4]=[45,33];
+        report a;
+        destroy a;
+        report a;
+        person1.banana=45;
+        report person1.context;
+        report 'age' in person1.context;
     }
     """

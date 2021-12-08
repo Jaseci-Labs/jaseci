@@ -134,20 +134,28 @@ class jac_value():
     A reference to a variable in context dict that is common for elements
     """
 
-    def __init__(self, parent, value=None, ctx=None, name=None):
+    def __init__(self, parent, value=None, ctx=None, name=None, end=None):
+        """
+        Abstraction of all Jac types, ctx and name serve as obj[key/idx]
+        end is for idx ranges for list slices
+        """
         self.parent = parent
         self.ctx = ctx
         self.name = name
-        self.value = value if value is not None else ctx[name] \
-            if ctx is not None and name is not None and \
-            (type(name) == int or name in ctx.keys()) \
-            else None
+        self.end = end
+        self.value = value if value is not None else ctx[name:end] \
+            if ctx is not None and name is not None and end is not None \
+            else ctx[name] if ctx is not None and name is not None and \
+            (type(name) == int or name in ctx.keys()) else None
 
     def write(self):
         if(self.ctx is None or self.name is None):
             logger.critical(
                 f"No valid live variable! ctx: {self.ctx} name: {self.name}")
-        self.ctx[self.name] = self.wrap()
+        if(self.end is not None):
+            self.ctx[self.name:self.end] = self.wrap()
+        else:
+            self.ctx[self.name] = self.wrap()
 
     def wrap(self, serialize_mode=False):
         "Caller for recursive wrap"
