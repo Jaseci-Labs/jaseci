@@ -26,14 +26,7 @@ class JAC_TYPE:
 
 
 def jac_type_wrap(val):
-    if (type(val) == bool):
-        if (val):
-            val = JAC_TYPE.TRUE
-        else:
-            val = JAC_TYPE.FALSE
-    elif(val is None):
-        val = JAC_TYPE.NULL
-    elif(val == str):
+    if(val == str):
         val = JAC_TYPE.STR
     elif(val == int):
         val = JAC_TYPE.INT
@@ -55,13 +48,7 @@ def jac_type_wrap(val):
 
 
 def jac_type_unwrap(val):
-    if (val == JAC_TYPE.TRUE):
-        val = True
-    elif(val == JAC_TYPE.FALSE):
-        val = False
-    elif(val == JAC_TYPE.NULL):
-        val = None
-    elif(type(val) == str and val.startswith('JAC_TYPE.')):
+    if(type(val) == str and val.startswith('JAC_TYPE.')):
         if(val == JAC_TYPE.STR):
             val = str
         elif(val == JAC_TYPE.INT):

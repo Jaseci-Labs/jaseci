@@ -1,5 +1,5 @@
 from operator import itemgetter
-from jaseci.utils.utils import logger, app_logger
+from jaseci.utils.utils import logger, app_logger, json_out
 from datetime import datetime
 from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 import sys
@@ -11,20 +11,20 @@ def log(param_list, meta):
     """Standard built in for printing output to log"""
     result = ''
     for i in param_list:
-        result += str(jwv(i))
+        result += json_out(jwv(i))
     app_logger.info(result)
     return result
 
 
 def out(param_list, meta):
     """Standard built in for printing output"""
-    param_list = [jwv(x) for x in param_list]
+    param_list = [json_out(jwv(x)) for x in param_list]
     print(*param_list)
 
 
 def err(param_list, meta):
     """Standard built in for printing to stderr"""
-    param_list = [jwv(x) for x in param_list]
+    param_list = [json_out(jwv(x)) for x in param_list]
     print(*param_list, file=sys.stderr)
 
 

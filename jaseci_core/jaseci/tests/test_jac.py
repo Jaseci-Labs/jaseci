@@ -6,7 +6,6 @@ from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
 from jaseci.element.super_master import super_master
 from jaseci.element.master import master
-from jaseci.jac.machine.jac_value import JAC_TYPE
 
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
@@ -365,7 +364,7 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('getter')
         test_walker2.prime(gph)
         test_walker2.run()
-        self.assertEqual(test_walker2.context['a'], JAC_TYPE.NULL)
+        self.assertEqual(test_walker2.context['a'], None)
 
     def test_sentinel_version_label(self):
         """Test sentinel version labeling"""
@@ -423,10 +422,10 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
         test_walker.run()
-        self.assertEqual(test_walker.report[0], JAC_TYPE.TRUE)
-        self.assertEqual(test_walker.report[1], JAC_TYPE.FALSE)
-        self.assertEqual(test_walker.report[2], JAC_TYPE.TRUE)
-        self.assertEqual(test_walker.report[3], JAC_TYPE.FALSE)
+        self.assertEqual(test_walker.report[0], True)
+        self.assertEqual(test_walker.report[1], False)
+        self.assertEqual(test_walker.report[2], True)
+        self.assertEqual(test_walker.report[3], False)
 
     def test_bool_type_convert(self):
         gph = graph(m_id='anon', h=mem_hook())
@@ -436,8 +435,8 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
         test_walker.run()
-        self.assertEqual(test_walker.report[0], 'true')
-        self.assertEqual("true", test_walker.report[1]['name'])
+        self.assertEqual(test_walker.report[0], True)
+        self.assertEqual(True, test_walker.report[1]['name'])
 
     def test_typecasts(self):
         gph = graph(m_id='anon', h=mem_hook())
@@ -450,7 +449,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(test_walker.report[0], 7.6)
         self.assertEqual(test_walker.report[1], 7)
         self.assertEqual(test_walker.report[2], "7.6")
-        self.assertEqual(test_walker.report[3], JAC_TYPE.TRUE)
+        self.assertEqual(test_walker.report[3], True)
         self.assertEqual(test_walker.report[4], 7.0)
         self.assertEqual(test_walker.report[5], "Types comes back correct")
 
@@ -499,19 +498,19 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[5], ' Testing Me  ')
         self.assertEqual(rep[6], ' testing me  ')
         self.assertEqual(rep[7], ' TeSTING ME  ')
-        self.assertEqual(rep[8], 'false')
-        self.assertEqual(rep[9], 'false')
-        self.assertEqual(rep[10], 'false')
-        self.assertEqual(rep[11], 'false')
-        self.assertEqual(rep[12], 'false')
-        self.assertEqual(rep[13], 'false')
-        self.assertEqual(rep[14], 'false')
+        self.assertEqual(rep[8], False)
+        self.assertEqual(rep[9], False)
+        self.assertEqual(rep[10], False)
+        self.assertEqual(rep[11], False)
+        self.assertEqual(rep[12], False)
+        self.assertEqual(rep[13], False)
+        self.assertEqual(rep[14], False)
         self.assertEqual(rep[15], 2)
         self.assertEqual(rep[16], 5)
         self.assertEqual(rep[17], ['tEsting', 'me'])
         self.assertEqual(rep[18], [' t', 'sting me  '])
-        self.assertEqual(rep[19], 'false')
-        self.assertEqual(rep[20], 'false')
+        self.assertEqual(rep[19], False)
+        self.assertEqual(rep[20], False)
         self.assertEqual(rep[21], ' tEsting you  ')
         self.assertEqual(rep[22], 'tEsting me')
         self.assertEqual(rep[23], 'Esting me')
@@ -519,7 +518,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[25], 'sting me  ')
         self.assertEqual(rep[26], ' tEsting me')
         self.assertEqual(rep[27], ' tEsting m')
-        self.assertEqual(rep[28], 'true')
+        self.assertEqual(rep[28], True)
 
     def test_sub_list(self):
         gph = graph(m_id='anon', h=mem_hook())
@@ -545,17 +544,19 @@ class jac_tests(TestCaseHelper, TestCase):
         rep = test_walker.report
         self.assertEqual(rep[0], 'Josh')
         self.assertEqual(
-            rep[1], {'age': 32, 'birthday': 'null', 'profession': 'null'})
+            rep[1], {'age': 32, 'birthday': None,
+                     'profession': None})
         self.assertEqual(
-            rep[2], {'age': 32, 'birthday': 'null', 'name': 'pete', 'profession': 'null'})
+            rep[2], {'age': 32, 'birthday': None,
+                     'name': 'pete', 'profession': None})
         self.assertEqual(rep[3], [1, 3])
         self.assertEqual(rep[4], {'a': 'b'})
         self.assertEqual(rep[5], [1, 2, 5, 6, 7, 8, 9])
         self.assertEqual(rep[6], [1, 2, 45, 33, 7, 8, 9])
-        self.assertEqual(rep[7], 'null')
+        self.assertEqual(rep[7], None)
         self.assertEqual(rep[8], {'age': 32,
                                   'banana': 45,
-                                  'birthday': 'null',
+                                  'birthday': None,
                                   'name': 'pete',
-                                  'profession': 'null'})
-        self.assertEqual(rep[9], 'true')
+                                  'profession': None})
+        self.assertEqual(rep[9], True)

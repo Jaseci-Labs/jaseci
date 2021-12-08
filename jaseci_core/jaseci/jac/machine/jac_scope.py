@@ -4,9 +4,8 @@ Variable scope manager for Jac
 Utility for all runtime interaction with variables in different scopes
 """
 from jaseci.actions.utils.global_actions import get_global_actions
-from jaseci.jac.machine.jac_value import jac_value, is_jac_elem
-from jaseci.jac.machine.jac_value import jac_elem_wrap, jac_elem_unwrap
-from jaseci.utils.utils import logger
+from jaseci.jac.machine.jac_value import jac_value
+from jaseci.jac.machine.jac_value import jac_elem_wrap
 
 
 class jac_scope():
@@ -46,46 +45,15 @@ class jac_scope():
 
     def find_live_attr(self, name, allow_read_only=True):
         """Finds binding for variable if not in standard scope"""
-        if '.' in name:  # Handles node attr references
-            subname = name.split('.')
-            found = None
-            # check if dotted var in current scope (node, etc)
-            if subname[0] in self.local_scope.keys():
-                found = self.local_scope[subname[0]]
-            # check if dotted var in walkers context (node, etc)
-            elif(subname[0] in self.has_obj.context.keys()):
-                found = self.has_obj.context[subname[0]]
-            if(found is not None):
-                # return node if it's a node
-                if is_jac_elem(found):
-                    head_obj = jac_elem_unwrap(found, self.parent)
-                    # head_obj.context['id'] = head_obj.jid
-                    if (subname[1] in head_obj.context.keys() or
-                            self.try_sync_to_arch(head_obj, subname[1])):
-                        return jac_value(self.parent,
-                                         ctx=head_obj.context,
-                                         name=subname[1])
-                else:
-                    logger.error(
-                        f'Something went wrong with {found} {subname}')
-                # other types in scope can go here
-            # check if dotted var is builtin action (of walker)
-            if (allow_read_only):
-                for i in self.action_sets:
-                    found = i.get_obj_by_name(
-                        name, silent=True)
-                    if(found):
-                        return jac_value(self.parent, value=found)
-        else:
-            # check if var is in walker's context
-            if(name in self.has_obj.context.keys()):
-                return jac_value(self.parent,
-                                 ctx=self.has_obj.context,
-                                 name=name)
-            elif(name in self.action_sets.keys()):
-                return jac_value(self.parent,
-                                 ctx=self.action_sets,
-                                 name=name)
+        # check if var is in walker's context
+        if(name in self.has_obj.context.keys()):
+            return jac_value(self.parent,
+                             ctx=self.has_obj.context,
+                             name=name)
+        elif(name in self.action_sets.keys()):
+            return jac_value(self.parent,
+                             ctx=self.action_sets,
+                             name=name)
         return None
 
     def get_live_var(self, name, create_mode=False):
@@ -104,16 +72,3 @@ class jac_scope():
             found.unwrap()
             return found
         return None
-
-    def try_sync_to_arch(self, obj, varname):
-        """Checks if latest Architype has variable"""
-        # TODO: Only supports node types
-        # from jaseci.utils.utils import logger
-        # logger.info(f'{obj}')
-        if(not obj.j_type == 'node' and not obj.j_type == 'edge'):
-            return False
-        if (varname in self.parent.parent().run_architype(
-                obj.name, kind='node', caller=obj).context.keys()):
-            obj.context[varname] = None
-            return True
-        return False
