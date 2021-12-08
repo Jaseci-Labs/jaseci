@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Lang Feature: Massively expanded functionality with destroy and list slice management
 - New Lang Feature: can now explicitly reference and dereference graph elements (nodes, edges, etc)
 - New Lang Feature: Field filtering for dictionaries, particularly useful for context, info, details
 - New Lang Feature: Type checking primitives, and type casting primitives

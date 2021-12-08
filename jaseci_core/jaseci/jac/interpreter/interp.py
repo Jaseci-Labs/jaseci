@@ -16,6 +16,7 @@ from jaseci.jac.machine.machine_state import machine_state
 
 from jaseci.jac.machine.jac_value import jac_value
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
+from copy import copy
 
 
 class interp(machine_state):
@@ -117,31 +118,31 @@ class interp(machine_state):
                     kid[0])
                 action_type = 'activity'
             if (kid[0].name == 'code_block'):
-                getattr(obj, f"{action_type}_action_ids").add_obj(
-                    action(
-                        m_id=self._m_id,
-                        h=self._h,
-                        name=action_name,
-                        value=jac_ast_to_ir(kid[0]),
-                        preset_in_out=preset_in_out,
-                        access_list=access_list
-                    )
+                act = action(
+                    m_id=self._m_id,
+                    h=self._h,
+                    name=action_name,
+                    value=jac_ast_to_ir(kid[0]),
+                    preset_in_out=preset_in_out,
+                    access_list=access_list
                 )
+                getattr(obj, f"{action_type}_action_ids").add_obj(act)
+                self._jac_scope.add_action(act)
                 break
             else:
                 func_link = \
                     self.get_builtin_action(action_name, jac_ast)
                 if(func_link):
-                    getattr(obj, f"{action_type}_action_ids").add_obj(
-                        action(
-                            m_id=self._m_id,
-                            h=self._h,
-                            name=action_name,
-                            value=func_link,
-                            preset_in_out=preset_in_out,
-                            access_list=access_list
-                        )
+                    act = action(
+                        m_id=self._m_id,
+                        h=self._h,
+                        name=action_name,
+                        value=func_link,
+                        preset_in_out=preset_in_out,
+                        access_list=access_list
                     )
+                    getattr(obj, f"{action_type}_action_ids").add_obj(act)
+                    self._jac_scope.add_action(act)
             if(not len(kid) or kid[0].name != 'COMMA'):
                 break
             else:
@@ -221,18 +222,13 @@ class interp(machine_state):
             | for_stmt
             | while_stmt
             | ctrl_stmt SEMI
+            | destroy_action
             | report_action
             | walker_action;
         """
         if (self._stopped):
             return
         kid = jac_ast.kid
-        if(not hasattr(self, f'run_{kid[0].name}')):
-            self.rt_error(
-                f'This scope cannot execute the statement '
-                f'"{kid[0].get_text()}" of type {kid[0].name}',
-                kid[0])
-            return
         self.run_rule(kid[0])
 
     def run_if_stmt(self, jac_ast):
@@ -338,6 +334,26 @@ class interp(machine_state):
         elif (kid[0].name == 'KW_CONTINUE'):
             self._loop_ctrl = 'continue'
 
+    def run_destroy_action(self, jac_ast):
+        """
+        destroy_action: KW_DESTROY expression SEMI;
+        """
+        kid = jac_ast.kid
+        result = self.run_expression(kid[1])
+        if (isinstance(result.value, element)):
+            self.destroy_node_ids.add_obj(result.value)
+        elif (isinstance(result.value, jac_set)):
+            self.destroy_node_ids.add_obj_list(result.value)
+        if(result.ctx is not None):
+            try:
+                del result.ctx[result.name]
+            except Exception as e:
+                self.rt_error(f'{e}', kid[1])
+        else:
+            self.rt_error(
+                f'{result.value} is not destroyable',
+                kid[1])
+
     def run_report_action(self, jac_ast):
         """
         report_action: KW_REPORT expression SEMI;
@@ -346,7 +362,7 @@ class interp(machine_state):
         report = self.run_expression(kid[1]).wrap(serialize_mode=True)
         if(not is_jsonable(report)):
             self.rt_error(f'Report not Json serializable', kid[0])
-        self.report.append(report)
+        self.report.append(copy(report))
 
     def run_expression(self, jac_ast):
         """
@@ -642,8 +658,8 @@ class interp(machine_state):
             | LPAREN expression RPAREN
             | spawn
             | atom DOT built_in
-            | atom index
-            | atom index_range
+            | atom DOT NAME
+            | atom index_slice
             | ref
             | deref
             | any_type;
@@ -660,8 +676,8 @@ class interp(machine_state):
             return jac_value(self, value=bool(kid[0].token_text() == 'true'))
         elif(kid[0].name == 'NULL'):
             return jac_value(self, value=None)
-        elif(kid[0].name == 'dotted_name'):
-            name = self.run_dotted_name(kid[0])
+        elif(kid[0].name == 'NAME'):
+            name = kid[0].token_text()
             val = self._jac_scope.get_live_var(
                 name, create_mode=self._assign_mode)
             if(val is None):
@@ -673,17 +689,22 @@ class interp(machine_state):
         elif(kid[0].name == 'atom'):
             atom_res = self.run_atom(kid[0])
             if(kid[1].name == 'DOT'):
-                return self.run_built_in(kid[2], atom_res)
-            elif (kid[1].name == "index"):
+                if(kid[2].name == 'built_in'):
+                    return self.run_built_in(kid[2], atom_res)
+                elif(kid[2].name == 'NAME'):
+                    d = atom_res.value
+                    n = kid[2].token_text()
+                    if(self.rt_check_type(d, [dict, element], kid[0])):
+                        if(isinstance(d, element)):
+                            d = d.context
+                        ret = jac_value(self, ctx=d, name=n)
+                        ret.unwrap()
+                        return ret
+            elif (kid[1].name == "index_slice"):
                 if(not self.rt_check_type(
                         atom_res.value, [list, str, dict], kid[0])):
                     return atom_res
-                return self.run_index(kid[1], atom_res)
-            elif (kid[1].name == "index_range"):
-                if(not self.rt_check_type(
-                        atom_res.value, [list, str], kid[0])):
-                    return atom_res
-                return self.run_index_range(kid[1], atom_res)
+                return self.run_index_slice(kid[1], atom_res)
         else:
             return self.run_rule(kid[0])
 
@@ -843,7 +864,8 @@ class interp(machine_state):
 
     def run_string_built_in(self, jac_ast, atom_res):
         """
-        string_built_in: TYP_STRING DOT NAME (LPAREN expr_list RPAREN)?;
+        string_built_in:
+                TYP_STRING DBL_COLON NAME (LPAREN expr_list RPAREN)?;
         """
         kid = jac_ast.kid
         if(not self.rt_check_type(atom_res.value, [str], kid[0])):
@@ -1066,33 +1088,32 @@ class interp(machine_state):
             return self.run_expr_list(kid[1])
         return jac_value(self, value=[])
 
-    def run_index(self, jac_ast, atom_res):
+    def run_index_slice(self, jac_ast, atom_res):
         """
-        index: LSQUARE expression RSQUARE;
+        index_slice:
+            LSQUARE expression RSQUARE
+            | LSQUARE expression COLON expression RSQUARE;
         """
         kid = jac_ast.kid
         idx = self.run_expression(kid[1]).value
-        if(not self.rt_check_type(idx, [int, str], kid[1])):
-            self.rt_error(f'Index of type {type(idx)} not valid. '
-                          f'Indicies must be an integer or string!', kid[1])
-            return atom_res
-        atom_res.unwrap()
-        return jac_value(self, ctx=atom_res.value, name=idx)
+        if(kid[2].name == "RSQUARE"):
+            if(not self.rt_check_type(idx, [int, str], kid[1])):
+                self.rt_error(
+                    f'Index of type {type(idx)} not valid. '
+                    f'Indicies must be an integer or string!', kid[1])
+                return atom_res
+            atom_res.unwrap()
 
-    def run_index_range(self, jac_ast, atom_res):
-        """
-        index_range: LSQUARE expression COLON expression RSQUARE;
-        """
-        kid = jac_ast.kid
-        idx1 = self.run_expression(kid[1]).value
-        idx2 = self.run_expression(kid[3]).value
-        if(not self.rt_check_type(idx1, [int], kid[1]) or
-           not self.rt_check_type(idx2, [int], kid[3])):
-            self.rt_error('Index range not valid. '
-                          'Indicies must be integers!', kid[1])
-            return atom_res
-        atom_res.unwrap()
-        return jac_value(self, value=atom_res.value[idx1:idx2])
+            return jac_value(self, ctx=atom_res.value, name=idx)
+        else:
+            end = self.run_expression(kid[3]).value
+            if(not self.rt_check_type(idx, [int], kid[1]) or
+               not self.rt_check_type(end, [int], kid[3])):
+                self.rt_error('List slice range not valid. '
+                              'Indicies must be an integers!', kid[1])
+                return atom_res
+            atom_res.unwrap()
+            return jac_value(self, ctx=atom_res.value, name=idx, end=end)
 
     def run_dict_val(self, jac_ast):
         """
@@ -1297,6 +1318,13 @@ class interp(machine_state):
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
         # try:
+        # if(not hasattr(self, f'run_{jac_ast.name}')):
+        #     self.rt_error(
+        #         f'This scope cannot execute the statement '
+        #         f'"{jac_ast.get_text()}" of type {jac_ast.name}',
+        #         jac_ast)
+        #     return
+
         return getattr(self, f'run_{jac_ast.name}')(jac_ast, *args)
         # except Exception as e:
         #     self.rt_error(

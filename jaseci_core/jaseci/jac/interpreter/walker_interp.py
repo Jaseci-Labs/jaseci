@@ -146,20 +146,6 @@ class walker_interp(interp):
             self.run_else_stmt(kid[2])
         after = len(self.next_node_ids)
 
-    def run_destroy_action(self, jac_ast):
-        """
-        destroy_action: KW_DESTROY expression SEMI;
-        """
-        kid = jac_ast.kid
-        result = self.run_expression(kid[1]).value
-        if (isinstance(result, node)):
-            self.destroy_node_ids.add_obj(result)
-        elif (isinstance(result, jac_set)):
-            self.destroy_node_ids.add_obj_list(result)
-        else:
-            self.rt_error(f'{result} is not destroyable type (i.e., nodes)',
-                          kid[1])
-
     def run_preset_in_out(self, jac_ast, obj, act):
         """
         preset_in_out:

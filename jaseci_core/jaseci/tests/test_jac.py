@@ -533,3 +533,29 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[0][0], 5)
         self.assertEqual(rep[0][1], 6)
         self.assertEqual(rep[0][2], 7)
+
+    def test_destroy_and_misc(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.destroy_and_misc)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], 'Josh')
+        self.assertEqual(
+            rep[1], {'age': 32, 'birthday': 'null', 'profession': 'null'})
+        self.assertEqual(
+            rep[2], {'age': 32, 'birthday': 'null', 'name': 'pete', 'profession': 'null'})
+        self.assertEqual(rep[3], [1, 3])
+        self.assertEqual(rep[4], {'a': 'b'})
+        self.assertEqual(rep[5], [1, 2, 5, 6, 7, 8, 9])
+        self.assertEqual(rep[6], [1, 2, 45, 33, 7, 8, 9])
+        self.assertEqual(rep[7], 'null')
+        self.assertEqual(rep[8], {'age': 32,
+                                  'banana': 45,
+                                  'birthday': 'null',
+                                  'name': 'pete',
+                                  'profession': 'null'})
+        self.assertEqual(rep[9], 'true')
