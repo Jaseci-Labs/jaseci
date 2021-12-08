@@ -877,7 +877,7 @@ filter_on_context = \
             e = --> node::test.edge[1];
             e.x1=8;
 
-            report [a.context:yo:, b.info:jid,j_type:, e.details];
+            report [a.context.{yo}, b.info.{jid,j_type}, e.details];
         }
     }
     """
