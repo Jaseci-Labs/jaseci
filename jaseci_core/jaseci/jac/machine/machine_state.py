@@ -52,10 +52,6 @@ class machine_state():
 
     # Helper Functions ##################
 
-    def parse_str_token(self, s):
-        return str(bytes(s, "utf-8").
-                   decode("unicode_escape")[1:-1])
-
     def obj_set_to_jac_set(self, obj_set):
         """
         Returns nodes jac_set from edge jac_set from current node

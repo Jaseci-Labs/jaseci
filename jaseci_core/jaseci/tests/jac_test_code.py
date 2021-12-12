@@ -968,7 +968,7 @@ try_else_stmts = \
     walker init {
         a=null;
         try {a=2/0;}
-        else (err) {report err;}
+        else with err {report err;}
         try {a=2/0;}
         else {report 'dont need err';}
         try {a=2/0;}

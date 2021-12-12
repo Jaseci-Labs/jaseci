@@ -1,6 +1,8 @@
 grammar jac;
 
-start: ver_label? element+ EOF;
+start: ver_label? import_module* element+ EOF;
+
+import_module: KW_IMPORT STRING SEMI;
 
 element: architype | walker;
 
@@ -313,6 +315,7 @@ KW_CONTEXT: 'context';
 KW_INFO: 'info';
 KW_DETAILS: 'details';
 KW_ACTIVITY: 'activity';
+KW_IMPORT: 'import';
 COLON: ':';
 DBL_COLON: '::';
 COLON_OUT: '::>';

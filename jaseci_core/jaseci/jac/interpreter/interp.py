@@ -4,7 +4,7 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
-from jaseci.utils.utils import is_jsonable, is_urn
+from jaseci.utils.utils import is_jsonable, is_urn, parse_str_token
 from jaseci.element.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
@@ -699,7 +699,7 @@ class interp(machine_state):
             return jac_value(self, value=float(kid[0].token_text()))
         elif(kid[0].name == 'STRING'):
             return jac_value(
-                self, value=self.parse_str_token(kid[0].token_text()))
+                self, value=parse_str_token(kid[0].token_text()))
         elif(kid[0].name == 'BOOL'):
             return jac_value(self, value=bool(kid[0].token_text() == 'true'))
         elif(kid[0].name == 'NULL'):
@@ -1159,7 +1159,7 @@ class interp(machine_state):
         kv_pair: STRING COLON expression;
         """
         kid = jac_ast.kid
-        obj[self.parse_str_token(kid[0].token_text())
+        obj[parse_str_token(kid[0].token_text())
             ] = self.run_expression(kid[2]).value
 
     def run_spawn(self, jac_ast):

@@ -17,6 +17,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#import_module.
+    def enterImport_module(self, ctx:jacParser.Import_moduleContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#import_module.
+    def exitImport_module(self, ctx:jacParser.Import_moduleContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#element.
     def enterElement(self, ctx:jacParser.ElementContext):
         pass

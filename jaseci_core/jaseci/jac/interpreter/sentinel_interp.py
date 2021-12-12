@@ -7,6 +7,7 @@ referenced through self.
 from jaseci.actor.architype import architype
 from jaseci.actor.walker import walker
 from jaseci.jac.interpreter.interp import interp
+from jaseci.utils.utils import parse_str_token
 
 
 class sentinel_interp(interp):
@@ -27,7 +28,7 @@ class sentinel_interp(interp):
         ver_label: 'version' COLON STRING;
         """
         kid = jac_ast.kid
-        self.version = self.parse_str_token(kid[2].token_text())
+        self.version = parse_str_token(kid[2].token_text())
 
     def run_element(self, jac_ast):
         """

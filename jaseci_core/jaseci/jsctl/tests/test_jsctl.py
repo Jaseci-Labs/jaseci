@@ -156,3 +156,12 @@ class jsctl_test(TestCaseHelper, TestCase):
         key = 'aaaaaaaa'
         r = self.call_cast(f'walker summon -key {key} -wlk {walk} -nd {nd}')
         self.assertEqual(len(r), 1)
+
+    def test_jsctl_import(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/ll_base.jac -set_active true")
+        self.call("walker run -name init")
+        self.call("walker run -name gen_rand_life")
+        r = self.call_cast("walker run -name get_gen_day")
+        self.assertGreater(len(r), 3)

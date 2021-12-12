@@ -81,6 +81,11 @@ def json_out(val):
         return val
 
 
+def parse_str_token(s):
+    return str(bytes(s, "utf-8").
+               decode("unicode_escape")[1:-1])
+
+
 def get_all_subclasses(cls):
     """Return list of all subclasses of cls"""
     return set(cls.__subclasses__()).union(
