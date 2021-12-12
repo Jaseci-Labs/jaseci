@@ -962,3 +962,19 @@ destroy_and_misc = \
         report 'age' in person1.context;
     }
     """
+
+try_else_stmts = \
+    """
+    walker init {
+        a=null;
+        try {a=2/0;}
+        else (err) {report err;}
+        try {a=2/0;}
+        else {report 'dont need err';}
+        try {a=2/0;}
+        try {a=2/0;}
+        report a;
+        try {a=2/1;}
+        report a;
+    }
+    """

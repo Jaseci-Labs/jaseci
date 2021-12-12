@@ -219,6 +219,7 @@ class interp(machine_state):
             | node_ctx_block
             | expression SEMI
             | if_stmt
+            | try_stmt
             | for_stmt
             | while_stmt
             | ctrl_stmt SEMI
@@ -233,7 +234,7 @@ class interp(machine_state):
 
     def run_if_stmt(self, jac_ast):
         """
-        if_stmt: KW_IF expression code_block (elif_stmt)* (else_stmt)?;
+        if_stmt: KW_IF expression code_block elif_stmt* else_stmt?;
         """
         kid = jac_ast.kid
         if(self.run_expression(kid[1]).value):
@@ -251,6 +252,33 @@ class interp(machine_state):
                 kid = kid[1:]
                 if(not len(kid)):
                     break
+
+    def run_try_stmt(self, jac_ast):
+        """
+        try_stmt: KW_TRY code_block else_from_try?;
+        """
+        kid = jac_ast.kid
+        try:
+            self.run_code_block(kid[1])
+            return
+        except Exception as e:
+            if(len(kid) > 2):
+                self.run_else_from_try(kid[2], e)
+
+    def run_else_from_try(self, jac_ast, e):
+        """
+        else_from_try:
+            KW_ELSE (LPAREN NAME RPAREN)? code_block
+            | KW_ELSE (KW_WITH NAME)? code_block;
+        """
+        kid = jac_ast.kid
+        if(len(kid) > 2):
+            edict = {'type': type(e).__name__,
+                     'msg': str(e),
+                     'args': e.args}
+            jac_value(self, ctx=self._jac_scope.local_scope,
+                      name=kid[2].token_text(), value=edict).write()
+        self.run_code_block(kid[-1])
 
     def run_elif_stmt(self, jac_ast):
         """
@@ -651,10 +679,10 @@ class interp(machine_state):
             | STRING
             | BOOL
             | NULL
+            | NAME
             | node_edge_ref
             | list_val
             | dict_val
-            | dotted_name
             | LPAREN expression RPAREN
             | spawn
             | atom DOT built_in

@@ -251,6 +251,24 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#try_stmt.
+    def enterTry_stmt(self, ctx:jacParser.Try_stmtContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#try_stmt.
+    def exitTry_stmt(self, ctx:jacParser.Try_stmtContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#else_from_try.
+    def enterElse_from_try(self, ctx:jacParser.Else_from_tryContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#else_from_try.
+    def exitElse_from_try(self, ctx:jacParser.Else_from_tryContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#elif_stmt.
     def enterElif_stmt(self, ctx:jacParser.Elif_stmtContext):
         pass
