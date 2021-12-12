@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Lang Feature: Multifile codebase support and import keyword and semantic added
 - New Lang Feature: Try-else blocks introduced for exception handling
 - New Lang Feature: Added new `&` reference and `*` dereference semantic for getting psuedo-pointers to node, edges, etc
 - New Lang Feature: Massively expanded functionality with destroy and list slice management
