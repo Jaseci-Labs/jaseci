@@ -560,3 +560,19 @@ class jac_tests(TestCaseHelper, TestCase):
                                   'name': 'pete',
                                   'profession': None})
         self.assertEqual(rep[9], True)
+
+    def test_try_else_stmts(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.try_else_stmts)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], {'args': ('division by zero',),
+                                  'msg': 'division by zero',
+                                  'type': 'ZeroDivisionError'})
+        self.assertEqual(rep[1], 'dont need err')
+        self.assertEqual(rep[2], None)
+        self.assertEqual(rep[3], 2)

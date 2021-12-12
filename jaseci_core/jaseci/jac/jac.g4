@@ -73,6 +73,7 @@ statement:
 	| node_ctx_block
 	| expression SEMI
 	| if_stmt
+	| try_stmt
 	| for_stmt
 	| while_stmt
 	| ctrl_stmt SEMI
@@ -80,7 +81,13 @@ statement:
 	| report_action
 	| walker_action;
 
-if_stmt: KW_IF expression code_block (elif_stmt)* (else_stmt)?;
+if_stmt: KW_IF expression code_block elif_stmt* else_stmt?;
+
+try_stmt: KW_TRY code_block else_from_try?;
+
+else_from_try:
+	KW_ELSE (LPAREN NAME RPAREN)? code_block
+	| KW_ELSE (KW_WITH NAME)? code_block;
 
 elif_stmt: KW_ELIF expression code_block;
 
@@ -335,6 +342,7 @@ KW_DISENGAGE: 'disengage';
 KW_SKIP: 'skip';
 KW_REPORT: 'report';
 KW_DESTROY: 'destroy';
+KW_TRY: 'try';
 DOT: '.';
 NOT: '!' | 'not';
 EE: '==';

@@ -4,7 +4,8 @@
 
 ### Updates
 
-- New Lang Feature Added new `&` reference and `*` dereference semantic for getting psuedo-pointers to node, edges, etc
+- New Lang Feature: Try-else blocks introduced for exception handling
+- New Lang Feature: Added new `&` reference and `*` dereference semantic for getting psuedo-pointers to node, edges, etc
 - New Lang Feature: Massively expanded functionality with destroy and list slice management
 - New Lang Feature: can now explicitly reference and dereference graph elements (nodes, edges, etc)
 - New Lang Feature: Field filtering for dictionaries, particularly useful for context, info, details
