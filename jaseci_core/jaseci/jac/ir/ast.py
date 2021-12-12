@@ -125,11 +125,12 @@ class ast():
             kid = jac_ast.kid
             fn = parse_str_token(kid[1].token_text())
             mod_name = os.path.basename(fn)
-            logger.info(f"{self.imported}")
+            from_mod = self.tree_root.mod_name
+            logger.info(f"Importing {mod_name} from {from_mod}...")
             if(mod_name in self.imported):
-                logger.error(
+                logger.warning(
                     f"Already imported {mod_name}, may "
-                    f"be circular from {self.tree_root.mod_name}")
+                    f"be circular at {from_mod}")
             elif (os.path.isfile(fn)):
                 with open(fn, 'r') as file:
                     jac_text = file.read()
@@ -141,7 +142,7 @@ class ast():
                                   imported=self.imported).kid)
             else:
                 err = f"Module not found for import! {mod_name} from" +\
-                    f" {self.tree_root.mod_name}"
+                    f" {from_mod}"
                 self.tree_root.parse_errors.append(err)
             return []
 

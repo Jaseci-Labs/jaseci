@@ -158,7 +158,6 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertEqual(len(r), 1)
 
     def test_jsctl_import(self):
-        # self.logger_on()
         self.call(
             "sentinel register -code "
             "jaseci/jsctl/tests/ll_base.jac -set_active true")
