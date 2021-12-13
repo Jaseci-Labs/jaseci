@@ -84,7 +84,7 @@ class machine_state():
         """Generates string for screen output"""
         name = self.name if hasattr(self, 'name') else 'blank'
         if(jac_ast):
-            msg = f'{name} - line {jac_ast.line}, ' + \
+            msg = f'{jac_ast.mod_name}:{name} - line {jac_ast.line}, ' + \
                 f'col {jac_ast.column} - rule {jac_ast.name} - {msg}'
         else:
             msg = f'{msg}'

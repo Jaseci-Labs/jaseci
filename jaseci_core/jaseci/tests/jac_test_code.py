@@ -963,6 +963,16 @@ destroy_and_misc = \
     }
     """
 
+arbitrary_assign = \
+    """
+    node person: has name, age, birthday, profession;
+    walker init {
+        some = spawn here --> node::person;
+        some.apple = 45;
+        report some.context;
+    }
+    """
+
 try_else_stmts = \
     """
     walker init {

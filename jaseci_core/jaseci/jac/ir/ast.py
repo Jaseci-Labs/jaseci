@@ -25,7 +25,7 @@ class ast():
         self.context = {}
         self.parse_errors = parse_errors if parse_errors else []
         self.start_rule = start_rule
-        self.mod_name = mod_name if mod_name is not None else "@text_str"
+        self.mod_name = mod_name if mod_name is not None else "@default"
         self.line = 0
         self.column = 0
         self.kid = []

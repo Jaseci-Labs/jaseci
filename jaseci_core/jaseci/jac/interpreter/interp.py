@@ -725,6 +725,10 @@ class interp(machine_state):
                     if(self.rt_check_type(d, [dict, element], kid[0])):
                         if(isinstance(d, element)):
                             d = d.context
+                            if(n not in d.keys()):
+                                self.rt_error(f"Invalid field in element {n}",
+                                              kid[2])
+                                d = None
                         ret = jac_value(self, ctx=d, name=n)
                         ret.unwrap()
                         return ret
