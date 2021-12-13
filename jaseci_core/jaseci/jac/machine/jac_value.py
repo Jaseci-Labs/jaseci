@@ -26,24 +26,25 @@ class JAC_TYPE:
 
 
 def jac_type_wrap(val):
-    if(val == str):
-        val = JAC_TYPE.STR
-    elif(val == int):
-        val = JAC_TYPE.INT
-    elif(val == float):
-        val = JAC_TYPE.FLOAT
-    elif(val == list):
-        val = JAC_TYPE.LIST
-    elif(val == dict):
-        val = JAC_TYPE.DICT
-    elif(val == bool):
-        val = JAC_TYPE.BOOL
-    elif(val == node):
-        val = JAC_TYPE.NODE
-    elif(val == edge):
-        val = JAC_TYPE.EDGE
-    elif(val == type):
-        val = JAC_TYPE.TYPE
+    if(isinstance(val, type)):
+        if(val == str):
+            val = JAC_TYPE.STR
+        elif(val == int):
+            val = JAC_TYPE.INT
+        elif(val == float):
+            val = JAC_TYPE.FLOAT
+        elif(val == list):
+            val = JAC_TYPE.LIST
+        elif(val == dict):
+            val = JAC_TYPE.DICT
+        elif(val == bool):
+            val = JAC_TYPE.BOOL
+        elif(val == node):
+            val = JAC_TYPE.NODE
+        elif(val == edge):
+            val = JAC_TYPE.EDGE
+        elif(val == type):
+            val = JAC_TYPE.TYPE
     return val
 
 
