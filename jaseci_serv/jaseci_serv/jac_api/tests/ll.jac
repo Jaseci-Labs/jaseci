@@ -445,7 +445,7 @@ walker get_due_soon {
           skip;
       }
       # ignore item that is currently snoozed
-      if (here.snooze_till != '') {
+      if (here.snooze_till) {
         if (infer.date_day_diff(today_date, here.snooze_till) < 0) {
           take -[parent]-> node::workette;
           skip;
@@ -453,7 +453,7 @@ walker get_due_soon {
       }
 
       # Select items that are due soon
-      if (here.date != '') {
+      if (here.date) {
           if (infer.date_day_diff(here.date, today_date) < soon): due_soon_list += [here];
       }
       take -[parent]-> node::workette;
@@ -486,7 +486,7 @@ walker get_snoozed_till_recent {
           skip;
       }
       # Select items that are snoozed until today or recent past days
-      if (here.snooze_till != '') {
+      if (here.snooze_till) {
           if (infer.date_day_diff(today_date, here.snooze_till) > 0) {
               snoozed_to_active_list += [here];
           }

@@ -88,6 +88,8 @@ def interface_api(api_name, is_public, **kwargs):
     if('code' in kwargs and kwargs['code']):
         if (os.path.isfile(kwargs['code'])):
             with open(kwargs['code'], 'r') as file:
+                if(kwargs['name'] == 'default'):
+                    kwargs['name'] = os.path.basename(kwargs['code'])
                 kwargs['code'] = file.read()
         else:
             click.echo(f"Code file {kwargs['code']} not found!")
@@ -247,6 +249,7 @@ def clear():
 @click.command(help="Reset jsctl (clears state)")
 def reset():
     reset_state()
+    click.echo(f"Jaseci State Cleared!")
 
 
 @click.command(help="Internal book generation tools")

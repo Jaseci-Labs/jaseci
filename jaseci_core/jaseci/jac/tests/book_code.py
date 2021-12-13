@@ -297,9 +297,9 @@ list_remove = \
         nd=spawn here --> node::test;
         nd.lst=[['b', 333],['c',245],['a', 56]];
         std.out(nd.lst);
-        nd.lst.destroy(1);
+        nd.lst.destroy:1:;
         std.out(nd.lst);
-        std.out(nd.lst.destroy(1));
+        std.out(nd.lst.destroy:1:);
     }
     """
 
@@ -531,5 +531,94 @@ fam_example = \
         man {
             std.out("I didn't do any of the hard work.");
         }
+    }
+    """
+
+visitor_preset = \
+    """
+    node person {
+        has name;
+        has byear;
+        can date.quantize_to_year::std.time_now()::>byear with setter entry;
+        can std.out::byear," from ",visitor.info:: with exit;
+        can std.out::byear," init only from ",visitor.info:: with init exit;
+    }
+
+    walker init {
+        has year=std.time_now();
+        root {
+            person1 = spawn here -->
+                node::person(name="Josh", byear="1995-01-01");
+            take --> ;
+        }
+        person {
+            spawn here walker::setter;
+        }
+    }
+
+    walker setter {
+        has year=std.time_now();
+    }
+    """
+
+visitor_local_aciton = \
+    """
+    node person {
+        has name;
+        has byear;
+        can set_year with setter entry {
+            byear = visitor.year;
+        }
+        can print_out with exit {
+            std.out(byear, " from ", visitor.info);
+        }
+        can reset {  # <-- Could add 'with activity' for equivalent behavior
+            byear = "1995-01-01";
+            std.out("resetting year to 1995:", here.context);
+        }
+    }
+
+    walker init {
+        has year = std.time_now();
+        has person1;
+        root {
+            person1 = spawn here --> node::person;
+            std.out(person1.context);
+            person1::reset;
+            take -->;
+        }
+        person {
+            spawn here walker::setter;
+            person1::reset(name="Joe");
+        }
+    }
+
+    walker setter {
+        has year = std.time_now();
+    }
+    """
+
+copy_assign_to_edge = \
+    """
+    node person: has name, age, birthday, profession;
+    edge friend: has meeting_place;
+    edge family: has kind;
+
+    walker init {
+        person1 = spawn here -[friend(meeting_place = "college")] ->
+            node::person(name = "Josh", age = 32);
+        person2 = spawn here -[family(kind = "sister")] ->
+            node::person(name = "Jane", age = 30);
+
+        twin1 = spawn here -[friend]-> node::person;
+        twin2 = spawn here -[family]-> node::person;
+        twin1 := person1;
+        twin2 := person2;
+
+        -->.edge[2] := -->.edge[0];
+        -->.edge[3] := -->.edge[1];
+
+        std.out("Context for our people nodes and edges:");
+        for i in -->: std.out(i.context, '\\n', i.edge[0].context);
     }
     """

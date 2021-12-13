@@ -136,7 +136,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         out = self.new_stdout.getvalue()
-        self.assertEqual(out.count("'"), 10)
+        self.assertEqual(out.count('"'), 10)
 
     def test_array_assign(self):
         self.sent.register_code(jtc.array_assign)
@@ -196,11 +196,11 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(),
-                         "[['b', 333], ['c', 245], ['a', 56]]\n"
-                         "[['a', 56], ['b', 333], ['c', 245]]\n"
-                         "[['c', 245], ['b', 333], ['a', 56]]\n"
-                         "[['a', 56], ['c', 245], ['b', 333]]\n"
-                         "[['b', 333], ['c', 245], ['a', 56]]\n")
+                         '[["b", 333], ["c", 245], ["a", 56]]\n'
+                         '[["a", 56], ["b", 333], ["c", 245]]\n'
+                         '[["c", 245], ["b", 333], ["a", 56]]\n'
+                         '[["a", 56], ["c", 245], ["b", 333]]\n'
+                         '[["b", 333], ["c", 245], ["a", 56]]\n')
 
     def test_list_remove_element(self):
         self.sent.register_code(jtc.list_remove)
@@ -208,9 +208,8 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(),
-                         "[['b', 333], ['c', 245], ['a', 56]]\n"
-                         "[['b', 333], ['a', 56]]\n"
-                         "[['b', 333]]\n")
+                         '[["b", 333], ["c", 245], ["a", 56]]\n'
+                         '[["b", 333], ["a", 56]]\n[["b", 333]]\n')
 
     def test_can_action(self):
         self.sent.register_code(jtc.can_action)
@@ -266,10 +265,9 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(),
-                         "{'three': 3, 'four': 4}\n"
-                         "{'three': 3, 'four': 55}\n"
-                         "{'one': 1, 'two': 2}\n"
-                         "2\n")
+                         '{"three": 3, "four": 4}\n'
+                         '{"three": 3, "four": 55}\n'
+                         '{"one": 1, "two": 2}\n2\n')
 
     def test_dict_md_assign(self):
         self.sent.register_code(jtc.dict_md_assign)
@@ -277,9 +275,8 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(),
-                         "{'one': {'inner': 44}, 'two': 2}\n"
-                         "{'inner': 2}\n"
-                         "2\n")
+                         '{"one": {"inner": 44}, "two": 2}\n'
+                         '{"inner": 2}\n2\n')
 
     def test_dict_keys(self):
         self.sent.register_code(jtc.dict_keys)
@@ -287,9 +284,8 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(),
-                         "{'one': {'inner': 44}, 'two': 2}\n"
-                         "{'inner': 2}\n"
-                         "2\n")
+                         '{"one": {"inner": 44}, "two": 2}\n'
+                         '{"inner": 2}\n2\n')
 
     def test_cond_dict_keys(self):
         self.sent.register_code(jtc.cond_dict_keys)
@@ -297,9 +293,9 @@ class jac_book_tests(TestCaseHelper, TestCase):
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(),
-                         "{'one': {'inner': 44}, 'two': 2}\n"
-                         "is here\n"
-                         "also not here\n")
+                         '{"one": {"inner": 44}, "two": 2}\n'
+                         'is here\n'
+                         'also not here\n')
 
     def test_vector_softmax(self):
         self.sent.register_code(jtc.soft_max)
@@ -318,3 +314,44 @@ class jac_book_tests(TestCaseHelper, TestCase):
         self.assertEqual(
             self.new_stdout.getvalue(),
             "I didn't do any of the hard work.\n")
+
+    def test_book_visitor_preset(self):
+        self.sent.register_code(jtc.visitor_preset)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        outsplit = self.new_stdout.getvalue().split('\n')
+        self.assertIn('from', outsplit[0])
+        self.assertIn('setter', outsplit[0])
+        self.assertIn('walker', outsplit[0])
+        self.assertIn('init', outsplit[1])
+        self.assertIn('walker', outsplit[1])
+        self.assertIn('init only', outsplit[2])
+        self.assertIn('"name": "init"', outsplit[2])
+
+    def test_book_visitor_local_aciton(self):
+        self.sent.register_code(jtc.visitor_local_aciton)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        outsplit = self.new_stdout.getvalue().split('\n')
+        self.assertIn('"byear": null', outsplit[0])
+        self.assertIn('to 1995: {}', outsplit[1])
+        self.assertIn('setter', outsplit[2])
+        self.assertIn('"byear": "1995-01-01"', outsplit[3])
+        self.assertIn('"name": "init"', outsplit[4])
+
+    def test_book_copy_assign_to_edge(self):
+        self.sent.register_code(jtc.copy_assign_to_edge)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        outsplit = self.new_stdout.getvalue().split('\n')
+        self.assertIn('"Josh", "age": 32', outsplit[1])
+        self.assertIn('college', outsplit[2])
+        self.assertIn('"Jane", "age": 30', outsplit[3])
+        self.assertIn("sister", outsplit[4])
+        self.assertIn('"Josh", "age": 32', outsplit[5])
+        self.assertIn("college", outsplit[6])
+        self.assertIn('"Jane", "age": 30', outsplit[7])
+        self.assertIn("sister", outsplit[8])

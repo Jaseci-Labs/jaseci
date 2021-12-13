@@ -374,23 +374,6 @@ class jac_tests(TestCaseHelper, TestCase):
         sent.register_code(jtc.version_label)
         self.assertEqual(sent.version, 'alpha-1.0')
 
-    def test_get_uuid(self):
-        """Test sentinel version labeling"""
-        gph = graph(m_id='anon', h=mem_hook())
-        sent = sentinel(m_id='anon', h=gph._h)
-        sent.register_code(jtc.get_uuid)
-        test_walker = \
-            sent.walker_ids.get_obj_by_name('init')
-        test_walker.prime(gph)
-        test_walker.run()
-        nodes = gph.get_all_nodes()
-        num = 0
-        for i in nodes:
-            if(i.name == 'test'):
-                self.assertEqual(len(i.context['a'].split('-')[0]), 8)
-                num += 1
-        self.assertEqual(num, 1)
-
     def test_visibility_builtins(self):
         """Test builtins to see into nodes and edges"""
         gph = graph(m_id='anon', h=mem_hook())
@@ -417,7 +400,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(test_walker.report[0]['age'], 32)
         self.assertEqual(test_walker.report[1]['meeting_place'], 'college')
         self.assertEqual(test_walker.report[2]['name'], 'Jane')
-        self.assertEqual(test_walker.report[3]['type'], 'sister')
+        self.assertEqual(test_walker.report[3]['kind'], 'sister')
 
     def test_filter_ctx_for_edges_nodes(self):
         """Test builtins to see into nodes and edges"""
@@ -430,3 +413,166 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         self.assertEqual(test_walker.report[0]['age'], 30)
         self.assertEqual(len(test_walker.report[1]), 0)
+
+    def test_null_handling(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.null_handleing)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertEqual(test_walker.report[0], True)
+        self.assertEqual(test_walker.report[1], False)
+        self.assertEqual(test_walker.report[2], True)
+        self.assertEqual(test_walker.report[3], False)
+
+    def test_bool_type_convert(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.bool_type_convert)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertEqual(test_walker.report[0], True)
+        self.assertEqual(True, test_walker.report[1]['name'])
+
+    def test_typecasts(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.typecasts)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertEqual(test_walker.report[0], 7.6)
+        self.assertEqual(test_walker.report[1], 7)
+        self.assertEqual(test_walker.report[2], "7.6")
+        self.assertEqual(test_walker.report[3], True)
+        self.assertEqual(test_walker.report[4], 7.0)
+        self.assertEqual(test_walker.report[5], "Types comes back correct")
+
+    def test_typecast_error(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.typecasts_error)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertIn('Cannot get edges from 7.6',
+                      test_walker.runtime_errors[0])
+        self.assertIn('Invalid cast of JAC_TYPE.STR to JAC_TYPE.INT',
+                      test_walker.runtime_errors[1])
+
+    def test_filter_on_context(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.filter_on_context)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertEqual({'yo': 'Yeah i said'},
+                         test_walker.report[0][0])
+        self.assertNotIn("name",
+                         test_walker.report[0][1].keys())
+        self.assertIn("name",
+                      test_walker.report[0][2].keys())
+
+    def test_string_manipulation(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.string_manipulation)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], 't')
+        self.assertEqual(rep[1], 'tin')
+        self.assertEqual(rep[2], 'sting me ')
+        self.assertEqual(rep[3], ' TESTING ME  ')
+        self.assertEqual(rep[4], ' testing me  ')
+        self.assertEqual(rep[5], ' Testing Me  ')
+        self.assertEqual(rep[6], ' testing me  ')
+        self.assertEqual(rep[7], ' TeSTING ME  ')
+        self.assertEqual(rep[8], False)
+        self.assertEqual(rep[9], False)
+        self.assertEqual(rep[10], False)
+        self.assertEqual(rep[11], False)
+        self.assertEqual(rep[12], False)
+        self.assertEqual(rep[13], False)
+        self.assertEqual(rep[14], False)
+        self.assertEqual(rep[15], 2)
+        self.assertEqual(rep[16], 5)
+        self.assertEqual(rep[17], ['tEsting', 'me'])
+        self.assertEqual(rep[18], [' t', 'sting me  '])
+        self.assertEqual(rep[19], False)
+        self.assertEqual(rep[20], False)
+        self.assertEqual(rep[21], ' tEsting you  ')
+        self.assertEqual(rep[22], 'tEsting me')
+        self.assertEqual(rep[23], 'Esting me')
+        self.assertEqual(rep[24], 'tEsting me  ')
+        self.assertEqual(rep[25], 'sting me  ')
+        self.assertEqual(rep[26], ' tEsting me')
+        self.assertEqual(rep[27], ' tEsting m')
+        self.assertEqual(rep[28], True)
+
+    def test_sub_list(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.sub_list)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0][0], 5)
+        self.assertEqual(rep[0][1], 6)
+        self.assertEqual(rep[0][2], 7)
+
+    def test_destroy_and_misc(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.destroy_and_misc)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], 'Josh')
+        self.assertEqual(
+            rep[1], {'age': 32, 'birthday': None,
+                     'profession': None})
+        self.assertEqual(
+            rep[2], {'age': 32, 'birthday': None,
+                     'name': 'pete', 'profession': None})
+        self.assertEqual(rep[3], [1, 3])
+        self.assertEqual(rep[4], {'a': 'b'})
+        self.assertEqual(rep[5], [1, 2, 5, 6, 7, 8, 9])
+        self.assertEqual(rep[6], [1, 2, 45, 33, 7, 8, 9])
+        self.assertEqual(rep[7], None)
+        self.assertEqual(rep[8], {'age': 32,
+                                  'banana': 45,
+                                  'birthday': None,
+                                  'name': 'pete',
+                                  'profession': None})
+        self.assertEqual(rep[9], True)
+
+    def test_try_else_stmts(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.try_else_stmts)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], {'args': ('division by zero',),
+                                  'msg': 'division by zero',
+                                  'type': 'ZeroDivisionError'})
+        self.assertEqual(rep[1], 'dont need err')
+        self.assertEqual(rep[2], None)
+        self.assertEqual(rep[3], 2)

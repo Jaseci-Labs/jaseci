@@ -91,7 +91,7 @@ class jac_code():
     def parse_jac(self, code, start_rule='start'):
         """Generate AST tree from Jac code text"""
         logger.info(str(f'{self.name}: Processing Jac code...'))
-        tree = ast(jac_text=code, start_rule=start_rule)
+        tree = ast(jac_text=code, start_rule=start_rule, mod_name=self.name)
         self.errors = tree.parse_errors
         if(tree.parse_errors):
             logger.error(str(f'{self.name}: Invalid syntax in Jac code!'))

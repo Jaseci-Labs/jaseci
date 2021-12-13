@@ -68,6 +68,6 @@ def __router__():
     )
 
 
-if __name__ == '__main__':
-    USEApp.run(port=4672)
-    USEApp.log('INFO', 'USE service up and running')
+# if __name__ == '__main__':
+#     USEApp.run(port=4672)
+#     USEApp.log('INFO', 'USE service up and running')

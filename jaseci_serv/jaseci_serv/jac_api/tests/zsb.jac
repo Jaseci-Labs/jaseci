@@ -73,7 +73,7 @@ walker unlink_question {
         if(not here.qlinks or here.qlinks.length < idx):
             report "Index out of range!";
         else {
-            here.qlinks.destroy(idx);
+            here.qlinks.destroy:idx:;
             pretext="";
             for i in here.qlinks: pretext+=i;
             old_enc = here.encoding;

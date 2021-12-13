@@ -34,10 +34,10 @@ def rest_api_auto_doc(endpoint: str, fsig: signature):
             if (p_type == str):
                 json_samp[p_name] = 'some string'
     if (params):
-        doc += f"\n**Parameters**:\n"
+        doc += "\n**Parameters**:\n"
         for i in params:
             doc += i
-        doc += f"\n**JSON Example**\n"
+        doc += "\n**JSON Example**\n"
         doc += f"```javascript\n{json.dumps(json_samp, indent=4)}\n```\n"
     return doc
 

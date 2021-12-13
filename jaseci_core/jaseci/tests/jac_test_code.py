@@ -716,17 +716,6 @@ basic = \
     }
     """
 
-
-get_uuid = \
-    """
-    node test {has a;}
-
-    walker init {
-        nd= spawn here --> node::test;
-        nd.a = std.get_uuid(nd);
-    }
-    """
-
 visibility_builtins = \
     """
     node test {
@@ -762,12 +751,12 @@ spawn_ctx_edge_node = \
     """
     node person: has name, age, birthday, profession;
     edge friend: has meeting_place;
-    edge family: has type;
+    edge family: has kind;
 
     walker init {
         person1 = spawn here -[friend(meeting_place = "college")]->
             node::person(name = "Josh", age = 32);
-        person2 = spawn here -[family(type = "sister")] ->
+        person2 = spawn here -[family(kind = "sister")] ->
             node::person(name = "Jane", age = 30);
 
         for i in -->{
@@ -781,15 +770,211 @@ filter_ctx_edge_node = \
     """
     node person: has name, age, birthday, profession;
     edge friend: has meeting_place;
-    edge family: has type;
+    edge family: has kind;
 
     walker init {
         person1 = spawn here -[friend(meeting_place = "college")]->
             node::person(name = "Josh", age = 32);
-        person2 = spawn here -[family(type = "sister")] ->
+        person2 = spawn here -[family(kind = "sister")] ->
             node::person(name = "Jane", age = 30);
 
         report --> node::person(name=='Jane')[0].context;
-        report -[family(type=="brother")]->;
+        report -[family(kind=="brother")]->;
+    }
+    """
+
+null_handleing = \
+    """
+    node person: has name, age, birthday, profession;
+
+    walker init {
+        person1 = spawn here -->
+            node::person(name = "Josh", age = 32);
+
+        if(person1.birthday==null): report true;
+        else: report false;
+
+        if(person1.name==null): report true;
+        else: report false;
+
+        person1.name=null;
+        report person1.name==null;
+        person1.name=0;
+        report person1.name==null;
+    }
+    """
+
+bool_type_convert = \
+    """
+    node person: has name;
+
+    walker init {
+        p1 = spawn here -->
+            node::person(name = "Josh");
+
+        p1.name = true;
+        report p1.name;
+        std.log(p1.name);
+        report p1.context;
+    }
+    """
+
+typecasts = \
+    """
+    walker init {
+        a=5.6;
+        report (a+2);
+        report (a+2).int;
+        report (a+2).str;
+        report (a+2).bool;
+        report (a+2).int.float;
+
+        if(a.str.type == str and !(a.int.type == str)
+           and a.int.type == int):
+            report "Types comes back correct";
+    }
+    """
+
+typecasts_error = \
+    """
+    walker init {
+        a=5.6;
+        report (a+2);
+        report (a+2).int;
+        report (a+2).str;
+        report (a+2).edge;
+        report ("a+2").int.float;
+
+        if(a.str.type == str and !(a.int.type == str)
+           and a.int.type == int):
+            report "Types comes back correct";
+    }
+    """
+
+filter_on_context = \
+    """
+    node test {
+        has yo, mama;
+    }
+
+    edge apple {
+        has v1, v2;
+    }
+
+    edge banana {
+        has x1, x2;
+    }
+
+    walker init {
+        root {
+            a = spawn here -[apple]-> node::test;
+            a.yo="Yeah i said";
+            a.mama="Yo Mama Fool!";
+            b = spawn here -[banana]-> node::test;
+
+            e = -[apple]->.edge[0];
+            e.v1 = 7;
+            e = --> node::test.edge[1];
+            e.x1=8;
+
+            report [a.context.{yo}, b.info.{jid,j_type}, e.details];
+        }
+    }
+    """
+
+string_manipulation = \
+    """
+    walker init {
+        a=" tEsting me  ";
+        report a[4];
+        report a[4:7];
+        report a[3:-1];
+        report a.str::upper;
+        report a.str::lower;
+        report a.str::title;
+        report a.str::capitalize;
+        report a.str::swap_case;
+        report a.str::is_alnum;
+        report a.str::is_alpha;
+        report a.str::is_digit;
+        report a.str::is_title;
+        report a.str::is_upper;
+        report a.str::is_lower;
+        report a.str::is_space;
+        report a.str::count('t');
+        report a.str::find('i');
+        report a.str::split;
+        report a.str::split('E');
+        report a.str::startswith('tEs');
+        report a.str::endswith('me');
+        report a.str::replace('me', 'you');
+        report a.str::strip;
+        report a.str::strip(' t');
+        report a.str::lstrip;
+        report a.str::lstrip(' tE');
+        report a.str::rstrip;
+        report a.str::rstrip(' e');
+
+        report a.str::upper.str::is_upper;
+    }
+    """
+
+sub_list = \
+    """
+    walker init {
+        a=[1,2,3,4,5,6,7,8,9];
+        report a[4:7];
+    }
+    """
+
+destroy_and_misc = \
+    """
+    node person: has name, age, birthday, profession;
+    edge friend: has meeting_place;
+    edge family: has kind;
+
+    walker init {
+        person1 = spawn here -[friend(meeting_place = "college")]->
+            node::person(name = "Josh", age = 32);
+        person2 = spawn here -[family(kind = "sister")] ->
+            node::person(name = "Jane", age = 30);
+
+        report person1.name;
+        destroy person1.name;
+        report person1.context;
+        person1.name="pete";
+        report person1.context;
+        a=[1,2,3];
+        destroy a[1];
+        report a;
+        b={'a': 'b', 'c':'d'};
+        destroy b['c'];
+        report b;
+        a=[1,2,3,5,6,7,8,9];
+        destroy a[2:4];
+        report a;
+        a[2:4]=[45,33];
+        report a;
+        destroy a;
+        report a;
+        person1.banana=45;
+        report person1.context;
+        report 'age' in person1.context;
+    }
+    """
+
+try_else_stmts = \
+    """
+    walker init {
+        a=null;
+        try {a=2/0;}
+        else with err {report err;}
+        try {a=2/0;}
+        else {report 'dont need err';}
+        try {a=2/0;}
+        try {a=2/0;}
+        report a;
+        try {a=2/1;}
+        report a;
     }
     """

@@ -25,6 +25,7 @@ class machine_state():
         self._jac_scope = None
         self._loop_ctrl = None
         self._stopped = None
+        self._assign_mode = False
         self._loop_limit = 10000
 
     def parent(self):
@@ -51,15 +52,11 @@ class machine_state():
 
     # Helper Functions ##################
 
-    def parse_str_token(self, s):
-        return str(bytes(s, "utf-8").
-                   decode("unicode_escape")[1:-1])
-
     def obj_set_to_jac_set(self, obj_set):
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set(self)
+        ret = jac_set()
         for i in obj_set:
             ret.add_obj(i)
         return ret
@@ -68,7 +65,7 @@ class machine_state():
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set(self)
+        ret = jac_set()
         for i in edge_set.obj_list():
             ret.add_obj(i.opposing_node(self.current_node))
         return ret

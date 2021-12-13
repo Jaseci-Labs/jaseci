@@ -34,7 +34,7 @@ class master(core_master):
             mas._h = self._h
             return self.make_me_head_master_or_destroy(mas)
         else:
-            return {'response': f"Errors occurred",
+            return {'response': "Errors occurred",
                     'errors': serializer.errors}
 
     def api_master_delete(self, name: str):
@@ -68,7 +68,7 @@ class super_master(master, core_super):
             mas._h = self._h
             return self.make_me_head_master_or_destroy(mas)
         else:
-            return {'response': f"Errors occurred",
+            return {'response': "Errors occurred",
                     'errors': serializer.errors}
 
 
