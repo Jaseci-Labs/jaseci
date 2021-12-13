@@ -103,3 +103,67 @@ class test_ll_wall(TestCaseHelper, TestCase):
         self.assertEqual(len(data[0][0][0][2]), 3)
 
         data = self.run_walker('get_gen_day', {"date": "2021-07-13"})
+
+    def test_ll_highlevel_groups(self):
+        """Test highlevel_groups walker when certifying a day"""
+
+        self.run_walker('get_gen_day', {"date": "2021-07-15"})
+
+        data = self.run_walker('get_latest_day', {'show_report': 1})
+
+        day_id = data[0][1]['jid']
+
+        g1 = self.run_walker('create_workette', {
+                             "title": "group 1", "wtype": "workset"}, prime=day_id)
+        self.assertEqual(g1[0]['context']['name'], 'group 1')
+        self.assertEqual(g1[0]['context']['wtype'], 'workset')
+
+        g2 = self.run_walker('create_workette', {
+                             "title": "group 2", "wtype": "workset"}, prime=day_id)
+        self.assertEqual(g2[0]['context']['name'], 'group 2')
+        self.assertEqual(g2[0]['context']['wtype'], 'workset')
+
+        # child of group 1
+        g1_item1 = self.run_walker('create_workette', {
+                                   "title": "item 1", "wtype": "workette"}, prime=g1[0]['jid'])
+        self.assertEqual(g1_item1[0]['context']['name'], 'item 1')
+
+        self.graph_node_set(g1_item1[0]['jid'], {"status": "done"})
+
+        # child of item 1
+        g1_item2 = self.run_walker('create_workette', {
+                                   "title": "item 2", "wtype": "workette"}, prime=g1_item1[0]['jid'])
+        self.assertEqual(g1_item2[0]['context']['name'], 'item 2')
+
+        data = self.graph_node_set(g1_item2[0]['jid'], {"status": "done"})
+        print("child of item 1", data)
+
+        # child of item 2
+        g1_item3 = self.run_walker('create_workette', {
+                                   "title": "item 3", "wtype": "workette"}, prime=g1_item2[0]['jid'])
+        self.assertEqual(g1_item3[0]['context']['name'], 'item 3')
+
+        data = self.graph_node_set(g1_item3[0]['jid'], {"status": "done"})
+        print("child of item 1", data)
+        # child of item 2 - but not done
+        g1_item4 = self.run_walker('create_workette', {
+                                   "title": "item 4 - not done", "wtype": "workette"}, prime=g1_item2[0]['jid'])
+        self.assertEqual(g1_item4[0]['context']['name'], 'item 4 - not done')
+
+        #data = self.run_walker('set_day_highlevel_groups', {}, prime=day_id)
+        # print(data)
+
+        # certify day, should return day highlights
+        data = self.run_walker('set_day_highlight', {
+                               "highlight_items": []}, prime=day_id)
+
+        dayNode = self.run_walker('get_workette', {}, day_id)
+
+        highlevel_groups = dayNode[0]["context"]["highlevel_groups"]
+
+        self.assertEqual(len(highlevel_groups), 2)
+        self.assertEqual(highlevel_groups[0]["name"], "group 1")
+        self.assertEqual(highlevel_groups[0]["completed_items"], 3)
+
+        self.assertEqual(highlevel_groups[1]["name"], "group 2")
+        self.assertEqual(highlevel_groups[1]["completed_items"], 0)

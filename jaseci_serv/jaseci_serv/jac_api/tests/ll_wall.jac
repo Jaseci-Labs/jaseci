@@ -21,7 +21,7 @@ node week {
 }
 
 node day {
-    has anchor day, note, order, focus_order, ritual_order, expanded_children, show_hidden_items, focusR, log;
+    has anchor day, note, order, focus_order, ritual_order, expanded_children, show_hidden_items, focusR, log, highlevel_groups;
     has ll_version;
     can infer.day_from_date;
 }
@@ -145,6 +145,7 @@ walker delete_day {
         }
     }
     day {
+        report here;
         spawn --> node::workette walker::delete_workette();
         destroy here;
     }
@@ -754,6 +755,69 @@ walker clear_day_highlight {
     }
 }
 
+walker get_high_level_groups {
+    has show_report;
+    has anchor groups;
+
+    with entry {
+        groups = [];
+    }
+
+    day {
+        take -[parent]-> node::workette;
+    }
+
+    workette {
+        if ( here.wtype == "workset" ) {
+            groups += [here];
+        }
+    }
+
+    with exit {
+        if(show_report): report groups;
+    }
+}
+
+walker get_completed_items {
+    has show_report;
+    has anchor count;
+
+    with entry {
+        count = 0;
+    }
+
+    day {
+        take -[parent]-> node::workette;
+    }
+
+    workette {
+        if( here.wtype == "workette" && here.status == "done" ) {
+            count += 1;
+        }
+
+        if( here.wtype == "workset" || (-[parent]->).length > 0 ) {
+            take -[parent]-> node::workette;
+        }
+    }
+
+    with exit {
+        if(show_report): report count;
+    }
+}
+
+# Compute highlevel groups completed items
+walker set_day_highlevel_groups {
+    day {
+        groups = [];
+        #spawn here walker::get_high_level_groups = [group 1, group 2]
+        for group in spawn here walker::get_high_level_groups {
+            groups += [{"id": &(group), "name": group.name, "color": group.color, "completed_items": spawn group walker::get_completed_items}];
+        }
+
+        here.highlevel_groups = groups;
+    }
+}
+
 walker set_day_highlight {
     has highlight_items;
     has dayNode;
@@ -762,25 +826,28 @@ walker set_day_highlight {
 
     with entry {
         cnt = 0;
+        types = [];
+        if( !highlight_items ): highlight_items = [];
     }
 
     day {
-        if( !highlight_items ): disengage;
-
         #clear highlights
         spawn here walker::clear_day_highlight;
 
-        types = [];
+        spawn here walker::set_day_highlevel_groups;
 
         dayNode = here;
 
-        for h in highlight_items {
-            typeObj = {"type": h["type"], "color": h["color"], "icon": h["icon"]};
+        if( highlight_items.length > 0 ) {
+            for h in highlight_items {
+                typeObj = {"type": h["type"], "color": h["color"], "icon": h["icon"]};
 
-            types += [typeObj];
+                types += [typeObj];
 
-            if( h["id"] ): take *(h["id"]);
+                if( h["id"] ): take h["id"];
+            }
         }
+        else: disengage;
     }
 
     workette {
@@ -791,7 +858,7 @@ walker set_day_highlight {
     }
 
     with exit {
-        spawn dayNode walker::get_highlights(num_days_to_load=1);
+        spawn dayNode walker::get_highlights;
     }
 }
 
@@ -826,6 +893,160 @@ walker get_highlights {
 
     with exit {
         report [highlights, 1];
+    }
+}
+
+walker get_productivity_insights {
+    has anchor data;
+    has current, previous, past_month, filter;
+    has current_data, previous_data;
+    has parent;
+    has done_with_current;
+    has date;
+    has past_month_data;
+
+    with entry {        
+        date = current;
+        if(!previous): previous = "";
+
+        data = [];
+        current_data = [];
+        previous_data = [];
+
+        parent = "";
+        past_month_data = [];
+    }
+
+    root {
+        past_month_data = spawn here walker::get_productivity_insights_by_month(current=past_month);
+        take --> node::life;
+    }
+    life {
+        ignore --> node::year > infer.year_from_date(date);
+        take net.max(--> node::year);
+    }
+    year {
+        ignore node::month > infer.month_from_date(date);
+        take net.max(--> node::month)
+        else {
+            ignore here;
+            take <-- node::life;
+        }
+    }
+    month {
+        ignore node::week > infer.week_from_date(date);
+        take net.max(--> node::week)
+        else {
+            ignore here;
+            take <-- node::year == infer.year_from_date(date);
+        }
+    }
+    week {
+        ignore node::day > infer.day_from_date(date);
+        take net.max(--> node::day)
+        else {
+            ignore here;
+            take <-- node::month == infer.month_from_date(date);
+        }
+    }
+    day {
+        cnt = 0;
+        # if current day's parent week is now different to previous data, re-run all process
+        # if( filter == "week" ): generic_node = <-[generic]-[0].week;
+        # else: generic_node = <-[generic]-[0]].month;
+
+        weekNode = <-[generic]-[0];
+        if( parent != "" && parent.week != weekNode.week && previous != "" ) {
+
+            #if its alread different week from previous, and current week is already done, exit;
+            if( done_with_current ): disengage;
+
+            cnt = 0;
+            done_with_current = true;
+            date = previous;
+            parent = weekNode.week;
+
+            take --> node::life;
+        }
+
+        parent = <-[generic]-[0];
+
+        if( cnt > 6  ): disengage;
+
+        if( !here.highlevel_groups ): highlevel_groups = [];
+        else: highlevel_groups = here.highlevel_groups;
+
+        if( !done_with_current ): current_data += [{"id": &(here), "date": here.day, "groups": highlevel_groups }];
+        else: previous_data += [{"id": &(here), "date": here.day, "groups": highlevel_groups }];
+
+        cnt += 1;
+        take -[past]->;
+    }
+
+    with exit {
+        data = {"current": current_data, "previous": previous_data, "past_month": past_month_data, "filter": filter};
+
+        report data;
+    }
+}
+
+walker get_productivity_insights_by_month {
+    has anchor data, show_report;
+    has current;
+
+    has date;
+
+    with entry {        
+        if(!current): current = std.time_now();
+
+        date = current;
+
+        data = [];        
+    }
+
+    root: take --> node::life;
+    life {
+        ignore --> node::year > infer.year_from_date(date);
+        take net.max(--> node::year);
+    }
+    year {
+        ignore node::month > infer.month_from_date(date);
+        take net.max(--> node::month)
+        else {
+            ignore here;
+            take <-- node::life;
+        }
+    }
+    month {
+        #ignore node::week > infer.week_from_date(date);
+        take --> node::week else {
+            ignore here;
+            take <-- node::year == infer.year_from_date(date);
+        }
+    }
+    week {
+        #ignore node::day > infer.day_from_date(date);
+        take --> node::day
+        else {
+            ignore here;
+            take <-- node::month == infer.month_from_date(date);
+        }
+    }
+    day {
+        if( !here.highlevel_groups ): highlevel_groups = [];
+        else: highlevel_groups = here.highlevel_groups;
+
+        data += [{"id": &(here), "date": here.day, "groups": highlevel_groups }];
+    }
+
+    with exit {
+        if(show_report): report data;
+    }
+}
+
+walker get_workette {
+    day, workette {
+        report here;
     }
 }
 
