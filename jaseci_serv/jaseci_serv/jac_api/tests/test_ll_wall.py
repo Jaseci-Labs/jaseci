@@ -105,6 +105,7 @@ class test_ll_wall(TestCaseHelper, TestCase):
         data = self.run_walker('get_gen_day', {"date": "2021-07-13"})
 
     def test_ll_highlevel_groups(self):
+        self.logger_on()
         """Test highlevel_groups walker when certifying a day"""
 
         self.run_walker('get_gen_day', {"date": "2021-07-15"})
@@ -154,10 +155,12 @@ class test_ll_wall(TestCaseHelper, TestCase):
         # print(data)
 
         # certify day, should return day highlights
+        # NOTE: source scripts/script_sync_code_kube_test jaseci 8 jaseci_serv.jac_api.tests.test_ll_wall.test_ll_wall.test_ll_highlevel_groups
         data = self.run_walker('set_day_highlight', {
                                "highlight_items": []}, prime=day_id)
-
+        self.log(data)
         dayNode = self.run_walker('get_workette', {}, day_id)
+        self.log(dayNode)
 
         highlevel_groups = dayNode[0]["context"]["highlevel_groups"]
 
