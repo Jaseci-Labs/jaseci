@@ -6,23 +6,23 @@ sidebar_position: 5
 
 ## Lists
 
-- Lists are used to store multiple items in a single variable, meaning that any new items needs to be appened to the end of the list.
+- Lists are used to store multiple items in a single variable, meaning that any new items needs to be appended to the end of the list.
 - List items are ordered, changeable, and allow duplicate values.
 - List items are indexed, the first item has index [0], the second item has index [1] etc.
 - List have the ability to store multi-typed data.
-- List indicies start at 0
+- List indices start at 0
 
 ```
-// initialising an empty list
+// initializing an empty list
 a = []
 
-// initialising a list with data
+// initializing a list with data
 a = [1, 2, 3, 4];
 
 // modifying a specific index in a list 
 a[0] = [1,1];
 
-// multi-dimentional lists access
+// multi-dimensional lists access
 a = [[0,0],[0,0]]
 a[0][1] = 2; // this will result in [[0,2], [0,0]]
 
@@ -46,10 +46,10 @@ lst.destroy(1)  // removed b
 - Dictionaries can store multi-type data
 
 ```
-// initialising an empty dictionary
+// initializing an empty dictionary
 a = {}
 
-// initialising a dictionary with data 
+// initializing a dictionary with data 
 a =  {"three": 3, "four": 4};
 
 // accessing objects in a dictionary

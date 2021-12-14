@@ -12,7 +12,7 @@ Things to note:
 
 <!-- TODO: Add link below -->
 - At each level it creates the required node that corresponds with each date component if it does not exist (life -> year -> etc..).
-- On the `week` node, in addition to spawning a new `day` if a matching one doesn't exist, it checks for the most recent previous day using `get_latest_day` (learn more) and copies all incomplete workettes to the new day using `carry_forward` [learn more]('#').
+- On the `week` node, in addition to spawning a new `day` if a matching one doesn't exist, it checks for the most recent previous day using `get_latest_day` (learn more) and copies all incomplete workettes to the new day using `carry_forward` [learn more](/docs/intermediate/standard-library-documentation/jaseci-primitives#walker).
 
 ```
 walker get_gen_day {
@@ -165,8 +165,7 @@ Ex: `-[parent]-> node::workette` represents a collection of nodes connected by t
 
 Things to note:
 
-<!-- TODO: add below link -->
-- We traverse against the defined direction of the `past` edge to get to the latest node. See [myca edges]('#').
+- We traverse against the defined direction of the `past` edge to get to the latest node. See [myca edges](/docs/myca-a-jaseci-product/data-model#edges).
 
 ```
 walker past_to_now {
@@ -189,11 +188,10 @@ walker past_to_now {
 >... regardless of the directionality of the edge.
 
 ### Walker: get_suggested_focus
-<!-- TODO: Add links to the below -->
 
 `get_suggested_focus` reports a collection of recommended workettes that need attention. This may include workettes where the due date is nearby, the snooze has expired recently or will expire on the current day, and ones that have been incomplete and copied over many days.
 
-For details on how each of the criteria are determined see walkers [get_due_soon]('#'), [get_snoozed_till_recent]('#'), and [get_long_active_items]('#').
+For details on how each of the criteria are determined see walkers [get_due_soon](/docs/myca-a-jaseci-product/walkers-advanced#walker-get_due_soon), [get_snoozed_till_recent](/docs/myca-a-jaseci-product/walkers-advanced#walker-get_snoozed_till_recent), and [get_long_active_items](/docs/myca-a-jaseci-product/walkers-advanced#walker-get_long_active_items).
 
 ```
 walker get_suggested_focus {
@@ -326,7 +324,7 @@ walker get_snoozed_till_recent {
 
 `get_long_active_items` looks for workettes that have been incomplete over many days (specified by the `long_days` parameter) by counting the number of times it has been carried forward through the `past` edge.
 <!-- TODO: Add link below -->
-See [days_in_backlog]('#') for more details.
+See [days_in_backlog](/docs/myca-a-jaseci-product/walkers-advanced#walker-days_in_backlog) for more details.
 
 ```
 walker get_long_active_items {

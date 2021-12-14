@@ -100,7 +100,7 @@ walker get_suggested_parent {
 walker update_embeddings {
     can use.get_embedding;
     workette {
-        # Update embedding via USE if neccessary
+        # Update embedding via USE if necessary
         if ((!here.name_emb && here.name) || (here.name && here.name != here.name_used_for_emb)) {
             here.name_emb = use.get_embedding(here.name);
             here.name_emb = here.name_emb[0];
