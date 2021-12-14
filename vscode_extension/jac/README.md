@@ -6,6 +6,8 @@ Full Guide for what to do is present here: https://code.visualstudio.com/api/lan
 
 Helpful video is here: https://www.youtube.com/watch?v=5msZv-nKebI
 
+Example of syntax highlighting: https://github.com/microsoft/vscode/blob/main/extensions/cpp/syntaxes/c.tmLanguage.json, https://github.com/microsoft/vscode/blob/main/extensions/python/syntaxes/MagicPython.tmLanguage.json
+
 ## Features
 
 Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
