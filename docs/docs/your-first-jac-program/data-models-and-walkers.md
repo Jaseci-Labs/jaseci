@@ -8,9 +8,9 @@ Here we'll look at setting up the Jaseci data model (nodes and edges) and defini
 
 <!-- TODO: Update the below links -->
 >  **From the Docs**
-> - **Nodes** represent an entity on a graph. [Learn more]('#')
-> - **Edges** represent the relationship between nodes on a graph. [Learn more]('#')
-> -  **Walkers** traverse nodes via edges executing logic at the node level. [Learn more]('#')
+> - **Nodes** represent an entity on a graph. [Learn more](../intermediate/standard-library-documentation/jaseci-primitives.md)
+> - **Edges** represent the relationship between nodes on a graph. [Learn more](../intermediate/standard-library-documentation/jaseci-primitives.md)
+> -  **Walkers** traverse nodes via edges executing logic at the node level. [Learn more](../intermediate/standard-library-documentation/jaseci-primitives.md)
 
 ## Data Model
 
@@ -27,8 +27,8 @@ node person {
 
 <!-- TODO: Update the below links -->
 >  **From the Docs**
-> - **has** defines a property on a node or walker. [Learn more]('#')
-> - **anchor** defines the primitive representation or return value of a node or walker. [Learn more]('#')
+> - **has** defines a property on a node or walker. [Learn more](../intermediate/standard-library-documentation/built-in-operations.md)
+> - **anchor** defines the primitive representation or return value of a node or walker. [Learn more](../intermediate/standard-library-documentation/built-in-operations.md)
 
 `friend` edge
 
@@ -58,7 +58,7 @@ walker join {
 <!-- TODO: Update the below links -->
 >  **From the Docs**
 > - **root** is a built-in node that represents the starting point of a graph.
-> - **spawn** creates a node with or without edges or runs a walker on a node. [Learn more]('#')
+> - **spawn** creates a node with or without edges or runs a walker on a node. [Learn more](../intermediate/standard-library-documentation/built-in-operations.md)
 
 ### Listing members of the network
 
@@ -85,7 +85,7 @@ walker get_members {
 
 <!-- TODO: Update the below links -->
 >  **From the Docs**
-> - **with entry / exit** defines a block of code to execute when a walker first enters or is about the exit a node. **with entry** can be used to initialize the walker's attributes, while **with** exit can be used to report a return value as a walker completes execution. [Learn more]('#')
+> - **with entry / exit** defines a block of code to execute when a walker first enters or is about the exit a node. **with entry** can be used to initialize the walker's attributes, while **with** exit can be used to report a return value as a walker completes execution. [Learn more](../intermediate/standard-library-documentation/jaseci-primitives.md)
 
 ## Adding friends
 
@@ -158,4 +158,4 @@ walker get_suggested_friends {
 }
 ```
 
-On to [Building the application!]('#')
+On to [Building the application!](build-the-jac-code-and-application.mdx)
