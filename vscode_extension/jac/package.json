@@ -1,0 +1,25 @@
+{
+    "name": "jac",
+    "displayName": "JAC",
+    "description": "Jac Programming Language",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.63.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "jac",
+            "aliases": ["Jac Programming Language", "jac"],
+            "extensions": [".jac"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "jac",
+            "scopeName": "source.jac",
+            "path": "./syntaxes/jac.tmLanguage.json"
+        }]
+    }
+}
