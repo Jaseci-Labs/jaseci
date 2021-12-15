@@ -8,7 +8,7 @@ In this section we walk you through writing your first Jac program.
 
 Facebook, the most popular social media network... Can we build a small replica of it using Jaseci, Yes, and In this section of the tutorial we will create a such a social network using Jaseci and the Jac programming language. We will only focus a few of Facebook's features in our program to save us months/ year/ thousands of devs...
 
-## supported features
+## Supported features
 
 Supported features:
 Here's a list of features our final social network program would support:

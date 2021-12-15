@@ -24,9 +24,10 @@ kubectl get pod
 4. If it says “Creating Container” (or similar) wait a bit and run the run the command to check the status of the pods again. We want to make sure that the Pods are in a Ready/ Running state before continuing.
 5. Next run the following command to run the Jaseci tests to verify that your installation works:
 ```
-./scripts/script_sync_code_kube
+./scripts/script_sync_code_kube_test
 ```
 Running the above demo script will run the Jaseci tests and output the results to your terminal. If the demo runs successfully you can move onto the next sections to start writing Jac code.
+
 6. Port forward Jaseci pods for access to the API locally:
 ```
 kubectl port-forward <jaseci pod name> 8888:80
