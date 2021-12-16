@@ -963,7 +963,7 @@ destroy_and_misc = \
     }
     """
 
-arbitrary_assign = \
+arbitrary_assign_on_element = \
     """
     node person: has name, age, birthday, profession;
     walker init {

@@ -77,8 +77,8 @@ class interp(machine_state):
             self.rt_error(
                 f'Has variable name of `_private` not allowed!', kid[0])
         elif (var_name not in obj.context.keys()):  # Runs only once
-            jac_value(self, ctx=obj.context,
-                      name=var_name, value=var_val).write()
+            jac_value(self, ctx=obj,
+                      name=var_name, value=var_val).write(kid[0], force=True)
         if(is_private):
             if('_private' in obj.context.keys()):
                 if(var_name not in obj.context['_private']):
@@ -277,7 +277,7 @@ class interp(machine_state):
                      'msg': str(e),
                      'args': e.args}
             jac_value(self, ctx=self._jac_scope.local_scope,
-                      name=kid[2].token_text(), value=edict).write()
+                      name=kid[2].token_text(), value=edict).write(kid[2])
         self.run_code_block(kid[-1])
 
     def run_elif_stmt(self, jac_ast):
@@ -326,7 +326,7 @@ class interp(machine_state):
                 self.rt_error('Not a list for iteration!', kid[3])
             for i in lst:
                 var.value = i
-                var.write()
+                var.write(kid[1])
                 self.run_code_block(kid[4])
                 loops += 1
                 if (self._loop_ctrl == 'break'):
@@ -372,15 +372,7 @@ class interp(machine_state):
             self.destroy_node_ids.add_obj(result.value)
         elif (isinstance(result.value, jac_set)):
             self.destroy_node_ids.add_obj_list(result.value)
-        if(result.ctx is not None):
-            try:
-                del result.ctx[result.name]
-            except Exception as e:
-                self.rt_error(f'{e}', kid[1])
-        else:
-            self.rt_error(
-                f'{result.value} is not destroyable',
-                kid[1])
+        result.self_destruct(kid[1])
 
     def run_report_action(self, jac_ast):
         """
@@ -430,7 +422,7 @@ class interp(machine_state):
         kid = jac_ast.kid
         result = self.run_expression(kid[1])
         dest.value = result.value
-        dest.write()
+        dest.write(jac_ast)
         return dest
 
     def run_copy_assign(self, jac_ast, dest):
@@ -449,8 +441,8 @@ class interp(machine_state):
             return dest
         for i in src.value.context.keys():
             if(i in dest.value.context.keys()):
-                jac_value(self, ctx=dest.value.context, name=i,
-                          value=src.value.context[i]).write()
+                jac_value(self, ctx=dest.value, name=i,
+                          value=src.value.context[i]).write(jac_ast)
         return dest
 
     def run_inc_assign(self, jac_ast, dest):
@@ -466,7 +458,7 @@ class interp(machine_state):
             dest.value = dest.value * self.run_expression(kid[1]).value
         elif(kid[0].name == 'DEQ'):
             dest.value = dest.value / self.run_expression(kid[1]).value
-        dest.write()
+        dest.write(jac_ast)
         return dest
 
     def run_connect(self, jac_ast):
@@ -723,15 +715,11 @@ class interp(machine_state):
                     d = atom_res.value
                     n = kid[2].token_text()
                     if(self.rt_check_type(d, [dict, element], kid[0])):
-                        if(isinstance(d, element)):
-                            d = d.context
-                            # if(n not in d.keys()):
-                            #     self.rt_error(f"Invalid field {n}",
-                            #                   kid[2])
-                            #     d = None
                         ret = jac_value(self, ctx=d, name=n)
                         ret.unwrap()
                         return ret
+                    else:
+                        self.rt_error(f"Invalid variable {n}", kid[0])
             elif (kid[1].name == "index_slice"):
                 if(not self.rt_check_type(
                         atom_res.value, [list, str, dict], kid[0])):
@@ -887,7 +875,7 @@ class interp(machine_state):
             idx = self.run_expression(kid[2])
             if (isinstance(atom_res.value, list) and
                     isinstance(idx.value, int)):
-                del atom_res.value[idx.value]
+                atom_res.self_destruct(kid[2])
                 return atom_res
             else:
                 self.rt_error(f'Cannot remove index {idx} from {atom_res}.',
@@ -1278,12 +1266,12 @@ class interp(machine_state):
         """
         kid = jac_ast.kid
         name = kid[0].token_text()
-        if(name in obj.context.keys() or obj.j_type == 'walker'):
-            result = self.run_expression(kid[-1]).value
-            jac_value(self, ctx=obj.context,
-                      name=name, value=result).write()
+        result = self.run_expression(kid[-1]).value
+        dest = jac_value(self, ctx=obj, name=name, value=result)
+        if(obj.j_type == 'walker'):
+            dest.write(kid[0], force=True)
         else:
-            self.rt_error(f'{name} not present in object', kid[0])
+            dest.write(kid[0])
 
     def run_filter_compare(self, jac_ast, obj):
         """
@@ -1294,7 +1282,7 @@ class interp(machine_state):
         if(name in obj.context.keys()):
             result = self.run_expression(kid[-1])
             return self.run_cmp_op(
-                kid[1], jac_value(self, ctx=obj.context, name=name),
+                kid[1], jac_value(self, ctx=obj, name=name),
                 result).value
         else:
             self.rt_error(f'{name} not present in object', kid[0])

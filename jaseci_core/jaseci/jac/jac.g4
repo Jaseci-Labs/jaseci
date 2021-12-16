@@ -179,7 +179,7 @@ obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
 
 dict_built_in: KW_KEYS | LBRACE name_list RBRACE;
 
-list_built_in: KW_LENGTH | KW_DESTROY COLON expression COLON;
+list_built_in: KW_LENGTH;
 
 string_built_in:
 	TYP_STRING DBL_COLON NAME (LPAREN expr_list RPAREN)?;

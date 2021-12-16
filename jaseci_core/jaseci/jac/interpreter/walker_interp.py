@@ -174,7 +174,7 @@ class walker_interp(interp):
         if (kid[-1].name == "expression"):
             dest = m.run_expression(kid[-1])
             dest.value = result
-            dest.write()
+            dest.write(kid[-1])
 
     # Helper Functions ##################
     def auto_trigger_node_actions(self, nd, act_list):
