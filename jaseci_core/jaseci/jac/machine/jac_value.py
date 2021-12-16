@@ -135,7 +135,7 @@ class jac_value():
 
     def setup_value(self, value):
         if (isinstance(self.ctx, element)):
-            self.is_element = type(self.ctx)
+            self.is_element = self.ctx
             self.ctx = self.ctx.context
         if value is not None:
             return value
@@ -149,10 +149,13 @@ class jac_value():
             return None
 
     def write(self, jac_ast, force=False):
-        if(not force and self.is_element and self.name not in self.ctx.keys()):
+        if(not force and self.is_element and self.name not in self.ctx.keys()
+           and not self.parent.parent().
+           check_in_arch_context(self.name, self.is_element)):
             self.parent.rt_error(
                 f"Creating variable {self.name} in graph "
-                f"element {self.is_element} is not allowed, please define",
+                f"element {type(self.is_element)} is not allowed, "
+                "please define",
                 jac_ast)
         elif(self.ctx is None or self.name is None):
             self.parent.rt_error(
@@ -167,7 +170,7 @@ class jac_value():
         if(self.is_element and self.name in self.ctx.keys()):
             self.parent.rt_error(
                 f"Deleting {self.name} in graph element "
-                f"{self.is_element} is not allowed, try setting to null",
+                f"{type(self.is_element)} is not allowed, try setting to null",
                 jac_ast)
             return
         if(self.ctx is not None):
