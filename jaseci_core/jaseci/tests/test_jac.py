@@ -544,8 +544,8 @@ class jac_tests(TestCaseHelper, TestCase):
         rep = test_walker.report
         self.assertEqual(rep[0], 'Josh')
         self.assertEqual(
-            rep[1], {'age': 32, 'birthday': None,
-                     'profession': None})
+            rep[1],  {'name': 'Josh', 'age': 32,
+                      'birthday': None, 'profession': None})
         self.assertEqual(
             rep[2], {'age': 32, 'birthday': None,
                      'name': 'pete', 'profession': None})
@@ -555,16 +555,15 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[6], [1, 2, 45, 33, 7, 8, 9])
         self.assertEqual(rep[7], None)
         self.assertEqual(rep[8], {'age': 32,
-                                  'banana': 45,
                                   'birthday': None,
                                   'name': 'pete',
                                   'profession': None})
         self.assertEqual(rep[9], True)
 
-    def test_arbitrary_assign(self):
+    def test_arbitrary_assign_on_element(self):
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
-        sent.register_code(jtc.arbitrary_assign)
+        sent.register_code(jtc.arbitrary_assign_on_element)
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
@@ -573,8 +572,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[0],  {'name': None,
                                    'age': None,
                                    'birthday': None,
-                                   'profession': None,
-                                   'apple': 45})
+                                   'profession': None})
 
     def test_try_else_stmts(self):
         gph = graph(m_id='anon', h=mem_hook())

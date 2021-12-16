@@ -6,7 +6,6 @@ Representations for all jac runtime variables
 from jaseci.element.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
-from jaseci.utils.utils import logger
 import uuid
 
 
@@ -129,11 +128,15 @@ class jac_value():
         """
         self.parent = parent
         self.ctx = ctx
+        self.is_element = False
         self.name = name
         self.end = end
         self.value = self.setup_value(value)
 
     def setup_value(self, value):
+        if (isinstance(self.ctx, element)):
+            self.is_element = type(self.ctx)
+            self.ctx = self.ctx.context
         if value is not None:
             return value
         elif(self.ctx is not None and self.name is not None
@@ -145,16 +148,28 @@ class jac_value():
         else:
             return None
 
-    def write(self):
-        if(self.ctx is None or self.name is None):
-            logger.critical(
-                f"No valid live variable! ctx: {self.ctx} name: {self.name}")
-        if(self.end is not None):
+    def write(self, jac_ast, force=False):
+        if(not force and self.is_element and self.name not in self.ctx.keys()):
+            self.parent.rt_error(
+                f"Creating variable {self.name} in graph "
+                f"element {self.is_element} is not allowed, please define",
+                jac_ast)
+        elif(self.ctx is None or self.name is None):
+            self.parent.rt_error(
+                f"No valid live variable! ctx: {self.ctx} name: {self.name}",
+                jac_ast)
+        elif(self.end is not None):
             self.ctx[self.name:self.end] = self.wrap()
         else:
             self.ctx[self.name] = self.wrap()
 
-    def destroy(self, jac_ast):
+    def self_destruct(self, jac_ast):
+        if(self.is_element and self.name in self.ctx.keys()):
+            self.parent.rt_error(
+                f"Deleting {self.name} in graph element "
+                f"{self.is_element} is not allowed, try setting to null",
+                jac_ast)
+            return
         if(self.ctx is not None):
             try:
                 del self.ctx[self.name]
