@@ -1,0 +1,141 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Jac Programming Language",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#strings"
+        }
+    ],
+    "repository": {
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "storage.modifier.jac",
+                    "match": "\\b(import)\\b"
+                },
+                {
+                    "match": "\\b(str|int|float|list|dict|bool|node|edge|walker)\\b",
+                    "name": "support.type.jac"
+                },
+                {
+                    "name": "keyword.control.jac",
+                    "match": "\\b(if|elif|else|while|for|take|ignore|skip|disengage|break|continue)\\b"
+                },
+                {
+                    "match": "\\b(null|true|false)\\b",
+                    "name": "constant.language.c"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "include": "#doublequote"
+                },
+                {
+                    "include": "#singlequote"
+                }
+            ]
+        },
+        "doublequote": {
+            "name": "string.quoted.double.jac",
+            "begin": "\"",
+            "end": "\"",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.jac",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "singlequote": {
+            "name": "string.quoted.double.jac",
+            "begin": "'",
+            "end": "'",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.jac",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "comments": {
+            "patterns": [
+                {
+                    "include": "#numbercomment"
+                },
+                {
+                    "include": "#dblslashcomment"
+                },
+                {
+                    "include": "#commentblock"
+                }
+            ]
+        },
+        "numbercomment": {
+            "name": "comment.line.number-sign.jac",
+            "begin": "(\\#)",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.definition.comment.jac"
+                }
+            },
+            "end": "($)",
+            "patterns": [
+                {
+                    "include": "#codetags"
+                }
+            ]
+        },
+        "dblslashcomment": {
+            "name": "comment.line.double-slash.jac",
+            "begin": "(\\/\\/)",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.definition.comment.jac"
+                }
+            },
+            "end": "(?=\\n)",
+            "patterns": [
+                {
+                    "include": "#codetags"
+                }
+            ]
+        },
+        "commentblock": {
+            "name": "comment.block.jac",
+            "begin": "(\\/\\*)",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.definition.comment.begin.jac"
+                }
+            },
+            "end": "(\\*\\/)",
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.definition.comment.end.jac"
+                }
+            },
+            "patterns": [
+                {
+                    "include": "#codetags"
+                }
+            ]
+        },
+        "codetags": {
+            "match": "(?:\\b(NOTE|XXX|HACK|FIXME|BUG|TODO)\\b)",
+            "captures": {
+                "1": {
+                    "name": "keyword.codetag.notation.jac"
+                }
+            }
+        }
+    },
+    "scopeName": "source.jac"
+}
