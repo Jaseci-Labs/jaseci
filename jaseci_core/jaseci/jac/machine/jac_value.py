@@ -131,10 +131,19 @@ class jac_value():
         self.ctx = ctx
         self.name = name
         self.end = end
-        self.value = value if value is not None else ctx[name:end] \
-            if ctx is not None and name is not None and end is not None \
-            else ctx[name] if ctx is not None and name is not None and \
-            (type(name) == int or name in ctx.keys()) else None
+        self.value = self.setup_value(value)
+
+    def setup_value(self, value):
+        if value is not None:
+            return value
+        elif(self.ctx is not None and self.name is not None
+             and self.end is not None):
+            return self.ctx[self.name:self.end]
+        elif (self.ctx is not None and self.name is not None and
+              (type(self.name) == int or self.name in self.ctx.keys())):
+            return self.ctx[self.name]
+        else:
+            return None
 
     def write(self):
         if(self.ctx is None or self.name is None):
@@ -144,6 +153,17 @@ class jac_value():
             self.ctx[self.name:self.end] = self.wrap()
         else:
             self.ctx[self.name] = self.wrap()
+
+    def destroy(self, jac_ast):
+        if(self.ctx is not None):
+            try:
+                del self.ctx[self.name]
+            except Exception as e:
+                self.parent.rt_error(f'{e}', jac_ast)
+        else:
+            self.parent.rt_error(
+                f'{self.value} is not destroyable',
+                jac_ast)
 
     def wrap(self, serialize_mode=False):
         "Caller for recursive wrap"

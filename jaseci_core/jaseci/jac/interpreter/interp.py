@@ -372,15 +372,7 @@ class interp(machine_state):
             self.destroy_node_ids.add_obj(result.value)
         elif (isinstance(result.value, jac_set)):
             self.destroy_node_ids.add_obj_list(result.value)
-        if(result.ctx is not None):
-            try:
-                del result.ctx[result.name]
-            except Exception as e:
-                self.rt_error(f'{e}', kid[1])
-        else:
-            self.rt_error(
-                f'{result.value} is not destroyable',
-                kid[1])
+        result.destroy(kid[1])
 
     def run_report_action(self, jac_ast):
         """
