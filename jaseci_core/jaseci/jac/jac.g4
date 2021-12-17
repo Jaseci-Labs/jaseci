@@ -2,7 +2,14 @@ grammar jac;
 
 start: ver_label? import_module* element+ EOF;
 
-import_module: KW_IMPORT STRING SEMI;
+import_module:
+	KW_IMPORT LBRACE (import_items | '*') RBRACE KW_WITH STRING SEMI;
+
+import_items:
+	KW_WALKER ('*' | DBL_COLON NAME) (COMMA import_items)?
+	| KW_NODE ('*' | DBL_COLON NAME) (COMMA import_items)?
+	| KW_EDGE ('*' | DBL_COLON NAME) (COMMA import_items)?
+	| KW_GRAPH ('*' | DBL_COLON NAME) (COMMA import_items)?;
 
 element: architype | walker;
 

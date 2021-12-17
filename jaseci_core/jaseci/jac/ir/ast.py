@@ -18,13 +18,15 @@ class ast():
     TODO: Error handling if jac program has errors
     """
 
+    ast_map = {}
+
     def __init__(self, jac_text=None, mod_name=None, imported=None,
                  parse_errors=None, start_rule='start'):
         self.name = 'unparsed'
         self.kind = 'unparsed'
         self.context = {}
-        self.parse_errors = parse_errors if parse_errors else []
-        self.start_rule = start_rule
+        self._parse_errors = parse_errors if parse_errors else []
+        self._start_rule = start_rule
         self.mod_name = mod_name if mod_name is not None else "@default"
         self.line = 0
         self.column = 0
@@ -68,13 +70,13 @@ class ast():
         parser = jacParser(stream)
         parser.removeErrorListeners()
         parser.addErrorListener(errors)
-        tree = getattr(parser, self.start_rule)()
+        tree = getattr(parser, self._start_rule)()
         builder = self.jac_tree_builder(self, imported)
         walker = ParseTreeWalker()
         walker.walk(builder, tree)
 
-        if(self.parse_errors):
-            for i in self.parse_errors:
+        if(self._parse_errors):
+            for i in self._parse_errors:
                 logger.error(
                     str(f"{i}")
                 )
@@ -120,17 +122,19 @@ class ast():
 
         def run_import_module(self, jac_ast):
             """
-            import_module: KW_IMPORT STRING SEMI;
+            import_module:
+                KW_IMPORT LBRACE (import_items | '*') RBRACE
+                KW_WITH STRING SEMI;
             """
             kid = jac_ast.kid
-            fn = parse_str_token(kid[1].token_text())
-            mod_name = os.path.basename(fn)
+            fn = parse_str_token(kid[-2].token_text())
+            mod_name = fn
             from_mod = self.tree_root.mod_name
             logger.info(f"Importing {mod_name} from {from_mod}...")
             if(mod_name in self.imported):
                 logger.warning(
                     f"Already imported {mod_name}, may "
-                    f"be circular at {from_mod}")
+                    f"be circular at {from_mod}, ignoring...")
             elif (os.path.isfile(fn)):
                 with open(fn, 'r') as file:
                     jac_text = file.read()
@@ -143,7 +147,7 @@ class ast():
             else:
                 err = f"Module not found for import! {mod_name} from" +\
                     f" {from_mod}"
-                self.tree_root.parse_errors.append(err)
+                self.tree_root._parse_errors.append(err)
             return []
 
         def enterEveryRule(self, ctx):
@@ -154,7 +158,7 @@ class ast():
                 new_node = ast()
             new_node.name = jacParser.ruleNames[ctx.getRuleIndex()]
             new_node.kind = 'rule'
-            new_node.parse_errors = self.tree_root.parse_errors
+            new_node._parse_errors = self.tree_root._parse_errors
             new_node.line = ctx.start.line
             new_node.column = ctx.start.column
 
@@ -193,7 +197,7 @@ class ast():
         def syntaxError(self, recognizer, offendingSymbol,
                         line, column, msg, e):
             """Add error to error list"""
-            self.tree_root.parse_errors.append(
+            self.tree_root._parse_errors.append(
                 f"{str(self.tree_root.mod_name)}: line {str(line)}:"
                 f"{str(column)} - {self.tree_root} - {msg}"
             )
