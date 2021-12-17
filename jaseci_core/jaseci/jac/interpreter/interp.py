@@ -578,14 +578,14 @@ class interp(machine_state):
 
     def run_term(self, jac_ast):
         """
-        term: factor ((MUL | DIV | MOD) factor)*;
+        term: factor ((STAR_MUL | DIV | MOD) factor)*;
         """
         kid = jac_ast.kid
         result = self.run_factor(kid[0])
         kid = kid[1:]
         while (kid):
             other_res = self.run_factor(kid[1])
-            if(kid[0].name == 'MUL'):
+            if(kid[0].name == 'STAR_MUL'):
                 result.value = result.value * other_res.value
             elif(kid[0].name == 'DIV'):
                 result.value = result.value / other_res.value

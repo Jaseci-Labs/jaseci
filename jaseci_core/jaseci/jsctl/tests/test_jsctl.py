@@ -158,10 +158,20 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertEqual(len(r), 1)
 
     def test_jsctl_import(self):
+        self.logger_on()
         self.call(
             "sentinel register -code "
             "jaseci/jsctl/tests/ll_base.jac -set_active true")
+        self.logger_off()
         self.call("walker run -name init")
         self.call("walker run -name gen_rand_life")
         r = self.call_cast("walker run -name get_gen_day")
         self.assertGreater(len(r), 3)
+
+    def test_jsctl_import_filters(self):
+        self.logger_on()
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/base.jac -set_active true")
+        r = self.call_cast("walker run -name init")
+        self.log(r)

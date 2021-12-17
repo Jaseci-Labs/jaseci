@@ -18,21 +18,23 @@ class ast():
     TODO: Error handling if jac program has errors
     """
 
-    def __init__(self, jac_text=None, mod_name=None, imported=None,
-                 parse_errors=None, start_rule='start'):
+    _ast_head_map = {}
+
+    def __init__(self, jac_text=None, mod_name=None,
+                 parse_errors=None, start_rule='start', fresh_start=True):
+        if(fresh_start):
+            ast._ast_head_map = {}
         self.name = 'unparsed'
         self.kind = 'unparsed'
         self.context = {}
-        self.parse_errors = parse_errors if parse_errors else []
-        self.start_rule = start_rule
+        self._parse_errors = parse_errors if parse_errors else []
+        self._start_rule = start_rule
         self.mod_name = mod_name if mod_name is not None else "@default"
         self.line = 0
         self.column = 0
         self.kid = []
         if(jac_text):
-            if imported is None:
-                imported = []
-            self.parse_jac_str(jac_text, imported)
+            self.parse_jac_str(jac_text)
 
     def is_rule(self):
         """Returns true if node is a rule"""
@@ -59,8 +61,9 @@ class ast():
         if(self.is_terminal()):
             return self.token()['symbol']
 
-    def parse_jac_str(self, jac_str, imported):
+    def parse_jac_str(self, jac_str):
         """Parse language and build ast from string"""
+        ast._ast_head_map[self.mod_name] = self
         input_stream = InputStream(jac_str)
         lexer = jacLexer(input_stream)
         stream = CommonTokenStream(lexer)
@@ -68,13 +71,13 @@ class ast():
         parser = jacParser(stream)
         parser.removeErrorListeners()
         parser.addErrorListener(errors)
-        tree = getattr(parser, self.start_rule)()
-        builder = self.jac_tree_builder(self, imported)
+        tree = getattr(parser, self._start_rule)()
+        builder = self.jac_tree_builder(self)
         walker = ParseTreeWalker()
         walker.walk(builder, tree)
 
-        if(self.parse_errors):
-            for i in self.parse_errors:
+        if(self._parse_errors):
+            for i in self._parse_errors:
                 logger.error(
                     str(f"{i}")
                 )
@@ -113,48 +116,98 @@ class ast():
     class jac_tree_builder(ParseTreeListener):
         """Converter class from Antlr trees to Jaseci Tree"""
 
-        def __init__(self, tree_root, imported):
+        def __init__(self, tree_root):
             self.tree_root = tree_root
             self.node_stack = []
-            self.imported = [tree_root.mod_name]+imported
 
         def run_import_module(self, jac_ast):
             """
-            import_module: KW_IMPORT STRING SEMI;
+            import_module:
+                KW_IMPORT LBRACE (import_items | '*') RBRACE
+                KW_WITH STRING SEMI;
             """
             kid = jac_ast.kid
-            fn = parse_str_token(kid[1].token_text())
-            mod_name = os.path.basename(fn)
+            fn = parse_str_token(kid[-2].token_text())
+            mod_name = fn
             from_mod = self.tree_root.mod_name
-            logger.info(f"Importing {mod_name} from {from_mod}...")
-            if(mod_name in self.imported):
-                logger.warning(
-                    f"Already imported {mod_name}, may "
-                    f"be circular at {from_mod}")
-            elif (os.path.isfile(fn)):
+            logger.info(f"Importing items from {mod_name} to {from_mod}...")
+            parsed_ast = None
+            if(mod_name in ast._ast_head_map.keys()):
+                parsed_ast = ast._ast_head_map[mod_name]
+            elif(os.path.isfile(fn)):
                 with open(fn, 'r') as file:
                     jac_text = file.read()
-                self.imported.append(mod_name)
-                return filter(lambda x:
-                              x.name == 'element',
-                              ast(jac_text=jac_text,
-                                  mod_name=mod_name,
-                                  imported=self.imported).kid)
+                parsed_ast = ast(jac_text=jac_text, mod_name=mod_name,
+                                 fresh_start=False)
             else:
                 err = f"Module not found for import! {mod_name} from" +\
                     f" {from_mod}"
-                self.tree_root.parse_errors.append(err)
-            return []
+                self.tree_root._parse_errors.append(err)
+            import_elements = list(filter(lambda x:
+                                          x.name == 'element',
+                                          parsed_ast.kid))
+            if(kid[2].name == 'STAR_MUL'):
+                return import_elements
+            else:
+                return self.run_import_items(
+                    kid[2], import_elements)
+
+        def run_import_items(self, jac_ast, import_elements):
+            """
+            import_items:
+                KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
+                | KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
+                | KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
+                | KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?;
+            """
+            kid = jac_ast.kid
+            ret_elements = list(filter(lambda x:
+                                       x.kid[0].kid[0].name == kid[0].name,
+                                       import_elements))
+            if(kid[1].name == "import_names"):
+                ret_elements = list(filter(lambda x:
+                                           x.kid[0].kid[1].name in
+                                           self.run_import_names(kid[1]),
+                                           ret_elements))
+            if(kid[-1].name == "import_items"):
+                return ret_elements + self.run_import_items(kid[-1],
+                                                            import_elements)
+            # TODO: Init not appearing here in test
+            logger.info(f"{ret_elements}")
+            return ret_elements
+
+        def run_import_names(self, jac_ast):
+            """
+            import_names:
+                DBL_COLON NAME
+                | DBL_COLON LBRACE name_list RBRACE;
+            """
+            kid = jac_ast.kid
+            if(kid[1].name == "NAME"):
+                return [kid[1].token_text()]
+            else:
+                return self.run_name_list(kid[2])
+
+        def run_name_list(self, jac_ast):
+            """
+            name_list: NAME (COMMA NAME)*;
+            """
+            kid = jac_ast.kid
+            ret = []
+            for i in kid:
+                if(i.name == 'NAME'):
+                    ret.append(i.token_text())
+            return ret
 
         def enterEveryRule(self, ctx):
             """Visits every node in antlr parse tree"""
             if(len(self.node_stack) == 0):
                 new_node = self.tree_root
             else:
-                new_node = ast()
+                new_node = ast(fresh_start=False)
             new_node.name = jacParser.ruleNames[ctx.getRuleIndex()]
             new_node.kind = 'rule'
-            new_node.parse_errors = self.tree_root.parse_errors
+            new_node._parse_errors = self.tree_root._parse_errors
             new_node.line = ctx.start.line
             new_node.column = ctx.start.column
 
@@ -170,7 +223,7 @@ class ast():
 
         def visitTerminal(self, node):
             """Visits terminals as walker walks, adds ast node"""
-            new_node = ast()
+            new_node = ast(fresh_start=False)
             new_node.name = jacParser.symbolicNames[node.getSymbol().type]
             new_node.kind = 'terminal'
             new_node.line = node.getSymbol().line
@@ -193,7 +246,7 @@ class ast():
         def syntaxError(self, recognizer, offendingSymbol,
                         line, column, msg, e):
             """Add error to error list"""
-            self.tree_root.parse_errors.append(
+            self.tree_root._parse_errors.append(
                 f"{str(self.tree_root.mod_name)}: line {str(line)}:"
                 f"{str(column)} - {self.tree_root} - {msg}"
             )
