@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fasttext-classifier
+spec:
+  selector:
+    pod: fasttext-classifier
+  ports:
+    - protocol: TCP
+      port: 4675
+      targetPort: 4675
+      name: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fasttext-classifier-up
+  namespace: default
+data:
+  prod_up: |-
+    git clone --branch $JASECI_REPO_BRANCH --single-branch $JASECI_REPO jaseci;
+    mv jaseci/ai_serving/ /;
+    cd /ai_serving;
+    python3 -m fasttext_classifier.fasttext_classifier;
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fasttext-classifier
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: fasttext-classifier
+  template:
+    metadata:
+      labels:
+        pod: fasttext-classifier
+      name: fasttext-classifier
+    spec:
+      containers:
+        - name: fasttext-classifier
+          imagePullPolicy: IfNotPresent
+          image: fasttext-classifier:latest
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+          command: [bash, -c, "source /script/prod_up"]
+          ports:
+            - containerPort: 4675
+          env:
+            # TODO: update to official repo when ready to merge
+            - name: JASECI_REPO
+              value: https://github.com/shemarlindie/jaseci.git
+            # TODO: update to main branch when ready to merge
+            - name: JASECI_REPO_BRANCH
+              value: sl/fasttext_ai_service_demo
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+
+      volumes:
+        - name: prod-script
+          configMap:
+            name: fasttext-classifier-up
