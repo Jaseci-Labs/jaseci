@@ -2,6 +2,7 @@ from jaseci.element.master import master
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
+from jaseci.actions.module.ai_serving_api import check_model_live
 
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
@@ -21,6 +22,8 @@ class FasttextClfTests(TestCaseHelper, TestCase):
 
     def test_fasttext_classifier_predict(self):
         """test fasttext_classifier.predict"""
+        if (not check_model_live('FASTTEXT_CLASSIFIER')):
+            self.skipTest('External resource not available')
 
         jac_code = """
         walker test_fasttext_classifier {
@@ -33,7 +36,8 @@ class FasttextClfTests(TestCaseHelper, TestCase):
         self.sent.register_code(jac_code)
         self.assertTrue(self.sent.is_active)
 
-        walker = self.sent.walker_ids.get_obj_by_name('test_fasttext_classifier')
+        walker = \
+            self.sent.walker_ids.get_obj_by_name('test_fasttext_classifier')
         self.assertIsNotNone(walker)
 
         sentences = ['hello', 'Do I need a passport or visa to enter Guyana?']
