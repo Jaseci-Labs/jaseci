@@ -125,6 +125,8 @@ class ast():
             import_module:
                 KW_IMPORT LBRACE (import_items | '*') RBRACE
                 KW_WITH STRING SEMI;
+
+            TODO: Check for duplicate imports and ignore if imported
             """
             kid = jac_ast.kid
             fn = parse_str_token(kid[-2].token_text())
@@ -166,14 +168,13 @@ class ast():
                                        import_elements))
             if(kid[1].name == "import_names"):
                 ret_elements = list(filter(lambda x:
-                                           x.kid[0].kid[1].name in
+                                           x.kid[0].kid[1].token_text() in
                                            self.run_import_names(kid[1]),
                                            ret_elements))
             if(kid[-1].name == "import_items"):
                 return ret_elements + self.run_import_items(kid[-1],
                                                             import_elements)
-            # TODO: Init not appearing here in test
-            logger.info(f"{ret_elements}")
+
             return ret_elements
 
         def run_import_names(self, jac_ast):

@@ -2,7 +2,6 @@ walker init {
     has year = std.time_now();
     has person1;
     root {
-        std.log("TEST");
         person1 = spawn here --> node::person;
         report person1.context;
         person1::reset;
