@@ -3,13 +3,17 @@ grammar jac;
 start: ver_label? import_module* element+ EOF;
 
 import_module:
-	KW_IMPORT LBRACE (import_items | '*') RBRACE KW_WITH STRING SEMI;
+	KW_IMPORT LBRACE (import_items | STAR_MUL) RBRACE KW_WITH STRING SEMI;
 
 import_items:
-	KW_WALKER ('*' | DBL_COLON NAME) (COMMA import_items)?
-	| KW_NODE ('*' | DBL_COLON NAME) (COMMA import_items)?
-	| KW_EDGE ('*' | DBL_COLON NAME) (COMMA import_items)?
-	| KW_GRAPH ('*' | DBL_COLON NAME) (COMMA import_items)?;
+	KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
+	| KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
+	| KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
+	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?;
+
+import_names:
+	DBL_COLON NAME
+	| DBL_COLON LBRACE name_list RBRACE;
 
 element: architype | walker;
 
@@ -140,7 +144,7 @@ nin: NOT KW_IN;
 
 arithmetic: term ((PLUS | MINUS) term)*;
 
-term: factor ((MUL | DIV | MOD) factor)*;
+term: factor ((STAR_MUL | DIV | MOD) factor)*;
 
 factor: (PLUS | MINUS) factor | power;
 
@@ -171,7 +175,7 @@ atom:
 
 ref: '&' expression;
 
-deref: '*' expression;
+deref: STAR_MUL expression;
 
 built_in:
 	cast_built_in
@@ -369,7 +373,7 @@ COMMA: ',';
 KW_CAN: 'can';
 PLUS: '+';
 MINUS: '-';
-MUL: '*';
+STAR_MUL: '*';
 DIV: '/';
 MOD: '%';
 POW: '^';
