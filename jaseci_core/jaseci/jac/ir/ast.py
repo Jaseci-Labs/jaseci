@@ -143,9 +143,9 @@ class ast():
                 err = f"Module not found for import! {mod_name} from" +\
                     f" {from_mod}"
                 self.tree_root._parse_errors.append(err)
-            import_elements = filter(lambda x:
-                                     x.name == 'element',
-                                     parsed_ast.kid)
+            import_elements = list(filter(lambda x:
+                                          x.name == 'element',
+                                          parsed_ast.kid))
             if(kid[2].name == 'STAR_MUL'):
                 return import_elements
             else:
@@ -161,17 +161,19 @@ class ast():
                 | KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?;
             """
             kid = jac_ast.kid
-            ret_elements = filter(lambda x:
-                                  x.kid[0].kid[0].name == kid[0].name,
-                                  import_elements.kid)
+            ret_elements = list(filter(lambda x:
+                                       x.kid[0].kid[0].name == kid[0].name,
+                                       import_elements))
             if(kid[1].name == "import_names"):
-                ret_elements = filter(lambda x:
-                                      x.kid[0].kid[1].name in
-                                      self.run_import_names(kid[1]),
-                                      ret_elements.kid)
+                ret_elements = list(filter(lambda x:
+                                           x.kid[0].kid[1].name in
+                                           self.run_import_names(kid[1]),
+                                           ret_elements))
             if(kid[-1].name == "import_items"):
                 return ret_elements + self.run_import_items(kid[-1],
                                                             import_elements)
+            # TODO: Init not appearing here in test
+            logger.info(f"{ret_elements}")
             return ret_elements
 
         def run_import_names(self, jac_ast):
