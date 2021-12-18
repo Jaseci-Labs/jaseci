@@ -988,3 +988,17 @@ try_else_stmts = \
         report a;
     }
     """
+
+node_edge_same_name = \
+    """
+    node person: has name, age, birthday, profession;
+    edge person: has meeting_place;
+
+    walker init {
+        person1 = spawn here -[person(meeting_place = "college")]->
+            node::person(name = "Josh", age = 32);
+
+        report -->.edge[0].context;
+        report -->[0].context;
+    }
+    """

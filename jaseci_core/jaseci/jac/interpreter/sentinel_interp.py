@@ -32,16 +32,15 @@ class sentinel_interp(interp):
 
     def run_element(self, jac_ast):
         """
-        element:
-            architype
-            | walker
-
+        element: architype | walker | test;
         """
         kid = jac_ast.kid
         if(kid[0].name == 'architype'):
             self.load_architype(kid[0])
         elif(kid[0].name == 'walker'):
             self.load_walker(kid[0])
+        elif(kid[0].name == 'TEST'):
+            self.load_test(kid[0])
 
     def load_architype(self, jac_ast):
         """
@@ -51,8 +50,8 @@ class sentinel_interp(interp):
             | KW_GRAPH NAME graph_block;
         """
         arch = architype(m_id=self._m_id, h=self._h, code_ir=jac_ast)
-        if(self.arch_ids.has_obj_by_name(arch.name)):
-            self.arch_ids.destroy_obj_by_name(arch.name)
+        if(self.arch_ids.has_obj_by_name(arch.name, kind=arch.kind)):
+            self.arch_ids.destroy_obj_by_name(arch.name, kind=arch.kind)
         self.arch_ids.add_obj(arch)
         return arch
 
@@ -72,6 +71,16 @@ class sentinel_interp(interp):
             self.walker_ids.destroy_obj_by_name(walk.name)
         self.walker_ids.add_obj(walk)
         return walk
+
+    def load_test(self, jac_ast):
+        """
+        test: KW_TEST graph_ref (walker_ref | walker);
+        """
+        arch = architype(m_id=self._m_id, h=self._h, code_ir=jac_ast)
+        if(self.arch_ids.has_obj_by_name(arch.name)):
+            self.arch_ids.destroy_obj_by_name(arch.name)
+        self.arch_ids.add_obj(arch)
+        return arch
 
     def run_namespaces(self, jac_ast):
         """
