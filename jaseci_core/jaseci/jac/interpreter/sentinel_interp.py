@@ -8,6 +8,7 @@ from jaseci.actor.architype import architype
 from jaseci.actor.walker import walker
 from jaseci.jac.interpreter.interp import interp
 from jaseci.utils.utils import parse_str_token
+from jaseci.jac.ir.jac_code import jac_ast_to_ir
 
 
 class sentinel_interp(interp):
@@ -39,7 +40,7 @@ class sentinel_interp(interp):
             self.load_architype(kid[0])
         elif(kid[0].name == 'walker'):
             self.load_walker(kid[0])
-        elif(kid[0].name == 'TEST'):
+        elif(kid[0].name == 'test'):
             self.load_test(kid[0])
 
     def load_architype(self, jac_ast):
@@ -74,13 +75,28 @@ class sentinel_interp(interp):
 
     def load_test(self, jac_ast):
         """
-        test: KW_TEST graph_ref (walker_ref | walker);
+        test: KW_TEST graph_ref ((walker_ref spawn_ctx?) | walker);
         """
-        arch = architype(m_id=self._m_id, h=self._h, code_ir=jac_ast)
-        if(self.arch_ids.has_obj_by_name(arch.name)):
-            self.arch_ids.destroy_obj_by_name(arch.name)
-        self.arch_ids.add_obj(arch)
-        return arch
+        kid = jac_ast.kid
+        graph_name = kid[1].kid[2].token_text()
+        walker_name = kid[2].kid[2].token_text()
+        if(not self.arch_ids.has_obj_by_name(graph_name,
+                                             kind='graph')):
+            self.rt_error(f"Graph {graph_name} not found!", kid[1])
+            return
+        if(kid[2].name == 'walker'):
+            self.load_walker(kid[2])
+        if(not self.arch_ids.has_obj_by_name(walker_name,
+                                             kind='walker')):
+            self.rt_error(
+                f"Walker {walker_name} not found or invalid!", kid[2])
+            return
+        if(kid[-1].name == 'spawn_ctx'):
+            self.testcases.append([graph_name,
+                                   walker_name,
+                                   jac_ast_to_ir(kid[-1])])
+        else:
+            self.testcases.append([graph_name, walker_name])
 
     def run_namespaces(self, jac_ast):
         """
