@@ -26,6 +26,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#ver_label.
+    def enterVer_label(self, ctx:jacParser.Ver_labelContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#ver_label.
+    def exitVer_label(self, ctx:jacParser.Ver_labelContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#import_items.
     def enterImport_items(self, ctx:jacParser.Import_itemsContext):
         pass
@@ -71,12 +80,12 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#ver_label.
-    def enterVer_label(self, ctx:jacParser.Ver_labelContext):
+    # Enter a parse tree produced by jacParser#test.
+    def enterTest(self, ctx:jacParser.TestContext):
         pass
 
-    # Exit a parse tree produced by jacParser#ver_label.
-    def exitVer_label(self, ctx:jacParser.Ver_labelContext):
+    # Exit a parse tree produced by jacParser#test.
+    def exitTest(self, ctx:jacParser.TestContext):
         pass
 
 
@@ -338,6 +347,15 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#ctrl_stmt.
     def exitCtrl_stmt(self, ctx:jacParser.Ctrl_stmtContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#assert_stmt.
+    def enterAssert_stmt(self, ctx:jacParser.Assert_stmtContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#assert_stmt.
+    def exitAssert_stmt(self, ctx:jacParser.Assert_stmtContext):
         pass
 
 

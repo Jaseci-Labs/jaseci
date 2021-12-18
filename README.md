@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Support Feature: Started vs code for JAC extension first beta
 - New Lang Feature: Multifile codebase support and import keyword and semantic added
 - New Lang Feature: Try-else blocks introduced for exception handling
 - New Lang Feature: Added new `&` reference and `*` dereference semantic for getting psuedo-pointers to node, edges, etc
