@@ -6,7 +6,7 @@ Each sentinel has an id, name, timestamp and it's set of walkers.
 from jaseci.element.element import element
 from jaseci.utils.utils import logger
 from jaseci.utils.id_list import id_list
-from jaseci.jac.ir.jac_code import jac_code
+from jaseci.jac.ir.jac_code import jac_code, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
 
 
@@ -22,6 +22,7 @@ class sentinel(element, jac_code, sentinel_interp):
         self.version = None
         self.arch_ids = id_list(self)
         self.walker_ids = id_list(self)
+        self.testcases = []
         element.__init__(self, *args, **kwargs)
         jac_code.__init__(self, code_ir=None)
         sentinel_interp.__init__(self)
@@ -141,6 +142,19 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         src_arch = self.run_architype(object.name, kind=object.kind)
         return key_name in src_arch.context
+
+    def run_tests(self):
+        for i in self.testcases:
+            gph = self.run_architype(i[0], kind='graph', caller=self)
+            wlk = self.spawn_walker(i[1], caller=self)
+            wlk.prime(gph)
+            if(len(i) > 2):
+                self.run_spawn_ctx(jac_ir_to_ast(i[3]), wlk)
+            try:
+                wlk.run()
+                self.rt_info(f"PASSED")
+            except Exception as e:
+                self.rt_error(f"{e}")
 
     def destroy(self):
         """

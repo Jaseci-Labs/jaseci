@@ -30,7 +30,7 @@ walker:
 		| walk_activity_block
 	)* walk_exit_block? RBRACE;
 
-test: KW_TEST graph_ref (walker_ref | walker);
+test: KW_TEST graph_ref ((walker_ref spawn_ctx?) | walker);
 
 namespaces: COLON name_list;
 
