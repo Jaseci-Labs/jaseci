@@ -30,7 +30,7 @@ walker:
 		| walk_activity_block
 	)* walk_exit_block? RBRACE;
 
-test: KW_TEST graph_ref walker_ref | KW_TEST graph_ref walker;
+test: KW_TEST graph_ref (walker_ref | walker);
 
 namespaces: COLON name_list;
 
@@ -339,7 +339,7 @@ LBRACE: '{';
 RBRACE: '}';
 KW_EDGE: 'edge';
 KW_WALKER: 'walker';
-KW_TEST: 'test';
+KW_TEST: 'testcase';
 KW_ASSERT: 'assert';
 SEMI: ';';
 EQ: '=';

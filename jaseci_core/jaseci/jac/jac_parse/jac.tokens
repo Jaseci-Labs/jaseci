@@ -138,7 +138,7 @@ ErrorChar=100
 '}'=38
 'edge'=39
 'walker'=40
-'test'=41
+'testcase'=41
 'assert'=42
 ';'=43
 '='=44
