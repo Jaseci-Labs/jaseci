@@ -1040,7 +1040,7 @@ testcases = \
         assert visitor...
     };
 
-    test with graph::dummy by walker tester {
+    test with graph::dummy by walker {
     }
 
     test with {

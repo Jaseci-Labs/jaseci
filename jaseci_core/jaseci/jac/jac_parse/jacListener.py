@@ -80,6 +80,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#walker_block.
+    def enterWalker_block(self, ctx:jacParser.Walker_blockContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#walker_block.
+    def exitWalker_block(self, ctx:jacParser.Walker_blockContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#test.
     def enterTest(self, ctx:jacParser.TestContext):
         pass
