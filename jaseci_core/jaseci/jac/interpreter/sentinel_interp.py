@@ -75,15 +75,22 @@ class sentinel_interp(interp):
 
     def load_test(self, jac_ast):
         """
-        test: KW_TEST graph_ref ((walker_ref spawn_ctx?) | walker);
+        test:
+            KW_TEST KW_WITH (graph_ref | graph_block) KW_BY (
+                (walker_ref spawn_ctx? (code_block | SEMI))
+                | walker
+            );
         """
         kid = jac_ast.kid
-        graph_name = kid[1].kid[2].token_text()
-        walker_name = kid[2].kid[2].token_text()
-        if(not self.arch_ids.has_obj_by_name(graph_name,
-                                             kind='graph')):
-            self.rt_error(f"Graph {graph_name} not found!", kid[1])
-            return
+        testcase = {}
+        walker_name = kid[4].kid[2].token_text()
+        if(kid[2].name == "graph_ref"):
+            graph_name = kid[2].kid[2].token_text()
+            if(not self.arch_ids.has_obj_by_name(graph_name,
+                                                 kind='graph')):
+                self.rt_error(f"Graph {graph_name} not found!", kid[1])
+                return
+            testcase['graph_ref'] = graph_name
         if(kid[2].name == 'walker'):
             self.load_walker(kid[2])
         if(not self.arch_ids.has_obj_by_name(walker_name,
