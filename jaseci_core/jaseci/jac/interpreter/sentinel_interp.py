@@ -59,11 +59,7 @@ class sentinel_interp(interp):
     # Note: Sentinels only registers the attr_stmts
     def load_walker(self, jac_ast):
         """
-        walker:
-            KW_WALKER NAME namespaces? LBRACE attr_stmt* walk_entry_block? (
-                statement
-                | walk_activity_block
-            )* walk_exit_block? RBRACE;
+        walker: KW_WALKER NAME namespaces? walker_block;
         """
         walk = walker(m_id=self._m_id, h=self._h, code_ir=jac_ast)
         if(jac_ast.kid[2].name == 'namespaces'):
@@ -76,34 +72,44 @@ class sentinel_interp(interp):
     def load_test(self, jac_ast):
         """
         test:
-            KW_TEST KW_WITH (graph_ref | graph_block) KW_BY (
+            KW_TEST KW_WITH (graph_ref | KW_GRAPH graph_block) KW_BY (
                 (walker_ref spawn_ctx? (code_block | SEMI))
-                | walker
+                | KW_WALKER walker_block
             );
         """
         kid = jac_ast.kid
-        testcase = {}
-        walker_name = kid[4].kid[2].token_text()
-        if(kid[2].name == "graph_ref"):
-            graph_name = kid[2].kid[2].token_text()
+        testcase = {'graph_ref': None, 'graph_block': None,
+                    'walker_ref': None, 'spawn_ctx': None,
+                    'assert_block': None, 'walker_block': None, }
+        kid = kid[2:]
+        if(kid[0].name == "graph_ref"):
+            graph_name = kid[0].kid[2].token_text()
             if(not self.arch_ids.has_obj_by_name(graph_name,
                                                  kind='graph')):
-                self.rt_error(f"Graph {graph_name} not found!", kid[1])
+                self.rt_error(f"Graph {graph_name} not found!", kid[0])
                 return
             testcase['graph_ref'] = graph_name
-        if(kid[2].name == 'walker'):
-            self.load_walker(kid[2])
-        if(not self.arch_ids.has_obj_by_name(walker_name,
-                                             kind='walker')):
-            self.rt_error(
-                f"Walker {walker_name} not found or invalid!", kid[2])
-            return
-        if(kid[-1].name == 'spawn_ctx'):
-            self.testcases.append([graph_name,
-                                   walker_name,
-                                   jac_ast_to_ir(kid[-1])])
         else:
-            self.testcases.append([graph_name, walker_name])
+            kid = kid[1:]
+            testcase['graph_block'] = jac_ast_to_ir(kid[0])
+        kid = kid[2:]
+        if(kid[0].name == 'walker_ref'):
+            walker_name = kid[0].kid[2].token_text()
+            if(not self.walker_ids.has_obj_by_name(walker_name)):
+                self.rt_error(f"Walker {walker_name} not found!", kid[0])
+                return
+            testcase['walker_ref'] = walker_name
+            kid = kid[1:]
+            if(kid[0].name == 'spawn_ctx'):
+                testcase['spawn_ctx'] = jac_ast_to_ir(kid[0])
+                kid = kid[1:]
+            if(kid[0].name == "code_block"):
+                testcase['assert_block'] = jac_ast_to_ir(kid[0])
+        else:
+            kid = kid[1:]
+            testcase['walker_block'] = jac_ast_to_ir(kid[0])
+
+        self.testcases.append(testcase)
 
     def run_namespaces(self, jac_ast):
         """

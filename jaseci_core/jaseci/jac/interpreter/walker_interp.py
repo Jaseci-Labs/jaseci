@@ -17,11 +17,7 @@ class walker_interp(interp):
 
     def run_walker(self, jac_ast):
         """
-        walker:
-            KW_WALKER NAME namespaces? LBRACE attr_stmt* walk_entry_block? (
-                statement
-                | walk_activity_block
-            )* walk_exit_block? RBRACE;
+        walker: KW_WALKER NAME namespaces? walker_block;
         """
         kid = jac_ast.kid
         self.push_scope(
@@ -33,6 +29,18 @@ class walker_interp(interp):
         self._jac_scope.set_agent_refs(cur_node=self.current_node,
                                        cur_walker=self)
 
+        self.run_walker_block(kid[-1])
+        self.pop_scope()
+
+    def run_walker_block(self, jac_ast):
+        """
+        walker_block:
+            LBRACE attr_stmt* walk_entry_block? (
+                statement
+                | walk_activity_block
+            )* walk_exit_block? RBRACE;
+        """
+        kid = jac_ast.kid
         if(self.current_step == 0):
             for i in kid:
                 if(i.name == 'attr_stmt'):
@@ -56,7 +64,6 @@ class walker_interp(interp):
         self.auto_trigger_node_actions(
             nd=self.current_node,
             act_list=self.current_node.exit_action_ids)
-        self.pop_scope()
 
     def run_node_ctx_block(self, jac_ast):
         """

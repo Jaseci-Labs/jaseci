@@ -24,8 +24,10 @@ architype:
 	| KW_EDGE NAME attr_block
 	| KW_GRAPH NAME graph_block;
 
-walker:
-	KW_WALKER NAME namespaces? LBRACE attr_stmt* walk_entry_block? (
+walker: KW_WALKER NAME namespaces? walker_block;
+
+walker_block:
+	LBRACE attr_stmt* walk_entry_block? (
 		statement
 		| walk_activity_block
 	)* walk_exit_block? RBRACE;
@@ -33,7 +35,7 @@ walker:
 test:
 	KW_TEST KW_WITH (graph_ref | KW_GRAPH graph_block) KW_BY (
 		(walker_ref spawn_ctx? (code_block | SEMI))
-		| KW_WALKER walker
+		| KW_WALKER walker_block
 	);
 
 namespaces: COLON name_list;
