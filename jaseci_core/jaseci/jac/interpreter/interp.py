@@ -1326,7 +1326,7 @@ class interp(machine_state):
     # Helper Functions ##################
 
     def call_ability(self, nd, name, act_list):
-        m = interp(parent_override=self.parent(), m_id=self._m_id)
+        m = interp(parent_override=self.parent(), caller=self)
         m.push_scope(jac_scope(parent=nd,
                                has_obj=nd,
                                action_sets=[nd.activity_action_ids]))

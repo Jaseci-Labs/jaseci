@@ -1009,11 +1009,11 @@ testcases = \
         has yo, mama;
     }
 
-    edge apple {
+    node apple {
         has v1, v2;
     }
 
-    edge banana {
+    node banana {
         has x1, x2;
     }
 
@@ -1022,7 +1022,7 @@ testcases = \
         spawn {
             graph_root = spawn node::testnode (yo="Hey yo!");
             n1=spawn node::apple(v1="I'm apple");
-            n2=spawn ndoe::banana(x1="I'm banana");
+            n2=spawn node::banana(x1="I'm banana");
             graph_root --> n1 --> n2;
         }
     }
@@ -1037,21 +1037,25 @@ testcases = \
     test with graph::dummy by walker::init;
 
     test with graph::dummy by walker::init {
-        assert visitor...
-    };
-
-    test with graph::dummy by walker {
+       report "ASSERT BLOCK";
     }
 
-    test with {
+    test with graph::dummy by walker {
+        report here.context;
+        report "IN generic walker";
+        take -->;
+    }
+
+    test with graph {
         has anchor graph_root;
         spawn {
             graph_root = spawn node::testnode (yo="Hey yo!");
             n1=spawn node::apple(v1="I'm apple");
-            n2=spawn ndoe::banana(x1="I'm banana");
+            n2=spawn node::banana(x1="I'm banana");
             graph_root --> n1 --> n2;
+            graph_root --> n2;
         }
     } by walker::init {
-        assert visitor...
-    };
+        report "ASSERT BLOCK";
+    }
     """

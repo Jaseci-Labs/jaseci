@@ -29,7 +29,10 @@ class walker_interp(interp):
         self._jac_scope.set_agent_refs(cur_node=self.current_node,
                                        cur_walker=self)
 
-        self.run_walker_block(kid[-1])
+        if(jac_ast.name == "walker_block"):
+            self.run_walker_block(jac_ast)
+        else:
+            self.run_walker_block(kid[-1])
         self.pop_scope()
 
     def run_walker_block(self, jac_ast):
@@ -163,7 +166,7 @@ class walker_interp(interp):
         """
         kid = jac_ast.kid
         param_list = []
-        m = interp(parent_override=self.parent(), m_id=self._m_id)
+        m = interp(parent_override=self.parent(), caller=self)
         m.push_scope(jac_scope(parent=self,
                                has_obj=obj,
                                action_sets=[
