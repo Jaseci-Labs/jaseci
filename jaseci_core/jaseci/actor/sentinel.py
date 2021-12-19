@@ -8,6 +8,8 @@ from jaseci.utils.utils import logger
 from jaseci.utils.id_list import id_list
 from jaseci.jac.ir.jac_code import jac_code, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
+from jaseci.actor.architype import architype
+from jaseci.actor.walker import walker
 
 
 class sentinel(element, jac_code, sentinel_interp):
@@ -144,17 +146,39 @@ class sentinel(element, jac_code, sentinel_interp):
         return key_name in src_arch.context
 
     def run_tests(self):
+        """
+        Testcase schema
+        testcase = {'graph_ref': None, 'graph_block': None,
+            'walker_ref': None, 'spawn_ctx': None,
+            'assert_block': None, 'walker_block': None, }
+        """
+
         for i in self.testcases:
-            gph = self.run_architype(i[0], kind='graph', caller=self)
-            wlk = self.spawn_walker(i[1], caller=self)
+            destroy_set = []
+            if(i['graph_ref']):
+                gph = self.run_architype(
+                    i['graph_ref'], kind='graph', caller=self)
+            else:
+                gph = architype(m_id=self._m_id, h=self._h,
+                                code_ir=jac_ir_to_ast(i['graph_block']))
+                destroy_set.append(gph)
+                gph = gph.run()
+            if(i['walker_ref']):
+                wlk = self.spawn_walker(i['walker_ref'], caller=self)
+            else:
+                wlk = walker(m_id=self._m_id, h=self._h,
+                             code_ir=jac_ir_to_ast(i['walker_block']))
+                destroy_set.append(wlk)
             wlk.prime(gph)
-            if(len(i) > 2):
-                self.run_spawn_ctx(jac_ir_to_ast(i[3]), wlk)
+            if(i['spawn_ctx']):
+                self.run_spawn_ctx(jac_ir_to_ast(i['spawn_ctx']), wlk)
             try:
                 wlk.run()
                 self.rt_info(f"PASSED")
             except Exception as e:
                 self.rt_error(f"{e}")
+        for i in destroy_set:
+            i.destory()
 
     def destroy(self):
         """
