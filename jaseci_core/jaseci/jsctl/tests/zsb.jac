@@ -239,7 +239,7 @@ graph sample {
     }
 }
 
-walker test {
+walker test_walk {
     root { take -->; }
     botset { spawn here --> graph::sample; }
 }
