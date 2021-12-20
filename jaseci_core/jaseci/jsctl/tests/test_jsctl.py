@@ -161,7 +161,36 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(
             "sentinel register -code "
             "jaseci/jsctl/tests/ll_base.jac -set_active true")
+        self.logger_off()
         self.call("walker run -name init")
         self.call("walker run -name gen_rand_life")
         r = self.call_cast("walker run -name get_gen_day")
         self.assertGreater(len(r), 3)
+
+    def test_jsctl_import_filters(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/base.jac -set_active true")
+        r = self.call_cast("walker run -name init")
+        self.assertEqual(len(r), 8)
+
+    def test_jsctl_import_filters1(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/base1.jac -set_active true")
+        r = self.call_cast("walker run -name init")
+        self.assertEqual(len(r), 8)
+
+    def test_jsctl_import_filters2(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/base2.jac -set_active true")
+        r = self.call_cast("walker run -name init")
+        self.assertEqual(len(r), 8)
+
+    def test_jsctl_import_filters3(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/base3.jac -set_active true")
+        r = self.call_cast("walker run -name init")
+        self.assertEqual(len(r), 0)

@@ -391,7 +391,7 @@ class jacLexer(Lexer):
     KW_CAN = 77
     PLUS = 78
     MINUS = 79
-    MUL = 80
+    STAR_MUL = 80
     DIV = 81
     MOD = 82
     POW = 83
@@ -442,8 +442,8 @@ class jacLexer(Lexer):
             "KW_WHILE", "KW_CONTINUE", "KW_BREAK", "KW_DISENGAGE", "KW_SKIP", 
             "KW_REPORT", "KW_DESTROY", "KW_TRY", "DOT", "NOT", "EE", "LT", 
             "GT", "LTE", "GTE", "NE", "KW_IN", "KW_ANCHOR", "KW_HAS", "KW_PRIVATE", 
-            "COMMA", "KW_CAN", "PLUS", "MINUS", "MUL", "DIV", "MOD", "POW", 
-            "LPAREN", "RPAREN", "LSQUARE", "RSQUARE", "FLOAT", "STRING", 
+            "COMMA", "KW_CAN", "PLUS", "MINUS", "STAR_MUL", "DIV", "MOD", 
+            "POW", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE", "FLOAT", "STRING", 
             "BOOL", "INT", "NULL", "NAME", "COMMENT", "LINE_COMMENT", "PY_COMMENT", 
             "WS", "ErrorChar" ]
 
@@ -461,7 +461,7 @@ class jacLexer(Lexer):
                   "KW_REPORT", "KW_DESTROY", "KW_TRY", "DOT", "NOT", "EE", 
                   "LT", "GT", "LTE", "GTE", "NE", "KW_IN", "KW_ANCHOR", 
                   "KW_HAS", "KW_PRIVATE", "COMMA", "KW_CAN", "PLUS", "MINUS", 
-                  "MUL", "DIV", "MOD", "POW", "LPAREN", "RPAREN", "LSQUARE", 
+                  "STAR_MUL", "DIV", "MOD", "POW", "LPAREN", "RPAREN", "LSQUARE", 
                   "RSQUARE", "FLOAT", "STRING", "BOOL", "INT", "NULL", "NAME", 
                   "COMMENT", "LINE_COMMENT", "PY_COMMENT", "WS", "ErrorChar" ]
 

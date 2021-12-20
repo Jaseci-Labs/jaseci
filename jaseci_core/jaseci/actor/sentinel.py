@@ -134,6 +134,14 @@ class sentinel(element, jac_code, sentinel_interp):
             arch.destroy()
             return ret
 
+    def check_in_arch_context(self, key_name, object):
+        """
+        Validates a key is present in currently loaded architype of
+        a particular instance (helper for expanding node has variables)
+        """
+        src_arch = self.run_architype(object.name, kind=object.kind)
+        return key_name in src_arch.context
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage

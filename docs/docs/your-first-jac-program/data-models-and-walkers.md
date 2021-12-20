@@ -7,6 +7,7 @@ sidebar_position: 2
 Here we'll look at setting up the Jaseci data model (nodes and edges) and defining the walkers to support the feature list.
 
 >  **From the Docs**
+
 > - **Nodes** represent an entity on a graph. [Learn more](/docs/intermediate/standard-library-documentation/jaseci-primitives#node)
 > - **Edges** represent the relationship between nodes on a graph. [Learn more](/docs/intermediate/standard-library-documentation/jaseci-primitives#edge)
 > -  **Walkers** traverse nodes via edges executing logic at the node level. [Learn more](/docs/intermediate/standard-library-documentation/jaseci-primitives#walker)

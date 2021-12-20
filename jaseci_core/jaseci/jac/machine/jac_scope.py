@@ -48,7 +48,7 @@ class jac_scope():
         # check if var is in walker's context
         if(name in self.has_obj.context.keys()):
             return jac_value(self.parent,
-                             ctx=self.has_obj.context,
+                             ctx=self.has_obj,
                              name=name)
         elif(name in self.action_sets.keys()):
             return jac_value(self.parent,
