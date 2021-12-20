@@ -39,6 +39,8 @@ class architype_interp(interp):
             self.run_attr_block(kid[-1], item)
         elif (kid[0].name == 'KW_GRAPH'):
             item = self.run_graph_block(kid[-1])
+        elif (jac_ast.name == 'graph_block'):  # used in jac tests
+            item = self.run_graph_block(jac_ast)
         item.parent_id = self.parent().id
         self.pop_scope()
         return item

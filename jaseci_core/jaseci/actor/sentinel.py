@@ -155,11 +155,13 @@ class sentinel(element, jac_code, sentinel_interp):
 
         for i in self.testcases:
             destroy_set = []
+            title = i['title']
             if(i['graph_ref']):
                 gph = self.run_architype(
                     i['graph_ref'], kind='graph', caller=self)
             else:
                 gph = architype(m_id=self._m_id, h=self._h,
+                                parent_id=self.id,
                                 code_ir=jac_ir_to_ast(i['graph_block']))
                 destroy_set.append(gph)
                 gph = gph.run()
@@ -167,6 +169,7 @@ class sentinel(element, jac_code, sentinel_interp):
                 wlk = self.spawn_walker(i['walker_ref'], caller=self)
             else:
                 wlk = walker(m_id=self._m_id, h=self._h,
+                             parent_id=self.id,
                              code_ir=jac_ir_to_ast(i['walker_block']))
                 destroy_set.append(wlk)
             wlk.prime(gph)
@@ -174,11 +177,11 @@ class sentinel(element, jac_code, sentinel_interp):
                 self.run_spawn_ctx(jac_ir_to_ast(i['spawn_ctx']), wlk)
             try:
                 wlk.run()
-                self.rt_info(f"PASSED")
+                self.rt_info(f"Testing {title}... PASSED {wlk.report}")
             except Exception as e:
                 self.rt_error(f"{e}")
         for i in destroy_set:
-            i.destory()
+            i.destroy()
 
     def destroy(self):
         """

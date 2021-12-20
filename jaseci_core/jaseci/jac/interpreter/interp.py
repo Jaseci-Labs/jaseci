@@ -654,7 +654,7 @@ class interp(machine_state):
                 param_list = self.run_expr_list(kid[1]).value
             if (isinstance(atom_res.value, action)):
                 try:
-                    ret = atom_res.value.trigger(param_list)
+                    ret = atom_res.value.trigger(param_list, self._jac_scope)
                 except Exception as e:
                     self.rt_error(f'{e}', jac_ast)
                     ret = None

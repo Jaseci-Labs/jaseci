@@ -29,7 +29,7 @@ class walker_interp(interp):
         self._jac_scope.set_agent_refs(cur_node=self.current_node,
                                        cur_walker=self)
 
-        if(jac_ast.name == "walker_block"):
+        if(jac_ast.name == "walker_block"):  # used in jac tests
             self.run_walker_block(jac_ast)
         else:
             self.run_walker_block(kid[-1])
@@ -145,9 +145,9 @@ class walker_interp(interp):
         result = self.run_expression(kid[1]).value
         before = len(self.next_node_ids)
         if (isinstance(result, node)):
-            self.next_node_ids.add_obj(result)
+            self.next_node_ids.add_obj(result, allow_dups=True)
         elif (isinstance(result, jac_set)):
-            self.next_node_ids.add_obj_list(result)
+            self.next_node_ids.add_obj_list(result, allow_dups=True)
         elif(result):
             self.rt_error(f'{result} is not destination type (i.e., nodes)',
                           kid[1])
@@ -177,7 +177,7 @@ class walker_interp(interp):
         if(kid[1].name == "expr_list"):
             param_list = m.run_expr_list(kid[1]).value
         try:
-            result = act.trigger(param_list)
+            result = act.trigger(param_list, self._jac_scope)
         except Exception as e:
             self.rt_error(f'{e}', jac_ast)
             result = None

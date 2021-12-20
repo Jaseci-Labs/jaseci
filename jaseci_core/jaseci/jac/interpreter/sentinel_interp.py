@@ -72,16 +72,17 @@ class sentinel_interp(interp):
     def load_test(self, jac_ast):
         """
         test:
-            KW_TEST KW_WITH (graph_ref | KW_GRAPH graph_block) KW_BY (
+            KW_TEST STRING KW_WITH (graph_ref | KW_GRAPH graph_block) KW_BY (
                 (walker_ref spawn_ctx? (code_block | SEMI))
                 | KW_WALKER walker_block
             );
         """
         kid = jac_ast.kid
-        testcase = {'graph_ref': None, 'graph_block': None,
+        testcase = {'title': kid[1].token_text(),
+                    'graph_ref': None, 'graph_block': None,
                     'walker_ref': None, 'spawn_ctx': None,
                     'assert_block': None, 'walker_block': None, }
-        kid = kid[2:]
+        kid = kid[3:]
         if(kid[0].name == "graph_ref"):
             graph_name = kid[0].kid[2].token_text()
             if(not self.arch_ids.has_obj_by_name(graph_name,

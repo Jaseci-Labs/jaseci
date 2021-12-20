@@ -1034,19 +1034,23 @@ testcases = \
         take -->;
     }
 
-    test with graph::dummy by walker::init;
+    test "basic test with refs" 
+    with graph::dummy by walker::init;
 
-    test with graph::dummy by walker::init {
+    test "test with refs and assert block"
+    with graph::dummy by walker::init {
        report "ASSERT BLOCK";
     }
 
-    test with graph::dummy by walker {
+    test "test with graph ref and walker block"
+    with graph::dummy by walker {
         report here.context;
         report "IN generic walker";
         take -->;
     }
 
-    test with graph {
+    test "test with graph block and walker ref"
+    with graph {
         has anchor graph_root;
         spawn {
             graph_root = spawn node::testnode (yo="Hey yo!");
