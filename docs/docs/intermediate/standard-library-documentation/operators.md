@@ -23,14 +23,14 @@ d = 4 - 6;
 // exponent / power
 a = 4 ^ 4;
 
-// modulous
+// modulus
 b = 9 % 5
 ```
 
 ## Equality
 
 ```
-// euqal
+// equal
 a == b
 
 // not equal

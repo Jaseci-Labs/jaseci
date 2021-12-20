@@ -98,8 +98,7 @@ The parent edge represents the link between workettes and child workettes, i.e. 
 
 >Sub-workettes can go an infinite amount of levels deep (theoretically), i.e. sub-tasks can have sub-tasks.
 
-<!-- TODO: add link from final website -->
-Let's move on the [walkers]('#') that will make use of this data model.
+Let's move on the [walkers](/docs/intermediate/standard-library-documentation/jaseci-primitives#walker) that will make use of this data model.
 
 
 

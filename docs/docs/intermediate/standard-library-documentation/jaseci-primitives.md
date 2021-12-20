@@ -9,7 +9,7 @@ sidebar_position: 1
 Can be thought of as the representation of an entity.
 - Nodes are composed of context and executable actions.
 - Nodes accumulate context via a push function, context can be read as well
-- Nodes execute a set of actions upon Extry and Exit.
+- Nodes execute a set of actions upon Entry and Exit.
 
 **Defining a node**
 ```

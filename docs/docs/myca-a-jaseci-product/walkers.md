@@ -125,7 +125,7 @@ Use the `destroy` keyword to delete a node.
 ## Date component manipulation
 
 <!-- TODO: add link below -->
-`get_gen_day` looks for a day node that matches the date parameter or creates one and reports it. [see advanced walkers]('#')
+`get_gen_day` looks for a day node that matches the date parameter or creates one and reports it. [see advanced walkers](/docs/myca-a-jaseci-product/walkers-advanced)
 
 `get_*` walks the graph looking for the respective date component node (`week`, 'month', etc) that matches the `date` parameter and reports it and its workettes.
 
