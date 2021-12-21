@@ -22,7 +22,8 @@ data:
     cd jaseci;
     cd jaseci_core; source install.sh;
     cd ../jaseci_serv; source install.sh;
-    jsserv wait_for_db && jsserv migrate;
+    jsserv wait_for_db && jsserv makemigrations base &&
+    jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
 ---
 apiVersion: apps/v1
@@ -30,7 +31,7 @@ kind: Deployment
 metadata:
   name: jaseci
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       pod: jaseci

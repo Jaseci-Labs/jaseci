@@ -32,6 +32,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='jaseciobject',
             name='j_master',
+            field=models.UUIDField(null=True, blank=True)
         ),
         migrations.RunPython(convert_user_to_j_master, migrations.RunPython.noop),
 
