@@ -20,20 +20,10 @@ class walker_interp(interp):
         walker: KW_WALKER NAME namespaces? walker_block;
         """
         kid = jac_ast.kid
-        self.push_scope(
-            jac_scope(
-                parent=self,
-                has_obj=self,
-                action_sets=[self.activity_action_ids,
-                             self.current_node.activity_action_ids]))
-        self._jac_scope.set_agent_refs(cur_node=self.current_node,
-                                       cur_walker=self)
-
         if(jac_ast.name == "walker_block"):  # used in jac tests
-            self.run_walker_block(jac_ast)
+            self.scope_and_run(jac_ast, self.run_walker_block)
         else:
-            self.run_walker_block(kid[-1])
-        self.pop_scope()
+            self.scope_and_run(kid[-1], self.run_walker_block)
 
     def run_walker_block(self, jac_ast):
         """
@@ -204,3 +194,20 @@ class walker_interp(interp):
             if (i not in self.ignore_node_ids.obj_list()):
                 ret.add_obj(i)
         return ret
+
+    def scope_and_run(self, jac_ast, run_func):
+        """
+        Helper to run ast elements with execution scope added
+        (Useful for running arbitrary code blocks as one-offs)
+        """
+        self.push_scope(
+            jac_scope(
+                parent=self,
+                has_obj=self,
+                action_sets=[self.activity_action_ids,
+                             self.current_node.activity_action_ids]))
+        self._jac_scope.set_agent_refs(cur_node=self.current_node,
+                                       cur_walker=self)
+
+        run_func(jac_ast)
+        self.pop_scope()

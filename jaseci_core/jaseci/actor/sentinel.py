@@ -145,14 +145,19 @@ class sentinel(element, jac_code, sentinel_interp):
         src_arch = self.run_architype(object.name, kind=object.kind)
         return key_name in src_arch.context
 
-    def run_tests(self):
+    def run_tests(self, detailed=False):
         """
         Testcase schema
         testcase = {'graph_ref': None, 'graph_block': None,
             'walker_ref': None, 'spawn_ctx': None,
             'assert_block': None, 'walker_block': None, }
         """
-
+        from pprint import pformat
+        from time import time
+        TY = '\033[33m'
+        TG = '\033[32m'
+        TR = '\033[31m'
+        EC = '\033[m'
         for i in self.testcases:
             destroy_set = []
             title = i['title']
@@ -175,11 +180,19 @@ class sentinel(element, jac_code, sentinel_interp):
             wlk.prime(gph)
             if(i['spawn_ctx']):
                 self.run_spawn_ctx(jac_ir_to_ast(i['spawn_ctx']), wlk)
+            stime = time()
             try:
+                print(f"Testing {title}: ", end='')
                 wlk.run()
-                self.rt_info(f"Testing {title}... PASSED {wlk.report}")
+                if(i['assert_block']):
+                    wlk.scope_and_run(jac_ir_to_ast(
+                        i['assert_block']), run_func=wlk.run_code_block)
+                print(f"[{TG}PASSED{EC} in {TY}{time()-stime:.2f}s{EC}]")
+                if(detailed or 1):
+                    print("REPORT: " + pformat(wlk.report))
             except Exception as e:
-                self.rt_error(f"{e}")
+                print(f"[{TR}FAILED{EC} in {TY}{time()-stime:.2f}s{EC}]")
+                print(f"{e}")
         for i in destroy_set:
             i.destroy()
 
