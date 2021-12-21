@@ -3,7 +3,7 @@
 from django.db import migrations, models
 from django.db.backends.base import schema
 
-from jaseci_serv.jaseci_serv.base.models import JaseciObject
+from jaseci_serv.base.models import JaseciObject
 
 def convert_user_to_j_master(apps, schema_editor):
     """The old user field in jaseci object convert to j_master"""
