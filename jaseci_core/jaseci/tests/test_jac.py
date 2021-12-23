@@ -606,17 +606,20 @@ class jac_tests(TestCaseHelper, TestCase):
                      'name': 'Josh', 'profession': None})
 
     def test_testcases(self):
-        self.logger_on()
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.testcases)
-        sent.run_tests()
-        # test_walker = \
-        #     sent.walker_ids.get_obj_by_name('init')
-        # test_walker.prime(gph)
-        # test_walker.run()
-        # rep = test_walker.report
-        # self.assertEqual(rep[0], {'meeting_place': 'college'})
-        # self.assertEqual(
-        #     rep[1], {'age': 32, 'birthday': None,
-        #              'name': 'Josh', 'profession': None})
+        sent.run_tests(silent=True)
+        self.assertEqual(len(sent.testcases), 4)
+        for i in sent.testcases:
+            self.assertEqual(i['passed'], True)
+
+    def test_testcase_asserts(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.testcase_asserts)
+        sent.run_tests(silent=True)
+        self.assertEqual(len(sent.testcases), 3)
+        self.assertEqual(sent.testcases[0]['passed'], True)
+        self.assertEqual(sent.testcases[1]['passed'], False)
+        self.assertEqual(sent.testcases[2]['passed'], False)

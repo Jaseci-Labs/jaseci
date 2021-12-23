@@ -222,6 +222,7 @@ class interp(machine_state):
             | try_stmt
             | for_stmt
             | while_stmt
+            | assert_stmt SEMI
             | ctrl_stmt SEMI
             | destroy_action
             | report_action
@@ -361,6 +362,19 @@ class interp(machine_state):
             self._loop_ctrl = 'break'
         elif (kid[0].name == 'KW_CONTINUE'):
             self._loop_ctrl = 'continue'
+
+    def run_assert_stmt(self, jac_ast):
+        """
+        assert_stmt: KW_ASSERT expression;
+        """
+        kid = jac_ast.kid
+        passed = False
+        try:
+            passed = self.run_expression(kid[1]).value
+        except Exception as e:
+            raise Exception('JAC Assert Failed', kid[1].get_text(), e)
+        if(not passed):
+            raise Exception('JAC Assert Failed', kid[1].get_text())
 
     def run_destroy_action(self, jac_ast):
         """

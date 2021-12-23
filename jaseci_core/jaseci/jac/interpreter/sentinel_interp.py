@@ -81,7 +81,8 @@ class sentinel_interp(interp):
         testcase = {'title': kid[1].token_text(),
                     'graph_ref': None, 'graph_block': None,
                     'walker_ref': None, 'spawn_ctx': None,
-                    'assert_block': None, 'walker_block': None, }
+                    'assert_block': None, 'walker_block': None,
+                    'outcome': None}
         kid = kid[3:]
         if(kid[0].name == "graph_ref"):
             graph_name = kid[0].kid[2].token_text()

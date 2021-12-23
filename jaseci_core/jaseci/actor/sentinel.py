@@ -145,12 +145,14 @@ class sentinel(element, jac_code, sentinel_interp):
         src_arch = self.run_architype(object.name, kind=object.kind)
         return key_name in src_arch.context
 
-    def run_tests(self, detailed=False):
+    def run_tests(self, detailed=False, silent=False):
         """
         Testcase schema
-        testcase = {'graph_ref': None, 'graph_block': None,
+        testcase = {'title': kid[1].token_text(),
+            'graph_ref': None, 'graph_block': None,
             'walker_ref': None, 'spawn_ctx': None,
-            'assert_block': None, 'walker_block': None, }
+            'assert_block': None, 'walker_block': None,
+            'passed': None}
         """
         from pprint import pformat
         from time import time
@@ -182,17 +184,22 @@ class sentinel(element, jac_code, sentinel_interp):
                 self.run_spawn_ctx(jac_ir_to_ast(i['spawn_ctx']), wlk)
             stime = time()
             try:
-                print(f"Testing {title}: ", end='')
+                if(not silent):
+                    print(f"Testing {title}: ", end='')
                 wlk.run()
                 if(i['assert_block']):
                     wlk.scope_and_run(jac_ir_to_ast(
                         i['assert_block']), run_func=wlk.run_code_block)
-                print(f"[{TG}PASSED{EC} in {TY}{time()-stime:.2f}s{EC}]")
-                if(detailed or 1):
+                i['passed'] = True
+                if(not silent):
+                    print(f"[{TG}PASSED{EC} in {TY}{time()-stime:.2f}s{EC}]")
+                if(detailed and not silent):
                     print("REPORT: " + pformat(wlk.report))
             except Exception as e:
-                print(f"[{TR}FAILED{EC} in {TY}{time()-stime:.2f}s{EC}]")
-                print(f"{e}")
+                i['passed'] = False
+                if(not silent):
+                    print(f"[{TR}FAILED{EC} in {TY}{time()-stime:.2f}s{EC}]")
+                    print(f"{e}")
         for i in destroy_set:
             i.destroy()
 
