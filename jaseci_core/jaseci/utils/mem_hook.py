@@ -1,5 +1,6 @@
 from .id_list import id_list
 from .utils import logger
+
 import json
 
 
@@ -32,7 +33,9 @@ class mem_hook():
     """
 
     def __init__(self):
+        from jaseci.actions.utils.global_actions import get_global_actions
         self.mem = {'global': {}}
+        self.global_action_list = get_global_actions(self)
 
     def get_obj(self, caller_id, item_id, override=False):
         """

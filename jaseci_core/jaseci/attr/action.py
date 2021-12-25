@@ -36,6 +36,6 @@ class action(item):
             importlib.import_module(
                 ACTION_PACKAGE+self.value[0].split('.')[-1]),
             self.value[1]
-        )(param_list, meta={'m_id': self._m_id,
-                            'h': self._h, 'scope': scope})
+        )(param_list, meta={'m_id': scope.parent._m_id,
+                            'h': scope.parent._h, 'scope': scope})
         return result
