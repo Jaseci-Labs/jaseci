@@ -188,7 +188,7 @@ class TestCaseHelper():
         TY = '\033[33m'
         TG = '\033[32m'
         TR = '\033[31m'
-        EC = '\033[m'  # noqa
+        EC = '\033[m'
         td = super().tearDown()
         result = f'Time: {TY}{time()-self.stime:.3f} ' + \
                  f'- {EC}{self.id().split(".")[-1]}: '

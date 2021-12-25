@@ -173,9 +173,10 @@ class jac_tests(TestCaseHelper, TestCase):
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.prog1)
-        test_node = sent.arch_ids.get_obj_by_name('test', kind='node').run()
+        test_node = sent.arch_ids.get_obj_by_name(
+            'testnode', kind='node').run()
         test_walker = \
-            sent.walker_ids.get_obj_by_name('test')
+            sent.walker_ids.get_obj_by_name('testwalk')
         test_walker.prime(test_node)
         test_walker.run()
         self.assertEqual(test_node.context['c'],
@@ -329,7 +330,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(len(nodes), 3)
         num = 0
         for i in nodes:
-            if(i.name == 'test'):
+            if(i.name == 'testnode'):
                 self.assertEqual(i.context['a'], 8)
                 num += 1
         self.assertEqual(num, 2)
@@ -589,3 +590,36 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[1], 'dont need err')
         self.assertEqual(rep[2], None)
         self.assertEqual(rep[3], 2)
+
+    def test_node_edge_same_name(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.node_edge_same_name)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], {'meeting_place': 'college'})
+        self.assertEqual(
+            rep[1], {'age': 32, 'birthday': None,
+                     'name': 'Josh', 'profession': None})
+
+    def test_testcases(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.testcases)
+        sent.run_tests(silent=True)
+        self.assertEqual(len(sent.testcases), 4)
+        for i in sent.testcases:
+            self.assertEqual(i['passed'], True)
+
+    def test_testcase_asserts(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.testcase_asserts)
+        sent.run_tests(silent=True)
+        self.assertEqual(len(sent.testcases), 3)
+        self.assertEqual(sent.testcases[0]['passed'], True)
+        self.assertEqual(sent.testcases[1]['passed'], False)
+        self.assertEqual(sent.testcases[2]['passed'], False)

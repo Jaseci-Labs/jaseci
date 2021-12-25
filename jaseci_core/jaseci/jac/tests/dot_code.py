@@ -169,7 +169,7 @@ dot_graph = \
     node day;
     edge parent;
     edge child;
-    graph test {
+    graph test_graph {
         has anchor A;
         strict graph G {
             H [node=year]
@@ -189,7 +189,7 @@ dot_graph = \
     }
     walker init {
         root {
-            spawn here --> graph::test;
+            spawn here --> graph::test_graph;
         }
     }
     """

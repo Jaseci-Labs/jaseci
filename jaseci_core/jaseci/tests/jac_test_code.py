@@ -191,13 +191,13 @@ ll_proto = \
 
 prog0 = \
     """
-    node test:0 {
+    node testnode:0 {
         has a, b, c;
         can std.log::a,b::>c with exit;
     }
 
-    walker test {
-        test {
+    walker testwalk {
+        testnode {
             here.a = 43;
             here.b = 'Yeah \\n"fools"!';
             report here.b;
@@ -228,13 +228,13 @@ prog0 = \
 
 prog1 = \
     """
-    node test:0 {
+    node testnode:0 {
         has a, b, c;
         can std.log::a,b::>c with exit;
     }
 
-    walker test {
-        test {
+    walker testwalk {
+        testnode {
             here.a = 43;
             here.b = 'Yeah \\n"fools"!';
             report here.b;
@@ -412,14 +412,14 @@ prog1 = \
 
 edgey = \
     """
-    node test;
+    node testnode;
 
     edge apple;
     edge banana;
 
     walker init {
         root {
-            a = spawn here --> node::test;
+            a = spawn here --> node::testnode ;
             here -[apple]-> a;
             here -[banana]-> a;
         }
@@ -428,14 +428,14 @@ edgey = \
 
 edgey2 = \
     """
-    node test;
+    node testnode;
 
     edge apple;
     edge banana;
 
     walker init {
         root {
-            a = spawn here --> node::test;
+            a = spawn here --> node::testnode ;
             here -[apple]-> a;
             here -[banana]-> a;
 
@@ -446,15 +446,15 @@ edgey2 = \
 
 edgey2b = \
     """
-    node test;
+    node testnode;
 
     edge apple;
     edge banana;
 
     walker init {
         root {
-            a = spawn here --> node::test;
-            b = spawn here --> node::test;
+            a = spawn here --> node::testnode ;
+            b = spawn here --> node::testnode ;
             here -[apple]-> a;
             here -[banana]-> a;
 
@@ -465,15 +465,15 @@ edgey2b = \
 
 edgey2c = \
     """
-    node test;
+    node testnode;
 
     edge apple;
     edge banana;
 
     walker init {
         root {
-            a = spawn here --> node::test;
-            b = spawn here --> node::test;
+            a = spawn here --> node::testnode ;
+            b = spawn here --> node::testnode ;
             here -[apple]-> a;
             here -[banana]-> a;
 
@@ -484,15 +484,15 @@ edgey2c = \
 
 edgey3 = \
     """
-    node test;
+    node testnode;
 
     edge apple;
     edge banana;
 
     walker init {
         root {
-            a = spawn here --> node::test;
-            b = spawn here --> node::test;
+            a = spawn here --> node::testnode ;
+            b = spawn here --> node::testnode ;
             here -[apple]-> a;
             here -[apple]-> a;
             here -[banana]-> a;
@@ -507,14 +507,14 @@ edgey3 = \
 
 edgey4 = \
     """
-    node test;
+    node testnode;
 
     edge apple;
     edge banana;
 
     walker init {
         root {
-            a = spawn here --> node::test;
+            a = spawn here --> node::testnode ;
             here --> a;
             here -[apple]-> a;
             here -[banana]-> a;
@@ -526,14 +526,14 @@ edgey4 = \
 
 edgey5 = \
     """
-    node test;
+    node testnode;
 
     edge apple;
     edge banana;
 
     walker init {
         root {
-            a = spawn here --> node::test;
+            a = spawn here --> node::testnode ;
             here --> a;
             here --> a;
             here -[apple]-> a;
@@ -546,15 +546,15 @@ edgey5 = \
 
 edgey6 = \
     """
-    node test;
+    node testnode;
 
     edge apple;
     edge banana;
 
     walker init {
         root {
-            a = spawn here --> node::test;
-            b = spawn here --> node::test;
+            a = spawn here --> node::testnode ;
+            b = spawn here --> node::testnode ;
 
             here -[apple]-> -[generic]->;
         }
@@ -563,15 +563,15 @@ edgey6 = \
 
 edgey7 = \
     """
-    node test;
+    node testnode;
 
     edge apple;
     edge banana;
 
     walker init {
         root {
-            a = spawn here --> node::test;
-            b = spawn here --> node::test;
+            a = spawn here --> node::testnode ;
+            b = spawn here --> node::testnode ;
             here --> a;
             here --> a;
             here -[apple]-> a;
@@ -585,7 +585,7 @@ edgey7 = \
 
 edge_access = \
     """
-    node test;
+    node testnode;
 
     edge apple {
         has v1, v2;
@@ -597,12 +597,12 @@ edge_access = \
 
     walker init {
         root {
-            a = spawn here -[apple]-> node::test;
-            b = spawn here -[banana]-> node::test;
+            a = spawn here -[apple]-> node::testnode ;
+            b = spawn here -[banana]-> node::testnode ;
 
             e = -[apple]->.edge[0];
             e.v1 = 7;
-            e = --> node::test.edge[1];
+            e = --> node::testnode .edge[1];
             e.x1=8;
         }
     }
@@ -610,15 +610,15 @@ edge_access = \
 
 has_assign = \
     """
-    node test {
+    node testnode {
         has a=8;
     }
 
 
     walker init {
         root {
-            a = spawn here --> node::test;
-            b = spawn here --> node::test;
+            a = spawn here --> node::testnode ;
+            b = spawn here --> node::testnode ;
 
             std.log(a.a, b.a);
         }
@@ -718,7 +718,7 @@ basic = \
 
 visibility_builtins = \
     """
-    node test {
+    node testnode {
         has yo, mama;
     }
 
@@ -732,14 +732,14 @@ visibility_builtins = \
 
     walker init {
         root {
-            a = spawn here -[apple]-> node::test;
+            a = spawn here -[apple]-> node::testnode ;
             a.yo="Yeah i said";
             a.mama="Yo Mama Fool!";
-            b = spawn here -[banana]-> node::test;
+            b = spawn here -[banana]-> node::testnode ;
 
             e = -[apple]->.edge[0];
             e.v1 = 7;
-            e = --> node::test.edge[1];
+            e = --> node::testnode .edge[1];
             e.x1=8;
 
             report [a.context, b.info, e.details];
@@ -853,7 +853,7 @@ typecasts_error = \
 
 filter_on_context = \
     """
-    node test {
+    node testnode {
         has yo, mama;
     }
 
@@ -867,14 +867,14 @@ filter_on_context = \
 
     walker init {
         root {
-            a = spawn here -[apple]-> node::test;
+            a = spawn here -[apple]-> node::testnode ;
             a.yo="Yeah i said";
             a.mama="Yo Mama Fool!";
-            b = spawn here -[banana]-> node::test;
+            b = spawn here -[banana]-> node::testnode ;
 
             e = -[apple]->.edge[0];
             e.v1 = 7;
-            e = --> node::test.edge[1];
+            e = --> node::testnode .edge[1];
             e.x1=8;
 
             report [a.context.{yo}, b.info.{jid,j_type}, e.details];
@@ -986,5 +986,134 @@ try_else_stmts = \
         report a;
         try {a=2/1;}
         report a;
+    }
+    """
+
+node_edge_same_name = \
+    """
+    node person: has name, age, birthday, profession;
+    edge person: has meeting_place;
+
+    walker init {
+        person1 = spawn here -[person(meeting_place = "college")]->
+            node::person(name = "Josh", age = 32);
+
+        report -->.edge[0].context;
+        report -->[0].context;
+    }
+    """
+
+testcases = \
+    """
+    node testnode {
+        has yo, mama;
+    }
+
+    node apple {
+        has v1, v2;
+    }
+
+    node banana {
+        has x1, x2;
+    }
+
+    graph dummy {
+        has anchor graph_root;
+        spawn {
+            graph_root = spawn node::testnode (yo="Hey yo!");
+            n1=spawn node::apple(v1="I'm apple");
+            n2=spawn node::banana(x1="I'm banana");
+            graph_root --> n1 --> n2;
+        }
+    }
+
+    walker init {
+        has num=4;
+        report here.context;
+        report num;
+        take -->;
+    }
+
+    test "basic test with refs"
+    with graph::dummy by walker::init;
+
+    test "test with refs and assert block"
+    with graph::dummy by walker::init {
+       report "ASSERT BLOCK";
+    }
+
+    test "test with graph ref and walker block"
+    with graph::dummy by walker {
+        report here.context;
+        report "IN generic walker";
+        take -->;
+    }
+
+    test "test with graph block and walker ref"
+    with graph {
+        has anchor graph_root;
+        spawn {
+            graph_root = spawn node::testnode (yo="Hey yo!");
+            n1=spawn node::apple(v1="I'm apple");
+            n2=spawn node::banana(x1="I'm banana");
+            graph_root --> n1 --> n2;
+            graph_root --> n2;
+        }
+    } by walker::init {
+        report "ASSERT BLOCK";
+    }
+    """
+
+
+testcase_asserts = \
+    """
+    node testnode {
+        has yo, mama;
+    }
+
+    node apple {
+        has v1, v2;
+    }
+
+    node banana {
+        has x1, x2;
+    }
+
+    graph dummy {
+        has anchor graph_root;
+        spawn {
+            graph_root = spawn node::testnode (yo="Hey yo!");
+            n1=spawn node::apple(v1="I'm apple");
+            n2=spawn node::banana(x1="I'm banana");
+            graph_root --> n1 --> n2;
+        }
+    }
+
+    walker init {
+        has num=4;
+        report here.context;
+        report num;
+        take -->;
+    }
+
+    test "assert should be valid"
+    with graph::dummy by walker::init {
+       assert (num==4);
+       assert (here.x1=="I'm banana");
+       assert <--[0].v1=="I'm apple";
+    }
+
+    test "assert should fail"
+    with graph::dummy by walker::init {
+       assert (num==4);
+       assert (here.x1=="I'm banana");
+       assert <--[0].v1=="I'm Apple";
+    }
+
+    test "assert should fail, add internal except"
+    with graph::dummy by walker::init {
+       assert (num==4);
+       assert (here.x1=="I'm banana");
+       assert <--[10].v1=="I'm apple";
     }
     """

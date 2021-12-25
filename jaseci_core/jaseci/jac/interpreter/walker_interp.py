@@ -17,22 +17,23 @@ class walker_interp(interp):
 
     def run_walker(self, jac_ast):
         """
-        walker:
-            KW_WALKER NAME namespaces? LBRACE attr_stmt* walk_entry_block? (
+        walker: KW_WALKER NAME namespaces? walker_block;
+        """
+        kid = jac_ast.kid
+        if(jac_ast.name == "walker_block"):  # used in jac tests
+            self.scope_and_run(jac_ast, self.run_walker_block)
+        else:
+            self.scope_and_run(kid[-1], self.run_walker_block)
+
+    def run_walker_block(self, jac_ast):
+        """
+        walker_block:
+            LBRACE attr_stmt* walk_entry_block? (
                 statement
                 | walk_activity_block
             )* walk_exit_block? RBRACE;
         """
         kid = jac_ast.kid
-        self.push_scope(
-            jac_scope(
-                parent=self,
-                has_obj=self,
-                action_sets=[self.activity_action_ids,
-                             self.current_node.activity_action_ids]))
-        self._jac_scope.set_agent_refs(cur_node=self.current_node,
-                                       cur_walker=self)
-
         if(self.current_step == 0):
             for i in kid:
                 if(i.name == 'attr_stmt'):
@@ -56,7 +57,6 @@ class walker_interp(interp):
         self.auto_trigger_node_actions(
             nd=self.current_node,
             act_list=self.current_node.exit_action_ids)
-        self.pop_scope()
 
     def run_node_ctx_block(self, jac_ast):
         """
@@ -135,9 +135,9 @@ class walker_interp(interp):
         result = self.run_expression(kid[1]).value
         before = len(self.next_node_ids)
         if (isinstance(result, node)):
-            self.next_node_ids.add_obj(result)
+            self.next_node_ids.add_obj(result, allow_dups=True)
         elif (isinstance(result, jac_set)):
-            self.next_node_ids.add_obj_list(result)
+            self.next_node_ids.add_obj_list(result, allow_dups=True)
         elif(result):
             self.rt_error(f'{result} is not destination type (i.e., nodes)',
                           kid[1])
@@ -156,7 +156,7 @@ class walker_interp(interp):
         """
         kid = jac_ast.kid
         param_list = []
-        m = interp(parent_override=self.parent(), m_id=self._m_id)
+        m = interp(parent_override=self.parent(), caller=self)
         m.push_scope(jac_scope(parent=self,
                                has_obj=obj,
                                action_sets=[
@@ -167,7 +167,7 @@ class walker_interp(interp):
         if(kid[1].name == "expr_list"):
             param_list = m.run_expr_list(kid[1]).value
         try:
-            result = act.trigger(param_list)
+            result = act.trigger(param_list, self._jac_scope)
         except Exception as e:
             self.rt_error(f'{e}', jac_ast)
             result = None
@@ -194,3 +194,20 @@ class walker_interp(interp):
             if (i not in self.ignore_node_ids.obj_list()):
                 ret.add_obj(i)
         return ret
+
+    def scope_and_run(self, jac_ast, run_func):
+        """
+        Helper to run ast elements with execution scope added
+        (Useful for running arbitrary code blocks as one-offs)
+        """
+        self.push_scope(
+            jac_scope(
+                parent=self,
+                has_obj=self,
+                action_sets=[self.activity_action_ids,
+                             self.current_node.activity_action_ids]))
+        self._jac_scope.set_agent_refs(cur_node=self.current_node,
+                                       cur_walker=self)
+
+        run_func(jac_ast)
+        self.pop_scope()

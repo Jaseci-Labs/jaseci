@@ -222,6 +222,7 @@ class interp(machine_state):
             | try_stmt
             | for_stmt
             | while_stmt
+            | assert_stmt SEMI
             | ctrl_stmt SEMI
             | destroy_action
             | report_action
@@ -361,6 +362,19 @@ class interp(machine_state):
             self._loop_ctrl = 'break'
         elif (kid[0].name == 'KW_CONTINUE'):
             self._loop_ctrl = 'continue'
+
+    def run_assert_stmt(self, jac_ast):
+        """
+        assert_stmt: KW_ASSERT expression;
+        """
+        kid = jac_ast.kid
+        passed = False
+        try:
+            passed = self.run_expression(kid[1]).value
+        except Exception as e:
+            raise Exception('JAC Assert Failed', kid[1].get_text(), e)
+        if(not passed):
+            raise Exception('JAC Assert Failed', kid[1].get_text())
 
     def run_destroy_action(self, jac_ast):
         """
@@ -654,7 +668,7 @@ class interp(machine_state):
                 param_list = self.run_expr_list(kid[1]).value
             if (isinstance(atom_res.value, action)):
                 try:
-                    ret = atom_res.value.trigger(param_list)
+                    ret = atom_res.value.trigger(param_list, self._jac_scope)
                 except Exception as e:
                     self.rt_error(f'{e}', jac_ast)
                     ret = None
@@ -1326,7 +1340,7 @@ class interp(machine_state):
     # Helper Functions ##################
 
     def call_ability(self, nd, name, act_list):
-        m = interp(parent_override=self.parent(), m_id=self._m_id)
+        m = interp(parent_override=self.parent(), caller=self)
         m.push_scope(jac_scope(parent=nd,
                                has_obj=nd,
                                action_sets=[nd.activity_action_ids]))

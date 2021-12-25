@@ -17,6 +17,7 @@ class action(item):
     objects that are to be used from whereever those contexts are attached
     e.g., (nodes, edges, walkers, etc). This is used by Jac's runtime
     engine to support preset actions in nodes
+    access_list is used by walker to decide what to trigger
     """
 
     def __init__(self, preset_in_out=None, access_list=None,
@@ -25,7 +26,7 @@ class action(item):
         self.access_list = access_list
         super().__init__(*args, **kwargs)
 
-    def trigger(self, param_list):
+    def trigger(self, param_list, scope):
         """
         param_list should be passed as list of values to lib functions
         Also note that Jac stores preset_in_out as input/output list of hex
@@ -35,5 +36,6 @@ class action(item):
             importlib.import_module(
                 ACTION_PACKAGE+self.value[0].split('.')[-1]),
             self.value[1]
-        )(param_list, meta={'m_id': self._m_id, 'h': self._h})
+        )(param_list, meta={'m_id': self._m_id,
+                            'h': self._h, 'scope': scope})
         return result

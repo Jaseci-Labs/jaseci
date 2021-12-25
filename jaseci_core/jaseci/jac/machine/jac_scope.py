@@ -43,6 +43,12 @@ class jac_scope():
         self.local_scope['here'] = src_scope.local_scope['here']
         self.local_scope['visitor'] = src_scope.local_scope['visitor']
 
+    def get_aganet_refs(self):
+        return {
+            'here': self.local_scope['here'],
+            'visitor': self.local_scope['visitor']
+        }
+
     def find_live_attr(self, name, allow_read_only=True):
         """Finds binding for variable if not in standard scope"""
         # check if var is in walker's context

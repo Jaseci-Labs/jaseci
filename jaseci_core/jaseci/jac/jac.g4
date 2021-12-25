@@ -5,6 +5,8 @@ start: ver_label? import_module* element+ EOF;
 import_module:
 	KW_IMPORT LBRACE (import_items | STAR_MUL) RBRACE KW_WITH STRING SEMI;
 
+ver_label: 'version' COLON STRING SEMI?;
+
 import_items:
 	KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
 	| KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
@@ -15,20 +17,26 @@ import_names:
 	DBL_COLON NAME
 	| DBL_COLON LBRACE name_list RBRACE;
 
-element: architype | walker;
+element: architype | walker | test;
 
 architype:
 	KW_NODE NAME (COLON INT)? attr_block
 	| KW_EDGE NAME attr_block
 	| KW_GRAPH NAME graph_block;
 
-walker:
-	KW_WALKER NAME namespaces? LBRACE attr_stmt* walk_entry_block? (
+walker: KW_WALKER NAME namespaces? walker_block;
+
+walker_block:
+	LBRACE attr_stmt* walk_entry_block? (
 		statement
 		| walk_activity_block
 	)* walk_exit_block? RBRACE;
 
-ver_label: 'version' COLON STRING SEMI?;
+test:
+	KW_TEST STRING KW_WITH (graph_ref | KW_GRAPH graph_block) KW_BY (
+		(walker_ref spawn_ctx? (code_block | SEMI))
+		| KW_WALKER walker_block
+	);
 
 namespaces: COLON name_list;
 
@@ -89,6 +97,7 @@ statement:
 	| try_stmt
 	| for_stmt
 	| while_stmt
+	| assert_stmt SEMI
 	| ctrl_stmt SEMI
 	| destroy_action
 	| report_action
@@ -113,6 +122,8 @@ for_stmt:
 while_stmt: KW_WHILE expression code_block;
 
 ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_SKIP;
+
+assert_stmt: KW_ASSERT expression;
 
 destroy_action: KW_DESTROY expression SEMI;
 
@@ -334,6 +345,8 @@ LBRACE: '{';
 RBRACE: '}';
 KW_EDGE: 'edge';
 KW_WALKER: 'walker';
+KW_TEST: 'test';
+KW_ASSERT: 'assert';
 SEMI: ';';
 EQ: '=';
 PEQ: '+=';
