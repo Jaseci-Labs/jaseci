@@ -4,6 +4,9 @@
 
 ### Updates
 
+- New Language Feature: Tests and testing features as first order language semantics
+- New Lang Feature: Asserts!
+- Fix: Simplified and optimized global abilities
 - New Support Feature: Started vs code for JAC extension first beta
 - New Lang Feature: Multifile codebase support and import keyword and semantic added
 - New Lang Feature: Try-else blocks introduced for exception handling
