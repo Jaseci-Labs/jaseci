@@ -1,7 +1,7 @@
 """
 Master api as a mixin
 """
-
+from jaseci.api.interface import interface
 from jaseci.utils.id_list import id_list
 
 
@@ -15,8 +15,9 @@ class master_api():
         self.head_master_id = head_master
         self.sub_master_ids = id_list(self)
 
-    def api_master_create(self, name: str, set_active: bool = True,
-                          other_fields: dict = {}):
+    @interface.private_api
+    def master_create(self, name: str, set_active: bool = True,
+                      other_fields: dict = {}):
         """
         Create a master instance and return root node master object
 
@@ -27,8 +28,9 @@ class master_api():
         new_m = master(h=self._h, name=name)
         return self.make_me_head_master_or_destroy(new_m)
 
-    def api_master_get(self, name: str, mode: str = 'default',
-                       detailed: bool = False):
+    @interface.private_api
+    def master_get(self, name: str, mode: str = 'default',
+                   detailed: bool = False):
         """
         Return the content of the master with mode
         Valid modes: {default, }
@@ -39,7 +41,8 @@ class master_api():
         else:
             return mas.serialize(detailed=detailed)
 
-    def api_master_list(self, detailed: bool = False):
+    @interface.private_api
+    def master_list(self, detailed: bool = False):
         """
         Provide complete list of all master objects (list of root node objects)
         """
@@ -48,7 +51,8 @@ class master_api():
             masts.append(i.serialize(detailed=detailed))
         return masts
 
-    def api_master_active_set(self, name: str):
+    @interface.private_api
+    def master_active_set(self, name: str):
         """
         Sets the default master master should use
         NOTE: Specail handler included in general_interface_to_api
@@ -59,20 +63,23 @@ class master_api():
         self._caller = mas
         return {'response': f'You are now {mas.name}'}
 
-    def api_master_active_unset(self):
+    @interface.private_api
+    def master_active_unset(self):
         """
         Unsets the default sentinel master should use
         """
         self._caller = self
         return {'response': f'You are now {self.name}'}
 
-    def api_master_active_get(self, detailed: bool = False):
+    @interface.private_api
+    def master_active_get(self, detailed: bool = False):
         """
         Returns the default master master is using
         """
         return self._caller.serialize(detailed=detailed)
 
-    def api_master_delete(self, name: str):
+    @interface.private_api
+    def master_delete(self, name: str):
         """
         Permanently delete master with given id
         """

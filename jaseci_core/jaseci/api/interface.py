@@ -2,8 +2,7 @@
 General master interface engine for client interfaces as mixin
 """
 import uuid
-from inspect import signature
-from inspect import getdoc
+from inspect import signature, getdoc
 from jaseci.utils.utils import logger
 from jaseci.utils.utils import is_jsonable
 from jaseci.element.element import element
@@ -13,6 +12,33 @@ class interface():
     """
     General master interface engine
     """
+    _public_api = []
+    _private_api = []
+    _admin_api = []
+
+    def public_api(func, cmd_group=None):
+        if(cmd_group is None):
+            cmd_group = func.__name__.split('_')
+        interface._public_api.append(
+            [signature(func), getdoc(func), cmd_group])
+        return func
+
+    def private_api(func, cmd_group=None):
+        if(cmd_group is None):
+            cmd_group = func.__name__.split('_')
+        interface._private_api.append(
+            [signature(func), getdoc(func), cmd_group])
+        return func
+
+    def admin_api(func, cmd_group=None):
+        if(cmd_group is None):
+            cmd_group = func.__name__.split('_')
+        interface._admin_api.append([signature(func), getdoc(func), cmd_group])
+        return func
+
+    public_api = staticmethod(public_api)
+    private_api = staticmethod(private_api)
+    admin_api = staticmethod(admin_api)
 
     def provide_internal_default(self, param):
         """

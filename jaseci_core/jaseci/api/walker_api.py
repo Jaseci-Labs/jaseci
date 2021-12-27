@@ -1,6 +1,7 @@
 """
 Walker api functions as a mixin
 """
+from jaseci.api.interface import interface
 from jaseci.actor.walker import walker
 from jaseci.graph.node import node
 from jaseci.actor.sentinel import sentinel
@@ -16,8 +17,9 @@ class walker_api():
     def __init__(self):
         self.spawned_walker_ids = id_list(self)
 
-    def api_walker_register(self, snt: sentinel = None,
-                            code: str = '', encoded: bool = False):
+    @interface.private_api
+    def walker_register(self, snt: sentinel = None,
+                        code: str = '', encoded: bool = False):
         """
         Create blank or code loaded walker and return object
         """
@@ -30,8 +32,9 @@ class walker_api():
         else:
             return [f'Walker not created, invalid code!']
 
-    def api_walker_get(self, wlk: walker, mode: str = 'default',
-                       detailed: bool = False):
+    @interface.private_api
+    def walker_get(self, wlk: walker, mode: str = 'default',
+                   detailed: bool = False):
         """
         Get a walker rendered with specific mode
         Valid modes: {default, code, ir, keys, }
@@ -45,8 +48,9 @@ class walker_api():
         else:
             return wlk.serialize(detailed=detailed)
 
-    def api_walker_set(self, wlk: walker, code: str,
-                       mode: str = 'default'):
+    @interface.private_api
+    def walker_set(self, wlk: walker, code: str,
+                   mode: str = 'default'):
         """
         Set code/ir for a walker
         Valid modes: {code, ir, }
@@ -62,7 +66,8 @@ class walker_api():
         else:
             return [f'{wlk} code issues encountered!']
 
-    def api_walker_list(self, snt: sentinel = None, detailed: bool = False):
+    @interface.private_api
+    def walker_list(self, snt: sentinel = None, detailed: bool = False):
         """
         List walkers known to sentinel
         """
@@ -71,7 +76,8 @@ class walker_api():
             walks.append(i.serialize(detailed=detailed))
         return walks
 
-    def api_walker_delete(self, wlk: walker, snt: sentinel = None):
+    @interface.private_api
+    def walker_delete(self, wlk: walker, snt: sentinel = None):
         """
         Permanently delete walker with given id
         """
@@ -80,7 +86,8 @@ class walker_api():
         snt.walker_ids.destroy_obj(wlk)
         return [f'Walker {wlkid} successfully deleted']
 
-    def api_walker_spawn_create(self, name: str, snt: sentinel = None):
+    @interface.private_api
+    def walker_spawn_create(self, name: str, snt: sentinel = None):
         """
         Creates new instance of walker and returns new walker object
         """
@@ -94,7 +101,8 @@ class walker_api():
         else:
             return [f'Walker not found!']
 
-    def api_walker_spawn_delete(self, name: str):
+    @interface.private_api
+    def walker_spawn_delete(self, name: str):
         """
         Delete instance of walker
         """
@@ -105,7 +113,8 @@ class walker_api():
         else:
             return [f'Walker {name} not found!']
 
-    def api_walker_spawn_list(self, detailed: bool = False):
+    @interface.private_api
+    def walker_spawn_list(self, detailed: bool = False):
         """
         List walkers spawned by master
         """
@@ -114,15 +123,17 @@ class walker_api():
             walks.append(i.serialize(detailed=detailed))
         return walks
 
-    def api_walker_prime(self, wlk: walker, nd: node = None, ctx: dict = {}):
+    @interface.private_api
+    def walker_prime(self, wlk: walker, nd: node = None, ctx: dict = {}):
         """
         Assigns walker to a graph node and primes walker for execution
         """
         wlk.prime(nd, prime_ctx=ctx)
         return [f'Walker primed on node {nd.id}']
 
-    def api_walker_execute(self, wlk: walker, prime: node = None,
-                           ctx: dict = {}):
+    @interface.private_api
+    def walker_execute(self, wlk: walker, prime: node = None,
+                       ctx: dict = {}):
         """
         Executes walker (assumes walker is primed)
         """
@@ -131,8 +142,9 @@ class walker_api():
         wlk.run()
         return wlk.report
 
-    def api_walker_run(self, name: str, nd: node = None, ctx: dict = {},
-                       snt: sentinel = None):
+    @interface.private_api
+    def walker_run(self, name: str, nd: node = None, ctx: dict = {},
+                   snt: sentinel = None):
         """
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.

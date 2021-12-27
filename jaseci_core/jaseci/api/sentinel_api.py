@@ -1,6 +1,7 @@
 """
 Sentinel api functions as a mixin
 """
+from jaseci.api.interface import interface
 from jaseci.utils.id_list import id_list
 from jaseci.actor.sentinel import sentinel
 from jaseci.utils.utils import b64decode_str
@@ -16,9 +17,10 @@ class sentinel_api():
         self.active_snt_id = None
         self.sentinel_ids = id_list(self)
 
-    def api_sentinel_register(self, name: str = 'default', code: str = '',
-                              encoded: bool = False, auto_run: str = 'init',
-                              ctx: dict = {}, set_active: bool = True):
+    @interface.private_api
+    def sentinel_register(self, name: str = 'default', code: str = '',
+                          encoded: bool = False, auto_run: str = 'init',
+                          ctx: dict = {}, set_active: bool = True):
         """
         Create blank or code loaded sentinel and return object
         Auto_run is the walker to execute on register (assumes active graph
@@ -47,8 +49,9 @@ class sentinel_api():
             return [snt.serialize(), new_gph]
         return [snt.serialize()]
 
-    def api_sentinel_pull(self, set_active: bool = True,
-                          on_demand: bool = True):
+    @interface.private_api
+    def sentinel_pull(self, set_active: bool = True,
+                      on_demand: bool = True):
         """
         Copies global sentinel to local master
         """
@@ -70,8 +73,9 @@ class sentinel_api():
         return self.api_sentinel_set(code=g_snt.code_ir, snt=snt,
                                      mode='ir')
 
-    def api_sentinel_get(self, snt: sentinel = None,
-                         mode: str = 'default', detailed: bool = False):
+    @interface.private_api
+    def sentinel_get(self, snt: sentinel = None,
+                     mode: str = 'default', detailed: bool = False):
         """
         Get a sentinel rendered with specific mode
         Valid modes: {default, code, ir, }
@@ -83,8 +87,9 @@ class sentinel_api():
         else:
             return snt.serialize(detailed=detailed)
 
-    def api_sentinel_set(self, code: str, encoded: bool = False,
-                         snt: sentinel = None, mode: str = 'default'):
+    @interface.private_api
+    def sentinel_set(self, code: str, encoded: bool = False,
+                     snt: sentinel = None, mode: str = 'default'):
         """
         Set code/ir for a sentinel, only replaces walkers/archs in sentinel
         Valid modes: {code, ir, }
@@ -110,7 +115,8 @@ class sentinel_api():
                     'success': False,
                     'errors': snt.errors+snt.runtime_errors}
 
-    def api_sentinel_list(self, detailed: bool = False):
+    @interface.private_api
+    def sentinel_list(self, detailed: bool = False):
         """
         Provide complete list of all sentinel objects
         """
@@ -119,7 +125,8 @@ class sentinel_api():
             snts.append(i.serialize(detailed=detailed))
         return snts
 
-    def api_sentinel_active_set(self, snt: sentinel):
+    @interface.private_api
+    def sentinel_active_set(self, snt: sentinel):
         """
         Sets the default sentinel master should use
         """
@@ -127,7 +134,8 @@ class sentinel_api():
         self.api_alias_register('active:sentinel', snt.jid)
         return [f'Sentinel {snt.id} set as default']
 
-    def api_sentinel_active_unset(self):
+    @interface.private_api
+    def sentinel_active_unset(self):
         """
         Unsets the default sentinel master should use
         """
@@ -135,7 +143,8 @@ class sentinel_api():
         self.api_alias_delete('active:sentinel')
         return ['Default sentinel unset']
 
-    def api_sentinel_active_global(self, detailed: bool = False):
+    @interface.private_api
+    def sentinel_active_global(self, detailed: bool = False):
         """
         Sets the default master sentinel to the global sentinel
         Exclusive OR with pull strategy
@@ -153,7 +162,8 @@ class sentinel_api():
             ret['response'] = f'Global sentinel {glob_id} set as default'
         return ret
 
-    def api_sentinel_active_get(self, detailed: bool = False):
+    @interface.private_api
+    def sentinel_active_get(self, detailed: bool = False):
         """
         Returns the default sentinel master is using
         """
@@ -167,7 +177,8 @@ class sentinel_api():
                 self._m_id, uuid.UUID(id))
             return default.serialize(detailed=detailed)
 
-    def api_sentinel_delete(self, snt: sentinel):
+    @interface.private_api
+    def sentinel_delete(self, snt: sentinel):
         """
         Permanently delete sentinel with given id
         """

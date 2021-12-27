@@ -1,6 +1,7 @@
 """
 Super (master) api as a mixin
 """
+from jaseci.api.interface import interface
 
 
 class super_api():
@@ -8,8 +9,9 @@ class super_api():
 
     """
 
-    def admin_api_master_createsuper(self, name: str, set_active: bool = True,
-                                     other_fields: dict = {}):
+    @interface.admin_api
+    def master_createsuper(self, name: str, set_active: bool = True,
+                           other_fields: dict = {}):
         """
         Create a super instance and return root node super object
 

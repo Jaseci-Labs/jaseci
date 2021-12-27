@@ -1,3 +1,4 @@
+from jaseci.api.interface import interface
 from jaseci.actor.walker import walker
 from jaseci.graph.node import node
 from jaseci.element.element import element
@@ -104,8 +105,9 @@ class public_api():
             if(glob_wlk and glob_wlk.code_sig != wlk.code_sig):
                 wlk.apply_ir(glob_wlk.code_ir)
 
-    def public_api_walker_summon(self, key: str, wlk: walker, nd: node,
-                                 ctx: dict = {}, global_sync: bool = True):
+    @interface.public_api
+    def walker_summon(self, key: str, wlk: walker, nd: node,
+                      ctx: dict = {}, global_sync: bool = True):
         """
         Public api for running walkers, namespace key must be provided
         along with the walker id and node id
