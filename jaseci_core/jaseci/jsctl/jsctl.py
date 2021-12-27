@@ -13,7 +13,6 @@ import requests
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
 from jaseci.element.super_master import super_master
-from jaseci.api.public_api import public_api
 from .book_tools import book
 
 session = None
@@ -102,8 +101,7 @@ def interface_api(api_name, is_public, **kwargs):
     if(connection['token'] and connection['url']):
         out = remote_api_call(kwargs, api_name)
     elif(is_public):
-        out = public_api(session['master']._h).general_interface_to_api(
-            kwargs, api_name)
+        out = session['master'].public_interface_to_api(kwargs, api_name)
     else:
         out = session['master'].general_interface_to_api(kwargs, api_name)
     if(isinstance(out, dict) or isinstance(out, list)):
@@ -117,6 +115,23 @@ def interface_api(api_name, is_public, **kwargs):
         with open(session['filename'], 'wb') as f:
             pickle.dump(session['master'], f)
 
+    # api_funcs = {}
+    # for i in session['master']._public_api:
+    #     if (i.startswith('api_') or i.startswith('admin_api_') or
+    #             i.startswith('public_api_')):
+    #         is_public = False
+    #         # Get function names and signatures
+    #         if i.startswith('api_'):
+    #             func_str = i[4:]
+    #         elif i.startswith('admin_'):
+    #             func_str = i[10:]
+    #         else:  # is public api
+    #             func_str = i[11:]
+    #             is_public = True
+    #         cmd_groups = func_str.split('_')
+    #         func_sig = session['master'].get_api_signature(i)
+    #         func_doc = session['master'].get_api_doc(i
+
 
 def extract_api_tree():
     """
@@ -124,31 +139,15 @@ def extract_api_tree():
     signatures in leaves from API function names in Master
     """
     api_funcs = {}
-    for i in dir(session['master'])+dir(public_api(None)):
-        if (i.startswith('api_') or i.startswith('admin_api_') or
-                i.startswith('public_api_')):
-            is_public = False
-            # Get function names and signatures
-            if i.startswith('api_'):
-                func_str = i[4:]
-            elif i.startswith('admin_'):
-                func_str = i[10:]
-            else:  # is public api
-                func_str = i[11:]
-                is_public = True
-            cmd_groups = func_str.split('_')
-            func_sig = session['master'].get_api_signature(
-                i) if not is_public else public_api(None).get_api_signature(i)
-            func_doc = session['master'].get_api_doc(
-                i) if not is_public else public_api(None).get_api_doc(i)
-
-            # Build hierarchy of command groups
-            api_root = api_funcs
-            for j in cmd_groups:
-                if (j not in api_root.keys()):
-                    api_root[j] = {}
-                api_root = api_root[j]
-            api_root['leaf'] = [i, func_sig, is_public, func_doc]
+    for i in session['master'].all_apis():
+        # Build hierarchy of command groups
+        api_root = api_funcs
+        for j in i['groups']:
+            if (j not in api_root.keys()):
+                api_root[j] = {}
+            api_root = api_root[j]
+        api_root['leaf'] = [i['fname'], i['sig'],
+                            i in session['master']._public_api,  i['doc']]
     return api_funcs
 
 

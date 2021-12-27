@@ -16,25 +16,39 @@ class interface():
     _private_api = []
     _admin_api = []
 
+    def __init__(self):
+        """
+        self.committer is set by api implementaiton if intent
+        is to commit changes enacted by public call
+        """
+        self._pub_committer = None
+
     def public_api(func, cmd_group=None):
         if(cmd_group is None):
             cmd_group = func.__name__.split('_')
         interface._public_api.append(
-            [signature(func), getdoc(func), cmd_group])
+            {'fname': func.__name__, 'sig': signature(func),
+             'doc': getdoc(func), 'groups': cmd_group})
         return func
 
     def private_api(func, cmd_group=None):
         if(cmd_group is None):
             cmd_group = func.__name__.split('_')
         interface._private_api.append(
-            [signature(func), getdoc(func), cmd_group])
+            {'fname': func.__name__, 'sig': signature(func),
+             'doc': getdoc(func), 'groups': cmd_group})
         return func
 
     def admin_api(func, cmd_group=None):
         if(cmd_group is None):
             cmd_group = func.__name__.split('_')
-        interface._admin_api.append([signature(func), getdoc(func), cmd_group])
+        interface._admin_api.append(
+            {'fname': func.__name__, 'sig': signature(func),
+             'doc': getdoc(func), 'groups': cmd_group})
         return func
+
+    def all_apis(self):
+        return self._public_api+self._private_api+self._admin_api
 
     public_api = staticmethod(public_api)
     private_api = staticmethod(private_api)
@@ -72,7 +86,7 @@ class interface():
             api_name is the name of the api being mapped to
         """
         param_map = {}
-        if(api_name.startswith('api_master_active')):
+        if(api_name.startswith('master_active')):
             _caller = self
         else:
             _caller = self._caller
@@ -121,6 +135,62 @@ class interface():
             return self.interface_error(f'Non-JSON API ret {type(ret)}: {ret}')
         return ret
 
+    def public_interface_to_api(self, params, api_name):
+        """
+        A mapper utility to interface to public
+        Assumptions:
+            params is a dictionary of parameter names and values in UUID
+            api_name is the name of the api being mapped to
+        """
+        param_map = {}
+        if (not hasattr(self, api_name)):
+            logger.error(f'{api_name} not a valid API')
+            return False
+        func_sig = signature(getattr(self, api_name))
+        for i in func_sig.parameters.keys():
+            if (i == 'self'):
+                continue
+            p_name = i
+            p_type = func_sig.parameters[i].annotation
+            p_default = func_sig.parameters[i].default
+            val = p_default if p_default is not \
+                func_sig.parameters[i].empty else None
+            if (p_name in params.keys()):
+                val = params[p_name]
+            if (issubclass(p_type, element)):
+                if(val is None):
+                    logger.error(
+                        f'No {p_type} value for {p_name} provided!')
+                val = self._h.get_obj(
+                    'override', uuid.UUID(val), override=True)
+                self.seek_committer(val)
+                if (isinstance(val, p_type)):
+                    param_map[i] = val
+                else:
+                    logger.error(f'{type(val)} is not {p_type}')
+                    param_map[i] = None
+            else:  # TODO: Can do type checks here too
+                param_map[i] = val
+
+            if (param_map[i] is None):
+                logger.error(f'Invalid API parameter set - {params}')
+                return False
+        ret = getattr(self, api_name)(**param_map)
+        if(not is_jsonable(ret)):
+            logger.error(
+                str(f'API returns non json object {type(ret)}: {ret}'))
+        return ret
+
+    def seek_committer(self, obj):
+        """Opportunistically assign a committer"""
+        if(not self._pub_committer):
+            self._pub_committer = obj._h.get_obj(
+                obj._m_id, uuid.UUID(obj._m_id))
+
+    def clear_committer(self):
+        """Unset committer"""
+        self._pub_committer = None
+
     def get_api_signature(self, api_name):
         """
         Checks for valid api name and returns signature
@@ -143,3 +213,12 @@ class interface():
             # if(api_name in dir(legacy_api)):
             #     doc = "Deprecated!\n" + doc
             return doc
+
+    def sync_walker_from_global_sent(self, wlk):
+        """Checks for matching code ir between global and spawned walker"""
+        glob_id = wlk._h.get_glob('GLOB_SENTINEL')
+        if(glob_id):
+            snt = wlk._h.get_obj(wlk._m_id, uuid.UUID(glob_id))
+            glob_wlk = snt.walker_ids.get_obj_by_name(wlk.name)
+            if(glob_wlk and glob_wlk.code_sig != wlk.code_sig):
+                wlk.apply_ir(glob_wlk.code_ir)
