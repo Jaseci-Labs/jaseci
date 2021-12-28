@@ -18,7 +18,7 @@ class interface():
 
     def __init__(self):
         """
-        self.committer is set by api implementaiton if intent
+        self._pub_committer is set by api implementaiton if intent
         is to commit changes enacted by public call
         """
         self._pub_committer = None

@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from jaseci_serv.base.orm_hook import orm_hook
 from jaseci.element.master import master as core_master
 from jaseci.element.super_master import super_master as core_super
+from jaseci.api.interface import interface
 
 
 class master(core_master):
