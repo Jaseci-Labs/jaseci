@@ -56,13 +56,19 @@ def cli(filename, mem_only):
 
 
 def remote_api_call(payload, api_name):
-    """Constructs and issues call to remote server"""
-    if(api_name.startswith('api_')):
-        path = '/jac/'+api_name[4:]
-    elif(api_name.startswith('admin_api_')):
-        path = '/admin/'+api_name[10:]
-    elif(api_name.startswith('public_api_')):
-        path = '/public/'+api_name[11:]
+    """
+    Constructs and issues call to remote server
+    NOTE: Untested
+    """
+    for i in super_master.all_apis(None):
+        if(api_name == '_'.join(i['groups'])):
+            if(i in super_master._private_api):
+                path = '/jac/'+api_name
+            elif(i in super_master._admin_api):
+                path = '/admin/'+api_name
+            elif(i in super_master._public_api):
+                path = '/public/'+api_name
+            break
     ret = requests.post(connection['url']+path,
                         json=payload,
                         headers=connection['headers'])
@@ -146,7 +152,7 @@ def extract_api_tree():
             if (j not in api_root.keys()):
                 api_root[j] = {}
             api_root = api_root[j]
-        api_root['leaf'] = [i['fname'], i['sig'],
+        api_root['leaf'] = ['_'.join(i['groups']), i['sig'],
                             i in session['master']._public_api,  i['doc']]
     return api_funcs
 
