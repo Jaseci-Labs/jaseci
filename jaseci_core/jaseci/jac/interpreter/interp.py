@@ -952,6 +952,8 @@ class interp(machine_state):
                     result = jac_value(self, value=atom_res.value.find(*args))
                 elif (str_op == "split"):
                     result = jac_value(self, value=atom_res.value.split(*args))
+                elif (str_op == "join"):
+                    result = jac_value(self, value=atom_res.value.join(*args))
                 elif (str_op == "startswith"):
                     result = jac_value(
                         self, value=atom_res.value.startswith(*args))

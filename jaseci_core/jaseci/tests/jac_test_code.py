@@ -919,6 +919,14 @@ string_manipulation = \
     }
     """
 
+string_join = \
+    """
+    walker init {
+        a=['test', 'me', 'now'];
+        report '_'.str::join(a);
+    }
+    """
+
 sub_list = \
     """
     walker init {

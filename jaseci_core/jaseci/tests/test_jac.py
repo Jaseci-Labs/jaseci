@@ -519,6 +519,17 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[27], ' tEsting m')
         self.assertEqual(rep[28], True)
 
+    def test_string_join(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.string_join)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], 'test_me_now')
+
     def test_sub_list(self):
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
