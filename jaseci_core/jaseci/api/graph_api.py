@@ -26,7 +26,7 @@ class graph_api():
         gph = graph(m_id=self._m_id, h=self._h)
         self.graph_ids.add_obj(gph)
         if(set_active):
-            self.api_graph_active_set(gph)
+            self.graph_active_set(gph)
         return gph.serialize()
 
     @interface.private_api
@@ -62,7 +62,7 @@ class graph_api():
         Sets the default graph master should use
         """
         self.active_gph_id = gph.jid
-        self.api_alias_register('active:graph', gph.jid)
+        self.alias_register('active:graph', gph.jid)
         return [f'Graph {gph.id} set as default']
 
     @interface.private_api
@@ -71,7 +71,7 @@ class graph_api():
         Unsets the default sentinel master should use
         """
         self.active_gph_id = None
-        self.api_alias_delete('active:graph')
+        self.alias_delete('active:graph')
         return ['Default graph unset']
 
     @interface.private_api
@@ -92,7 +92,7 @@ class graph_api():
         Permanently delete graph with given id
         """
         if(self.active_gph_id == gph.jid):
-            self.api_graph_active_unset()
+            self.graph_active_unset()
         self.graph_ids.destroy_obj(gph)
         return [f'Graph {gph.id} successfully deleted']
 

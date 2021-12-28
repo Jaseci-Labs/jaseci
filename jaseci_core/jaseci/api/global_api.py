@@ -54,7 +54,7 @@ class global_api():
         """
         Set sentinel as globally accessible
         """
-        current = self.api_global_get('GLOB_SENTINEL')['value']
+        current = self.global_get('GLOB_SENTINEL')['value']
         if(current):
             snt = self._h.get_obj(self._m_id, uuid.UUID(current))
             for i in snt.get_deep_obj_list():

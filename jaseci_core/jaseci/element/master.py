@@ -29,6 +29,7 @@ class master(element, interface, master_api, alias_api, graph_api, object_api,
         graph_api.__init__(self)
         walker_api.__init__(self)
         sentinel_api.__init__(self)
+        interface.__init__(self)
 
     def destroy(self):
         """

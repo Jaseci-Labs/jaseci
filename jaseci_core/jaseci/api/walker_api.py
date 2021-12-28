@@ -114,7 +114,7 @@ class walker_api():
             if(self.spawned_walker_ids.has_obj_by_name(name)):
                 self.spawned_walker_ids.destroy_obj_by_name(name)
             self.spawned_walker_ids.add_obj(wlk)
-            self.api_alias_register(f'spawned:walker:{name}', wlk.jid)
+            self.alias_register(f'spawned:walker:{name}', wlk.jid)
             return wlk.serialize()
         else:
             return [f'Walker not found!']
@@ -126,7 +126,7 @@ class walker_api():
         """
         if(self.spawned_walker_ids.has_obj_by_name(name)):
             self.spawned_walker_ids.destroy_obj_by_name(name)
-            self.api_alias_delete(f'spawned:walker:{name}')
+            self.alias_delete(f'spawned:walker:{name}')
             return [f'Walker {name} deteled!']
         else:
             return [f'Walker {name} not found!']
@@ -156,7 +156,7 @@ class walker_api():
         Executes walker (assumes walker is primed)
         """
         if(prime):
-            self.api_walker_prime(wlk=wlk, nd=prime, ctx=ctx)
+            self.walker_prime(wlk=wlk, nd=prime, ctx=ctx)
         wlk.run()
         return wlk.report
 
@@ -171,7 +171,7 @@ class walker_api():
         if(not wlk):
             return [f'Walker {name} not found!']
         wlk.prime(nd, prime_ctx=ctx)
-        res = self.api_walker_execute(wlk)
+        res = self.walker_execute(wlk)
         wlk.destroy()
         return res
 

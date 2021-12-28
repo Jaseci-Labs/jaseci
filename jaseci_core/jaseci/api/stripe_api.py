@@ -85,14 +85,14 @@ class stripe_api():
         """ add customer payment method """
         try:
             paymentMethods = \
-                self.admin_api_stripe_retrieve_customer_payment_methods(
+                self.stripe_retrieve_customer_payment_methods(
                     customerId)
 
             paymentMethod = stripe.PaymentMethod.attach(
                 paymentMethodId, customer=customerId)
 
             if(len(paymentMethods.data) == 0):
-                self.admin_api_stripe_update_default_payment_method(
+                self.stripe_update_default_payment_method(
                     customerId, paymentMethodId)
 
             paymentMethod.is_default = len(paymentMethods.data) == 0
@@ -142,11 +142,11 @@ class stripe_api():
         """
         try:
             # attach payment method to customer
-            self.admin_api_stripe_add_customer_payment_methods(
+            self.stripe_add_customer_payment_methods(
                 paymentId, customerId)
 
             # set card to default payment method
-            self.admin_api_stripe_update_default_payment_method(
+            self.stripe_update_default_payment_method(
                 customerId, paymentId)
 
             subscription = stripe.Subscription.create(

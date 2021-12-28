@@ -31,7 +31,7 @@ class sentinel_api():
         if(not snt):
             snt = sentinel(m_id=self._m_id, h=self._h, name=name)
             self.sentinel_ids.add_obj(snt)
-            new_gph = self.api_graph_create(set_active=True)
+            new_gph = self.graph_create(set_active=True)
         if(code):
             if (encoded):
                 code = b64decode_str(code)
@@ -40,10 +40,10 @@ class sentinel_api():
                 return {'response': 'Error in jac code', 'errors': snt.errors}
         if(snt.walker_ids.has_obj_by_name(auto_run) and self.active_gph_id):
             nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
-            self.api_walker_run(name=auto_run, nd=nd, ctx=ctx,
-                                snt=snt)
+            self.walker_run(name=auto_run, nd=nd, ctx=ctx,
+                            snt=snt)
         if(set_active):
-            self.api_sentinel_active_set(snt)
+            self.sentinel_active_set(snt)
         self.extract_snt_aliases(snt)
         if(new_gph):
             return [snt.serialize(), new_gph]
@@ -69,9 +69,9 @@ class sentinel_api():
             return {'response': f'{snt} already active!',
                     'success': True}
         if(set_active):
-            self.api_sentinel_active_set(snt)
-        return self.api_sentinel_set(code=g_snt.code_ir, snt=snt,
-                                     mode='ir')
+            self.sentinel_active_set(snt)
+        return self.sentinel_set(code=g_snt.code_ir, snt=snt,
+                                 mode='ir')
 
     @interface.private_api
     def sentinel_get(self, snt: sentinel = None,
@@ -131,7 +131,7 @@ class sentinel_api():
         Sets the default sentinel master should use
         """
         self.active_snt_id = snt.jid
-        self.api_alias_register('active:sentinel', snt.jid)
+        self.alias_register('active:sentinel', snt.jid)
         return [f'Sentinel {snt.id} set as default']
 
     @interface.private_api
@@ -140,7 +140,7 @@ class sentinel_api():
         Unsets the default sentinel master should use
         """
         self.active_snt_id = None
-        self.api_alias_delete('active:sentinel')
+        self.alias_delete('active:sentinel')
         return ['Default sentinel unset']
 
     @interface.private_api
@@ -155,7 +155,7 @@ class sentinel_api():
             ret['response'] = 'No global sentinel is available!'
         else:
             self.active_snt_id = "global"  # Resolved in interface
-            self.api_alias_register('active:sentinel', glob_id)
+            self.alias_register('active:sentinel', glob_id)
             ret['sentinel'] = self._h.get_obj(
                 self._m_id, uuid.UUID(glob_id)).serialize(detailed=detailed)
             ret['success'] = True
@@ -184,7 +184,7 @@ class sentinel_api():
         """
         self.remove_snt_aliases(snt)
         if(self.active_snt_id == snt.jid):
-            self.api_sentinel_active_unset()
+            self.sentinel_active_unset()
         self.sentinel_ids.destroy_obj(snt)
         return [f'Sentinel {snt.id} successfully deleted']
 

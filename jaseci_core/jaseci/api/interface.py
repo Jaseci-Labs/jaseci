@@ -24,24 +24,24 @@ class interface():
         self._pub_committer = None
 
     def public_api(func, cmd_group=None):
-        if(cmd_group is None):
-            cmd_group = func.__name__.split('_')
+        cmd_group = func.__name__.split(
+            '_') if cmd_group is None else cmd_group
         interface._public_api.append(
             {'fname': func.__name__, 'sig': signature(func),
              'doc': getdoc(func), 'groups': cmd_group})
         return func
 
     def private_api(func, cmd_group=None):
-        if(cmd_group is None):
-            cmd_group = func.__name__.split('_')
+        cmd_group = func.__name__.split(
+            '_') if cmd_group is None else cmd_group
         interface._private_api.append(
             {'fname': func.__name__, 'sig': signature(func),
              'doc': getdoc(func), 'groups': cmd_group})
         return func
 
     def admin_api(func, cmd_group=None):
-        if(cmd_group is None):
-            cmd_group = func.__name__.split('_')
+        cmd_group = func.__name__.split(
+            '_') if cmd_group is None else cmd_group
         interface._admin_api.append(
             {'fname': func.__name__, 'sig': signature(func),
              'doc': getdoc(func), 'groups': cmd_group})
