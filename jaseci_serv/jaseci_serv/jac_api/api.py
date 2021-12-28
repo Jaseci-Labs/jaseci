@@ -1,9 +1,8 @@
+from django.urls import path
 from .views import AbstractJacAPIView
 from .views import AbstractAdminJacAPIView, AbstractPublicJacAPIView
 from jaseci.element.element import element
 from jaseci_serv.base.models import super_master
-from jaseci.api.public_api import public_api
-from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import copy_func
 from inspect import signature
 import uuid
@@ -42,29 +41,29 @@ def rest_api_auto_doc(endpoint: str, fsig: signature):
     return doc
 
 
-# Introspection on master interface to generate view class for master apis
-def generate_apis(M):
-    for i in dir(M):
-        if (i.startswith('api_')):
-            cls = AbstractJacAPIView
-            apidocstr = f'/jac/{i[4:]}'
-        elif (i.startswith('admin_api_')):
-            cls = AbstractAdminJacAPIView
-            apidocstr = f'/admin/{i[10:]}'
-        elif (i.startswith('public_api_')):
-            cls = AbstractPublicJacAPIView
-            apidocstr = f'/public/{i[11:]}'
-        else:
-            continue
-        func_sig = M.get_api_signature(i)
-        gen_cls = type(i,
-                       (cls,),
+generated_urls = []
+
+
+def generate_apis(api_list, view_cls, dir_head):
+    """
+    Auto generates Django APIs based on core interface
+    """
+    for i in api_list:
+        fname = '_'.join(i['groups'])
+        apidocstr = f"{dir_head}/{fname}"
+        func_sig = i['sig']
+        gen_cls = type(fname,
+                       (view_cls,),
                        {})
         gen_cls.post = copy_func(gen_cls.post)
-        gen_cls.post.__doc__ = M.get_api_doc(i) + '\n\n' + \
+        gen_cls.post.__doc__ = i['doc'] + '\n\n' + \
             rest_api_auto_doc(apidocstr, func_sig)
-        globals()[i] = gen_cls
+        globals()[fname] = gen_cls
+        global generated_urls
+        generated_urls.append(
+            path(apidocstr, globals()[fname].as_view(), name=fname))
 
 
-generate_apis(super_master(h=mem_hook()))
-generate_apis(public_api(None))
+generate_apis(super_master._public_api, AbstractPublicJacAPIView, 'public')
+generate_apis(super_master._private_api, AbstractJacAPIView, 'jac')
+generate_apis(super_master._admin_api, AbstractAdminJacAPIView, 'admin')

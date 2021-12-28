@@ -64,8 +64,8 @@ def set_global(param_list, meta):
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
     if(not mast.is_master(super_check=True, silent=False)):
         return False
-    mast.admin_api_global_set(param_list[0], json.dumps(param_list[1]))
-    return json.loads(mast.api_global_get(param_list[0])['value'])
+    mast.global_set(param_list[0], json.dumps(param_list[1]))
+    return json.loads(mast.global_get(param_list[0])['value'])
 
 
 def get_global(param_list, meta):
@@ -77,7 +77,7 @@ def get_global(param_list, meta):
     Return - Sorted list
     """
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    val = mast.api_global_get(param_list[0])['value']
+    val = mast.global_get(param_list[0])['value']
     if(val):
         return json.loads(val)
     else:
@@ -89,7 +89,7 @@ def destroy_global(param_list, meta):
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
     if(not mast.is_master(super_check=True, silent=False)):
         return False
-    return mast.admin_api_global_delete(param_list[0])
+    return mast.global_delete(param_list[0])
 
 
 def set_perms(param_list, meta):
@@ -101,8 +101,8 @@ def set_perms(param_list, meta):
     Return - true/false whether successful
     """
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    return mast.api_object_perms_set(obj=param_list[0],
-                                     mode=param_list[1])['success']
+    return mast.object_perms_set(obj=param_list[0],
+                                 mode=param_list[1])['success']
 
 
 def get_perms(param_list, meta):
@@ -125,9 +125,9 @@ def grant_perms(param_list, meta):
     Return - Sorted list
     """
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    return mast.api_object_perms_grant(obj=param_list[0],
-                                       mast=param_list[1],
-                                       read_only=param_list[3])['success']
+    return mast.object_perms_grant(obj=param_list[0],
+                                   mast=param_list[1],
+                                   read_only=param_list[3])['success']
 
 
 def revoke_perms(param_list, meta):
@@ -139,5 +139,5 @@ def revoke_perms(param_list, meta):
     Return - Sorted list
     """
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    return mast.api_object_perms_revoke(obj=param_list[0],
-                                        mast=param_list[1])['success']
+    return mast.object_perms_revoke(obj=param_list[0],
+                                    mast=param_list[1])['success']

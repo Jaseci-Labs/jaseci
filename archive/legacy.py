@@ -15,14 +15,16 @@ class legacy_api():
     APIs that should be deprecated
     """
 
-    def api_load_app(self, name: str, code: str, encoded: bool = False):
+    @interface.private_api
+    def load_app(self, name: str, code: str, encoded: bool = False):
         """
         Short for api_load_application
         """
         return self.api_load_application(name, code, encoded)
 
-    def api_load_application(self, name: str, code: str,
-                             encoded: bool = True):
+    @interface.private_api
+    def load_application(self, name: str, code: str,
+                         encoded: bool = True):
         """
         Get or create then return application sentinel and graph pairing
         Code must be encoded in base64
@@ -39,29 +41,33 @@ class legacy_api():
         return {'sentinel': snt.id.urn, 'graph': gph.id.urn,
                 'active': snt.is_active}
 
-    def api_prime_walker(self, wlk: walker, nd: node, ctx: dict = {}):
+    @interface.private_api
+    def prime_walker(self, wlk: walker, nd: node, ctx: dict = {}):
         """
         Assigns walker to a graph node and primes walker for execution
         """
         wlk.prime(nd, prime_ctx=ctx)
         return [f'Walker primed on node {nd.id}']
 
-    def api_run_walker(self, wlk: walker):
+    @interface.private_api
+    def run_walker(self, wlk: walker):
         """
         Executes walker (assumes walker is primed)
         """
         wlk.run()
         return wlk.report
 
-    def api_prime_run(self, snt: sentinel, name: str,
-                      nd: node, ctx: dict = {}):
+    @interface.private_api
+    def prime_run(self, snt: sentinel, name: str,
+                  nd: node, ctx: dict = {}):
         """
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.
         """
         return self.api_run(snt, name, nd, ctx)
 
-    def api_create_graph(self, name: str):
+    @interface.private_api
+    def create_graph(self, name: str):
         """
         Create a graph instance and return root node graph object
         """
@@ -69,7 +75,8 @@ class legacy_api():
         self.graph_ids.add_obj(gph)
         return gph.serialize()
 
-    def api_create_sentinel(self, name: str):
+    @interface.private_api
+    def create_sentinel(self, name: str):
         """
         Create blank sentinel and return object
         """
@@ -77,7 +84,8 @@ class legacy_api():
         self.sentinel_ids.add_obj(snt)
         return snt.serialize()
 
-    def api_list_graph(self, detailed: bool = False):
+    @interface.private_api
+    def list_graph(self, detailed: bool = False):
         """
         Provide complete list of all graph objects (list of root node objects)
         """
@@ -86,7 +94,8 @@ class legacy_api():
             gphs.append(i.serialize(detailed=detailed))
         return gphs
 
-    def api_list_walker(self, snt: sentinel, detailed: bool = False):
+    @interface.private_api
+    def list_walker(self, snt: sentinel, detailed: bool = False):
         """
         List walkers known to sentinel
         """
@@ -95,7 +104,8 @@ class legacy_api():
             walks.append(i.serialize(detailed=detailed))
         return walks
 
-    def api_list_sentinel(self, detailed: bool = False):
+    @interface.private_api
+    def list_sentinel(self, detailed: bool = False):
         """
         Provide complete list of all sentinel objects
         """
@@ -104,22 +114,25 @@ class legacy_api():
             snts.append(i.serialize(detailed=detailed))
         return snts
 
-    def api_delete_graph(self, gph: graph):
+    @interface.private_api
+    def delete_graph(self, gph: graph):
         """
         Permanently delete graph with given id
         """
         self.graph_ids.destroy_obj(gph)
         return [f'Graph {gph.id} successfully deleted']
 
-    def api_delete_sentinel(self, snt: sentinel):
+    @interface.private_api
+    def delete_sentinel(self, snt: sentinel):
         """
         Permanently delete sentinel with given id
         """
         self.sentinel_ids.destroy_obj(snt)
         return [f'Sentinel {snt.id} successfully deleted']
 
-    def api_get_graph(self, gph: graph, detailed: bool = False,
-                      dot: bool = False):
+    @interface.private_api
+    def get_graph(self, gph: graph, detailed: bool = False,
+                  dot: bool = False):
         """
         Return the content of the graph
         """
@@ -131,19 +144,22 @@ class legacy_api():
                 nds.append(i.serialize(detailed=detailed))
             return nds
 
-    def api_get_object(self, obj: element, detailed: bool = False):
+    @interface.private_api
+    def get_object(self, obj: element, detailed: bool = False):
         """
         Return the content of the graph
         """
         return obj.serialize(detailed=detailed)
 
-    def api_get_jac(self, snt: sentinel):
+    @interface.private_api
+    def get_jac(self, snt: sentinel):
         """
         Get sentinel implementation in form of Jac source code
         """
         return [snt.code]
 
-    def api_set_jac(self, snt: sentinel, code: str, encoded: bool):
+    @interface.private_api
+    def set_jac(self, snt: sentinel, code: str, encoded: bool):
         """
         Set sentinel implementation with Jac source code
         """
@@ -170,7 +186,8 @@ class legacy_api():
             else:
                 return [f'Sentinel {snt.id} code issues encountered!']
 
-    def api_spawn_walker(self, snt: sentinel, name: str):
+    @interface.private_api
+    def spawn_walker(self, snt: sentinel, name: str):
         """
         Creates new instance of walker and returns new walker object
         """
@@ -180,15 +197,17 @@ class legacy_api():
         else:
             return [f'Walker not found!']
 
-    def api_unspawn(self, wlk: walker):
+    @interface.private_api
+    def unspawn(self, wlk: walker):
         """
         Delete instance of walker (not implemented yet)
         """
 
         return []
 
-    def api_run(self, snt: sentinel, name: str,
-                nd: node, ctx: dict = {}):
+    @interface.private_api
+    def run(self, snt: sentinel, name: str,
+            nd: node, ctx: dict = {}):
         """
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.
@@ -201,7 +220,8 @@ class legacy_api():
         wlk.destroy()
         return res
 
-    def api_get_node_context(self, nd: node, ctx: list):
+    @interface.private_api
+    def get_node_context(self, nd: node, ctx: list):
         """
         Returns value a given node
         """
@@ -213,7 +233,8 @@ class legacy_api():
                     ret[i] = nd_ctx[i]
         return ret
 
-    def api_set_node_context(self, snt: sentinel, nd: node, ctx: dict):
+    @interface.private_api
+    def set_node_context(self, snt: sentinel, nd: node, ctx: dict):
         """
         Assigns values to member variables of a given node using ctx object
         """
@@ -222,7 +243,8 @@ class legacy_api():
                 nd.name, kind='node').run())
         return nd.serialize()
 
-    def api_create_alias(self, name: str, value: str):
+    @interface.private_api
+    def create_alias(self, name: str, value: str):
         """
         Creates a string to string alias to be used by client
         """
@@ -231,13 +253,15 @@ class legacy_api():
         self.alias_map[name] = value
         return [f"Alias from '{name}' to '{value}' created!"]
 
-    def api_list_alias(self):
+    @interface.private_api
+    def list_alias(self):
         """
         List all string to string alias that client can use
         """
         return self.alias_map
 
-    def api_delete_alias(self, name: str = None, all: bool = False):
+    @interface.private_api
+    def delete_alias(self, name: str = None, all: bool = False):
         """
         Remove string to string alias that client can use
         """

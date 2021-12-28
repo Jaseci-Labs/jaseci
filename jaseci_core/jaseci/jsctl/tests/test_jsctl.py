@@ -17,10 +17,10 @@ class jsctl_test(TestCaseHelper, TestCase):
     def call(self, cmd):
         res = CliRunner(mix_stderr=False).invoke(jsctl.cli,
                                                  ["-m"]+cmd.split(' '))
-        out = res.stdout
-        self.log(out)
+        self.log(res.stdout)
         self.log(res.stderr)
-        return out
+        self.log(res.exception)
+        return res.stdout
 
     def call_cast(self, cmd):
         ret = self.call(cmd)
