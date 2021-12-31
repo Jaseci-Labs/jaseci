@@ -34,11 +34,6 @@ def reset_state():
 reset_state()
 
 
-def blank_func():
-    """No help provided"""
-    pass
-
-
 @shell(prompt='jaseci > ', intro='Starting Jaseci Shell...')
 @click.option('--filename', '-f', default="js.session",
               help="Specify filename for session state.")
@@ -121,23 +116,6 @@ def interface_api(api_name, is_public, **kwargs):
         with open(session['filename'], 'wb') as f:
             pickle.dump(session['master'], f)
 
-    # api_funcs = {}
-    # for i in session['master']._public_api:
-    #     if (i.startswith('api_') or i.startswith('admin_api_') or
-    #             i.startswith('public_api_')):
-    #         is_public = False
-    #         # Get function names and signatures
-    #         if i.startswith('api_'):
-    #             func_str = i[4:]
-    #         elif i.startswith('admin_'):
-    #             func_str = i[10:]
-    #         else:  # is public api
-    #             func_str = i[11:]
-    #             is_public = True
-    #         cmd_groups = func_str.split('_')
-    #         func_sig = session['master'].get_api_signature(i)
-    #         func_doc = session['master'].get_api_doc(i
-
 
 def extract_api_tree():
     """
@@ -202,7 +180,7 @@ def cmd_tree_builder(location, group_func=cli, cmd_str=''):
             build_cmd(group_func, i, loc['leaf'])
             continue
         else:
-            f = copy_func(blank_func, i)
+            f = copy_func(lambda: None, i)
             f.__doc__ = f'Group of `{(cmd_str+" "+i).lstrip()}` commands'
             new_func = group_func.group()(f)
         cmd_tree_builder(loc, new_func, cmd_str+' '+i)

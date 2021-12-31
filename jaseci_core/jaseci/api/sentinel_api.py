@@ -126,6 +126,10 @@ class sentinel_api():
         return snts
 
     @interface.private_api
+    def sentinel_test(self, snt: sentinel = None):
+        pass
+
+    @interface.private_api
     def sentinel_active_set(self, snt: sentinel):
         """
         Sets the default sentinel master should use
