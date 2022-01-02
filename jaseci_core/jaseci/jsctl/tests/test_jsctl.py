@@ -229,3 +229,10 @@ class jsctl_test(TestCaseHelper, TestCase):
             "jaseci/jsctl/tests/teststest.jac")
         r = self.call_split("sentinel test -detailed true")
         self.assertEqual(len(r), 27)
+
+    def test_jsctl_jac_build(self):
+        self.call(
+            "jac build -code "
+            "jaseci/jsctl/tests/teststest.jac")
+        r = self.call_split("ls")
+        self.assertEqual(len(r), 27)

@@ -123,7 +123,8 @@ def extract_api_tree():
     signatures in leaves from API function names in Master
     """
     api_funcs = {}
-    for i in session['master'].all_apis():
+    for i in session['master'].all_apis() + \
+            session['master']._cli_api:
         # Build hierarchy of command groups
         api_root = api_funcs
         for j in i['groups']:

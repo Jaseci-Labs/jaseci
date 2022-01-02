@@ -89,7 +89,8 @@ class sentinel_api():
 
     @interface.private_api
     def sentinel_set(self, code: str, encoded: bool = False,
-                     snt: sentinel = None, mode: str = 'default'):
+                     snt: sentinel = None, mode: str = 'default',
+                     debug_mode=True):
         """
         Set code/ir for a sentinel, only replaces walkers/archs in sentinel
         Valid modes: {code, ir, }
@@ -195,6 +196,10 @@ class sentinel_api():
             self.sentinel_active_unset()
         self.sentinel_ids.destroy_obj(snt)
         return [f'Sentinel {snt.id} successfully deleted']
+
+    def active_snt(self):
+        return self._h.get_obj(
+            self._m_id, uuid.UUID(self.active_snt_id))
 
     def destroy(self):
         """
