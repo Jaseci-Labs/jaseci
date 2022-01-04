@@ -17,7 +17,7 @@ class master(core_master):
         super().__init__(*args, **kwargs)
         self.valid_configs += JASECI_CONFIGS
 
-    @interface.private_api
+    @interface.private_api()
     def master_create(self, name: str, set_active: bool = True,
                       other_fields: dict = {}):
         """
@@ -39,7 +39,7 @@ class master(core_master):
             return {'response': "Errors occurred",
                     'errors': serializer.errors}
 
-    @interface.private_api
+    @interface.private_api()
     def master_delete(self, name: str):
         """
         Permanently delete master with given id
@@ -56,7 +56,7 @@ class super_master(master, core_super):
         super().__init__(*args, **kwargs)
         self.valid_configs = JASECI_CONFIGS
 
-    @interface.admin_api
+    @interface.admin_api()
     def master_createsuper(self, name: str, set_active: bool = True,
                            other_fields: dict = {}):
         """

@@ -12,7 +12,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         super().setUp()
 
     def call(self, cmd):
-        res = CliRunner(mix_stderr=False).invoke(jsctl.cli,
+        res = CliRunner(mix_stderr=False).invoke(jsctl.jsctl,
                                                  ["-m"]+cmd.split(' '))
         self.log(res.stdout)
         self.log(res.stderr)
@@ -231,8 +231,14 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertEqual(len(r), 27)
 
     def test_jsctl_jac_build(self):
+        import os
+        self.assertFalse(os.path.exists(
+            'jaseci/jsctl/tests/teststest.jir'))
         self.call(
-            "jac build -code "
-            "jaseci/jsctl/tests/teststest.jac")
-        r = self.call_split("ls")
-        self.assertEqual(len(r), 27)
+            "jac build jaseci/jsctl/tests/teststest.jac")
+        self.assertGreater(os.path.getsize(
+            'jaseci/jsctl/tests/teststest.jir'), 50000)
+        os.remove(
+            'jaseci/jsctl/tests/teststest.jir')
+        self.assertFalse(os.path.exists(
+            'jaseci/jsctl/tests/teststest.jir'))

@@ -17,7 +17,7 @@ class sentinel_api():
         self.active_snt_id = None
         self.sentinel_ids = id_list(self)
 
-    @interface.private_api
+    @interface.private_api()
     def sentinel_register(self, name: str = 'default', code: str = '',
                           encoded: bool = False, auto_run: str = 'init',
                           ctx: dict = {}, set_active: bool = True):
@@ -49,7 +49,7 @@ class sentinel_api():
             return [snt.serialize(), new_gph]
         return [snt.serialize()]
 
-    @interface.private_api
+    @interface.private_api()
     def sentinel_pull(self, set_active: bool = True,
                       on_demand: bool = True):
         """
@@ -73,7 +73,7 @@ class sentinel_api():
         return self.sentinel_set(code=g_snt.code_ir, snt=snt,
                                  mode='ir')
 
-    @interface.private_api
+    @interface.private_api()
     def sentinel_get(self, snt: sentinel = None,
                      mode: str = 'default', detailed: bool = False):
         """
@@ -87,7 +87,7 @@ class sentinel_api():
         else:
             return snt.serialize(detailed=detailed)
 
-    @interface.private_api
+    @interface.private_api()
     def sentinel_set(self, code: str, encoded: bool = False,
                      snt: sentinel = None, mode: str = 'default',
                      debug_mode=True):
@@ -116,7 +116,7 @@ class sentinel_api():
                     'success': False,
                     'errors': snt.errors+snt.runtime_errors}
 
-    @interface.private_api
+    @interface.private_api()
     def sentinel_list(self, detailed: bool = False):
         """
         Provide complete list of all sentinel objects
@@ -126,7 +126,7 @@ class sentinel_api():
             snts.append(i.serialize(detailed=detailed))
         return snts
 
-    @interface.private_api
+    @interface.private_api()
     def sentinel_test(self, snt: sentinel = None,
                       detailed: bool = False):
         """
@@ -134,7 +134,7 @@ class sentinel_api():
         """
         return snt.run_tests(detailed=detailed)
 
-    @interface.private_api
+    @interface.private_api()
     def sentinel_active_set(self, snt: sentinel):
         """
         Sets the default sentinel master should use
@@ -143,7 +143,7 @@ class sentinel_api():
         self.alias_register('active:sentinel', snt.jid)
         return [f'Sentinel {snt.id} set as default']
 
-    @interface.private_api
+    @interface.private_api()
     def sentinel_active_unset(self):
         """
         Unsets the default sentinel master should use
@@ -152,7 +152,7 @@ class sentinel_api():
         self.alias_delete('active:sentinel')
         return ['Default sentinel unset']
 
-    @interface.private_api
+    @interface.private_api()
     def sentinel_active_global(self, detailed: bool = False):
         """
         Sets the default master sentinel to the global sentinel
@@ -171,7 +171,7 @@ class sentinel_api():
             ret['response'] = f'Global sentinel {glob_id} set as default'
         return ret
 
-    @interface.private_api
+    @interface.private_api()
     def sentinel_active_get(self, detailed: bool = False):
         """
         Returns the default sentinel master is using
@@ -186,7 +186,7 @@ class sentinel_api():
                 self._m_id, uuid.UUID(id))
             return default.serialize(detailed=detailed)
 
-    @interface.private_api
+    @interface.private_api()
     def sentinel_delete(self, snt: sentinel):
         """
         Permanently delete sentinel with given id

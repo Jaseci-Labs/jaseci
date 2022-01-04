@@ -39,7 +39,7 @@ reset_state()
               help="Specify filename for session state.")
 @click.option('--mem-only', '-m', is_flag=True,
               help="Set true to not save file for session.")
-def cli(filename, mem_only):
+def jsctl(filename, mem_only):
     """
     The Jaseci Command Line Interface
     """
@@ -132,7 +132,8 @@ def extract_api_tree():
                 api_root[j] = {}
             api_root = api_root[j]
         api_root['leaf'] = ['_'.join(i['groups']), i['sig'],
-                            i in session['master']._public_api,  i['doc']]
+                            i in session['master']._public_api,  i['doc'],
+                            i['cli_args']]
     return api_funcs
 
 
@@ -150,6 +151,7 @@ def build_cmd(group_func, func_name, leaf):
     f.__doc__ = leaf[3]
 
     func_sig = leaf[1]
+    cli_args = leaf[4]
     for i in func_sig.parameters.keys():
         if(i == 'self'):
             continue
@@ -157,7 +159,9 @@ def build_cmd(group_func, func_name, leaf):
         p_type = func_sig.parameters[i].annotation
         if(p_type not in [int, bool, float]):
             p_type = str
-        if(p_default is not func_sig.parameters[i].empty):
+        if(i in cli_args):
+            f = click.argument(f'{i}', type=p_type)(f)
+        elif(p_default is not func_sig.parameters[i].empty):
             f = click.option(
                 f'-{i}', default=p_type(p_default), required=False,
                 type=p_type)(f)
@@ -171,7 +175,7 @@ def build_cmd(group_func, func_name, leaf):
     return group_func.command()(f)
 
 
-def cmd_tree_builder(location, group_func=cli, cmd_str=''):
+def cmd_tree_builder(location, group_func=jsctl, cmd_str=''):
     """
     Generates Click command groups from API tree recursively
     """
@@ -253,17 +257,17 @@ def tool(op, output):
         click.echo(f'[saved to {output}]')
 
 
-cli.add_command(login)
-cli.add_command(edit)
-cli.add_command(ls)
-cli.add_command(clear)
-cli.add_command(reset)
-cli.add_command(tool)
+jsctl.add_command(login)
+jsctl.add_command(edit)
+jsctl.add_command(ls)
+jsctl.add_command(clear)
+jsctl.add_command(reset)
+jsctl.add_command(tool)
 cmd_tree_builder(extract_api_tree())
 
 
 def main():
-    cli()
+    jsctl()
 
 
 if __name__ == '__main__':

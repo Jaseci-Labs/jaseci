@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Feature: Direct jac file building from in JSCTL
 - New Language Feature: Tests and testing features as first order language semantics
 - New Lang Feature: Asserts!
 - Fix: Simplified and optimized global abilities

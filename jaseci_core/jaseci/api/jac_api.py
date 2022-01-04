@@ -10,33 +10,33 @@ class jac_api():
     """
     Jac tool APIs
     """
-    @interface.cli_api
-    def jac_build(self, input: str, output: str = ""):
+    @interface.cli_api(cli_args=['filename'])
+    def jac_build(self, filename: str, out: str = ""):
         """
         Command line tooling for building executable jac ir
         """
-        if(not os.path.isfile(input)):
+        if(not os.path.isfile(filename)):
             return "File does not exsist!"
-        if(not len(output)):
-            if(input.endswith(".jac")):
-                output = input.replace(".jac", ".jir")
+        if(not len(out)):
+            if(filename.endswith(".jac")):
+                out = filename.replace(".jac", ".jir")
             else:
-                output = input+'.jir'
+                out = filename+'.jir'
         faux = self.faux_master()
-        with open(input, 'r') as file:
+        with open(filename, 'r') as file:
             faux.sentinel_register(code=file.read())
-            with open(output, 'w') as ofile:
-                out = json.dumps(
+            with open(out, 'w') as ofile:
+                jir_out = json.dumps(
                     faux.sentinel_get(mode='ir',
                                       snt=faux.active_snt()))
-                ofile.write(out)
-                return f"Build of {output} complete!"
+                ofile.write(jir_out)
+                return f"Build of {out} complete!"
 
-    @interface.cli_api
+    @interface.cli_api()
     def jac_test(self, file: str, detailed=False):
         pass
 
-    @interface.cli_api
+    @interface.cli_api()
     def jac_run(self, file: str):
         pass
 

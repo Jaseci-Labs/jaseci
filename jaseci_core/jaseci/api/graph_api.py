@@ -18,7 +18,7 @@ class graph_api():
         self.active_gph_id = None
         self.graph_ids = id_list(self)
 
-    @interface.private_api
+    @interface.private_api()
     def graph_create(self, set_active: bool = True):
         """
         Create a graph instance and return root node graph object
@@ -29,7 +29,7 @@ class graph_api():
             self.graph_active_set(gph)
         return gph.serialize()
 
-    @interface.private_api
+    @interface.private_api()
     def graph_get(self, gph: graph = None,
                   mode: str = 'default', detailed: bool = False):
         """
@@ -46,7 +46,7 @@ class graph_api():
                 items.append(i.serialize(detailed=detailed))
             return items
 
-    @interface.private_api
+    @interface.private_api()
     def graph_list(self, detailed: bool = False):
         """
         Provide complete list of all graph objects (list of root node objects)
@@ -56,7 +56,7 @@ class graph_api():
             gphs.append(i.serialize(detailed=detailed))
         return gphs
 
-    @interface.private_api
+    @interface.private_api()
     def graph_active_set(self, gph: graph):
         """
         Sets the default graph master should use
@@ -65,7 +65,7 @@ class graph_api():
         self.alias_register('active:graph', gph.jid)
         return [f'Graph {gph.id} set as default']
 
-    @interface.private_api
+    @interface.private_api()
     def graph_active_unset(self):
         """
         Unsets the default sentinel master should use
@@ -74,7 +74,7 @@ class graph_api():
         self.alias_delete('active:graph')
         return ['Default graph unset']
 
-    @interface.private_api
+    @interface.private_api()
     def graph_active_get(self, detailed: bool = False):
         """
         Returns the default graph master is using
@@ -86,7 +86,7 @@ class graph_api():
         else:
             return ['No default graph is selected!']
 
-    @interface.private_api
+    @interface.private_api()
     def graph_delete(self, gph: graph):
         """
         Permanently delete graph with given id
@@ -96,7 +96,7 @@ class graph_api():
         self.graph_ids.destroy_obj(gph)
         return [f'Graph {gph.id} successfully deleted']
 
-    @interface.private_api
+    @interface.private_api()
     def graph_node_get(self, nd: node, ctx: list = None):
         """
         Returns value a given node
@@ -109,7 +109,7 @@ class graph_api():
                     ret[i] = nd_ctx[i]
         return ret
 
-    @interface.private_api
+    @interface.private_api()
     def graph_node_set(self, nd: node, ctx: dict, snt: sentinel = None):
         """
         Assigns values to member variables of a given node using ctx object

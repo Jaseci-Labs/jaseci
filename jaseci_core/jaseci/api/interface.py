@@ -24,29 +24,39 @@ class interface():
         """
         self._pub_committer = None
 
-    def assimilate_api(api_list, func, cmd_group=None):
+    def assimilate_api(api_list, func, cmd_group=None,
+                       cli_args=None):
         cmd_group = func.__name__.split(
             '_') if cmd_group is None else cmd_group
         api_list.append(
             {'fname': func.__name__, 'sig': signature(func),
-             'doc': getdoc(func), 'groups': cmd_group})
+             'doc': getdoc(func), 'groups': cmd_group,
+             'cli_args': cli_args if cli_args is not None else []})
         return func
 
-    def public_api(func, cmd_group=None):
-        return interface.assimilate_api(
-            interface._public_api, func, cmd_group)
+    def public_api(cmd_group=None, cli_args=None):
+        def decorator_func(func):
+            return interface.assimilate_api(
+                interface._public_api, func, cmd_group, cli_args)
+        return decorator_func
 
-    def private_api(func, cmd_group=None):
-        return interface.assimilate_api(
-            interface._private_api, func, cmd_group)
+    def private_api(cmd_group=None, cli_args=None):
+        def decorator_func(func):
+            return interface.assimilate_api(
+                interface._private_api, func, cmd_group, cli_args)
+        return decorator_func
 
-    def admin_api(func, cmd_group=None):
-        return interface.assimilate_api(
-            interface._admin_api, func, cmd_group)
+    def admin_api(cmd_group=None, cli_args=None):
+        def decorator_func(func):
+            return interface.assimilate_api(
+                interface._admin_api, func, cmd_group, cli_args)
+        return decorator_func
 
-    def cli_api(func, cmd_group=None):
-        return interface.assimilate_api(
-            interface._cli_api, func, cmd_group)
+    def cli_api(cmd_group=None, cli_args=None):
+        def decorator_func(func):
+            return interface.assimilate_api(
+                interface._cli_api, func, cmd_group, cli_args)
+        return decorator_func
 
     def all_apis(self):
         return self._public_api+self._private_api+self._admin_api
