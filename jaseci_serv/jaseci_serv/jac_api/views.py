@@ -41,10 +41,10 @@ class AbstractJacAPIView(APIView):
 
         api_result = self.caller.general_interface_to_api(
             self.cmd, type(self).__name__)
-        self.log_request_time()
+        self.log_request_stats()
         return self.issue_response(api_result)
 
-    def log_request_time(self):
+    def log_request_stats(self):
         """Api call preamble"""
         TY = '\033[33m'
         TG = '\033[32m'
@@ -104,7 +104,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
 
         api_result = self.caller.public_interface_to_api(
             self.cmd, type(self).__name__)
-        self.log_request_time()
+        self.log_request_stats()
         return self.issue_response(api_result)
 
     def set_caller(self, request):

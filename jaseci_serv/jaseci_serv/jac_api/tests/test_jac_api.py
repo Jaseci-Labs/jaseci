@@ -47,7 +47,6 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
 
     def test_public_jac_apis_walker_summon_auth(self):
         """Test public API for summoning walker"""
-        self.logger_on()
         zsb_file = open(os.path.dirname(__file__) +
                         "/zsb.jac").read()
         payload = {'op': 'sentinel_register', 'name': 'zsb',

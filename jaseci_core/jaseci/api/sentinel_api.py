@@ -89,8 +89,7 @@ class sentinel_api():
 
     @interface.private_api()
     def sentinel_set(self, code: str, encoded: bool = False,
-                     snt: sentinel = None, mode: str = 'default',
-                     debug_mode=True):
+                     snt: sentinel = None, mode: str = 'default'):
         """
         Set code/ir for a sentinel, only replaces walkers/archs in sentinel
         Valid modes: {code, ir, }

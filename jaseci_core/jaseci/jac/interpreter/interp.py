@@ -318,6 +318,7 @@ class interp(machine_state):
                 self.run_expression(kid[5])
                 if(loops > self._loop_limit):
                     self.rt_error(f'Hit loop limit, breaking...', kid[0])
+                    self._loop_ctrl = 'break'
         else:
             var = self._jac_scope.get_live_var(
                 kid[1].token_text(), create_mode=True)
@@ -335,6 +336,7 @@ class interp(machine_state):
                     break
                 if(loops > self._loop_limit):
                     self.rt_error(f'Hit loop limit, breaking...', kid[0])
+                    self._loop_ctrl = 'break'
 
     def run_while_stmt(self, jac_ast):
         """
@@ -350,6 +352,7 @@ class interp(machine_state):
                 break
             if(loops > self._loop_limit):
                 self.rt_error(f'Hit loop limit, breaking...', kid[0])
+                self._loop_ctrl = 'break'
 
     def run_ctrl_stmt(self, jac_ast):
         """

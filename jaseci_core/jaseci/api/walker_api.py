@@ -151,18 +151,17 @@ class walker_api():
 
     @interface.private_api()
     def walker_execute(self, wlk: walker, prime: node = None,
-                       ctx: dict = {}):
+                       ctx: dict = {}, profiling: bool = False):
         """
         Executes walker (assumes walker is primed)
         """
         if(prime):
             self.walker_prime(wlk=wlk, nd=prime, ctx=ctx)
-        wlk.run()
-        return wlk.report
+        return wlk.run(profiling=profiling)
 
     @interface.private_api()
     def walker_run(self, name: str, nd: node = None, ctx: dict = {},
-                   snt: sentinel = None):
+                   snt: sentinel = None, profiling: bool = False):
         """
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.
@@ -170,8 +169,8 @@ class walker_api():
         wlk = snt.spawn_walker(name, caller=self)
         if(not wlk):
             return [f'Walker {name} not found!']
-        wlk.prime(nd, prime_ctx=ctx)
-        res = self.walker_execute(wlk)
+        res = self.walker_execute(
+            wlk=wlk, prime=nd, ctx=ctx, profiling=profiling)
         wlk.destroy()
         return res
 

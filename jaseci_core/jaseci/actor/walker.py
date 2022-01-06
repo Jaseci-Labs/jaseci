@@ -14,6 +14,9 @@ from jaseci.jac.interpreter.walker_interp import walker_interp
 from jaseci.jac.ir.jac_code import jac_code
 import uuid
 import hashlib
+import io
+import pstats
+import cProfile
 
 
 class walker(element, jac_code, walker_interp, anchored):
@@ -75,7 +78,8 @@ class walker(element, jac_code, walker_interp, anchored):
 
         self.current_node = self.next_node_ids.pop_first_obj()
         self.run_walker(jac_ast=self._jac_ast)
-        self.log_history('visited', self.current_node.id)
+        if(self.current_step < 200):
+            self.log_history('visited', self.current_node.id)
         self.current_step += 1
         self.profile['steps'] = self.current_step
         if (self._stopped == 'skip'):
@@ -102,8 +106,13 @@ class walker(element, jac_code, walker_interp, anchored):
         self.profile['steps'] = self.current_step
         logger.debug(str(f'Walker {self.name} primed - {start_node}'))
 
-    def run(self, start_node=None, prime_ctx=None):
+    def run(self, start_node=None, prime_ctx=None,
+            profiling=False):
         """Executes Walker to completion"""
+        if(profiling):
+            pr = cProfile.Profile()
+            pr.enable()
+
         if(start_node):
             self.prime(start_node, prime_ctx)
 
@@ -115,6 +124,21 @@ class walker(element, jac_code, walker_interp, anchored):
             logger.debug(
                 str(f'Walker {self.name} did not arrive at report state')
             )
+
+        if(profiling):
+            pr.disable()
+            s = io.StringIO()
+            sortby = pstats.SortKey.CUMULATIVE
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps.print_stats()
+            s = s.getvalue()
+            s = 'ncalls'+s.split('ncalls')[-1]
+            s = '\n'.join([','.join(line.rstrip().split(None, 5))
+                          for line in s.split('\n')])
+            self.profile['perf'] = s
+            return {'report': self.report,
+                    'profile': self.profile}
+
         return self.report
 
     def log_history(self, name, value):
