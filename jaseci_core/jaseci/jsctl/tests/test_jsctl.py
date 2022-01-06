@@ -232,13 +232,25 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_jac_build(self):
         import os
-        self.assertFalse(os.path.exists(
-            'jaseci/jsctl/tests/teststest.jir'))
+        if(os.path.exists('jaseci/jsctl/tests/teststest.jir')):
+            os.remove('jaseci/jsctl/tests/teststest.jir')
+            self.assertFalse(os.path.exists(
+                'jaseci/jsctl/tests/teststest.jir'))
         self.call(
             "jac build jaseci/jsctl/tests/teststest.jac")
         self.assertGreater(os.path.getsize(
             'jaseci/jsctl/tests/teststest.jir'), 50000)
-        os.remove(
-            'jaseci/jsctl/tests/teststest.jir')
-        self.assertFalse(os.path.exists(
-            'jaseci/jsctl/tests/teststest.jir'))
+
+    def test_jsctl_jac_test(self):
+        r = self.call_split(
+            "jac test jaseci/jsctl/tests/teststest.jac")
+        self.assertTrue(r[0].startswith('Testing "assert should be'))
+        self.assertTrue(r[4].startswith('  "tests": 3'))
+        self.assertTrue(r[7].startswith('  "success": true'))
+
+    def test_jsctl_jac_test_jir(self):
+        r = self.call_split(
+            "jac test jaseci/jsctl/tests/teststest.jir")
+        self.assertTrue(r[0].startswith('Testing "assert should be'))
+        self.assertTrue(r[4].startswith('  "tests": 3'))
+        self.assertTrue(r[7].startswith('  "success": true'))

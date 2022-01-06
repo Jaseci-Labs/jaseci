@@ -10,33 +10,54 @@ class jac_api():
     """
     Jac tool APIs
     """
-    @interface.cli_api(cli_args=['filename'])
-    def jac_build(self, filename: str, out: str = ""):
+    @interface.cli_api(cli_args=['file'])
+    def jac_build(self, file: str, out: str = ""):
         """
         Command line tooling for building executable jac ir
         """
-        if(not os.path.isfile(filename)):
-            return "File does not exsist!"
+        if(not os.path.isfile(file)):
+            ret = "File does not exsist!"
+            print(ret)
+            return ret
         if(not len(out)):
-            if(filename.endswith(".jac")):
-                out = filename.replace(".jac", ".jir")
+            if(file.endswith(".jac")):
+                out = file.replace(".jac", ".jir")
             else:
-                out = filename+'.jir'
+                out = file+'.jir'
         faux = self.faux_master()
-        with open(filename, 'r') as file:
+        with open(file, 'r') as file:
             faux.sentinel_register(code=file.read())
             with open(out, 'w') as ofile:
                 jir_out = json.dumps(
                     faux.sentinel_get(mode='ir',
                                       snt=faux.active_snt()))
                 ofile.write(jir_out)
-                return f"Build of {out} complete!"
+                ret = f"Build of {out} complete!"
+                print(ret)
+                return ret
 
-    @interface.cli_api()
-    def jac_test(self, file: str, detailed=False):
-        pass
+    @interface.cli_api(cli_args=['file'])
+    def jac_test(self, file: str, detailed: bool = False):
+        """
+        Command line tooling for running all test in both .jac code files
+        and .jir executables
+        """
+        if(not os.path.isfile(file)):
+            ret = "File does not exsist!"
+            print(ret)
+            return ret
+        is_jir = file.endswith(".jir")
+        faux = self.faux_master()
+        with open(file, 'r') as file:
+            if(is_jir):
+                faux.sentinel_register()
+                faux.sentinel_set(snt=faux.active_snt(),
+                                  code=file.read(), mode='ir')
+            else:
+                faux.sentinel_register(code=file.read())
+        return faux.sentinel_test(snt=faux.active_snt(), detailed=detailed)
 
-    @interface.cli_api()
+    @interface.cli_api(cli_args=['file'])
     def jac_run(self, file: str):
         pass
 
