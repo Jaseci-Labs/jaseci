@@ -58,8 +58,26 @@ class jac_api():
         return faux.sentinel_test(snt=faux.active_snt(), detailed=detailed)
 
     @interface.cli_api(cli_args=['file'])
-    def jac_run(self, file: str):
-        pass
+    def jac_run(self, file: str, walk: str = 'init', ctx: dict = {}):
+        """
+        Command line tooling for running all test in both .jac code files
+        and .jir executables
+        """
+        if(not os.path.isfile(file)):
+            ret = "File does not exsist!"
+            print(ret)
+            return ret
+        is_jir = file.endswith(".jir")
+        faux = self.faux_master()
+        with open(file, 'r') as file:
+            if(is_jir):
+                faux.sentinel_register()
+                faux.sentinel_set(snt=faux.active_snt(),
+                                  code=file.read(), mode='ir')
+            else:
+                faux.sentinel_register(code=file.read())
+        return faux.walker_run(name=walk, snt=faux.active_snt(),
+                               nd=faux.active_gph(), ctx=ctx)
 
     def faux_master(self):
         from jaseci.element.super_master import super_master

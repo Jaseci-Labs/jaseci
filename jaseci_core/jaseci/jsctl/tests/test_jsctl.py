@@ -143,7 +143,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         snt_id = self.call_cast('sentinel list')[0]['jid']
         self.call(f'sentinel active set -snt {snt_id}')
         self.call(f'sentinel active get')
-        self.assertEqual(len(self.call_cast(f'walker list')), 1)
+        self.assertEqual(len(self.call_cast(f'walker list')), 2)
 
     def test_jsctl_init_auto_called(self):
         """Tests that alias mapping api works"""
@@ -254,3 +254,18 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertTrue(r[0].startswith('Testing "assert should be'))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
+
+    def test_jsctl_jac_run(self):
+        r = self.call_cast(
+            "jac run jaseci/jsctl/tests/teststest.jac")
+        self.assertEqual(r, [{}, 4])
+
+    def test_jsctl_jac_run_jir(self):
+        r = self.call_cast(
+            "jac run jaseci/jsctl/tests/teststest.jir")
+        self.assertEqual(r, [{}, 4])
+
+    def test_jsctl_jac_run_jir_walk(self):
+        r = self.call_cast(
+            "jac run jaseci/jsctl/tests/teststest.jir -walk alt_init")
+        self.assertEqual(r, [7])

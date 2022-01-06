@@ -27,6 +27,12 @@ walker init {
     take -->;
 }
 
+walker alt_init {
+    has num=7;
+    report num;
+    take -->;
+}
+
 test "assert should be valid"
 with graph::dummy by walker::init {
     assert (num==4);

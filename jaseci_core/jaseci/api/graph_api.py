@@ -119,6 +119,10 @@ class graph_api():
                 nd.name, kind='node', caller=self))
         return nd.serialize()
 
+    def active_gph(self):
+        return self._h.get_obj(
+            self._m_id, uuid.UUID(self.active_gph_id))
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage
