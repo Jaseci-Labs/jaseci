@@ -14,7 +14,7 @@ class config_api():
     def __init__(self, *args, **kwargs):
         self.valid_configs = ['CONFIG_EXAMPLE', 'STRIPE_KEY']
 
-    @interface.admin_api
+    @interface.admin_api()
     def config_get(self, name: str,
                    do_check: bool = True):
         """
@@ -24,7 +24,7 @@ class config_api():
             return self.name_error(name)
         return self._h.get_glob(name)
 
-    @interface.admin_api
+    @interface.admin_api()
     def config_set(self, name: str, value: str,
                    do_check: bool = True):
         """
@@ -35,21 +35,21 @@ class config_api():
         self._h.save_glob(name, value)
         return [f"Config of '{name}' to '{value}' set!"]
 
-    @interface.admin_api
+    @interface.admin_api()
     def config_list(self):
         """
         Check a config is present
         """
         return [v for v in self._h.list_glob() if v in self.valid_configs]
 
-    @interface.admin_api
+    @interface.admin_api()
     def config_exists(self, name: str):
         """
         Check a config is present
         """
         return self._h.has_glob(name)
 
-    @interface.admin_api
+    @interface.admin_api()
     def config_delete(self, name: str,
                       do_check: bool = True):
         """

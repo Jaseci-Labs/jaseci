@@ -13,7 +13,7 @@ class stripe_api():
     def __init__(self):
         stripe.api_key = self._h.resolve_glob('STRIPE_KEY', stripe_test_key)
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_product_create(self, name: str = "VIP Plan",
                               description: str = "Plan description"):
         """ create product """
@@ -25,7 +25,7 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_product_price_set(self, productId: str,
                                  amount: float = 50,
                                  interval: str = "month"):
@@ -40,7 +40,7 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_product_list(self, detalied: bool = True):
         """ retrieve all producs """
         if(not detalied):
@@ -54,7 +54,7 @@ class stripe_api():
             except Exception as e:
                 return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_customer_create(self, paymentId: str,
                                name: str = "cristopher evangelista",
                                email: str = "imurbatman12@gmail.com",
@@ -71,7 +71,7 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_customer_get(self, customerId: str):
         """ retrieve customer information """
         try:
@@ -79,7 +79,7 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_customer_payment_add(self, paymentMethodId: str,
                                     customerId: str):
         """ add customer payment method """
@@ -102,7 +102,7 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_customer_payment_delete(self, paymentMethodId: str):
         """ remove customer payment method """
         try:
@@ -110,7 +110,7 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_customer_payment_get(self, customerId: str):
         """ get customer list of payment methods """
         try:
@@ -121,7 +121,7 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_customer_payment_default(self, customerId: str,
                                         paymentMethodId: str):
         """ update default payment method of customer """
@@ -132,7 +132,7 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_subscription_create(self, paymentId: str,
                                    name: str, email: str,
                                    priceId: str, customerId: str):
@@ -163,7 +163,7 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_subscription_delete(self, subscriptionId: str):
         """ cancel customer subscription """
         try:
@@ -171,7 +171,7 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_subscription_get(self, customerId: str):
         """ retrieve customer subcription """
         try:
@@ -187,7 +187,7 @@ class stripe_api():
         except Exception as e:
             return {"message": str(e)}
 
-    @interface.admin_api
+    @interface.admin_api()
     def stripe_invoices_list(self, customerId: str,
                              subscriptionId: str,
                              limit: int = 10,

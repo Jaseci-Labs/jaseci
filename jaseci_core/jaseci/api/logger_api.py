@@ -12,7 +12,7 @@ class logger_api():
     APIs for Jaseci Logging configuration
     """
 
-    @interface.admin_api
+    @interface.admin_api()
     def logger_http_connect(self, host: str, port: int,
                             url: str, log: str = 'all'):
         """
@@ -32,7 +32,7 @@ class logger_api():
             num += 1
         return [f'{num} http handlers added!']
 
-    @interface.admin_api
+    @interface.admin_api()
     def logger_http_clear(self, log: str = 'all'):
         """
         Connects internal logging to http(s) (log msgs sent via POSTs)
@@ -51,7 +51,7 @@ class logger_api():
                     num += 1
         return [f'{num} http handlers removed!']
 
-    @interface.admin_api
+    @interface.admin_api()
     def logger_list(self):
         """
         Check active loggers

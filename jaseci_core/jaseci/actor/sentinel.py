@@ -160,6 +160,7 @@ class sentinel(element, jac_code, sentinel_interp):
         TG = '\033[32m'
         TR = '\033[31m'
         EC = '\033[m'
+        num_failed = 0
         for i in self.testcases:
             destroy_set = []
             title = i['title']
@@ -197,11 +198,22 @@ class sentinel(element, jac_code, sentinel_interp):
                     print("REPORT: " + pformat(wlk.report))
             except Exception as e:
                 i['passed'] = False
+                num_failed += 1
                 if(not silent):
                     print(f"[{TR}FAILED{EC} in {TY}{time()-stime:.2f}s{EC}]")
                     print(f"{e}")
-        for i in destroy_set:
-            i.destroy()
+            for i in destroy_set:  # FIXME: destroy set not complete
+                i.destroy()
+        num_tests = len(self.testcases)
+        summary = {'tests': num_tests, 'passed': num_tests-num_failed,
+                   'failed': num_failed,
+                   'success': num_tests and not num_failed}
+        if(detailed):
+            details = []
+            for i in self.testcases:
+                details.append({'test': i['title'], 'passed': i['passed']})
+            summary['details'] = details
+        return summary
 
     def destroy(self):
         """

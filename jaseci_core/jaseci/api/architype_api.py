@@ -20,7 +20,7 @@ class architype_api():
     a Jaseci instance is aware of.
     """
 
-    @interface.private_api
+    @interface.private_api()
     def architype_register(self, code: str, encoded: bool = False,
                            snt: sentinel = None):
         """Create an architype based on the code passed and return object.
@@ -59,7 +59,7 @@ class architype_api():
             ret['response'] = f'Errors occured'
         return ret
 
-    @interface.private_api
+    @interface.private_api()
     def architype_get(self, arch: architype, mode: str = 'default',
                       detailed: bool = False):
         """Get an architype rendered with specific mode
@@ -82,7 +82,7 @@ class architype_api():
         else:
             return {'architype': arch.serialize(detailed=detailed)}
 
-    @interface.private_api
+    @interface.private_api()
     def architype_set(self, arch: architype, code: str,
                       mode: str = 'default'):
         """Set code/ir for a architype
@@ -113,7 +113,7 @@ class architype_api():
                     'success': True,
                     'errors': arch.errors}
 
-    @interface.private_api
+    @interface.private_api()
     def architype_list(self, snt: sentinel = None, detailed: bool = False):
         """List architypes known to sentinel
 
@@ -129,7 +129,7 @@ class architype_api():
             archs.append(i.serialize(detailed=detailed))
         return archs
 
-    @interface.private_api
+    @interface.private_api()
     def architype_delete(self, arch: architype, snt: sentinel = None):
         """Permanently delete sentinel with given id
 

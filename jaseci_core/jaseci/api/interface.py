@@ -15,6 +15,7 @@ class interface():
     _public_api = []
     _private_api = []
     _admin_api = []
+    _cli_api = []
 
     def __init__(self):
         """
@@ -23,36 +24,48 @@ class interface():
         """
         self._pub_committer = None
 
-    def public_api(func, cmd_group=None):
+    def assimilate_api(api_list, func, cmd_group=None,
+                       cli_args=None):
         cmd_group = func.__name__.split(
             '_') if cmd_group is None else cmd_group
-        interface._public_api.append(
+        api_list.append(
             {'fname': func.__name__, 'sig': signature(func),
-             'doc': getdoc(func), 'groups': cmd_group})
+             'doc': getdoc(func), 'groups': cmd_group,
+             'cli_args': cli_args if cli_args is not None else []})
         return func
 
-    def private_api(func, cmd_group=None):
-        cmd_group = func.__name__.split(
-            '_') if cmd_group is None else cmd_group
-        interface._private_api.append(
-            {'fname': func.__name__, 'sig': signature(func),
-             'doc': getdoc(func), 'groups': cmd_group})
-        return func
+    def public_api(cmd_group=None, cli_args=None):
+        def decorator_func(func):
+            return interface.assimilate_api(
+                interface._public_api, func, cmd_group, cli_args)
+        return decorator_func
 
-    def admin_api(func, cmd_group=None):
-        cmd_group = func.__name__.split(
-            '_') if cmd_group is None else cmd_group
-        interface._admin_api.append(
-            {'fname': func.__name__, 'sig': signature(func),
-             'doc': getdoc(func), 'groups': cmd_group})
-        return func
+    def private_api(cmd_group=None, cli_args=None):
+        def decorator_func(func):
+            return interface.assimilate_api(
+                interface._private_api, func, cmd_group, cli_args)
+        return decorator_func
+
+    def admin_api(cmd_group=None, cli_args=None):
+        def decorator_func(func):
+            return interface.assimilate_api(
+                interface._admin_api, func, cmd_group, cli_args)
+        return decorator_func
+
+    def cli_api(cmd_group=None, cli_args=None):
+        def decorator_func(func):
+            return interface.assimilate_api(
+                interface._cli_api, func, cmd_group, cli_args)
+        return decorator_func
 
     def all_apis(self):
         return self._public_api+self._private_api+self._admin_api
 
+    assimilate_api = staticmethod(assimilate_api)
     public_api = staticmethod(public_api)
     private_api = staticmethod(private_api)
     admin_api = staticmethod(admin_api)
+    cli_api = staticmethod(cli_api)
 
     def provide_internal_default(self, param):
         """
@@ -112,8 +125,6 @@ class interface():
             if (issubclass(p_type, element)):
                 if(val is None):
                     break
-                    # return self.interface_error(
-                    #     f'No {p_type} value for {p_name} provided!')
                 val = _caller._h.get_obj(
                     _caller._m_id, uuid.UUID(val))
                 if (isinstance(val, p_type)):
@@ -126,10 +137,6 @@ class interface():
 
             if (param_map[i] is None):
                 return self.interface_error(f'Invalid API args - {params}')
-        # if (len(param_map) < len(params)-1):
-        #     logger.warning(
-        #         str(f'Unused parameters in API call - '
-        #             f'got {params.keys()}, expected {param_map.keys()}'))
         ret = getattr(_caller, api_name)(**param_map)
         if(not is_jsonable(ret)):
             return self.interface_error(f'Non-JSON API ret {type(ret)}: {ret}')
@@ -210,8 +217,6 @@ class interface():
             return False
         else:
             doc = getdoc(getattr(self._caller, api_name))
-            # if(api_name in dir(legacy_api)):
-            #     doc = "Deprecated!\n" + doc
             return doc
 
     def sync_walker_from_global_sent(self, wlk):

@@ -23,7 +23,7 @@ class alias_api():
     def __init__(self):
         self.alias_map = {}
 
-    @interface.private_api
+    @interface.private_api()
     def alias_register(self, name: str, value: str):
         """Create string to string alias mapping that caller can use.
 
@@ -43,7 +43,7 @@ class alias_api():
         self.save()
         return {'response': f"Alias from '{name}' to '{value}' set!"}
 
-    @interface.private_api
+    @interface.private_api()
     def alias_list(self):
         """List all string to string alias that caller can use.
 
@@ -60,7 +60,7 @@ class alias_api():
         """
         return self.alias_map
 
-    @interface.private_api
+    @interface.private_api()
     def alias_delete(self, name: str):
         """Delete an active string to string alias mapping.
 
@@ -85,7 +85,7 @@ class alias_api():
             return {'response': f'Alias {name} not present',
                     'success': False}
 
-    @interface.private_api
+    @interface.private_api()
     def alias_clear(self):
         """Remove all string to string alias that client can use.
 
