@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Feature: New profiling flag added to run walker api for performance profiling
 - New Feature: Direct jac file building, test, and run from in JSCTL
 - New Language Feature: Tests and testing features as first order language semantics
 - New Lang Feature: Asserts!
