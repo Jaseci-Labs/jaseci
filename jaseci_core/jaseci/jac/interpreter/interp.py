@@ -1017,11 +1017,8 @@ class interp(machine_state):
             else:
                 result += self.viable_nodes()
         else:
-            if(len(kid) > 1):
-                result = self.parent().run_architype(
-                    kid[2].token_text(), kind='node', caller=self)
-            else:
-                result = node(m_id=self._m_id, h=self._h)
+            result = self.parent().run_architype(
+                kid[2].token_text(), kind='node', caller=self)
         return result
 
     def run_walker_ref(self, jac_ast):

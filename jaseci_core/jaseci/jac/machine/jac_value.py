@@ -6,6 +6,7 @@ Representations for all jac runtime variables
 from jaseci.element.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
+from jaseci.jac.jac_set import jac_set
 import uuid
 
 NoneType = type(None)
@@ -33,6 +34,8 @@ def jac_type_wrap(val):
         elif(val == float):
             val = JAC_TYPE.FLOAT
         elif(val == list):
+            val = JAC_TYPE.LIST
+        elif(val == jac_set):
             val = JAC_TYPE.LIST
         elif(val == dict):
             val = JAC_TYPE.DICT

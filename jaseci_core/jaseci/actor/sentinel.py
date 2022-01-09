@@ -8,8 +8,7 @@ from jaseci.utils.utils import logger
 from jaseci.utils.id_list import id_list
 from jaseci.jac.ir.jac_code import jac_code, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
-from jaseci.actor.architype import architype
-from jaseci.actor.walker import walker
+from jaseci.graph.node import node
 
 
 class sentinel(element, jac_code, sentinel_interp):
@@ -106,11 +105,15 @@ class sentinel(element, jac_code, sentinel_interp):
         Spawns a new architype from registered architypes and adds to
         live walkers
         """
-        src_arch = self.arch_ids.get_obj_by_name(name, kind=kind)
+        src_arch = self.arch_ids.get_obj_by_name(name, kind=kind,
+                                                 silent=True)
         if (not src_arch):
-            logger.error(
-                str(f'{self.name}: Unable to spawn architype {[name, kind]}!')
-            )
+            if(name != 'generic'):
+                logger.error(
+                    str(
+                        f'{self.name}: Unable to spawn architype '
+                        f'{[name, kind]}!')
+                )
             return None
 
         if(caller and caller._m_id != src_arch._m_id):
@@ -129,6 +132,8 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         arch = self.spawn_architype(name, kind, caller)
         if(arch is None):
+            if(name == 'generic' and kind == 'node'):
+                return node(m_id=self._m_id, h=self._h)
             return None
         if(arch.jid in self.arch_ids):
             return arch.run()
