@@ -76,7 +76,7 @@ class jac_api():
                 faux.sentinel_set(snt=faux.active_snt(),
                                   code=file.read(), mode='ir')
             else:
-                faux.sentinel_register(code=file.read())
+                faux.sentinel_register(code=file.read(), auto_run='')
         return faux.walker_run(name=walk, snt=faux.active_snt(),
                                nd=faux.active_gph(), ctx=ctx,
                                profiling=profiling)
