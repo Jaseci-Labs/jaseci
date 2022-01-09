@@ -8,11 +8,10 @@ from jaseci.graph.node import node
 from jaseci.graph.edge import edge
 import uuid
 
+NoneType = type(None)
+
 
 class JAC_TYPE:
-    NULL = 'null'
-    TRUE = 'true'
-    FALSE = 'false'
     STR = 'JAC_TYPE.STR'
     INT = 'JAC_TYPE.INT'
     FLOAT = 'JAC_TYPE.FLOAT'
@@ -22,6 +21,7 @@ class JAC_TYPE:
     NODE = 'JAC_TYPE.NODE'
     EDGE = 'JAC_TYPE.EDGE'
     TYPE = 'JAC_TYPE.TYPE'
+    NULL = 'JAC_TYPE.NULL'
 
 
 def jac_type_wrap(val):
@@ -44,6 +44,8 @@ def jac_type_wrap(val):
             val = JAC_TYPE.EDGE
         elif(val == type):
             val = JAC_TYPE.TYPE
+        elif(val == NoneType):
+            val = JAC_TYPE.NULL
     return val
 
 
@@ -67,6 +69,8 @@ def jac_type_unwrap(val):
             val = edge
         elif(val == JAC_TYPE.TYPE):
             val = type
+        elif(val == JAC_TYPE.NULL):
+            val = NoneType
     return val
 
 
