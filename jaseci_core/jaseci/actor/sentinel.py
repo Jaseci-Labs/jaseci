@@ -9,6 +9,8 @@ from jaseci.utils.id_list import id_list
 from jaseci.jac.ir.jac_code import jac_code, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
 from jaseci.graph.node import node
+from jaseci.actor.walker import walker
+from jaseci.actor.architype import architype
 
 
 class sentinel(element, jac_code, sentinel_interp):
