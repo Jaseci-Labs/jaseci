@@ -20,7 +20,7 @@
                     "match": "\\b(import)\\b"
                 },
                 {
-                    "match": "\\b(str|int|float|list|dict|bool|node|edge|walker)\\b",
+                    "match": "\\b(str|int|float|list|dict|bool|node|edge|walker|graph|test)\\b",
                     "name": "support.type.jac"
                 },
                 {
