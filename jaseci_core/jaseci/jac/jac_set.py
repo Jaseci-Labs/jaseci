@@ -21,7 +21,8 @@ class jac_set(list):
 
     def append(self, item):
         if(not isinstance(item, element) or not hasattr(item, 'anchor_value')):
-            logger.error("Invalid object {item} to be added to jac_set!")
+            logger.error(
+                f"Invalid {type(item)} object {item} to be added to jac_set!")
         else:
             list.append(self, item)
 

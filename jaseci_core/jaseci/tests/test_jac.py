@@ -632,3 +632,15 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(sent.testcases[0]['passed'], True)
         self.assertEqual(sent.testcases[1]['passed'], False)
         self.assertEqual(sent.testcases[2]['passed'], False)
+
+    def test_report_not_to_jacset(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.report_not_to_jacset)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertIn('context', rep[0][0].keys())
+        self.assertIn('j_type', rep[0][0].keys())

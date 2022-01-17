@@ -1125,3 +1125,15 @@ testcase_asserts = \
        assert <--[10].v1=="I'm apple";
     }
     """
+
+report_not_to_jacset = \
+    """
+    node testnode {
+        has yo, mama;
+    }
+
+    walker init {
+        spawn here --> node::testnode;
+        report -->;
+    }
+    """
