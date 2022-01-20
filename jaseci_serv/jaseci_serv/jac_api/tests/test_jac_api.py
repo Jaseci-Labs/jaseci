@@ -765,3 +765,21 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.data[0]['max_bot_count'], 10)
+
+    def test_check_sentinel_set(self):
+        """Test that sentinel set works serverside"""
+        import jaseci.tests.jac_test_code as jtc
+        payload = {'op': 'sentinel_register', 'name': 'zsb',
+                   'auto_run': '', 'code': jtc.version_label}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'sentinel_set', 'code': jtc.set_get_global_dict}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'walker_run', 'name': 'setter'}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'walker_run', 'name': 'getter'}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(res.data[0]['max_bot_count'], 10)

@@ -133,7 +133,7 @@ def extract_api_tree():
                 api_root[j] = {}
             api_root = api_root[j]
         api_root['leaf'] = ['_'.join(i['groups']), i['sig'],
-                            i in session['master']._public_api,  i['doc'],
+                            i in super_master._public_api,  i['doc'],
                             i['cli_args']]
     return api_funcs
 

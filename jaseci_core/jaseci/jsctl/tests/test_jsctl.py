@@ -269,3 +269,14 @@ class jsctl_test(TestCaseHelper, TestCase):
         r = self.call_cast(
             "jac run jaseci/jsctl/tests/teststest.jir -walk alt_init")
         self.assertEqual(r, [7])
+
+    def test_jsctl_sentinel_set(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/teststest.jac -set_active true")
+        self.call(
+            "sentinel set -code "
+            "jaseci/jsctl/tests/base.jac")
+        r = self.call_cast("walker run -name init")
+        r = self.call_cast("walker run -name init")
+        self.assertEqual(len(r), 8)
