@@ -88,7 +88,8 @@ def interface_api(api_name, is_public, **kwargs):
     if('code' in kwargs and kwargs['code']):
         if (os.path.isfile(kwargs['code'])):
             with open(kwargs['code'], 'r') as file:
-                if(kwargs['name'] == 'default'):
+                if(api_name == 'sentinel_register' and
+                   'name'in kwargs and kwargs['name'] == 'default'):
                     kwargs['name'] = kwargs['code']
                 kwargs['code'] = file.read()
         else:
