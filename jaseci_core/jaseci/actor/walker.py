@@ -58,7 +58,7 @@ class walker(element, jac_code, walker_interp, anchored):
         """Return list of md5 keys for namespaces"""
         ret = {}
         for i in self.namespaces:
-            ret[hashlib.md5((self._m_id+i).encode()).hexdigest()] = i
+            ret[i] = hashlib.md5((self._m_id+i).encode()).hexdigest()
         return ret
 
     def step(self):

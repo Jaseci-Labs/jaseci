@@ -24,7 +24,7 @@ class walker_api():
         Public api for running walkers, namespace key must be provided
         along with the walker id and node id
         """
-        if(key not in wlk.namespace_keys().keys()):
+        if(key not in wlk.namespace_keys().values()):
             return ['Not authorized to execute this walker']
         if(global_sync):  # Test needed
             self.sync_walker_from_global_sent(wlk)
