@@ -14,19 +14,19 @@ class jsctl_test(TestCaseHelper, TestCase):
     def call(self, cmd):
         res = CliRunner(mix_stderr=False).invoke(jsctl.jsctl,
                                                  ["-m"]+cmd.split(' '))
-        self.log(res.stdout)
-        self.log(res.stderr)
-        self.log(res.exception)
+        # self.log(res.stdout)
+        # self.log(res.stderr)
+        # self.log(res.exception)
         return res.stdout
 
     def call_cast(self, cmd):
         ret = self.call(cmd)
-        self.log(ret)
+        # self.log(ret)
         return json.loads(ret)
 
     def call_split(self, cmd):
         ret = self.call(cmd)
-        self.log(ret)
+        # self.log(ret)
         return ret.split('\n')
 
     def tearDown(self):
@@ -173,7 +173,7 @@ class jsctl_test(TestCaseHelper, TestCase):
             "sentinel register -name zsb -code "
             "jaseci/jsctl/tests/zsb.jac -set_active true")
         r = self.call_cast('walker get -mode keys -wlk zsb:walker:pubinit')
-        key = list(r.keys())[0]
+        key = r['anyone']
         r = self.call_cast('alias list')
         walk = r['zsb:walker:pubinit']
         nd = r['active:graph']

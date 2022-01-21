@@ -57,7 +57,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
                    'wlk': 'zsb:walker:pubinit'}
         res = self.auth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        key = list(res.data.keys())[0]
+        key = res.data['anyone']
         payload = {'op': 'alias_list'}
         res = self.auth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
@@ -99,7 +99,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
                    'wlk': 'spawned:walker:pubinit'}
         res = self.auth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        key = list(res.data.keys())[0]
+        key = res.data['anyone']
         payload = {'op': 'alias_list'}
         res = self.auth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')

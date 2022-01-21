@@ -98,9 +98,8 @@ class orm_hook(mem_hook):
             self.red.set(item.id.urn, item.json(detailed=True))
         except TypeError:
             logger.error(
-                str(f"Item {item} is not JSON serializable for redis store!"),
-                exc_info=True
-            )
+                f"Item {item} is not JSON serializable for redis store!")
+            logger.error(f"Item details: {item.serialize()}",  exc_info=True)
         except Exception as e:
             logger.error(
                 str(f"Couldn't save {item} to redis! {e}"),

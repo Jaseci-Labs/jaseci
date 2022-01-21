@@ -21,6 +21,7 @@
 
 ### Notes
 
+- Format of `walker get -mode key` api changed from {key:namespace} to {namespace:key}
 - `test` is now a keyword with added test capabilities in jaseci
 - Type, int, float, str, list, dict, bool, are now keywords, if you used these as variable names in legacy code, must make updates.
 - The destroy built-in is totally revised `lst.destroy(idx)` on lists should be changed to `destroy lst[idx]`.

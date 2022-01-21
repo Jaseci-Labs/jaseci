@@ -101,8 +101,9 @@ def jac_wrap_value(val, serialize_mode=False):
     val = jac_type_wrap(val)
     if (isinstance(val, element)):
         val = jac_elem_wrap(val, serialize_mode=serialize_mode)
+    elif(isinstance(val, jac_set)):
+        val = jac_wrap_value(list(val), serialize_mode)
     elif (isinstance(val, list)):
-        val = list(val)
         for i in range(len(val)):
             val[i] = jac_wrap_value(val[i], serialize_mode)
     elif (isinstance(val, dict)):
