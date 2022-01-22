@@ -1,13 +1,11 @@
 from jaseci.attr.action import action
-from jaseci.actions.utils.find_action import find_action
-from jaseci.actions.utils.find_action import get_action_set
+from jaseci.actions.find_action import find_action
+from jaseci.actions.find_action import get_action_set
 import uuid
 
 action_list = get_action_set('std') + get_action_set('net') + \
     get_action_set('rand') + get_action_set('vector') + \
     get_action_set('request')
-
-registered_globals = {}
 
 
 def get_global_actions(hook):

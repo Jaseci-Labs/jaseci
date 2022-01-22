@@ -5,7 +5,7 @@ This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
 from jaseci.utils.utils import logger
-from jaseci.actions.utils.find_action import find_action
+from jaseci.actions.find_action import find_action
 from jaseci.element.element import element
 
 from jaseci.jac.jac_set import jac_set

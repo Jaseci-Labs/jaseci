@@ -11,6 +11,7 @@ def find_action(func_name):
     if found
     """
     prefix = actions.__name__ + "."
+    print(actions.__path__)
     for importer, modname, ispkg in \
             pkgutil.iter_modules(actions.__path__, prefix):
         if(not ispkg):
