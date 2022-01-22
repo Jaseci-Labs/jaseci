@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from rest_framework.test import APIClient
-from jaseci.actions.module.ai_serving_api import check_model_live
+from jaseci.actions.ai_serving_api import check_model_live
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 import uuid
