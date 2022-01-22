@@ -37,7 +37,7 @@
             ]
         },
         "entity_block_definition": {
-            "begin": "^\\s*(node|walker)\\s+([A-Za-z][\\w]*)\\s*({)",
+            "begin": "^\\s*(node|walker)\\s+([A-Za-z][\\w]*)(\\s*({)|;)",
             "name": "source.jac.embedded.source",
             "beginCaptures": {
                 "1": {
@@ -50,7 +50,7 @@
                     "name": "punctuation.definition.tag.jac"
                 }
             },
-            "end": "\\s*\\}",
+            "end": "\\s*\\(}|;)",
             "endCaptures": {
                 "0": {
                     "name": "punctuation.definition.tag.prisma"
