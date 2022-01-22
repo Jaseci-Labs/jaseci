@@ -1,5 +1,5 @@
 from jaseci.utils.mem_hook import mem_hook
-from jaseci.actions.module.ai_serving_api import check_model_live
+from jaseci.actions.ai_serving_api import check_model_live
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
 
