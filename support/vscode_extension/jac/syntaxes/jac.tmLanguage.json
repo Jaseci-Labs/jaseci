@@ -56,7 +56,7 @@
             "end": "\\s*\\(}|;)",
             "endCaptures": {
                 "0": {
-                    "name": "punctuation.definition.tag.prisma"
+                    "name": "punctuation.definition.tag.jac"
                 }
             }
         },
@@ -164,7 +164,7 @@
             }
         },
         "functional": {
-            "name": "source.prisma.value",
+            "name": "source.jac.value",
             "patterns": [
                 {
                     "include": "#function_calls"
@@ -190,7 +190,7 @@
             "end": "\\)",
             "endCaptures": {
                 "0": {
-                    "name": "punctuation.definition.tag.prisma"
+                    "name": "punctuation.definition.tag.jac"
                 }
             }
         }
