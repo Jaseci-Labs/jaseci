@@ -10,6 +10,9 @@
         },
         {
             "include": "#strings"
+        },
+        {
+            "include": "#entity_block_definition"
         }
     ],
     "repository": {
@@ -20,7 +23,7 @@
                     "match": "\\b(import)\\b"
                 },
                 {
-                    "match": "\\b(str|int|float|list|dict|bool|node|edge|walker|graph|test)\\b",
+                    "match": "\\b(str|int|float|list|dict|bool|edge|graph|digraph|subgraph|test)\\b",
                     "name": "support.type.jac"
                 },
                 {
@@ -33,17 +36,38 @@
                 }
             ]
         },
+        "entity_block_definition": {
+            "begin": "^\\s*(node|walker)\\s+([A-Za-z][\\w]*)\\s*({)",
+            "name": "source.jac.embedded.source",
+            "beginCaptures": {
+                "1": {
+                    "name": "storage.type.entity.jac"
+                },
+                "2": {
+                    "name": "entity.name.type.entity.jac"
+                },
+                "3": {
+                    "name": "punctuation.definition.tag.jac"
+                }
+            },
+            "end": "\\s*\\}",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.tag.prisma"
+                }
+            }
+        },
         "strings": {
             "patterns": [
                 {
-                    "include": "#doublequote"
+                    "include": "#double_quote"
                 },
                 {
-                    "include": "#singlequote"
+                    "include": "#single_quote"
                 }
             ]
         },
-        "doublequote": {
+        "double_quote": {
             "name": "string.quoted.double.jac",
             "begin": "\"",
             "end": "\"",
@@ -54,7 +78,7 @@
                 }
             ]
         },
-        "singlequote": {
+        "single_quote": {
             "name": "string.quoted.double.jac",
             "begin": "'",
             "end": "'",
@@ -68,17 +92,17 @@
         "comments": {
             "patterns": [
                 {
-                    "include": "#numbercomment"
+                    "include": "#number_comment"
                 },
                 {
-                    "include": "#dblslashcomment"
+                    "include": "#dblslash_comment"
                 },
                 {
-                    "include": "#commentblock"
+                    "include": "#comment_block"
                 }
             ]
         },
-        "numbercomment": {
+        "number_comment": {
             "name": "comment.line.number-sign.jac",
             "begin": "(\\#)",
             "beginCaptures": {
@@ -93,7 +117,7 @@
                 }
             ]
         },
-        "dblslashcomment": {
+        "dblslash_comment": {
             "name": "comment.line.double-slash.jac",
             "begin": "(\\/\\/)",
             "beginCaptures": {
@@ -108,7 +132,7 @@
                 }
             ]
         },
-        "commentblock": {
+        "comment_block": {
             "name": "comment.block.jac",
             "begin": "(\\/\\*)",
             "beginCaptures": {
