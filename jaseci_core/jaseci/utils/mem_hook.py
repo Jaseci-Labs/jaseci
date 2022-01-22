@@ -33,7 +33,7 @@ class mem_hook():
     """
 
     def __init__(self):
-        from jaseci.actions.utils.global_actions import get_global_actions
+        from jaseci.actions.global_actions import get_global_actions
         self.mem = {'global': {}}
         self.global_action_list = get_global_actions(self)
 
