@@ -214,6 +214,23 @@ class jsctl_test(TestCaseHelper, TestCase):
         r = self.call_cast("walker run -name init")
         self.assertEqual(len(r), 8)
 
+    def test_jsctl_import_fails_when_incomplete(self):
+        self.logger_on()
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/base3.jac -set_active true")
+        r = self.call_cast("walker run -name init")
+        self.log(r)
+        self.assertTrue('success' in r.keys())
+        self.assertFalse(r['success'])
+
+    def test_jsctl_import_from_local(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/base4.jac -set_active true")
+        r = self.call_cast("walker run -name init")
+        self.assertEqual(len(r), 8)
+
     def test_jsctl_run_tests(self):
         self.call(
             "sentinel register -code "

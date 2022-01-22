@@ -93,7 +93,6 @@ class interp(machine_state):
                 COMMA dotted_name (preset_in_out event_clause)?
             )* SEMI
             | KW_CAN NAME event_clause? code_block;
-
         """
         kid = jac_ast.kid
         kid = kid[1:]
