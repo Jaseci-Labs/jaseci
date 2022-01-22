@@ -15,6 +15,9 @@
             "include": "#functional"
         },
         {
+            "include": "#assignment"
+        },
+        {
             "include": "#entity_block_definition"
         }
     ],
@@ -193,6 +196,28 @@
                     "name": "punctuation.definition.tag.jac"
                 }
             }
+        },
+        "assignment": {
+            "patterns": [
+                {
+                    "begin": "(^\\s|:?\\s|)(\\w+|\\w+(?:\\.\\w+)+)\\s*(=|\\+=|-=|\\+\\+|--)\\s*",
+                    "beginCaptures": {
+                        "1": {},
+                        "2": {
+                            "name": "variable.other.assignment.jac"
+                        },
+                        "3": {
+                            "name": "keyword.operator.terraform"
+                        }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#functional"
+                        }
+                    ],
+                    "end": "\\n"
+                }
+            ]
         }
     },
     "scopeName": "source.jac"
