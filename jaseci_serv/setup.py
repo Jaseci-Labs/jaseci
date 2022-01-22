@@ -15,7 +15,8 @@ setup(
         # 'mysqlclient',
         'sphinx>=2.4.3,<2.5.0',
         'django-cors-headers',
-        'tblib'
+        'tblib',
+        'django-test-migrations'
     ],
     package_data={"": ["*.jac"], },
     entry_points={

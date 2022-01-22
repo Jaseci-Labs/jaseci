@@ -5,7 +5,6 @@
 __pycache__
 db.sqlite3
 media
-# migrations
 
 # General # 
 *.egg-info/
