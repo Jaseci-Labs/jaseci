@@ -12,6 +12,9 @@
             "include": "#strings"
         },
         {
+            "include": "#functional"
+        },
+        {
             "include": "#entity_block_definition"
         }
     ],
@@ -23,7 +26,7 @@
                     "match": "\\b(import)\\b"
                 },
                 {
-                    "match": "\\b(str|int|float|list|dict|bool|edge|graph|digraph|subgraph|test)\\b",
+                    "match": "\\b(str|int|float|list|dict|bool|edge|digraph|subgraph|test)\\b",
                     "name": "support.type.jac"
                 },
                 {
@@ -37,7 +40,7 @@
             ]
         },
         "entity_block_definition": {
-            "begin": "^\\s*(node|walker)\\s+([A-Za-z][\\w]*)(\\s*({)|;)",
+            "begin": "^\\s*(node|walker|graph)\\s+([A-Za-z][\\w]*)(\\s*({)|;)",
             "name": "source.jac.embedded.source",
             "beginCaptures": {
                 "1": {
@@ -157,6 +160,37 @@
             "captures": {
                 "1": {
                     "name": "keyword.codetag.notation.jac"
+                }
+            }
+        },
+        "functional": {
+            "name": "source.prisma.value",
+            "patterns": [
+                {
+                    "include": "#function_calls"
+                }
+            ]
+        },
+        "function_calls": {
+            "name": "source.jac.functional_calls",
+            "begin": "(\\w+)(\\()",
+            "beginCaptures": {
+                "1": {
+                    "name": "support.function.functional_calls.jac"
+                },
+                "2": {
+                    "name": "punctuation.definition.tag.jac"
+                }
+            },
+            "patterns": [
+                {
+                    "include": "#functional"
+                }
+            ],
+            "end": "\\)",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.tag.prisma"
                 }
             }
         }
