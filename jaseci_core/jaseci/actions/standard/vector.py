@@ -1,8 +1,10 @@
 """Built in actions for Jaseci"""
 import numpy as np
 from operator import itemgetter
+from jaseci.actions.live_actions import jaseci_action
 
 
+@jaseci_action()
 def cosine_sim(param_list, meta):
     """
     Caculate the cosine similarity score of two given vectors
@@ -19,6 +21,7 @@ def cosine_sim(param_list, meta):
     return result.astype(float)
 
 
+@jaseci_action()
 def dot_product(param_list, meta):
     """
     Caculate the dot product of two given vectors
@@ -31,6 +34,7 @@ def dot_product(param_list, meta):
     return np.inner(param_list[0], param_list[1])
 
 
+@jaseci_action()
 def get_centroid(param_list, meta):
     """
     Calculate the centroid of the given list of vectors
@@ -45,6 +49,7 @@ def get_centroid(param_list, meta):
     return [centroid, tightness]
 
 
+@jaseci_action()
 def softmax(param_list, meta):
     """
     Calculate the centroid of the given list of vectors
@@ -57,6 +62,7 @@ def softmax(param_list, meta):
     return list(e_x / e_x.sum())
 
 
+@jaseci_action()
 def sort_by_key(param_list, meta):  # TODO: Should be in std lib
     """
     Sort the given list. Optionally by specific key

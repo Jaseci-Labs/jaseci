@@ -1,6 +1,8 @@
 """Built in actions for Jaseci"""
+from jaseci.actions.live_actions import jaseci_action
 
 
+@jaseci_action()
 def max(param_list, meta):
     ret = None
     if (not len(param_list)):

@@ -5,8 +5,8 @@ Each action has an id, name, timestamp and it's set of edges.
 """
 from .item import item
 import importlib
-
-ACTION_PACKAGE = 'jaseci.actions.'
+from jaseci.actions.live_actions import live_actions
+# ACTION_PACKAGE = 'jaseci.actions.'
 
 
 class action(item):
@@ -32,10 +32,14 @@ class action(item):
         Also note that Jac stores preset_in_out as input/output list of hex
         ids since preset_in_out doesn't use _ids convention
         """
-        result = getattr(
-            importlib.import_module(
-                ACTION_PACKAGE+self.value[0].split('.')[-1]),
-            self.value[1]
-        )(param_list, meta={'m_id': scope.parent._m_id,
-                            'h': scope.parent._h, 'scope': scope})
+        # result = getattr(
+        #     importlib.import_module(
+        #         ACTION_PACKAGE+self.value[0].split('.')[-1]),
+        #     self.value[1]
+        # )(param_list, meta={'m_id': scope.parent._m_id,
+        #                     'h': scope.parent._h, 'scope': scope})
+        result = live_actions[
+            self.value](param_list,
+                        meta={'m_id': scope.parent._m_id,
+                              'h': scope.parent._h, 'scope': scope})
         return result
