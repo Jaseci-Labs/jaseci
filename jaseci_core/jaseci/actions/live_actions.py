@@ -2,6 +2,7 @@
 General action base class with automation for hot loading
 """
 from importlib.util import spec_from_file_location, module_from_spec
+from jaseci.utils.utils import logger
 
 live_actions = {}
 
@@ -15,6 +16,7 @@ def jaseci_action(act_group=None):
 
 def assimilate_action(func, act_group=None):
     """Helper for jaseci_action decorator"""
+    global live_actions
     act_group = [func.__module__.split(
         '.')[-1]] if act_group is None else act_group
     live_actions[f"{'.'.join(act_group+[func.__name__])}"] = func
@@ -24,7 +26,12 @@ def assimilate_action(func, act_group=None):
 def load_actions(file):
     """Load all jaseci actions from python file"""
     spec = spec_from_file_location(str(file).split("/")[-1][:-3], str(file))
-    spec.loader.exec_module(module_from_spec(spec))
+    if(spec is None):
+        logger.error(f"Cannot hot load from action file {file}")
+        return False
+    else:
+        spec.loader.exec_module(module_from_spec(spec))
+        return True
 
 
 def load_standard():
