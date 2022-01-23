@@ -1,7 +1,9 @@
 """Built in actions for Jaseci"""
 import requests
+from jaseci.actions.live_actions import jaseci_action
 
 
+@jaseci_action()
 def get(param_list, meta):
     """
     Issue request
@@ -23,6 +25,7 @@ def get(param_list, meta):
     return ret
 
 
+@jaseci_action()
 def post(param_list, meta):
     """
     Issue request
@@ -44,6 +47,7 @@ def post(param_list, meta):
     return ret
 
 
+@jaseci_action()
 def put(param_list, meta):
     """
     Issue request
@@ -65,6 +69,7 @@ def put(param_list, meta):
     return ret
 
 
+@jaseci_action()
 def delete(param_list, meta):
     """
     Issue request
@@ -86,6 +91,7 @@ def delete(param_list, meta):
     return ret
 
 
+@jaseci_action()
 def head(param_list, meta):
     """
     Issue request
@@ -107,6 +113,7 @@ def head(param_list, meta):
     return ret
 
 
+@jaseci_action()
 def options(param_list, meta):
     """
     Issue request

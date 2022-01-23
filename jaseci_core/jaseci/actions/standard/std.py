@@ -3,11 +3,13 @@ from operator import itemgetter
 from jaseci.utils.utils import logger, app_logger, json_out
 from datetime import datetime
 from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
+from jaseci.actions.live_actions import jaseci_action
 import sys
 import uuid
 import json
 
 
+@jaseci_action()
 def log(param_list, meta):
     """Standard built in for printing output to log"""
     result = ''
@@ -17,18 +19,21 @@ def log(param_list, meta):
     return result
 
 
+@jaseci_action()
 def out(param_list, meta):
     """Standard built in for printing output"""
     param_list = [json_out(jwv(x)) for x in param_list]
     print(*param_list)
 
 
+@jaseci_action()
 def err(param_list, meta):
     """Standard built in for printing to stderr"""
     param_list = [json_out(jwv(x)) for x in param_list]
     print(*param_list, file=sys.stderr)
 
 
+@jaseci_action()
 def sort_by_col(param_list, meta):
     """
     Sorts in place list of lists by column
@@ -49,11 +54,13 @@ def sort_by_col(param_list, meta):
     return sorted(lst, key=itemgetter(num), reverse=reverse)
 
 
+@jaseci_action()
 def time_now(param_list, meta):
     """Get utc date time for now in iso format"""
     return datetime.utcnow().isoformat()
 
 
+@jaseci_action()
 def set_global(param_list, meta):
     """
     Set global variable visible to all walkers/users
@@ -69,6 +76,7 @@ def set_global(param_list, meta):
     return json.loads(mast.global_get(param_list[0])['value'])
 
 
+@jaseci_action()
 def get_global(param_list, meta):
     """
     Set global variable visible to all walkers/users
@@ -85,6 +93,7 @@ def get_global(param_list, meta):
         return None
 
 
+@jaseci_action()
 def destroy_global(param_list, meta):
     """Get utc date time for now in iso format"""
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
@@ -93,6 +102,7 @@ def destroy_global(param_list, meta):
     return mast.global_delete(param_list[0])
 
 
+@jaseci_action()
 def set_perms(param_list, meta):
     """
     Sets object access mode for any Jaseci object
@@ -106,6 +116,7 @@ def set_perms(param_list, meta):
                                  mode=param_list[1])['success']
 
 
+@jaseci_action()
 def get_perms(param_list, meta):
     """
     Returns object access mode for any Jaseci object
@@ -116,6 +127,7 @@ def get_perms(param_list, meta):
     return param_list[0].j_access
 
 
+@jaseci_action()
 def grant_perms(param_list, meta):
     """
     Grants another user permissions to access a Jaseci object
@@ -131,6 +143,7 @@ def grant_perms(param_list, meta):
                                    read_only=param_list[3])['success']
 
 
+@jaseci_action()
 def revoke_perms(param_list, meta):
     """
     Remove permissions for user to access a Jaseci object
