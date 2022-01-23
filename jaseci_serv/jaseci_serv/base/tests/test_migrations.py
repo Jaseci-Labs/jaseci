@@ -57,3 +57,29 @@ class TestMigrationsBase0003(MigratorTestCase):
         assert jaseci_object.objects.filter(kind='object_kind').count() == 0
         new_obj = jaseci_object.objects.get(name='object_kind')
         assert new_obj.kind == 'object_name'
+
+
+class TestMigrationsBase0004(MigratorTestCase):
+    """Test direct migrations for the base app"""
+    migrate_from = ('base', '0003_swap_kind_and_name')
+    migrate_to = ('base', '0004_update_kind_with_j_type')
+    old_user = ''
+    old_jaseci_obj = ''
+
+    def prepare(self):
+        """Data preparation"""
+        jaseci_object = self.old_state.apps.get_model('base', 'JaseciObject')
+        self.old_jaseci_obj = jaseci_object.objects.create(
+            kind='basic',
+            j_type='node',
+            name='test_obj'
+        )
+
+    def test_migration_base0004(self):
+        """Test migration 00004 which set kind to be j_type value"""
+        jaseci_object = self.new_state.apps.get_model('base', 'JaseciObject')
+        assert jaseci_object.objects.count() == 1
+        new_obj = jaseci_object.objects.get(name='test_obj')
+        assert new_obj.kind == 'node'
+        assert new_obj.j_type == 'node'
+
