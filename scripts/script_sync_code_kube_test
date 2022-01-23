@@ -1,6 +1,9 @@
 #!/bin/bash
 PODN=jaseci
 TREADN=8
+echo $PODN
+echo $THREADN
+
 if [[ $1 ]]; then
     PODN=$1
 fi
