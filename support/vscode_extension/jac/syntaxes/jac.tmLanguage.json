@@ -43,7 +43,7 @@
             ]
         },
         "entity_block_definition": {
-            "begin": "^\\s*(node|walker|graph)\\s+([A-Za-z][\\w]*)(\\s*({)|;)",
+            "begin": "^\\s*(node|walker|graph)\\s+([A-Za-z][\\w]*|(?:\\w+(?:(?:\\,\\s?|\\:)(?:\\w+|\\s\\w))+))(\\s*({)|;)",
             "name": "source.jac.embedded.source",
             "beginCaptures": {
                 "1": {
