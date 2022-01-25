@@ -1,7 +1,7 @@
 # Setting of Monitoring for JASECI #
 
 
-## PreRequisite ##
+## Prerequisite ##
 
 ### Install Helm  ###
 
@@ -13,7 +13,7 @@ https://helm.sh/docs/intro/install/
 
 #### Step 1 ####
 
-# add prometheus Helm repo
+##### add prometheus Helm repo  #####
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 
 #### Step 2 ####
@@ -42,7 +42,7 @@ kubectl port-forward -n prometheus deploy/prometheus-server 8080:9090
 
 #### Step 1 ####
 
-# Go to grafana.yaml under grafana  Directory in the code and update the values of promethues URL as required 
+##### Go to grafana.yaml under grafana  Directory in the code and update the values of promethues URL as required #####
 
 
 #### Step 1 ####
@@ -74,7 +74,7 @@ kubectl get svc grafana
 Visit the URL from your Browser and login with credentials
 
 Username : admin
-password- <As given while applying grafana Helm>
+password- "As given while applying grafana Helm"
 
 #### Step 4 ####
 
@@ -83,18 +83,29 @@ For creating a dashboard to monitor the cluster:
 ## Cluster Monitoring Dashboard ##
 
 Click '+' button on left panel and select ‘Import’.
+
 Enter 3119 dashboard id under Grafana.com Dashboard.
+
 Click ‘Load’.
+
 Select ‘Prometheus’ as the endpoint under prometheus data sources drop down.
+
 Click ‘Import’.
+
 This will show monitoring dashboard for all cluster nodes
 
 ## Pods Monitoring Dashboard ##
 
 Click '+' button on left panel and select ‘Import’.
+
 Enter 6417 dashboard id under Grafana.com Dashboard.
+
 Click ‘Load’.
+
 Enter Kubernetes Pods Monitoring as the Dashboard name.
+
 Click change to set the Unique identifier (uid).
+
 Select ‘Prometheus’ as the endpoint under prometheus data sources drop down.s
+
 Click ‘Import’.
