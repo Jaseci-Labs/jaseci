@@ -108,3 +108,10 @@ Click change to set the Unique identifier (uid).
 Select ‘Prometheus’ as the endpoint under prometheus data sources drop down.s
 
 Click ‘Import’.
+
+
+
+
+
+
+##### Credits https://www.eksworkshop.com/
