@@ -61,6 +61,8 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_carry_forward(self):
         self.call(
+            "actions register ../jskit_lib/infer.py")
+        self.call(
             "sentinel register -name ll -code "
             "jaseci/jsctl/tests/ll.jac -set_active true")
         self.call("graph create -set_active true")
@@ -288,3 +290,8 @@ class jsctl_test(TestCaseHelper, TestCase):
         r = self.call_cast("walker run -name init")
         r = self.call_cast("walker run -name init")
         self.assertEqual(len(r), 8)
+
+    def test_jsctl_action_list(self):
+        r = self.call_cast(
+            "actions list")
+        self.assertIn("std.out", r)
