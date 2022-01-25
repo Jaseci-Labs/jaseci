@@ -3,6 +3,7 @@ Admin Global api functions as a mixin
 """
 from jaseci.api.interface import interface
 import jaseci.actions.live_actions as lact
+from jaseci.attr.action import action
 
 
 class actions_api():
@@ -26,10 +27,9 @@ class actions_api():
         """
         """
         actions = list(lact.live_actions.keys())
-        if(not len(name)):
-            return actions
-        else:
-            return list(filter(lambda a: a.startswith(name), actions))
+        if(len(name)):
+            actions = list(filter(lambda a: a.startswith(name), actions))
+        return actions
 
     @interface.admin_api()
     def actions_delete(self, name: str, value: str):
