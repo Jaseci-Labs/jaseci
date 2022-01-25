@@ -40,7 +40,6 @@ kubectl port-forward -n prometheus deploy/prometheus-server 8080:9090
 
 ## Grafana ##
 
-#### Step 1 ####
 
 ##### Go to grafana.yaml under grafana  Directory in the code and update the values of promethues URL as required #####
 
@@ -69,14 +68,14 @@ Run below code to get the External-IP for Grafana
 
 kubectl get svc grafana
 
-#### Step 4 ####
+#### Step 5 ####
 
 Visit the URL from your Browser and login with credentials
 
 Username : admin
 password- "As given while applying grafana Helm"
 
-#### Step 4 ####
+#### Step 6 ####
 
 For creating a dashboard to monitor the cluster:
 
