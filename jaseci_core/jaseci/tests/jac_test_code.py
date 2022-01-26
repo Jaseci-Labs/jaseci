@@ -1137,3 +1137,19 @@ report_not_to_jacset = \
         report -->;
     }
     """
+
+walker_spawn_unwrap_check = \
+    """
+    node testnode {
+        has yo, mama;
+    }
+
+    walker print {
+       has anchor nd;
+       nd=here;
+    }
+
+    walker init {
+        report &(spawn here walker::print);
+    }
+    """

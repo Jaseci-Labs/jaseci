@@ -1234,7 +1234,6 @@ class interp(machine_state):
         ret.unwrap()
         self.report = self.report + walk.report
         walk.destroy()
-        # ret.unwrap()
         return ret
 
     def run_graph_spawn(self, jac_ast, location):

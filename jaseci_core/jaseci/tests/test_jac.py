@@ -644,3 +644,14 @@ class jac_tests(TestCaseHelper, TestCase):
         rep = test_walker.report
         self.assertIn('context', rep[0][0].keys())
         self.assertIn('j_type', rep[0][0].keys())
+
+    def test_walker_spawn_unwrap_check(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.walker_spawn_unwrap_check)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertTrue(rep[0].startswith('urn:uuid'))
