@@ -20,7 +20,8 @@ class sentinel_api():
     @interface.private_api()
     def sentinel_register(self, name: str = 'default', code: str = '',
                           encoded: bool = False, auto_run: str = 'init',
-                          ctx: dict = {}, set_active: bool = True):
+                          auto_gen_graph: bool = True, ctx: dict = {},
+                          set_active: bool = True):
         """
         Create blank or code loaded sentinel and return object
         Auto_run is the walker to execute on register (assumes active graph
@@ -31,7 +32,8 @@ class sentinel_api():
         if(not snt):
             snt = sentinel(m_id=self._m_id, h=self._h, name=name)
             self.sentinel_ids.add_obj(snt)
-            new_gph = self.graph_create(set_active=True)
+            if(auto_gen_graph):
+                new_gph = self.graph_create(set_active=True)
         if(code):
             if (encoded):
                 code = b64decode_str(code)
