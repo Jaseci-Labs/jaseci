@@ -1231,6 +1231,7 @@ class interp(machine_state):
             self.run_spawn_ctx(kid[1], walk)
         walk.run()
         ret = jac_value(self, value=walk.anchor_value())
+        ret.unwrap()
         self.report = self.report + walk.report
         walk.destroy()
         # ret.unwrap()
