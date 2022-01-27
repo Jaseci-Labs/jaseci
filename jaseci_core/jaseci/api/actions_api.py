@@ -3,7 +3,6 @@ Admin Global api functions as a mixin
 """
 from jaseci.api.interface import interface
 import jaseci.actions.live_actions as lact
-from jaseci.attr.action import action
 
 
 class actions_api():

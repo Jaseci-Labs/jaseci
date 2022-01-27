@@ -1,7 +1,6 @@
 """Built in actions for Jaseci"""
 from datetime import datetime
 from datetime import timedelta
-from jaseci.utils.utils import logger
 from jaseci.jac.machine.jac_value import jac_type_unwrap as jtu
 from jaseci.actions.live_actions import jaseci_action
 

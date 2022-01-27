@@ -4,7 +4,6 @@ Action class for Jaseci
 Each action has an id, name, timestamp and it's set of edges.
 """
 from .item import item
-import importlib
 from jaseci.actions.live_actions import live_actions
 # ACTION_PACKAGE = 'jaseci.actions.'
 
