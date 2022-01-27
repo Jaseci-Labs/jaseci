@@ -26,15 +26,31 @@
             "patterns": [
                 {
                     "name": "storage.modifier.jac",
-                    "match": "\\b(import)\\b"
+                    "match": "\\b(import|ignore|with|strict|context|details|info|activity|length|keys)\\b"
                 },
                 {
-                    "match": "\\b(str|int|float|list|dict|bool|edge|digraph|subgraph|test)\\b",
+                    "match": "\\b(str|int|float|list|dict|bool|edge|digraph|subgraph|test|type)\\b",
                     "name": "support.type.jac"
                 },
                 {
                     "name": "keyword.control.jac",
-                    "match": "\\b(if|elif|else|while|for|take|ignore|skip|disengage|break|continue)\\b"
+                    "match": "\\b(if|elif|else|while|for|while|in|by|to|report|take|ignore|skip|disengage|break|continue|destroy|spawn|entry|exit|assert)\\b"
+                },
+                {
+                    "name": "keyword.operator.logical",
+                    "match": "\\b(not|and|or)\\b"
+                },
+                {
+                    "name": "variable.other.property",
+                    "match": "\\b(has|can|anchor|private)\\b"
+                },
+                {
+                    "name": "keyword.control.flow.jac",
+                    "match": "\\s*\\b(?<!\\.)(report|destroy|here|take|in)\\b(?=.*[-\\\\])"
+                },
+                {
+                    "name": "keyword.control.flow.jac",
+                    "match": "\\s*\\b(?<!\\.)(node|walker)\\b(?=.*[:\\\\])"
                 },
                 {
                     "match": "\\b(null|true|false)\\b",
@@ -167,7 +183,7 @@
             }
         },
         "functional": {
-            "name": "source.jac.value",
+            "name": "source.jac.functional",
             "patterns": [
                 {
                     "include": "#function_calls"
