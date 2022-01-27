@@ -15,16 +15,18 @@ from jaseci.jac.machine.jac_scope import jac_scope
 class machine_state():
     """Shared interpreter class across both sentinels and walkers"""
 
-    def __init__(self, parent_override=None, m_id=None):
+    def __init__(self, parent_override=None, caller=None):
         self.report = []
         self.runtime_errors = []
         self._parent_override = parent_override
-        if(not isinstance(self, element)):
-            self._m_id = m_id
+        if(not isinstance(self, element) and caller):
+            self._m_id = caller._m_id
+            self._h = caller._h
         self._scope_stack = [None]
         self._jac_scope = None
         self._loop_ctrl = None
         self._stopped = None
+        self._assign_mode = False
         self._loop_limit = 10000
 
     def parent(self):
@@ -51,15 +53,11 @@ class machine_state():
 
     # Helper Functions ##################
 
-    def parse_str_token(self, s):
-        return str(bytes(s, "utf-8").
-                   decode("unicode_escape")[1:-1])
-
     def obj_set_to_jac_set(self, obj_set):
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set(self)
+        ret = jac_set()
         for i in obj_set:
             ret.add_obj(i)
         return ret
@@ -68,7 +66,7 @@ class machine_state():
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set(self)
+        ret = jac_set()
         for i in edge_set.obj_list():
             ret.add_obj(i.opposing_node(self.current_node))
         return ret
@@ -87,7 +85,7 @@ class machine_state():
         """Generates string for screen output"""
         name = self.name if hasattr(self, 'name') else 'blank'
         if(jac_ast):
-            msg = f'{name} - line {jac_ast.line}, ' + \
+            msg = f'{jac_ast.mod_name}:{name} - line {jac_ast.line}, ' + \
                 f'col {jac_ast.column} - rule {jac_ast.name} - {msg}'
         else:
             msg = f'{msg}'

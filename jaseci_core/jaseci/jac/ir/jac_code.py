@@ -12,7 +12,11 @@ class jac_json_enc(json.JSONEncoder):
 
     def default(self, obj):
         if(isinstance(obj, ast)):
-            return obj.__dict__
+            retd = {}
+            for i in obj.__dict__.keys():
+                if(not i.startswith('_')):
+                    retd[i] = obj.__dict__[i]
+            return retd
         return super().default(obj)
 
 
@@ -25,23 +29,11 @@ class jac_json_dec(json.JSONDecoder):
 
     def object_hook(self, obj):
 
-        if isinstance(obj, dict):
-            if "start_rule" in obj and "kid" in obj:
-                ret = ast()
-                for i in ret.__dict__.keys():
-                    setattr(ret, i, obj[i])
-                return ret
-
-        if isinstance(obj, dict):
-            for key in list(obj):
-                obj[key] = self.object_hook(obj[key])
-            return obj
-
-        if isinstance(obj, list):
-            for i in range(0, len(obj)):
-                obj[i] = self.object_hook(obj[i])
-            return obj
-
+        if isinstance(obj, dict) and "mod_name" in obj and "kid" in obj:
+            ret = ast(fresh_start=False)
+            for i in obj.keys():
+                setattr(ret, i, obj[i])
+            return ret
         return obj
 
 
@@ -82,20 +74,22 @@ class jac_code():
             jac_ast_to_ir(ir)
         self.code_sig = hashlib.md5(self.code_ir.encode()).hexdigest()
         jac_code.refresh(self)  # should disregard overloaded versions
-        if(self._jac_ast):
+        if(self._jac_ast and
+           (self.j_type == 'architype' or self.j_type == 'walker') and
+           (self._jac_ast.name == 'architype' or
+                self._jac_ast.name == 'walker')):
             kid = self._jac_ast.kid
-            if(self.j_type == 'architype' or self.j_type == 'walker'):
-                self.kind = f"{kid[0].token_text()}"
-                self.name = f"{kid[1].token_text()}"
+            self.kind = f"{kid[0].token_text()}"
+            self.name = f"{kid[1].token_text()}"
 
     def parse_jac(self, code, start_rule='start'):
         """Generate AST tree from Jac code text"""
         logger.info(str(f'{self.name}: Processing Jac code...'))
-        tree = ast(jac_text=code, start_rule=start_rule)
-        self.errors = tree.parse_errors
-        if(tree.parse_errors):
+        tree = ast(jac_text=code, start_rule=start_rule, mod_name=self.name)
+        self.errors = tree._parse_errors
+        if(tree._parse_errors):
             logger.error(str(f'{self.name}: Invalid syntax in Jac code!'))
-            for i in tree.parse_errors:
+            for i in tree._parse_errors:
                 logger.error(i)
             return None
         return tree

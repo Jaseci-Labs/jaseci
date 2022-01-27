@@ -72,6 +72,20 @@ def is_jsonable(x):
         return False
 
 
+def json_out(val):
+    if(type(val) == str):
+        return val
+    try:
+        return json.dumps(val)
+    except Exception:
+        return val
+
+
+def parse_str_token(s):
+    return str(bytes(s, "utf-8").
+               decode("unicode_escape")[1:-1])
+
+
 def get_all_subclasses(cls):
     """Return list of all subclasses of cls"""
     return set(cls.__subclasses__()).union(
@@ -174,7 +188,7 @@ class TestCaseHelper():
         TY = '\033[33m'
         TG = '\033[32m'
         TR = '\033[31m'
-        EC = '\033[m'  # noqa
+        EC = '\033[m'
         td = super().tearDown()
         result = f'Time: {TY}{time()-self.stime:.3f} ' + \
                  f'- {EC}{self.id().split(".")[-1]}: '

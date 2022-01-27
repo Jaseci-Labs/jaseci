@@ -6,8 +6,11 @@ Each sentinel has an id, name, timestamp and it's set of walkers.
 from jaseci.element.element import element
 from jaseci.utils.utils import logger
 from jaseci.utils.id_list import id_list
-from jaseci.jac.ir.jac_code import jac_code
+from jaseci.jac.ir.jac_code import jac_code, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
+from jaseci.graph.node import node
+from jaseci.actor.walker import walker
+from jaseci.actor.architype import architype
 
 
 class sentinel(element, jac_code, sentinel_interp):
@@ -22,6 +25,7 @@ class sentinel(element, jac_code, sentinel_interp):
         self.version = None
         self.arch_ids = id_list(self)
         self.walker_ids = id_list(self)
+        self.testcases = []
         element.__init__(self, *args, **kwargs)
         jac_code.__init__(self, code_ir=None)
         sentinel_interp.__init__(self)
@@ -103,11 +107,15 @@ class sentinel(element, jac_code, sentinel_interp):
         Spawns a new architype from registered architypes and adds to
         live walkers
         """
-        src_arch = self.arch_ids.get_obj_by_name(name, kind=kind)
+        src_arch = self.arch_ids.get_obj_by_name(name, kind=kind,
+                                                 silent=True)
         if (not src_arch):
-            logger.error(
-                str(f'{self.name}: Unable to spawn architype {[name, kind]}!')
-            )
+            if(name != 'generic'):
+                logger.error(
+                    str(
+                        f'{self.name}: Unable to spawn architype '
+                        f'{[name, kind]}!')
+                )
             return None
 
         if(caller and caller._m_id != src_arch._m_id):
@@ -126,6 +134,8 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         arch = self.spawn_architype(name, kind, caller)
         if(arch is None):
+            if(name == 'generic' and kind == 'node'):
+                return node(m_id=self._m_id, h=self._h)
             return None
         if(arch.jid in self.arch_ids):
             return arch.run()
@@ -133,6 +143,84 @@ class sentinel(element, jac_code, sentinel_interp):
             ret = arch.run()
             arch.destroy()
             return ret
+
+    def check_in_arch_context(self, key_name, object):
+        """
+        Validates a key is present in currently loaded architype of
+        a particular instance (helper for expanding node has variables)
+        """
+        src_arch = self.run_architype(object.name, kind=object.kind)
+        return key_name in src_arch.context
+
+    def run_tests(self, detailed=False, silent=False):
+        """
+        Testcase schema
+        testcase = {'title': kid[1].token_text(),
+            'graph_ref': None, 'graph_block': None,
+            'walker_ref': None, 'spawn_ctx': None,
+            'assert_block': None, 'walker_block': None,
+            'passed': None}
+        """
+        from pprint import pformat
+        from time import time
+        TY = '\033[33m'
+        TG = '\033[32m'
+        TR = '\033[31m'
+        EC = '\033[m'
+        num_failed = 0
+        for i in self.testcases:
+            destroy_set = []
+            title = i['title']
+            if(i['graph_ref']):
+                gph = self.run_architype(
+                    i['graph_ref'], kind='graph', caller=self)
+            else:
+                gph = architype(m_id=self._m_id, h=self._h,
+                                parent_id=self.id,
+                                code_ir=jac_ir_to_ast(i['graph_block']))
+                destroy_set.append(gph)
+                gph = gph.run()
+            if(i['walker_ref']):
+                wlk = self.spawn_walker(i['walker_ref'], caller=self)
+            else:
+                wlk = walker(m_id=self._m_id, h=self._h,
+                             parent_id=self.id,
+                             code_ir=jac_ir_to_ast(i['walker_block']))
+                destroy_set.append(wlk)
+            wlk.prime(gph)
+            if(i['spawn_ctx']):
+                self.run_spawn_ctx(jac_ir_to_ast(i['spawn_ctx']), wlk)
+            stime = time()
+            try:
+                if(not silent):
+                    print(f"Testing {title}: ", end='')
+                wlk.run()
+                if(i['assert_block']):
+                    wlk.scope_and_run(jac_ir_to_ast(
+                        i['assert_block']), run_func=wlk.run_code_block)
+                i['passed'] = True
+                if(not silent):
+                    print(f"[{TG}PASSED{EC} in {TY}{time()-stime:.2f}s{EC}]")
+                if(detailed and not silent):
+                    print("REPORT: " + pformat(wlk.report))
+            except Exception as e:
+                i['passed'] = False
+                num_failed += 1
+                if(not silent):
+                    print(f"[{TR}FAILED{EC} in {TY}{time()-stime:.2f}s{EC}]")
+                    print(f"{e}")
+            for i in destroy_set:  # FIXME: destroy set not complete
+                i.destroy()
+        num_tests = len(self.testcases)
+        summary = {'tests': num_tests, 'passed': num_tests-num_failed,
+                   'failed': num_failed,
+                   'success': num_tests and not num_failed}
+        if(detailed):
+            details = []
+            for i in self.testcases:
+                details.append({'test': i['title'], 'passed': i['passed']})
+            summary['details'] = details
+        return summary
 
     def destroy(self):
         """

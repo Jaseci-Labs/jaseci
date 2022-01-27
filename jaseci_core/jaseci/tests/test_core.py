@@ -57,27 +57,26 @@ class architype_tests(TestCaseHelper, TestCase):
         Test that the destroy of sentinels clears owned objects
         """
         mast = master(h=mem_hook())
-        num_objs = len(mast._h.mem.keys())
+        num_objs = len(mast._h.mem.keys())-len(mast._h.global_action_list)
         self.assertEqual(num_objs, 2)
         new_graph = graph(m_id=mast._m_id, h=mast._h)
         sent = sentinel(m_id=mast._m_id, h=mast._h)
         code = jtc.prog1
         mast.sentinel_ids.add_obj(sent)
         mast.graph_ids.add_obj(new_graph)
-        num_new = len(mast._h.mem.keys())
+        num_new = len(mast._h.mem.keys())-len(mast._h.global_action_list)
         self.assertEqual(num_new, num_objs+2)
 
         sent.register_code(code)
-        num_objs = len(mast._h.mem.keys())
+        num_objs = len(mast._h.mem.keys())-len(mast._h.global_action_list)
         sent.register_code(code)
-        new_num = len(mast._h.mem.keys())
+        new_num = len(mast._h.mem.keys())-len(mast._h.global_action_list)
         self.assertEqual(num_objs, new_num)
 
     def test_json_blob_of_objects(self):
         """
         Test saving object to json and back to python dict
         """
-        self.logger_on()
         for i in get_all_subclasses(element):
             orig = i(m_id='anon', h=mem_hook())
             blob1 = orig.json(detailed=True)

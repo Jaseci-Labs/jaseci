@@ -1,0 +1,242 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Jac Programming Language",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#functional"
+        },
+        {
+            "include": "#assignment"
+        },
+        {
+            "include": "#entity_block_definition"
+        }
+    ],
+    "repository": {
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "storage.modifier.jac",
+                    "match": "\\b(import|ignore|with|strict|context|details|info|activity|length|keys)\\b"
+                },
+                {
+                    "match": "\\b(str|int|float|list|dict|bool|edge|digraph|subgraph|test|type)\\b",
+                    "name": "support.type.jac"
+                },
+                {
+                    "name": "keyword.control.jac",
+                    "match": "\\b(if|elif|else|while|for|while|in|by|to|report|take|ignore|skip|disengage|break|continue|destroy|spawn|entry|exit|assert)\\b"
+                },
+                {
+                    "name": "keyword.operator.logical",
+                    "match": "\\b(not|and|or)\\b"
+                },
+                {
+                    "name": "variable.other.property",
+                    "match": "\\b(has|can|anchor|private)\\b"
+                },
+                {
+                    "name": "keyword.control.flow.jac",
+                    "comment": "Highlights 'report' et al. that preceeds a '-->'",
+                    "match": "\\s*\\b(?<!\\.)(report|destroy|here|take|in)\\b(?=.*[-\\\\])"
+                },
+                {
+                    "name": "keyword.control.flow.jac",
+                    "comment": "Highlights 'node' in node::name",
+                    "match": "\\s*\\b(?<!\\.)(node|walker)\\b(?=.*[:\\\\])"
+                },
+                {
+                    "match": "\\b(null|true|false)\\b",
+                    "name": "constant.language.c"
+                }
+            ]
+        },
+        "entity_block_definition": {
+            "begin": "^\\s*(node|walker|graph)\\s+([A-Za-z][\\w]*|(?:\\w+(?:(?:\\,\\s?|\\:)(?:\\w+|\\s\\w))+))(\\s*({)|;)",
+            "name": "source.jac.embedded.source",
+            "beginCaptures": {
+                "1": {
+                    "name": "storage.type.entity.jac"
+                },
+                "2": {
+                    "name": "entity.name.type.entity.jac"
+                },
+                "3": {
+                    "name": "punctuation.definition.tag.jac"
+                }
+            },
+            "end": "\\s*\\(}|;)",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.tag.jac"
+                }
+            }
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "include": "#double_quote"
+                },
+                {
+                    "include": "#single_quote"
+                }
+            ]
+        },
+        "double_quote": {
+            "name": "string.quoted.double.jac",
+            "begin": "\"",
+            "end": "\"",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.jac",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "single_quote": {
+            "name": "string.quoted.double.jac",
+            "begin": "'",
+            "end": "'",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.jac",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "comments": {
+            "patterns": [
+                {
+                    "include": "#number_comment"
+                },
+                {
+                    "include": "#dblslash_comment"
+                },
+                {
+                    "include": "#comment_block"
+                }
+            ]
+        },
+        "number_comment": {
+            "name": "comment.line.number-sign.jac",
+            "begin": "(\\#)",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.definition.comment.jac"
+                }
+            },
+            "end": "($)",
+            "patterns": [
+                {
+                    "include": "#codetags"
+                }
+            ]
+        },
+        "dblslash_comment": {
+            "name": "comment.line.double-slash.jac",
+            "begin": "(\\/\\/)",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.definition.comment.jac"
+                }
+            },
+            "end": "(?=\\n)",
+            "patterns": [
+                {
+                    "include": "#codetags"
+                }
+            ]
+        },
+        "comment_block": {
+            "name": "comment.block.jac",
+            "begin": "(\\/\\*)",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.definition.comment.begin.jac"
+                }
+            },
+            "end": "(\\*\\/)",
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.definition.comment.end.jac"
+                }
+            },
+            "patterns": [
+                {
+                    "include": "#codetags"
+                }
+            ]
+        },
+        "codetags": {
+            "match": "(?:\\b(NOTE|XXX|HACK|FIXME|BUG|TODO)\\b)",
+            "captures": {
+                "1": {
+                    "name": "keyword.codetag.notation.jac"
+                }
+            }
+        },
+        "functional": {
+            "name": "source.jac.functional",
+            "patterns": [
+                {
+                    "include": "#function_calls"
+                }
+            ]
+        },
+        "function_calls": {
+            "name": "source.jac.functional_calls",
+            "begin": "(\\w+)(\\()",
+            "beginCaptures": {
+                "1": {
+                    "name": "support.function.functional_calls.jac"
+                },
+                "2": {
+                    "name": "punctuation.definition.tag.jac"
+                }
+            },
+            "patterns": [
+                {
+                    "include": "#functional"
+                }
+            ],
+            "end": "\\)",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.tag.jac"
+                }
+            }
+        },
+        "assignment": {
+            "patterns": [
+                {
+                    "begin": "(^\\s|:?\\s|)(\\w+|\\w+(?:\\.\\w+)+)\\s*(=|\\+=|-=|\\+\\+|--)\\s*",
+                    "beginCaptures": {
+                        "1": {},
+                        "2": {
+                            "name": "variable.other.assignment.jac"
+                        },
+                        "3": {
+                            "name": "keyword.operator.terraform"
+                        }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#functional"
+                        }
+                    ],
+                    "end": "\\n"
+                }
+            ]
+        }
+    },
+    "scopeName": "source.jac"
+}

@@ -1,5 +1,5 @@
 from jaseci.utils.utils import obj_class_cache, build_class_dict
-from pprint import pformat
+# from pprint import pformat
 from inspect import getdoc
 import jaseci
 
@@ -34,14 +34,14 @@ class book():
     def api_call_spec(self, cls):
         ret = ''
         for i in dir(cls):
-            access = 'master'
+            # access = 'master'
             if (i.startswith('api_')):
                 api = i[4:].replace('_', ' ')
             elif (i.startswith('admin_api_')):
-                access = 'super'
+                # access = 'super'
                 api = i[10:].replace('_', ' ')
             elif (i.startswith('public_api_')):
-                access = 'public'
+                # access = 'public'
                 api = i[11:].replace('_', ' ')
             else:
                 continue

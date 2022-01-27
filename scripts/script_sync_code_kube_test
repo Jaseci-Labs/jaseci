@@ -1,7 +1,16 @@
 #!/bin/bash
 PODN=jaseci
+TREADN=8
 if [[ $1 ]]; then
     PODN=$1
 fi
 
-for podname in $(kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci_serv ${podname}:/; echo "Copy code to pod and test"; kubectl cp jaseci_core ${podname}:/;  kubectl exec -it ${podname} -- bash -c "cd jaseci_core; source install_live.sh"; kubectl exec -it ${podname} -- bash -c "cd jaseci_serv; source install_live.sh; jsserv test --parallel 8 --failfast -v 0 && flake8 --exclude=settings.py,*migrations*,jac_parse"; done
+if [[ $2 ]]; then
+    TREADN=$2
+fi
+
+podlist=(`kubectl get pods -l pod=$PODN -o json| jq -r '.items[].metadata.name'`)
+
+for podname in ${podlist[@]}; do kubectl cp jaseci_serv ${podname}:/; echo "Copy code to pod and test"; kubectl cp jaseci_core ${podname}:/;  kubectl exec -it ${podname} -- bash -c "cd jaseci_core; source install_live.sh"; done
+
+ kubectl exec -it ${podlist[0]} -- bash -c "cd jaseci_serv; source install_live.sh; jsserv test $3 --parallel $TREADN --failfast -v 0 && flake8 --exclude=settings.py,*migrations*,jac_parse";

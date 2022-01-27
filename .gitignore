@@ -18,3 +18,4 @@ migrations
 build
 .vscode
 js.session
+.idea

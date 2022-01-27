@@ -1,6 +1,7 @@
 """
 Admin Global api functions as a mixin
 """
+from jaseci.api.interface import interface
 from jaseci.actor.sentinel import sentinel
 import uuid
 
@@ -10,7 +11,8 @@ class global_api():
     Admin global APIs
     """
 
-    def admin_api_global_set(self, name: str, value: str):
+    @interface.admin_api()
+    def global_set(self, name: str, value: str):
         """
         Set a global
         """
@@ -23,7 +25,8 @@ class global_api():
             ret['response'] = f"Global variable '{name}' to '{value}' set!"
         return ret
 
-    def admin_api_global_delete(self, name: str):
+    @interface.admin_api()
+    def global_delete(self, name: str):
         """
         Delete a global
         """
@@ -36,7 +39,8 @@ class global_api():
             ret['response'] = f"Global {name} deleted."
         return ret
 
-    def admin_api_global_sentinel_set(self, snt: sentinel = None):
+    @interface.admin_api()
+    def global_sentinel_set(self, snt: sentinel = None):
         """
         Set sentinel as globally accessible
         """
@@ -45,11 +49,12 @@ class global_api():
         self._h.save_glob('GLOB_SENTINEL', snt.jid)
         return {'response': f"Global sentinel set to '{snt}'!"}
 
-    def admin_api_global_sentinel_unset(self):
+    @interface.admin_api()
+    def global_sentinel_unset(self):
         """
         Set sentinel as globally accessible
         """
-        current = self.api_global_get('GLOB_SENTINEL')['value']
+        current = self.global_get('GLOB_SENTINEL')['value']
         if(current):
             snt = self._h.get_obj(self._m_id, uuid.UUID(current))
             for i in snt.get_deep_obj_list():

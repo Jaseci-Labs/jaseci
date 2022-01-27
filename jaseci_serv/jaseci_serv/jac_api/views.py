@@ -3,10 +3,10 @@ from knox.auth import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from jaseci.utils.utils import logger
-from jaseci.api.public_api import public_api
 from jaseci.element.element import element
 from jaseci_serv.base.orm_hook import orm_hook
 from jaseci_serv.base.models import JaseciObject, GlobalVars
+from jaseci_serv.base.models import master as core_master
 from time import time
 
 
@@ -16,6 +16,7 @@ class JResponse(Response):
         self.master = master
         for i in self.master._h.save_obj_list:
             self.master._h.commit_obj_to_redis(i)
+        self.master._h.skip_redis_update = True
 
     def close(self):
         super(JResponse, self).close()
@@ -40,10 +41,10 @@ class AbstractJacAPIView(APIView):
 
         api_result = self.caller.general_interface_to_api(
             self.cmd, type(self).__name__)
-        self.log_request_time()
+        self.log_request_stats()
         return self.issue_response(api_result)
 
-    def log_request_time(self):
+    def log_request_stats(self):
         """Api call preamble"""
         TY = '\033[33m'
         TG = '\033[32m'
@@ -93,17 +94,30 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
     """
     permission_classes = (AllowAny,)
 
+    def post(self, request):
+        """
+        Public post function that parses api signature to load parms
+        SuperSmart Post - can read signatures of master and process
+        bodies accordingly
+        """
+        self.proc_request(request)
+
+        api_result = self.caller.public_interface_to_api(
+            self.cmd, type(self).__name__)
+        self.log_request_stats()
+        return self.issue_response(api_result)
+
     def set_caller(self, request):
         """Assigns the calling api interface obj"""
-        self.caller = public_api(orm_hook(
+        self.caller = core_master(h=orm_hook(
             objects=JaseciObject.objects,
             globs=GlobalVars.objects
-        ))
+        ), persist=False)
 
     def issue_response(self, api_result):
         """Issue response from call"""
         # If committer set, results should be saved back
-        if(self.caller.committer):
-            return JResponse(self.caller.committer, api_result)
+        if(self.caller._pub_committer):
+            return JResponse(self.caller._pub_committer, api_result)
         else:
             return Response(api_result)

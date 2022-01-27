@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from jaseci_serv.base.orm_hook import orm_hook
 from jaseci.element.master import master as core_master
 from jaseci.element.super_master import super_master as core_super
+from jaseci.api.interface import interface
 
 
 class master(core_master):
@@ -16,8 +17,9 @@ class master(core_master):
         super().__init__(*args, **kwargs)
         self.valid_configs += JASECI_CONFIGS
 
-    def api_master_create(self, name: str, set_active: bool = True,
-                          other_fields: dict = {}):
+    @interface.private_api()
+    def master_create(self, name: str, set_active: bool = True,
+                      other_fields: dict = {}):
         """
         Create a master instance and return root node master object
 
@@ -34,10 +36,11 @@ class master(core_master):
             mas._h = self._h
             return self.make_me_head_master_or_destroy(mas)
         else:
-            return {'response': f"Errors occurred",
+            return {'response': "Errors occurred",
                     'errors': serializer.errors}
 
-    def api_master_delete(self, name: str):
+    @interface.private_api()
+    def master_delete(self, name: str):
         """
         Permanently delete master with given id
         """
@@ -53,8 +56,9 @@ class super_master(master, core_super):
         super().__init__(*args, **kwargs)
         self.valid_configs = JASECI_CONFIGS
 
-    def admin_api_master_createsuper(self, name: str, set_active: bool = True,
-                                     other_fields: dict = {}):
+    @interface.admin_api()
+    def master_createsuper(self, name: str, set_active: bool = True,
+                           other_fields: dict = {}):
         """
         Create a super instance and return root node super object
         """
@@ -68,7 +72,7 @@ class super_master(master, core_super):
             mas._h = self._h
             return self.make_me_head_master_or_destroy(mas)
         else:
-            return {'response': f"Errors occurred",
+            return {'response': "Errors occurred",
                     'errors': serializer.errors}
 
 

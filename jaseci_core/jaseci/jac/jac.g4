@@ -1,23 +1,44 @@
 grammar jac;
 
-start: ver_label? element+ EOF;
+start: ver_label? import_module* element+ EOF;
 
-element: architype | walker;
+import_module:
+	KW_IMPORT LBRACE (import_items | STAR_MUL) RBRACE KW_WITH STRING SEMI;
+
+ver_label: 'version' COLON STRING SEMI?;
+
+import_items:
+	KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
+	| KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
+	| KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
+	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?;
+
+import_names:
+	DBL_COLON NAME
+	| DBL_COLON LBRACE name_list RBRACE;
+
+element: architype | walker | test;
 
 architype:
 	KW_NODE NAME (COLON INT)? attr_block
 	| KW_EDGE NAME attr_block
 	| KW_GRAPH NAME graph_block;
 
-walker:
-	KW_WALKER NAME namespace_list LBRACE attr_stmt* walk_entry_block? (
+walker: KW_WALKER NAME namespaces? walker_block;
+
+walker_block:
+	LBRACE attr_stmt* walk_entry_block? (
 		statement
 		| walk_activity_block
 	)* walk_exit_block? RBRACE;
 
-ver_label: 'version' COLON STRING SEMI?;
+test:
+	KW_TEST STRING KW_WITH (graph_ref | KW_GRAPH graph_block) KW_BY (
+		(walker_ref spawn_ctx? (code_block | SEMI))
+		| KW_WALKER walker_block
+	);
 
-namespace_list: COLON NAME (COMMA NAME)* |;
+namespaces: COLON name_list;
 
 walk_entry_block: KW_WITH KW_ENTRY code_block;
 
@@ -47,34 +68,48 @@ has_stmt:
 has_assign: NAME | NAME EQ expression;
 
 can_stmt:
-	KW_CAN dotted_name preset_in_out? event_clause? (
-		COMMA dotted_name preset_in_out? event_clause?
+	KW_CAN dotted_name (preset_in_out event_clause)? (
+		COMMA dotted_name (preset_in_out event_clause)?
 	)* SEMI
 	| KW_CAN NAME event_clause? code_block;
 
-event_clause: KW_WITH (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
+event_clause:
+	KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
 
 preset_in_out:
-	DBL_COLON NAME (COMMA NAME)* (DBL_COLON | COLON_OUT NAME)?;
+	DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
 
-dotted_name: NAME (DOT NAME)*;
+dotted_name: NAME DOT NAME;
+
+name_list: NAME (COMMA NAME)*;
+
+expr_list: expression (COMMA expression)*;
 
 code_block: LBRACE statement* RBRACE | COLON statement;
 
-node_ctx_block: NAME (COMMA NAME)* code_block;
+node_ctx_block: name_list code_block;
 
 statement:
 	code_block
 	| node_ctx_block
 	| expression SEMI
 	| if_stmt
+	| try_stmt
 	| for_stmt
 	| while_stmt
+	| assert_stmt SEMI
 	| ctrl_stmt SEMI
+	| destroy_action
 	| report_action
 	| walker_action;
 
-if_stmt: KW_IF expression code_block (elif_stmt)* (else_stmt)?;
+if_stmt: KW_IF expression code_block elif_stmt* else_stmt?;
+
+try_stmt: KW_TRY code_block else_from_try?;
+
+else_from_try:
+	KW_ELSE (LPAREN NAME RPAREN)? code_block
+	| KW_ELSE (KW_WITH NAME)? code_block;
 
 elif_stmt: KW_ELIF expression code_block;
 
@@ -88,54 +123,46 @@ while_stmt: KW_WHILE expression code_block;
 
 ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_SKIP;
 
+assert_stmt: KW_ASSERT expression;
+
+destroy_action: KW_DESTROY expression SEMI;
+
 report_action: KW_REPORT expression SEMI;
 
-walker_action:
-	ignore_action
-	| take_action
-	| destroy_action
-	| KW_DISENGAGE SEMI;
+walker_action: ignore_action | take_action | KW_DISENGAGE SEMI;
 
 ignore_action: KW_IGNORE expression SEMI;
 
 take_action: KW_TAKE expression (SEMI | else_stmt);
 
-destroy_action: KW_DESTROY expression SEMI;
+expression: connect (assignment | copy_assign | inc_assign)?;
 
-expression: assignment | connect;
+assignment: EQ expression;
 
-assignment:
-	dotted_name index* EQ expression
-	| inc_assign
-	| copy_assign;
+copy_assign: CPY_EQ expression;
 
-inc_assign:
-	dotted_name index* (PEQ | MEQ | TEQ | DEQ) expression;
-
-copy_assign: dotted_name index* CPY_EQ expression;
+inc_assign: (PEQ | MEQ | TEQ | DEQ) expression;
 
 connect: logical ( (NOT)? edge_ref expression)?;
 
 logical: compare ((KW_AND | KW_OR) compare)*;
 
-compare:
-	NOT compare
-	| arithmetic (
-		(EE | LT | GT | LTE | GTE | NE | KW_IN | nin) arithmetic
-	)*;
+compare: NOT compare | arithmetic (cmp_op arithmetic)*;
+
+cmp_op: EE | LT | GT | LTE | GTE | NE | KW_IN | nin;
 
 nin: NOT KW_IN;
 
 arithmetic: term ((PLUS | MINUS) term)*;
 
-term: factor ((MUL | DIV | MOD) factor)*;
+term: factor ((STAR_MUL | DIV | MOD) factor)*;
 
 factor: (PLUS | MINUS) factor | power;
 
 power: func_call (POW factor)*;
 
 func_call:
-	atom (LPAREN (expression (COMMA expression)*)? RPAREN)?
+	atom (LPAREN expr_list? RPAREN)?
 	| atom? DBL_COLON NAME spawn_ctx?;
 
 atom:
@@ -143,27 +170,45 @@ atom:
 	| FLOAT
 	| STRING
 	| BOOL
+	| NULL
+	| NAME
 	| node_edge_ref
 	| list_val
 	| dict_val
-	| dotted_name
 	| LPAREN expression RPAREN
 	| spawn
-	| atom DOT func_built_in
-	| atom index+
-	| DEREF expression;
+	| atom DOT built_in
+	| atom DOT NAME
+	| atom index_slice
+	| ref
+	| deref
+	| any_type;
 
-func_built_in:
-	| KW_LENGTH
-	| KW_KEYS
-	| KW_EDGE
-	| KW_NODE
-	| KW_CONTEXT
-	| KW_INFO
-	| KW_DETAILS
-	| KW_DESTROY LPAREN expression RPAREN;
+ref: '&' expression;
 
-node_edge_ref: node_ref | edge_ref (node_ref)?;
+deref: STAR_MUL expression;
+
+built_in:
+	cast_built_in
+	| obj_built_in
+	| dict_built_in
+	| list_built_in
+	| string_built_in;
+
+cast_built_in: any_type;
+
+obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
+
+dict_built_in: KW_KEYS | LBRACE name_list RBRACE;
+
+list_built_in: KW_LENGTH;
+
+string_built_in:
+	TYP_STRING DBL_COLON NAME (LPAREN expr_list RPAREN)?;
+
+node_edge_ref:
+	node_ref filter_ctx?
+	| edge_ref (node_ref filter_ctx?)?;
 
 node_ref: KW_NODE DBL_COLON NAME;
 
@@ -173,15 +218,23 @@ graph_ref: KW_GRAPH DBL_COLON NAME;
 
 edge_ref: edge_to | edge_from | edge_any;
 
-edge_to: '-->' | '-' ('[' NAME ']')? '->';
+edge_to:
+	'-->'
+	| '-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
 
-edge_from: '<--' | '<-' ('[' NAME ']')? '-';
+edge_from:
+	'<--'
+	| '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '-';
 
-edge_any: '<-->' | '<-' ('[' NAME ']')? '->';
+edge_any:
+	'<-->'
+	| '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
 
-list_val: LSQUARE (expression (COMMA expression)*)? RSQUARE;
+list_val: LSQUARE expr_list? RSQUARE;
 
-index: LSQUARE expression RSQUARE;
+index_slice:
+	LSQUARE expression RSQUARE
+	| LSQUARE expression COLON expression RSQUARE;
 
 dict_val: LBRACE (kv_pair (COMMA kv_pair)*)? RBRACE;
 
@@ -197,7 +250,25 @@ graph_spawn: edge_ref graph_ref;
 
 walker_spawn: walker_ref spawn_ctx?;
 
-spawn_ctx: LPAREN (assignment (COMMA assignment)*)? RPAREN;
+spawn_ctx: LPAREN (spawn_assign (COMMA spawn_assign)*)? RPAREN;
+
+filter_ctx:
+	LPAREN (filter_compare (COMMA filter_compare)*)? RPAREN;
+
+spawn_assign: NAME EQ expression;
+
+filter_compare: NAME cmp_op expression;
+
+any_type:
+	TYP_STRING
+	| TYP_INT
+	| TYP_FLOAT
+	| TYP_LIST
+	| TYP_DICT
+	| TYP_BOOL
+	| KW_NODE
+	| KW_EDGE
+	| KW_TYPE;
 
 /* DOT grammar below */
 dot_graph:
@@ -242,6 +313,13 @@ dot_id:
 	| KW_EDGE;
 
 /* Lexer rules */
+TYP_STRING: 'str';
+TYP_INT: 'int';
+TYP_FLOAT: 'float';
+TYP_LIST: 'list';
+TYP_DICT: 'dict';
+TYP_BOOL: 'bool';
+KW_TYPE: 'type';
 KW_GRAPH: 'graph';
 KW_STRICT: 'strict';
 KW_DIGRAPH: 'digraph';
@@ -259,6 +337,7 @@ KW_CONTEXT: 'context';
 KW_INFO: 'info';
 KW_DETAILS: 'details';
 KW_ACTIVITY: 'activity';
+KW_IMPORT: 'import';
 COLON: ':';
 DBL_COLON: '::';
 COLON_OUT: '::>';
@@ -266,6 +345,8 @@ LBRACE: '{';
 RBRACE: '}';
 KW_EDGE: 'edge';
 KW_WALKER: 'walker';
+KW_TEST: 'test';
+KW_ASSERT: 'assert';
 SEMI: ';';
 EQ: '=';
 PEQ: '+=';
@@ -288,7 +369,7 @@ KW_DISENGAGE: 'disengage';
 KW_SKIP: 'skip';
 KW_REPORT: 'report';
 KW_DESTROY: 'destroy';
-DEREF: '&';
+KW_TRY: 'try';
 DOT: '.';
 NOT: '!' | 'not';
 EE: '==';
@@ -305,7 +386,7 @@ COMMA: ',';
 KW_CAN: 'can';
 PLUS: '+';
 MINUS: '-';
-MUL: '*';
+STAR_MUL: '*';
 DIV: '/';
 MOD: '%';
 POW: '^';
@@ -317,6 +398,7 @@ FLOAT: ([0-9]+)? '.' [0-9]+;
 STRING: '"' ~ ["\r\n]* '"' | '\'' ~ ['\r\n]* '\'';
 BOOL: 'true' | 'false';
 INT: [0-9]+;
+NULL: 'null';
 NAME: [a-zA-Z_] [a-zA-Z0-9_]*;
 COMMENT: '/*' .*? '*/' -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;

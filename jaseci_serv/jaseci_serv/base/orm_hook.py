@@ -37,6 +37,7 @@ class orm_hook(mem_hook):
         self.objects = objects
         self.globs = globs
         self.red = red
+        self.skip_redis_update = False
         self.save_obj_list = set()
         self.save_glob_dict = {}
         super().__init__()
@@ -97,9 +98,8 @@ class orm_hook(mem_hook):
             self.red.set(item.id.urn, item.json(detailed=True))
         except TypeError:
             logger.error(
-                str(f"Item {item} is not JSON serializable for redis store!"),
-                exc_info=True
-            )
+                f"Item {item} is not JSON serializable for redis store!")
+            logger.error(f"Item details: {item.serialize()}",  exc_info=True)
         except Exception as e:
             logger.error(
                 str(f"Couldn't save {item} to redis! {e}"),
@@ -107,7 +107,6 @@ class orm_hook(mem_hook):
             )
 
     def commit_obj(self, item):
-        self.commit_obj_to_redis(item)
         item_from_db, created = self.objects.get_or_create(jid=item.id
                                                            )
         utils.map_assignment_of_matching_fields(item_from_db, item)
@@ -193,6 +192,10 @@ class orm_hook(mem_hook):
         #         dist[type(i).__name__] = 1
         # print(dist)
         for i in self.save_obj_list:
+            if(not self.skip_redis_update):
+                self.commit_obj_to_redis(i)
+            else:
+                self.skip_redis_update = False
             self.commit_obj(i)
         self.save_obj_list = set()
         for i in self.save_glob_dict.keys():

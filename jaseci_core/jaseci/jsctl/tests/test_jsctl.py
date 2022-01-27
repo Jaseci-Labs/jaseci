@@ -10,22 +10,24 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.call(
-            "sentinel register -name zsb -code "
-            "jaseci/jsctl/tests/zsb.jac -set_active true")
 
     def call(self, cmd):
-        res = CliRunner(mix_stderr=False).invoke(jsctl.cli,
+        res = CliRunner(mix_stderr=False).invoke(jsctl.jsctl,
                                                  ["-m"]+cmd.split(' '))
-        out = res.stdout
-        self.log(out)
-        self.log(res.stderr)
-        return out
+        # self.log(res.stdout)
+        # self.log(res.stderr)
+        # self.log(res.exception)
+        return res.stdout
 
     def call_cast(self, cmd):
         ret = self.call(cmd)
-        self.log(ret)
+        # self.log(ret)
         return json.loads(ret)
+
+    def call_split(self, cmd):
+        ret = self.call(cmd)
+        # self.log(ret)
+        return ret.split('\n')
 
     def tearDown(self):
         jsctl.session["master"]._h.clear_mem_cache()
@@ -48,6 +50,9 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertIn("Group of `sentinel active` commands", r)
 
     def test_jsctl_create_graph_mem_only(self):
+        self.call(
+            "sentinel register -name zsb -code "
+            "jaseci/jsctl/tests/teststest.jac -set_active true")
         self.assertEqual(len(self.call_cast('graph list')), 1)
         self.call('graph create')
         self.call('graph create')
@@ -78,6 +83,9 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_aliases(self):
         """Tests that alias mapping api works"""
+        self.call(
+            "sentinel register -name zsb -code "
+            "jaseci/jsctl/tests/zsb.jac -set_active true")
         gph_id = self.call_cast('graph create')['jid']
         snt_id = self.call_cast('sentinel list')[0]['jid']
         self.call(f'alias register -name s -value {snt_id}')
@@ -90,6 +98,9 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_auto_aliases(self):
         """Tests that auto alias mapping api works"""
+        self.call(
+            "sentinel register -name zsb -code "
+            "jaseci/jsctl/tests/zsb.jac -set_active true")
         aliases = self.call_cast('alias list')
         self.assertGreater(len(aliases), 20)
         self.assertIn('zsb:architype:bot', aliases.keys())
@@ -99,6 +110,9 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_auto_aliases_delete(self):
         """Tests that auto removing alias mapping api works"""
+        self.call(
+            "sentinel register -name zsb -code "
+            "jaseci/jsctl/tests/zsb.jac -set_active true")
         num = len(self.call_cast('alias list'))
         self.call('architype delete -arch zsb:architype:bot')
         self.call('walker delete -wlk zsb:walker:similar_questions')
@@ -107,6 +121,10 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_config_cmds(self):
         """Tests that config commands works"""
+        self.call(
+            "sentinel register -name zsb -code "
+            "jaseci/jsctl/tests/teststest.jac -set_active true")
+
         self.call(
             f'config set -name CONFIG_EXAMPLE -value TEST -do_check False')
         self.call(f'config set -name APPLE -value Grape2 -do_check False')
@@ -119,10 +137,13 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_default_snt_setting(self):
         """Tests that alias mapping api works"""
+        self.call(
+            "sentinel register -name zsb -code "
+            "jaseci/jsctl/tests/teststest.jac -set_active true")
         snt_id = self.call_cast('sentinel list')[0]['jid']
         self.call(f'sentinel active set -snt {snt_id}')
         self.call(f'sentinel active get')
-        self.assertEqual(len(self.call_cast(f'walker list')), 22)
+        self.assertEqual(len(self.call_cast(f'walker list')), 2)
 
     def test_jsctl_init_auto_called(self):
         """Tests that alias mapping api works"""
@@ -131,6 +152,9 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_master_defaults(self):
         """Tests that alias mapping api works"""
+        self.call(
+            "sentinel register -name zsb -code "
+            "jaseci/jsctl/tests/zsb.jac -set_active true")
         gph_id = self.call_cast('graph create')['jid']
         snt_id = self.call_cast('sentinel list')[0]['jid']
         self.call(f'sentinel active set -snt {snt_id}')
@@ -145,8 +169,11 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertIn('namespace key', r)
 
     def test_public_apis_walker_summon_auth(self):
+        self.call(
+            "sentinel register -name zsb -code "
+            "jaseci/jsctl/tests/zsb.jac -set_active true")
         r = self.call_cast('walker get -mode keys -wlk zsb:walker:pubinit')
-        key = list(r.keys())[0]
+        key = r['anyone']
         r = self.call_cast('alias list')
         walk = r['zsb:walker:pubinit']
         nd = r['active:graph']
@@ -155,3 +182,109 @@ class jsctl_test(TestCaseHelper, TestCase):
         key = 'aaaaaaaa'
         r = self.call_cast(f'walker summon -key {key} -wlk {walk} -nd {nd}')
         self.assertEqual(len(r), 1)
+
+    def test_jsctl_import(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/ll_base.jac -set_active true")
+        self.logger_off()
+        self.call("walker run -name init")
+        self.call("walker run -name gen_rand_life")
+        r = self.call_cast("walker run -name get_gen_day")
+        self.assertGreater(len(r), 3)
+
+    def test_jsctl_import_filters(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/base.jac -set_active true")
+        r = self.call_cast("walker run -name init")
+        self.assertEqual(len(r), 8)
+
+    def test_jsctl_import_filters1(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/base1.jac -set_active true")
+        r = self.call_cast("walker run -name init")
+        self.assertEqual(len(r), 8)
+
+    def test_jsctl_import_filters2(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/base2.jac -set_active true")
+        r = self.call_cast("walker run -name init")
+        self.assertEqual(len(r), 8)
+
+    def test_jsctl_import_fails_when_incomplete(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/base3.jac -set_active true")
+        r = self.call_cast("walker run -name init")
+        self.assertTrue('success' in r.keys())
+        self.assertFalse(r['success'])
+
+    def test_jsctl_run_tests(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/teststest.jac")
+        r = self.call_split("sentinel test")
+        self.assertTrue(r[0].startswith('Testing "assert should be'))
+        self.assertTrue(r[4].startswith('  "tests": 3'))
+        self.assertTrue(r[7].startswith('  "success": true'))
+
+    def test_jsctl_run_tests_detailed(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/teststest.jac")
+        r = self.call_split("sentinel test -detailed true")
+        self.assertEqual(len(r), 27)
+
+    def test_jsctl_jac_build(self):
+        import os
+        if(os.path.exists('jaseci/jsctl/tests/teststest.jir')):
+            os.remove('jaseci/jsctl/tests/teststest.jir')
+            self.assertFalse(os.path.exists(
+                'jaseci/jsctl/tests/teststest.jir'))
+        self.call(
+            "jac build jaseci/jsctl/tests/teststest.jac")
+        self.assertGreater(os.path.getsize(
+            'jaseci/jsctl/tests/teststest.jir'), 50000)
+
+    def test_jsctl_jac_test(self):
+        r = self.call_split(
+            "jac test jaseci/jsctl/tests/teststest.jac")
+        self.assertTrue(r[0].startswith('Testing "assert should be'))
+        self.assertTrue(r[4].startswith('  "tests": 3'))
+        self.assertTrue(r[7].startswith('  "success": true'))
+
+    def test_jsctl_jac_test_jir(self):
+        r = self.call_split(
+            "jac test jaseci/jsctl/tests/teststest.jir")
+        self.assertTrue(r[0].startswith('Testing "assert should be'))
+        self.assertTrue(r[4].startswith('  "tests": 3'))
+        self.assertTrue(r[7].startswith('  "success": true'))
+
+    def test_jsctl_jac_run(self):
+        r = self.call_cast(
+            "jac run jaseci/jsctl/tests/teststest.jac")
+        self.assertEqual(r, [{}, 4])
+
+    def test_jsctl_jac_run_jir(self):
+        r = self.call_cast(
+            "jac run jaseci/jsctl/tests/teststest.jir")
+        self.assertEqual(r, [{}, 4])
+
+    def test_jsctl_jac_run_jir_walk(self):
+        r = self.call_cast(
+            "jac run jaseci/jsctl/tests/teststest.jir -walk alt_init")
+        self.assertEqual(r, [7])
+
+    def test_jsctl_sentinel_set(self):
+        self.call(
+            "sentinel register -code "
+            "jaseci/jsctl/tests/teststest.jac -set_active true")
+        self.call(
+            "sentinel set -code "
+            "jaseci/jsctl/tests/base.jac")
+        r = self.call_cast("walker run -name init")
+        r = self.call_cast("walker run -name init")
+        self.assertEqual(len(r), 8)

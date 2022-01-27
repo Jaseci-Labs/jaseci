@@ -8,6 +8,7 @@ from jaseci.graph.node import node
 from jaseci.jac.interpreter.interp import interp
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.machine.jac_scope import jac_scope
+from jaseci.jac.ir.jac_code import jac_ir_to_ast
 
 
 class walker_interp(interp):
@@ -16,28 +17,32 @@ class walker_interp(interp):
 
     def run_walker(self, jac_ast):
         """
-        walker:
-            KW_WALKER NAME namespace_list LBRACE attr_stmt* walk_entry_block? (
+        walker: KW_WALKER NAME namespaces? walker_block;
+        """
+        kid = jac_ast.kid
+        if(jac_ast.name == "walker_block"):  # used in jac tests
+            self.scope_and_run(jac_ast, self.run_walker_block)
+        else:
+            self.scope_and_run(kid[-1], self.run_walker_block)
+
+    def run_walker_block(self, jac_ast):
+        """
+        walker_block:
+            LBRACE attr_stmt* walk_entry_block? (
                 statement
                 | walk_activity_block
             )* walk_exit_block? RBRACE;
         """
-        self.push_scope(
-            jac_scope(
-                parent=self,
-                has_obj=self,
-                action_sets=[self.activity_action_ids,
-                             self.current_node.activity_action_ids]))
-        self._jac_scope.set_live_var(
-            'here', self.current_node.id.urn, [], jac_ast)
-
-        self.trigger_entry_actions()
         kid = jac_ast.kid
-
         if(self.current_step == 0):
             for i in kid:
                 if(i.name == 'attr_stmt'):
                     self.run_attr_stmt(jac_ast=i, obj=self)
+
+        self.auto_trigger_node_actions(
+            nd=self.current_node,
+            act_list=self.current_node.entry_action_ids)
+
         for i in kid:
             if(i.name == 'walk_entry_block'):
                 self.run_walk_entry_block(i)
@@ -49,8 +54,19 @@ class walker_interp(interp):
                 self.run_walk_exit_block(i)
 
         # self.trigger_activity_actions()
-        self.trigger_exit_actions()
-        self.pop_scope()
+        self.auto_trigger_node_actions(
+            nd=self.current_node,
+            act_list=self.current_node.exit_action_ids)
+
+    def run_node_ctx_block(self, jac_ast):
+        """
+        node_ctx_block: name_list code_block;
+        """
+        kid = jac_ast.kid
+        for i in self.run_name_list(kid[0]):
+            if (self.current_node.name == i):
+                self.run_code_block(kid[1])
+                return
 
     def run_walk_entry_block(self, jac_ast):
         """
@@ -101,11 +117,11 @@ class walker_interp(interp):
         ignore_action: KW_IGNORE expression SEMI;
         """
         kid = jac_ast.kid
-        result = self.run_expression(kid[1])
+        result = self.run_expression(kid[1]).value
         if (isinstance(result, node)):
             self.ignore_node_ids.add_obj(result)
         elif (isinstance(result, jac_set)):
-            self.ignore_node_ids += result
+            self.ignore_node_ids.add_obj_list(result)
         else:
             self.rt_error(f'{result} is not ignorable type (i.e., nodes)',
                           kid[1])
@@ -116,12 +132,12 @@ class walker_interp(interp):
             KW_TAKE expression (SEMI | else_stmt);
         """
         kid = jac_ast.kid
-        result = self.run_expression(kid[1])
+        result = self.run_expression(kid[1]).value
         before = len(self.next_node_ids)
         if (isinstance(result, node)):
-            self.next_node_ids.add_obj(result)
+            self.next_node_ids.add_obj(result, allow_dups=True)
         elif (isinstance(result, jac_set)):
-            self.next_node_ids += result
+            self.next_node_ids.add_obj_list(result, allow_dups=True)
         elif(result):
             self.rt_error(f'{result} is not destination type (i.e., nodes)',
                           kid[1])
@@ -129,45 +145,69 @@ class walker_interp(interp):
         if (before >= after and kid[2].name == 'else_stmt'):
             self.run_else_stmt(kid[2])
         after = len(self.next_node_ids)
-        # if(before >= after and not self.stopped == 'stop'):
-        #     self.rt_info(f"Walker was unable to take any edge" +
-        #                  f" - {self.current_node}", kid[0])
 
-    def run_destroy_action(self, jac_ast):
+    def run_preset_in_out(self, jac_ast, obj, act):
         """
-        destroy_action: KW_DESTROY expression SEMI;
+        preset_in_out:
+            DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
+
+        obj: The node or edge with preset
+        act: The action associated with preset
         """
         kid = jac_ast.kid
-        result = self.run_expression(kid[1])
-        if (isinstance(result, node)):
-            self.destroy_node_ids.add_obj(result)
-        elif (isinstance(result, jac_set)):
-            self.destroy_node_ids += result
-        else:
-            self.rt_error(f'{result} is not destroyable type (i.e., nodes)',
-                          kid[1])
+        param_list = []
+        m = interp(parent_override=self.parent(), caller=self)
+        m.push_scope(jac_scope(parent=self,
+                               has_obj=obj,
+                               action_sets=[
+                                   obj.activity_action_ids]))
+        m._jac_scope.set_agent_refs(cur_node=self.current_node,
+                                    cur_walker=self)
+
+        if(kid[1].name == "expr_list"):
+            param_list = m.run_expr_list(kid[1]).value
+        try:
+            result = act.trigger(param_list, self._jac_scope)
+        except Exception as e:
+            self.rt_error(f'{e}', jac_ast)
+            result = None
+        if (kid[-1].name == "expression"):
+            dest = m.run_expression(kid[-1])
+            dest.value = result
+            dest.write(kid[-1])
 
     # Helper Functions ##################
-
-    def trigger_entry_actions(self):
-        """Trigger current node actions on entry"""
-        for i in self.current_node.entry_action_ids.obj_list():
-            i.trigger()
-
-    def trigger_activity_actions(self):
-        """Trigger current node actions on activity"""
-        for i in self.current_node.activity_action_ids.obj_list():
-            i.trigger()
-
-    def trigger_exit_actions(self):
-        """Trigger current node actions on exit"""
-        for i in self.current_node.exit_action_ids.obj_list():
-            i.trigger()
+    def auto_trigger_node_actions(self, nd, act_list):
+        for i in act_list.obj_list():
+            if(i.access_list and self.name not in i.access_list):
+                continue
+            if(i.preset_in_out):
+                self.run_preset_in_out(
+                    jac_ir_to_ast(i.preset_in_out), nd, i)
+            else:
+                self.call_ability(nd=nd, name=i.name, act_list=act_list)
 
     def viable_nodes(self):
         """Returns all nodes that shouldnt be ignored"""
-        ret = jac_set(self)
+        ret = jac_set()
         for i in self.current_node.attached_nodes():
             if (i not in self.ignore_node_ids.obj_list()):
                 ret.add_obj(i)
         return ret
+
+    def scope_and_run(self, jac_ast, run_func):
+        """
+        Helper to run ast elements with execution scope added
+        (Useful for running arbitrary code blocks as one-offs)
+        """
+        self.push_scope(
+            jac_scope(
+                parent=self,
+                has_obj=self,
+                action_sets=[self.activity_action_ids,
+                             self.current_node.activity_action_ids]))
+        self._jac_scope.set_agent_refs(cur_node=self.current_node,
+                                       cur_walker=self)
+
+        run_func(jac_ast)
+        self.pop_scope()
