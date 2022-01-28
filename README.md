@@ -4,6 +4,8 @@
 
 ### Updates
 
+- New Feature: Hotloading jaseci action modules
+- New Feature: Decorator interface for creating jaseci action modules
 - New Feature: New profiling flag added to run walker api for performance profiling
 - New Feature: Direct jac file building, test, and run from in JSCTL
 - New Language Feature: Tests and testing features as first order language semantics

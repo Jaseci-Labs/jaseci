@@ -8,10 +8,7 @@ setup(
         'click-shell>=2.0,<3.0',
         'numpy >= 1.21.0, < 1.22.0',
         'antlr4-python3-runtime>=4.9.0,<4.10.0',
-        'requests',
-        'redis',
-        'flake8',
-        'stripe'
+        'requests', 'redis', 'flake8', 'stripe', 'fastapi[all]'
     ],
     package_data={"": ["*.ini"], },
     entry_points={

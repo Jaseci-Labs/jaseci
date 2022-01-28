@@ -61,7 +61,7 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_carry_forward(self):
         self.call(
-            "actions register ../jskit_lib/infer.py")
+            "actions register ../jskit/infer.py")
         self.call(
             "sentinel register -name ll -code "
             "jaseci/jsctl/tests/ll.jac -set_active true")
