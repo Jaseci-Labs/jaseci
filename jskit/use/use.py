@@ -10,30 +10,30 @@ module = hub.load(
 
 
 @jra.jaseci_action()
-def question_encode(q):
-    if(isinstance(q, list)):
+def question_encode(question: str):
+    if(isinstance(question, list)):
         return module.signatures['question_encoder'](
-            tf.constant(q))['outputs'].numpy().tolist()
-    elif (isinstance(q, str)):
+            tf.constant(question))['outputs'].numpy().tolist()
+    elif (isinstance(question, str)):
         return module.signatures['question_encoder'](
-            tf.constant([q]))['outputs'].numpy().tolist()
+            tf.constant([question]))['outputs'].numpy().tolist()
 
 
 @jra.jaseci_action()
-def answer_encode(a, context=None):
+def answer_encode(answer: str, context: str = None):
     if(context is None):
-        context = a
-    if(isinstance(a, list)):
+        context = answer
+    if(isinstance(answer, list)):
         return module.signatures['response_encoder'](
-            input=tf.constant(a),
+            input=tf.constant(answer),
             context=tf.constant(context))['outputs'].numpy().tolist()
-    elif(isinstance(a, str)):
+    elif(isinstance(answer, str)):
         return module.signatures['response_encoder'](
-            input=tf.constant([a]),
+            input=tf.constant([answer]),
             context=tf.constant([context]))['outputs'].numpy().tolist()
 
 
 @jra.jaseci_action()
-def cos_sim_score(q_emb, a_emb):
+def cos_sim_score(q_emb: list, a_emb: list):
     norm = np.linalg.norm
     return np.dot(q_emb, a_emb)/(norm(q_emb)*norm(a_emb))
