@@ -46,16 +46,18 @@ def load_remote_actions(url):
         spec = spec.json()
         for i in spec.keys():
             live_actions[i] = gen_remote_func_hook(url, i, spec[i])
+        return True
 
     except Exception as e:
         logger.error(f"Cannot hot load remote actions at {url}: {e}")
+        return False
 
 
 def gen_remote_func_hook(url, act_name, param_names):
+    """Generater for function calls for remote action calls"""
     def func(param_list, meta):
         params = {}
         for i in range(len(param_names)):
-            print(act_name, param_names)
             if(i < len(param_list)):
                 params[param_names[i]] = param_list[i]
             else:

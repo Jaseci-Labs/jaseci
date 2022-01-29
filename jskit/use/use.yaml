@@ -19,9 +19,13 @@ metadata:
 data:
   prod_up: |-
     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
-    mv /jaseci/ai_serving/ /;
-    cd /ai_serving;
-    uwsgi use/uwsgi.ini
+    cd /jaseci
+    git checkout action_new_interface
+    cd /jaseci/jaseci_core/
+    source install.sh
+    cd /jaseci/jskit/use
+    pip3 install -r requirements.txt
+    uvicorn use:app --reload
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -38,12 +42,10 @@ spec:
         pod: jsuse
       name: jsuse
     spec:
-      imagePullSecrets:
-        - name: jsuseregcred
       containers:
         - name: jsuse
           imagePullPolicy: IfNotPresent
-          image: jaseci/ai-service:use
+          image: python:3-slim
           resources:
             requests:
               memory: "3Gi"

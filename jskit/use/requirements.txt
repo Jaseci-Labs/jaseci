@@ -3,3 +3,4 @@ numpy
 tensorflow
 tensorflow-hub
 tensorflow-text
+jaseci
