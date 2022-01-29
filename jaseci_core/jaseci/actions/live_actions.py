@@ -3,6 +3,8 @@ General action base class with automation for hot loading
 """
 from importlib.util import spec_from_file_location, module_from_spec
 from jaseci.utils.utils import logger
+from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
+import requests
 
 live_actions = {}
 
@@ -23,7 +25,7 @@ def assimilate_action(func, act_group=None):
     return func
 
 
-def load_actions(file):
+def load_local_actions(file):
     """Load all jaseci actions from python file"""
     spec = spec_from_file_location(str(file).split("/")[-1][:-3], str(file))
     if(spec is None):
@@ -32,6 +34,37 @@ def load_actions(file):
     else:
         spec.loader.exec_module(module_from_spec(spec))
         return True
+
+
+def load_remote_actions(url):
+    """Load all jaseci actions from live pod"""
+    global live_actions
+    headers = {'content-type': 'application/json'}
+    try:
+        spec = requests.get(url.rstrip('/')+ACTIONS_SPEC_LOC,
+                            headers=headers)
+        spec = spec.json()
+        for i in spec.keys():
+            live_actions[i] = gen_remote_func_hook(url, i, spec[i])
+
+    except Exception as e:
+        logger.error(f"Cannot hot load remote actions at {url}: {e}")
+
+
+def gen_remote_func_hook(url, act_name, param_names):
+    def func(param_list, meta):
+        params = {}
+        for i in range(len(param_names)):
+            print(act_name, param_names)
+            if(i < len(param_list)):
+                params[param_names[i]] = param_list[i]
+            else:
+                params[param_names[i]] = None
+        act_url = f"{url}/{act_name.split('.')[-1]}"
+        res = requests.post(
+            act_url, headers={'content-type': 'application/json'}, json=params)
+        return res.json()
+    return func
 
 
 def load_standard():

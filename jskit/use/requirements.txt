@@ -3,4 +3,3 @@ numpy
 tensorflow
 tensorflow-hub
 tensorflow-text
-fastapi[all]

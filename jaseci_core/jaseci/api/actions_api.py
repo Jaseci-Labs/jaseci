@@ -11,11 +11,18 @@ class actions_api():
     """
 
     @interface.admin_api(cli_args=['file'])
-    def actions_register(self, file: str):
+    def actions_load_local(self, file: str):
         """
         Hot load a python module and assimlate any Jaseci Actions
         """
-        lact.load_actions(file)
+        lact.load_local_actions(file)
+
+    @interface.admin_api(cli_args=['url'])
+    def actions_load_remote(self, url: str):
+        """
+        Hot load an actions set from live pod at URL
+        """
+        lact.load_remote_actions(url)
 
     # @interface.admin_api()
     # def actions_get(self, name: str, value: str):
