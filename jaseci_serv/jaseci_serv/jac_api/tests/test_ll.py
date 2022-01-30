@@ -1,9 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-
+import jaseci.actions.remote_actions as ract
 from rest_framework.test import APIClient
-from jaseci.actions.ai_serving_api import check_model_live
 from jaseci.utils.utils import TestCaseHelper
+import jaseci.actions.live_actions as lact
 from django.test import TestCase
 import uuid
 import base64
@@ -48,6 +48,7 @@ class test_ll(TestCaseHelper, TestCase):
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.gph = self.master._h.get_obj(
             self.master.jid, uuid.UUID(res.data['jid']))
+        lact.load_local_actions('jaseci_serv/jac_api/tests/infer.py')
 
     def tearDown(self):
         super().tearDown()
@@ -182,7 +183,7 @@ class test_ll(TestCaseHelper, TestCase):
 
     def test_ll_goal_associations(self):
         """Test setting categories for a workette"""
-        if (not check_model_live('BART')):
+        if (not ract.load_remote_actions('http://jsbart')):
             self.skipTest("external resource not available")
         CATS = [
             "professional work",
@@ -214,7 +215,7 @@ class test_ll(TestCaseHelper, TestCase):
             'professional work')
 
     def test_parent_suggestion(self):
-        if (not check_model_live('USE_ENCODER')):
+        if (not ract.load_remote_actions('http://jsuse_enc')):
             self.skipTest("external resource not available")
         """Test generating a suggested parent item for a given item"""
         new_wkt = 'clean up the house'

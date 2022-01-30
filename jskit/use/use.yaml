@@ -7,8 +7,8 @@ spec:
     pod: jsuse
   ports:
     - protocol: TCP
-      port: 4672
-      targetPort: 4672
+      port: 80
+      targetPort: 80
       name: http
 ---
 apiVersion: v1
@@ -23,10 +23,11 @@ data:
     cd /jaseci
     git checkout action_new_interface
     cd /jaseci/jaseci_core/
+    apt -y install --no-install-recommends python3.8 python3-pip vim;
     source install.sh
     cd /jaseci/jskit/use
     pip3 install -r requirements.txt
-    uvicorn use:app --reload
+    uvicorn use:app --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -46,7 +47,7 @@ spec:
       containers:
         - name: jsuse
           imagePullPolicy: IfNotPresent
-          image: python:3-slim
+          image: ubuntu:20.04
           resources:
             requests:
               memory: "3Gi"
@@ -54,7 +55,7 @@ spec:
               memory: "3Gi"
           command: [bash, -c, "source script/prod_up"]
           ports:
-            - containerPort: 4672
+            - containerPort: 80
           volumeMounts:
             - name: prod-script
               mountPath: /script

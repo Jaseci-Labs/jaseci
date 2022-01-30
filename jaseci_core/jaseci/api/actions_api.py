@@ -3,6 +3,7 @@ Admin Global api functions as a mixin
 """
 from jaseci.api.interface import interface
 import jaseci.actions.live_actions as lact
+import jaseci.actions.remote_actions as ract
 
 
 class actions_api():
@@ -22,7 +23,7 @@ class actions_api():
         """
         Hot load an actions set from live pod at URL
         """
-        lact.load_remote_actions(url)
+        ract.load_remote_actions(url)
 
     # @interface.admin_api()
     # def actions_get(self, name: str, value: str):
