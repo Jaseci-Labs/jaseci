@@ -11,6 +11,12 @@ def convert_user_to_j_master(apps, schema_editor):
     JaseciObject = apps.get_model('base', 'JaseciObject')
     for j_object in JaseciObject.objects.using(db_alias).all():
         j_object.j_master = j_object.user.master
+        # For all JaseciObject except for action, do the following
+        # kind --> name 
+        # j_type --> kind
+        if j_object.j_type != 'action':
+            j_object.name = j_object.kind
+            j_object.kind = j_object.j_type
         j_object.save()
 
 class Migration(migrations.Migration):
