@@ -38,7 +38,7 @@ def jaseci_action(act_group=None, aliases=list()):
 def assimilate_action(func, act_group, aliases, caller_globals):
     """Helper for jaseci_action decorator"""
     # Construct list of action apis available
-    act_group = [inspect.getfile(func).split(
+    act_group = [os.path.basename(inspect.getfile(func)).split(
         '.')[0]] if act_group is None else act_group
     remote_actions[f"{'.'.join(act_group+[func.__name__])}"] = \
         func.__code__.co_varnames
