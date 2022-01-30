@@ -18,12 +18,12 @@ metadata:
   namespace: default
 data:
   prod_up: |-
-    apt update; apt -y upgrade; apt -y install git;
+    apt update; apt -y upgrade;
+    apt -y install --no-install-recommends python3.8 python3-pip vim git;
     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
     cd /jaseci
     git checkout action_new_interface
     cd /jaseci/jaseci_core/
-    apt -y install --no-install-recommends python3.8 python3-pip vim;
     source install.sh
     cd /jaseci/jskit/use
     pip3 install -r requirements.txt

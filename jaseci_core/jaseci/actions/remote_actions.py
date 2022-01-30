@@ -10,6 +10,7 @@ from time import time
 import inspect
 import requests
 import uvicorn
+import os
 
 remote_actions = {}
 ACTIONS_SPEC_LOC = "/jaseci_actions_spec/"
@@ -37,8 +38,8 @@ def jaseci_action(act_group=None, aliases=list()):
 def assimilate_action(func, act_group, aliases, caller_globals):
     """Helper for jaseci_action decorator"""
     # Construct list of action apis available
-    act_group = [func.__module__.split(
-        '.')[-1]] if act_group is None else act_group
+    act_group = [inspect.getfile(func).split(
+        '.')[0]] if act_group is None else act_group
     remote_actions[f"{'.'.join(act_group+[func.__name__])}"] = \
         func.__code__.co_varnames
 
@@ -70,6 +71,8 @@ def assimilate_action(func, act_group, aliases, caller_globals):
         return ret
     for i in aliases:
         new_func = app.post(f"/{i}/")(new_func)
+        remote_actions[f"{'.'.join(act_group+[i])}"] = \
+            func.__code__.co_varnames
     caller_globals[f'{JS_ACTION_PREAMBLE}{func.__name__}'] = new_func
 
     # Return original function so it can be called as it in call site code base
