@@ -18,6 +18,7 @@ metadata:
   namespace: default
 data:
   prod_up: |-
+    apt update; apt -y upgrade; apt -y install git;
     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
     cd /jaseci
     git checkout action_new_interface

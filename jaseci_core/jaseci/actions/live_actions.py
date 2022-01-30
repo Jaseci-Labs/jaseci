@@ -62,7 +62,7 @@ def gen_remote_func_hook(url, act_name, param_names):
                 params[param_names[i]] = param_list[i]
             else:
                 params[param_names[i]] = None
-        act_url = f"{url}/{act_name.split('.')[-1]}"
+        act_url = f"{url.rstrip('/')}/{act_name.split('.')[-1]}"
         res = requests.post(
             act_url, headers={'content-type': 'application/json'}, json=params)
         return res.json()
