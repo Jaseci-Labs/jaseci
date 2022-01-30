@@ -9,7 +9,7 @@ module = hub.load(
     'https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/3')
 
 
-@jra.jaseci_action()
+@jra.jaseci_action(aliases=['enc_question'])
 def question_encode(question: str):
     if(isinstance(question, list)):
         return module.signatures['question_encoder'](
@@ -19,7 +19,7 @@ def question_encode(question: str):
             tf.constant([question]))['outputs'].numpy().tolist()
 
 
-@jra.jaseci_action()
+@jra.jaseci_action(aliases=['enc_answer'])
 def answer_encode(answer: str, context: str = None):
     if(context is None):
         context = answer
@@ -39,21 +39,10 @@ def cos_sim_score(q_emb: list, a_emb: list):
     return np.dot(q_emb, a_emb)/(norm(q_emb)*norm(a_emb))
 
 
-@jra.jaseci_action()
-def enc_question(question: str):
-    return question_encode(question)
-
-
-@jra.jaseci_action()
-def enc_answer(answer: str, context: str = None):
-    return answer_encode(answer, context)
-
-
-@jra.jaseci_action()
+@jra.jaseci_action(aliases=['qa_score'])
 def dist_score(q_emb: list, a_emb: list):
     return np.inner(q_emb, a_emb).tolist()
 
 
-@jra.jaseci_action()
-def qa_score(q_emb: list, a_emb: list):
-    return dist_score(q_emb, a_emb)
+if __name__ == "__main__":
+    jra.launch_server(port=8000)

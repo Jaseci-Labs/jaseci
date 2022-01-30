@@ -1,6 +1,7 @@
 """
 General action base class with automation for hot loading
 """
+from hashlib import new
 from jaseci.utils.utils import logger
 from jaseci.actions.live_actions import live_actions
 from fastapi import FastAPI
@@ -12,7 +13,7 @@ import uvicorn
 
 remote_actions = {}
 ACTIONS_SPEC_LOC = "/jaseci_actions_spec/"
-
+JS_ACTION_PREAMBLE = "js_action_"
 app = FastAPI()
 
 
@@ -21,7 +22,7 @@ def action_list():
     return remote_actions
 
 
-def jaseci_action(act_group=None):
+def jaseci_action(act_group=None, aliases=list()):
     """Decorator for Jaseci Action interface"""
     caller_globals = dict(inspect.getmembers(
         inspect.stack()[1][0]))["f_globals"]
@@ -29,11 +30,11 @@ def jaseci_action(act_group=None):
         caller_globals['app'] = app
 
     def decorator_func(func):
-        return assimilate_action(func, act_group)
+        return assimilate_action(func, act_group, aliases, caller_globals)
     return decorator_func
 
 
-def assimilate_action(func, act_group=None):
+def assimilate_action(func, act_group, aliases, caller_globals):
     """Helper for jaseci_action decorator"""
     # Construct list of action apis available
     act_group = [func.__module__.split(
@@ -44,12 +45,14 @@ def assimilate_action(func, act_group=None):
     # Need to get pydatic model for func signature for fastAPI post
     model = validate_arguments(func).model
 
+    # Keep only feilds present in param list in base model
     keep_fields = {}
     for i in model.__fields__.keys():
         if i in func.__code__.co_varnames:
             keep_fields[i] = model.__fields__[i]
     model.__fields__ = keep_fields
 
+    # Create duplicate funtion for api endpoint and inject in call site globals
     @app.post(f"/{func.__name__}/")
     def new_func(params: model):
         pl_peek = str(dict(params.__dict__))[:256]
@@ -65,7 +68,12 @@ def assimilate_action(func, act_group=None):
             f'API call to {TG}{func.__name__}{EC}'
             f' completed in {TY}{tot_time:.3f} seconds{EC}'))
         return ret
-    return new_func
+    for i in aliases:
+        new_func = app.post(f"/{i}/")(new_func)
+    caller_globals[f'{JS_ACTION_PREAMBLE}{func.__name__}'] = new_func
+
+    # Return original function so it can be called as it in call site code base
+    return func
 
 
 def load_remote_actions(url):
@@ -100,5 +108,5 @@ def gen_remote_func_hook(url, act_name, param_names):
     return func
 
 
-def launch_server(port=80):
-    uvicorn.run(app, port=port, host='0.0.0.0')
+def launch_server(port=80, host='0.0.0.0'):
+    uvicorn.run(app, port=port, host=host)
