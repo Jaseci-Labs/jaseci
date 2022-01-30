@@ -27,7 +27,7 @@ data:
     source install.sh
     cd /jaseci/jskit/use
     pip3 install -r requirements.txt
-    uvicorn use:app --host 0.0.0.0 --port 80
+    uvicorn use:app --host 0.0.0.0 --port 80 --reload
 ---
 apiVersion: apps/v1
 kind: Deployment

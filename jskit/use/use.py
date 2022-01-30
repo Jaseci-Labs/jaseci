@@ -37,3 +37,23 @@ def answer_encode(answer: str, context: str = None):
 def cos_sim_score(q_emb: list, a_emb: list):
     norm = np.linalg.norm
     return np.dot(q_emb, a_emb)/(norm(q_emb)*norm(a_emb))
+
+
+@jra.jaseci_action()
+def enc_question(question: str):
+    return question_encode(question)
+
+
+@jra.jaseci_action()
+def enc_answer(answer: str, context: str = None):
+    return answer_encode(answer, context)
+
+
+@jra.jaseci_action()
+def dist_score(q_emb: list, a_emb: list):
+    return np.inner(q_emb, a_emb).tolist()
+
+
+@jra.jaseci_action()
+def qa_score(q_emb: list, a_emb: list):
+    return dist_score(q_emb, a_emb)
