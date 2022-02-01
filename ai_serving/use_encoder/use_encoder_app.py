@@ -5,7 +5,7 @@ from base.ai_serving_base import AIServiceBase, FlaskError
 import numpy as np
 import tensorflow_hub as hub
 import tensorflow as tf
-import tensorflow_text # noqa
+import tensorflow_text  # noqa
 
 
 class USEEncoderBase():
@@ -26,8 +26,8 @@ def __router__():
     print(request.json)
     if 'op' not in request.json:
         raise FlaskError(
-                message='Required param \'op\' is missing from the request.',
-                status_code=404
+            message='Required param \'op\' is missing from the request.',
+            status_code=404
         )
     op = request.json['op']
     if op == 'encode':
@@ -35,9 +35,9 @@ def __router__():
             {'encoded': USE.encode(request.json['text'])}
 
     raise FlaskError(
-            message='Invalid param op. ' +
-                    'Supported: ecnode',
-            status_code=404, payload={'original_op': request.json['op']}
+        message='Invalid param op. ' +
+        'Supported: ecnode',
+        status_code=404, payload={'original_op': request.json['op']}
     )
 
 

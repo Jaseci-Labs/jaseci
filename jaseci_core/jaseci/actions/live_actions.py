@@ -3,7 +3,8 @@ General action base class with automation for hot loading
 """
 from importlib.util import spec_from_file_location, module_from_spec
 from jaseci.utils.utils import logger
-
+from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
+import requests
 
 live_actions = {}
 
@@ -70,3 +71,35 @@ def get_global_actions(hook):
                 ).jid
             )
     return global_action_list
+
+
+def load_remote_actions(url):
+    """Load all jaseci actions from live pod"""
+    headers = {'content-type': 'application/json'}
+    try:
+        spec = requests.get(url.rstrip('/')+ACTIONS_SPEC_LOC,
+                            headers=headers)
+        spec = spec.json()
+        for i in spec.keys():
+            live_actions[i] = gen_remote_func_hook(url, i, spec[i])
+        return True
+
+    except Exception as e:
+        logger.error(f"Cannot hot load remote actions at {url}: {e}")
+        return False
+
+
+def gen_remote_func_hook(url, act_name, param_names):
+    """Generater for function calls for remote action calls"""
+    def func(param_list, meta):
+        params = {}
+        for i in range(len(param_names)):
+            if(i < len(param_list)):
+                params[param_names[i]] = param_list[i]
+            else:
+                params[param_names[i]] = None
+        act_url = f"{url.rstrip('/')}/{act_name.split('.')[-1]}"
+        res = requests.post(
+            act_url, headers={'content-type': 'application/json'}, json=params)
+        return res.json()
+    return func

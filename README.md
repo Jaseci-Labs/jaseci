@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Feature: APIs for manipulating actions
 - New Feature: Hotloading jaseci action modules
 - New Feature: Decorator interface for creating jaseci action modules
 - New Feature: New profiling flag added to run walker api for performance profiling

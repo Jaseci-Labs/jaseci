@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from rest_framework.test import APIClient
-import jaseci.actions.remote_actions as ract
+import jaseci.actions.live_actions as lact
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 import uuid
@@ -50,7 +50,7 @@ class test_zsb(TestCaseHelper, TestCase):
 
     def test_zsb_create_answer(self):
         """Test ZSB Create Answer call USE api"""
-        if (not ract.load_remote_actions('http://jsuse')):
+        if (not lact.load_remote_actions('http://jsuse')):
             self.skipTest("external resource not available")
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['name'], 'bot')
@@ -60,7 +60,7 @@ class test_zsb(TestCaseHelper, TestCase):
 
     def test_zsb_ask_question(self):
         """Test ZSB Create Answer call USE api"""
-        if (not ract.load_remote_actions('http://jsuse')):
+        if (not lact.load_remote_actions('http://jsuse')):
             self.skipTest("external resource not available")
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['name'], 'bot')
@@ -78,7 +78,7 @@ class test_zsb(TestCaseHelper, TestCase):
 
     def test_zsb_ask_question_multi(self):
         """Test ZSB Create Answer call USE api"""
-        if (not ract.load_remote_actions('http://jsuse')):
+        if (not lact.load_remote_actions('http://jsuse')):
             self.skipTest("external resource not available")
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['name'], 'bot')

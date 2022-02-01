@@ -5,7 +5,7 @@ from jaseci.graph.graph import graph
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 import jaseci.tests.jac_test_code as jtc
-import jaseci.actions.remote_actions as ract
+import jaseci.actions.live_actions as lact
 
 
 class jac_tests(TestCaseHelper, TestCase):
@@ -19,7 +19,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_basic_USE_calls_from_jac(self):
         """Test the execution of a basic walker building graph"""
-        if (not ract.load_remote_actions('http://jsuse')):
+        if (not lact.load_remote_actions('http://jsuse')):
             self.skipTest("external resource not available")
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
@@ -36,7 +36,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_basic_USE_single_string_calls_from_jac(self):
         """Test the execution of a basic walker building graph"""
-        if (not ract.load_remote_actions('http://jsuse')):
+        if (not lact.load_remote_actions('http://jsuse')):
             self.skipTest("external resource not available")
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
@@ -53,7 +53,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_USE_qa_with_ctx(self):
         """Test the execution of a basic walker building graph"""
-        if (not ract.load_remote_actions('http://jsuse')):
+        if (not lact.load_remote_actions('http://jsuse')):
             self.skipTest("external resource not available")
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
@@ -70,7 +70,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_USE_qa_with_ctx_clean(self):
         """Test the execution of a basic walker building graph"""
-        if (not ract.load_remote_actions('http://jsuse')):
+        if (not lact.load_remote_actions('http://jsuse')):
             self.skipTest("external resource not available")
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)

@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-import jaseci.actions.remote_actions as ract
 from rest_framework.test import APIClient
 from jaseci.utils.utils import TestCaseHelper
 import jaseci.actions.live_actions as lact
@@ -183,7 +182,7 @@ class test_ll(TestCaseHelper, TestCase):
 
     def test_ll_goal_associations(self):
         """Test setting categories for a workette"""
-        if (not ract.load_remote_actions('http://jsbart')):
+        if (not lact.load_remote_actions('http://jsbart')):
             self.skipTest("external resource not available")
         CATS = [
             "professional work",
@@ -215,7 +214,7 @@ class test_ll(TestCaseHelper, TestCase):
             'professional work')
 
     def test_parent_suggestion(self):
-        if (not ract.load_remote_actions('http://jsuse_enc')):
+        if (not lact.load_remote_actions('http://jsuse_enc')):
             self.skipTest("external resource not available")
         """Test generating a suggested parent item for a given item"""
         new_wkt = 'clean up the house'

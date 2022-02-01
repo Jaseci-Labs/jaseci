@@ -3,7 +3,6 @@ Admin Global api functions as a mixin
 """
 from jaseci.api.interface import interface
 import jaseci.actions.live_actions as lact
-import jaseci.actions.remote_actions as ract
 
 
 class actions_api():
@@ -16,14 +15,14 @@ class actions_api():
         """
         Hot load a python module and assimlate any Jaseci Actions
         """
-        return {"Success": lact.load_local_actions(file)}
+        return {"success": lact.load_local_actions(file)}
 
     @interface.admin_api(cli_args=['url'])
     def actions_load_remote(self, url: str):
         """
         Hot load an actions set from live pod at URL
         """
-        return {"Success": ract.load_remote_actions(url)}
+        return {"success": lact.load_remote_actions(url)}
 
     # @interface.admin_api()
     # def actions_get(self, name: str, value: str):
