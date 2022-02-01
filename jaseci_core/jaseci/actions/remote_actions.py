@@ -1,7 +1,6 @@
 """
 General action base class with automation for hot loading
 """
-from hashlib import new
 from jaseci.utils.utils import logger
 from fastapi import FastAPI
 from pydantic import validate_arguments
