@@ -1,0 +1,4 @@
+transformers
+pytorch
+fastapi
+uvicorn

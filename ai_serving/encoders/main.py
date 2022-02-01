@@ -37,7 +37,7 @@ def config_setup():
     else:
         raise Exception('Unknown architecture.')
     model.to(device)
-
+config_setup()
 #initializing the FastApi object
 app = FastAPI()
 #declaring the request body content for intent classification
@@ -103,33 +103,52 @@ def getCandidateEmbedding(request_data : ParseText):
 @app.put("/setconfig")
 def setConfig(request_data : ConfigData):
     global config
+    config.read('config.cfg')
+    train_param=config['TRAIN_PARAMETERS']
+    model_param=config['MODEL_PARAMETERS']
     if request_data.training_parameters:
-        config['TRAIN_PARAMETERS']={
-        "MAX_CONTEXTS_LENGTH":request_data.training_parameters['MAX_CONTEXTS_LENGTH'],
-        "MAX_RESPONSE_LENGTH":request_data.training_parameters['MAX_RESPONSE_LENGTH'],
-        "TRAIN_BATCH_SIZE":request_data.training_parameters['TRAIN_BATCH_SIZE'],
-        "EVAL_BATCH_SIZE":request_data.training_parameters['EVAL_BATCH_SIZE'],
-        "MAX_HISTORY":request_data.training_parameters['MAX_HISTORY'],
-        "LEARNING_RATE":request_data.training_parameters['LEARNING_RATE'],
-        "WEIGHT_DECAY":request_data.training_parameters['WEIGHT_DECAY'],
-        "WARMUP_STEPS":request_data.training_parameters['WARMUP_STEPS'],
-        "ADAM_EPSILON":request_data.training_parameters['ADAM_EPSILON'],
-        "MAX_GRAD_NORM":request_data.training_parameters['MAX_GRAD_NORM'],
-        "NUM_TRAIN_EPOCHS":request_data.training_parameters['NUM_TRAIN_EPOCHS'],
-        "SEED":request_data.training_parameters['SEED'],
-        "GRADIENT_ACCUMULATION_STEPS":request_data.training_parameters['GRADIENT_ACCUMULATION_STEPS'],
-        "FP16":request_data.training_parameters['FP16'],
-        "FP16_OPT_LEVEL":request_data.training_parameters['FP16_OPT_LEVEL'],
-        "GPU":request_data.training_parameters['GPU']
-        }
+        if "MAX_CONTEXTS_LENGTH" in request_data.training_parameters:
+            train_param["MAX_CONTEXTS_LENGTH"]=request_data.training_parameters['MAX_CONTEXTS_LENGTH']
+        if "MAX_RESPONSE_LENGTH" in request_data.training_parameters:
+            train_param["MAX_RESPONSE_LENGTH"]=request_data.training_parameters['MAX_RESPONSE_LENGTH']
+        if "TRAIN_BATCH_SIZE" in request_data.training_parameters:            
+            train_param["TRAIN_BATCH_SIZE"]=request_data.training_parameters['TRAIN_BATCH_SIZE']
+        if "EVAL_BATCH_SIZE" in request_data.training_parameters: 
+            train_param["EVAL_BATCH_SIZE"]=request_data.training_parameters['EVAL_BATCH_SIZE']
+        if "MAX_HISTORY" in request_data.training_parameters: 
+            train_param["MAX_HISTORY"]=request_data.training_parameters['MAX_HISTORY']
+        if "LEARNING_RATE" in request_data.training_parameters: 
+            train_param["LEARNING_RATE"]=request_data.training_parameters['LEARNING_RATE']
+        if "WEIGHT_DECAY" in request_data.training_parameters: 
+            train_param["WEIGHT_DECAY"]=request_data.training_parameters['WEIGHT_DECAY']
+        if "WARMUP_STEPS" in request_data.training_parameters: 
+            train_param["WARMUP_STEPS"]=request_data.training_parameters['WARMUP_STEPS']
+        if "ADAM_EPSILON" in request_data.training_parameters: 
+            train_param["ADAM_EPSILON"]=request_data.training_parameters['ADAM_EPSILON']
+        if "MAX_GRAD_NORM" in request_data.training_parameters: 
+            train_param["MAX_GRAD_NORM"]=request_data.training_parameters['MAX_GRAD_NORM']
+        if "NUM_TRAIN_EPOCHS" in request_data.training_parameters: 
+            train_param["NUM_TRAIN_EPOCHS"]=request_data.training_parameters['NUM_TRAIN_EPOCHS']
+        if "SEED" in request_data.training_parameters: 
+            train_param["SEED"]=request_data.training_parameters['SEED']
+        if "GRADIENT_ACCUMULATION_STEPS" in request_data.training_parameters: 
+            train_param["GRADIENT_ACCUMULATION_STEPS"]=request_data.training_parameters['GRADIENT_ACCUMULATION_STEPS']
+        if "FP16" in request_data.training_parameters: 
+            train_param["FP16"]=request_data.training_parameters['FP16']
+        if "FP16_OPT_LEVEL" in request_data.training_parameters: 
+            train_param["FP16_OPT_LEVEL"]=request_data.training_parameters['FP16_OPT_LEVEL']
+        if "GPU" in request_data.training_parameters: 
+            train_param["GPU"]=request_data.training_parameters['GPU']
     if request_data.model_parameters:
-        config["MODEL_PARAMETERS"]={	
-        "ARCHITECTURE":request_data.model_parameters["ARCHITECTURE"],
-        "SHARED":request_data.model_parameters["SHARED"],
-        "MODEL_NAME":request_data.model_parameters["MODEL_NAME"],
-        "POLY_M":request_data.model_parameters["POLY_M"]
-        }
-        with open("config.cfg", 'w') as configfile:
-            config.write(configfile)
+        if "ARCHITECTURE" in request_data.model_parameters: 
+            model_param["ARCHITECTURE"]=request_data.model_parameters["ARCHITECTURE"]
+        if "SHARED" in request_data.model_parameters: 
+            model_param["SHARED"]=request_data.model_parameters["SHARED"]
+        if "MODEL_NAME" in request_data.model_parameters: 
+            model_param["MODEL_NAME"]=request_data.model_parameters["MODEL_NAME"]
+        if "POLY_M" in request_data.model_parameters: 
+            model_param["POLY_M"]=request_data.model_parameters["POLY_M"]            
+    with open("config.cfg", 'w') as configfile:
+        config.write(configfile)
         config_setup()
     return JSONResponse(content="config setup completed")

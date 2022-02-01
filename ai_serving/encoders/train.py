@@ -9,32 +9,31 @@ from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 from tokenizer import SelectionJoinTransform, SelectionResponelTransform,SelectionDataset,SelectionSequentialTransform
 import configparser
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
 config = configparser.ConfigParser()
-config.read('config.cfg')
-
-max_contexts_length = int(config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
-max_candidate_length = int(config['TRAIN_PARAMETERS']['MAX_RESPONSE_LENGTH'])
-train_batch_size = int(config['TRAIN_PARAMETERS']['TRAIN_BATCH_SIZE'])
-eval_batch_size = int(config['TRAIN_PARAMETERS']['EVAL_BATCH_SIZE'])
-
-max_history = int(config['TRAIN_PARAMETERS']['MAX_HISTORY'])
-learning_rate = float(config['TRAIN_PARAMETERS']['LEARNING_RATE'])
-weight_decay = float(config['TRAIN_PARAMETERS']['WEIGHT_DECAY'])
-warmup_steps = int(config['TRAIN_PARAMETERS']['WARMUP_STEPS'])
-adam_epsilon = float(config['TRAIN_PARAMETERS']['ADAM_EPSILON'])
-max_grad_norm = float(config['TRAIN_PARAMETERS']['MAX_GRAD_NORM'])
-gradient_accumulation_steps = int(config['TRAIN_PARAMETERS']['GRADIENT_ACCUMULATION_STEPS'])
-num_train_epochs = int(config['TRAIN_PARAMETERS']['NUM_TRAIN_EPOCHS'])
-fp16 = bool(config['TRAIN_PARAMETERS']['FP16'])
-fp16_opt_level = str(config['TRAIN_PARAMETERS']['FP16_OPT_LEVEL'])
-gpu = int(config['TRAIN_PARAMETERS']['GPU'])
+device,max_contexts_length,max_candidate_length,train_batch_size,eval_batch_size,max_history,learning_rate,weight_decay,warmup_steps,adam_epsilon,max_grad_norm,fp16,fp16_opt_level,gpu,gradient_accumulation_steps,num_train_epochs=None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None
+def config_setup():
+    global device,max_contexts_length,max_candidate_length,train_batch_size,eval_batch_size,max_history,learning_rate,weight_decay,warmup_steps,adam_epsilon,max_grad_norm,fp16,fp16_opt_level,gpu,gradient_accumulation_steps,num_train_epochs
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    config.read('config.cfg')
+    max_contexts_length = int(config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
+    max_candidate_length = int(config['TRAIN_PARAMETERS']['MAX_RESPONSE_LENGTH'])
+    train_batch_size = int(config['TRAIN_PARAMETERS']['TRAIN_BATCH_SIZE'])
+    eval_batch_size = int(config['TRAIN_PARAMETERS']['EVAL_BATCH_SIZE'])
+    max_history = int(config['TRAIN_PARAMETERS']['MAX_HISTORY'])
+    learning_rate = float(config['TRAIN_PARAMETERS']['LEARNING_RATE'])
+    weight_decay = float(config['TRAIN_PARAMETERS']['WEIGHT_DECAY'])
+    warmup_steps = int(config['TRAIN_PARAMETERS']['WARMUP_STEPS'])
+    adam_epsilon = float(config['TRAIN_PARAMETERS']['ADAM_EPSILON'])
+    max_grad_norm = float(config['TRAIN_PARAMETERS']['MAX_GRAD_NORM'])
+    gradient_accumulation_steps = int(config['TRAIN_PARAMETERS']['GRADIENT_ACCUMULATION_STEPS'])
+    num_train_epochs = int(config['TRAIN_PARAMETERS']['NUM_TRAIN_EPOCHS'])
+    fp16 = bool(config['TRAIN_PARAMETERS']['FP16'])
+    fp16_opt_level = str(config['TRAIN_PARAMETERS']['FP16_OPT_LEVEL'])
+    gpu = int(config['TRAIN_PARAMETERS']['GPU'])
 
 output_dir="log_output"
 train_dir="."
-
+config_setup()
 model=None
 global_step,tr_loss,nb_tr_steps,epoch,device=None,None,None,None,None
 

@@ -3,15 +3,18 @@ import torch
 from tokenizer import SelectionJoinTransform, SelectionSequentialTransform,SelectionData,ContextData,CandidateData
 import configparser
 config = configparser.ConfigParser()
-config.read('config.cfg')
 
-max_history = int(config['TRAIN_PARAMETERS']['MAX_HISTORY'])
-max_contexts_length = int(config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
-max_candidate_length = int(config['TRAIN_PARAMETERS']['MAX_RESPONSE_LENGTH'])
+max_history,max_contexts_length,max_candidate_length=None,None,None
+def config_setup():
+  global max_history,max_contexts_length,max_candidate_length  
+  config.read('config.cfg')
+  max_history = int(config['TRAIN_PARAMETERS']['MAX_HISTORY'])
+  max_contexts_length = int(config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
+  max_candidate_length = int(config['TRAIN_PARAMETERS']['MAX_RESPONSE_LENGTH'])
 
-
+config_setup()
 def get_inference(model,tokenizer,context,candidate):
-
+    global max_history,max_contexts_length,max_candidate_length  
     context_transform = SelectionJoinTransform(tokenizer=tokenizer, max_len=max_contexts_length,
                                             max_history=max_history)
     candidate_transform = SelectionSequentialTransform(tokenizer=tokenizer, max_len=max_candidate_length,
@@ -30,7 +33,7 @@ def get_inference(model,tokenizer,context,candidate):
     return candidate[prediction]
 
 def get_context_embedding(model,tokenizer,context):
-
+    global max_history,max_contexts_length,max_candidate_length  
     context_transform = SelectionJoinTransform(tokenizer=tokenizer, max_len=max_contexts_length,
                                             max_history=max_history)
 
@@ -43,7 +46,7 @@ def get_context_embedding(model,tokenizer,context):
     return embeddings
     
 def get_candidate_embedding(model,tokenizer, candidate):
-
+    global max_history,max_contexts_length,max_candidate_length  
     candidate_transform = SelectionSequentialTransform(tokenizer=tokenizer, max_len=max_candidate_length,
                                                 max_history=None, pair_last=False)
 
