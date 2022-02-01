@@ -13,7 +13,6 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.logger_on()
 
     def tearDown(self):
         super().tearDown()

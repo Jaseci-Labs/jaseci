@@ -17,6 +17,7 @@ class test_ll(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
+        lact.load_local_actions(os.path.dirname(__file__) + '/infer.py')
         self.user = get_user_model().objects.create_user(
             'JSCITfdfdEST_test@jaseci.com',
             'password'
@@ -48,7 +49,6 @@ class test_ll(TestCaseHelper, TestCase):
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.gph = self.master._h.get_obj(
             self.master.jid, uuid.UUID(res.data['jid']))
-        lact.load_local_actions('jaseci_serv/jac_api/tests/infer.py')
 
     def tearDown(self):
         super().tearDown()

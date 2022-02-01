@@ -275,7 +275,9 @@ prog1 = \
         has output;
         q = use.enc_question(["How old are you?",
                               "which animal is the best?"]);
+        std.log(q);
         a = use.enc_answer(["I'm 40 years old.", "Elephants rule."]);
+        std.log(a);
         output = use.qa_score(q, a);
         report output;
     }

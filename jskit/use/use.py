@@ -3,6 +3,7 @@ import tensorflow_hub as hub
 import tensorflow as tf
 import tensorflow_text  # noqa
 import jaseci.actions.remote_actions as jra
+from typing import Union
 
 
 module = hub.load(
@@ -10,7 +11,7 @@ module = hub.load(
 
 
 @jra.jaseci_action(aliases=['enc_question'])
-def question_encode(question: str):
+def question_encode(question: Union[str, list]):
     if(isinstance(question, list)):
         return module.signatures['question_encoder'](
             tf.constant(question))['outputs'].numpy().tolist()
@@ -20,7 +21,7 @@ def question_encode(question: str):
 
 
 @jra.jaseci_action(aliases=['enc_answer'])
-def answer_encode(answer: str, context: str = None):
+def answer_encode(answer: Union[str, list], context: Union[str, list] = None):
     if(context is None):
         context = answer
     if(isinstance(answer, list)):
