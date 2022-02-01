@@ -9,7 +9,7 @@ from typing import Union
 module = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 
 
-@jra.jaseci_action(act_group=['use'])
+@jra.jaseci_action(act_group=['use'], aliases=['get_embedding'])
 def encode(text: Union[str, list]):
     if(isinstance(text, str)):
         text = [text]

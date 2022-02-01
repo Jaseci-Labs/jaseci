@@ -50,7 +50,7 @@ class test_zsb(TestCaseHelper, TestCase):
 
     def test_zsb_create_answer(self):
         """Test ZSB Create Answer call USE api"""
-        if (not lact.load_remote_actions('http://jsuse')):
+        if (not lact.load_remote_actions('http://js-use-qa')):
             self.skipTest("external resource not available")
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['name'], 'bot')
@@ -60,7 +60,7 @@ class test_zsb(TestCaseHelper, TestCase):
 
     def test_zsb_ask_question(self):
         """Test ZSB Create Answer call USE api"""
-        if (not lact.load_remote_actions('http://jsuse')):
+        if (not lact.load_remote_actions('http://js-use-qa')):
             self.skipTest("external resource not available")
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['name'], 'bot')
@@ -78,7 +78,7 @@ class test_zsb(TestCaseHelper, TestCase):
 
     def test_zsb_ask_question_multi(self):
         """Test ZSB Create Answer call USE api"""
-        if (not lact.load_remote_actions('http://jsuse')):
+        if (not lact.load_remote_actions('http://js-use-qa')):
             self.skipTest("external resource not available")
         data = self.run_walker('add_bot', {'name': "Bot"})
         self.assertEqual(data[0]['name'], 'bot')

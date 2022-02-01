@@ -214,7 +214,8 @@ class test_ll(TestCaseHelper, TestCase):
             'professional work')
 
     def test_parent_suggestion(self):
-        if (not lact.load_remote_actions('http://jsuse_enc')):
+        self.logger_on()
+        if (not lact.load_remote_actions('http://js-use-enc')):
             self.skipTest("external resource not available")
         """Test generating a suggested parent item for a given item"""
         new_wkt = 'clean up the house'
