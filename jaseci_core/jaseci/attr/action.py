@@ -38,7 +38,7 @@ class action(item):
         # )(param_list, meta={'m_id': scope.parent._m_id,
         #                     'h': scope.parent._h, 'scope': scope})
         result = live_actions[
-            self.value](param_list,
+            self.value](*param_list,
                         meta={'m_id': scope.parent._m_id,
                               'h': scope.parent._h, 'scope': scope})
         return result
