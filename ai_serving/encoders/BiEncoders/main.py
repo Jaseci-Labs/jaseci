@@ -10,7 +10,7 @@ import torch
 from torch.nn import CosineSimilarity
 import os
 import configparser
-from models import BiEncoderShared,PolyEncoderModelShared
+from models import BiEncoderShared
 from train import train_model
 from evaluate import get_inference,get_candidate_embedding,get_context_embedding
 config = configparser.ConfigParser()
@@ -28,10 +28,7 @@ def config_setup():
 
     bert_config = BertConfig()
     tokenizer = BertTokenizer.from_pretrained(model_name, do_lower_case=True)
-    if architecture == 'poly':
-        if shared:
-            model = PolyEncoderModelShared(config=bert_config, model_name=model_name, poly_m=poly_m)
-    elif architecture == 'bi':
+    if architecture == 'bi':
         if shared:
             model = BiEncoderShared(bert_config,model_name)
     else:
