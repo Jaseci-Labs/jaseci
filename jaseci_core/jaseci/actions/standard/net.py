@@ -1,15 +1,14 @@
 """Built in actions for Jaseci"""
 from jaseci.actions.live_actions import jaseci_action
+from jaseci.jac.jac_set import jac_set
 
 
 @jaseci_action()
-def max(param_list, meta):
+def max(item_set: jac_set, meta):
     ret = None
-    if (not len(param_list)):
+    if (not len(item_set)):
         return None
-    items = param_list[0].obj_list()
-    if (not len(items)):
-        return None
+    items = item_set.obj_list()
     max_val = items[0].anchor_value()
     ret = items[0]
     for i in items:

@@ -5,7 +5,7 @@ from jaseci.actions.live_actions import jaseci_action
 
 
 @jaseci_action()
-def cosine_sim(param_list, meta):
+def cosine_sim(vec_a: list, vec_b: list, meta):
     """
     Caculate the cosine similarity score of two given vectors
     Param 1 - First vector
@@ -13,16 +13,13 @@ def cosine_sim(param_list, meta):
 
     Return - float between 0 and 1
     """
-    vec_a = param_list[0]
-    vec_b = param_list[1]
-
     result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) *
                                      np.linalg.norm(vec_b))
     return result.astype(float)
 
 
 @jaseci_action()
-def dot_product(param_list, meta):
+def dot_product(vec_a: list, vec_b: list, meta):
     """
     Caculate the dot product of two given vectors
     Param 1 - First vector
@@ -31,51 +28,47 @@ def dot_product(param_list, meta):
     Return - float between 0 and 1
     """
 
-    return np.inner(param_list[0], param_list[1])
+    return np.inner(vec_a, vec_b).tolist()
 
 
 @jaseci_action()
-def get_centroid(param_list, meta):
+def get_centroid(vec_list: list, meta):
     """
     Calculate the centroid of the given list of vectors
     Param 1 - List of vectors
 
     Return - (centroid vector, cluster tightness)
     """
-    vec_list = param_list[0]
-    centroid = np.mean(vec_list, axis=0)
+    centroid = np.mean(vec_list, axis=0).astype(float)
     tightness = np.mean([cosine_sim([vec, centroid], meta)
                          for vec in vec_list]).astype(float)
     return [centroid, tightness]
 
 
 @jaseci_action()
-def softmax(param_list, meta):
+def softmax(vec_list: list, meta):
     """
     Calculate the centroid of the given list of vectors
     Param 1 - List of vectors
 
     Return - (centroid vector, cluster tightness)
     """
-    vec_list = param_list[0]
     e_x = np.exp(vec_list - np.max(vec_list))
     return list(e_x / e_x.sum())
 
 
 @jaseci_action()
-def sort_by_key(param_list, meta):  # TODO: Should be in std lib
+def sort_by_key(data: dict, reverse=False, key_pos=None, meta=None):
     """
     Sort the given list. Optionally by specific key
     Param 1 - List of items
     Param 2 - if Reverse
-    Param 2 (Optional) - Index of the key to be used for sorting
+    Param 3 (Optional) - Index of the key to be used for sorting
     if param 1 is a list of tuples.
-    """
-    data = param_list[0]
-    if_reverse = param_list[1]
 
-    if (len(param_list) > 2):
-        key_pos = param_list[2]
-        return sorted(data, key=itemgetter(key_pos), reverse=if_reverse)
+    Deprecated
+    """
+    if (key_pos is not None):
+        return sorted(data, key=itemgetter(key_pos), reverse=reverse)
     else:
-        return sorted(data, reverse=if_reverse)
+        return sorted(data, reverse=reverse)

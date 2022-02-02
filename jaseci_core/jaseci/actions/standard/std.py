@@ -1,6 +1,6 @@
 """Built in actions for Jaseci"""
 from operator import itemgetter
-from jaseci.utils.utils import logger, app_logger, json_out
+from jaseci.utils.utils import app_logger, json_out
 from datetime import datetime
 from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 from jaseci.actions.live_actions import jaseci_action
@@ -41,7 +41,7 @@ def sort_by_col(lst: list, col_num: int, reverse: bool = False, meta=None):
     Sorts in place list of lists by column
     Param 1 - list
     Param 2 - col number
-    Param 3 - 'reverse' / 'asc' / 'desc' (optional)
+    Param 3 - boolean as to whether things should be reversed
 
     Return - Sorted list
     """
