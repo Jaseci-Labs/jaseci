@@ -7,20 +7,20 @@ from jaseci.actions.live_actions import jaseci_action
 
 
 @jaseci_action()
-def seed(param_list, meta):
+def seed(val: int, meta):
     """Seed random num generator"""
-    random.seed(param_list[0], version=2)
+    random.seed(val, version=2)
     # faker.Faker.seed(param_list[0])
 
 
 @jaseci_action()
-def integer(param_list, meta):
+def integer(start: int, end: int, meta):
     """Random integeter between range"""
-    return random.randint(param_list[0], param_list[1])
+    return random.randint(start, end)
 
 
 @jaseci_action()
-def sentence(param_list, meta):
+def sentence(meta):
     """Get a random sentence"""
     fstr = ''
     for i in range(random.randint(0, 10)):
@@ -30,10 +30,10 @@ def sentence(param_list, meta):
 
 
 @jaseci_action()
-def time(param_list, meta):
+def time(start_date: str, end_date: str, meta):
     """Provide a random datetime between range"""
-    start = datetime.fromisoformat(param_list[0])
-    end = datetime.fromisoformat(param_list[1])
+    start = datetime.fromisoformat(start_date)
+    end = datetime.fromisoformat(end_date)
     return (start + timedelta(
         seconds=random.randint(0, int((end - start).total_seconds())),
     )).isoformat()

@@ -31,14 +31,8 @@ class action(item):
         Also note that Jac stores preset_in_out as input/output list of hex
         ids since preset_in_out doesn't use _ids convention
         """
-        # result = getattr(
-        #     importlib.import_module(
-        #         ACTION_PACKAGE+self.value[0].split('.')[-1]),
-        #     self.value[1]
-        # )(param_list, meta={'m_id': scope.parent._m_id,
-        #                     'h': scope.parent._h, 'scope': scope})
         result = live_actions[
-            self.value](param_list,
+            self.value](*param_list,
                         meta={'m_id': scope.parent._m_id,
                               'h': scope.parent._h, 'scope': scope})
         return result

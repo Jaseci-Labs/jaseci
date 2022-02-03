@@ -25,6 +25,7 @@
 
 ### Notes
 
+- `std.sort_by_col` tweaked to make last paramter a boolean for reverse (instead of string)
 - Format of `walker get -mode key` api changed from {key:namespace} to {namespace:key}
 - `test` is now a keyword with added test capabilities in jaseci
 - Type, int, float, str, list, dict, bool, are now keywords, if you used these as variable names in legacy code, must make updates.
