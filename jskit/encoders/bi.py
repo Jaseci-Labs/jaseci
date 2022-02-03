@@ -33,28 +33,9 @@ def config_setup():
     model.to(device)
 config_setup()
 
-#initializing the FastApi object
-app = FastAPI()
-#declaring the request body content for intent classification
-class ParseText(BaseModel):
-    contexts: Optional[str] = None  
-    candidates: Optional[List]=None
-
-class TrainData(BaseModel):
-    contexts: Optional[List] = None  
-    candidates: Optional[List]=None
-
-class ScoreEmbeddings(BaseModel):
-    context_embedding: List   
-    candidate_embedding: List
-
-class ConfigData(BaseModel):
-    training_parameters: Optional[dict]=None   
-    model_parameters: Optional[dict]=None   
-
 @jra.jaseci_action(act_group=['bi_enc'], aliases=['get_bi_cos_sim'])
-def cosSimilarityScore(request_data : ScoreEmbeddings):
-    tensors=(request_data.context_embedding,request_data.candidate_embedding)
+def cosSimilarityScore(context_embedding, candidate_embedding):
+    tensors=(context_embedding,candidate_embedding)
     context_embedding,candidate_embedding= (torch.tensor(t, dtype=torch.float) for t in tensors)
     context_embedding = context_embedding.unsqueeze(1)
     dot_product = torch.matmul(context_embedding, candidate_embedding.permute(0, 2, 1))  # take this as logits
@@ -63,80 +44,80 @@ def cosSimilarityScore(request_data : ScoreEmbeddings):
     return JSONResponse(content={"cos_score":cos_similarity.item()})
 
 @jra.jaseci_action(act_group=['bi_enc'], aliases=['inference'])
-def getinference(request_data : ParseText):
+def getinference(contexts,candidates):
     global model
     model.eval()
-    predicted_label=evaluate.get_inference(model,tokenizer,context=request_data.contexts,candidate=request_data.candidates)
+    predicted_label=evaluate.get_inference(model,tokenizer,context=contexts,candidate=candidates)
     return JSONResponse(content={"label":predicted_label})
 
 @jra.jaseci_action(act_group=['bi_enc'], aliases=['train'])
-def trainModel(request_data:TrainData):
+def trainModel(contexts,candidates):
     global model
     model.train()
     try:
-        model = train.train_model(model,tokenizer,request_data.contexts,request_data.candidates)
+        model = train.train_model(model,tokenizer,contexts,candidates)
         return JSONResponse(content="Model Training is comnpleted",status_code=200)
     except:
         return JSONResponse(content="Error Occured",status_code=500)
 
 @jra.jaseci_action(act_group=['bi_enc'], aliases=['getcontextembedding'])
-def getContextEmbedding(request_data : ParseText):
+def getContextEmbedding(contexts):
     global model,tokenizer
     model.eval()
-    embedding=evaluate.get_context_embedding(model,tokenizer,request_data.contexts)
+    embedding=evaluate.get_context_embedding(model,tokenizer,contexts)
     return JSONResponse(content={"context_embed":embedding.cpu().numpy().tolist()})
 
 @jra.jaseci_action(act_group=['bi_enc'], aliases=['getcandidateembedding'])
-def getCandidateEmbedding(request_data : ParseText):
+def getCandidateEmbedding(candidates):
     global model,tokenizer
     model.eval()
-    embedding=evaluate.get_candidate_embedding(model,tokenizer,request_data.candidates)
+    embedding=evaluate.get_candidate_embedding(model,tokenizer,candidates)
     return JSONResponse(content={"candidate_embed":embedding.cpu().numpy().tolist()})
 
 @jra.jaseci_action(act_group=['bi_enc'], aliases=['setconfig'])
-def setConfig(request_data : ConfigData):
+def setConfig(training_parameters,model_parameters):
     global config,save_restart
     config.read('Utilities/config.cfg')
     train_param=config['TRAIN_PARAMETERS']
     model_param=config['MODEL_PARAMETERS']
-    if request_data.training_parameters:
-        if "MAX_CONTEXTS_LENGTH" in request_data.training_parameters:
-            train_param["MAX_CONTEXTS_LENGTH"]=request_data.training_parameters['MAX_CONTEXTS_LENGTH']
-        if "MAX_RESPONSE_LENGTH" in request_data.training_parameters:
-            train_param["MAX_RESPONSE_LENGTH"]=request_data.training_parameters['MAX_RESPONSE_LENGTH']
-        if "TRAIN_BATCH_SIZE" in request_data.training_parameters:            
-            train_param["TRAIN_BATCH_SIZE"]=request_data.training_parameters['TRAIN_BATCH_SIZE']
-        if "EVAL_BATCH_SIZE" in request_data.training_parameters: 
-            train_param["EVAL_BATCH_SIZE"]=request_data.training_parameters['EVAL_BATCH_SIZE']
-        if "MAX_HISTORY" in request_data.training_parameters: 
-            train_param["MAX_HISTORY"]=request_data.training_parameters['MAX_HISTORY']
-        if "LEARNING_RATE" in request_data.training_parameters: 
-            train_param["LEARNING_RATE"]=request_data.training_parameters['LEARNING_RATE']
-        if "WEIGHT_DECAY" in request_data.training_parameters: 
-            train_param["WEIGHT_DECAY"]=request_data.training_parameters['WEIGHT_DECAY']
-        if "WARMUP_STEPS" in request_data.training_parameters: 
-            train_param["WARMUP_STEPS"]=request_data.training_parameters['WARMUP_STEPS']
-        if "ADAM_EPSILON" in request_data.training_parameters: 
-            train_param["ADAM_EPSILON"]=request_data.training_parameters['ADAM_EPSILON']
-        if "MAX_GRAD_NORM" in request_data.training_parameters: 
-            train_param["MAX_GRAD_NORM"]=request_data.training_parameters['MAX_GRAD_NORM']
-        if "NUM_TRAIN_EPOCHS" in request_data.training_parameters: 
-            train_param["NUM_TRAIN_EPOCHS"]=request_data.training_parameters['NUM_TRAIN_EPOCHS']
-        if "SEED" in request_data.training_parameters: 
-            train_param["SEED"]=request_data.training_parameters['SEED']
-        if "GRADIENT_ACCUMULATION_STEPS" in request_data.training_parameters: 
-            train_param["GRADIENT_ACCUMULATION_STEPS"]=request_data.training_parameters['GRADIENT_ACCUMULATION_STEPS']
-        if "FP16" in request_data.training_parameters: 
-            train_param["FP16"]=request_data.training_parameters['FP16']
-        if "FP16_OPT_LEVEL" in request_data.training_parameters: 
-            train_param["FP16_OPT_LEVEL"]=request_data.training_parameters['FP16_OPT_LEVEL']
-        if "GPU" in request_data.training_parameters: 
-            train_param["GPU"]=request_data.training_parameters['GPU']
-    if request_data.model_parameters:
-        if "SHARED" in request_data.model_parameters: 
-            model_param["SHARED"]=request_data.model_parameters["SHARED"]
-        if "MODEL_NAME" in request_data.model_parameters: 
-            model_param["MODEL_NAME"]=request_data.model_parameters["MODEL_NAME"]       
+    if training_parameters:
+        if "MAX_CONTEXTS_LENGTH" in training_parameters:
+            train_param["MAX_CONTEXTS_LENGTH"]=training_parameters['MAX_CONTEXTS_LENGTH']
+        if "MAX_RESPONSE_LENGTH" in training_parameters:
+            train_param["MAX_RESPONSE_LENGTH"]=training_parameters['MAX_RESPONSE_LENGTH']
+        if "TRAIN_BATCH_SIZE" in training_parameters:            
+            train_param["TRAIN_BATCH_SIZE"]=training_parameters['TRAIN_BATCH_SIZE']
+        if "EVAL_BATCH_SIZE" in training_parameters: 
+            train_param["EVAL_BATCH_SIZE"]=training_parameters['EVAL_BATCH_SIZE']
+        if "MAX_HISTORY" in training_parameters: 
+            train_param["MAX_HISTORY"]=training_parameters['MAX_HISTORY']
+        if "LEARNING_RATE" in training_parameters: 
+            train_param["LEARNING_RATE"]=training_parameters['LEARNING_RATE']
+        if "WEIGHT_DECAY" in training_parameters: 
+            train_param["WEIGHT_DECAY"]=training_parameters['WEIGHT_DECAY']
+        if "WARMUP_STEPS" in training_parameters: 
+            train_param["WARMUP_STEPS"]=training_parameters['WARMUP_STEPS']
+        if "ADAM_EPSILON" in training_parameters: 
+            train_param["ADAM_EPSILON"]=training_parameters['ADAM_EPSILON']
+        if "MAX_GRAD_NORM" in training_parameters: 
+            train_param["MAX_GRAD_NORM"]=training_parameters['MAX_GRAD_NORM']
+        if "NUM_TRAIN_EPOCHS" in training_parameters: 
+            train_param["NUM_TRAIN_EPOCHS"]=training_parameters['NUM_TRAIN_EPOCHS']
+        if "SEED" in training_parameters: 
+            train_param["SEED"]=training_parameters['SEED']
+        if "GRADIENT_ACCUMULATION_STEPS" in training_parameters: 
+            train_param["GRADIENT_ACCUMULATION_STEPS"]=training_parameters['GRADIENT_ACCUMULATION_STEPS']
+        if "FP16" in training_parameters: 
+            train_param["FP16"]=training_parameters['FP16']
+        if "FP16_OPT_LEVEL" in training_parameters: 
+            train_param["FP16_OPT_LEVEL"]=training_parameters['FP16_OPT_LEVEL']
+        if "GPU" in training_parameters: 
+            train_param["GPU"]=training_parameters['GPU']
+    if model_parameters:
+        if "SHARED" in model_parameters: 
+            model_param["SHARED"]=model_parameters["SHARED"]
+        if "MODEL_NAME" in model_parameters: 
+            model_param["MODEL_NAME"]=model_parameters["MODEL_NAME"]       
         save_restart=True  
     with open("Utilities/config.cfg", 'w') as configfile:
         config.write(configfile)
