@@ -6,40 +6,39 @@ import numpy as np
 from tqdm import tqdm
 from torch.nn import CrossEntropyLoss
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
-from tokenizer import SelectionJoinTransform, SelectionResponelTransform,SelectionDataset,SelectionSequentialTransform
+from Utilities import tokenizer as token_util
 import configparser
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
 config = configparser.ConfigParser()
-config.read('config.cfg')
-
-max_contexts_length = int(config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
-max_candidate_length = int(config['TRAIN_PARAMETERS']['MAX_RESPONSE_LENGTH'])
-train_batch_size = int(config['TRAIN_PARAMETERS']['TRAIN_BATCH_SIZE'])
-eval_batch_size = int(config['TRAIN_PARAMETERS']['EVAL_BATCH_SIZE'])
-
-max_history = int(config['TRAIN_PARAMETERS']['MAX_HISTORY'])
-learning_rate = float(config['TRAIN_PARAMETERS']['LEARNING_RATE'])
-weight_decay = float(config['TRAIN_PARAMETERS']['WEIGHT_DECAY'])
-warmup_steps = int(config['TRAIN_PARAMETERS']['WARMUP_STEPS'])
-adam_epsilon = float(config['TRAIN_PARAMETERS']['ADAM_EPSILON'])
-max_grad_norm = float(config['TRAIN_PARAMETERS']['MAX_GRAD_NORM'])
-gradient_accumulation_steps = int(config['TRAIN_PARAMETERS']['GRADIENT_ACCUMULATION_STEPS'])
-num_train_epochs = int(config['TRAIN_PARAMETERS']['NUM_TRAIN_EPOCHS'])
-fp16 = bool(config['TRAIN_PARAMETERS']['FP16'])
-fp16_opt_level = str(config['TRAIN_PARAMETERS']['FP16_OPT_LEVEL'])
-gpu = int(config['TRAIN_PARAMETERS']['GPU'])
+device,basepath,max_contexts_length,max_candidate_length,train_batch_size,eval_batch_size,max_history,learning_rate,weight_decay,warmup_steps,adam_epsilon,max_grad_norm,fp16,fp16_opt_level,gpu,gradient_accumulation_steps,num_train_epochs=None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None
+def config_setup():
+    global device,basepath,max_contexts_length,max_candidate_length,train_batch_size,eval_batch_size,max_history,learning_rate,weight_decay,warmup_steps,adam_epsilon,max_grad_norm,fp16,fp16_opt_level,gpu,gradient_accumulation_steps,num_train_epochs
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    config.read('Utilities/config.cfg')
+    max_contexts_length = int(config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
+    max_candidate_length = int(config['TRAIN_PARAMETERS']['MAX_RESPONSE_LENGTH'])
+    train_batch_size = int(config['TRAIN_PARAMETERS']['TRAIN_BATCH_SIZE'])
+    eval_batch_size = int(config['TRAIN_PARAMETERS']['EVAL_BATCH_SIZE'])
+    max_history = int(config['TRAIN_PARAMETERS']['MAX_HISTORY'])
+    learning_rate = float(config['TRAIN_PARAMETERS']['LEARNING_RATE'])
+    weight_decay = float(config['TRAIN_PARAMETERS']['WEIGHT_DECAY'])
+    warmup_steps = int(config['TRAIN_PARAMETERS']['WARMUP_STEPS'])
+    adam_epsilon = float(config['TRAIN_PARAMETERS']['ADAM_EPSILON'])
+    max_grad_norm = float(config['TRAIN_PARAMETERS']['MAX_GRAD_NORM'])
+    gradient_accumulation_steps = int(config['TRAIN_PARAMETERS']['GRADIENT_ACCUMULATION_STEPS'])
+    num_train_epochs = int(config['TRAIN_PARAMETERS']['NUM_TRAIN_EPOCHS'])
+    fp16 = bool(config['TRAIN_PARAMETERS']['FP16'])
+    fp16_opt_level = str(config['TRAIN_PARAMETERS']['FP16_OPT_LEVEL'])
+    gpu = int(config['TRAIN_PARAMETERS']['GPU'])
+    base_path=config["TRAIN_PARAMETERS"]["BASEPATH"]
 
 output_dir="log_output"
 train_dir="."
-
 model=None
-global_step,tr_loss,nb_tr_steps,epoch,device=None,None,None,None,None
+global_step,tr_loss,nb_tr_steps,epoch,device,basepath=None,None,None,None,None,None
 
 def eval_running_model(dataloader):
-  global model,global_step, tr_loss ,nb_tr_steps,epoch,device
+  global model,global_step, tr_loss ,nb_tr_steps,epoch,device,basepath
   loss_fct = CrossEntropyLoss()
   model.eval()
   eval_loss, eval_hit_times = 0, 0
@@ -75,11 +74,12 @@ def eval_running_model(dataloader):
 
 def train_model(model_train,tokenizer,contexts,candidates,val=False):  
   ## init dataset and bert model
-  global model,global_step, tr_loss ,nb_tr_steps,epoch,device
+  config_setup()
+  global model,global_step, tr_loss ,nb_tr_steps,epoch,device,basepath
   model=model_train
-  context_transform = SelectionJoinTransform(tokenizer=tokenizer, max_len=int(max_contexts_length),
+  context_transform = token_util.SelectionJoinTransform(tokenizer=tokenizer, max_len=int(max_contexts_length),
                                              max_history=int(max_history))
-  candidate_transform = SelectionSequentialTransform(tokenizer=tokenizer, max_len=int(max_candidate_length),
+  candidate_transform = token_util.SelectionSequentialTransform(tokenizer=tokenizer, max_len=int(max_candidate_length),
                                                     max_history=None, pair_last=False)
 #   candidate_new_transform = SelectionResponelTransform(tokenizer=tokenizer, max_len=max_candidate_length)
 
@@ -88,10 +88,10 @@ def train_model(model_train,tokenizer,contexts,candidates,val=False):
   print('Output dir:', output_dir)
   print('=' * 80)
 
-  train_dataset = SelectionDataset(contexts,candidates,
+  train_dataset = token_util.SelectionDataset(contexts,candidates,
                                    context_transform, candidate_transform, sample_cnt=None)
   if val:
-    val_dataset = SelectionDataset('dev_snips.txt',
+    val_dataset = token_util.SelectionDataset('dev_snips.txt',
                                     context_transform, candidate_transform, sample_cnt=None)
     val_dataloader = DataLoader(val_dataset,
                               batch_size=eval_batch_size, collate_fn=val_dataset.batchify_join_str, shuffle=False)
@@ -196,6 +196,7 @@ def train_model(model_train,tokenizer,contexts,candidates,val=False):
   print('[Saving at]', state_save_path)
   log_wf.write('[Saving at] %s\n' % state_save_path)
   torch.save(model.state_dict(), state_save_path)
+ 
   print(global_step, tr_loss / nb_tr_steps)
   log_wf.write('%d\t%f\n' % (global_step, tr_loss / nb_tr_steps))
   return model

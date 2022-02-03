@@ -1,8 +1,6 @@
 import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
-import os
-
 import pickle
 
 
@@ -139,7 +137,7 @@ def pickle_load(file_path):
   return data
 
 class SelectionDataset(Dataset):
-  def __init__(self,contexts,candidates, context_transform, candidate_transform, sample_cnt=None):
+  def __init__(self,contexts=None,candidates=None, context_transform=None, candidate_transform=None, sample_cnt=None):
     self.context_transform = context_transform
     self.candidate_transform = candidate_transform
     self.candidate_list=[]
@@ -255,50 +253,49 @@ class SelectionDataset(Dataset):
            candidates_token_ids_list_batch, candidates_segment_ids_list_batch, candidates_input_masks_list_batch, labels_batch
 
 
-class SelectionData():
-  def __init__(self, text,intent, context_transform, candidate_transform):
-    self.context_transform = context_transform
-    self.candidate_transform = candidate_transform
-    self.candidate_list=[]
-    self.data_source = []
-    self.transformed_data = None
-    context=text
-    candidates= []
-    labels= None
-    for resp in intent:
-        candidates.append(resp)
-    transformed_context = self.context_transform(context)  # [token_ids],[seg_ids],[masks]
-    transformed_candidates = self.candidate_transform(candidates)
-    self.transformed_data = (transformed_context,transformed_candidates)
-    # print(self.transformed_data) 
+# class SelectionData():
+#   def __init__(self, text,intent, context_transform, candidate_transform):
+#     self.context_transform = context_transform
+#     self.candidate_transform = candidate_transform
+#     self.candidate_list=[]
+#     self.data_source = []
+#     self.transformed_data = None
+#     context=text
+#     candidates= []
+#     labels= None
+#     for resp in intent:
+#         candidates.append(resp)
+#     transformed_context = self.context_transform(context)  # [token_ids],[seg_ids],[masks]
+#     transformed_candidates = self.candidate_transform(candidates)
+#     self.transformed_data = (transformed_context,transformed_candidates)
+#     # print(self.transformed_data) 
 
-  def get_data(self):
-
-
-    (contexts_token_ids_list, contexts_segment_ids_list, contexts_input_masks_list), \
-    (candidates_token_ids_list, candidates_segment_ids_list, candidates_input_masks_list, _) = self.transformed_data[:2]
+#   def get_data(self):
 
 
-    long_tensors = [contexts_token_ids_list, contexts_segment_ids_list, contexts_input_masks_list,
-                    candidates_token_ids_list, candidates_segment_ids_list, candidates_input_masks_list]
+#     (contexts_token_ids_list, contexts_segment_ids_list, contexts_input_masks_list), \
+#     (candidates_token_ids_list, candidates_segment_ids_list, candidates_input_masks_list, _) = self.transformed_data[:2]
 
-    contexts_token_ids_list_batch, contexts_segment_ids_list_batch, contexts_input_masks_list_batch, \
-    candidates_token_ids_list_batch, candidates_segment_ids_list_batch, candidates_input_masks_list_batch = (
-      torch.tensor(t, dtype=torch.long) for t in long_tensors)
 
-    labels_batch = None
-    return contexts_token_ids_list_batch, contexts_segment_ids_list_batch, contexts_input_masks_list_batch, \
-           candidates_token_ids_list_batch, candidates_segment_ids_list_batch, candidates_input_masks_list_batch
+#     long_tensors = [contexts_token_ids_list, contexts_segment_ids_list, contexts_input_masks_list,
+#                     candidates_token_ids_list, candidates_segment_ids_list, candidates_input_masks_list]
+
+#     contexts_token_ids_list_batch, contexts_segment_ids_list_batch, contexts_input_masks_list_batch, \
+#     candidates_token_ids_list_batch, candidates_segment_ids_list_batch, candidates_input_masks_list_batch = (
+#       torch.tensor(t, dtype=torch.long) for t in long_tensors)
+
+#     labels_batch = None
+#     return contexts_token_ids_list_batch, contexts_segment_ids_list_batch, contexts_input_masks_list_batch, \
+#            candidates_token_ids_list_batch, candidates_segment_ids_list_batch, candidates_input_masks_list_batch
 
 class ContextData():
   def __init__(self, text, context_transform):
     self.context_transform = context_transform
-    self.candidate_list=[]
-    self.data_source = []
     self.transformed_data = None
-    context=text
-
-    transformed_context = self.context_transform(context)  # [token_ids],[seg_ids],[masks]
+    self.context_list=[]
+    for resp in text:
+        self.context_list.append(resp)
+    transformed_context = self.context_transform(self.context_list)  # [token_ids],[seg_ids],[masks]
     self.transformed_data = (transformed_context)
     # print(self.transformed_data) 
 
