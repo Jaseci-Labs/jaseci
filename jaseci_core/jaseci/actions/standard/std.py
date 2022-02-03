@@ -5,7 +5,6 @@ from datetime import datetime
 from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.element.element import element
-from jaseci.element.master import master
 import sys
 import uuid
 import json
@@ -117,7 +116,7 @@ def get_perms(obj: element, meta):
 
 
 @jaseci_action()
-def grant_perms(obj: element, mast: master, read_only: bool, meta):
+def grant_perms(obj: element, mast: element, read_only: bool, meta):
     """
     Grants another user permissions to access a Jaseci object
     Param 1 - target element
@@ -133,7 +132,7 @@ def grant_perms(obj: element, mast: master, read_only: bool, meta):
 
 
 @jaseci_action()
-def revoke_perms(obj: element, mast: master, meta):
+def revoke_perms(obj: element, mast: element, meta):
     """
     Remove permissions for user to access a Jaseci object
     Param 1 - target element

@@ -39,8 +39,8 @@ def get_centroid(vec_list: list, meta):
 
     Return - (centroid vector, cluster tightness)
     """
-    centroid = np.mean(vec_list, axis=0).astype(float)
-    tightness = np.mean([cosine_sim([vec, centroid], meta)
+    centroid = np.mean(vec_list, axis=0)
+    tightness = np.mean([cosine_sim(vec, centroid, meta)
                          for vec in vec_list]).astype(float)
     return [centroid, tightness]
 
