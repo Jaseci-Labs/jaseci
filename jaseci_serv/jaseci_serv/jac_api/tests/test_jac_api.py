@@ -108,7 +108,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'walker_summon', 'key': key, 'wlk': walk, 'nd': nd}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.assertEqual(len(res.data), 0)
+        self.assertEqual(len(res.data['report']), 0)
 
 
 class PrivateJacApiTests(TestCaseHelper, TestCase):
@@ -749,7 +749,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'graph_get'}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.assertEqual(len(res.data), 3)
+        self.assertEqual(len(res.data['report']), 3)
 
     def test_check_json_global_dict(self):
         """Test set get global objects (as json)"""
@@ -764,7 +764,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'walker_run', 'name': 'getter'}
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.assertEqual(res.data[0]['max_bot_count'], 10)
+        self.assertEqual(res.data['report'][0]['max_bot_count'], 10)
 
     def test_check_sentinel_set(self):
         """Test that sentinel set works serverside"""
@@ -782,4 +782,4 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'walker_run', 'name': 'getter'}
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.assertEqual(res.data[0]['max_bot_count'], 10)
+        self.assertEqual(res.data['report'][0]['max_bot_count'], 10)

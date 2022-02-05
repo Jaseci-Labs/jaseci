@@ -65,8 +65,8 @@ class jac_tests(TestCaseHelper, TestCase):
         report = test_walker.run()
         test_walker.save()
         test_walker._h.commit()
-        self.assertEqual(len(report[0]), 1)
-        self.assertEqual(len(report[0][0]), 1)
+        self.assertEqual(len(report['report'][0]), 1)
+        self.assertEqual(len(report['report'][0][0]), 1)
 
     def test_USE_qa_with_ctx_clean(self):
         """Test the execution of a basic walker building graph"""
