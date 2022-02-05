@@ -125,6 +125,9 @@ class walker(element, jac_code, walker_interp, anchored):
                 str(f'Walker {self.name} did not arrive at report state')
             )
 
+        report_ret = {'report': self.report}
+        if(len(self.runtime_errors)):
+            report_ret['errors'] = self.runtime_errors
         if(profiling):
             pr.disable()
             s = io.StringIO()
@@ -136,10 +139,9 @@ class walker(element, jac_code, walker_interp, anchored):
             s = '\n'.join([','.join(line.rstrip().split(None, 5))
                           for line in s.split('\n')])
             self.profile['perf'] = s
-            return {'report': self.report,
-                    'profile': self.profile}
+            report_ret['profile'] = self.profile
 
-        return self.report
+        return report_ret
 
     def log_history(self, name, value):
         """Helper function for logging history of walker's activities"""
