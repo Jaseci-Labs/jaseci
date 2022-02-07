@@ -12,7 +12,6 @@ setup(
         'drf-yasg>=1.20.0,<1.21.0',
         'markdown>=3.2.1,<3.3.0',
         'psycopg2-binary>=2,<3',
-        # 'mysqlclient',
         'sphinx>=2.4.3,<2.5.0',
         'django-cors-headers',
         'tblib'

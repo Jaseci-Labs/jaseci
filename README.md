@@ -4,6 +4,10 @@
 
 ### Updates
 
+- New Feature: APIs for manipulating actions
+- New Feature: Hotloading jaseci action modules
+- Update: New action creation methodology and architecture
+- New Feature: Decorator interface for creating jaseci action modules
 - New Feature: New profiling flag added to run walker api for performance profiling
 - New Feature: Direct jac file building, test, and run from in JSCTL
 - New Language Feature: Tests and testing features as first order language semantics
@@ -21,6 +25,7 @@
 
 ### Notes
 
+- `std.sort_by_col` tweaked to make last paramter a boolean for reverse (instead of string)
 - Format of `walker get -mode key` api changed from {key:namespace} to {namespace:key}
 - `test` is now a keyword with added test capabilities in jaseci
 - Type, int, float, str, list, dict, bool, are now keywords, if you used these as variable names in legacy code, must make updates.

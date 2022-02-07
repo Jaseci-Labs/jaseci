@@ -1,9 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-
 from rest_framework.test import APIClient
-from jaseci.actions.module.ai_serving_api import check_model_live
 from jaseci.utils.utils import TestCaseHelper
+import jaseci.actions.live_actions as lact
 from django.test import TestCase
 import uuid
 import base64
@@ -17,6 +16,7 @@ class test_ll(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
+        lact.load_local_actions(os.path.dirname(__file__) + '/infer.py')
         self.user = get_user_model().objects.create_user(
             'JSCITfdfdEST_test@jaseci.com',
             'password'
@@ -180,41 +180,42 @@ class test_ll(TestCaseHelper, TestCase):
         len_after = self.master._h.get_object_distribution()
         self.assertEqual(len_before, len_after)
 
-    def test_ll_goal_associations(self):
-        """Test setting categories for a workette"""
-        if (not check_model_live('BART')):
-            self.skipTest("external resource not available")
-        CATS = [
-            "professional work",
-            "chores",
-            "hobby",
-            "relationship",
-            "personal improvement"
-        ]
-        # Create a new day
-        data = self.run_walker('get_gen_day', {})
-        jid = data[0][1]['jid']
+    # def test_ll_goal_associations(self):
+    #     """Test setting categories for a workette"""
+    #     if (not lact.load_remote_actions('http://jsbart')):
+    #         self.skipTest("external resource not available")
+    #     CATS = [
+    #         "professional work",
+    #         "chores",
+    #         "hobby",
+    #         "relationship",
+    #         "personal improvement"
+    #     ]
+    #     # Create a new day
+    #     data = self.run_walker('get_gen_day', {})
+    #     jid = data[0][1]['jid']
 
-        # Create a new workette
-        new_wkt = self.run_walker(
-            'create_workette', {'title': 'work on Q2 roadmap'}, prime=jid)
-        wkt_id = new_wkt[0]['jid']
+    #     # Create a new workette
+    #     new_wkt = self.run_walker(
+    #         'create_workette', {'title': 'work on Q2 roadmap'}, prime=jid)
+    #     wkt_id = new_wkt[0]['jid']
 
-        # Set categories for that workette
-        self.run_walker(
-            'add_and_associate_goals',
-            {'goals': CATS},
-            prime=wkt_id)
-        updated_wkt = self.run_walker('get_workette', {}, prime=wkt_id)
+    #     # Set categories for that workette
+    #     self.run_walker(
+    #         'add_and_associate_goals',
+    #         {'goals': CATS},
+    #         prime=wkt_id)
+    #     updated_wkt = self.run_walker('get_workette', {}, prime=wkt_id)
 
-        # Assert on categories
-        self.assertSetEqual(set(updated_wkt[0]['context']['goals']), set(CATS))
-        self.assertEqual(
-            updated_wkt[0]['context']['sorted_goals'][0][0],
-            'professional work')
+    #     # Assert on categories
+    #     self.assertSetEqual(set(updated_wkt[0]['context']['goals']),
+    #                         set(CATS))
+    #     self.assertqEual(
+    #         updated_wkt[0]['context']['sorted_goals'][0][0],
+    #         'professional work')
 
     def test_parent_suggestion(self):
-        if (not check_model_live('USE_ENCODER')):
+        if (not lact.load_remote_actions('http://js-use-enc')):
             self.skipTest("external resource not available")
         """Test generating a suggested parent item for a given item"""
         new_wkt = 'clean up the house'

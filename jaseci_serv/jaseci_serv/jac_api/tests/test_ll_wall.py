@@ -3,6 +3,7 @@ from django.urls import reverse
 
 from rest_framework.test import APIClient
 from jaseci.utils.utils import TestCaseHelper
+import jaseci.actions.live_actions as lact
 from django.test import TestCase
 import uuid
 import base64
@@ -45,6 +46,7 @@ class test_ll_wall(TestCaseHelper, TestCase):
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.gph = self.master._h.get_obj(
             self.master.jid, uuid.UUID(res.data['jid']))
+        lact.load_local_actions('jaseci_serv/jac_api/tests/infer.py')
 
     def tearDown(self):
         super().tearDown()

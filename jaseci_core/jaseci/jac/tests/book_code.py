@@ -283,9 +283,9 @@ sort_by_col = \
         lst=[['b', 333],['c',245],['a', 56]];
         std.out(lst);
         std.out(std.sort_by_col(lst, 0));
-        std.out(std.sort_by_col(lst, 0, 'reverse'));
+        std.out(std.sort_by_col(lst, 0, true));
         std.out(std.sort_by_col(lst, 1));
-        std.out(std.sort_by_col(lst, 1, 'reverse'));
+        std.out(std.sort_by_col(lst, 1, true));
     }
     """
 

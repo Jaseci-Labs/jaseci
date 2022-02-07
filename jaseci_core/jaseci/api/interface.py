@@ -199,27 +199,6 @@ class interface():
         """Unset committer"""
         self._pub_committer = None
 
-    def get_api_signature(self, api_name):
-        """
-        Checks for valid api name and returns signature
-        """
-        if (not hasattr(self._caller, api_name)):
-            logger.error(f'{api_name} not a valid API')
-            return False
-        else:
-            return signature(getattr(self._caller, api_name))
-
-    def get_api_doc(self, api_name):
-        """
-        Checks for valid api name and returns signature
-        """
-        if (not hasattr(self._caller, api_name)):
-            logger.error(f'{api_name} not a valid API')
-            return False
-        else:
-            doc = getdoc(getattr(self._caller, api_name))
-            return doc
-
     def sync_walker_from_global_sent(self, wlk):
         """Checks for matching code ir between global and spawned walker"""
         glob_id = wlk._h.get_glob('GLOB_SENTINEL')
