@@ -225,8 +225,8 @@ class test_ll(TestCaseHelper, TestCase):
         w_id = data[0][1]['jid']
         data = self.run_walker(
             'get_suggested_parent', {'new_wkt_name': new_wkt}, prime=w_id)
-        self.assertTrue(len(data) > 0)
-        self.assertTrue(0 < data[-1][1] < 1)
+        self.assertTrue(len(data['report']) > 0)
+        self.assertTrue(0 < data['report'][-1][1] < 1)
 
     def test_due_soon(self):
         """Test generating a list of suggested focus items for a given day"""
@@ -279,7 +279,7 @@ class test_ll(TestCaseHelper, TestCase):
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {'show_report': 1})
-        w_id = data[0][1]['jid']
+        w_id = data['report'][0][1]['jid']
         workettes = self.run_walker('get_workettes', {}, prime=w_id)
         for wkt in workettes:
             res = self.run_walker(
@@ -291,7 +291,7 @@ class test_ll(TestCaseHelper, TestCase):
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {'show_report': 1})
-        w_id = data[0][1]['jid']
+        w_id = data['report'][0][1]['jid']
         result = self.run_walker(
             'get_long_active_items',
             {'show_report': 1, 'long_days': 1}, prime=w_id)
@@ -301,7 +301,7 @@ class test_ll(TestCaseHelper, TestCase):
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {'show_report': 1})
-        w_id = data[0][1]['jid']
+        w_id = data['report'][0][1]['jid']
         result = self.run_walker(
             'get_suggested_focus',
             {'max_items': 5, 'long_days': 1}, prime=w_id)
