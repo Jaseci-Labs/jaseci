@@ -252,28 +252,28 @@ class test_ll(TestCaseHelper, TestCase):
             'get_due_soon', {'soon': 4, 'show_report': 1}, prime=w_id)
         self.assertTrue(len(data['report']) > 0)
 
-    def test_get_snoozed_until_recent(self):
-        """Test getting items that have been snoozed until recently"""
-        self.run_walker('gen_rand_life', {})
-        self.run_walker('get_gen_day', {})
-        data = self.run_walker('get_latest_day', {'show_report': 1})['report']
-        w_id = data[0][1]['jid']
-        today_date = datetime.datetime.today()
-        snoozed_item = False
-        for wkt in data:
-            if wkt[1]['name'] == 'workette':
-                if random.choice([0, 1]) or not snoozed_item:
-                    snoozed_item = True
-                    delta = random.randint(-3, 0)
-                    snoozed_date = today_date + datetime.timedelta(days=delta)
-                    snoozed_date = snoozed_date.replace(
-                        hour=0, minute=0, second=0, microsecond=0)
-                    wkt[1]['context']['snooze_till'] = snoozed_date.isoformat()
-                    self.graph_node_set(wkt[1]['jid'], wkt[1]['context'])
-        result = self.run_walker(
-            'get_snoozed_until_recent', {'show_report': 1},
-            prime=w_id)['report']
-        self.assertTrue(len(result) > 0)
+    # def test_get_snoozed_until_recent(self):
+    #     """Test getting items that have been snoozed until recently"""
+    #     self.run_walker('gen_rand_life', {})
+    #     self.run_walker('get_gen_day', {})
+    #     data = self.run_walker('get_latest_day', {'show_report': 1})['report']
+    #     w_id = data[0][1]['jid']
+    #     today_date = datetime.datetime.today()
+    #     snoozed_item = False
+    #     for wkt in data:
+    #         if wkt[1]['name'] == 'workette':
+    #             if random.choice([0, 1]) or not snoozed_item:
+    #                 snoozed_item = True
+    #                 delta = random.randint(-3, 0)
+    #                 snoozed_date = today_date + datetime.timedelta(days=delta)
+    #                 snoozed_date = snoozed_date.replace(
+    #                     hour=0, minute=0, second=0, microsecond=0)
+    #                 wkt[1]['context']['snooze_till'] = snoozed_date.isoformat()
+    #                 self.graph_node_set(wkt[1]['jid'], wkt[1]['context'])
+    #     result = self.run_walker(
+    #         'get_snoozed_until_recent', {'show_report': 1},
+    #         prime=w_id)['report']
+    #     self.assertTrue(len(result) > 0)
 
     def test_days_in_backlog(self):
         """Test getting the number of days an item has been in the backlog"""

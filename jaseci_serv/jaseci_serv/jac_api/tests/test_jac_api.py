@@ -71,7 +71,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'walker_summon', 'key': key, 'wlk': walk, 'nd': nd}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.assertEqual(len(res.data), 1)
+        self.assertFalse(res.data['success'])
 
     def test_serverside_sentinel_global_public_access_summon(self):
         """Test master delete operation"""
