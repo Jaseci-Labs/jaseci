@@ -425,7 +425,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         payload = {'op': 'walker_execute', 'wlk': walk.id.urn}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        nid = res.data[0]['jid']
+        nid = res.data['report'][0]['jid']
         payload = {'op': 'graph_node_set', 'snt': sent.id.urn, 'nd': nid,
                    'ctx': {'apple': 'TEST'}}
         res = self.client.post(

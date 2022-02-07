@@ -233,11 +233,11 @@ class test_ll(TestCaseHelper, TestCase):
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {'show_report': 1})
-        w_id = data[0][1]['jid']
+        w_id = data['report'][0][1]['jid']
 
         today_date = datetime.datetime.today()
         due_item = False
-        for wkt in data:
+        for wkt in data['report']:
             if wkt[1]['name'] == 'workette':
                 if random.choice([0, 1]) or not due_item:
                     due_item = True
@@ -250,13 +250,13 @@ class test_ll(TestCaseHelper, TestCase):
 
         data = self.run_walker(
             'get_due_soon', {'soon': 4, 'show_report': 1}, prime=w_id)
-        self.assertTrue(len(data) > 0)
+        self.assertTrue(len(data['report']) > 0)
 
     def test_get_snoozed_until_recent(self):
         """Test getting items that have been snoozed until recently"""
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
-        data = self.run_walker('get_latest_day', {'show_report': 1})
+        data = self.run_walker('get_latest_day', {'show_report': 1})['report']
         w_id = data[0][1]['jid']
         today_date = datetime.datetime.today()
         snoozed_item = False
@@ -271,7 +271,8 @@ class test_ll(TestCaseHelper, TestCase):
                     wkt[1]['context']['snooze_till'] = snoozed_date.isoformat()
                     self.graph_node_set(wkt[1]['jid'], wkt[1]['context'])
         result = self.run_walker(
-            'get_snoozed_until_recent', {'show_report': 1}, prime=w_id)
+            'get_snoozed_until_recent', {'show_report': 1},
+            prime=w_id)['report']
         self.assertTrue(len(result) > 0)
 
     def test_days_in_backlog(self):
@@ -280,11 +281,11 @@ class test_ll(TestCaseHelper, TestCase):
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {'show_report': 1})
         w_id = data['report'][0][1]['jid']
-        workettes = self.run_walker('get_workettes', {}, prime=w_id)
+        workettes = self.run_walker('get_workettes', {}, prime=w_id)['report']
         for wkt in workettes:
             res = self.run_walker(
                 'days_in_backlog', {'show_report': 1}, prime=wkt['jid'])
-            self.assertIs(type(res[0]), int)
+            self.assertIs(type(res['report'][0]), int)
 
     def test_get_long_active_items(self):
         """Test getting items been in backlog for long"""

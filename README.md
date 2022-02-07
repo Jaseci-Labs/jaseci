@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Improvement: Better Error reporting all around
 - New Feature: APIs for manipulating actions
 - New Feature: Hotloading jaseci action modules
 - Update: New action creation methodology and architecture
