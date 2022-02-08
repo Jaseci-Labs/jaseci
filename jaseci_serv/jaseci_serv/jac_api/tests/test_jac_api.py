@@ -749,7 +749,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {'op': 'graph_get'}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        self.assertEqual(len(res.data['report']), 3)
+        self.assertEqual(len(res.data), 3)
 
     def test_check_json_global_dict(self):
         """Test set get global objects (as json)"""

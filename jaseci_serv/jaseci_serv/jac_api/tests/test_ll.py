@@ -72,68 +72,68 @@ class test_ll(TestCaseHelper, TestCase):
 
     def test_ll_today_new(self):
         """Test LifeLogify Jac Implementation"""
-        data = self.run_walker('get_gen_day', {})
+        data = self.run_walker('get_gen_day', {})['report']
         self.assertEqual(data[0][1]['name'], 'day')
         jid = data[0][1]['jid']
-        data = self.run_walker('get_gen_day', {})
+        data = self.run_walker('get_gen_day', {})['report']
         self.assertEqual(data[0][1]['jid'], jid)
 
     def test_ll_create_get_workette(self):
         """Test LifeLogify Jac Implementation"""
-        data = self.run_walker('get_gen_day', {})
+        data = self.run_walker('get_gen_day', {})['report']
         self.assertEqual(data[0][1]['name'], 'day')
         jid = data[0][1]['jid']
-        data = self.run_walker('create_workette', {}, prime=jid)
+        data = self.run_walker('create_workette', {}, prime=jid)['report']
         self.assertEqual(data[0]['name'], 'workette')
-        data = self.run_walker('create_workette', {}, prime=jid)
+        data = self.run_walker('create_workette', {}, prime=jid)['report']
         self.assertEqual(data[0]['name'], 'workette')
-        data = self.run_walker('get_workettes', {}, prime=jid)
+        data = self.run_walker('get_workettes', {}, prime=jid)['report']
         self.assertEqual(len(data), 2)
         self.assertEqual(data[0]['name'], 'workette')
         self.assertEqual(data[1]['name'], 'workette')
         wjid = data[0]['jid']
-        data = self.run_walker('create_workette', {}, prime=wjid)
-        data = self.run_walker('create_workette', {}, prime=wjid)
-        data = self.run_walker('create_workette', {}, prime=wjid)
-        data = self.run_walker('get_workettes', {}, prime=wjid)
+        data = self.run_walker('create_workette', {}, prime=wjid)['report']
+        data = self.run_walker('create_workette', {}, prime=wjid)['report']
+        data = self.run_walker('create_workette', {}, prime=wjid)['report']
+        data = self.run_walker('get_workettes', {}, prime=wjid)['report']
         self.assertEqual(len(data), 3)
-        data = self.run_walker('get_workettes', {}, prime=jid)
+        data = self.run_walker('get_workettes', {}, prime=jid)['report']
         self.assertEqual(len(data), 2)
-        data = self.run_walker('get_workettes_deep', {}, prime=jid)
+        data = self.run_walker('get_workettes_deep', {}, prime=jid)['report']
         self.assertEqual(len(data), 5)
 
     def test_ll_get_date(self):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('get_gen_day', {})
         data = self.run_walker('gen_rand_life', {})
-        data = self.run_walker('get_latest_day', {'show_report': 1})
+        data = self.run_walker('get_latest_day', {'show_report': 1})['report']
         wjid = data[0][1]['jid']
-        data = self.run_walker('get_workettes', {}, prime=wjid)
+        data = self.run_walker('get_workettes', {}, prime=wjid)['report']
         self.assertEqual(len(data), 0)
         data = self.run_walker('get_latest_day', {'before_date': '2020-03-01',
-                                                  'show_report': 1})
+                                                  'show_report': 1})['report']
         wjid = data[0][1]['jid']
-        data = self.run_walker('get_workettes', {}, prime=wjid)
+        data = self.run_walker('get_workettes', {}, prime=wjid)['report']
         self.assertGreater(len(data), 1)
 
     def test_ll_carry_forward_simple(self):
         """Test LifeLogify Jac Implementation"""
         data = self.run_walker('gen_rand_life', {})
         data = self.run_walker('get_gen_day', {})
-        wjid = data[0][1]['jid']
+        wjid = data['report'][0][1]['jid']
         data = self.run_walker('get_workettes', {}, prime=wjid)
-        self.assertGreater(len(data), 1)
+        self.assertGreater(len(data['report']), 1)
 
     def test_ll_delete_workette(self):
         """Test LifeLogify Jac Implementation"""
-        data = self.run_walker('get_gen_day', {})
+        data = self.run_walker('get_gen_day', {})['report']
         self.assertEqual(data[0][1]['name'], 'day')
         jid = data[0][1]['jid']
-        data = self.run_walker('create_workette', {}, prime=jid)
+        data = self.run_walker('create_workette', {}, prime=jid)['report']
         self.assertEqual(data[0]['name'], 'workette')
-        data = self.run_walker('create_workette', {}, prime=jid)
+        data = self.run_walker('create_workette', {}, prime=jid)['report']
         self.assertEqual(data[0]['name'], 'workette')
-        data = self.run_walker('get_workettes', {}, prime=jid)
+        data = self.run_walker('get_workettes', {}, prime=jid)['report']
         self.assertEqual(len(data), 2)
         self.assertEqual(data[0]['name'], 'workette')
         self.assertEqual(data[1]['name'], 'workette')
@@ -141,78 +141,44 @@ class test_ll(TestCaseHelper, TestCase):
         data = self.run_walker('create_workette', {}, prime=wjid)
         data = self.run_walker('create_workette', {}, prime=wjid)
         data = self.run_walker('create_workette', {}, prime=wjid)
-        data = self.run_walker('get_workettes', {}, prime=wjid)
+        data = self.run_walker('get_workettes', {}, prime=wjid)['report']
         self.assertEqual(len(data), 3)
         data = self.run_walker('delete_workette', {}, prime=wjid)
-        data = self.run_walker('get_workettes', {}, prime=jid)
+        data = self.run_walker('get_workettes', {}, prime=jid)['report']
         self.assertEqual(len(data), 1)
-        data = self.run_walker('get_workettes_deep', {}, prime=jid)
+        data = self.run_walker('get_workettes_deep', {}, prime=jid)['report']
         self.assertEqual(len(data), 1)
 
     def test_ll_delete_workette_no_leaks(self):
         """Test LifeLogify Jac Implementation"""
-        data = self.run_walker('get_gen_day', {})
+        data = self.run_walker('get_gen_day', {})['report']
         self.assertEqual(data[0][1]['name'], 'day')
         jid = data[0][1]['jid']
-        data = self.run_walker('create_workette', {}, prime=jid)
+        data = self.run_walker('create_workette', {}, prime=jid)['report']
         self.assertEqual(data[0]['name'], 'workette')
         len_before = self.master._h.get_object_distribution()
-        data = self.run_walker('create_workette', {}, prime=jid)
+        data = self.run_walker('create_workette', {}, prime=jid)['report']
         self.assertEqual(data[0]['name'], 'workette')
-        data = self.run_walker('get_workettes', {}, prime=jid)
+        data = self.run_walker('get_workettes', {}, prime=jid)['report']
         self.assertEqual(len(data), 2)
         self.assertEqual(data[0]['name'], 'workette')
         self.assertEqual(data[1]['name'], 'workette')
         wjid = data[1]['jid']
-        data = self.run_walker('create_workette', {}, prime=wjid)
+        data = self.run_walker('create_workette', {}, prime=wjid)['report']
         exjid = data[0]['jid']
         data = self.run_walker('create_workette', {}, prime=wjid)
         data = self.run_walker('create_workette', {}, prime=wjid)
-        data = self.run_walker('get_workettes', {}, prime=wjid)
+        data = self.run_walker('get_workettes', {}, prime=wjid)['report']
         self.assertEqual(len(data), 3)
-        data = self.run_walker('delete_workette', {}, prime=wjid)
+        data = self.run_walker('delete_workette', {}, prime=wjid)['report']
         self.assertNotIn(uuid.UUID(exjid), self.master._h.mem.keys())
         self.assertIn(uuid.UUID(jid), self.master._h.mem.keys())
-        data = self.run_walker('get_workettes', {}, prime=jid)
+        data = self.run_walker('get_workettes', {}, prime=jid)['report']
         self.assertEqual(len(data), 1)
-        data = self.run_walker('get_workettes_deep', {}, prime=jid)
+        data = self.run_walker('get_workettes_deep', {}, prime=jid)['report']
         self.assertEqual(len(data), 1)
         len_after = self.master._h.get_object_distribution()
         self.assertEqual(len_before, len_after)
-
-    # def test_ll_goal_associations(self):
-    #     """Test setting categories for a workette"""
-    #     if (not lact.load_remote_actions('http://jsbart')):
-    #         self.skipTest("external resource not available")
-    #     CATS = [
-    #         "professional work",
-    #         "chores",
-    #         "hobby",
-    #         "relationship",
-    #         "personal improvement"
-    #     ]
-    #     # Create a new day
-    #     data = self.run_walker('get_gen_day', {})
-    #     jid = data[0][1]['jid']
-
-    #     # Create a new workette
-    #     new_wkt = self.run_walker(
-    #         'create_workette', {'title': 'work on Q2 roadmap'}, prime=jid)
-    #     wkt_id = new_wkt[0]['jid']
-
-    #     # Set categories for that workette
-    #     self.run_walker(
-    #         'add_and_associate_goals',
-    #         {'goals': CATS},
-    #         prime=wkt_id)
-    #     updated_wkt = self.run_walker('get_workette', {}, prime=wkt_id)
-
-    #     # Assert on categories
-    #     self.assertSetEqual(set(updated_wkt[0]['context']['goals']),
-    #                         set(CATS))
-    #     self.assertqEual(
-    #         updated_wkt[0]['context']['sorted_goals'][0][0],
-    #         'professional work')
 
     def test_parent_suggestion(self):
         if (not lact.load_remote_actions('http://js-use-enc')):
@@ -221,7 +187,7 @@ class test_ll(TestCaseHelper, TestCase):
         new_wkt = 'clean up the house'
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
-        data = self.run_walker('get_latest_day', {'show_report': 1})
+        data = self.run_walker('get_latest_day', {'show_report': 1})['report']
         w_id = data[0][1]['jid']
         data = self.run_walker(
             'get_suggested_parent', {'new_wkt_name': new_wkt}, prime=w_id)
@@ -251,29 +217,6 @@ class test_ll(TestCaseHelper, TestCase):
         data = self.run_walker(
             'get_due_soon', {'soon': 4, 'show_report': 1}, prime=w_id)
         self.assertTrue(len(data['report']) > 0)
-
-    # def test_get_snoozed_until_recent(self):
-    #     """Test getting items that have been snoozed until recently"""
-    #     self.run_walker('gen_rand_life', {})
-    #     self.run_walker('get_gen_day', {})
-    #     data = self.run_walker('get_latest_day', {'show_report': 1})['report']
-    #     w_id = data[0][1]['jid']
-    #     today_date = datetime.datetime.today()
-    #     snoozed_item = False
-    #     for wkt in data:
-    #         if wkt[1]['name'] == 'workette':
-    #             if random.choice([0, 1]) or not snoozed_item:
-    #                 snoozed_item = True
-    #                 delta = random.randint(-3, 0)
-    #                 snoozed_date = today_date + datetime.timedelta(days=delta)
-    #                 snoozed_date = snoozed_date.replace(
-    #                     hour=0, minute=0, second=0, microsecond=0)
-    #                 wkt[1]['context']['snooze_till'] = snoozed_date.isoformat()
-    #                 self.graph_node_set(wkt[1]['jid'], wkt[1]['context'])
-    #     result = self.run_walker(
-    #         'get_snoozed_until_recent', {'show_report': 1},
-    #         prime=w_id)['report']
-    #     self.assertTrue(len(result) > 0)
 
     def test_days_in_backlog(self):
         """Test getting the number of days an item has been in the backlog"""

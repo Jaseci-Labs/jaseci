@@ -183,7 +183,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertEqual(len(r['report']), 0)
         key = 'aaaaaaaa'
         r = self.call_cast(f'walker summon -key {key} -wlk {walk} -nd {nd}')
-        self.assertEqual(len(r), 1)
+        self.assertFalse(r['success'])
 
     def test_jsctl_import(self):
         self.call(
