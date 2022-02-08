@@ -4,6 +4,7 @@ from difflib import SequenceMatcher
 import os
 import pickle
 
+
 def matcher(string, pattern):
     '''
     Return the start and end index of any pattern present in the text.
@@ -18,8 +19,9 @@ def matcher(string, pattern):
         match_tup = (start, end)
         string = string.replace(pattern, "X" * len(pattern), 1)
         match_list.append(match_tup)
-        
+
     return match_list, string
+
 
 def mark_sentence(s, match_list):
     '''
@@ -28,7 +30,7 @@ def mark_sentence(s, match_list):
     word_dict = {}
     for word in s.split():
         word_dict[word] = 'O'
-        
+
     for start, end, e_type in match_list:
         temp_str = s[start:end]
         tmp_list = temp_str.split()
@@ -40,6 +42,7 @@ def mark_sentence(s, match_list):
             word_dict[temp_str] = 'B-' + e_type
     return word_dict
 
+
 def clean(text):
     '''
     Just a helper fuction to add a space before the punctuations for better tokenization
@@ -49,20 +52,21 @@ def clean(text):
     for i in text:
         if i in filters:
             text = text.replace(i, " " + i)
-            
+
     return text
+
 
 def create_data(df):
     '''
     The function responsible for the creation of data in the said format.
     '''
-    filepath= f'train/train.txt'
-    if not os.path.exists(filepath):
-        os.makedirs(filepath)
-    with open(filepath , 'w') as f:
+    filepath = f'train/train.txt'
+    if not os.path.exists("train"):
+        os.makedirs("train")
+    with open(filepath, 'w') as f:
         for text, annotation in zip(df.text, df.annotation):
             text = clean(text)
-            text_ = text        
+            text_ = text
             match_list = []
             for i in annotation:
                 a, text_ = matcher(text, i[0])
@@ -71,7 +75,6 @@ def create_data(df):
             d = mark_sentence(text, match_list)
 
             for i in d.keys():
-                f.writelines(i + ' ' + d[i] +'\n')
+                f.writelines(i + ' ' + d[i] + '\n')
             f.writelines('\n')
     return True
-
