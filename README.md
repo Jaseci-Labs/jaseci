@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Improvement: Better Error reporting all around
 - New Feature: APIs for manipulating actions
 - New Feature: Hotloading jaseci action modules
 - Update: New action creation methodology and architecture
@@ -25,6 +26,7 @@
 
 ### Notes
 
+- Reports back from walker is now dictionary of form `{'report': list(report)}` instead of currnet `list(report)`
 - `std.sort_by_col` tweaked to make last paramter a boolean for reverse (instead of string)
 - Format of `walker get -mode key` api changed from {key:namespace} to {namespace:key}
 - `test` is now a keyword with added test capabilities in jaseci
