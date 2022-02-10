@@ -25,7 +25,8 @@ class walker_api():
         along with the walker id and node id
         """
         if(key not in wlk.namespace_keys().values()):
-            return ['Not authorized to execute this walker']
+            return self.bad_walk_response(
+                ['Not authorized to execute this walker'])
         if(global_sync):  # Test needed
             self.sync_walker_from_global_sent(wlk)
         walk = wlk.duplicate()
@@ -168,7 +169,7 @@ class walker_api():
         """
         wlk = snt.spawn_walker(name, caller=self)
         if(not wlk):
-            return [f'Walker {name} not found!']
+            return self.bad_walk_response([f'Walker {name} not found!'])
         res = self.walker_execute(
             wlk=wlk, prime=nd, ctx=ctx, profiling=profiling)
         wlk.destroy()
@@ -180,3 +181,6 @@ class walker_api():
         """
         for i in self.spawned_walker_ids.obj_list():
             i.destroy()
+
+    def bad_walk_response(self, errors=list()):
+        return {'report': [], 'success': False, 'errors': errors}

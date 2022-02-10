@@ -25,7 +25,6 @@ class core_api_test(TestCaseHelper, TestCase):
     def call(self, mast, pl):
         ret = mast.general_interface_to_api(
             api_name=pl[0], params=pl[1])
-        self.log(ret)
         return ret
 
     def test_sent_global_active(self):
