@@ -6,12 +6,18 @@ from torch import nn
 from torch.utils.data import DataLoader
 import nlpaug.augmenter.word as naw
 import torch
-import tqdm
 import math
 from datetime import datetime
 import numpy as np
 from fastapi.responses import JSONResponse
 import jaseci.actions.remote_actions as jra
+
+model_name = "bert-base-uncased"
+device = "cuda" if torch.cuda.is_available() else "cpu"
+num_epochs = 2
+model_save_path = 'output/sent_' + \
+    model_name.replace("/", "-")+'-' + \
+    datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
 def create_model(model_name="bert-base-uncased", max_seq_length=256):
@@ -28,9 +34,11 @@ def create_model(model_name="bert-base-uncased", max_seq_length=256):
     return model
 
 
+model = create_model(model_name=model_name, max_seq_length=256)
+
+
 def get_aug_sample(text1, text2):
     # Synonym replacement using BERT ####
-    progress = tqdm.tqdm(unit="docs", total=len(text1))
     aug = naw.ContextualWordEmbsAug(
         model_path=model_name, action="insert", device=device)
     aug_samples = []
@@ -39,21 +47,9 @@ def get_aug_sample(text1, text2):
         print(augmented_texts)
         inp_example = InputExample(texts=augmented_texts, label=0)
         aug_samples.append(inp_example)
-        progress.update(1)
-    progress.reset()
-    progress.close()
     print("Textual augmentation completed....")
     print("Number of silver pairs generated: {}".format(len(aug_samples)))
     return aug_samples
-
-
-model_name = "bert-base-uncased"
-model = create_model(model_name=model_name, max_seq_length=256)
-device = "cuda" if torch.cuda.is_available() else "cpu"
-num_epochs = 2
-model_save_path = 'output/sent_' + \
-    model_name.replace("/", "-")+'-' + \
-    datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
 @jra.jaseci_action(act_group=['sent_enc'], aliases=['train_model'])
@@ -62,13 +58,9 @@ def train(text1: List[str], text2: List[str]):
 
     try:
         gold_samples = []
-        progress = tqdm.tqdm(unit="docs", total=len(text1))
         for sample1, sample2 in zip(text1, text2):
             inp_example = InputExample(texts=[sample1, sample2], label=1)
             gold_samples.append(inp_example)
-            progress.update(1)
-        progress.reset()
-        progress.close()
         # generate Samples for 0 labels
         aug_samples = get_aug_sample(text1, text2)
         # Define your train dataset, the dataloader and the train loss
@@ -112,3 +104,32 @@ def predict(text1: str, text2: List[str]):
         print(e)
         return JSONResponse(content=f"Error Occured : {str(e)}",
                             status_code=500)
+
+
+@jra.jaseci_action(act_group=['sent_enc'], aliases=['getembeddings'])
+def getEmbedding(text):
+    global model
+    model.eval()
+    try:
+        embeddings = model.encode(text)
+        return JSONResponse(content={"embed":
+                                     np.squeeze(
+                                         np.asarray(embeddings)).tolist()},
+                            status_code=200)
+    except Exception as e:
+        print(e)
+        return JSONResponse(content=f"Error Occured : {str(e)}",
+                            status_code=500)
+
+
+@jra.jaseci_action(act_group=['sent_enc'], aliases=['get_cos_sim'])
+def cosine_sim(vec_a: list, vec_b: list, meta):
+    """
+    Caculate the cosine similarity score of two given vectors
+    Param 1 - First vector
+    Param 2 - Second vector
+    Return - float between 0 and 1
+    """
+    result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) *
+                                     np.linalg.norm(vec_b))
+    return result.astype(float)
