@@ -783,3 +783,23 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         self.assertEqual(res.data['report'][0]['max_bot_count'], 10)
+
+    def test_action_loads_remote_config_save(self):
+        """Test that sentinel set works serverside"""
+        import jaseci.actions.live_actions as lact
+        import json
+        if (not lact.load_remote_actions('http://js-use-enc')):
+            self.skipTest("external resource not available")
+        payload = {'op': 'config_delete', 'name': 'ACTION_SETS'}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'actions_load_remote', 'url': 'http://js-use-enc'}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(res.data, {'success': True})
+        payload = {'op': 'config_get', 'name': 'ACTION_SETS'}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        self.assertEqual(
+            res.data,
+            json.dumps({"local": [], "remote": ["http://js-use-enc"]}))

@@ -12,7 +12,7 @@ class config_api():
     """
 
     def __init__(self, *args, **kwargs):
-        self.valid_configs = ['CONFIG_EXAMPLE', 'STRIPE_KEY']
+        self.valid_configs = ['CONFIG_EXAMPLE', 'STRIPE_KEY', 'ACTION_SETS']
 
     @interface.admin_api()
     def config_get(self, name: str,

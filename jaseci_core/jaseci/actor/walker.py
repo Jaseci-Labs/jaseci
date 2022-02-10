@@ -116,13 +116,14 @@ class walker(element, jac_code, walker_interp, anchored):
         if(start_node):
             self.prime(start_node, prime_ctx)
 
+        report_ret = {'success': True}
         try:
             while self.step():
                 pass
         except Exception as e:
             import traceback as tb
             self.rt_error(f'Internal Exception: {e}')
-            self.rt_error(tb.format_exc(), silent=True)
+            report_ret['stack_trace'] = tb.format_exc()
 
         self.save()
 
@@ -131,7 +132,7 @@ class walker(element, jac_code, walker_interp, anchored):
                 str(f'Walker {self.name} did not arrive at report state')
             )
 
-        report_ret = {'report': self.report, 'success': True}
+        report_ret['report'] = self.report
         if(len(self.runtime_errors)):
             report_ret['errors'] = self.runtime_errors
             report_ret['success'] = False

@@ -48,6 +48,17 @@ def load_standard():
 load_standard()
 
 
+def load_preconfig_actions(hook):
+    import json
+    action_preload = hook.resolve_glob('ACTION_SETS', None)
+    if (action_preload):
+        action_preload = json.loads(action_preload)
+        for i in action_preload['local']:
+            load_local_actions(i)
+        for i in action_preload['remote']:
+            load_remote_actions(i)
+
+
 def get_global_actions(hook):
     """
     Loads all global action hooks for use by Jac programs
