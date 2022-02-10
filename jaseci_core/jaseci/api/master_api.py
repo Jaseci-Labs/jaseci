@@ -79,6 +79,13 @@ class master_api():
         return self._caller.serialize(detailed=detailed)
 
     @interface.private_api()
+    def master_self(self, detailed: bool = False):
+        """
+        Returns the masters object
+        """
+        return self.serialize(detailed=detailed)
+
+    @interface.private_api()
     def master_delete(self, name: str):
         """
         Permanently delete master with given id

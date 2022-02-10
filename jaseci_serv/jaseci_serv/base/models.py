@@ -52,9 +52,6 @@ class master(core_master):
 
 
 class super_master(master, core_super):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.valid_configs = JASECI_CONFIGS
 
     @interface.admin_api()
     def master_createsuper(self, name: str, set_active: bool = True,
