@@ -295,3 +295,14 @@ class jsctl_test(TestCaseHelper, TestCase):
         r = self.call_cast(
             "actions list")
         self.assertIn("std.out", r)
+
+    def test_jsctl_master_self(self):
+        r = self.call_cast(
+            "master self")
+        self.assertIn("j_type", r.keys())
+        a = r['jid']
+        r = self.call_cast(
+            "master active get")
+        self.assertIn("j_type", r.keys())
+        b = r['jid']
+        self.assertEqual(a, b)
