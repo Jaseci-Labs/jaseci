@@ -69,7 +69,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call("walker run -name init")
         self.call("walker run -name gen_rand_life")
         r = self.call_cast("walker run -name get_gen_day")
-        self.assertGreater(len(r), 3)
+        self.assertGreater(len(r['report']), 3)
 
     def test_jsctl_dot(self):
         self.call(
@@ -180,10 +180,10 @@ class jsctl_test(TestCaseHelper, TestCase):
         walk = r['zsb:walker:pubinit']
         nd = r['active:graph']
         r = self.call_cast(f'walker summon -key {key} -wlk {walk} -nd {nd}')
-        self.assertEqual(len(r), 0)
+        self.assertEqual(len(r['report']), 0)
         key = 'aaaaaaaa'
         r = self.call_cast(f'walker summon -key {key} -wlk {walk} -nd {nd}')
-        self.assertEqual(len(r), 1)
+        self.assertFalse(r['success'])
 
     def test_jsctl_import(self):
         self.call(
@@ -193,28 +193,28 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call("walker run -name init")
         self.call("walker run -name gen_rand_life")
         r = self.call_cast("walker run -name get_gen_day")
-        self.assertGreater(len(r), 3)
+        self.assertGreater(len(r['report']), 3)
 
     def test_jsctl_import_filters(self):
         self.call(
             "sentinel register -code "
             "jaseci/jsctl/tests/base.jac -set_active true")
         r = self.call_cast("walker run -name init")
-        self.assertEqual(len(r), 8)
+        self.assertEqual(len(r['report']), 8)
 
     def test_jsctl_import_filters1(self):
         self.call(
             "sentinel register -code "
             "jaseci/jsctl/tests/base1.jac -set_active true")
         r = self.call_cast("walker run -name init")
-        self.assertEqual(len(r), 8)
+        self.assertEqual(len(r['report']), 8)
 
     def test_jsctl_import_filters2(self):
         self.call(
             "sentinel register -code "
             "jaseci/jsctl/tests/base2.jac -set_active true")
         r = self.call_cast("walker run -name init")
-        self.assertEqual(len(r), 8)
+        self.assertEqual(len(r['report']), 8)
 
     def test_jsctl_import_fails_when_incomplete(self):
         self.call(
@@ -268,17 +268,17 @@ class jsctl_test(TestCaseHelper, TestCase):
     def test_jsctl_jac_run(self):
         r = self.call_cast(
             "jac run jaseci/jsctl/tests/teststest.jac")
-        self.assertEqual(r, [{}, 4])
+        self.assertEqual(r['report'], [{}, 4])
 
     def test_jsctl_jac_run_jir(self):
         r = self.call_cast(
             "jac run jaseci/jsctl/tests/teststest.jir")
-        self.assertEqual(r, [{}, 4])
+        self.assertEqual(r['report'], [{}, 4])
 
     def test_jsctl_jac_run_jir_walk(self):
         r = self.call_cast(
             "jac run jaseci/jsctl/tests/teststest.jir -walk alt_init")
-        self.assertEqual(r, [7])
+        self.assertEqual(r['report'], [7])
 
     def test_jsctl_sentinel_set(self):
         self.call(
@@ -289,7 +289,7 @@ class jsctl_test(TestCaseHelper, TestCase):
             "jaseci/jsctl/tests/base.jac")
         r = self.call_cast("walker run -name init")
         r = self.call_cast("walker run -name init")
-        self.assertEqual(len(r), 8)
+        self.assertEqual(len(r['report']), 8)
 
     def test_jsctl_action_list(self):
         r = self.call_cast(

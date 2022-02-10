@@ -14,7 +14,6 @@ class jac_actions_tests(TestCaseHelper, TestCase):
         super().tearDown()
 
     def test_remote_action_example(self):
-        self.logger_on()
         from typing import Union
         @jra.jaseci_action(act_group=['use'], aliases=['enc_question'])
         def question_encode(question: Union[str, list]):

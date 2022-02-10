@@ -1232,7 +1232,8 @@ class interp(machine_state):
         walk.run()
         ret = jac_value(self, value=walk.anchor_value())
         ret.unwrap()
-        self.report = self.report + walk.report
+        self.report += walk.report
+        self.runtime_errors += walk.runtime_errors
         walk.destroy()
         return ret
 
@@ -1348,7 +1349,8 @@ class interp(machine_state):
         m._jac_scope.inherit_agent_refs(self._jac_scope)
         m.run_code_block(jac_ir_to_ast(
             act_list.get_obj_by_name(name).value))
-        self.report = self.report + m.report
+        self.report += m.report
+        self.runtime_errors += m.runtime_errors
 
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
