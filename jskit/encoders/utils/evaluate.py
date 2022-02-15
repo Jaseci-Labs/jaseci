@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-from Utilities import tokenizer as token_util
+from utils import tokenizer as token_util
 import configparser
 config = configparser.ConfigParser()
 
@@ -10,7 +10,8 @@ max_history, max_contexts_length, max_candidate_length, device = None, \
 
 def config_setup():
     global max_history, max_contexts_length, max_candidate_length, device
-    config.read('Utilities/config.cfg')
+    config.read('utils/config.cfg')
+    print(config.sections())
     max_history = int(config['TRAIN_PARAMETERS']['MAX_HISTORY'])
     max_contexts_length = int(
         config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
