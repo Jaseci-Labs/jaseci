@@ -86,14 +86,14 @@ class jsctl_test(TestCaseHelper, TestCase):
     def test_jsctl_aliases(self):
         """Tests that alias mapping api works"""
         self.call(
-            "sentinel register -name zsb -code "
-            "jaseci/jsctl/tests/zsb.jac -set_active true")
+            "sentinel register "
+            "jaseci/jsctl/tests/zsb.jac -name zsb -set_active true")
         gph_id = self.call_cast('graph create')['jid']
         snt_id = self.call_cast('sentinel list')[0]['jid']
-        self.call(f'alias register -name s -value {snt_id}')
-        self.call(f'alias register -name g -value {gph_id}')
+        self.call(f'alias register s -value {snt_id}')
+        self.call(f'alias register g -value {gph_id}')
         self.assertEqual(len(self.call_cast('graph get -gph g')), 1)
-        self.call(f'walker run -snt s -nd g -name init')
+        self.call(f'walker run init -snt s -nd g')
         self.assertEqual(len(self.call_cast('graph get -gph g')), 3)
         self.call(f'alias clear')
         self.assertEqual(len(self.call_cast(f'alias list').keys()), 0)
@@ -101,8 +101,8 @@ class jsctl_test(TestCaseHelper, TestCase):
     def test_jsctl_auto_aliases(self):
         """Tests that auto alias mapping api works"""
         self.call(
-            "sentinel register -name zsb -code "
-            "jaseci/jsctl/tests/zsb.jac -set_active true")
+            "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb "
+            "-set_active true")
         aliases = self.call_cast('alias list')
         self.assertGreater(len(aliases), 20)
         self.assertIn('zsb:architype:bot', aliases.keys())
@@ -113,12 +113,13 @@ class jsctl_test(TestCaseHelper, TestCase):
     def test_jsctl_auto_aliases_delete(self):
         """Tests that auto removing alias mapping api works"""
         self.call(
-            "sentinel register -name zsb -code "
-            "jaseci/jsctl/tests/zsb.jac -set_active true")
+            "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb "
+            "-set_active true")
         num = len(self.call_cast('alias list'))
-        self.call('architype delete -arch zsb:architype:bot')
-        self.call('walker delete -wlk zsb:walker:similar_questions')
-        self.call('walker delete -wlk zsb:walker:create_nugget')
+
+        self.call('architype delete zsb:architype:bot')
+        self.call('walker delete zsb:walker:similar_questions')
+        self.call('walker delete zsb:walker:create_nugget')
         self.assertEqual(num-3, len(self.call_cast('alias list')))
 
     def test_jsctl_config_cmds(self):
