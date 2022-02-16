@@ -20,7 +20,7 @@ import TabItem from '@theme/TabItem';
     <pre>
     <code># Clone Jaseci repo</code>
     <code>git clone https://github.com/Jaseci-Labs/jaseci.git</code>
-    <br>
+    <br/>
     <code># Install dependencies</code>
     <code>brew install jq</code>
     </pre>
@@ -62,7 +62,7 @@ import TabItem from '@theme/TabItem';
     <pre>
     <code># Clone Jaseci repo</code>
     <code>git clone https://github.com/Jaseci-Labs/jaseci.git</code>
-    <br>
+    <br/>
     <code># Install dependencies</code>
     <code>sudo apt-get install jq</code>
     </pre>
