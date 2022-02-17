@@ -11,7 +11,7 @@ class global_api():
     Admin global APIs
     """
 
-    @interface.admin_api()
+    @interface.admin_api(cli_args=['name'])
     def global_set(self, name: str, value: str):
         """
         Set a global
@@ -25,7 +25,7 @@ class global_api():
             ret['response'] = f"Global variable '{name}' to '{value}' set!"
         return ret
 
-    @interface.admin_api()
+    @interface.admin_api(cli_args=['name'])
     def global_delete(self, name: str):
         """
         Delete a global

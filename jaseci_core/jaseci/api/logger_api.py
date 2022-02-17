@@ -12,7 +12,7 @@ class logger_api():
     APIs for Jaseci Logging configuration
     """
 
-    @interface.admin_api()
+    @interface.admin_api(cli_args=['host'])
     def logger_http_connect(self, host: str, port: int,
                             url: str, log: str = 'all'):
         """

@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Improvement: JSCTL now takes args without flags in sensible places for quality of life.
 - Improvement: Better Error reporting all around
 - New Feature: APIs for manipulating actions
 - New Feature: Hotloading jaseci action modules
@@ -26,6 +27,7 @@
 
 ### Notes
 
+- Various flags are now args for `jsctl` i.e., `walker run -name init` is now `walker run init` as name is now the standard arg. If you wanted to specify a node the flag would be used as per `walker run init -nd {uuid}`
 - Reports back from walker is now dictionary of form `{'report': list(report)}` instead of currnet `list(report)`
 - `std.sort_by_col` tweaked to make last paramter a boolean for reverse (instead of string)
 - Format of `walker get -mode key` api changed from {key:namespace} to {namespace:key}
