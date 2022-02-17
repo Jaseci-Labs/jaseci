@@ -17,7 +17,7 @@ class global_api():
         Set a global
         """
         ret = {'success': True}
-        if(name == 'GLOB_SENTINEL' or name in self.valid_configs):
+        if(name == 'GLOB_SENTINEL' or name in self._valid_configs):
             ret['response'] = f"{name} is sacred!"
             ret['success'] = False
         else:
@@ -31,7 +31,7 @@ class global_api():
         Delete a global
         """
         ret = {'success': True}
-        if(name == 'GLOB_SENTINEL' or name in self.valid_configs):
+        if(name == 'GLOB_SENTINEL' or name in self._valid_configs):
             ret['response'] = f"{name} is sacred!"
             ret['success'] = False
         else:

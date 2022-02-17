@@ -15,7 +15,7 @@ from jaseci.api.interface import interface
 class master(core_master):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.valid_configs += JASECI_CONFIGS
+        self._valid_configs += JASECI_CONFIGS
 
     @interface.private_api()
     def master_create(self, name: str, set_active: bool = True,

@@ -19,7 +19,7 @@ class actions_api():
         success = lact.load_local_actions(file)
         if(success):
             cur_config = self.config_get('ACTION_SETS')
-            if(cur_config):
+            if(cur_config and (not isinstance(cur_config, list))):
                 config = json.loads(cur_config)
                 if file not in config['local']:
                     config['local'].append(file)

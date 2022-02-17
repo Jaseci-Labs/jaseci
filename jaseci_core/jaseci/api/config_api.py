@@ -12,7 +12,7 @@ class config_api():
     """
 
     def __init__(self, *args, **kwargs):
-        self.valid_configs = ['CONFIG_EXAMPLE', 'STRIPE_KEY', 'ACTION_SETS']
+        self._valid_configs = ['CONFIG_EXAMPLE', 'STRIPE_KEY', 'ACTION_SETS']
 
     @interface.admin_api(cli_args=['name'])
     def config_get(self, name: str,
@@ -40,14 +40,14 @@ class config_api():
         """
         Check a config is present
         """
-        return [v for v in self._h.list_glob() if v in self.valid_configs]
+        return [v for v in self._h.list_glob() if v in self._valid_configs]
 
     @interface.admin_api()
     def config_index(self):
         """
         List all valid configs
         """
-        return self.valid_configs
+        return self._valid_configs
 
     @interface.admin_api(cli_args=['name'])
     def config_exists(self, name: str):
@@ -70,8 +70,8 @@ class config_api():
     def name_error(self, name):
         """Much used error output"""
         return [
-            f"Config {name} not recognized, must be in {self.valid_configs}!"]
+            f"Config {name} not recognized, must be in {self._valid_configs}!"]
 
     def name_check(self, name):
         """Much used name check"""
-        return (name in self.valid_configs)
+        return (name in self._valid_configs)
