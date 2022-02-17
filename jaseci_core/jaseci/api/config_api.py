@@ -42,6 +42,13 @@ class config_api():
         """
         return [v for v in self._h.list_glob() if v in self.valid_configs]
 
+    @interface.admin_api()
+    def config_index(self):
+        """
+        List all valid configs
+        """
+        return self.valid_configs
+
     @interface.admin_api(cli_args=['name'])
     def config_exists(self, name: str):
         """
