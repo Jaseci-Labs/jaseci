@@ -9,7 +9,7 @@ def convert_user_to_j_master(apps, schema_editor):
     """The old user field in jaseci object convert to j_master"""
     db_alias = schema_editor.connection.alias
     JaseciObject = apps.get_model('base', 'JaseciObject')
-    for j_object in JaseciObject.objects.using(db_alias).all():
+    for j_object in JaseciObject.objects.using(db_alias).only('j_master', 'user', 'name', 'kind', 'j_type').iterator():
         j_object.j_master = j_object.user.master
         # For all JaseciObject except for action, do the following
         # kind --> name 
