@@ -4,7 +4,7 @@ import os
 import time
 from tqdm import tqdm
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
-from utils import tokenizer as token_util
+from . import tokenizer as token_util
 import configparser
 
 config = configparser.ConfigParser()

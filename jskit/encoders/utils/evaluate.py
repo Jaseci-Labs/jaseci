@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-from utils import tokenizer as token_util
+from . import tokenizer as token_util
 import configparser
 config = configparser.ConfigParser()
 
@@ -11,7 +11,6 @@ max_history, max_contexts_length, max_candidate_length, device = None, \
 def config_setup():
     global max_history, max_contexts_length, max_candidate_length, device
     config.read('utils/config.cfg')
-    print(config.sections())
     max_history = int(config['TRAIN_PARAMETERS']['MAX_HISTORY'])
     max_contexts_length = int(
         config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
@@ -59,7 +58,6 @@ def get_inference(model, tokenizer, context, candidate):
                 "candidate_input_masks": candidate_input_masks_list_batch}
         logits = model(context_data, candidate_data, eval=True)
         _, prediction = torch.max(logits, dim=1)
-        print(candidate[prediction])
         return candidate[prediction]
 
 

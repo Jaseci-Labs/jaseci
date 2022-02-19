@@ -23,7 +23,8 @@ def config_setup():
     model_name = config['MODEL_PARAMETERS']['MODEL_NAME']
     shared = config['MODEL_PARAMETERS']['SHARED']
     seed = config['TRAIN_PARAMETERS']['SEED']
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if model is None:
         bert_config = BertConfig()
         tokenizer = BertTokenizer.from_pretrained(model_name,
@@ -40,6 +41,8 @@ def config_setup():
         save_restart = False
     model.to(device)
 
+
+config_setup()
 
 # @jra.jaseci_action(act_group=['bi_enc'], aliases=['get_bi_cos_sim'])
 # def cosine_sim(vec_a: list, vec_b: list, meta):
@@ -133,5 +136,4 @@ def set_config(training_parameters, model_parameters):
 
 
 if __name__ == "__main__":
-    config_setup()
     jra.launch_server(port=8000)

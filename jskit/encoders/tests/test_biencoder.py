@@ -1,8 +1,8 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from bi import app
+from bi import app, config_setup
 from fastapi.testclient import TestClient
-from test_data import (
+from .test_data import (
     test_cos_sim_request,
     test_context_emb_request,
     test_context_emb_response,
@@ -18,6 +18,7 @@ class biencoder_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
+        config_setup()
         self.client = TestClient(app)
 
     def tearDown(self) -> None:
@@ -25,8 +26,8 @@ class biencoder_test(TestCaseHelper, TestCase):
 
     def test_cos_sim_function(self):
         response = self.client.post(
-            "/cos_sim_score",
-            test_cos_sim_request
+            "/cos_sim_score/",
+            json=test_cos_sim_request
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -34,20 +35,20 @@ class biencoder_test(TestCaseHelper, TestCase):
             {"cos_score": 0.49492838978767395}
         )
 
-    def test_biencoder_train(self):
-        response = self.client.post(
-            "/train",
-            json=test_train_request
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            "Model Training is comnpleted"
-        )
+    # def test_biencoder_train(self):
+    #     response = self.client.post(
+    #         "/train/",
+    #         json=test_train_request
+    #     )
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertEqual(
+    #         response.json(),
+    #         "Model Training is comnpleted"
+    #     )
 
     def test_biencoder_infer(self):
         response = self.client.post(
-            "/infer",
+            "/infer/",
             json=test_infer_request
         )
         self.assertEqual(response.status_code, 200)
@@ -57,23 +58,24 @@ class biencoder_test(TestCaseHelper, TestCase):
         )
 
     def test_biencoder_context_emb(self):
-        response = self.client.get(
-            "/getcontextemb",
+        response = self.client.post(
+            "/get_context_emb/",
             json=test_context_emb_request
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.json(),
-            test_context_emb_response
+            len(response.json()['context_embed'][0]),
+            64
         )
 
     def test_candidate_embedding(self):
-        response = self.client.get(
-            "/getcandidateemb",
+        response = self.client.post(
+            "/get_candidate_emb/",
             json=test_candidate_emb_request
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.json(),
-            test_candidate_emb_response
+            len(response.json()['candidate_embed'][0][0]),
+            64
         )
+
