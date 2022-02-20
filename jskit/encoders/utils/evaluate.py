@@ -16,7 +16,8 @@ def config_setup():
         config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
     max_candidate_length = int(
         config['TRAIN_PARAMETERS']['MAX_RESPONSE_LENGTH'])
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device('cpu')
 
 
 config_setup()
@@ -78,7 +79,6 @@ def get_context_embedding(model, tokenizer, context):
             "context_input_masks": context_input_masks_list_batch}
         embeddings = model(context_data=embedding_data,
                            eval=True, get_embedding=True)
-    # print(embeddings)
     return embeddings
 
 
