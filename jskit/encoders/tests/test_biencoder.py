@@ -32,7 +32,7 @@ class biencoder_test(TestCaseHelper, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
-            {"cos_score": 0.49492838978767395}
+            0.49492838978767395
         )
 
     def test_biencoder_train(self):
@@ -43,7 +43,7 @@ class biencoder_test(TestCaseHelper, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
-            "Model Training is comnpleted"
+            "Model Training is complete."
         )
 
     def test_biencoder_infer(self):
@@ -52,10 +52,9 @@ class biencoder_test(TestCaseHelper, TestCase):
             json=test_infer_request
         )
         self.assertEqual(response.status_code, 200)
-        self.assertTrue('label' in response.json())
         # self.assertEqual(
         #     response.json(),
-        #     {"label": "BookRestaurant"}
+        #     "BookRestaurant"
         # )
 
     def test_biencoder_context_emb(self):
@@ -65,7 +64,7 @@ class biencoder_test(TestCaseHelper, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            len(response.json()['context_embed'][0]),
+            len(response.json()[0]),
             64
         )
 
@@ -76,7 +75,7 @@ class biencoder_test(TestCaseHelper, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            len(response.json()['candidate_embed'][0][0]),
+            len(response.json()[0][0]),
             64
         )
 

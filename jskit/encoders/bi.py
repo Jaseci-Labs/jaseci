@@ -1,9 +1,13 @@
 import os, configparser
 import torch
-from fastapi.responses import JSONResponse
+from fastapi import HTTPException
 from transformers import BertConfig, BertTokenizer
 from utils.models import BiEncoderShared
-from utils.evaluate import get_context_embedding, get_candidate_embedding, get_inference
+from utils.evaluate import (
+    get_context_embedding,
+    get_candidate_embedding,
+    get_inference
+)
 from utils.train import train_model
 import jaseci.actions.remote_actions as jra
 
@@ -41,9 +45,22 @@ def config_setup():
         save_restart = False
     model.to(device)
 
-
 config_setup()
 
+@jra.jaseci_action(act_group=['bi_enc'])
+def cos_sim_score(context_embedding, candidate_embedding):
+    tensors = (context_embedding, candidate_embedding)
+    context_embedding, candidate_embedding = (torch.tensor
+                                              (t, dtype=torch.float)
+                                              for t in tensors)
+    context_embedding = context_embedding.unsqueeze(1)
+    dot_product = torch.matmul(context_embedding,
+                               candidate_embedding.permute(0, 2, 1))
+    dot_product.squeeze_(1)
+    cos_similarity = (dot_product + 1) / 2
+    return cos_similarity.item()
+
+# TODO: change to linalg.dot function?
 # @jra.jaseci_action(act_group=['bi_enc'], aliases=['get_bi_cos_sim'])
 # def cosine_sim(vec_a: list, vec_b: list, meta):
 #     """
@@ -56,23 +73,6 @@ config_setup()
 #                                      np.linalg.norm(vec_b))
 #     return result.astype(float)
 
-
-# change to linalg.dot function
-@jra.jaseci_action(act_group=['bi_enc'])
-def cos_sim_score(context_embedding, candidate_embedding):
-    tensors = (context_embedding, candidate_embedding)
-    context_embedding, candidate_embedding = (torch.tensor
-                                              (t, dtype=torch.float)
-                                              for t in tensors)
-    context_embedding = context_embedding.unsqueeze(1)
-    dot_product = torch.matmul(context_embedding,
-                               candidate_embedding.permute(0, 2, 1))
-    dot_product.squeeze_(1)
-    cos_similarity = (dot_product + 1) / 2
-    return JSONResponse(content={"cos_score": cos_similarity.item()},
-                        status_code=200)
-
-
 @jra.jaseci_action(act_group=['bi_enc'])
 def infer(contexts, candidates):
     global model
@@ -80,8 +80,7 @@ def infer(contexts, candidates):
     predicted_label = get_inference(model, tokenizer,
                                     context=contexts,
                                     candidate=candidates)
-    return JSONResponse(content={"label": predicted_label}, status_code=200)
-
+    return predicted_label
 
 @jra.jaseci_action(act_group=['bi_enc'])
 def train(contexts, candidates):
@@ -89,32 +88,24 @@ def train(contexts, candidates):
     model.train()
     try:
         model = train_model(model, tokenizer, contexts, candidates)
-        return JSONResponse(content="Model Training is comnpleted",
-                            status_code=200)
+        return "Model Training is complete."
     except Exception as e:
         print(e)
-        return JSONResponse(content="Error Occured", status_code=500)
-
+        raise HTTPException(status_code=500, detail=str(e))
 
 @jra.jaseci_action(act_group=['bi_enc'], aliases=['encode_context'])
 def get_context_emb(contexts):
     global model, tokenizer
     model.eval()
     embedding = get_context_embedding(model, tokenizer, contexts)
-    return JSONResponse(content={"context_embed":
-                                 embedding.cpu().numpy().tolist()},
-                        status_code=200)
-
+    return embedding.cpu().numpy().tolist()
 
 @jra.jaseci_action(act_group=['bi_enc'], aliases=['encode_candidate'])
 def get_candidate_emb(candidates):
     global model, tokenizer
     model.eval()
     embedding = get_candidate_embedding(model, tokenizer, candidates)
-    return JSONResponse(content={"candidate_embed":
-                                 embedding.cpu().numpy().tolist()},
-                        status_code=200)
-
+    return embedding.cpu().numpy().tolist()
 
 @jra.jaseci_action(act_group=['bi_enc'])
 def set_config(training_parameters, model_parameters):
@@ -132,7 +123,7 @@ def set_config(training_parameters, model_parameters):
         config.write(configfile)
 
     config_setup()
-    return JSONResponse(content="config setup completed", status_code=200)
+    return "Config setup is complete."
 
 
 if __name__ == "__main__":
