@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
+    <title>Stencil Component Starter</title>
+
+    <script type="module" src="/build/components.esm.js"></script>
+    <script nomodule src="/build/components.js"></script>
+    <link rel="stylesheet" href="/build/components.css" />
+  </head>
+  <body>
+    <jsc-nav-bar label="Jaseci Webkit"></jsc-nav-bar>
+    <my-component first="Stencil" last="'Don't call me a framework' JS"></my-component>
+    <script>
+      customElements.whenDefined('jsc-nav-bar').then(() => {
+        const navBar = document.querySelector('jsc-nav-bar');
+        navBar.setAttribute('label', 'Jaseci Webkit');
+        navBar.setAttribute(
+          'links',
+          JSON.stringify([
+            {
+              component: 'Button',
+              props: { title: 'Home' },
+            },
+            {
+              component: 'Button',
+              props: { title: 'Services' },
+            },
+            {
+              component: 'Button',
+              props: { title: 'About' },
+            },
+            {
+              component: 'Button',
+              props: { title: 'Get in Touch' },
+            },
+          ]),
+        );
+      });
+    </script>
+  </body>
+</html>
