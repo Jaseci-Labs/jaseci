@@ -29,6 +29,7 @@ jobs:
         pwd
         ls -l
         chmod +x jaseci_core/install.sh
+        pwd
         ./jaseci_core/install.sh
         
     - name: Setup Jaseci
