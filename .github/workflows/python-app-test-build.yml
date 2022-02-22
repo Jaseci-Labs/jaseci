@@ -23,7 +23,6 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        chmod +x /jaseci_core/install.sh
         ./jaseci_core/install.sh
         
     - name: Setup Jaseci
@@ -32,5 +31,4 @@ jobs:
         
     - name: Test Jaseci
       run: |
-        chmod +x /jaseci_core/test.sh
         ./jaseci_core/test.sh
