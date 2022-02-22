@@ -23,4 +23,5 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        chmod +x /home/runner/work/jaseci/jaseci/jaseci_core/install.sh
         pwd
