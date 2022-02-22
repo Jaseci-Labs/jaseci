@@ -26,7 +26,7 @@ jobs:
         
     - name: Install Jaseci
       run: |
-        ls /jaseci_core/
+        ls
         chmod +x /jaseci_core/install.sh
         ./jaseci_core/install.sh
         
