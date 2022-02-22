@@ -33,6 +33,7 @@ jobs:
         
     - name: Setup Jaseci
       run: |
+        pwd
         python jaseci_core/setup.py
         
     - name: Test Jaseci
