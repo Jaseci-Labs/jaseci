@@ -15,7 +15,8 @@ config = configparser.ConfigParser()
 model, model_name, shared, seed, tokenizer = None, None, None, None, None
 save_restart = False
 output_dir = "log_output"
-state_save_path = os.path.join(output_dir, 'pytorch_model.bin')
+DEFAULT_MODEL_NAME = 'pytorch_model.bin'
+DEFAULT_MODEL_PATH = os.path.join(output_dir, 'pytorch_model.bin')
 
 
 def config_setup():
@@ -28,6 +29,9 @@ def config_setup():
     shared = config['MODEL_PARAMETERS']['SHARED']
     seed = config['TRAIN_PARAMETERS']['SEED']
     device = torch.device("cpu")
+    # uncomment this if you wish to use GPU to train
+    # this is commented out because this causes issues with
+    # unittest on machines with GPU
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if model is None:
         bert_config = BertConfig()
@@ -36,7 +40,7 @@ def config_setup():
         model = BiEncoderShared(config=bert_config,
                                 model_name=model_name, shared=shared)
     elif save_restart:
-        torch.save(model.state_dict(), state_save_path)
+        torch.save(model.state_dict(), DEFAULT_MODEL_PATH)
         bert_config = BertConfig()
         tokenizer = BertTokenizer.from_pretrained(model_name,
                                                   do_lower_case=True)
@@ -125,6 +129,21 @@ def set_config(training_parameters, model_parameters):
     config_setup()
     return "Config setup is complete."
 
+@jra.jaseci_action(act_group=['bi_enc'])
+def save_model(model_name):
+    global model
+    if not model.isalnum():
+        raise HTTPException(
+            status_code=400,
+            detail='Invalid model name. Only alphanumeric chars allowed.'
+        )
+    model_path = os.path.join(output_dir, f'{model_name}.bin')
+    torch.save(model.state_dict(), model_path)
+
+
+@jra.jaseci_action(act_group=['bi_enc'])
+def load_model(model_name):
+    pass
 
 if __name__ == "__main__":
     jra.launch_server(port=8000)
