@@ -24,4 +24,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         chmod +x /home/runner/work/jaseci/jaseci/jaseci_core/install.sh
-        pwd
+        ./home/runner/work/jaseci/jaseci/jaseci_core/install.sh
+        
+    - name: Setup Jaseci
+      run: |
+        python setup.py
+        
+    - name: Test Jaseci
+      run: |
+        chmod +x /home/runner/work/jaseci/jaseci/jaseci_core/test.sh
+        ./home/runner/work/jaseci/jaseci/jaseci_core/test.sh
