@@ -4,7 +4,7 @@ import os
 import time
 from tqdm import tqdm
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
-from Utilities import tokenizer as token_util
+from . import tokenizer as token_util
 import configparser
 
 config = configparser.ConfigParser()
@@ -20,8 +20,9 @@ def config_setup():
         train_batch_size, eval_batch_size, max_history, learning_rate, \
         weight_decay, warmup_steps, adam_epsilon, max_grad_norm, fp16, \
         fp16_opt_level, gpu, gradient_accumulation_steps, num_train_epochs
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    config.read('Utilities/config.cfg')
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device('cpu')
+    config.read('utils/config.cfg')
     max_contexts_length = int(
         config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
     max_candidate_length = int(
