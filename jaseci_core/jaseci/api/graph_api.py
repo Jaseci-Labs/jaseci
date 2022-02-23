@@ -56,7 +56,7 @@ class graph_api():
             gphs.append(i.serialize(detailed=detailed))
         return gphs
 
-    @interface.private_api()
+    @interface.private_api(cli_args=['gph'])
     def graph_active_set(self, gph: graph):
         """
         Sets the default graph master should use
@@ -86,7 +86,7 @@ class graph_api():
         else:
             return ['No default graph is selected!']
 
-    @interface.private_api()
+    @interface.private_api(cli_args=['gph'])
     def graph_delete(self, gph: graph):
         """
         Permanently delete graph with given id
@@ -96,7 +96,7 @@ class graph_api():
         self.graph_ids.destroy_obj(gph)
         return [f'Graph {gph.id} successfully deleted']
 
-    @interface.private_api()
+    @interface.private_api(cli_args=['nd'])
     def graph_node_get(self, nd: node, ctx: list = None):
         """
         Returns value a given node
@@ -109,7 +109,7 @@ class graph_api():
                     ret[i] = nd_ctx[i]
         return ret
 
-    @interface.private_api()
+    @interface.private_api(cli_args=['nd'])
     def graph_node_set(self, nd: node, ctx: dict, snt: sentinel = None):
         """
         Assigns values to member variables of a given node using ctx object

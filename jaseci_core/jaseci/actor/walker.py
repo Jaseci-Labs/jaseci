@@ -116,8 +116,15 @@ class walker(element, jac_code, walker_interp, anchored):
         if(start_node):
             self.prime(start_node, prime_ctx)
 
-        while self.step():
-            pass
+        report_ret = {'success': True}
+        try:
+            while self.step():
+                pass
+        except Exception as e:
+            import traceback as tb
+            self.rt_error(f'Internal Exception: {e}')
+            report_ret['stack_trace'] = tb.format_exc()
+
         self.save()
 
         if(not self.report):
@@ -125,6 +132,10 @@ class walker(element, jac_code, walker_interp, anchored):
                 str(f'Walker {self.name} did not arrive at report state')
             )
 
+        report_ret['report'] = self.report
+        if(len(self.runtime_errors)):
+            report_ret['errors'] = self.runtime_errors
+            report_ret['success'] = False
         if(profiling):
             pr.disable()
             s = io.StringIO()
@@ -136,10 +147,9 @@ class walker(element, jac_code, walker_interp, anchored):
             s = '\n'.join([','.join(line.rstrip().split(None, 5))
                           for line in s.split('\n')])
             self.profile['perf'] = s
-            return {'report': self.report,
-                    'profile': self.profile}
+            report_ret['profile'] = self.profile
 
-        return self.report
+        return report_ret
 
     def log_history(self, name, value):
         """Helper function for logging history of walker's activities"""

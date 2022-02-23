@@ -5,7 +5,7 @@ This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
 from jaseci.utils.utils import logger
-from jaseci.actions.live_actions import live_actions
+from jaseci.actions.live_actions import live_actions, load_preconfig_actions
 # from jaseci.actions.find_action import find_action
 from jaseci.element.element import element
 
@@ -77,6 +77,8 @@ class machine_state():
         Takes reference to action attr, finds the built in function
         and returns new name used as hook by action class
         """
+        if(func_name not in live_actions.keys()):
+            load_preconfig_actions(self._h)
         if(func_name not in live_actions.keys()):
             self.rt_error(f"Builtin action not found - {func_name}", jac_ast)
         return func_name

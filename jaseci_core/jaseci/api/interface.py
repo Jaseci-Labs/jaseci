@@ -87,10 +87,13 @@ class interface():
             return self.active_gph_id
         return None
 
-    def interface_error(self, err):
+    def interface_error(self, err, stack=None):
         """Standard error output to logger and api response"""
         logger.error(err)
-        return {'response': err, 'success': False, 'errors': [err]}
+        ret = {'response': err, 'success': False, 'errors': [err]}
+        if(stack):
+            ret['stack_trace'] = stack
+        return ret
 
     def general_interface_to_api(self, params, api_name):
         """
@@ -138,7 +141,12 @@ class interface():
 
             if (param_map[i] is None):
                 return self.interface_error(f'Invalid API args - {params}')
-        ret = getattr(_caller, api_name)(**param_map)
+        try:
+            ret = getattr(_caller, api_name)(**param_map)
+        except Exception as e:
+            import traceback as tb
+            return self.interface_error(
+                f'Internal Exception: {e}', stack=tb.format_exc())
         if(not is_jsonable(ret)):
             return self.interface_error(f'Non-JSON API ret {type(ret)}: {ret}')
         return ret
@@ -152,7 +160,7 @@ class interface():
         """
         param_map = {}
         if (not hasattr(self, api_name)):
-            logger.error(f'{api_name} not a valid API')
+            return self.interface_error(f'{api_name} not a valid API')
             return False
         func_sig = signature(getattr(self, api_name))
         for i in func_sig.parameters.keys():
@@ -167,7 +175,7 @@ class interface():
                 val = params[p_name]
             if (issubclass(p_type, element)):
                 if(val is None):
-                    logger.error(
+                    return self.interface_error(
                         f'No {p_type} value for {p_name} provided!')
                 val = self._h.get_obj(
                     'override', uuid.UUID(val), override=True)
@@ -175,17 +183,22 @@ class interface():
                 if (isinstance(val, p_type)):
                     param_map[i] = val
                 else:
-                    logger.error(f'{type(val)} is not {p_type}')
+                    return self.interface_error(f'{type(val)} is not {p_type}')
                     param_map[i] = None
             else:  # TODO: Can do type checks here too
                 param_map[i] = val
 
             if (param_map[i] is None):
-                logger.error(f'Invalid API parameter set - {params}')
-                return False
-        ret = getattr(self, api_name)(**param_map)
+                return self.interface_error(
+                    f'Invalid API parameter set - {params}')
+        try:
+            ret = getattr(self, api_name)(**param_map)
+        except Exception as e:
+            import traceback as tb
+            return self.interface_error(
+                f'Internal Exception: {e}', stack=tb.format_exc())
         if(not is_jsonable(ret)):
-            logger.error(
+            return self.interface_error(
                 str(f'API returns non json object {type(ret)}: {ret}'))
         return ret
 

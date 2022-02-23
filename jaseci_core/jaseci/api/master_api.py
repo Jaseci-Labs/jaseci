@@ -15,7 +15,7 @@ class master_api():
         self.head_master_id = head_master
         self.sub_master_ids = id_list(self)
 
-    @interface.private_api()
+    @interface.private_api(cli_args=['name'])
     def master_create(self, name: str, set_active: bool = True,
                       other_fields: dict = {}):
         """
@@ -28,7 +28,7 @@ class master_api():
         new_m = master(h=self._h, name=name)
         return self.make_me_head_master_or_destroy(new_m)
 
-    @interface.private_api()
+    @interface.private_api(cli_args=['name'])
     def master_get(self, name: str, mode: str = 'default',
                    detailed: bool = False):
         """
@@ -51,7 +51,7 @@ class master_api():
             masts.append(i.serialize(detailed=detailed))
         return masts
 
-    @interface.private_api()
+    @interface.private_api(cli_args=['name'])
     def master_active_set(self, name: str):
         """
         Sets the default master master should use
@@ -79,6 +79,13 @@ class master_api():
         return self._caller.serialize(detailed=detailed)
 
     @interface.private_api()
+    def master_self(self, detailed: bool = False):
+        """
+        Returns the masters object
+        """
+        return self.serialize(detailed=detailed)
+
+    @interface.private_api(cli_args=['name'])
     def master_delete(self, name: str):
         """
         Permanently delete master with given id

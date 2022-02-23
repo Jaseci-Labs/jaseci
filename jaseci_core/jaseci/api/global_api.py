@@ -11,13 +11,13 @@ class global_api():
     Admin global APIs
     """
 
-    @interface.admin_api()
+    @interface.admin_api(cli_args=['name'])
     def global_set(self, name: str, value: str):
         """
         Set a global
         """
         ret = {'success': True}
-        if(name == 'GLOB_SENTINEL' or name in self.valid_configs):
+        if(name == 'GLOB_SENTINEL' or name in self._valid_configs):
             ret['response'] = f"{name} is sacred!"
             ret['success'] = False
         else:
@@ -25,13 +25,13 @@ class global_api():
             ret['response'] = f"Global variable '{name}' to '{value}' set!"
         return ret
 
-    @interface.admin_api()
+    @interface.admin_api(cli_args=['name'])
     def global_delete(self, name: str):
         """
         Delete a global
         """
         ret = {'success': True}
-        if(name == 'GLOB_SENTINEL' or name in self.valid_configs):
+        if(name == 'GLOB_SENTINEL' or name in self._valid_configs):
             ret['response'] = f"{name} is sacred!"
             ret['success'] = False
         else:

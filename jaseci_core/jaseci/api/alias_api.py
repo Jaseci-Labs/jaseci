@@ -23,7 +23,7 @@ class alias_api():
     def __init__(self):
         self.alias_map = {}
 
-    @interface.private_api()
+    @interface.private_api(cli_args=['name'])
     def alias_register(self, name: str, value: str):
         """Create string to string alias mapping that caller can use.
 
@@ -60,7 +60,7 @@ class alias_api():
         """
         return self.alias_map
 
-    @interface.private_api()
+    @interface.private_api(cli_args=['name'])
     def alias_delete(self, name: str):
         """Delete an active string to string alias mapping.
 
