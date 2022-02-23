@@ -30,7 +30,6 @@ jobs:
         
     - name: Setup Jaseci
       run: |
-        pwd
         
     - name: Test Jaseci
       run: |
