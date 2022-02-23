@@ -1,13 +1,13 @@
-import os, configparser
+import os
+import configparser
 import torch
+from typing import List
 from fastapi import HTTPException
-from transformers import BertConfig, BertTokenizer
-from utils.models import BiEncoderShared
-from utils.evaluate import (
-    get_context_embedding,
-    get_candidate_embedding,
-    get_inference
-)
+from transformers import BertModel, BertConfig, BertTokenizer
+from utils.evaluate import get_embeddings
+from utils.models import BiEncoder
+import traceback
+import numpy as np
 from utils.train import train_model
 import jaseci.actions.remote_actions as jra
 
@@ -19,6 +19,7 @@ DEFAULT_MODEL_NAME = 'pytorch_model.bin'
 DEFAULT_MODEL_PATH = os.path.join(output_dir, 'pytorch_model.bin')
 
 
+# function for config setup
 def config_setup():
     """
     Loading configurations from utils/config.cfg and initialize tokenizer and model
@@ -27,7 +28,7 @@ def config_setup():
     config.read('utils/config.cfg')
     model_name = config['MODEL_PARAMETERS']['MODEL_NAME']
     shared = config['MODEL_PARAMETERS']['SHARED']
-    seed = config['TRAIN_PARAMETERS']['SEED']
+    seed = int(config['TRAIN_PARAMETERS']['SEED'])
     device = torch.device("cpu")
     # uncomment this if you wish to use GPU to train
     # this is commented out because this causes issues with
@@ -36,80 +37,96 @@ def config_setup():
     if model is None:
         bert_config = BertConfig()
         tokenizer = BertTokenizer.from_pretrained(model_name,
-                                                  do_lower_case=True)
-        model = BiEncoderShared(config=bert_config,
-                                model_name=model_name, shared=shared)
+                                                  do_lower_case=True, clean_text=False)
+        if shared is True:
+            cont_bert = BertModel(bert_config)
+            cand_bert = cont_bert
+            print("shared model created")
+        else:
+            cont_bert = BertModel(bert_config)
+            cand_bert = BertModel(bert_config)
+            print("non shared model created")
+        model = BiEncoder(config=bert_config,
+                          cont_bert=cont_bert, cand_bert=cand_bert, shared=shared)
+
     elif save_restart:
         torch.save(model.state_dict(), DEFAULT_MODEL_PATH)
         bert_config = BertConfig()
         tokenizer = BertTokenizer.from_pretrained(model_name,
-                                                  do_lower_case=True)
-        model = BiEncoderShared(config=bert_config,
-                                model_name=model_name, shared=shared)
+                                                  do_lower_case=True, clean_text=False)
+        cont_bert = BertModel(bert_config)
+        cand_bert = BertModel(bert_config)
+        model = BiEncoder(config=bert_config,
+                          cont_bert=cont_bert, cand_bert=cand_bert, shared=shared)
         save_restart = False
     model.to(device)
 
+
 config_setup()
 
-@jra.jaseci_action(act_group=['bi_enc'])
-def cos_sim_score(context_embedding, candidate_embedding):
-    tensors = (context_embedding, candidate_embedding)
-    context_embedding, candidate_embedding = (torch.tensor
-                                              (t, dtype=torch.float)
-                                              for t in tensors)
-    context_embedding = context_embedding.unsqueeze(1)
-    dot_product = torch.matmul(context_embedding,
-                               candidate_embedding.permute(0, 2, 1))
-    dot_product.squeeze_(1)
-    cos_similarity = (dot_product + 1) / 2
-    return cos_similarity.item()
+# API for getting the cosine similarity
 
-# TODO: change to linalg.dot function?
-# @jra.jaseci_action(act_group=['bi_enc'], aliases=['get_bi_cos_sim'])
-# def cosine_sim(vec_a: list, vec_b: list, meta):
-#     """
-#     Caculate the cosine similarity score of two given vectors
-#     Param 1 - First vector
-#     Param 2 - Second vector
-#     Return - float between 0 and 1
-#     """
-#     result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) *
-#                                      np.linalg.norm(vec_b))
-#     return result.astype(float)
 
 @jra.jaseci_action(act_group=['bi_enc'])
-def infer(contexts, candidates):
-    global model
-    model.eval()
-    predicted_label = get_inference(model, tokenizer,
-                                    context=contexts,
-                                    candidate=candidates)
-    return predicted_label
+def cosine_sim(vec_a: list, vec_b: list, meta):
+    """
+    Caculate the cosine similarity score of two given vectors
+    Param 1 - First vector
+    Param 2 - Second vector
+    Return - float between 0 and 1
+    """
+    result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) *
+                                     np.linalg.norm(vec_b))
+    return result.astype(float)
 
+
+# @jra.jaseci_action(act_group=['bi_enc'])
+# def infer(contexts, candidates):
+#     global model
+#     model.eval()
+#     predicted_label = get_inference(model, tokenizer,
+#                                     context=contexts,
+#                                     candidate=candidates)
+#     return predicted_label
+
+# API for training
 @jra.jaseci_action(act_group=['bi_enc'])
-def train(contexts, candidates):
+def train(contexts: List, candidates: List):
     global model
     model.train()
     try:
-        model = train_model(model, tokenizer, contexts, candidates)
+        model = train_model(model, tokenizer, contexts,
+                            candidates, output_dir="model_output")
         return "Model Training is complete."
     except Exception as e:
         print(e)
+        print(traceback.print_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
+# API for geting Context Embedding
+
+
 @jra.jaseci_action(act_group=['bi_enc'], aliases=['encode_context'])
-def get_context_emb(contexts):
+def get_context_emb(contexts: List):
     global model, tokenizer
     model.eval()
-    embedding = get_context_embedding(model, tokenizer, contexts)
-    return embedding.cpu().numpy().tolist()
+    embedding = get_embeddings(
+        model=model, tokenizer=tokenizer, text_data=contexts, embed_type="context")
+    return embedding
+
+# API for geting Candidates Embedding
+
 
 @jra.jaseci_action(act_group=['bi_enc'], aliases=['encode_candidate'])
-def get_candidate_emb(candidates):
+def get_candidate_emb(candidates: List):
     global model, tokenizer
     model.eval()
-    embedding = get_candidate_embedding(model, tokenizer, candidates)
-    return embedding.cpu().numpy().tolist()
+    embedding = get_embeddings(
+        model, tokenizer, text_data=candidates, embed_type="candidate")
+    return embedding
+
+# API for setting the training and model parameters
+
 
 @jra.jaseci_action(act_group=['bi_enc'])
 def set_config(training_parameters, model_parameters):
@@ -129,6 +146,7 @@ def set_config(training_parameters, model_parameters):
     config_setup()
     return "Config setup is complete."
 
+
 @jra.jaseci_action(act_group=['bi_enc'])
 def save_model(model_name):
     global model
@@ -144,6 +162,7 @@ def save_model(model_name):
 @jra.jaseci_action(act_group=['bi_enc'])
 def load_model(model_name):
     pass
+
 
 if __name__ == "__main__":
     jra.launch_server(port=8000)

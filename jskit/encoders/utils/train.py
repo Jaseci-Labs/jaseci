@@ -15,11 +15,12 @@ device, max_contexts_length, max_candidate_length, train_batch_size, \
     None, None, None, None, None, None, None, None, None, None, None, None
 
 
+# training setup
 def config_setup():
     global device, basepath, max_contexts_length, max_candidate_length, \
         train_batch_size, eval_batch_size, max_history, learning_rate, \
         weight_decay, warmup_steps, adam_epsilon, max_grad_norm, fp16, \
-        fp16_opt_level, gpu, gradient_accumulation_steps, num_train_epochs
+        fp16_opt_level, gpu, gradient_accumulation_steps, num_train_epochs, shared
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device('cpu')
     config.read('utils/config.cfg')
@@ -41,32 +42,28 @@ def config_setup():
     fp16 = bool(config['TRAIN_PARAMETERS']['FP16'])
     fp16_opt_level = str(config['TRAIN_PARAMETERS']['FP16_OPT_LEVEL'])
     gpu = int(config['TRAIN_PARAMETERS']['GPU'])
+    shared = bool(config['MODEL_PARAMETERS']['SHARED'])
 
 
 output_dir = "log_output"
 train_dir = "."
 model = None
-global_step, tr_loss, nb_tr_steps, epoch, device, basepath = None, None, \
-    None, None, None, None
+global_step, tr_loss, nb_tr_steps, epoch, device, basepath, shared = None, None, \
+    None, None, None, None, None
 
 
-def train_model(model_train, tokenizer, contexts, candidates, val=False):
+# training function
+def train_model(model_train, tokenizer, contexts, candidates, output_dir, val=False):
     config_setup()
-    global model, global_step, tr_loss, nb_tr_steps, epoch, device, basepath
+    global model, global_step, tr_loss, nb_tr_steps, epoch, device, basepath, shared
+
     model = model_train
     context_transform = token_util.SelectionJoinTransform(
         tokenizer=tokenizer,
-        max_len=int(max_contexts_length),
-        max_history=int(max_history))
+        max_len=int(max_contexts_length))
     candidate_transform = token_util.SelectionSequentialTransform(
         tokenizer=tokenizer,
-        max_len=int(max_candidate_length),
-        max_history=None, pair_last=False)
-
-    print('=' * 80)
-    print('Train dir:', train_dir)
-    print('Output dir:', output_dir)
-    print('=' * 80)
+        max_len=int(max_candidate_length))
 
     train_dataset = token_util.SelectionDataset(
         contexts,
@@ -82,12 +79,22 @@ def train_model(model_train, tokenizer, contexts, candidates, val=False):
         (max(5, num_train_epochs))
     epoch_start = 1
     global_step = 0
-    # best_eval_loss = float('inf')
-    # best_test_loss = float('inf')
-
+    bert_dir = output_dir+"/bert"
+    resp_bert_dir = output_dir+"/resp_bert"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    log_wf = open(os.path.join(output_dir, 'log.txt'), 'a', encoding='utf-8')
+    if not os.path.exists(bert_dir):
+        os.makedirs(bert_dir)
+    if not os.path.exists(resp_bert_dir):
+        os.makedirs(resp_bert_dir)
+    log_wf = open(os.path.join(output_dir, 'log.txt'),
+                  'a', encoding='utf-8')
+    if shared:
+        state_save_path = os.path.join(output_dir, 'pytorch_model.bin')
+    else:
+        state_save_path = os.path.join(bert_dir, 'pytorch_model.bin')
+        state_save_path_1 = os.path.join(
+            resp_bert_dir, 'pytorch_model.bin')
 
     state_save_path = os.path.join(output_dir, 'pytorch_model.bin')
     no_decay = ["bias", "LayerNorm.weight"]
@@ -129,22 +136,13 @@ def train_model(model_train, tokenizer, contexts, candidates, val=False):
                 model.train()
                 optimizer.zero_grad()
                 batch = tuple(t.to(device) for t in batch)
-                context_token_ids_list_batch, context_segment_ids_list_batch, \
-                    context_input_masks_list_batch, \
-                    candidate_token_ids_list_batch, \
-                    candidate_segment_ids_list_batch, \
-                    candidate_input_masks_list_batch, labels_batch = batch
-                context_data = {
-                    "context_input_ids": context_token_ids_list_batch,
-                    "context_segment_ids": context_segment_ids_list_batch,
-                    "context_input_masks": context_input_masks_list_batch}
-                candidate_data = {
-                    "candidate_input_ids": candidate_token_ids_list_batch,
-                    "candidates_segment_ids": candidate_segment_ids_list_batch,
-                    "candidate_input_masks": candidate_input_masks_list_batch}
-                loss = model(context_data,
-                             candidate_data,
+                context_token_ids_list_batch,  context_input_masks_list_batch, \
+                    response_token_ids_list_batch,  response_input_masks_list_batch, labels_batch = batch
+
+                loss = model(context_token_ids_list_batch,  context_input_masks_list_batch,
+                             response_token_ids_list_batch, response_input_masks_list_batch,
                              labels_batch)
+                print(f"loss is  : {loss}")
                 tr_loss += loss.item()
                 nb_tr_examples += context_token_ids_list_batch.size(0)
                 nb_tr_steps += 1
@@ -163,23 +161,22 @@ def train_model(model_train, tokenizer, contexts, candidates, val=False):
                 if global_step < warmup_steps:
                     scheduler.step()
                 model.zero_grad()
-                optimizer.zero_grad()
                 global_step += 1
 
                 if step % print_freq == 0:
                     bar.update(min(print_freq, step))
+                    time.sleep(0.02)
                     print(global_step, tr_loss / nb_tr_steps)
                     log_wf.write('%d\t%f\n' %
                                  (global_step, tr_loss / nb_tr_steps))
 
-        scheduler.step()
-
-    print('Global Step %d V :\n' % global_step)
-    log_wf.write('Global Step %d V :\n' % global_step)
-    # save model
-    print('[Saving at]', state_save_path)
-    log_wf.write('[Saving at] %s\n' % state_save_path)
-    torch.save(model.state_dict(), state_save_path)
-    print(global_step, tr_loss / nb_tr_steps)
-    log_wf.write('%d\t%f\n' % (global_step, tr_loss / nb_tr_steps))
+                log_wf.flush()
+                pass
+    if shared is True:
+        torch.save(model.state_dict(), state_save_path)
+    else:
+        print('[Saving at]', state_save_path)
+        log_wf.write('[Saving at] %s\n' % state_save_path)
+        torch.save(model.resp_bert.state_dict(), state_save_path_1)
+        torch.save(model.bert.state_dict(), state_save_path)
     return model
