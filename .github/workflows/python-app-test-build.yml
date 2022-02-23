@@ -27,11 +27,9 @@ jobs:
     - name: Install Jaseci
       run: |
         source jaseci_core/install.sh
-        
-    - name: Test Jaseci Setup
-      run: |
-        source jaseci_core/test.sh
-        
     - name: check Jaseci
       run: |
         jsctl
+    - name: Test Jaseci Setup
+      run: |
+        source jaseci_core/test.sh
