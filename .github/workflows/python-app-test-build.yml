@@ -26,14 +26,12 @@ jobs:
         
     - name: Install Jaseci
       run: |
-        pwd
+        source jaseci_core/install.sh
         
     - name: Setup Jaseci
       run: |
         pwd
-        python jaseci_core/setup.py
         
     - name: Test Jaseci
       run: |
-        chmod +x jaseci_core/test.sh
-        jaseci_core/test.sh
+        source jaseci_core/test.sh
