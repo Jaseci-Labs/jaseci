@@ -1,1 +1,1 @@
-pip3 install .
+pip3 install jaseci_serv/
