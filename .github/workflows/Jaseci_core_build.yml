@@ -32,4 +32,4 @@ jobs:
         jsctl
     - name: Test Jaseci Setup
       run: |
-        source jaseci_core/test.sh
+        source test.sh
