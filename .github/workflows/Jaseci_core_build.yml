@@ -30,6 +30,6 @@ jobs:
     - name: check Jaseci
       run: |
         jsctl
-#     - name: Test Jaseci Setup
-#       run: |
-#         source jaseci_core/test.sh
+    - name: Test Jaseci Setup
+       run: |
+        source jaseci_core/test.sh
