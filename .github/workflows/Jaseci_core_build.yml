@@ -41,7 +41,7 @@ jobs:
         pwd
         
     - name: Build package
-      run: python -m build jaseci_core/ --outdir /home/runner/work/jaseci/jaseci
+      run: python -m build jaseci_core/ --outdir /home/runner/work/jaseci/jaseci/dist
       
     - name: Check File Dir after Build
       run: |
