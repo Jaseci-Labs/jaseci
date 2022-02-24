@@ -53,3 +53,4 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.BHARAT_PYPI_API_TOKEN }}
+        verbose: true
