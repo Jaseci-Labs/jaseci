@@ -34,23 +34,17 @@ jobs:
 #     - name: Test Jaseci Setup
 #       run: |
 #         source jaseci_core/test.sh
-    - name: Check File Dir before Build
-      run: |
-        ls -l
-        ls -l jaseci_core/
-        pwd
-        
+
     - name: Build package
       run: python -m build jaseci_core/ --outdir /home/runner/work/jaseci/jaseci/dist
       
     - name: Check File Dir after Build
       run: |
-        ls -l
-        ls -l jaseci_core/
+        ls -l dist/
     
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
       with:
         user: __token__
-        password: pypi-AgEIcHlwaS5vcmcCJDU4MGViNDVhLTgyMjMtNDdhNi04NTAzLTUyY2FkZGUwYmFmMQACJXsicGVybWlzc2lvbnMiOiAidXNlciIsICJ2ZXJzaW9uIjogMX0AAAYgGfohyf1iNbpnvd7V126lOcbScqMeYehIzQ6CCWcvEyw
+        password: ${{ secrets.BHARAT_PYPI_API_TOKEN }}
         verbose: true
