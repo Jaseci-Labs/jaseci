@@ -11,6 +11,8 @@ export class NavLink {
   @Prop() background: string;
   @Prop() margin: string;
   @Prop() padding: string;
+  @Prop() align: 'start' | 'middle' | 'end' = 'start';
+  @Prop({ attribute: 'crossalign' }) crossAlign: 'start' | 'middle' | 'end' = 'start';
 
   render() {
     return (
@@ -24,6 +26,7 @@ export class NavLink {
           boxSizing: 'border-box',
           display: 'flex',
         }}
+        class={`align-${this.align} ${`cross-align-${this.crossAlign}`}`}
       >
         <slot name="children"></slot>
       </div>

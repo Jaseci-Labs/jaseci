@@ -1,11 +1,32 @@
 :host {
   display: block;
+  justify-content: center;
 }
 
 ::slotted(div) {
   display: flex;
 }
 
-::slotted(div) > * {
-  margin: '10px 20px';
+.align-start {
+  justify-content: start;
+}
+
+.align-middle {
+  justify-content: center;
+}
+
+.align-end {
+  justify-content: end;
+}
+
+.cross-align-start {
+  align-items: start;
+}
+
+.cross-align-middle {
+  align-items: center;
+}
+
+.cross-align-end {
+  align-items: end;
 }

@@ -7,18 +7,14 @@ import { renderComponentTree } from '../../utils/utils';
   shadow: true,
 })
 export class App {
-  get markup() {
+  get 'markup'() {
     return renderComponentTree([
       {
         component: 'Navbar',
         slots: {
           links: [
-            { component: 'NavLink', props: { label: 'Test' } },
-            {
-              component: 'NavLink',
-              props: { label: 'Hello' },
-              slots: { links: [{ component: 'Navbar', props: { title: 'cool' } }] },
-            },
+            { component: 'NavLink', props: { label: 'Home' } },
+            { component: 'NavLink', props: { label: 'About' } },
           ],
         },
         props: { label: 'Jaseci App' },
@@ -37,15 +33,50 @@ export class App {
               component: 'Row',
               props: {
                 width: '100%',
+                height: '300px',
                 padding: '10px',
-                background: 'white',
+                background: 'black',
+                align: 'middle',
+                crossAlign: 'middle',
               },
               slots: {
                 children: [
                   {
                     component: 'Container',
                     props: {
+                      background: 'red',
+                      width: '50px',
+                      height: '50px',
+                    },
+                  },
+                  {
+                    component: 'Container',
+                    props: {
                       background: 'blue',
+                      width: '50px',
+                      height: '50px',
+                    },
+                  },
+                ],
+              },
+            },
+
+            {
+              component: 'Row',
+              props: {
+                width: '100%',
+                height: '300px',
+                padding: '10px',
+                background: 'grey',
+                align: 'start',
+                crossAlign: 'middle',
+              },
+              slots: {
+                children: [
+                  {
+                    component: 'Container',
+                    props: {
+                      background: 'red',
                       width: '50px',
                       height: '50px',
                     },
@@ -66,11 +97,11 @@ export class App {
       },
     ]);
   }
+  'top';
 
-  render() {
+  'render'() {
     return (
       <div>
-        {JSON.stringify(this.markup)}
         <div innerHTML={this.markup}></div>
       </div>
     );

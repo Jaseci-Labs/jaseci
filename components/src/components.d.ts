@@ -26,7 +26,9 @@ export namespace Components {
         "label": string;
     }
     interface JscRow {
+        "align": 'start' | 'middle' | 'end';
         "background": string;
+        "crossAlign": 'start' | 'middle' | 'end';
         "height": string;
         "margin": string;
         "padding": string;
@@ -114,7 +116,9 @@ declare namespace LocalJSX {
         "label"?: string;
     }
     interface JscRow {
+        "align"?: 'start' | 'middle' | 'end';
         "background"?: string;
+        "crossAlign"?: 'start' | 'middle' | 'end';
         "height"?: string;
         "margin"?: string;
         "padding"?: string;
