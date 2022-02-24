@@ -1,0 +1,8 @@
+:host {
+  display: inline-block;
+}
+
+.jsc_nav_link {
+  margin: 0 16px;
+  cursor: pointer;
+}

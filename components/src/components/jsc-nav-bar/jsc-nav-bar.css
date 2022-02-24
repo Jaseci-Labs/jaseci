@@ -14,12 +14,5 @@
 
 .jsc_nav_bar__label {
   font-size: 1.3em;
-}
-
-.jsc_nav_bar__links {
-  display: flex;
-}
-
-.jsc_nav_bar__links__item {
-  margin: 0 16px;
+  font-weight: 500;
 }

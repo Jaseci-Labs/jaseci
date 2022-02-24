@@ -7,34 +7,71 @@ import { renderComponentTree } from '../../utils/utils';
   shadow: true,
 })
 export class App {
-  render() {
-    return (
-      <div>
-        {JSON.stringify(
-          renderComponentTree([
+  get markup() {
+    return renderComponentTree([
+      {
+        component: 'Navbar',
+        slots: {
+          links: [
+            { component: 'NavLink', props: { label: 'Test' } },
             {
-              component: 'Navbar',
+              component: 'NavLink',
+              props: { label: 'Hello' },
+              slots: { links: [{ component: 'Navbar', props: { title: 'cool' } }] },
+            },
+          ],
+        },
+        props: { label: 'Jaseci App' },
+      },
+      {
+        component: 'Container',
+        props: {
+          width: '100%',
+          background: '#0090FF',
+          padding: '10px',
+          margin: '10px 0',
+        },
+        slots: {
+          children: [
+            {
+              component: 'Row',
+              props: {
+                width: '100%',
+                padding: '10px',
+                background: 'white',
+              },
               slots: {
-                links: [
-                  { component: 'Button', props: { label: 'Test' } },
+                children: [
                   {
-                    component: 'Button',
-                    props: { label: 'Hello' },
-                    slots: { links: [{ component: 'Navbar', props: { title: 'cool' } }] },
+                    component: 'Container',
+                    props: {
+                      background: 'blue',
+                      width: '50px',
+                      height: '50px',
+                    },
+                  },
+                  {
+                    component: 'Container',
+                    props: {
+                      background: 'blue',
+                      width: '50px',
+                      height: '50px',
+                    },
                   },
                 ],
               },
-              props: { label: 'Jaseci App' },
             },
-          ]),
-        )}
-        <jsc-nav-bar label="Test">
-          <div slot="links">
-            <a>Link 1</a>
-            <a>Link 2</a>
-            <a>Link 3</a>
-          </div>
-        </jsc-nav-bar>
+          ],
+        },
+      },
+    ]);
+  }
+
+  render() {
+    return (
+      <div>
+        {JSON.stringify(this.markup)}
+        <div innerHTML={this.markup}></div>
       </div>
     );
   }

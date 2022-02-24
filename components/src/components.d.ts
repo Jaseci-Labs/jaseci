@@ -8,12 +8,29 @@ import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 export namespace Components {
     interface JscApp {
     }
+    interface JscContainer {
+        "background": string;
+        "height": string;
+        "margin": string;
+        "padding": string;
+        "width": string;
+    }
     interface JscNavBar {
         /**
           * The title of the app bar.
          */
         "label": string;
         "links": string;
+    }
+    interface JscNavLink {
+        "label": string;
+    }
+    interface JscRow {
+        "background": string;
+        "height": string;
+        "margin": string;
+        "padding": string;
+        "width": string;
     }
     interface MyComponent {
         /**
@@ -37,11 +54,29 @@ declare global {
         prototype: HTMLJscAppElement;
         new (): HTMLJscAppElement;
     };
+    interface HTMLJscContainerElement extends Components.JscContainer, HTMLStencilElement {
+    }
+    var HTMLJscContainerElement: {
+        prototype: HTMLJscContainerElement;
+        new (): HTMLJscContainerElement;
+    };
     interface HTMLJscNavBarElement extends Components.JscNavBar, HTMLStencilElement {
     }
     var HTMLJscNavBarElement: {
         prototype: HTMLJscNavBarElement;
         new (): HTMLJscNavBarElement;
+    };
+    interface HTMLJscNavLinkElement extends Components.JscNavLink, HTMLStencilElement {
+    }
+    var HTMLJscNavLinkElement: {
+        prototype: HTMLJscNavLinkElement;
+        new (): HTMLJscNavLinkElement;
+    };
+    interface HTMLJscRowElement extends Components.JscRow, HTMLStencilElement {
+    }
+    var HTMLJscRowElement: {
+        prototype: HTMLJscRowElement;
+        new (): HTMLJscRowElement;
     };
     interface HTMLMyComponentElement extends Components.MyComponent, HTMLStencilElement {
     }
@@ -51,12 +86,22 @@ declare global {
     };
     interface HTMLElementTagNameMap {
         "jsc-app": HTMLJscAppElement;
+        "jsc-container": HTMLJscContainerElement;
         "jsc-nav-bar": HTMLJscNavBarElement;
+        "jsc-nav-link": HTMLJscNavLinkElement;
+        "jsc-row": HTMLJscRowElement;
         "my-component": HTMLMyComponentElement;
     }
 }
 declare namespace LocalJSX {
     interface JscApp {
+    }
+    interface JscContainer {
+        "background"?: string;
+        "height"?: string;
+        "margin"?: string;
+        "padding"?: string;
+        "width"?: string;
     }
     interface JscNavBar {
         /**
@@ -64,6 +109,16 @@ declare namespace LocalJSX {
          */
         "label"?: string;
         "links"?: string;
+    }
+    interface JscNavLink {
+        "label"?: string;
+    }
+    interface JscRow {
+        "background"?: string;
+        "height"?: string;
+        "margin"?: string;
+        "padding"?: string;
+        "width"?: string;
     }
     interface MyComponent {
         /**
@@ -81,7 +136,10 @@ declare namespace LocalJSX {
     }
     interface IntrinsicElements {
         "jsc-app": JscApp;
+        "jsc-container": JscContainer;
         "jsc-nav-bar": JscNavBar;
+        "jsc-nav-link": JscNavLink;
+        "jsc-row": JscRow;
         "my-component": MyComponent;
     }
 }
@@ -90,7 +148,10 @@ declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
             "jsc-app": LocalJSX.JscApp & JSXBase.HTMLAttributes<HTMLJscAppElement>;
+            "jsc-container": LocalJSX.JscContainer & JSXBase.HTMLAttributes<HTMLJscContainerElement>;
             "jsc-nav-bar": LocalJSX.JscNavBar & JSXBase.HTMLAttributes<HTMLJscNavBarElement>;
+            "jsc-nav-link": LocalJSX.JscNavLink & JSXBase.HTMLAttributes<HTMLJscNavLinkElement>;
+            "jsc-row": LocalJSX.JscRow & JSXBase.HTMLAttributes<HTMLJscRowElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
         }
     }

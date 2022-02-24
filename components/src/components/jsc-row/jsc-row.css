@@ -1,0 +1,11 @@
+:host {
+  display: block;
+}
+
+::slotted(div) {
+  display: flex;
+}
+
+::slotted(div) > * {
+  margin: '10px 20px';
+}
