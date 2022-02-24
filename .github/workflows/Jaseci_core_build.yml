@@ -31,5 +31,5 @@ jobs:
       run: |
         jsctl
     - name: Test Jaseci Setup
-       run: |
+      run: |
         source jaseci_core/test.sh
