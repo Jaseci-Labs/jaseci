@@ -10,33 +10,38 @@
     <link rel="stylesheet" href="/build/components.css" />
   </head>
   <body>
-    <jsc-nav-bar label="Jaseci Webkit"></jsc-nav-bar>
+    <jsc-app></jsc-app>
     <my-component first="Stencil" last="'Don't call me a framework' JS"></my-component>
     <script>
-      customElements.whenDefined('jsc-nav-bar').then(() => {
-        const navBar = document.querySelector('jsc-nav-bar');
-        navBar.setAttribute('label', 'Jaseci Webkit');
-        navBar.setAttribute(
-          'links',
-          JSON.stringify([
-            {
-              component: 'Button',
-              props: { title: 'Home' },
-            },
-            {
-              component: 'Button',
-              props: { title: 'Services' },
-            },
-            {
-              component: 'Button',
-              props: { title: 'About' },
-            },
-            {
-              component: 'Button',
-              props: { title: 'Get in Touch' },
-            },
-          ]),
-        );
+      customElements.whenDefined('jsc-app').then(() => {
+        const app = document.querySelector('jsc-app');
+        // navBar.setAttribute('label', 'Jaseci Webkit');
+        // navBar.setAttribute(
+        //   'links',
+        //   JSON.stringify([
+        //     {
+        //       component: 'Navbar',
+        //       links: [
+        //         {
+        //           component: 'Button',
+        //           props: { title: 'Home' },
+        //         },
+        //         {
+        //           component: 'Button',
+        //           props: { title: 'Services' },
+        //         },
+        //         {
+        //           component: 'Button',
+        //           props: { title: 'About' },
+        //         },
+        //         {
+        //           component: 'Button',
+        //           props: { title: 'Get in Touch' },
+        //         },
+        //       ],
+        //     },
+        //   ]),
+        // );
       });
     </script>
   </body>

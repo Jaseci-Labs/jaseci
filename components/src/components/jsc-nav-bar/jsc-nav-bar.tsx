@@ -2,14 +2,14 @@ import { Component, Prop, h, Watch } from '@stencil/core';
 
 @Component({
   tag: 'jsc-nav-bar',
-  styleUrl: 'nav-bar.css',
+  styleUrl: 'jsc-nav-bar.css',
   shadow: true,
 })
 export class NavBar {
   /**
    * The title of the app bar.
    */
-  @Prop() label: string;
+  @Prop({ mutable: true }) label: string;
   @Prop({ mutable: true }) links: string;
 
   @Watch('label')
