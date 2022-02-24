@@ -5,6 +5,7 @@ interface JaseciComponent {
   // identifies the component type to render
   component: ComponentNames;
   props: JaseciComponentProps;
+  slots?: Record<string, Array<JaseciComponent>>;
 }
 
 type JaseciComponentProps = Record<string, unknown>;

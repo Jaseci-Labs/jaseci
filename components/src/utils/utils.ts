@@ -7,7 +7,7 @@ export const componentMap: Record<Exclude<ComponentNames, 'App'>, ComponentTags>
   Button: 'button',
 };
 
-const renderTag = (componentTag: ComponentTags) => `<${componentTag}></${componentTag}>`;
+const renderTag = (componentTag: ComponentTags, config: { withChilren: Boolean }) => `<${componentTag}>${config.withChilren ? '{children}' : ''}</${componentTag}>`;
 
 // converts props to a string of html attributes to append to the tag
 const attachProps = (renderedTag: string, props: Record<string, unknown>) => {
@@ -18,17 +18,31 @@ const attachProps = (renderedTag: string, props: Record<string, unknown>) => {
   return renderedTag.replace('>', ` ${propsString}>`);
 };
 
-export const renderComponent = (componentName: ComponentNames, props: Record<string, unknown>) => {
-  return attachProps(renderTag(componentMap[componentName]), props);
+// creates a single tag and attaches the props in the correct format
+export const renderComponent = (jaseciComponent: JaseciComponent) => {
+  return attachProps(
+    renderTag(componentMap[jaseciComponent.component], {
+      withChilren: !!jaseciComponent.slots && Object.keys(jaseciComponent.slots).length > 0,
+    }),
+    jaseciComponent.props,
+  );
 };
 
+// generates the html structure that will be rendered
 export const renderComponentTree = (jaseciNodes: Array<JaseciComponent>) => {
-  let markup = '<div>';
+  let markup = '';
 
-  jaseciNodes.map(node => {
-    markup += renderComponent(node.component, node.props);
-  });
+  if (jaseciNodes) {
+    jaseciNodes.map(node => {
+      markup += renderComponent(node);
+      // render child nodes
+      if (node.slots) {
+        Object.keys(node.slots).map(slotName => {
+          markup = markup.replace(new RegExp('{children}'), `<div slot="${slotName}">${renderComponentTree(node.slots[slotName])}</div>`);
+        });
+      }
+    });
+  }
 
-  markup += '</div>';
   return markup;
 };

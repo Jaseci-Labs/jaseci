@@ -29,9 +29,10 @@ export class NavBar {
       <div class="jsc_nav_bar">
         <p class="jsc_nav_bar__label">{this.label}</p>
         <div class="jsc_nav_bar__links">
-          {this.navLinks.map(link => (
+          <slot name="links"></slot>
+          {/* {this.navLinks.map(link => (
             <p class="jsc_nav_bar__links__item">{link.props.title}</p>
-          ))}
+          ))} */}
         </div>
       </div>
     );
