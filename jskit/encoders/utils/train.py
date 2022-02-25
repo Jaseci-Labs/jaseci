@@ -27,7 +27,7 @@ def config_setup():
     max_contexts_length = int(
         config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
     max_candidate_length = int(
-        config['TRAIN_PARAMETERS']['MAX_RESPONSE_LENGTH'])
+        config['TRAIN_PARAMETERS']['MAX_CANDIDATE_LENGTH'])
     train_batch_size = int(config['TRAIN_PARAMETERS']['TRAIN_BATCH_SIZE'])
     eval_batch_size = int(config['TRAIN_PARAMETERS']['EVAL_BATCH_SIZE'])
     max_history = int(config['TRAIN_PARAMETERS']['MAX_HISTORY'])
@@ -53,28 +53,32 @@ global_step, tr_loss, nb_tr_steps, epoch, device, basepath, shared = None, None,
 
 
 # training function
-def train_model(model_train, tokenizer, contexts, candidates, output_dir, val=False):
+def train_model(model_train, tokenizer, contexts, candidates, labels, output_dir, val=False):
     config_setup()
     global model, global_step, tr_loss, nb_tr_steps, epoch, device, basepath, shared
 
     model = model_train
     context_transform = token_util.SelectionJoinTransform(
         tokenizer=tokenizer,
-        max_len=int(max_contexts_length))
+        max_len=int(max_contexts_length)
+    )
     candidate_transform = token_util.SelectionSequentialTransform(
         tokenizer=tokenizer,
-        max_len=int(max_candidate_length))
-
+        max_len=int(max_candidate_length)
+    )
     train_dataset = token_util.SelectionDataset(
-        contexts,
-        candidates,
-        context_transform,
-        candidate_transform,
-        sample_cnt=None)
-    train_dataloader = DataLoader(train_dataset,
-                                  batch_size=train_batch_size,
-                                  collate_fn=train_dataset.batchify_join_str,
-                                  shuffle=True)
+        contexts=contexts,
+        candidates=candidates,
+        labels=labels,
+        context_transform=context_transform,
+        candidate_transform=candidate_transform
+    )
+    train_dataloader = DataLoader(
+        train_dataset,
+        batch_size=train_batch_size,
+        collate_fn=train_dataset.batchify_join_str,
+        shuffle=True
+    )
     t_total = len(train_dataloader) // train_batch_size * \
         (max(5, num_train_epochs))
     epoch_start = 1
@@ -137,10 +141,10 @@ def train_model(model_train, tokenizer, contexts, candidates, output_dir, val=Fa
                 optimizer.zero_grad()
                 batch = tuple(t.to(device) for t in batch)
                 context_token_ids_list_batch,  context_input_masks_list_batch, \
-                    response_token_ids_list_batch,  response_input_masks_list_batch, labels_batch = batch
+                    candidate_token_ids_list_batch,  candidate_input_masks_list_batch, labels_batch = batch
 
                 loss = model(context_token_ids_list_batch,  context_input_masks_list_batch,
-                             response_token_ids_list_batch, response_input_masks_list_batch,
+                             candidate_token_ids_list_batch, candidate_input_masks_list_batch,
                              labels_batch)
                 print(f"loss is  : {loss}")
                 tr_loss += loss.item()

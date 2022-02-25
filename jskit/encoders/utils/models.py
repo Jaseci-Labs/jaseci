@@ -178,57 +178,60 @@ class BiEncoder(BertPreTrainedModel):
             self.cand_bert = kwargs['cand_bert']
 
     def forward(self, context_input_ids=None, context_input_masks=None,
-                candidate_input_ids=None, candidate_input_masks=None, labels=None, embed_type=None, mode="train"):
-        # only select the first response (whose lbl==1)
+                candidate_input_ids=None, candidate_input_masks=None,
+                labels=None, get_embedding=None, mode="train", pooling="mean"):
+        # only select the first candidate (whose lbl==1)
         if labels is not None:
             candidate_input_ids = candidate_input_ids[:, 0, :].unsqueeze(1)
             candidate_input_masks = candidate_input_masks[:, 0, :].unsqueeze(1)
-        # gets the candidate embedding
-        if embed_type == "context" or mode == "train":
+        # gets the context embedding
+        if get_embedding == "context" or mode == "train" or mode == "eval":
             context_vec = self.cont_bert(context_input_ids, context_input_masks)[
                 0]  # [bs,dim]
-            output_vectors = []
-            input_mask_expanded = context_input_masks.unsqueeze(
-                -1).expand(context_vec.size()).float()
-            sum_embeddings = torch.sum(context_vec * input_mask_expanded, 1)
-            # If tokens are weighted (by WordWeights layer), feature 'token_weights_sum' will be present
-            sum_mask = input_mask_expanded.sum(1)
-            sum_mask = torch.clamp(sum_mask, min=1e-9)
-            output_vectors.append(sum_embeddings / sum_mask)
-            context_vec = torch.cat(output_vectors, 1)
-            if embed_type == "context":
-                return context_vec
-        # gets the context embedding
-        if embed_type == "candidate" or mode == "train":
+            if pooling == "mean":
+                # Mean pooling
+                output_vectors = []
+                input_mask_expanded = context_input_masks.unsqueeze(
+                    -1).expand(context_vec.size()).float()
+                sum_embeddings = torch.sum(
+                    context_vec * input_mask_expanded, 1)
+                sum_mask = input_mask_expanded.sum(1)
+                sum_mask = torch.clamp(sum_mask, min=1e-9)
+                output_vectors.append(sum_embeddings / sum_mask)
+                context_vec = torch.cat(output_vectors, 1)
+                if get_embedding == "context":
+                    return context_vec
+        # gets the candidate embedding
+        if get_embedding == "candidate" or mode == "train" or mode == "eval":
             batch_size, res_cnt, seq_length = candidate_input_ids.shape
             candidate_input_ids = candidate_input_ids.view(-1, seq_length)
             candidate_input_masks = candidate_input_masks.view(-1, seq_length)
             candidate_vec = self.cand_bert(candidate_input_ids, candidate_input_masks)[
                 0]  # [bs,dim]
-            output_vectors = []
-            input_mask_expanded = candidate_input_masks.unsqueeze(
-                -1).expand(candidate_vec.size()).float()
-            sum_embeddings = torch.sum(
-                candidate_vec * input_mask_expanded, 1)
-            # If tokens are weighted (by WordWeights layer), feature 'token_weights_sum' will be present
-            sum_mask = input_mask_expanded.sum(1)
-            sum_mask = torch.clamp(sum_mask, min=1e-9)
-            output_vectors.append(sum_embeddings / sum_mask)
-            candidate_vec = torch.cat(output_vectors, 1)
-            candidate_vec = candidate_vec.view(batch_size, res_cnt, -1)
-            if embed_type == "candidate":
-                return candidate_vec
-        # uses log_softmax loss function
-        if labels is not None:
+            if pooling == "mean":
+                # Mean pooling
+                output_vectors = []
+                input_mask_expanded = candidate_input_masks.unsqueeze(
+                    -1).expand(candidate_vec.size()).float()
+                sum_embeddings = torch.sum(
+                    candidate_vec * input_mask_expanded, 1)
+                sum_mask = input_mask_expanded.sum(1)
+                sum_mask = torch.clamp(sum_mask, min=1e-9)
+                output_vectors.append(sum_embeddings / sum_mask)
+                candidate_vec = torch.cat(output_vectors, 1)
+                candidate_vec = candidate_vec.view(batch_size, res_cnt, -1)
+                if get_embedding == "candidate":
+                    return candidate_vec
+        if labels is not None and mode == "train":
             candidate_vec = candidate_vec.squeeze(1)
             dot_product = torch.matmul(
                 context_vec, candidate_vec.t())  # [bs, bs]
             mask = torch.eye(context_input_ids.size(0)).to(
                 context_input_ids.device)
-            loss = F.log_softmax(dot_product, dim=0) * mask
+            loss = F.log_softmax(dot_product, dim=-1) * mask
             loss = (-loss.sum(dim=1)).mean()
             return loss
-        else:  # not is use for now
+        else:
             context_vec = context_vec.unsqueeze(1)
             dot_product = torch.matmul(
                 context_vec, candidate_vec.permute(0, 2, 1)).squeeze()

@@ -16,7 +16,7 @@ def config_setup():
     max_contexts_length = int(
         config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
     max_candidate_length = int(
-        config['TRAIN_PARAMETERS']['MAX_RESPONSE_LENGTH'])
+        config['TRAIN_PARAMETERS']['MAX_CANDIDATE_LENGTH'])
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device('cpu')
 
@@ -24,41 +24,41 @@ def config_setup():
 config_setup()
 
 
-# def get_inference(model, tokenizer, context, candidate):
-#     global max_history, max_contexts_length, max_candidate_length, device
-#     context_transform = token_util.SelectionJoinTransform(
-#         tokenizer=tokenizer,
-#         max_len=max_contexts_length)
-#     candidate_transform = token_util.SelectionSequentialTransform(
-#         tokenizer=tokenizer,
-#         max_len=max_candidate_length)
+def get_inference(model, tokenizer, contexts, candidates):
+    global max_history, max_contexts_length, max_candidate_length, device
+    context_transform = token_util.SelectionJoinTransform(
+        tokenizer=tokenizer,
+        max_len=max_contexts_length
+    )
+    candidate_transform = token_util.SelectionSequentialTransform(
+        tokenizer=tokenizer,
+        max_len=max_candidate_length
+    )
+    labels = [0] * len(candidates)
+    test_data = token_util.SelectionDataset(
+        contexts=contexts,
+        candidates=candidates,
+        context_transform=context_transform,
+        candidate_transform=candidate_transform, mode="eval",
+        labels=labels
+    )
+    val_dataloader = DataLoader(
+        test_data,
+        batch_size=1,
+        collate_fn=test_data.batchify_join_str,
+        shuffle=False
+    )
+    for step, batch in enumerate(val_dataloader, start=1):
+        batch = tuple(t.to(device) for t in batch)
+        context_token_ids_list_batch, context_input_masks_list_batch,\
+            candidate_token_ids_list_batch, candidate_input_masks_list_batch,\
+            labels_batch = batch
+        with torch.no_grad():
+            logits = model(context_token_ids_list_batch,  context_input_masks_list_batch,
+                           candidate_token_ids_list_batch, candidate_input_masks_list_batch, mode="eval")
+        _, prediction = torch.max(logits, dim=-1)
+        return candidates[prediction]
 
-#     test_data = token_util.SelectionDataset(context,
-#                                             candidate,
-#                                             context_transform,
-#                                             candidate_transform)
-#     val_dataloader = DataLoader(test_data,
-#                                 batch_size=1,
-#                                 collate_fn=test_data.batchify_join_str,
-#                                 shuffle=False)
-#     for step, batch in enumerate(val_dataloader, start=1):
-#         batch = tuple(t.to(device) for t in batch)
-#         context_token_ids_list_batch, context_segment_ids_list_batch,\
-#             context_input_masks_list_batch, candidate_token_ids_list_batch,\
-#             candidate_segment_ids_list_batch,\
-#             candidate_input_masks_list_batch, labels_batch = batch
-#         with torch.no_grad():
-#             context_data = {
-#                 "context_input_ids": context_token_ids_list_batch,
-#                 "context_segment_ids": context_segment_ids_list_batch,
-#                 "context_input_masks": context_input_masks_list_batch}
-#             candidate_data = {
-#                 "candidate_input_ids": candidate_token_ids_list_batch,
-#                 "candidates_segment_ids": candidate_segment_ids_list_batch,
-#                 "candidate_input_masks": candidate_input_masks_list_batch}
-#         logits = model(context_data, candidate_data, eval=True)
-#         _, prediction = torch.max(logits, dim=1)
-#         return candidate[prediction]
 
 # function provides embedding for context and candidate
 def get_embeddings(model, tokenizer, text_data, embed_type="context"):

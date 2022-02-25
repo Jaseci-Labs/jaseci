@@ -3,40 +3,54 @@ import torch
 from torch.utils.data import Dataset
 
 
-# this class transforms data in required training format
+# this class transforms data in required training format and inference for text and tokens
 class SelectionDataset(Dataset):
-    def __init__(self, context, candidates, context_transform, candidate_transform,  sample_cnt=None, mode='poly'):
+    def __init__(self, contexts, candidates, context_transform, candidate_transform, labels=None, mode='train'):
         self.context_transform = context_transform
         self.candidate_transform = candidate_transform
         self.data_source = []
         self.mode = mode
         group = {
-            "context": None,
-            "candidates": [],
-            "labels": []
+            'context': None,
+            'candidates': [],
+            'labels': []
         }
-        # creating datasource for training
-        for text in context:
-            for cand in candidates:
-                group['context'] = [text]
+        if mode == "eval":
+            for text in contexts:
+                for cand, lbl in zip(candidates, labels):
+                    group['candidates'].append(cand)
+                    group['labels'].append(lbl)
+                    group['context'] = [text]
+                self.data_source.append(group)
+        else:
+            for text, cand, lbl in zip(contexts, candidates, labels):
+                if lbl == 1 and len(group['candidates']) > 0:
+                    self.data_source.append(group)
+                    group = {
+                        'context': None,
+                        'candidates': [],
+                        'labels': []
+                    }
                 group['candidates'].append(cand)
-                group['labels'].append(1)
-            group['candidates'].append("sampletext")
-            group['labels'].append(0)
-            self.data_source.append(group)
+                group['labels'].append(lbl)
+                group['context'] = [text]
+            if len(group['candidates']) > 0:
+                self.data_source.append(group)
+            # print(self.data_source)
         group = {
-            "context": None,
-            "candidates": [],
-            "labels": []
+            'context': None,
+            'candidates': [],
+            'labels': []
         }
-        # adding some negetive examples
-        group['context'] = ["This is sample text"]
-        group['candidates'].append("sampletext")
-        group['labels'].append(1)
-        group['context'] = ["This is a sample text "]
-        group['candidates'].append("notsampletext")
-        group['labels'].append(0)
-        self.data_source.append(group)
+        if len(self.data_source) < 2 and mode != "eval":
+            group['context'] = ["This is sample text"]
+            group['candidates'].append("sampletext")
+            group['labels'].append(1)
+            if len(candidates) > 1:
+                group['context'] = ["This is a sample text"]
+                group['candidates'].append("notsampletext")
+                group['labels'].append(0)
+            self.data_source.append(group)
 
     def __len__(self):
         return len(self.data_source)
@@ -75,14 +89,16 @@ class SelectionDataset(Dataset):
         long_tensors = [contexts_token_ids_list_batch, contexts_input_masks_list_batch,
                         candidates_token_ids_list_batch, candidates_input_masks_list_batch]
 
-        contexts_token_ids_list_batch, contexts_input_masks_list_batch, candidates_token_ids_list_batch, candidates_input_masks_list_batch = (
-            torch.tensor(t, dtype=torch.long) for t in long_tensors)
+        contexts_token_ids_list_batch, contexts_input_masks_list_batch, \
+            candidates_token_ids_list_batch, candidates_input_masks_list_batch = (
+                torch.tensor(t, dtype=torch.long) for t in long_tensors)
 
         labels_batch = torch.tensor(labels_batch, dtype=torch.long)
-        return contexts_token_ids_list_batch, contexts_input_masks_list_batch, candidates_token_ids_list_batch, candidates_input_masks_list_batch, labels_batch
+        return contexts_token_ids_list_batch, contexts_input_masks_list_batch, \
+            candidates_token_ids_list_batch, candidates_input_masks_list_batch, labels_batch
 
 
-# this class transforms data in required inference format
+# this class transforms data to generate embeddings
 class EvalDataset(Dataset):
     def __init__(self, texts, context_transform=None, candidate_transform=None,  mode="context"):
         self.context_transform = context_transform
