@@ -33,21 +33,23 @@ def set_seed(seed):
 
 
 # function for config setup
+config.read('utils/config.cfg')
+
+
 def config_setup():
     """
     Loading configurations from utils/config.cfg and initialize tokenizer and model
     """
-    global seed, model, save_restart, tokenizer, device
-    config.read('utils/config.cfg')
+    global seed, model, save_restart, tokenizer, device, shared, config
     model_name = config['MODEL_PARAMETERS']['MODEL_NAME']
     shared = config['MODEL_PARAMETERS']['SHARED']
     seed = int(config['TRAIN_PARAMETERS']['SEED'])
-
+    print(shared)
     if model is None:
         bert_config = BertConfig()
         tokenizer = BertTokenizer.from_pretrained(model_name,
                                                   do_lower_case=True, clean_text=False)
-        if shared is True:
+        if shared == "True":
             cont_bert = BertModel(bert_config)
             cand_bert = cont_bert
             print("shared model created")
@@ -180,7 +182,7 @@ def save_model(model_path: str):
     """
     saves the model to the provided model_path
     """
-    global model
+    global model, tokenizer, shared, config
     try:
         if not model_path.isalnum():
             raise HTTPException(
@@ -189,21 +191,32 @@ def save_model(model_path: str):
             )
         if not os.path.exists(model_path):
             os.makedirs(model_path)
-        cand_bert_path = os.path.join(model_path)+"\cand_bert\\"
-        cont_bert_path = os.path.join(model_path)+"\cont_bert\\"
-        if not os.path.exists(cand_bert_path):
-            os.makedirs(cand_bert_path)
-        if not os.path.exists(cont_bert_path):
-            os.makedirs(cont_bert_path)
-        model.cand_bert.config.to_json_file(cand_bert_path + "config.json")
-        model.cont_bert.config.to_json_file(cont_bert_path + "config.json")
-        tokenizer.save_vocabulary(cand_bert_path)
-        tokenizer.save_vocabulary(cont_bert_path)
-        torch.save(model.cand_bert.state_dict(),
-                   cand_bert_path+"pytorch_model.bin")
-        torch.save(model.cont_bert.state_dict(),
-                   cont_bert_path+"pytorch_model.bin")
-        return (f'[Saved model at] : {model_path}')
+        print(shared)
+        if shared == "True":
+            model.config.to_json_file(model_path + "\config.json")
+            tokenizer.save_vocabulary(model_path)
+            torch.save(model.cand_bert.state_dict(),
+                       model_path+"\pytorch_model.bin")
+            with open(model_path+"\config.cfg", 'w') as fp:
+                config.write(fp)
+        else:
+            cand_bert_path = os.path.join(model_path)+"\cand_bert\\"
+            cont_bert_path = os.path.join(model_path)+"\cont_bert\\"
+            if not os.path.exists(cand_bert_path):
+                os.makedirs(cand_bert_path)
+            if not os.path.exists(cont_bert_path):
+                os.makedirs(cont_bert_path)
+            model.cand_bert.config.to_json_file(cand_bert_path + "config.json")
+            model.cont_bert.config.to_json_file(cont_bert_path + "config.json")
+            tokenizer.save_vocabulary(cand_bert_path)
+            tokenizer.save_vocabulary(cont_bert_path)
+            torch.save(model.cand_bert.state_dict(),
+                       cand_bert_path+"pytorch_model.bin")
+            torch.save(model.cont_bert.state_dict(),
+                       cont_bert_path+"pytorch_model.bin")
+            with open(model_path+"\config.cfg", 'w') as fp:
+                config.write(fp)
+            return (f'[Saved model at] : {model_path}')
     except Exception as e:
         print(traceback.print_exc())
         raise HTTPException(status_code=500, detail=str(e))
@@ -214,23 +227,35 @@ def load_model(model_path):
     """
     loads the model from the provided model_path
     """
-    global device, model, tokenizer
+    global device, model, tokenizer, shared, config
     try:
-        cand_bert_path = os.path.join(model_path, "cand_bert\\")
-        cont_bert_path = os.path.join(model_path, "cont_bert\\")
-        print('Loading parameters from', cand_bert_path)
-        cont_bert_state_dict = torch.load(
-            cont_bert_path+"\pytorch_model.bin", map_location="cpu")
-        cand_bert_state_dict = torch.load(
-            cand_bert_path+"\pytorch_model.bin", map_location="cpu")
-        cont_bert = BertModel.from_pretrained(
-            cont_bert_path, state_dict=cont_bert_state_dict)
-        cand_bert = BertModel.from_pretrained(
-            cand_bert_path, state_dict=cand_bert_state_dict)
-        tokenizer = BertTokenizer.from_pretrained(os.path.join(
-            cand_bert_path, "vocab.txt"), do_lower_case=True, clean_text=False)
-        bert_config = BertConfig.from_json_file(
-            os.path.join(cand_bert_path, 'config.json'))
+        config.read(model_path+'/config.cfg')
+        shared = config['MODEL_PARAMETERS']['SHARED']
+        if shared == "True":
+            bert_config = BertConfig()
+            tokenizer = BertTokenizer.from_pretrained(os.path.join(
+                model_path, "vocab.txt"), do_lower_case=True, clean_text=False)
+            cont_bert_state_dict = torch.load(
+                model_path+"\pytorch_model.bin", map_location="cpu")
+            cont_bert = BertModel.from_pretrained(
+                model_path, state_dict=cont_bert_state_dict)
+            cand_bert = cont_bert
+        else:
+            cand_bert_path = os.path.join(model_path, "cand_bert\\")
+            cont_bert_path = os.path.join(model_path, "cont_bert\\")
+            print('Loading parameters from', cand_bert_path)
+            cont_bert_state_dict = torch.load(
+                cont_bert_path+"\pytorch_model.bin", map_location="cpu")
+            cand_bert_state_dict = torch.load(
+                cand_bert_path+"\pytorch_model.bin", map_location="cpu")
+            cont_bert = BertModel.from_pretrained(
+                cont_bert_path, state_dict=cont_bert_state_dict)
+            cand_bert = BertModel.from_pretrained(
+                cand_bert_path, state_dict=cand_bert_state_dict)
+            tokenizer = BertTokenizer.from_pretrained(os.path.join(
+                cand_bert_path, "vocab.txt"), do_lower_case=True, clean_text=False)
+            bert_config = BertConfig.from_json_file(
+                os.path.join(cand_bert_path, 'config.json'))
         model = BiEncoder(config=bert_config,
                           cont_bert=cont_bert, cand_bert=cand_bert, shared=shared)
         model.to(device)
