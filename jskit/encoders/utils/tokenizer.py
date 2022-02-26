@@ -1,4 +1,3 @@
-from pickle import NONE
 import torch
 from torch.utils.data import Dataset
 
@@ -106,18 +105,18 @@ class EvalDataset(Dataset):
         self.data_source = []
         self.mode = mode
         group = {
-            "text": None
+            "text": []
         }
         for text in texts:
-            group['text'] = text
-            self.data_source.append([group['text']])
+            group['text'].append(text)
+            self.data_source.append(group)
 
     def __len__(self):
         return len(self.data_source)
 
     def __getitem__(self, index):
         group = self.data_source[index]
-        text = group
+        text = group["text"]
         if self.mode == "context":
             transformed_text = self.context_transform(
                 text)  # [token_ids],[masks]

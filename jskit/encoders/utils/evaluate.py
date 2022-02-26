@@ -84,10 +84,10 @@ def get_embeddings(model, tokenizer, text_data, embed_type="context"):
         with torch.no_grad():
             if embed_type == "context":
                 embeddings = model(context_input_ids=token_ids_list_batch,
-                                   context_input_masks=input_masks_list_batch, embed_type=embed_type, mode="eval")
+                                   context_input_masks=input_masks_list_batch, get_embedding=embed_type, mode="get_embed")
             else:
                 embeddings = model(candidate_input_ids=token_ids_list_batch,
-                                   candidate_input_masks=input_masks_list_batch, embed_type=embed_type, mode="eval")
+                                   candidate_input_masks=input_masks_list_batch, get_embedding=embed_type, mode="get_embed")
                 embeddings = embeddings.squeeze(0)
 
     return embeddings.squeeze(0).detach().tolist()

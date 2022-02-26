@@ -228,6 +228,11 @@ def load_model(model_path):
     loads the model from the provided model_path
     """
     global device, model, tokenizer, shared, config
+    if not os.path.exists(model_path):
+        raise HTTPException(
+            status_code=404,
+            detail='Model path is not available'
+        )
     try:
         config.read(model_path+'/config.cfg')
         shared = config['MODEL_PARAMETERS']['SHARED']
