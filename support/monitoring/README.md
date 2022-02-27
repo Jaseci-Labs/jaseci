@@ -99,6 +99,8 @@ Now from the monitoring folder of the repo, run below command:
 
 If your running in your local kubernetes , run below :
 
+Please Note to replace <YOUR PASSWORD> with the password you want to add for your grafana portal.
+
 ```console
 helm install grafana helmcharts/grafana \
     --set adminPassword='<YOUR PASSWORD>' \
@@ -116,7 +118,7 @@ helm install grafana helmcharts/grafana \
 ```
 
 
-    Please Note to give your password while applying the same
+    
 
 #### Step 3 ####
 
