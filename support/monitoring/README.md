@@ -14,11 +14,11 @@ https://helm.sh/docs/intro/install/
 #### Step 1 ####
 
 ##### add prometheus Helm repo  #####
-''' helm repo add prometheus-community https://prometheus-community.github.io/helm-charts '''
+'''' helm repo add prometheus-community https://prometheus-community.github.io/helm-charts '''
 
 #### Step 2 ####
 
-''' helm install prometheus prometheus-community/prometheus \
+'''' helm install prometheus prometheus-community/prometheus \
     --set alertmanager.persistentVolume.storageClass="gp2" \
     --set server.persistentVolume.storageClass="gp2" '''
 
@@ -27,13 +27,13 @@ prometheus-server.prometheus.svc.cluster.local
 
 #### Step 3 ####
 
-''' kubectl get all '''
+'''' kubectl get all '''
 
 #### Step 4 ####
 
 Use Port-forward to test if promethues is running in your local browser
 
-''' kubectl port-forward -n prometheus deploy/prometheus-server 8080:9090 '''
+'''' kubectl port-forward -n prometheus deploy/prometheus-server 8080:9090 '''
 
 
 
@@ -46,7 +46,7 @@ Use Port-forward to test if promethues is running in your local browser
 
 #### Step 1 ####
 
-''' helm install grafana helmcharts/grafana \
+'''' helm install grafana helmcharts/grafana \
     --set persistence.storageClassName="gp2" \
     --set persistence.enabled=true \
     --set adminPassword='<YOUR PASSWORD>' \
@@ -60,13 +60,13 @@ Use Port-forward to test if promethues is running in your local browser
 
 Run the following command to check if Grafana is deployed properly:
 
-''' kubectl get all -n grafana ''' 
+'''' kubectl get all -n grafana ''' 
 
 #### Step 4 ####
 
 Run below code to get the External-IP for Grafana
 
-''' kubectl get svc grafana '''
+'''' kubectl get svc grafana '''
 
 #### Step 5 ####
 
