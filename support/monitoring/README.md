@@ -58,7 +58,7 @@ Run below command to check all the pods has been successfully created. This will
 kubectl get all 
 ```
 
-![alt text](https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true)
+![alt text](https://github.com/ashagraw91/jaseci/blob/new-monitoriing-grafana-promethues/support/monitoring/img/promethues.png?raw=true)
 
 The 5 pods have different roles , as below :
 
