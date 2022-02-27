@@ -13,27 +13,36 @@ https://helm.sh/docs/intro/install/
 
 #### Step 1 ####
 
-##### add prometheus Helm repo  #####
-```console helm repo add prometheus-community https://prometheus-community.github.io/helm-charts ```
+##### add prometheus Helm repo  ####
+
+```console
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 
+```
 
 #### Step 2 ####
 
-```console helm install prometheus prometheus-community/prometheus \
+```console
+ helm install prometheus prometheus-community/prometheus \
     --set alertmanager.persistentVolume.storageClass="gp2" \
-    --set server.persistentVolume.storageClass="gp2" ```
+    --set server.persistentVolume.storageClass="gp2" 
+```
 
 The Prometheus server can be accessed via port 80 on the following DNS name from within your cluster:
 prometheus-server.prometheus.svc.cluster.local
 
 #### Step 3 ####
 
-```console kubectl get all ```
+```console
+kubectl get all 
+```
 
 #### Step 4 ####
 
 Use Port-forward to test if promethues is running in your local browser
 
-```console kubectl port-forward -n prometheus deploy/prometheus-server 8080:9090 ```
+```console
+kubectl port-forward -n prometheus deploy/prometheus-server 8080:9090 
+```
 
 
 
@@ -46,12 +55,14 @@ Use Port-forward to test if promethues is running in your local browser
 
 #### Step 1 ####
 
-```console helm install grafana helmcharts/grafana \
+```console
+helm install grafana helmcharts/grafana \
     --set persistence.storageClassName="gp2" \
     --set persistence.enabled=true \
     --set adminPassword='<YOUR PASSWORD>' \
     --values helmcharts/grafana/grafana/grafana.yaml \
-    --set service.type=LoadBalancer ```
+    --set service.type=LoadBalancer 
+```
 
 
     Please Note to give your password while applying the same
@@ -60,13 +71,17 @@ Use Port-forward to test if promethues is running in your local browser
 
 Run the following command to check if Grafana is deployed properly:
 
-```console kubectl get all -n grafana ```
+```console
+kubectl get all -n grafana 
+```
 
 #### Step 4 ####
 
 Run below code to get the External-IP for Grafana
 
-```console kubectl get svc grafana ```
+```console
+kubectl get svc grafana 
+```
 
 #### Step 5 ####
 
