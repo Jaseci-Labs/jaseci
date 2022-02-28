@@ -193,15 +193,15 @@ def save_model(model_path: str):
             os.makedirs(model_path)
         print(shared)
         if shared == "True":
-            model.config.to_json_file(model_path + "\config.json")
+            model.config.to_json_file(model_path + "/config.json")
             tokenizer.save_vocabulary(model_path)
             torch.save(model.cand_bert.state_dict(),
-                       model_path+"\pytorch_model.bin")
-            with open(model_path+"\config.cfg", 'w') as fp:
+                       model_path+"/pytorch_model.bin")
+            with open(model_path+"/config.cfg", 'w') as fp:
                 config.write(fp)
         else:
-            cand_bert_path = os.path.join(model_path)+"\cand_bert\\"
-            cont_bert_path = os.path.join(model_path)+"\cont_bert\\"
+            cand_bert_path = os.path.join(model_path)+"/cand_bert/"
+            cont_bert_path = os.path.join(model_path)+"/cont_bert/"
             if not os.path.exists(cand_bert_path):
                 os.makedirs(cand_bert_path)
             if not os.path.exists(cont_bert_path):
@@ -214,7 +214,7 @@ def save_model(model_path: str):
                        cand_bert_path+"pytorch_model.bin")
             torch.save(model.cont_bert.state_dict(),
                        cont_bert_path+"pytorch_model.bin")
-            with open(model_path+"\config.cfg", 'w') as fp:
+            with open(model_path+"/config.cfg", 'w') as fp:
                 config.write(fp)
             return (f'[Saved model at] : {model_path}')
     except Exception as e:
@@ -241,7 +241,7 @@ def load_model(model_path):
             tokenizer = BertTokenizer.from_pretrained(os.path.join(
                 model_path, "vocab.txt"), do_lower_case=True, clean_text=False)
             cont_bert_state_dict = torch.load(
-                model_path+"\pytorch_model.bin", map_location="cpu")
+                model_path+"/pytorch_model.bin", map_location="cpu")
             cont_bert = BertModel.from_pretrained(
                 model_path, state_dict=cont_bert_state_dict)
             cand_bert = cont_bert
@@ -250,9 +250,9 @@ def load_model(model_path):
             cont_bert_path = os.path.join(model_path, "cont_bert\\")
             print('Loading parameters from', cand_bert_path)
             cont_bert_state_dict = torch.load(
-                cont_bert_path+"\pytorch_model.bin", map_location="cpu")
+                cont_bert_path+"/pytorch_model.bin", map_location="cpu")
             cand_bert_state_dict = torch.load(
-                cand_bert_path+"\pytorch_model.bin", map_location="cpu")
+                cand_bert_path+"/pytorch_model.bin", map_location="cpu")
             cont_bert = BertModel.from_pretrained(
                 cont_bert_path, state_dict=cont_bert_state_dict)
             cand_bert = BertModel.from_pretrained(
