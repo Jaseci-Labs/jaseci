@@ -44,7 +44,6 @@ def config_setup():
     model_name = config['MODEL_PARAMETERS']['MODEL_NAME']
     shared = config['MODEL_PARAMETERS']['SHARED']
     seed = int(config['TRAIN_PARAMETERS']['SEED'])
-    print(shared)
     if model is None:
         bert_config = BertConfig()
         tokenizer = BertTokenizer.from_pretrained(model_name,
@@ -191,7 +190,6 @@ def save_model(model_path: str):
             )
         if not os.path.exists(model_path):
             os.makedirs(model_path)
-        print(shared)
         if shared == "True":
             model.config.to_json_file(model_path + "/config.json")
             tokenizer.save_vocabulary(model_path)
@@ -246,8 +244,8 @@ def load_model(model_path):
                 model_path, state_dict=cont_bert_state_dict)
             cand_bert = cont_bert
         else:
-            cand_bert_path = os.path.join(model_path, "cand_bert\\")
-            cont_bert_path = os.path.join(model_path, "cont_bert\\")
+            cand_bert_path = os.path.join(model_path, "cand_bert/")
+            cont_bert_path = os.path.join(model_path, "cont_bert/")
             print('Loading parameters from', cand_bert_path)
             cont_bert_state_dict = torch.load(
                 cont_bert_path+"/pytorch_model.bin", map_location="cpu")
