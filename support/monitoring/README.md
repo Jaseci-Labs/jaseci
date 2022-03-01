@@ -58,7 +58,6 @@ Run below command to check all the pods has been successfully created. This will
 kubectl get all 
 ```
 
-![alt text](https://github.com/ashagraw91/jaseci/blob/new-monitoriing-grafana-promethues/support/monitoring/img/promethues.png?raw=true)
 
 The 5 pods have different roles , as below :
 
@@ -89,27 +88,37 @@ kubectl port-forward -n prometheus deploy/prometheus-server 8080:9090
 
 ##### Go to grafana.yaml under grafana  Directory in the code and update the values of promethues URL as required #####
 
-In the cloned repository folder , go to helmcharts/grafana/grafana/values.yaml file and update the URL to the promethues service URL as we noted doen in step 2 above, i.e prometheus-server.<namespace>.svc.cluster.local
+In the cloned repository folder , go to grafana/grafana.yaml file and update the URL to the promethues service URL as we noted doen in step 2 above, i.e prometheus-server.<namespace>.svc.cluster.local
 
 This is required to connect Grafana to collect data from promethues .
 
 Now from the monitoring folder of the repo, run below command:
 
+
 #### Step 1 ####
+
+First we will add chart repository reference in our local
+
+```console
+helm repo add grafana https://grafana.github.io/helm-charts
+```
+
+
+#### Step 2 ####
 
 If your running in your local kubernetes , run below :
 
 Please Note to replace <YOUR PASSWORD> with the password you want to add for your grafana portal.
 
 ```console
-helm install grafana helmcharts/grafana \
+helm install grafana grafana/grafana \
     --set adminPassword='<YOUR PASSWORD>' \
-    --values helmcharts/grafana/grafana/grafana.yaml \
+    --values grafana/grafana.yaml \
 ```
 If you are using Cloud here, AWS :
 
 ```console
-helm install grafana helmcharts/grafana \
+helm install grafana grafana/grafana \
     --set persistence.storageClassName="gp2" \
     --set persistence.enabled=true \
     --set adminPassword='<YOUR PASSWORD>' \
