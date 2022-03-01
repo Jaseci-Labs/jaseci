@@ -1,5 +1,5 @@
 from typing import List
-from fastapi.responses import JSONResponse
+from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
@@ -17,11 +17,14 @@ config.read('config.cfg')
 
 TARS_MODEL_NAME = config['TARS_MODEL']['NER_MODEL']
 NER_LABEL_TYPE = config['LABEL_TYPE']['NER']
-# 1. Load zero-shot NER tagger
+# Load zero-shot NER tagger
 tars = TARSTagger.load(TARS_MODEL_NAME)
 
 
-def trainEntity():
+def train_entity():
+    """
+    funtion for training the model
+    """
     global tars
     # define columns
     columns = {0: 'text', 1: 'ner'}
@@ -34,13 +37,12 @@ def trainEntity():
     # make tag dictionary from the corpus
     tag_dictionary = corpus.make_tag_dictionary(tag_type=tag_type)
 
-    # tars = TARSClassifier.load('tars-base')
-    # 2. make the model aware of the desired set of labels from the new corpus
+    # make the model aware of the desired set of labels from the new corpus
     tars.add_and_switch_to_new_task(
         "ner tagging", label_dictionary=tag_dictionary, label_type=tag_type)
-    # 3. initialize the text classifier trainer with your corpus
+    #  initialize the text classifier trainer with your corpus
     trainer = ModelTrainer(tars, corpus)
-    # 4. train model
+    # train model
     trainer.train(base_path='train/ner_tagging',  # path to store the model artifacts
                   learning_rate=0.02,
                   mini_batch_size=1,
@@ -49,20 +51,24 @@ def trainEntity():
                   train_with_dev=True
 
                   )
-    # 5. Load trained TARS model
+    #  Load trained TARS model
     tars = TARSTagger.load('train/ner_tagging/final-model.pt')
-    print("model loading completed")
+    print("model training and loading completed")
 
 
 # defining the api for entitydetection
-@jra.jaseci_action(act_group=['ent_ext'], aliases=['entitydetection'])
-def entityDetection(text: str, ner_labels: List[str]):
+@jra.jaseci_action(act_group=['ent_ext'])
+def entity_detection(text: str, ner_labels: List[str]):
+    """
+    API for detectiing provided entity in text
+    """
     global tars
     if text:
         if ner_labels:
             tars.add_and_switch_to_new_task(
                 'Entity Detection Task', ner_labels, label_type=NER_LABEL_TYPE)
             sentence = Sentence(text)
+            # predicting entities in the text
             tars.predict(sentence)
             tagged_sentence = sentence.to_dict(NER_LABEL_TYPE)
             json_compatible_data = jsonable_encoder(tagged_sentence)
@@ -74,30 +80,36 @@ def entityDetection(text: str, ner_labels: List[str]):
                 temp_dict["entity_value"] = json_data["labels"][0]["_value"]
                 temp_dict["conf_score"] = json_data["labels"][0]["_score"]
                 response_data_format['entities'].append(temp_dict)
-            return JSONResponse(content=response_data_format, status_code=200)
+            return response_data_format
         else:
-            return JSONResponse(content={"Exception": "NER Labels are missing in request data"}, status_code=400)
+            return HTTPException(status_code=404, detail=str("NER Labels are missing in request data"))
     else:
-        return JSONResponse(content={"Exception": "Text data is missing in request data"}, status_code=400)
+        return HTTPException(status_code=404, detail=str("Text data is missing in request data"))
 
 
-@jra.jaseci_action(act_group=['ent_ext'], aliases=['updateentitydataset'])
-def updateDataset(text: str, entity: List[dict]):
-    print(entity)
+@jra.jaseci_action(act_group=['ent_ext'])
+def train(text: str, entity: List[dict]):
+    """
+    API for training the model
+    """
     tag = []
     if text and entity:
         for ent in entity:
             if ent['entity_value'] and ent['entity_name']:
                 tag.append((ent['entity_value'], ent['entity_name']))
             else:
-                return JSONResponse(content="Entity Data missing in request", status_code=400)
+                return HTTPException(status_code=404, detail=str("Entity Data missing in request"))
             data = pd.DataFrame([[text, tag
                                   ]], columns=['text', 'annotation'])
-            # creating the file.
+            # creating training data
             if create_data(data):
-                trainEntity()
-                return JSONResponse(content="Model Training is Completed", status_code=200)
+                train_entity()
+                return "Model Training is Completed"
             else:
-                return JSONResponse(content="Issue encountered during train data creation", status_code=500)
+                return HTTPException(status_code=500, detail=str("Issue encountered during train data creation"))
     else:
-        return JSONResponse(content="Need Data for Text and Entity", status_code=400)
+        return HTTPException(status_code=404, detail=str("Need Data for Text and Entity"))
+
+
+if __name__ == "__main__":
+    jra.launch_server(port=8000)
