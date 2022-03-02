@@ -10,6 +10,9 @@ import pandas as pd
 from utils import create_data
 import configparser
 import jaseci.actions.remote_actions as jra
+import os
+import torch
+from pathlib import Path
 
 config = configparser.ConfigParser()
 config.read('config.cfg')
@@ -19,6 +22,11 @@ TARS_MODEL_NAME = config['TARS_MODEL']['NER_MODEL']
 NER_LABEL_TYPE = config['LABEL_TYPE']['NER']
 # Load zero-shot NER tagger
 tars = TARSTagger.load(TARS_MODEL_NAME)
+device = torch.device("cpu")
+# uncomment this if you wish to use GPU to train
+# this is commented out because this causes issues with
+# unittest on machines with GPU
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def train_entity():
@@ -82,9 +90,11 @@ def entity_detection(text: str, ner_labels: List[str]):
                 response_data_format['entities'].append(temp_dict)
             return response_data_format
         else:
-            return HTTPException(status_code=404, detail=str("NER Labels are missing in request data"))
+            raise HTTPException(status_code=404, detail=str(
+                "NER Labels are missing in request data"))
     else:
-        return HTTPException(status_code=404, detail=str("Text data is missing in request data"))
+        raise HTTPException(status_code=404, detail=str(
+            "Text data is missing in request data"))
 
 
 @jra.jaseci_action(act_group=['ent_ext'])
@@ -98,7 +108,8 @@ def train(text: str, entity: List[dict]):
             if ent['entity_value'] and ent['entity_name']:
                 tag.append((ent['entity_value'], ent['entity_name']))
             else:
-                return HTTPException(status_code=404, detail=str("Entity Data missing in request"))
+                raise HTTPException(status_code=404, detail=str(
+                    "Entity Data missing in request"))
             data = pd.DataFrame([[text, tag
                                   ]], columns=['text', 'annotation'])
             # creating training data
@@ -106,9 +117,49 @@ def train(text: str, entity: List[dict]):
                 train_entity()
                 return "Model Training is Completed"
             else:
-                return HTTPException(status_code=500, detail=str("Issue encountered during train data creation"))
+                raise HTTPException(status_code=500, detail=str(
+                    "Issue encountered during train data creation"))
     else:
-        return HTTPException(status_code=404, detail=str("Need Data for Text and Entity"))
+        raise HTTPException(status_code=404, detail=str(
+            "Need Data for Text and Entity"))
+
+
+@jra.jaseci_action(act_group=['bi_enc'])
+def save_model(model_path: str):
+    """
+    saves the model to the provided model_path
+    """
+    global tars
+    try:
+        if not model_path.isalnum():
+            raise HTTPException(
+                status_code=400,
+                detail='Invalid model name. Only alphanumeric chars allowed.'
+            )
+        if type(model_path) is str:
+            model_path = Path(model_path)
+        model_path.mkdir(exist_ok=True, parents=True)
+        tars.save(model_path / "final-model.pt")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jra.jaseci_action(act_group=['bi_enc'])
+def load_model(model_path):
+    """
+    loads the model from the provided model_path
+    """
+    global tars
+    try:
+        if type(model_path) is str:
+            model_path = Path(model_path)
+        if (model_path / "final-model.pt").exists():
+            tars.load_state_dict(tars.load(
+                model_path / "final-model.pt").state_dict())
+        tars.to(device)
+        return (f'[loaded model from] : {model_path}')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
