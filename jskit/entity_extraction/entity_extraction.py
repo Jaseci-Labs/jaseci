@@ -10,7 +10,6 @@ import pandas as pd
 from utils import create_data
 import configparser
 import jaseci.actions.remote_actions as jra
-import os
 import torch
 from pathlib import Path
 
@@ -23,7 +22,6 @@ NER_LABEL_TYPE = config['LABEL_TYPE']['NER']
 # Load zero-shot NER tagger
 tars = TARSTagger.load(TARS_MODEL_NAME)
 device = torch.device("cpu")
-tars.to(device)
 # uncomment this if you wish to use GPU to train
 # this is commented out because this causes issues with
 # unittest on machines with GPU
