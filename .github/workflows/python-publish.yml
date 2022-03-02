@@ -8,14 +8,9 @@
 
 name: Upload Python Package
 
-# on:
-#   release:
-#     types: [created]
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  release:
+    types: [created]
 
 jobs:
   deploy:
@@ -39,6 +34,5 @@ jobs:
         TWINE_USERNAME: ${{ secrets.BHARAT_PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.BHARAT_PYPI_PASSWORD }}
       run: |
-        pip install build
         python -m build jaseci_core/ --outdir /home/runner/work/jaseci/jaseci/dist
         twine upload /home/runner/work/jaseci/jaseci/dist/*
