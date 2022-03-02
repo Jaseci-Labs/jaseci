@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 setup(
-    name='jaseci',
+    name='jaseci_core',
     version='1.3.0',
     packages=find_packages(include=['jaseci', 'jaseci.*']),
     install_requires=[
