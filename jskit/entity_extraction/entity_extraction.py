@@ -23,6 +23,7 @@ NER_LABEL_TYPE = config['LABEL_TYPE']['NER']
 # Load zero-shot NER tagger
 tars = TARSTagger.load(TARS_MODEL_NAME)
 device = torch.device("cpu")
+tars.to(device)
 # uncomment this if you wish to use GPU to train
 # this is commented out because this causes issues with
 # unittest on machines with GPU
@@ -124,7 +125,7 @@ def train(text: str, entity: List[dict]):
             "Need Data for Text and Entity"))
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jra.jaseci_action(act_group=['ent_ext'])
 def save_model(model_path: str):
     """
     saves the model to the provided model_path
@@ -144,7 +145,7 @@ def save_model(model_path: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jra.jaseci_action(act_group=['ent_ext'])
 def load_model(model_path):
     """
     loads the model from the provided model_path
