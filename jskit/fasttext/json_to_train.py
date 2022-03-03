@@ -1,7 +1,7 @@
 import re
 import json
 
-from .config import train_file_path, clf_json_file_path
+from config import train_file_path, clf_json_file_path
 
 
 def intent_to_label(intent):
@@ -27,16 +27,13 @@ def prep_sentence(sentence):
 
 def json_to_train():
     result = []
-
     with open(clf_json_file_path, 'r', encoding='utf-8') as clf_file:
         clf_data = json.load(clf_file)
-
     for intent, data in clf_data.items():
         label = prep_label(intent)
         for sentence in data:
             sentence = prep_sentence(sentence)
             result.append(f'{label} {sentence}')
-
     with open(train_file_path, 'w', encoding='utf-8') as of:
         of.write('\n'.join(result))
 
