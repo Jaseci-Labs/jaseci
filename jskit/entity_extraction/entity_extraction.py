@@ -10,7 +10,6 @@ import pandas as pd
 from utils import create_data
 import configparser
 import jaseci.actions.remote_actions as jra
-import os
 import torch
 from pathlib import Path
 
@@ -124,7 +123,7 @@ def train(text: str, entity: List[dict]):
             "Need Data for Text and Entity"))
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jra.jaseci_action(act_group=['ent_ext'])
 def save_model(model_path: str):
     """
     saves the model to the provided model_path
@@ -144,7 +143,7 @@ def save_model(model_path: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jra.jaseci_action(act_group=['ent_ext'])
 def load_model(model_path):
     """
     loads the model from the provided model_path
