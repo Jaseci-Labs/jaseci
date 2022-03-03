@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from main import app
+from entity_extraction import app
 from fastapi.testclient import TestClient
 from test_data import (
     test_entity_detection_request,
@@ -36,29 +36,29 @@ class entity_extraction_test(TestCaseHelper, TestCase):
 
     def test_entity_detection_fail_ner(self):
         response = self.client.post(
-            "/entity_detection",
+            "/entity_detection/",
             json=test_entity_detection_request_fail_ner,
         )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json(),
-            "NER Labels are missing in request data"
+            {'detail': 'NER Labels are missing in request data'}
         )
 
     def test_entity_detection_fail_text(self):
         response = self.client.post(
-            "/entity_detection",
+            "/entity_detection/",
             json=test_entity_detection_request_fail_text,
         )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json(),
-            "Text data is missing in request data"
+            {'detail': 'Text data is missing in request data'}
         )
 
     def test_entity_training_pass(self):
         response = self.client.post(
-            "/train",
+            "/train/",
             json=test_entity_training_pass
         )
         self.assertEqual(response.status_code, 404)
@@ -69,20 +69,20 @@ class entity_extraction_test(TestCaseHelper, TestCase):
 
     def test_entity_training_fail(self):
         response = self.client.post(
-            "/train",
+            "/train/",
             json=test_entity_training_fail)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json(),
-            "Need Data for Text and Entity"
+            {'detail': 'Need Data for Text and Entity'}
         )
 
     def test_entity_training_fail2(self):
         response = self.client.post(
-            "/train",
+            "/train/",
             json=test_entity_training_fail2)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json(),
-            "Entity Data missing in request"
+            {'detail': 'Entity Data missing in request'}
         )
