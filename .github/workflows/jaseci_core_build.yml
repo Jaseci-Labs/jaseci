@@ -37,7 +37,3 @@ jobs:
       run: |
         cd jaseci_core/
         python3 -m unittest discover jaseci/ --failfast -p "test_*.py"
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@v1.6
-      with:
-        projectBaseDir: .
