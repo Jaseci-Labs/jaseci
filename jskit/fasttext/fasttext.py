@@ -8,8 +8,8 @@ import traceback
 
 from fastapi import HTTPException
 import jaseci.actions.remote_actions as jra
-from jskit.fasttext.utils.json_to_train import json_to_train, prep_sentence, label_to_intent
-from jskit.fasttext.utils.config import (
+from utils.json_to_train import json_to_train, prep_sentence, label_to_intent
+from utils.config import (
     model_file_path, train_file_path, clf_json_file_path,
     model_dir, base_json_file_path
 )

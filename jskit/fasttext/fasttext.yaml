@@ -18,12 +18,9 @@ metadata:
   namespace: default
 data:
   prod_up: |-
-    git clone "https://github.com/facebookresearch/fastText.git";
-    cd fastText;
-    pip install .;
     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
     cd /jaseci/jaseci_core/
-    git checkout podify-fasttext;
+    git checkout jra-fasttext;
     source install.sh
     cd /jaseci/jskit/fasttext
     uvicorn fasttext:app --host 0.0.0.0 --port 80
