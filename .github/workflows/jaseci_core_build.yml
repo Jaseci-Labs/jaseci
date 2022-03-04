@@ -1,4 +1,4 @@
-name: jaseci_core - Linting and Unit Tests
+name: jaseci_core
 
 on:
   push:
