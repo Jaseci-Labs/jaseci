@@ -1,1 +1,1 @@
-pip3 install jaseci_core/
+pip3 install .

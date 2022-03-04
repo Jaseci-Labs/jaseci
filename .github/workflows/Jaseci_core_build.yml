@@ -24,10 +24,16 @@ jobs:
         
     - name: Install Jaseci
       run: |
-        source jaseci_core/install.sh
+        pip3 install jaseci_core/
     - name: check Jaseci
       run: |
         jsctl
     - name: Test Jaseci Setup
       run: |
-        source test.sh
+        python3 -m unittest discover jaseci/ --failfast -p "test_$1*.py"
+    - name: Lint Jaseci
+      run: |
+        flake8 --exclude=settings.py,*migrations*,jac_parse,ci_app
+
+
+        
