@@ -37,3 +37,6 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       with:
         projectBaseDir: .
+         args: >
+           -Dsonar.organization=${{ secrets.ORGANIZATION }}
+           -Dsonar.projectKey=${{ secrets.PROJECT_KEY_SERV }}
