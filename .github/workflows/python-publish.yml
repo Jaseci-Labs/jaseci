@@ -31,8 +31,8 @@ jobs:
         
     - name: Build and Publish
       env: 
-        TWINE_USERNAME: ${{ secrets.BHARAT_PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.BHARAT_PYPI_PASSWORD }}
+        TWINE_USERNAME: ${{ secrets.JASECI_PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.JASECI_PYPI_PASSWORD }}
       run: |
         python -m build jaseci_core/ --outdir /home/runner/work/jaseci/jaseci/dist
         twine upload /home/runner/work/jaseci/jaseci/dist/*
