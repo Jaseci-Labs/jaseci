@@ -3,31 +3,61 @@ import traceback
 from typing import List, Dict, Union, Mapping
 import jaseci.actions.remote_actions as jra
 from json_to_train import json_to_train, prep_sentence, label_to_intent
-from config import model_file_path, train_file_path, clf_json_file_path
+from config import model_file_path, train_file_path, clf_json_file_path, model_dir, base_json_file_path
+
 from fastapi import HTTPException
 import fasttext
 import os
 import json
 from pathlib import Path
+import shutil
 # keeps loaded model
+
+
 model = None
+"""
+Below code is to create a base_model.json file, 
+which help initialize a default model with a default data, 
+if not already exist.
+"""
+model_dir.mkdir(exist_ok=True, parents=True)
+if not os.path.exists(base_json_file_path):
+    default_data = {
+        "sample_train_intent": [
+            "this is a sample train text to create base model"
+        ]
+    }
+    json_object = json.dumps(default_data, indent=4)
+    with open((model_dir/"base_model.json"), "w") as outfile:
+        outfile.write(json_object)
 
 
-def updatetrainfile(traindata: Dict[str, str] = None):
-    with open(clf_json_file_path) as fp:
-        data = json.load(fp)
-    data.update(traindata)
+def updatetrainfile(traindata: Dict[str, str] = None, train_with_existing=True):
+    data = {}
+    """
+    if we alreading have a existing training_data.json and we have to ##train_with_existing 
+    we append the data to the  training_data.json file
+    otherwise we create training_data.json from the data provided
+    """
+
+    if os.path.exists(clf_json_file_path):
+        with open(clf_json_file_path) as fp:
+            data = json.load(fp)
+    if train_with_existing is True:
+        data.update(traindata)
+    else:
+        data = traindata
     json_object = json.dumps(data, indent=4)
     with open(clf_json_file_path, "w") as outfile:
         outfile.write(json_object)
 
 
 @ jra.jaseci_action(act_group=['fasttext_classifier'])
-def train(traindata:  Dict[str, List[str]] = None):
+def train(traindata:  Dict[str, List[str]] = None, train_with_existing: bool = True):
     global model
     print('Training...')
-    if traindata is not None:
-        updatetrainfile(traindata)
+    # we pass the ##train_with_existing param to updatetrainfile function
+    updatetrainfile(traindata, train_with_existing)
 
     json_to_train()
     model = fasttext.train_supervised(
@@ -89,8 +119,10 @@ def save_model(model_path: str = None):
     state_save_path = os.path.join(model_path / "model.ftz")
     # model_path = (model_path / "model.ftz")
     model.save_model(state_save_path)
-    print('')
-    return (f'Model saved to {state_save_path}.')
+    # we also ship the training_data.json file with the model to maintain the state of the model
+    shutil.copyfile(base_json_file_path,
+                    model_path / "training_data.json")
+    return (f'Model saved to {model_path}.')
 
 
 @ jra.jaseci_action(act_group=['fasttext_classifier'])
