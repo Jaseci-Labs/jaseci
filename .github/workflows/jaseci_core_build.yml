@@ -1,4 +1,4 @@
-name: Jaseci_core - Build and Test
+name: jaseci_core - Linting and Unit Tests
 
 on:
   push:
@@ -22,26 +22,22 @@ jobs:
         python -m pip install --upgrade pip
         pip install black flake8==3.7.9 isort
         
-    - name: Install Jaseci
+    - name: Install jaseci_core
       run: |
         pip3 install jaseci_core/
-    - name: check Jaseci
+    - name: Verify installation
       run: |
         jsctl
-    - name: Lint Jaseci
+    - name: Linting
       continue-on-error: true
       run: |
         flake8 --exclude=settings.py,*migrations*,jac_parse,ci_app
-    - name: Test Jaseci Setup
+    - name: jaseci_core unit tests
       if: always()
       run: |
         cd jaseci_core/
-        python3 -m unittest discover jaseci/ --failfast -p "test_$1*.py"
+        python3 -m unittest discover jaseci/ --failfast -p "test_*.py"
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@v1.6
       with:
         projectBaseDir: .
-    
-
-
-        
