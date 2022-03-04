@@ -31,3 +31,7 @@ jobs:
     - name: check Jaseci
       run: |
         jsctl
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@v1.6
+      with:
+        projectBaseDir: .
