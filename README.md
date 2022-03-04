@@ -1,3 +1,4 @@
+[![jaseci_core](https://github.com/Jaseci-Labs/jaseci/workflows/jaseci_core_build/badge.svg)](https://github.com/Jaseci-Labs/jaseci/actions?query=workflow%3Atest)
 # Jaseci Release Notes
 
 ## Version 1.3
