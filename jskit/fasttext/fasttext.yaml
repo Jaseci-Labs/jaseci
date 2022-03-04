@@ -23,7 +23,7 @@ data:
     git checkout jra-fasttext;
     source install.sh
     cd /jaseci/jskit/fasttext
-    uvicorn fasttext:app --host 0.0.0.0 --port 80
+    uvicorn fasttext_classifier:app --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -43,11 +43,9 @@ spec:
       containers:
         - name: js-fasttext
           imagePullPolicy: IfNotPresent
-          image: jaseci/ai-ready-img
+          image: jaseci/ai-ready-img:latest
           resources:
             requests:
-              memory: "3Gi"
-            limits:
               memory: "3Gi"
           command: [bash, -c, "source script/prod_up"]
           ports:
