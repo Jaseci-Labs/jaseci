@@ -10,7 +10,7 @@ name: Upload Python Package
 
 on:
   release:
-    types: [published]
+    types: [created]
 
 jobs:
   deploy:
@@ -26,6 +26,13 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install setuptools wheel twine
         pip install build
-    - name: Build package
-      run: python -m build
+        
+    - name: Build and Publish
+      env: 
+        TWINE_USERNAME: ${{ secrets.BHARAT_PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.BHARAT_PYPI_PASSWORD }}
+      run: |
+        python -m build jaseci_core/ --outdir /home/runner/work/jaseci/jaseci/dist
+        twine upload /home/runner/work/jaseci/jaseci/dist/*
