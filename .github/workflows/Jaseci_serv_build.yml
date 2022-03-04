@@ -31,13 +31,3 @@ jobs:
     - name: check Jaseci
       run: |
         jsctl
-    - name: SonarCloud Scan
-      continue-on-error: true
-      uses: SonarSource/sonarcloud-github-action@v1.6
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
-        projectBaseDir: .
-         args: >
-          -Dsonar.organization=${{ secrets.ORGANIZATION }}
-          -Dsonar.projectKey=${{ secrets.PROJECT_KEY_SERV }}
