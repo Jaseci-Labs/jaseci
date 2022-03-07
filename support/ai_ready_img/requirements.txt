@@ -6,3 +6,4 @@ transformers>=4.16.2,<5.0.0
 torch>=1.10.2,<2.0.0
 flair>=0.10,<1.0.0
 pandas>=1.4.1,<2.0.0
+fasttext-wheel>=0.9.2,<1.0.0
