@@ -55,7 +55,7 @@ import TabItem from '@theme/TabItem';
     <h2>Setup Jaseci Repository</h2>
     <p>Clone the Jaseci repo at https://github.com/Jaseci-Labs/jaseci.git</p>
     <ol>
-        <li>Follow steps 1 through 5 <a href="https://phoenixnap.com/kb/install-kubernetes-on-ubuntu">here</a> to install Docker, Kubernetes and Kubectl on your Machine.</li>
+        <li>Follow steps 1 through 5 <a href="https://phoenixnap.com/kb/install-kubernetes-on-ubuntu">here</a> to install Docker, Kubernetes and Kubectl on your Machine. Please use your package manager if you do not have apt.</li>
     </ol>
   </TabItem>
 </Tabs>
