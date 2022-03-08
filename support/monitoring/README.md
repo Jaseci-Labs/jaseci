@@ -46,9 +46,9 @@ If you are using Cloud , For example here we use AWS :
 ```
 
 After this run the Prometheus server can be accessed via port 80 on the following DNS name from within your cluster:
-prometheus-server.<namespace>.svc.cluster.local
+prometheus-server.\<namespace\>.svc.cluster.local
 
-Here, in place of <namespace> put the name of namespace where your service lies. Note this URL for reference to put in Grafana setup later.
+Here, in place of \<namespace\> put the name of namespace where your service lies. Note this URL for reference to put in Grafana setup later.
 
 #### Step 3 ####
 
@@ -88,7 +88,9 @@ kubectl port-forward deploy/prometheus-server 8080:9090
 
 ##### Go to grafana.yaml under grafana  Directory in the code and update the values of promethues URL as required #####
 
-In the cloned repository folder , go to grafana/grafana.yaml file and update the URL to the promethues service URL as we noted doen in step 2 above, i.e prometheus-server.<namespace>.svc.cluster.local
+In the cloned repository folder , go to grafana/grafana.yaml file and update the URL to the promethues service URL as we noted doen in step 2 above, i.e prometheus-server.\<namespace\>.svc.cluster.local
+
+Please note that in the previous example, we did not create any specific namespace for prometheus so the \<namespace\> here (and later) should be replaced with **default** if you follow the tutorial completely. 
 
 This is required to connect Grafana to collect data from promethues .
 
