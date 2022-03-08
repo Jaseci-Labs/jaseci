@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: js-segmenter
+spec:
+  selector:
+    pod: js-segmenter
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      name: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: js-segmenter-up
+  namespace: default
+data:
+  prod_up: |-
+    git clone https://github.com/AshishMahendra/jaseci.git /jaseci/
+    cd /jaseci/jaseci_core/
+    git checkout text_segmentation_prod
+    source install.sh
+    cd /jaseci/jskit/text_segmenter
+    uvicorn text_segmenter:app --host 0.0.0.0 --port 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: js-segmenter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: js-segmenter
+  template:
+    metadata:
+      labels:
+        pod: js-segmenter
+      name: js-segmenter
+    spec:
+      containers:
+        - name: js-segmenter
+          image: jaseci/ai-ready-img:latest
+          resources:
+            requests:
+              memory: "3Gi"
+            limits:
+              memory: "3Gi"
+          command: [bash, -c, "source script/prod_up"]
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+
+      volumes:
+        - name: prod-script
+          configMap:
+            name: js-segmenter-up
