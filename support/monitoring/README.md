@@ -77,7 +77,7 @@ promethues-server - It is the main promethues server pod which is responsible fo
 Use Port-forward to test if promethues is running in your local browser to check if all setup works and you are able to get the promethues running.
 
 ```console
-kubectl port-forward -n prometheus deploy/prometheus-server 8080:9090 
+kubectl port-forward deploy/prometheus-server 8080:9090 
 ```
 
 
@@ -144,7 +144,7 @@ Now, try to run grafana in your browser:
 If you running in your local kubernetes, run below :
 
 ```console
-kubectl port-forward -n prometheus deploy/grafana 80:80 
+kubectl port-forward deploy/grafana 80:80 
 ```
 
 
