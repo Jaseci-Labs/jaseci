@@ -5,6 +5,5 @@ datasources:
     - name: Prometheus
       type: prometheus
       url: http://prometheus-server.default.svc.cluster.local
-      # url: http://localhost:8080
       access: proxy
       isDefault: true
