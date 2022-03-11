@@ -1,0 +1,27 @@
+:host {
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+.button {
+  all: unset;
+  appearance: none;
+  background: var(--color-brand-9);
+  color: var(--color-brand-3);
+  padding: 8px 12px;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-weight: 500;
+  border-radius: 5px;
+}
+:focus.button {
+  box-shadow: 0 0 0 0.15rem var(--color-brand-8);
+}
+
+:hover.button {
+  background: var(--color-brand-10);
+}
+
+:active.button {
+  background: var(--color-brand-11);
+}

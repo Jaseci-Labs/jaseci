@@ -1,5 +1,6 @@
 :host {
   display: block;
+  box-sizing: border-box;
 }
 
 .jsc_nav_bar {
@@ -9,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #edf6ff;
+  color: var(--color-brand-3);
 }
 
 .jsc_nav_bar__label {

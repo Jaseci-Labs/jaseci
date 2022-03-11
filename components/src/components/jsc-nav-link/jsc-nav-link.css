@@ -1,5 +1,6 @@
 :host {
   display: inline-block;
+  box-sizing: border-box;
 }
 
 .jsc_nav_link {

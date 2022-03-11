@@ -3,11 +3,11 @@ import { ItemsPropValue, JustifyPropValue } from '../../types/propTypes';
 import { itemsValue, justifyValue } from '../../utils/propValueMappings';
 
 @Component({
-  tag: 'jsc-row',
-  styleUrl: 'jsc-row.css',
+  tag: 'jsc-column',
+  styleUrl: 'jsc-column.css',
   shadow: true,
 })
-export class Row {
+export class Column {
   @Element() host: HTMLElement;
   @Prop() width: string;
   @Prop() height: string;
@@ -25,7 +25,6 @@ export class Row {
       'width': this.width,
       'height': this.height,
       'background': this.background,
-      'padding': this.padding,
       'margin': this.margin,
       'justifyContent': justifyValue[this.justify],
       'alignItems': itemsValue[this.items],
@@ -33,6 +32,21 @@ export class Row {
   }
 
   render() {
-    return <slot name="children"></slot>;
+    return (
+      // <div
+      //   style={{
+      //     width: this.width,
+      //     height: this.height,
+      //     background: this.background,
+      //     margin: this.margin,
+      //     padding: this.padding,
+      //     boxSizing: 'border-box',
+      //     display: 'flex',
+      //     flexDirection: 'column',
+      //   }}
+      //   class={`align-${this.align} ${`cross-align-${this.crossAlign}`}`}
+      // >
+      <slot name="children"></slot>
+    );
   }
 }

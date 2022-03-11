@@ -9,39 +9,165 @@
     <script nomodule src="/build/components.js"></script>
     <link rel="stylesheet" href="/build/components.css" />
   </head>
+  <style>
+    body {
+      width: 100%;
+      margin: 0;
+      height: 100%;
+    }
+  </style>
   <body>
     <jsc-app></jsc-app>
     <!-- <my-component first="Stencil" last="'Don't call me a framework' JS"></my-component> -->
     <script>
       customElements.whenDefined('jsc-app').then(() => {
         const app = document.querySelector('jsc-app');
-        // navBar.setAttribute('label', 'Jaseci Webkit');
-        // navBar.setAttribute(
-        //   'links',
-        //   JSON.stringify([
-        //     {
-        //       component: 'Navbar',
-        //       links: [
-        //         {
-        //           component: 'Button',
-        //           props: { title: 'Home' },
-        //         },
-        //         {
-        //           component: 'Button',
-        //           props: { title: 'Services' },
-        //         },
-        //         {
-        //           component: 'Button',
-        //           props: { title: 'About' },
-        //         },
-        //         {
-        //           component: 'Button',
-        //           props: { title: 'Get in Touch' },
-        //         },
-        //       ],
-        //     },
-        //   ]),
-        // );
+        app.markup = [
+          {
+            component: 'Navbar',
+            slots: {
+              links: [
+                { component: 'NavLink', props: { label: 'Home' } },
+                { component: 'NavLink', props: { label: 'About' } },
+              ],
+            },
+            props: { label: 'Jaseci App' },
+          },
+          {
+            component: 'Container',
+            props: {
+              width: '100%',
+              height: '100%',
+              border: '2px solid blue',
+              padding: '10px',
+            },
+            slots: {
+              children: [
+                {
+                  component: 'Row',
+                  props: {
+                    width: '100%',
+                    justify: 'around',
+                    padding: '10px 0px',
+                  },
+                  slots: {
+                    children: [
+                      {
+                        component: 'Column',
+                        props: {
+                          height: '100%',
+                          width: '300px',
+                          background: 'rgba(155, 0, 50, 0.2)',
+                        },
+                        slots: {
+                          children: [
+                            {
+                              component: 'Container',
+                              props: {
+                                width: '100px',
+                                background: 'green',
+                                height: '100px',
+                              },
+                            },
+                            {
+                              component: 'Container',
+                              props: {
+                                width: '100px',
+                                background: 'blue',
+                                height: '100px',
+                              },
+                            },
+                            {
+                              component: 'Container',
+                              props: {
+                                width: '100px',
+                                background: 'red',
+                                height: '100px',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        component: 'Row',
+                        slots: {
+                          children: [
+                            {
+                              component: 'Container',
+                              props: {
+                                width: '100px',
+                                height: '100px',
+                                background: 'purple',
+                                border: '2px solid red',
+                              },
+                            },
+                            {
+                              component: 'Container',
+                              props: {
+                                width: '100px',
+                                height: '100px',
+                                background: 'blue',
+                                border: '2px solid purple',
+                              },
+                            },
+                            {
+                              component: 'Container',
+                              props: {
+                                width: '100px',
+                                height: '100px',
+                                background: 'green',
+                                border: '2px solid blue',
+                              },
+                            },
+                          ],
+                        },
+                        props: {
+                          width: '100%',
+                          height: '300px',
+                          padding: '10px',
+                          justify: 'around',
+                          crossAlign: 'center',
+                          background: 'rgba(155, 0, 50, 0.2)',
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  component: 'Inputbox',
+                  props: {
+                    placeholder: 'Hello',
+                    // label: 'Click Here',
+                    fullwidth: 'true',
+                    margin: '10px 0',
+                  },
+                },
+                {
+                  component: 'Textbox',
+                  props: {
+                    placeholder: 'Enter a message...',
+                    // label: 'Click Here',
+                    fullwidth: 'true',
+                    margin: '10px 0',
+                  },
+                },
+                {
+                  name: 'b1',
+                  component: 'Button',
+                  events: {
+                    click: {
+                      fn: 'alert',
+                      args: ['hello there'],
+                    },
+                  },
+                  props: {
+                    label: 'Click Here',
+                  },
+                },
+              ],
+            },
+          },
+        ];
       });
     </script>
   </body>
