@@ -67,23 +67,6 @@ walker get_interests {
 }
 ```
 
-For this we'll create a walker that returns a static list of interests.
-
-```
-walker get_interests {
-    has anchor interests;
-
-    with entry {
-        interests = ['Movies', 'Education', 'Food', 'Cars', 'Music'];
-    }
-
-    with exit {
-        for i in interests {
-            report i;
-        }
-    }
-}
-```
 
 ## Creating a post and inferring interest
 
