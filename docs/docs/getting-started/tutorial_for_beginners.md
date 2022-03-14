@@ -133,7 +133,7 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
 
     The below graph can help us understand the jac code.
 
-    ![Graph Family](fam.jpg)
+    ![Graph Family](/docs/static/img/tutorial/getting_started/fam.jpg)
 
     
 
