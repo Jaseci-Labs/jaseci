@@ -3,6 +3,7 @@ General action base class with automation for hot loading
 """
 from jaseci.utils.utils import logger
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from pydantic import validate_arguments
 from time import time
 import inspect
@@ -10,33 +11,32 @@ import uvicorn
 import os
 
 remote_actions = {}
-spot_list = []
+registered_apis = []
 ACTIONS_SPEC_LOC = "/jaseci_actions_spec/"
 JS_ACTION_PREAMBLE = "js_action_"
 
 
+def mark_as_remote(api):
+    registered_apis.append(api)
+
+
 def serv_actions():
+    """Returns fastAPI app interface for actions"""
     app = FastAPI()
+    @app.get("/")
+    def redirect():
+        return RedirectResponse(url='/docs')
+
     @app.get(ACTIONS_SPEC_LOC)
     def action_list():
         return remote_actions
 
-    for i in spot_list:
-        assimilate_action(app, i[0], i[1], i[2], i[3])
+    for i in registered_apis:
+        gen_api_service(app, i[0], i[1], i[2], i[3])
     return app
 
 
-def jaseci_action(act_group=None, aliases=list()):
-    """Decorator for Jaseci Action interface"""
-
-    def decorator_func(func):
-        spot_list.append([func, act_group, aliases, caller_globals])
-        # assimilate_action(func, act_group, aliases, caller_globals)
-        return func
-    return decorator_func
-
-
-def assimilate_action(app, func, act_group, aliases, caller_globals):
+def gen_api_service(app, func, act_group, aliases, caller_globals):
     """Helper for jaseci_action decorator"""
     # Construct list of action apis available
     act_group = [os.path.basename(inspect.getfile(func)).split(
@@ -76,9 +76,6 @@ def assimilate_action(app, func, act_group, aliases, caller_globals):
             func.__code__.co_varnames
     caller_globals[f'{JS_ACTION_PREAMBLE}{func.__name__}'] = new_func
 
-    # Return original function so it can be called as it in call site code base
-    return func
-
 
 def launch_server(port=80, host='0.0.0.0'):
-    uvicorn.run(app, port=port, host=host)
+    uvicorn.run(serv_actions(), port=port, host=host)

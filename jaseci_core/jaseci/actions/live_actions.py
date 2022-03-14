@@ -3,12 +3,12 @@ General action base class with automation for hot loading
 """
 from importlib.util import spec_from_file_location, module_from_spec
 from jaseci.utils.utils import logger
-from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC, serv_actions
+from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
+from jaseci.actions.remote_actions import serv_actions, mark_as_remote
 import requests
 import inspect
 
 live_actions = {}
-possible_remote = []
 
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
@@ -20,7 +20,7 @@ def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
 
     def decorator_func(func):
         if(allow_remote):
-            possible_remote.append([func, act_group, aliases, caller_globals])
+            mark_as_remote([func, act_group, aliases, caller_globals])
         return assimilate_action(func, act_group)
     return decorator_func
 
