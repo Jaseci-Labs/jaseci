@@ -26,7 +26,7 @@
 3. Give `hello.jac` the following contents:  
    
         walker init {
-            std.out("Hello World");
+            std.out("Hello, World!");
         }
 4. Change directory to `hello_jac`: `cd hello_jac`
 4. Start the jaseci shell: `jsctl`
