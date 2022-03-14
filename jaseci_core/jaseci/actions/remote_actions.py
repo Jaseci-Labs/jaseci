@@ -10,29 +10,33 @@ import uvicorn
 import os
 
 remote_actions = {}
+spot_list = []
 ACTIONS_SPEC_LOC = "/jaseci_actions_spec/"
 JS_ACTION_PREAMBLE = "js_action_"
-app = FastAPI()
 
 
-@app.get(ACTIONS_SPEC_LOC)
-def action_list():
-    return remote_actions
+def serv_actions():
+    app = FastAPI()
+    @app.get(ACTIONS_SPEC_LOC)
+    def action_list():
+        return remote_actions
+
+    for i in spot_list:
+        assimilate_action(app, i[0], i[1], i[2], i[3])
+    return app
 
 
 def jaseci_action(act_group=None, aliases=list()):
     """Decorator for Jaseci Action interface"""
-    caller_globals = dict(inspect.getmembers(
-        inspect.stack()[1][0]))["f_globals"]
-    if 'app' not in caller_globals:
-        caller_globals['app'] = app
 
     def decorator_func(func):
-        return assimilate_action(func, act_group, aliases, caller_globals)
+        spot_list.append([func, act_group, aliases, caller_globals])
+        # assimilate_action(func, act_group, aliases, caller_globals)
+        return func
     return decorator_func
 
 
-def assimilate_action(func, act_group, aliases, caller_globals):
+def assimilate_action(app, func, act_group, aliases, caller_globals):
     """Helper for jaseci_action decorator"""
     # Construct list of action apis available
     act_group = [os.path.basename(inspect.getfile(func)).split(
