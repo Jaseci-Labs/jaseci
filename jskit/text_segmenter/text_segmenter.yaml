@@ -23,7 +23,7 @@ data:
     git checkout text_segmentation_prod
     source install.sh
     cd /jaseci/jskit/text_segmenter
-    uvicorn text_segmenter:app --host 0.0.0.0 --port 80
+    uvicorn text_segmenter:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
 kind: Deployment

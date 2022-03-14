@@ -24,7 +24,7 @@ def serv_actions():
     """Returns fastAPI app interface for actions"""
     app = FastAPI()
     @app.get("/")
-    def redirect():
+    def home_redirect():
         return RedirectResponse(url='/docs')
 
     @app.get(ACTIONS_SPEC_LOC)

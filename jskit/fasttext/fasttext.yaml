@@ -23,7 +23,7 @@ data:
     git checkout jra-fasttext;
     source install.sh
     cd /jaseci/jskit/fasttext
-    uvicorn fasttext_classifier:app --host 0.0.0.0 --port 80
+    uvicorn fasttext_classifier:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
 kind: Deployment
