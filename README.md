@@ -1,88 +1,38 @@
 [![jaseci_core](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci_core_build.yml/badge.svg?branch=main)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci_core_build.yml)
 [![jaseci_serv](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci_serv_build.yml/badge.svg?branch=main)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci_serv_build.yml)
-# Jaseci Release Notes
 
-## Version 1.3
 
-### Updates
+## Setup
 
-- Improvement: JSCTL now takes args without flags in sensible places for quality of life.
-- Improvement: Better Error reporting all around
-- New Feature: APIs for manipulating actions
-- New Feature: Hotloading jaseci action modules
-- Update: New action creation methodology and architecture
-- New Feature: Decorator interface for creating jaseci action modules
-- New Feature: New profiling flag added to run walker api for performance profiling
-- New Feature: Direct jac file building, test, and run from in JSCTL
-- New Language Feature: Tests and testing features as first order language semantics
-- New Lang Feature: Asserts!
-- Fix: Simplified and optimized global abilities
-- New Support Feature: Started vs code for JAC extension first beta
-- New Lang Feature: Multifile codebase support and import keyword and semantic added
-- New Lang Feature: Try-else blocks introduced for exception handling
-- New Lang Feature: Added new `&` reference and `*` dereference semantic for getting psuedo-pointers to node, edges, etc
-- New Lang Feature: Massively expanded functionality with destroy and list slice management
-- New Lang Feature: can now explicitly reference and dereference graph elements (nodes, edges, etc)
-- New Lang Feature: Field filtering for dictionaries, particularly useful for context, info, details
-- New Lang Feature: Type checking primitives, and type casting primitives
-- New Lang Feature: String library finally present
+### Prerequisites
+1. Python 3
+2. Virtualenv
+3. pip3
+4. Docker Desktop with Kubernetes Enabled
+5. OS - Windows (WSL) or Linux
+6. Visual Studio Code (Recommeded)
 
-### Notes
+### Installations
 
-- Various flags are now args for `jsctl` i.e., `walker run -name init` is now `walker run init` as name is now the standard arg. If you wanted to specify a node the flag would be used as per `walker run init -nd {uuid}`
-- Reports back from walker is now dictionary of form `{'report': list(report)}` instead of currnet `list(report)`
-- `std.sort_by_col` tweaked to make last paramter a boolean for reverse (instead of string)
-- Format of `walker get -mode key` api changed from {key:namespace} to {namespace:key}
-- `test` is now a keyword with added test capabilities in jaseci
-- Type, int, float, str, list, dict, bool, are now keywords, if you used these as variable names in legacy code, must make updates.
-- The destroy built-in is totally revised `lst.destroy(idx)` on lists should be changed to `destroy lst[idx]`.
-- Get_uuid standard library function is deprecated since we have string manipulation
-- Internal representation of element now `jac:uuid:` format, should not be visible to coder, `&` references still produce `urn:uuid:` as strings. To dereference use new `*` dereference operators.
-- Standard, output and logging now will print proper values (e.g. json values for null, true, and false)
+1. Clone this repo
+2. Create a virtual python environment: `virtualenv venv`
+3. Activate the virtual environment: `source venv/bin/activate`
+4. Install JSCTL (Jaseci Command line tool): `cd jaseci_core && source install.sh`
+5.  Install the VSCode Extension for Jaseci (Only if using VSCode): `cd support/vscode_extension/ && source install.sh`
 
-## Version 1.2.2
+### Write some code (Hello, World!)
+1. To get started created a folder in this repo called `hello_jac`
+2. Create a file called `hello.jac`
+3. Give `hello.jac` the following contents:  
+   
+        walker init {
+            std.out("Hello World");
+        }
+4. run `cd hello_jac`
+4. Start the jaseci shell: `jsctl`
+5. Run the program: `jac run hello.jac`
+6. This should print to the console: `Hello World`
 
-### Updates
-
-- New Language Feature: can now perform assignments arbitrarily (not just to named variables)
-- New Language Feature: can spawn assign on creation of nodes and edges
-- New Language Feature: can filter references to nodes and edges
-- Added new built-ins for nodes and edges (context, info, and details)
-- Fixed dot output
-- Added reset command to jsctl to clear complete state
-- Various language grammar tweaks
-
-## Version 1.2.1
-
-### Updates
-
-- Both jaseci and jaseci_serv are architected to be standalone packages
-- Stripe API integrated
-- EMails can be templated with HTML content
-- Token expiry time can be set as config through live api
-- Added auto sync to global sentinel for spawned walkers
-- FIX: Global sentinels cascade to all users on change
-- FIX: Multi pod concurrency issue corrected
-
-## Version 1.2.0
-
-### Updates
-
-- New Hierarchal user creation and management through core Jaseci
-- New version labels for Jac programs
-- New custom action for nodes and edges
-- New Jaseci server support for new API and Jaseci architecture
-- New namespaces for public walker permissions management with key access
-- New object sharing across users and access control APIs
-- New Jaseci object permissions architecture
-- New Jac library for outbound requests
-- New Globals Jac standard library and API interfaces
-- New support for server-side Jac deployments and relevant APIs
-- New Jac language updates
-- New access language features for edge manipulation and traversal
-- New code IR format and handling across Architypes and Walkers
-- New dot integration redesign
-- New added editor to JSCTL
-- New complete API redesign and deprecation of legacy APIs
-- New introduced new standard Jaseci Bible (unfinished)
-- New redesigned graphs nodes and edges to support multi-graph semantic.
+## References
+- Official Documentation: https://docs.jaseci.org/
+- Jaseci Bible: https://github.com/Jaseci-Labs/jaseci_bible
