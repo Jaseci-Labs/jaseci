@@ -20,7 +20,6 @@ data:
   prod_up: |-
     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
     cd /jaseci/jaseci_core/
-    git checkout jra-fasttext;
     source install.sh
     cd /jaseci/jskit/fasttext
     uvicorn fasttext_classifier:serv_actions --host 0.0.0.0 --port 80

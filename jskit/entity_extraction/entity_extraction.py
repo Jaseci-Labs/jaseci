@@ -9,7 +9,7 @@ from flair.trainers import ModelTrainer
 import pandas as pd
 from utils import create_data
 import configparser
-import jaseci.actions.remote_actions as jra
+from jaseci.actions.live_actions import jaseci_action
 import torch
 from pathlib import Path
 
@@ -64,7 +64,7 @@ def train_entity():
 
 
 # defining the api for entitydetection
-@jra.jaseci_action(act_group=['ent_ext'])
+@jaseci_action(act_group=['ent_ext'])
 def entity_detection(text: str, ner_labels: List[str]):
     """
     API for detectiing provided entity in text
@@ -96,7 +96,7 @@ def entity_detection(text: str, ner_labels: List[str]):
             "Text data is missing in request data"))
 
 
-@jra.jaseci_action(act_group=['ent_ext'])
+@jaseci_action(act_group=['ent_ext'])
 def train(text: str, entity: List[dict]):
     """
     API for training the model
@@ -123,7 +123,7 @@ def train(text: str, entity: List[dict]):
             "Need Data for Text and Entity"))
 
 
-@jra.jaseci_action(act_group=['ent_ext'])
+@jaseci_action(act_group=['ent_ext'])
 def save_model(model_path: str):
     """
     saves the model to the provided model_path
@@ -143,7 +143,7 @@ def save_model(model_path: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jra.jaseci_action(act_group=['ent_ext'])
+@jaseci_action(act_group=['ent_ext'])
 def load_model(model_path):
     """
     loads the model from the provided model_path
@@ -162,4 +162,5 @@ def load_model(model_path):
 
 
 if __name__ == "__main__":
-    jra.launch_server(port=8000)
+    from jaseci.actions.remote_actions import launch_server
+    launch_server(port=8000)

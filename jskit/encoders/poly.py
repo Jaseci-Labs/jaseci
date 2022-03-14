@@ -5,7 +5,7 @@ import torch
 import configparser
 import os
 from Utilities import models, evaluate, train
-import jaseci.actions.remote_actions as jra
+from jaseci.actions.live_actions import jaseci_action
 config = configparser.ConfigParser()
 
 model, model_name, shared, seed, tokenizer = None, None, None, None, None
@@ -50,7 +50,7 @@ def config_setup():
 config_setup()
 
 
-@jra.jaseci_action(act_group=['poly_enc'], aliases=['get_poly_cos_sim'])
+@jaseci_action(act_group=['poly_enc'], aliases=['get_poly_cos_sim'])
 def cosSimilarityScore(context_embedding, candidate_embedding):
     tensors = (context_embedding, candidate_embedding)
     context_vecs, candidates_vec = (torch.tensor(
@@ -67,7 +67,7 @@ def cosSimilarityScore(context_embedding, candidate_embedding):
     return JSONResponse(content={"cos_score": cos_similarity.item()})
 
 
-@jra.jaseci_action(act_group=['poly_enc'], aliases=['inference'])
+@jaseci_action(act_group=['poly_enc'], aliases=['inference'])
 def getinference(contexts, candidates):
     global model
     model.eval()
@@ -79,7 +79,7 @@ def getinference(contexts, candidates):
     return JSONResponse(content={"label": predicted_label})
 
 
-@jra.jaseci_action(act_group=['poly_enc'], aliases=['train'])
+@jaseci_action(act_group=['poly_enc'], aliases=['train'])
 def trainModel(contexts, candidates):
     global model
     model.train()
@@ -92,7 +92,7 @@ def trainModel(contexts, candidates):
         return JSONResponse(content="Error Occured", status_code=500)
 
 
-@jra.jaseci_action(act_group=['poly_enc'], aliases=['getcontextembedding'])
+@jaseci_action(act_group=['poly_enc'], aliases=['getcontextembedding'])
 def getContextEmbedding(contexts):
     global model, tokenizer
     model.eval()
@@ -104,7 +104,7 @@ def getContextEmbedding(contexts):
         "context_embed": embedding.cpu().numpy().tolist()})
 
 
-@jra.jaseci_action(act_group=['poly_enc'], aliases=['getcandidateembedding'])
+@jaseci_action(act_group=['poly_enc'], aliases=['getcandidateembedding'])
 def getCandidateEmbedding(candidates):
     global model, tokenizer
     model.eval()
@@ -113,7 +113,7 @@ def getCandidateEmbedding(candidates):
         "candidate_embed": embedding.cpu().numpy().tolist()})
 
 
-@jra.jaseci_action(act_group=['poly_enc'], aliases=['setconfig'])
+@jaseci_action(act_group=['poly_enc'], aliases=['setconfig'])
 def setConfig(training_parameters, model_parameters):
     global config, save_restart
     config.read('Utilities/config.cfg')
