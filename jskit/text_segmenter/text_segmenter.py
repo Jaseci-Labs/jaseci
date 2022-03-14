@@ -50,7 +50,6 @@ def segmentation(text, threshold=0.7):
     # returning final segments of text
     return(segments)
 
-
 @ jra.jaseci_action(act_group=['text_segmentor'])
 def get_segements(text: str, threshold: float = 0.7):
     try:
@@ -58,10 +57,6 @@ def get_segements(text: str, threshold: float = 0.7):
         return segmented_text
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# model_list = Enum("wiki", "legal")
-
 
 @ jra.jaseci_action(act_group=['text_segmentor'])
 def load_model(model_name: str):  # modelname could be ("wiki", "legal")
@@ -71,11 +66,13 @@ def load_model(model_name: str):  # modelname could be ("wiki", "legal")
             "dennlinger/bert-wiki-paragraphs")
         model = AutoModelForSequenceClassification.from_pretrained(
             "dennlinger/bert-wiki-paragraphs")
-    else:
+    elif model_name == "legal":
         tokenizer = AutoTokenizer.from_pretrained(
             "dennlinger/roberta-cls-consec")
         model = AutoModelForSequenceClassification.from_pretrained(
             "dennlinger/roberta-cls-consec")
+    else:
+        raise HTTPException(status_code=500, detail="Invalid model name.")
     return f"[Model Loaded] : {model_name}"
 
 
