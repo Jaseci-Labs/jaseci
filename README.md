@@ -10,7 +10,7 @@
 3. pip3
 4. Docker Desktop with Kubernetes Enabled
 5. OS - Windows (WSL) or Linux
-6. Visual Studio Code (Recommeded)
+6. Visual Studio Code (Recommeded) - https://code.visualstudio.com/
 
 ### Installations
 
@@ -28,7 +28,7 @@
         walker init {
             std.out("Hello World");
         }
-4. run `cd hello_jac`
+4. Change directory to `hello_jac`: `cd hello_jac`
 4. Start the jaseci shell: `jsctl`
 5. Run the program: `jac run hello.jac`
 6. This should print to the console: `Hello World`
