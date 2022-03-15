@@ -88,10 +88,10 @@ def cosine_sim(vec_a: List[float], vec_b: List[float], meta):
     """
     result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) *
                                      np.linalg.norm(vec_b))
-    return round(result.astype(float), 2)
+    return result.astype(float)
 
 
-@jaseci_action(act_group=['bi_enc'], allow_remote=False)
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def infer(contexts: List, candidates: List):
     """
     Take list of context, candidate and return nearest candidate to the context
@@ -105,7 +105,7 @@ def infer(contexts: List, candidates: List):
 
 
 # API for training
-@jaseci_action(act_group=['bi_enc'], allow_remote=False)
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def train(contexts: List, candidates: List, labels: List[int]):
     """
     Take list of context, candidate, labels and trains the model
@@ -129,7 +129,7 @@ def train(contexts: List, candidates: List, labels: List[int]):
 
 
 # API for geting Context Embedding
-@jaseci_action(act_group=['bi_enc'], aliases=['encode_context'])
+@jaseci_action(act_group=['bi_enc'], aliases=['encode_context'], allow_remote=True)
 def get_context_emb(contexts: List):
     """
     Take list of context and returns the embeddings
@@ -143,7 +143,7 @@ def get_context_emb(contexts: List):
 # API for geting Candidates Embedding
 
 
-@jaseci_action(act_group=['bi_enc'], aliases=['encode_candidate'])
+@jaseci_action(act_group=['bi_enc'], aliases=['encode_candidate'], allow_remote=True)
 def get_candidate_emb(candidates: List):
     """
     Take list of candidates and returns the embeddings
@@ -157,7 +157,7 @@ def get_candidate_emb(candidates: List):
 # API for setting the training and model parameters
 
 
-@jaseci_action(act_group=['bi_enc'], allow_remote=False)
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def set_config(training_parameters, model_parameters):
     """
     Update the configuration file with any new incoming parameters
@@ -176,7 +176,7 @@ def set_config(training_parameters, model_parameters):
     return "Config setup is complete."
 
 
-@jaseci_action(act_group=['bi_enc'], allow_remote=False)
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def save_model(model_path: str):
     """
     saves the model to the provided model_path
@@ -220,7 +220,7 @@ def save_model(model_path: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=['bi_enc'], allow_remote=False)
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def load_model(model_path):
     """
     loads the model from the provided model_path
