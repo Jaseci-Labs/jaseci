@@ -2,7 +2,7 @@ from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
 from bi import serv_actions, config_setup
 from fastapi.testclient import TestClient
-from .test_data import (
+from test_data import (
     test_cos_sim_request,
     test_context_emb_request,
     test_context_emb_response,
