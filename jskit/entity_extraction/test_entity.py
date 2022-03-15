@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from entity_extraction import app
+from entity_extraction import serv_actions
 from fastapi.testclient import TestClient
 from test_data import (
     test_entity_detection_request,
@@ -18,7 +18,7 @@ class entity_extraction_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.client = TestClient(app)
+        self.client = TestClient(serv_actions())
 
     def tearDown(self) -> None:
         return super().tearDown()

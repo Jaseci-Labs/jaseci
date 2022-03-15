@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import en_core_web_sm as english_model
-import jaseci.actions.remote_actions as jra
+from jaseci.actions.live_actions import jaseci_action
 from enum import Enum
 
 # loading segmentation model from hugging face
@@ -50,7 +50,8 @@ def segmentation(text, threshold=0.7):
     # returning final segments of text
     return(segments)
 
-@ jra.jaseci_action(act_group=['text_segmentor'])
+
+@jaseci_action(act_group=['text_segmentor'], allow_remote=False)
 def get_segements(text: str, threshold: float = 0.7):
     try:
         segmented_text = segmentation(text=text, threshold=threshold)
@@ -58,7 +59,8 @@ def get_segements(text: str, threshold: float = 0.7):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@ jra.jaseci_action(act_group=['text_segmentor'])
+
+@jaseci_action(act_group=['text_segmentor'], allow_remote=False)
 def load_model(model_name: str):  # modelname could be ("wiki", "legal")
     global model, tokenizer
     if model_name == "wiki":
@@ -77,5 +79,6 @@ def load_model(model_name: str):  # modelname could be ("wiki", "legal")
 
 
 if __name__ == '__main__':
+    from jaseci.actions.remote_actions import launch_server
     print('Text Segmentor up and running')
-    jra.launch_server(port=8000)
+    launch_server(port=8000)

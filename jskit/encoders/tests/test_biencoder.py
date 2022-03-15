@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from bi import app, config_setup
+from bi import serv_actions, config_setup
 from fastapi.testclient import TestClient
 from .test_data import (
     test_cos_sim_request,
@@ -19,7 +19,7 @@ class biencoder_test(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
         config_setup()
-        self.client = TestClient(app)
+        self.client = TestClient(serv_actions())
 
     def tearDown(self) -> None:
         return super().tearDown()

@@ -4,21 +4,29 @@ General action base class with automation for hot loading
 from importlib.util import spec_from_file_location, module_from_spec
 from jaseci.utils.utils import logger
 from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
+from jaseci.actions.remote_actions import serv_actions, mark_as_remote
 import requests
+import inspect
 
 live_actions = {}
 
 
-def jaseci_action(act_group=None):
+def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
     """Decorator for Jaseci Action interface"""
+    caller_globals = dict(inspect.getmembers(
+        inspect.stack()[1][0]))["f_globals"]
+    if allow_remote and 'serv_actions' not in caller_globals:
+        caller_globals['serv_actions'] = serv_actions
+
     def decorator_func(func):
+        if(allow_remote):
+            mark_as_remote([func, act_group, aliases, caller_globals])
         return assimilate_action(func, act_group)
     return decorator_func
 
 
 def assimilate_action(func, act_group=None):
     """Helper for jaseci_action decorator"""
-    global live_actions
     act_group = [func.__module__.split(
         '.')[-1]] if act_group is None else act_group
     live_actions[f"{'.'.join(act_group+[func.__name__])}"] = func
