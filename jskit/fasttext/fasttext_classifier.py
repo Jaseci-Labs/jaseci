@@ -7,7 +7,7 @@ import fasttext
 import traceback
 
 from fastapi import HTTPException
-import jaseci.actions.remote_actions as jra
+from jaseci.actions.live_actions import jaseci_action
 from json_to_train import json_to_train, prep_sentence, label_to_intent
 from config import (
     model_file_path, train_file_path, clf_json_file_path,
@@ -52,8 +52,9 @@ def updatetrainfile(traindata: Dict[str, str] = None, train_with_existing=True):
         outfile.write(json_object)
 
 
-@jra.jaseci_action(act_group=['fasttext'])
-def train(traindata:  Dict[str, List[str]] = None, train_with_existing: bool = True):
+@jaseci_action(act_group=['fasttext'], allow_remote=False)
+def train(traindata:  Dict[str, List[str]] = None,
+          train_with_existing: bool = True):
     global model
     print('Training...')
     # we pass the ##train_with_existing param to updatetrainfile function
@@ -80,7 +81,7 @@ def train(traindata:  Dict[str, List[str]] = None, train_with_existing: bool = T
         return f"Model training Completed"
 
 
-@jra.jaseci_action(act_group=['fasttext_classifier'])
+@jaseci_action(act_group=['fasttext_classifier'], allow_remote=False)
 def load_model(model_path: str = None):
     global model, model_file_path
     if model_path is not None:
@@ -100,7 +101,7 @@ def load_model(model_path: str = None):
         return f"Model Loaded From : {model_path}"
 
 
-@jra.jaseci_action(act_group=['fasttext_classifier'])
+@jaseci_action(act_group=['fasttext_classifier'], allow_remote=False)
 def save_model(model_path: str = None):
     if not model_path.isalnum():
         raise HTTPException(
@@ -125,7 +126,7 @@ def save_model(model_path: str = None):
     return (f'Model saved to {model_path}.')
 
 
-@jra.jaseci_action(act_group=['fasttext'])
+@jaseci_action(act_group=['fasttext'], allow_remote=False)
 def predict(sentences: List[str]):
     global model
     try:
@@ -147,5 +148,6 @@ def predict(sentences: List[str]):
 
 
 if __name__ == '__main__':
+    from jaseci.actions.remote_actions import launch_server
     print('FasttextClassifier up and running')
-    jra.launch_server(port=8000)
+    launch_server(port=8000)

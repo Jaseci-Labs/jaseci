@@ -9,7 +9,7 @@ from utils.models import BiEncoder
 import traceback
 import numpy as np
 from utils.train import train_model
-import jaseci.actions.remote_actions as jra
+from jaseci.actions.live_actions import jaseci_action
 import random
 
 config = configparser.ConfigParser()
@@ -78,7 +78,7 @@ config_setup()
 # API for getting the cosine similarity
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jaseci_action(act_group=['bi_enc'], allow_remote=False)
 def cosine_sim(vec_a: list, vec_b: list, meta):
     """
     Caculate the cosine similarity score of two given vectors
@@ -91,7 +91,7 @@ def cosine_sim(vec_a: list, vec_b: list, meta):
     return result.astype(float)
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jaseci_action(act_group=['bi_enc'], allow_remote=False)
 def infer(contexts: List, candidates: List):
     """
     Take list of context, candidate and return nearest candidate to the context
@@ -105,7 +105,7 @@ def infer(contexts: List, candidates: List):
 
 
 # API for training
-@jra.jaseci_action(act_group=['bi_enc'])
+@jaseci_action(act_group=['bi_enc'], allow_remote=False)
 def train(contexts: List, candidates: List, labels: List[int]):
     """
     Take list of context, candidate, labels and trains the model
@@ -129,7 +129,7 @@ def train(contexts: List, candidates: List, labels: List[int]):
 
 
 # API for geting Context Embedding
-@jra.jaseci_action(act_group=['bi_enc'], aliases=['encode_context'])
+@jaseci_action(act_group=['bi_enc'], aliases=['encode_context'])
 def get_context_emb(contexts: List):
     """
     Take list of context and returns the embeddings
@@ -143,7 +143,7 @@ def get_context_emb(contexts: List):
 # API for geting Candidates Embedding
 
 
-@jra.jaseci_action(act_group=['bi_enc'], aliases=['encode_candidate'])
+@jaseci_action(act_group=['bi_enc'], aliases=['encode_candidate'])
 def get_candidate_emb(candidates: List):
     """
     Take list of candidates and returns the embeddings
@@ -157,7 +157,7 @@ def get_candidate_emb(candidates: List):
 # API for setting the training and model parameters
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jaseci_action(act_group=['bi_enc'], allow_remote=False)
 def set_config(training_parameters, model_parameters):
     """
     Update the configuration file with any new incoming parameters
@@ -176,7 +176,7 @@ def set_config(training_parameters, model_parameters):
     return "Config setup is complete."
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jaseci_action(act_group=['bi_enc'], allow_remote=False)
 def save_model(model_path: str):
     """
     saves the model to the provided model_path
@@ -220,7 +220,7 @@ def save_model(model_path: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jaseci_action(act_group=['bi_enc'], allow_remote=False)
 def load_model(model_path):
     """
     loads the model from the provided model_path
@@ -269,4 +269,5 @@ def load_model(model_path):
 
 
 if __name__ == "__main__":
-    jra.launch_server(port=8000)
+    from jaseci.actions.remote_actions import launch_server
+    launch_server(port=8000)
