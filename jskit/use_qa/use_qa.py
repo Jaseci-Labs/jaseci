@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow_hub as hub
 import tensorflow as tf
 import tensorflow_text  # noqa
-import jaseci.actions.remote_actions as jra
+from jaseci.actions.live_actions import jaseci_action
 from typing import Union
 
 
@@ -10,7 +10,7 @@ module = hub.load(
     'https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/3')
 
 
-@jra.jaseci_action(act_group=['use'], aliases=['enc_question'])
+@jaseci_action(act_group=['use'], aliases=['enc_question'], allow_remote=True)
 def question_encode(question: Union[str, list]):
     if(isinstance(question, list)):
         return module.signatures['question_encoder'](
@@ -20,7 +20,7 @@ def question_encode(question: Union[str, list]):
             tf.constant([question]))['outputs'].numpy().tolist()
 
 
-@jra.jaseci_action(act_group=['use'], aliases=['enc_answer'])
+@jaseci_action(act_group=['use'], aliases=['enc_answer'], allow_remote=True)
 def answer_encode(answer: Union[str, list], context: Union[str, list] = None):
     if(context is None):
         context = answer
@@ -34,16 +34,17 @@ def answer_encode(answer: Union[str, list], context: Union[str, list] = None):
             context=tf.constant([context]))['outputs'].numpy().tolist()
 
 
-@jra.jaseci_action(act_group=['use'])
+@jaseci_action(act_group=['use'], allow_remote=True)
 def cos_sim_score(q_emb: list, a_emb: list):
     norm = np.linalg.norm
     return np.dot(q_emb, a_emb)/(norm(q_emb)*norm(a_emb))
 
 
-@jra.jaseci_action(act_group=['use'], aliases=['qa_score'])
+@jaseci_action(act_group=['use'], aliases=['qa_score'], allow_remote=True)
 def dist_score(q_emb: list, a_emb: list):
     return np.inner(q_emb, a_emb).tolist()
 
 
 if __name__ == "__main__":
-    jra.launch_server(port=8000)
+    from jaseci.actions.remote_actions import launch_server
+    launch_server(port=8000)

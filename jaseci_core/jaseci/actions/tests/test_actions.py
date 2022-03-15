@@ -15,22 +15,27 @@ class jac_actions_tests(TestCaseHelper, TestCase):
 
     def test_remote_action_example(self):
         from typing import Union
-        @jra.jaseci_action(act_group=['use'], aliases=['enc_question'])
+        @jla.jaseci_action(act_group=['use'], aliases=['enc_question'],
+                           allow_remote=True)
         def question_encode(question: Union[str, list]):
             pass
 
-        @jra.jaseci_action(act_group=['use'], aliases=['enc_answer'])
+        @jla.jaseci_action(act_group=['use'], aliases=['enc_answer'],
+                           allow_remote=True)
         def answer_encode(answer: Union[str, list],
                           context: Union[str, list] = None):
             pass
 
-        @jra.jaseci_action(act_group=['use'])
+        @jla.jaseci_action(act_group=['use'],
+                           allow_remote=True)
         def cos_sim_score(q_emb: list, a_emb: list):
             pass
 
-        @jra.jaseci_action(act_group=['use'], aliases=['qa_score'])
+        @jla.jaseci_action(act_group=['use'], aliases=['qa_score'],
+                           allow_remote=True)
         def dist_score(q_emb: list, a_emb: list):
             pass
+        jra.serv_actions()
         self.assertEqual(jra.remote_actions,
                          {'use.answer_encode': ('answer', 'context'),
                           'use.cos_sim_score': ('q_emb', 'a_emb'),
