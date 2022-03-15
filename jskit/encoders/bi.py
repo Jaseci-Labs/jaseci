@@ -78,7 +78,7 @@ config_setup()
 # API for getting the cosine similarity
 
 
-@jaseci_action(act_group=['bi_enc'], allow_remote=False)
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def cosine_sim(vec_a: List[float], vec_b: List[float], meta):
     """
     Caculate the cosine similarity score of two given vectors
@@ -88,7 +88,7 @@ def cosine_sim(vec_a: List[float], vec_b: List[float], meta):
     """
     result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) *
                                      np.linalg.norm(vec_b))
-    return result.astype(float)
+    return round(result.astype(float), 2)
 
 
 @jaseci_action(act_group=['bi_enc'], allow_remote=False)

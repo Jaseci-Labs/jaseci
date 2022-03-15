@@ -32,7 +32,7 @@ class biencoder_test(TestCaseHelper, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
-            0.04607951029096483
+            0.05
         )
 
     def test_biencoder_train(self):
