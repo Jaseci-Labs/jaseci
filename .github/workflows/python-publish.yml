@@ -34,5 +34,6 @@ jobs:
         TWINE_USERNAME: ${{ secrets.JASECI_PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.JASECI_PYPI_PASSWORD }}
       run: |
-        python -m build jaseci_core/ --outdir /home/runner/work/jaseci/jaseci/dist
-        twine upload /home/runner/work/jaseci/jaseci/dist/*
+        cd jaseci_core
+        python3 -m build
+        python3 -m twine upload --repository testpypi dist/*
