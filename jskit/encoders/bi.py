@@ -79,7 +79,7 @@ config_setup()
 
 
 @jra.jaseci_action(act_group=['bi_enc'])
-def cosine_sim(vec_a: list, vec_b: list, meta):
+def cosine_sim(vec_a: List[float], vec_b: List[float], meta):
     """
     Caculate the cosine similarity score of two given vectors
     Param 1 - First vector
