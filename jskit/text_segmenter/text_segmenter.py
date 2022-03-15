@@ -51,7 +51,7 @@ def segmentation(text, threshold=0.7):
     return(segments)
 
 
-@jaseci_action(act_group=['text_segmentor'], allow_remote=False)
+@jaseci_action(act_group=['text_segmentor'], allow_remote=True)
 def get_segements(text: str, threshold: float = 0.7):
     try:
         segmented_text = segmentation(text=text, threshold=threshold)
@@ -60,7 +60,7 @@ def get_segements(text: str, threshold: float = 0.7):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=['text_segmentor'], allow_remote=False)
+@jaseci_action(act_group=['text_segmentor'], allow_remote=True)
 def load_model(model_name: str):  # modelname could be ("wiki", "legal")
     global model, tokenizer
     if model_name == "wiki":

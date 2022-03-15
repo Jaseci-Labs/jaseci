@@ -51,7 +51,7 @@ config_setup()
 
 
 @jaseci_action(act_group=['poly_enc'], aliases=['get_poly_cos_sim'],
-               allow_remote=False)
+               allow_remote=True)
 def cosSimilarityScore(context_embedding, candidate_embedding):
     tensors = (context_embedding, candidate_embedding)
     context_vecs, candidates_vec = (torch.tensor(
@@ -69,7 +69,7 @@ def cosSimilarityScore(context_embedding, candidate_embedding):
 
 
 @jaseci_action(act_group=['poly_enc'], aliases=['inference'],
-               allow_remote=False)
+               allow_remote=True)
 def getinference(contexts, candidates):
     global model
     model.eval()
@@ -81,7 +81,7 @@ def getinference(contexts, candidates):
     return JSONResponse(content={"label": predicted_label})
 
 
-@jaseci_action(act_group=['poly_enc'], aliases=['train'], allow_remote=False)
+@jaseci_action(act_group=['poly_enc'], aliases=['train'], allow_remote=True)
 def trainModel(contexts, candidates):
     global model
     model.train()
@@ -95,7 +95,7 @@ def trainModel(contexts, candidates):
 
 
 @jaseci_action(act_group=['poly_enc'], aliases=['getcontextembedding'],
-               allow_remote=False)
+               allow_remote=True)
 def getContextEmbedding(contexts):
     global model, tokenizer
     model.eval()
@@ -108,7 +108,7 @@ def getContextEmbedding(contexts):
 
 
 @jaseci_action(act_group=['poly_enc'], aliases=['getcandidateembedding'],
-               allow_remote=False)
+               allow_remote=True)
 def getCandidateEmbedding(candidates):
     global model, tokenizer
     model.eval()
@@ -118,7 +118,7 @@ def getCandidateEmbedding(candidates):
 
 
 @jaseci_action(act_group=['poly_enc'], aliases=['setconfig'],
-               allow_remote=False)
+               allow_remote=True)
 def setConfig(training_parameters, model_parameters):
     global config, save_restart
     config.read('Utilities/config.cfg')

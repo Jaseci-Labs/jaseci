@@ -53,7 +53,7 @@ def get_aug_sample(text1, text2):
 
 
 @jaseci_action(act_group=['sent_enc'], aliases=['train_model'],
-               allow_remote=False)
+               allow_remote=True)
 def train(text1: List[str], text2: List[str]):
     global model, model_name, device
 

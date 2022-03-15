@@ -16,8 +16,8 @@ from config import (
 
 model = None
 """
-Below code is to create a base_model.json file, 
-which help initialize a default model with a default data, 
+Below code is to create a base_model.json file,
+which help initialize a default model with a default data,
 if not already exist.
 """
 model_dir.mkdir(exist_ok=True, parents=True)
@@ -35,7 +35,7 @@ if not os.path.exists(base_json_file_path):
 def updatetrainfile(traindata: Dict[str, str] = None, train_with_existing=True):
     data = {}
     """
-    if we alreading have a existing training_data.json and we have to ##train_with_existing 
+    if we alreading have a existing training_data.json and we have to ##train_with_existing
     we append the data to the  training_data.json file
     otherwise we create training_data.json from the data provided
     """
@@ -52,7 +52,7 @@ def updatetrainfile(traindata: Dict[str, str] = None, train_with_existing=True):
         outfile.write(json_object)
 
 
-@jaseci_action(act_group=['fasttext'], allow_remote=False)
+@jaseci_action(act_group=['fasttext'], allow_remote=True)
 def train(traindata:  Dict[str, List[str]] = None,
           train_with_existing: bool = True):
     global model
@@ -81,7 +81,7 @@ def train(traindata:  Dict[str, List[str]] = None,
         return f"Model training Completed"
 
 
-@jaseci_action(act_group=['fasttext_classifier'], allow_remote=False)
+@jaseci_action(act_group=['fasttext_classifier'], allow_remote=True)
 def load_model(model_path: str = None):
     global model, model_file_path
     if model_path is not None:
@@ -101,7 +101,7 @@ def load_model(model_path: str = None):
         return f"Model Loaded From : {model_path}"
 
 
-@jaseci_action(act_group=['fasttext_classifier'], allow_remote=False)
+@jaseci_action(act_group=['fasttext_classifier'], allow_remote=True)
 def save_model(model_path: str = None):
     if not model_path.isalnum():
         raise HTTPException(
@@ -126,7 +126,7 @@ def save_model(model_path: str = None):
     return (f'Model saved to {model_path}.')
 
 
-@jaseci_action(act_group=['fasttext'], allow_remote=False)
+@jaseci_action(act_group=['fasttext'], allow_remote=True)
 def predict(sentences: List[str]):
     global model
     try:

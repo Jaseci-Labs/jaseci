@@ -64,7 +64,7 @@ def train_entity():
 
 
 # defining the api for entitydetection
-@jaseci_action(act_group=['ent_ext'], allow_remote=False)
+@jaseci_action(act_group=['ent_ext'], allow_remote=True)
 def entity_detection(text: str, ner_labels: List[str]):
     """
     API for detectiing provided entity in text
@@ -96,7 +96,7 @@ def entity_detection(text: str, ner_labels: List[str]):
             "Text data is missing in request data"))
 
 
-@jaseci_action(act_group=['ent_ext'], allow_remote=False)
+@jaseci_action(act_group=['ent_ext'], allow_remote=True)
 def train(text: str, entity: List[dict]):
     """
     API for training the model
@@ -123,7 +123,7 @@ def train(text: str, entity: List[dict]):
             "Need Data for Text and Entity"))
 
 
-@jaseci_action(act_group=['ent_ext'], allow_remote=False)
+@jaseci_action(act_group=['ent_ext'], allow_remote=True)
 def save_model(model_path: str):
     """
     saves the model to the provided model_path
@@ -143,7 +143,7 @@ def save_model(model_path: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=['ent_ext'], allow_remote=False)
+@jaseci_action(act_group=['ent_ext'], allow_remote=True)
 def load_model(model_path):
     """
     loads the model from the provided model_path
