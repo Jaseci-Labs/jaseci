@@ -33,7 +33,7 @@ jobs:
       run: |
         pip3 install jaseci_serv/
 
-   - name: jaseci_core unit tests
+    - name: jaseci_serv tests
       if: always()
       run: |
         cd jaseci_serv/
