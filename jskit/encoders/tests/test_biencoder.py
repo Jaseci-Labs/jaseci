@@ -31,9 +31,8 @@ class biencoder_test(TestCaseHelper, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.json(),
-            0.04607951029096483
-        )
+            round(response.json(), 2),
+            0.05)
 
     def test_biencoder_train(self):
         response = self.client.post(
