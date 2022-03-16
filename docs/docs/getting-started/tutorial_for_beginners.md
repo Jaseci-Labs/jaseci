@@ -197,43 +197,50 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
 
     Lets get into details of the code :
         
-        // One of the important features of jac is even nodes and edges cam store information, below we have a node that has atrributes and
-        node person{
-            has name;
-            has byear;
-            can set_year with setter entry{
-                byear = visitor.year;
+        // One of the important features of jac is even nodes and edges cam store information, below we have a node that has atrributes and blocks with entry, exit and activity criteria
+        node person{ // declaring a node block person
+            has name; // node person has a name
+            has byear; // it also has birthyear as byear
+            can set_year with setter entry{ // node block has a can block that will only be 
+            
+            executed with setter entry
+                byear = visitor.year; //visitor is the object's active instance, wecan access 
+                // the properties of object by calling "visitor.<property>"
             }
-            can print_out with exit{
-                std.out(byear," from ", visitor.info);
+            
+            can print_out with exit{ //person node has another can block that will be executed with exit of the object instance
+                
+                std.out(byear," from ", visitor.info); //visitor.info provides the entiire details about the object call 
             }
-            can reset{
-                ::set_back;  
-                std.out("resetting birth year to 2000 : ", here.context);
+            can reset{ // a rest block to test the activity other than setter
+                ::set_back;  // this statement is used to call the setback block 
+                std.out("resetting birth year to 2000 : ", here.context); // here is another built-in property that can be used to access the data  of the current instance
             }
-            can set_back : byear = "2000-01-01";
+            can set_back : byear = "2000-01-01"; // if a block is a one-liner, it can also be declared with " : ", as declared in current line
         }
 
-        walker init {
-            has year=std.time_now();
-            can setup{
-                person1 = spawn here --> node::person(name="Ashish");
-                std.out("node id : ",person1);
-                person1::reset;
+        walker init { //declaring the init walker start the execution, in jac walker can also have properties
+            has year=std.time_now(); // declaring year as a property 
+            can setup{ // has a setup block
+                person1 = spawn here --> node::person(name="Ashish"); //spwaning a new node
+                std.out("node id : ",person1); // prinit the variable gives us the node id
+                person1::reset; // call the reset block for current node 
             }
-            root{
-                ::setup;
-                take --> ;
+            root{ //the root block i excuted initially
+                ::setup; // call the setup block
+                take --> ; // take the availalbe edge 
             }   
-            person{
-                spawn here walker::setter;
-                here::reset(name="Joe");
+            person{ // the person block is executed next
+                spawn here walker::setter; // we're spawnning the setter walker on person1 node 
+                here::reset(name="Joe");// from current position reset the name to Joe
             }
         }
 
-        walker setter{
+        walker setter{ // the setter walker which has a attribute which is used to set for a particular node
             has year="2008-11-19";
         }
+    From the above example we're able to understand how data and fucntions can be made availalbe in node and walker, how we can use them.
+
 
 # Appendix 
 ## Interface Parameters
@@ -320,3 +327,80 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
     walker summon (self, key: str, wlk: jaseci.actor.walker.walker, nd:
     jaseci.graph.node.node, ctx: dict = )
 
+        
+## Lexer Rules  
+
+    TYP_STRING: 'str'; 
+    TYP_INT : 'int';
+    TYP_FLOAT : 'float'; 
+    TYP_LIST: 'list '; 
+    TYP_DICT: 'dict '; 
+    TYP_BOOL: 'bool'; 
+    KW_TYPE: 'type '; 
+    KW_GRAPH : 'graph '; 
+    KW_STRICT: 'strict '; 
+    KW_DIGRAPH : 'digraph ';
+    KW_SUBGRAPH: 'subgraph ';
+    KW_NODE : 'node '; 
+    KW_IGNORE : 'ignore '; 
+    KW_TAKE : 'take'; 
+    KW_SPAWN: 'spawn'; 
+    KW_WITH: 'with '; 
+    KW_ENTRY: 'entry'; 
+    KW_EXIT: 'exit' ; 
+    KW_LENGTH: 'length '; 
+    KW_KEYS: 'keys '; 
+    KW_CONTEXT : 'context '; 
+    KW_INFO: 'info';
+    KW_DETAILS:	'details'; 
+    KW_ACTIVITY :  'activity';
+    COLON : ' : ' ;
+    DBL_ COLON : ' :: ' ;
+    COLON_OUT:	'::>';
+    LBRACE : '{';
+    RBRACE : '}' ;
+    KW_EDGE : 'edge '; 
+    KW_WALKER:	'walker'; 
+    SEMI :  ' ; ' ;
+    EQ : '= ' ;
+    PEQ : '+= ' ;
+    MEQ : '-=' ;
+    TEQ : '*= ' ;
+    DEQ : '/= ' ;
+    CPY_EQ : ' := ' ;
+    KW_AND : 'and ' I '&& ' ;
+    KW_OR:	'or' I  ' I I ' ;
+    KW_ IF:	' if ' ;
+    KW_ELIF: 'elif ' ; 
+    KW_ELSE : 'else'; 
+    KW_FOR : 'for';
+    KW_TO : 'to';
+    KW_BY : 'by ' ;
+    KW_WHILE :  'while ';
+    KW_CONTINUE:	'continue ';
+    KW_BREAK: 'break '; 
+    KW_DISENGAGE: 'disengage';
+    KW_SKIP: 'skip' ; 
+    KW_REPORT: 'report'; 
+    KW_DESTROY : 'destroy '; 
+    DOT: '.';
+    NOT: '!' I	'not' ;
+    EE: '== ' ;
+    LT : '< ' ;
+    GT: '> ' ;
+    LTE : '<= ' ;
+    GTE: '>= ' ; 
+    NE:	' !-' ; 
+    KW_IN : 'in';
+    KW_ANCHOR : 'anchor';
+    KW_HAS : 'has'; 
+    KW_PRIVATE: 'private '; 
+    COMMA: ',';
+    KW_CAN: 'can ';
+    PLUS: '+' ;
+    MINUS: '-';
+    MUL : '*' ;
+    DIV: ' I ' ;
+    MOD: '%' ;
+    POW: '^'
+    NULL: 'null'
