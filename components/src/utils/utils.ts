@@ -11,6 +11,7 @@ export const componentMap: Record<Exclude<ComponentNames, 'App'>, ComponentTags>
   Button: 'jsc-button',
   Inputbox: 'jsc-inputbox',
   Textbox: 'jsc-textbox',
+  Text: 'jsc-text',
 };
 
 const renderTag = (componentTag: ComponentTags, config: { withChildren: Boolean }) => `<${componentTag}>${config.withChildren ? '{children}' : ''}</${componentTag}>`;

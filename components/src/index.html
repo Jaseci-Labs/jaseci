@@ -139,15 +139,34 @@
                   props: {
                     value: 'Test',
                     placeholder: 'Hello',
-                    // label: 'Click Here',
                     fullwidth: 'true',
                     margin: '10px 0',
                   },
                   events: {
                     onEnter: [
+                      // {
+                      //   fn: 'update',
+                      //   args: ['b1.label', 'var(ib1.value)'],
+                      // },
+                      {
+                        fn: 'append',
+                        args: [
+                          'msgs',
+                          {
+                            component: 'Text',
+                            props: { value: 'var(ib1.value)' },
+                          },
+                        ],
+                      },
                       {
                         fn: 'update',
-                        args: ['b1.label', 'var(ib1.value)'],
+                        args: ['ib1.value', ''],
+                        onCompleted: {
+                          fn: 'alert',
+                          args: ['Done...'],
+                        },
+                        // onFailure: [{}],
+                        cond: ['var(ib1.value)::#eq::Jaseci'],
                       },
                     ],
                   },
@@ -189,7 +208,18 @@
                   },
                 },
 
-                {},
+                {
+                  name: 'msgs',
+                  component: 'Container',
+                  props: {
+                    width: '300px',
+                    height: '200px',
+                    background: '#fff',
+                    border: '1px solid red',
+                    margin: '10px 0',
+                    padding: '0px 8px',
+                  },
+                },
               ],
             },
           },

@@ -59,6 +59,10 @@ export namespace Components {
         "padding": string;
         "width": string;
     }
+    interface JscText {
+        "value": string;
+        "variant": 'simple' | 'title';
+    }
     interface JscTextbox {
         "fullwidth": string;
         "margin": string;
@@ -129,6 +133,12 @@ declare global {
         prototype: HTMLJscRowElement;
         new (): HTMLJscRowElement;
     };
+    interface HTMLJscTextElement extends Components.JscText, HTMLStencilElement {
+    }
+    var HTMLJscTextElement: {
+        prototype: HTMLJscTextElement;
+        new (): HTMLJscTextElement;
+    };
     interface HTMLJscTextboxElement extends Components.JscTextbox, HTMLStencilElement {
     }
     var HTMLJscTextboxElement: {
@@ -150,6 +160,7 @@ declare global {
         "jsc-nav-bar": HTMLJscNavBarElement;
         "jsc-nav-link": HTMLJscNavLinkElement;
         "jsc-row": HTMLJscRowElement;
+        "jsc-text": HTMLJscTextElement;
         "jsc-textbox": HTMLJscTextboxElement;
         "my-component": HTMLMyComponentElement;
     }
@@ -208,6 +219,10 @@ declare namespace LocalJSX {
         "padding"?: string;
         "width"?: string;
     }
+    interface JscText {
+        "value"?: string;
+        "variant"?: 'simple' | 'title';
+    }
     interface JscTextbox {
         "fullwidth"?: string;
         "margin"?: string;
@@ -237,6 +252,7 @@ declare namespace LocalJSX {
         "jsc-nav-bar": JscNavBar;
         "jsc-nav-link": JscNavLink;
         "jsc-row": JscRow;
+        "jsc-text": JscText;
         "jsc-textbox": JscTextbox;
         "my-component": MyComponent;
     }
@@ -253,6 +269,7 @@ declare module "@stencil/core" {
             "jsc-nav-bar": LocalJSX.JscNavBar & JSXBase.HTMLAttributes<HTMLJscNavBarElement>;
             "jsc-nav-link": LocalJSX.JscNavLink & JSXBase.HTMLAttributes<HTMLJscNavLinkElement>;
             "jsc-row": LocalJSX.JscRow & JSXBase.HTMLAttributes<HTMLJscRowElement>;
+            "jsc-text": LocalJSX.JscText & JSXBase.HTMLAttributes<HTMLJscTextElement>;
             "jsc-textbox": LocalJSX.JscTextbox & JSXBase.HTMLAttributes<HTMLJscTextboxElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
         }

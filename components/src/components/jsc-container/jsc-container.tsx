@@ -1,4 +1,4 @@
-import { Component, Prop, h, Element } from '@stencil/core';
+import { Component, Element, h, Prop } from '@stencil/core';
 
 @Component({
   tag: 'jsc-container',
@@ -26,6 +26,7 @@ export class Container {
       'padding': this.padding,
       'border': this.border,
       'box-sizing': 'border-box',
+      'overflowX': 'auto',
     });
     // });
   }
