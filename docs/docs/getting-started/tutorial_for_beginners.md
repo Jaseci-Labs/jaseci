@@ -15,7 +15,7 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
       2.  cd  **jaseci_core**
       3.   bash install.sh
 2. Starting With **jsctl** :
-   1. once you fire **jsctl** command in out terminal, jaseci command line shell it activated.
+   1. once you execute  **jsctl** command in terminal, jaseci command line shell it activated.
         
             jsctl
             Starting Jaseci Shell...
@@ -34,8 +34,7 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
             ======================
             exit  help  quit 
             
-    1. You'll get all available commands  in **Jaseci**
-    2. For getting details on command you can type :
+    3. You'll get all available commands  in **Jaseci**. For getting details on command you can type :
          
             jaseci > graph --help
             Usage: graph [OPTIONS] COMMAND [ARGS]...
@@ -71,8 +70,9 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
         hello world
     Let's get into the details, `walker` is keyword used to define a **Walker**, `init` is a reserved word which in this case provides the entry point to the jac program. Therefore, once the compiler encounter `walker init {}` it start the execution, line 2 contains, `std` library for standard operation and `out()` is a module for printing, so the command `std.out()`  helps in displaying the passed text `Hello World` on the command prompt.
 
-3. Let's consised a full jac program:
+3. Let's consised a full jac program. The program is to create a family having a man , a womam, a son and show the relations between them:
    
+        node person;
         node man;
         node woman;
 
@@ -81,17 +81,18 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
         edge married;
 
         walker init {
-            root {
-                spawn here --> node::man;
-                spawn here --> node::woman;
-                --> node::man <-[married]-> --> node::woman;
-                take -->; }
+        root {
+            spawn here --> node::man;
+            spawn here --> node::woman;
+            --> node::man <-[married]-> --> node::woman;
+            take -->;
+            }
             woman {
-                son = spawn here <-[mom]- node::man;
-                son -[dad]-> <-[married]->;
+            son = spawn here <-[mom]- node::person;
+            son -[dad]-> <-[married]->;
             }
             man {
-                std.out("I␣didn’t␣do␣any␣of␣the␣hard␣work.");
+                std.out("I␣didnt␣do␣any␣of␣the␣hard␣work.");
             }
         }
     Executing the above code : 
@@ -110,34 +111,129 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
         2022-03-14 20:01:53,768 - INFO - parse_jac: family: Processing Jac code...
         2022-03-14 20:01:53,797 - INFO - register: family: Successfully registered code
         I didnt do any of the hard work.
-        [
-        {
-            "version": null,
-            "name": "family",
-            "kind": "generic",
-            "jid": "urn:uuid:9a59c26f-d518-4b91-89ba-e1a0e53640c3",
-            "j_timestamp": "2022-03-14T14:31:53.767279",
-            "j_type": "sentinel"
-        },
-        {
-            "context": {},
-            "anchor": null,
-            "name": "root",
-            "kind": "generic",
-            "jid": "urn:uuid:d80a52d3-efbb-4c50-96e5-2a99507dfac9",
-            "j_timestamp": "2022-03-14T14:31:53.768278",
-            "j_type": "graph"
-        }
-        ]
+
     So, we create a root graph by executing `graph create`, then we register our code with a sentinel using the command `sentinel register -name family -code fam.jac` where **family** is the nae of the sentinel and **fam.jac** is the file containing the jac code to be register.
+    
+    Lets get into details of the code :
+
+        Declaring the nodes required for the program -
+        node person;
+        ​node man;
+        ​node woman;
+
+        Edges required for depicting the relations -
+        edge mom;
+        edge dad;
+        edge married;
+
+        walker init { //declaring the walker
+           
+           // the root block contains the code related to root node
+           root { // declaring root block
+                spawn here --> node::man; // spawn a reserverd keyword to spwan or instantiate anything, a new node of type man, in this case. 
+                spawn here --> node::woman; // spwaning a node of type `woman` from root `node`
+                --> node::man <-[married]-> --> node::woman; // this line does 2 operations, firstly, take the edge from root node to node man, then create a bi-directional edge of type married from mam to woman
+                take -->; // this line instructs to take the edge available, i.e. from man to woman
+            }
+
+            // the woman block contains connection code with child 
+            woman {
+                son = spawn here <-[mom]- node::person; // creates node of type person from current location i.e. from woman node and assign it to son
+                son -[dad]-> <-[married]->;  // this line can also be written as :- son -[dad]-> node::man; , which mean create a edge from son to man.
+            }
+            // the man block didn't have any task, so we just did a std.out()
+            man {
+                std.out("I␣didnt␣do␣any␣of␣the␣hard␣work.");
+            }
 
     The below graph can help us understand the jac code.
 
     ![Graph Family](/docs/static/img/tutorial/getting_started/fam.jpg)
 
-    
+ 4. Hopefully we're starting to understand the nuances of jac. To get a better understanding let's take another example.  
+    ### code : 
+        node person{
+            has name;
+            has byear;
+            can set_year with setter entry{
+                byear = visitor.year;
+            }
+            can print_out with exit{
+                std.out(byear," from ", visitor.info);
+            }
+            can reset{
+                ::set_back;  
+                std.out("resetting birth year to 2000 : ", here.context);
+            }
+            can set_back : byear = "2000-01-01";
+        }
 
+        walker init {
+            has year=std.time_now();
+            can setup{
+                person1 = spawn here --> node::person(name="Ashish");
+                std.out("node id : ",person1);
+                person1::reset;
+            }
+            root{
+                ::setup;
+                take --> ;
+            }   
+            person{
+                spawn here walker::setter;
+                here::reset(name="Joe");
+            }
+        }
 
+        walker setter{
+            has year="2008-11-19";
+        }
+    ### output : 
+        node id :  jac:uuid:fee335b6-db23-49c4-84c9-8161c4d0c055
+        resetting birth year to 2000 :  {}
+        2008-11-19  from  {"context": {"year": "2008-11-19"}, "anchor": null, "name": "setter", "kind": "walker", "jid": "urn:uuid:336e56cd-4440-4835-9ae8-1484e78b2556", "j_timestamp": "2022-03-15T12:39:27.398912", "j_type": "walker"}
+        resetting birth year to 2000 :  {"name": "Joe", "byear": "2000-01-01"}
+        2000-01-01  from  {"context": {"year": "2022-03-15T12:39:27.391920"}, "anchor": null, "name": "init", "kind": "walker", "jid": "urn:uuid:71055778-86cd-47b7-8410-6c6039fe3318", "j_timestamp": "2022-03-15T12:39:27.391920", "j_type": "walker"}
+
+    Lets get into details of the code :
+        
+        // One of the important features of jac is even nodes and edges cam store information, below we have a node that has atrributes and
+        node person{
+            has name;
+            has byear;
+            can set_year with setter entry{
+                byear = visitor.year;
+            }
+            can print_out with exit{
+                std.out(byear," from ", visitor.info);
+            }
+            can reset{
+                ::set_back;  
+                std.out("resetting birth year to 2000 : ", here.context);
+            }
+            can set_back : byear = "2000-01-01";
+        }
+
+        walker init {
+            has year=std.time_now();
+            can setup{
+                person1 = spawn here --> node::person(name="Ashish");
+                std.out("node id : ",person1);
+                person1::reset;
+            }
+            root{
+                ::setup;
+                take --> ;
+            }   
+            person{
+                spawn here walker::setter;
+                here::reset(name="Joe");
+            }
+        }
+
+        walker setter{
+            has year="2008-11-19";
+        }
 
 # Appendix 
 ## Interface Parameters
