@@ -1,12 +1,10 @@
 name: Jaseci Serv Tests
 
-on: workflow_dispatch
-
-#on:
-#  push:
-#    branches: [ main ]
-#  pull_request:
-#    branches: [ main ]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   unit-test:
