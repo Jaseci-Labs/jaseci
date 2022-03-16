@@ -1,4 +1,4 @@
-# This workflow will upload a Python Package using Twine when a release is created
+# This workflow will upload a Python Package using Twine when a new tag is created
 # For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
 
 # This workflow uses actions that are not certified by GitHub.
@@ -9,11 +9,12 @@
 name: Upload Python Package
 
 on:
-  release:
-    types: [created]
-
+  push:
+    tags:        
+      - '*'
+      
 jobs:
-  deploy:
+  push_jaseci_core_to_pypi:
 
     runs-on: ubuntu-latest
 
@@ -29,10 +30,36 @@ jobs:
         pip install setuptools wheel twine
         pip install build
         
-    - name: Build and Publish
+    - name: Push to pypi
       env: 
-        TWINE_USERNAME: ${{ secrets.JASECI_PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.JASECI_PYPI_PASSWORD }}
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.JASECI_PYPI_API_TOKEN }}
       run: |
-        python -m build jaseci_core/ --outdir /home/runner/work/jaseci/jaseci/dist
-        twine upload /home/runner/work/jaseci/jaseci/dist/*
+        cd jaseci_core
+        python3 -m build
+        python3 -m twine upload dist/*
+
+  push_jaseci_serv_to_pypi:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel twine
+        pip install build
+        
+    - name: Push to pypi
+      env: 
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.JASECI_SERV_PYPI_API_TOKEN }}
+      run: |
+        cd jaseci_serv
+        python3 -m build
+        python3 -m twine upload dist/*
