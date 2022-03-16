@@ -1,5 +1,7 @@
 name: Jaseci Serv Tests
+
 on: workflow_dispatch
+
 #on:
 #  push:
 #    branches: [ main ]
@@ -7,7 +9,7 @@ on: workflow_dispatch
 #    branches: [ main ]
 
 jobs:
-  build:
+  unit-test:
 
     runs-on: ubuntu-latest
 
