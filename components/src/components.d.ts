@@ -33,10 +33,12 @@ export namespace Components {
         "width": string;
     }
     interface JscInputbox {
+        "events": string;
         "fullwidth": string;
         "margin": string;
         "padding": string;
         "placeholder": string;
+        "value": string;
     }
     interface JscNavBar {
         /**
@@ -179,10 +181,13 @@ declare namespace LocalJSX {
         "width"?: string;
     }
     interface JscInputbox {
+        "events"?: string;
         "fullwidth"?: string;
         "margin"?: string;
+        "onValueChanged"?: (event: CustomEvent<string>) => void;
         "padding"?: string;
         "placeholder"?: string;
+        "value"?: string;
     }
     interface JscNavBar {
         /**

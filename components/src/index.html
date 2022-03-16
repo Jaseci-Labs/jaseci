@@ -134,15 +134,26 @@
                   },
                 },
                 {
+                  name: 'ib1',
                   component: 'Inputbox',
                   props: {
+                    value: 'Test',
                     placeholder: 'Hello',
                     // label: 'Click Here',
                     fullwidth: 'true',
                     margin: '10px 0',
                   },
+                  events: {
+                    onEnter: [
+                      {
+                        fn: 'update',
+                        args: ['b1.label', 'var(ib1.value)'],
+                      },
+                    ],
+                  },
                 },
                 {
+                  name: 'textBox1',
                   component: 'Textbox',
                   props: {
                     placeholder: 'Enter a message...',
@@ -155,15 +166,30 @@
                   name: 'b1',
                   component: 'Button',
                   events: {
-                    click: {
-                      fn: 'alert',
-                      args: ['hello there'],
-                    },
+                    // onKeyPress: [
+                    //   {
+                    //     fn: 'alert',
+                    //     key: 'ArrowDown',
+                    //     args: ['Hello'],
+                    //   },
+                    // ],
+                    onClick: [
+                      {
+                        fn: 'update',
+                        args: ['textBox1.placeholder', 'var(ib1.placeholder)'],
+                      },
+                      {
+                        fn: 'update',
+                        args: ['b1.label', 'var(ib1.value)'],
+                      },
+                    ],
                   },
                   props: {
                     label: 'Click Here',
                   },
                 },
+
+                {},
               ],
             },
           },

@@ -7,10 +7,10 @@ interface JaseciComponent {
   component: ComponentNames;
   props: JaseciComponentProps;
   slots?: Record<string, Array<JaseciComponent>>;
-  events?: Record<JaseciEvent, { fn: JaseciAction; args: Array<string | number> }>;
+  events?: Record<JaseciEventName, Array<JaseciAction>>;
 }
 
+type JaseciAction = { fn: JaseciActionName; args: Array<string | number>; key?: string };
 type JaseciComponentProps = Record<string, unknown>;
-
-type JaseciEvent = 'click';
-type JaseciAction = 'alert' | 'log';
+type JaseciEventName = 'onClick' | 'onKeyPress' | 'onEnter';
+type JaseciActionName = 'alert' | 'update' | 'log';
