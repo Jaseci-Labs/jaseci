@@ -1,9 +1,9 @@
 import os
 import configparser
 import torch
-from typing import List
+from typing import Dict, List
 from fastapi import HTTPException
-from transformers import BertModel, BertConfig, BertTokenizer
+from transformers import AutoModel, AutoConfig, AutoTokenizer
 from utils.evaluate import get_embeddings, get_inference
 from utils.models import BiEncoder
 import traceback
@@ -15,9 +15,7 @@ import random
 config = configparser.ConfigParser()
 model, model_name, shared, seed, tokenizer = None, None, None, None, None
 save_restart = False
-output_dir = "log_output"
-DEFAULT_MODEL_NAME = 'pytorch_model.bin'
-DEFAULT_MODEL_PATH = os.path.join(output_dir, 'pytorch_model.bin')
+output_dir = "logoutput"
 device = torch.device("cpu")
 # uncomment this if you wish to use GPU to train
 # this is commented out because this causes issues with
@@ -45,30 +43,36 @@ def config_setup():
     shared = config['MODEL_PARAMETERS']['SHARED']
     seed = int(config['TRAIN_PARAMETERS']['SEED'])
     if model is None:
-        bert_config = BertConfig()
-        tokenizer = BertTokenizer.from_pretrained(model_name,
+        model_config = AutoConfig.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name,
                                                   do_lower_case=True, clean_text=False)
         if shared == "True":
-            cont_bert = BertModel(bert_config)
+            cont_bert = AutoModel.from_config(model_config)
             cand_bert = cont_bert
             print("shared model created")
         else:
-            cont_bert = BertModel(bert_config)
-            cand_bert = BertModel(bert_config)
+            cont_bert = AutoModel.from_config(model_config)
+            cand_bert = AutoModel.from_config(model_config)
             print("non shared model created")
-        model = BiEncoder(config=bert_config,
+        model = BiEncoder(config=model_config,
                           cont_bert=cont_bert, cand_bert=cand_bert, shared=shared)
 
     elif save_restart:
-        torch.save(model.state_dict(), DEFAULT_MODEL_PATH)
-        bert_config = BertConfig()
-        tokenizer = BertTokenizer.from_pretrained(model_name,
+        # torch.save(model.state_dict(), DEFAULT_MODEL_PATH)
+        saved_text = save_model(output_dir)
+        if "Saved" in saved_text:
+            print(saved_text)
+        else:
+            print("Unable to save live model")
+        model_config = AutoConfig.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name,
                                                   do_lower_case=True, clean_text=False)
-        cont_bert = BertModel(bert_config)
-        cand_bert = BertModel(bert_config)
-        model = BiEncoder(config=bert_config,
+        cont_bert = AutoModel.from_config(model_config)
+        cand_bert = AutoModel.from_config(model_config)
+        model = BiEncoder(config=model_config,
                           cont_bert=cont_bert, cand_bert=cand_bert, shared=shared)
         save_restart = False
+
     model.to(device)
     set_seed(seed)
 
@@ -158,7 +162,7 @@ def get_candidate_emb(candidates: List):
 
 
 @jaseci_action(act_group=['bi_enc'], allow_remote=True)
-def set_config(training_parameters, model_parameters):
+def set_config(training_parameters: Dict = None, model_parameters: Dict = None):
     """
     Update the configuration file with any new incoming parameters
     """
@@ -171,8 +175,10 @@ def set_config(training_parameters, model_parameters):
         save_restart = True
     with open("utils/config.cfg", 'w') as configfile:
         config.write(configfile)
-
-    config_setup()
+    try:
+        config_setup()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     return "Config setup is complete."
 
 
@@ -214,9 +220,9 @@ def save_model(model_path: str):
                        cont_bert_path+"pytorch_model.bin")
             with open(model_path+"/config.cfg", 'w') as fp:
                 config.write(fp)
-            return (f'[Saved model at] : {model_path}')
+        return (f'[Saved model at] : {model_path}')
     except Exception as e:
-        print(traceback.print_exc())
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -235,36 +241,36 @@ def load_model(model_path):
         config.read(model_path+'/config.cfg')
         shared = config['MODEL_PARAMETERS']['SHARED']
         if shared == "True":
-            bert_config = BertConfig()
-            tokenizer = BertTokenizer.from_pretrained(os.path.join(
+            model_config = AutoConfig.from_pretrained(model_name)
+            tokenizer = AutoTokenizer.from_pretrained(os.path.join(
                 model_path, "vocab.txt"), do_lower_case=True, clean_text=False)
             cont_bert_state_dict = torch.load(
                 model_path+"/pytorch_model.bin", map_location="cpu")
-            cont_bert = BertModel.from_pretrained(
+            cont_bert = AutoModel.from_pretrained(
                 model_path, state_dict=cont_bert_state_dict)
             cand_bert = cont_bert
         else:
-            cand_bert_path = os.path.join(model_path, "cand_bert/")
-            cont_bert_path = os.path.join(model_path, "cont_bert/")
+            cand_bert_path = os.path.join(model_path, "cand_bert")
+            cont_bert_path = os.path.join(model_path, "cont_bert")
             print('Loading parameters from', cand_bert_path)
             cont_bert_state_dict = torch.load(
                 cont_bert_path+"/pytorch_model.bin", map_location="cpu")
             cand_bert_state_dict = torch.load(
                 cand_bert_path+"/pytorch_model.bin", map_location="cpu")
-            cont_bert = BertModel.from_pretrained(
+            cont_bert = AutoModel.from_pretrained(
                 cont_bert_path, state_dict=cont_bert_state_dict)
-            cand_bert = BertModel.from_pretrained(
+            cand_bert = AutoModel.from_pretrained(
                 cand_bert_path, state_dict=cand_bert_state_dict)
-            tokenizer = BertTokenizer.from_pretrained(os.path.join(
-                cand_bert_path, "vocab.txt"), do_lower_case=True, clean_text=False)
-            bert_config = BertConfig.from_json_file(
+            tokenizer = AutoTokenizer.from_pretrained(os.path.join(
+                cand_bert_path), do_lower_case=True, clean_text=False)
+            model_config = AutoConfig.from_pretrained(
                 os.path.join(cand_bert_path, 'config.json'))
-        model = BiEncoder(config=bert_config,
+        model = BiEncoder(config=model_config,
                           cont_bert=cont_bert, cand_bert=cand_bert, shared=shared)
         model.to(device)
         return (f'[loaded model from] : {model_path}')
     except Exception as e:
-        print(traceback.print_exc())
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
