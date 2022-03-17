@@ -17,9 +17,9 @@ from pprint import pformat
 
 
 # Get an instance of a logger
-def connect_logger_handler(target_logger, handler):
+def connect_logger_handler(target_logger, handler, level=logging.WARN):
     """Attaches standard formatting and adds handler to logger"""
-    target_logger.setLevel(logging.INFO)
+    target_logger.setLevel(level)
     handler.setFormatter(
         logging.Formatter(
             '%(asctime)s - %(levelname)s - %(funcName)s: %(message)s')
@@ -33,7 +33,7 @@ if(len(logger.handlers) < 1):
 
 app_logger = logging.getLogger('app')
 if(len(app_logger.handlers) < 1):
-    connect_logger_handler(app_logger, logging.StreamHandler())
+    connect_logger_handler(app_logger, logging.StreamHandler(), logging.INFO)
 
 
 def log_var_out(val):

@@ -81,10 +81,9 @@ class interface():
                 else:
                     return glob_id
             return self.active_snt_id
-        if(param == 'gph' and self.active_gph_id):
-            return self.active_gph_id
-        if(param == 'nd' and self.active_gph_id):
-            return self.active_gph_id
+        if(param == 'gph' or param == 'nd'):
+            return self.active_gph_id if self.active_gph_id else \
+                self.interface_error('No default graph node available!')
         return None
 
     def interface_error(self, err, stack=None):

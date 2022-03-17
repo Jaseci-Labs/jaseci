@@ -1,6 +1,14 @@
 [![jaseci_core](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci_core_build.yml/badge.svg?branch=main)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci_core_build.yml)
 [![jaseci_serv](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci_serv_build.yml/badge.svg?branch=main)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci_serv_build.yml)
+
 # Jaseci Release Notes
+
+## Version 1.3.1
+
+### Updates
+
+- Improvement: General polish items of JSCTL UI
+- Improvement: Raised the default core logging reporting level to warning
 
 ## Version 1.3
 

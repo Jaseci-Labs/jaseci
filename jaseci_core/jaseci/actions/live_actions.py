@@ -6,7 +6,8 @@ from jaseci.utils.utils import logger
 from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.actions.remote_actions import serv_actions, mark_as_remote
 import requests
-import os, sys
+import os
+import sys
 import inspect
 
 live_actions = {}
