@@ -6,6 +6,7 @@ from jaseci.utils.utils import logger
 from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.actions.remote_actions import serv_actions, mark_as_remote
 import requests
+import os, sys
 import inspect
 
 live_actions = {}
@@ -40,6 +41,9 @@ def load_local_actions(file):
         logger.error(f"Cannot hot load from action file {file}")
         return False
     else:
+        module_dir = os.path.dirname(os.path.realpath(str(file)))
+        if module_dir not in sys.path:
+            sys.path.append(module_dir)
         spec.loader.exec_module(module_from_spec(spec))
         return True
 
