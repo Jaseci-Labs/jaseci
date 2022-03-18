@@ -7,6 +7,7 @@
 
 ### Updates
 
+- New Feature: `std.get_report` gives the what is to be reported so far
 - Improvement: General polish items of JSCTL UI
 - Improvement: Raised the default core logging reporting level to warning
 

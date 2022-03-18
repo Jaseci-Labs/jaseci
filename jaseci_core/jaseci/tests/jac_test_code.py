@@ -1155,3 +1155,15 @@ walker_spawn_unwrap_check = \
         report &(spawn here walker::print);
     }
     """
+
+std_get_report = \
+    """
+    walker init {
+       report 3;
+       report 5;
+       report 6;
+       report 7;
+       report std.get_report();
+       report 8;
+    }
+    """

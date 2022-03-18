@@ -25,7 +25,7 @@ class action(item):
         self.access_list = access_list
         super().__init__(*args, **kwargs)
 
-    def trigger(self, param_list, scope):
+    def trigger(self, param_list, scope, interp):
         """
         param_list should be passed as list of values to lib functions
         Also note that Jac stores preset_in_out as input/output list of hex
@@ -34,5 +34,6 @@ class action(item):
         result = live_actions[
             self.value](*param_list,
                         meta={'m_id': scope.parent._m_id,
-                              'h': scope.parent._h, 'scope': scope})
+                              'h': scope.parent._h, 'scope': scope,
+                              'interp':  interp})
         return result
