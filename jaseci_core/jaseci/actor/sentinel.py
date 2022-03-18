@@ -196,6 +196,7 @@ class sentinel(element, jac_code, sentinel_interp):
                     print(f"Testing {title}: ", end='')
                 wlk.run()
                 if(i['assert_block']):
+                    wlk._loop_ctrl = None
                     wlk.scope_and_run(jac_ir_to_ast(
                         i['assert_block']), run_func=wlk.run_code_block)
                 i['passed'] = True
