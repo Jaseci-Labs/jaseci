@@ -670,7 +670,8 @@ class interp(machine_state):
                 param_list = self.run_expr_list(kid[1]).value
             if (isinstance(atom_res.value, action)):
                 try:
-                    ret = atom_res.value.trigger(param_list, self._jac_scope)
+                    ret = atom_res.value.trigger(
+                        param_list, self._jac_scope, self)
                 except Exception as e:
                     self.rt_error(f'{e}', jac_ast)
                     ret = None
@@ -861,7 +862,7 @@ class interp(machine_state):
         kid = jac_ast.kid
         if (kid[0].name == "KW_KEYS"):
             if(isinstance(atom_res.value, dict)):
-                return jac_value(self, value=atom_res.value.keys())
+                return jac_value(self, value=list(atom_res.value.keys()))
             else:
                 self.rt_error(f'Cannot get keys of {atom_res}. '
                               f'Not Dictionary!', kid[0])

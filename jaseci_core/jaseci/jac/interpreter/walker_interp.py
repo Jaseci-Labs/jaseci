@@ -167,7 +167,7 @@ class walker_interp(interp):
         if(kid[1].name == "expr_list"):
             param_list = m.run_expr_list(kid[1]).value
         try:
-            result = act.trigger(param_list, self._jac_scope)
+            result = act.trigger(param_list, self._jac_scope, self)
         except Exception as e:
             self.rt_error(f'{e}', jac_ast)
             result = None

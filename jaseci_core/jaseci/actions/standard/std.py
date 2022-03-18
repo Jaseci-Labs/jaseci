@@ -143,3 +143,11 @@ def revoke_perms(obj: element, mast: element, meta):
     mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
     return mast.object_perms_revoke(obj=obj,
                                     mast=mast)['success']
+
+
+@jaseci_action()
+def get_report(meta):
+    """
+    Get current report so far for walker run
+    """
+    return meta['interp'].report
