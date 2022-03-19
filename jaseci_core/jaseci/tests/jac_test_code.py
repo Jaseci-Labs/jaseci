@@ -1167,3 +1167,12 @@ std_get_report = \
        report 8;
     }
     """
+
+func_with_array_index = \
+    """
+    walker init {
+       report 3;
+       report 5;
+       report std.get_report()[0];
+    }
+    """

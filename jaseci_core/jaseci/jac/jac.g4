@@ -159,11 +159,7 @@ term: factor ((STAR_MUL | DIV | MOD) factor)*;
 
 factor: (PLUS | MINUS) factor | power;
 
-power: func_call (POW factor)*;
-
-func_call:
-	atom (LPAREN expr_list? RPAREN)?
-	| atom? DBL_COLON NAME spawn_ctx?;
+power: atom (POW factor)*;
 
 atom:
 	INT
@@ -176,24 +172,30 @@ atom:
 	| list_val
 	| dict_val
 	| LPAREN expression RPAREN
+	| DBL_COLON NAME spawn_ctx?
+	| atom atom_trailer+
 	| spawn
-	| atom DOT built_in
-	| atom DOT NAME
-	| atom index_slice
 	| ref
 	| deref
 	| any_type;
+
+atom_trailer:
+	DOT built_in
+	| DOT NAME
+	| index_slice
+	| LPAREN expr_list? RPAREN
+	| DBL_COLON NAME spawn_ctx?;
 
 ref: '&' expression;
 
 deref: STAR_MUL expression;
 
 built_in:
-	cast_built_in
+	| string_built_in
+	| cast_built_in
 	| obj_built_in
 	| dict_built_in
-	| list_built_in
-	| string_built_in;
+	| list_built_in;
 
 cast_built_in: any_type;
 
