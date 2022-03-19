@@ -627,10 +627,10 @@ class interp(machine_state):
 
     def run_power(self, jac_ast):
         """
-        power: func_call (POW factor)*;
+        power: atom (POW factor)*;
         """
         kid = jac_ast.kid
-        result = self.run_func_call(kid[0])
+        result = self.run_atom(kid[0])
         kid = kid[1:]
         if(len(kid) < 1):
             return result
@@ -641,44 +641,6 @@ class interp(machine_state):
                 if(not kid):
                     break
             return result
-
-    def run_func_call(self, jac_ast):
-        """
-        func_call:
-            atom (LPAREN expr_list? RPAREN)?
-            | atom? DBL_COLON NAME spawn_ctx?;
-        """
-        kid = jac_ast.kid
-        atom_res = jac_value(self, value=self._jac_scope.has_obj)
-        if (kid[0].name == 'atom'):
-            atom_res = self.run_atom(kid[0])
-            kid = kid[1:]
-        if(len(kid) < 1):
-            return atom_res
-
-        elif (kid[0].name == 'DBL_COLON'):
-            if(len(kid) > 2):
-                self.run_spawn_ctx(kid[2], atom_res.value)
-            self.call_ability(
-                nd=atom_res.value,
-                name=kid[1].token_text(),
-                act_list=atom_res.value.activity_action_ids)
-            return atom_res
-        elif(kid[0].name == "LPAREN"):
-            param_list = []
-            if(kid[1].name == 'expr_list'):
-                param_list = self.run_expr_list(kid[1]).value
-            if (isinstance(atom_res.value, action)):
-                try:
-                    ret = atom_res.value.trigger(
-                        param_list, self._jac_scope, self)
-                except Exception as e:
-                    self.rt_error(f'{e}', jac_ast)
-                    ret = None
-                return jac_value(self, value=ret)
-            else:
-                self.rt_error(f'Unable to execute ability {atom_res}',
-                              kid[0])
 
     def run_atom(self, jac_ast):
         """
@@ -693,10 +655,9 @@ class interp(machine_state):
             | list_val
             | dict_val
             | LPAREN expression RPAREN
+            | DBL_COLON NAME spawn_ctx?
+            | atom atom_trailer+
             | spawn
-            | atom DOT built_in
-            | atom DOT NAME
-            | atom index_slice
             | ref
             | deref
             | any_type;
@@ -723,27 +684,69 @@ class interp(machine_state):
             return val
         elif(kid[0].name == 'LPAREN'):
             return self.run_expression(kid[1])
+        elif(kid[0].name == 'DBL_COLON'):
+            return self.run_atom_trailer(jac_ast, None)
         elif(kid[0].name == 'atom'):
-            atom_res = self.run_atom(kid[0])
-            if(kid[1].name == 'DOT'):
-                if(kid[2].name == 'built_in'):
-                    return self.run_built_in(kid[2], atom_res)
-                elif(kid[2].name == 'NAME'):
-                    d = atom_res.value
-                    n = kid[2].token_text()
-                    if(self.rt_check_type(d, [dict, element], kid[0])):
-                        ret = jac_value(self, ctx=d, name=n)
-                        ret.unwrap()
-                        return ret
-                    else:
-                        self.rt_error(f"Invalid variable {n}", kid[0])
-            elif (kid[1].name == "index_slice"):
-                if(not self.rt_check_type(
-                        atom_res.value, [list, str, dict], kid[0])):
-                    return atom_res
-                return self.run_index_slice(kid[1], atom_res)
+            ret = self.run_atom(kid[0])
+            for i in kid[1:]:
+                ret = self.run_atom_trailer(i, ret)
+            return ret
         else:
             return self.run_rule(kid[0])
+
+    def run_atom_trailer(self, jac_ast, atom_res):
+        """
+        atom_trailer:
+            DOT built_in
+            | DOT NAME
+            | index_slice
+            | LPAREN expr_list? RPAREN
+            | DBL_COLON NAME spawn_ctx?;
+        """
+        kid = jac_ast.kid
+        if(atom_res is None):
+            atom_res = jac_value(self, value=self._jac_scope.has_obj)
+        if(kid[0].name == 'DOT'):
+            if(kid[1].name == 'built_in'):
+
+                return self.run_built_in(kid[1], atom_res)
+            elif(kid[1].name == 'NAME'):
+                d = atom_res.value
+                n = kid[1].token_text()
+                if(self.rt_check_type(d, [dict, element], kid[0])):
+                    ret = jac_value(self, ctx=d, name=n)
+                    ret.unwrap()
+                    return ret
+                else:
+                    self.rt_error(f"Invalid variable {n}", kid[0])
+        elif (kid[0].name == "index_slice"):
+            if(not self.rt_check_type(
+                    atom_res.value, [list, str, dict], kid[0])):
+                return atom_res
+            return self.run_index_slice(kid[0], atom_res)
+        elif(kid[0].name == "LPAREN"):
+            param_list = []
+            if(kid[1].name == 'expr_list'):
+                param_list = self.run_expr_list(kid[1]).value
+            if (isinstance(atom_res.value, action)):
+                try:
+                    ret = atom_res.value.trigger(
+                        param_list, self._jac_scope, self)
+                except Exception as e:
+                    self.rt_error(f'{e}', jac_ast)
+                    ret = None
+                return jac_value(self, value=ret)
+            else:
+                self.rt_error(f'Unable to execute ability {atom_res}',
+                              kid[0])
+        elif (kid[0].name == 'DBL_COLON'):
+            if(len(kid) > 2):
+                self.run_spawn_ctx(kid[2], atom_res.value)
+            self.call_ability(
+                nd=atom_res.value,
+                name=kid[1].token_text(),
+                act_list=atom_res.value.activity_action_ids)
+            return atom_res
 
     def run_ref(self, jac_ast):
         """

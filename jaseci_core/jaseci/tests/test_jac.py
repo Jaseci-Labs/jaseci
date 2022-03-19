@@ -668,7 +668,6 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep, [3, 5, 6, 7, [3, 5, 6, 7], 8])
 
     def test_func_with_array_index(self):
-        self.logger_on()
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.func_with_array_index)
@@ -677,4 +676,4 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.prime(gph)
         test_walker.run()
         rep = test_walker.report
-        self.assertEqual(rep, [3, 5, 6, 7, [3, 5, 6, 7], 8])
+        self.assertEqual(rep, [3, 5, 3])

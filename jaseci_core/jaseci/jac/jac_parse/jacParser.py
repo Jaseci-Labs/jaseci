@@ -12,7 +12,7 @@ else:
 def serializedATN():
     with StringIO() as buf:
         buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3f")
-        buf.write("\u0436\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
+        buf.write("\u0439\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
         buf.write("\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4\f\t\f\4\r\t\r\4\16")
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
         buf.write("\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31")
@@ -76,49 +76,49 @@ def serializedATN():
         buf.write("\66\3\66\5\66\u02b3\n\66\3\67\3\67\3\67\38\38\38\78\u02bb")
         buf.write("\n8\f8\168\u02be\138\39\39\39\79\u02c3\n9\f9\169\u02c6")
         buf.write("\139\3:\3:\3:\5:\u02cb\n:\3;\3;\3;\7;\u02d0\n;\f;\16;")
-        buf.write("\u02d3\13;\3<\3<\3<\5<\u02d8\n<\3<\5<\u02db\n<\3<\5<\u02de")
-        buf.write("\n<\3<\3<\3<\5<\u02e3\n<\5<\u02e5\n<\3=\3=\3=\3=\3=\3")
-        buf.write("=\3=\3=\3=\3=\3=\3=\3=\3=\3=\3=\3=\3=\5=\u02f9\n=\3=\3")
-        buf.write("=\3=\3=\3=\3=\3=\3=\7=\u0303\n=\f=\16=\u0306\13=\3>\3")
-        buf.write(">\3>\3?\3?\3?\3@\3@\3@\3@\3@\5@\u0313\n@\3A\3A\3B\3B\3")
-        buf.write("C\3C\3C\3C\3C\5C\u031e\nC\3D\3D\3E\3E\3E\3E\3E\3E\3E\5")
-        buf.write("E\u0329\nE\3F\3F\5F\u032d\nF\3F\3F\3F\5F\u0332\nF\5F\u0334")
-        buf.write("\nF\5F\u0336\nF\3G\3G\3G\3G\3H\3H\3H\3H\3I\3I\3I\3I\3")
-        buf.write("J\3J\3J\5J\u0347\nJ\3K\3K\3K\3K\3K\3K\5K\u034f\nK\3K\5")
-        buf.write("K\u0352\nK\3K\5K\u0355\nK\3L\3L\3L\3L\3L\3L\5L\u035d\n")
-        buf.write("L\3L\5L\u0360\nL\3L\5L\u0363\nL\3M\3M\3M\3M\3M\3M\5M\u036b")
-        buf.write("\nM\3M\5M\u036e\nM\3M\5M\u0371\nM\3N\3N\5N\u0375\nN\3")
-        buf.write("N\3N\3O\3O\3O\3O\3O\3O\3O\3O\3O\3O\5O\u0383\nO\3P\3P\3")
-        buf.write("P\3P\7P\u0389\nP\fP\16P\u038c\13P\5P\u038e\nP\3P\3P\3")
-        buf.write("Q\3Q\3Q\3Q\3R\3R\5R\u0398\nR\3R\3R\3S\3S\3S\5S\u039f\n")
-        buf.write("S\3T\5T\u03a2\nT\3T\3T\5T\u03a6\nT\3U\3U\3U\3V\3V\5V\u03ad")
-        buf.write("\nV\3W\3W\3W\3W\7W\u03b3\nW\fW\16W\u03b6\13W\5W\u03b8")
-        buf.write("\nW\3W\3W\3X\3X\3X\3X\7X\u03c0\nX\fX\16X\u03c3\13X\5X")
-        buf.write("\u03c5\nX\3X\3X\3Y\3Y\3Y\3Y\3Z\3Z\3Z\3Z\3[\3[\3\\\5\\")
-        buf.write("\u03d4\n\\\3\\\3\\\5\\\u03d8\n\\\3\\\3\\\3\\\3\\\3]\3")
-        buf.write("]\5]\u03e0\n]\7]\u03e2\n]\f]\16]\u03e5\13]\3^\3^\3^\3")
-        buf.write("^\3^\3^\3^\3^\5^\u03ef\n^\3_\3_\3_\3`\3`\5`\u03f6\n`\3")
-        buf.write("`\6`\u03f9\n`\r`\16`\u03fa\3a\3a\3a\5a\u0400\na\3a\5a")
-        buf.write("\u0403\na\6a\u0405\na\ra\16a\u0406\3b\3b\5b\u040b\nb\3")
-        buf.write("b\3b\5b\u040f\nb\3c\3c\3c\5c\u0414\nc\6c\u0416\nc\rc\16")
-        buf.write("c\u0417\3d\3d\3e\3e\5e\u041e\ne\3f\3f\5f\u0422\nf\3g\3")
-        buf.write("g\3g\3g\5g\u0428\ng\3h\3h\5h\u042c\nh\5h\u042e\nh\3h\3")
-        buf.write("h\3h\3h\3i\3i\3i\2\3xj\2\4\6\b\n\f\16\20\22\24\26\30\32")
-        buf.write("\34\36 \"$&(*,.\60\62\64\668:<>@BDFHJLNPRTVXZ\\^`bdfh")
-        buf.write("jlnprtvxz|~\u0080\u0082\u0084\u0086\u0088\u008a\u008c")
-        buf.write("\u008e\u0090\u0092\u0094\u0096\u0098\u009a\u009c\u009e")
-        buf.write("\u00a0\u00a2\u00a4\u00a6\u00a8\u00aa\u00ac\u00ae\u00b0")
-        buf.write("\u00b2\u00b4\u00b6\u00b8\u00ba\u00bc\u00be\u00c0\u00c2")
-        buf.write("\u00c4\u00c6\u00c8\u00ca\u00cc\u00ce\u00d0\2\16\4\2\33")
-        buf.write("\34\"\"\4\2=>@@\3\2/\62\3\2\64\65\3\2RS\3\2TV\3\2\37!")
-        buf.write("\5\2\13\21\26\26))\4\2\22\22\24\24\5\2\22\22\26\26))\4")
-        buf.write("\2\6\6\n\n\b\2\22\22\26\26))\\]__aa\2\u047d\2\u00d3\3")
-        buf.write("\2\2\2\4\u00e2\3\2\2\2\6\u00ed\3\2\2\2\b\u0117\3\2\2\2")
-        buf.write("\n\u0120\3\2\2\2\f\u0125\3\2\2\2\16\u0134\3\2\2\2\20\u0136")
-        buf.write("\3\2\2\2\22\u013d\3\2\2\2\24\u0153\3\2\2\2\26\u0168\3")
-        buf.write("\2\2\2\30\u016b\3\2\2\2\32\u016f\3\2\2\2\34\u0173\3\2")
-        buf.write("\2\2\36\u0182\3\2\2\2 \u0186\3\2\2\2\"\u018a\3\2\2\2$")
-        buf.write("\u0198\3\2\2\2&\u01a4\3\2\2\2(\u01a6\3\2\2\2*\u01ab\3")
+        buf.write("\u02d3\13;\3<\3<\3<\3<\3<\3<\3<\3<\3<\3<\3<\3<\3<\3<\3")
+        buf.write("<\3<\3<\5<\u02e6\n<\3<\3<\3<\3<\5<\u02ec\n<\3<\3<\6<\u02f0")
+        buf.write("\n<\r<\16<\u02f1\7<\u02f4\n<\f<\16<\u02f7\13<\3=\3=\3")
+        buf.write("=\3=\3=\3=\3=\5=\u0300\n=\3=\3=\3=\3=\5=\u0306\n=\5=\u0308")
+        buf.write("\n=\3>\3>\3>\3?\3?\3?\3@\3@\3@\3@\3@\3@\5@\u0316\n@\3")
+        buf.write("A\3A\3B\3B\3C\3C\3C\3C\3C\5C\u0321\nC\3D\3D\3E\3E\3E\3")
+        buf.write("E\3E\3E\3E\5E\u032c\nE\3F\3F\5F\u0330\nF\3F\3F\3F\5F\u0335")
+        buf.write("\nF\5F\u0337\nF\5F\u0339\nF\3G\3G\3G\3G\3H\3H\3H\3H\3")
+        buf.write("I\3I\3I\3I\3J\3J\3J\5J\u034a\nJ\3K\3K\3K\3K\3K\3K\5K\u0352")
+        buf.write("\nK\3K\5K\u0355\nK\3K\5K\u0358\nK\3L\3L\3L\3L\3L\3L\5")
+        buf.write("L\u0360\nL\3L\5L\u0363\nL\3L\5L\u0366\nL\3M\3M\3M\3M\3")
+        buf.write("M\3M\5M\u036e\nM\3M\5M\u0371\nM\3M\5M\u0374\nM\3N\3N\5")
+        buf.write("N\u0378\nN\3N\3N\3O\3O\3O\3O\3O\3O\3O\3O\3O\3O\5O\u0386")
+        buf.write("\nO\3P\3P\3P\3P\7P\u038c\nP\fP\16P\u038f\13P\5P\u0391")
+        buf.write("\nP\3P\3P\3Q\3Q\3Q\3Q\3R\3R\5R\u039b\nR\3R\3R\3S\3S\3")
+        buf.write("S\5S\u03a2\nS\3T\5T\u03a5\nT\3T\3T\5T\u03a9\nT\3U\3U\3")
+        buf.write("U\3V\3V\5V\u03b0\nV\3W\3W\3W\3W\7W\u03b6\nW\fW\16W\u03b9")
+        buf.write("\13W\5W\u03bb\nW\3W\3W\3X\3X\3X\3X\7X\u03c3\nX\fX\16X")
+        buf.write("\u03c6\13X\5X\u03c8\nX\3X\3X\3Y\3Y\3Y\3Y\3Z\3Z\3Z\3Z\3")
+        buf.write("[\3[\3\\\5\\\u03d7\n\\\3\\\3\\\5\\\u03db\n\\\3\\\3\\\3")
+        buf.write("\\\3\\\3]\3]\5]\u03e3\n]\7]\u03e5\n]\f]\16]\u03e8\13]")
+        buf.write("\3^\3^\3^\3^\3^\3^\3^\3^\5^\u03f2\n^\3_\3_\3_\3`\3`\5")
+        buf.write("`\u03f9\n`\3`\6`\u03fc\n`\r`\16`\u03fd\3a\3a\3a\5a\u0403")
+        buf.write("\na\3a\5a\u0406\na\6a\u0408\na\ra\16a\u0409\3b\3b\5b\u040e")
+        buf.write("\nb\3b\3b\5b\u0412\nb\3c\3c\3c\5c\u0417\nc\6c\u0419\n")
+        buf.write("c\rc\16c\u041a\3d\3d\3e\3e\5e\u0421\ne\3f\3f\5f\u0425")
+        buf.write("\nf\3g\3g\3g\3g\5g\u042b\ng\3h\3h\5h\u042f\nh\5h\u0431")
+        buf.write("\nh\3h\3h\3h\3h\3i\3i\3i\2\3vj\2\4\6\b\n\f\16\20\22\24")
+        buf.write("\26\30\32\34\36 \"$&(*,.\60\62\64\668:<>@BDFHJLNPRTVX")
+        buf.write("Z\\^`bdfhjlnprtvxz|~\u0080\u0082\u0084\u0086\u0088\u008a")
+        buf.write("\u008c\u008e\u0090\u0092\u0094\u0096\u0098\u009a\u009c")
+        buf.write("\u009e\u00a0\u00a2\u00a4\u00a6\u00a8\u00aa\u00ac\u00ae")
+        buf.write("\u00b0\u00b2\u00b4\u00b6\u00b8\u00ba\u00bc\u00be\u00c0")
+        buf.write("\u00c2\u00c4\u00c6\u00c8\u00ca\u00cc\u00ce\u00d0\2\16")
+        buf.write("\4\2\33\34\"\"\4\2=>@@\3\2/\62\3\2\64\65\3\2RS\3\2TV\3")
+        buf.write("\2\37!\5\2\13\21\26\26))\4\2\22\22\24\24\5\2\22\22\26")
+        buf.write("\26))\4\2\6\6\n\n\b\2\22\22\26\26))\\]__aa\2\u0483\2\u00d3")
+        buf.write("\3\2\2\2\4\u00e2\3\2\2\2\6\u00ed\3\2\2\2\b\u0117\3\2\2")
+        buf.write("\2\n\u0120\3\2\2\2\f\u0125\3\2\2\2\16\u0134\3\2\2\2\20")
+        buf.write("\u0136\3\2\2\2\22\u013d\3\2\2\2\24\u0153\3\2\2\2\26\u0168")
+        buf.write("\3\2\2\2\30\u016b\3\2\2\2\32\u016f\3\2\2\2\34\u0173\3")
+        buf.write("\2\2\2\36\u0182\3\2\2\2 \u0186\3\2\2\2\"\u018a\3\2\2\2")
+        buf.write("$\u0198\3\2\2\2&\u01a4\3\2\2\2(\u01a6\3\2\2\2*\u01ab\3")
         buf.write("\2\2\2,\u01c0\3\2\2\2.\u01dd\3\2\2\2\60\u01df\3\2\2\2")
         buf.write("\62\u01e5\3\2\2\2\64\u01ee\3\2\2\2\66\u01f2\3\2\2\28\u01fa")
         buf.write("\3\2\2\2:\u020c\3\2\2\2<\u020e\3\2\2\2>\u0223\3\2\2\2")
@@ -129,23 +129,23 @@ def serializedATN():
         buf.write("\3\2\2\2^\u0283\3\2\2\2`\u0286\3\2\2\2b\u0289\3\2\2\2")
         buf.write("d\u028c\3\2\2\2f\u0295\3\2\2\2h\u02a8\3\2\2\2j\u02b2\3")
         buf.write("\2\2\2l\u02b4\3\2\2\2n\u02b7\3\2\2\2p\u02bf\3\2\2\2r\u02ca")
-        buf.write("\3\2\2\2t\u02cc\3\2\2\2v\u02e4\3\2\2\2x\u02f8\3\2\2\2")
-        buf.write("z\u0307\3\2\2\2|\u030a\3\2\2\2~\u0312\3\2\2\2\u0080\u0314")
-        buf.write("\3\2\2\2\u0082\u0316\3\2\2\2\u0084\u031d\3\2\2\2\u0086")
-        buf.write("\u031f\3\2\2\2\u0088\u0321\3\2\2\2\u008a\u0335\3\2\2\2")
-        buf.write("\u008c\u0337\3\2\2\2\u008e\u033b\3\2\2\2\u0090\u033f\3")
-        buf.write("\2\2\2\u0092\u0346\3\2\2\2\u0094\u0354\3\2\2\2\u0096\u0362")
-        buf.write("\3\2\2\2\u0098\u0370\3\2\2\2\u009a\u0372\3\2\2\2\u009c")
-        buf.write("\u0382\3\2\2\2\u009e\u0384\3\2\2\2\u00a0\u0391\3\2\2\2")
-        buf.write("\u00a2\u0395\3\2\2\2\u00a4\u039e\3\2\2\2\u00a6\u03a1\3")
-        buf.write("\2\2\2\u00a8\u03a7\3\2\2\2\u00aa\u03aa\3\2\2\2\u00ac\u03ae")
-        buf.write("\3\2\2\2\u00ae\u03bb\3\2\2\2\u00b0\u03c8\3\2\2\2\u00b2")
-        buf.write("\u03cc\3\2\2\2\u00b4\u03d0\3\2\2\2\u00b6\u03d3\3\2\2\2")
-        buf.write("\u00b8\u03e3\3\2\2\2\u00ba\u03ee\3\2\2\2\u00bc\u03f0\3")
-        buf.write("\2\2\2\u00be\u03f8\3\2\2\2\u00c0\u0404\3\2\2\2\u00c2\u040a")
-        buf.write("\3\2\2\2\u00c4\u0415\3\2\2\2\u00c6\u0419\3\2\2\2\u00c8")
-        buf.write("\u041b\3\2\2\2\u00ca\u041f\3\2\2\2\u00cc\u0423\3\2\2\2")
-        buf.write("\u00ce\u042d\3\2\2\2\u00d0\u0433\3\2\2\2\u00d2\u00d4\5")
+        buf.write("\3\2\2\2t\u02cc\3\2\2\2v\u02eb\3\2\2\2x\u0307\3\2\2\2")
+        buf.write("z\u0309\3\2\2\2|\u030c\3\2\2\2~\u0315\3\2\2\2\u0080\u0317")
+        buf.write("\3\2\2\2\u0082\u0319\3\2\2\2\u0084\u0320\3\2\2\2\u0086")
+        buf.write("\u0322\3\2\2\2\u0088\u0324\3\2\2\2\u008a\u0338\3\2\2\2")
+        buf.write("\u008c\u033a\3\2\2\2\u008e\u033e\3\2\2\2\u0090\u0342\3")
+        buf.write("\2\2\2\u0092\u0349\3\2\2\2\u0094\u0357\3\2\2\2\u0096\u0365")
+        buf.write("\3\2\2\2\u0098\u0373\3\2\2\2\u009a\u0375\3\2\2\2\u009c")
+        buf.write("\u0385\3\2\2\2\u009e\u0387\3\2\2\2\u00a0\u0394\3\2\2\2")
+        buf.write("\u00a2\u0398\3\2\2\2\u00a4\u03a1\3\2\2\2\u00a6\u03a4\3")
+        buf.write("\2\2\2\u00a8\u03aa\3\2\2\2\u00aa\u03ad\3\2\2\2\u00ac\u03b1")
+        buf.write("\3\2\2\2\u00ae\u03be\3\2\2\2\u00b0\u03cb\3\2\2\2\u00b2")
+        buf.write("\u03cf\3\2\2\2\u00b4\u03d3\3\2\2\2\u00b6\u03d6\3\2\2\2")
+        buf.write("\u00b8\u03e6\3\2\2\2\u00ba\u03f1\3\2\2\2\u00bc\u03f3\3")
+        buf.write("\2\2\2\u00be\u03fb\3\2\2\2\u00c0\u0407\3\2\2\2\u00c2\u040d")
+        buf.write("\3\2\2\2\u00c4\u0418\3\2\2\2\u00c6\u041c\3\2\2\2\u00c8")
+        buf.write("\u041e\3\2\2\2\u00ca\u0422\3\2\2\2\u00cc\u0426\3\2\2\2")
+        buf.write("\u00ce\u0430\3\2\2\2\u00d0\u0436\3\2\2\2\u00d2\u00d4\5")
         buf.write("\6\4\2\u00d3\u00d2\3\2\2\2\u00d3\u00d4\3\2\2\2\u00d4\u00d8")
         buf.write("\3\2\2\2\u00d5\u00d7\5\4\3\2\u00d6\u00d5\3\2\2\2\u00d7")
         buf.write("\u00da\3\2\2\2\u00d8\u00d6\3\2\2\2\u00d8\u00d9\3\2\2\2")
@@ -362,168 +362,170 @@ def serializedATN():
         buf.write("v<\2\u02cd\u02ce\7W\2\2\u02ce\u02d0\5r:\2\u02cf\u02cd")
         buf.write("\3\2\2\2\u02d0\u02d3\3\2\2\2\u02d1\u02cf\3\2\2\2\u02d1")
         buf.write("\u02d2\3\2\2\2\u02d2u\3\2\2\2\u02d3\u02d1\3\2\2\2\u02d4")
-        buf.write("\u02da\5x=\2\u02d5\u02d7\7X\2\2\u02d6\u02d8\58\35\2\u02d7")
-        buf.write("\u02d6\3\2\2\2\u02d7\u02d8\3\2\2\2\u02d8\u02d9\3\2\2\2")
-        buf.write("\u02d9\u02db\7Y\2\2\u02da\u02d5\3\2\2\2\u02da\u02db\3")
-        buf.write("\2\2\2\u02db\u02e5\3\2\2\2\u02dc\u02de\5x=\2\u02dd\u02dc")
-        buf.write("\3\2\2\2\u02dd\u02de\3\2\2\2\u02de\u02df\3\2\2\2\u02df")
-        buf.write("\u02e0\7%\2\2\u02e0\u02e2\7a\2\2\u02e1\u02e3\5\u00acW")
-        buf.write("\2\u02e2\u02e1\3\2\2\2\u02e2\u02e3\3\2\2\2\u02e3\u02e5")
-        buf.write("\3\2\2\2\u02e4\u02d4\3\2\2\2\u02e4\u02dd\3\2\2\2\u02e5")
-        buf.write("w\3\2\2\2\u02e6\u02e7\b=\1\2\u02e7\u02f9\7_\2\2\u02e8")
-        buf.write("\u02f9\7\\\2\2\u02e9\u02f9\7]\2\2\u02ea\u02f9\7^\2\2\u02eb")
-        buf.write("\u02f9\7`\2\2\u02ec\u02f9\7a\2\2\u02ed\u02f9\5\u008aF")
-        buf.write("\2\u02ee\u02f9\5\u009aN\2\u02ef\u02f9\5\u009eP\2\u02f0")
-        buf.write("\u02f1\7X\2\2\u02f1\u02f2\5\\/\2\u02f2\u02f3\7Y\2\2\u02f3")
-        buf.write("\u02f9\3\2\2\2\u02f4\u02f9\5\u00a2R\2\u02f5\u02f9\5z>")
-        buf.write("\2\u02f6\u02f9\5|?\2\u02f7\u02f9\5\u00b4[\2\u02f8\u02e6")
-        buf.write("\3\2\2\2\u02f8\u02e8\3\2\2\2\u02f8\u02e9\3\2\2\2\u02f8")
-        buf.write("\u02ea\3\2\2\2\u02f8\u02eb\3\2\2\2\u02f8\u02ec\3\2\2\2")
-        buf.write("\u02f8\u02ed\3\2\2\2\u02f8\u02ee\3\2\2\2\u02f8\u02ef\3")
-        buf.write("\2\2\2\u02f8\u02f0\3\2\2\2\u02f8\u02f4\3\2\2\2\u02f8\u02f5")
-        buf.write("\3\2\2\2\u02f8\u02f6\3\2\2\2\u02f8\u02f7\3\2\2\2\u02f9")
-        buf.write("\u0304\3\2\2\2\u02fa\u02fb\f\b\2\2\u02fb\u02fc\7D\2\2")
-        buf.write("\u02fc\u0303\5~@\2\u02fd\u02fe\f\7\2\2\u02fe\u02ff\7D")
-        buf.write("\2\2\u02ff\u0303\7a\2\2\u0300\u0301\f\6\2\2\u0301\u0303")
-        buf.write("\5\u009cO\2\u0302\u02fa\3\2\2\2\u0302\u02fd\3\2\2\2\u0302")
-        buf.write("\u0300\3\2\2\2\u0303\u0306\3\2\2\2\u0304\u0302\3\2\2\2")
-        buf.write("\u0304\u0305\3\2\2\2\u0305y\3\2\2\2\u0306\u0304\3\2\2")
-        buf.write("\2\u0307\u0308\7\4\2\2\u0308\u0309\5\\/\2\u0309{\3\2\2")
-        buf.write("\2\u030a\u030b\7T\2\2\u030b\u030c\5\\/\2\u030c}\3\2\2")
-        buf.write("\2\u030d\u0313\5\u0080A\2\u030e\u0313\5\u0082B\2\u030f")
-        buf.write("\u0313\5\u0084C\2\u0310\u0313\5\u0086D\2\u0311\u0313\5")
-        buf.write("\u0088E\2\u0312\u030d\3\2\2\2\u0312\u030e\3\2\2\2\u0312")
-        buf.write("\u030f\3\2\2\2\u0312\u0310\3\2\2\2\u0312\u0311\3\2\2\2")
-        buf.write("\u0313\177\3\2\2\2\u0314\u0315\5\u00b4[\2\u0315\u0081")
-        buf.write("\3\2\2\2\u0316\u0317\t\b\2\2\u0317\u0083\3\2\2\2\u0318")
-        buf.write("\u031e\7\36\2\2\u0319\u031a\7\'\2\2\u031a\u031b\5\66\34")
-        buf.write("\2\u031b\u031c\7(\2\2\u031c\u031e\3\2\2\2\u031d\u0318")
-        buf.write("\3\2\2\2\u031d\u0319\3\2\2\2\u031e\u0085\3\2\2\2\u031f")
-        buf.write("\u0320\7\35\2\2\u0320\u0087\3\2\2\2\u0321\u0322\7\13\2")
-        buf.write("\2\u0322\u0323\7%\2\2\u0323\u0328\7a\2\2\u0324\u0325\7")
-        buf.write("X\2\2\u0325\u0326\58\35\2\u0326\u0327\7Y\2\2\u0327\u0329")
-        buf.write("\3\2\2\2\u0328\u0324\3\2\2\2\u0328\u0329\3\2\2\2\u0329")
-        buf.write("\u0089\3\2\2\2\u032a\u032c\5\u008cG\2\u032b\u032d\5\u00ae")
-        buf.write("X\2\u032c\u032b\3\2\2\2\u032c\u032d\3\2\2\2\u032d\u0336")
-        buf.write("\3\2\2\2\u032e\u0333\5\u0092J\2\u032f\u0331\5\u008cG\2")
-        buf.write("\u0330\u0332\5\u00aeX\2\u0331\u0330\3\2\2\2\u0331\u0332")
-        buf.write("\3\2\2\2\u0332\u0334\3\2\2\2\u0333\u032f\3\2\2\2\u0333")
-        buf.write("\u0334\3\2\2\2\u0334\u0336\3\2\2\2\u0335\u032a\3\2\2\2")
-        buf.write("\u0335\u032e\3\2\2\2\u0336\u008b\3\2\2\2\u0337\u0338\7")
-        buf.write("\26\2\2\u0338\u0339\7%\2\2\u0339\u033a\7a\2\2\u033a\u008d")
-        buf.write("\3\2\2\2\u033b\u033c\7*\2\2\u033c\u033d\7%\2\2\u033d\u033e")
-        buf.write("\7a\2\2\u033e\u008f\3\2\2\2\u033f\u0340\7\22\2\2\u0340")
-        buf.write("\u0341\7%\2\2\u0341\u0342\7a\2\2\u0342\u0091\3\2\2\2\u0343")
-        buf.write("\u0347\5\u0094K\2\u0344\u0347\5\u0096L\2\u0345\u0347\5")
-        buf.write("\u0098M\2\u0346\u0343\3\2\2\2\u0346\u0344\3\2\2\2\u0346")
-        buf.write("\u0345\3\2\2\2\u0347\u0093\3\2\2\2\u0348\u0355\7\5\2\2")
-        buf.write("\u0349\u0351\7S\2\2\u034a\u034b\7Z\2\2\u034b\u034e\7a")
-        buf.write("\2\2\u034c\u034f\5\u00acW\2\u034d\u034f\5\u00aeX\2\u034e")
-        buf.write("\u034c\3\2\2\2\u034e\u034d\3\2\2\2\u034e\u034f\3\2\2\2")
-        buf.write("\u034f\u0350\3\2\2\2\u0350\u0352\7[\2\2\u0351\u034a\3")
-        buf.write("\2\2\2\u0351\u0352\3\2\2\2\u0352\u0353\3\2\2\2\u0353\u0355")
-        buf.write("\7\6\2\2\u0354\u0348\3\2\2\2\u0354\u0349\3\2\2\2\u0355")
-        buf.write("\u0095\3\2\2\2\u0356\u0363\7\7\2\2\u0357\u035f\7\b\2\2")
-        buf.write("\u0358\u0359\7Z\2\2\u0359\u035c\7a\2\2\u035a\u035d\5\u00ac")
-        buf.write("W\2\u035b\u035d\5\u00aeX\2\u035c\u035a\3\2\2\2\u035c\u035b")
-        buf.write("\3\2\2\2\u035c\u035d\3\2\2\2\u035d\u035e\3\2\2\2\u035e")
-        buf.write("\u0360\7[\2\2\u035f\u0358\3\2\2\2\u035f\u0360\3\2\2\2")
-        buf.write("\u0360\u0361\3\2\2\2\u0361\u0363\7S\2\2\u0362\u0356\3")
-        buf.write("\2\2\2\u0362\u0357\3\2\2\2\u0363\u0097\3\2\2\2\u0364\u0371")
-        buf.write("\7\t\2\2\u0365\u036d\7\b\2\2\u0366\u0367\7Z\2\2\u0367")
-        buf.write("\u036a\7a\2\2\u0368\u036b\5\u00acW\2\u0369\u036b\5\u00ae")
-        buf.write("X\2\u036a\u0368\3\2\2\2\u036a\u0369\3\2\2\2\u036a\u036b")
-        buf.write("\3\2\2\2\u036b\u036c\3\2\2\2\u036c\u036e\7[\2\2\u036d")
-        buf.write("\u0366\3\2\2\2\u036d\u036e\3\2\2\2\u036e\u036f\3\2\2\2")
-        buf.write("\u036f\u0371\7\6\2\2\u0370\u0364\3\2\2\2\u0370\u0365\3")
-        buf.write("\2\2\2\u0371\u0099\3\2\2\2\u0372\u0374\7Z\2\2\u0373\u0375")
-        buf.write("\58\35\2\u0374\u0373\3\2\2\2\u0374\u0375\3\2\2\2\u0375")
-        buf.write("\u0376\3\2\2\2\u0376\u0377\7[\2\2\u0377\u009b\3\2\2\2")
-        buf.write("\u0378\u0379\7Z\2\2\u0379\u037a\5\\/\2\u037a\u037b\7[")
-        buf.write("\2\2\u037b\u0383\3\2\2\2\u037c\u037d\7Z\2\2\u037d\u037e")
-        buf.write("\5\\/\2\u037e\u037f\7$\2\2\u037f\u0380\5\\/\2\u0380\u0381")
-        buf.write("\7[\2\2\u0381\u0383\3\2\2\2\u0382\u0378\3\2\2\2\u0382")
-        buf.write("\u037c\3\2\2\2\u0383\u009d\3\2\2\2\u0384\u038d\7\'\2\2")
-        buf.write("\u0385\u038a\5\u00a0Q\2\u0386\u0387\7P\2\2\u0387\u0389")
-        buf.write("\5\u00a0Q\2\u0388\u0386\3\2\2\2\u0389\u038c\3\2\2\2\u038a")
-        buf.write("\u0388\3\2\2\2\u038a\u038b\3\2\2\2\u038b\u038e\3\2\2\2")
-        buf.write("\u038c\u038a\3\2\2\2\u038d\u0385\3\2\2\2\u038d\u038e\3")
-        buf.write("\2\2\2\u038e\u038f\3\2\2\2\u038f\u0390\7(\2\2\u0390\u009f")
-        buf.write("\3\2\2\2\u0391\u0392\7]\2\2\u0392\u0393\7$\2\2\u0393\u0394")
-        buf.write("\5\\/\2\u0394\u00a1\3\2\2\2\u0395\u0397\7\31\2\2\u0396")
-        buf.write("\u0398\5\\/\2\u0397\u0396\3\2\2\2\u0397\u0398\3\2\2\2")
-        buf.write("\u0398\u0399\3\2\2\2\u0399\u039a\5\u00a4S\2\u039a\u00a3")
-        buf.write("\3\2\2\2\u039b\u039f\5\u00a6T\2\u039c\u039f\5\u00aaV\2")
-        buf.write("\u039d\u039f\5\u00a8U\2\u039e\u039b\3\2\2\2\u039e\u039c")
-        buf.write("\3\2\2\2\u039e\u039d\3\2\2\2\u039f\u00a5\3\2\2\2\u03a0")
-        buf.write("\u03a2\5\u0092J\2\u03a1\u03a0\3\2\2\2\u03a1\u03a2\3\2")
-        buf.write("\2\2\u03a2\u03a3\3\2\2\2\u03a3\u03a5\5\u008cG\2\u03a4")
-        buf.write("\u03a6\5\u00acW\2\u03a5\u03a4\3\2\2\2\u03a5\u03a6\3\2")
-        buf.write("\2\2\u03a6\u00a7\3\2\2\2\u03a7\u03a8\5\u0092J\2\u03a8")
-        buf.write("\u03a9\5\u0090I\2\u03a9\u00a9\3\2\2\2\u03aa\u03ac\5\u008e")
-        buf.write("H\2\u03ab\u03ad\5\u00acW\2\u03ac\u03ab\3\2\2\2\u03ac\u03ad")
-        buf.write("\3\2\2\2\u03ad\u00ab\3\2\2\2\u03ae\u03b7\7X\2\2\u03af")
-        buf.write("\u03b4\5\u00b0Y\2\u03b0\u03b1\7P\2\2\u03b1\u03b3\5\u00b0")
-        buf.write("Y\2\u03b2\u03b0\3\2\2\2\u03b3\u03b6\3\2\2\2\u03b4\u03b2")
-        buf.write("\3\2\2\2\u03b4\u03b5\3\2\2\2\u03b5\u03b8\3\2\2\2\u03b6")
-        buf.write("\u03b4\3\2\2\2\u03b7\u03af\3\2\2\2\u03b7\u03b8\3\2\2\2")
-        buf.write("\u03b8\u03b9\3\2\2\2\u03b9\u03ba\7Y\2\2\u03ba\u00ad\3")
-        buf.write("\2\2\2\u03bb\u03c4\7X\2\2\u03bc\u03c1\5\u00b2Z\2\u03bd")
-        buf.write("\u03be\7P\2\2\u03be\u03c0\5\u00b2Z\2\u03bf\u03bd\3\2\2")
-        buf.write("\2\u03c0\u03c3\3\2\2\2\u03c1\u03bf\3\2\2\2\u03c1\u03c2")
-        buf.write("\3\2\2\2\u03c2\u03c5\3\2\2\2\u03c3\u03c1\3\2\2\2\u03c4")
-        buf.write("\u03bc\3\2\2\2\u03c4\u03c5\3\2\2\2\u03c5\u03c6\3\2\2\2")
-        buf.write("\u03c6\u03c7\7Y\2\2\u03c7\u00af\3\2\2\2\u03c8\u03c9\7")
-        buf.write("a\2\2\u03c9\u03ca\7.\2\2\u03ca\u03cb\5\\/\2\u03cb\u00b1")
-        buf.write("\3\2\2\2\u03cc\u03cd\7a\2\2\u03cd\u03ce\5j\66\2\u03ce")
-        buf.write("\u03cf\5\\/\2\u03cf\u00b3\3\2\2\2\u03d0\u03d1\t\t\2\2")
-        buf.write("\u03d1\u00b5\3\2\2\2\u03d2\u03d4\7\23\2\2\u03d3\u03d2")
-        buf.write("\3\2\2\2\u03d3\u03d4\3\2\2\2\u03d4\u03d5\3\2\2\2\u03d5")
-        buf.write("\u03d7\t\n\2\2\u03d6\u03d8\5\u00d0i\2\u03d7\u03d6\3\2")
-        buf.write("\2\2\u03d7\u03d8\3\2\2\2\u03d8\u03d9\3\2\2\2\u03d9\u03da")
-        buf.write("\7\'\2\2\u03da\u03db\5\u00b8]\2\u03db\u03dc\7(\2\2\u03dc")
-        buf.write("\u00b7\3\2\2\2\u03dd\u03df\5\u00ba^\2\u03de\u03e0\7-\2")
-        buf.write("\2\u03df\u03de\3\2\2\2\u03df\u03e0\3\2\2\2\u03e0\u03e2")
-        buf.write("\3\2\2\2\u03e1\u03dd\3\2\2\2\u03e2\u03e5\3\2\2\2\u03e3")
-        buf.write("\u03e1\3\2\2\2\u03e3\u03e4\3\2\2\2\u03e4\u00b9\3\2\2\2")
-        buf.write("\u03e5\u03e3\3\2\2\2\u03e6\u03ef\5\u00c8e\2\u03e7\u03ef")
-        buf.write("\5\u00c2b\2\u03e8\u03ef\5\u00bc_\2\u03e9\u03ea\5\u00d0")
-        buf.write("i\2\u03ea\u03eb\7.\2\2\u03eb\u03ec\5\u00d0i\2\u03ec\u03ef")
-        buf.write("\3\2\2\2\u03ed\u03ef\5\u00ceh\2\u03ee\u03e6\3\2\2\2\u03ee")
-        buf.write("\u03e7\3\2\2\2\u03ee\u03e8\3\2\2\2\u03ee\u03e9\3\2\2\2")
-        buf.write("\u03ee\u03ed\3\2\2\2\u03ef\u00bb\3\2\2\2\u03f0\u03f1\t")
-        buf.write("\13\2\2\u03f1\u03f2\5\u00be`\2\u03f2\u00bd\3\2\2\2\u03f3")
-        buf.write("\u03f5\7Z\2\2\u03f4\u03f6\5\u00c0a\2\u03f5\u03f4\3\2\2")
-        buf.write("\2\u03f5\u03f6\3\2\2\2\u03f6\u03f7\3\2\2\2\u03f7\u03f9")
-        buf.write("\7[\2\2\u03f8\u03f3\3\2\2\2\u03f9\u03fa\3\2\2\2\u03fa")
-        buf.write("\u03f8\3\2\2\2\u03fa\u03fb\3\2\2\2\u03fb\u00bf\3\2\2\2")
-        buf.write("\u03fc\u03ff\5\u00d0i\2\u03fd\u03fe\7.\2\2\u03fe\u0400")
-        buf.write("\5\u00d0i\2\u03ff\u03fd\3\2\2\2\u03ff\u0400\3\2\2\2\u0400")
-        buf.write("\u0402\3\2\2\2\u0401\u0403\7P\2\2\u0402\u0401\3\2\2\2")
-        buf.write("\u0402\u0403\3\2\2\2\u0403\u0405\3\2\2\2\u0404\u03fc\3")
-        buf.write("\2\2\2\u0405\u0406\3\2\2\2\u0406\u0404\3\2\2\2\u0406\u0407")
-        buf.write("\3\2\2\2\u0407\u00c1\3\2\2\2\u0408\u040b\5\u00caf\2\u0409")
-        buf.write("\u040b\5\u00ceh\2\u040a\u0408\3\2\2\2\u040a\u0409\3\2")
-        buf.write("\2\2\u040b\u040c\3\2\2\2\u040c\u040e\5\u00c4c\2\u040d")
-        buf.write("\u040f\5\u00be`\2\u040e\u040d\3\2\2\2\u040e\u040f\3\2")
-        buf.write("\2\2\u040f\u00c3\3\2\2\2\u0410\u0413\5\u00c6d\2\u0411")
-        buf.write("\u0414\5\u00caf\2\u0412\u0414\5\u00ceh\2\u0413\u0411\3")
-        buf.write("\2\2\2\u0413\u0412\3\2\2\2\u0414\u0416\3\2\2\2\u0415\u0410")
-        buf.write("\3\2\2\2\u0416\u0417\3\2\2\2\u0417\u0415\3\2\2\2\u0417")
-        buf.write("\u0418\3\2\2\2\u0418\u00c5\3\2\2\2\u0419\u041a\t\f\2\2")
-        buf.write("\u041a\u00c7\3\2\2\2\u041b\u041d\5\u00caf\2\u041c\u041e")
-        buf.write("\5\u00be`\2\u041d\u041c\3\2\2\2\u041d\u041e\3\2\2\2\u041e")
-        buf.write("\u00c9\3\2\2\2\u041f\u0421\5\u00d0i\2\u0420\u0422\5\u00cc")
-        buf.write("g\2\u0421\u0420\3\2\2\2\u0421\u0422\3\2\2\2\u0422\u00cb")
-        buf.write("\3\2\2\2\u0423\u0424\7$\2\2\u0424\u0427\5\u00d0i\2\u0425")
-        buf.write("\u0426\7$\2\2\u0426\u0428\5\u00d0i\2\u0427\u0425\3\2\2")
-        buf.write("\2\u0427\u0428\3\2\2\2\u0428\u00cd\3\2\2\2\u0429\u042b")
-        buf.write("\7\25\2\2\u042a\u042c\5\u00d0i\2\u042b\u042a\3\2\2\2\u042b")
-        buf.write("\u042c\3\2\2\2\u042c\u042e\3\2\2\2\u042d\u0429\3\2\2\2")
-        buf.write("\u042d\u042e\3\2\2\2\u042e\u042f\3\2\2\2\u042f\u0430\7")
-        buf.write("\'\2\2\u0430\u0431\5\u00b8]\2\u0431\u0432\7(\2\2\u0432")
-        buf.write("\u00cf\3\2\2\2\u0433\u0434\t\r\2\2\u0434\u00d1\3\2\2\2")
-        buf.write("\u0082\u00d3\u00d8\u00de\u00e6\u00f1\u00f6\u00fa\u00ff")
+        buf.write("\u02d5\b<\1\2\u02d5\u02ec\7_\2\2\u02d6\u02ec\7\\\2\2\u02d7")
+        buf.write("\u02ec\7]\2\2\u02d8\u02ec\7^\2\2\u02d9\u02ec\7`\2\2\u02da")
+        buf.write("\u02ec\7a\2\2\u02db\u02ec\5\u008aF\2\u02dc\u02ec\5\u009a")
+        buf.write("N\2\u02dd\u02ec\5\u009eP\2\u02de\u02df\7X\2\2\u02df\u02e0")
+        buf.write("\5\\/\2\u02e0\u02e1\7Y\2\2\u02e1\u02ec\3\2\2\2\u02e2\u02e3")
+        buf.write("\7%\2\2\u02e3\u02e5\7a\2\2\u02e4\u02e6\5\u00acW\2\u02e5")
+        buf.write("\u02e4\3\2\2\2\u02e5\u02e6\3\2\2\2\u02e6\u02ec\3\2\2\2")
+        buf.write("\u02e7\u02ec\5\u00a2R\2\u02e8\u02ec\5z>\2\u02e9\u02ec")
+        buf.write("\5|?\2\u02ea\u02ec\5\u00b4[\2\u02eb\u02d4\3\2\2\2\u02eb")
+        buf.write("\u02d6\3\2\2\2\u02eb\u02d7\3\2\2\2\u02eb\u02d8\3\2\2\2")
+        buf.write("\u02eb\u02d9\3\2\2\2\u02eb\u02da\3\2\2\2\u02eb\u02db\3")
+        buf.write("\2\2\2\u02eb\u02dc\3\2\2\2\u02eb\u02dd\3\2\2\2\u02eb\u02de")
+        buf.write("\3\2\2\2\u02eb\u02e2\3\2\2\2\u02eb\u02e7\3\2\2\2\u02eb")
+        buf.write("\u02e8\3\2\2\2\u02eb\u02e9\3\2\2\2\u02eb\u02ea\3\2\2\2")
+        buf.write("\u02ec\u02f5\3\2\2\2\u02ed\u02ef\f\7\2\2\u02ee\u02f0\5")
+        buf.write("x=\2\u02ef\u02ee\3\2\2\2\u02f0\u02f1\3\2\2\2\u02f1\u02ef")
+        buf.write("\3\2\2\2\u02f1\u02f2\3\2\2\2\u02f2\u02f4\3\2\2\2\u02f3")
+        buf.write("\u02ed\3\2\2\2\u02f4\u02f7\3\2\2\2\u02f5\u02f3\3\2\2\2")
+        buf.write("\u02f5\u02f6\3\2\2\2\u02f6w\3\2\2\2\u02f7\u02f5\3\2\2")
+        buf.write("\2\u02f8\u02f9\7D\2\2\u02f9\u0308\5~@\2\u02fa\u02fb\7")
+        buf.write("D\2\2\u02fb\u0308\7a\2\2\u02fc\u0308\5\u009cO\2\u02fd")
+        buf.write("\u02ff\7X\2\2\u02fe\u0300\58\35\2\u02ff\u02fe\3\2\2\2")
+        buf.write("\u02ff\u0300\3\2\2\2\u0300\u0301\3\2\2\2\u0301\u0308\7")
+        buf.write("Y\2\2\u0302\u0303\7%\2\2\u0303\u0305\7a\2\2\u0304\u0306")
+        buf.write("\5\u00acW\2\u0305\u0304\3\2\2\2\u0305\u0306\3\2\2\2\u0306")
+        buf.write("\u0308\3\2\2\2\u0307\u02f8\3\2\2\2\u0307\u02fa\3\2\2\2")
+        buf.write("\u0307\u02fc\3\2\2\2\u0307\u02fd\3\2\2\2\u0307\u0302\3")
+        buf.write("\2\2\2\u0308y\3\2\2\2\u0309\u030a\7\4\2\2\u030a\u030b")
+        buf.write("\5\\/\2\u030b{\3\2\2\2\u030c\u030d\7T\2\2\u030d\u030e")
+        buf.write("\5\\/\2\u030e}\3\2\2\2\u030f\u0316\3\2\2\2\u0310\u0316")
+        buf.write("\5\u0088E\2\u0311\u0316\5\u0080A\2\u0312\u0316\5\u0082")
+        buf.write("B\2\u0313\u0316\5\u0084C\2\u0314\u0316\5\u0086D\2\u0315")
+        buf.write("\u030f\3\2\2\2\u0315\u0310\3\2\2\2\u0315\u0311\3\2\2\2")
+        buf.write("\u0315\u0312\3\2\2\2\u0315\u0313\3\2\2\2\u0315\u0314\3")
+        buf.write("\2\2\2\u0316\177\3\2\2\2\u0317\u0318\5\u00b4[\2\u0318")
+        buf.write("\u0081\3\2\2\2\u0319\u031a\t\b\2\2\u031a\u0083\3\2\2\2")
+        buf.write("\u031b\u0321\7\36\2\2\u031c\u031d\7\'\2\2\u031d\u031e")
+        buf.write("\5\66\34\2\u031e\u031f\7(\2\2\u031f\u0321\3\2\2\2\u0320")
+        buf.write("\u031b\3\2\2\2\u0320\u031c\3\2\2\2\u0321\u0085\3\2\2\2")
+        buf.write("\u0322\u0323\7\35\2\2\u0323\u0087\3\2\2\2\u0324\u0325")
+        buf.write("\7\13\2\2\u0325\u0326\7%\2\2\u0326\u032b\7a\2\2\u0327")
+        buf.write("\u0328\7X\2\2\u0328\u0329\58\35\2\u0329\u032a\7Y\2\2\u032a")
+        buf.write("\u032c\3\2\2\2\u032b\u0327\3\2\2\2\u032b\u032c\3\2\2\2")
+        buf.write("\u032c\u0089\3\2\2\2\u032d\u032f\5\u008cG\2\u032e\u0330")
+        buf.write("\5\u00aeX\2\u032f\u032e\3\2\2\2\u032f\u0330\3\2\2\2\u0330")
+        buf.write("\u0339\3\2\2\2\u0331\u0336\5\u0092J\2\u0332\u0334\5\u008c")
+        buf.write("G\2\u0333\u0335\5\u00aeX\2\u0334\u0333\3\2\2\2\u0334\u0335")
+        buf.write("\3\2\2\2\u0335\u0337\3\2\2\2\u0336\u0332\3\2\2\2\u0336")
+        buf.write("\u0337\3\2\2\2\u0337\u0339\3\2\2\2\u0338\u032d\3\2\2\2")
+        buf.write("\u0338\u0331\3\2\2\2\u0339\u008b\3\2\2\2\u033a\u033b\7")
+        buf.write("\26\2\2\u033b\u033c\7%\2\2\u033c\u033d\7a\2\2\u033d\u008d")
+        buf.write("\3\2\2\2\u033e\u033f\7*\2\2\u033f\u0340\7%\2\2\u0340\u0341")
+        buf.write("\7a\2\2\u0341\u008f\3\2\2\2\u0342\u0343\7\22\2\2\u0343")
+        buf.write("\u0344\7%\2\2\u0344\u0345\7a\2\2\u0345\u0091\3\2\2\2\u0346")
+        buf.write("\u034a\5\u0094K\2\u0347\u034a\5\u0096L\2\u0348\u034a\5")
+        buf.write("\u0098M\2\u0349\u0346\3\2\2\2\u0349\u0347\3\2\2\2\u0349")
+        buf.write("\u0348\3\2\2\2\u034a\u0093\3\2\2\2\u034b\u0358\7\5\2\2")
+        buf.write("\u034c\u0354\7S\2\2\u034d\u034e\7Z\2\2\u034e\u0351\7a")
+        buf.write("\2\2\u034f\u0352\5\u00acW\2\u0350\u0352\5\u00aeX\2\u0351")
+        buf.write("\u034f\3\2\2\2\u0351\u0350\3\2\2\2\u0351\u0352\3\2\2\2")
+        buf.write("\u0352\u0353\3\2\2\2\u0353\u0355\7[\2\2\u0354\u034d\3")
+        buf.write("\2\2\2\u0354\u0355\3\2\2\2\u0355\u0356\3\2\2\2\u0356\u0358")
+        buf.write("\7\6\2\2\u0357\u034b\3\2\2\2\u0357\u034c\3\2\2\2\u0358")
+        buf.write("\u0095\3\2\2\2\u0359\u0366\7\7\2\2\u035a\u0362\7\b\2\2")
+        buf.write("\u035b\u035c\7Z\2\2\u035c\u035f\7a\2\2\u035d\u0360\5\u00ac")
+        buf.write("W\2\u035e\u0360\5\u00aeX\2\u035f\u035d\3\2\2\2\u035f\u035e")
+        buf.write("\3\2\2\2\u035f\u0360\3\2\2\2\u0360\u0361\3\2\2\2\u0361")
+        buf.write("\u0363\7[\2\2\u0362\u035b\3\2\2\2\u0362\u0363\3\2\2\2")
+        buf.write("\u0363\u0364\3\2\2\2\u0364\u0366\7S\2\2\u0365\u0359\3")
+        buf.write("\2\2\2\u0365\u035a\3\2\2\2\u0366\u0097\3\2\2\2\u0367\u0374")
+        buf.write("\7\t\2\2\u0368\u0370\7\b\2\2\u0369\u036a\7Z\2\2\u036a")
+        buf.write("\u036d\7a\2\2\u036b\u036e\5\u00acW\2\u036c\u036e\5\u00ae")
+        buf.write("X\2\u036d\u036b\3\2\2\2\u036d\u036c\3\2\2\2\u036d\u036e")
+        buf.write("\3\2\2\2\u036e\u036f\3\2\2\2\u036f\u0371\7[\2\2\u0370")
+        buf.write("\u0369\3\2\2\2\u0370\u0371\3\2\2\2\u0371\u0372\3\2\2\2")
+        buf.write("\u0372\u0374\7\6\2\2\u0373\u0367\3\2\2\2\u0373\u0368\3")
+        buf.write("\2\2\2\u0374\u0099\3\2\2\2\u0375\u0377\7Z\2\2\u0376\u0378")
+        buf.write("\58\35\2\u0377\u0376\3\2\2\2\u0377\u0378\3\2\2\2\u0378")
+        buf.write("\u0379\3\2\2\2\u0379\u037a\7[\2\2\u037a\u009b\3\2\2\2")
+        buf.write("\u037b\u037c\7Z\2\2\u037c\u037d\5\\/\2\u037d\u037e\7[")
+        buf.write("\2\2\u037e\u0386\3\2\2\2\u037f\u0380\7Z\2\2\u0380\u0381")
+        buf.write("\5\\/\2\u0381\u0382\7$\2\2\u0382\u0383\5\\/\2\u0383\u0384")
+        buf.write("\7[\2\2\u0384\u0386\3\2\2\2\u0385\u037b\3\2\2\2\u0385")
+        buf.write("\u037f\3\2\2\2\u0386\u009d\3\2\2\2\u0387\u0390\7\'\2\2")
+        buf.write("\u0388\u038d\5\u00a0Q\2\u0389\u038a\7P\2\2\u038a\u038c")
+        buf.write("\5\u00a0Q\2\u038b\u0389\3\2\2\2\u038c\u038f\3\2\2\2\u038d")
+        buf.write("\u038b\3\2\2\2\u038d\u038e\3\2\2\2\u038e\u0391\3\2\2\2")
+        buf.write("\u038f\u038d\3\2\2\2\u0390\u0388\3\2\2\2\u0390\u0391\3")
+        buf.write("\2\2\2\u0391\u0392\3\2\2\2\u0392\u0393\7(\2\2\u0393\u009f")
+        buf.write("\3\2\2\2\u0394\u0395\7]\2\2\u0395\u0396\7$\2\2\u0396\u0397")
+        buf.write("\5\\/\2\u0397\u00a1\3\2\2\2\u0398\u039a\7\31\2\2\u0399")
+        buf.write("\u039b\5\\/\2\u039a\u0399\3\2\2\2\u039a\u039b\3\2\2\2")
+        buf.write("\u039b\u039c\3\2\2\2\u039c\u039d\5\u00a4S\2\u039d\u00a3")
+        buf.write("\3\2\2\2\u039e\u03a2\5\u00a6T\2\u039f\u03a2\5\u00aaV\2")
+        buf.write("\u03a0\u03a2\5\u00a8U\2\u03a1\u039e\3\2\2\2\u03a1\u039f")
+        buf.write("\3\2\2\2\u03a1\u03a0\3\2\2\2\u03a2\u00a5\3\2\2\2\u03a3")
+        buf.write("\u03a5\5\u0092J\2\u03a4\u03a3\3\2\2\2\u03a4\u03a5\3\2")
+        buf.write("\2\2\u03a5\u03a6\3\2\2\2\u03a6\u03a8\5\u008cG\2\u03a7")
+        buf.write("\u03a9\5\u00acW\2\u03a8\u03a7\3\2\2\2\u03a8\u03a9\3\2")
+        buf.write("\2\2\u03a9\u00a7\3\2\2\2\u03aa\u03ab\5\u0092J\2\u03ab")
+        buf.write("\u03ac\5\u0090I\2\u03ac\u00a9\3\2\2\2\u03ad\u03af\5\u008e")
+        buf.write("H\2\u03ae\u03b0\5\u00acW\2\u03af\u03ae\3\2\2\2\u03af\u03b0")
+        buf.write("\3\2\2\2\u03b0\u00ab\3\2\2\2\u03b1\u03ba\7X\2\2\u03b2")
+        buf.write("\u03b7\5\u00b0Y\2\u03b3\u03b4\7P\2\2\u03b4\u03b6\5\u00b0")
+        buf.write("Y\2\u03b5\u03b3\3\2\2\2\u03b6\u03b9\3\2\2\2\u03b7\u03b5")
+        buf.write("\3\2\2\2\u03b7\u03b8\3\2\2\2\u03b8\u03bb\3\2\2\2\u03b9")
+        buf.write("\u03b7\3\2\2\2\u03ba\u03b2\3\2\2\2\u03ba\u03bb\3\2\2\2")
+        buf.write("\u03bb\u03bc\3\2\2\2\u03bc\u03bd\7Y\2\2\u03bd\u00ad\3")
+        buf.write("\2\2\2\u03be\u03c7\7X\2\2\u03bf\u03c4\5\u00b2Z\2\u03c0")
+        buf.write("\u03c1\7P\2\2\u03c1\u03c3\5\u00b2Z\2\u03c2\u03c0\3\2\2")
+        buf.write("\2\u03c3\u03c6\3\2\2\2\u03c4\u03c2\3\2\2\2\u03c4\u03c5")
+        buf.write("\3\2\2\2\u03c5\u03c8\3\2\2\2\u03c6\u03c4\3\2\2\2\u03c7")
+        buf.write("\u03bf\3\2\2\2\u03c7\u03c8\3\2\2\2\u03c8\u03c9\3\2\2\2")
+        buf.write("\u03c9\u03ca\7Y\2\2\u03ca\u00af\3\2\2\2\u03cb\u03cc\7")
+        buf.write("a\2\2\u03cc\u03cd\7.\2\2\u03cd\u03ce\5\\/\2\u03ce\u00b1")
+        buf.write("\3\2\2\2\u03cf\u03d0\7a\2\2\u03d0\u03d1\5j\66\2\u03d1")
+        buf.write("\u03d2\5\\/\2\u03d2\u00b3\3\2\2\2\u03d3\u03d4\t\t\2\2")
+        buf.write("\u03d4\u00b5\3\2\2\2\u03d5\u03d7\7\23\2\2\u03d6\u03d5")
+        buf.write("\3\2\2\2\u03d6\u03d7\3\2\2\2\u03d7\u03d8\3\2\2\2\u03d8")
+        buf.write("\u03da\t\n\2\2\u03d9\u03db\5\u00d0i\2\u03da\u03d9\3\2")
+        buf.write("\2\2\u03da\u03db\3\2\2\2\u03db\u03dc\3\2\2\2\u03dc\u03dd")
+        buf.write("\7\'\2\2\u03dd\u03de\5\u00b8]\2\u03de\u03df\7(\2\2\u03df")
+        buf.write("\u00b7\3\2\2\2\u03e0\u03e2\5\u00ba^\2\u03e1\u03e3\7-\2")
+        buf.write("\2\u03e2\u03e1\3\2\2\2\u03e2\u03e3\3\2\2\2\u03e3\u03e5")
+        buf.write("\3\2\2\2\u03e4\u03e0\3\2\2\2\u03e5\u03e8\3\2\2\2\u03e6")
+        buf.write("\u03e4\3\2\2\2\u03e6\u03e7\3\2\2\2\u03e7\u00b9\3\2\2\2")
+        buf.write("\u03e8\u03e6\3\2\2\2\u03e9\u03f2\5\u00c8e\2\u03ea\u03f2")
+        buf.write("\5\u00c2b\2\u03eb\u03f2\5\u00bc_\2\u03ec\u03ed\5\u00d0")
+        buf.write("i\2\u03ed\u03ee\7.\2\2\u03ee\u03ef\5\u00d0i\2\u03ef\u03f2")
+        buf.write("\3\2\2\2\u03f0\u03f2\5\u00ceh\2\u03f1\u03e9\3\2\2\2\u03f1")
+        buf.write("\u03ea\3\2\2\2\u03f1\u03eb\3\2\2\2\u03f1\u03ec\3\2\2\2")
+        buf.write("\u03f1\u03f0\3\2\2\2\u03f2\u00bb\3\2\2\2\u03f3\u03f4\t")
+        buf.write("\13\2\2\u03f4\u03f5\5\u00be`\2\u03f5\u00bd\3\2\2\2\u03f6")
+        buf.write("\u03f8\7Z\2\2\u03f7\u03f9\5\u00c0a\2\u03f8\u03f7\3\2\2")
+        buf.write("\2\u03f8\u03f9\3\2\2\2\u03f9\u03fa\3\2\2\2\u03fa\u03fc")
+        buf.write("\7[\2\2\u03fb\u03f6\3\2\2\2\u03fc\u03fd\3\2\2\2\u03fd")
+        buf.write("\u03fb\3\2\2\2\u03fd\u03fe\3\2\2\2\u03fe\u00bf\3\2\2\2")
+        buf.write("\u03ff\u0402\5\u00d0i\2\u0400\u0401\7.\2\2\u0401\u0403")
+        buf.write("\5\u00d0i\2\u0402\u0400\3\2\2\2\u0402\u0403\3\2\2\2\u0403")
+        buf.write("\u0405\3\2\2\2\u0404\u0406\7P\2\2\u0405\u0404\3\2\2\2")
+        buf.write("\u0405\u0406\3\2\2\2\u0406\u0408\3\2\2\2\u0407\u03ff\3")
+        buf.write("\2\2\2\u0408\u0409\3\2\2\2\u0409\u0407\3\2\2\2\u0409\u040a")
+        buf.write("\3\2\2\2\u040a\u00c1\3\2\2\2\u040b\u040e\5\u00caf\2\u040c")
+        buf.write("\u040e\5\u00ceh\2\u040d\u040b\3\2\2\2\u040d\u040c\3\2")
+        buf.write("\2\2\u040e\u040f\3\2\2\2\u040f\u0411\5\u00c4c\2\u0410")
+        buf.write("\u0412\5\u00be`\2\u0411\u0410\3\2\2\2\u0411\u0412\3\2")
+        buf.write("\2\2\u0412\u00c3\3\2\2\2\u0413\u0416\5\u00c6d\2\u0414")
+        buf.write("\u0417\5\u00caf\2\u0415\u0417\5\u00ceh\2\u0416\u0414\3")
+        buf.write("\2\2\2\u0416\u0415\3\2\2\2\u0417\u0419\3\2\2\2\u0418\u0413")
+        buf.write("\3\2\2\2\u0419\u041a\3\2\2\2\u041a\u0418\3\2\2\2\u041a")
+        buf.write("\u041b\3\2\2\2\u041b\u00c5\3\2\2\2\u041c\u041d\t\f\2\2")
+        buf.write("\u041d\u00c7\3\2\2\2\u041e\u0420\5\u00caf\2\u041f\u0421")
+        buf.write("\5\u00be`\2\u0420\u041f\3\2\2\2\u0420\u0421\3\2\2\2\u0421")
+        buf.write("\u00c9\3\2\2\2\u0422\u0424\5\u00d0i\2\u0423\u0425\5\u00cc")
+        buf.write("g\2\u0424\u0423\3\2\2\2\u0424\u0425\3\2\2\2\u0425\u00cb")
+        buf.write("\3\2\2\2\u0426\u0427\7$\2\2\u0427\u042a\5\u00d0i\2\u0428")
+        buf.write("\u0429\7$\2\2\u0429\u042b\5\u00d0i\2\u042a\u0428\3\2\2")
+        buf.write("\2\u042a\u042b\3\2\2\2\u042b\u00cd\3\2\2\2\u042c\u042e")
+        buf.write("\7\25\2\2\u042d\u042f\5\u00d0i\2\u042e\u042d\3\2\2\2\u042e")
+        buf.write("\u042f\3\2\2\2\u042f\u0431\3\2\2\2\u0430\u042c\3\2\2\2")
+        buf.write("\u0430\u0431\3\2\2\2\u0431\u0432\3\2\2\2\u0432\u0433\7")
+        buf.write("\'\2\2\u0433\u0434\5\u00b8]\2\u0434\u0435\7(\2\2\u0435")
+        buf.write("\u00cf\3\2\2\2\u0436\u0437\t\r\2\2\u0437\u00d1\3\2\2\2")
+        buf.write("\u0081\u00d3\u00d8\u00de\u00e6\u00f1\u00f6\u00fa\u00ff")
         buf.write("\u0103\u0108\u010c\u0111\u0115\u0117\u0120\u0125\u012b")
         buf.write("\u0134\u0139\u0141\u0145\u0149\u014b\u014f\u0159\u015e")
         buf.write("\u0162\u0166\u017b\u0182\u0186\u018a\u0198\u01a4\u01ad")
@@ -531,13 +533,13 @@ def serializedATN():
         buf.write("\u01e7\u01ec\u01f7\u01ff\u0206\u020c\u0223\u022b\u022f")
         buf.write("\u0234\u023a\u0240\u0243\u025a\u0271\u027b\u0281\u028e")
         buf.write("\u0293\u029a\u02a5\u02a8\u02b2\u02bc\u02c4\u02ca\u02d1")
-        buf.write("\u02d7\u02da\u02dd\u02e2\u02e4\u02f8\u0302\u0304\u0312")
-        buf.write("\u031d\u0328\u032c\u0331\u0333\u0335\u0346\u034e\u0351")
-        buf.write("\u0354\u035c\u035f\u0362\u036a\u036d\u0370\u0374\u0382")
-        buf.write("\u038a\u038d\u0397\u039e\u03a1\u03a5\u03ac\u03b4\u03b7")
-        buf.write("\u03c1\u03c4\u03d3\u03d7\u03df\u03e3\u03ee\u03f5\u03fa")
-        buf.write("\u03ff\u0402\u0406\u040a\u040e\u0413\u0417\u041d\u0421")
-        buf.write("\u0427\u042b\u042d")
+        buf.write("\u02e5\u02eb\u02f1\u02f5\u02ff\u0305\u0307\u0315\u0320")
+        buf.write("\u032b\u032f\u0334\u0336\u0338\u0349\u0351\u0354\u0357")
+        buf.write("\u035f\u0362\u0365\u036d\u0370\u0373\u0377\u0385\u038d")
+        buf.write("\u0390\u039a\u03a1\u03a4\u03a8\u03af\u03b7\u03ba\u03c4")
+        buf.write("\u03c7\u03d6\u03da\u03e2\u03e6\u03f1\u03f8\u03fd\u0402")
+        buf.write("\u0405\u0409\u040d\u0411\u0416\u041a\u0420\u0424\u042a")
+        buf.write("\u042e\u0430")
         return buf.getvalue()
 
 
@@ -648,8 +650,8 @@ class jacParser ( Parser ):
     RULE_term = 55
     RULE_factor = 56
     RULE_power = 57
-    RULE_func_call = 58
-    RULE_atom = 59
+    RULE_atom = 58
+    RULE_atom_trailer = 59
     RULE_ref = 60
     RULE_deref = 61
     RULE_built_in = 62
@@ -708,7 +710,7 @@ class jacParser ( Parser ):
                    "report_action", "walker_action", "ignore_action", "take_action", 
                    "expression", "assignment", "copy_assign", "inc_assign", 
                    "connect", "logical", "compare", "cmp_op", "nin", "arithmetic", 
-                   "term", "factor", "power", "func_call", "atom", "ref", 
+                   "term", "factor", "power", "atom", "atom_trailer", "ref", 
                    "deref", "built_in", "cast_built_in", "obj_built_in", 
                    "dict_built_in", "list_built_in", "string_built_in", 
                    "node_edge_ref", "node_ref", "walker_ref", "graph_ref", 
@@ -5136,8 +5138,8 @@ class jacParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def func_call(self):
-            return self.getTypedRuleContext(jacParser.Func_callContext,0)
+        def atom(self):
+            return self.getTypedRuleContext(jacParser.AtomContext,0)
 
 
         def POW(self, i:int=None):
@@ -5174,7 +5176,7 @@ class jacParser ( Parser ):
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 714
-            self.func_call()
+            self.atom(0)
             self.state = 719
             self._errHandler.sync(self)
             _alt = self._interp.adaptivePredict(self._input,70,self._ctx)
@@ -5187,118 +5189,6 @@ class jacParser ( Parser ):
                 self.state = 721
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,70,self._ctx)
-
-        except RecognitionException as re:
-            localctx.exception = re
-            self._errHandler.reportError(self, re)
-            self._errHandler.recover(self, re)
-        finally:
-            self.exitRule()
-        return localctx
-
-
-    class Func_callContext(ParserRuleContext):
-        __slots__ = 'parser'
-
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
-            super().__init__(parent, invokingState)
-            self.parser = parser
-
-        def atom(self):
-            return self.getTypedRuleContext(jacParser.AtomContext,0)
-
-
-        def LPAREN(self):
-            return self.getToken(jacParser.LPAREN, 0)
-
-        def RPAREN(self):
-            return self.getToken(jacParser.RPAREN, 0)
-
-        def expr_list(self):
-            return self.getTypedRuleContext(jacParser.Expr_listContext,0)
-
-
-        def DBL_COLON(self):
-            return self.getToken(jacParser.DBL_COLON, 0)
-
-        def NAME(self):
-            return self.getToken(jacParser.NAME, 0)
-
-        def spawn_ctx(self):
-            return self.getTypedRuleContext(jacParser.Spawn_ctxContext,0)
-
-
-        def getRuleIndex(self):
-            return jacParser.RULE_func_call
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterFunc_call" ):
-                listener.enterFunc_call(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitFunc_call" ):
-                listener.exitFunc_call(self)
-
-
-
-
-    def func_call(self):
-
-        localctx = jacParser.Func_callContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 116, self.RULE_func_call)
-        self._la = 0 # Token type
-        try:
-            self.state = 738
-            self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,75,self._ctx)
-            if la_ == 1:
-                self.enterOuterAlt(localctx, 1)
-                self.state = 722
-                self.atom(0)
-                self.state = 728
-                self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,72,self._ctx)
-                if la_ == 1:
-                    self.state = 723
-                    self.match(jacParser.LPAREN)
-                    self.state = 725
-                    self._errHandler.sync(self)
-                    _la = self._input.LA(1)
-                    if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.T__1) | (1 << jacParser.T__2) | (1 << jacParser.T__4) | (1 << jacParser.T__5) | (1 << jacParser.T__6) | (1 << jacParser.TYP_STRING) | (1 << jacParser.TYP_INT) | (1 << jacParser.TYP_FLOAT) | (1 << jacParser.TYP_LIST) | (1 << jacParser.TYP_DICT) | (1 << jacParser.TYP_BOOL) | (1 << jacParser.KW_TYPE) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_SPAWN) | (1 << jacParser.DBL_COLON) | (1 << jacParser.LBRACE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 67)) & ~0x3f) == 0 and ((1 << (_la - 67)) & ((1 << (jacParser.NOT - 67)) | (1 << (jacParser.PLUS - 67)) | (1 << (jacParser.MINUS - 67)) | (1 << (jacParser.STAR_MUL - 67)) | (1 << (jacParser.LPAREN - 67)) | (1 << (jacParser.LSQUARE - 67)) | (1 << (jacParser.FLOAT - 67)) | (1 << (jacParser.STRING - 67)) | (1 << (jacParser.BOOL - 67)) | (1 << (jacParser.INT - 67)) | (1 << (jacParser.NULL - 67)) | (1 << (jacParser.NAME - 67)))) != 0):
-                        self.state = 724
-                        self.expr_list()
-
-
-                    self.state = 727
-                    self.match(jacParser.RPAREN)
-
-
-                pass
-
-            elif la_ == 2:
-                self.enterOuterAlt(localctx, 2)
-                self.state = 731
-                self._errHandler.sync(self)
-                _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.T__1) | (1 << jacParser.T__2) | (1 << jacParser.T__4) | (1 << jacParser.T__5) | (1 << jacParser.T__6) | (1 << jacParser.TYP_STRING) | (1 << jacParser.TYP_INT) | (1 << jacParser.TYP_FLOAT) | (1 << jacParser.TYP_LIST) | (1 << jacParser.TYP_DICT) | (1 << jacParser.TYP_BOOL) | (1 << jacParser.KW_TYPE) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_SPAWN) | (1 << jacParser.LBRACE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 81)) & ~0x3f) == 0 and ((1 << (_la - 81)) & ((1 << (jacParser.MINUS - 81)) | (1 << (jacParser.STAR_MUL - 81)) | (1 << (jacParser.LPAREN - 81)) | (1 << (jacParser.LSQUARE - 81)) | (1 << (jacParser.FLOAT - 81)) | (1 << (jacParser.STRING - 81)) | (1 << (jacParser.BOOL - 81)) | (1 << (jacParser.INT - 81)) | (1 << (jacParser.NULL - 81)) | (1 << (jacParser.NAME - 81)))) != 0):
-                    self.state = 730
-                    self.atom(0)
-
-
-                self.state = 733
-                self.match(jacParser.DBL_COLON)
-                self.state = 734
-                self.match(jacParser.NAME)
-                self.state = 736
-                self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,74,self._ctx)
-                if la_ == 1:
-                    self.state = 735
-                    self.spawn_ctx()
-
-
-                pass
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5356,6 +5246,13 @@ class jacParser ( Parser ):
         def RPAREN(self):
             return self.getToken(jacParser.RPAREN, 0)
 
+        def DBL_COLON(self):
+            return self.getToken(jacParser.DBL_COLON, 0)
+
+        def spawn_ctx(self):
+            return self.getTypedRuleContext(jacParser.Spawn_ctxContext,0)
+
+
         def spawn(self):
             return self.getTypedRuleContext(jacParser.SpawnContext,0)
 
@@ -5376,15 +5273,11 @@ class jacParser ( Parser ):
             return self.getTypedRuleContext(jacParser.AtomContext,0)
 
 
-        def DOT(self):
-            return self.getToken(jacParser.DOT, 0)
-
-        def built_in(self):
-            return self.getTypedRuleContext(jacParser.Built_inContext,0)
-
-
-        def index_slice(self):
-            return self.getTypedRuleContext(jacParser.Index_sliceContext,0)
+        def atom_trailer(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(jacParser.Atom_trailerContext)
+            else:
+                return self.getTypedRuleContext(jacParser.Atom_trailerContext,i)
 
 
         def getRuleIndex(self):
@@ -5405,141 +5298,135 @@ class jacParser ( Parser ):
         _parentState = self.state
         localctx = jacParser.AtomContext(self, self._ctx, _parentState)
         _prevctx = localctx
-        _startState = 118
-        self.enterRecursionRule(localctx, 118, self.RULE_atom, _p)
+        _startState = 116
+        self.enterRecursionRule(localctx, 116, self.RULE_atom, _p)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 758
+            self.state = 745
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,76,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,72,self._ctx)
             if la_ == 1:
-                self.state = 741
+                self.state = 723
                 self.match(jacParser.INT)
                 pass
 
             elif la_ == 2:
-                self.state = 742
+                self.state = 724
                 self.match(jacParser.FLOAT)
                 pass
 
             elif la_ == 3:
-                self.state = 743
+                self.state = 725
                 self.match(jacParser.STRING)
                 pass
 
             elif la_ == 4:
-                self.state = 744
+                self.state = 726
                 self.match(jacParser.BOOL)
                 pass
 
             elif la_ == 5:
-                self.state = 745
+                self.state = 727
                 self.match(jacParser.NULL)
                 pass
 
             elif la_ == 6:
-                self.state = 746
+                self.state = 728
                 self.match(jacParser.NAME)
                 pass
 
             elif la_ == 7:
-                self.state = 747
+                self.state = 729
                 self.node_edge_ref()
                 pass
 
             elif la_ == 8:
-                self.state = 748
+                self.state = 730
                 self.list_val()
                 pass
 
             elif la_ == 9:
-                self.state = 749
+                self.state = 731
                 self.dict_val()
                 pass
 
             elif la_ == 10:
-                self.state = 750
+                self.state = 732
                 self.match(jacParser.LPAREN)
-                self.state = 751
+                self.state = 733
                 self.expression()
-                self.state = 752
+                self.state = 734
                 self.match(jacParser.RPAREN)
                 pass
 
             elif la_ == 11:
-                self.state = 754
-                self.spawn()
+                self.state = 736
+                self.match(jacParser.DBL_COLON)
+                self.state = 737
+                self.match(jacParser.NAME)
+                self.state = 739
+                self._errHandler.sync(self)
+                la_ = self._interp.adaptivePredict(self._input,71,self._ctx)
+                if la_ == 1:
+                    self.state = 738
+                    self.spawn_ctx()
+
+
                 pass
 
             elif la_ == 12:
-                self.state = 755
-                self.ref()
+                self.state = 741
+                self.spawn()
                 pass
 
             elif la_ == 13:
-                self.state = 756
-                self.deref()
+                self.state = 742
+                self.ref()
                 pass
 
             elif la_ == 14:
-                self.state = 757
+                self.state = 743
+                self.deref()
+                pass
+
+            elif la_ == 15:
+                self.state = 744
                 self.any_type()
                 pass
 
 
             self._ctx.stop = self._input.LT(-1)
-            self.state = 770
+            self.state = 755
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,78,self._ctx)
+            _alt = self._interp.adaptivePredict(self._input,74,self._ctx)
             while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
                 if _alt==1:
                     if self._parseListeners is not None:
                         self.triggerExitRuleEvent()
                     _prevctx = localctx
-                    self.state = 768
+                    localctx = jacParser.AtomContext(self, _parentctx, _parentState)
+                    self.pushNewRecursionContext(localctx, _startState, self.RULE_atom)
+                    self.state = 747
+                    if not self.precpred(self._ctx, 5):
+                        from antlr4.error.Errors import FailedPredicateException
+                        raise FailedPredicateException(self, "self.precpred(self._ctx, 5)")
+                    self.state = 749 
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,77,self._ctx)
-                    if la_ == 1:
-                        localctx = jacParser.AtomContext(self, _parentctx, _parentState)
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_atom)
-                        self.state = 760
-                        if not self.precpred(self._ctx, 6):
-                            from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 6)")
-                        self.state = 761
-                        self.match(jacParser.DOT)
-                        self.state = 762
-                        self.built_in()
-                        pass
+                    _alt = 1
+                    while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                        if _alt == 1:
+                            self.state = 748
+                            self.atom_trailer()
 
-                    elif la_ == 2:
-                        localctx = jacParser.AtomContext(self, _parentctx, _parentState)
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_atom)
-                        self.state = 763
-                        if not self.precpred(self._ctx, 5):
-                            from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 5)")
-                        self.state = 764
-                        self.match(jacParser.DOT)
-                        self.state = 765
-                        self.match(jacParser.NAME)
-                        pass
-
-                    elif la_ == 3:
-                        localctx = jacParser.AtomContext(self, _parentctx, _parentState)
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_atom)
-                        self.state = 766
-                        if not self.precpred(self._ctx, 4):
-                            from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 4)")
-                        self.state = 767
-                        self.index_slice()
-                        pass
-
+                        else:
+                            raise NoViableAltException(self)
+                        self.state = 751 
+                        self._errHandler.sync(self)
+                        _alt = self._interp.adaptivePredict(self._input,73,self._ctx)
              
-                self.state = 772
+                self.state = 757
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,78,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input,74,self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5547,6 +5434,131 @@ class jacParser ( Parser ):
             self._errHandler.recover(self, re)
         finally:
             self.unrollRecursionContexts(_parentctx)
+        return localctx
+
+
+    class Atom_trailerContext(ParserRuleContext):
+        __slots__ = 'parser'
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def DOT(self):
+            return self.getToken(jacParser.DOT, 0)
+
+        def built_in(self):
+            return self.getTypedRuleContext(jacParser.Built_inContext,0)
+
+
+        def NAME(self):
+            return self.getToken(jacParser.NAME, 0)
+
+        def index_slice(self):
+            return self.getTypedRuleContext(jacParser.Index_sliceContext,0)
+
+
+        def LPAREN(self):
+            return self.getToken(jacParser.LPAREN, 0)
+
+        def RPAREN(self):
+            return self.getToken(jacParser.RPAREN, 0)
+
+        def expr_list(self):
+            return self.getTypedRuleContext(jacParser.Expr_listContext,0)
+
+
+        def DBL_COLON(self):
+            return self.getToken(jacParser.DBL_COLON, 0)
+
+        def spawn_ctx(self):
+            return self.getTypedRuleContext(jacParser.Spawn_ctxContext,0)
+
+
+        def getRuleIndex(self):
+            return jacParser.RULE_atom_trailer
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterAtom_trailer" ):
+                listener.enterAtom_trailer(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitAtom_trailer" ):
+                listener.exitAtom_trailer(self)
+
+
+
+
+    def atom_trailer(self):
+
+        localctx = jacParser.Atom_trailerContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 118, self.RULE_atom_trailer)
+        self._la = 0 # Token type
+        try:
+            self.state = 773
+            self._errHandler.sync(self)
+            la_ = self._interp.adaptivePredict(self._input,77,self._ctx)
+            if la_ == 1:
+                self.enterOuterAlt(localctx, 1)
+                self.state = 758
+                self.match(jacParser.DOT)
+                self.state = 759
+                self.built_in()
+                pass
+
+            elif la_ == 2:
+                self.enterOuterAlt(localctx, 2)
+                self.state = 760
+                self.match(jacParser.DOT)
+                self.state = 761
+                self.match(jacParser.NAME)
+                pass
+
+            elif la_ == 3:
+                self.enterOuterAlt(localctx, 3)
+                self.state = 762
+                self.index_slice()
+                pass
+
+            elif la_ == 4:
+                self.enterOuterAlt(localctx, 4)
+                self.state = 763
+                self.match(jacParser.LPAREN)
+                self.state = 765
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.T__1) | (1 << jacParser.T__2) | (1 << jacParser.T__4) | (1 << jacParser.T__5) | (1 << jacParser.T__6) | (1 << jacParser.TYP_STRING) | (1 << jacParser.TYP_INT) | (1 << jacParser.TYP_FLOAT) | (1 << jacParser.TYP_LIST) | (1 << jacParser.TYP_DICT) | (1 << jacParser.TYP_BOOL) | (1 << jacParser.KW_TYPE) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_SPAWN) | (1 << jacParser.DBL_COLON) | (1 << jacParser.LBRACE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 67)) & ~0x3f) == 0 and ((1 << (_la - 67)) & ((1 << (jacParser.NOT - 67)) | (1 << (jacParser.PLUS - 67)) | (1 << (jacParser.MINUS - 67)) | (1 << (jacParser.STAR_MUL - 67)) | (1 << (jacParser.LPAREN - 67)) | (1 << (jacParser.LSQUARE - 67)) | (1 << (jacParser.FLOAT - 67)) | (1 << (jacParser.STRING - 67)) | (1 << (jacParser.BOOL - 67)) | (1 << (jacParser.INT - 67)) | (1 << (jacParser.NULL - 67)) | (1 << (jacParser.NAME - 67)))) != 0):
+                    self.state = 764
+                    self.expr_list()
+
+
+                self.state = 767
+                self.match(jacParser.RPAREN)
+                pass
+
+            elif la_ == 5:
+                self.enterOuterAlt(localctx, 5)
+                self.state = 768
+                self.match(jacParser.DBL_COLON)
+                self.state = 769
+                self.match(jacParser.NAME)
+                self.state = 771
+                self._errHandler.sync(self)
+                la_ = self._interp.adaptivePredict(self._input,76,self._ctx)
+                if la_ == 1:
+                    self.state = 770
+                    self.spawn_ctx()
+
+
+                pass
+
+
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
         return localctx
 
 
@@ -5581,9 +5593,9 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 120, self.RULE_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 773
+            self.state = 775
             self.match(jacParser.T__1)
-            self.state = 774
+            self.state = 776
             self.expression()
         except RecognitionException as re:
             localctx.exception = re
@@ -5628,9 +5640,9 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 122, self.RULE_deref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 776
+            self.state = 778
             self.match(jacParser.STAR_MUL)
-            self.state = 777
+            self.state = 779
             self.expression()
         except RecognitionException as re:
             localctx.exception = re
@@ -5648,6 +5660,10 @@ class jacParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
+        def string_built_in(self):
+            return self.getTypedRuleContext(jacParser.String_built_inContext,0)
+
+
         def cast_built_in(self):
             return self.getTypedRuleContext(jacParser.Cast_built_inContext,0)
 
@@ -5662,10 +5678,6 @@ class jacParser ( Parser ):
 
         def list_built_in(self):
             return self.getTypedRuleContext(jacParser.List_built_inContext,0)
-
-
-        def string_built_in(self):
-            return self.getTypedRuleContext(jacParser.String_built_inContext,0)
 
 
         def getRuleIndex(self):
@@ -5687,37 +5699,42 @@ class jacParser ( Parser ):
         localctx = jacParser.Built_inContext(self, self._ctx, self.state)
         self.enterRule(localctx, 124, self.RULE_built_in)
         try:
-            self.state = 784
+            self.state = 787
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,79,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,78,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 779
-                self.cast_built_in()
+
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 780
-                self.obj_built_in()
+                self.state = 782
+                self.string_built_in()
                 pass
 
             elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 781
-                self.dict_built_in()
+                self.state = 783
+                self.cast_built_in()
                 pass
 
             elif la_ == 4:
                 self.enterOuterAlt(localctx, 4)
-                self.state = 782
-                self.list_built_in()
+                self.state = 784
+                self.obj_built_in()
                 pass
 
             elif la_ == 5:
                 self.enterOuterAlt(localctx, 5)
-                self.state = 783
-                self.string_built_in()
+                self.state = 785
+                self.dict_built_in()
+                pass
+
+            elif la_ == 6:
+                self.enterOuterAlt(localctx, 6)
+                self.state = 786
+                self.list_built_in()
                 pass
 
 
@@ -5761,7 +5778,7 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 126, self.RULE_cast_built_in)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 786
+            self.state = 789
             self.any_type()
         except RecognitionException as re:
             localctx.exception = re
@@ -5809,7 +5826,7 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 788
+            self.state = 791
             _la = self._input.LA(1)
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_CONTEXT) | (1 << jacParser.KW_INFO) | (1 << jacParser.KW_DETAILS))) != 0)):
                 self._errHandler.recoverInline(self)
@@ -5864,21 +5881,21 @@ class jacParser ( Parser ):
         localctx = jacParser.Dict_built_inContext(self, self._ctx, self.state)
         self.enterRule(localctx, 130, self.RULE_dict_built_in)
         try:
-            self.state = 795
+            self.state = 798
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [jacParser.KW_KEYS]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 790
+                self.state = 793
                 self.match(jacParser.KW_KEYS)
                 pass
             elif token in [jacParser.LBRACE]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 791
+                self.state = 794
                 self.match(jacParser.LBRACE)
-                self.state = 792
+                self.state = 795
                 self.name_list()
-                self.state = 793
+                self.state = 796
                 self.match(jacParser.RBRACE)
                 pass
             else:
@@ -5923,7 +5940,7 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 132, self.RULE_list_built_in)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 797
+            self.state = 800
             self.match(jacParser.KW_LENGTH)
         except RecognitionException as re:
             localctx.exception = re
@@ -5980,21 +5997,21 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 134, self.RULE_string_built_in)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 799
+            self.state = 802
             self.match(jacParser.TYP_STRING)
-            self.state = 800
+            self.state = 803
             self.match(jacParser.DBL_COLON)
-            self.state = 801
+            self.state = 804
             self.match(jacParser.NAME)
-            self.state = 806
+            self.state = 809
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,81,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,80,self._ctx)
             if la_ == 1:
-                self.state = 802
+                self.state = 805
                 self.match(jacParser.LPAREN)
-                self.state = 803
+                self.state = 806
                 self.expr_list()
-                self.state = 804
+                self.state = 807
                 self.match(jacParser.RPAREN)
 
 
@@ -6045,37 +6062,37 @@ class jacParser ( Parser ):
         localctx = jacParser.Node_edge_refContext(self, self._ctx, self.state)
         self.enterRule(localctx, 136, self.RULE_node_edge_ref)
         try:
-            self.state = 819
+            self.state = 822
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [jacParser.KW_NODE]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 808
+                self.state = 811
                 self.node_ref()
-                self.state = 810
+                self.state = 813
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,82,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input,81,self._ctx)
                 if la_ == 1:
-                    self.state = 809
+                    self.state = 812
                     self.filter_ctx()
 
 
                 pass
             elif token in [jacParser.T__2, jacParser.T__4, jacParser.T__5, jacParser.T__6, jacParser.MINUS]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 812
+                self.state = 815
                 self.edge_ref()
-                self.state = 817
+                self.state = 820
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,84,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input,83,self._ctx)
                 if la_ == 1:
-                    self.state = 813
+                    self.state = 816
                     self.node_ref()
-                    self.state = 815
+                    self.state = 818
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,83,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input,82,self._ctx)
                     if la_ == 1:
-                        self.state = 814
+                        self.state = 817
                         self.filter_ctx()
 
 
@@ -6130,11 +6147,11 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 138, self.RULE_node_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 821
+            self.state = 824
             self.match(jacParser.KW_NODE)
-            self.state = 822
+            self.state = 825
             self.match(jacParser.DBL_COLON)
-            self.state = 823
+            self.state = 826
             self.match(jacParser.NAME)
         except RecognitionException as re:
             localctx.exception = re
@@ -6181,11 +6198,11 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 140, self.RULE_walker_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 825
+            self.state = 828
             self.match(jacParser.KW_WALKER)
-            self.state = 826
+            self.state = 829
             self.match(jacParser.DBL_COLON)
-            self.state = 827
+            self.state = 830
             self.match(jacParser.NAME)
         except RecognitionException as re:
             localctx.exception = re
@@ -6232,11 +6249,11 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 142, self.RULE_graph_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 829
+            self.state = 832
             self.match(jacParser.KW_GRAPH)
-            self.state = 830
+            self.state = 833
             self.match(jacParser.DBL_COLON)
-            self.state = 831
+            self.state = 834
             self.match(jacParser.NAME)
         except RecognitionException as re:
             localctx.exception = re
@@ -6285,24 +6302,24 @@ class jacParser ( Parser ):
         localctx = jacParser.Edge_refContext(self, self._ctx, self.state)
         self.enterRule(localctx, 144, self.RULE_edge_ref)
         try:
-            self.state = 836
+            self.state = 839
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,86,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,85,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 833
+                self.state = 836
                 self.edge_to()
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 834
+                self.state = 837
                 self.edge_from()
                 pass
 
             elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 835
+                self.state = 838
                 self.edge_any()
                 pass
 
@@ -6363,43 +6380,43 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 146, self.RULE_edge_to)
         self._la = 0 # Token type
         try:
-            self.state = 850
+            self.state = 853
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [jacParser.T__2]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 838
+                self.state = 841
                 self.match(jacParser.T__2)
                 pass
             elif token in [jacParser.MINUS]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 839
+                self.state = 842
                 self.match(jacParser.MINUS)
-                self.state = 847
+                self.state = 850
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if _la==jacParser.LSQUARE:
-                    self.state = 840
+                    self.state = 843
                     self.match(jacParser.LSQUARE)
-                    self.state = 841
-                    self.match(jacParser.NAME)
                     self.state = 844
+                    self.match(jacParser.NAME)
+                    self.state = 847
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,87,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input,86,self._ctx)
                     if la_ == 1:
-                        self.state = 842
+                        self.state = 845
                         self.spawn_ctx()
 
                     elif la_ == 2:
-                        self.state = 843
+                        self.state = 846
                         self.filter_ctx()
 
 
-                    self.state = 846
+                    self.state = 849
                     self.match(jacParser.RSQUARE)
 
 
-                self.state = 849
+                self.state = 852
                 self.match(jacParser.T__3)
                 pass
             else:
@@ -6461,43 +6478,43 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 148, self.RULE_edge_from)
         self._la = 0 # Token type
         try:
-            self.state = 864
+            self.state = 867
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [jacParser.T__4]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 852
+                self.state = 855
                 self.match(jacParser.T__4)
                 pass
             elif token in [jacParser.T__5]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 853
+                self.state = 856
                 self.match(jacParser.T__5)
-                self.state = 861
+                self.state = 864
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if _la==jacParser.LSQUARE:
-                    self.state = 854
+                    self.state = 857
                     self.match(jacParser.LSQUARE)
-                    self.state = 855
-                    self.match(jacParser.NAME)
                     self.state = 858
+                    self.match(jacParser.NAME)
+                    self.state = 861
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,90,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input,89,self._ctx)
                     if la_ == 1:
-                        self.state = 856
+                        self.state = 859
                         self.spawn_ctx()
 
                     elif la_ == 2:
-                        self.state = 857
+                        self.state = 860
                         self.filter_ctx()
 
 
-                    self.state = 860
+                    self.state = 863
                     self.match(jacParser.RSQUARE)
 
 
-                self.state = 863
+                self.state = 866
                 self.match(jacParser.MINUS)
                 pass
             else:
@@ -6556,43 +6573,43 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 150, self.RULE_edge_any)
         self._la = 0 # Token type
         try:
-            self.state = 878
+            self.state = 881
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [jacParser.T__6]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 866
+                self.state = 869
                 self.match(jacParser.T__6)
                 pass
             elif token in [jacParser.T__5]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 867
+                self.state = 870
                 self.match(jacParser.T__5)
-                self.state = 875
+                self.state = 878
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if _la==jacParser.LSQUARE:
-                    self.state = 868
+                    self.state = 871
                     self.match(jacParser.LSQUARE)
-                    self.state = 869
-                    self.match(jacParser.NAME)
                     self.state = 872
+                    self.match(jacParser.NAME)
+                    self.state = 875
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,93,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input,92,self._ctx)
                     if la_ == 1:
-                        self.state = 870
+                        self.state = 873
                         self.spawn_ctx()
 
                     elif la_ == 2:
-                        self.state = 871
+                        self.state = 874
                         self.filter_ctx()
 
 
-                    self.state = 874
+                    self.state = 877
                     self.match(jacParser.RSQUARE)
 
 
-                self.state = 877
+                self.state = 880
                 self.match(jacParser.T__3)
                 pass
             else:
@@ -6645,17 +6662,17 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 880
+            self.state = 883
             self.match(jacParser.LSQUARE)
-            self.state = 882
+            self.state = 885
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.T__1) | (1 << jacParser.T__2) | (1 << jacParser.T__4) | (1 << jacParser.T__5) | (1 << jacParser.T__6) | (1 << jacParser.TYP_STRING) | (1 << jacParser.TYP_INT) | (1 << jacParser.TYP_FLOAT) | (1 << jacParser.TYP_LIST) | (1 << jacParser.TYP_DICT) | (1 << jacParser.TYP_BOOL) | (1 << jacParser.KW_TYPE) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_SPAWN) | (1 << jacParser.DBL_COLON) | (1 << jacParser.LBRACE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 67)) & ~0x3f) == 0 and ((1 << (_la - 67)) & ((1 << (jacParser.NOT - 67)) | (1 << (jacParser.PLUS - 67)) | (1 << (jacParser.MINUS - 67)) | (1 << (jacParser.STAR_MUL - 67)) | (1 << (jacParser.LPAREN - 67)) | (1 << (jacParser.LSQUARE - 67)) | (1 << (jacParser.FLOAT - 67)) | (1 << (jacParser.STRING - 67)) | (1 << (jacParser.BOOL - 67)) | (1 << (jacParser.INT - 67)) | (1 << (jacParser.NULL - 67)) | (1 << (jacParser.NAME - 67)))) != 0):
-                self.state = 881
+                self.state = 884
                 self.expr_list()
 
 
-            self.state = 884
+            self.state = 887
             self.match(jacParser.RSQUARE)
         except RecognitionException as re:
             localctx.exception = re
@@ -6708,30 +6725,30 @@ class jacParser ( Parser ):
         localctx = jacParser.Index_sliceContext(self, self._ctx, self.state)
         self.enterRule(localctx, 154, self.RULE_index_slice)
         try:
-            self.state = 896
+            self.state = 899
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,97,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,96,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 886
+                self.state = 889
                 self.match(jacParser.LSQUARE)
-                self.state = 887
+                self.state = 890
                 self.expression()
-                self.state = 888
+                self.state = 891
                 self.match(jacParser.RSQUARE)
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 890
-                self.match(jacParser.LSQUARE)
-                self.state = 891
-                self.expression()
-                self.state = 892
-                self.match(jacParser.COLON)
                 self.state = 893
-                self.expression()
+                self.match(jacParser.LSQUARE)
                 self.state = 894
+                self.expression()
+                self.state = 895
+                self.match(jacParser.COLON)
+                self.state = 896
+                self.expression()
+                self.state = 897
                 self.match(jacParser.RSQUARE)
                 pass
 
@@ -6792,29 +6809,29 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 898
+            self.state = 901
             self.match(jacParser.LBRACE)
-            self.state = 907
+            self.state = 910
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==jacParser.STRING:
-                self.state = 899
+                self.state = 902
                 self.kv_pair()
-                self.state = 904
+                self.state = 907
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while _la==jacParser.COMMA:
-                    self.state = 900
+                    self.state = 903
                     self.match(jacParser.COMMA)
-                    self.state = 901
+                    self.state = 904
                     self.kv_pair()
-                    self.state = 906
+                    self.state = 909
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
 
 
-            self.state = 909
+            self.state = 912
             self.match(jacParser.RBRACE)
         except RecognitionException as re:
             localctx.exception = re
@@ -6862,11 +6879,11 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 158, self.RULE_kv_pair)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 911
+            self.state = 914
             self.match(jacParser.STRING)
-            self.state = 912
+            self.state = 915
             self.match(jacParser.COLON)
-            self.state = 913
+            self.state = 916
             self.expression()
         except RecognitionException as re:
             localctx.exception = re
@@ -6915,17 +6932,17 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 160, self.RULE_spawn)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 915
+            self.state = 918
             self.match(jacParser.KW_SPAWN)
-            self.state = 917
+            self.state = 920
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,100,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,99,self._ctx)
             if la_ == 1:
-                self.state = 916
+                self.state = 919
                 self.expression()
 
 
-            self.state = 919
+            self.state = 922
             self.spawn_object()
         except RecognitionException as re:
             localctx.exception = re
@@ -6974,24 +6991,24 @@ class jacParser ( Parser ):
         localctx = jacParser.Spawn_objectContext(self, self._ctx, self.state)
         self.enterRule(localctx, 162, self.RULE_spawn_object)
         try:
-            self.state = 924
+            self.state = 927
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,101,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,100,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 921
+                self.state = 924
                 self.node_spawn()
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 922
+                self.state = 925
                 self.walker_spawn()
                 pass
 
             elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 923
+                self.state = 926
                 self.graph_spawn()
                 pass
 
@@ -7045,21 +7062,21 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 927
+            self.state = 930
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.T__2) | (1 << jacParser.T__4) | (1 << jacParser.T__5) | (1 << jacParser.T__6))) != 0) or _la==jacParser.MINUS:
-                self.state = 926
+                self.state = 929
                 self.edge_ref()
 
 
-            self.state = 929
+            self.state = 932
             self.node_ref()
-            self.state = 931
+            self.state = 934
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,103,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,102,self._ctx)
             if la_ == 1:
-                self.state = 930
+                self.state = 933
                 self.spawn_ctx()
 
 
@@ -7107,9 +7124,9 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 166, self.RULE_graph_spawn)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 933
+            self.state = 936
             self.edge_ref()
-            self.state = 934
+            self.state = 937
             self.graph_ref()
         except RecognitionException as re:
             localctx.exception = re
@@ -7155,13 +7172,13 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 168, self.RULE_walker_spawn)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 936
+            self.state = 939
             self.walker_ref()
-            self.state = 938
+            self.state = 941
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,104,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,103,self._ctx)
             if la_ == 1:
-                self.state = 937
+                self.state = 940
                 self.spawn_ctx()
 
 
@@ -7221,29 +7238,29 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 940
+            self.state = 943
             self.match(jacParser.LPAREN)
-            self.state = 949
+            self.state = 952
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==jacParser.NAME:
-                self.state = 941
+                self.state = 944
                 self.spawn_assign()
-                self.state = 946
+                self.state = 949
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while _la==jacParser.COMMA:
-                    self.state = 942
+                    self.state = 945
                     self.match(jacParser.COMMA)
-                    self.state = 943
+                    self.state = 946
                     self.spawn_assign()
-                    self.state = 948
+                    self.state = 951
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
 
 
-            self.state = 951
+            self.state = 954
             self.match(jacParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
@@ -7301,29 +7318,29 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 953
+            self.state = 956
             self.match(jacParser.LPAREN)
-            self.state = 962
+            self.state = 965
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==jacParser.NAME:
-                self.state = 954
+                self.state = 957
                 self.filter_compare()
-                self.state = 959
+                self.state = 962
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while _la==jacParser.COMMA:
-                    self.state = 955
+                    self.state = 958
                     self.match(jacParser.COMMA)
-                    self.state = 956
+                    self.state = 959
                     self.filter_compare()
-                    self.state = 961
+                    self.state = 964
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
 
 
-            self.state = 964
+            self.state = 967
             self.match(jacParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
@@ -7371,11 +7388,11 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 174, self.RULE_spawn_assign)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 966
+            self.state = 969
             self.match(jacParser.NAME)
-            self.state = 967
+            self.state = 970
             self.match(jacParser.EQ)
-            self.state = 968
+            self.state = 971
             self.expression()
         except RecognitionException as re:
             localctx.exception = re
@@ -7424,11 +7441,11 @@ class jacParser ( Parser ):
         self.enterRule(localctx, 176, self.RULE_filter_compare)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 970
+            self.state = 973
             self.match(jacParser.NAME)
-            self.state = 971
+            self.state = 974
             self.cmp_op()
-            self.state = 972
+            self.state = 975
             self.expression()
         except RecognitionException as re:
             localctx.exception = re
@@ -7494,7 +7511,7 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 974
+            self.state = 977
             _la = self._input.LA(1)
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.TYP_STRING) | (1 << jacParser.TYP_INT) | (1 << jacParser.TYP_FLOAT) | (1 << jacParser.TYP_LIST) | (1 << jacParser.TYP_DICT) | (1 << jacParser.TYP_BOOL) | (1 << jacParser.KW_TYPE) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0)):
                 self._errHandler.recoverInline(self)
@@ -7561,34 +7578,34 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 977
+            self.state = 980
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==jacParser.KW_STRICT:
-                self.state = 976
+                self.state = 979
                 self.match(jacParser.KW_STRICT)
 
 
-            self.state = 979
+            self.state = 982
             _la = self._input.LA(1)
             if not(_la==jacParser.KW_GRAPH or _la==jacParser.KW_DIGRAPH):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
-            self.state = 981
+            self.state = 984
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 90)) & ~0x3f) == 0 and ((1 << (_la - 90)) & ((1 << (jacParser.FLOAT - 90)) | (1 << (jacParser.STRING - 90)) | (1 << (jacParser.INT - 90)) | (1 << (jacParser.NAME - 90)))) != 0):
-                self.state = 980
+                self.state = 983
                 self.dot_id()
 
 
-            self.state = 983
+            self.state = 986
             self.match(jacParser.LBRACE)
-            self.state = 984
+            self.state = 987
             self.dot_stmt_list()
-            self.state = 985
+            self.state = 988
             self.match(jacParser.RBRACE)
         except RecognitionException as re:
             localctx.exception = re
@@ -7640,21 +7657,21 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 993
+            self.state = 996
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_SUBGRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.LBRACE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 90)) & ~0x3f) == 0 and ((1 << (_la - 90)) & ((1 << (jacParser.FLOAT - 90)) | (1 << (jacParser.STRING - 90)) | (1 << (jacParser.INT - 90)) | (1 << (jacParser.NAME - 90)))) != 0):
-                self.state = 987
+                self.state = 990
                 self.dot_stmt()
-                self.state = 989
+                self.state = 992
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if _la==jacParser.SEMI:
-                    self.state = 988
+                    self.state = 991
                     self.match(jacParser.SEMI)
 
 
-                self.state = 995
+                self.state = 998
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -7719,40 +7736,40 @@ class jacParser ( Parser ):
         localctx = jacParser.Dot_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 184, self.RULE_dot_stmt)
         try:
-            self.state = 1004
+            self.state = 1007
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,113,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,112,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 996
+                self.state = 999
                 self.dot_node_stmt()
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 997
+                self.state = 1000
                 self.dot_edge_stmt()
                 pass
 
             elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 998
+                self.state = 1001
                 self.dot_attr_stmt()
                 pass
 
             elif la_ == 4:
                 self.enterOuterAlt(localctx, 4)
-                self.state = 999
+                self.state = 1002
                 self.dot_id()
-                self.state = 1000
+                self.state = 1003
                 self.match(jacParser.EQ)
-                self.state = 1001
+                self.state = 1004
                 self.dot_id()
                 pass
 
             elif la_ == 5:
                 self.enterOuterAlt(localctx, 5)
-                self.state = 1003
+                self.state = 1006
                 self.dot_subgraph()
                 pass
 
@@ -7807,14 +7824,14 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1006
+            self.state = 1009
             _la = self._input.LA(1)
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0)):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
-            self.state = 1007
+            self.state = 1010
             self.dot_attr_list()
         except RecognitionException as re:
             localctx.exception = re
@@ -7872,23 +7889,23 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1014 
+            self.state = 1017 
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
-                self.state = 1009
+                self.state = 1012
                 self.match(jacParser.LSQUARE)
-                self.state = 1011
+                self.state = 1014
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 90)) & ~0x3f) == 0 and ((1 << (_la - 90)) & ((1 << (jacParser.FLOAT - 90)) | (1 << (jacParser.STRING - 90)) | (1 << (jacParser.INT - 90)) | (1 << (jacParser.NAME - 90)))) != 0):
-                    self.state = 1010
+                    self.state = 1013
                     self.dot_a_list()
 
 
-                self.state = 1013
+                self.state = 1016
                 self.match(jacParser.RSQUARE)
-                self.state = 1016 
+                self.state = 1019 
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if not (_la==jacParser.LSQUARE):
@@ -7950,31 +7967,31 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1026 
+            self.state = 1029 
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
-                self.state = 1018
-                self.dot_id()
                 self.state = 1021
-                self._errHandler.sync(self)
-                _la = self._input.LA(1)
-                if _la==jacParser.EQ:
-                    self.state = 1019
-                    self.match(jacParser.EQ)
-                    self.state = 1020
-                    self.dot_id()
-
-
+                self.dot_id()
                 self.state = 1024
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.COMMA:
+                if _la==jacParser.EQ:
+                    self.state = 1022
+                    self.match(jacParser.EQ)
                     self.state = 1023
+                    self.dot_id()
+
+
+                self.state = 1027
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                if _la==jacParser.COMMA:
+                    self.state = 1026
                     self.match(jacParser.COMMA)
 
 
-                self.state = 1028 
+                self.state = 1031 
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 90)) & ~0x3f) == 0 and ((1 << (_la - 90)) & ((1 << (jacParser.FLOAT - 90)) | (1 << (jacParser.STRING - 90)) | (1 << (jacParser.INT - 90)) | (1 << (jacParser.NAME - 90)))) != 0)):
@@ -8033,27 +8050,27 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1032
+            self.state = 1035
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [jacParser.KW_GRAPH, jacParser.KW_NODE, jacParser.KW_EDGE, jacParser.FLOAT, jacParser.STRING, jacParser.INT, jacParser.NAME]:
-                self.state = 1030
+                self.state = 1033
                 self.dot_node_id()
                 pass
             elif token in [jacParser.KW_SUBGRAPH, jacParser.LBRACE]:
-                self.state = 1031
+                self.state = 1034
                 self.dot_subgraph()
                 pass
             else:
                 raise NoViableAltException(self)
 
-            self.state = 1034
+            self.state = 1037
             self.dot_edgeRHS()
-            self.state = 1036
+            self.state = 1039
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==jacParser.LSQUARE:
-                self.state = 1035
+                self.state = 1038
                 self.dot_attr_list()
 
 
@@ -8115,27 +8132,27 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1043 
+            self.state = 1046 
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
-                self.state = 1038
-                self.dot_edgeop()
                 self.state = 1041
+                self.dot_edgeop()
+                self.state = 1044
                 self._errHandler.sync(self)
                 token = self._input.LA(1)
                 if token in [jacParser.KW_GRAPH, jacParser.KW_NODE, jacParser.KW_EDGE, jacParser.FLOAT, jacParser.STRING, jacParser.INT, jacParser.NAME]:
-                    self.state = 1039
+                    self.state = 1042
                     self.dot_node_id()
                     pass
                 elif token in [jacParser.KW_SUBGRAPH, jacParser.LBRACE]:
-                    self.state = 1040
+                    self.state = 1043
                     self.dot_subgraph()
                     pass
                 else:
                     raise NoViableAltException(self)
 
-                self.state = 1045 
+                self.state = 1048 
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if not (_la==jacParser.T__3 or _la==jacParser.T__7):
@@ -8179,7 +8196,7 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1047
+            self.state = 1050
             _la = self._input.LA(1)
             if not(_la==jacParser.T__3 or _la==jacParser.T__7):
                 self._errHandler.recoverInline(self)
@@ -8231,13 +8248,13 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1049
+            self.state = 1052
             self.dot_node_id()
-            self.state = 1051
+            self.state = 1054
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==jacParser.LSQUARE:
-                self.state = 1050
+                self.state = 1053
                 self.dot_attr_list()
 
 
@@ -8286,13 +8303,13 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1053
+            self.state = 1056
             self.dot_id()
-            self.state = 1055
+            self.state = 1058
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==jacParser.COLON:
-                self.state = 1054
+                self.state = 1057
                 self.dot_port()
 
 
@@ -8346,17 +8363,17 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1057
+            self.state = 1060
             self.match(jacParser.COLON)
-            self.state = 1058
-            self.dot_id()
             self.state = 1061
+            self.dot_id()
+            self.state = 1064
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==jacParser.COLON:
-                self.state = 1059
+                self.state = 1062
                 self.match(jacParser.COLON)
-                self.state = 1060
+                self.state = 1063
                 self.dot_id()
 
 
@@ -8414,27 +8431,27 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1067
+            self.state = 1070
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==jacParser.KW_SUBGRAPH:
-                self.state = 1063
+                self.state = 1066
                 self.match(jacParser.KW_SUBGRAPH)
-                self.state = 1065
+                self.state = 1068
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 90)) & ~0x3f) == 0 and ((1 << (_la - 90)) & ((1 << (jacParser.FLOAT - 90)) | (1 << (jacParser.STRING - 90)) | (1 << (jacParser.INT - 90)) | (1 << (jacParser.NAME - 90)))) != 0):
-                    self.state = 1064
+                    self.state = 1067
                     self.dot_id()
 
 
 
 
-            self.state = 1069
+            self.state = 1072
             self.match(jacParser.LBRACE)
-            self.state = 1070
+            self.state = 1073
             self.dot_stmt_list()
-            self.state = 1071
+            self.state = 1074
             self.match(jacParser.RBRACE)
         except RecognitionException as re:
             localctx.exception = re
@@ -8494,7 +8511,7 @@ class jacParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1073
+            self.state = 1076
             _la = self._input.LA(1)
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 90)) & ~0x3f) == 0 and ((1 << (_la - 90)) & ((1 << (jacParser.FLOAT - 90)) | (1 << (jacParser.STRING - 90)) | (1 << (jacParser.INT - 90)) | (1 << (jacParser.NAME - 90)))) != 0)):
                 self._errHandler.recoverInline(self)
@@ -8514,7 +8531,7 @@ class jacParser ( Parser ):
     def sempred(self, localctx:RuleContext, ruleIndex:int, predIndex:int):
         if self._predicates == None:
             self._predicates = dict()
-        self._predicates[59] = self.atom_sempred
+        self._predicates[58] = self.atom_sempred
         pred = self._predicates.get(ruleIndex, None)
         if pred is None:
             raise Exception("No predicate with index:" + str(ruleIndex))
@@ -8523,15 +8540,7 @@ class jacParser ( Parser ):
 
     def atom_sempred(self, localctx:AtomContext, predIndex:int):
             if predIndex == 0:
-                return self.precpred(self._ctx, 6)
-         
-
-            if predIndex == 1:
                 return self.precpred(self._ctx, 5)
-         
-
-            if predIndex == 2:
-                return self.precpred(self._ctx, 4)
          
 
 

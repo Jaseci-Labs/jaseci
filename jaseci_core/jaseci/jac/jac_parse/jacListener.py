@@ -530,21 +530,21 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#func_call.
-    def enterFunc_call(self, ctx:jacParser.Func_callContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#func_call.
-    def exitFunc_call(self, ctx:jacParser.Func_callContext):
-        pass
-
-
     # Enter a parse tree produced by jacParser#atom.
     def enterAtom(self, ctx:jacParser.AtomContext):
         pass
 
     # Exit a parse tree produced by jacParser#atom.
     def exitAtom(self, ctx:jacParser.AtomContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#atom_trailer.
+    def enterAtom_trailer(self, ctx:jacParser.Atom_trailerContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#atom_trailer.
+    def exitAtom_trailer(self, ctx:jacParser.Atom_trailerContext):
         pass
 
 
