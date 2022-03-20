@@ -176,6 +176,8 @@ class BiEncoder(BertPreTrainedModel):
         else:
             self.cont_bert = kwargs['cont_bert']
             self.cand_bert = kwargs['cand_bert']
+        self.loss_type = kwargs.get('loss_type', 'dot-prod')
+        assert self.loss_type in ['dot-prod', 'cos-sim']
 
     def forward(self, context_input_ids=None, context_input_masks=None,
                 candidate_input_ids=None, candidate_input_masks=None,
@@ -224,11 +226,14 @@ class BiEncoder(BertPreTrainedModel):
                     return candidate_vec
         if labels is not None and mode == "train":
             candidate_vec = candidate_vec.squeeze(1)
-            dot_product = torch.matmul(
-                context_vec, candidate_vec.t())  # [bs, bs]
-            mask = torch.eye(context_input_ids.size(0)).to(
-                context_input_ids.device)
-            loss = F.log_softmax(dot_product, dim=-1) * mask
+            if self.loss_type == 'dot-prod':
+                dot_product = torch.sum(context_vec * candidate_vec, dim=-1)  # row-wise dot product
+                loss = F.log_softmax(dot_product, dim=-1)
+            else:  # `cos-sim`
+                loss_fn = torch.nn.CosineEmbeddingLoss()
+                batch_size = candidate_vec.size(0)
+                # TODO: support negative pairs
+                loss = loss_fn(context_vec, candidate_vec, target=torch.ones(batch_size, device=candidate_vec.device))
             loss = (-loss.sum(dim=1)).mean()
             return loss
         else:
