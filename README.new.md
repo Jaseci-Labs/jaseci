@@ -31,6 +31,8 @@ In this section we'll take a look at how easy it is to get up and running with a
 5. Assuming that you have jaseci installed, run the program with the following command: `jsctl jac run hello.jac`
 6. This should print to the console: `Hello World`
 
+Let's get into the details, `walker` is keyword used to define a **Walker**, `init` is a reserved word which in this case provides the entry point to the jac program. Therefore, once the compiler encounter `walker init {}` it start the execution, line 2 contains, `std` library for standard operation and `out()` is a module for printing, so the command `std.out()`  helps in displaying the passed text `Hello World` on the command prompt.
+
 ### Workflow
 In the quickstart section, you saw that we instantly ran the code in hello.jac program. The `run` command runs a jac programs on the fly. We only recommend doing this for very small programs. Using the `run` command on larger programs may take sometime.
 
@@ -103,6 +105,33 @@ for example to see all the commands for `jac` type:
     test   Command line tooling for running all test in both .jac code files...
 
 ### Visualizing a graph
+As you get to know Jaseci and Jac, you'll want to try things and tinker a bit. In this section, we'll get to know how jsctl can be used as the main platform for this play. A typical flow will involve jumping into shell-mode, writing some code, running that code to observe output, and in visualizing the state of the graph, and rendering that graph in dot to see its visualization.
+
+#### Installing Graphiz
+Graphiz is a software package that comes with a tool called `dot`. Dot is a standardized and open graph description language that is a key primitive of Graphiz. The dot tool in takes dot code and renders it nicely.
+
+##### Windows (WSL)
+Run the following command to install `Graphiz` on Linux:
+
+`sudo apt install graphiz`
+
+##### MacOS
+Run the following commang to install `Graphiz` on MacOS
+
+`brew install graphiz`
+
+Thats it!
+
+#### Using Graphiz
+
+Now that we have Graphiz installed, lets use it.
+
+1. In the `hello_jac` folder that you created earlier create a file called `fam.jac` and give it the following content:
+
+
+
+
+
 
 ## References
 - Official Documentation: https://docs.jaseci.org/
