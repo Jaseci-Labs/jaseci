@@ -133,7 +133,7 @@ def train(contexts: List, candidates: List, labels: List[int]):
 
 
 # API for geting Context Embedding
-@jaseci_action(act_group=['bi_enc'], aliases=['encode_context'])
+@jaseci_action(act_group=['bi_enc'], aliases=['encode_context'], allow_remote=True)
 def get_context_emb(contexts: List):
     """
     Take list of context and returns the embeddings
@@ -147,7 +147,7 @@ def get_context_emb(contexts: List):
 # API for geting Candidates Embedding
 
 
-@jaseci_action(act_group=['bi_enc'], aliases=['encode_candidate'])
+@jaseci_action(act_group=['bi_enc'], aliases=['encode_candidate'], allow_remote=True)
 def get_candidate_emb(candidates: List):
     """
     Take list of candidates and returns the embeddings
