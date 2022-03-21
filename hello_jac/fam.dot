@@ -1,0 +1,11 @@
+strict digraph root {
+    "n0" [ id="9df56101f83147918326ca6657b4b23c", label="n0:root"  ]
+    "n1" [ id="011d88ae58744e5a87ca27fd6875ce3e", label="n1:man"  ]
+    "n2" [ id="2099b359f4024a94bc167dead2b8d15d", label="n2:woman"  ]
+    "n3" [ id="efa326feadc94b2fad2399e787907885", label="n3:man"  ]
+    "n0" -> "n1" [ id="10b075a1b3714ff986f9cbb37160f601", label="e0" ]
+    "n1" -> "n2" [ id="a7bae4f6c8ae4a3496cd8f942bb40aa8", label="e1:married", dir="both" ]
+    "n3" -> "n1" [ id="35a76964f7144e9aba04200368cdab29", label="e2:dad" ]
+    "n3" -> "n2" [ id="285d4f89f6144b2ca208807d8471fa54", label="e3:mom" ]
+    "n0" -> "n2" [ id="4caffc3f14884965b48d64a005d57427", label="e4" ]
+}

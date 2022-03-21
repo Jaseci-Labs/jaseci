@@ -129,9 +129,105 @@ Now that we have Graphiz installed, lets use it.
 1. In the `hello_jac` folder that you created earlier create a file called `fam.jac` and give it the following content:
 
 
+        node man;
+        node woman;
 
+        edge mom;
+        edge dad;
+        edge married;
 
+        walker create_fam {
+            root {
+                spawn here --> node::man;
+                spawn here --> node::woman;
+                --> node::man <-[married]-> --> node::woman;
+                take -->;
+            }
+            woman {
+                son = spawn here <-[mom]- node::man;
+                son -[dad]-> <-[married]->;
+            }
+            man {
+                std.out("I didn't do any of the hard work.");
+            }
+        }
 
+Don't worry if that looks confusing. As you learn the Jac language, This will become clear.
+
+2. Let's "register" a sentinel based on our Jac program. A sentinel is the abstraction Jaseci uses to encapsulate compiled walkers and architype nodes and edges. You can think of registering a sentinel as compiling your jac program. The walkers of a given sentinel can then be invoked and run on abitrary nodes of any graph. Lets register `fam.jac`
+
+3. Open the jaseci shell by typing `jsctl`
+4. Run the following command to register a sentinel:  
+   `sentinel register -name fam -code fam.jac -set_active true`
+
+You should see the following output:
+
+    jaseci > sentinel register -name fam -code fam.jac -set_active true
+    2022-03-21 13:56:29,443 - INFO - parse_jac: fam: Processing Jac code...
+    2022-03-21 13:56:29,558 - INFO - register: fam: Successfully registered code
+    [
+    {
+        "version": null,
+        "name": "fam",
+        "kind": "generic",
+        "jid": "urn:uuid:04385141-7d65-4467-bf51-d251bb9e5a84",
+        "j_timestamp": "2022-03-21T17:56:29.443318",
+        "j_type": "sentinel"
+    },
+    {
+        "context": {},
+        "anchor": null,
+        "name": "root",
+        "kind": "generic",
+        "jid": "urn:uuid:9df56101-f831-4791-8326-ca6657b4b23c",
+        "j_timestamp": "2022-03-21T17:56:29.443427",
+        "j_type": "graph"
+    }
+    ]
+
+This output shows that sentinel was created. Note, that we've also made this the "active" sentinel meaning it will be used as the default setting for any calls to the Jaseci Core APIs that require a sentinel be specified.
+
+At this point, Jasei has registerd our code and we are ready to run walkers!
+
+4. Now let's fun our walker on the root node of the graph we created and see what happens!
+
+Run the following command:
+
+`walker run -name create_fam`
+
+You should see the following output:
+
+    walker run -name create_fam
+    I didn't do any of the hard work.
+    []
+
+But how do we visualize that the graph produced by the program is right. If you've guessed it, We can use the Jaseci dot feature to take a look at our Graph!!
+
+Run the following command:
+
+`graph get -mode dot -o fam.dot`
+
+You should see the following output:
+
+    jaseci > graph get -mode dot -o fam.dot
+    strict digraph root {
+        "n0" [ id="9df56101f83147918326ca6657b4b23c", label="n0:root"  ]
+        "n1" [ id="011d88ae58744e5a87ca27fd6875ce3e", label="n1:man"  ]
+        "n2" [ id="2099b359f4024a94bc167dead2b8d15d", label="n2:woman"  ]
+        "n3" [ id="efa326feadc94b2fad2399e787907885", label="n3:man"  ]
+        "n0" -> "n1" [ id="10b075a1b3714ff986f9cbb37160f601", label="e0" ]
+        "n1" -> "n2" [ id="a7bae4f6c8ae4a3496cd8f942bb40aa8", label="e1:married", dir="both" ]
+        "n3" -> "n1" [ id="35a76964f7144e9aba04200368cdab29", label="e2:dad" ]
+        "n3" -> "n2" [ id="285d4f89f6144b2ca208807d8471fa54", label="e3:mom" ]
+        "n0" -> "n2" [ id="4caffc3f14884965b48d64a005d57427", label="e4" ]
+    }
+    [saved to fam.dot]
+
+To see a pretty visual of the graph itself, we can use the dot command from Graphiz. exit the shell by typing `exit` and then Simply, run the following command:
+
+`dot -Tpdf fam.dot -o fam.pdf`
+
+A new file called `fam.pdf` will now appear in the `hello_jac` folder. Open this file to see your graph!
 
 ## References
 - Official Documentation: https://docs.jaseci.org/
