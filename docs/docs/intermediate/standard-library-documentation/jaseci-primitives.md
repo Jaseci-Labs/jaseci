@@ -12,7 +12,7 @@ Can be thought of as the representation of an entity.
 - Nodes execute a set of actions upon Entry and Exit.
 
 **Defining a node**
-```
+```jac
 node [name_of_node] {
 }
 ```
@@ -27,7 +27,7 @@ node [name_of_node] {
 
 **Defining an edge**
 
-```
+```jac
 edge [name_of_edge];
 ```
 
@@ -40,7 +40,7 @@ edge [name_of_edge];
 - Walkers can carry with them their own actions and contexts that is executed whenever specified in the walkers own code
 
 **Defining a walker**
-```
+```jac
  walker [name_of_walker]{
 }
 ```
@@ -48,7 +48,7 @@ edge [name_of_edge];
 **Defining specific node code to execute**
 When defining a walker, you also write specific code blocks that will only execute when the walker is on a specific node.
 
-```
+```jac
  walker [name_of_walker]{
     [Any code here is executed regardless of the node the walker is on]
     ...
@@ -71,7 +71,7 @@ When defining a walker, you also write specific code blocks that will only execu
 
 When defining a walker, you also have the ability to write specific code blocks that execute if and only if a walker enters or exists a node. Any code within the **with_entry** block is the first thing that executes as soon as a walker enter a node. And the opposite is true for **with_exit**, triggering only when the walker is about to leave a node.
 
-```
+```jac
 walker [name_of_walker]{
     with entry{
         [code to execute when a walker first enters a node]

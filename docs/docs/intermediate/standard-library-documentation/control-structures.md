@@ -10,7 +10,7 @@ sidebar_position: 4
 > - Switch Case (not yet supported)
 
 ## IF-ELSE
-```
+```jac
 // prototype
 
 if(condition) {
@@ -35,7 +35,7 @@ if(a == b){
 
 ## IF-ELIF-ELSE
 
-```
+```jac
 if(a == b): std.out("A equals B");
 elif(a > b): std.out("A is greater than B");
 elif(a == b - 1): std.out("A is one less than B");
@@ -51,7 +51,7 @@ else: std.out("A is something else");
 
 ### While Loop
 
-```
+```jac
 // prototype
 while(condition) {
     code to execute
@@ -67,7 +67,7 @@ while(i>0) {
 
 ### For Loop
 
-```
+```jac
 // prototype 
 for (initialization statement) to (test_expression) by (update_statement){
     code to execute
@@ -84,7 +84,7 @@ for i=0 to i<10 by i+=1:
 
 ### Break
 
-```
+```jac
 // for loop example
 
 for i=0 to i<10 by i+=1 {
@@ -106,7 +106,7 @@ while(i>0) {
 
 ### Continue
 
-```
+```jac
 // for loop example
 
 for i=0 to i<10 by i+=1 {

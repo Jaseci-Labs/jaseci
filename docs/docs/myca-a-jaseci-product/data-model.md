@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## Nodes
 
-```
+```jac
 node life {
     has anchor owner, note, order, settings;
     can infer.year_from_date;
@@ -21,7 +21,7 @@ node life {
 
 >Nodes, such as life, can also declare actions (similar to walkers). This allows a walker to use the action declared by the node even if it does not declare it itself.
 
-```
+```jac
 node year {
     has anchor year, note, order;
     can infer.month_from_date;
@@ -32,7 +32,7 @@ node year {
 
 For example: `if year_node == 2021 ...`
 
-```
+```jac
 node month {
     has anchor month, note, order;
     can infer.year_from_date;
@@ -40,7 +40,7 @@ node month {
 }
 ```
 
-```
+```jac
 node week {
     has anchor week, note, order;
     can infer.month_from_date;
@@ -51,7 +51,7 @@ node week {
 `week` is the numeric representation of the weeks of a month, ranging from 1-5
 
 
-```
+```jac
 node day {
     has anchor day, note, order, focus_order, ritual_order, expanded_children, focusR;
     has ll_version;
@@ -59,7 +59,7 @@ node day {
 }
 ```
 
-```
+```jac
 node workette {
     has name, order, date, status, snooze_till, color, links, expanded_children;
     has wtype, note, is_MIT, is_ritual;
@@ -73,7 +73,7 @@ node workette {
 
 ### Edges
 
-```
+```jac
 edge past;
 ```
 
@@ -88,7 +88,7 @@ The past edge represents the link between:
 
 >A workette is "carried forward" (or copied) to the next day if it has not yet been completed.
 
-```
+```jac
 edge parent;
 ```
 

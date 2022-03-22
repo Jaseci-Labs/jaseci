@@ -34,33 +34,31 @@ jsctl runs as a standalone binary, so those examples don't require authenticatio
 
 <Tabs>
   <TabItem value="python-requests" label="Python (requests)" default>
-   
 
-      import requests
-      # set api base url
-      api_base_url = 'http://localhost:8888'
+        import requests
+        # set api base url
+        api_base_url = 'http://localhost:8888'
 
-      # API URLs
-      url_user_create = f"{api_base_url}/user/create/"
-      url_user_token = f"{api_base_url}/user/token/"
-      url_create_graph = f"{api_base_url}/jac/create_graph"
-      url_create_sentinel = f"{api_base_url}/jac/create_sentinel"
-      url_set_jac = f"{api_base_url}/jac/set_jac"
-      url_run = f"{api_base_url}/jac/run"
+        # API URLs
+        url_user_create = f"{api_base_url}/user/create/"
+        url_user_token = f"{api_base_url}/user/token/"
+        url_create_graph = f"{api_base_url}/jac/create_graph"
+        url_create_sentinel = f"{api_base_url}/jac/create_sentinel"
+        url_set_jac = f"{api_base_url}/jac/set_jac"
+        url_run = f"{api_base_url}/jac/run"
 
-      payload = {
+        payload = {
         "name": "Test User",
         "email": "test@example.com",
         "password": "testpassword",
         "is_activated": True
-      }
+        }
 
-      response = requests.post(url_user_create, json=payload)
+        response = requests.post(url_user_create, json=payload)
 
-      print(response.json())
-    
+        print(response.json())
+ 
   </TabItem>
-
   <TabItem value="curl" label="cURL">
 
 
