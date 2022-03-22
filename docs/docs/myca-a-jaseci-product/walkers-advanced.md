@@ -14,7 +14,7 @@ Things to note:
 - At each level it creates the required node that corresponds with each date component if it does not exist (life -> year -> etc..).
 - On the `week` node, in addition to spawning a new `day` if a matching one doesn't exist, it checks for the most recent previous day using `get_latest_day` (learn more) and copies all incomplete workettes to the new day using `carry_forward` [learn more](/docs/intermediate/standard-library-documentation/jaseci-primitives#walker).
 
-```
+```jac
 walker get_gen_day {
     has date;
     has anchor day_node;
@@ -75,7 +75,7 @@ Things to note:
 
 - On the `year`, `month`, and `week` nodes, if no usable children are found it goes back up one level with take `<-- ...` so the next instance of the the node can be checked.
 
-```
+```jac
 walker get_latest_day {
     has before_date, show_report;
     has anchor latest_day;
@@ -128,7 +128,7 @@ Things to note:
 
 - The recursive call to `carry_forward` spawns it on a collection of nodes that match the filter or query set (`-[parent]-> node::workette`), rather than just a single node.
 
-```
+```jac
 walker carry_forward {
     has parent;
     day {
@@ -167,7 +167,7 @@ Things to note:
 
 - We traverse against the defined direction of the `past` edge to get to the latest node. See [myca edges](/docs/myca-a-jaseci-product/data-model#edges).
 
-```
+```jac
 walker past_to_now {
     has anchor now;
     take <-[past]- else {
@@ -193,7 +193,7 @@ walker past_to_now {
 
 For details on how each of the criteria are determined see walkers [get_due_soon](/docs/myca-a-jaseci-product/walkers-advanced#walker-get_due_soon), [get_snoozed_till_recent](/docs/myca-a-jaseci-product/walkers-advanced#walker-get_snoozed_till_recent), and [get_long_active_items](/docs/myca-a-jaseci-product/walkers-advanced#walker-get_long_active_items).
 
-```
+```jac
 walker get_suggested_focus {
   has max_items, long_days, soon_delta;
 
@@ -234,7 +234,7 @@ walker get_suggested_focus {
 
 `get_due_soon` reports the workettes that have an upcoming due date that is close to the current date. The number of days the due date has to be away from the current date is specified by the `soon` parameter. It also skips special workette types and any snoozed workettes.
 
-```
+```jac
 walker get_due_soon {
   has soon, show_report;
   has anchor due_soon_list, today_date;
@@ -283,7 +283,7 @@ walker get_due_soon {
 
 `get_snoozed_till_recent` looks for workettes where the snooze has expired recently or will expire today.
 
-```
+```jac
 walker get_snoozed_till_recent {
   has show_report;
   has anchor snoozed_to_active_list;
@@ -326,7 +326,7 @@ walker get_snoozed_till_recent {
 <!-- TODO: Add link below -->
 See [days_in_backlog](/docs/myca-a-jaseci-product/walkers-advanced#walker-days_in_backlog) for more details.
 
-```
+```jac
 walker get_long_active_items {
   has long_days, show_report;
   has anchor old_list;
@@ -365,7 +365,7 @@ walker get_long_active_items {
 
 `days_in_backlog` counts the number of times a workette has been carried forward by traversing through the past edge and counting the number of links.
 
-```
+```jac
 walker days_in_backlog {
     has show_report;
     has anchor num_days;
