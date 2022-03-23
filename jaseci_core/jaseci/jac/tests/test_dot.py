@@ -85,6 +85,16 @@ class test_dot(TestCaseHelper, TestCase):
                          "root\n"
                          "node_1\n")
 
+    def test_dot_edge_with_attrs_vars(self):
+        """Test edge in dot with attrs and variables"""
+        self.sent.register_code(dtc.dot_edge_with_attrs_vars)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "edge_1\n"
+                         "node_1\n")
+
     def test_dot_graph_parses(self):
         self.sent.register_code(dtc.dot_graph)
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')

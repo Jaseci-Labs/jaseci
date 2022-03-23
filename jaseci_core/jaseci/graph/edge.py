@@ -123,6 +123,18 @@ class edge(element, anchored):
                 return False
         return True
 
+    def set_context(self, ctx, arch=None):
+        """Assign values to context of edge"""
+        if (arch is None):
+            arch = self
+        for i in ctx.keys():
+            if (i not in arch.context.keys()):
+                logger.warning(str(f"{i} not a context member of {self}"))
+                continue
+            else:
+                self.context[i] = ctx[i]
+        self.save()
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage
