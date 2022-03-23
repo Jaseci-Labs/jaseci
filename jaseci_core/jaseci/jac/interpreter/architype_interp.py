@@ -145,15 +145,20 @@ class architype_interp(interp):
             else:
                 edge_obj = edge(m_id=self._m_id, h=self._h,
                                 kind='edge', name='generic')
+
+            lhs_node_id = op.pop('lhs_node_id')
+            rhs_node_id = op.pop('rhs_node_id')
+            op.pop('op')
+            op.pop('is_directional')
             edge_obj.set_context(op)
-            lhs_node = node_objs.get(op['lhs_node_id'], None)
+            lhs_node = node_objs.get(lhs_node_id, None)
             if(lhs_node is None):
                 del nodes_def
                 del node_objs
                 del edge_objs
                 self.rt_error('Invalid from node for edge')
                 return None
-            rhs_node = node_objs.get(op['rhs_node_id'], None)
+            rhs_node = node_objs.get(rhs_node_id, None)
             if(rhs_node is None):
                 del nodes_def
                 del node_objs
