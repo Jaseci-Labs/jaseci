@@ -1,4 +1,8 @@
-# Welcome to the Jaseci Tutorial
+---
+sidebar_position: 1
+---
+
+# Quick Start
 
 Hi! The First thought comes to our mind after knowing that we have to learn a new programming language, Jaseci is, WHY, a new language?
 Let's achieve the answer together.
@@ -148,7 +152,7 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
 
     The below graph can help us understand the jac code.
 
-    ![Graph Family](/docs/static/img/tutorial/getting_started/fam.jpg)
+    ![Graph Family](/img/tutorial/getting_started/fam.jpg)
 
  4. Hopefully we're starting to understand the nuances of jac. To get a better understanding let's take another example.  
     ### code : 
