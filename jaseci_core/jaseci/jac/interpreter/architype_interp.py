@@ -145,6 +145,7 @@ class architype_interp(interp):
             else:
                 edge_obj = edge(m_id=self._m_id, h=self._h,
                                 kind='edge', name='generic')
+            edge_obj.set_context(op)
             lhs_node = node_objs.get(op['lhs_node_id'], None)
             if(lhs_node is None):
                 del nodes_def
@@ -243,7 +244,7 @@ class architype_interp(interp):
             lhs_id = self.run_dot_id(kid[0])
             kid = kid[1:]
             if (len(kid) == 0 or kid[0].token_text() != '='):
-                # If there is rhs, treat it as a boolean value of True
+                # If there is no rhs, treat it as a boolean value of True
                 # e.g. [is_active, color=red] sets the attributes
                 # is_active as True and color as "red"
                 rhs_id = True
