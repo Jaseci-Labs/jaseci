@@ -109,7 +109,7 @@ const config = {
       prism: {
         theme: require('prism-react-renderer/themes/dracula'),
         darkTheme: darkCodeTheme,
-        additionalLanguages: ['jac', 'python', 'curl']
+        additionalLanguages: ['jac', 'python']
       },
     }),
 };
