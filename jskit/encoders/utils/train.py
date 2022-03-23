@@ -42,7 +42,7 @@ def config_setup():
     fp16 = bool(config['TRAIN_PARAMETERS']['FP16'])
     fp16_opt_level = str(config['TRAIN_PARAMETERS']['FP16_OPT_LEVEL'])
     gpu = int(config['TRAIN_PARAMETERS']['GPU'])
-    shared = bool(config['MODEL_PARAMETERS']['SHARED'])
+    shared = config['MODEL_PARAMETERS']['SHARED']
 
 
 output_dir = "log_output"
