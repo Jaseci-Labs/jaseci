@@ -116,10 +116,11 @@ Request :
                         "MAX_GRAD_NORM": "1",
                         "NUM_TRAIN_EPOCHS": "20",
                         "SEED": "12345",
-                        "GRADIENT_ACCUMULATION_STEPS": "1"
+                        "GRADIENT_ACCUMULATION_STEPS": "1",
+                        "BASEPATH":"modeloutput"
                     },
                     "model_parameters": {
-                        "SHARED": "False", // if shared is false we use Siamese Model
+                        "SHARED": "False", // if shared is True we use Siamese Model
                         "MODEL_NAME": "bert-base-uncased" 
                     }
                 }
