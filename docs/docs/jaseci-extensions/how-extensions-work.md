@@ -14,7 +14,7 @@ Extensions (or actions) are predefined functions that a walker can make use of t
 
 Here, the `infer_from_date` action from the `infer` module is declared as a capability of the `date_get_year` walker. This action is then used later on in the walker body definition.
 
-```
+```jac
 walker date_get_year {
     has date;
     can infer.year_from_date;
@@ -27,7 +27,7 @@ walker date_get_year {
 
 Since the `rand` module is global its actions are accessible without a declaration.
 
-```
+```jac
 walker get_random_int {    
     report rand.integer(0, 10);
 }
@@ -37,7 +37,7 @@ walker get_random_int {
 
 ### Using an action that connects to an external AI service
 
-```
+```jac
 walker infer_best_topic {
     has topics;
     has anchor best_topic;  # used as return value

@@ -13,18 +13,18 @@ sidebar_position: 2
 
 - Spawning generic code
 
-```
+```jac
 node1 =  spawn node;
 ```
 
 - spawning a typed node (of type person)
 
-```
+```jac
 node1  = spawn node::person;
 ```
 
 - spawning a node with edges
-```
+```jac
 spawn node::person <--[friend]--> node::person;
 # or #
 node1 = spawn node::person;
@@ -34,7 +34,7 @@ node1 <-[friend]-> node2
 
 - spawning a walker
 
-```
+```jac
 spawn [name_of_walker];
 ```
 
@@ -45,7 +45,7 @@ spawn [name_of_walker];
 
 **Defining a node with properties**
 
-```
+```jac
 node [name_of_node]{
 has parameter_1, parameter_2, parameter_n
 }
@@ -58,7 +58,7 @@ has parameter_1, parameter_2, parameter_n
 - Actions can be seen as functions the node/edge has access to. Without declaring these actions, a node/edge cannot make use of them.
 
 **Defining a node with actions**
-```
+```jac
 node [name_of_node]{
 can action_1, action_2, action_n
 }
@@ -70,7 +70,7 @@ can action_1, action_2, action_n
 - The property that is tagged with the anchor keyword can be used as the return value of that node/edge.
 
 **Making use of the anchor keyword**
-```
+```jac
 node [name_of_node]{
 has parameter_1, anchor parameter_2, parameter_n
 }
@@ -91,7 +91,7 @@ The take command performs a breath first search to add take operations to the qu
 
 **Traversing to a generic node from a walker**
 
-```
+```jac
 // generic definition of the nodes. Nodes of type 'myNode' will have a 'data' property
 
 node myNode: has anchor data;
@@ -122,7 +122,7 @@ This process continues until the queue is empty or the walker is killed.
 
 **Basic traversal using take**
 
-```
+```jac
 walker testWalker{
     node_type{
         take -->;
@@ -138,7 +138,7 @@ walker testWalker{
 
 **Traversing to a specific type of node from a walker**
 
-```
+```jac
 walker testWalker{
     node_type{
         take --> node::node_type;
@@ -156,7 +156,8 @@ walker testWalker2{
 
 **Traversing to a specific type of edge from a walker**
 
-```walker testWalker{
+```jac
+walker testWalker{
     node_type{
         take -[edge_type]->;
     }
@@ -173,7 +174,7 @@ walker testWalker2{
 
 **Traversing to a specific type of edge that has a specific type of node from a walker**
 
-```
+```jac
 walker testWalker{
    node_type{
         take -[edge_type]-> node::node_type;
@@ -193,7 +194,7 @@ Take also allows the use of an else statement, should there be no edges with the
 
 **Executing alternative logic should there be no edges with the take filter**
 
-```
+```jac
 walker testWalker{
     node_type{
         take [some filter] else {
@@ -228,7 +229,7 @@ walker testWalker2{
 
 > One use case of this can be for instance, let's say you have walker, with the sole purpose of finding uncompleted tasks. When the walker begins traversing the graph, based on the logic, it can make use of the report command to add the uncompleted tasks to the global list. Then at the end of the traversal the list of uncompleted tasks is presented.
 
-```
+```jac
 node task{
     has anchor name, isCompleted;
 }
