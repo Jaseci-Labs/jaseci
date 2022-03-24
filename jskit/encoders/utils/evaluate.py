@@ -12,7 +12,9 @@ max_history, max_contexts_length, max_candidate_length, device = None, \
 # inference parameters setup
 def config_setup():
     global max_history, max_contexts_length, max_candidate_length, device
-    config.read(os.path.realpath('utils/config.cfg'))
+    dirname = os.path.dirname(__file__)
+    config_fname = os.path.join(dirname, 'config.cfg')
+    config.read(config_fname)
     max_history = int(config['TRAIN_PARAMETERS']['MAX_HISTORY'])
     max_contexts_length = int(
         config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])

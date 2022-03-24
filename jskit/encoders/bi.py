@@ -31,7 +31,12 @@ def set_seed(seed):
 
 
 # function for config setup
-config.read('utils/config.cfg')
+config.read(
+    os.path.join(
+        os.path.dirname(__file__),
+        'utils/config.cfg'
+    )
+)
 
 
 def config_setup():

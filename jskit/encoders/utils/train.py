@@ -23,7 +23,9 @@ def config_setup():
         fp16_opt_level, gpu, gradient_accumulation_steps, num_train_epochs, shared
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device('cpu')
-    config.read('utils/config.cfg')
+    dirname = os.path.dirname(__file__)
+    config_fname = os.path.join(dirname, 'config.cfg')
+    config.read(config_fname)
     max_contexts_length = int(
         config['TRAIN_PARAMETERS']['MAX_CONTEXTS_LENGTH'])
     max_candidate_length = int(
