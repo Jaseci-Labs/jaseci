@@ -42,7 +42,6 @@ def config_setup():
     fp16 = bool(config['TRAIN_PARAMETERS']['FP16'])
     fp16_opt_level = str(config['TRAIN_PARAMETERS']['FP16_OPT_LEVEL'])
     gpu = int(config['TRAIN_PARAMETERS']['GPU'])
-    shared = config['MODEL_PARAMETERS']['SHARED']
 
 
 output_dir = "log_output"
@@ -53,7 +52,7 @@ global_step, tr_loss, nb_tr_steps, epoch, device, basepath, shared = None, None,
 
 
 # training function
-def train_model(model_train, tokenizer, contexts, candidates, labels, output_dir, val=False):
+def train_model(model_train, tokenizer, contexts, candidates, labels, val=False):
     config_setup()
     global model, global_step, tr_loss, nb_tr_steps, epoch, device, basepath, shared
 
@@ -83,24 +82,10 @@ def train_model(model_train, tokenizer, contexts, candidates, labels, output_dir
         (max(5, num_train_epochs))
     epoch_start = 1
     global_step = 0
-    bert_dir = output_dir+"/bert"
-    resp_bert_dir = output_dir+"/resp_bert"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    if not os.path.exists(bert_dir):
-        os.makedirs(bert_dir)
-    if not os.path.exists(resp_bert_dir):
-        os.makedirs(resp_bert_dir)
     log_wf = open(os.path.join(output_dir, 'log.txt'),
                   'a', encoding='utf-8')
-    if shared:
-        state_save_path = os.path.join(output_dir, 'pytorch_model.bin')
-    else:
-        state_save_path = os.path.join(bert_dir, 'pytorch_model.bin')
-        state_save_path_1 = os.path.join(
-            resp_bert_dir, 'pytorch_model.bin')
-
-    state_save_path = os.path.join(output_dir, 'pytorch_model.bin')
     no_decay = ["bias", "LayerNorm.weight"]
     optimizer_grouped_parameters = [
         {
@@ -176,11 +161,5 @@ def train_model(model_train, tokenizer, contexts, candidates, labels, output_dir
 
                 log_wf.flush()
                 pass
-    if shared is True:
-        torch.save(model.state_dict(), state_save_path)
-    else:
-        print('[Saving at]', state_save_path)
-        log_wf.write('[Saving at] %s\n' % state_save_path)
-        torch.save(model.resp_bert.state_dict(), state_save_path_1)
-        torch.save(model.bert.state_dict(), state_save_path)
+
     return model
