@@ -223,7 +223,6 @@ class test_ll(TestCaseHelper, TestCase):
         self.run_walker('gen_rand_life', {})
         self.run_walker('get_gen_day', {})
         data = self.run_walker('get_latest_day', {'show_report': 1})
-        self.log(data)
         w_id = data['report'][0][1]['jid']
         workettes = self.run_walker('get_workettes', {}, prime=w_id)['report']
         for wkt in workettes:
