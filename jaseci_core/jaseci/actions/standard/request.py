@@ -4,7 +4,7 @@ from jaseci.actions.live_actions import jaseci_action
 
 
 @jaseci_action()
-def get(url: str, data: dict, header: dict, meta):
+def get(url: str, data: dict, header: dict):
     """
     Issue request
     Param 1 - url
@@ -23,7 +23,7 @@ def get(url: str, data: dict, header: dict, meta):
 
 
 @jaseci_action()
-def post(url: str, data: dict, header: dict, meta):
+def post(url: str, data: dict, header: dict):
     """
     Issue request
     Param 1 - url
@@ -42,7 +42,7 @@ def post(url: str, data: dict, header: dict, meta):
 
 
 @jaseci_action()
-def put(url: str, data: dict, header: dict, meta):
+def put(url: str, data: dict, header: dict):
     """
     Issue request
     Param 1 - url
@@ -61,7 +61,7 @@ def put(url: str, data: dict, header: dict, meta):
 
 
 @jaseci_action()
-def delete(url: str, data: dict, header: dict, meta):
+def delete(url: str, data: dict, header: dict):
     """
     Issue request
     Param 1 - url
@@ -80,7 +80,7 @@ def delete(url: str, data: dict, header: dict, meta):
 
 
 @jaseci_action()
-def head(url: str, data: dict, header: dict, meta):
+def head(url: str, data: dict, header: dict):
     """
     Issue request
     Param 1 - url
@@ -99,7 +99,7 @@ def head(url: str, data: dict, header: dict, meta):
 
 
 @jaseci_action()
-def options(url: str, data: dict, header: dict, meta):
+def options(url: str, data: dict, header: dict):
     """
     Issue request
     Param 1 - url

@@ -11,7 +11,7 @@ import json
 
 
 @jaseci_action()
-def log(*args, meta):
+def log(*args):
     """Standard built in for printing output to log"""
     result = ''
     for i in args:
@@ -21,21 +21,21 @@ def log(*args, meta):
 
 
 @jaseci_action()
-def out(*args, meta):
+def out(*args):
     """Standard built in for printing output"""
     args = [json_out(jwv(x)) for x in args]
     print(*args)
 
 
 @jaseci_action()
-def err(*args, meta):
+def err(*args):
     """Standard built in for printing to stderr"""
     args = [json_out(jwv(x)) for x in args]
     print(*args, file=sys.stderr)
 
 
 @jaseci_action()
-def sort_by_col(lst: list, col_num: int, reverse: bool = False, meta=None):
+def sort_by_col(lst: list, col_num: int, reverse: bool = False):
     """
     Sorts in place list of lists by column
     Param 1 - list
@@ -105,7 +105,7 @@ def set_perms(obj: element, mode: str, meta):
 
 
 @jaseci_action()
-def get_perms(obj: element, meta):
+def get_perms(obj: element):
     """
     Returns object access mode for any Jaseci object
     Param 1 - target element
