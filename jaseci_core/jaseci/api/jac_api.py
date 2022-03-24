@@ -17,7 +17,6 @@ class jac_api():
         """
         if(not os.path.isfile(file)):
             ret = "File does not exsist!"
-            print(ret)
             return ret
         if(not len(out)):
             if(file.endswith(".jac")):
@@ -33,7 +32,7 @@ class jac_api():
                                       snt=faux.active_snt()))
                 ofile.write(jir_out)
                 ret = f"Build of {out} complete!"
-                print(ret)
+
                 return ret
 
     @interface.cli_api(cli_args=['file'])
@@ -44,7 +43,6 @@ class jac_api():
         """
         if(not os.path.isfile(file)):
             ret = "File does not exsist!"
-            print(ret)
             return ret
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
@@ -66,7 +64,6 @@ class jac_api():
         """
         if(not os.path.isfile(file)):
             ret = "File does not exsist!"
-            print(ret)
             return ret
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
