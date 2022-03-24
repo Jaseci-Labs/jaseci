@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Improvement: Changed meta requirement for actions to be option at hook points
 - Improvement: Now you can arbitrarily chain array indexs into function calls as per `std.get_report()[0]`.
 - New Feature: `std.get_report` gives the what is to be reported so far
 - Improvement: General polish items of JSCTL UI

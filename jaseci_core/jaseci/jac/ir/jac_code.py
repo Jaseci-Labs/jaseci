@@ -84,7 +84,6 @@ class jac_code():
 
     def parse_jac(self, code, start_rule='start'):
         """Generate AST tree from Jac code text"""
-        logger.info(str(f'{self.name}: Processing Jac code...'))
         tree = ast(jac_text=code, start_rule=start_rule, mod_name=self.name)
         self.errors = tree._parse_errors
         if(tree._parse_errors):
@@ -106,10 +105,8 @@ class jac_code():
         else:
             self.apply_ir(tree)
 
-        if(self.is_active):
-            logger.info(str(f'{self.name}: Successfully registered code'))
-        else:
-            logger.info(str(f'{self.name}: Code not registered'))
+        if(not self.is_active):
+            logger.error(str(f'{self.name}: Code not registered'))
         return self.is_active
 
     def ir_dict(self):

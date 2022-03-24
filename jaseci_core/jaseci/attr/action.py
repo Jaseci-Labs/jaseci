@@ -5,6 +5,7 @@ Each action has an id, name, timestamp and it's set of edges.
 """
 from .item import item
 from jaseci.actions.live_actions import live_actions
+import inspect
 # ACTION_PACKAGE = 'jaseci.actions.'
 
 
@@ -31,9 +32,15 @@ class action(item):
         Also note that Jac stores preset_in_out as input/output list of hex
         ids since preset_in_out doesn't use _ids convention
         """
-        result = live_actions[
-            self.value](*param_list,
-                        meta={'m_id': scope.parent._m_id,
-                              'h': scope.parent._h, 'scope': scope,
-                              'interp':  interp})
+        func = live_actions[self.value]
+        self.log_output(inspect.getfullargspec(func))
+        args = inspect.getfullargspec(func)
+        args = args[0]+args[4]
+        if('meta' in args):
+            result = func(*param_list,
+                          meta={'m_id': scope.parent._m_id,
+                                'h': scope.parent._h, 'scope': scope,
+                                'interp':  interp})
+        else:
+            result = func(*param_list)
         return result
