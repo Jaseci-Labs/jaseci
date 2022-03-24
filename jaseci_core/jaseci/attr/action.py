@@ -33,7 +33,6 @@ class action(item):
         ids since preset_in_out doesn't use _ids convention
         """
         func = live_actions[self.value]
-        self.log_output(inspect.getfullargspec(func))
         args = inspect.getfullargspec(func)
         args = args[0]+args[4]
         if('meta' in args):

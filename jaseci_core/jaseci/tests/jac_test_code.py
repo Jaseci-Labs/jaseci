@@ -1176,3 +1176,11 @@ func_with_array_index = \
        report std.get_report()[0];
     }
     """
+
+rt_error_test1 = \
+    """
+    walker init {
+       spawn here --> node::generic;
+       report -->[2];
+    }
+    """
