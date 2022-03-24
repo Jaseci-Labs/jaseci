@@ -114,7 +114,7 @@ The edit command invokes the built in editor. Though it’s a terminal editor ba
 
 Now type out the toy program in Jac Code:
 
-```
+```jac
 node man;
 node woman;
 edge mom;

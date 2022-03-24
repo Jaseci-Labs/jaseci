@@ -18,7 +18,7 @@ Here we'll look at setting up the Jaseci data model (nodes and edges) and defini
 
 Members of the network are defined as `person` nodes with one attribute, `name`. For simplicity, we will also assume that each `person` has a unique `name`. This allows us to use `name` as the anchor for the node to make handling this type of node easier (as in comparisons, for example).
 
-```
+```jac
 // person node to represent members of the network
 node person {
     has anchor name;
@@ -34,7 +34,7 @@ node person {
 
 We will use a named undirected edge called `friend` to describe the relationship between `person` nodes on the network.
 
-```
+```jac
 // friend edge to describe the relationship between person nodes
 edge friend;
 ```
@@ -45,7 +45,7 @@ edge friend;
 
 This walker is intended to be run on the `root` node. It creates a `person` node connected to `root` by an unnamed undirected edge. It has a `name` attribute which is passed through to the `person` being created.
 
-```
+```jac
 walker join {
     has name;
 
@@ -64,8 +64,10 @@ walker join {
 
 This walker is intended to be run on the `root` node. It walks the graph returning a list of `person` nodes that represents all network members.
 
-```
+```jac
 // gets all members of the network
+
+
 walker get_members {
     has anchor members;
 
@@ -91,7 +93,7 @@ walker get_members {
 
 This walker is intended to be run on a `person` node. It creates an undirected `friend` edge between the node on which it is run and another `person` node defined by the `new_friend` attribute.
 
-```
+```jac
 // adds a friend to the person node being walked
 walker add_friend {
     has new_friend;
@@ -106,7 +108,7 @@ walker add_friend {
 
 This walker is intended to be run on a `person` node. It gets a list of `person` nodes that are connected to the node on which it is run by an undirected `friend` edge. This represents that person's friend list.
 
-```
+```jac
 // get the list of friends of the person node being walked
 walker get_friend_list {
     has anchor friend_list;
@@ -135,7 +137,7 @@ The current algorithm suggests friends of existing friends, i.e. persons with wh
 
 **Note**: There is a bug where it might suggest friends that you already have. Who can find and/or fix it? ;-)
 
-```
+```jac
 // gets suggested friends for the person node being walked
 // current algorithm: suggest friends of friends (mutual friends)
 walker get_suggested_friends {

@@ -12,7 +12,7 @@ sidebar_position: 5
 - List have the ability to store multi-typed data.
 - List indices start at 0
 
-```
+```jac
 // initializing an empty list
 a = []
 
@@ -45,7 +45,7 @@ lst.destroy(1)  // removed b
 - A dictionary is a collection which is changeable and does not allow duplicate keys.
 - Dictionaries can store multi-type data
 
-```
+```jac
 // initializing an empty dictionary
 a = {}
 
