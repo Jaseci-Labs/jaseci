@@ -27,11 +27,13 @@ In this section we'll take a look at how easy it is to get up and running with a
 1.  To get started created a new folder (on your desktop or anywhere else) called `hello_jac`
 2.  Inside that folder, create a file called `hello.jac`
 3.  Give `hello.jac` the following contents:
+
 ```jac
 walker init {
     std.out("Hello, World!");
 }
 ```
+
 4.  Open a terminal in `hello_jac` folder.
 5.  Assuming that you have jaseci installed, run the program with the following command: `jsctl jac run hello.jac`
 6.  This should print to the console: `Hello World`
@@ -105,6 +107,7 @@ To get help on a particular command type:
 for example to see all the commands for `jac` type:
 
 `help jac` You should see an output like:
+
 ```
 Usage: jac [OPTIONS] COMMAND [ARGS]...
 
@@ -118,6 +121,7 @@ build  Command line tooling for building executable jac ir
 run    Command line tooling for running all test in both .jac code files...
 test   Command line tooling for running all test in both .jac code files...
 ```
+
 ### Visualizing a graph
 
 As you get to know Jaseci and Jac, you'll want to try things and tinker a bit. In this section, we'll get to know how jsctl can be used as the main platform for this play. A typical flow will involve jumping into shell-mode, writing some code, running that code to observe output, and in visualizing the state of the graph, and rendering that graph in dot to see its visualization.
@@ -180,6 +184,7 @@ Don't worry if that looks confusing. As you learn the Jac language, This will be
    `sentinel register -name fam -code fam.jac -set_active true`
 
 You should see the following output:
+
 ```
 jaseci > sentinel register -name fam -code fam.jac -set_active true
 2022-03-21 13:56:29,443 - INFO - parse_jac: fam: Processing Jac code...
