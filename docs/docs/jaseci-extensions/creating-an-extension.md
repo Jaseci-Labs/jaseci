@@ -8,7 +8,7 @@ Extensions are housed in the `jaseci_core/jaseci/actions` directory of the Jasec
 
 Example directory structure of a Jaseci extension
 
-```
+```python
 jaseci_core/jaseci/actions
 |- module
 |   |- my_module_actions.py # implementation
@@ -18,7 +18,7 @@ jaseci_core/jaseci/actions
 
 Let's say we want to extend Jaseci some useful string manipulation functions. The implementation would be something like this:
 
-```
+```python
 jaseci_core/jaseci/actions
 |- module
 |   |- str_actions.py
@@ -28,7 +28,7 @@ jaseci_core/jaseci/actions
 
 `str_actions.py`
 
-```
+```python
 def capitalize(param_list):
     """Converts the first character to upper case"""
     if len(param_list) and type(param_list[0]) is str:
@@ -54,13 +54,13 @@ def isnumeric(param_list):
 
 `str.py`
 
-```
+```python
 from .module.str_actions import capitalize, title, isnumeric
 ```
 
 Now to ensure everything is working as expected we add unit tests for the action:
 
-```
+```python
 jaseci_core/jaseci/tests
 |- test_str.py
 |- ...
@@ -68,7 +68,7 @@ jaseci_core/jaseci/tests
 
 `test_str.py`
 
-```
+```python
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
@@ -111,8 +111,12 @@ class str_tests(TestCaseHelper, TestCase):
 
 To test everything out we need to update the code in the Jaseci pod.
 
-`for podname in $(kubectl get pods -l pod=jaseci -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci_serv ${podname}:/; echo "Copy code to pod"; kubectl cp jaseci_core ${podname}:/;  kubectl exec -it ${podname} -- bash -c "cd jaseci_core; source install.sh"; done`
+```
+for podname in $(kubectl get pods -l pod=jaseci -o json| jq -r '.items[].metadata.name'); do kubectl cp jaseci_serv ${podname}:/; echo "Copy code to pod"; kubectl cp jaseci_core ${podname}:/;  kubectl exec -it ${podname} -- bash -c "cd jaseci_core; source install.sh"; done
+```
 
 Then run the Jaseci core tests.
 
-`kubectl exec <jaseci pod name> -- bash -c "cd jaseci_core && source test.sh"`
+```
+kubectl exec <jaseci pod name> -- bash -c "cd jaseci_core && source test.sh"
+```

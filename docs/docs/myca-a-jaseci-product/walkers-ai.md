@@ -17,7 +17,7 @@ Things to note:
 - Workettes that don't have sub-workettes or ones that do not represent a category / group (`workset`) are skipped, and hence, not suggested.
 - It keeps a running note of the best match, which is returned at the end of execution.
 
-```
+```jac
 walker get_suggested_parent {
     has new_wkt_name, new_wkt_name_emb;
     has cur_best_match, cur_best_score;
@@ -96,7 +96,7 @@ walker get_suggested_parent {
 
 `get_suggested_parent`, when spawned on a workette node, creates a vector representation of its `name` and `note` using the USE AI service. This representation is used in machine learning comparisons, such as `vector.consine_sim`, which determines the similarity between two vectors using a cosine function.
 
-```
+```jac
 walker update_embeddings {
     can use.get_embedding;
     workette {

@@ -10,7 +10,7 @@ First, we'll take a look at the simple walkers that make up myca.
 
 `init` looks for an instance of the graph for the current user (`owner`) and creates one if it does not exist.
 
-```
+```jac
 walker init {
     has owner;
     has anchor life_node;
@@ -26,7 +26,7 @@ walker init {
 
 `get_workette` reports the current workette or day node.
 
-```
+```jac
 walker get_workette {
     day, workette {
         report here;
@@ -37,7 +37,7 @@ walker get_workette {
 
 `get_workettes` reports all the immediate child workettes on a day or workette node.
 
-```
+```jac
 walker get_workettes {
     day, workette {
         for i in --> node::workette:
@@ -48,7 +48,7 @@ walker get_workettes {
 
 `get_workettes_deep` reports all workettes and sub-workettes on a day node
 
-```
+```jac
 walker get_workettes_deep {
     day {
         take --> node::workette;
@@ -62,7 +62,7 @@ walker get_workettes_deep {
 
 `load_workette` reports a tuple for all workettes and sub-workettes on a node along with the id of that node.
 
-```
+```jac
 walker load_workette {
      day, week, month, year, life,  workette {
         for i in  -[parent]-> node::workette {
@@ -75,7 +75,7 @@ walker load_workette {
 
 `create_workette` takes in the parameters necessary to create a workette and spawns a new one on the current node.
 
-```
+```jac
 walker create_workette {
     has title;
     has wtype, note;
@@ -92,7 +92,7 @@ walker create_workette {
 
 `move_workette` moves a workette from one node to another by using edge manipulation.
 
-```
+```jac
 walker move_workette {
     has dest_node;
     if(!dest_node): disengage;
@@ -110,7 +110,7 @@ walker move_workette {
 
 `delete_workette` deletes a workette node.
 
-```
+```jac
 walker delete_workette {
     workette {
         take -[parent]-> node::workette;
@@ -129,7 +129,7 @@ Use the `destroy` keyword to delete a node.
 
 `get_*` walks the graph looking for the respective date component node (`week`, 'month', etc) that matches the `date` parameter and reports it and its workettes.
 
-```
+```jac
 walker get_week {
     has date;
     if(date){
@@ -145,7 +145,7 @@ walker get_week {
 }
 ```
 
-```
+```jac
 walker get_month {
         has date;
     if(date){
@@ -160,7 +160,7 @@ walker get_month {
 }
 ```
 
-```
+```jac
 walker get_year {
         has date;
     if(date){
@@ -174,7 +174,7 @@ walker get_year {
 }
 ```
 
-```
+```jac
 walker get_life {
         has date;
     if(date){

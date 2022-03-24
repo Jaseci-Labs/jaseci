@@ -1,5 +1,5 @@
 ---
-side_bar_position: 2
+sidebar_position: 3
 ---
 
 # Jaseci's Architecture

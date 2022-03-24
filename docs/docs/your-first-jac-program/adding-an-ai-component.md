@@ -18,7 +18,7 @@ Let's add an AI component that suggests best post to members based on their prim
 
 The new person node will look like this.
 
-```
+```jac
 node person {
     has name;
 
@@ -33,7 +33,7 @@ The post node will represent a member's post and house the text of that post. It
 
 This is what that looks like.
 
-```
+```jac
 node post {
     has body; // post text
     has body_emb; // an embedding (or vector) representation of body
@@ -51,7 +51,7 @@ node post {
 
 For this we'll create a walker that returns a static list of interests.
 
-```
+```jac
 walker get_interests {
     has anchor interests;
 
@@ -74,7 +74,7 @@ This walker is meant to run on a person and is expected to create a post owned b
 
 The `update_embeddings` walker creates or updates the embedding for the body of a post using the `USE` external AI service. It also calculates the cosine similarity between the post's body and each of the predefined interests using that embedding. These results are then stored in teach created post so we know which interest it matches best.
 
-```
+```jac
 walker publish_post {
     has body;
 
@@ -115,7 +115,7 @@ walker update_embeddings {
 
 This walker will check the graph for the best post given an interest as its argument. It checks each post to see if the `top_interest` property matches the requested interest and reports the one with the highest matching score.
 
-```
+```jac
 walker get_best_post {
     has anchor best_post;
     has interest;
@@ -160,7 +160,7 @@ walker get_best_post {
 
 Here's a demonstration using the Jaseci API wrapper to simulate how the new functionality can be used.
 
-```
+```python
 from jac_api import JacApi
 
 if __name__ == '__main__':
