@@ -135,7 +135,7 @@ def entity_detection(text: str, ner_labels: Optional[List]=["PREDEFINED"]):
                 json_compatible_data = jsonable_encoder(tagged_sentence)
                 #response_data_format = {
                 #    "input_text": json_compatible_data["text"], "entities": []}
-                response_data_format = {}
+                response_data_format = {"entities": []}
 
                 for json_data in json_compatible_data["entities"]:
                     temp_dict = {}
