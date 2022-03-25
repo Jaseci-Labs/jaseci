@@ -1,5 +1,5 @@
 import flair
-from typing import List
+from typing import List, Optional
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from flair.data import Corpus
@@ -9,10 +9,11 @@ from flair.embeddings import WordEmbeddings, StackedEmbeddings, FlairEmbeddings
 from flair.data import Sentence
 from flair.trainers import ModelTrainer
 import pandas as pd
-from utils import create_data, create_data_new
+from entity_utils import create_data, create_data_new
 import configparser
 from jaseci.actions.live_actions import jaseci_action
 import torch
+import os
 from pathlib import Path
 config = configparser.ConfigParser()
 flair.device = torch.device('cpu')
@@ -46,7 +47,12 @@ def init_model():
     """create a tagger as per the model provided through config"""
 
     global tagger, NER_MODEL_NAME, NER_LABEL_TYPE, MODEL_TYPE
-    config.read('config.cfg')
+    config.read(
+        os.path.join(
+            os.path.dirname(__file__),
+            'config.cfg'
+        )
+    )
     NER_MODEL_NAME = config['TAGGER_MODEL']['NER_MODEL']
     NER_LABEL_TYPE = config['LABEL_TYPE']['NER']
     MODEL_TYPE = config['TAGGER_MODEL']['MODEL_TYPE']
@@ -111,7 +117,7 @@ def train_entity():
 
 # defining the api for entitydetection
 @jaseci_action(act_group=['ent_ext'], allow_remote=True)
-def entity_detection(text: str, ner_labels: List[str]):
+def entity_detection(text: str, ner_labels: Optional[List]=True):
     """
     API for detectiing provided entity in text
     """
@@ -237,7 +243,12 @@ def set_config(ner_model: str = None, model_type: str = None):
     2. "LSTM" or "GRU" : RNN models
     """
     global config
-    config.read('config.cfg')
+    config.read(
+        os.path.join(
+            os.path.dirname(__file__),
+            'config.cfg'
+        )
+    )
 
     if ner_model or model_type:
         config['TAGGER_MODEL']["NER_MODEL"] = ner_model
