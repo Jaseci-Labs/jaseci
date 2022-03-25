@@ -117,7 +117,7 @@ def train_entity():
 
 # defining the api for entitydetection
 @jaseci_action(act_group=['ent_ext'], allow_remote=True)
-def entity_detection(text: str, ner_labels: Optional[List]=True):
+def entity_detection(text: str, ner_labels: Optional[List]=["PREDEFINED"]):
     """
     API for detectiing provided entity in text
     """
