@@ -39,10 +39,11 @@ def serv_actions():
 def gen_api_service(app, func, act_group, aliases, caller_globals):
     """Helper for jaseci_action decorator"""
     # Construct list of action apis available
+    varnames = list(inspect.signature(func).parameters.keys())
     act_group = [os.path.basename(inspect.getfile(func)).split(
         '.')[0]] if act_group is None else act_group
     remote_actions[f"{'.'.join(act_group+[func.__name__])}"] = \
-        func.__code__.co_varnames
+        varnames
 
     # Need to get pydatic model for func signature for fastAPI post
     model = validate_arguments(func).model
@@ -50,7 +51,7 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
     # Keep only feilds present in param list in base model
     keep_fields = {}
     for i in model.__fields__.keys():
-        if i in func.__code__.co_varnames:
+        if i in varnames:
             keep_fields[i] = model.__fields__[i]
     model.__fields__ = keep_fields
 
@@ -73,7 +74,7 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
     for i in aliases:
         new_func = app.post(f"/{i}/")(new_func)
         remote_actions[f"{'.'.join(act_group+[i])}"] = \
-            func.__code__.co_varnames
+            varnames
     caller_globals[f'{JS_ACTION_PREAMBLE}{func.__name__}'] = new_func
 
 

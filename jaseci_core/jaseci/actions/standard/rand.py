@@ -7,14 +7,14 @@ from jaseci.actions.live_actions import jaseci_action
 
 
 @jaseci_action()
-def seed(val: int, meta):
+def seed(val: int):
     """Seed random num generator"""
     random.seed(val, version=2)
     # faker.Faker.seed(param_list[0])
 
 
 @jaseci_action()
-def integer(start: int, end: int, meta):
+def integer(start: int, end: int):
     """Random integeter between range"""
     return random.randint(start, end)
 
@@ -30,7 +30,7 @@ def sentence(meta):
 
 
 @jaseci_action()
-def time(start_date: str, end_date: str, meta):
+def time(start_date: str, end_date: str):
     """Provide a random datetime between range"""
     start = datetime.fromisoformat(start_date)
     end = datetime.fromisoformat(end_date)

@@ -273,11 +273,9 @@ class interp(machine_state):
         """
         kid = jac_ast.kid
         if(len(kid) > 2):
-            edict = {'type': type(e).__name__,
-                     'msg': str(e),
-                     'args': e.args}
             jac_value(self, ctx=self._jac_scope.local_scope,
-                      name=kid[2].token_text(), value=edict).write(kid[2])
+                      name=kid[2].token_text(),
+                      value=self.jac_exception(e, jac_ast)).write(kid[2])
         self.run_code_block(kid[-1])
 
     def run_elif_stmt(self, jac_ast):
@@ -374,9 +372,10 @@ class interp(machine_state):
         try:
             passed = self.run_expression(kid[1]).value
         except Exception as e:
-            raise Exception('JAC Assert Failed', kid[1].get_text(), e)
+            e = self.jac_exception(e, jac_ast)
+            raise Exception('Jac Assert Failed', kid[1].get_text(), e)
         if(not passed):
-            raise Exception('JAC Assert Failed', kid[1].get_text())
+            raise Exception('Jac Assert Failed', kid[1].get_text())
 
     def run_destroy_action(self, jac_ast):
         """
@@ -1142,8 +1141,11 @@ class interp(machine_state):
                     f'Indicies must be an integer or string!', kid[1])
                 return atom_res
             atom_res.unwrap()
-
-            return jac_value(self, ctx=atom_res.value, name=idx)
+            try:
+                return jac_value(self, ctx=atom_res.value, name=idx)
+            except Exception:
+                self.rt_error("List index out of range", kid[1])
+                return atom_res
         else:
             end = self.run_expression(kid[3]).value
             if(not self.rt_check_type(idx, [int], kid[1]) or
@@ -1152,7 +1154,11 @@ class interp(machine_state):
                               'Indicies must be an integers!', kid[1])
                 return atom_res
             atom_res.unwrap()
-            return jac_value(self, ctx=atom_res.value, name=idx, end=end)
+            try:
+                return jac_value(self, ctx=atom_res.value, name=idx, end=end)
+            except Exception:
+                self.rt_error("List slice out of range", kid[1])
+                return atom_res
 
     def run_dict_val(self, jac_ast):
         """

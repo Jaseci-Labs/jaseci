@@ -585,6 +585,7 @@ class jac_tests(TestCaseHelper, TestCase):
                                    'profession': None})
 
     def test_try_else_stmts(self):
+        self.logger_on()
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.try_else_stmts)
@@ -594,6 +595,9 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         rep = test_walker.report
         self.assertEqual(rep[0], {'args': ('division by zero',),
+                                  'col': 8,
+                                  'line': 5,
+                                  'mod': '@default',
                                   'msg': 'division by zero',
                                   'type': 'ZeroDivisionError'})
         self.assertEqual(rep[1], 'dont need err')
@@ -677,3 +681,18 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         rep = test_walker.report
         self.assertEqual(rep, [3, 5, 3])
+
+    def test_rt_error_test1(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.rt_error_test1)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertIn("List index out of range",
+                      test_walker.runtime_errors[0])
+        self.assertIn(" line ",
+                      test_walker.runtime_errors[0])
+        self.assertIn(" col ",
+                      test_walker.runtime_errors[0])

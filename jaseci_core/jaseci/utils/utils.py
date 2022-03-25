@@ -29,7 +29,7 @@ def connect_logger_handler(target_logger, handler, level=logging.WARN):
 
 logger = logging.getLogger('core')
 if(len(logger.handlers) < 1):
-    connect_logger_handler(logger, logging.StreamHandler())
+    connect_logger_handler(logger, logging.StreamHandler(), logging.INFO)
 
 app_logger = logging.getLogger('app')
 if(len(app_logger.handlers) < 1):
