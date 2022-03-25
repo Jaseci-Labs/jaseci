@@ -96,8 +96,76 @@ class SelectionDataset(Dataset):
         return contexts_token_ids_list_batch, contexts_input_masks_list_batch, \
             candidates_token_ids_list_batch, candidates_input_masks_list_batch, labels_batch
 
+# this class transforms data in required training format and inference for text and tokens
+
+
+class InferDataset(Dataset):
+    def __init__(self, contexts, candidates, context_transform, candidate_transform, labels=None, mode='train'):
+        self.context_transform = context_transform
+        self.candidate_transform = candidate_transform
+        self.data_source = []
+        self.mode = mode
+
+        for text in contexts:
+            group = {
+                'context': None,
+                'candidates': [],
+                'labels': []
+            }
+            for cand in candidates:
+                group['candidates'].append(cand)
+                group['labels'].append(0)
+                group['context'] = [text]
+            self.data_source.append(group)
+
+    def __len__(self):
+        return len(self.data_source)
+
+    def __getitem__(self, index):
+        group = self.data_source[index]
+        context, candidates, labels = group['context'], group['candidates'], group['labels']
+
+        transformed_context = self.context_transform(
+            context)  # [token_ids],[seg_ids],[masks]
+        transformed_candidates = self.candidate_transform(
+            candidates)  # [token_ids],[seg_ids],[masks]
+        ret = transformed_context, transformed_candidates, labels
+
+        return ret
+
+    def batchify_join_str(self, batch):
+
+        contexts_token_ids_list_batch, contexts_input_masks_list_batch, \
+            candidates_token_ids_list_batch, candidates_input_masks_list_batch = [], [], [], []
+        labels_batch = []
+        for sample in batch:
+            (contexts_token_ids_list, contexts_input_masks_list), (
+                candidates_token_ids_list, candidates_input_masks_list) = sample[:2]
+
+            contexts_token_ids_list_batch.append(contexts_token_ids_list)
+            contexts_input_masks_list_batch.append(
+                contexts_input_masks_list)
+
+            candidates_token_ids_list_batch.append(candidates_token_ids_list)
+            candidates_input_masks_list_batch.append(
+                candidates_input_masks_list)
+
+            labels_batch.append(sample[-1])
+
+        long_tensors = [contexts_token_ids_list_batch, contexts_input_masks_list_batch,
+                        candidates_token_ids_list_batch, candidates_input_masks_list_batch]
+
+        contexts_token_ids_list_batch, contexts_input_masks_list_batch, \
+            candidates_token_ids_list_batch, candidates_input_masks_list_batch = (
+                torch.tensor(t, dtype=torch.long) for t in long_tensors)
+
+        labels_batch = torch.tensor(labels_batch, dtype=torch.long)
+        return contexts_token_ids_list_batch, contexts_input_masks_list_batch, \
+            candidates_token_ids_list_batch, candidates_input_masks_list_batch, labels_batch
 
 # this class transforms data to generate embeddings
+
+
 class EvalDataset(Dataset):
     def __init__(self, texts, context_transform=None, candidate_transform=None,  mode="context"):
         self.context_transform = context_transform

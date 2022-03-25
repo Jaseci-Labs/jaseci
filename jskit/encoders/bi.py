@@ -1,7 +1,7 @@
 import os
 import configparser
 import torch
-from typing import Dict, List
+from typing import Dict, List, Union
 from fastapi import HTTPException
 from transformers import AutoModel, AutoConfig, AutoTokenizer
 from utils.evaluate import get_embeddings, get_inference
@@ -84,9 +84,13 @@ def config_setup():
 
 config_setup()
 
+
+# to validate data and datatype provided
+def is_list_of(data, dtype):
+    return bool(data) and isinstance(data, list) and all(isinstance(elem, dtype) for elem in data)
+
+
 # API for getting the cosine similarity
-
-
 @jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def cosine_sim(vec_a: List[float], vec_b: List[float], meta):
     """
@@ -101,16 +105,40 @@ def cosine_sim(vec_a: List[float], vec_b: List[float], meta):
 
 
 @jaseci_action(act_group=['bi_enc'], allow_remote=True)
-def infer(contexts: List, candidates: List):
+def infer(contexts: Union[List[str], List[List[float]]], candidates: Union[List[str], List[List[float]]]):
     """
     Take list of context, candidate and return nearest candidate to the context
     """
     global model
     model.eval()
-    predicted_candidate = get_inference(model, tokenizer,
-                                        contexts=contexts,
-                                        candidates=candidates)
-    return predicted_candidate
+    predicted_candidates = []
+    if is_list_of(data=contexts, dtype=str) and is_list_of(data=candidates, dtype=str):
+        predicted_candidates = get_inference(model, tokenizer,
+                                             contexts=contexts,
+                                             candidates=candidates)
+    elif is_list_of(data=contexts, dtype=str) and is_list_of(data=candidates, dtype=list):
+        con_embed = []
+        con_embed = get_candidate_emb(contexts)
+        for data in con_embed:
+            score_dat = []
+            for lbl in candidates:
+                score_dat.append(cosine_sim(
+                    vec_a=data, vec_b=lbl, meta="string"))
+            predicted_candidates.append(candidates[np.argmax(score_dat)])
+    elif is_list_of(data=contexts, dtype=list) and is_list_of(data=candidates, dtype=str):
+        cand_embed = []
+        predicted_candidates = []
+        cand_embed = get_candidate_emb(candidates)
+        for data in contexts:
+            score_dat = []
+            for lbl in cand_embed:
+                score_dat.append(cosine_sim(
+                    vec_a=data, vec_b=lbl, meta="string"))
+            predicted_candidates.append(candidates[np.argmax(score_dat)])
+    else:
+        raise HTTPException(status_code=404, detail=str(
+            "Invalid argument"))
+    return predicted_candidates
 
 
 # API for training

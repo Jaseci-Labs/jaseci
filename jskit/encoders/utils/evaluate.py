@@ -38,7 +38,7 @@ def get_inference(model, tokenizer, contexts, candidates):
         max_len=max_candidate_length
     )
     labels = [0] * len(candidates)
-    test_data = token_util.SelectionDataset(
+    test_data = token_util.InferDataset(
         contexts=contexts,
         candidates=candidates,
         context_transform=context_transform,
@@ -47,10 +47,11 @@ def get_inference(model, tokenizer, contexts, candidates):
     )
     val_dataloader = DataLoader(
         test_data,
-        batch_size=1,
+        batch_size=2,
         collate_fn=test_data.batchify_join_str,
         shuffle=False
     )
+    results = []
     for step, batch in enumerate(val_dataloader, start=1):
         batch = tuple(t.to(device) for t in batch)
         context_token_ids_list_batch, context_input_masks_list_batch,\
@@ -60,7 +61,13 @@ def get_inference(model, tokenizer, contexts, candidates):
             logits = model(context_token_ids_list_batch,  context_input_masks_list_batch,
                            candidate_token_ids_list_batch, candidate_input_masks_list_batch, mode="eval")
         _, prediction = torch.max(logits, dim=-1)
-        return candidates[prediction]
+        prediction = prediction.tolist()
+        if isinstance(prediction, list):
+            for pred in prediction:
+                results.append(candidates[pred])
+        else:
+            results.append(candidates[prediction])
+        return results
 
 
 # function provides embedding for context and candidate
