@@ -48,7 +48,7 @@ def clean(text):
     Just a helper fuction to add a space before the punctuations for better tokenization
     '''
     filters = ["!", "#", "$", "%", "&", "(", ")", "/", "*", ".", ":", ";", "<", "=", ">", "?", "@", "[",
-               "\\", "]", "_", "`", "{", "}", "~", "'"]
+               "\\", "]", "_", "`", "{", "}", "~", "'", ","]
     for i in text:
         if i in filters:
             text = text.replace(i, " " + i)
@@ -66,7 +66,6 @@ def create_data(df):
     with open(filepath, 'w') as f:
         for text, annotation in zip(df.text, df.annotation):
             text = clean(text)
-            text_ = text
             match_list = []
             for i in annotation:
                 a, text_ = matcher(text, i[0])
@@ -76,5 +75,34 @@ def create_data(df):
 
             for i in d.keys():
                 f.writelines(i + ' ' + d[i] + '\n')
+            f.writelines('\n')
+    return True
+
+
+def create_data_new(df):
+    filepath = f'train/train.txt'
+    if not os.path.exists("train"):
+        os.makedirs("train")
+    with open(filepath, 'w') as f:
+        for text, annotation in zip(df.text, df.annotation):
+            text = clean(text)
+            text = clean(text)
+            split_sent = text.split()
+            tags = ['O']*len(split_sent)
+            for i in annotation:
+                e_type = i[1]
+                ent_val = text[i[2]:i[3]]
+                tags[split_sent.index(ent_val.split()[0])] = "B-" + e_type
+                split_sent[split_sent.index(
+                    ent_val.split()[0])] = split_sent[split_sent.index(ent_val.split()[0])]+'t'
+                # print(tags)
+                if len(ent_val.split()) > 1:
+                    for ent in ent_val.split()[1:]:
+                        tags[split_sent.index(
+                            ent)] = "I-" + e_type
+                        split_sent[split_sent.index(
+                            ent)] = split_sent[split_sent.index(ent)]+'t'
+            for w, t in zip(text.split(), tags):
+                f.writelines(w + ' ' + t + '\n')
             f.writelines('\n')
     return True

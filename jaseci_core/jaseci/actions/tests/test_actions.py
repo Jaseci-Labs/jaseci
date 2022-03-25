@@ -37,13 +37,13 @@ class jac_actions_tests(TestCaseHelper, TestCase):
             pass
         jra.serv_actions()
         self.assertEqual(jra.remote_actions,
-                         {'use.answer_encode': ('answer', 'context'),
-                          'use.cos_sim_score': ('q_emb', 'a_emb'),
-                          'use.dist_score': ('q_emb', 'a_emb'),
-                          'use.enc_answer': ('answer', 'context'),
-                          'use.enc_question': ('question',),
-                          'use.qa_score': ('q_emb', 'a_emb'),
-                          'use.question_encode': ('question',)})
+                         {'use.answer_encode': ['answer', 'context'],
+                          'use.cos_sim_score': ['q_emb', 'a_emb'],
+                          'use.dist_score': ['q_emb', 'a_emb'],
+                          'use.enc_answer': ['answer', 'context'],
+                          'use.enc_question': ['question', ],
+                          'use.qa_score': ['q_emb', 'a_emb'],
+                          'use.question_encode': ['question']})
 
     def test_live_action_globals(self):
         self.assertGreater(len(jla.live_actions), 25)

@@ -115,7 +115,7 @@ def load_remote_actions(url):
 
 def gen_remote_func_hook(url, act_name, param_names):
     """Generater for function calls for remote action calls"""
-    def func(*args, meta):
+    def func(*args):
         params = {}
         for i in range(len(param_names)):
             if(i < len(args)):
