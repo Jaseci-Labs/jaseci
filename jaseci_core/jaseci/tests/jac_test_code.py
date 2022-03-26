@@ -1194,3 +1194,10 @@ root_type_nodes = \
        report -->[0].details['name'];
     }
     """
+
+invalid_key_error = \
+    """
+    walker init {
+       report here.context['adfas'];
+    }
+    """
