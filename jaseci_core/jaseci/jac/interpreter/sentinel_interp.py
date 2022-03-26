@@ -18,7 +18,7 @@ class sentinel_interp(interp):
         """
         start: ver_label? element+ EOF;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'ver_label'):
             self.run_ver_label(kid[0])
         for i in kid[:-1]:
@@ -28,14 +28,14 @@ class sentinel_interp(interp):
         """
         ver_label: 'version' COLON STRING;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         self.version = parse_str_token(kid[2].token_text())
 
     def run_element(self, jac_ast):
         """
         element: architype | walker | test;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'architype'):
             self.load_architype(kid[0])
         elif(kid[0].name == 'walker'):
@@ -77,7 +77,7 @@ class sentinel_interp(interp):
                 | KW_WALKER walker_block
             );
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         testcase = {'title': kid[1].token_text(),
                     'graph_ref': None, 'graph_block': None,
                     'walker_ref': None, 'spawn_ctx': None,

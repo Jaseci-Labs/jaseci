@@ -29,6 +29,7 @@ class machine_state():
         self._stopped = None
         self._assign_mode = False
         self._loop_limit = 10000
+        self._cur_jac_ast = None
 
     def parent(self):
         if(self._parent_override):
@@ -51,6 +52,10 @@ class machine_state():
     def pop_scope(self):
         self._scope_stack.pop()
         self._jac_scope = self._scope_stack[-1]
+
+    def set_cur_ast(self, jac_ast):
+        self._cur_jac_ast = jac_ast
+        return jac_ast.kid
 
     # Helper Functions ##################
 

@@ -696,3 +696,25 @@ class jac_tests(TestCaseHelper, TestCase):
                       test_walker.runtime_errors[0])
         self.assertIn(" col ",
                       test_walker.runtime_errors[0])
+
+    def test_root_type_nodes(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.root_type_nodes)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        report = test_walker.report
+        self.assertEqual(report, ["root", "root"])
+
+    def test_invalid_key_error(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.invalid_key_error)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        errors = test_walker.runtime_errors
+        self.assertGreater(len(errors), 0)

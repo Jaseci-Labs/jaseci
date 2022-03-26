@@ -1184,3 +1184,20 @@ rt_error_test1 = \
        report -->[2];
     }
     """
+
+
+root_type_nodes = \
+    """
+    walker init {
+       spawn here --> node::root;
+       report here.details['name'];
+       report -->[0].details['name'];
+    }
+    """
+
+invalid_key_error = \
+    """
+    walker init {
+       report here.context['adfas'];
+    }
+    """

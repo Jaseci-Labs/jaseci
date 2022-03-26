@@ -26,7 +26,7 @@ class interp(machine_state):
         """
         attr_stmt: has_stmt | can_stmt;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'has_stmt'):
             self.run_has_stmt(kid[0], obj)
         elif(kid[0].name == 'can_stmt'):
@@ -38,7 +38,7 @@ class interp(machine_state):
                 KW_HAS KW_PRIVATE? KW_ANCHOR? has_assign
                 (COMMA has_assign)* SEMI;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         kid = kid[1:]
         is_private = False
         is_anchor = False
@@ -60,7 +60,7 @@ class interp(machine_state):
         """
         has_assign: NAME | NAME EQ expression;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         var_name = kid[0].token_text()
         var_val = None  # jac's null
         if(len(kid) > 1):
@@ -94,7 +94,7 @@ class interp(machine_state):
             )* SEMI
             | KW_CAN NAME event_clause? code_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         kid = kid[1:]
         while True:
             action_type = 'activity'
@@ -152,7 +152,7 @@ class interp(machine_state):
         event_clause:
                 KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         nl = []
         if(kid[1].name == "name_list"):
             nl = self.run_name_list(kid[1])
@@ -162,7 +162,7 @@ class interp(machine_state):
         """
         dotted_name: NAME (DOT NAME)*;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         ret = ''
         for i in kid:
             if(i.name == 'NAME'):
@@ -176,7 +176,7 @@ class interp(machine_state):
         """
         name_list: NAME (COMMA NAME)*;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         ret = []
         for i in kid:
             if(i.name == 'NAME'):
@@ -187,7 +187,7 @@ class interp(machine_state):
         """
         expr_list: expression (COMMA expression)*;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         ret = []
         for i in kid:
             if(i.name == 'expression'):
@@ -202,7 +202,7 @@ class interp(machine_state):
         code_block: LBRACE statement* RBRACE | COLON statement;
         TODO: Handle breaks and continues
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         for i in kid:
             if (self._loop_ctrl):
                 if (self._loop_ctrl == 'continue'):
@@ -229,14 +229,14 @@ class interp(machine_state):
         """
         if (self._stopped):
             return
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         self.run_rule(kid[0])
 
     def run_if_stmt(self, jac_ast):
         """
         if_stmt: KW_IF expression code_block elif_stmt* else_stmt?;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(self.run_expression(kid[1]).value):
             self.run_code_block(kid[2])
             return
@@ -257,7 +257,7 @@ class interp(machine_state):
         """
         try_stmt: KW_TRY code_block else_from_try?;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         try:
             self.run_code_block(kid[1])
             return
@@ -271,7 +271,7 @@ class interp(machine_state):
             KW_ELSE (LPAREN NAME RPAREN)? code_block
             | KW_ELSE (KW_WITH NAME)? code_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(len(kid) > 2):
             jac_value(self, ctx=self._jac_scope.local_scope,
                       name=kid[2].token_text(),
@@ -282,7 +282,7 @@ class interp(machine_state):
         """
         elif_stmt: KW_ELIF expression code_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(self.run_expression(kid[1]).value):
             self.run_code_block(kid[2])
             return True
@@ -293,7 +293,7 @@ class interp(machine_state):
         """
         else_stmt: KW_ELSE code_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         self.run_code_block(kid[1])
 
     def run_for_stmt(self, jac_ast):
@@ -302,7 +302,7 @@ class interp(machine_state):
             KW_FOR expression KW_TO expression KW_BY expression code_block
             | KW_FOR NAME KW_IN expression code_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         loops = 0
         if(kid[1].name == 'expression'):
             self.run_expression(kid[1])
@@ -339,7 +339,7 @@ class interp(machine_state):
         """
         while_stmt: KW_WHILE expression code_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         loops = 0
         while self.run_expression(kid[1]).value:
             self.run_code_block(kid[2])
@@ -355,7 +355,7 @@ class interp(machine_state):
         """
         ctrl_stmt: KW_CONTINUE | KW_BREAK | KW_SKIP;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if (kid[0].name == 'KW_SKIP'):
             self._stopped = 'skip'
         elif (kid[0].name == 'KW_BREAK'):
@@ -367,7 +367,7 @@ class interp(machine_state):
         """
         assert_stmt: KW_ASSERT expression;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         passed = False
         try:
             passed = self.run_expression(kid[1]).value
@@ -381,7 +381,7 @@ class interp(machine_state):
         """
         destroy_action: KW_DESTROY expression SEMI;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = self.run_expression(kid[1])
         if (isinstance(result.value, element)):
             self.destroy_node_ids.add_obj(result.value)
@@ -393,7 +393,7 @@ class interp(machine_state):
         """
         report_action: KW_REPORT expression SEMI;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         report = self.run_expression(kid[1]).wrap(serialize_mode=True)
         if(not is_jsonable(report)):
             self.rt_error(f'Report not Json serializable', kid[0])
@@ -408,7 +408,7 @@ class interp(machine_state):
                 self.rt_error("Cannot assign to this experssion", kid[0])
                 return False
             return True
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(len(kid) == 1):
             return self.run_connect(kid[0])
         else:
@@ -434,7 +434,7 @@ class interp(machine_state):
         """
         assignment: EQ expression;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = self.run_expression(kid[1])
         dest.value = result.value
         dest.write(jac_ast)
@@ -444,7 +444,7 @@ class interp(machine_state):
         """
         copy_assign: CPY_EQ expression;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         src = self.run_expression(kid[1])
         if (not self.rt_check_type(dest.value, [node, edge], kid[1])):
             self.rt_error("':=' only applies to nodes and edges", kid[1])
@@ -464,7 +464,7 @@ class interp(machine_state):
         """
         inc_assign: (PEQ | MEQ | TEQ | DEQ) expression;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'PEQ'):
             dest.value = dest.value + self.run_expression(kid[1]).value
         elif(kid[0].name == 'MEQ'):
@@ -480,7 +480,7 @@ class interp(machine_state):
         """
         connect: logical ( (NOT)? edge_ref expression)?;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if (len(kid) < 2):
             return self.run_logical(kid[0])
         bret = self.run_logical(kid[0])
@@ -515,7 +515,7 @@ class interp(machine_state):
         """
         logical: compare ((KW_AND | KW_OR) compare)*;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = self.run_compare(kid[0])
         kid = kid[1:]
         while (kid):
@@ -536,7 +536,7 @@ class interp(machine_state):
         """
         compare: NOT compare | arithmetic (cmp_op arithmetic)*;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'NOT'):
             return jac_value(self, value=not self.run_compare(kid[1]).value)
         else:
@@ -555,7 +555,7 @@ class interp(machine_state):
         """
         cmp_op: EE | LT | GT | LTE | GTE | NE | KW_IN | nin;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'EE'):
             return jac_value(self, value=val1.value == val2.value)
         elif(kid[0].name == 'LT'):
@@ -577,7 +577,7 @@ class interp(machine_state):
         """
         arithmetic: term ((PLUS | MINUS) term)*;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = self.run_term(kid[0])
         kid = kid[1:]
         while (kid):
@@ -595,7 +595,7 @@ class interp(machine_state):
         """
         term: factor ((STAR_MUL | DIV | MOD) factor)*;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = self.run_factor(kid[0])
         kid = kid[1:]
         while (kid):
@@ -615,7 +615,7 @@ class interp(machine_state):
         """
         factor: (PLUS | MINUS) factor | power;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'power'):
             return self.run_power(kid[0])
         else:
@@ -628,7 +628,7 @@ class interp(machine_state):
         """
         power: atom (POW factor)*;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = self.run_atom(kid[0])
         kid = kid[1:]
         if(len(kid) < 1):
@@ -661,7 +661,7 @@ class interp(machine_state):
             | deref
             | any_type;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'INT'):
             return jac_value(self, value=int(kid[0].token_text()))
         elif(kid[0].name == 'FLOAT'):
@@ -702,7 +702,7 @@ class interp(machine_state):
             | LPAREN expr_list? RPAREN
             | DBL_COLON NAME spawn_ctx?;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(atom_res is None):
             atom_res = jac_value(self, value=self._jac_scope.has_obj)
         if(kid[0].name == 'DOT'):
@@ -751,7 +751,7 @@ class interp(machine_state):
         """
         ref: '&' expression;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = self.run_expression(kid[1])
         if (self.rt_check_type(result.value, element, kid[1])):
             result = jac_value(self, value=result.value.jid)
@@ -761,7 +761,7 @@ class interp(machine_state):
         """
         deref: '*' expression;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = self.run_expression(kid[1])
         if (is_urn(result.value)):
             result = jac_value(
@@ -785,7 +785,7 @@ class interp(machine_state):
         """
         arch_built_in: any_type;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         typ = self.run_any_type(kid[0])
         if (typ.value == edge):
             if(isinstance(atom_res.value, node)):
@@ -839,7 +839,7 @@ class interp(machine_state):
         """
         obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         from jaseci.actor.walker import walker
         if (kid[0].name == "KW_CONTEXT"):
             if(self.rt_check_type(atom_res.value,
@@ -861,7 +861,7 @@ class interp(machine_state):
         """
         dict_built_in: KW_KEYS | COLON name_list COLON;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if (kid[0].name == "KW_KEYS"):
             if(isinstance(atom_res.value, dict)):
                 return jac_value(self, value=list(atom_res.value.keys()))
@@ -881,7 +881,7 @@ class interp(machine_state):
         """
         list_built_in: KW_LENGTH | KW_DESTROY COLON expression COLON;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if (kid[0].name == "KW_LENGTH"):
             if(isinstance(atom_res.value, list)):
                 return jac_value(self, value=len(atom_res.value))
@@ -906,7 +906,7 @@ class interp(machine_state):
         string_built_in:
                 TYP_STRING DBL_COLON NAME (LPAREN expr_list RPAREN)?;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(not self.rt_check_type(atom_res.value, [str], kid[0])):
             return atom_res
         result = None
@@ -989,7 +989,7 @@ class interp(machine_state):
             node_ref filter_ctx?
             | edge_ref (node_ref filter_ctx?)?;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'node_ref'):
             result = self.run_node_ref(kid[0])
             if(len(kid) > 1):
@@ -1009,7 +1009,7 @@ class interp(machine_state):
         """
         node_ref: KW_NODE DBL_COLON NAME;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(not is_spawn):
             result = jac_set()
             if (len(kid) > 1):
@@ -1027,14 +1027,14 @@ class interp(machine_state):
         """
         walker_ref: KW_WALKER DBL_COLON NAME;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         return self.parent().spawn_walker(kid[2].token_text(), caller=self)
 
     def run_graph_ref(self, jac_ast):
         """
         graph_ref: KW_GRAPH DBL_COLON NAME;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         gph = self.parent().run_architype(
             kid[2].token_text(), kind='graph', caller=self)
         return gph
@@ -1043,7 +1043,7 @@ class interp(machine_state):
         """
         edge_ref: edge_to | edge_from | edge_any;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(not is_spawn):
             return self.run_rule(kid[0])
         else:
@@ -1066,7 +1066,7 @@ class interp(machine_state):
             '-->'
             | '-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = jac_set()
         for i in self.current_node.outbound_edges() + \
                 self.current_node.bidirected_edges():
@@ -1085,7 +1085,7 @@ class interp(machine_state):
             '<--'
             | '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '-';
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = jac_set()
         for i in self.current_node.inbound_edges() + \
                 self.current_node.bidirected_edges():
@@ -1105,7 +1105,7 @@ class interp(machine_state):
             | '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
         NOTE: these do not use strict bidirected semantic but any edge
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = jac_set()
         for i in self.current_node.attached_edges():
             if (len(kid) > 2 and i.name != kid[2].token_text()):
@@ -1121,7 +1121,7 @@ class interp(machine_state):
         """
         list_val: LSQUARE expr_list? RSQUARE;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[1].name == "expr_list"):
             return self.run_expr_list(kid[1])
         return jac_value(self, value=[])
@@ -1132,8 +1132,10 @@ class interp(machine_state):
             LSQUARE expression RSQUARE
             | LSQUARE expression COLON expression RSQUARE;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         idx = self.run_expression(kid[1]).value
+        if(type(idx) == str and idx not in atom_res.value.keys()):
+            self.rt_error(f'Key {idx} not found in object/dict.', kid[1])
         if(kid[2].name == "RSQUARE"):
             if(not self.rt_check_type(idx, [int, str], kid[1])):
                 self.rt_error(
@@ -1164,7 +1166,7 @@ class interp(machine_state):
         """
         dict_val: LBRACE (kv_pair (COMMA kv_pair)*)? RBRACE;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         dict_res = {}
         for i in kid:
             if(i.name == 'kv_pair'):
@@ -1175,7 +1177,7 @@ class interp(machine_state):
         """
         kv_pair: STRING COLON expression;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         obj[parse_str_token(kid[0].token_text())
             ] = self.run_expression(kid[2]).value
 
@@ -1186,7 +1188,7 @@ class interp(machine_state):
         NOTE: spawn statements support locations that are either nodes or
         jac_sets
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[1].name == 'expression'):
             location = self.run_expression(kid[1]).value
             if(isinstance(location, node)):
@@ -1206,14 +1208,14 @@ class interp(machine_state):
         """
         spawn_object: node_spawn | walker_spawn;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         return self.run_rule(kid[0], location)
 
     def run_node_spawn(self, jac_ast, location):
         """
         node_spawn: edge_ref? node_ref spawn_ctx?;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'node_ref'):
             ret_node = self.run_node_ref(kid[0], is_spawn=True)
         else:
@@ -1234,7 +1236,7 @@ class interp(machine_state):
         """
         walker_spawn: walker_ref spawn_ctx?;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         walk = self.run_walker_ref(kid[0])
         walk.prime(location)
         if(len(kid) > 1):
@@ -1251,7 +1253,7 @@ class interp(machine_state):
         """
         graph_spawn: edge_ref graph_ref;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         use_edge = self.run_edge_ref(kid[0], is_spawn=True)
         result = self.run_graph_ref(kid[1])
         direction = kid[0].kid[0].name
@@ -1267,7 +1269,7 @@ class interp(machine_state):
         """
         spawn_ctx: LPAREN (spawn_assign (COMMA spawn_assign)*)? RPAREN;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         for i in kid:
             if (i.name == 'spawn_assign'):
                 self.run_spawn_assign(i, obj)
@@ -1277,7 +1279,7 @@ class interp(machine_state):
         filter_ctx:
                 LPAREN (filter_compare (COMMA filter_compare)*)? RPAREN;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         ret = jac_set()
         for i in obj.obj_list():
             for j in kid:
@@ -1290,7 +1292,7 @@ class interp(machine_state):
         """
         spawn_assign: NAME EQ expression;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         name = kid[0].token_text()
         result = self.run_expression(kid[-1]).value
         dest = jac_value(self, ctx=obj, name=name, value=result)
@@ -1303,7 +1305,7 @@ class interp(machine_state):
         """
         filter_compare: NAME cmp_op expression;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         name = kid[0].token_text()
         if(name in obj.context.keys()):
             result = self.run_expression(kid[-1])
@@ -1327,7 +1329,7 @@ class interp(machine_state):
             | KW_EDGE
             | KW_TYPE;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == "TYP_STRING"):
             return jac_value(self, value=str)
         elif(kid[0].name == "TYP_INT"):
