@@ -20,6 +20,7 @@ node Entity{
 edge PredefIntent;
 edge PredefEntity;
 edge Root2Doc;
+edge Belong;
 
 walker getIntents {
   // This walker always returns the predefined getIntents
@@ -84,7 +85,7 @@ walker entityExtractor {
     for entityNode in here.entities {
       std.out(entityNode.name);
       if (entityNode.name in chunkEntities){
-        here --> entityNode;
+        here -[Belong]-> entityNode;
       }
     }
   }
@@ -95,8 +96,40 @@ walker intentExtractor {
     chunkIntents = ["Education"];
     for intentNode in here.intents {
       if (intentNode.name in chunkIntents) {
-        here --> intentNode;
+        here -[Belong]-> intentNode;
       }
     }
   }
 }
+
+walker getAnswer {
+    // This walker returns the answer of the given intent and entities
+    has intentName, entityName;
+    has res;
+    root {
+        intentName = '';
+        entityName = 'Jaseci';
+        take -[PredefIntent]->;
+        take -[PredefEntity]->;
+    }
+    Intent {
+        std.out('Intent Node Answer');
+        res = [];
+        if (intentName == here.name) {
+            for seg in <-[Belong]- {
+                res = res + [seg.text];
+            }
+        }
+        report res;
+    }
+    Entity {
+        res = [];
+        if (entityName == here.name) {
+            for seg in <-[Belong]- {
+                res = res + [seg.text];
+            }
+        }
+        report res;
+    }
+}
+
