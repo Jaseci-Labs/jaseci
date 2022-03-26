@@ -473,7 +473,6 @@ class jac_tests(TestCaseHelper, TestCase):
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
         test_walker.run()
-        self.log(test_walker.report)
         self.assertEqual({'yo': 'Yeah i said'},
                          test_walker.report[0][0])
         self.assertNotIn("name",
