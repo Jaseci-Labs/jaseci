@@ -5,8 +5,6 @@ node Doc {
 }
 node Chunk{
   has text;
-  has entities;
-  has intents;
 }
 node Intent{
   has name;
@@ -69,9 +67,9 @@ walker segmenter {
     // Please call the AI model API here instead.
 
     for i in segs{
-      segNode = spawn here --> node::Chunk(text = i, entities = entities, intents = intents);
-      spawn segNode walker::entityExtractor(entites = entities);
-      spawn segNode walker::intentExtractor(entites = entities);
+      segNode = spawn here --> node::Chunk(text = i);
+      spawn segNode walker::entityExtractor(entities = entities);
+      spawn segNode walker::intentExtractor(intents = intents);
     }
   }
 }
@@ -82,7 +80,7 @@ walker entityExtractor {
   Chunk {
     chunkEntities = ["Michigan", "Dream", "Jaseci"];
     // Definitely CALL THE AI HERE!!
-    for entityNode in here.entities {
+    for entityNode in entities {
       std.out(entityNode.name);
       if (entityNode.name in chunkEntities){
         here -[Belong]-> entityNode;
@@ -92,9 +90,10 @@ walker entityExtractor {
 }
 
 walker intentExtractor {
+  has intents;
   Chunk {
     chunkIntents = ["Education"];
-    for intentNode in here.intents {
+    for intentNode in intents {
       if (intentNode.name in chunkIntents) {
         here -[Belong]-> intentNode;
       }
