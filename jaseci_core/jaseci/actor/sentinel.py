@@ -134,8 +134,11 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         arch = self.spawn_architype(name, kind, caller)
         if(arch is None):
-            if(name == 'generic' and kind == 'node'):
-                return node(m_id=self._m_id, h=self._h)
+            if(kind == 'node'):
+                if(name == 'generic'):
+                    return node(m_id=self._m_id, h=self._h)
+                elif(name == 'root'):
+                    return node(name='root', m_id=self._m_id, h=self._h)
             return None
         if(arch.jid in self.arch_ids):
             return arch.run()
