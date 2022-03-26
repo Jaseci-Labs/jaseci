@@ -8,6 +8,7 @@ from jaseci.graph.node import node
 from jaseci.graph.edge import edge
 from jaseci.jac.interpreter.interp import interp
 from jaseci.jac.machine.jac_scope import jac_scope
+from jaseci.utils.utils import parse_str_token
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 
 
@@ -379,6 +380,8 @@ class architype_interp(interp):
         kid = jac_ast.kid
         if(kid[0].name == 'INT'):
             return int(kid[0].token_text())
-        if (kid[0].name == 'FLOAT'):
+        elif (kid[0].name == 'FLOAT'):
             return float(kid[0].token_text())
+        elif(kid[0].name == 'STRING'):
+            return parse_str_token(kid[0].token_text())
         return kid[0].token_text()
