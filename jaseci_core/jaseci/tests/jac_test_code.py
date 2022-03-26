@@ -903,6 +903,7 @@ string_manipulation = \
         report a.str::is_upper;
         report a.str::is_lower;
         report a.str::is_space;
+        report '{"a": 5}'.str::load_json;
         report a.str::count('t');
         report a.str::find('i');
         report a.str::split;
@@ -1199,5 +1200,22 @@ invalid_key_error = \
     """
     walker init {
        report here.context['adfas'];
+    }
+    """
+
+
+file_io = \
+    """
+    walker init {
+        fn="fileiotest.txt";
+        a = {'a': 5};
+        file.dump_json(fn, a);
+        b=file.load_json(fn);
+        b['a']+=b['a'];
+        file.dump_json(fn, b);
+        c=file.load_str(fn);
+        file.append_str(fn, c);
+        c=file.load_str(fn);
+        report c;
     }
     """
