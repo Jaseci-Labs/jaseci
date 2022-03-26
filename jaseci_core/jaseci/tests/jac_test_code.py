@@ -1219,3 +1219,12 @@ file_io = \
         report c;
     }
     """
+
+
+auto_cast = \
+    """
+    walker init {
+        report 1==1.0;
+        report 1.0==1;
+    }
+    """
