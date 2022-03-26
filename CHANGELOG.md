@@ -4,6 +4,8 @@
 
 ### Updates
 
+- New Feature: File I/O Library in with json support
+- New Lang Feature: `.str::load_json` added to string library
 - Fix: Error output when key not in object or dict
 - New Lang Feature: Can now spawn root nodes in addition to generic nodes
 - Improvement: Line numbers provided for all "Internal Errors"

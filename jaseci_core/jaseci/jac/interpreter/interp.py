@@ -936,6 +936,9 @@ class interp(machine_state):
                 result = jac_value(self, value=atom_res.value.islower())
             elif (str_op == "is_space"):
                 result = jac_value(self, value=atom_res.value.isspace())
+            elif (str_op == "load_json"):
+                import json
+                result = jac_value(self, value=json.loads(atom_res.value))
             elif (len(kid) < 4 and str_op == "split"):
                 result = jac_value(self, value=atom_res.value.split())
             elif (len(kid) < 4 and str_op == "strip"):

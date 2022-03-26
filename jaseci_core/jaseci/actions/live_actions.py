@@ -54,6 +54,7 @@ def load_standard():
     import jaseci.actions.standard.rand  # noqa
     import jaseci.actions.standard.request  # noqa
     import jaseci.actions.standard.std  # noqa
+    import jaseci.actions.standard.file  # noqa
     import jaseci.actions.standard.vector  # noqa
     import jaseci.actions.standard.date  # noqa
 
@@ -81,9 +82,9 @@ def get_global_actions(hook):
     import uuid
     global_action_list = []
     for i in live_actions.keys():
-        if(i.startswith('std.') or i.startswith('net.') or
-           i.startswith('rand.') or i.startswith('vector.') or
-           i.startswith('request.')):
+        if(i.startswith('std.') or i.startswith('file.') or
+           i.startswith('net.') or i.startswith('rand.') or
+           i.startswith('vector.') or i.startswith('request.')):
             global_action_list.append(
                 action(
                     m_id=uuid.UUID(int=0).urn,
