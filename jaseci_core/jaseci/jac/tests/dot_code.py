@@ -231,3 +231,29 @@ dot_graph = \
         }
     }
     """
+
+dot_quoted_string = \
+    """
+    node test_node {
+        has name;
+    }
+    graph test_graph {
+        has anchor graph_root;
+        graph G {
+            graph_root [node=test_node, name=root]
+            node_1 [node=test_node, name="this has space"]
+            node_2 [node=test_node, name="another space"]
+            graph_root -> node_1
+            graph_root -> node_2
+        }
+    }
+    walker init {
+        root {
+            spawn here --> graph::test_graph;
+        }
+        test_node {
+            report here.name;
+        }
+        take -->;
+    }
+    """

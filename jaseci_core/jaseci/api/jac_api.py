@@ -25,7 +25,9 @@ class jac_api():
                 out = file+'.jir'
         faux = self.faux_master()
         with open(file, 'r') as file:
-            faux.sentinel_register(code=file.read())
+            ret = faux.sentinel_register(code=file.read())
+            if('success' in ret and not ret['success']):
+                return ret
             with open(out, 'w') as ofile:
                 jir_out = json.dumps(
                     faux.sentinel_get(mode='ir',
@@ -52,7 +54,9 @@ class jac_api():
                 faux.sentinel_set(snt=faux.active_snt(),
                                   code=file.read(), mode='ir')
             else:
-                faux.sentinel_register(code=file.read())
+                ret = faux.sentinel_register(code=file.read())
+                if('success' in ret and not ret['success']):
+                    return ret
         return faux.sentinel_test(snt=faux.active_snt(), detailed=detailed)
 
     @interface.cli_api(cli_args=['file'])
@@ -73,7 +77,9 @@ class jac_api():
                 faux.sentinel_set(snt=faux.active_snt(),
                                   code=file.read(), mode='ir')
             else:
-                faux.sentinel_register(code=file.read(), auto_run='')
+                ret = faux.sentinel_register(code=file.read(), auto_run='')
+                if('success' in ret and not ret['success']):
+                    return ret
         return faux.walker_run(name=walk, snt=faux.active_snt(),
                                nd=faux.active_gph(), ctx=ctx,
                                profiling=profiling)

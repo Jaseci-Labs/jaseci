@@ -108,3 +108,12 @@ class test_dot(TestCaseHelper, TestCase):
         gen_walker.run()
         dot_str = self.gph.graph_dot_str()
         self.assertTrue('strict digraph root' in dot_str)
+
+    def test_dot_quoted_string(self):
+        self.sent.register_code(dtc.dot_quoted_string)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        report = gen_walker.report
+        self.assertEqual(
+            report, ['root', 'this has space', 'another space'])

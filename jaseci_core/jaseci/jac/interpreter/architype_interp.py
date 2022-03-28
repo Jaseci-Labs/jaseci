@@ -8,6 +8,7 @@ from jaseci.graph.node import node
 from jaseci.graph.edge import edge
 from jaseci.jac.interpreter.interp import interp
 from jaseci.jac.machine.jac_scope import jac_scope
+from jaseci.utils.utils import parse_str_token
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 
 
@@ -21,7 +22,7 @@ class architype_interp(interp):
             | KW_EDGE NAME attr_block
             | KW_GRAPH NAME graph_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         self.push_scope(
             jac_scope(
                 parent=self,
@@ -52,7 +53,7 @@ class architype_interp(interp):
             | COLON (attr_stmt)* SEMI
             | SEMI;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         for i in kid:
             if(i.name == 'attr_stmt'):
                 self.run_attr_stmt(i, obj)
@@ -61,7 +62,7 @@ class architype_interp(interp):
         """
         graph_block: graph_block_spawn | graph_block_dot;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         return getattr(self, f'run_{kid[0].name}')(kid[0])
 
     def run_graph_block_spawn(self, jac_ast):
@@ -70,7 +71,7 @@ class architype_interp(interp):
             LBRACE has_root KW_SPAWN code_block RBRACE
             | COLON has_root KW_SPAWN code_block SEMI;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         root_name = self.run_has_root(kid[1])
         m = interp(parent_override=self.parent(), caller=self)
         m.push_scope(jac_scope(parent=self,
@@ -96,7 +97,7 @@ class architype_interp(interp):
             LBRACE has_root dot_graph RBRACE
             | COLON has_root dot_graph SEMI;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         graph_state = {
             'strict': False,
             'digraph': True,
@@ -176,7 +177,7 @@ class architype_interp(interp):
         """
         has_root: KW_HAS KW_ANCHOR NAME SEMI;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         return kid[2].token_text()
 
     def run_dot_graph(self, jac_ast, graph_state):
@@ -187,7 +188,7 @@ class architype_interp(interp):
         # TODO: jac should support multiple edges between the same node but it
         # currently does not. once that's updates, need to update here
         # accordingly. We will only support non strict graph.
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if (kid[0].name == 'KW_STRICT'):
             graph_state['strict'] = True
             kid = kid[1:]
@@ -202,7 +203,7 @@ class architype_interp(interp):
         """
         dot_stmt_list: (dot_stmt ';'?)*
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         for i in kid:
             if(i.name == 'dot_stmt'):
                 self.run_dot_stmt(i, graph_state)
@@ -216,7 +217,7 @@ class architype_interp(interp):
             | dot_id '=' dot_id
             | dot_subgraph
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if (kid[0] == 'dot_id'):
             pass
         else:
@@ -232,7 +233,7 @@ class architype_interp(interp):
         """
         dot_attr_list: ('[' dot_a_list? ']')+
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         attrs = {}
         while (len(kid) > 0):
             attrs.update(self.run_dot_a_list(kid[1]))
@@ -243,7 +244,7 @@ class architype_interp(interp):
         """
         dot_a_list: (dot_id('=' dot_id)? ','?)+
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         a_list = {}
         while (len(kid) > 0):
             lhs_id = self.run_dot_id(kid[0])
@@ -269,7 +270,7 @@ class architype_interp(interp):
         """
         dot_edge_stmt: (dot_node_id | dot_subgraph) dot_edgeRHS dot_attr_list?
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if (kid[0] == 'dot_subgraph'):
             self.rt_error('Subgraphs not supported!', kid[0])
             return
@@ -287,7 +288,7 @@ class architype_interp(interp):
         """
         dot_edgeRHS: (dot_edgeop(dot_node_id | dot_subgraph))+
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         cur_lhs_id = lhs_id
         while (len(kid) > 0):
             is_directional = self.run_dot_edgeop(kid[0])
@@ -316,7 +317,7 @@ class architype_interp(interp):
         """
         dot_edgeop: '->' | '--'
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if (kid[0].token_text() == '->'):
             return True
         else:
@@ -326,7 +327,7 @@ class architype_interp(interp):
         """
         dot_node_stmt: dot_node_id dot_attr_list?
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         node_id = self.run_dot_node_id(kid[0])
         node_attrs = {}
         if (kid[-1].name == 'dot_attr_list'):
@@ -348,7 +349,7 @@ class architype_interp(interp):
         """
         dot_node_id: dot_id dot_port?
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if (kid[-1].name == 'dot_port'):
             self.rt_warn('Node ports not supported')
         return self.run_dot_id(kid[0])
@@ -376,9 +377,11 @@ class architype_interp(interp):
             | KW_NODE
             | KW_EDGE;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'INT'):
             return int(kid[0].token_text())
-        if (kid[0].name == 'FLOAT'):
+        elif (kid[0].name == 'FLOAT'):
             return float(kid[0].token_text())
+        elif(kid[0].name == 'STRING'):
+            return parse_str_token(kid[0].token_text())
         return kid[0].token_text()

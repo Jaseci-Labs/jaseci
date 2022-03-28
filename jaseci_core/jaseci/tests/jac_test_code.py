@@ -903,6 +903,7 @@ string_manipulation = \
         report a.str::is_upper;
         report a.str::is_lower;
         report a.str::is_space;
+        report '{"a": 5}'.str::load_json;
         report a.str::count('t');
         report a.str::find('i');
         report a.str::split;
@@ -1182,5 +1183,48 @@ rt_error_test1 = \
     walker init {
        spawn here --> node::generic;
        report -->[2];
+    }
+    """
+
+
+root_type_nodes = \
+    """
+    walker init {
+       spawn here --> node::root;
+       report here.details['name'];
+       report -->[0].details['name'];
+    }
+    """
+
+invalid_key_error = \
+    """
+    walker init {
+       report here.context['adfas'];
+    }
+    """
+
+
+file_io = \
+    """
+    walker init {
+        fn="fileiotest.txt";
+        a = {'a': 5};
+        file.dump_json(fn, a);
+        b=file.load_json(fn);
+        b['a']+=b['a'];
+        file.dump_json(fn, b);
+        c=file.load_str(fn);
+        file.append_str(fn, c);
+        c=file.load_str(fn);
+        report c;
+    }
+    """
+
+
+auto_cast = \
+    """
+    walker init {
+        report 1==1.0;
+        report 1.0==1;
     }
     """
