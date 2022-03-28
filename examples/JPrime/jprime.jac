@@ -8,9 +8,11 @@ node Chunk{
 }
 node Intent{
   has name;
+  has count;
 }
 node Entity{
   has name;
+  has count;
 }
 
 // Definition of nodes
@@ -31,9 +33,13 @@ graph segmenterTest {
     has anchor testRoot;
     spawn {
         testRoot = spawn node::root;
-        docNode = spawn testRoot -[Root2Doc]-> node::Doc;
+        // testIntent = spawn node::Intent(name="Education", count=0);
+        // testRoot -[PredefIntent]-> testIntent;
+        testIntent = spawn testRoot -[PredefIntent]-> node::Intent(name="Education", count=0);
+        testEntity = spawn testRoot -[PredefEntity]-> node::Entity(name="Michigan", count=0);
     }
 }
+
 walker getIntents {
   // This walker always returns the predefined getIntents
   has anchor intents;
@@ -57,12 +63,12 @@ walker createPredefines {
     intents = spawn here walker::getIntents;
     // Create all the intents
     for intent in intents {
-      spawn here -[PredefIntent]-> node::Intent(name = intent);
+      spawn here -[PredefIntent]-> node::Intent(name = intent, count = 0);
     }
     // Create all the entities
     entities = spawn here walker::getEntities;
     for entity in entities{
-      spawn here -[PredefEntity]-> node::Entity(name = entity);
+      spawn here -[PredefEntity]-> node::Entity(name = entity, count = 0);
     }
   }
 }
@@ -95,9 +101,9 @@ walker entityExtractor {
     chunkEntities = ["Michigan", "Dream", "Jaseci"];
     // Definitely CALL THE AI HERE!!
     for entityNode in entities {
-      std.out(entityNode.name);
       if (entityNode.name in chunkEntities){
         here -[Belong]-> entityNode;
+        entityNode.count += 1;
       }
     }
   }
@@ -110,6 +116,7 @@ walker intentExtractor {
     for intentNode in intents {
       if (intentNode.name in chunkIntents) {
         here -[Belong]-> intentNode;
+        intentNode.count += 1;
       }
     }
   }
@@ -175,3 +182,17 @@ with graph::segmenterTest by walker::segmenter{
     assert count == 3; //There should be 3 segments
 }
 
+test "test intentExtractor"
+with graph::segmenterTest by walker::segmenter{
+    for i in intents {
+        std.out(i.count);
+        assert i.count == 3;
+    }
+}
+test "test entityExtractor"
+with graph::segmenterTest by walker::segmenter{
+    for i in entities {
+        std.out(i.count);
+        assert i.count == 3;
+    }
+}
