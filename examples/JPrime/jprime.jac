@@ -20,6 +20,13 @@ edge PredefEntity;
 edge Root2Doc;
 edge Belong;
 
+graph createGraphTest {
+    has anchor testRoot;
+    spawn {
+        testRoot = spawn node::root;
+    }
+}
+
 walker getIntents {
   // This walker always returns the predefined getIntents
   has anchor intents;
@@ -132,3 +139,5 @@ walker getAnswer {
     }
 }
 
+test "test initializer"
+with graph::createGraphTest by walker::createPredefines {}
