@@ -4,6 +4,12 @@
 
 ### Updates
 
+- New Feature: File I/O Library in with json support
+- New Lang Feature: `.str::load_json` added to string library
+- Fix: Error output when key not in object or dict
+- New Lang Feature: Can now spawn root nodes in addition to generic nodes
+- Improvement: Line numbers provided for all "Internal Errors"
+- Fix: Dot strings now handled as expected (stripping quotes etc)
 - Improvement: General improvements to error reporting
 - Improvement: Changed meta requirement for actions to be option at hook points
 - Improvement: Now you can arbitrarily chain array indexs into function calls as per `std.get_report()[0]`.

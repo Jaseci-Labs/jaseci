@@ -93,6 +93,12 @@ class UserManager(BaseUserManager):
 
         # Create user's root node
         user.master = master(h=user._h, name=email).id
+        if('set_sent_global' in extra_fields and
+           extra_fields['set_sent_global']):
+            user.master.sentinel_active_global()
+        if('create_graph' in extra_fields and
+           extra_fields['create_graph']):
+            user.master.graph_create()
         user._h.commit()
 
         user.save(using=self._db)
