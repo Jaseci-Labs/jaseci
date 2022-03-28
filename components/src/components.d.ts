@@ -11,63 +11,73 @@ export namespace Components {
         "markup": JaseciComponent[];
     }
     interface JscButton {
+        "css": string;
         "events": string;
         "label": string;
         "name": string;
     }
     interface JscColumn {
-        "background": string;
-        "height": string;
+        "css": string;
+        "events": string;
         "items": ItemsPropValue;
         "justify": JustifyPropValue;
-        "margin": string;
-        "padding": string;
-        "width": string;
+        "name": string;
     }
     interface JscContainer {
-        "background": string;
-        "border": string;
-        "height": string;
-        "margin": string;
-        "padding": string;
-        "width": string;
+        "css": string;
+        "events": string;
+        "name": string;
     }
     interface JscInputbox {
+        "css": string;
         "events": string;
         "fullwidth": string;
-        "margin": string;
-        "padding": string;
+        "label": string;
+        "name": string;
         "placeholder": string;
         "value": string;
     }
+    interface JscLabel {
+        "htmlFor": string;
+        "label": string;
+    }
     interface JscNavBar {
+        "css": string;
+        "events": string;
         /**
           * The title of the app bar.
          */
         "label": string;
-        "links": string;
+        "name": string;
     }
     interface JscNavLink {
+        "css": string;
+        "events": string;
+        "href": string;
         "label": string;
+        "target": string;
     }
     interface JscRow {
-        "background": string;
-        "height": string;
+        "css": string;
+        "events": string;
         "items": ItemsPropValue;
         "justify": JustifyPropValue;
-        "margin": string;
-        "padding": string;
-        "width": string;
     }
     interface JscText {
+        "css": string;
+        "events": string;
+        "state": string;
         "value": string;
         "variant": 'simple' | 'title';
     }
     interface JscTextbox {
+        "css": string;
+        "events": string;
         "fullwidth": string;
-        "margin": string;
-        "padding": string;
+        "label": string;
+        "name": string;
         "placeholder": string;
+        "value": string;
     }
     interface MyComponent {
         /**
@@ -115,6 +125,12 @@ declare global {
         prototype: HTMLJscInputboxElement;
         new (): HTMLJscInputboxElement;
     };
+    interface HTMLJscLabelElement extends Components.JscLabel, HTMLStencilElement {
+    }
+    var HTMLJscLabelElement: {
+        prototype: HTMLJscLabelElement;
+        new (): HTMLJscLabelElement;
+    };
     interface HTMLJscNavBarElement extends Components.JscNavBar, HTMLStencilElement {
     }
     var HTMLJscNavBarElement: {
@@ -157,6 +173,7 @@ declare global {
         "jsc-column": HTMLJscColumnElement;
         "jsc-container": HTMLJscContainerElement;
         "jsc-inputbox": HTMLJscInputboxElement;
+        "jsc-label": HTMLJscLabelElement;
         "jsc-nav-bar": HTMLJscNavBarElement;
         "jsc-nav-link": HTMLJscNavLinkElement;
         "jsc-row": HTMLJscRowElement;
@@ -170,64 +187,75 @@ declare namespace LocalJSX {
         "markup"?: JaseciComponent[];
     }
     interface JscButton {
+        "css"?: string;
         "events"?: string;
         "label"?: string;
         "name"?: string;
     }
     interface JscColumn {
-        "background"?: string;
-        "height"?: string;
+        "css"?: string;
+        "events"?: string;
         "items"?: ItemsPropValue;
         "justify"?: JustifyPropValue;
-        "margin"?: string;
-        "padding"?: string;
-        "width"?: string;
+        "name"?: string;
     }
     interface JscContainer {
-        "background"?: string;
-        "border"?: string;
-        "height"?: string;
-        "margin"?: string;
-        "padding"?: string;
-        "width"?: string;
+        "css"?: string;
+        "events"?: string;
+        "name"?: string;
     }
     interface JscInputbox {
+        "css"?: string;
         "events"?: string;
         "fullwidth"?: string;
-        "margin"?: string;
+        "label"?: string;
+        "name"?: string;
         "onValueChanged"?: (event: CustomEvent<string>) => void;
-        "padding"?: string;
         "placeholder"?: string;
         "value"?: string;
     }
+    interface JscLabel {
+        "htmlFor"?: string;
+        "label"?: string;
+    }
     interface JscNavBar {
+        "css"?: string;
+        "events"?: string;
         /**
           * The title of the app bar.
          */
         "label"?: string;
-        "links"?: string;
+        "name"?: string;
     }
     interface JscNavLink {
+        "css"?: string;
+        "events"?: string;
+        "href"?: string;
         "label"?: string;
+        "target"?: string;
     }
     interface JscRow {
-        "background"?: string;
-        "height"?: string;
+        "css"?: string;
+        "events"?: string;
         "items"?: ItemsPropValue;
         "justify"?: JustifyPropValue;
-        "margin"?: string;
-        "padding"?: string;
-        "width"?: string;
     }
     interface JscText {
+        "css"?: string;
+        "events"?: string;
+        "state"?: string;
         "value"?: string;
         "variant"?: 'simple' | 'title';
     }
     interface JscTextbox {
+        "css"?: string;
+        "events"?: string;
         "fullwidth"?: string;
-        "margin"?: string;
-        "padding"?: string;
+        "label"?: string;
+        "name"?: string;
+        "onValueChanged"?: (event: CustomEvent<string>) => void;
         "placeholder"?: string;
+        "value"?: string;
     }
     interface MyComponent {
         /**
@@ -249,6 +277,7 @@ declare namespace LocalJSX {
         "jsc-column": JscColumn;
         "jsc-container": JscContainer;
         "jsc-inputbox": JscInputbox;
+        "jsc-label": JscLabel;
         "jsc-nav-bar": JscNavBar;
         "jsc-nav-link": JscNavLink;
         "jsc-row": JscRow;
@@ -266,6 +295,7 @@ declare module "@stencil/core" {
             "jsc-column": LocalJSX.JscColumn & JSXBase.HTMLAttributes<HTMLJscColumnElement>;
             "jsc-container": LocalJSX.JscContainer & JSXBase.HTMLAttributes<HTMLJscContainerElement>;
             "jsc-inputbox": LocalJSX.JscInputbox & JSXBase.HTMLAttributes<HTMLJscInputboxElement>;
+            "jsc-label": LocalJSX.JscLabel & JSXBase.HTMLAttributes<HTMLJscLabelElement>;
             "jsc-nav-bar": LocalJSX.JscNavBar & JSXBase.HTMLAttributes<HTMLJscNavBarElement>;
             "jsc-nav-link": LocalJSX.JscNavLink & JSXBase.HTMLAttributes<HTMLJscNavLinkElement>;
             "jsc-row": LocalJSX.JscRow & JSXBase.HTMLAttributes<HTMLJscRowElement>;

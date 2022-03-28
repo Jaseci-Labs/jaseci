@@ -4,6 +4,8 @@
 }
 
 .jsc_nav_link {
+  all: unset;
   margin: 0 16px;
   cursor: pointer;
+  text-decoration: none;
 }

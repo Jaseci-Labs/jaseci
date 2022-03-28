@@ -1,5 +1,6 @@
-import { Component, Prop, h, Element } from '@stencil/core';
+import { Component, Element, h, Prop } from '@stencil/core';
 import { ItemsPropValue, JustifyPropValue } from '../../types/propTypes';
+import { setUpEvents } from '../../utils/events';
 import { itemsValue, justifyValue } from '../../utils/propValueMappings';
 
 @Component({
@@ -9,44 +10,26 @@ import { itemsValue, justifyValue } from '../../utils/propValueMappings';
 })
 export class Column {
   @Element() host: HTMLElement;
-  @Prop() width: string;
-  @Prop() height: string;
-  @Prop() background: string;
-  @Prop() margin: string;
-  @Prop() padding: string;
+  @Prop() css: string = JSON.stringify({});
   @Prop() justify: JustifyPropValue = 'start';
   @Prop() items: ItemsPropValue = 'start';
+  @Prop() events: string;
+  @Prop() name: string;
 
   componentDidLoad() {
     const childrenSlot = this.host.querySelector('div[slot=children]') as HTMLSlotElement;
 
     Object.assign((childrenSlot as HTMLElement).style, {
       'box-sizing': 'border-box',
-      'width': this.width,
-      'height': this.height,
-      'background': this.background,
-      'margin': this.margin,
-      'justifyContent': justifyValue[this.justify],
-      'alignItems': itemsValue[this.items],
+      'justify-content': justifyValue[this.justify],
+      'align-items': itemsValue[this.items],
+      ...JSON.parse(this.css),
     });
+
+    setUpEvents(this.host, this.events);
   }
 
   render() {
-    return (
-      // <div
-      //   style={{
-      //     width: this.width,
-      //     height: this.height,
-      //     background: this.background,
-      //     margin: this.margin,
-      //     padding: this.padding,
-      //     boxSizing: 'border-box',
-      //     display: 'flex',
-      //     flexDirection: 'column',
-      //   }}
-      //   class={`align-${this.align} ${`cross-align-${this.crossAlign}`}`}
-      // >
-      <slot name="children"></slot>
-    );
+    return <slot name="children"></slot>;
   }
 }

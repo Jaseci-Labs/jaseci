@@ -1,4 +1,5 @@
 import { Component, Element, h, Prop } from '@stencil/core';
+import { setUpEvents } from '../../utils/events';
 
 @Component({
   tag: 'jsc-container',
@@ -7,28 +8,21 @@ import { Component, Element, h, Prop } from '@stencil/core';
 })
 export class Container {
   @Element() host: HTMLElement;
-  @Prop() width: string;
-  @Prop() height: string;
-  @Prop() background: string;
-  @Prop() margin: string;
-  @Prop() padding: string;
-  @Prop() border: string;
+  @Prop() css: string = JSON.stringify({});
+  @Prop() events: string;
+  @Prop() name: string;
 
   componentDidLoad() {
     // const childrenSlot = this.host.shadowRoot.querySelector('slot[name=children]') as HTMLSlotElement;
 
     // childrenSlot.assignedNodes().map(node => {
     Object.assign(this.host.style, {
-      'width': this.width,
-      'height': this.height,
-      'background': this.background,
-      'margin': this.margin,
-      'padding': this.padding,
-      'border': this.border,
       'box-sizing': 'border-box',
       'overflowX': 'auto',
+      ...JSON.parse(this.css),
     });
-    // });
+
+    setUpEvents(this.host, this.events);
   }
 
   render() {

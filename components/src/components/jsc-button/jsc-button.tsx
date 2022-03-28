@@ -11,6 +11,7 @@ export class Button {
   @Prop() label: string;
   @Prop() events: string;
   @Prop() name: string;
+  @Prop() css: string = JSON.stringify({});
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);
@@ -18,7 +19,7 @@ export class Button {
 
   render() {
     return (
-      <button name={this.name} class={`button`}>
+      <button name={this.name} style={JSON.parse(this.css as any)} class={`button`}>
         {this.label}
       </button>
     );

@@ -8,6 +8,7 @@ interface JaseciComponent {
   props: JaseciComponentProps;
   slots?: Record<string, Array<JaseciComponent>>;
   events?: Record<JaseciEventName, Array<JaseciAction>>;
+  css?: Record<string, string>;
 }
 
 type JaseciAction = {
@@ -19,6 +20,6 @@ type JaseciAction = {
 };
 type JaseciComponentProps = Record<string, unknown>;
 type JaseciEventName = 'onClick' | 'onKeyPress' | 'onEnter';
-type JaseciActionName = 'alert' | 'update' | 'log' | 'append';
+type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add';
 type ActionConditionName = 'eq' | 'neq' | 'gt';
 type ActionCondition = `${string}::#${ActionConditionName}::${string}`;

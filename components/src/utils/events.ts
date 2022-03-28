@@ -3,6 +3,7 @@ import { renderComponentTree } from './utils';
 
 export function setUpEvents(host: HTMLElement, events: string) {
   if (events) {
+    host.removeAttribute('events');
     const parsedEvents: JaseciComponent['events'] = JSON.parse(events);
     linkEvents(host, parsedEvents);
   }
@@ -10,26 +11,45 @@ export function setUpEvents(host: HTMLElement, events: string) {
 
 type ParseArgsConfig = { withOriginal?: boolean };
 
-// determine the value of a variable
-export function computeVar(arg: string) {
-  if (typeof arg === 'string' && arg.startsWith('var(') && arg.endsWith(')')) {
-    const variableName = arg.split('var(')?.[1]?.split(')')[0];
-    const [componentName, componentProperty] = variableName.split('.');
-    const component = getComponentByName(componentName);
-    const variableValue = component[componentProperty];
-    return variableValue;
+/**
+ *  Determines the value of a variable
+ */
+export function computeVar(arg: string, result?: any) {
+  let updatedArg = arg;
+  const vars = arg.match(/var[(](.*?)[)]/g);
+
+  console.log('vars', vars);
+
+  if (typeof arg === 'string' && vars?.length > 0) {
+    vars.map(variableRef => {
+      let component: Element;
+      let variableValue: any;
+      const variableName = variableRef.split('var(')?.[1]?.split(')')[0];
+      const [componentName, componentProperty] = variableName.split('.');
+      if (componentName !== 'result') {
+        component = getComponentByName(componentName);
+        variableValue = component[componentProperty];
+      }
+      if (componentName === 'result') {
+        variableValue = result;
+      }
+      updatedArg = updatedArg.replaceAll(variableRef, variableValue);
+    });
+
+    return updatedArg;
   }
 
   return arg;
 }
 
 // evaluates the value of an arg specified as a variable where the variable is a property name
-function parseArgs(args: unknown[], config?: ParseArgsConfig) {
+function parseArgs(args: unknown[] = [], config?: ParseArgsConfig, result?: any) {
   const originalArgsWithNewArgs = {};
   let newArgs = [...args];
+
   args.map((arg, index) => {
     if (typeof arg === 'string') {
-      const variableValue = computeVar(arg);
+      const variableValue = computeVar(arg, result);
       newArgs = [...newArgs.slice(0, index), variableValue, ...newArgs.slice(index + 1)];
       originalArgsWithNewArgs[arg] = variableValue;
     }
@@ -45,10 +65,10 @@ function getComponentByName(componentName: string) {
 /**
  * Evaluates the correct action to be attached to the event handler of the dom element
  */
-function runAction(action: JaseciAction) {
+function runAction(action: JaseciAction, result?: any) {
   const actionName = action.fn;
   const actionArgs = action.args;
-  const parsedActionArgs = parseArgs(action.args);
+  const parsedActionArgs = parseArgs(action.args, {}, result);
 
   checkCond(action.cond || []).run(() => {
     switch (actionName) {
@@ -62,6 +82,12 @@ function runAction(action: JaseciAction) {
         update(component, propertyName, value);
         action?.onCompleted && runAction(action?.onCompleted);
         break;
+      case 'add':
+        const val1 = parsedActionArgs[0];
+        const val2 = parsedActionArgs[1];
+        const result = Number(val1) + Number(val2);
+        action?.onCompleted && runAction(action?.onCompleted, result);
+        break;
       case 'append':
         const targetComponentName = actionArgs[0];
         if (typeof targetComponentName !== 'string') throw new Error('Component name must be a string');
@@ -74,6 +100,7 @@ function runAction(action: JaseciAction) {
         break;
       default:
         new Function(`${actionName}.apply(this, ${JSON.stringify(parsedActionArgs)})`)();
+        action?.onCompleted && runAction(action?.onCompleted);
     }
   });
 }

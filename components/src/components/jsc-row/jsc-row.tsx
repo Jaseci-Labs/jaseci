@@ -1,5 +1,6 @@
-import { Component, Prop, h, Element } from '@stencil/core';
+import { Component, Element, h, Prop } from '@stencil/core';
 import { ItemsPropValue, JustifyPropValue } from '../../types/propTypes';
+import { setUpEvents } from '../../utils/events';
 import { itemsValue, justifyValue } from '../../utils/propValueMappings';
 
 @Component({
@@ -9,11 +10,8 @@ import { itemsValue, justifyValue } from '../../utils/propValueMappings';
 })
 export class Row {
   @Element() host: HTMLElement;
-  @Prop() width: string;
-  @Prop() height: string;
-  @Prop() background: string;
-  @Prop() margin: string;
-  @Prop() padding: string;
+  @Prop() css: string = JSON.stringify({});
+  @Prop() events: string;
   @Prop() justify: JustifyPropValue = 'start';
   @Prop() items: ItemsPropValue = 'start';
 
@@ -22,14 +20,12 @@ export class Row {
 
     Object.assign((childrenSlot as HTMLElement).style, {
       'box-sizing': 'border-box',
-      'width': this.width,
-      'height': this.height,
-      'background': this.background,
-      'padding': this.padding,
-      'margin': this.margin,
       'justifyContent': justifyValue[this.justify],
       'alignItems': itemsValue[this.items],
+      ...JSON.parse(this.css),
     });
+
+    setUpEvents(this.host, this.events);
   }
 
   render() {

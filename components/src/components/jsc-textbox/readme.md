@@ -7,11 +7,12 @@
 
 ## Properties
 
-| Property | Attribute | Description     | Type     | Default     |
-| -------- | --------- | --------------- | -------- | ----------- |
-| `first`  | `first`   | The first name  | `string` | `undefined` |
-| `last`   | `last`    | The last name   | `string` | `undefined` |
-| `middle` | `middle`  | The middle name | `string` | `undefined` |
+| Property      | Attribute     | Description | Type     | Default     |
+| ------------- | ------------- | ----------- | -------- | ----------- |
+| `fullwidth`   | `fullwidth`   |             | `string` | `undefined` |
+| `margin`      | `margin`      |             | `string` | `undefined` |
+| `padding`     | `padding`     |             | `string` | `undefined` |
+| `placeholder` | `placeholder` |             | `string` | `undefined` |
 
 
 ----------------------------------------------

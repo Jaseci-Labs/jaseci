@@ -30,9 +30,13 @@ const attachName = (renderedTag: string, name: string) => {
 };
 
 const attachEvents = (renderedTag: string, events: JaseciComponent['events']) => {
-  console.log(renderedTag);
   const eventsString = JSON.stringify(events);
   return events ? renderedTag.replace('>', ` events=\'${eventsString}\'>`) : renderedTag;
+};
+
+const attachCSS = (renderedTag: string, css: JaseciComponent['css']) => {
+  const styleString = JSON.stringify(css);
+  return css ? renderedTag.replace('>', ` css=\'${styleString}\'>`) : renderedTag;
 };
 
 // creates a single tag and attaches the props in the correct format
@@ -40,11 +44,12 @@ export const renderComponent = (jaseciComponent: JaseciComponent) => {
   const renderedTag = renderTag(componentMap[jaseciComponent.component], {
     withChildren: !!jaseciComponent.slots && Object.keys(jaseciComponent.slots).length > 0,
   });
-  const componentWithProps = attachProps(renderedTag, jaseciComponent.props);
+  const componentWithProps = attachProps(renderedTag, jaseciComponent.props || {});
   const componentWithName = attachName(componentWithProps, jaseciComponent.name);
   const componentWithEvents = attachEvents(componentWithName, jaseciComponent.events);
+  const componentWithCSS = attachCSS(componentWithEvents, jaseciComponent.css || {});
 
-  return componentWithEvents;
+  return componentWithCSS;
 };
 
 // generates the html structure that will be rendered

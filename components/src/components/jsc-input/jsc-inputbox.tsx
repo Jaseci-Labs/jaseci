@@ -1,4 +1,4 @@
-import { Component, Element, Event, EventEmitter, h, Prop } from '@stencil/core';
+import { Component, Element, Event, EventEmitter, Fragment, h, Prop } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
 
 @Component({
@@ -8,11 +8,12 @@ import { setUpEvents } from '../../utils/events';
 })
 export class Input {
   @Prop({ reflect: true }) value: string;
-  @Prop() placeholder: string;
-  @Prop() fullwidth: string;
-  @Prop() padding: string;
-  @Prop() margin: string;
+  @Prop() css: string = JSON.stringify({});
+  @Prop() name: string;
+  @Prop() label: string;
   @Prop() events: string;
+  @Prop() fullwidth: string;
+  @Prop() placeholder: string;
   @Element() host: HTMLElement;
 
   @Event() valueChanged: EventEmitter<string>;
@@ -27,17 +28,20 @@ export class Input {
 
   render() {
     return (
-      <input
-        style={{
-          padding: this.padding,
-          margin: this.margin,
-        }}
-        value={this.value}
-        // use onInput since it's evaluates immediately
-        onInput={this.onInputChangeValue.bind(this)}
-        class={`input ${this.fullwidth === 'true' ? 'fullWidth' : ''}`}
-        placeholder={this.placeholder}
-      ></input>
+      <Fragment>
+        <jsc-label htmlFor={this.name} label={this.label}></jsc-label>
+        <input
+          name={this.name}
+          style={{
+            ...JSON.parse(this.css),
+          }}
+          value={this.value}
+          // use onInput since it's evaluates immediately
+          onInput={this.onInputChangeValue.bind(this)}
+          class={`input ${this.fullwidth === 'true' ? 'fullWidth' : ''}`}
+          placeholder={this.placeholder}
+        ></input>
+      </Fragment>
     );
   }
 }

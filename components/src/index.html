@@ -27,15 +27,16 @@
             component: 'Navbar',
             slots: {
               links: [
-                { component: 'NavLink', props: { label: 'Home' } },
-                { component: 'NavLink', props: { label: 'About' } },
+                { component: 'NavLink', props: { label: 'Home', href: 'https://google.com', color: '#fff' } },
+                { component: 'NavLink', props: { label: 'About', href: 'https://google.com', color: '#fff' } },
               ],
             },
             props: { label: 'Jaseci App' },
+            css: { background: '#000000' },
           },
           {
             component: 'Container',
-            props: {
+            css: {
               width: '100%',
               height: '100%',
               border: '2px solid blue',
@@ -46,24 +47,31 @@
                 {
                   component: 'Row',
                   props: {
-                    width: '100%',
                     justify: 'around',
+                  },
+                  css: {
+                    width: '100%',
                     padding: '10px 0px',
                   },
                   slots: {
                     children: [
                       {
                         component: 'Column',
-                        props: {
-                          height: '100%',
-                          width: '300px',
+                        css: {
+                          width: '400px',
+                          height: '600px',
+                          padding: '10px',
                           background: 'rgba(155, 0, 50, 0.2)',
+                        },
+                        props: {
+                          justify: 'center',
+                          items: 'start',
                         },
                         slots: {
                           children: [
                             {
                               component: 'Container',
-                              props: {
+                              css: {
                                 width: '100px',
                                 background: 'green',
                                 height: '100px',
@@ -71,7 +79,8 @@
                             },
                             {
                               component: 'Container',
-                              props: {
+                              props: {},
+                              css: {
                                 width: '100px',
                                 background: 'blue',
                                 height: '100px',
@@ -79,7 +88,7 @@
                             },
                             {
                               component: 'Container',
-                              props: {
+                              css: {
                                 width: '100px',
                                 background: 'red',
                                 height: '100px',
@@ -94,7 +103,7 @@
                           children: [
                             {
                               component: 'Container',
-                              props: {
+                              css: {
                                 width: '100px',
                                 height: '100px',
                                 background: 'purple',
@@ -103,7 +112,7 @@
                             },
                             {
                               component: 'Container',
-                              props: {
+                              css: {
                                 width: '100px',
                                 height: '100px',
                                 background: 'blue',
@@ -112,7 +121,7 @@
                             },
                             {
                               component: 'Container',
-                              props: {
+                              css: {
                                 width: '100px',
                                 height: '100px',
                                 background: 'green',
@@ -122,11 +131,13 @@
                           ],
                         },
                         props: {
-                          width: '100%',
+                          // justify: 'around',
+                          items: 'center',
+                        },
+                        css: {
+                          width: '400px',
                           height: '300px',
                           padding: '10px',
-                          justify: 'around',
-                          crossAlign: 'center',
                           background: 'rgba(155, 0, 50, 0.2)',
                         },
                       },
@@ -137,36 +148,32 @@
                   name: 'ib1',
                   component: 'Inputbox',
                   props: {
-                    value: 'Test',
-                    placeholder: 'Hello',
+                    label: 'Name',
+                    value: '',
+                    placeholder: 'Enter your name',
                     fullwidth: 'true',
                     margin: '10px 0',
                   },
                   events: {
                     onEnter: [
-                      // {
-                      //   fn: 'update',
-                      //   args: ['b1.label', 'var(ib1.value)'],
-                      // },
                       {
                         fn: 'append',
                         args: [
                           'msgs',
                           {
                             component: 'Text',
-                            props: { value: 'var(ib1.value)' },
+                            props: { value: 'var(ib1.value) cool' },
                           },
                         ],
-                      },
-                      {
-                        fn: 'update',
-                        args: ['ib1.value', ''],
                         onCompleted: {
                           fn: 'alert',
-                          args: ['Done...'],
+                          args: ['var(ib1.value) Added...'],
+                          onCompleted: {
+                            fn: 'update',
+                            args: ['ib1.value', ''],
+                            cond: ['var(ib1.value)::#eq::Jaseci'],
+                          },
                         },
-                        // onFailure: [{}],
-                        cond: ['var(ib1.value)::#eq::Jaseci'],
                       },
                     ],
                   },
@@ -176,7 +183,7 @@
                   component: 'Textbox',
                   props: {
                     placeholder: 'Enter a message...',
-                    // label: 'Click Here',
+                    label: 'Biography',
                     fullwidth: 'true',
                     margin: '10px 0',
                   },
@@ -185,13 +192,6 @@
                   name: 'b1',
                   component: 'Button',
                   events: {
-                    // onKeyPress: [
-                    //   {
-                    //     fn: 'alert',
-                    //     key: 'ArrowDown',
-                    //     args: ['Hello'],
-                    //   },
-                    // ],
                     onClick: [
                       {
                         fn: 'update',
@@ -203,21 +203,71 @@
                       },
                     ],
                   },
+                  css: {
+                    marginTop: '10px',
+                  },
                   props: {
                     label: 'Click Here',
                   },
                 },
-
                 {
                   name: 'msgs',
                   component: 'Container',
-                  props: {
+                  css: {
                     width: '300px',
                     height: '200px',
                     background: '#fff',
                     border: '1px solid red',
                     margin: '10px 0',
                     padding: '0px 8px',
+                  },
+                },
+
+                {
+                  component: 'Container',
+                  slots: {
+                    children: [
+                      {
+                        component: 'Text',
+                        props: { value: 'Counter' },
+                        css: { fontWeight: 'bold', fontSize: '1.2em', textDecoration: 'underline' },
+                      },
+                      {
+                        component: 'Row',
+                        slots: {
+                          children: [
+                            {
+                              component: 'Text',
+                              props: { value: 'Current value: ' },
+                              css: { marginRight: '5px' },
+                            },
+                            {
+                              name: 'counterText',
+                              component: 'Text',
+                              props: { value: '0' },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        name: 'counterButton',
+                        component: 'Button',
+                        props: { label: 'Count' },
+                        events: {
+                          onClick: [
+                            {
+                              fn: 'add',
+                              args: ['var(counterText.value)', 1],
+                              cond: ['var(counterText.value)::#neq::10'],
+                              onCompleted: {
+                                fn: 'update',
+                                args: ['counterText.value', 'var(result)'],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
                   },
                 },
               ],

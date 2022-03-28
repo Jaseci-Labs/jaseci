@@ -1,38 +1,9 @@
 :host {
   display: block;
-  justify-content: center;
   box-sizing: border-box;
 }
 
 ::slotted(div) {
   display: flex;
-}
-
-::slotted(div) > * {
-  padding: 100px;
-  background-color: red;
-}
-
-.align-start {
-  justify-content: start;
-}
-
-.align-middle {
-  justify-content: center;
-}
-
-.align-end {
-  justify-content: end;
-}
-
-.cross-align-start {
-  align-items: start;
-}
-
-.cross-align-middle {
-  align-items: center;
-}
-
-.cross-align-end {
-  align-items: end;
+  flex-direction: row;
 }

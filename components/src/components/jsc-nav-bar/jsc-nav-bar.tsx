@@ -1,4 +1,5 @@
-import { Component, Prop, h, Watch } from '@stencil/core';
+import { Component, Element, h, Prop, Watch } from '@stencil/core';
+import { setUpEvents } from '../../utils/events';
 
 @Component({
   tag: 'jsc-nav-bar',
@@ -10,7 +11,10 @@ export class NavBar {
    * The title of the app bar.
    */
   @Prop({ mutable: true }) label: string;
-  @Prop({ mutable: true }) links: string;
+  @Prop() css: string = JSON.stringify({});
+  @Prop() name: string;
+  @Prop() events: string;
+  @Element() host: HTMLElement;
 
   @Watch('label')
   validateLabel(newLabel: string) {
@@ -20,13 +24,13 @@ export class NavBar {
     }
   }
 
-  get navLinks(): Array<JaseciComponent> {
-    return JSON.parse(this.links);
+  componentDidLoad() {
+    setUpEvents(this.host, this.events);
   }
 
   render() {
     return (
-      <div class="jsc_nav_bar">
+      <div class="jsc_nav_bar" style={JSON.parse(this.css)}>
         <p class="jsc_nav_bar__label">{this.label}</p>
         <slot name="links"></slot>
       </div>
