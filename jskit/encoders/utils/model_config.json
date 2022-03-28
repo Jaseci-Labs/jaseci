@@ -1,0 +1,5 @@
+{
+    "shared": true,
+    "model_name": "prajjwal1/bert-tiny",
+    "model_save_path": "modeloutput"
+}

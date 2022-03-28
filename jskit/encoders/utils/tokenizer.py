@@ -236,7 +236,7 @@ class SelectionJoinTransform(object):
 
         self.cls_id = self.tokenizer.convert_tokens_to_ids('[CLS]')
         self.sep_id = self.tokenizer.convert_tokens_to_ids('[SEP]')
-        self.tokenizer.add_tokens(['\n'], special_tokens=True)
+        # self.tokenizer.add_tokens(['\n'], special_tokens=True)
         self.pad_id = 0
 
     def __call__(self, texts):
