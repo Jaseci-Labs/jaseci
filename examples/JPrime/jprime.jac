@@ -27,6 +27,13 @@ graph createGraphTest {
     }
 }
 
+graph segmenterTest {
+    has anchor testRoot;
+    spawn {
+        testRoot = spawn node::root;
+        docNode = spawn testRoot -[Root2Doc]-> node::Doc;
+    }
+}
 walker getIntents {
   // This walker always returns the predefined getIntents
   has anchor intents;
@@ -140,4 +147,31 @@ walker getAnswer {
 }
 
 test "test initializer"
-with graph::createGraphTest by walker::createPredefines {}
+with graph::createGraphTest by walker::createPredefines {
+    count = 0;
+    for i in -[PredefIntent]-> {
+        count = count + 1;
+    }
+    for i in spawn here walker::getIntents {
+        count = count - 1;
+    }
+    assert count == 0;
+
+    for i in -[PredefEntity]-> {
+        count = count + 1;
+    }
+    for i in spawn here walker::getEntities {
+        count = count - 1;
+    }
+    assert count == 0;
+}
+
+test "test segmenter"
+with graph::segmenterTest by walker::segmenter{
+    count = 0;
+    for i in --> {
+        count = count + 1;
+    }
+    assert count == 3; //There should be 3 segments
+}
+
