@@ -699,6 +699,7 @@ class jac_tests(TestCaseHelper, TestCase):
                       test_walker.runtime_errors[0])
 
     def test_root_type_nodes(self):
+        self.logger_on()
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.root_type_nodes)

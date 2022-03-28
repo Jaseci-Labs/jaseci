@@ -1190,7 +1190,7 @@ rt_error_test1 = \
 root_type_nodes = \
     """
     walker init {
-       spawn here --> node::root;
+       spawn here -[generic]-> node::root;
        report here.details['name'];
        report -->[0].details['name'];
     }
