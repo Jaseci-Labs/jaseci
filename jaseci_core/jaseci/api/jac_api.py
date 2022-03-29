@@ -88,8 +88,8 @@ class jac_api():
     def jac_dot(self, file: str, walk: str = 'init', ctx: dict = {},
                 profiling: bool = False):
         """
-        Command line tooling for running all test in both .jac code files
-        and .jir executables
+        Command line tooling for a walker then output graph in both .jac code 
+        files and .jir executables
         """
         if(not os.path.isfile(file)):
             ret = "File does not exsist!"
@@ -108,7 +108,7 @@ class jac_api():
         faux.walker_run(name=walk, snt=faux.active_snt(),
                         nd=faux.active_gph(), ctx=ctx,
                         profiling=profiling)
-        return faux.graph_get(mode='dot')
+        return faux.graph_get(gph=faux.active_gph(), mode='dot')
 
     def faux_master(self):
         from jaseci.element.super_master import super_master
