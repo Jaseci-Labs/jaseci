@@ -1,5 +1,13 @@
 # Jaseci Change / Release Notes
 
+## Version 1.3.2
+
+### Updates
+
+- New Feature: Created shorthand for string, list, and dict functions i.e., `.s::`, `.d::`, and `.l::` respectively
+- New Feature: Added suite of dict manipulation functions
+- New Feature: Added suite of list manipulation functions
+
 ## Version 1.3.1
 
 ### Updates
