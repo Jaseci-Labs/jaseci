@@ -192,10 +192,10 @@ deref: STAR_MUL expression;
 
 built_in:
 	| string_built_in
-	| cast_built_in
-	| obj_built_in
 	| dict_built_in
-	| list_built_in;
+	| list_built_in
+	| obj_built_in
+	| cast_built_in;
 
 cast_built_in: any_type;
 
@@ -204,7 +204,7 @@ obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
 dict_built_in:
 	KW_KEYS
 	| LBRACE name_list RBRACE
-	| (TYP_DICT DBL_COLON | DICT_DBL_COLON) NAME (
+	| (TYP_DICT DBL_COLON | DICT_DBL_COLON) (NAME | KW_KEYS) (
 		LPAREN expr_list RPAREN
 	)?;
 

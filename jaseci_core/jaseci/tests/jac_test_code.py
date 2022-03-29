@@ -930,12 +930,12 @@ list_manipulation = \
         b[0]+=1;
         report a;
         report b;
-        a.l::extend(b);
+        a.list::extend(b);
         a.l::append(b[0]);
         report a;
         a.l::reverse;
         report a;
-        a.l::sort;
+        a.list::sort;
         report a;
         a.l::reverse;
         report a.l::index(4);
@@ -947,44 +947,28 @@ list_manipulation = \
         a.l::pop;
         report a.l::count(4);
         report a;
+        a.l::clear;
+        report a;
     }
     """
 
 dict_manipulation = \
     """
     walker init {
-        a=" tEsting me  ";
-        report a[4];
-        report a[4:7];
-        report a[3:-1];
-        report a.str::upper;
-        report a.str::lower;
-        report a.str::title;
-        report a.str::capitalize;
-        report a.str::swap_case;
-        report a.str::is_alnum;
-        report a.str::is_alpha;
-        report a.str::is_digit;
-        report a.str::is_title;
-        report a.str::is_upper;
-        report a.str::is_lower;
-        report a.str::is_space;
-        report '{"a": 5}'.str::load_json;
-        report a.str::count('t');
-        report a.str::find('i');
-        report a.s::split;
-        report a.s::split('E');
-        report a.s::startswith('tEs');
-        report a.str::endswith('me');
-        report a.str::replace('me', 'you');
-        report a.str::strip;
-        report a.str::strip(' t');
-        report a.str::lstrip;
-        report a.str::lstrip(' tE');
-        report a.str::rstrip;
-        report a.str::rstrip(' e');
-
-        report a.str::upper.str::is_upper;
+        a = {'four':4, 'five':5};
+        b=a.d::copy;
+        b['four']+=1;
+        report a;
+        report b;
+        report a.dict::items;
+        report a.d::keys;
+        a.d::popitem;
+        report a;
+        report a.dict::values;
+        a.d::update({'four': 7});
+        report a;
+        a.d::pop('four');
+        report a;
     }
     """
 
