@@ -201,12 +201,17 @@ cast_built_in: any_type;
 
 obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
 
-dict_built_in: KW_KEYS | LBRACE name_list RBRACE;
+dict_built_in:
+	KW_KEYS
+	| LBRACE name_list RBRACE
+	| (TYP_DICT | 'd') DBL_COLON NAME (LPAREN expr_list RPAREN)?;
 
-list_built_in: KW_LENGTH;
+list_built_in:
+	KW_LENGTH
+	| (TYP_LIST | 'l') DBL_COLON NAME (LPAREN expr_list RPAREN)?;
 
 string_built_in:
-	TYP_STRING DBL_COLON NAME (LPAREN expr_list RPAREN)?;
+	(TYP_STRING | 's') DBL_COLON NAME (LPAREN expr_list RPAREN)?;
 
 node_edge_ref:
 	node_ref filter_ctx?
