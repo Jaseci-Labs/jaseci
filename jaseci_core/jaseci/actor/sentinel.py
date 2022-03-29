@@ -9,6 +9,7 @@ from jaseci.utils.id_list import id_list
 from jaseci.jac.ir.jac_code import jac_code, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
 from jaseci.graph.node import node
+from jaseci.graph.edge import edge
 from jaseci.actor.walker import walker
 from jaseci.actor.architype import architype
 
@@ -110,12 +111,6 @@ class sentinel(element, jac_code, sentinel_interp):
         src_arch = self.arch_ids.get_obj_by_name(name, kind=kind,
                                                  silent=True)
         if (not src_arch):
-            if(name != 'generic'):
-                logger.error(
-                    str(
-                        f'{self.name}: Unable to spawn architype '
-                        f'{[name, kind]}!')
-                )
             return None
 
         if(caller and caller._m_id != src_arch._m_id):
@@ -132,14 +127,25 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         Spawn, run, then destroy architype if m_id's are different
         """
+        if(caller is None):
+            caller = self
         arch = self.spawn_architype(name, kind, caller)
         if(arch is None):
-            if(kind == 'node'):
-                if(name == 'generic'):
-                    return node(m_id=self._m_id, h=self._h)
-                elif(name == 'root'):
-                    return node(name='root', m_id=self._m_id, h=self._h)
-            return None
+            if(name == 'generic'):
+                if(kind == 'node'):
+                    arch = node(m_id=caller._m_id, h=self._h)
+                elif(kind == 'edge'):
+                    arch = edge(m_id=caller._m_id, h=self._h)
+            elif(name == 'root' and kind == 'node'):
+                arch = node(name='root', m_id=caller._m_id, h=self._h)
+            else:
+                logger.error(
+                    str(
+                        f'{self.name}: Unable to spawn architype '
+                        f'{[name, kind]}!')
+                )
+                return None
+            return arch
         if(arch.jid in self.arch_ids):
             return arch.run()
         else:
