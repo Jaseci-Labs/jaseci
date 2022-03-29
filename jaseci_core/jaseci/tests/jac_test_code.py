@@ -906,9 +906,9 @@ string_manipulation = \
         report '{"a": 5}'.str::load_json;
         report a.str::count('t');
         report a.str::find('i');
-        report a.str::split;
-        report a.str::split('E');
-        report a.str::startswith('tEs');
+        report a.s::split;
+        report a.s::split('E');
+        report a.s::startswith('tEs');
         report a.str::endswith('me');
         report a.str::replace('me', 'you');
         report a.str::strip;

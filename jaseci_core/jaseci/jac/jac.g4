@@ -204,14 +204,20 @@ obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
 dict_built_in:
 	KW_KEYS
 	| LBRACE name_list RBRACE
-	| (TYP_DICT | 'd') DBL_COLON NAME (LPAREN expr_list RPAREN)?;
+	| (TYP_DICT DBL_COLON | DICT_DBL_COLON) NAME (
+		LPAREN expr_list RPAREN
+	)?;
 
 list_built_in:
 	KW_LENGTH
-	| (TYP_LIST | 'l') DBL_COLON NAME (LPAREN expr_list RPAREN)?;
+	| (TYP_LIST DBL_COLON | LIST_DBL_COLON) NAME (
+		LPAREN expr_list RPAREN
+	)?;
 
 string_built_in:
-	(TYP_STRING | 's') DBL_COLON NAME (LPAREN expr_list RPAREN)?;
+	(TYP_STRING DBL_COLON | STR_DBL_COLON) NAME (
+		LPAREN expr_list RPAREN
+	)?;
 
 node_edge_ref:
 	node_ref filter_ctx?
@@ -347,6 +353,9 @@ KW_ACTIVITY: 'activity';
 KW_IMPORT: 'import';
 COLON: ':';
 DBL_COLON: '::';
+STR_DBL_COLON: 's::';
+LIST_DBL_COLON: 'l::';
+DICT_DBL_COLON: 'd::';
 COLON_OUT: '::>';
 LBRACE: '{';
 RBRACE: '}';
