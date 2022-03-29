@@ -11,8 +11,10 @@ import json
 # training setup
 def config_setup():
     global train_config, device
+    dirname = os.path.dirname(__file__)
+    config_fname = os.path.join(dirname, "train_config.json")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    with open("utils/train_config.json", "r") as jsonfile:
+    with open(config_fname, "r") as jsonfile:
         train_config = json.load(jsonfile)
     # device = torch.device('cpu')
 
@@ -24,7 +26,7 @@ model = None
 
 def train_model(model_train, tokenizer, contexts, candidates, labels, val=False):
     config_setup()
-    global model, train_config, device
+    global model, train_config
 
     model = model_train
     context_transform = token_util.SelectionJoinTransform(
@@ -82,10 +84,10 @@ def train_model(model_train, tokenizer, contexts, candidates, labels, val=False)
                 to use fp16 training''')
         model, optimizer = amp.initialize(
             model, optimizer, opt_level=train_config['fp16_opt_level'])
-    for epoch in trange(train_config['num_train_epochs'], desc="Epoch", disable=False):
+    for epoch in trange(train_config['num_train_epochs'], desc="Epoch", disable=False, unit='batch'):
         tr_loss = 0
         nb_tr_examples, nb_tr_steps = 0, 0
-        with tqdm(total=len(train_dataloader)) as bar:
+        with trange(len(train_dataloader), unit="it") as bar:
             for step, batch in enumerate(train_dataloader, start=1):
                 model.train()
                 optimizer.zero_grad()
@@ -116,7 +118,7 @@ def train_model(model_train, tokenizer, contexts, candidates, labels, val=False)
                 model.zero_grad()
                 global_step += 1
                 bar.update()
-        print(f"\nEpoch : {epoch+1} \t loss is  : {tr_loss/nb_tr_steps}\n")
+        print(f"\nEpoch : {epoch+1} \t loss : {tr_loss/nb_tr_steps}\n")
         log_wf.flush()
         pass
 

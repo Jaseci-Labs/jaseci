@@ -18,11 +18,11 @@ import shutil
 model, model_name, tokenizer = None, None, None
 save_restart = False
 basepath = None
-device = torch.device("cpu")
+# device = torch.device("cpu")
 # uncomment this if you wish to use GPU to train
 # this is commented out because this causes issues with
 # unittest on machines with GPU
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # funtion to set seed for the module
@@ -37,7 +37,9 @@ def config_setup():
     Loading configurations from utils/config.cfg and initialize tokenizer and model
     """
     global model, save_restart, tokenizer, shared, model_config, model_save_path
-    with open("utils/model_config.json", "r") as jsonfile:
+    dirname = os.path.dirname(__file__)
+    config_fname = os.path.join(dirname, "utils/model_config.json")
+    with open(config_fname, "r") as jsonfile:
         model_config = json.load(jsonfile)
     model_name = model_config["model_name"]
     shared = model_config["shared"]
@@ -232,13 +234,17 @@ def get_model_config():
 
 @jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def set_model_config(model_parameters: Dict = None):
+    global save_restart
     try:
         with open("utils/model_config.json", "r") as jsonfile:
             data = json.load(jsonfile)
         with open("utils/model_config.json", "w+") as jsonfile:
             data.update(model_parameters)
             json.dump(data, jsonfile, indent=4)
+        save_restart = True
+        config_setup()
         return "Config setup is complete."
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
