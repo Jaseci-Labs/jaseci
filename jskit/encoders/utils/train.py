@@ -1,34 +1,15 @@
 import torch
 from torch.utils.data import DataLoader
 import os
-from tqdm import tqdm
 from tqdm.autonotebook import trange
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 from . import tokenizer as token_util
-import json
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# training setup
-def config_setup():
-    global train_config, device
-    dirname = os.path.dirname(__file__)
-    config_fname = os.path.join(dirname, "train_config.json")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    with open(config_fname, "r") as jsonfile:
-        train_config = json.load(jsonfile)
-    # device = torch.device('cpu')
+def train_model(model, tokenizer, contexts, candidates, labels, train_config):
 
-
-model = None
-
-# training function
-
-
-def train_model(model_train, tokenizer, contexts, candidates, labels, val=False):
-    config_setup()
-    global model, train_config
-
-    model = model_train
     context_transform = token_util.SelectionJoinTransform(
         tokenizer=tokenizer,
         max_len=train_config['max_contexts_length']
@@ -52,12 +33,11 @@ def train_model(model_train, tokenizer, contexts, candidates, labels, val=False)
     )
     t_total = len(train_dataloader) // train_config['train_batch_size'] * \
         (max(5, train_config['num_train_epochs']))
-    epoch_start = 1
     global_step = 0
     if not os.path.exists(train_config['basepath']):
         os.makedirs(train_config['basepath'])
-    log_wf = open(os.path.join(train_config['basepath'], 'log.txt'),
-                  'a', encoding='utf-8')
+    # log_wf = open(os.path.join(train_config['basepath'], 'log.txt'),
+    #               'a', encoding='utf-8')
     no_decay = ["bias", "LayerNorm.weight"]
     optimizer_grouped_parameters = [
         {
@@ -70,9 +50,11 @@ def train_model(model_train, tokenizer, contexts, candidates, labels, val=False)
             nd in n for nd in no_decay)], "weight_decay": 0.0},
     ]
     optimizer = AdamW(optimizer_grouped_parameters,
-                      lr=train_config['learning_rate'], eps=train_config['adam_epsilon'])
+                      lr=train_config['learning_rate'],
+                      eps=train_config['adam_epsilon'])
     scheduler = get_linear_schedule_with_warmup(
-        optimizer, num_warmup_steps=train_config['warmup_steps'], num_training_steps=t_total
+        optimizer, num_warmup_steps=train_config['warmup_steps'],
+        num_training_steps=t_total
     )
     fp16 = False
     if fp16:
@@ -84,7 +66,8 @@ def train_model(model_train, tokenizer, contexts, candidates, labels, val=False)
                 to use fp16 training''')
         model, optimizer = amp.initialize(
             model, optimizer, opt_level=train_config['fp16_opt_level'])
-    for epoch in trange(train_config['num_train_epochs'], desc="Epoch", disable=False, unit='batch'):
+    for epoch in trange(train_config['num_train_epochs'], desc="Epoch",
+                        disable=False, unit='batch'):
         tr_loss = 0
         nb_tr_examples, nb_tr_steps = 0, 0
         with trange(len(train_dataloader), unit="it") as bar:
@@ -92,11 +75,16 @@ def train_model(model_train, tokenizer, contexts, candidates, labels, val=False)
                 model.train()
                 optimizer.zero_grad()
                 batch = tuple(t.to(device) for t in batch)
-                context_token_ids_list_batch,  context_input_masks_list_batch, \
-                    candidate_token_ids_list_batch,  candidate_input_masks_list_batch, labels_batch = batch
+                context_token_ids_list_batch, \
+                    context_input_masks_list_batch, \
+                    candidate_token_ids_list_batch, \
+                    candidate_input_masks_list_batch, \
+                    labels_batch = batch
 
-                loss = model(context_token_ids_list_batch,  context_input_masks_list_batch,
-                             candidate_token_ids_list_batch, candidate_input_masks_list_batch,
+                loss = model(context_token_ids_list_batch,
+                             context_input_masks_list_batch,
+                             candidate_token_ids_list_batch,
+                             candidate_input_masks_list_batch,
                              labels_batch)
                 tr_loss += loss.item()
                 nb_tr_examples += context_token_ids_list_batch.size(0)
@@ -106,7 +94,8 @@ def train_model(model_train, tokenizer, contexts, candidates, labels, val=False)
                     with amp.scale_loss(loss, optimizer) as scaled_loss:
                         scaled_loss.backward()
                     torch.nn.utils.clip_grad_norm_(
-                        amp.master_params(optimizer), train_config['max_grad_norm'])
+                        amp.master_params(optimizer),
+                        train_config['max_grad_norm'])
                 else:
                     loss.backward()
                     torch.nn.utils.clip_grad_norm_(
@@ -119,7 +108,5 @@ def train_model(model_train, tokenizer, contexts, candidates, labels, val=False)
                 global_step += 1
                 bar.update()
         print(f"\nEpoch : {epoch+1} \t loss : {tr_loss/nb_tr_steps}\n")
-        log_wf.flush()
-        pass
 
     return model
