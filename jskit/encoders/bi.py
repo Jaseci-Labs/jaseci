@@ -41,6 +41,7 @@ def config_setup(save_restart=False):
         model_config = json.load(jsonfile)
     with open(t_config_fname, "r") as jsonfile:
         train_config = json.load(jsonfile)
+    train_config['device'] = device
     if save_restart:
         try:
             save_model(model_config["model_save_path"])
@@ -63,7 +64,7 @@ def config_setup(save_restart=False):
                       cand_bert=cand_bert,
                       shared=model_config["shared"])
 
-    model.to(device)
+    model.to(train_config['device'])
     set_seed(train_config['seed'])
 
 
@@ -329,7 +330,7 @@ def load_model(model_path):
                           cont_bert=cont_bert,
                           cand_bert=cand_bert,
                           shared=model_config_data['shared'])
-        model.to(device)
+        model.to(train_config['device'])
         return (f'[loaded model from] : {model_path}')
     except Exception as e:
         traceback.print_exc()

@@ -5,8 +5,6 @@ from tqdm.autonotebook import trange
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 from . import tokenizer as token_util
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 def train_model(model, tokenizer, contexts, candidates, labels, train_config):
 
@@ -37,7 +35,7 @@ def train_model(model, tokenizer, contexts, candidates, labels, train_config):
     if not os.path.exists(train_config['basepath']):
         os.makedirs(train_config['basepath'])
     # log_wf = open(os.path.join(train_config['basepath'], 'log.txt'),
-    #               'a', encoding='utf-8')
+    #               'a', encoding='utf-8') # will be used in for logging
     no_decay = ["bias", "LayerNorm.weight"]
     optimizer_grouped_parameters = [
         {
@@ -74,7 +72,7 @@ def train_model(model, tokenizer, contexts, candidates, labels, train_config):
             for step, batch in enumerate(train_dataloader, start=1):
                 model.train()
                 optimizer.zero_grad()
-                batch = tuple(t.to(device) for t in batch)
+                batch = tuple(t.to(train_config['device']) for t in batch)
                 context_token_ids_list_batch, \
                     context_input_masks_list_batch, \
                     candidate_token_ids_list_batch, \

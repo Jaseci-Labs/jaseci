@@ -2,8 +2,6 @@ import torch
 from torch.utils.data import DataLoader
 from . import tokenizer as token_util
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 def get_inference(model, tokenizer, contexts, candidates, train_config):
     context_transform = token_util.SelectionJoinTransform(
@@ -30,7 +28,7 @@ def get_inference(model, tokenizer, contexts, candidates, train_config):
     )
     results = []
     for step, batch in enumerate(val_dataloader, start=1):
-        batch = tuple(t.to(device) for t in batch)
+        batch = tuple(t.to(train_config['device']) for t in batch)
         context_token_ids_list_batch, context_input_masks_list_batch,\
             candidate_token_ids_list_batch, candidate_input_masks_list_batch,\
             labels_batch = batch
@@ -78,7 +76,7 @@ def get_embeddings(model, tokenizer, text_data,
         num_workers=0)
 
     for step, batch in enumerate(dataloader, start=1):
-        batch = tuple(t.to(device) for t in batch)
+        batch = tuple(t.to(train_config['device']) for t in batch)
         token_ids_batch,  input_masks_batch = batch
 
         with torch.no_grad():
