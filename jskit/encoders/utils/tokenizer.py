@@ -167,7 +167,10 @@ class SelectionSequentialTransform(object):
         input_ids_list, input_masks_list = [], []
         for text in texts:
             tokenized_dict = self.tokenizer.encode_plus(
-                text, max_length=self.max_len, pad_to_max_length=True)
+                text,
+                padding='max_length',
+                max_length=self.max_len,
+                truncation=True)
             input_ids, input_masks = tokenized_dict['input_ids'], \
                 tokenized_dict['attention_mask']
             assert len(input_ids) == self.max_len

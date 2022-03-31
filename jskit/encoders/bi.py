@@ -41,7 +41,8 @@ def config_setup(save_restart=False):
         model_config = json.load(jsonfile)
     with open(t_config_fname, "r") as jsonfile:
         train_config = json.load(jsonfile)
-    train_config['device'] = device
+
+    train_config.update({'device': device.type})
     if save_restart:
         try:
             save_model(model_config["model_save_path"])
