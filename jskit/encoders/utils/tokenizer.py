@@ -43,7 +43,6 @@ class SelectionDataset(Dataset):
                 group['context'] = [text]
             if len(group['candidates']) > 0:
                 self.data_source.append(group)
-            # print(self.data_source)
         group = {
             'context': None,
             'candidates': [],
@@ -186,7 +185,6 @@ class SelectionJoinTransform(object):
 
         self.cls_id = self.tokenizer.convert_tokens_to_ids('[CLS]')
         self.sep_id = self.tokenizer.convert_tokens_to_ids('[SEP]')
-        # self.tokenizer.add_tokens(['\n'], special_tokens=True)
         self.pad_id = 0
 
     def __call__(self, texts):

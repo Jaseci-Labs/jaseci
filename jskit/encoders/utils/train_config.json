@@ -14,5 +14,6 @@
     "fp16": false,
     "fp16_opt_level": "O1",
     "gpu": 0,
-    "basepath": "logoutput"
+    "basepath": "logoutput",
+    "seed": 12345
 }

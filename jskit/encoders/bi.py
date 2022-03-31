@@ -13,10 +13,7 @@ import random
 import json
 import shutil
 
-# config = configparser.ConfigParser()
-model, model_name, tokenizer = None, None, None
-save_restart = False
-basepath = None
+
 # device = torch.device("cpu")
 # uncomment this if you wish to use GPU to train
 # this is commented out because this causes issues with
@@ -67,7 +64,7 @@ def config_setup(save_restart=False):
                       shared=model_config["shared"])
 
     model.to(device)
-    set_seed(12345)
+    set_seed(train_config['seed'])
 
 
 config_setup()
@@ -107,7 +104,6 @@ def infer(contexts: Union[List[str], List[List]],
     """
     Take list of context, candidate and return nearest candidate to the context
     """
-    # global model
     model.eval()
     predicted_candidates = []
     try:
@@ -210,7 +206,6 @@ def get_train_config():
     try:
         with open("utils/train_config.json", "r") as jsonfile:
             data = json.load(jsonfile)
-            print("Read successful")
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -233,7 +228,6 @@ def get_model_config():
     try:
         with open("utils/model_config.json", "r") as jsonfile:
             data = json.load(jsonfile)
-            print("Read successful")
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -259,12 +253,13 @@ def save_model(model_path: str):
     """
     saves the model to the provided model_path
     """
-    # global model, tokenizer, model_config
     try:
         if not model_path.replace('_', '').isalnum():
             raise HTTPException(
                 status_code=400,
-                detail="Invalid model name. Only alphanumeric chars allowed "
+                detail="""
+                Invalid model name. Model Name can only have Alphanumeric
+                 and '_' characters."""
             )
         if not os.path.exists(model_path):
             os.makedirs(model_path)
@@ -317,10 +312,11 @@ def load_model(model_path):
             cont_bert = AutoModel.from_pretrained(
                 model_path, local_files_only=True)
             cand_bert = cont_bert
+            print(f'Loading shared model from : {model_path}')
         else:
             cand_bert_path = os.path.join(model_path, "cand_bert")
             cont_bert_path = os.path.join(model_path, "cont_bert")
-            print('Loading parameters from', cand_bert_path)
+            print(f'Loading non-shared model from : {model_path}')
             cont_bert = AutoModel.from_pretrained(
                 cont_bert_path, local_files_only=True)
             cand_bert = AutoModel.from_pretrained(
