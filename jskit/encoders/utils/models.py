@@ -1,7 +1,7 @@
 
 import torch
 import torch.nn as nn
-from transformers import BertModel, BertPreTrainedModel
+from transformers import PreTrainedModel, AutoModel
 import torch.nn.functional as F
 
 
@@ -21,11 +21,11 @@ class PolyEncoderModelShared(nn.Module):
     def __init__(self, config, model_name, shared: bool, *inputs, **kwargs):
         super(PolyEncoderModelShared, self).__init__()
         if shared is True:
-            self.cont_model = BertModel.from_pretrained(model_name)
+            self.cont_model = AutoModel.from_pretrained(model_name)
             self.cand_model = self.cont_model
         else:
-            self.cont_model = BertModel.from_pretrained(model_name)
-            self.cand_model = BertModel.from_pretrained(model_name)
+            self.cont_model = AutoModel.from_pretrained(model_name)
+            self.cand_model = AutoModel.from_pretrained(model_name)
         self.vec_dim = 64
 
         self.poly_m = int(kwargs['poly_m'])
@@ -166,7 +166,7 @@ class PolyEncoderModelShared(nn.Module):
             return cos_similarity
 
 
-class BiEncoder(BertPreTrainedModel):
+class BiEncoder(PreTrainedModel):
     def __init__(self, config, *inputs, **kwargs):
         super().__init__(config, *inputs, **kwargs)
         # if shared is true it creates only one model (Siamese type)

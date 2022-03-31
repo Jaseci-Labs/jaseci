@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from entity_extraction import app
+from entity_extraction import serv_actions
 from fastapi.testclient import TestClient
 from test_data import (
     test_entity_detection_request,
@@ -9,7 +9,10 @@ from test_data import (
     test_entity_detection_request_fail_text,
     test_entity_training_pass,
     test_entity_training_fail,
-    test_entity_training_fail2
+    test_entity_training_fail2,
+    test_entity_config_setup_blank,
+    test_entity_config_setup_trf,
+    test_entity_config_setup_ner
 )
 
 
@@ -18,7 +21,7 @@ class entity_extraction_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.client = TestClient(app)
+        self.client = TestClient(serv_actions())
 
     def tearDown(self) -> None:
         return super().tearDown()
@@ -85,4 +88,34 @@ class entity_extraction_test(TestCaseHelper, TestCase):
         self.assertEqual(
             response.json(),
             {'detail': 'Entity Data missing in request'}
+        )
+
+    def test_entity_config_setup1(self):
+        response = self.client.post(
+            "/set_config/",
+            json=test_entity_config_setup_ner)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            "Config setup is complete."
+        )
+
+    def test_entity_config_setup2(self):
+        response = self.client.post(
+            "/set_config/",
+            json=test_entity_config_setup_trf)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            "Config setup is complete."
+        )
+
+    def test_entity_config_setup3(self):
+        response = self.client.post(
+            "/set_config/",
+            json=test_entity_config_setup_blank)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            "Config setup is complete."
         )

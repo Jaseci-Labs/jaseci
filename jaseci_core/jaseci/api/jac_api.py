@@ -17,7 +17,6 @@ class jac_api():
         """
         if(not os.path.isfile(file)):
             ret = "File does not exsist!"
-            print(ret)
             return ret
         if(not len(out)):
             if(file.endswith(".jac")):
@@ -26,14 +25,16 @@ class jac_api():
                 out = file+'.jir'
         faux = self.faux_master()
         with open(file, 'r') as file:
-            faux.sentinel_register(code=file.read())
+            ret = faux.sentinel_register(code=file.read())
+            if('success' in ret and not ret['success']):
+                return ret
             with open(out, 'w') as ofile:
                 jir_out = json.dumps(
                     faux.sentinel_get(mode='ir',
                                       snt=faux.active_snt()))
                 ofile.write(jir_out)
                 ret = f"Build of {out} complete!"
-                print(ret)
+
                 return ret
 
     @interface.cli_api(cli_args=['file'])
@@ -44,7 +45,6 @@ class jac_api():
         """
         if(not os.path.isfile(file)):
             ret = "File does not exsist!"
-            print(ret)
             return ret
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
@@ -54,7 +54,9 @@ class jac_api():
                 faux.sentinel_set(snt=faux.active_snt(),
                                   code=file.read(), mode='ir')
             else:
-                faux.sentinel_register(code=file.read())
+                ret = faux.sentinel_register(code=file.read())
+                if('success' in ret and not ret['success']):
+                    return ret
         return faux.sentinel_test(snt=faux.active_snt(), detailed=detailed)
 
     @interface.cli_api(cli_args=['file'])
@@ -66,7 +68,6 @@ class jac_api():
         """
         if(not os.path.isfile(file)):
             ret = "File does not exsist!"
-            print(ret)
             return ret
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
@@ -76,7 +77,9 @@ class jac_api():
                 faux.sentinel_set(snt=faux.active_snt(),
                                   code=file.read(), mode='ir')
             else:
-                faux.sentinel_register(code=file.read(), auto_run='')
+                ret = faux.sentinel_register(code=file.read(), auto_run='')
+                if('success' in ret and not ret['success']):
+                    return ret
         return faux.walker_run(name=walk, snt=faux.active_snt(),
                                nd=faux.active_gph(), ctx=ctx,
                                profiling=profiling)

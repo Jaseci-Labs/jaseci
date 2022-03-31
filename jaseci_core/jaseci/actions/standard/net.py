@@ -4,7 +4,7 @@ from jaseci.jac.jac_set import jac_set
 
 
 @jaseci_action()
-def max(item_set: jac_set, meta):
+def max(item_set: jac_set):
     ret = None
     if (not len(item_set)):
         return None

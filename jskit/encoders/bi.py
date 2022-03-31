@@ -1,23 +1,21 @@
 import os
 import configparser
 import torch
-from typing import List
+from typing import Dict, List
 from fastapi import HTTPException
-from transformers import BertModel, BertConfig, BertTokenizer
+from transformers import AutoModel, AutoConfig, AutoTokenizer
 from utils.evaluate import get_embeddings, get_inference
 from utils.models import BiEncoder
 import traceback
 import numpy as np
 from utils.train import train_model
-import jaseci.actions.remote_actions as jra
+from jaseci.actions.live_actions import jaseci_action
 import random
 
 config = configparser.ConfigParser()
 model, model_name, shared, seed, tokenizer = None, None, None, None, None
 save_restart = False
-output_dir = "log_output"
-DEFAULT_MODEL_NAME = 'pytorch_model.bin'
-DEFAULT_MODEL_PATH = os.path.join(output_dir, 'pytorch_model.bin')
+basepath = None
 device = torch.device("cpu")
 # uncomment this if you wish to use GPU to train
 # this is commented out because this causes issues with
@@ -33,42 +31,53 @@ def set_seed(seed):
 
 
 # function for config setup
-config.read('utils/config.cfg')
+config.read(
+    os.path.join(
+        os.path.dirname(__file__),
+        'utils/config.cfg'
+    )
+)
 
 
 def config_setup():
     """
     Loading configurations from utils/config.cfg and initialize tokenizer and model
     """
-    global seed, model, save_restart, tokenizer, device, shared, config
+    global seed, model, save_restart, tokenizer, device, shared, config, basepath
     model_name = config['MODEL_PARAMETERS']['MODEL_NAME']
     shared = config['MODEL_PARAMETERS']['SHARED']
     seed = int(config['TRAIN_PARAMETERS']['SEED'])
+    basepath = config['TRAIN_PARAMETERS']['BASEPATH']
     if model is None:
-        bert_config = BertConfig()
-        tokenizer = BertTokenizer.from_pretrained(model_name,
+        model_config = AutoConfig.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name,
                                                   do_lower_case=True, clean_text=False)
         if shared == "True":
-            cont_bert = BertModel(bert_config)
+            cont_bert = AutoModel.from_config(model_config)
             cand_bert = cont_bert
             print("shared model created")
         else:
-            cont_bert = BertModel(bert_config)
-            cand_bert = BertModel(bert_config)
+            cont_bert = AutoModel.from_config(model_config)
+            cand_bert = AutoModel.from_config(model_config)
             print("non shared model created")
-        model = BiEncoder(config=bert_config,
+        model = BiEncoder(config=model_config,
                           cont_bert=cont_bert, cand_bert=cand_bert, shared=shared)
 
     elif save_restart:
-        torch.save(model.state_dict(), DEFAULT_MODEL_PATH)
-        bert_config = BertConfig()
-        tokenizer = BertTokenizer.from_pretrained(model_name,
+        saved_text = save_model(basepath)
+        if "Saved" in saved_text:
+            print(saved_text)
+        else:
+            print("Unable to save live model")
+        model_config = AutoConfig.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name,
                                                   do_lower_case=True, clean_text=False)
-        cont_bert = BertModel(bert_config)
-        cand_bert = BertModel(bert_config)
-        model = BiEncoder(config=bert_config,
+        cont_bert = AutoModel.from_config(model_config)
+        cand_bert = AutoModel.from_config(model_config)
+        model = BiEncoder(config=model_config,
                           cont_bert=cont_bert, cand_bert=cand_bert, shared=shared)
         save_restart = False
+
     model.to(device)
     set_seed(seed)
 
@@ -78,8 +87,8 @@ config_setup()
 # API for getting the cosine similarity
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
-def cosine_sim(vec_a: list, vec_b: list, meta):
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
+def cosine_sim(vec_a: List[float], vec_b: List[float], meta):
     """
     Caculate the cosine similarity score of two given vectors
     Param 1 - First vector
@@ -91,7 +100,7 @@ def cosine_sim(vec_a: list, vec_b: list, meta):
     return result.astype(float)
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def infer(contexts: List, candidates: List):
     """
     Take list of context, candidate and return nearest candidate to the context
@@ -105,12 +114,12 @@ def infer(contexts: List, candidates: List):
 
 
 # API for training
-@jra.jaseci_action(act_group=['bi_enc'])
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def train(contexts: List, candidates: List, labels: List[int]):
     """
     Take list of context, candidate, labels and trains the model
     """
-    global model
+    global model, basepath
     model.train()
     try:
         model = train_model(
@@ -118,18 +127,17 @@ def train(contexts: List, candidates: List, labels: List[int]):
             tokenizer=tokenizer,
             contexts=contexts,
             candidates=candidates,
-            labels=labels,
-            output_dir="model_output"
+            labels=labels
         )
+        save_model(model_path=basepath)
         return "Model Training is complete."
     except Exception as e:
-        print(e)
-        print(traceback.print_exc())
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
 # API for geting Context Embedding
-@jra.jaseci_action(act_group=['bi_enc'], aliases=['encode_context'])
+@jaseci_action(act_group=['bi_enc'], aliases=['encode_context'], allow_remote=True)
 def get_context_emb(contexts: List):
     """
     Take list of context and returns the embeddings
@@ -143,7 +151,7 @@ def get_context_emb(contexts: List):
 # API for geting Candidates Embedding
 
 
-@jra.jaseci_action(act_group=['bi_enc'], aliases=['encode_candidate'])
+@jaseci_action(act_group=['bi_enc'], aliases=['encode_candidate'], allow_remote=True)
 def get_candidate_emb(candidates: List):
     """
     Take list of candidates and returns the embeddings
@@ -157,8 +165,8 @@ def get_candidate_emb(candidates: List):
 # API for setting the training and model parameters
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
-def set_config(training_parameters, model_parameters):
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
+def set_config(training_parameters: Dict = None, model_parameters: Dict = None):
     """
     Update the configuration file with any new incoming parameters
     """
@@ -171,12 +179,14 @@ def set_config(training_parameters, model_parameters):
         save_restart = True
     with open("utils/config.cfg", 'w') as configfile:
         config.write(configfile)
-
-    config_setup()
+    try:
+        config_setup()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     return "Config setup is complete."
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def save_model(model_path: str):
     """
     saves the model to the provided model_path
@@ -191,10 +201,8 @@ def save_model(model_path: str):
         if not os.path.exists(model_path):
             os.makedirs(model_path)
         if shared == "True":
-            model.config.to_json_file(model_path + "/config.json")
+            model.cont_bert.save_pretrained(model_path)
             tokenizer.save_vocabulary(model_path)
-            torch.save(model.cand_bert.state_dict(),
-                       model_path+"/pytorch_model.bin")
             with open(model_path+"/config.cfg", 'w') as fp:
                 config.write(fp)
         else:
@@ -204,23 +212,20 @@ def save_model(model_path: str):
                 os.makedirs(cand_bert_path)
             if not os.path.exists(cont_bert_path):
                 os.makedirs(cont_bert_path)
-            model.cand_bert.config.to_json_file(cand_bert_path + "config.json")
-            model.cont_bert.config.to_json_file(cont_bert_path + "config.json")
             tokenizer.save_vocabulary(cand_bert_path)
             tokenizer.save_vocabulary(cont_bert_path)
-            torch.save(model.cand_bert.state_dict(),
-                       cand_bert_path+"pytorch_model.bin")
-            torch.save(model.cont_bert.state_dict(),
-                       cont_bert_path+"pytorch_model.bin")
+            model.cont_bert.save_pretrained(cont_bert_path)
+            model.cand_bert.save_pretrained(cand_bert_path)
             with open(model_path+"/config.cfg", 'w') as fp:
                 config.write(fp)
-            return (f'[Saved model at] : {model_path}')
+
+        return (f'[Saved model at] : {model_path}')
     except Exception as e:
-        print(traceback.print_exc())
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jra.jaseci_action(act_group=['bi_enc'])
+@jaseci_action(act_group=['bi_enc'], allow_remote=True)
 def load_model(model_path):
     """
     loads the model from the provided model_path
@@ -235,38 +240,34 @@ def load_model(model_path):
         config.read(model_path+'/config.cfg')
         shared = config['MODEL_PARAMETERS']['SHARED']
         if shared == "True":
-            bert_config = BertConfig()
-            tokenizer = BertTokenizer.from_pretrained(os.path.join(
-                model_path, "vocab.txt"), do_lower_case=True, clean_text=False)
-            cont_bert_state_dict = torch.load(
-                model_path+"/pytorch_model.bin", map_location="cpu")
-            cont_bert = BertModel.from_pretrained(
-                model_path, state_dict=cont_bert_state_dict)
+            model_config = AutoConfig.from_pretrained(
+                model_path, local_files_only=True)
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path, do_lower_case=True, clean_text=False)
+            cont_bert = AutoModel.from_pretrained(
+                model_path, local_files_only=True)
             cand_bert = cont_bert
         else:
-            cand_bert_path = os.path.join(model_path, "cand_bert/")
-            cont_bert_path = os.path.join(model_path, "cont_bert/")
+            cand_bert_path = os.path.join(model_path, "cand_bert")
+            cont_bert_path = os.path.join(model_path, "cont_bert")
             print('Loading parameters from', cand_bert_path)
-            cont_bert_state_dict = torch.load(
-                cont_bert_path+"/pytorch_model.bin", map_location="cpu")
-            cand_bert_state_dict = torch.load(
-                cand_bert_path+"/pytorch_model.bin", map_location="cpu")
-            cont_bert = BertModel.from_pretrained(
-                cont_bert_path, state_dict=cont_bert_state_dict)
-            cand_bert = BertModel.from_pretrained(
-                cand_bert_path, state_dict=cand_bert_state_dict)
-            tokenizer = BertTokenizer.from_pretrained(os.path.join(
-                cand_bert_path, "vocab.txt"), do_lower_case=True, clean_text=False)
-            bert_config = BertConfig.from_json_file(
-                os.path.join(cand_bert_path, 'config.json'))
-        model = BiEncoder(config=bert_config,
+            cont_bert = AutoModel.from_pretrained(
+                cont_bert_path, local_files_only=True)
+            cand_bert = AutoModel.from_pretrained(
+                cont_bert_path, local_files_only=True)
+            model_config = AutoConfig.from_pretrained(
+                cont_bert_path, local_files_only=True)
+            tokenizer = AutoTokenizer.from_pretrained(
+                cand_bert_path, do_lower_case=True, clean_text=False)
+        model = BiEncoder(config=model_config,
                           cont_bert=cont_bert, cand_bert=cand_bert, shared=shared)
         model.to(device)
         return (f'[loaded model from] : {model_path}')
     except Exception as e:
-        print(traceback.print_exc())
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
-    jra.launch_server(port=8000)
+    from jaseci.actions.remote_actions import launch_server
+    launch_server(port=8000)

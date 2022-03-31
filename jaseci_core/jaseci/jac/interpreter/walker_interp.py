@@ -19,7 +19,7 @@ class walker_interp(interp):
         """
         walker: KW_WALKER NAME namespaces? walker_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(jac_ast.name == "walker_block"):  # used in jac tests
             self.scope_and_run(jac_ast, self.run_walker_block)
         else:
@@ -33,7 +33,7 @@ class walker_interp(interp):
                 | walk_activity_block
             )* walk_exit_block? RBRACE;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(self.current_step == 0):
             for i in kid:
                 if(i.name == 'attr_stmt'):
@@ -62,7 +62,7 @@ class walker_interp(interp):
         """
         node_ctx_block: name_list code_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         for i in self.run_name_list(kid[0]):
             if (self.current_node.name == i):
                 self.run_code_block(kid[1])
@@ -72,7 +72,7 @@ class walker_interp(interp):
         """
         walk_entry_block: KW_WITH KW_ENTRY code_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if (self.current_step == 0):
             self.in_entry_exit = True
             self.run_code_block(kid[2])
@@ -82,7 +82,7 @@ class walker_interp(interp):
         """
         walk_exit_block: KW_WITH KW_EXIT code_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         self._stopped = None
         if (len(self.next_node_ids) == 0):
             self.in_entry_exit = True
@@ -93,7 +93,7 @@ class walker_interp(interp):
         """
         walk_activity_block: KW_WITH KW_ACTIVITY code_block;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         self.run_code_block(kid[2])
 
     def run_walker_action(self, jac_ast):
@@ -104,7 +104,7 @@ class walker_interp(interp):
             | destroy_action
             | KW_DISENGAGE SEMI;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if (kid[0].name == 'KW_DISENGAGE'):
             self._stopped = 'stop'
             self.next_node_ids.remove_all()
@@ -116,7 +116,7 @@ class walker_interp(interp):
         """
         ignore_action: KW_IGNORE expression SEMI;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = self.run_expression(kid[1]).value
         if (isinstance(result, node)):
             self.ignore_node_ids.add_obj(result)
@@ -131,7 +131,7 @@ class walker_interp(interp):
         take_action:
             KW_TAKE expression (SEMI | else_stmt);
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         result = self.run_expression(kid[1]).value
         before = len(self.next_node_ids)
         if (isinstance(result, node)):
@@ -154,7 +154,7 @@ class walker_interp(interp):
         obj: The node or edge with preset
         act: The action associated with preset
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         param_list = []
         m = interp(parent_override=self.parent(), caller=self)
         m.push_scope(jac_scope(parent=self,
@@ -167,7 +167,7 @@ class walker_interp(interp):
         if(kid[1].name == "expr_list"):
             param_list = m.run_expr_list(kid[1]).value
         try:
-            result = act.trigger(param_list, self._jac_scope)
+            result = act.trigger(param_list, self._jac_scope, self)
         except Exception as e:
             self.rt_error(f'{e}', jac_ast)
             result = None

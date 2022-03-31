@@ -10,7 +10,7 @@ import math
 from datetime import datetime
 import numpy as np
 from fastapi.responses import JSONResponse
-import jaseci.actions.remote_actions as jra
+from jaseci.actions.live_actions import jaseci_action
 
 model_name = "bert-base-uncased"
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -52,7 +52,8 @@ def get_aug_sample(text1, text2):
     return aug_samples
 
 
-@jra.jaseci_action(act_group=['sent_enc'], aliases=['train_model'])
+@jaseci_action(act_group=['sent_enc'], aliases=['train_model'],
+               allow_remote=True)
 def train(text1: List[str], text2: List[str]):
     global model, model_name, device
 
@@ -85,7 +86,7 @@ def train(text1: List[str], text2: List[str]):
                             status_code=500)
 
 
-@ jra.jaseci_action(act_group=['sent_enc'], aliases=['inference'])
+@ jaseci_action(act_group=['sent_enc'], aliases=['inference'])
 def predict(text1: str, text2: List[str]):
     try:
         sim = np.zeros(len(text2))
@@ -106,7 +107,7 @@ def predict(text1: str, text2: List[str]):
                             status_code=500)
 
 
-@jra.jaseci_action(act_group=['sent_enc'], aliases=['getembeddings'])
+@jaseci_action(act_group=['sent_enc'], aliases=['getembeddings'])
 def getEmbedding(text):
     global model
     model.eval()
@@ -122,7 +123,7 @@ def getEmbedding(text):
                             status_code=500)
 
 
-@jra.jaseci_action(act_group=['sent_enc'], aliases=['get_cos_sim'])
+@jaseci_action(act_group=['sent_enc'], aliases=['get_cos_sim'])
 def cosine_sim(vec_a: list, vec_b: list, meta):
     """
     Caculate the cosine similarity score of two given vectors

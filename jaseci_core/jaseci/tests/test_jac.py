@@ -504,20 +504,60 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[12], False)
         self.assertEqual(rep[13], False)
         self.assertEqual(rep[14], False)
-        self.assertEqual(rep[15], 2)
-        self.assertEqual(rep[16], 5)
-        self.assertEqual(rep[17], ['tEsting', 'me'])
-        self.assertEqual(rep[18], [' t', 'sting me  '])
-        self.assertEqual(rep[19], False)
+        self.assertEqual(rep[15], {'a': 5})
+        self.assertEqual(rep[16], 2)
+        self.assertEqual(rep[17], 5)
+        self.assertEqual(rep[18], ['tEsting', 'me'])
+        self.assertEqual(rep[19], [' t', 'sting me  '])
         self.assertEqual(rep[20], False)
-        self.assertEqual(rep[21], ' tEsting you  ')
-        self.assertEqual(rep[22], 'tEsting me')
-        self.assertEqual(rep[23], 'Esting me')
-        self.assertEqual(rep[24], 'tEsting me  ')
-        self.assertEqual(rep[25], 'sting me  ')
-        self.assertEqual(rep[26], ' tEsting me')
-        self.assertEqual(rep[27], ' tEsting m')
-        self.assertEqual(rep[28], True)
+        self.assertEqual(rep[21], False)
+        self.assertEqual(rep[22], ' tEsting you  ')
+        self.assertEqual(rep[23], 'tEsting me')
+        self.assertEqual(rep[24], 'Esting me')
+        self.assertEqual(rep[25], 'tEsting me  ')
+        self.assertEqual(rep[26], 'sting me  ')
+        self.assertEqual(rep[27], ' tEsting me')
+        self.assertEqual(rep[28], ' tEsting m')
+        self.assertEqual(rep[29], True)
+
+    def test_list_manipulation(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.list_manipulation)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], [4])
+        self.assertEqual(rep[1], [5])
+        self.assertEqual(rep[2], [4, 5, 5])
+        self.assertEqual(rep[3], [5, 5, 4])
+        self.assertEqual(rep[4], [4, 5, 5])
+        self.assertEqual(rep[5], 2)
+        self.assertEqual(rep[6], [5, 5, 4, 2])
+        self.assertEqual(rep[7], [5, 'apple', 4, 2])
+        self.assertEqual(rep[8], 1)
+        self.assertEqual(rep[9], [5, 'apple', 4])
+        self.assertEqual(rep[10], [])
+
+    def test_dict_manipulation(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.dict_manipulation)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], {'four': 4, 'five': 5})
+        self.assertEqual(rep[1], {'four': 5, 'five': 5})
+        self.assertEqual(rep[2], [['four', 4], ['five', 5]])
+        self.assertEqual(rep[3], ['four', 'five'])
+        self.assertEqual(rep[4], {'four': 4})
+        self.assertEqual(rep[5], [4])
+        self.assertEqual(rep[6], {'four': 7})
+        self.assertEqual(rep[7], {})
 
     def test_string_join(self):
         gph = graph(m_id='anon', h=mem_hook())
@@ -585,6 +625,7 @@ class jac_tests(TestCaseHelper, TestCase):
                                    'profession': None})
 
     def test_try_else_stmts(self):
+        self.logger_on()
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.try_else_stmts)
@@ -594,6 +635,9 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         rep = test_walker.report
         self.assertEqual(rep[0], {'args': ('division by zero',),
+                                  'col': 8,
+                                  'line': 5,
+                                  'mod': '@default',
                                   'msg': 'division by zero',
                                   'type': 'ZeroDivisionError'})
         self.assertEqual(rep[1], 'dont need err')
@@ -655,3 +699,85 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         rep = test_walker.report
         self.assertTrue(rep[0].startswith('urn:uuid'))
+
+    def test_std_get_report(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.std_get_report)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep, [3, 5, 6, 7, [3, 5, 6, 7], 8])
+
+    def test_func_with_array_index(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.func_with_array_index)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep, [3, 5, 3])
+
+    def test_rt_error_test1(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.rt_error_test1)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        self.assertIn("List index out of range",
+                      test_walker.runtime_errors[0])
+        self.assertIn(" line ",
+                      test_walker.runtime_errors[0])
+        self.assertIn(" col ",
+                      test_walker.runtime_errors[0])
+
+    def test_root_type_nodes(self):
+        self.logger_on()
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.root_type_nodes)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        report = test_walker.report
+        self.assertEqual(report, ["root", "root"])
+
+    def test_invalid_key_error(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.invalid_key_error)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        errors = test_walker.runtime_errors
+        self.assertGreater(len(errors), 0)
+
+    def test_file_io(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.file_io)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        report = test_walker.report
+        self.assertEqual(report, ['{"a": 10}{"a": 10}'])
+
+    def test_auto_cast(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.auto_cast)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        report = test_walker.report
+        self.assertEqual(report, [True, True])

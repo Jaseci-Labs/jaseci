@@ -1,8 +1,8 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from bi import app, config_setup
+from bi import serv_actions, config_setup
 from fastapi.testclient import TestClient
-from .test_data import (
+from test_data import (
     test_cos_sim_request,
     test_context_emb_request,
     test_context_emb_response,
@@ -19,20 +19,20 @@ class biencoder_test(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
         config_setup()
-        self.client = TestClient(app)
+        self.client = TestClient(serv_actions())
 
     def tearDown(self) -> None:
         return super().tearDown()
 
     def test_cos_sim_function(self):
         response = self.client.post(
-            "/cos_sim_score/",
+            "/cosine_sim/",
             json=test_cos_sim_request
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.json(),
-            0.49492838978767395
+            round(response.json(), 2),
+            0.05
         )
 
     def test_biencoder_train(self):
@@ -64,8 +64,8 @@ class biencoder_test(TestCaseHelper, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            len(response.json()[0]),
-            64
+            len(response.json()),
+            768
         )
 
     def test_candidate_embedding(self):
@@ -75,7 +75,6 @@ class biencoder_test(TestCaseHelper, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            len(response.json()[0][0]),
-            64
+            len(response.json()),
+            768
         )
-

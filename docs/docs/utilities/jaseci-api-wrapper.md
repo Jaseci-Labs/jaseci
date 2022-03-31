@@ -8,7 +8,7 @@ Jaseci utilities to simplify and accelerate coding.
 
 `jac_api.py`
 
-```
+```python
 import base64
 import time
 from typing import Union
