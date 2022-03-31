@@ -2,7 +2,7 @@ from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
 from entity_extraction import serv_actions
 from fastapi.testclient import TestClient
-from test_data import (
+from .test_data import (
     test_entity_detection_request,
     test_entity_detection_response,
     test_entity_detection_request_fail_ner,
