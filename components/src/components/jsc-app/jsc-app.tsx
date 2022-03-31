@@ -1,4 +1,4 @@
-import { Component, h, Prop } from '@stencil/core';
+import { Component, h, Method, Prop } from '@stencil/core';
 import { renderComponentTree } from '../../utils/utils';
 
 @Component({
@@ -7,7 +7,13 @@ import { renderComponentTree } from '../../utils/utils';
   shadow: true,
 })
 export class App {
-  @Prop() markup: JaseciComponent[];
+  @Prop({ mutable: true }) markup: JaseciComponent[];
+
+  @Method()
+  setMarkup(value) {
+    this.markup = value;
+    console.log(this.markup);
+  }
 
   componentDidLoad() {
     console.log(this.markup);

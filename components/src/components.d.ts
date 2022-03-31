@@ -9,6 +9,7 @@ import { ItemsPropValue, JustifyPropValue } from "./types/propTypes";
 export namespace Components {
     interface JscApp {
         "markup": JaseciComponent[];
+        "setMarkup": (value: any) => Promise<void>;
     }
     interface JscButton {
         "css": string;
