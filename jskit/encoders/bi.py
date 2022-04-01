@@ -28,7 +28,7 @@ def set_seed(seed):
     torch.manual_seed(seed)
 
 
-def config_setup(save_restart=False):
+def config_setup():
     """
     Loading configurations from utils/config.cfg and
     initialize tokenizer and model
@@ -43,11 +43,6 @@ def config_setup(save_restart=False):
         train_config = json.load(jsonfile)
 
     train_config.update({'device': device.type})
-    if save_restart:
-        try:
-            save_model(model_config["model_save_path"])
-        except Exception as e:
-            print(f"unable to save model, Exception : {e}")
     trf_config = AutoConfig.from_pretrained(model_config["model_name"])
     tokenizer = AutoTokenizer.from_pretrained(model_config["model_name"],
                                               do_lower_case=True,
@@ -161,7 +156,6 @@ def train(contexts: List, candidates: List, labels: List[int]):
             candidates=candidates,
             labels=labels, train_config=train_config
         )
-        save_model(model_path=model_config["model_save_path"])
         return "Model Training is complete."
     except Exception as e:
         traceback.print_exc()
@@ -239,11 +233,12 @@ def get_model_config():
 def set_model_config(model_parameters: Dict = None):
     global model_config
     try:
+        save_model(model_config["model_save_path"])
         with open("utils/model_config.json", "w+") as jsonfile:
             model_config.update(model_parameters)
             json.dump(model_config, jsonfile, indent=4)
 
-        config_setup(save_restart=True)
+        config_setup()
         return "Config setup is complete."
 
     except Exception as e:
@@ -268,6 +263,7 @@ def save_model(model_path: str):
         if model_config["shared"] is True:
             model.cont_bert.save_pretrained(model_path)
             tokenizer.save_vocabulary(model_path)
+            print(f'Saving shared model to : {model_path}')
         else:
             cand_bert_path = os.path.join(model_path + "/cand_bert")
             cont_bert_path = os.path.join(model_path + "/cont_bert")
@@ -279,7 +275,7 @@ def save_model(model_path: str):
             tokenizer.save_vocabulary(cont_bert_path)
             model.cont_bert.save_pretrained(cont_bert_path)
             model.cand_bert.save_pretrained(cand_bert_path)
-
+            print(f'Saving non-shared model to : {model_path}')
         shutil.copyfile(os.path.join(os.path.dirname(__file__),
                                      'utils/train_config.json'),
                         os.path.join(model_path, "train_config.json"))
@@ -322,7 +318,7 @@ def load_model(model_path):
             cont_bert = AutoModel.from_pretrained(
                 cont_bert_path, local_files_only=True)
             cand_bert = AutoModel.from_pretrained(
-                cont_bert_path, local_files_only=True)
+                cand_bert_path, local_files_only=True)
             trf_config = AutoConfig.from_pretrained(
                 cont_bert_path, local_files_only=True)
             tokenizer = AutoTokenizer.from_pretrained(

@@ -560,7 +560,7 @@ test_infer_request = {
     "candidate_type": "text"
 }
 
-train_config_response_default = {
+train_config_default = {
     "max_contexts_length": 128,
     "max_candidate_length": 64,
     "train_batch_size": 8,
@@ -582,7 +582,7 @@ train_config_response_default = {
 }
 
 
-model_config_response_default = {
+model_config_default = {
     "shared": False,
     "model_name": "prajjwal1/bert-tiny",
     "model_save_path": "modeloutput"
