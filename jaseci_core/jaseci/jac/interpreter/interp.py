@@ -200,7 +200,6 @@ class interp(machine_state):
     def run_code_block(self, jac_ast):
         """
         code_block: LBRACE statement* RBRACE | COLON statement;
-        TODO: Handle breaks and continues
         """
         kid = self.set_cur_ast(jac_ast)
         for i in kid:
