@@ -71,10 +71,21 @@ class sharable():
         """Check if element is private"""
         return self.j_access == 'private'
 
+    def super_check(self, caller_id):
+        """Quick check if caller is super master"""
+        if(not hasattr(self, "_h")):
+            return False
+        user = self._h.get_obj(uuid.UUID(int=0).urn,
+                               uuid.UUID(caller_id))
+        if(user.j_type == 'super_master'):
+            return True
+        return False
+
     def check_read_access(self, caller_id, silent=False):
         if(caller_id == self._m_id or self.is_readable() or
            caller_id in self.j_r_acc_ids or
-           caller_id in self.j_rw_acc_ids):
+           caller_id in self.j_rw_acc_ids or
+           self.super_check(caller_id)):
             return True
         if(not silent):
             logger.error(str(
@@ -83,7 +94,8 @@ class sharable():
 
     def check_write_access(self, caller_id, silent=False):
         if(caller_id == self._m_id or self.is_public() or
-           caller_id in self.j_rw_acc_ids):
+           caller_id in self.j_rw_acc_ids or
+           self.super_check(caller_id)):
             return True
         if(not silent):
             logger.error(str(
