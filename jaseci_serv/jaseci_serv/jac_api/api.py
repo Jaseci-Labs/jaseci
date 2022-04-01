@@ -66,4 +66,4 @@ def generate_apis(api_list, view_cls, dir_head):
 
 generate_apis(super_master._public_api, AbstractPublicJacAPIView, 'public')
 generate_apis(super_master._private_api, AbstractJacAPIView, 'jac')
-generate_apis(super_master._admin_api, AbstractAdminJacAPIView, 'admin')
+generate_apis(super_master._admin_api, AbstractAdminJacAPIView, 'js_admin')
