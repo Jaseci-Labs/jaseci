@@ -204,11 +204,7 @@ class interp(machine_state):
         """
         kid = self.set_cur_ast(jac_ast)
         for i in kid:
-            if (self._loop_ctrl):
-                if (self._loop_ctrl == 'continue'):
-                    self._loop_ctrl = None
-                return
-            if(i.name == 'statement'):
+            if(i.name == 'statement' and not self._loop_ctrl):
                 self.run_statement(jac_ast=i)
 
     def run_statement(self, jac_ast):
@@ -307,12 +303,13 @@ class interp(machine_state):
         if(kid[1].name == 'expression'):
             self.run_expression(kid[1])
             while self.run_expression(kid[3]).value:
+                self._loop_ctrl = None
                 self.run_code_block(kid[6])
-                loops += 1
-                if (self._loop_ctrl == 'break'):
-                    self._loop_ctrl = None
-                    break
                 self.run_expression(kid[5])
+                loops += 1
+                if (self._loop_ctrl and self._loop_ctrl == 'break'):
+                    break
+                self._loop_ctrl = None
                 if(loops > self._loop_limit):
                     self.rt_error(f'Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
@@ -328,9 +325,9 @@ class interp(machine_state):
                 var.write(kid[1])
                 self.run_code_block(kid[4])
                 loops += 1
-                if (self._loop_ctrl == 'break'):
-                    self._loop_ctrl = None
+                if (self._loop_ctrl and self._loop_ctrl == 'break'):
                     break
+                self._loop_ctrl = None
                 if(loops > self._loop_limit):
                     self.rt_error(f'Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
@@ -344,9 +341,9 @@ class interp(machine_state):
         while self.run_expression(kid[1]).value:
             self.run_code_block(kid[2])
             loops += 1
-            if (self._loop_ctrl == 'break'):
-                self._loop_ctrl = None
+            if (self._loop_ctrl and self._loop_ctrl == 'break'):
                 break
+            self._loop_ctrl = None
             if(loops > self._loop_limit):
                 self.rt_error(f'Hit loop limit, breaking...', kid[0])
                 self._loop_ctrl = 'break'
@@ -859,7 +856,12 @@ class interp(machine_state):
 
     def run_dict_built_in(self, jac_ast, atom_res):
         """
-        dict_built_in: KW_KEYS | COLON name_list COLON;
+        dict_built_in:
+            KW_KEYS
+            | LBRACE name_list RBRACE
+            | (TYP_DICT DBL_COLON | DICT_DBL_COLON) NAME (
+                LPAREN expr_list RPAREN
+            )?;
         """
         kid = self.set_cur_ast(jac_ast)
         if (kid[0].name == "KW_KEYS"):
@@ -875,11 +877,58 @@ class interp(machine_state):
             if(self.rt_check_type(d, [dict], kid[0])):
                 d = {k: d[k] for k in d if k in filter_on}
                 return jac_value(self, value=d)
+        else:
+            if(not self.rt_check_type(atom_res.value, [dict], kid[0])):
+                return atom_res
+            kid = kid[1:]
+            if(kid[0].name == "DBL_COLON"):
+                kid = kid[1:]
+            result = None
+            op = kid[0].token_text()
+            try:
+                if (op == "items"):
+                    result = jac_value(self, value=list(
+                        map(list, atom_res.value.items())))
+                elif (op == "copy"):
+                    result = jac_value(self, value=atom_res.value.copy())
+                elif (op == "keys"):
+                    result = jac_value(self, value=list(atom_res.value.keys()))
+                elif (op == "clear"):
+                    result = jac_value(self, value=atom_res.value.clear())
+                elif (op == "popitem"):
+                    result = jac_value(self, value=list(
+                        atom_res.value.popitem()))
+                elif (op == "values"):
+                    result = jac_value(self, value=list(
+                        atom_res.value.values()))
+                if (result):
+                    if(len(kid) > 1):
+                        self.rt_warn(
+                            f"{op} does not take parameters, ignoring", kid[2])
+                    return result
+                if(len(kid) > 1):
+                    args = self.run_expr_list(kid[2]).value
+                    if (op == "pop"):
+                        result = jac_value(
+                            self, value=atom_res.value.pop(*args))
+                    elif (op == "update"):
+                        result = jac_value(
+                            self, value=atom_res.value.update(*args))
+                    if (result):
+                        return result
+            except Exception as e:
+                self.rt_error(f'{e}', jac_ast)
+            self.rt_error(f'Call to {op} is invalid.', jac_ast)
+
         return atom_res
 
     def run_list_built_in(self, jac_ast, atom_res):
         """
-        list_built_in: KW_LENGTH | KW_DESTROY COLON expression COLON;
+        list_built_in:
+            KW_LENGTH
+            | (TYP_LIST DBL_COLON | LIST_DBL_COLON) NAME (
+                LPAREN expr_list RPAREN
+            )?;
         """
         kid = self.set_cur_ast(jac_ast)
         if (kid[0].name == "KW_LENGTH"):
@@ -890,27 +939,75 @@ class interp(machine_state):
                     f'Cannot get length of {atom_res.value}. Not List!',
                     kid[0])
                 return jac_value(self, value=0)
-        elif (kid[0].name == "KW_DESTROY"):
-            idx = self.run_expression(kid[2])
-            if (isinstance(atom_res.value, list) and
-                    isinstance(idx.value, int)):
-                atom_res.self_destruct(kid[2])
+        else:
+            if(not self.rt_check_type(atom_res.value, [list], kid[0])):
                 return atom_res
-            else:
-                self.rt_error(f'Cannot remove index {idx} from {atom_res}.',
-                              kid[0])
+            kid = kid[1:]
+            if(kid[0].name == "DBL_COLON"):
+                kid = kid[1:]
+            result = None
+            op = kid[0].token_text()
+            try:
+                if (op == "reverse"):
+                    result = jac_value(self, value=atom_res.value.reverse())
+                elif (op == "copy"):
+                    result = jac_value(self, value=atom_res.value.copy())
+                elif (op == "sort"):
+                    result = jac_value(self, value=atom_res.value.sort())
+                elif (op == "clear"):
+                    result = jac_value(self, value=atom_res.value.clear())
+                elif (len(kid) < 2 and op == "pop"):
+                    result = jac_value(self, value=atom_res.value.pop())
+                if (result):
+                    if(len(kid) > 1):
+                        self.rt_warn(
+                            f"{op} does not take parameters, ignoring", kid[2])
+                    return result
+                if(len(kid) > 1):
+                    args = self.run_expr_list(kid[2]).value
+                    if (op == "index"):
+                        result = jac_value(
+                            self, value=atom_res.value.index(*args))
+                    elif (op == "append"):
+                        result = jac_value(
+                            self, value=atom_res.value.append(*args))
+                    elif (op == "extend"):
+                        result = jac_value(
+                            self, value=atom_res.value.extend(*args))
+                    elif (op == "insert"):
+                        result = jac_value(
+                            self, value=atom_res.value.insert(*args))
+                    elif (op == "remove"):
+                        result = jac_value(
+                            self, value=atom_res.value.remove(*args))
+                    elif (op == "count"):
+                        result = jac_value(
+                            self, value=atom_res.value.count(*args))
+                    elif (op == "pop"):
+                        result = jac_value(
+                            self, value=atom_res.value.pop(*args))
+                    if (result):
+                        return result
+            except Exception as e:
+                self.rt_error(f'{e}', jac_ast)
+            self.rt_error(f'Call to {op} is invalid.', jac_ast)
         return atom_res
 
     def run_string_built_in(self, jac_ast, atom_res):
         """
         string_built_in:
-                TYP_STRING DBL_COLON NAME (LPAREN expr_list RPAREN)?;
+        (TYP_STRING DBL_COLON | STR_DBL_COLON) NAME (
+                LPAREN expr_list RPAREN
+        )?;
         """
         kid = self.set_cur_ast(jac_ast)
         if(not self.rt_check_type(atom_res.value, [str], kid[0])):
             return atom_res
+        kid = kid[1:]
+        if(kid[0].name == "DBL_COLON"):
+            kid = kid[1:]
         result = None
-        str_op = kid[2].token_text()
+        str_op = kid[0].token_text()
         try:
             if (str_op == "upper"):
                 result = jac_value(self, value=atom_res.value.upper())
@@ -939,21 +1036,21 @@ class interp(machine_state):
             elif (str_op == "load_json"):
                 import json
                 result = jac_value(self, value=json.loads(atom_res.value))
-            elif (len(kid) < 4 and str_op == "split"):
+            elif (len(kid) < 2 and str_op == "split"):
                 result = jac_value(self, value=atom_res.value.split())
-            elif (len(kid) < 4 and str_op == "strip"):
+            elif (len(kid) < 2 and str_op == "strip"):
                 result = jac_value(self, value=atom_res.value.strip())
-            elif (len(kid) < 4 and str_op == "lstrip"):
+            elif (len(kid) < 2 and str_op == "lstrip"):
                 result = jac_value(self, value=atom_res.value.lstrip())
-            elif (len(kid) < 4 and str_op == "rstrip"):
+            elif (len(kid) < 2 and str_op == "rstrip"):
                 result = jac_value(self, value=atom_res.value.rstrip())
             if (result):
-                if(len(kid) > 3):
+                if(len(kid) > 1):
                     self.rt_warn(
-                        f"{str_op} does not take parameters, ignoring", kid[4])
+                        f"{str_op} does not take parameters, ignoring", kid[2])
                 return result
-            if(len(kid) > 3):
-                args = self.run_expr_list(kid[4]).value
+            if(len(kid) > 1):
+                args = self.run_expr_list(kid[2]).value
                 if (str_op == "count"):
                     result = jac_value(self, value=atom_res.value.count(*args))
                 elif (str_op == "find"):

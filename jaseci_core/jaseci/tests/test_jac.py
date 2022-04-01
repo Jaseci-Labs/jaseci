@@ -520,6 +520,45 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[28], ' tEsting m')
         self.assertEqual(rep[29], True)
 
+    def test_list_manipulation(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.list_manipulation)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], [4])
+        self.assertEqual(rep[1], [5])
+        self.assertEqual(rep[2], [4, 5, 5])
+        self.assertEqual(rep[3], [5, 5, 4])
+        self.assertEqual(rep[4], [4, 5, 5])
+        self.assertEqual(rep[5], 2)
+        self.assertEqual(rep[6], [5, 5, 4, 2])
+        self.assertEqual(rep[7], [5, 'apple', 4, 2])
+        self.assertEqual(rep[8], 1)
+        self.assertEqual(rep[9], [5, 'apple', 4])
+        self.assertEqual(rep[10], [])
+
+    def test_dict_manipulation(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.dict_manipulation)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], {'four': 4, 'five': 5})
+        self.assertEqual(rep[1], {'four': 5, 'five': 5})
+        self.assertEqual(rep[2], [['four', 4], ['five', 5]])
+        self.assertEqual(rep[3], ['four', 'five'])
+        self.assertEqual(rep[4], {'four': 4})
+        self.assertEqual(rep[5], [4])
+        self.assertEqual(rep[6], {'four': 7})
+        self.assertEqual(rep[7], {})
+
     def test_string_join(self):
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)

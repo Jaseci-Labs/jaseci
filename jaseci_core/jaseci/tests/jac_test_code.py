@@ -906,9 +906,9 @@ string_manipulation = \
         report '{"a": 5}'.str::load_json;
         report a.str::count('t');
         report a.str::find('i');
-        report a.str::split;
-        report a.str::split('E');
-        report a.str::startswith('tEs');
+        report a.s::split;
+        report a.s::split('E');
+        report a.s::startswith('tEs');
         report a.str::endswith('me');
         report a.str::replace('me', 'you');
         report a.str::strip;
@@ -919,6 +919,56 @@ string_manipulation = \
         report a.str::rstrip(' e');
 
         report a.str::upper.str::is_upper;
+    }
+    """
+
+list_manipulation = \
+    """
+    walker init {
+        a = [4];
+        b=a.l::copy;
+        b[0]+=1;
+        report a;
+        report b;
+        a.list::extend(b);
+        a.l::append(b[0]);
+        report a;
+        a.l::reverse;
+        report a;
+        a.list::sort;
+        report a;
+        a.l::reverse;
+        report a.l::index(4);
+        a.l::append(a.l::index(4));
+        report a;
+        a.l::insert(2, "apple");
+        a.l::remove(5);
+        report a;
+        a.l::pop;
+        report a.l::count(4);
+        report a;
+        a.l::clear;
+        report a;
+    }
+    """
+
+dict_manipulation = \
+    """
+    walker init {
+        a = {'four':4, 'five':5};
+        b=a.d::copy;
+        b['four']+=1;
+        report a;
+        report b;
+        report a.dict::items;
+        report a.d::keys;
+        a.d::popitem;
+        report a;
+        report a.dict::values;
+        a.d::update({'four': 7});
+        report a;
+        a.d::pop('four');
+        report a;
     }
     """
 
