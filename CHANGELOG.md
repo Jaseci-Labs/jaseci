@@ -4,11 +4,17 @@
 
 ### Updates
 
+- Improvement: Jaseci's admin api route changed to `/js_admin/...` vs `/admin/` to not conflict with Django's internals
+- Update: Django 3 upgraded to latest as well as all other dependencies.
 - Fix: Believe it or not, I never fully implemented `continue`. LIKE REALLY??? Anyway, fixed now. FTLOG!
 - New Feature: Added `jac dot` cli command much like `jac run` but prints dot graph
 - New Feature: Created shorthand for string, list, and dict functions i.e., `.s::`, `.d::`, and `.l::` respectively
 - New Feature: Added suite of dict manipulation functions
 - New Feature: Added suite of list manipulation functions
+
+### Notes
+
+- All api calls to Jaseci admin apis using the `/admin/` route must be updated to `/js_admin/`
 
 ## Version 1.3.1
 
