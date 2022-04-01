@@ -204,11 +204,7 @@ class interp(machine_state):
         """
         kid = self.set_cur_ast(jac_ast)
         for i in kid:
-            if (self._loop_ctrl):
-                if (self._loop_ctrl == 'continue'):
-                    self._loop_ctrl = None
-                return
-            if(i.name == 'statement'):
+            if(i.name == 'statement' and not self._loop_ctrl):
                 self.run_statement(jac_ast=i)
 
     def run_statement(self, jac_ast):
@@ -307,12 +303,13 @@ class interp(machine_state):
         if(kid[1].name == 'expression'):
             self.run_expression(kid[1])
             while self.run_expression(kid[3]).value:
+                self._loop_ctrl = None
                 self.run_code_block(kid[6])
-                loops += 1
-                if (self._loop_ctrl == 'break'):
-                    self._loop_ctrl = None
-                    break
                 self.run_expression(kid[5])
+                loops += 1
+                if (self._loop_ctrl and self._loop_ctrl == 'break'):
+                    break
+                self._loop_ctrl = None
                 if(loops > self._loop_limit):
                     self.rt_error(f'Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
@@ -328,9 +325,9 @@ class interp(machine_state):
                 var.write(kid[1])
                 self.run_code_block(kid[4])
                 loops += 1
-                if (self._loop_ctrl == 'break'):
-                    self._loop_ctrl = None
+                if (self._loop_ctrl and self._loop_ctrl == 'break'):
                     break
+                self._loop_ctrl = None
                 if(loops > self._loop_limit):
                     self.rt_error(f'Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
@@ -344,9 +341,9 @@ class interp(machine_state):
         while self.run_expression(kid[1]).value:
             self.run_code_block(kid[2])
             loops += 1
-            if (self._loop_ctrl == 'break'):
-                self._loop_ctrl = None
+            if (self._loop_ctrl and self._loop_ctrl == 'break'):
                 break
+            self._loop_ctrl = None
             if(loops > self._loop_limit):
                 self.rt_error(f'Hit loop limit, breaking...', kid[0])
                 self._loop_ctrl = 'break'

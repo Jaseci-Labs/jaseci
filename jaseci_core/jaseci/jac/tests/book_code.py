@@ -131,6 +131,21 @@ continue_stmt = \
     }
     """
 
+continue_stmt2 = \
+    """
+    walker init {
+        z=10;
+
+        while(z>=0){
+            z-=1;
+            if(z<5){
+                continue;
+            }
+            std.out("hello", z);
+        }
+    }
+    """
+
 destroy_disconn = \
     """
     node testnode {

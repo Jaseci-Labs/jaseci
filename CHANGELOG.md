@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Fix: Believe it or not, I never fully implemented `continue`. LIKE REALLY??? Anyway, fixed now. FTLOG!
 - New Feature: Added `jac dot` cli command much like `jac run` but prints dot graph
 - New Feature: Created shorthand for string, list, and dict functions i.e., `.s::`, `.d::`, and `.l::` respectively
 - New Feature: Added suite of dict manipulation functions

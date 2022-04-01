@@ -88,7 +88,7 @@ class jac_api():
     def jac_dot(self, file: str, walk: str = 'init', ctx: dict = {},
                 profiling: bool = False):
         """
-        Command line tooling for a walker then output graph in both .jac code 
+        Command line tooling for a walker then output graph in both .jac code
         files and .jir executables
         """
         if(not os.path.isfile(file)):
