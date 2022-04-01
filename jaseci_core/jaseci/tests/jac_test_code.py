@@ -1278,3 +1278,12 @@ auto_cast = \
         report 1.0==1;
     }
     """
+
+no_error_on_dict_key_assign = \
+    """
+    walker init {
+        a={};
+        a['b']=4;
+        report a;
+    }
+    """
