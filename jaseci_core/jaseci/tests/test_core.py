@@ -3,12 +3,14 @@ from unittest import TestCase
 
 from jaseci.graph.node import node
 from jaseci.element.master import master
+from jaseci.element.super_master import super_master
 from jaseci.element.element import element
 from jaseci.graph.graph import graph
 from jaseci.actor.sentinel import sentinel
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import get_all_subclasses
 import jaseci.tests.jac_test_code as jtc
+import uuid
 
 
 class architype_tests(TestCaseHelper, TestCase):
@@ -85,3 +87,15 @@ class architype_tests(TestCaseHelper, TestCase):
             new.json_load(blob1)
             self.assertEqual(orig.id, new.id)
             self.assertTrue(orig.is_equivalent(new))
+
+    def test_supermaster_can_touch_all_data(self):
+        mh = mem_hook()
+        mast = master(h=mh)
+        mast2 = master(h=mh)
+        node12 = node(m_id=mast2._m_id, h=mast2._h)
+        supmast = super_master(h=mh)
+        bad = mh.get_obj(mast._m_id, uuid.UUID(node12.jid))
+        good = mh.get_obj(supmast._m_id, uuid.UUID(node12.jid))
+        self.assertEqual(good, node12)
+        self.assertNotEqual(bad, node12)
+        self.assertIsNone(bad)

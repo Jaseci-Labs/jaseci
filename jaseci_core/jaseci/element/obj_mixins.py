@@ -75,8 +75,7 @@ class sharable():
         """Quick check if caller is super master"""
         if(not hasattr(self, "_h")):
             return False
-        user = self._h.get_obj(uuid.UUID(int=0).urn,
-                               uuid.UUID(caller_id))
+        user = self._h.get_obj(caller_id, uuid.UUID(caller_id), override=True)
         if(user.j_type == 'super_master'):
             return True
         return False
