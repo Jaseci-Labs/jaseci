@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Improvement: No longer saves action data into graph and keeps it in architypes
 - New Feature: Walkers can be called directly using `wapi/{walkername}` api
 - New Feature: New `master_allusers` API available for super master users
 - Improvement: Superusers now have access to all data
