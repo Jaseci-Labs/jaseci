@@ -176,8 +176,8 @@ class walker_api():
         return res
 
     @interface.private_api(cli_args=['name'], url_args=['name'])
-    def w_api(self, name: str, nd: node = None, ctx: dict = {},
-              snt: sentinel = None, profiling: bool = False):
+    def wapi(self, name: str, nd: node = None, ctx: dict = {},
+             snt: sentinel = None, profiling: bool = False):
         """
         Walker individual APIs
         """
