@@ -59,6 +59,11 @@ class machine_state():
 
     # Helper Functions ##################
 
+    def get_arch_for(self, obj):
+        """Returns the architype that matches object"""
+        return self.parent().arch_ids.get_obj_by_name(
+            name=obj.name, kind=obj.kind)
+
     def obj_set_to_jac_set(self, obj_set):
         """
         Returns nodes jac_set from edge jac_set from current node

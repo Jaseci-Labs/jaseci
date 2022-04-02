@@ -33,8 +33,7 @@ class interp(machine_state):
             if(obj.j_type == 'walker'):
                 self.run_can_stmt(kid[0], obj)
             else:
-                obj = self.parent().arch_ids.get_obj_by_name(
-                    name=obj.name, kind=obj.kind)
+                obj = self.get_arch_for(obj)
                 if(not obj._can_compiled_flag):
                     self.run_can_stmt(kid[0], obj)
 
@@ -743,8 +742,7 @@ class interp(machine_state):
         elif (kid[0].name == 'DBL_COLON'):
             if(len(kid) > 2):
                 self.run_spawn_ctx(kid[2], atom_res.value)
-            arch = self.parent().arch_ids.get_obj_by_name(
-                name=atom_res.value.name, kind=atom_res.value.kind)
+            arch = self.get_arch_for(atom_res.value)
             self.call_ability(
                 nd=atom_res.value,
                 name=kid[1].token_text(),
@@ -1463,8 +1461,7 @@ class interp(machine_state):
 
     def call_ability(self, nd, name, act_list):
         m = interp(parent_override=self.parent(), caller=self)
-        arch = self.parent().arch_ids.get_obj_by_name(
-            name=nd.name, kind=nd.kind)
+        arch = self.get_arch_for(nd)
         m.push_scope(jac_scope(parent=nd,
                                has_obj=nd,
                                action_sets=[arch.activity_action_ids]))
