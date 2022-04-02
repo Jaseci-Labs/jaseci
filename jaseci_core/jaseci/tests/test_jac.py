@@ -384,8 +384,8 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         self.assertEqual(2, len(test_walker.report[0][0].keys()))
         self.assertGreaterEqual(len(test_walker.report[0][1].keys()), 7)
-        self.assertLess(len(test_walker.report[0][1].keys()), 16)
-        self.assertGreaterEqual(len(test_walker.report[0][2].keys()), 16)
+        self.assertLess(len(test_walker.report[0][1].keys()), 14)
+        self.assertGreaterEqual(len(test_walker.report[0][2].keys()), 14)
 
     def test_spawn_ctx_for_edges_nodes(self):
         """Test builtins to see into nodes and edges"""
@@ -738,7 +738,6 @@ class jac_tests(TestCaseHelper, TestCase):
                       test_walker.runtime_errors[0])
 
     def test_root_type_nodes(self):
-        self.logger_on()
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.root_type_nodes)

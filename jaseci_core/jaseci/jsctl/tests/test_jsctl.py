@@ -189,7 +189,6 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(
             "sentinel register "
             "jaseci/jsctl/tests/ll_base.jac -set_active true")
-        self.logger_off()
         self.call("walker run init")
         self.call("walker run gen_rand_life")
         r = self.call_cast("walker run get_gen_day")

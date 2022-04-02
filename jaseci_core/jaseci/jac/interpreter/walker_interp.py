@@ -39,9 +39,11 @@ class walker_interp(interp):
                 if(i.name == 'attr_stmt'):
                     self.run_attr_stmt(jac_ast=i, obj=self)
 
+        arch = self.parent().arch_ids.get_obj_by_name(
+            name=self.current_node.name, kind=self.current_node.kind)
         self.auto_trigger_node_actions(
             nd=self.current_node,
-            act_list=self.current_node.entry_action_ids)
+            act_list=arch.entry_action_ids)
 
         for i in kid:
             if(i.name == 'walk_entry_block'):
@@ -54,9 +56,11 @@ class walker_interp(interp):
                 self.run_walk_exit_block(i)
 
         # self.trigger_activity_actions()
+        arch = self.parent().arch_ids.get_obj_by_name(
+            name=self.current_node.name, kind=self.current_node.kind)
         self.auto_trigger_node_actions(
             nd=self.current_node,
-            act_list=self.current_node.exit_action_ids)
+            act_list=arch.exit_action_ids)
 
     def run_node_ctx_block(self, jac_ast):
         """
@@ -157,10 +161,12 @@ class walker_interp(interp):
         kid = self.set_cur_ast(jac_ast)
         param_list = []
         m = interp(parent_override=self.parent(), caller=self)
+        arch = self.parent().arch_ids.get_obj_by_name(
+            name=obj.name, kind=obj.kind)
         m.push_scope(jac_scope(parent=self,
                                has_obj=obj,
                                action_sets=[
-                                   obj.activity_action_ids]))
+                                   arch.activity_action_ids]))
         m._jac_scope.set_agent_refs(cur_node=self.current_node,
                                     cur_walker=self)
 
@@ -200,12 +206,14 @@ class walker_interp(interp):
         Helper to run ast elements with execution scope added
         (Useful for running arbitrary code blocks as one-offs)
         """
+        arch = self.parent().arch_ids.get_obj_by_name(
+            name=self.current_node.name, kind=self.current_node.kind)
         self.push_scope(
             jac_scope(
                 parent=self,
                 has_obj=self,
                 action_sets=[self.activity_action_ids,
-                             self.current_node.activity_action_ids]))
+                             arch.activity_action_ids]))
         self._jac_scope.set_agent_refs(cur_node=self.current_node,
                                        cur_walker=self)
 
