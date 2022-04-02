@@ -31,13 +31,13 @@ class AbstractJacAPIView(APIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request):
+    def post(self, request, *kwargs):
         """
         General post function that parses api signature to load parms
         SuperSmart Post - can read signatures of master and process
         bodies accordingly
         """
-        self.proc_request(request)
+        self.proc_request(request, *kwargs)
 
         api_result = self.caller.general_interface_to_api(
             self.cmd, type(self).__name__)
@@ -58,13 +58,14 @@ class AbstractJacAPIView(APIView):
             f' completed in {TY}{tot_time:.3f} seconds{EC}'
             f' saving {TY}{save_count}{EC} objects.'))
 
-    def proc_request(self, request):
+    def proc_request(self, request, *kwargs):
         """Parse request to field set"""
         pl_peek = str(dict(request.data))[:256]
         logger.info(str(
             f'Incoming call to {type(self).__name__} with {pl_peek}'))
         self.start_time = time()
         self.cmd = request.data
+        self.cmd.update(kwargs)
         self.set_caller(request)
         self.res = "Not valid interaction!"
 
