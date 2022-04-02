@@ -53,7 +53,7 @@ walker getEntities {
   // This walker always returns the predefined entities
   has anchor entities;
   with entry {
-    entities = ['Michigan', 'University', 'Jaseci' ];
+    entities = ['Michigan', 'University', 'Jaseci', 'Ann Arbor'];
     // List all the predefined entities here.
   }
 }
@@ -85,7 +85,6 @@ walker segmenter {
   Doc {
     segs =['The University of Michigan is a university located in Ann Arbor.', 'The University of Michigan is recognized as one of the best engineering schools in US.', 'I like coding Jaseci in University of Michigan.'];
     // Please call the AI model API here instead.
-
     for i in segs{
       segNode = spawn here --> node::Chunk(text = i);
       spawn segNode walker::entityExtractor(entities = entities);
@@ -97,13 +96,18 @@ walker segmenter {
 walker entityExtractor {
   // The walker creates entity links based on the given segment (Chunk)
   has entities;
+  can ent_ext.entity_detection;
   Chunk {
     chunkEntities = ["Michigan", "Dream", "Jaseci"];
     // Definitely CALL THE AI HERE!!
-    for entityNode in entities {
-      if (entityNode.name in chunkEntities){
-        here -[Belong]-> entityNode;
-        entityNode.count += 1;
+    entityExtraction = ent_ext.entity_detection(text = here.text)['entities']; 
+    // This is the list of entities detect by the AI model.
+    for entity in entityExtraction {
+      for entityNode in entities {
+        if (entityNode.name == entity['entity_text']){
+          here -[Belong]-> entityNode;
+          entityNode.count += 1;
+        }
       }
     }
   }
