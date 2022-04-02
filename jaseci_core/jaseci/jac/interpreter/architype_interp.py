@@ -22,6 +22,13 @@ class architype_interp(interp):
             | KW_EDGE NAME attr_block
             | KW_GRAPH NAME graph_block;
         """
+        if(jac_ast is None):  # Using defaults
+            if(self.kind == 'node' and self.name in ['root', 'generic']):
+                return node(m_id=self._m_id, h=self._h,
+                            kind=self.kind, name=self.name)
+            elif(self.kind == 'edge' and self.name in ['generic']):
+                return edge(m_id=self._m_id, h=self._h,
+                            kind=self.kind, name=self.name)
         kid = self.set_cur_ast(jac_ast)
         self.push_scope(
             jac_scope(
@@ -57,6 +64,7 @@ class architype_interp(interp):
         for i in kid:
             if(i.name == 'attr_stmt'):
                 self.run_attr_stmt(i, obj)
+        self._can_compiled_flag = True
 
     def run_graph_block(self, jac_ast):
         """

@@ -30,10 +30,20 @@ class sentinel(element, jac_code, sentinel_interp):
         element.__init__(self, *args, **kwargs)
         jac_code.__init__(self, code_ir=None)
         sentinel_interp.__init__(self)
+        self.load_arch_defaults()
+
+    def load_arch_defaults(self):
+        self.arch_ids.add_obj(architype(m_id=self._m_id, h=self._h,
+                                        name='root', kind='node'))
+        self.arch_ids.add_obj(architype(m_id=self._m_id, h=self._h,
+                                        name='generic', kind='node'))
+        self.arch_ids.add_obj(architype(m_id=self._m_id, h=self._h,
+                                        name='generic', kind='edge'))
 
     def reset(self):
         """Resets state of sentinel and unregister's code"""
         self.arch_ids.destroy_all()
+        self.load_arch_defaults()
         self.walker_ids.destroy_all()
         jac_code.reset(self)
         sentinel_interp.reset(self)
@@ -56,6 +66,7 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         Load walkers and architypes from IR
         """
+
         self.run_start(self._jac_ast)
 
         if(self.runtime_errors):

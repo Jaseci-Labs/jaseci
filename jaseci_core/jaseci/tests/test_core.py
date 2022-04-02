@@ -67,7 +67,7 @@ class architype_tests(TestCaseHelper, TestCase):
         mast.sentinel_ids.add_obj(sent)
         mast.graph_ids.add_obj(new_graph)
         num_new = len(mast._h.mem.keys())-len(mast._h.global_action_list)
-        self.assertEqual(num_new, num_objs+2)
+        self.assertEqual(num_new, num_objs+2+3)
 
         sent.register_code(code)
         num_objs = len(mast._h.mem.keys())-len(mast._h.global_action_list)

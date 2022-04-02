@@ -30,7 +30,13 @@ class interp(machine_state):
         if(kid[0].name == 'has_stmt'):
             self.run_has_stmt(kid[0], obj)
         elif(kid[0].name == 'can_stmt'):
-            self.run_can_stmt(kid[0], obj)
+            if(obj.j_type == 'walker'):
+                self.run_can_stmt(kid[0], obj)
+            else:
+                obj = self.parent().arch_ids.get_obj_by_name(
+                    name=obj.name, kind=obj.kind)
+                if(not obj._can_compiled_flag):
+                    self.run_can_stmt(kid[0], obj)
 
     def run_has_stmt(self, jac_ast, obj):
         """
@@ -111,11 +117,11 @@ class interp(machine_state):
             if(len(kid) > 0 and kid[0].name == 'event_clause'):
                 action_type, access_list = self.run_event_clause(kid[0])
                 kid = kid[1:]
-            if (not isinstance(obj, node) and action_type != 'activity'):
-                self.rt_warn(
-                    "Only nodes can have on entry/exit, treating as activity",
-                    kid[0])
-                action_type = 'activity'
+            # if (not isinstance(obj, node) and action_type != 'activity'):
+            #     self.rt_warn(
+            #         "Only nodes has on entry/exit, treating as activity",
+            #         kid[0])
+            #     action_type = 'activity'
             if (kid[0].name == 'code_block'):
                 act = action(
                     m_id=self._m_id,
@@ -737,10 +743,12 @@ class interp(machine_state):
         elif (kid[0].name == 'DBL_COLON'):
             if(len(kid) > 2):
                 self.run_spawn_ctx(kid[2], atom_res.value)
+            arch = self.parent().arch_ids.get_obj_by_name(
+                name=atom_res.value.name, kind=atom_res.value.kind)
             self.call_ability(
                 nd=atom_res.value,
                 name=kid[1].token_text(),
-                act_list=atom_res.value.activity_action_ids)
+                act_list=arch.activity_action_ids)
             return atom_res
 
     def run_ref(self, jac_ast):
@@ -1455,9 +1463,11 @@ class interp(machine_state):
 
     def call_ability(self, nd, name, act_list):
         m = interp(parent_override=self.parent(), caller=self)
+        arch = self.parent().arch_ids.get_obj_by_name(
+            name=nd.name, kind=nd.kind)
         m.push_scope(jac_scope(parent=nd,
                                has_obj=nd,
-                               action_sets=[nd.activity_action_ids]))
+                               action_sets=[arch.activity_action_ids]))
         m._jac_scope.inherit_agent_refs(self._jac_scope)
         m.run_code_block(jac_ir_to_ast(
             act_list.get_obj_by_name(name).value))
