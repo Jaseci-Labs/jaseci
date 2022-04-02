@@ -133,6 +133,8 @@ class walker(element, jac_code, walker_interp, anchored):
             )
 
         report_ret['report'] = self.report
+        if(self.report_status):
+            report_ret['status_code'] = self.report_status
         if(len(self.runtime_errors)):
             report_ret['errors'] = self.runtime_errors
             report_ret['success'] = False
