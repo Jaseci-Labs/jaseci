@@ -4,6 +4,9 @@
 
 ### Updates
 
+- New Feature: Walkers can be called directly using `wapi/{walkername}` api
+- New Feature: New `master_allusers` API available for super master users
+- Improvement: Superusers now have access to all data
 - Improvement: Jaseci's admin api route changed to `/js_admin/...` vs `/admin/` to not conflict with Django's internals
 - Update: Django 3 upgraded to latest as well as all other dependencies.
 - Fix: Believe it or not, I never fully implemented `continue`. LIKE REALLY??? Anyway, fixed now. FTLOG!
