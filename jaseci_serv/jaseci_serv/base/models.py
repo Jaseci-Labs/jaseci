@@ -72,6 +72,20 @@ class super_master(master, core_super):
             return {'response': "Errors occurred",
                     'errors': serializer.errors}
 
+    @interface.admin_api()
+    def master_allusers(self, num: int = None, start_idx: int = None):
+        """
+        Returns info on a set of users, num specifies the number of users to
+        return and start idx specfies where to start
+        """
+        users = get_user_model().objects.all()
+        start = start_idx if start_idx else 0
+        end = start_idx + num if num else len(users)
+        ret = []
+        for i in users[start:end]:
+            ret.append({'user': i.email, 'jid': i.master})
+        return ret
+
 
 class UserManager(BaseUserManager):
     """

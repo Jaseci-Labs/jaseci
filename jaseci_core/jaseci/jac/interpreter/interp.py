@@ -1233,7 +1233,8 @@ class interp(machine_state):
         """
         kid = self.set_cur_ast(jac_ast)
         idx = self.run_expression(kid[1]).value
-        if(type(idx) == str and idx not in atom_res.value.keys()):
+        if(type(idx) == str and idx not in atom_res.value.keys() and
+           not self._assign_mode):
             self.rt_error(f'Key {idx} not found in object/dict.', kid[1])
         if(kid[2].name == "RSQUARE"):
             if(not self.rt_check_type(idx, [int, str], kid[1])):
