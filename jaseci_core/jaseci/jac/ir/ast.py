@@ -1,6 +1,7 @@
 """
 AST for Jac
 """
+from ast import parse
 from antlr4 import InputStream, CommonTokenStream, ParseTreeListener
 from antlr4.error.ErrorListener import ErrorListener
 
@@ -77,12 +78,8 @@ class ast():
         walker.walk(builder, tree)
 
         if(self._parse_errors):
-            for i in self._parse_errors:
-                logger.error(
-                    str(f"{i}")
-                )
             logger.error(
-                str(f"Above parse errors encountered - {self}")
+                str(f"Parse errors encountered - {self}")
             )
 
     def __str__(self):
@@ -145,6 +142,8 @@ class ast():
                 err = f"Module not found for import! {mod_name} from" +\
                     f" {from_mod}"
                 self.tree_root._parse_errors.append(err)
+            if(parsed_ast):
+                self.tree_root._parse_errors += parsed_ast._parse_errors
             import_elements = list(filter(lambda x:
                                           x.name == 'element',
                                           parsed_ast.kid))
