@@ -637,7 +637,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[0], {'args': ('division by zero',),
                                   'col': 8,
                                   'line': 5,
-                                  'mod': '@default',
+                                  'mod': 'basic',
                                   'msg': 'division by zero',
                                   'type': 'ZeroDivisionError'})
         self.assertEqual(rep[1], 'dont need err')

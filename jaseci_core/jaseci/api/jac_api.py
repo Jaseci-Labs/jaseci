@@ -54,7 +54,7 @@ class jac_api():
                 faux.sentinel_set(snt=faux.active_snt(),
                                   code=file.read(), mode='ir')
             else:
-                ret = faux.sentinel_register(code=file.read())
+                ret = faux.sentinel_register(code=file.read(), auto_run='')
                 if('success' in ret and not ret['success']):
                     return ret
         return faux.sentinel_test(snt=faux.active_snt(), detailed=detailed)

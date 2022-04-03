@@ -1,7 +1,6 @@
 """
 AST for Jac
 """
-from ast import parse
 from antlr4 import InputStream, CommonTokenStream, ParseTreeListener
 from antlr4.error.ErrorListener import ErrorListener
 
@@ -21,7 +20,7 @@ class ast():
 
     _ast_head_map = {}
 
-    def __init__(self, jac_text=None, mod_name=None,
+    def __init__(self, mod_name, jac_text=None,
                  parse_errors=None, start_rule='start', fresh_start=True):
         if(fresh_start):
             ast._ast_head_map = {}
@@ -129,7 +128,7 @@ class ast():
             fn = parse_str_token(kid[-2].token_text())
             mod_name = fn
             from_mod = self.tree_root.mod_name
-            logger.info(f"Importing items from {mod_name} to {from_mod}...")
+            logger.debug(f"Importing items from {mod_name} to {from_mod}...")
             parsed_ast = None
             if(mod_name in ast._ast_head_map.keys()):
                 parsed_ast = ast._ast_head_map[mod_name]
@@ -204,7 +203,8 @@ class ast():
             if(len(self.node_stack) == 0):
                 new_node = self.tree_root
             else:
-                new_node = ast(fresh_start=False)
+                new_node = ast(mod_name=self.tree_root.mod_name,
+                               fresh_start=False)
             new_node.name = jacParser.ruleNames[ctx.getRuleIndex()]
             new_node.kind = 'rule'
             new_node._parse_errors = self.tree_root._parse_errors
@@ -223,7 +223,7 @@ class ast():
 
         def visitTerminal(self, node):
             """Visits terminals as walker walks, adds ast node"""
-            new_node = ast(fresh_start=False)
+            new_node = ast(mod_name=self.tree_root.mod_name, fresh_start=False)
             new_node.name = jacParser.symbolicNames[node.getSymbol().type]
             new_node.kind = 'terminal'
             new_node.line = node.getSymbol().line
