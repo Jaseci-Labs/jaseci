@@ -1,6 +1,6 @@
 grammar jac;
 
-start: ver_label? import_module* element+ EOF;
+start: ver_label? import_module* element* EOF;
 
 import_module:
 	KW_IMPORT LBRACE (import_items | STAR_MUL) RBRACE KW_WITH STRING SEMI;

@@ -50,12 +50,12 @@ class sentinel(element, jac_code, sentinel_interp):
         super().refresh()
         self.ir_load()
 
-    def register_code(self, text):
+    def register_code(self, text, dir='./'):
         """
         Registers a program (set of walkers and architypes) written in Jac
         """
         self.reset()
-        self.register(text)
+        self.register(text, dir)
         if(self.is_active):
             self.ir_load()
         return self.is_active
