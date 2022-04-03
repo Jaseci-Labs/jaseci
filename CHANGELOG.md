@@ -4,6 +4,8 @@
 
 ### Updates
 
+- Improvement: Status codes auto plucked from return payload in jsserv
+- New Feature: Can now control status codes with `report.status = 201` style statements
 - Improvement: No longer saves action data into graph and keeps it in architypes
 - New Feature: Walkers can be called directly using `wapi/{walkername}` api
 - New Feature: New `master_allusers` API available for super master users
