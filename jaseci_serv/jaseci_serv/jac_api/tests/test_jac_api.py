@@ -820,3 +820,21 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse('jac_api:wapi', args=['testwalker']), payload)
         self.assertTrue(res.data['success'])
+
+    def test_jac_report_status_pluck(self):
+        """Test API for running a walker"""
+        payload = {'op': 'graph_create'}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {'op': 'sentinel_register', 'name': 'Something',
+                   'code': 'walker ss {report.status = 302; report 4;}', }
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload,
+                               format='json')
+
+        payload = {}
+        res = self.client.post(
+            reverse('jac_api:walker_list'), payload)
+        self.assertEqual(len(res.data), 1)
+        res = self.client.post(
+            reverse('jac_api:wapi', args=['ss']), payload)
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(res.data['success'])

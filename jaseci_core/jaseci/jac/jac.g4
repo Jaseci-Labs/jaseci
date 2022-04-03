@@ -127,7 +127,9 @@ assert_stmt: KW_ASSERT expression;
 
 destroy_action: KW_DESTROY expression SEMI;
 
-report_action: KW_REPORT expression SEMI;
+report_action:
+	KW_REPORT expression SEMI
+	| KW_REPORT DOT NAME EQ INT SEMI;
 
 walker_action: ignore_action | take_action | KW_DISENGAGE SEMI;
 

@@ -33,8 +33,7 @@ class interp(machine_state):
             if(obj.j_type == 'walker'):
                 self.run_can_stmt(kid[0], obj)
             else:
-                obj = self.parent().arch_ids.get_obj_by_name(
-                    name=obj.name, kind=obj.kind)
+                obj = self.get_arch_for(obj)
                 if(not obj._can_compiled_flag):
                     self.run_can_stmt(kid[0], obj)
 
@@ -393,13 +392,21 @@ class interp(machine_state):
 
     def run_report_action(self, jac_ast):
         """
-        report_action: KW_REPORT expression SEMI;
+        report_action:
+            KW_REPORT expression SEMI
+            | KW_REPORT DOT NAME EQ INT SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
-        report = self.run_expression(kid[1]).wrap(serialize_mode=True)
-        if(not is_jsonable(report)):
-            self.rt_error(f'Report not Json serializable', kid[0])
-        self.report.append(copy(report))
+        if(kid[1].name == "DOT"):
+            if(kid[2].token_text() in ['status', 'status_code']):
+                self.report_status = int(kid[4].token_text())
+            else:
+                self.rt_error(f'Invalid report attribute to set', kid[2])
+        else:
+            report = self.run_expression(kid[1]).wrap(serialize_mode=True)
+            if(not is_jsonable(report)):
+                self.rt_error(f'Report not Json serializable', kid[0])
+            self.report.append(copy(report))
 
     def run_expression(self, jac_ast):
         """
@@ -743,8 +750,7 @@ class interp(machine_state):
         elif (kid[0].name == 'DBL_COLON'):
             if(len(kid) > 2):
                 self.run_spawn_ctx(kid[2], atom_res.value)
-            arch = self.parent().arch_ids.get_obj_by_name(
-                name=atom_res.value.name, kind=atom_res.value.kind)
+            arch = self.get_arch_for(atom_res.value)
             self.call_ability(
                 nd=atom_res.value,
                 name=kid[1].token_text(),
@@ -1353,6 +1359,8 @@ class interp(machine_state):
         ret = jac_value(self, value=walk.anchor_value())
         ret.unwrap()
         self.report += walk.report
+        if(walk.report_status):
+            self.report_status = walk.report_status
         self.runtime_errors += walk.runtime_errors
         walk.destroy()
         return ret
@@ -1463,8 +1471,7 @@ class interp(machine_state):
 
     def call_ability(self, nd, name, act_list):
         m = interp(parent_override=self.parent(), caller=self)
-        arch = self.parent().arch_ids.get_obj_by_name(
-            name=nd.name, kind=nd.kind)
+        arch = self.get_arch_for(nd)
         m.push_scope(jac_scope(parent=nd,
                                has_obj=nd,
                                action_sets=[arch.activity_action_ids]))
@@ -1472,6 +1479,8 @@ class interp(machine_state):
         m.run_code_block(jac_ir_to_ast(
             act_list.get_obj_by_name(name).value))
         self.report += m.report
+        if(m.report_status):
+            self.report_status = m.report_status
         self.runtime_errors += m.runtime_errors
 
     def run_rule(self, jac_ast, *args):

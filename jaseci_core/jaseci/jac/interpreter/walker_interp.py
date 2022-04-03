@@ -39,8 +39,7 @@ class walker_interp(interp):
                 if(i.name == 'attr_stmt'):
                     self.run_attr_stmt(jac_ast=i, obj=self)
 
-        arch = self.parent().arch_ids.get_obj_by_name(
-            name=self.current_node.name, kind=self.current_node.kind)
+        arch = self.get_arch_for(self.current_node)
         self.auto_trigger_node_actions(
             nd=self.current_node,
             act_list=arch.entry_action_ids)
@@ -56,8 +55,7 @@ class walker_interp(interp):
                 self.run_walk_exit_block(i)
 
         # self.trigger_activity_actions()
-        arch = self.parent().arch_ids.get_obj_by_name(
-            name=self.current_node.name, kind=self.current_node.kind)
+        arch = self.get_arch_for(self.current_node)
         self.auto_trigger_node_actions(
             nd=self.current_node,
             act_list=arch.exit_action_ids)
@@ -161,8 +159,7 @@ class walker_interp(interp):
         kid = self.set_cur_ast(jac_ast)
         param_list = []
         m = interp(parent_override=self.parent(), caller=self)
-        arch = self.parent().arch_ids.get_obj_by_name(
-            name=obj.name, kind=obj.kind)
+        arch = self.get_arch_for(obj)
         m.push_scope(jac_scope(parent=self,
                                has_obj=obj,
                                action_sets=[
@@ -206,8 +203,7 @@ class walker_interp(interp):
         Helper to run ast elements with execution scope added
         (Useful for running arbitrary code blocks as one-offs)
         """
-        arch = self.parent().arch_ids.get_obj_by_name(
-            name=self.current_node.name, kind=self.current_node.kind)
+        arch = self.get_arch_for(self.current_node)
         self.push_scope(
             jac_scope(
                 parent=self,

@@ -73,13 +73,21 @@ class AbstractJacAPIView(APIView):
         """Assigns the calling api interface obj"""
         self.caller = request.user.get_master()
 
+    def pluck_status_code(self, api_result):
+        """Extracts status code out of payload"""
+        status = 200
+        if(isinstance(api_result, dict) and 'status_code' in api_result):
+            status = api_result['status_code']
+        return status
+
     def issue_response(self, api_result):
         """Issue response from call"""
         # self.caller._h.commit()
         # return Response(api_result)
         # for i in self.caller._h.save_obj_list:
         #     self.caller._h.commit_obj_to_redis(i)
-        return JResponse(self.caller, api_result)
+        status = self.pluck_status_code(api_result)
+        return JResponse(self.caller, api_result, status=status)
 
 
 class AbstractAdminJacAPIView(AbstractJacAPIView):
@@ -118,7 +126,9 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
     def issue_response(self, api_result):
         """Issue response from call"""
         # If committer set, results should be saved back
+        status = self.pluck_status_code(api_result)
         if(self.caller._pub_committer):
-            return JResponse(self.caller._pub_committer, api_result)
+            return JResponse(self.caller._pub_committer,
+                             api_result, status=status)
         else:
-            return Response(api_result)
+            return Response(api_result, status=status)
