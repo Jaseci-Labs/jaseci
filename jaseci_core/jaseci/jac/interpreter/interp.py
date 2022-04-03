@@ -1367,18 +1367,21 @@ class interp(machine_state):
 
     def run_graph_spawn(self, jac_ast, location):
         """
-        graph_spawn: edge_ref graph_ref;
+        graph_spawn: edge_ref? graph_ref;
         """
         kid = self.set_cur_ast(jac_ast)
-        use_edge = self.run_edge_ref(kid[0], is_spawn=True)
-        result = self.run_graph_ref(kid[1])
-        direction = kid[0].kid[0].name
-        if (direction == 'edge_from'):
-            location.attach_inbound(result, [use_edge])
-        elif (direction == 'edge_to'):
-            location.attach_outbound(result, [use_edge])
+        if(kid[0].name == 'graph_ref'):
+            result = self.run_graph_ref(kid[0])
         else:
-            location.attach_bidirected(result, [use_edge])
+            use_edge = self.run_edge_ref(kid[0], is_spawn=True)
+            result = self.run_graph_ref(kid[1])
+            direction = kid[0].kid[0].name
+            if (direction == 'edge_from'):
+                location.attach_inbound(result, [use_edge])
+            elif (direction == 'edge_to'):
+                location.attach_outbound(result, [use_edge])
+            else:
+                location.attach_bidirected(result, [use_edge])
         return jac_value(self, value=result)
 
     def run_spawn_ctx(self, jac_ast, obj):

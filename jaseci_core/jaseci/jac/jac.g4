@@ -261,7 +261,7 @@ spawn_object: node_spawn | walker_spawn | graph_spawn;
 
 node_spawn: edge_ref? node_ref spawn_ctx?;
 
-graph_spawn: edge_ref graph_ref;
+graph_spawn: edge_ref? graph_ref;
 
 walker_spawn: walker_ref spawn_ctx?;
 

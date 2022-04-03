@@ -1292,3 +1292,33 @@ report_status = \
     """
     walker init {report.status = 302; report "hello";}
     """
+
+
+graph_in_graph = \
+    """
+    graph one {
+        has anchor graph_root;
+        spawn {
+            graph_root = spawn node::generic;
+        }
+    }
+
+    graph two {
+        has anchor graph_root;
+        spawn {
+
+            graph_root = spawn node::generic;
+            day1 = spawn graph::one;
+
+            graph_root --> day1;
+        }
+    }
+
+    walker init {
+        root {
+            spawn here --> graph::two;
+        }
+        take -->;
+        report here;
+    }
+    """
