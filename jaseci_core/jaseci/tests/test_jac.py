@@ -792,3 +792,15 @@ class jac_tests(TestCaseHelper, TestCase):
         report = test_walker.report
         self.assertEqual(report, [{'b': 4}])
         self.assertEqual(len(test_walker.runtime_errors), 0)
+
+    def test_report_status(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.report_status)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        report = test_walker.report
+        self.assertEqual(report, ['hello'])
+        self.assertEqual(test_walker.report_status, 302)

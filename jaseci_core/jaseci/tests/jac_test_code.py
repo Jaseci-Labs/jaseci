@@ -1287,3 +1287,8 @@ no_error_on_dict_key_assign = \
         report a;
     }
     """
+
+report_status = \
+    """
+    walker init {report.status = 302; report "hello";}
+    """
