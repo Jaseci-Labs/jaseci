@@ -7,9 +7,13 @@
 
 ## Properties
 
-| Property | Attribute | Description | Type     | Default     |
-| -------- | --------- | ----------- | -------- | ----------- |
-| `label`  | `label`   |             | `string` | `undefined` |
+| Property | Attribute | Description | Type     | Default              |
+| -------- | --------- | ----------- | -------- | -------------------- |
+| `css`    | `css`     |             | `string` | `JSON.stringify({})` |
+| `events` | `events`  |             | `string` | `undefined`          |
+| `href`   | `href`    |             | `string` | `undefined`          |
+| `label`  | `label`   |             | `string` | `undefined`          |
+| `target` | `target`  |             | `string` | `undefined`          |
 
 
 ----------------------------------------------

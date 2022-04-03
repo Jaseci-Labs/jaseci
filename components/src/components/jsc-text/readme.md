@@ -7,10 +7,13 @@
 
 ## Properties
 
-| Property  | Attribute | Description | Type                  | Default     |
-| --------- | --------- | ----------- | --------------------- | ----------- |
-| `value`   | `value`   |             | `string`              | `undefined` |
-| `variant` | `variant` |             | `"simple" \| "title"` | `'simple'`  |
+| Property  | Attribute | Description | Type                  | Default                               |
+| --------- | --------- | ----------- | --------------------- | ------------------------------------- |
+| `css`     | `css`     |             | `string`              | `JSON.stringify({})`                  |
+| `events`  | `events`  |             | `string`              | `undefined`                           |
+| `state`   | `state`   |             | `string`              | `JSON.stringify({ counterValue: 2 })` |
+| `value`   | `value`   |             | `string`              | `undefined`                           |
+| `variant` | `variant` |             | `"simple" \| "title"` | `'simple'`                            |
 
 
 ----------------------------------------------

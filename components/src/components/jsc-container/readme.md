@@ -7,14 +7,11 @@
 
 ## Properties
 
-| Property     | Attribute    | Description | Type     | Default     |
-| ------------ | ------------ | ----------- | -------- | ----------- |
-| `background` | `background` |             | `string` | `undefined` |
-| `border`     | `border`     |             | `string` | `undefined` |
-| `height`     | `height`     |             | `string` | `undefined` |
-| `margin`     | `margin`     |             | `string` | `undefined` |
-| `padding`    | `padding`    |             | `string` | `undefined` |
-| `width`      | `width`      |             | `string` | `undefined` |
+| Property | Attribute | Description | Type     | Default              |
+| -------- | --------- | ----------- | -------- | -------------------- |
+| `css`    | `css`     |             | `string` | `JSON.stringify({})` |
+| `events` | `events`  |             | `string` | `undefined`          |
+| `name`   | `name`    |             | `string` | `undefined`          |
 
 
 ----------------------------------------------

@@ -7,10 +7,12 @@
 
 ## Properties
 
-| Property | Attribute | Description               | Type     | Default     |
-| -------- | --------- | ------------------------- | -------- | ----------- |
-| `label`  | `label`   | The title of the app bar. | `string` | `undefined` |
-| `links`  | `links`   |                           | `string` | `undefined` |
+| Property | Attribute | Description               | Type     | Default              |
+| -------- | --------- | ------------------------- | -------- | -------------------- |
+| `css`    | `css`     |                           | `string` | `JSON.stringify({})` |
+| `events` | `events`  |                           | `string` | `undefined`          |
+| `label`  | `label`   | The title of the app bar. | `string` | `undefined`          |
+| `name`   | `name`    |                           | `string` | `undefined`          |
 
 
 ----------------------------------------------

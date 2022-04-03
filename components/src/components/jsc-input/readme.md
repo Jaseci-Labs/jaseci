@@ -7,14 +7,15 @@
 
 ## Properties
 
-| Property      | Attribute     | Description | Type     | Default     |
-| ------------- | ------------- | ----------- | -------- | ----------- |
-| `events`      | `events`      |             | `string` | `undefined` |
-| `fullwidth`   | `fullwidth`   |             | `string` | `undefined` |
-| `margin`      | `margin`      |             | `string` | `undefined` |
-| `padding`     | `padding`     |             | `string` | `undefined` |
-| `placeholder` | `placeholder` |             | `string` | `undefined` |
-| `value`       | `value`       |             | `string` | `undefined` |
+| Property      | Attribute     | Description | Type     | Default              |
+| ------------- | ------------- | ----------- | -------- | -------------------- |
+| `css`         | `css`         |             | `string` | `JSON.stringify({})` |
+| `events`      | `events`      |             | `string` | `undefined`          |
+| `fullwidth`   | `fullwidth`   |             | `string` | `undefined`          |
+| `label`       | `label`       |             | `string` | `undefined`          |
+| `name`        | `name`        |             | `string` | `undefined`          |
+| `placeholder` | `placeholder` |             | `string` | `undefined`          |
+| `value`       | `value`       |             | `string` | `undefined`          |
 
 
 ## Events
@@ -23,6 +24,19 @@
 | -------------- | ----------- | --------------------- |
 | `valueChanged` |             | `CustomEvent<string>` |
 
+
+## Dependencies
+
+### Depends on
+
+- [jsc-label](../jsc-label)
+
+### Graph
+```mermaid
+graph TD;
+  jsc-inputbox --> jsc-label
+  style jsc-inputbox fill:#f9f,stroke:#333,stroke-width:4px
+```
 
 ----------------------------------------------
 
