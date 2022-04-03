@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Feature: Standard input `std.input(prompt)` :-p
 - Improvement: Status codes auto plucked from return payload in jsserv
 - New Feature: Can now control status codes with `report.status = 201` style statements
 - Improvement: No longer saves action data into graph and keeps it in architypes

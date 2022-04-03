@@ -745,7 +745,7 @@ class interp(machine_state):
                     ret = None
                 return jac_value(self, value=ret)
             else:
-                self.rt_error(f'Unable to execute ability {atom_res}',
+                self.rt_error(f'Unable to execute ability',
                               kid[0])
         elif (kid[0].name == 'DBL_COLON'):
             if(len(kid) > 2):
