@@ -64,10 +64,10 @@ class entity_extraction_test(TestCaseHelper, TestCase):
             "/train/",
             json=test_entity_training_pass
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
-            "Model Training is started"
+            "Model Training is Completed"
         )
 
     def test_entity_training_fail(self):
@@ -109,6 +109,10 @@ class entity_extraction_test(TestCaseHelper, TestCase):
             response.json(),
             "Config setup is complete."
         )
+        response = self.client.post(
+            "/set_config/",
+            json=test_entity_config_setup_ner)
+        self.assertEqual(response.status_code, 200)
 
     def test_entity_config_setup3(self):
         response = self.client.post(
@@ -119,3 +123,7 @@ class entity_extraction_test(TestCaseHelper, TestCase):
             response.json(),
             "Config setup is complete."
         )
+        response = self.client.post(
+            "/set_config/",
+            json=test_entity_config_setup_ner)
+        self.assertEqual(response.status_code, 200)
