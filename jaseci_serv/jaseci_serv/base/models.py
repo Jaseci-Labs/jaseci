@@ -73,7 +73,7 @@ class super_master(master, core_super):
                     'errors': serializer.errors}
 
     @interface.admin_api()
-    def master_allusers(self, num: int = None, start_idx: int = None):
+    def master_allusers(self, num: int = 0, start_idx: int = 0):
         """
         Returns info on a set of users, num specifies the number of users to
         return and start idx specfies where to start
@@ -83,7 +83,7 @@ class super_master(master, core_super):
         end = start_idx + num if num else len(users)
         ret = []
         for i in users[start:end]:
-            ret.append({'user': i.email, 'jid': i.master})
+            ret.append({'user': i.email, 'jid': i.master.urn})
         return ret
 
 
