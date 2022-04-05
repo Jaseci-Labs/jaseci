@@ -6,7 +6,7 @@ interface JaseciComponent {
   // identifies the component type to render
   component: ComponentNames;
   props: JaseciComponentProps;
-  slots?: Record<string, Array<JaseciComponent>>;
+  sections?: Record<string, Array<JaseciComponent>>;
   events?: Record<JaseciEventName, Array<JaseciAction>>;
   css?: Record<string, string>;
 }

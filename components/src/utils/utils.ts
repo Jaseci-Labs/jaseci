@@ -42,7 +42,7 @@ const attachCSS = (renderedTag: string, css: JaseciComponent['css']) => {
 // creates a single tag and attaches the props in the correct format
 export const renderComponent = (jaseciComponent: JaseciComponent) => {
   const renderedTag = renderTag(componentMap[jaseciComponent.component], {
-    withChildren: !!jaseciComponent.slots && Object.keys(jaseciComponent.slots).length > 0,
+    withChildren: !!jaseciComponent.sections && Object.keys(jaseciComponent.sections).length > 0,
   });
   const componentWithProps = attachProps(renderedTag, jaseciComponent.props || {});
   const componentWithName = attachName(componentWithProps, jaseciComponent.name);
@@ -60,11 +60,11 @@ export const renderComponentTree = (jaseciNodes: Array<JaseciComponent>) => {
     jaseciNodes.map(node => {
       markup += renderComponent(node);
       // render child nodes
-      if (node.slots) {
-        Object.keys(node.slots).map(slotName => {
+      if (node.sections) {
+        Object.keys(node.sections).map(sectionName => {
           // replace the last children placeholder in the markup with the current node
           // inserts one node into another
-          markup = markup.replace(new RegExp('{children}'), `<div slot="${slotName}">${renderComponentTree(node.slots[slotName])}</div>`);
+          markup = markup.replace(new RegExp('{children}'), `<div slot="${sectionName}">${renderComponentTree(node.sections[sectionName])}</div>`);
         });
       }
     });
