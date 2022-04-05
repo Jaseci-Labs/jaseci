@@ -186,8 +186,8 @@ class BiEncoder(PreTrainedModel):
             candidate_input_masks = candidate_input_masks[:, 0, :].unsqueeze(1)
         # gets the context embedding
         if get_embedding == "context" or mode == "train" or mode == "eval":
-            context_vec = self.cont_bert(context_input_ids, context_input_masks)[
-                0]  # [bs,dim]
+            context_vec = self.cont_bert(context_input_ids,
+                                         context_input_masks)[0]
             if pooling == "mean":
                 # Mean pooling
                 output_vectors = []
@@ -206,8 +206,8 @@ class BiEncoder(PreTrainedModel):
             batch_size, res_cnt, seq_length = candidate_input_ids.shape
             candidate_input_ids = candidate_input_ids.view(-1, seq_length)
             candidate_input_masks = candidate_input_masks.view(-1, seq_length)
-            candidate_vec = self.cand_bert(candidate_input_ids, candidate_input_masks)[
-                0]  # [bs,dim]
+            candidate_vec = self.cand_bert(candidate_input_ids,
+                                           candidate_input_masks)[0]
             if pooling == "mean":
                 # Mean pooling
                 output_vectors = []

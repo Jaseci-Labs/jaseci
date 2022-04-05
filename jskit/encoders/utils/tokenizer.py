@@ -2,26 +2,34 @@ import torch
 from torch.utils.data import Dataset
 
 
-# this class transforms data in required training format and inference for text and tokens
+# this class transforms data in required training format
+# and inference for text and tokens
 class SelectionDataset(Dataset):
-    def __init__(self, contexts, candidates, context_transform, candidate_transform, labels=None, mode='train'):
+    def __init__(self, contexts, candidates, context_transform,
+                 candidate_transform, labels=None, mode='train'):
         self.context_transform = context_transform
         self.candidate_transform = candidate_transform
         self.data_source = []
         self.mode = mode
-        group = {
-            'context': None,
-            'candidates': [],
-            'labels': []
-        }
         if mode == "eval":
             for text in contexts:
-                for cand, lbl in zip(candidates, labels):
+                group = {
+                    'context': None,
+                    'candidates': [],
+                    'labels': []
+                }
+                for cand in candidates:
                     group['candidates'].append(cand)
-                    group['labels'].append(lbl)
+                    # below label is 0 for all,used for help in inference
+                    group['labels'].append(0)
                     group['context'] = [text]
                 self.data_source.append(group)
         else:
+            group = {
+                'context': None,
+                'candidates': [],
+                'labels': []
+            }
             for text, cand, lbl in zip(contexts, candidates, labels):
                 if lbl == 1 and len(group['candidates']) > 0:
                     self.data_source.append(group)
@@ -35,7 +43,6 @@ class SelectionDataset(Dataset):
                 group['context'] = [text]
             if len(group['candidates']) > 0:
                 self.data_source.append(group)
-            # print(self.data_source)
         group = {
             'context': None,
             'candidates': [],
@@ -56,7 +63,8 @@ class SelectionDataset(Dataset):
 
     def __getitem__(self, index):
         group = self.data_source[index]
-        context, candidates, labels = group['context'], group['candidates'], group['labels']
+        context, candidates, labels = group['context'], \
+            group['candidates'], group['labels']
 
         transformed_context = self.context_transform(
             context)  # [token_ids],[seg_ids],[masks]
@@ -69,11 +77,13 @@ class SelectionDataset(Dataset):
     def batchify_join_str(self, batch):
 
         contexts_token_ids_list_batch, contexts_input_masks_list_batch, \
-            candidates_token_ids_list_batch, candidates_input_masks_list_batch = [], [], [], []
+            candidates_token_ids_list_batch, \
+            candidates_input_masks_list_batch = [], [], [], []
         labels_batch = []
         for sample in batch:
-            (contexts_token_ids_list, contexts_input_masks_list), (
-                candidates_token_ids_list, candidates_input_masks_list) = sample[:2]
+            (contexts_token_ids_list, contexts_input_masks_list), \
+                (candidates_token_ids_list,
+                 candidates_input_masks_list) = sample[:2]
 
             contexts_token_ids_list_batch.append(contexts_token_ids_list)
             contexts_input_masks_list_batch.append(
@@ -85,21 +95,27 @@ class SelectionDataset(Dataset):
 
             labels_batch.append(sample[-1])
 
-        long_tensors = [contexts_token_ids_list_batch, contexts_input_masks_list_batch,
-                        candidates_token_ids_list_batch, candidates_input_masks_list_batch]
+        long_tensors = [contexts_token_ids_list_batch,
+                        contexts_input_masks_list_batch,
+                        candidates_token_ids_list_batch,
+                        candidates_input_masks_list_batch]
 
         contexts_token_ids_list_batch, contexts_input_masks_list_batch, \
-            candidates_token_ids_list_batch, candidates_input_masks_list_batch = (
+            candidates_token_ids_list_batch, \
+            candidates_input_masks_list_batch = (
                 torch.tensor(t, dtype=torch.long) for t in long_tensors)
 
         labels_batch = torch.tensor(labels_batch, dtype=torch.long)
-        return contexts_token_ids_list_batch, contexts_input_masks_list_batch, \
-            candidates_token_ids_list_batch, candidates_input_masks_list_batch, labels_batch
+        return contexts_token_ids_list_batch,  \
+            contexts_input_masks_list_batch, \
+            candidates_token_ids_list_batch, \
+            candidates_input_masks_list_batch, labels_batch
 
 
 # this class transforms data to generate embeddings
 class EvalDataset(Dataset):
-    def __init__(self, texts, context_transform=None, candidate_transform=None,  mode="context"):
+    def __init__(self, texts, context_transform=None,
+                 candidate_transform=None,  mode="context"):
         self.context_transform = context_transform
         self.candidate_transform = candidate_transform
         self.data_source = []
@@ -109,7 +125,7 @@ class EvalDataset(Dataset):
         }
         for text in texts:
             group['text'].append(text)
-            self.data_source.append(group)
+        self.data_source.append(group)
 
     def __len__(self):
         return len(self.data_source)
@@ -148,11 +164,15 @@ class SelectionSequentialTransform(object):
         self.max_len = max_len
 
     def __call__(self, texts):
-        input_ids_list, segment_ids_list, input_masks_list, contexts_masks_list = [], [], [], []
+        input_ids_list, input_masks_list = [], []
         for text in texts:
             tokenized_dict = self.tokenizer.encode_plus(
-                text, max_length=self.max_len, pad_to_max_length=True)
-            input_ids, input_masks = tokenized_dict['input_ids'], tokenized_dict['attention_mask']
+                text,
+                padding='max_length',
+                max_length=self.max_len,
+                truncation=True)
+            input_ids, input_masks = tokenized_dict['input_ids'], \
+                tokenized_dict['attention_mask']
             assert len(input_ids) == self.max_len
             assert len(input_masks) == self.max_len
             input_ids_list.append(input_ids)
@@ -168,7 +188,6 @@ class SelectionJoinTransform(object):
 
         self.cls_id = self.tokenizer.convert_tokens_to_ids('[CLS]')
         self.sep_id = self.tokenizer.convert_tokens_to_ids('[SEP]')
-        self.tokenizer.add_tokens(['\n'], special_tokens=True)
         self.pad_id = 0
 
     def __call__(self, texts):
@@ -176,7 +195,8 @@ class SelectionJoinTransform(object):
         # https://github.com/facebookresearch/ParlAI/issues/2306#issuecomment-599180186
         context = '\n'.join(texts)
         tokenized_dict = self.tokenizer.encode_plus(context)
-        input_ids, input_masks = tokenized_dict['input_ids'], tokenized_dict['attention_mask']
+        input_ids, input_masks = tokenized_dict['input_ids'], \
+            tokenized_dict['attention_mask']
         input_ids = input_ids[-self.max_len:]
         input_ids[0] = self.cls_id
         input_masks = input_masks[-self.max_len:]
