@@ -58,7 +58,8 @@ def init_model():
     MODEL_TYPE = config['TAGGER_MODEL']['MODEL_TYPE']
     if MODEL_TYPE.lower() == "trfmodel" and NER_MODEL_NAME.lower() != "none":
         tagger = TARSTagger(embeddings=NER_MODEL_NAME)
-    elif NER_MODEL_NAME.lower() != "none" and MODEL_TYPE.lower() in ["lstm", "gru"]:
+    elif NER_MODEL_NAME.lower() != "none" and MODEL_TYPE.lower() in [
+            "lstm", "gru"]:
         tagger = SequenceTagger.load(NER_MODEL_NAME)
     else:
         tagger = None
@@ -89,7 +90,8 @@ def train_entity():
     try:
         if MODEL_TYPE.lower() in "trfmodel":
             tagger.add_and_switch_to_new_task(
-                "ner_train", label_dictionary=tag_dictionary, label_type=NER_LABEL_TYPE)
+                "ner_train", label_dictionary=tag_dictionary,
+                label_type=NER_LABEL_TYPE)
         elif tagger is None and MODEL_TYPE.lower() in ["lstm", "gru"]:
             tagger = SequenceTagger(hidden_size=256,
                                     embeddings=embeddings,
@@ -102,7 +104,7 @@ def train_entity():
     #  initialize the Sequence trainer with your corpus
     trainer = ModelTrainer(tagger, corpus)
     # train model
-    trainer.train(base_path=f'train/{NER_MODEL_NAME}',  # path to store the model artifacts
+    trainer.train(base_path=f'train/{NER_MODEL_NAME}',  # path to store model
                   learning_rate=0.02,
                   mini_batch_size=1,
                   max_epochs=10,
@@ -117,7 +119,7 @@ def train_entity():
 
 # defining the api for entitydetection
 @jaseci_action(act_group=['ent_ext'], allow_remote=True)
-def entity_detection(text: str, ner_labels: Optional[List]=["PREDEFINED"]):
+def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
     """
     API for detectiing provided entity in text
     """
@@ -125,22 +127,22 @@ def entity_detection(text: str, ner_labels: Optional[List]=["PREDEFINED"]):
     if tagger is not None:
         if text:
             if ner_labels:
-                if "none" in MODEL_TYPE.lower():
+                if "trf_model" in MODEL_TYPE.lower():
                     tagger.add_and_switch_to_new_task(
-                        'Entity Detection Task', ner_labels, label_type=NER_LABEL_TYPE)
+                        'Entity Detection Task', ner_labels,
+                        label_type=NER_LABEL_TYPE)
                 sentence = Sentence(text)
                 # predicting entities in the text
                 tagger.predict(sentence)
                 tagged_sentence = sentence.to_dict(NER_LABEL_TYPE)
                 json_compatible_data = jsonable_encoder(tagged_sentence)
-                #response_data_format = {
-                #    "input_text": json_compatible_data["text"], "entities": []}
                 response_data_format = {"entities": []}
 
                 for json_data in json_compatible_data["entities"]:
                     temp_dict = {}
                     temp_dict["entity_text"] = json_data["text"]
-                    temp_dict["entity_value"] = json_data["labels"][0]["_value"]
+                    temp_dict["entity_value"] = json_data["labels"][0][
+                        "_value"]
                     temp_dict["conf_score"] = json_data["labels"][0]["_score"]
                     temp_dict["start_pos"] = json_data["start_pos"]
                     temp_dict["end_pos"] = json_data["end_pos"]
@@ -201,7 +203,7 @@ def save_model(model_path: str):
             if not model_path.isalnum():
                 raise HTTPException(
                     status_code=400,
-                    detail='Invalid model name. Only alphanumeric chars allowed.'
+                    detail='Invalid model name,Only alphanumeric chars allowed'
                 )
             if type(model_path) is str:
                 model_path = Path(model_path)
