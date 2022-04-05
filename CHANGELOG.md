@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Feature: Random library adds random text generation lorem style with `rand.word()`, `rand.sentence()`, `rand.paragraph()`, and `rand.text()`.
 - New Feature: Standard input `std.input(prompt)` :-p
 - Improvement: Status codes auto plucked from return payload in jsserv
 - New Feature: Can now control status codes with `report.status = 201` style statements

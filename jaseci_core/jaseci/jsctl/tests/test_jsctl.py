@@ -79,7 +79,6 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call("walker run init")
         self.call("walker run gen_rand_life")
         r = self.call("graph get -mode dot")
-        self.assertIn("test test test", r)
         self.assertIn('"n0" -> "n', r)
         self.assertIn('week="', r)
 
