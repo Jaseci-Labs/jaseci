@@ -27,12 +27,14 @@ file_io = \
 
 std_used_in_node_has_var = \
     """
-    #node testnode {has a=rand.sentence();}
-    node testnode {has a=7;}
+    node testnode {has a=rand.sentence();}
+
     walker init
     {
         a = spawn here --> node::testnode;
-        report -->;
+        a = spawn here --> node::testnode;
+        a = spawn --> --> node::testnode;
+        report a;
         report here.details;
     }
     """
