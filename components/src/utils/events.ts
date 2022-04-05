@@ -153,11 +153,15 @@ function update(element: Element, property: string, value: unknown) {
 function append(targetComponent: Element, newComponentString: string) {
   // extract vars
   const variables = newComponentString.match(/var[(](.*?)[)]/g);
-  const parsedArgs = parseArgs(variables, { withOriginal: true });
+  let parsedArgs;
 
-  Object.keys(parsedArgs).map(variable => {
-    newComponentString = newComponentString.replaceAll(variable, parsedArgs[variable]);
-  });
+  if (variables) {
+    parsedArgs = parseArgs(variables, { withOriginal: true });
+
+    Object.keys(parsedArgs).map(variable => {
+      newComponentString = newComponentString.replaceAll(variable, parsedArgs[variable]);
+    });
+  }
 
   let newComponent = JSON.parse(newComponentString);
 

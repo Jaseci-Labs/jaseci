@@ -1,4 +1,4 @@
-import { Component, Element, Event, EventEmitter, Fragment, h, Prop } from '@stencil/core';
+import { Component, Element, Event, EventEmitter, Fragment, h, Prop, Watch } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
 
 @Component({
@@ -24,12 +24,25 @@ export class Input {
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);
+
+    this.setFullWidth();
+  }
+
+  setFullWidth() {
+    Object.assign(this.host.style, {
+      width: this.fullwidth === 'true' ? '100%' : 'auto',
+    });
+  }
+
+  @Watch('fullwidth')
+  fullwidthChange() {
+    this.setFullWidth();
   }
 
   render() {
     return (
       <Fragment>
-        <jsc-label htmlFor={this.name} label={this.label}></jsc-label>
+        {this.label && <jsc-label htmlFor={this.name} label={this.label}></jsc-label>}
         <input
           name={this.name}
           style={{
