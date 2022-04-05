@@ -1297,54 +1297,83 @@ class interp(machine_state):
 
     def run_spawn(self, jac_ast):
         """
-        spawn: KW_SPAWN expression spawn_object;
+        spawn: KW_SPAWN spawn_object;
 
         NOTE: spawn statements support locations that are either nodes or
         jac_sets
         """
         kid = self.set_cur_ast(jac_ast)
-        if(kid[1].name == 'expression'):
-            location = self.run_expression(kid[1]).value
-            if(isinstance(location, node)):
-                return self.run_spawn_object(kid[2], location)
-            elif(isinstance(location, jac_set)):
-                res = []
-                for i in location.obj_list():
-                    res.append(self.run_spawn_object(kid[2], i))
-                return jac_value(self, value=res)
-            else:
-                self.rt_error(
-                    f'Spawn can not occur on {type(location)}!', kid[1])
-        else:
-            return self.run_spawn_object(kid[1], None)
+        return self.run_spawn_object(kid[1])
 
-    def run_spawn_object(self, jac_ast, location):
+    def run_spawn_object(self, jac_ast):
         """
-        spawn_object: node_spawn | walker_spawn;
+        spawn_object: node_spawn | walker_spawn | graph_spawn;
         """
         kid = self.set_cur_ast(jac_ast)
-        return self.run_rule(kid[0], location)
+        return self.run_rule(kid[0])
 
-    def run_node_spawn(self, jac_ast, location):
+    def run_spawn_edge(self, jac_ast):
         """
-        node_spawn: edge_ref? node_ref spawn_ctx?;
+        spawn_edge: expression edge_ref;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        return {
+            "location": self.run_expression(kid[0]).value,
+            "use_edge": self.run_edge_ref(kid[1], is_spawn=True),
+            "direction": kid[1].kid[0].name,
+        }
+        # if(isinstance(location, node)):
+        #     return self.run_spawn_object(kid[2], location)
+        # elif(isinstance(location, jac_set)):  # TEST ME
+        #     res = []
+        #     for i in location.obj_list():
+        #         res.append(self.run_spawn_object(kid[2], i))
+        #     return jac_value(self, value=res)
+        # else:
+        #     self.rt_error(
+        #         f'Spawn can not occur on {type(location)}!', kid[1])
+
+    def run_node_spawn(self, jac_ast):
+        """
+        node_spawn: spawn_edge? node_ref spawn_ctx?;
         """
         kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'node_ref'):
             ret_node = self.run_node_ref(kid[0], is_spawn=True)
         else:
-            use_edge = self.run_edge_ref(kid[0], is_spawn=True)
-            ret_node = self.run_node_ref(kid[1], is_spawn=True)
-            direction = kid[0].kid[0].name
-            if (direction == 'edge_from'):
-                location.attach_inbound(ret_node, [use_edge])
-            elif (direction == 'edge_to'):
-                location.attach_outbound(ret_node, [use_edge])
+            sp = self.run_spawn_edge(kid[0])
+            if(isinstance(sp['location'], node)):
+                ret_node = self.run_node_ref(kid[1], is_spawn=True)
+                if (sp['direction'] == 'edge_from'):
+                    sp['location'].attach_inbound(ret_node, [sp['use_edge']])
+                elif (sp['direction'] == 'edge_to'):
+                    sp['location'].attach_outbound(ret_node, [sp['use_edge']])
+                else:
+                    sp['location'].attach_bidirected(
+                        ret_node, [sp['use_edge']])
+                if (kid[-1].name == 'spawn_ctx'):
+                    self.run_spawn_ctx(kid[-1], ret_node)
+                return jac_value(self, value=ret_node)
+            elif(isinstance(sp['location'], jac_set)):
+                res = []
+                for i in sp['location'].obj_list():
+                    ret_node = self.run_node_ref(kid[1], is_spawn=True)
+                    if (sp['direction'] == 'edge_from'):
+                        sp['location'].attach_inbound(
+                            ret_node, [sp['use_edge']])
+                    elif (sp['direction'] == 'edge_to'):
+                        sp['location'].attach_outbound(
+                            ret_node, [sp['use_edge']])
+                    else:
+                        sp['location'].attach_bidirected(
+                            ret_node, [sp['use_edge']])
+                    if (kid[-1].name == 'spawn_ctx'):
+                        self.run_spawn_ctx(kid[-1], ret_node)
+                    res.append(jac_value(self, value=ret_node))
+                return jac_value(self, value=res)
             else:
-                location.attach_bidirected(ret_node, [use_edge])
-        if (kid[-1].name == 'spawn_ctx'):
-            self.run_spawn_ctx(kid[-1], ret_node)
-        return jac_value(self, value=ret_node)
+                self.rt_error(
+                    f'Spawn can not occur on {type(location)}!', kid[1])
 
     def run_walker_spawn(self, jac_ast, location):
         """

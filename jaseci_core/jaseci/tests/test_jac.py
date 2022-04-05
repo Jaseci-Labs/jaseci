@@ -759,17 +759,6 @@ class jac_tests(TestCaseHelper, TestCase):
         errors = test_walker.runtime_errors
         self.assertGreater(len(errors), 0)
 
-    def test_file_io(self):
-        gph = graph(m_id='anon', h=mem_hook())
-        sent = sentinel(m_id='anon', h=gph._h)
-        sent.register_code(jtc.file_io)
-        test_walker = \
-            sent.walker_ids.get_obj_by_name('init')
-        test_walker.prime(gph)
-        test_walker.run()
-        report = test_walker.report
-        self.assertEqual(report, ['{"a": 10}{"a": 10}'])
-
     def test_auto_cast(self):
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
