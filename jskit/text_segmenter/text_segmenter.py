@@ -3,7 +3,6 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import en_core_web_sm as english_model
 from jaseci.actions.live_actions import jaseci_action
-from enum import Enum
 
 # loading segmentation model from hugging face
 tokenizer = AutoTokenizer.from_pretrained("dennlinger/roberta-cls-consec")
@@ -13,13 +12,17 @@ model = AutoModelForSequenceClassification.from_pretrained(
 spacy = english_model.load()
 
 
-def segmentation(text, threshold=0.7):
+def segmentation(text, threshold=0.85):
+    """
+    This function takes the raw text, converts them into sentence tokens.
+    Tokens are then provided to the sequence classifier to predict the 
+    syntactical similarity.
+    """
     # spliting the raw test into sentences
     doc = spacy(text)
     sentences = [sent.text.strip() for sent in doc.sents]
     index = 0
     sub_segments = []
-    sub_seg_index = 0
     segments = []
     for sent_ind in range(1, len(sentences)):
         # create sentence pair to evaluate
@@ -31,27 +34,26 @@ def segmentation(text, threshold=0.7):
         value = torch.softmax(outputs, dim=1).tolist()[0][1]
         # creating sub-segment of similar text
         if value > threshold:
-            if sub_seg_index == 0:
+            if not sub_segments:
                 sub_segments.append(sentences[index])
                 sub_segments.append(sentences[sent_ind])
-                sub_seg_index = 1
             else:
                 sub_segments.append(sentences[sent_ind])
         else:
+
             if not sub_segments:
                 sub_segments.append(sentences[index])
             segments.append(" ".join(sub_segments))
             sub_segments = []
-            sub_seg_index = 0
+            sub_segments.append(sentences[sent_ind])
         index += 1
-        # print(f"{index} : {value}")
     if sub_segments:
         segments.append(" ".join(sub_segments))
     # returning final segments of text
     return(segments)
 
 
-@jaseci_action(act_group=['text_segmentor'], allow_remote=True)
+@ jaseci_action(act_group=['text_segmentor'], allow_remote=True)
 def get_segments(text: str, threshold: float = 0.7):
     try:
         segmented_text = segmentation(text=text, threshold=threshold)
@@ -60,7 +62,7 @@ def get_segments(text: str, threshold: float = 0.7):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=['text_segmentor'], allow_remote=True)
+@ jaseci_action(act_group=['text_segmentor'], allow_remote=True)
 def load_model(model_name: str):  # modelname could be ("wiki", "legal")
     global model, tokenizer
     if model_name == "wiki":
