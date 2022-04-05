@@ -53,7 +53,8 @@ class jac_scope():
     def find_live_attr(self, name, allow_read_only=True):
         """Finds binding for variable if not in standard scope"""
         # check if var is in walker's context
-        if(name in self.has_obj.context.keys()):
+        if('context' in self.has_obj.__dict__ and
+           name in self.has_obj.context.keys()):
             return jac_value(self.parent,
                              ctx=self.has_obj,
                              name=name)

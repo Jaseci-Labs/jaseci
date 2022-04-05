@@ -841,9 +841,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_jac_admin_master_allusers(self):
         """Test API for creating a graph"""
-        self.logger_on()
         payload = {}
         res = self.sclient.post(
-            reverse(f'jac_api:master_allusers'), payload, format='json')
+            reverse('jac_api:master_allusers'), payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.log(res.data)
