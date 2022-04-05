@@ -22,7 +22,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install black flake8==3.7.9 isort
         cd support/ai_ready_img
-        pip install -r requirements
+        pip install -r requirements.txt
         
     - name: Install jaseci_core
       run: |
@@ -30,8 +30,33 @@ jobs:
     - name: Verify installation
       run: |
         jsctl
-    - name: JSKit regression tests 
-      if: always()
+
+    - name: Test biencoder
       run: |
-        cd jskit/
-        source test.sh
+        cd jskit/encoders/
+        python3 -m unittest discover . -p "test_*.py"
+
+    - name: Test entity_extraction
+      run: |
+        cd jskit/entity_extraction/
+        python3 -m unittest discover . -p "test_*.py"
+
+    - name: Test fasttext
+      run: |
+        cd jskit/fasttext/
+        python3 -m unittest discover . -p "test_*.py"
+
+    - name: Test text_segmenter
+      run: |
+        cd jskit/text_segmenter/
+        python3 -m unittest discover . -p "test_*.py"
+
+    - name: Test use_enc
+      run: |
+        cd jskit/use_enc/
+        python3 -m unittest discover . -p "test_*.py"
+
+    - name: Test use__qa
+      run: |
+        cd jskit/use_enc/
+        python3 -m unittest discover . -p "test_*.py"

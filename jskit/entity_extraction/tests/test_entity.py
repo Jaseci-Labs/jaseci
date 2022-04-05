@@ -32,10 +32,11 @@ class entity_extraction_test(TestCaseHelper, TestCase):
             json=test_entity_detection_request
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            test_entity_detection_response
-        )
+        for idx, ent in enumerate(test_entity_detection_response["entities"]):
+            ent.pop("conf_score")
+            res_ent = response.json()["entities"][idx]
+            res_ent.pop("conf_score")
+            self.assertEqual(res_ent, ent)
 
     def test_entity_detection_fail_ner(self):
         response = self.client.post(
