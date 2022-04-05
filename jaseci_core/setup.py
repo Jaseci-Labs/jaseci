@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name='jaseci',
-    version='1.3.2.10',
+    version='1.3.2.11',
     packages=find_packages(include=['jaseci', 'jaseci.*']),
     install_requires=[
         'click>=8.1.0,<8.2.0',
