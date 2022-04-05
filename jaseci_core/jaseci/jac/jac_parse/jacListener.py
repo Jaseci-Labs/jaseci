@@ -746,6 +746,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#spawn_edge.
+    def enterSpawn_edge(self, ctx:jacParser.Spawn_edgeContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#spawn_edge.
+    def exitSpawn_edge(self, ctx:jacParser.Spawn_edgeContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#node_spawn.
     def enterNode_spawn(self, ctx:jacParser.Node_spawnContext):
         pass

@@ -54,7 +54,7 @@ def segmentation(text, threshold=0.85):
 
 
 @ jaseci_action(act_group=['text_segmentor'], allow_remote=True)
-def get_segements(text: str, threshold: float = 0.85):
+def get_segments(text: str, threshold: float = 0.7):
     try:
         segmented_text = segmentation(text=text, threshold=threshold)
         return segmented_text

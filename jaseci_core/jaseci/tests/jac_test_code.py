@@ -1253,28 +1253,54 @@ invalid_key_error = \
     }
     """
 
-
-file_io = \
-    """
-    walker init {
-        fn="fileiotest.txt";
-        a = {'a': 5};
-        file.dump_json(fn, a);
-        b=file.load_json(fn);
-        b['a']+=b['a'];
-        file.dump_json(fn, b);
-        c=file.load_str(fn);
-        file.append_str(fn, c);
-        c=file.load_str(fn);
-        report c;
-    }
-    """
-
-
 auto_cast = \
     """
     walker init {
         report 1==1.0;
         report 1.0==1;
+    }
+    """
+
+no_error_on_dict_key_assign = \
+    """
+    walker init {
+        a={};
+        a['b']=4;
+        report a;
+    }
+    """
+
+report_status = \
+    """
+    walker init {report.status = 302; report "hello";}
+    """
+
+
+graph_in_graph = \
+    """
+    graph one {
+        has anchor graph_root;
+        spawn {
+            graph_root = spawn node::generic;
+        }
+    }
+
+    graph two {
+        has anchor graph_root;
+        spawn {
+
+            graph_root = spawn node::generic;
+            day1 = spawn graph::one;
+
+            graph_root --> day1;
+        }
+    }
+
+    walker init {
+        root {
+            spawn here --> graph::two;
+        }
+        take -->;
+        report here;
     }
     """

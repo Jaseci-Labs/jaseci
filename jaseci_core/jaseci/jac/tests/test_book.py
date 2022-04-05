@@ -30,7 +30,6 @@ class jac_book_tests(TestCaseHelper, TestCase):
         sys.stdout = self.new_stdout
 
     def test_basic_arith(self):
-        self.logger_on()
         self.sent.register_code(jtc.basic_arith)
         gen_walker = self.sent.walker_ids.get_obj_by_name('init')
         gen_walker.prime(self.gph)
@@ -130,6 +129,15 @@ class jac_book_tests(TestCaseHelper, TestCase):
         self.assertEqual(self.new_stdout.getvalue(),
                          "Hello 5 times!\nHello 4 times!\n"
                          "Hello 2 times!\nHello 1 times!\n")
+
+    def test_continue_stmt2(self):
+        self.sent.register_code(jtc.continue_stmt2)
+        gen_walker = self.sent.walker_ids.get_obj_by_name('init')
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(),
+                         "hello 9\nhello 8\n"
+                         "hello 7\nhello 6\nhello 5\n")
 
     def test_destroy_disconnect(self):
         self.sent.register_code(jtc.destroy_disconn)

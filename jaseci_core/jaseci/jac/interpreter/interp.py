@@ -30,7 +30,12 @@ class interp(machine_state):
         if(kid[0].name == 'has_stmt'):
             self.run_has_stmt(kid[0], obj)
         elif(kid[0].name == 'can_stmt'):
-            self.run_can_stmt(kid[0], obj)
+            if(obj.j_type == 'walker'):
+                self.run_can_stmt(kid[0], obj)
+            else:
+                obj = self.get_arch_for(obj)
+                if(not obj._can_compiled_flag):
+                    self.run_can_stmt(kid[0], obj)
 
     def run_has_stmt(self, jac_ast, obj):
         """
@@ -111,11 +116,11 @@ class interp(machine_state):
             if(len(kid) > 0 and kid[0].name == 'event_clause'):
                 action_type, access_list = self.run_event_clause(kid[0])
                 kid = kid[1:]
-            if (not isinstance(obj, node) and action_type != 'activity'):
-                self.rt_warn(
-                    "Only nodes can have on entry/exit, treating as activity",
-                    kid[0])
-                action_type = 'activity'
+            # if (not isinstance(obj, node) and action_type != 'activity'):
+            #     self.rt_warn(
+            #         "Only nodes has on entry/exit, treating as activity",
+            #         kid[0])
+            #     action_type = 'activity'
             if (kid[0].name == 'code_block'):
                 act = action(
                     m_id=self._m_id,
@@ -200,15 +205,10 @@ class interp(machine_state):
     def run_code_block(self, jac_ast):
         """
         code_block: LBRACE statement* RBRACE | COLON statement;
-        TODO: Handle breaks and continues
         """
         kid = self.set_cur_ast(jac_ast)
         for i in kid:
-            if (self._loop_ctrl):
-                if (self._loop_ctrl == 'continue'):
-                    self._loop_ctrl = None
-                return
-            if(i.name == 'statement'):
+            if(i.name == 'statement' and not self._loop_ctrl):
                 self.run_statement(jac_ast=i)
 
     def run_statement(self, jac_ast):
@@ -307,12 +307,13 @@ class interp(machine_state):
         if(kid[1].name == 'expression'):
             self.run_expression(kid[1])
             while self.run_expression(kid[3]).value:
+                self._loop_ctrl = None
                 self.run_code_block(kid[6])
-                loops += 1
-                if (self._loop_ctrl == 'break'):
-                    self._loop_ctrl = None
-                    break
                 self.run_expression(kid[5])
+                loops += 1
+                if (self._loop_ctrl and self._loop_ctrl == 'break'):
+                    break
+                self._loop_ctrl = None
                 if(loops > self._loop_limit):
                     self.rt_error(f'Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
@@ -328,9 +329,9 @@ class interp(machine_state):
                 var.write(kid[1])
                 self.run_code_block(kid[4])
                 loops += 1
-                if (self._loop_ctrl == 'break'):
-                    self._loop_ctrl = None
+                if (self._loop_ctrl and self._loop_ctrl == 'break'):
                     break
+                self._loop_ctrl = None
                 if(loops > self._loop_limit):
                     self.rt_error(f'Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
@@ -344,9 +345,9 @@ class interp(machine_state):
         while self.run_expression(kid[1]).value:
             self.run_code_block(kid[2])
             loops += 1
-            if (self._loop_ctrl == 'break'):
-                self._loop_ctrl = None
+            if (self._loop_ctrl and self._loop_ctrl == 'break'):
                 break
+            self._loop_ctrl = None
             if(loops > self._loop_limit):
                 self.rt_error(f'Hit loop limit, breaking...', kid[0])
                 self._loop_ctrl = 'break'
@@ -391,13 +392,21 @@ class interp(machine_state):
 
     def run_report_action(self, jac_ast):
         """
-        report_action: KW_REPORT expression SEMI;
+        report_action:
+            KW_REPORT expression SEMI
+            | KW_REPORT DOT NAME EQ INT SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
-        report = self.run_expression(kid[1]).wrap(serialize_mode=True)
-        if(not is_jsonable(report)):
-            self.rt_error(f'Report not Json serializable', kid[0])
-        self.report.append(copy(report))
+        if(kid[1].name == "DOT"):
+            if(kid[2].token_text() in ['status', 'status_code']):
+                self.report_status = int(kid[4].token_text())
+            else:
+                self.rt_error(f'Invalid report attribute to set', kid[2])
+        else:
+            report = self.run_expression(kid[1]).wrap(serialize_mode=True)
+            if(not is_jsonable(report)):
+                self.rt_error(f'Report not Json serializable', kid[0])
+            self.report.append(copy(report))
 
     def run_expression(self, jac_ast):
         """
@@ -736,15 +745,16 @@ class interp(machine_state):
                     ret = None
                 return jac_value(self, value=ret)
             else:
-                self.rt_error(f'Unable to execute ability {atom_res}',
+                self.rt_error(f'Unable to execute ability',
                               kid[0])
         elif (kid[0].name == 'DBL_COLON'):
             if(len(kid) > 2):
                 self.run_spawn_ctx(kid[2], atom_res.value)
+            arch = self.get_arch_for(atom_res.value)
             self.call_ability(
                 nd=atom_res.value,
                 name=kid[1].token_text(),
-                act_list=atom_res.value.activity_action_ids)
+                act_list=arch.activity_action_ids)
             return atom_res
 
     def run_ref(self, jac_ast):
@@ -1237,7 +1247,8 @@ class interp(machine_state):
         """
         kid = self.set_cur_ast(jac_ast)
         idx = self.run_expression(kid[1]).value
-        if(type(idx) == str and idx not in atom_res.value.keys()):
+        if(type(idx) == str and idx not in atom_res.value.keys() and
+           not self._assign_mode):
             self.rt_error(f'Key {idx} not found in object/dict.', kid[1])
         if(kid[2].name == "RSQUARE"):
             if(not self.rt_check_type(idx, [int, str], kid[1])):
@@ -1286,87 +1297,148 @@ class interp(machine_state):
 
     def run_spawn(self, jac_ast):
         """
-        spawn: KW_SPAWN expression spawn_object;
+        spawn: KW_SPAWN spawn_object;
 
         NOTE: spawn statements support locations that are either nodes or
         jac_sets
         """
         kid = self.set_cur_ast(jac_ast)
-        if(kid[1].name == 'expression'):
-            location = self.run_expression(kid[1]).value
-            if(isinstance(location, node)):
-                return self.run_spawn_object(kid[2], location)
-            elif(isinstance(location, jac_set)):
-                res = []
-                for i in location.obj_list():
-                    res.append(self.run_spawn_object(kid[2], i))
-                return jac_value(self, value=res)
-            else:
-                self.rt_error(
-                    f'Spawn can not occur on {type(location)}!', kid[1])
-        else:
-            return self.run_spawn_object(kid[1], None)
+        return self.run_spawn_object(kid[1])
 
-    def run_spawn_object(self, jac_ast, location):
+    def run_spawn_object(self, jac_ast):
         """
-        spawn_object: node_spawn | walker_spawn;
+        spawn_object: node_spawn | walker_spawn | graph_spawn;
         """
         kid = self.set_cur_ast(jac_ast)
-        return self.run_rule(kid[0], location)
+        return self.run_rule(kid[0])
 
-    def run_node_spawn(self, jac_ast, location):
+    def run_spawn_edge(self, jac_ast):
         """
-        node_spawn: edge_ref? node_ref spawn_ctx?;
+        spawn_edge: expression edge_ref;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        loc = self.run_expression(kid[0]).value
+        if(isinstance(loc, jac_set)):
+            edge_set = [self.run_edge_ref(kid[1], is_spawn=True) for _ in loc]
+            loc = loc.obj_list()
+        else:
+            edge_set = self.run_edge_ref(kid[1], is_spawn=True)
+        return {
+            "location": loc,
+            "use_edge": edge_set,
+            "direction": kid[1].kid[0].name,
+        }
+
+    def run_node_spawn(self, jac_ast):
+        """
+        node_spawn: spawn_edge? node_ref spawn_ctx?;
         """
         kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'node_ref'):
             ret_node = self.run_node_ref(kid[0], is_spawn=True)
+            if (kid[-1].name == 'spawn_ctx'):
+                self.run_spawn_ctx(kid[-1], ret_node)
+            return jac_value(self, value=ret_node)
         else:
-            use_edge = self.run_edge_ref(kid[0], is_spawn=True)
-            ret_node = self.run_node_ref(kid[1], is_spawn=True)
-            direction = kid[0].kid[0].name
-            if (direction == 'edge_from'):
-                location.attach_inbound(ret_node, [use_edge])
-            elif (direction == 'edge_to'):
-                location.attach_outbound(ret_node, [use_edge])
+            sp = self.run_spawn_edge(kid[0])
+            if(isinstance(sp['location'], node)):
+                ret_node = self.run_node_ref(kid[1], is_spawn=True)
+                if (sp['direction'] == 'edge_from'):
+                    sp['location'].attach_inbound(ret_node, [sp['use_edge']])
+                elif (sp['direction'] == 'edge_to'):
+                    sp['location'].attach_outbound(ret_node, [sp['use_edge']])
+                else:
+                    sp['location'].attach_bidirected(
+                        ret_node, [sp['use_edge']])
+                if (kid[-1].name == 'spawn_ctx'):
+                    self.run_spawn_ctx(kid[-1], ret_node)
+                return jac_value(self, value=ret_node)
+            elif(isinstance(sp['location'], jac_set)):
+                res = []
+                sp['location'] = sp['location'].obj_list()
+                for i in range(len(sp['location'])):
+                    ret_node = self.run_node_ref(kid[1], is_spawn=True)
+                    if (sp['direction'] == 'edge_from'):
+                        sp['location'][i].attach_inbound(
+                            ret_node, [sp['use_edge'][i]])
+                    elif (sp['direction'] == 'edge_to'):
+                        sp['location'][i].attach_outbound(
+                            ret_node, [sp['use_edge'][i]])
+                    else:
+                        sp['location'][i].attach_bidirected(
+                            ret_node, [sp['use_edge'][i]])
+                    if (kid[-1].name == 'spawn_ctx'):
+                        self.run_spawn_ctx(kid[-1], ret_node)
+                    res.append(ret_node)
+                return jac_value(self, value=res)
             else:
-                location.attach_bidirected(ret_node, [use_edge])
-        if (kid[-1].name == 'spawn_ctx'):
-            self.run_spawn_ctx(kid[-1], ret_node)
-        return jac_value(self, value=ret_node)
+                self.rt_error(
+                    f'Spawn can not occur on {type(sp["location"])}!', kid[1])
 
-    def run_walker_spawn(self, jac_ast, location):
+    def run_graph_spawn(self, jac_ast):
         """
-        walker_spawn: walker_ref spawn_ctx?;
+        graph_spawn: spawn_edge? graph_ref;
         """
         kid = self.set_cur_ast(jac_ast)
-        walk = self.run_walker_ref(kid[0])
-        walk.prime(location)
-        if(len(kid) > 1):
-            self.run_spawn_ctx(kid[1], walk)
-        walk.run()
-        ret = jac_value(self, value=walk.anchor_value())
-        ret.unwrap()
-        self.report += walk.report
-        self.runtime_errors += walk.runtime_errors
-        walk.destroy()
-        return ret
-
-    def run_graph_spawn(self, jac_ast, location):
-        """
-        graph_spawn: edge_ref graph_ref;
-        """
-        kid = self.set_cur_ast(jac_ast)
-        use_edge = self.run_edge_ref(kid[0], is_spawn=True)
-        result = self.run_graph_ref(kid[1])
-        direction = kid[0].kid[0].name
-        if (direction == 'edge_from'):
-            location.attach_inbound(result, [use_edge])
-        elif (direction == 'edge_to'):
-            location.attach_outbound(result, [use_edge])
+        if(kid[0].name == 'graph_ref'):
+            result = self.run_graph_ref(kid[0])
+            return jac_value(self, value=result)
         else:
-            location.attach_bidirected(result, [use_edge])
-        return jac_value(self, value=result)
+            sp = self.run_spawn_edge(kid[0])
+            if(isinstance(sp['location'], node)):
+                ret_node = self.run_graph_ref(kid[1])
+                if (sp['direction'] == 'edge_from'):
+                    sp['location'].attach_inbound(ret_node, [sp['use_edge']])
+                elif (sp['direction'] == 'edge_to'):
+                    sp['location'].attach_outbound(ret_node, [sp['use_edge']])
+                else:
+                    sp['location'].attach_bidirected(
+                        ret_node, [sp['use_edge']])
+                return jac_value(self, value=ret_node)
+            elif(isinstance(sp['location'], jac_set)):
+                res = []
+                sp['location'] = sp['location'].obj_list()
+                for i in range(len(sp['location'])):
+                    ret_node = self.run_graph_ref(kid[1])
+                    if (sp['direction'] == 'edge_from'):
+                        sp['location'][i].attach_inbound(
+                            ret_node, [sp['use_edge'][i]])
+                    elif (sp['direction'] == 'edge_to'):
+                        sp['location'][i].attach_outbound(
+                            ret_node, [sp['use_edge'][i]])
+                    else:
+                        sp['location'][i].attach_bidirected(
+                            ret_node, [sp['use_edge'][i]])
+                    res.append(ret_node)
+                return jac_value(self, value=res)
+            else:
+                self.rt_error(
+                    f'Spawn can not occur on {type(sp["location"])}!', kid[1])
+
+    def run_walker_spawn(self, jac_ast):
+        """
+        walker_spawn: expression walker_ref spawn_ctx?;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        location = self.run_expression(kid[0]).value
+        if(isinstance(location, node)):
+            location = jac_set(in_list=[location])
+        ret = []
+        for i in location.obj_list():
+            walk = self.run_walker_ref(kid[1])
+            walk.prime(i)
+            if(len(kid) > 2):
+                self.run_spawn_ctx(kid[2], walk)
+            walk.run()
+            tr = jac_value(self, value=walk.anchor_value())
+            tr.unwrap()
+            ret.append(tr.value)
+            self.report += walk.report
+            if(walk.report_status):
+                self.report_status = walk.report_status
+            self.runtime_errors += walk.runtime_errors
+            walk.destroy()
+        return jac_value(self, value=ret[0] if len(ret) == 1 else ret)
 
     def run_spawn_ctx(self, jac_ast, obj):
         """
@@ -1458,13 +1530,16 @@ class interp(machine_state):
 
     def call_ability(self, nd, name, act_list):
         m = interp(parent_override=self.parent(), caller=self)
+        arch = self.get_arch_for(nd)
         m.push_scope(jac_scope(parent=nd,
                                has_obj=nd,
-                               action_sets=[nd.activity_action_ids]))
+                               action_sets=[arch.activity_action_ids]))
         m._jac_scope.inherit_agent_refs(self._jac_scope)
         m.run_code_block(jac_ir_to_ast(
             act_list.get_obj_by_name(name).value))
         self.report += m.report
+        if(m.report_status):
+            self.report_status = m.report_status
         self.runtime_errors += m.runtime_errors
 
     def run_rule(self, jac_ast, *args):

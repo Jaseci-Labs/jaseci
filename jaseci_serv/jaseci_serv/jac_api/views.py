@@ -31,14 +31,13 @@ class AbstractJacAPIView(APIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request):
+    def post(self, request, **kwargs):
         """
         General post function that parses api signature to load parms
         SuperSmart Post - can read signatures of master and process
         bodies accordingly
         """
-        self.proc_request(request)
-
+        self.proc_request(request, **kwargs)
         api_result = self.caller.general_interface_to_api(
             self.cmd, type(self).__name__)
         self.log_request_stats()
@@ -58,13 +57,15 @@ class AbstractJacAPIView(APIView):
             f' completed in {TY}{tot_time:.3f} seconds{EC}'
             f' saving {TY}{save_count}{EC} objects.'))
 
-    def proc_request(self, request):
+    def proc_request(self, request, **kwargs):
         """Parse request to field set"""
         pl_peek = str(dict(request.data))[:256]
         logger.info(str(
             f'Incoming call to {type(self).__name__} with {pl_peek}'))
         self.start_time = time()
-        self.cmd = request.data
+        self.cmd = request.data.dict() if type(
+            request.data) is not dict else request.data
+        self.cmd.update(kwargs)
         self.set_caller(request)
         self.res = "Not valid interaction!"
 
@@ -72,13 +73,21 @@ class AbstractJacAPIView(APIView):
         """Assigns the calling api interface obj"""
         self.caller = request.user.get_master()
 
+    def pluck_status_code(self, api_result):
+        """Extracts status code out of payload"""
+        status = 200
+        if(isinstance(api_result, dict) and 'status_code' in api_result):
+            status = api_result['status_code']
+        return status
+
     def issue_response(self, api_result):
         """Issue response from call"""
         # self.caller._h.commit()
         # return Response(api_result)
         # for i in self.caller._h.save_obj_list:
         #     self.caller._h.commit_obj_to_redis(i)
-        return JResponse(self.caller, api_result)
+        status = self.pluck_status_code(api_result)
+        return JResponse(self.caller, api_result, status=status)
 
 
 class AbstractAdminJacAPIView(AbstractJacAPIView):
@@ -94,13 +103,13 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
     """
     permission_classes = (AllowAny,)
 
-    def post(self, request):
+    def post(self, request, **kwargs):
         """
         Public post function that parses api signature to load parms
         SuperSmart Post - can read signatures of master and process
         bodies accordingly
         """
-        self.proc_request(request)
+        self.proc_request(request, **kwargs)
 
         api_result = self.caller.public_interface_to_api(
             self.cmd, type(self).__name__)
@@ -117,7 +126,9 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
     def issue_response(self, api_result):
         """Issue response from call"""
         # If committer set, results should be saved back
+        status = self.pluck_status_code(api_result)
         if(self.caller._pub_committer):
-            return JResponse(self.caller._pub_committer, api_result)
+            return JResponse(self.caller._pub_committer,
+                             api_result, status=status)
         else:
-            return Response(api_result)
+            return Response(api_result, status=status)
