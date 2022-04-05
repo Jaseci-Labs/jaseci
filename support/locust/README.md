@@ -1,13 +1,13 @@
 ## Locust Load Test for JASECI API
 
-#### Install Python 3.8 
+### Install Python 3.8 
 Install Python from offical Python Website
 
 ```console
 https://www.python.org/downloads/release/python-380/
 ```
 
-#### Install Locust 
+### Install Locust 
 
 Locust is an easy-to-use, distributed, user load testing tool. It is intended for load-testing web sites (or other systems) and figuring out how many concurrent users a system can handle.
 
@@ -30,7 +30,7 @@ pip install pandas
 ```console
 pip install locust_plugins
 ```
-#### Run Locust through browser
+### Run Locust through browser
 
 ```console
 locust -f <filename.py>
@@ -38,7 +38,7 @@ locust -f <filename.py>
 
 Once you’ve started Locust using one of the above command lines, you should open up a browser and point it to http://127.0.0.1:8089. Then you should be greeted with something like this
 
-#### Run Locust headless 
+### Run Locust headless 
 
 You can run locust without the web UI - for example if you want to run it in some automated flow, like a CI server - by using the --headless flag together with -u and -r:
 
@@ -52,7 +52,7 @@ where
 -r specifies the hatch rate (number of users to spawn per second).
 
 
-#### Run Locust via Docker
+### Run Locust via Docker
 
 Coming Soon
 
