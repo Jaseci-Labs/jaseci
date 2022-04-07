@@ -119,7 +119,9 @@ function runAction(action: JaseciAction, result?: any) {
         if (!operation.includes('.')) throw new Error('Invalid operation. Operation and component not specified.');
         const [opTargetComponentName, operationName] = operation.split('.');
         const opTargetComponent = getComponentByName(opTargetComponentName);
-        const operationDef = JSON.parse(opTargetComponent.getAttribute('operations'))[operationName];
+        const opTargetComponentOperations = opTargetComponent.getAttribute('operations');
+        if (!opTargetComponentOperations) throw new Error(`No operation defined for ${opTargetComponentName}`);
+        const operationDef = JSON.parse(opTargetComponentOperations)[operationName];
 
         operationDef.run.map(operationAction => {
           console.log({ operationAction });
