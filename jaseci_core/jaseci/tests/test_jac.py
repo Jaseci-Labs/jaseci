@@ -795,7 +795,6 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(test_walker.report_status, 302)
 
     def test_graph_in_graph(self):
-        self.logger_on()
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.graph_in_graph)
