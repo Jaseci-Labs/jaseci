@@ -19,6 +19,7 @@ export function computeOpArgs(operationActionArgs: string[], actionArgs: (string
 
   operationActionArgs.map((operationArg, index) => {
     // const matchedArgs = operationArg.match(/arg[(](.*?)[)]/g);
+    console.log(actionArgs[index], operationActionArgs[index]);
     argValues[`arg(${operationArg})`] = actionArgs[index];
   });
 
@@ -121,22 +122,32 @@ function runAction(action: JaseciAction, result?: any) {
         const operationDef = JSON.parse(opTargetComponent.getAttribute('operations'))[operationName];
 
         operationDef.run.map(operationAction => {
+          console.log({ operationAction });
           const opArgsMap = computeOpArgs(operationDef.args, action?.args);
-          console.log({ operationArgs: operationAction?.args, actionArgs: action?.args, opArgsMap });
 
           const newActionArgs = operationAction?.args?.map(arg => {
             let parsedArg = arg;
+            console.log({ parsedArg });
 
             Object.keys(opArgsMap).map(opArg => {
-              if (typeof arg == 'string' && arg.includes(opArg)) {
-                parsedArg = opArgsMap[opArg];
+              if (typeof parsedArg == 'string' || typeof parsedArg === 'object') {
+                if (typeof parsedArg == 'object') {
+                  parsedArg = JSON.stringify(parsedArg);
+                  if (parsedArg.includes(opArg)) {
+                    parsedArg = parsedArg.replaceAll(opArg, opArgsMap[opArg]);
+                    parsedArg = JSON.parse(parsedArg);
+                  }
+                } else {
+                  if (parsedArg.includes(opArg)) {
+                    parsedArg = parsedArg.replaceAll(opArg, opArgsMap[opArg]);
+                    parsedArg = parsedArg;
+                  }
+                }
               }
             });
 
             return parsedArg;
           });
-
-          console.log({ newActionArgs });
 
           operationAction.args = newActionArgs;
 
