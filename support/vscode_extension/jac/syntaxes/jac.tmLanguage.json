@@ -203,24 +203,12 @@
             ]
         },
         "function_calls": {
-            "name": "source.jac.functional_calls",
-            "begin": "(\\w+)(\\()",
-            "beginCaptures": {
+            "match": "(\\w+)(\\()",
+            "captures": {
                 "1": {
                     "name": "support.function.functional_calls.jac"
                 },
                 "2": {
-                    "name": "punctuation.definition.tag.jac"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#functional"
-                }
-            ],
-            "end": "\\)",
-            "endCaptures": {
-                "0": {
                     "name": "punctuation.definition.tag.jac"
                 }
             }
