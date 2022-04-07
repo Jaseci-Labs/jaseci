@@ -15,7 +15,7 @@
             "include": "#functional"
         },
         {
-            "include": "#assignment"
+            "include": "#operators"
         },
         {
             "include": "#entity_block_definition"
@@ -29,16 +29,16 @@
                     "match": "\\b(import|ignore|with|strict|context|details|info|activity|length|keys)\\b"
                 },
                 {
-                    "match": "\\b(str|int|float|list|dict|bool|edge|digraph|subgraph|test|type)\\b",
+                    "match": "\\b(str|int|float|list|dict|bool|test|type)\\b",
                     "name": "support.type.jac"
+                },
+                {
+                    "match": "\\b(edge|graph|node|digraph|subgraph)\\b",
+                    "name": "storage.type.entity.jac"
                 },
                 {
                     "name": "keyword.control.jac",
                     "match": "\\b(if|elif|else|while|for|while|in|by|to|report|take|ignore|skip|disengage|break|continue|destroy|spawn|entry|exit|assert)\\b"
-                },
-                {
-                    "name": "keyword.operator.logical",
-                    "match": "\\b(not|and|or)\\b"
                 },
                 {
                     "name": "variable.other.property",
@@ -50,9 +50,19 @@
                     "match": "\\s*\\b(?<!\\.)(report|destroy|here|take|in)\\b(?=.*[-\\\\])"
                 },
                 {
-                    "name": "keyword.control.flow.jac",
                     "comment": "Highlights 'node' in node::name",
-                    "match": "\\s*\\b(?<!\\.)(node|walker)\\b(?=.*[:\\\\])"
+                    "match": "\\s*\\b(?<!\\.)(node|walker|graph)\\b(.*[:\\\\])(\\w+)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.control.flow.jac"
+                        },
+                        "2": {
+                            "name": "keyword.operator.jac"
+                        },
+                        "3": {
+                            "name": "support.function.functional_calls.jac"
+                        }
+                    }
                 },
                 {
                     "match": "\\b(null|true|false)\\b",
@@ -215,25 +225,98 @@
                 }
             }
         },
-        "assignment": {
+        "operators": {
             "patterns": [
                 {
-                    "begin": "(^\\s|:?\\s|)(\\w+|\\w+(?:\\.\\w+)+)\\s*(=|\\+=|-=|\\+\\+|--)\\s*",
-                    "beginCaptures": {
-                        "1": {},
-                        "2": {
-                            "name": "variable.other.assignment.jac"
+                    "match": "(?:([a-zA-Z$_][\\w$]*)?\\s+|(?<![\\w$]))(and=|or=)",
+                    "captures": {
+                        "1": {
+                            "name": "variable.assignment.jac"
                         },
-                        "3": {
-                            "name": "keyword.operator.terraform"
+                        "2": {
+                            "name": "keyword.operator.assignment.compound.jac"
                         }
-                    },
-                    "patterns": [
-                        {
-                            "include": "#functional"
+                    }
+                },
+                {
+                    "match": "([a-zA-Z$_][\\w$]*)?\\s*(%=|\\+=|-=|\\*=|&&=|\\|\\|=|\\?=|(?<!\\()/=)",
+                    "captures": {
+                        "1": {
+                            "name": "variable.assignment.jac"
+                        },
+                        "2": {
+                            "name": "keyword.operator.assignment.compound.jac"
                         }
-                    ],
-                    "end": "(;|:|}|{|[|]|\\n)"
+                    }
+                },
+                {
+                    "match": "([a-zA-Z$_][\\w$]*)?\\s*(&=|\\^=|<<=|>>=|>>>=|\\|=)",
+                    "captures": {
+                        "1": {
+                            "name": "variable.assignment.coffee"
+                        },
+                        "2": {
+                            "name": "keyword.operator.assignment.compound.bitwise.jac"
+                        }
+                    }
+                },
+                {
+                    "match": "<<|>>>|>>",
+                    "name": "keyword.operator.bitwise.shift.jac"
+                },
+                {
+                    "match": "!=|<=|>=|==|<|>",
+                    "name": "keyword.operator.comparison.jac"
+                },
+                {
+                    "match": "&&|!|\\|\\|",
+                    "name": "keyword.operator.logical.jac"
+                },
+                {
+                    "match": "&|\\||\\^|~",
+                    "name": "keyword.operator.bitwise.jac"
+                },
+                {
+                    "match": "([a-zA-Z$_][\\w$]*)?\\s*(=|:(?!:))(?![>=])",
+                    "captures": {
+                        "1": {
+                            "name": "variable.assignment.jac"
+                        },
+                        "2": {
+                            "name": "keyword.operator.assignment.jac"
+                        }
+                    }
+                },
+                {
+                    "match": "--",
+                    "name": "keyword.operator.decrement.jac"
+                },
+                {
+                    "match": "\\+\\+",
+                    "name": "keyword.operator.increment.jac"
+                },
+                {
+                    "match": "\\.\\.\\.",
+                    "name": "keyword.operator.splat.jac"
+                },
+                {
+                    "match": "\\?",
+                    "name": "keyword.operator.existential.jac"
+                },
+                {
+                    "match": "%|\\*|/|-|\\+",
+                    "name": "keyword.operator.jac"
+                },
+                {
+                    "match": "(?x)\n\\b(?<![\\.\\$])\n(?:\n  (and|or|not) # logical\n  |\n  (is|isnt) # comparison\n)\n(?!\\s*:)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.operator.logical.jac"
+                        },
+                        "2": {
+                            "name": "keyword.operator.comparison.jac"
+                        }
+                    }
                 }
             ]
         }
