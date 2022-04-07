@@ -62,7 +62,7 @@ def remote_api_call(payload, api_name):
             elif(i in super_master._admin_api):
                 path = '/js_admin/'+api_name
             elif(i in super_master._public_api):
-                path = '/public/'+api_name
+                path = '/js_public/'+api_name
             break
     ret = requests.post(connection['url']+path,
                         json=payload,
