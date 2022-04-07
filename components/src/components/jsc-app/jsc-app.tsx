@@ -12,11 +12,6 @@ export class App {
   @Method()
   async setMarkup(value) {
     this.markup = value;
-    console.log(this.markup);
-  }
-
-  componentDidLoad() {
-    console.log(this.markup);
   }
 
   render() {

@@ -19,7 +19,6 @@ export class NavBar {
 
   @Watch('label')
   validateLabel(newLabel: string) {
-    console.log('label updated');
     if (typeof newLabel !== 'number') {
       throw new Error('Label must be a string.');
     }

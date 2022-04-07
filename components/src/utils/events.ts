@@ -19,7 +19,6 @@ export function computeOpArgs(operationActionArgs: string[], actionArgs: (string
 
   operationActionArgs.map((operationArg, index) => {
     // const matchedArgs = operationArg.match(/arg[(](.*?)[)]/g);
-    console.log(actionArgs[index], operationActionArgs[index]);
     argValues[`arg(${operationArg})`] = actionArgs[index];
   });
 
@@ -32,8 +31,6 @@ export function computeOpArgs(operationActionArgs: string[], actionArgs: (string
 export function computeVar(arg: string, result?: any) {
   let updatedArg = arg;
   const vars = arg.match(/var[(](.*?)[)]/g);
-
-  console.log('vars', vars);
 
   if (typeof arg === 'string' && vars?.length > 0) {
     vars.map(variableRef => {
@@ -124,12 +121,10 @@ function runAction(action: JaseciAction, result?: any) {
         const operationDef = JSON.parse(opTargetComponentOperations)[operationName];
 
         operationDef.run.map(operationAction => {
-          console.log({ operationAction });
           const opArgsMap = computeOpArgs(operationDef.args, action?.args);
 
           const newActionArgs = operationAction?.args?.map(arg => {
             let parsedArg = arg;
-            console.log({ parsedArg });
 
             Object.keys(opArgsMap).map(opArg => {
               if (typeof parsedArg == 'string' || typeof parsedArg === 'object') {
@@ -156,7 +151,6 @@ function runAction(action: JaseciAction, result?: any) {
           runAction(operationAction);
         });
 
-        console.log(operationName.trim(), operationDef);
         action?.onCompleted && runAction(action?.onCompleted);
         break;
 
