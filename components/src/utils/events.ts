@@ -180,8 +180,8 @@ function linkEvents(host: HTMLElement, events: JaseciComponent['events']) {
 
         break;
       }
-      case 'onEnter': {
-        events['onEnter'].map(action => {
+      case 'onEnterKeyPress': {
+        events['onEnterKeyPress'].map(action => {
           host.addEventListener('keydown', keyboardEvent => {
             if (keyboardEvent.key === 'Enter') {
               runAction(action);

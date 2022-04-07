@@ -26,7 +26,7 @@ type JaseciOperation = {
 };
 
 type JaseciComponentProps = Record<string, unknown>;
-type JaseciEventName = 'onClick' | 'onKeyPress' | 'onEnter';
+type JaseciEventName = 'onClick' | 'onKeyPress' | 'onEnterKeyPress';
 type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add' | 'runOperation';
 type ActionConditionName = 'eq' | 'neq' | 'gt' | 'lt';
 type ActionCondition = `${string}::#${ActionConditionName}::${string}`;
