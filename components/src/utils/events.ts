@@ -12,6 +12,20 @@ export function setUpEvents(host: HTMLElement, events: string) {
 type ParseArgsConfig = { withOriginal?: boolean };
 
 /**
+ * Inject the provided args for an action into the defined args of an operation
+ */
+export function computeOpArgs(operationActionArgs: string[], actionArgs: (string | number)[]) {
+  let argValues = {};
+
+  operationActionArgs.map((operationArg, index) => {
+    // const matchedArgs = operationArg.match(/arg[(](.*?)[)]/g);
+    argValues[`arg(${operationArg})`] = actionArgs[index];
+  });
+
+  return argValues;
+}
+
+/**
  *  Determines the value of a variable
  */
 export function computeVar(arg: string, result?: any) {
@@ -98,6 +112,41 @@ function runAction(action: JaseciAction, result?: any) {
         append(targetComponent, newComponentString);
         action?.onCompleted && runAction(action?.onCompleted);
         break;
+      case 'runOperation':
+        const operation = action?.operation;
+        if (typeof operation !== 'string') throw new Error('Operation must be a string.');
+        if (!operation.includes('.')) throw new Error('Invalid operation. Operation and component not specified.');
+        const [opTargetComponentName, operationName] = operation.split('.');
+        const opTargetComponent = getComponentByName(opTargetComponentName);
+        const operationDef = JSON.parse(opTargetComponent.getAttribute('operations'))[operationName];
+
+        operationDef.run.map(operationAction => {
+          const opArgsMap = computeOpArgs(operationDef.args, action?.args);
+          console.log({ operationArgs: operationAction?.args, actionArgs: action?.args, opArgsMap });
+
+          const newActionArgs = operationAction?.args?.map(arg => {
+            let parsedArg = arg;
+
+            Object.keys(opArgsMap).map(opArg => {
+              if (typeof arg == 'string' && arg.includes(opArg)) {
+                parsedArg = opArgsMap[opArg];
+              }
+            });
+
+            return parsedArg;
+          });
+
+          console.log({ newActionArgs });
+
+          operationAction.args = newActionArgs;
+
+          runAction(operationAction);
+        });
+
+        console.log(operationName.trim(), operationDef);
+        action?.onCompleted && runAction(action?.onCompleted);
+        break;
+
       default:
         new Function(`${actionName}.apply(this, ${JSON.stringify(parsedActionArgs)})`)();
         action?.onCompleted && runAction(action?.onCompleted);

@@ -34,6 +34,11 @@ const attachEvents = (renderedTag: string, events: JaseciComponent['events']) =>
   return events ? renderedTag.replace('>', ` events=\'${eventsString}\'>`) : renderedTag;
 };
 
+const attachOperations = (renderedTag: string, operations: JaseciComponent['operations']) => {
+  const operationsString = JSON.stringify(operations);
+  return operations ? renderedTag.replace('>', ` operations=\'${operationsString}\'>`) : renderedTag;
+};
+
 const attachCSS = (renderedTag: string, css: JaseciComponent['css']) => {
   const styleString = JSON.stringify(css);
   return css ? renderedTag.replace('>', ` css=\'${styleString}\'>`) : renderedTag;
@@ -47,7 +52,8 @@ export const renderComponent = (jaseciComponent: JaseciComponent) => {
   const componentWithProps = attachProps(renderedTag, jaseciComponent.props || {});
   const componentWithName = attachName(componentWithProps, jaseciComponent.name);
   const componentWithEvents = attachEvents(componentWithName, jaseciComponent.events);
-  const componentWithCSS = attachCSS(componentWithEvents, jaseciComponent.css || {});
+  const componentWithOperations = attachOperations(componentWithEvents, jaseciComponent.operations);
+  const componentWithCSS = attachCSS(componentWithOperations, jaseciComponent.css || {});
 
   return componentWithCSS;
 };

@@ -8,6 +8,7 @@ interface JaseciComponent {
   props: JaseciComponentProps;
   sections?: Record<string, Array<JaseciComponent>>;
   events?: Record<JaseciEventName, Array<JaseciAction>>;
+  operations?: Record<string, JaseciOperation>;
   css?: Record<string, string>;
 }
 
@@ -15,11 +16,17 @@ type JaseciAction = {
   fn: JaseciActionName;
   args: Array<string | number>;
   key?: string;
+  operation?: string;
   cond?: ActionCondition[];
   onCompleted?: JaseciAction;
 };
+type JaseciOperation = {
+  args: Array<string>;
+  run: Array<Record<JaseciEventName, Array<JaseciAction>>>;
+};
+
 type JaseciComponentProps = Record<string, unknown>;
 type JaseciEventName = 'onClick' | 'onKeyPress' | 'onEnter';
-type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add';
-type ActionConditionName = 'eq' | 'neq' | 'gt';
+type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add' | 'runOperation';
+type ActionConditionName = 'eq' | 'neq' | 'gt' | 'lt';
 type ActionCondition = `${string}::#${ActionConditionName}::${string}`;

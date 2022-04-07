@@ -10,6 +10,7 @@ export class MyComponent {
   @Prop() variant: 'simple' | 'title' = 'simple';
   @Prop() value: string;
   @Prop() state: string = JSON.stringify({ counterValue: 2 });
+  @Prop() operations: string;
   @Prop() css: string = JSON.stringify({});
   @Prop() events: string;
 

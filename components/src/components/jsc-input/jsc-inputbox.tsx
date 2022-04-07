@@ -14,6 +14,7 @@ export class Input {
   @Prop() events: string;
   @Prop() fullwidth: string;
   @Prop() placeholder: string;
+  @Prop() operations: string;
   @Element() host: HTMLElement;
 
   @Event() valueChanged: EventEmitter<string>;

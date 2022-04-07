@@ -12,6 +12,7 @@ export class Button {
   @Prop() events: string;
   @Prop() name: string;
   @Prop() css: string = JSON.stringify({});
+  @Prop() operations: string;
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);

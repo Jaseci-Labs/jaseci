@@ -25,7 +25,7 @@
         app.markup = [
           {
             component: 'Navbar',
-            slots: {
+            sections: {
               links: [
                 { component: 'NavLink', props: { label: 'Home', href: 'https://google.com', color: '#fff' } },
                 { component: 'NavLink', props: { label: 'About', href: 'https://google.com', color: '#fff' } },
@@ -42,7 +42,7 @@
               border: '2px solid blue',
               padding: '10px',
             },
-            slots: {
+            sections: {
               children: [
                 {
                   component: 'Row',
@@ -53,7 +53,7 @@
                     width: '100%',
                     padding: '10px 0px',
                   },
-                  slots: {
+                  sections: {
                     children: [
                       {
                         component: 'Column',
@@ -67,7 +67,7 @@
                           justify: 'center',
                           items: 'start',
                         },
-                        slots: {
+                        sections: {
                           children: [
                             {
                               component: 'Container',
@@ -99,7 +99,7 @@
                       },
                       {
                         component: 'Row',
-                        slots: {
+                        sections: {
                           children: [
                             {
                               component: 'Container',
@@ -157,23 +157,9 @@
                   events: {
                     onEnter: [
                       {
-                        fn: 'append',
-                        args: [
-                          'msgs',
-                          {
-                            component: 'Text',
-                            props: { value: 'var(ib1.value) cool' },
-                          },
-                        ],
-                        onCompleted: {
-                          fn: 'alert',
-                          args: ['var(ib1.value) Added...'],
-                          onCompleted: {
-                            fn: 'update',
-                            args: ['ib1.value', ''],
-                            cond: ['var(ib1.value)::#eq::Jaseci'],
-                          },
-                        },
+                        fn: 'runOperation',
+                        operation: 'msgs.appendMessage',
+                        args: ['Hello world.'],
                       },
                     ],
                   },
@@ -210,6 +196,7 @@
                     label: 'Click Here',
                   },
                 },
+
                 {
                   name: 'msgs',
                   component: 'Container',
@@ -221,11 +208,61 @@
                     margin: '10px 0',
                     padding: '0px 8px',
                   },
+                  operations: {
+                    alertMessage: {
+                      args: ['message1', 'message2'],
+                      run: [
+                        { fn: 'alert', args: ['arg(message1) huh'] },
+                        { fn: 'alert', args: ['arg(message2) cool'] },
+                      ],
+                    },
+                    appendMessage: {
+                      args: ['messageBody'],
+                      run: [
+                        {
+                          fn: 'append',
+                          args: [
+                            {
+                              component: 'Text',
+                              props: { value: 'var(messageBody) cool' },
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+                {
+                  component: 'Button',
+                  props: { label: 'View Operations' },
+                  events: {
+                    onClick: [{ fn: 'alert', args: ['var(msgs.operations)'] }],
+                  },
+                },
+                // run the messages operation
+                {
+                  component: 'Button',
+                  props: { label: 'Run Operations' },
+                  events: {
+                    onClick: [
+                      {
+                        fn: 'runOperation',
+                        operation: 'msgs.alertMessage',
+                        args: ['does this work well?', 'This is another message'],
+                        onCompleted: { fn: 'alert', args: ['Phase 1 Done'] },
+                      },
+                      {
+                        fn: 'runOperation',
+                        operation: 'msgs.alertMessage',
+                        args: ['new message', 'Cool shiz', 'bug?'],
+                      },
+                    ],
+                  },
                 },
 
                 {
                   component: 'Container',
-                  slots: {
+                  sections: {
                     children: [
                       {
                         component: 'Text',
@@ -234,7 +271,7 @@
                       },
                       {
                         component: 'Row',
-                        slots: {
+                        sections: {
                           children: [
                             {
                               component: 'Text',

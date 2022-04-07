@@ -10,6 +10,7 @@ export class Container {
   @Element() host: HTMLElement;
   @Prop() css: string = JSON.stringify({});
   @Prop() events: string;
+  @Prop() operations: string;
   @Prop() name: string;
 
   componentDidLoad() {

@@ -14,6 +14,7 @@ export class NavBar {
   @Prop() css: string = JSON.stringify({});
   @Prop() name: string;
   @Prop() events: string;
+  @Prop() operations: string;
   @Element() host: HTMLElement;
 
   @Watch('label')

@@ -14,6 +14,7 @@ export class Column {
   @Prop() justify: JustifyPropValue = 'start';
   @Prop() items: ItemsPropValue = 'start';
   @Prop() events: string;
+  @Prop() operations: string;
   @Prop() name: string;
 
   componentDidLoad() {

@@ -14,6 +14,7 @@ export class Row {
   @Prop() events: string;
   @Prop() justify: JustifyPropValue = 'start';
   @Prop() items: ItemsPropValue = 'start';
+  @Prop() operations: string;
 
   componentDidLoad() {
     const childrenSlot = this.host.querySelector('div[slot=children]') as HTMLSlotElement;

@@ -10,7 +10,7 @@ export class App {
   @Prop({ mutable: true }) markup: JaseciComponent[];
 
   @Method()
-  setMarkup(value) {
+  async setMarkup(value) {
     this.markup = value;
     console.log(this.markup);
   }

@@ -12,6 +12,7 @@ export class NavLink {
   @Prop() target: string;
   @Prop() css: string = JSON.stringify({});
   @Prop() events: string;
+  @Prop() operations: string;
   @Element() host: HTMLElement;
 
   componentDidLoad() {

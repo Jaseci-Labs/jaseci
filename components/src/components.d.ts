@@ -16,6 +16,7 @@ export namespace Components {
         "events": string;
         "label": string;
         "name": string;
+        "operations": string;
     }
     interface JscColumn {
         "css": string;
@@ -23,11 +24,13 @@ export namespace Components {
         "items": ItemsPropValue;
         "justify": JustifyPropValue;
         "name": string;
+        "operations": string;
     }
     interface JscContainer {
         "css": string;
         "events": string;
         "name": string;
+        "operations": string;
     }
     interface JscInputbox {
         "css": string;
@@ -35,12 +38,14 @@ export namespace Components {
         "fullwidth": string;
         "label": string;
         "name": string;
+        "operations": string;
         "placeholder": string;
         "value": string;
     }
     interface JscLabel {
         "htmlFor": string;
         "label": string;
+        "operations": string;
     }
     interface JscNavBar {
         "css": string;
@@ -50,12 +55,14 @@ export namespace Components {
          */
         "label": string;
         "name": string;
+        "operations": string;
     }
     interface JscNavLink {
         "css": string;
         "events": string;
         "href": string;
         "label": string;
+        "operations": string;
         "target": string;
     }
     interface JscRow {
@@ -63,10 +70,12 @@ export namespace Components {
         "events": string;
         "items": ItemsPropValue;
         "justify": JustifyPropValue;
+        "operations": string;
     }
     interface JscText {
         "css": string;
         "events": string;
+        "operations": string;
         "state": string;
         "value": string;
         "variant": 'simple' | 'title';
@@ -77,6 +86,7 @@ export namespace Components {
         "fullwidth": string;
         "label": string;
         "name": string;
+        "operations": string;
         "placeholder": string;
         "value": string;
     }
@@ -192,6 +202,7 @@ declare namespace LocalJSX {
         "events"?: string;
         "label"?: string;
         "name"?: string;
+        "operations"?: string;
     }
     interface JscColumn {
         "css"?: string;
@@ -199,11 +210,13 @@ declare namespace LocalJSX {
         "items"?: ItemsPropValue;
         "justify"?: JustifyPropValue;
         "name"?: string;
+        "operations"?: string;
     }
     interface JscContainer {
         "css"?: string;
         "events"?: string;
         "name"?: string;
+        "operations"?: string;
     }
     interface JscInputbox {
         "css"?: string;
@@ -212,12 +225,14 @@ declare namespace LocalJSX {
         "label"?: string;
         "name"?: string;
         "onValueChanged"?: (event: CustomEvent<string>) => void;
+        "operations"?: string;
         "placeholder"?: string;
         "value"?: string;
     }
     interface JscLabel {
         "htmlFor"?: string;
         "label"?: string;
+        "operations"?: string;
     }
     interface JscNavBar {
         "css"?: string;
@@ -227,12 +242,14 @@ declare namespace LocalJSX {
          */
         "label"?: string;
         "name"?: string;
+        "operations"?: string;
     }
     interface JscNavLink {
         "css"?: string;
         "events"?: string;
         "href"?: string;
         "label"?: string;
+        "operations"?: string;
         "target"?: string;
     }
     interface JscRow {
@@ -240,10 +257,12 @@ declare namespace LocalJSX {
         "events"?: string;
         "items"?: ItemsPropValue;
         "justify"?: JustifyPropValue;
+        "operations"?: string;
     }
     interface JscText {
         "css"?: string;
         "events"?: string;
+        "operations"?: string;
         "state"?: string;
         "value"?: string;
         "variant"?: 'simple' | 'title';
@@ -255,6 +274,7 @@ declare namespace LocalJSX {
         "label"?: string;
         "name"?: string;
         "onValueChanged"?: (event: CustomEvent<string>) => void;
+        "operations"?: string;
         "placeholder"?: string;
         "value"?: string;
     }

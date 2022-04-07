@@ -8,6 +8,7 @@ import { Component, h, Prop } from '@stencil/core';
 export class Label {
   @Prop() label: string;
   @Prop() htmlFor: string;
+  @Prop() operations: string;
 
   render() {
     return (

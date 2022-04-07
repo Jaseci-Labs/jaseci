@@ -13,6 +13,7 @@ export class Textbox {
   @Prop() name: string;
   @Prop() label: string;
   @Prop() css: string = JSON.stringify({});
+  @Prop() operations: string;
   @Prop() events: string;
 
   @Element() host: HTMLElement;

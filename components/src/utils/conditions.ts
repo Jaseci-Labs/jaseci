@@ -20,7 +20,10 @@ export function checkCond(cond: ActionCondition[]) {
         passing = !checkEquality(val1, val2);
         break;
       case 'gt':
-        passing = checkGreaterThan(Number(val1), Number(val2));
+        passing = checkGreaterThan(isNaN(Number(val1)) ? val1.length : Number(val1), Number(val2));
+        break;
+      case 'lt':
+        passing = checkLessThan(isNaN(Number(val1)) ? val1.length : Number(val1), Number(val2));
         break;
       default:
         passing = checkEquality(val1, val2);
@@ -41,4 +44,8 @@ export function checkEquality(val1: unknown, val2: unknown) {
 
 export function checkGreaterThan(val1: number, val2: number) {
   return val1 > val2;
+}
+
+export function checkLessThan(val1: number, val2: number) {
+  return val1 < val2;
 }
