@@ -25,7 +25,6 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker = \
             sent.walker_ids.get_obj_by_name('init')
         test_walker.prime(gph)
-        ret = test_walker.run()
-        self.log(ret)
+        test_walker.run()
         report = test_walker.report
-        self.assertEqual(len(report), 3)
+        self.assertEqual(report[0][0], "THIS IS AN INTENT_LABEL")

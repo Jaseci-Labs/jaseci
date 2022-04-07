@@ -1530,6 +1530,7 @@ class interp(machine_state):
 
     def call_ability(self, nd, name, act_list):
         m = interp(parent_override=self.parent(), caller=self)
+        m.current_node = nd
         arch = self.get_arch_for(nd)
         m.push_scope(jac_scope(parent=nd,
                                has_obj=nd,

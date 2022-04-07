@@ -12,7 +12,6 @@ node state {
 edge transition {has intent_label;}
 walker test_walker {
     state {
-        std.log(here);
         here::collect_intents;
     }
 }
@@ -21,15 +20,18 @@ graph test_graph {
     spawn {
         state_node = spawn node::state;
         state_2 = spawn node::state;
-        state_node -[transition(intent_label = "THIS IS AN INTENT_LABEL")]-> state_2;
+        state_node -[transition(intent_label =
+                     "THIS IS AN INTENT_LABEL")]-> state_2;
     }
 }
 
 walker init {
     spawn here --> graph::test_graph;
     spawn --> walker::test_walker;
-
+    report -->[0].cand_intents;
+    report -->;
 }
+
 test "Test"
 with graph::test_graph by walker::test_walker {
      assert(here.cand_intents == ['THIS IS AN INTENT_LABEL']);
