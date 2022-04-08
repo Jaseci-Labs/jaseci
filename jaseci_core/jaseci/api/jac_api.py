@@ -18,6 +18,8 @@ class jac_api():
         if(not os.path.isfile(file)):
             ret = "File does not exsist!"
             return ret
+        filename = os.path.basename(file)
+        dir = os.path.dirname(os.path.realpath(file))
         if(not len(out)):
             if(file.endswith(".jac")):
                 out = file.replace(".jac", ".jir")
@@ -25,7 +27,8 @@ class jac_api():
                 out = file+'.jir'
         faux = self.faux_master()
         with open(file, 'r') as file:
-            ret = faux.sentinel_register(code=file.read())
+            ret = faux.sentinel_register(
+                code=file.read(), code_dir=dir, name=filename)
             if('success' in ret and not ret['success']):
                 return ret
             with open(out, 'w') as ofile:
@@ -46,15 +49,19 @@ class jac_api():
         if(not os.path.isfile(file)):
             ret = "File does not exsist!"
             return ret
+        filename = os.path.basename(file)
+        dir = os.path.dirname(os.path.realpath(file))
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
         with open(file, 'r') as file:
             if(is_jir):
-                faux.sentinel_register()
+                faux.sentinel_register(name=filename)
                 faux.sentinel_set(snt=faux.active_snt(),
                                   code=file.read(), mode='ir')
             else:
-                ret = faux.sentinel_register(code=file.read())
+                ret = faux.sentinel_register(
+                    code=file.read(), code_dir=dir,  name=filename,
+                    auto_run='')
                 if('success' in ret and not ret['success']):
                     return ret
         return faux.sentinel_test(snt=faux.active_snt(), detailed=detailed)
@@ -69,20 +76,53 @@ class jac_api():
         if(not os.path.isfile(file)):
             ret = "File does not exsist!"
             return ret
+        filename = os.path.basename(file)
+        dir = os.path.dirname(os.path.realpath(file))
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
         with open(file, 'r') as file:
             if(is_jir):
-                faux.sentinel_register()
+                faux.sentinel_register(name=filename)
                 faux.sentinel_set(snt=faux.active_snt(),
                                   code=file.read(), mode='ir')
             else:
-                ret = faux.sentinel_register(code=file.read(), auto_run='')
+                ret = faux.sentinel_register(
+                    code=file.read(), code_dir=dir, name=filename, auto_run='')
                 if('success' in ret and not ret['success']):
                     return ret
         return faux.walker_run(name=walk, snt=faux.active_snt(),
                                nd=faux.active_gph(), ctx=ctx,
                                profiling=profiling)
+
+    @interface.cli_api(cli_args=['file'])
+    def jac_dot(self, file: str, walk: str = 'init', ctx: dict = {},
+                profiling: bool = False):
+        """
+        Command line tooling for a walker then output graph in both .jac code
+        files and .jir executables
+        """
+        if(not os.path.isfile(file)):
+            ret = "File does not exsist!"
+            return ret
+        filename = os.path.basename(file)
+        dir = os.path.dirname(os.path.realpath(file))
+        is_jir = file.endswith(".jir")
+        faux = self.faux_master()
+        with open(file, 'r') as file:
+            if(is_jir):
+                faux.sentinel_register(name=filename)
+                faux.sentinel_set(snt=faux.active_snt(),
+                                  code=file.read(), mode='ir')
+            else:
+                ret = faux.sentinel_register(
+                    code=file.read(), name=filename, code_dir=dir,
+                    auto_run='')
+                if('success' in ret and not ret['success']):
+                    return ret
+        faux.walker_run(name=walk, snt=faux.active_snt(),
+                        nd=faux.active_gph(), ctx=ctx,
+                        profiling=profiling)
+        return faux.graph_get(gph=faux.active_gph(), mode='dot')
 
     def faux_master(self):
         from jaseci.element.super_master import super_master

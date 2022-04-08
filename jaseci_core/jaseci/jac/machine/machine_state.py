@@ -18,6 +18,7 @@ class machine_state():
 
     def __init__(self, parent_override=None, caller=None):
         self.report = []
+        self.report_status = None
         self.runtime_errors = []
         self._parent_override = parent_override
         if(not isinstance(self, element) and caller):
@@ -39,6 +40,7 @@ class machine_state():
 
     def reset(self):
         self.report = []
+        self.report_status = None
         self.runtime_errors = []
         self._scope_stack = [None]
         self._jac_scope = None
@@ -58,6 +60,11 @@ class machine_state():
         return jac_ast.kid
 
     # Helper Functions ##################
+
+    def get_arch_for(self, obj):
+        """Returns the architype that matches object"""
+        return self.parent().arch_ids.get_obj_by_name(
+            name=obj.name, kind=obj.kind)
 
     def obj_set_to_jac_set(self, obj_set):
         """

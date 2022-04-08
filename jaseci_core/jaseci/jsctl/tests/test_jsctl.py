@@ -79,7 +79,6 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call("walker run init")
         self.call("walker run gen_rand_life")
         r = self.call("graph get -mode dot")
-        self.assertIn("test test test", r)
         self.assertIn('"n0" -> "n', r)
         self.assertIn('week="', r)
 
@@ -186,10 +185,10 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertFalse(r['success'])
 
     def test_jsctl_import(self):
-        self.call(
+        r = self.call(
             "sentinel register "
-            "jaseci/jsctl/tests/ll_base.jac -set_active true")
-        self.logger_off()
+            "jaseci/jsctl/tests/ll_base.jac -code_dir "
+            "jaseci/jsctl/tests -set_active true")
         self.call("walker run init")
         self.call("walker run gen_rand_life")
         r = self.call_cast("walker run get_gen_day")

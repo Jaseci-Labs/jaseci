@@ -5,6 +5,7 @@ from jaseci.attr import action
 from jaseci.graph.edge import edge
 from jaseci.element import element
 from jaseci.utils.mem_hook import mem_hook
+from jaseci.actor.architype import architype
 
 
 class node_tests(TestCaseHelper, TestCase):
@@ -58,7 +59,7 @@ class node_tests(TestCaseHelper, TestCase):
 
     def test_add_entry_action_to_node_and_destroy(self):
         """Test connecting and disconnecting etc of nodes"""
-        node1 = node(m_id='anon', h=mem_hook())
+        node1 = architype(m_id='anon', h=mem_hook())
         act = action.action(m_id='anon', h=node1._h,
                             name="yeah dude", value="SUP")
         node1.entry_action_ids.add_obj(act)

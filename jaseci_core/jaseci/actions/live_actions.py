@@ -23,15 +23,17 @@ def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
     def decorator_func(func):
         if(allow_remote):
             mark_as_remote([func, act_group, aliases, caller_globals])
-        return assimilate_action(func, act_group)
+        return assimilate_action(func, act_group, aliases)
     return decorator_func
 
 
-def assimilate_action(func, act_group=None):
+def assimilate_action(func, act_group=None, aliases=list()):
     """Helper for jaseci_action decorator"""
     act_group = [func.__module__.split(
         '.')[-1]] if act_group is None else act_group
     live_actions[f"{'.'.join(act_group+[func.__name__])}"] = func
+    for i in aliases:
+        live_actions[f"{'.'.join(act_group+[i])}"] = func
     return func
 
 

@@ -285,6 +285,7 @@ class user_api_tests_private(TestCaseHelper, TestCase):
             'name': self.user.name,
             'email': self.user.email,
             'is_activated': self.user.is_activated,
+            'is_superuser': self.user.is_superuser
         })
 
     def test_post_me_not_allowed(self):

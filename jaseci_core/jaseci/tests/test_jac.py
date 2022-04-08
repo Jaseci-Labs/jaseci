@@ -384,8 +384,8 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         self.assertEqual(2, len(test_walker.report[0][0].keys()))
         self.assertGreaterEqual(len(test_walker.report[0][1].keys()), 7)
-        self.assertLess(len(test_walker.report[0][1].keys()), 16)
-        self.assertGreaterEqual(len(test_walker.report[0][2].keys()), 16)
+        self.assertLess(len(test_walker.report[0][1].keys()), 14)
+        self.assertGreaterEqual(len(test_walker.report[0][2].keys()), 14)
 
     def test_spawn_ctx_for_edges_nodes(self):
         """Test builtins to see into nodes and edges"""
@@ -637,7 +637,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[0], {'args': ('division by zero',),
                                   'col': 8,
                                   'line': 5,
-                                  'mod': '@default',
+                                  'mod': 'basic',
                                   'msg': 'division by zero',
                                   'type': 'ZeroDivisionError'})
         self.assertEqual(rep[1], 'dont need err')
@@ -738,7 +738,6 @@ class jac_tests(TestCaseHelper, TestCase):
                       test_walker.runtime_errors[0])
 
     def test_root_type_nodes(self):
-        self.logger_on()
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.root_type_nodes)
@@ -760,17 +759,6 @@ class jac_tests(TestCaseHelper, TestCase):
         errors = test_walker.runtime_errors
         self.assertGreater(len(errors), 0)
 
-    def test_file_io(self):
-        gph = graph(m_id='anon', h=mem_hook())
-        sent = sentinel(m_id='anon', h=gph._h)
-        sent.register_code(jtc.file_io)
-        test_walker = \
-            sent.walker_ids.get_obj_by_name('init')
-        test_walker.prime(gph)
-        test_walker.run()
-        report = test_walker.report
-        self.assertEqual(report, ['{"a": 10}{"a": 10}'])
-
     def test_auto_cast(self):
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
@@ -781,3 +769,38 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         report = test_walker.report
         self.assertEqual(report, [True, True])
+
+    def test_no_error_on_dict_key_assign(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.no_error_on_dict_key_assign)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        report = test_walker.report
+        self.assertEqual(report, [{'b': 4}])
+        self.assertEqual(len(test_walker.runtime_errors), 0)
+
+    def test_report_status(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.report_status)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        report = test_walker.report
+        self.assertEqual(report, ['hello'])
+        self.assertEqual(test_walker.report_status, 302)
+
+    def test_graph_in_graph(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.graph_in_graph)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        report = test_walker.report
+        self.assertEqual(len(report), 3)

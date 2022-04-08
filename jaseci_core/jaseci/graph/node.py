@@ -22,9 +22,7 @@ class node(element, anchored):
         self.member_node_ids = id_list(self)
         self.dimension = dimension  # Nodes are always hdgd 0
         self.context = {}
-        self.entry_action_ids = id_list(self)
-        self.activity_action_ids = id_list(self)
-        self.exit_action_ids = id_list(self)
+
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
 
@@ -343,10 +341,7 @@ class node(element, anchored):
         """
         Destroys self from memory and persistent storage
         """
-        des = self.activity_action_ids.obj_list() + \
-            self.edge_ids.obj_list() + self.entry_action_ids.obj_list() + \
-            self.exit_action_ids.obj_list()
-        for i in des:
+        for i in self.edge_ids.obj_list():
             i.destroy()
         super().destroy()
 

@@ -30,7 +30,7 @@ class jac_json_dec(json.JSONDecoder):
     def object_hook(self, obj):
 
         if isinstance(obj, dict) and "mod_name" in obj and "kid" in obj:
-            ret = ast(fresh_start=False)
+            ret = ast(mod_name=obj['mod_name'], fresh_start=False)
             for i in obj.keys():
                 setattr(ret, i, obj[i])
             return ret
@@ -82,9 +82,10 @@ class jac_code():
             self.kind = f"{kid[0].token_text()}"
             self.name = f"{kid[1].token_text()}"
 
-    def parse_jac(self, code, start_rule='start'):
+    def parse_jac(self, code, dir, start_rule='start'):
         """Generate AST tree from Jac code text"""
-        tree = ast(jac_text=code, start_rule=start_rule, mod_name=self.name)
+        tree = ast(jac_text=code, start_rule=start_rule, mod_name=self.name,
+                   mod_dir=dir)
         self.errors = tree._parse_errors
         if(tree._parse_errors):
             logger.error(str(f'{self.name}: Invalid syntax in Jac code!'))
@@ -93,12 +94,12 @@ class jac_code():
             return None
         return tree
 
-    def register(self, code):
+    def register(self, code, dir):
         """
         Parses Jac code and saves IR
         """
         start_rule = 'start' if self.j_type == 'sentinel' else self.j_type
-        tree = self.parse_jac(code, start_rule=start_rule)
+        tree = self.parse_jac(code, dir, start_rule=start_rule)
 
         if(not tree):
             self.is_active = False
