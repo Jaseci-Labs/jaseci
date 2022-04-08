@@ -2,7 +2,7 @@ from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
 from entity_extraction import serv_actions
 from fastapi.testclient import TestClient
-from test_data import (
+from .test_data import (
     test_entity_detection_request,
     test_entity_detection_response,
     test_entity_detection_request_fail_ner,
@@ -32,10 +32,11 @@ class entity_extraction_test(TestCaseHelper, TestCase):
             json=test_entity_detection_request
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            test_entity_detection_response
-        )
+        for idx, ent in enumerate(test_entity_detection_response["entities"]):
+            ent.pop("conf_score")
+            res_ent = response.json()["entities"][idx]
+            res_ent.pop("conf_score")
+            self.assertEqual(res_ent, ent)
 
     def test_entity_detection_fail_ner(self):
         response = self.client.post(
@@ -64,10 +65,10 @@ class entity_extraction_test(TestCaseHelper, TestCase):
             "/train/",
             json=test_entity_training_pass
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
-            "Model Training is started"
+            "Model Training is Completed"
         )
 
     def test_entity_training_fail(self):
@@ -109,6 +110,10 @@ class entity_extraction_test(TestCaseHelper, TestCase):
             response.json(),
             "Config setup is complete."
         )
+        response = self.client.post(
+            "/set_config/",
+            json=test_entity_config_setup_ner)
+        self.assertEqual(response.status_code, 200)
 
     def test_entity_config_setup3(self):
         response = self.client.post(
@@ -119,3 +124,7 @@ class entity_extraction_test(TestCaseHelper, TestCase):
             response.json(),
             "Config setup is complete."
         )
+        response = self.client.post(
+            "/set_config/",
+            json=test_entity_config_setup_ner)
+        self.assertEqual(response.status_code, 200)

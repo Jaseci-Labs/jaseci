@@ -1,10 +1,11 @@
 test_entity_detection_request = {
     "text": "The Humboldt University of Berlin is situated in Berlin, Germany",
-    "ner_labels": ["University", "City", "Country"]
+    "ner_labels": [
+        "PREDEFINED"
+    ]
 }
 
 test_entity_detection_response = {
-    "input_text": "The Humboldt University of Berlin is situated in Berlin, Germany",
     "entities": [
         {
             "entity_text": "Humboldt University of Berlin",

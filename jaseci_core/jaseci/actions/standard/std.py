@@ -27,6 +27,12 @@ def out(*args):
     print(*args)
 
 
+@jaseci_action(aliases=['input'])
+def js_input(prompt: str = ''):
+    """Standard built in for printing output"""
+    return input(prompt)
+
+
 @jaseci_action()
 def err(*args):
     """Standard built in for printing to stderr"""

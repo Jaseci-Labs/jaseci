@@ -1,6 +1,6 @@
 grammar jac;
 
-start: ver_label? import_module* element+ EOF;
+start: ver_label? import_module* element* EOF;
 
 import_module:
 	KW_IMPORT LBRACE (import_items | STAR_MUL) RBRACE KW_WITH STRING SEMI;
@@ -127,7 +127,9 @@ assert_stmt: KW_ASSERT expression;
 
 destroy_action: KW_DESTROY expression SEMI;
 
-report_action: KW_REPORT expression SEMI;
+report_action:
+	KW_REPORT expression SEMI
+	| KW_REPORT DOT NAME EQ INT SEMI;
 
 walker_action: ignore_action | take_action | KW_DISENGAGE SEMI;
 
@@ -253,15 +255,17 @@ dict_val: LBRACE (kv_pair (COMMA kv_pair)*)? RBRACE;
 
 kv_pair: STRING COLON expression;
 
-spawn: KW_SPAWN expression? spawn_object;
+spawn: KW_SPAWN spawn_object;
 
 spawn_object: node_spawn | walker_spawn | graph_spawn;
 
-node_spawn: edge_ref? node_ref spawn_ctx?;
+spawn_edge: expression edge_ref;
 
-graph_spawn: edge_ref graph_ref;
+node_spawn: spawn_edge? node_ref spawn_ctx?;
 
-walker_spawn: walker_ref spawn_ctx?;
+graph_spawn: spawn_edge? graph_ref;
+
+walker_spawn: expression walker_ref spawn_ctx?;
 
 spawn_ctx: LPAREN (spawn_assign (COMMA spawn_assign)*)? RPAREN;
 

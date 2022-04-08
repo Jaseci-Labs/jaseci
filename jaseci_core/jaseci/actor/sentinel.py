@@ -8,8 +8,6 @@ from jaseci.utils.utils import logger
 from jaseci.utils.id_list import id_list
 from jaseci.jac.ir.jac_code import jac_code, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
-from jaseci.graph.node import node
-from jaseci.graph.edge import edge
 from jaseci.actor.walker import walker
 from jaseci.actor.architype import architype
 
@@ -30,10 +28,20 @@ class sentinel(element, jac_code, sentinel_interp):
         element.__init__(self, *args, **kwargs)
         jac_code.__init__(self, code_ir=None)
         sentinel_interp.__init__(self)
+        self.load_arch_defaults()
+
+    def load_arch_defaults(self):
+        self.arch_ids.add_obj(architype(m_id=self._m_id, h=self._h,
+                                        name='root', kind='node'))
+        self.arch_ids.add_obj(architype(m_id=self._m_id, h=self._h,
+                                        name='generic', kind='node'))
+        self.arch_ids.add_obj(architype(m_id=self._m_id, h=self._h,
+                                        name='generic', kind='edge'))
 
     def reset(self):
         """Resets state of sentinel and unregister's code"""
         self.arch_ids.destroy_all()
+        self.load_arch_defaults()
         self.walker_ids.destroy_all()
         jac_code.reset(self)
         sentinel_interp.reset(self)
@@ -42,12 +50,12 @@ class sentinel(element, jac_code, sentinel_interp):
         super().refresh()
         self.ir_load()
 
-    def register_code(self, text):
+    def register_code(self, text, dir='./'):
         """
         Registers a program (set of walkers and architypes) written in Jac
         """
         self.reset()
-        self.register(text)
+        self.register(text, dir)
         if(self.is_active):
             self.ir_load()
         return self.is_active
@@ -56,6 +64,7 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         Load walkers and architypes from IR
         """
+
         self.run_start(self._jac_ast)
 
         if(self.runtime_errors):
@@ -131,21 +140,12 @@ class sentinel(element, jac_code, sentinel_interp):
             caller = self
         arch = self.spawn_architype(name, kind, caller)
         if(arch is None):
-            if(name == 'generic'):
-                if(kind == 'node'):
-                    arch = node(m_id=caller._m_id, h=self._h)
-                elif(kind == 'edge'):
-                    arch = edge(m_id=caller._m_id, h=self._h)
-            elif(name == 'root' and kind == 'node'):
-                arch = node(name='root', m_id=caller._m_id, h=self._h)
-            else:
-                logger.error(
-                    str(
-                        f'{self.name}: Unable to spawn architype '
-                        f'{[name, kind]}!')
-                )
-                return None
-            return arch
+            logger.error(
+                str(
+                    f'{self.name}: Unable to spawn architype '
+                    f'{[name, kind]}!')
+            )
+            return None
         if(arch.jid in self.arch_ids):
             return arch.run()
         else:

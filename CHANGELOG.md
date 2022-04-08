@@ -4,9 +4,26 @@
 
 ### Updates
 
+- Improvement: Disallowing spawning of unlinked edges, i.e., `spawn --> node::generic` not allowed without `here`
+- New Feature: Random library adds random text generation lorem style with `rand.word()`, `rand.sentence()`, `rand.paragraph()`, and `rand.text()`.
+- New Feature: Standard input `std.input(prompt)` :-p
+- Improvement: Status codes auto plucked from return payload in jsserv
+- New Feature: Can now control status codes with `report.status = 201` style statements
+- Improvement: No longer saves action data into graph and keeps it in architypes
+- New Feature: Walkers can be called directly using `wapi/{walkername}` api
+- New Feature: New `master_allusers` API available for super master users
+- Improvement: Superusers now have access to all data
+- Improvement: Jaseci's admin api route changed to `/js_admin/...` vs `/admin/` to not conflict with Django's internals
+- Update: Django 3 upgraded to latest as well as all other dependencies.
+- Fix: Believe it or not, I never fully implemented `continue`. LIKE REALLY??? Anyway, fixed now. FTLOG!
+- New Feature: Added `jac dot` cli command much like `jac run` but prints dot graph
 - New Feature: Created shorthand for string, list, and dict functions i.e., `.s::`, `.d::`, and `.l::` respectively
 - New Feature: Added suite of dict manipulation functions
 - New Feature: Added suite of list manipulation functions
+
+### Notes
+
+- All api calls to Jaseci admin apis using the `/admin/` route must be updated to `/js_admin/`
 
 ## Version 1.3.1
 

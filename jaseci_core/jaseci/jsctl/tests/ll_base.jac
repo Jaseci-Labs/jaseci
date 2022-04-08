@@ -1,4 +1,4 @@
-import {*} with "jaseci/jsctl/tests/ll_import.jac";
+import {*} with "./ll_import.jac";
 
 edge past;
 edge parent;
