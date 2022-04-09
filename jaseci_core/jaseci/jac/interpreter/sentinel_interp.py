@@ -33,15 +33,34 @@ class sentinel_interp(interp):
 
     def run_element(self, jac_ast):
         """
-        element: architype | walker | test;
+        element: constant | architype | walker | test;
         """
         kid = self.set_cur_ast(jac_ast)
-        if(kid[0].name == 'architype'):
+        if(kid[0].name == 'constant'):
+            self.load_constant(kid[0])
+        elif(kid[0].name == 'architype'):
             self.load_architype(kid[0])
         elif(kid[0].name == 'walker'):
             self.load_walker(kid[0])
         elif(kid[0].name == 'test'):
             self.load_test(kid[0])
+
+    def load_constant(self, jac_ast):
+        """
+        constant:
+            KW_CONST NAME EQ expression (COMMA NAME EQ expression)* SEMI;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        kid = kid[1:]
+        while(kid[0].name == "NAME"):
+            const_name = kid[0].token_text()
+            if(const_name in self.global_const):
+                self.rt_error(f"Constant {const_name} already defined!",
+                              kid[0])
+            else:
+                self.global_const[const_name] = self.run_expression(
+                    kid[2]).value
+            kid = kid[4:] if kid[3].name == "COMMA" else kid[3:]
 
     def load_architype(self, jac_ast):
         """

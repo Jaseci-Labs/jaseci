@@ -17,7 +17,10 @@ import_names:
 	DBL_COLON NAME
 	| DBL_COLON LBRACE name_list RBRACE;
 
-element: architype | walker | test;
+element: constant | architype | walker | test;
+
+constant:
+	KW_CONST NAME EQ expression (COMMA NAME EQ expression)* SEMI;
 
 architype:
 	KW_NODE NAME (COLON INT)? attr_block
@@ -401,6 +404,7 @@ NE: '!=';
 KW_IN: 'in';
 KW_ANCHOR: 'anchor';
 KW_HAS: 'has';
+KW_CONST: 'const';
 KW_PRIVATE: 'private';
 COMMA: ',';
 KW_CAN: 'can';
