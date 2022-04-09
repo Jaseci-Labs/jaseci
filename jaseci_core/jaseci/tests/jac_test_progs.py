@@ -45,3 +45,13 @@ action_load_std_lib = \
         report std.actload_local('../jskit/infer.py');
     }
     """
+
+
+globals = \
+    """
+    global a = "testing";
+
+    walker init {
+        report global.a;
+    }
+    """

@@ -42,3 +42,14 @@ class jac_tests(TestCaseHelper, TestCase):
             api_name='walker_run', params={'name': 'aload'})
         report = report['report']
         self.assertEqual(report[0], False)
+
+    def test_globals(self):
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtp.globals)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        report = test_walker.report
+        self.assertEqual(report[0], "testing")

@@ -659,6 +659,7 @@ class interp(machine_state):
             | BOOL
             | NULL
             | NAME
+            | KW_GLOBAL DOT NAME
             | node_edge_ref
             | list_val
             | dict_val
@@ -690,6 +691,13 @@ class interp(machine_state):
                 self.rt_error(f"Variable not defined - {name}", kid[0])
                 return jac_value(self, )
             return val
+        elif(kid[0].name == 'KW_GLOBAL'):
+            name = kid[2].token_text()
+            if(name not in self.parent().global_vars):
+                self.rt_error(f"Global not defined - {name}", kid[2])
+                return jac_value(self, )
+            return jac_value(self,
+                             ctx=self.parent().global_vars, name=name)
         elif(kid[0].name == 'LPAREN'):
             return self.run_expression(kid[1])
         elif(kid[0].name == 'DBL_COLON'):

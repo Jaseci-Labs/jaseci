@@ -17,10 +17,10 @@ import_names:
 	DBL_COLON NAME
 	| DBL_COLON LBRACE name_list RBRACE;
 
-element: constant | architype | walker | test;
+element: global_var | architype | walker | test;
 
-constant:
-	KW_CONST NAME EQ expression (COMMA NAME EQ expression)* SEMI;
+global_var:
+	KW_GLOBAL NAME EQ expression (COMMA NAME EQ expression)* SEMI;
 
 architype:
 	KW_NODE NAME (COLON INT)? attr_block
@@ -173,6 +173,7 @@ atom:
 	| BOOL
 	| NULL
 	| NAME
+	| KW_GLOBAL DOT NAME
 	| node_edge_ref
 	| list_val
 	| dict_val
@@ -404,7 +405,7 @@ NE: '!=';
 KW_IN: 'in';
 KW_ANCHOR: 'anchor';
 KW_HAS: 'has';
-KW_CONST: 'const';
+KW_GLOBAL: 'global';
 KW_PRIVATE: 'private';
 COMMA: ',';
 KW_CAN: 'can';
