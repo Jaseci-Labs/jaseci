@@ -105,6 +105,8 @@ class machine_state():
 
     def rt_log_str(self, msg, jac_ast=None):
         """Generates string for screen output"""
+        if(jac_ast is None):
+            jac_ast = self._cur_jac_ast
         name = self.name if hasattr(self, 'name') else 'blank'
         if(jac_ast):
             msg = f'{jac_ast.mod_name}:{name} - line {jac_ast.line}, ' + \

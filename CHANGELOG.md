@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Feature: Introduction of new standard library option for loading actions in Jac with `std.actload_local` and `std.actload_remote`
 - Improvement: Disallowing spawning of unlinked edges, i.e., `spawn --> node::generic` not allowed without `here`
 - New Feature: Random library adds random text generation lorem style with `rand.word()`, `rand.sentence()`, `rand.paragraph()`, and `rand.text()`.
 - New Feature: Standard input `std.input(prompt)` :-p

@@ -54,7 +54,7 @@ def sort_by_col(lst: list, col_num: int, reverse: bool = False):
 
 
 @jaseci_action()
-def time_now(meta):
+def time_now():
     """Get utc date time for now in iso format"""
     return datetime.utcnow().isoformat()
 
@@ -85,6 +85,30 @@ def get_global(name: str, meta):
         return json.loads(val)
     else:
         return None
+
+
+@jaseci_action()
+def actload_local(filename: str, meta):
+    """
+    Load local actions to Jaseci
+    """
+    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    if(not mast.is_master(super_check=True, silent=True)):
+        meta['interp'].rt_error("Only super master can load actions.")
+        return False
+    return mast.actions_load_local(file=filename)['success']
+
+
+@jaseci_action()
+def actload_remote(url: str, meta):
+    """
+    Load remote actions to Jaseci
+    """
+    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    if(not mast.is_master(super_check=True, silent=True)):
+        meta['interp'].rt_error("Only super master can load actions.")
+        return False
+    return mast.actions_load_remote(url=url)['success']
 
 
 @jaseci_action()
