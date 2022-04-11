@@ -53,5 +53,7 @@ globals = \
 
     walker init {
         report global.a;
+        global.a = 56;
+        report global.a;
     }
     """

@@ -11,7 +11,8 @@ import_items:
 	KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
 	| KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
 	| KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
-	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?;
+	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?
+	| KW_GLOBAL (STAR_MUL | import_names) (COMMA import_items)?;
 
 import_names:
 	DBL_COLON NAME

@@ -13,6 +13,8 @@ walker init {
     }
 }
 
+global say = "resetting year to 1995:";
+
 walker setter {
     has year = std.time_now();
 }

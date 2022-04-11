@@ -142,7 +142,7 @@ class ast():
                                  mod_dir=mdir, fresh_start=False)
             else:
                 err = f"Module not found for import! {mod_name} from" +\
-                    f" {from_mod}"
+                    f" {from_mod} - {fn}"
                 self.tree_root._parse_errors.append(err)
             if(parsed_ast):
                 self.tree_root._parse_errors += parsed_ast._parse_errors
@@ -163,7 +163,8 @@ class ast():
                 KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
                 | KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
                 | KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
-                | KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?;
+                | KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?
+                | KW_GLOBAL (STAR_MUL | import_names) (COMMA import_items)?;
             """
             kid = jac_ast.kid
             ret_elements = list(filter(lambda x:

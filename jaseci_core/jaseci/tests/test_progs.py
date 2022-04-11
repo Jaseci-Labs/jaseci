@@ -52,4 +52,4 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.prime(gph)
         test_walker.run()
         report = test_walker.report
-        self.assertEqual(report[0], "testing")
+        self.assertEqual(report, ["testing", 56])
