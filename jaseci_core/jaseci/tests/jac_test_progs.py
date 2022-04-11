@@ -42,7 +42,7 @@ bug_check1 = \
 action_load_std_lib = \
     """
     walker aload {
-        report std.actload_local('../jskit/infer.py');
+        report std.actload_local('jaseci/tests/infer.py');
     }
     """
 
