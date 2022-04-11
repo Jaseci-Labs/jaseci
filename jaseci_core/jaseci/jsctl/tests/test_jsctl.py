@@ -223,6 +223,14 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertTrue('success' in r.keys())
         self.assertFalse(r['success'])
 
+    def test_jsctl_import_globals(self):
+        self.call(
+            "sentinel register "
+            "jaseci/jsctl/tests/base4.jac -code_dir jaseci/jsctl/tests/ "
+            "-set_active true")
+        r = self.call_cast("walker run init")
+        self.assertEqual(len(r['report']), 8)
+
     def test_jsctl_run_tests(self):
         self.call(
             "sentinel register "

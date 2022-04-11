@@ -62,6 +62,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#global_var.
+    def enterGlobal_var(self, ctx:jacParser.Global_varContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#global_var.
+    def exitGlobal_var(self, ctx:jacParser.Global_varContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#architype.
     def enterArchitype(self, ctx:jacParser.ArchitypeContext):
         pass

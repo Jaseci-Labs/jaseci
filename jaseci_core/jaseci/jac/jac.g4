@@ -11,13 +11,17 @@ import_items:
 	KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
 	| KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
 	| KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
-	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?;
+	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?
+	| KW_GLOBAL (STAR_MUL | import_names) (COMMA import_items)?;
 
 import_names:
 	DBL_COLON NAME
 	| DBL_COLON LBRACE name_list RBRACE;
 
-element: architype | walker | test;
+element: global_var | architype | walker | test;
+
+global_var:
+	KW_GLOBAL NAME EQ expression (COMMA NAME EQ expression)* SEMI;
 
 architype:
 	KW_NODE NAME (COLON INT)? attr_block
@@ -170,6 +174,7 @@ atom:
 	| BOOL
 	| NULL
 	| NAME
+	| KW_GLOBAL DOT NAME
 	| node_edge_ref
 	| list_val
 	| dict_val
@@ -401,6 +406,7 @@ NE: '!=';
 KW_IN: 'in';
 KW_ANCHOR: 'anchor';
 KW_HAS: 'has';
+KW_GLOBAL: 'global';
 KW_PRIVATE: 'private';
 COMMA: ',';
 KW_CAN: 'can';

@@ -24,6 +24,7 @@ class sentinel(element, jac_code, sentinel_interp):
         self.version = None
         self.arch_ids = id_list(self)
         self.walker_ids = id_list(self)
+        self.global_vars = {}
         self.testcases = []
         element.__init__(self, *args, **kwargs)
         jac_code.__init__(self, code_ir=None)

@@ -1,5 +1,11 @@
 # Jaseci Change / Release Notes
 
+## Version 1.3.3
+
+### Updates
+
+- New Feature: New global element type and `global` keyword
+
 ## Version 1.3.2
 
 ### Updates
