@@ -16,6 +16,11 @@ from datetime import datetime
 from pprint import pformat
 
 
+def master_from_meta(meta):
+    """Return master from meta in actions"""
+    return meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+
+
 # Get an instance of a logger
 def connect_logger_handler(target_logger, handler, level=logging.WARN):
     """Attaches standard formatting and adds handler to logger"""
