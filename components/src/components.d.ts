@@ -12,6 +12,7 @@ export namespace Components {
         "setMarkup": (value: any) => Promise<void>;
     }
     interface JscButton {
+        "color": string;
         "css": string;
         "events": string;
         "label": string;
@@ -198,6 +199,7 @@ declare namespace LocalJSX {
         "markup"?: JaseciComponent[];
     }
     interface JscButton {
+        "color"?: string;
         "css"?: string;
         "events"?: string;
         "label"?: string;
