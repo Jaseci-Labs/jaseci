@@ -71,3 +71,14 @@ net_root_std_lib = \
         }
     }
     """
+
+
+or_stmt = \
+    """
+    walker init {
+        x = 3.4;
+        y = "Hello";
+        if(x == 3.45 or y == "Hello"):
+            report [x, y];
+    }
+    """

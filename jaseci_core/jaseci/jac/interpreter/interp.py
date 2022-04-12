@@ -529,11 +529,11 @@ class interp(machine_state):
         kid = kid[1:]
         while (kid):
             if (kid[0].name == 'KW_AND'):
-                if (result):
+                if (result.value):
                     result.value = result.value and self.run_compare(
                         kid[1]).value
             elif (kid[0].name == 'KW_OR'):
-                if (not result):
+                if (not result.value):
                     result.value = result.value or self.run_compare(
                         kid[1]).value
             kid = kid[2:]
