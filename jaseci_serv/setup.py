@@ -1,7 +1,10 @@
 from setuptools import setup, find_packages
+
+version = open("../VERSION", "r").read().strip()
+
 setup(
     name='jaseci_serv',
-    version='1.3.3.1',
+    version=version,
     packages=find_packages(include=['jaseci_serv', 'jaseci_serv.*']),
     install_requires=[
         'jaseci',
