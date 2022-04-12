@@ -119,10 +119,18 @@ walker entityExtractor {
 
 walker intentExtractor {
   has intents;
+  has candidates;
+  can bi_enc.infer;
+  with entry {
+    candidates = spawn here walker::getIntents;
+    std.out(candidates);
+  }
   Chunk {
-    chunkIntents = ["Education"];
+    std.out(here.text);
+    chunkIntents = bi_enc.infer(contexts = here.text, candidates = candidates, context_type = "text", candidates_type = "text");
+    std.out(chunkIntents);
     for intentNode in intents {
-      if (intentNode.name in chunkIntents) {
+      if (intentNode.name == chunkIntents) {
         here -[Belong]-> intentNode;
         intentNode.count += 1;
       }
