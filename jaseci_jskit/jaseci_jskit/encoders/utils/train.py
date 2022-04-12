@@ -29,13 +29,15 @@ def train_model(model, tokenizer, contexts, candidates, labels, train_config):
         collate_fn=train_dataset.batchify_join_str,
         shuffle=True
     )
-    t_total = len(train_dataloader) // train_config['train_batch_size'] * \
-        (max(5, train_config['num_train_epochs']))
+    t_total = len(train_dataloader) // \
+        train_config['gradient_accumulation_steps'] * (
+        max(5, train_config['num_train_epochs']))
+
     global_step = 0
     if not os.path.exists(train_config['basepath']):
         os.makedirs(train_config['basepath'])
-    # log_wf = open(os.path.join(train_config['basepath'], 'log.txt'),
-    #               'a', encoding='utf-8') # will be used in for logging
+    log_wf = open(os.path.join(train_config['basepath'], 'log.txt'),
+                  'w', encoding='utf-8')  # will be used in for logging
     no_decay = ["bias", "LayerNorm.weight"]
     optimizer_grouped_parameters = [
         {
@@ -87,24 +89,30 @@ def train_model(model, tokenizer, contexts, candidates, labels, train_config):
                 tr_loss += loss.item()
                 nb_tr_examples += context_token_ids_list_batch.size(0)
                 nb_tr_steps += 1
+                if (step + 1) % \
+                        train_config['gradient_accumulation_steps'] == 0:
+                    if fp16:
+                        with amp.scale_loss(loss, optimizer) as scaled_loss:
+                            scaled_loss.backward()
+                        torch.nn.utils.clip_grad_norm_(
+                            amp.master_params(optimizer),
+                            train_config['max_grad_norm'])
+                    else:
+                        loss.backward()
+                        torch.nn.utils.clip_grad_norm_(
+                            model.parameters(), train_config['max_grad_norm'])
 
-                if fp16:
-                    with amp.scale_loss(loss, optimizer) as scaled_loss:
-                        scaled_loss.backward()
-                    torch.nn.utils.clip_grad_norm_(
-                        amp.master_params(optimizer),
-                        train_config['max_grad_norm'])
-                else:
-                    loss.backward()
-                    torch.nn.utils.clip_grad_norm_(
-                        model.parameters(), train_config['max_grad_norm'])
-
-                optimizer.step()
-                if global_step < train_config['warmup_steps']:
+                    optimizer.step()
                     scheduler.step()
-                model.zero_grad()
-                global_step += 1
-                bar.update()
-        print(f"\nEpoch : {epoch+1} \t loss : {tr_loss/nb_tr_steps}\n")
+                    model.zero_grad()
+                    global_step += 1
+                    bar.update()
+
+        print(
+            f"""\n
+            Epoch : {epoch+1}
+            loss : {tr_loss/nb_tr_steps}
+            LR : {optimizer.param_groups[0]['lr']}\n""")
+        log_wf.write(f"{epoch+1}\t{tr_loss/nb_tr_steps}\n")
 
     return model
