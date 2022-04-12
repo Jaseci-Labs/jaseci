@@ -4,9 +4,9 @@ from jaseci.utils.utils import app_logger, json_out
 from datetime import datetime
 from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 from jaseci.actions.live_actions import jaseci_action
+from jaseci.utils.utils import master_from_meta
 from jaseci.element.element import element
 import sys
-import uuid
 import json
 
 
@@ -66,7 +66,7 @@ def set_global(name: str, value, meta):
     Param 1 - name
     Param 2 - value (must be json serializable)
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    mast = master_from_meta(meta)
     if(not mast.is_master(super_check=True, silent=False)):
         return False
     mast.global_set(name, json.dumps(value))
@@ -79,7 +79,7 @@ def get_global(name: str, meta):
     Set global variable visible to all walkers/users
     Param 1 - name
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    mast = master_from_meta(meta)
     val = mast.global_get(name)['value']
     if(val):
         return json.loads(val)
@@ -92,7 +92,7 @@ def actload_local(filename: str, meta):
     """
     Load local actions to Jaseci
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    mast = master_from_meta(meta)
     if(not mast.is_master(super_check=True, silent=True)):
         meta['interp'].rt_error("Only super master can load actions.")
         return False
@@ -104,7 +104,7 @@ def actload_remote(url: str, meta):
     """
     Load remote actions to Jaseci
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    mast = master_from_meta(meta)
     if(not mast.is_master(super_check=True, silent=True)):
         meta['interp'].rt_error("Only super master can load actions.")
         return False
@@ -114,7 +114,7 @@ def actload_remote(url: str, meta):
 @jaseci_action()
 def destroy_global(name: str, meta):
     """Get utc date time for now in iso format"""
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    mast = master_from_meta(meta)
     if(not mast.is_master(super_check=True, silent=False)):
         return False
     return mast.global_delete(name)
@@ -129,7 +129,7 @@ def set_perms(obj: element, mode: str, meta):
 
     Return - true/false whether successful
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    mast = master_from_meta(meta)
     return mast.object_perms_set(obj=obj,
                                  mode=mode)['success']
 
@@ -155,7 +155,7 @@ def grant_perms(obj: element, mast: element, read_only: bool, meta):
 
     Return - Sorted list
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    mast = master_from_meta(meta)
     return mast.object_perms_grant(obj=obj,
                                    mast=mast,
                                    read_only=read_only)['success']
@@ -170,7 +170,7 @@ def revoke_perms(obj: element, mast: element, meta):
 
     Return - Sorted list
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
+    mast = master_from_meta(meta)
     return mast.object_perms_revoke(obj=obj,
                                     mast=mast)['success']
 

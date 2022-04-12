@@ -57,3 +57,17 @@ globals = \
         report global.a;
     }
     """
+
+net_root_std_lib = \
+    """
+    walker init {
+        root {
+            report [here.info['jid'], net.root().info['jid']];
+            spawn here --> node::generic;
+            take -->;
+        }
+        generic {
+            report [here.info['jid'], net.root().info['jid']];
+        }
+    }
+    """
