@@ -85,7 +85,10 @@ class architype_interp(interp):
         m.push_scope(jac_scope(parent=self,
                                has_obj=None,
                                action_sets=[]))
-        m.run_code_block(kid[3])
+        try:
+            m.run_code_block(kid[3])
+        except Exception as e:
+            self.rt_error(f'Internal Exception: {e}', m._cur_jac_ast)
         local_state = m._jac_scope.local_scope
         self.report = self.report + m.report
         if(root_name in local_state.keys()):

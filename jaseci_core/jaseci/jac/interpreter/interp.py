@@ -529,11 +529,11 @@ class interp(machine_state):
         kid = kid[1:]
         while (kid):
             if (kid[0].name == 'KW_AND'):
-                if (result):
+                if (result.value):
                     result.value = result.value and self.run_compare(
                         kid[1]).value
             elif (kid[0].name == 'KW_OR'):
-                if (not result):
+                if (not result.value):
                     result.value = result.value or self.run_compare(
                         kid[1]).value
             kid = kid[2:]
@@ -1544,8 +1544,11 @@ class interp(machine_state):
                                has_obj=nd,
                                action_sets=[arch.activity_action_ids]))
         m._jac_scope.inherit_agent_refs(self._jac_scope)
-        m.run_code_block(jac_ir_to_ast(
-            act_list.get_obj_by_name(name).value))
+        try:
+            m.run_code_block(jac_ir_to_ast(
+                act_list.get_obj_by_name(name).value))
+        except Exception as e:
+            self.rt_error(f'Internal Exception: {e}', m._cur_jac_ast)
         self.report += m.report
         if(m.report_status):
             self.report_status = m.report_status
