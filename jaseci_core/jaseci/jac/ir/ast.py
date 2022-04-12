@@ -177,7 +177,8 @@ class ast():
                                            import_names,
                                            ret_elements))
                 if(len(ret_elements) < len(import_names)):
-                    err = f"Line {kid[1].line}: Module name not found!"
+                    err = f"{kid[1].mod_name}: Line {kid[1].line}: " + \
+                        "Module name not found!"
                     self.tree_root._parse_errors.append(err)
             if(kid[-1].name == "import_items"):
                 return ret_elements + self.run_import_items(kid[-1],
