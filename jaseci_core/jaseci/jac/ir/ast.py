@@ -20,7 +20,7 @@ class ast():
 
     _ast_head_map = {}
 
-    def __init__(self, jac_text=None, mod_name=None,
+    def __init__(self, mod_name, mod_dir='./', jac_text=None,
                  parse_errors=None, start_rule='start', fresh_start=True):
         if(fresh_start):
             ast._ast_head_map = {}
@@ -30,6 +30,7 @@ class ast():
         self._parse_errors = parse_errors if parse_errors else []
         self._start_rule = start_rule
         self.mod_name = mod_name if mod_name is not None else "@default"
+        self._mod_dir = mod_dir
         self.line = 0
         self.column = 0
         self.kid = []
@@ -77,12 +78,8 @@ class ast():
         walker.walk(builder, tree)
 
         if(self._parse_errors):
-            for i in self._parse_errors:
-                logger.error(
-                    str(f"{i}")
-                )
             logger.error(
-                str(f"Above parse errors encountered - {self}")
+                str(f"Parse errors encountered - {self}")
             )
 
     def __str__(self):
@@ -129,30 +126,36 @@ class ast():
             TODO: Check for duplicate imports and ignore if imported
             """
             kid = jac_ast.kid
-            fn = parse_str_token(kid[-2].token_text())
-            mod_name = fn
+            fn = os.path.join(self.tree_root._mod_dir, parse_str_token(
+                kid[-2].token_text()))
+            mod_name = os.path.basename(fn)
             from_mod = self.tree_root.mod_name
-            logger.info(f"Importing items from {mod_name} to {from_mod}...")
+            logger.debug(f"Importing items from {mod_name} to {from_mod}...")
             parsed_ast = None
             if(mod_name in ast._ast_head_map.keys()):
                 parsed_ast = ast._ast_head_map[mod_name]
             elif(os.path.isfile(fn)):
                 with open(fn, 'r') as file:
                     jac_text = file.read()
+                mdir = os.path.dirname(os.path.realpath(fn))+'/'
                 parsed_ast = ast(jac_text=jac_text, mod_name=mod_name,
-                                 fresh_start=False)
+                                 mod_dir=mdir, fresh_start=False)
             else:
                 err = f"Module not found for import! {mod_name} from" +\
-                    f" {from_mod}"
+                    f" {from_mod} - {fn}"
                 self.tree_root._parse_errors.append(err)
-            import_elements = list(filter(lambda x:
-                                          x.name == 'element',
-                                          parsed_ast.kid))
-            if(kid[2].name == 'STAR_MUL'):
-                return import_elements
+            if(parsed_ast):
+                self.tree_root._parse_errors += parsed_ast._parse_errors
+                import_elements = list(filter(lambda x:
+                                              x.name == 'element',
+                                              parsed_ast.kid))
+                if(kid[2].name == 'STAR_MUL'):
+                    return import_elements
+                else:
+                    return self.run_import_items(
+                        kid[2], import_elements)
             else:
-                return self.run_import_items(
-                    kid[2], import_elements)
+                return []
 
         def run_import_items(self, jac_ast, import_elements):
             """
@@ -160,7 +163,8 @@ class ast():
                 KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
                 | KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
                 | KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
-                | KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?;
+                | KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?
+                | KW_GLOBAL (STAR_MUL | import_names) (COMMA import_items)?;
             """
             kid = jac_ast.kid
             ret_elements = list(filter(lambda x:
@@ -205,7 +209,9 @@ class ast():
             if(len(self.node_stack) == 0):
                 new_node = self.tree_root
             else:
-                new_node = ast(fresh_start=False)
+                new_node = ast(mod_name=self.tree_root.mod_name,
+                               mod_dir=self.tree_root._mod_dir,
+                               fresh_start=False)
             new_node.name = jacParser.ruleNames[ctx.getRuleIndex()]
             new_node.kind = 'rule'
             new_node._parse_errors = self.tree_root._parse_errors
@@ -224,7 +230,8 @@ class ast():
 
         def visitTerminal(self, node):
             """Visits terminals as walker walks, adds ast node"""
-            new_node = ast(fresh_start=False)
+            new_node = ast(mod_name=self.tree_root.mod_name,
+                           mod_dir=self.tree_root._mod_dir, fresh_start=False)
             new_node.name = jacParser.symbolicNames[node.getSymbol().type]
             new_node.kind = 'terminal'
             new_node.line = node.getSymbol().line

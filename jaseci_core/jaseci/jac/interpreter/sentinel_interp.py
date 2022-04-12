@@ -18,7 +18,7 @@ class sentinel_interp(interp):
         """
         start: ver_label? element+ EOF;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'ver_label'):
             self.run_ver_label(kid[0])
         for i in kid[:-1]:
@@ -28,20 +28,39 @@ class sentinel_interp(interp):
         """
         ver_label: 'version' COLON STRING;
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         self.version = parse_str_token(kid[2].token_text())
 
     def run_element(self, jac_ast):
         """
-        element: architype | walker | test;
+        element: global | architype | walker | test;
         """
-        kid = jac_ast.kid
-        if(kid[0].name == 'architype'):
+        kid = self.set_cur_ast(jac_ast)
+        if(kid[0].name == 'global_var'):
+            self.load_global_var(kid[0])
+        elif(kid[0].name == 'architype'):
             self.load_architype(kid[0])
         elif(kid[0].name == 'walker'):
             self.load_walker(kid[0])
         elif(kid[0].name == 'test'):
             self.load_test(kid[0])
+
+    def load_global_var(self, jac_ast):
+        """
+        global_var:
+            KW_GLOBAL NAME EQ expression (COMMA NAME EQ expression)* SEMI;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        kid = kid[1:]
+        while(kid[0].name == "NAME"):
+            const_name = kid[0].token_text()
+            if(const_name in self.global_vars):
+                self.rt_error(f"Global {const_name} already defined!",
+                              kid[0])
+            else:
+                self.global_vars[const_name] = self.run_expression(
+                    kid[2]).value
+            kid = kid[4:] if kid[3].name == "COMMA" else kid[3:]
 
     def load_architype(self, jac_ast):
         """
@@ -77,7 +96,7 @@ class sentinel_interp(interp):
                 | KW_WALKER walker_block
             );
         """
-        kid = jac_ast.kid
+        kid = self.set_cur_ast(jac_ast)
         testcase = {'title': kid[1].token_text(),
                     'graph_ref': None, 'graph_block': None,
                     'walker_ref': None, 'spawn_ctx': None,

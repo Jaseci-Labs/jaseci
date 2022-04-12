@@ -61,7 +61,7 @@ class jsctl_test(TestCaseHelper, TestCase):
 
     def test_jsctl_carry_forward(self):
         self.call(
-            "actions load local ../jskit/infer.py")
+            "actions load local jaseci/tests/infer.py")
         self.call(
             "sentinel register "
             "jaseci/jsctl/tests/ll.jac -name ll -set_active true")
@@ -79,7 +79,6 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call("walker run init")
         self.call("walker run gen_rand_life")
         r = self.call("graph get -mode dot")
-        self.assertIn("test test test", r)
         self.assertIn('"n0" -> "n', r)
         self.assertIn('week="', r)
 
@@ -186,10 +185,10 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertFalse(r['success'])
 
     def test_jsctl_import(self):
-        self.call(
+        r = self.call(
             "sentinel register "
-            "jaseci/jsctl/tests/ll_base.jac -set_active true")
-        self.logger_off()
+            "jaseci/jsctl/tests/ll_base.jac -code_dir "
+            "jaseci/jsctl/tests -set_active true")
         self.call("walker run init")
         self.call("walker run gen_rand_life")
         r = self.call_cast("walker run get_gen_day")
@@ -223,6 +222,14 @@ class jsctl_test(TestCaseHelper, TestCase):
         r = self.call_cast("walker run init")
         self.assertTrue('success' in r.keys())
         self.assertFalse(r['success'])
+
+    def test_jsctl_import_globals(self):
+        self.call(
+            "sentinel register "
+            "jaseci/jsctl/tests/base4.jac -code_dir jaseci/jsctl/tests/ "
+            "-set_active true")
+        r = self.call_cast("walker run init")
+        self.assertEqual(len(r['report']), 8)
 
     def test_jsctl_run_tests(self):
         self.call(

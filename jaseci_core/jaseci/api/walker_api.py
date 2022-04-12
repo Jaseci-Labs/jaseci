@@ -175,6 +175,14 @@ class walker_api():
         wlk.destroy()
         return res
 
+    @interface.private_api(cli_args=['name'], url_args=['name'])
+    def wapi(self, name: str, nd: node = None, ctx: dict = {},
+             snt: sentinel = None, profiling: bool = False):
+        """
+        Walker individual APIs
+        """
+        return self.walker_run(name, nd, ctx, snt, profiling)
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage

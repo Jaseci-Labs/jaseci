@@ -51,6 +51,7 @@ def generate_apis(api_list, view_cls, dir_head):
     for i in api_list:
         fname = '_'.join(i['groups'])
         apidocstr = f"{dir_head}/{fname}"
+
         func_sig = i['sig']
         gen_cls = type(fname,
                        (view_cls,),
@@ -60,10 +61,13 @@ def generate_apis(api_list, view_cls, dir_head):
             rest_api_auto_doc(apidocstr, func_sig)
         globals()[fname] = gen_cls
         global generated_urls
+        url_args = ''
+        for j in i['url_args']:
+            url_args += f"/<str:{j}>"
         generated_urls.append(
-            path(apidocstr, globals()[fname].as_view(), name=fname))
+            path(apidocstr+url_args, globals()[fname].as_view(), name=fname))
 
 
-generate_apis(super_master._public_api, AbstractPublicJacAPIView, 'public')
-generate_apis(super_master._private_api, AbstractJacAPIView, 'jac')
-generate_apis(super_master._admin_api, AbstractAdminJacAPIView, 'admin')
+generate_apis(super_master._public_api, AbstractPublicJacAPIView, 'js_public')
+generate_apis(super_master._private_api, AbstractJacAPIView, 'js')
+generate_apis(super_master._admin_api, AbstractAdminJacAPIView, 'js_admin')

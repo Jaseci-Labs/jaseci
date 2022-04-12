@@ -6,7 +6,6 @@ and the to node it is pointing to.
 """
 from jaseci.element.element import element
 from jaseci.element.obj_mixins import anchored
-from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
 import uuid
 
@@ -19,7 +18,6 @@ class edge(element, anchored):
         self.to_node_id = None
         self.bidirected: bool = False
         self.context = {}
-        self.activity_action_ids = id_list(self)
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
         if from_node:
@@ -123,12 +121,22 @@ class edge(element, anchored):
                 return False
         return True
 
+    def set_context(self, ctx, arch=None):
+        """Assign values to context of edge"""
+        if (arch is None):
+            arch = self
+        for i in ctx.keys():
+            if (i not in arch.context.keys()):
+                logger.warning(str(f"{i} not a context member of {self}"))
+                continue
+            else:
+                self.context[i] = ctx[i]
+        self.save()
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage
         """
-        for i in self.activity_action_ids.obj_list():
-            i.destroy()
         base = self.from_node()
         target = self.to_node()
         if base and self.jid in base.edge_ids:

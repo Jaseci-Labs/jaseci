@@ -19,6 +19,7 @@ class sentinel_api():
 
     @interface.private_api(cli_args=['code'])
     def sentinel_register(self, name: str = 'default', code: str = '',
+                          code_dir: str = './',
                           encoded: bool = False, auto_run: str = 'init',
                           auto_gen_graph: bool = True, ctx: dict = {},
                           set_active: bool = True):
@@ -37,9 +38,11 @@ class sentinel_api():
         if(code):
             if (encoded):
                 code = b64decode_str(code)
-            snt.register_code(code)
+            snt.register_code(code, code_dir)
             if(not snt.is_active):
-                return {'response': 'Error in jac code', 'errors': snt.errors}
+                return {'response': 'Error in jac code',
+                        'errors': snt.errors,
+                        'success': False}
         if(snt.walker_ids.has_obj_by_name(auto_run) and self.active_gph_id):
             nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
             self.walker_run(name=auto_run, nd=nd, ctx=ctx,
@@ -90,7 +93,8 @@ class sentinel_api():
             return snt.serialize(detailed=detailed)
 
     @interface.private_api(cli_args=['code'])
-    def sentinel_set(self, code: str, encoded: bool = False,
+    def sentinel_set(self, code: str, code_dir: str = './',
+                     encoded: bool = False,
                      snt: sentinel = None, mode: str = 'default'):
         """
         Set code/ir for a sentinel, only replaces walkers/archs in sentinel
@@ -99,7 +103,7 @@ class sentinel_api():
         if (encoded):
             code = b64decode_str(code)
         if(mode == 'code' or mode == 'default'):
-            snt.register_code(code)
+            snt.register_code(code, code_dir)
         elif(mode == 'ir'):
             snt.apply_ir(code)
             snt.run_start(snt._jac_ast)

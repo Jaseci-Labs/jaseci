@@ -148,12 +148,11 @@ class jac_value():
             self.ctx = self.ctx.context
         if value is not None:
             return value
-        elif(self.ctx is not None and self.name is not None
-             and self.end is not None):
-            return self.ctx[self.name:self.end]
-        elif (self.ctx is not None and self.name is not None and
-              (type(self.name) == int or self.name in self.ctx.keys())):
-            return self.ctx[self.name]
+        elif(self.ctx is not None and self.name is not None):
+            if(self.end is not None):
+                return self.ctx[self.name:self.end]
+            elif(type(self.name) == int or self.name in self.ctx.keys()):
+                return self.ctx[self.name]
         else:
             return None
 

@@ -114,7 +114,7 @@ The edit command invokes the built in editor. Though it’s a terminal editor ba
 
 Now type out the toy program in Jac Code:
 
-```
+```jac
 node man;
 node woman;
 edge mom;
@@ -225,7 +225,7 @@ Here, we’re using this call to see the objects that were created for our toy p
 Now, for the big moment! lets run our walker on the root node of the graph we created and see what happens!
 
 ```
-jaseci > walker run -name create_fam
+jaseci > walker run create_fam
 I didn’t do any of the hard work.
 []
 jaseci >

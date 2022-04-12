@@ -18,6 +18,7 @@ class machine_state():
 
     def __init__(self, parent_override=None, caller=None):
         self.report = []
+        self.report_status = None
         self.runtime_errors = []
         self._parent_override = parent_override
         if(not isinstance(self, element) and caller):
@@ -29,6 +30,7 @@ class machine_state():
         self._stopped = None
         self._assign_mode = False
         self._loop_limit = 10000
+        self._cur_jac_ast = None
 
     def parent(self):
         if(self._parent_override):
@@ -38,6 +40,7 @@ class machine_state():
 
     def reset(self):
         self.report = []
+        self.report_status = None
         self.runtime_errors = []
         self._scope_stack = [None]
         self._jac_scope = None
@@ -52,7 +55,16 @@ class machine_state():
         self._scope_stack.pop()
         self._jac_scope = self._scope_stack[-1]
 
+    def set_cur_ast(self, jac_ast):
+        self._cur_jac_ast = jac_ast
+        return jac_ast.kid
+
     # Helper Functions ##################
+
+    def get_arch_for(self, obj):
+        """Returns the architype that matches object"""
+        return self.parent().arch_ids.get_obj_by_name(
+            name=obj.name, kind=obj.kind)
 
     def obj_set_to_jac_set(self, obj_set):
         """
@@ -83,8 +95,18 @@ class machine_state():
             self.rt_error(f"Builtin action not found - {func_name}", jac_ast)
         return func_name
 
+    def jac_exception(self, e: Exception, jac_ast):
+        return {'type': type(e).__name__,
+                'mod': jac_ast.mod_name,
+                'msg': str(e),
+                'args': e.args,
+                'line': jac_ast.line,
+                'col': jac_ast.column}
+
     def rt_log_str(self, msg, jac_ast=None):
         """Generates string for screen output"""
+        if(jac_ast is None):
+            jac_ast = self._cur_jac_ast
         name = self.name if hasattr(self, 'name') else 'blank'
         if(jac_ast):
             msg = f'{jac_ast.mod_name}:{name} - line {jac_ast.line}, ' + \

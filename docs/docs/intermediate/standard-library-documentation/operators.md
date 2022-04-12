@@ -6,7 +6,7 @@ sidebar_position: 3
 
 ## Arithmetic
 
-```
+```jac
 // addition
 a = 4 + 4;
 e = a + b + c + d;
@@ -29,7 +29,7 @@ b = 9 % 5
 
 ## Equality
 
-```
+```jac
 // equal
 a == b
 
@@ -51,7 +51,7 @@ a >= b
 
 ## Logical
 
-```
+```jac
 // not
 !a,
 
@@ -70,7 +70,7 @@ a or b
 
 ## Assignments
 
-```
+```jac
 a = 4 + 4; 
 a += 4 + 4; 
 a -= 4 * -5; 

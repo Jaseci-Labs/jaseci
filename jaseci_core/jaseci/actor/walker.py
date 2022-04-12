@@ -122,7 +122,7 @@ class walker(element, jac_code, walker_interp, anchored):
                 pass
         except Exception as e:
             import traceback as tb
-            self.rt_error(f'Internal Exception: {e}')
+            self.rt_error(f'Internal Exception: {e}', self._cur_jac_ast)
             report_ret['stack_trace'] = tb.format_exc()
 
         self.save()
@@ -133,6 +133,8 @@ class walker(element, jac_code, walker_interp, anchored):
             )
 
         report_ret['report'] = self.report
+        if(self.report_status):
+            report_ret['status_code'] = self.report_status
         if(len(self.runtime_errors)):
             report_ret['errors'] = self.runtime_errors
             report_ret['success'] = False

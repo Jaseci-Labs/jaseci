@@ -1,5 +1,5 @@
 ---
-side_bar_position: 3
+sidebar_position: 4
 ---
 
 import Tabs from '@theme/Tabs';
@@ -17,13 +17,7 @@ import TabItem from '@theme/TabItem';
 <Tabs>
   <TabItem value="macos-and-windows-wsl" label="MacOS and Windows (WSL)" default>
     <h2>Setup Jaseci Repository</h2>
-    <pre>
-    <code># Clone Jaseci repo</code>
-    <code>git clone https://github.com/Jaseci-Labs/jaseci.git</code>
-    <br/>
-    <code># Install dependencies</code>
-    <code>brew install jq</code>
-    </pre>
+    <p>Clone the Jaseci repo at https://github.com/Jaseci-Labs/jaseci.git</p>
     <h2>Configuring Docker Desktop</h2>
     <ul>
         <li>Launch Docker Desktop</li>
@@ -59,15 +53,9 @@ import TabItem from '@theme/TabItem';
   </TabItem>
   <TabItem value="linux" label="Linux">
     <h2>Setup Jaseci Repository</h2>
-    <pre>
-    <code># Clone Jaseci repo</code>
-    <code>git clone https://github.com/Jaseci-Labs/jaseci.git</code>
-    <br/>
-    <code># Install dependencies</code>
-    <code>sudo apt-get install jq</code>
-    </pre>
+    <p>Clone the Jaseci repo at https://github.com/Jaseci-Labs/jaseci.git</p>
     <ol>
-        <li>Follow steps 1 through 5 <a href="https://phoenixnap.com/kb/install-kubernetes-on-ubuntu">here</a> to install Docker, Kubernetes and Kubectl on your Machine.</li>
+        <li>Follow steps 1 through 5 <a href="https://phoenixnap.com/kb/install-kubernetes-on-ubuntu">here</a> to install Docker, Kubernetes and Kubectl on your Machine. Please use your package manager if you do not have apt.</li>
     </ol>
   </TabItem>
 </Tabs>

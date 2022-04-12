@@ -803,3 +803,46 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(
             res.data,
             json.dumps({"local": [], "remote": ["http://js-use-enc"]}))
+
+    def test_jac_walker_level_api_run(self):
+        """Test API for running a walker"""
+        payload = {'op': 'graph_create'}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {'op': 'sentinel_register', 'name': 'Something',
+                   'code': 'walker testwalker{ std.log("hello"); }', }
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload,
+                               format='json')
+
+        payload = {}
+        res = self.client.post(
+            reverse('jac_api:walker_list'), payload)
+        self.assertEqual(len(res.data), 1)
+        res = self.client.post(
+            reverse('jac_api:wapi', args=['testwalker']), payload)
+        self.assertTrue(res.data['success'])
+
+    def test_jac_report_status_pluck(self):
+        """Test API for running a walker"""
+        payload = {'op': 'graph_create'}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {'op': 'sentinel_register', 'name': 'Something',
+                   'code': 'walker ss {report.status = 302; report 4;}', }
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload,
+                               format='json')
+
+        payload = {}
+        res = self.client.post(
+            reverse('jac_api:walker_list'), payload)
+        self.assertEqual(len(res.data), 1)
+        res = self.client.post(
+            reverse('jac_api:wapi', args=['ss']), payload)
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(res.data['success'])
+
+    def test_jac_admin_master_allusers(self):
+        """Test API for creating a graph"""
+        payload = {}
+        res = self.sclient.post(
+            reverse('jac_api:master_allusers'), payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.log(res.data)

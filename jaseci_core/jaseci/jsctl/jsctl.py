@@ -58,11 +58,11 @@ def remote_api_call(payload, api_name):
     for i in super_master.all_apis(None):
         if(api_name == '_'.join(i['groups'])):
             if(i in super_master._private_api):
-                path = '/jac/'+api_name
+                path = '/js/'+api_name
             elif(i in super_master._admin_api):
-                path = '/admin/'+api_name
+                path = '/js_admin/'+api_name
             elif(i in super_master._public_api):
-                path = '/public/'+api_name
+                path = '/js_public/'+api_name
             break
     ret = requests.post(connection['url']+path,
                         json=payload,

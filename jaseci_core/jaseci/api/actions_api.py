@@ -26,7 +26,9 @@ class actions_api():
                     self.config_set('ACTION_SETS', json.dumps(config))
             else:
                 self.config_set('ACTION_SETS',
-                                json.dumps({'local': [file], 'remote': []}))
+                                json.dumps({'local': [file],
+                                            'remote': [],
+                                            'module': []}))
         return {"success": success}
 
     @interface.admin_api(cli_args=['url'])
@@ -44,7 +46,29 @@ class actions_api():
                     self.config_set('ACTION_SETS', json.dumps(config))
             else:
                 self.config_set('ACTION_SETS',
-                                json.dumps({'local': [], 'remote': [url]}))
+                                json.dumps({'local': [],
+                                            'remote': [url],
+                                            'module': []}))
+        return {"success": success}
+
+    @interface.admin_api(cli_args=['mod'])
+    def actions_load_module(self, mod: str):
+        """
+        Hot load an actions set from live pod at URL
+        """
+        success = lact.load_module_actions(mod)
+        if(success):
+            cur_config = self.config_get('ACTION_SETS')
+            if(cur_config and (not isinstance(cur_config, list))):
+                config = json.loads(cur_config)
+                if mod not in config['module']:
+                    config['module'].append(mod)
+                    self.config_set('ACTION_SETS', json.dumps(config))
+            else:
+                self.config_set('ACTION_SETS',
+                                json.dumps({'local': [],
+                                            'remote': [],
+                                            'module': [mod]}))
         return {"success": success}
 
     # @interface.admin_api()

@@ -46,9 +46,9 @@ If you are using Cloud , For example here we use AWS :
 ```
 
 After this run the Prometheus server can be accessed via port 80 on the following DNS name from within your cluster:
-prometheus-server.<namespace>.svc.cluster.local
+prometheus-server.\<namespace\>.svc.cluster.local
 
-Here, in place of <namespace> put the name of namespace where your service lies. Note this URL for reference to put in Grafana setup later.
+Here, in place of \<namespace\> put the name of namespace where your service lies. Note this URL for reference to put in Grafana setup later.
 
 #### Step 3 ####
 
@@ -77,7 +77,7 @@ promethues-server - It is the main promethues server pod which is responsible fo
 Use Port-forward to test if promethues is running in your local browser to check if all setup works and you are able to get the promethues running.
 
 ```console
-kubectl port-forward -n prometheus deploy/prometheus-server 8080:9090 
+kubectl port-forward deploy/prometheus-server 8080:9090 
 ```
 
 
@@ -88,7 +88,9 @@ kubectl port-forward -n prometheus deploy/prometheus-server 8080:9090
 
 ##### Go to grafana.yaml under grafana  Directory in the code and update the values of promethues URL as required #####
 
-In the cloned repository folder , go to grafana/grafana.yaml file and update the URL to the promethues service URL as we noted doen in step 2 above, i.e prometheus-server.<namespace>.svc.cluster.local
+In the cloned repository folder , go to grafana/grafana.yaml file and update the URL to the promethues service URL as we noted doen in step 2 above, i.e prometheus-server.\<namespace\>.svc.cluster.local
+
+Please note that in the previous example, we did not create any specific namespace for prometheus so the \<namespace\> here (and later) should be replaced with **default** if you follow the tutorial completely. 
 
 This is required to connect Grafana to collect data from promethues .
 
@@ -144,7 +146,7 @@ Now, try to run grafana in your browser:
 If you running in your local kubernetes, run below :
 
 ```console
-kubectl port-forward -n prometheus deploy/grafana 80:80 
+kubectl port-forward deploy/grafana 80:80 
 ```
 
 

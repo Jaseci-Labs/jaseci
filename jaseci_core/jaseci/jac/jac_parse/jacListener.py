@@ -62,6 +62,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#global_var.
+    def enterGlobal_var(self, ctx:jacParser.Global_varContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#global_var.
+    def exitGlobal_var(self, ctx:jacParser.Global_varContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#architype.
     def enterArchitype(self, ctx:jacParser.ArchitypeContext):
         pass
@@ -530,21 +539,21 @@ class jacListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by jacParser#func_call.
-    def enterFunc_call(self, ctx:jacParser.Func_callContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#func_call.
-    def exitFunc_call(self, ctx:jacParser.Func_callContext):
-        pass
-
-
     # Enter a parse tree produced by jacParser#atom.
     def enterAtom(self, ctx:jacParser.AtomContext):
         pass
 
     # Exit a parse tree produced by jacParser#atom.
     def exitAtom(self, ctx:jacParser.AtomContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#atom_trailer.
+    def enterAtom_trailer(self, ctx:jacParser.Atom_trailerContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#atom_trailer.
+    def exitAtom_trailer(self, ctx:jacParser.Atom_trailerContext):
         pass
 
 
@@ -743,6 +752,15 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#spawn_object.
     def exitSpawn_object(self, ctx:jacParser.Spawn_objectContext):
+        pass
+
+
+    # Enter a parse tree produced by jacParser#spawn_edge.
+    def enterSpawn_edge(self, ctx:jacParser.Spawn_edgeContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#spawn_edge.
+    def exitSpawn_edge(self, ctx:jacParser.Spawn_edgeContext):
         pass
 
 

@@ -84,7 +84,8 @@ class graph_api():
                 self._m_id, uuid.UUID(self.active_gph_id))
             return default.serialize(detailed=detailed)
         else:
-            return ['No default graph is selected!']
+            return {'success': False,
+                    'response': 'No default graph is selected!'}
 
     @interface.private_api(cli_args=['gph'])
     def graph_delete(self, gph: graph):

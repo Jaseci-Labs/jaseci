@@ -1,8 +1,10 @@
 {
     "name": "jac",
     "displayName": "JAC",
-    "description": "Jac Programming Language",
-    "version": "0.0.1",
+    "description": "VSCode Extension for the JAC Programming Language",
+    "version": "0.0.2",
+    "publisher": "jaseci-labs",
+    "icon": "images/icon.png",
     "engines": {
         "vscode": "^1.63.0"
     },
@@ -21,5 +23,10 @@
             "scopeName": "source.jac",
             "path": "./syntaxes/jac.tmLanguage.json"
         }]
-    }
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Jaseci-Labs/jaseci.git"
+    },
+    "homepage": "https://www.jaseci.org/"
 }
