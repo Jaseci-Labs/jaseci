@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Improvement: `actions load module` added as capability where module strings are accepted
 - New Feature: Added global root finder `net.root` to std lib and `net.min` to go with existing `net.max`
 - New Feature: New global element type and `global` keyword
 

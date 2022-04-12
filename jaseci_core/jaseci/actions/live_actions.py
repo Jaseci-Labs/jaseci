@@ -9,6 +9,7 @@ import requests
 import os
 import sys
 import inspect
+import importlib
 
 live_actions = {}
 
@@ -51,6 +52,13 @@ def load_local_actions(file):
         return True
 
 
+def load_module_actions(mod):
+    """Load all jaseci actions from python module"""
+    if(importlib.import_module(mod)):
+        return True
+    return False
+
+
 def load_standard():
     import jaseci.actions.standard.net  # noqa
     import jaseci.actions.standard.rand  # noqa
@@ -73,6 +81,8 @@ def load_preconfig_actions(hook):
             load_local_actions(i)
         for i in action_preload['remote']:
             load_remote_actions(i)
+        for i in action_preload['module']:
+            load_module_actions(i)
 
 
 def get_global_actions(hook):
