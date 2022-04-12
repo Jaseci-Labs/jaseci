@@ -1544,8 +1544,11 @@ class interp(machine_state):
                                has_obj=nd,
                                action_sets=[arch.activity_action_ids]))
         m._jac_scope.inherit_agent_refs(self._jac_scope)
-        m.run_code_block(jac_ir_to_ast(
-            act_list.get_obj_by_name(name).value))
+        try:
+            m.run_code_block(jac_ir_to_ast(
+                act_list.get_obj_by_name(name).value))
+        except Exception as e:
+            self.rt_error(f'Internal Exception: {e}', m._cur_jac_ast)
         self.report += m.report
         if(m.report_status):
             self.report_status = m.report_status

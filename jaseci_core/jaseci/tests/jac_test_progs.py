@@ -82,3 +82,20 @@ or_stmt = \
             report [x, y];
     }
     """
+
+nd_equals_error_correct_line = \
+    """
+    node plain{ has name="joe", noname;
+    can stuff with entry {std.out(name + noname); }}
+
+    walker init {
+        root {
+            spawn here --> node::plain;
+            take -->;
+        }
+        plain {
+            if(here.details['name'] == 'joe'):
+                report here.info;
+        }
+    }
+    """
