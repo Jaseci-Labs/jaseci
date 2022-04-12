@@ -171,10 +171,14 @@ class ast():
                                        x.kid[0].kid[0].name == kid[0].name,
                                        import_elements))
             if(kid[1].name == "import_names"):
+                import_names = self.run_import_names(kid[1])
                 ret_elements = list(filter(lambda x:
                                            x.kid[0].kid[1].token_text() in
-                                           self.run_import_names(kid[1]),
+                                           import_names,
                                            ret_elements))
+                if(len(ret_elements) < len(import_names)):
+                    err = f"Line {kid[1].line}: Module name not found!"
+                    self.tree_root._parse_errors.append(err)
             if(kid[-1].name == "import_items"):
                 return ret_elements + self.run_import_items(kid[-1],
                                                             import_elements)
