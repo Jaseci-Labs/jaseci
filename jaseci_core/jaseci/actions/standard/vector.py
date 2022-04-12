@@ -15,7 +15,7 @@ def cosine_sim(vec_a: list, vec_b: list):
     """
     result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) *
                                      np.linalg.norm(vec_b))
-    return result.astype(float)
+    return result.astype(float)[0]
 
 
 @jaseci_action()
