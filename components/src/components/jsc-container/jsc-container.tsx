@@ -11,7 +11,7 @@ export class Container {
   @Prop() css: string = JSON.stringify({});
   @Prop({ mutable: true }) events: string;
   @Prop() name: string;
-  @Prop({ mutable: true }) operations = JSON.parse(localStorage.getItem(`op-msgs`));
+  @Prop({ mutable: true }) operations;
 
   componentDidLoad() {
     // const childrenSlot = this.host.shadowRoot.querySelector('slot[name=children]') as HTMLSlotElement;
@@ -24,7 +24,7 @@ export class Container {
     });
 
     setUpEvents(this.host, this.events);
-    console.log('RErenders');
+    this.operations = JSON.parse(localStorage.getItem(`op-${this.name}`));
   }
 
   render() {
