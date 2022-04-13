@@ -9,9 +9,9 @@ import { setUpEvents } from '../../utils/events';
 export class Container {
   @Element() host: HTMLElement;
   @Prop() css: string = JSON.stringify({});
-  @Prop() events: string;
-  @Prop() operations: string;
+  @Prop({ mutable: true }) events: string;
   @Prop() name: string;
+  @Prop({ mutable: true }) operations = JSON.parse(localStorage.getItem(`op-msgs`));
 
   componentDidLoad() {
     // const childrenSlot = this.host.shadowRoot.querySelector('slot[name=children]') as HTMLSlotElement;
@@ -24,6 +24,7 @@ export class Container {
     });
 
     setUpEvents(this.host, this.events);
+    console.log('RErenders');
   }
 
   render() {

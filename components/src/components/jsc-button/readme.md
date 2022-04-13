@@ -7,12 +7,14 @@
 
 ## Properties
 
-| Property | Attribute | Description | Type     | Default              |
-| -------- | --------- | ----------- | -------- | -------------------- |
-| `css`    | `css`     |             | `string` | `JSON.stringify({})` |
-| `events` | `events`  |             | `string` | `undefined`          |
-| `label`  | `label`   |             | `string` | `undefined`          |
-| `name`   | `name`    |             | `string` | `undefined`          |
+| Property     | Attribute    | Description | Type     | Default              |
+| ------------ | ------------ | ----------- | -------- | -------------------- |
+| `color`      | `color`      |             | `string` | `undefined`          |
+| `css`        | `css`        |             | `string` | `JSON.stringify({})` |
+| `events`     | `events`     |             | `string` | `undefined`          |
+| `label`      | `label`      |             | `string` | `undefined`          |
+| `name`       | `name`       |             | `string` | `undefined`          |
+| `operations` | `operations` |             | `string` | `undefined`          |
 
 
 ----------------------------------------------

@@ -11,6 +11,7 @@ export class App {
 
   @Method()
   async setMarkup(value) {
+    localStorage.clear();
     this.markup = value;
   }
 

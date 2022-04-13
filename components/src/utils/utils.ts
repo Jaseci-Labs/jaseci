@@ -34,9 +34,10 @@ const attachEvents = (renderedTag: string, events: JaseciComponent['events']) =>
   return events ? renderedTag.replace('>', ` events=\'${eventsString}\'>`) : renderedTag;
 };
 
-const attachOperations = (renderedTag: string, operations: JaseciComponent['operations']) => {
-  const operationsString = JSON.stringify(operations);
-  return operations ? renderedTag.replace('>', ` operations=\'${operationsString}\'>`) : renderedTag;
+const setOperations = (operations: JaseciComponent['operations'], componentName: string) => {
+  if (!localStorage.getItem(`op-${componentName}`)) {
+    localStorage.setItem(`op-${componentName}`, JSON.stringify(operations));
+  }
 };
 
 const attachCSS = (renderedTag: string, css: JaseciComponent['css']) => {
@@ -52,8 +53,8 @@ export const renderComponent = (jaseciComponent: JaseciComponent) => {
   const componentWithProps = attachProps(renderedTag, jaseciComponent.props || {});
   const componentWithName = attachName(componentWithProps, jaseciComponent.name);
   const componentWithEvents = attachEvents(componentWithName, jaseciComponent.events);
-  const componentWithOperations = attachOperations(componentWithEvents, jaseciComponent.operations);
-  const componentWithCSS = attachCSS(componentWithOperations, jaseciComponent.css || {});
+  setOperations(jaseciComponent.operations, jaseciComponent.name);
+  const componentWithCSS = attachCSS(componentWithEvents, jaseciComponent.css || {});
 
   return componentWithCSS;
 };

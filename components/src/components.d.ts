@@ -31,7 +31,7 @@ export namespace Components {
         "css": string;
         "events": string;
         "name": string;
-        "operations": string;
+        "operations": any;
     }
     interface JscInputbox {
         "css": string;
@@ -218,7 +218,7 @@ declare namespace LocalJSX {
         "css"?: string;
         "events"?: string;
         "name"?: string;
-        "operations"?: string;
+        "operations"?: any;
     }
     interface JscInputbox {
         "css"?: string;

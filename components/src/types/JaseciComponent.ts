@@ -16,10 +16,16 @@ type JaseciAction = {
   fn: JaseciActionName;
   args: Array<string | number>;
   key?: string;
+  // used to specify operation in runOperation
   operation?: string;
   cond?: ActionCondition[];
   onCompleted?: JaseciAction;
+} & JaseciCallEndpointAction;
+
+type JaseciCallEndpointAction = {
+  endpoint?: string;
 };
+
 type JaseciOperation = {
   args: Array<string>;
   run: Array<Record<JaseciEventName, Array<JaseciAction>>>;
@@ -27,6 +33,6 @@ type JaseciOperation = {
 
 type JaseciComponentProps = Record<string, unknown>;
 type JaseciEventName = 'onClick' | 'onKeyPress' | 'onEnterKeyPress';
-type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add' | 'runOperation';
+type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add' | 'runOperation' | 'callEndpoint';
 type ActionConditionName = 'eq' | 'neq' | 'gt' | 'lt';
 type ActionCondition = `${string}::#${ActionConditionName}::${string}`;

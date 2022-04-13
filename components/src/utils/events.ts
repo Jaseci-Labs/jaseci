@@ -9,6 +9,10 @@ export function setUpEvents(host: HTMLElement, events: string) {
   }
 }
 
+// export function setUpOperations(name: string, operations: any) {
+//   operations = JSON.parse(localStorage.getItem(`op-${name}`));
+// }
+
 type ParseArgsConfig = { withOriginal?: boolean };
 
 /**
@@ -18,8 +22,9 @@ export function computeOpArgs(operationActionArgs: string[], actionArgs: (string
   let argValues = {};
 
   operationActionArgs.map((operationArg, index) => {
+    console.log(actionArgs[index]);
     // const matchedArgs = operationArg.match(/arg[(](.*?)[)]/g);
-    argValues[`arg(${operationArg})`] = actionArgs[index];
+    argValues[`arg(${operationArg})`] = typeof actionArgs[index] === 'string' ? computeVar(actionArgs[index] as string) : actionArgs[index];
   });
 
   return argValues;
@@ -82,7 +87,7 @@ function runAction(action: JaseciAction, result?: any) {
   const actionArgs = action.args;
   const parsedActionArgs = parseArgs(action.args, {}, result);
 
-  checkCond(action.cond || []).run(() => {
+  checkCond(action.cond || []).run(async () => {
     switch (actionName) {
       case 'update':
         // use actions.args because we need a ref instead of the value for the first arg of update
@@ -105,55 +110,62 @@ function runAction(action: JaseciAction, result?: any) {
         if (typeof targetComponentName !== 'string') throw new Error('Component name must be a string');
         const targetComponent = getComponentByName(targetComponentName);
         let newComponent = actionArgs[1];
-        let newComponentString = JSON.stringify(newComponent);
+        let newComponentString = typeof newComponent === 'string' ? newComponent : JSON.stringify(newComponent);
 
         append(targetComponent, newComponentString);
+
         action?.onCompleted && runAction(action?.onCompleted);
         break;
       case 'runOperation':
         const operation = action?.operation;
-        if (typeof operation !== 'string') throw new Error('Operation must be a string.');
-        if (!operation.includes('.')) throw new Error('Invalid operation. Operation and component not specified.');
-        const [opTargetComponentName, operationName] = operation.split('.');
-        const opTargetComponent = getComponentByName(opTargetComponentName);
-        const opTargetComponentOperations = opTargetComponent.getAttribute('operations');
-        if (!opTargetComponentOperations) throw new Error(`No operation defined for ${opTargetComponentName}`);
-        const operationDef = JSON.parse(opTargetComponentOperations)[operationName];
+        const [opComponentName, operationName] = operation.split('.');
+        // get the operation component
+        const opComponent = getComponentByName(opComponentName);
+        // get the structure of the operation
+        const componentOperations = (opComponent as HTMLElement & { operations: Record<string, JaseciOperation> }).operations;
+        const operationStructure = componentOperations[operationName];
 
-        operationDef.run.map(operationAction => {
-          const opArgsMap = computeOpArgs(operationDef.args, action?.args);
+        // get the defined args of the operation
+        const operationArgs = operationStructure.args;
 
-          const newActionArgs = operationAction?.args?.map(arg => {
-            let parsedArg = arg;
+        // get and compute args of the current action
+        let currentActionArgs = parsedActionArgs as [];
 
-            Object.keys(opArgsMap).map(opArg => {
-              if (typeof parsedArg == 'string' || typeof parsedArg === 'object') {
-                if (typeof parsedArg == 'object') {
-                  parsedArg = JSON.stringify(parsedArg);
-                  if (parsedArg.includes(opArg)) {
-                    parsedArg = parsedArg.replaceAll(opArg, opArgsMap[opArg]);
-                    parsedArg = JSON.parse(parsedArg);
-                  }
-                } else {
-                  if (parsedArg.includes(opArg)) {
-                    parsedArg = parsedArg.replaceAll(opArg, opArgsMap[opArg]);
-                    parsedArg = parsedArg;
-                  }
-                }
-              }
-            });
+        // map the args of the operation to the computed action args
+        const operationArgsMap = {};
 
-            return parsedArg;
-          });
-
-          operationAction.args = newActionArgs;
-
-          runAction(operationAction);
+        currentActionArgs.forEach((actionArgValue, index) => {
+          operationArgsMap[`arg(${operationArgs[index]})`] = actionArgValue;
         });
 
-        action?.onCompleted && runAction(action?.onCompleted);
+        // replace args with computed values
+        let updatedOperationStructure = { ...operationStructure };
+        let operationStructureActionsString = JSON.stringify(operationStructure.run);
+
+        console.log({ operationArgsMap });
+
+        Object.keys(operationArgsMap).forEach(arg => {
+          console.log({ arg });
+          operationStructureActionsString = operationStructureActionsString.replaceAll(arg, operationArgsMap[arg]);
+          console.log(operationStructureActionsString);
+        });
+
+        updatedOperationStructure['run'] = JSON.parse(operationStructureActionsString);
+        // run the operation
+        updatedOperationStructure['run'].map(action => runAction(action as any));
+        console.log({ updatedOperationStructure });
+
         break;
 
+      case 'callEndpoint':
+        const method = parsedActionArgs[0];
+        const body = typeof parsedActionArgs[1] === 'string' ? parsedActionArgs[1] : JSON.stringify(parsedActionArgs[1]);
+        console.log({ method, body });
+        const actions = await fetch(action?.endpoint, { method, body, headers: { 'Content-Type': 'application/json' } }).then(res => res.json());
+        if (!actions) throw new Error('No action returned from endpoint.');
+        Array.isArray(actions) ? actions.map(action => runAction(action)) : runAction(actions);
+
+        break;
       default:
         new Function(`${actionName}.apply(this, ${JSON.stringify(parsedActionArgs)})`)();
         action?.onCompleted && runAction(action?.onCompleted);
@@ -220,6 +232,8 @@ function append(targetComponent: Element, newComponentString: string) {
   }
 
   let newComponent = JSON.parse(newComponentString);
+  console.log({ newComponent });
 
-  targetComponent.shadowRoot.innerHTML += renderComponentTree([newComponent] as any);
+  const childComp = renderComponentTree([newComponent] as any);
+  targetComponent.shadowRoot.innerHTML += childComp;
 }

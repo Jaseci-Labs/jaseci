@@ -7,10 +7,11 @@
 
 ## Properties
 
-| Property  | Attribute  | Description | Type     | Default     |
-| --------- | ---------- | ----------- | -------- | ----------- |
-| `htmlFor` | `html-for` |             | `string` | `undefined` |
-| `label`   | `label`    |             | `string` | `undefined` |
+| Property     | Attribute    | Description | Type     | Default     |
+| ------------ | ------------ | ----------- | -------- | ----------- |
+| `htmlFor`    | `html-for`   |             | `string` | `undefined` |
+| `label`      | `label`      |             | `string` | `undefined` |
+| `operations` | `operations` |             | `string` | `undefined` |
 
 
 ## Dependencies

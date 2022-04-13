@@ -14,6 +14,7 @@
 | `fullwidth`   | `fullwidth`   |             | `string` | `undefined`          |
 | `label`       | `label`       |             | `string` | `undefined`          |
 | `name`        | `name`        |             | `string` | `undefined`          |
+| `operations`  | `operations`  |             | `string` | `undefined`          |
 | `placeholder` | `placeholder` |             | `string` | `undefined`          |
 | `value`       | `value`       |             | `string` | `undefined`          |
 
