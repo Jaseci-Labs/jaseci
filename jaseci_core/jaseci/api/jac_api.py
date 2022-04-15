@@ -28,7 +28,7 @@ class jac_api():
         faux = self.faux_master()
         with open(file, 'r') as file:
             ret = faux.sentinel_register(
-                code=file.read(), code_dir=dir, name=filename)
+                code=file.read(), code_dir=dir, name=filename, auto_run="")
             if('success' in ret and not ret['success']):
                 return ret
             with open(out, 'w') as ofile:
