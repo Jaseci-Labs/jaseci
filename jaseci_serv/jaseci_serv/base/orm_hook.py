@@ -49,7 +49,7 @@ class redis_cache():
         except Exception:
             return None
 
-    def delete(self, urn, value):
+    def delete(self, urn):
         try:
             return self.red.delete(urn)
         except Exception:

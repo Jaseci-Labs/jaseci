@@ -625,7 +625,6 @@ class jac_tests(TestCaseHelper, TestCase):
                                    'profession': None})
 
     def test_try_else_stmts(self):
-        self.logger_on()
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.try_else_stmts)
