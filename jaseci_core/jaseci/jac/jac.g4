@@ -54,11 +54,13 @@ attr_block: LBRACE (attr_stmt)* RBRACE | COLON attr_stmt | SEMI;
 
 attr_stmt: has_stmt | can_stmt;
 
+can_block: (can_stmt)*;
+
 graph_block: graph_block_spawn | graph_block_dot;
 
 graph_block_spawn:
-	LBRACE has_root KW_SPAWN code_block RBRACE
-	| COLON has_root KW_SPAWN code_block SEMI;
+	LBRACE has_root can_block KW_SPAWN code_block RBRACE
+	| COLON has_root can_block KW_SPAWN code_block SEMI;
 
 graph_block_dot:
 	LBRACE has_root dot_graph RBRACE

@@ -66,6 +66,15 @@ class architype_interp(interp):
                 self.run_attr_stmt(i, obj)
         self._can_compiled_flag = True
 
+    def run_can_block(self, jac_ast):
+        """
+        can_block: (can_stmt)*;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        for i in kid:
+            if(i.name == 'can_stmt'):
+                self.run_can_stmt(i, self)
+
     def run_graph_block(self, jac_ast):
         """
         graph_block: graph_block_spawn | graph_block_dot;
@@ -76,17 +85,18 @@ class architype_interp(interp):
     def run_graph_block_spawn(self, jac_ast):
         """
         graph_block_spawn:
-            LBRACE has_root KW_SPAWN code_block RBRACE
-            | COLON has_root KW_SPAWN code_block SEMI;
+            LBRACE has_root can_block KW_SPAWN code_block RBRACE
+            | COLON has_root can_block KW_SPAWN code_block SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
         root_name = self.run_has_root(kid[1])
+        self.run_can_block(kid[2])
         m = interp(parent_override=self.parent(), caller=self)
         m.push_scope(jac_scope(parent=self,
                                has_obj=None,
-                               action_sets=[]))
+                               action_sets=[self.activity_action_ids]))
         try:
-            m.run_code_block(kid[3])
+            m.run_code_block(kid[4])
         except Exception as e:
             self.rt_error(f'Internal Exception: {e}', m._cur_jac_ast)
         local_state = m._jac_scope.local_scope
@@ -95,11 +105,11 @@ class architype_interp(interp):
             obj = jeu(local_state[root_name], parent=self)
             if(not isinstance(obj, node)):
                 self.rt_error(f"{root_name} is {type(obj)} not node!",
-                              kid[2])
+                              kid[3])
             return obj
         else:
             self.rt_error(f"Graph didn't produce root node!",
-                          kid[2])
+                          kid[3])
             return None
 
     def run_graph_block_dot(self, jac_ast):
