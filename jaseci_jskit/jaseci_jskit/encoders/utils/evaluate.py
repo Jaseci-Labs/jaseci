@@ -31,7 +31,7 @@ def get_inference(model, tokenizer, contexts, candidates, train_config):
         batch = tuple(t.to(train_config['device']) for t in batch)
         context_token_ids_list_batch, context_input_masks_list_batch,\
             candidate_token_ids_list_batch, candidate_input_masks_list_batch,\
-            labels_batch = batch
+            _ = batch
         with torch.no_grad():
             logits = model(context_token_ids_list_batch,
                            context_input_masks_list_batch,
