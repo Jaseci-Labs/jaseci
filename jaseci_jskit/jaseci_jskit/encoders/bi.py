@@ -3,7 +3,7 @@ import torch
 from typing import Dict, List, Union
 from fastapi import HTTPException
 from transformers import AutoModel, AutoConfig, AutoTokenizer
-from utils.evaluate import get_embeddings, get_inference
+from utils.evaluate import get_embeddings
 from utils.models import BiEncoder
 import traceback
 import numpy as np
@@ -58,7 +58,9 @@ def config_setup():
     model = BiEncoder(config=trf_config,
                       cont_bert=cont_bert,
                       cand_bert=cand_bert,
-                      shared=model_config["shared"])
+                      shared=model_config["shared"],
+                      loss_type=model_config["loss_type"],
+                      loss_function=model_config["loss_function"])
 
     model.to(train_config['device'])
     set_seed(train_config['seed'])
@@ -105,11 +107,8 @@ def infer(contexts: Union[List[str], List[List]],
     predicted_candidates = []
     try:
         if (context_type == "text") and (candidate_type == "text"):
-            predicted_candidates = get_inference(model, tokenizer,
-                                                 contexts=contexts,
-                                                 candidates=candidates,
-                                                 train_config=train_config)
-            return predicted_candidates
+            con_embed = [get_context_emb(contexts)]
+            cand_embed = get_candidate_emb(candidates)
         elif (context_type == "text") and (candidate_type == "embedding"):
             con_embed = [get_context_emb(contexts)]
             cand_embed = candidates
@@ -126,8 +125,11 @@ def infer(contexts: Union[List[str], List[List]],
         for data in con_embed:
             score_dat = []
             for lbl in cand_embed:
-                score_dat.append(dot_prod(
-                    vec_a=data, vec_b=lbl))
+                if model_config["loss_type"] == "cos":
+                    score_dat.append(cosine_sim(
+                        vec_a=data, vec_b=lbl))
+                else:
+                    score_dat.append(dot_prod(vec_a=data, vec_b=lbl))
             if candidate_type == "embedding":
                 predicted_candidates.append(int(np.argmax(score_dat)))
             else:
@@ -326,7 +328,9 @@ def load_model(model_path):
         model = BiEncoder(config=trf_config,
                           cont_bert=cont_bert,
                           cand_bert=cand_bert,
-                          shared=model_config_data['shared'])
+                          shared=model_config_data['shared'],
+                          loss_type=model_config["loss_type"],
+                          loss_function=model_config["loss_function"])
         model.to(train_config['device'])
         return (f'[loaded model from] : {model_path}')
     except Exception as e:

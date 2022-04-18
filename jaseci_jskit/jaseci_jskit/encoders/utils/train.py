@@ -4,6 +4,7 @@ import os
 from tqdm.autonotebook import trange
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 from . import tokenizer as token_util
+import math
 
 
 def train_model(model, tokenizer, contexts, candidates, labels, train_config):
@@ -52,8 +53,11 @@ def train_model(model, tokenizer, contexts, candidates, labels, train_config):
     optimizer = AdamW(optimizer_grouped_parameters,
                       lr=train_config['learning_rate'],
                       eps=train_config['adam_epsilon'])
+    warmup_steps = math.ceil(len(train_dataset) *
+                             train_config['num_train_epochs'] /
+                             train_config['train_batch_size'] * 0.1)
     scheduler = get_linear_schedule_with_warmup(
-        optimizer, num_warmup_steps=train_config['warmup_steps'],
+        optimizer, num_warmup_steps=warmup_steps,
         num_training_steps=t_total
     )
     fp16 = False
@@ -114,5 +118,5 @@ def train_model(model, tokenizer, contexts, candidates, labels, train_config):
             loss : {tr_loss/nb_tr_steps}
             LR : {optimizer.param_groups[0]['lr']}\n""")
         log_wf.write(f"{epoch+1}\t{tr_loss/nb_tr_steps}\n")
-
+    log_wf.close()
     return model
