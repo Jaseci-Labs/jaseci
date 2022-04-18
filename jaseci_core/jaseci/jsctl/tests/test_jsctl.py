@@ -313,3 +313,12 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertIn("j_type", r.keys())
         b = r['jid']
         self.assertEqual(a, b)
+
+    def test_jsctl_graph_can(self):
+        self.call(
+            "actions load local jaseci/tests/infer.py")
+        self.call(
+            "sentinel register "
+            "jaseci/jsctl/tests/graph_can.jac -name gc -set_active true")
+        r = self.call("walker run go")
+        self.assertEqual(r.split()[0], "2020-01-01T00:00:00")
