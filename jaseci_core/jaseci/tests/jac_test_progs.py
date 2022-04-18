@@ -71,3 +71,31 @@ net_root_std_lib = \
         }
     }
     """
+
+
+or_stmt = \
+    """
+    walker init {
+        x = 3.4;
+        y = "Hello";
+        if(x == 3.45 or y == "Hello"):
+            report [x, y];
+    }
+    """
+
+nd_equals_error_correct_line = \
+    """
+    node plain{ has name="joe", noname;
+    can stuff with entry {std.out(name + noname); }}
+
+    walker init {
+        root {
+            spawn here --> node::plain;
+            take -->;
+        }
+        plain {
+            if(here.details['name'] == 'joe'):
+                report here.info;
+        }
+    }
+    """

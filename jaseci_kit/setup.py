@@ -1,8 +1,9 @@
 from setuptools import setup, find_packages
+
 setup(
-    name='jaseci_jskit',
-    version='1.3.3.1',
-    packages=find_packages(include=['jaseci_jskit', 'jaseci_jskit.*']),
+    name='jaseci_kit',
+    version='1.3.3.5',
+    packages=find_packages(include=['jaseci_kit', 'jaseci_kit.*']),
     install_requires=[
         'jaseci',
         'tensorflow >= 2.8.0, < 3.0.0',

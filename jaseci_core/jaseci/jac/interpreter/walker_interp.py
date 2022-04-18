@@ -172,7 +172,7 @@ class walker_interp(interp):
         try:
             result = act.trigger(param_list, self._jac_scope, self)
         except Exception as e:
-            self.rt_error(f'{e}', jac_ast)
+            self.rt_error(f'Internal Exception: {e}', m._cur_jac_ast)
             result = None
         if (kid[-1].name == "expression"):
             dest = m.run_expression(kid[-1])

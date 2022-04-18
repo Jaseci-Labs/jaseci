@@ -27,6 +27,35 @@ def find_class_and_import(j_type, core_mod):
         return utils.find_class_and_import(j_type, core_mod)
 
 
+class redis_cache():
+    """Redis sideline cache"""
+
+    def __init__(self, red):
+        self.red = red
+
+    def get(self, urn):
+        try:
+            return self.red.get(urn)
+        except Exception:
+            return None
+
+    def set(self, urn, value):
+        try:
+            return self.red.set(urn, value)
+        except TypeError:
+            logger.error(
+                f"Item {value} is not JSON serializable for redis store!")
+            logger.error(f"Item details: {value.serialize()}",  exc_info=True)
+        except Exception:
+            return None
+
+    def delete(self, urn):
+        try:
+            return self.red.delete(urn)
+        except Exception:
+            return None
+
+
 class orm_hook(mem_hook):
     """
     Hooks Django ORM database for Jaseci objects to Jaseci's core engine.
@@ -36,7 +65,7 @@ class orm_hook(mem_hook):
                  red=Redis(host=REDIS_HOST, decode_responses=True)):
         self.objects = objects
         self.globs = globs
-        self.red = red
+        self.red = redis_cache(red)
         self.skip_redis_update = False
         self.save_obj_list = set()
         self.save_glob_dict = {}
@@ -94,17 +123,7 @@ class orm_hook(mem_hook):
         self.save_obj_list.add(item)
 
     def commit_obj_to_redis(self, item):
-        try:
-            self.red.set(item.id.urn, item.json(detailed=True))
-        except TypeError:
-            logger.error(
-                f"Item {item} is not JSON serializable for redis store!")
-            logger.error(f"Item details: {item.serialize()}",  exc_info=True)
-        except Exception as e:
-            logger.error(
-                str(f"Couldn't save {item} to redis! {e}"),
-                exc_info=True
-            )
+        self.red.set(item.id.urn, item.json(detailed=True))
 
     def commit_obj(self, item):
         item_from_db, created = self.objects.get_or_create(jid=item.id

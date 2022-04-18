@@ -62,3 +62,18 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report[0][0], report[0][1])
         self.assertEqual(report[0][1], report[1][1])
         self.assertNotEqual(report[1][0], report[1][1])
+
+    def test_or_stmt(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name='test', code=jtp.or_stmt)
+        report = mast.general_interface_to_api(
+            api_name='walker_run', params={'name': 'init'})['report']
+        self.assertEqual(report, [[3.4, "Hello"]])
+
+    def test_nd_equals(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(
+            name='test', code=jtp.nd_equals_error_correct_line)
+        report = mast.general_interface_to_api(
+            api_name='walker_run', params={'name': 'init'})
+        self.assertIn("line 3", report['errors'][0])
