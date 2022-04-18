@@ -31,17 +31,23 @@ class SelectionDataset(Dataset):
                 'labels': []
             }
             for text, cand, lbl in zip(contexts, candidates, labels):
-                if lbl == 1 and len(group['candidates']) > 0:
-                    self.data_source.append(group)
-                    group = {
-                        'context': None,
-                        'candidates': [],
-                        'labels': []
-                    }
+                group = {
+                    'context': None,
+                    'candidates': [],
+                    'labels': []
+                }
+                # below code is to combine positive and negetive sample
+                # if lbl == 1 and len(group['candidates']) > 0:
+                #     self.data_source.append(group)
+                #     group = {
+                #         'context': None,
+                #         'candidates': [],
+                #         'labels': []
+                #     }
                 group['candidates'].append(cand)
                 group['labels'].append(lbl)
                 group['context'] = [text]
-            if len(group['candidates']) > 0:
+            # if len(group['candidates']) > 0:
                 self.data_source.append(group)
         group = {
             'context': None,
@@ -105,7 +111,7 @@ class SelectionDataset(Dataset):
             candidates_input_masks_list_batch = (
                 torch.tensor(t, dtype=torch.long) for t in long_tensors)
 
-        labels_batch = torch.tensor(labels_batch, dtype=torch.long)
+        labels_batch = torch.tensor(labels_batch, dtype=torch.float)
         return contexts_token_ids_list_batch,  \
             contexts_input_masks_list_batch, \
             candidates_token_ids_list_batch, \
@@ -123,8 +129,11 @@ class EvalDataset(Dataset):
         group = {
             "text": []
         }
-        for text in texts:
-            group['text'].append(text)
+        if mode == 'context':
+            group['text'] = texts
+        else:
+            for text in texts:
+                group['text'].append(text)
         self.data_source.append(group)
 
     def __len__(self):

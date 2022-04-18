@@ -135,11 +135,11 @@ class biencoder_test(TestCaseHelper, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         assert response.json()[0] in test_infer_request['candidates']
-        # step 2: setting training epoch to 20
+        # step 2: setting training epoch to 10
         response = self.client.post(
             "/set_train_config/",
             json={
-                "training_parameters": {"num_train_epochs": 20}
+                "training_parameters": {"num_train_epochs": 10}
             }
         )
         self.assertEqual(response.status_code, 200)
