@@ -23,16 +23,17 @@ def get(url: str, data: dict, header: dict):
 
 
 @jaseci_action()
-def post(url: str, data: dict, header: dict):
+def post(url: str, data: dict, files: list, header: dict):
     """
     Issue request
     Param 1 - url
     Param 2 - data
-    Param 3 - header
+    Param 3 - files
+    Param 4 - header
 
     Return - response object
     """
-    res = requests.post(url, json=data, headers=header)
+    res = requests.post(url, json=data, files=files, headers=header)
     ret = {'status_code': res.status_code}
     try:
         ret['response'] = res.json()
