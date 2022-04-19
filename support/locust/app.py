@@ -5,21 +5,17 @@ from locust import task, HttpUser, SequentialTaskSet, constant
 from locust_plugins.users import RestUser
 
 
-def add_users():
-    with open('userCredentials.csv', newline='') as f:
+def get_csv_data(filename):
+    with open(filename, newline='') as f:
         reader = csv.reader(f)
         # global UserName
         users = list(reader)
+        print(users)
         return users
 
 
-UserName = add_users()
-
-
-def read_excel(columName):
-    df = pd.read_excel('qna.xlsx', sheet_name='Sheet1')  # can also index sheet by name or fetch all sheets
-    mylist = df[columName].tolist()
-    return mylist
+UserName = get_csv_data('userCredentials.csv')
+qna = get_csv_data('qna.csv')
 
 
 class SeqTask(SequentialTaskSet):
@@ -35,7 +31,7 @@ class SeqTask(SequentialTaskSet):
             self.userName, self.password = UserName.pop()
             # print("Length of list is :", len(UserName))
         else:
-            add_users()
+            get_csv_data('userCredentials.csv')
 
     @task
     def generate_userToken(self):
@@ -60,6 +56,7 @@ class SeqTask(SequentialTaskSet):
         graph_response = self.client.post("/jac/graph_active_get", headers={"authorization": "Token " + self.zsb_token})
         res_var = graph_response.json()
 
+        # Check if jid object exists in json
         if "jid" in res_var:
             print("Graph already exists")
         else:
@@ -127,17 +124,17 @@ class SeqTask(SequentialTaskSet):
 
     @task
     def create_answers(self):
-        answers = read_excel("Answers")
+        #answers = read_excel("Answers")
 
         # global zsb_jid
         print("JID or user : ", self.userName, " is ----", self.zsb_jid)
-        for ans in answers:
+        for ans in qna:
             # print(zsb_token)
             # print('"{0}"'.format(zsb_jid))
             response = self.client.post("/jac/walker_run", headers={"authorization": "Token " + self.zsb_token}, json={
                 "name": "create_answer",
                 "nd": self.zsb_jid,
-                "ctx": {"text": ans},
+                "ctx": {"text": ans[1]},
                 "snt": "active:sentinel"
 
             })
@@ -147,13 +144,13 @@ class SeqTask(SequentialTaskSet):
 
     @task
     def ask_questions(self):
-        questions = read_excel("Questions")
-        for q in questions:
+        # questions = read_excel("Questions")
+        for questions in qna:
             response = self.client.post("/jac/walker_run", headers={"authorization": "Token " + self.zsb_token}, json={
                 "name": "ask_question",
                 "nd": self.zsb_jid,
                 "ctx": {
-                    "text": q,
+                    "text": questions[0],
                     "metadata": {
                         "channel": "ZSB Platform"}
                 },
@@ -163,24 +160,24 @@ class SeqTask(SequentialTaskSet):
             answer_var = response.json()
             print(response.status_code)
             print("User:", self.userName)
-            print("Question: ", q)
+            print("Question: ", questions[0])
             print("Answer: ", answer_var['report'][0]['context']['text'])
             print("----------------------------------------------------")
             time.sleep(2)
 
-    def on_stop(self):
-        response = self.client.post("/jac/walker_run", headers={"authorization": "Token " + self.zsb_token}, json={
+    # def on_stop(self):
+    #     response = self.client.post("/jac/walker_run", headers={"authorization": "Token " + self.zsb_token}, json={
 
-            "name": "delete_bot",
-            "nd": self.zsb_jid,
-            "ctx": {},
-            "snt": "active:sentinel"
-        })
-        print("Deleted bot with Jid: ", self.zsb_jid)
+    #         "name": "delete_bot",
+    #         "nd": self.zsb_jid,
+    #         "ctx": {},
+    #         "snt": "active:sentinel"
+    #     })
+    #     print("Deleted bot with Jid: ", self.zsb_jid)
 
 
 class LoadTest(RestUser):
-    host = "<Your jaseci API Host Url>"
+    host = "https://uatosapi.apps.zeroshotbot.com"
     # host = "https://reqres.in"
     tasks = [SeqTask]
     wait_time = constant(2)
