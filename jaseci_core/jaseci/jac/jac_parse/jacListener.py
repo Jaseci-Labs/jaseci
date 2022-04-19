@@ -161,6 +161,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#can_block.
+    def enterCan_block(self, ctx:jacParser.Can_blockContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#can_block.
+    def exitCan_block(self, ctx:jacParser.Can_blockContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#graph_block.
     def enterGraph_block(self, ctx:jacParser.Graph_blockContext):
         pass
