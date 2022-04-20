@@ -127,4 +127,7 @@ class jac_api():
     def faux_master(self):
         from jaseci.element.super_master import super_master
         from jaseci.utils.mem_hook import mem_hook
-        return super_master(h=mem_hook())
+        from copy import deepcopy
+        faux = super_master(h=mem_hook())
+        faux._h.mem['global'] = deepcopy(self._h.mem['global'])
+        return faux
