@@ -39,6 +39,7 @@ class sentinel_api():
             if (encoded):
                 code = b64decode_str(code)
             snt.register_code(code, code_dir)
+            snt.propagate_access()
             if(not snt.is_active):
                 return {'response': 'Error in jac code',
                         'errors': snt.errors,
@@ -107,6 +108,7 @@ class sentinel_api():
         elif(mode == 'ir'):
             snt.apply_ir(code)
             snt.run_start(snt._jac_ast)
+            snt.propagate_access()
             if(snt.runtime_errors):
                 snt.is_active = False
         else:
