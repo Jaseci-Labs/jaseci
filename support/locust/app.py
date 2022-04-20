@@ -38,11 +38,11 @@ class SeqTask(SequentialTaskSet):
             self.userName, self.password = UserName.pop()
             # print("Length of list is :", len(UserName))
         else:
-            get_csv_data('userCredentials.csv')
+            get_csv_data('addUsers.csv')
 
     @task
     def generate_userToken(self):
-        response = self.client.post("/user/token/", json={"email": self.userName, "password": self.password})
+        response = self.client.post("/user/token/", json={"email": self.userName, "password": ""})
         print("User: ", self.userName)
         json_var = response.json()
         # print("Response: ", res.text)
@@ -104,7 +104,7 @@ class SeqTask(SequentialTaskSet):
             time.sleep(1)
 
 class LoadTest(RestUser):
-    host = "<YOUR JASECI API URL>"
+    host = "https://uatosapi.apps.zeroshotbot.com"
     # host = "https://reqres.in"
     tasks = [SeqTask]
     wait_time = constant(2)
