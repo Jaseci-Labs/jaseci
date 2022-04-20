@@ -42,7 +42,7 @@ class SeqTask(SequentialTaskSet):
 
     @task
     def generate_userToken(self):
-        response = self.client.post("/user/token/", json={"email": self.userName, "password": ""})
+        response = self.client.post("/user/token/", json={"email": self.userName, "password": "Bcstech123"})
         print("User: ", self.userName)
         json_var = response.json()
         # print("Response: ", res.text)
