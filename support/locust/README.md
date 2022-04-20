@@ -25,12 +25,29 @@ pip install locust
 pip install pandas
 ```
 
+
+
 #### Install Locust Plugins
 
 ```console
 pip install locust_plugins
 ```
-### Run Locust through browser
+
+### Create Users for Load test
+
+To add users for load test , Edit the addUsers.csv files with new users in the format specified .
+
+After that run below command
+
+```console
+locust -f createUsers.py
+```
+
+Go to the link specified in console, e.x http://0.0.0.0:8089 and put the number of user same as what you added in csv file and run the application
+
+
+
+### Run Locust Load test through browser
 
 ```console
 locust -f <filename.py>
@@ -38,7 +55,7 @@ locust -f <filename.py>
 
 Once you’ve started Locust using one of the above command lines, you should open up a browser and point it to http://127.0.0.1:8089. Then you should be greeted with something like this
 
-### Run Locust headless 
+### Run Locust Load test via headless 
 
 You can run locust without the web UI - for example if you want to run it in some automated flow, like a CI server - by using the --headless flag together with -u and -r:
 
