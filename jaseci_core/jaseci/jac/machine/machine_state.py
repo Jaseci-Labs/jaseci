@@ -63,8 +63,12 @@ class machine_state():
 
     def get_arch_for(self, obj):
         """Returns the architype that matches object"""
-        return self.parent().arch_ids.get_obj_by_name(
+        ret = self.parent().arch_ids.get_obj_by_name(
             name=obj.name, kind=obj.kind)
+        if(ret is None):
+            self.rt_error(
+                f"Unable to find architype for {obj.name}, {obj.kind}")
+        return ret
 
     def obj_set_to_jac_set(self, obj_set):
         """

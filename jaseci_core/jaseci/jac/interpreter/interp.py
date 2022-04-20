@@ -977,6 +977,10 @@ class interp(machine_state):
                     result = jac_value(self, value=atom_res.value.sort())
                 elif (op == "clear"):
                     result = jac_value(self, value=atom_res.value.clear())
+                elif (op == "clear"):
+                    result = jac_value(self, value=atom_res.value.clear())
+                elif (op == "clear"):
+                    result = jac_value(self, value=atom_res.value.clear())
                 elif (len(kid) < 2 and op == "pop"):
                     result = jac_value(self, value=atom_res.value.pop())
                 if (result):
