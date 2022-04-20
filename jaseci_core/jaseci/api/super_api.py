@@ -30,11 +30,11 @@ class super_api():
         return and start idx specfies where to start
         """
 
-    @interface.admin_api()
+    @interface.admin_api(cli_args=['mast'])
     def master_become(self, mast: master):
         """
         Sets the default master master should use
         NOTE: Specail handler included in general_interface_to_api
         """
         self._caller = mast
-        return {'response': f'You are now {mas.name}'}
+        return {'response': f'You are now {mast.name}'}
