@@ -50,7 +50,7 @@ Go to the link specified in console, e.x http://0.0.0.0:8089 and put the number 
 ### Run Locust Load test through browser
 
 ```console
-locust -f <filename.py>
+locust -f app.py
 ```
 
 Once you’ve started Locust using one of the above command lines, you should open up a browser and point it to http://127.0.0.1:8089. Then you should be greeted with something like this
