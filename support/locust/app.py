@@ -104,7 +104,7 @@ class SeqTask(SequentialTaskSet):
             time.sleep(1)
 
 class LoadTest(RestUser):
-    host = "https://uatosapi.apps.zeroshotbot.com"
+    host = "<YOUR JASECI API URL>"
     # host = "https://reqres.in"
     tasks = [SeqTask]
     wait_time = constant(2)
