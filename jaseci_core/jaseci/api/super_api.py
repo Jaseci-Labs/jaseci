@@ -28,13 +28,14 @@ class super_api():
         """
         Returns info on a set of users, num specifies the number of users to
         return and start idx specfies where to start
+        NOTE: Abstract interface to be overridden
         """
 
     @interface.admin_api(cli_args=['mast'])
     def master_become(self, mast: master):
         """
         Sets the default master master should use
-        NOTE: Specail handler included in general_interface_to_api
+        FIXME: _caller does not persist accross http request!!
         """
         self._caller = mast
         return {'response': f'You are now {mast.name}'}
