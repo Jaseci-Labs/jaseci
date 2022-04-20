@@ -95,13 +95,6 @@ class master_api():
         self.sub_master_ids.destroy_obj_by_name(name)
         return {'response': f"{name} has been destroyed"}
 
-    @interface.admin_api()
-    def master_allusers(self, num: int = 0, start_idx: int = 0):
-        """
-        Returns info on a set of users, num specifies the number of users to
-        return and start idx specfies where to start
-        """
-
     def make_me_head_master_or_destroy(self, m):
         """
         Utility to bring an object into sub masters

@@ -21,3 +21,10 @@ class super_api():
         from jaseci.element.super_master import super_master
         new_m = super_master(h=self._h, name=name)
         return self.make_me_head_master_or_destroy(new_m)
+
+    @interface.admin_api()
+    def master_allusers(self, num: int = 0, start_idx: int = 0):
+        """
+        Returns info on a set of users, num specifies the number of users to
+        return and start idx specfies where to start
+        """
