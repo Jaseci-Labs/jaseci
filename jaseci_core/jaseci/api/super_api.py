@@ -2,6 +2,7 @@
 Super (master) api as a mixin
 """
 from jaseci.api.interface import interface
+from jaseci.element.master import master
 
 
 class super_api():
@@ -28,3 +29,12 @@ class super_api():
         Returns info on a set of users, num specifies the number of users to
         return and start idx specfies where to start
         """
+
+    @interface.admin_api()
+    def master_become(self, mast: master):
+        """
+        Sets the default master master should use
+        NOTE: Specail handler included in general_interface_to_api
+        """
+        self._caller = mast
+        return {'response': f'You are now {mas.name}'}
