@@ -131,9 +131,9 @@ def infer(contexts: Union[List[str], List[List]],
                 else:
                     score_dat.append(dot_prod(vec_a=data, vec_b=lbl))
             if candidate_type == "embedding":
-                predicted_candidates.append(int(np.argmax(score_dat)))
+                predicted_candidates.append([int(np.argmax(score_dat)), max(score_dat)])
             else:
-                predicted_candidates.append(candidates[np.argmax(score_dat)])
+                predicted_candidates.append([candidates[np.argmax(score_dat)], max(score_date)])
         return predicted_candidates
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(f'''input type can be
