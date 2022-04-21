@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: js-entity-extract
+  name: tfm-ner
 spec:
   selector:
-    pod: js-entity-extract
+    pod: tfm-ner
   ports:
     - protocol: TCP
       port: 80
@@ -14,33 +14,35 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: js-entity-extract-up
+  name: tfm-ner-up
   namespace: default
 data:
   prod_up: |-
     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
     cd /jaseci/jaseci_core/
     source install.sh
-    cd /jaseci/jaseci_kit/jaseci_kit/entity_extraction
-    uvicorn entity_extraction:serv_actions --host 0.0.0.0 --port 80
+    cd /jaseci
+    git checkout update-jskit-yaml
+    cd /jaseci/jaseci_kit/jaseci_kit/modules/tfm_ner/
+    uvicorn tfm_ner:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: js-entity-extract
+  name: tfm-ner
 spec:
   replicas: 1
   selector:
     matchLabels:
-      pod: js-entity-extract
+      pod: tfm-ner
   template:
     metadata:
       labels:
-        pod: js-entity-extract
-      name: js-entity-extract
+        pod: tfm-ner
+      name: tfm-ner
     spec:
       containers:
-        - name: js-entity-extract
+        - name: tfm-ner
           imagePullPolicy: IfNotPresent
           image: jaseci/ai-ready-img
           resources:
@@ -56,4 +58,4 @@ spec:
       volumes:
         - name: prod-script
           configMap:
-            name: js-entity-extract-up
+            name: tfm-ner-up
