@@ -44,8 +44,8 @@ class global_api():
         """
         Set sentinel as globally accessible
         """
-        for i in snt.get_deep_obj_list():
-            i.make_read_only()
+        snt.make_read_only()
+        snt.propagate_access()
         self._h.save_glob('GLOB_SENTINEL', snt.jid)
         return {'response': f"Global sentinel set to '{snt}'!"}
 

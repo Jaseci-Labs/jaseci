@@ -203,6 +203,13 @@ class element(hookable):
                         j.get_deep_obj_list(objs=objs)
         return objs
 
+    def propagate_access(self, set_access=None):
+        """Propagate permission through id_lists hierarchy"""
+        if(set_access is None):
+            set_access = self.j_access
+        for i in self.get_deep_obj_list():
+            i.j_access = set_access
+
     def log_output(self, val):
         """
         Utility to log out variable in pretty format

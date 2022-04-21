@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Improvement: Api so super masters can `become` any master id, also jsctl can issue `master allusers`
 - New Lang Feature: Can now have `can` statements in spawn graphs after `has anchor rootname`
 - Improvement: `actions load module` added as capability where module strings are accepted
 - New Feature: Added global root finder `net.root` to std lib and `net.min` to go with existing `net.max`
