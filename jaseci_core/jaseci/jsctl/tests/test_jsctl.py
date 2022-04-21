@@ -245,7 +245,16 @@ class jsctl_test(TestCaseHelper, TestCase):
             "sentinel register "
             "jaseci/jsctl/tests/teststest.jac")
         r = self.call_split("sentinel test -detailed true")
-        self.assertEqual(len(r), 27)
+        self.assertEqual(len(r), 33)
+
+    def test_jsctl_run_tests_with_stdout(self):
+        self.call(
+            "sentinel register "
+            "jaseci/jsctl/tests/teststest_stdout.jac")
+        r = self.call("sentinel test -detailed true")
+        self.assertIn('"stdout": "Some Output\\nSome Output\\n"', r)
+        r = r.replace('"stdout": "Some Output\\nSome Output\\n"', '')
+        self.assertNotIn('Some Output', r)
 
     def test_jsctl_jac_build(self):
         import os
