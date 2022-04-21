@@ -1304,3 +1304,16 @@ graph_in_graph = \
         report here;
     }
     """
+
+
+min_max_on_list = \
+    """
+    walker init {
+        a = [45, 3, 531.0, 3, 6, 531.1];
+
+        report a.l::max;
+        report a.l::min;
+        report a.l::idx_of_max;
+        report a.l::idx_of_min;
+    }
+    """
