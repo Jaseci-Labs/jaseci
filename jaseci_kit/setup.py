@@ -13,5 +13,5 @@ setup(
         'torch >= 1.10.2, < 2.0.0',
         'pandas>=1.4.1,<2.0.0'
     ],
-    package_data={"": ["*.ini"], },
+    package_data={"": ["*.json"], },
 )
