@@ -977,10 +977,16 @@ class interp(machine_state):
                     result = jac_value(self, value=atom_res.value.sort())
                 elif (op == "clear"):
                     result = jac_value(self, value=atom_res.value.clear())
-                elif (op == "clear"):
-                    result = jac_value(self, value=atom_res.value.clear())
-                elif (op == "clear"):
-                    result = jac_value(self, value=atom_res.value.clear())
+                elif (op == "max"):
+                    result = jac_value(self, value=max(atom_res.value))
+                elif (op == "min"):
+                    result = jac_value(self, value=min(atom_res.value))
+                elif (op == "idx_of_max"):
+                    result = jac_value(
+                        self, value=atom_res.value.index(max(atom_res.value)))
+                elif (op == "idx_of_min"):
+                    result = jac_value(
+                        self, value=atom_res.value.index(min(atom_res.value)))
                 elif (len(kid) < 2 and op == "pop"):
                     result = jac_value(self, value=atom_res.value.pop())
                 if (result):
