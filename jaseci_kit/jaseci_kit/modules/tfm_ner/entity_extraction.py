@@ -9,7 +9,7 @@ from transformers import pipeline
 from utils import tokenize_and_align_labels, train_model
 from utils import save_trained_model, load_trained_model
 from transformers import TrainingArguments
-from create_data import create_dataset
+#from create_data import create_dataset
 from utils import labelname
 import json
 
@@ -115,7 +115,8 @@ def load_dataset(text: str, entity: List[Dict]):
     global dataset, label_name
     try:
         data = [{"text": text, "entity": entity}]
-        datasets = create_dataset(data)
+        # TODO: revert this
+        #datasets = create_dataset(data)
         dataset = datasets[0]
         label_name = datasets[1]
         # create_dataset(text, ents)
