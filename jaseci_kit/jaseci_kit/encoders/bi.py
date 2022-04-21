@@ -71,7 +71,7 @@ config_setup()
 
 # API for getting the cosine similarity
 @ jaseci_action(act_group=['bi_enc'], allow_remote=True)
-def cosine_sim(vec_a: List[float], vec_b: List[float], meta):
+def cosine_sim(vec_a: List[float], vec_b: List[float]):
     """
     Caculate the cosine similarity score of two given vectors
     Param 1 - First vector
@@ -107,7 +107,9 @@ def infer(contexts: Union[List[str], List[List]],
     predicted_candidates = []
     try:
         if (context_type == "text") and (candidate_type == "text"):
-            con_embed = [get_context_emb(contexts)]
+            con_embed = []
+            for cont in contexts:
+                con_embed.append([get_context_emb(cont)])
             cand_embed = get_candidate_emb(candidates)
         elif (context_type == "text") and (candidate_type == "embedding"):
             con_embed = [get_context_emb(contexts)]

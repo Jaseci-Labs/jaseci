@@ -135,12 +135,12 @@ requests.post
             "train_batch_size": 8,
             "eval_batch_size": 2,
             "max_history": 4,
-            "learning_rate": 0.01,
-            "weight_decay": 0.1,
-            "warmup_steps": 2000,
-            "adam_epsilon": 8e-08,
+            "learning_rate": 1e-3,
+            "weight_decay": 0.01,
+            "warmup_steps": 100,
+            "adam_epsilon": 1e-6,
             "max_grad_norm": 1,
-            "num_train_epochs": 10,
+            "num_train_epochs": 20,
             "gradient_accumulation_steps": 1,
             "fp16": false,
             "fp16_opt_level": "O1",
@@ -172,24 +172,24 @@ Response :
     
 ``` 
 {
-  "max_contexts_length": 128,
-  "max_candidate_length": 64,
-  "train_batch_size": 8,
-  "eval_batch_size": 2,
-  "max_history": 4,
-  "learning_rate": 0.01,
-  "weight_decay": 0.1,
-  "warmup_steps": 2000,
-  "adam_epsilon": 8e-8,
-  "max_grad_norm": 1,
-  "num_train_epochs": 10,
-  "gradient_accumulation_steps": 1,
-  "fp16": false,
-  "fp16_opt_level": "O1",
-  "gpu": 0,
-  "basepath": "logoutput",
-  "seed": 12345,
-  "device": "cuda"
+    "max_contexts_length": 128,
+    "max_candidate_length": 64,
+    "train_batch_size": 8,
+    "eval_batch_size": 2,
+    "max_history": 4,
+    "learning_rate": 1e-3,
+    "weight_decay": 0.01,
+    "warmup_steps": 100,
+    "adam_epsilon": 1e-6,
+    "max_grad_norm": 1,
+    "num_train_epochs": 20,
+    "gradient_accumulation_steps": 1,
+    "fp16": false,
+    "fp16_opt_level": "O1",
+    "gpu": 0,
+    "basepath": "logoutput",
+    "seed": 12345,
+    "device": "cuda"
 }
 ```
 
@@ -208,9 +208,11 @@ Response :
     
 ``` 
 {
-  "shared": false,
-  "model_name": "prajjwal1/bert-tiny",
-  "model_save_path": "modeloutput"
+    "shared": false,
+    "model_name": "prajjwal1/bert-tiny",
+    "model_save_path": "modeloutput",
+    "loss_function": "mse",
+    "loss_type": "dot"
 }
 ```
 
@@ -226,8 +228,10 @@ requests.post
         "model_parameters : {
             "shared": false,
             "model_name": "prajjwal1/bert-tiny",
-            "model_save_path": "modeloutput" 
-        }        
+            "model_save_path": "modeloutput",
+            "loss_function": "mse",
+            "loss_type": "dot"
+        }     
     }
 )
 ```
@@ -297,30 +301,30 @@ Response:
 ```
 {
     "input_text": "The Humboldt University of Berlin is situated in Berlin, Germany",
-    "entities": 
-    [
+    "entities": [
         {
             "entity_text": "Humboldt University of Berlin",
-            "entity_value": "University",
+            "entity_value": "ORG",
             "conf_score": 0.9708927571773529,
             "start_pos": 4,
             "end_pos": 33
         },
         {
             "entity_text": "Berlin",
-            "entity_value": "City",
+            "entity_value": "LOC",
             "conf_score": 0.9977847933769226,
             "start_pos": 49,
             "end_pos": 55
         },
         {
             "entity_text": "Germany",
-            "entity_value": "Country",
+            "entity_value": "LOC",
             "conf_score": 0.9997479319572449,
             "start_pos": 57,
             "end_pos": 64
         }
     ]
+}
 }
 ```
 #### **train** - used to train the model on new entities
@@ -668,6 +672,122 @@ Response:
 0.5570200627571644
 ```
 
+### 6. USE_ENC
+use_enc module uses the universal sentence encoder and distance metric to evaluate the distance between two text encodings
+
+### 6.1. List of API's available 
+#### **encode** - encodes the text and returns a embedding of 512 length
+Request :
+```
+requests.post(
+    "/encode/",
+    json={
+        "text": "Which city is capital of India?"
+    }
+)
+```
+Response: 
+```    
+[
+  [
+    0.015976766124367714,
+    0.05355389043688774,
+    -0.02080559730529785,
+    -0.09500843286514282,
+    ....,
+    ....,
+    ....
+  ]
+]
+```
+
+#### **cos_sim_score** - calculates the cosine similarity between encodings
+Request :
+```
+requests.post(         
+    "/cos_sim_score/",
+    json={
+        "q_emb":[
+            0.015976766124367714,
+            0.05355389043688774,
+            -0.02080559730529785,
+            -0.09500843286514282,
+            ....,
+            ....,
+            ....
+        ],
+        "a_emb": [
+            -0.02469351328909397,
+            0.018782570958137512,
+            -0.030687350779771805,
+            -0.03719259053468704,
+            ....,
+            ....,
+            ....
+        ]
+    }
+)
+```
+Response: 
+```
+0.5570200427361625 
+```
+
+### 7. Summarization
+Summarization module can be used to produce extractive summary from text provided. it also accepts a URL from where it can scrape the summarize.
+### 7.1. List of API's available 
+#### **summarize** - summarizes the text and returns a the extractive summary of `sent_count` length  
+Request :
+```
+requests.post(
+    "/summarize/",
+    json={
+        "text": "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude. The King of England was at war with him and had led a great army into Scotland to drive him out of the land. Battle after battle had been fought. Six times Bruce had led his brave little army against his foes and six times his men had been beaten and driven into flight. At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains. One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him. He was tired and unhappy. He was ready to give up all hope. It seemed to him that there was no use for him to try to do anything more. As he lay thinking, he saw a spider over his head making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. “Poor thing,” said Bruce: “you, too, know what it is to fail.” But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as he watched her swing herself out upon the slender line. Would she fail again? No! The thread was carried safely to the beam and fastened there.",
+        "url": "none",
+        "sent_count": 4,
+        "summarizer_type": "LsaSummarizer"
+    }
+)
+```
+Response: 
+```    
+[
+  "The King of England was at war with him and had led a great army into Scotland to drive him out of the land.",
+  "At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains.",
+  "One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him.",
+  "As he lay thinking, he saw a spider over his head making ready to weave her web."
+]
+```
+
+Request :
+```
+requests.post(
+    "/summarize/",
+    json={
+        "text": "none",
+        "url": ""https://www.indianweb2.com/2022/04/addverb-to-open-worlds-largest-robot.html"",
+        "sent_count": 4,
+        "summarizer_type": "LsaSummarizer"
+    }
+)
+```
+Response: 
+```    
+[
+  "Last year in March, Addverb inaugurated robot manufacturing facility called “Bot-Valley” in Noida, which is spread over 2.5 acres of land.",
+  "and create highly skilled job opportunities leading to direct and indirect employment for over 3,000 people.",
+  "Sangeet Kumar , CEO of Addverb Technologies , said that “This brand-new facility will make Addverb a giant robot manufacturer on global fronts, by delivering cutting edge software and robust hardware systems, along with a mix of innovative fixed and flexible automation solutions.”",
+  "In September 2020, Addverb established its first offshore entity in Singapore to expand of its footprints in South East Asia."
+]
+```
+### 7. 2. Addtional Instructions
+1. Summarizer Options :
+```
+summarizer_type :
+    LexRankSummarizer : algorithm predicts if sentence which is similar to many other sentences of the text has a high probability of being important. 
+    LsaSummarizer : algorithm based on term-document frequency techniques with singular value decomposition to summarize texts.
+    LuhnSummarizer : algorithm's approach is based on TF-IDF (Term Frequency-Inverse Document Frequency).
+```
 ### Unfinished TODOs
 
 1. convert poly encoders to new interface
