@@ -124,12 +124,14 @@ def infer(contexts: Union[List[str], List[List]],
                 "input type not supported"))
         for data in con_embed:
             score_dat = []
-            for lbl in cand_embed:
+            for lidx, lbl in enumerate(cand_embed):
                 if model_config["loss_type"] == "cos":
                     score_dat.append(cosine_sim(
                         vec_a=data, vec_b=lbl))
                 else:
-                    score_dat.append(dot_prod(vec_a=data, vec_b=lbl))
+                    this_score = dot_prod(vec_a=data, vec_b=lbl)
+                    score_dat.append(this_score)
+                    print(f"{candidates[lidx]}: {this_score}")
             if candidate_type == "embedding":
                 predicted_candidates.append([int(np.argmax(score_dat)), max(score_dat)])
             else:
