@@ -32,10 +32,7 @@ class interp(machine_state):
         elif(kid[0].name == 'can_stmt'):
             if(obj.j_type == 'walker'):
                 self.run_can_stmt(kid[0], obj)
-            else:
-                obj = self.get_arch_for(obj)
-                if(not obj._can_compiled_flag):
-                    self.run_can_stmt(kid[0], obj)
+            #  Can statements in architype handled in architype load
 
     def run_has_stmt(self, jac_ast, obj):
         """

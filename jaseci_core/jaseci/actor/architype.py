@@ -17,7 +17,6 @@ class architype(element, jac_code, architype_interp):
         self.entry_action_ids = id_list(self)
         self.activity_action_ids = id_list(self)
         self.exit_action_ids = id_list(self)
-        self._can_compiled_flag = False
         element.__init__(self, *args, **kwargs)
         jac_code.__init__(self, code_ir)
         architype_interp.__init__(self)

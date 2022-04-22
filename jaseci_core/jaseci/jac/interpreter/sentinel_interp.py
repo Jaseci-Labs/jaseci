@@ -9,6 +9,7 @@ from jaseci.actor.walker import walker
 from jaseci.jac.interpreter.interp import interp
 from jaseci.utils.utils import parse_str_token
 from jaseci.jac.ir.jac_code import jac_ast_to_ir
+from jaseci.jac.machine.jac_scope import jac_scope
 
 
 class sentinel_interp(interp):
@@ -69,11 +70,29 @@ class sentinel_interp(interp):
             | KW_EDGE NAME attr_block
             | KW_GRAPH NAME graph_block;
         """
+        kid = self.set_cur_ast(jac_ast)
         arch = architype(m_id=self._m_id, h=self._h, code_ir=jac_ast)
         if(self.arch_ids.has_obj_by_name(arch.name, kind=arch.kind)):
             self.arch_ids.destroy_obj_by_name(arch.name, kind=arch.kind)
         self.arch_ids.add_obj(arch)
+        self.arch_can_compile(kid[-1], arch)
         return arch
+
+    def arch_can_compile(self, jac_ast, arch):
+        """Helper function to statically compile can stmts for arch"""
+        kid = self.set_cur_ast(jac_ast)
+        self.push_scope(jac_scope(parent=self,
+                                  has_obj=self,
+                                  action_sets=[]))
+        if(jac_ast.name == 'attr_block'):
+            for i in kid:
+                if i.name == 'attr_stmt' and i.kid[0].name == 'can_stmt':
+                    self.run_can_stmt(i.kid[0], arch)
+        elif(kid[0].name == 'graph_block_spawn'):
+            kid = kid[0].kid[2].kid
+            for i in kid:
+                self.run_can_stmt(i, arch)
+        self.pop_scope()
 
     # Note: Sentinels only registers the attr_stmts
     def load_walker(self, jac_ast):

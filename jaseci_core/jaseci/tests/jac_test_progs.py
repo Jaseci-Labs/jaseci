@@ -99,3 +99,23 @@ nd_equals_error_correct_line = \
         }
     }
     """
+
+strange_ability_bug = \
+    """
+    node plain {
+        can show with entry {
+            report "Showing";
+        }
+    }
+
+    walker init {
+        root {
+            spawn here --> node::plain;
+        }
+    }
+
+    walker travel {
+        take -->;
+    }
+
+    """
