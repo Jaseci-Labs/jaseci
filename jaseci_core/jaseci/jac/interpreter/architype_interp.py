@@ -64,7 +64,6 @@ class architype_interp(interp):
         for i in kid:
             if(i.name == 'attr_stmt'):
                 self.run_attr_stmt(i, obj)
-        self._can_compiled_flag = True
 
     def run_can_block(self, jac_ast):
         """

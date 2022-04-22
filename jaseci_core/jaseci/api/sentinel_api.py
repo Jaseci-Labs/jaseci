@@ -107,7 +107,7 @@ class sentinel_api():
             snt.register_code(code, code_dir)
         elif(mode == 'ir'):
             snt.apply_ir(code)
-            snt.run_start(snt._jac_ast)
+            snt.ir_load()
             snt.propagate_access()
             if(snt.runtime_errors):
                 snt.is_active = False
