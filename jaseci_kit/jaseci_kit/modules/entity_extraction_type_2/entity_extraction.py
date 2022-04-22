@@ -28,8 +28,11 @@ def config_setup():
     initialize tokenizer and model
     """
     global tokenizer, model, train_config, model_config, curr_model_path
-    m_config_fname = "config/model_config.json"
-    t_config_fname = "config/train_config.json"
+    global m_config_fname, t_config_fname
+
+    dirname = os.path.dirname(__file__)
+    m_config_fname = os.path.join(dirname, "config/model_config.json")
+    t_config_fname = os.path.join(dirname, "config/train_config.json")
     with open(m_config_fname, "r") as jsonfile:
         model_config = json.load(jsonfile)
     with open(t_config_fname, "r") as jsonfile:
@@ -130,7 +133,7 @@ def load_dataset(text: str, entity: List[Dict]):
 @ jaseci_action(act_group=['extract_entity'], allow_remote=True)
 def get_train_config():
     try:
-        with open("config/train_config.json", "r") as jsonfile:
+        with open(t_config_fname, "r") as jsonfile:
             data = json.load(jsonfile)
         return data
     except Exception as e:
@@ -141,7 +144,7 @@ def get_train_config():
 def set_train_config(training_parameters: Dict = None):
     global train_config
     try:
-        with open("config/train_config.json", "w+") as jsonfile:
+        with open(t_config_fname, "w+") as jsonfile:
             train_config.update(training_parameters)
             json.dump(train_config, jsonfile, indent=4)
         return "Config setup is complete."
@@ -152,7 +155,7 @@ def set_train_config(training_parameters: Dict = None):
 @ jaseci_action(act_group=['extract_entity'], allow_remote=True)
 def get_model_config():
     try:
-        with open("config/model_config.json", "r") as jsonfile:
+        with open(m_config_fname, "r") as jsonfile:
             data = json.load(jsonfile)
         return data
     except Exception as e:
@@ -164,7 +167,7 @@ def set_model_config(model_parameters: Dict = None):
     global model_config
     try:
         save_model(model_config["model_save_path"])
-        with open("config/model_config.json", "w+") as jsonfile:
+        with open(m_config_fname, "w+") as jsonfile:
             model_config.update(model_parameters)
             json.dump(model_config, jsonfile, indent=4)
 
