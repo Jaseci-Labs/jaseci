@@ -12,12 +12,14 @@ from jaseci.element.element import element
 class jac_set(list):
     """
     Jac set class for operations in Jac lang
+    (keeps append ordering and no dups)
     """
 
     def __init__(self, in_list=None):
         if (in_list):
             for i in in_list:
-                self.append(i)
+                if(i not in self):
+                    self.append(i)
 
     def append(self, item):
         if(not isinstance(item, element) or not hasattr(item, 'anchor_value')):
@@ -27,7 +29,8 @@ class jac_set(list):
             list.append(self, item)
 
     def add_obj(self, item):
-        self.append(item)
+        if(item not in self):
+            self.append(item)
 
     def obj_list(self):
         return self
