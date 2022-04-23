@@ -164,3 +164,48 @@ node_inheritance = \
         }
     }
     """
+
+
+node_inheritance = \
+    """
+    node plain {
+        has a=5, b=7, c=7, d=8;
+        can x with entry {
+            report "plain.x";
+        }
+        can y {
+            report "plain.y";
+        }
+    }
+
+    node plain2 {
+        has c=70, d=80;
+        can x with entry {
+            report "plain2.x";
+        }
+        can y {
+            report "plain2.y";
+        }
+    }
+
+    node super:plain:plain2 {
+        has a=55, c=7;
+        can x with entry {
+            :plain:x;
+            report "super.x";
+        }
+        can y {
+            report "super.y";
+        }
+    }
+
+    walker init {
+        root {
+            spawn here --> node::super;
+        }
+    }
+
+    walker travel {
+        take -->;
+    }
+    """
