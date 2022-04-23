@@ -66,8 +66,8 @@ class sentinel_interp(interp):
     def load_architype(self, jac_ast):
         """
         architype:
-            KW_NODE NAME (COLON INT)? attr_block
-            | KW_EDGE NAME attr_block
+            KW_NODE NAME (COLON NAME)* attr_block
+            | KW_EDGE NAME (COLON NAME)* attr_block
             | KW_GRAPH NAME graph_block;
         """
         kid = self.set_cur_ast(jac_ast)
