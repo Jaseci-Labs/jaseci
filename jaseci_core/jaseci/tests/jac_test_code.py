@@ -1126,3 +1126,26 @@ min_max_on_list = \
         report a.l::idx_of_min;
     }
     """
+
+edge_bug = \
+    """
+    node plain;
+
+    edge g; 
+
+    walker init {
+        root {
+            nd = spawn here -[g]-> node::plain;
+            nd -[g]-> nd;
+            spawn nd -[g]-> node::plain;
+            spawn nd -[g]-> node::plain;       
+            spawn nd <-[g]- node::plain;
+            spawn nd <-[g]- node::plain;
+        }
+        take -[g]->;
+        plain {
+            report -[g]->.edge;
+            disengage;
+        }
+    }
+    """

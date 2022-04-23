@@ -117,5 +117,4 @@ strange_ability_bug = \
     walker travel {
         take -->;
     }
-
     """

@@ -814,3 +814,16 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.run()
         report = test_walker.report
         self.assertEqual(report, [531.1, 3, 5, 1])
+
+    def test_edge_bug(self):
+        self.logger_on()
+        gph = graph(m_id='anon', h=mem_hook())
+        sent = sentinel(m_id='anon', h=gph._h)
+        sent.register_code(jtc.edge_bug)
+        test_walker = \
+            sent.walker_ids.get_obj_by_name('init')
+        test_walker.prime(gph)
+        test_walker.run()
+        report = test_walker.report
+        self.log(report)
+        self.assertEqual(report, [531.1, 3, 5, 1])
