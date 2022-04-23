@@ -21,7 +21,7 @@ data:
     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
     cd /jaseci/jaseci_core/
     source install.sh
-    cd /jaseci/jskit/use_qa
+    cd /jaseci/jaseci_kit/jaseci_kit/modules/use_qa/
     uvicorn use_qa:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
