@@ -130,7 +130,7 @@ class EvalDataset(Dataset):
             "text": []
         }
         if mode == 'context':
-            group['text'] = texts
+            group['text'].append(texts)
         else:
             for text in texts:
                 group['text'].append(text)
