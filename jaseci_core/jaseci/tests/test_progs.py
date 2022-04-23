@@ -98,3 +98,13 @@ class jac_tests(TestCaseHelper, TestCase):
             api_name='walker_run', params={'name': 'travel'})['report']
         self.assertEqual(
             report, ['Showing', 'Showing', 'Showing', 'Showing'])
+
+    def test_node_inheritance(self):
+        self.logger_on()
+        mast = master(h=mem_hook())
+        mast.sentinel_register(
+            name='test', code=jtp.node_inheritance)
+        report = mast.general_interface_to_api(
+            api_name='walker_run', params={'name': 'init'})
+        self.log(report)
+        self.assertEqual(report, [])
