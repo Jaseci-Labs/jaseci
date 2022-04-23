@@ -3,11 +3,11 @@ import torch
 from typing import Dict, List, Union
 from fastapi import HTTPException
 from transformers import AutoModel, AutoConfig, AutoTokenizer
-from .utils.evaluate import get_embeddings
-from .utils.models import BiEncoder
+from utils.evaluate import get_embeddings
+from utils.models import BiEncoder
 import traceback
 import numpy as np
-from .utils.train import train_model
+from utils.train import train_model
 from jaseci.actions.live_actions import jaseci_action
 import random
 import json
@@ -146,14 +146,18 @@ def infer(contexts: Union[List[str], List[List]],
 
 # API for training
 @ jaseci_action(act_group=['bi_enc'], allow_remote=True)
-def train(contexts: List,
-          candidates: List, labels: List[int],
+def train(dataset: Dict = None,
           from_scratch=False,
           training_parameters: Dict = None):
     """
     Take list of context, candidate, labels and trains the model
     """
     global model
+    train_data = {
+        'contexts': [],
+        'candidates': [],
+        'labels': []
+    }
     if from_scratch is True:
         save_model(model_config["model_save_path"])
         config_setup()
@@ -163,12 +167,17 @@ def train(contexts: List,
             with open("utils/train_config.json", "w+") as jsonfile:
                 train_config.update(training_parameters)
                 json.dump(train_config, jsonfile, indent=4)
+        for data in dataset.keys():
+            for dat in dataset[data]:
+                train_data['contexts'].append(dat)
+                train_data['candidates'].append(data)
+                train_data['labels'].append(1)
         model = train_model(
             model=model,
             tokenizer=tokenizer,
-            contexts=contexts,
-            candidates=candidates,
-            labels=labels, train_config=train_config
+            contexts=train_data['contexts'],
+            candidates=train_data['candidates'],
+            labels=train_data['labels'], train_config=train_config
         )
         return "Model Training is complete."
     except Exception as e:
