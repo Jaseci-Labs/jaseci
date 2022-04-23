@@ -3,11 +3,11 @@ import torch
 from typing import Dict, List, Union
 from fastapi import HTTPException
 from transformers import AutoModel, AutoConfig, AutoTokenizer
-from utils.evaluate import get_embeddings
-from utils.models import BiEncoder
+from .utils.evaluate import get_embeddings
+from .utils.models import BiEncoder
 import traceback
 import numpy as np
-from utils.train import train_model
+from .utils.train import train_model
 from jaseci.actions.live_actions import jaseci_action
 import random
 import json
@@ -124,18 +124,32 @@ def infer(contexts: Union[List[str], List[List]],
         else:
             raise HTTPException(status_code=404, detail=str(
                 "input type not supported"))
-        for data in con_embed:
+        for data, cont in zip(con_embed, contexts):
             score_dat = []
-            for lbl in cand_embed:
-                if model_config["loss_type"] == "cos":
-                    score_dat.append(cosine_sim(
-                        vec_a=data, vec_b=lbl))
-                else:
-                    score_dat.append(dot_prod(vec_a=data, vec_b=lbl))
+            out_data = {
+                "context": str,
+                'candidate': [],
+                'score': []
+            }
             if candidate_type == "embedding":
+                for lbl in cand_embed:
+                    if model_config["loss_type"] == "cos":
+                        score_dat.append(cosine_sim(
+                            vec_a=data, vec_b=lbl))
                 predicted_candidates.append(int(np.argmax(score_dat)))
             else:
-                predicted_candidates.append(candidates[np.argmax(score_dat)])
+                for lbl, cand in zip(cand_embed, candidates):
+                    if model_config["loss_type"] == "cos":
+                        out_data['context'] = cont
+                        out_data["candidate"].append(cand)
+                        out_data["score"].append(cosine_sim(
+                            vec_a=data, vec_b=lbl))
+                    else:
+                        out_data['context'] = cont
+                        out_data["candidate"].append(cand)
+                        out_data["score"].append(float(dot_prod(
+                            vec_a=data, vec_b=lbl)))
+                predicted_candidates.append(out_data)
         return predicted_candidates
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(f'''input type can be
