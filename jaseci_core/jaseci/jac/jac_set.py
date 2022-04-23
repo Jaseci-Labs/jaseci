@@ -25,7 +25,7 @@ class jac_set(list):
         if(not isinstance(item, element) or not hasattr(item, 'anchor_value')):
             logger.error(
                 f"Invalid {type(item)} object {item} to be added to jac_set!")
-        else:
+        elif(item not in self):
             list.append(self, item)
 
     def add_obj(self, item):
@@ -33,7 +33,7 @@ class jac_set(list):
             self.append(item)
 
     def obj_list(self):
-        return self
+        return list(set(self))
 
     def __lt__(self, other):
         """Returns reduced set where anchor value evals to other"""
