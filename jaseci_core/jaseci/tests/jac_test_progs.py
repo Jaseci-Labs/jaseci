@@ -151,6 +151,7 @@ node_inheritance = \
             report "super.x";
         }
         can y {
+            :plain2:y;
             report "super.y";
         }
     }
@@ -159,9 +160,9 @@ node_inheritance = \
         root {
             spawn here --> node::super;
         }
-    }
-
-    walker travel {
         take -->;
+        super {
+            here::y;
+        }
     }
     """
