@@ -4,6 +4,8 @@
 
 ### Updates
 
+- Improvement: Sentinel registering improved to include ir mode
+- Improvement: `edge` semantics improved
 - Major bug fix: Re registering new code was breaking architype abilities
 - Improvement: Tests now only show stdout and stderr on a test by test basis in detailed mode (Much cleaner)
 - Improvement: JSKit package architecture established, normalized, and standardized
