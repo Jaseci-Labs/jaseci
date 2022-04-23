@@ -18,8 +18,8 @@ class architype_interp(interp):
     def run_architype(self, jac_ast):
         """
         architype:
-            KW_NODE NAME (COLON INT)? attr_block
-            | KW_EDGE NAME attr_block
+            KW_NODE NAME (COLON NAME)* attr_block
+            | KW_EDGE NAME (COLON NAME)* attr_block
             | KW_GRAPH NAME graph_block;
         """
         if(jac_ast is None):  # Using defaults
@@ -38,8 +38,8 @@ class architype_interp(interp):
         if(kid[0].name == 'KW_NODE'):
             item = node(m_id=self._m_id, h=self._h,
                         kind=kid[0].token_text(), name=kid[1].token_text())
-            if(kid[2].name == 'COLON'):
-                item.dimension = int(kid[3].token_text())
+            if(kid[-2].name == 'INT'):
+                item.dimension = int(kid[-2].token_text())
             self.run_attr_block(kid[-1], item)
         elif(kid[0].name == 'KW_EDGE'):
             item = edge(m_id=self._m_id, h=self._h,
