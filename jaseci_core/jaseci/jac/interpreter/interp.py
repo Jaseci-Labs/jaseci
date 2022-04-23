@@ -809,14 +809,15 @@ class interp(machine_state):
             elif(isinstance(atom_res.value, edge)):
                 return atom_res
             elif(isinstance(atom_res.value, jac_set)):
-                res = jac_set()
-                for i in atom_res.value.obj_list():
-                    if(isinstance(i, edge)):
-                        res.add_obj(i)
-                    elif(isinstance(i, node)):
-                        res += self.obj_set_to_jac_set(
-                            self.current_node.attached_edges(i))
-                return jac_value(self, value=res)
+                return jac_value(self, value=self._relevant_edges)
+                # res = jac_set()
+                # for i in atom_res.value.obj_list():
+                #     if(isinstance(i, edge)):
+                #         res.add_obj(i)
+                #     elif(isinstance(i, node)):
+                #         res += self.obj_set_to_jac_set(
+                #             self.current_node.attached_edges(i))
+                # return jac_value(self, value=res)
             else:
                 self.rt_error(f'Cannot get edges from {atom_res.value}. '
                               f'Type {atom_res.jac_type()} invalid', kid[0])
@@ -1125,12 +1126,16 @@ class interp(machine_state):
             return jac_value(self, value=result)
 
         elif (kid[0].name == 'edge_ref'):
+            relevant_edges = self.run_edge_ref(kid[0])
             result = self.edge_to_node_jac_set(self.run_edge_ref(kid[0]))
             if(len(kid) > 1 and kid[1].name == 'node_ref'):
                 nres = self.run_node_ref(kid[1])
                 if(len(kid) > 2):
                     nres = self.run_filter_ctx(kid[2], nres)
                 result = result * nres
+                relevant_edges = self.edges_filter_on_nodes(relevant_edges,
+                                                            result)
+            self._relevant_edges = relevant_edges
             return jac_value(self, value=result)
 
     def run_node_ref(self, jac_ast, is_spawn=False):
