@@ -146,13 +146,23 @@ def infer(contexts: Union[List[str], List[List]],
 
 # API for training
 @ jaseci_action(act_group=['bi_enc'], allow_remote=True)
-def train(contexts: List, candidates: List, labels: List[int]):
+def train(contexts: List,
+          candidates: List, labels: List[int],
+          from_scratch=False,
+          training_parameters: Dict = None):
     """
     Take list of context, candidate, labels and trains the model
     """
     global model
+    if from_scratch is True:
+        save_model(model_config["model_save_path"])
+        config_setup()
     model.train()
     try:
+        if training_parameters is not None:
+            with open("utils/train_config.json", "w+") as jsonfile:
+                train_config.update(training_parameters)
+                json.dump(train_config, jsonfile, indent=4)
         model = train_model(
             model=model,
             tokenizer=tokenizer,
