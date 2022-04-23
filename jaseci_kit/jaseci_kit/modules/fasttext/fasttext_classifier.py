@@ -32,11 +32,12 @@ if not os.path.exists(base_json_file_path):
         outfile.write(json_object)
 
 
-def updatetrainfile(traindata: Dict[str, str] = None, train_with_existing=True):
+def updatetrainfile(traindata: Dict[str, str] = None,
+                    train_with_existing=True):
     data = {}
     """
-    if we alreading have a existing training_data.json and we have to ##train_with_existing
-    we append the data to the  training_data.json file
+    if we alreading have a existing training_data.json and we have to
+    train_with_existing we append the data to the  training_data.json file
     otherwise we create training_data.json from the data provided
     """
 
@@ -52,7 +53,7 @@ def updatetrainfile(traindata: Dict[str, str] = None, train_with_existing=True):
         outfile.write(json_object)
 
 
-@jaseci_action(act_group=['fasttext'], allow_remote=True)
+@jaseci_action(act_group=['fast_enc'], allow_remote=True)
 def train(traindata:  Dict[str, List[str]] = None,
           train_with_existing: bool = True):
     global model
@@ -78,10 +79,10 @@ def train(traindata:  Dict[str, List[str]] = None,
     if traindata is None:
         return model
     else:
-        return f"Model training Completed"
+        return "Model training Completed"
 
 
-@jaseci_action(act_group=['fasttext_classifier'], allow_remote=True)
+@jaseci_action(act_group=['fast_enc'], allow_remote=True)
 def load_model(model_path: str = None):
     global model, model_file_path
     if model_path is not None:
@@ -101,7 +102,7 @@ def load_model(model_path: str = None):
         return f"Model Loaded From : {model_path}"
 
 
-@jaseci_action(act_group=['fasttext_classifier'], allow_remote=True)
+@jaseci_action(act_group=['fast_enc'], allow_remote=True)
 def save_model(model_path: str = None):
     if not model_path.isalnum():
         raise HTTPException(
@@ -120,13 +121,14 @@ def save_model(model_path: str = None):
     state_save_path = os.path.join(model_path / "model.ftz")
     # model_path = (model_path / "model.ftz")
     model.save_model(state_save_path)
-    # we also ship the training_data.json file with the model to maintain the state of the model
+    # we also ship the training_data.json file
+    # with the model to maintain the state of the model
     shutil.copyfile(base_json_file_path,
                     model_path / "training_data.json")
     return (f'Model saved to {model_path}.')
 
 
-@jaseci_action(act_group=['fasttext'], allow_remote=True)
+@jaseci_action(act_group=['fast_enc'], allow_remote=True)
 def predict(sentences: List[str]):
     global model
     try:
