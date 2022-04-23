@@ -224,6 +224,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertFalse(r['success'])
 
     def test_jsctl_import_globals(self):
+        self.logger_on()
         self.call(
             "sentinel register "
             "jaseci/jsctl/tests/base4.jac -code_dir jaseci/jsctl/tests/ "

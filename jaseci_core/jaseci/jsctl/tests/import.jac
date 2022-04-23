@@ -1,3 +1,5 @@
+import {*} with "./glob_imp.jac";
+
 walker init {
     has year = std.time_now();
     has person1;
@@ -12,8 +14,6 @@ walker init {
         person1::reset(name="Joe");
     }
 }
-
-global say = "resetting year to 1995:";
 
 walker setter {
     has year = std.time_now();
