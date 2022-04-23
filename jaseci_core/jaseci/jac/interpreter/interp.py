@@ -661,7 +661,7 @@ class interp(machine_state):
             | list_val
             | dict_val
             | LPAREN expression RPAREN
-            | DBL_COLON NAME spawn_ctx?
+            | ability_op NAME spawn_ctx?
             | atom atom_trailer+
             | spawn
             | ref
@@ -697,7 +697,7 @@ class interp(machine_state):
                              ctx=self.parent().global_vars, name=name)
         elif(kid[0].name == 'LPAREN'):
             return self.run_expression(kid[1])
-        elif(kid[0].name == 'DBL_COLON'):
+        elif(kid[0].name == 'ability_op'):
             return self.run_atom_trailer(jac_ast, None)
         elif(kid[0].name == 'atom'):
             ret = self.run_atom(kid[0])
@@ -714,7 +714,7 @@ class interp(machine_state):
             | DOT NAME
             | index_slice
             | LPAREN expr_list? RPAREN
-            | DBL_COLON NAME spawn_ctx?;
+            | ability_op NAME spawn_ctx?;
         """
         kid = self.set_cur_ast(jac_ast)
         if(atom_res is None):
@@ -752,7 +752,7 @@ class interp(machine_state):
             else:
                 self.rt_error('Unable to execute ability',
                               kid[0])
-        elif (kid[0].name == 'DBL_COLON'):
+        elif (kid[0].name == 'ability_op'):
             if(len(kid) > 2):
                 self.run_spawn_ctx(kid[2], atom_res.value)
             arch = self.get_arch_for(atom_res.value)
