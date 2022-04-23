@@ -413,7 +413,7 @@ edge_access = \
 
             e = -[apple]->.edge[0];
             e.v1 = 7;
-            e = --> node::testnode .edge[1];
+            e = (--> node::testnode).edge[1];
             e.x1=8;
         }
     }
@@ -1131,14 +1131,14 @@ edge_bug = \
     """
     node plain;
 
-    edge g; 
+    edge g;
 
     walker init {
         root {
             nd = spawn here -[g]-> node::plain;
             nd -[g]-> nd;
             spawn nd -[g]-> node::plain;
-            spawn nd -[g]-> node::plain;       
+            spawn nd -[g]-> node::plain;
             spawn nd <-[g]- node::plain;
             spawn nd <-[g]- node::plain;
         }
