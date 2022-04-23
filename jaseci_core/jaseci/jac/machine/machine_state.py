@@ -26,6 +26,7 @@ class machine_state():
             self._h = caller._h
         self._scope_stack = [None]
         self._jac_scope = None
+        self._relevant_edges = []
         self._loop_ctrl = None
         self._stopped = None
         self._assign_mode = False
@@ -86,6 +87,18 @@ class machine_state():
         ret = jac_set()
         for i in edge_set.obj_list():
             ret.add_obj(i.opposing_node(self.current_node))
+        return ret
+
+    def edges_filter_on_nodes(self, edge_set, node_set):
+        """
+        Returns nodes jac_set from edge jac_set from current node
+        """
+        ret = jac_set()
+        for i in edge_set.obj_list():
+            for j in node_set.obj_list():
+                if(i.jid in j.edge_ids):
+                    ret.add_obj(i)
+                    break
         return ret
 
     def get_builtin_action(self, func_name, jac_ast=None):

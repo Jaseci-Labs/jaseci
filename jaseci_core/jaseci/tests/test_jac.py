@@ -824,4 +824,4 @@ class jac_tests(TestCaseHelper, TestCase):
         test_walker.prime(gph)
         test_walker.run()
         report = test_walker.report
-        self.assertEqual(len(report[0]), 3)
+        self.assertEqual(len(report[0]), 4)

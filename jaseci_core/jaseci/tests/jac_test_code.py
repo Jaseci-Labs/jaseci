@@ -1139,8 +1139,9 @@ edge_bug = \
             nd -[g]-> nd;
             spawn nd -[g]-> node::plain;
             spawn nd -[g]-> node::plain;
+            a = spawn nd <-[g]- node::plain;
             spawn nd <-[g]- node::plain;
-            spawn nd <-[g]- node::plain;
+            nd -[g]-> a;
         }
         take -[g]->;
         plain {
