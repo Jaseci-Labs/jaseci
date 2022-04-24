@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Major Feature: Multiple inheritance support on nodes and edges!
 - Improvement: Fixed and much improved `actions load local` functionality
 - Bug Fix: Globals imports of imports working
 - Improvement: Sentinel registering improved to include ir mode

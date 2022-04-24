@@ -145,6 +145,7 @@ node_inheritance = \
         has a=55, c=7;
         can x with entry {
             ::plain:x;
+            report here.context;
             report "super.x";
         }
         can y {
@@ -156,7 +157,6 @@ node_inheritance = \
     walker init {
         root {
             a=spawn here --> node::super;
-            std.log(a.context);
         }
         take -->;
         super {

@@ -755,14 +755,27 @@ class interp(machine_state):
                 self.rt_error('Unable to execute ability',
                               kid[0])
         elif (kid[0].name == 'ability_op'):
+            arch = self.run_ability_op(kid[0], atom_res)
             if(len(kid) > 2):
                 self.run_spawn_ctx(kid[2], atom_res.value)
-            arch = self.get_arch_for(atom_res.value)
             self.call_ability(
                 nd=atom_res.value,
                 name=kid[1].token_text(),
-                act_list=arch.activity_action_ids)
+                act_list=arch.get_all_actions())
             return atom_res
+
+    def run_ability_op(self, jac_ast, atom_res):
+        """
+        ability_op: DBL_COLON | DBL_COLON NAME COLON;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        kind = atom_res.value.kind
+        if(len(kid) > 1):
+            # FIXME: NEED TO CHECK ACTUAL INHERITENCE CHAIN
+            return self.parent().arch_ids.get_obj_by_name(
+                name=kid[1].token_text(), kind=kind)
+        else:
+            return self.get_arch_for(atom_res.value)
 
     def run_ref(self, jac_ast):
         """
@@ -1556,7 +1569,7 @@ class interp(machine_state):
         arch = self.get_arch_for(nd)
         m.push_scope(jac_scope(parent=nd,
                                has_obj=nd,
-                               action_sets=[arch.activity_action_ids]))
+                               action_sets=[arch.get_all_actions()]))
         m._jac_scope.inherit_agent_refs(self._jac_scope)
         try:
             m.run_code_block(jac_ir_to_ast(

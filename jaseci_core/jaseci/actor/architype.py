@@ -32,6 +32,11 @@ class architype(element, jac_code, architype_interp):
             self.refresh()
         return self._jac_ast
 
+    def get_all_actions(self):
+        return id_list(self, in_list=self.entry_action_ids +
+                       self.activity_action_ids +
+                       self.exit_action_ids)
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage
