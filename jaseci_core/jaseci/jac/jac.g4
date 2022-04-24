@@ -195,7 +195,7 @@ atom_trailer:
 	| LPAREN expr_list? RPAREN
 	| ability_op NAME spawn_ctx?;
 
-ability_op: DBL_COLON | COLON NAME? COLON;
+ability_op: DBL_COLON | DBL_COLON NAME COLON;
 
 ref: '&' expression;
 
