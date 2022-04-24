@@ -19,6 +19,7 @@ metadata:
 data:
   prod_up: |-
     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
+    pip install datasets
     cd /jaseci/jaseci_core/
     source install.sh
     cd /jaseci/jaseci_kit/jaseci_kit/modules/entity_extraction_type_2
