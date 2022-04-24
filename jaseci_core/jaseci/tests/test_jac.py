@@ -670,7 +670,7 @@ class jac_tests(TestCaseHelper, TestCase):
         gph = graph(m_id='anon', h=mem_hook())
         sent = sentinel(m_id='anon', h=gph._h)
         sent.register_code(jtc.testcase_asserts)
-        sent.run_tests(silent=True)
+        sent.run_tests(silent=False)
         self.assertEqual(len(sent.testcases), 3)
         self.assertEqual(sent.testcases[0]['passed'], True)
         self.assertEqual(sent.testcases[1]['passed'], False)

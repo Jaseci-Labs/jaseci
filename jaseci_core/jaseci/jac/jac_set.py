@@ -33,7 +33,7 @@ class jac_set(list):
             self.append(item)
 
     def obj_list(self):
-        return list(set(self))
+        return self
 
     def __lt__(self, other):
         """Returns reduced set where anchor value evals to other"""
