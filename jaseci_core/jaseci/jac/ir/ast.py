@@ -133,7 +133,8 @@ class ast():
             logger.debug(f"Importing items from {mod_name} to {from_mod}...")
             parsed_ast = None
             if(mod_name in ast._ast_head_map.keys()):
-                parsed_ast = ast._ast_head_map[mod_name]
+                return []
+                # parsed_ast = ast._ast_head_map[mod_name]
             elif(os.path.isfile(fn)):
                 with open(fn, 'r') as file:
                     jac_text = file.read()
