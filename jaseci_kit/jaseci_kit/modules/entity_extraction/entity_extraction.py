@@ -1,6 +1,6 @@
 from random import random
 import flair
-from typing import List, Optional
+from typing import List, Optional, Dict
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from flair.data import Corpus
@@ -71,7 +71,7 @@ def init_model():
 init_model()
 
 
-def train_entity():
+def train_entity(train_params: dict):
     """
     funtion for training the model
     """
@@ -107,9 +107,9 @@ def train_entity():
     trainer = ModelTrainer(tagger, corpus)
     # train model
     trainer.train(base_path=f'train/{NER_MODEL_NAME}',  # path to store model
-                  learning_rate=0.02,
-                  mini_batch_size=1,
-                  max_epochs=10,
+                  learning_rate=train_params["LR"],
+                  mini_batch_size=train_params["batch_size"],
+                  max_epochs=train_params["num_epoch"],
                   train_with_test=True,
                   train_with_dev=True
                   )
@@ -163,7 +163,8 @@ def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
 
 
 @jaseci_action(act_group=['ent_ext'], allow_remote=True)
-def train(train_data: List[dict]):
+def train(train_data: List[dict],
+          train_params: Dict = {"num_epoch": 10, "batch_size": 8, "LR": 0.02}):
     """
     API for training the model
     """
@@ -187,7 +188,7 @@ def train(train_data: List[dict]):
             completed = create_data(data)
             print(f"Exception  : {e}")
         if completed is True:
-            train_entity()
+            train_entity(train_params)
             return "Model Training is Completed"
         else:
             raise HTTPException(status_code=500, detail=str(
@@ -222,12 +223,15 @@ def save_model(model_path: str):
 
 
 @jaseci_action(act_group=['ent_ext'], allow_remote=True)
-def load_model(model_path):
+def load_model(model_path="default_path", default=False):
     """
     loads the model from the provided model_path
     """
     global tagger
     try:
+        if default is True:
+            init_model()
+            return (f"[deafaul model loaded model from] : {config['TAGGER_MODEL']['NER_MODEL']}")  # noqa
         if type(model_path) is str:
             model_path = Path(model_path)
         if (model_path / "final-model.pt").exists():
