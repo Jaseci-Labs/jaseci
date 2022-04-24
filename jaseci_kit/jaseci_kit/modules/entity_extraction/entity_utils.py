@@ -1,8 +1,5 @@
-import pandas as pd
-from tqdm import tqdm
 from difflib import SequenceMatcher
 import os
-import pickle
 
 
 def matcher(string, pattern):
@@ -25,7 +22,7 @@ def matcher(string, pattern):
 
 def mark_sentence(s, match_list):
     '''
-    Marks all the entities in the sentence as per the BIO scheme. 
+    Marks all the entities in the sentence as per the BIO scheme.
     '''
     word_dict = {}
     for word in s.split():
@@ -45,9 +42,11 @@ def mark_sentence(s, match_list):
 
 def clean(text):
     '''
-    Just a helper fuction to add a space before the punctuations for better tokenization
+    Just a helper fuction to add a space before
+    the punctuations for better tokenization
     '''
-    filters = ["!", "#", "$", "%", "&", "(", ")", "/", "*", ".", ":", ";", "<", "=", ">", "?", "@", "[",
+    filters = ["!", "#", "$", "%", "&", "(", ")", "/", "*", ".", ":", ";",
+               "<", "=", ">", "?", "@", "[",
                "\\", "]", "_", "`", "{", "}", "~", "'", ","]
     for i in text:
         if i in filters:
@@ -60,7 +59,7 @@ def create_data(df):
     '''
     The function responsible for the creation of data in the said format.
     '''
-    filepath = f'train/train.txt'
+    filepath = 'train/train.txt'
     if not os.path.exists("train"):
         os.makedirs("train")
     with open(filepath, 'w') as f:
@@ -80,7 +79,7 @@ def create_data(df):
 
 
 def create_data_new(df):
-    filepath = f'train/train.txt'
+    filepath = 'train/train.txt'
     if not os.path.exists("train"):
         os.makedirs("train")
     with open(filepath, 'w') as f:
@@ -94,7 +93,8 @@ def create_data_new(df):
                 ent_val = text[i[2]:i[3]]
                 tags[split_sent.index(ent_val.split()[0])] = "B-" + e_type
                 split_sent[split_sent.index(
-                    ent_val.split()[0])] = split_sent[split_sent.index(ent_val.split()[0])]+'t'
+                    ent_val.split()[0])] = split_sent[
+                        split_sent.index(ent_val.split()[0])]+'t'
                 # print(tags)
                 if len(ent_val.split()) > 1:
                     for ent in ent_val.split()[1:]:

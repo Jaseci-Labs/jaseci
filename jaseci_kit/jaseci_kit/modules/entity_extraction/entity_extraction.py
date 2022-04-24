@@ -163,21 +163,23 @@ def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
 
 
 @jaseci_action(act_group=['ent_ext'], allow_remote=True)
-def train(text: str, entity: List[dict]):
+def train(train_data: List[dict]):
     """
     API for training the model
     """
-    tag = []
-    if text and entity:
-        for ent in entity:
-            if ent['entity_value'] and ent['entity_name']:
-                tag.append((ent['entity_value'], ent['entity_name'],
-                            ent["start_index"], ent["end_index"]))
-            else:
-                raise HTTPException(status_code=404, detail=str(
-                    "Entity Data missing in request"))
-        data = pd.DataFrame([[text, tag
-                              ]], columns=['text', 'annotation'])
+    data = pd.DataFrame(columns=["text", "annotation"])
+    if train_data:
+        for t_data in train_data:
+            tag = []
+            for ent in t_data["entities"]:
+                if ent['entity_value'] and ent['entity_type']:
+                    tag.append((ent['entity_value'], ent['entity_type'],
+                                ent["start_index"], ent["end_index"]))
+                else:
+                    raise HTTPException(status_code=404, detail=str(
+                        "Entity Data missing in request"))
+            data = data.append({"text": t_data["context"],
+                                "annotation": tag}, ignore_index=True)
         # creating training data
         try:
             completed = create_data_new(data)
