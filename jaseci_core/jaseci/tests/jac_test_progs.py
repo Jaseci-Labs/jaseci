@@ -164,7 +164,6 @@ node_inheritance = \
     }
     """
 
-
 node_inheritance = \
     """
     node plain {
@@ -218,9 +217,9 @@ global_reregistering = \
 
     walker init {
         root {
-            spawn here - -> node:: plain;
-            spawn here - -> node:: plain;
-            spawn here - -> node: : plain;
+            spawn here - -> node::plain;
+            spawn here - -> node::plain;
+            spawn here - -> node::plain;
         }
         report global.a;
         take - ->;
