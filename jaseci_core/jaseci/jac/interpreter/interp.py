@@ -29,10 +29,9 @@ class interp(machine_state):
         kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'has_stmt'):
             self.run_has_stmt(kid[0], obj)
-        elif(kid[0].name == 'can_stmt'):
-            if(obj.j_type == 'walker'):
-                self.run_can_stmt(kid[0], obj)
-            #  Can statements in architype handled in architype load
+        elif(kid[0].name == 'can_stmt' and obj.j_type == 'walker'):
+            self.run_can_stmt(kid[0], obj)
+        #  Can statements in architype handled in architype load
 
     def run_has_stmt(self, jac_ast, obj):
         """
@@ -78,7 +77,8 @@ class interp(machine_state):
         if(var_name == '_private'):
             self.rt_error(
                 'Has variable name of `_private` not allowed!', kid[0])
-        elif (var_name not in obj.context.keys()):  # Runs only once
+        # Runs only once for walkers
+        elif (var_name not in obj.context.keys() or obj.j_type != 'walker'):
             jac_value(self, ctx=obj,
                       name=var_name, value=var_val).write(kid[0], force=True)
         if(is_private):

@@ -29,22 +29,35 @@ class architype_interp(interp):
             elif(self.kind == 'edge' and self.name in ['generic']):
                 return edge(m_id=self._m_id, h=self._h,
                             kind=self.kind, name=self.name)
+
+        def build_object(super_archs, item):
+            for i in super_archs:
+                super_jac_ast = self.parent().arch_ids.get_obj_by_name(
+                    name=i, kind=item.kind).get_jac_ast().kid[-1]
+                self.run_attr_block(super_jac_ast, item)
+            self.run_attr_block(kid[-1], item)
+
         kid = self.set_cur_ast(jac_ast)
         self.push_scope(
             jac_scope(
                 parent=self,
                 has_obj=self,
                 action_sets=[]))
+        super_archs = []
+        if(len(kid) > 2 and kid[2].name == "COLON"):
+            for i in kid[2:]:
+                if(i.name == "NAME"):
+                    super_archs.append(i.token_text())
         if(kid[0].name == 'KW_NODE'):
             item = node(m_id=self._m_id, h=self._h,
                         kind=kid[0].token_text(), name=kid[1].token_text())
             if(kid[-2].name == 'INT'):
                 item.dimension = int(kid[-2].token_text())
-            self.run_attr_block(kid[-1], item)
+            build_object(super_archs, item)
         elif(kid[0].name == 'KW_EDGE'):
             item = edge(m_id=self._m_id, h=self._h,
                         kind=kid[0].token_text(), name=kid[1].token_text())
-            self.run_attr_block(kid[-1], item)
+            build_object(super_archs, item)
         elif (kid[0].name == 'KW_GRAPH'):
             item = self.run_graph_block(kid[-1])
         elif (jac_ast.name == 'graph_block'):  # used in jac tests

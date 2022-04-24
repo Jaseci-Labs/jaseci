@@ -155,7 +155,8 @@ node_inheritance = \
 
     walker init {
         root {
-            spawn here --> node::super;
+            a=spawn here --> node::super;
+            std.log(a.context);
         }
         take -->;
         super {

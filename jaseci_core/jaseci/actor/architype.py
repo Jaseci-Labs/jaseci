@@ -25,9 +25,12 @@ class architype(element, jac_code, architype_interp):
         """
         Create set of new object instances from architype if needed
         """
+        return self.run_architype(jac_ast=self.get_jac_ast())
+
+    def get_jac_ast(self):
         if(not self._jac_ast):
             self.refresh()
-        return self.run_architype(jac_ast=self._jac_ast)
+        return self._jac_ast
 
     def destroy(self):
         """
