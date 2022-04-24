@@ -118,3 +118,20 @@ strange_ability_bug = \
         take -->;
     }
     """
+
+global_reregistering = \
+    """
+    node plain;
+
+    global a='556';
+
+    walker init {
+        root {
+            spawn here --> node::plain;
+            spawn here --> node::plain;
+            spawn here --> node::plain;
+        }
+        report global.a;
+        take -->;
+    }
+    """

@@ -41,9 +41,12 @@ class sentinel(element, jac_code, sentinel_interp):
 
     def reset(self):
         """Resets state of sentinel and unregister's code"""
+        self.version = None
+        self.global_vars = {}
+        self.testcases = []
         self.arch_ids.destroy_all()
-        self.load_arch_defaults()
         self.walker_ids.destroy_all()
+        self.load_arch_defaults()
         jac_code.reset(self)
         sentinel_interp.reset(self)
 
