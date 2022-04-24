@@ -58,7 +58,7 @@ class code_gen():
             self.g_ins([op.SET_ANCHOR, obj, var_name])
         if(var_name == '_private'):
             self.gt_error(
-                f'Has variable name of `_private` not allowed!', kid[0])
+                'Has variable name of `_private` not allowed!', kid[0])
         else:
             self.g_ins([op.CREATE_CTX_VAR, obj, var_name,
                        ref.RESULT_OUT, is_private])

@@ -77,7 +77,7 @@ class interp(machine_state):
 
         if(var_name == '_private'):
             self.rt_error(
-                f'Has variable name of `_private` not allowed!', kid[0])
+                'Has variable name of `_private` not allowed!', kid[0])
         elif (var_name not in obj.context.keys()):  # Runs only once
             jac_value(self, ctx=obj,
                       name=var_name, value=var_val).write(kid[0], force=True)
@@ -312,7 +312,7 @@ class interp(machine_state):
                     break
                 self._loop_ctrl = None
                 if(loops > self._loop_limit):
-                    self.rt_error(f'Hit loop limit, breaking...', kid[0])
+                    self.rt_error('Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
         else:
             var = self._jac_scope.get_live_var(
@@ -330,7 +330,7 @@ class interp(machine_state):
                     break
                 self._loop_ctrl = None
                 if(loops > self._loop_limit):
-                    self.rt_error(f'Hit loop limit, breaking...', kid[0])
+                    self.rt_error('Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
 
     def run_while_stmt(self, jac_ast):
@@ -346,7 +346,7 @@ class interp(machine_state):
                 break
             self._loop_ctrl = None
             if(loops > self._loop_limit):
-                self.rt_error(f'Hit loop limit, breaking...', kid[0])
+                self.rt_error('Hit loop limit, breaking...', kid[0])
                 self._loop_ctrl = 'break'
 
     def run_ctrl_stmt(self, jac_ast):
@@ -398,11 +398,11 @@ class interp(machine_state):
             if(kid[2].token_text() in ['status', 'status_code']):
                 self.report_status = int(kid[4].token_text())
             else:
-                self.rt_error(f'Invalid report attribute to set', kid[2])
+                self.rt_error('Invalid report attribute to set', kid[2])
         else:
             report = self.run_expression(kid[1]).wrap(serialize_mode=True)
             if(not is_jsonable(report)):
-                self.rt_error(f'Report not Json serializable', kid[0])
+                self.rt_error('Report not Json serializable', kid[0])
             self.report.append(copy(report))
 
     def run_expression(self, jac_ast):
@@ -750,7 +750,7 @@ class interp(machine_state):
                     ret = None
                 return jac_value(self, value=ret)
             else:
-                self.rt_error(f'Unable to execute ability',
+                self.rt_error('Unable to execute ability',
                               kid[0])
         elif (kid[0].name == 'DBL_COLON'):
             if(len(kid) > 2):

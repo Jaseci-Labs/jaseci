@@ -23,6 +23,7 @@ def mark_as_remote(api):
 def serv_actions():
     """Returns fastAPI app interface for actions"""
     app = FastAPI()
+
     @app.get("/")
     def home_redirect():
         return RedirectResponse(url='/docs')
