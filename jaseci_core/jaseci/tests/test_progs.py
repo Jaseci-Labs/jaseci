@@ -107,3 +107,13 @@ class jac_tests(TestCaseHelper, TestCase):
             api_name='walker_run', params={'name': 'init'})
         self.log(report)
         self.assertEqual(report, [])
+
+    def test_global_reregistering(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(
+            name='test', code=jtp.global_reregistering)
+        mast.sentinel_register(
+            name='test', code=jtp.global_reregistering)
+        mast.sentinel_register(
+            name='test', code=jtp.global_reregistering)
+        self.assertTrue(mast.active_snt().is_active)
