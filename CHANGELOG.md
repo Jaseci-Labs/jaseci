@@ -4,7 +4,8 @@
 
 ### Updates
 
-- Bug Fix: Globals imports of imports working 
+- Improvement: Fixed and much improved `actions load local` functionality
+- Bug Fix: Globals imports of imports working
 - Improvement: Sentinel registering improved to include ir mode
 - Improvement: `edge` semantics improved
 - Major bug fix: Re registering new code was breaking architype abilities
