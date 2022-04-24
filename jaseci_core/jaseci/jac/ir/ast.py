@@ -133,8 +133,7 @@ class ast():
             logger.debug(f"Importing items from {mod_name} to {from_mod}...")
             parsed_ast = None
             if(mod_name in ast._ast_head_map.keys()):
-                return []
-                # parsed_ast = ast._ast_head_map[mod_name]
+                parsed_ast = ast._ast_head_map[mod_name]
             elif(os.path.isfile(fn)):
                 with open(fn, 'r') as file:
                     jac_text = file.read()
@@ -232,7 +231,9 @@ class ast():
             """Overloaded function that visits every node on exit"""
             top = self.node_stack.pop()
             if(top.name == 'import_module'):
-                self.node_stack[-1].kid += self.run_import_module(top)
+                for i in self.run_import_module(top):
+                    if i not in self.node_stack[-1].kid:
+                        self.node_stack[-1].kid.append(i)
 
         def visitTerminal(self, node):
             """Visits terminals as walker walks, adds ast node"""
