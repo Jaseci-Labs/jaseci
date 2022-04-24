@@ -79,7 +79,6 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertIn("line 3", report['errors'][0])
 
     def test_strange_ability_bug(self):
-        self.logger_on()
         mast = master(h=mem_hook())
         mast.sentinel_register(
             name='test', code=jtp.strange_ability_bug)
@@ -99,12 +98,36 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(
             report, ['Showing', 'Showing', 'Showing', 'Showing'])
 
+    def test_node_inheritance(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(
+            name='test', code=jtp.node_inheritance, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name='walker_run', params={'name': 'init'})
+        self.assertEqual(report, {'report': ['plain.x',
+                                             {'a': 55, 'b': 7,
+                                              'c': 7, 'd': 80},
+                                             'super.x',
+                                             'plain2.y',
+                                             'super.y'],
+                                  'success': True})
+
+    def test_node_inheritance_chain_check(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(
+            name='test', code=jtp.node_inheritance_chain_check, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name='walker_run', params={'name': 'init'})
+        # self.log(report)
+        self.assertEqual(report['success'],  False)
+
     def test_global_reregistering(self):
         mast = master(h=mem_hook())
         mast.sentinel_register(
             name='test', code=jtp.global_reregistering)
-        mast.sentinel_register(
-            name='test', code=jtp.global_reregistering)
+        self.assertTrue(mast.active_snt().is_active)
+        mast.sentinel_set(snt=mast.active_snt(), code=jtp.global_reregistering)
+        self.assertTrue(mast.active_snt().is_active)
         mast.sentinel_register(
             name='test', code=jtp.global_reregistering)
         self.assertTrue(mast.active_snt().is_active)

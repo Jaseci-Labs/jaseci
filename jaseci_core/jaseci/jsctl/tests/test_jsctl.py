@@ -247,6 +247,15 @@ class jsctl_test(TestCaseHelper, TestCase):
         r = self.call_split("sentinel test -detailed true")
         self.assertEqual(len(r), 33)
 
+    def test_jsctl_multiple_registers_with_globals(self):
+        r = self.call_cast(
+            "sentinel register "
+            "jaseci/jsctl/tests/teststest.jir -mode ir")
+        r = self.call_cast(
+            "sentinel register "
+            "jaseci/jsctl/tests/teststest.jir -mode ir")
+        self.assertEqual(len(r), 1)
+
     def test_jsctl_run_tests_with_stdout(self):
         self.call(
             "sentinel register "
