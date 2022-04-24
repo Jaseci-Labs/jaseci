@@ -100,11 +100,12 @@ nd_equals_error_correct_line = \
     }
     """
 
-strange_ability_bug = \
+
+str = \
     """
     node plain {
         can show with entry {
-            report "Showing";
+            std.out("Showing");
         }
     }
 
@@ -117,4 +118,5 @@ strange_ability_bug = \
     walker travel {
         take -->;
     }
+
     """
