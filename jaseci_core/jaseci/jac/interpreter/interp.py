@@ -309,8 +309,8 @@ class interp(machine_state):
                 self.run_expression(kid[5])
                 loops += 1
                 if (self._loop_ctrl and self._loop_ctrl == 'break'):
+                    self._loop_ctrl = None
                     break
-                self._loop_ctrl = None
                 if(loops > self._loop_limit):
                     self.rt_error('Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
@@ -322,13 +322,14 @@ class interp(machine_state):
             if(not isinstance(lst, list)):
                 self.rt_error('Not a list for iteration!', kid[3])
             for i in lst:
+                self._loop_ctrl = None
                 var.value = i
                 var.write(kid[1])
                 self.run_code_block(kid[4])
                 loops += 1
                 if (self._loop_ctrl and self._loop_ctrl == 'break'):
+                    self._loop_ctrl = None
                     break
-                self._loop_ctrl = None
                 if(loops > self._loop_limit):
                     self.rt_error('Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
@@ -340,11 +341,12 @@ class interp(machine_state):
         kid = self.set_cur_ast(jac_ast)
         loops = 0
         while self.run_expression(kid[1]).value:
+            self._loop_ctrl = None
             self.run_code_block(kid[2])
             loops += 1
             if (self._loop_ctrl and self._loop_ctrl == 'break'):
+                self._loop_ctrl = None
                 break
-            self._loop_ctrl = None
             if(loops > self._loop_limit):
                 self.rt_error('Hit loop limit, breaking...', kid[0])
                 self._loop_ctrl = 'break'
