@@ -10,7 +10,7 @@ from flair.embeddings import WordEmbeddings, StackedEmbeddings, FlairEmbeddings
 from flair.data import Sentence
 from flair.trainers import ModelTrainer
 import pandas as pd
-from entity_utils import create_data, create_data_new
+from .entity_utils import create_data, create_data_new
 import configparser
 from jaseci.actions.live_actions import jaseci_action
 import torch

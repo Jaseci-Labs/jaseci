@@ -11,7 +11,8 @@ setup(
         'tensorflow-text >= 2.7.3, < 3.0.0',
         'transformers >= 4.16.2, < 5.0.0',
         'torch >= 1.10.2, < 2.0.0',
-        'pandas>=1.4.1,<2.0.0'
+        'pandas>=1.4.1,<2.0.0',
+        'flair'
     ],
-    package_data={"": ["*.json"], },
+    package_data={"": ["*.json", "*.cfg"], },
 )
