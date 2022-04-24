@@ -135,3 +135,14 @@ global_reregistering = \
         take -->;
     }
     """
+
+vector_cos_sim_check = \
+    """
+    node plain;
+
+    walker init {
+        a=[1,2,3];
+        b=[4,5,6];
+        report vector.cosine_sim(a,b);
+    }
+    """
