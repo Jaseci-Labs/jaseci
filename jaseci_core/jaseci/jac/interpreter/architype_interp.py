@@ -107,7 +107,7 @@ class architype_interp(interp):
                               kid[3])
             return obj
         else:
-            self.rt_error(f"Graph didn't produce root node!",
+            self.rt_error("Graph didn't produce root node!",
                           kid[3])
             return None
 
@@ -138,7 +138,7 @@ class architype_interp(interp):
 
         if (root_name not in nodes_def):
             del nodes_def
-            self.rt_error(f"Graph didn't produce root node!",
+            self.rt_error("Graph didn't produce root node!",
                           kid[1])
             return None
 

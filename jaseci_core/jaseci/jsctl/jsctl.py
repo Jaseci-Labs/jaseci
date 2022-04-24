@@ -89,7 +89,7 @@ def interface_api(api_name, is_public, **kwargs):
         if (os.path.isfile(kwargs['code'])):
             with open(kwargs['code'], 'r') as file:
                 if(api_name == 'sentinel_register' and
-                   'name'in kwargs and kwargs['name'] == 'default'):
+                   'name' in kwargs and kwargs['name'] == 'default'):
                     kwargs['name'] = kwargs['code']
                 kwargs['code'] = file.read()
         else:
@@ -238,7 +238,7 @@ def clear():
 @click.command(help="Reset jsctl (clears state)")
 def reset():
     reset_state()
-    click.echo(f"Jaseci State Cleared!")
+    click.echo("Jaseci State Cleared!")
 
 
 @click.command(help="Internal book generation tools")

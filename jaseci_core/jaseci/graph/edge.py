@@ -167,7 +167,7 @@ class edge(element, anchored):
         if(label):
             dstr += f', label="{label}"'
         if(self.bidirected):
-            dstr += f', dir="both"'
+            dstr += ', dir="both"'
 
         edge_dict = self.context
 

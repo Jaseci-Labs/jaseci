@@ -413,7 +413,7 @@ edge_access = \
 
             e = -[apple]->.edge[0];
             e.v1 = 7;
-            e = --> node::testnode .edge[1];
+            e = (--> node::testnode).edge[1];
             e.x1=8;
         }
     }
@@ -1124,5 +1124,29 @@ min_max_on_list = \
         report a.l::min;
         report a.l::idx_of_max;
         report a.l::idx_of_min;
+    }
+    """
+
+edge_bug = \
+    """
+    node plain;
+
+    edge g;
+
+    walker init {
+        root {
+            nd = spawn here -[g]-> node::plain;
+            nd -[g]-> nd;
+            spawn nd -[g]-> node::plain;
+            spawn nd -[g]-> node::plain;
+            a = spawn nd <-[g]- node::plain;
+            spawn nd <-[g]- node::plain;
+            nd -[g]-> a;
+        }
+        take -[g]->;
+        plain {
+            report -[g]->.edge;
+            disengage;
+        }
     }
     """

@@ -19,7 +19,7 @@ class sentinel_api():
 
     @interface.private_api(cli_args=['code'])
     def sentinel_register(self, name: str = 'default', code: str = '',
-                          code_dir: str = './',
+                          code_dir: str = './', mode: str = 'default',
                           encoded: bool = False, auto_run: str = 'init',
                           auto_gen_graph: bool = True, ctx: dict = {},
                           set_active: bool = True):
@@ -36,10 +36,8 @@ class sentinel_api():
             if(auto_gen_graph):
                 new_gph = self.graph_create(set_active=True)
         if(code):
-            if (encoded):
-                code = b64decode_str(code)
-            snt.register_code(code, code_dir)
-            snt.propagate_access()
+            self.sentinel_set(code=code, code_dir=code_dir, encoded=encoded,
+                              snt=snt, mode=mode)
             if(not snt.is_active):
                 return {'response': 'Error in jac code',
                         'errors': snt.errors,
