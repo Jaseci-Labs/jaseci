@@ -75,6 +75,10 @@ class sentinel_interp(interp):
         kind = kid[0].token_text()
         arch = architype(m_id=self._m_id, h=self._h, code_ir=jac_ast,
                          name=name, kind=kind)
+        if(len(kid) > 2 and kid[2].name == "COLON"):
+            for i in kid[2:]:
+                if(i.name == "NAME"):
+                    arch.super_archs.append(i.token_text())
         if(self.arch_ids.has_obj_by_name(arch.name, kind=arch.kind)):
             self.arch_ids.destroy_obj_by_name(arch.name, kind=arch.kind)
         self.arch_ids.add_obj(arch)

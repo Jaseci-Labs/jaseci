@@ -14,6 +14,7 @@ class architype(element, jac_code, architype_interp):
     """Architype class for Jaseci"""
 
     def __init__(self, code_ir=None, *args, **kwargs):
+        self.super_archs = list()
         self.entry_action_ids = id_list(self)
         self.activity_action_ids = id_list(self)
         self.exit_action_ids = id_list(self)

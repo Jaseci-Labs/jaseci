@@ -769,13 +769,17 @@ class interp(machine_state):
         ability_op: DBL_COLON | DBL_COLON NAME COLON;
         """
         kid = self.set_cur_ast(jac_ast)
-        kind = atom_res.value.kind
+        base_arch = self.get_arch_for(atom_res.value)
         if(len(kid) > 1):
-            # FIXME: NEED TO CHECK ACTUAL INHERITENCE CHAIN
-            return self.parent().arch_ids.get_obj_by_name(
-                name=kid[1].token_text(), kind=kind)
-        else:
-            return self.get_arch_for(atom_res.value)
+            kind = atom_res.value.kind
+            name = kid[1].token_text()
+            if(name in base_arch.super_archs):
+                return self.parent().arch_ids.get_obj_by_name(
+                    name=kid[1].token_text(), kind=kind)
+            else:
+                self.rt_error(
+                    f"{name} is not a super arch of {base_arch.name}")
+        return base_arch
 
     def run_ref(self, jac_ast):
         """
