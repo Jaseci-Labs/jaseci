@@ -79,7 +79,6 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertIn("line 3", report['errors'][0])
 
     def test_strange_ability_bug(self):
-        self.logger_on()
         mast = master(h=mem_hook())
         mast.sentinel_register(
             name='test', code=jtp.strange_ability_bug)
