@@ -154,10 +154,11 @@ multi_breaks = \
         can breakdance {
             for i=0 to i<10 by i+=1 {
                 for j=0 to j<20 by j+=1:
-                    if(j==12){
+                    if(j==12) {
                         val+=j;
                         break;
                     }
+                report "here";
                 if(i==6){
                     val+=i;
                     break;
@@ -166,10 +167,11 @@ multi_breaks = \
             break;
             val+=100;
         }
-    };
+    }
 
     walker init {
         nd=spawn here --> node::plain;
+        nd::breakdance;
         nd::breakdance;
         report nd.val;
     }

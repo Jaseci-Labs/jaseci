@@ -119,11 +119,10 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(type(report[0]), float)
 
     def test_multi_breaks(self):
-        self.logger_on()
         mast = master(h=mem_hook())
         mast.sentinel_register(name='test', code=jtp.multi_breaks,
                                auto_run="")
         report = mast.general_interface_to_api(
             api_name='walker_run', params={'name': 'init'})['report']
-        self.assertEqual(len(report), 1)
-        self.assertEqual(report[0], 45)
+        self.assertEqual(len(report), 15)
+        self.assertEqual(report[14], 180)
