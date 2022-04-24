@@ -38,16 +38,17 @@ def assimilate_action(func, act_group=None, aliases=list()):
     return func
 
 
-def load_local_actions(file):
+def load_local_actions(file: str):
     """Load all jaseci actions from python file"""
-    # name = '.' + str(file).split("/")[-1][:-3]
-    name = str(file).replace("./", '').replace("/", '.')[:-3]
+    name = file.rstrip('.py')
+    name = '.'.join(name.split("/")[-2:])
     spec = spec_from_file_location(name, str(file))
+    print(name)
     if(spec is None):
         logger.error(f"Cannot hot load from action file {file}")
         return False
     else:
-        module_dir = os.path.realpath(str('./'))
+        module_dir = os.path.dirname(os.path.dirname(os.path.realpath(file)))
         print(module_dir)
         if module_dir not in sys.path:
             sys.path.append(module_dir)
