@@ -108,11 +108,10 @@ def infer(contexts: Union[List[str], List[List]],
     try:
         if (context_type == "text") and (candidate_type == "text"):
             con_embed = []
-            for cont in contexts:
-                con_embed.append([get_context_emb(cont)])
+            con_embed = get_context_emb(contexts)
             cand_embed = get_candidate_emb(candidates)
         elif (context_type == "text") and (candidate_type == "embedding"):
-            con_embed = [get_context_emb(contexts)]
+            con_embed = get_context_emb(contexts)
             cand_embed = candidates
         elif (context_type == "embedding") and (candidate_type == "text"):
             con_embed = contexts
@@ -207,12 +206,14 @@ def get_context_emb(contexts: List):
     Take list of context and returns the embeddings
     """
     model.eval()
-    embedding = get_embeddings(
-        model=model,
-        tokenizer=tokenizer,
-        text_data=contexts,
-        embed_type="context",
-        train_config=train_config)
+    embedding = []
+    for cont in contexts:
+        embedding.append(get_embeddings(
+            model=model,
+            tokenizer=tokenizer,
+            text_data=cont,
+            embed_type="context",
+            train_config=train_config))
     return embedding
 
 # API for geting Candidates Embedding
