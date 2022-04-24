@@ -180,3 +180,44 @@ global_reregistering = \
         take - ->;
     }
     """
+
+vector_cos_sim_check = \
+    """
+    node plain;
+
+    walker init {
+        a=[1,2,3];
+        b=[4,5,6];
+        report vector.cosine_sim(a,b);
+    }
+    """
+
+multi_breaks = \
+    """
+    node plain {
+        has anchor val=0;
+        can breakdance {
+            for i=0 to i<10 by i+=1 {
+                for j=0 to j<20 by j+=1:
+                    if(j==12) {
+                        val+=j;
+                        break;
+                    }
+                report "here";
+                if(i==6){
+                    val+=i;
+                    break;
+                }
+            }
+            break;
+            val+=100;
+        }
+    }
+
+    walker init {
+        nd=spawn here --> node::plain;
+        nd::breakdance;
+        nd::breakdance;
+        report nd.val;
+    }
+    """
