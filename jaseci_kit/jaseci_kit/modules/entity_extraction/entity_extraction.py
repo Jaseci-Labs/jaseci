@@ -1,3 +1,4 @@
+from random import random
 import flair
 from typing import List, Optional
 from fastapi import HTTPException
@@ -89,8 +90,9 @@ def train_entity():
     # initialize sequence tagger
     try:
         if MODEL_TYPE.lower() in "trfmodel":
+            val = random()
             tagger.add_and_switch_to_new_task(
-                "ner_train", label_dictionary=tag_dictionary,
+                "ner_train"+str(val), label_dictionary=tag_dictionary,
                 label_type=NER_LABEL_TYPE)
         elif tagger is None and MODEL_TYPE.lower() in ["lstm", "gru"]:
             tagger = SequenceTagger(hidden_size=256,
@@ -127,9 +129,10 @@ def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
     if tagger is not None:
         if text:
             if ner_labels:
-                if "trf_model" in MODEL_TYPE.lower():
+                if "trfmodel" in MODEL_TYPE.lower():
+                    val = random()
                     tagger.add_and_switch_to_new_task(
-                        'Entity Detection Task', ner_labels,
+                        'Entity Detection Task'+str(val), ner_labels,
                         label_type=NER_LABEL_TYPE)
                 sentence = Sentence(text)
                 # predicting entities in the text
