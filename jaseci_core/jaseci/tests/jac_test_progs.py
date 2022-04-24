@@ -146,7 +146,6 @@ vector_cos_sim_check = \
         report vector.cosine_sim(a,b);
     }
     """
-<<<<<<< HEAD
 
 multi_breaks = \
     """
@@ -175,5 +174,3 @@ multi_breaks = \
         report nd.val;
     }
     """
-=======
->>>>>>> main
