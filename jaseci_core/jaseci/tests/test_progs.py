@@ -115,4 +115,5 @@ class jac_tests(TestCaseHelper, TestCase):
                                auto_run="")
         report = mast.general_interface_to_api(
             api_name='walker_run', params={'name': 'init'})['report']
-        self.assertEqual(report, [[3.4, "Hello"]])
+        self.assertEqual(len(report), 1)
+        self.assertEqual(type(report[0]), float)
