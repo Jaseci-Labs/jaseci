@@ -26,7 +26,7 @@ def integer(start: int, end: int):
 
 @jaseci_action()
 def choice(lst: list):
-    """Random integeter between range"""
+    """Random select and return item in list"""
     return random.choice(lst)
 
 
