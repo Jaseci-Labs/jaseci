@@ -23,6 +23,7 @@ data:
     source install.sh
     cd /jaseci/jaseci_kit/
     source install.sh
+    pip install flair==0.10
     cd /jaseci/jaseci_kit/jaseci_kit/modules/entity_extraction
     uvicorn jaseci_kit.ent_ext:serv_actions --host 0.0.0.0 --port 80
 ---
