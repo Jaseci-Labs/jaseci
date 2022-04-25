@@ -1,6 +1,8 @@
 """Built in actions for Jaseci"""
 import requests
 from jaseci.actions.live_actions import jaseci_action
+from base64 import b64decode
+from io import BytesIO
 
 
 @jaseci_action()
@@ -109,6 +111,50 @@ def options(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.options(url, json=data, headers=header)
+    ret = {'status_code': res.status_code}
+    try:
+        ret['response'] = res.json()
+    except Exception:
+        ret['response'] = res.text
+    return ret
+
+
+@jaseci_action()
+def multipart_base64(url: str, files: list, header: dict):
+    """
+    Issue request
+    Param 1 - url
+    Param 3 - header
+    Param 3 - file (Optional) used for single file
+    Param 4 - files (Optional) used for multiple files
+    Note - file and files can't be None at the same time
+
+    Return - response object
+    """
+
+    if not files:
+        return {
+            "status_code": 400,
+            "error": "Please include base64 using this format {\"field\":val,\"name\":val,\"base64\":val} using parameter `file` and `files` for array file"
+        }
+
+    formData = []
+    
+    if files is not None:
+        for f in files:
+            formData.append(
+                (
+                    f["field"] if "field" in f else "file",
+                    (
+                        f["name"],
+                        BytesIO(
+                            b64decode(f["base64"])
+                        )
+                    )
+                )
+            )
+
+    res = requests.post(url, files=formData, headers=header)
     ret = {'status_code': res.status_code}
     try:
         ret['response'] = res.json()
