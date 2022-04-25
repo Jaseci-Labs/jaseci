@@ -704,8 +704,6 @@ class interp(machine_state):
         elif(kid[0].name == 'atom'):
             ret = self.run_atom(kid[0])
             for i in kid[1:]:
-                self.rt_warn(i)  # FIXME
-                self.rt_warn(kid)
                 ret = self.run_atom_trailer(i, ret)
             return ret
         else:
@@ -781,7 +779,9 @@ class interp(machine_state):
             else:
                 self.rt_error(
                     f"{name} is not a super arch of {base_arch.name}")
-        return base_arch
+                return None
+        else:
+            return base_arch
 
     def run_ref(self, jac_ast):
         """
