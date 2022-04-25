@@ -1150,3 +1150,13 @@ edge_bug = \
         }
     }
     """
+
+rand_choice = \
+    """
+    walker init {
+        a = [45, 3, 531.0, 3, 6, 531.1];
+
+        report a;
+        report rand.choice(a);
+    }
+    """
