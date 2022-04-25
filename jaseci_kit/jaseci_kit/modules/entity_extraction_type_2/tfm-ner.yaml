@@ -22,10 +22,8 @@ data:
     pip install datasets
     cd /jaseci/jaseci_core/
     source install.sh
-    cd /jaseci/jaseci_kit
-    source install.sh
     cd /jaseci/jaseci_kit/jaseci_kit/modules/entity_extraction_type_2
-    uvicorn jaseci_kit.tfm_ner:serv_actions --host 0.0.0.0 --port 80
+    uvicorn entity_extraction:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
 kind: Deployment
