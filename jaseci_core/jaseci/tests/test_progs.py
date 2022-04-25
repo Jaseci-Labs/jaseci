@@ -118,7 +118,6 @@ class jac_tests(TestCaseHelper, TestCase):
             name='test', code=jtp.node_inheritance_chain_check, auto_run="")
         report = mast.general_interface_to_api(
             api_name='walker_run', params={'name': 'init'})
-        # self.log(report)
         self.assertEqual(report['success'],  False)
 
     def test_global_reregistering(self):

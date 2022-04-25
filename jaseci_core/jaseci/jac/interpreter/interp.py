@@ -779,7 +779,9 @@ class interp(machine_state):
             else:
                 self.rt_error(
                     f"{name} is not a super arch of {base_arch.name}")
-        return base_arch
+                return None
+        else:
+            return base_arch
 
     def run_ref(self, jac_ast):
         """
