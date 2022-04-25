@@ -25,6 +25,12 @@ def integer(start: int, end: int):
 
 
 @jaseci_action()
+def choice(lst: list):
+    """Random integeter between range"""
+    return random.choice(lst)
+
+
+@jaseci_action()
 def sentence(min_lenth: int = 4, max_length: int = 10, sep: str = ' '):
     """Get a random sentence"""
     n = random.randint(min_lenth, max_length)
