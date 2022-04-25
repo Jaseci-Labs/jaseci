@@ -1,7 +1,7 @@
 """Built in actions for Jaseci"""
 import requests
 from jaseci.actions.live_actions import jaseci_action
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from io import BytesIO
 
 
@@ -161,3 +161,15 @@ def multipart_base64(url: str, files: list, header: dict):
     except Exception:
         ret['response'] = res.text
     return ret
+
+
+@jaseci_action()
+def file_download_base64(url: str, header: dict, encoding: str = "utf-8"):
+    """Standard built in for download file from url"""
+    with requests.get(url, stream = True, headers = header) as res:
+        res.raise_for_status()
+        with BytesIO() as buffer:
+            for chunk in res.iter_content(chunk_size=8192):
+                buffer.write(chunk)
+            ret = buffer.getvalue()
+    return b64encode(ret).decode(encoding)
