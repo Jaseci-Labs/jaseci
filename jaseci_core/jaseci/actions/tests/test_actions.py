@@ -15,6 +15,7 @@ class jac_actions_tests(TestCaseHelper, TestCase):
 
     def test_remote_action_example(self):
         from typing import Union
+
         @jla.jaseci_action(act_group=['use'], aliases=['enc_question'],
                            allow_remote=True)
         def question_encode(question: Union[str, list]):

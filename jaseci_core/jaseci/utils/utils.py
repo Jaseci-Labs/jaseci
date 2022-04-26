@@ -177,7 +177,7 @@ def b64decode_str(code):
         code = base64.b64decode(code).decode()
     except UnicodeDecodeError:
         logger.error(
-            f'Code encoding invalid!')
+            'Code encoding invalid!')
     return code
 
 

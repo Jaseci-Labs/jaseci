@@ -1,5 +1,5 @@
-import {walker::setter, walker::init} with "./import.jac";
-import {global::say} with "./import.jac";
+import {*} with "./import.jac";
+import {global::say} with "./glob_imp.jac";
 
 node person {
     has name;

@@ -41,9 +41,12 @@ class sentinel(element, jac_code, sentinel_interp):
 
     def reset(self):
         """Resets state of sentinel and unregister's code"""
+        self.version = None
+        self.global_vars = {}
+        self.testcases = []
         self.arch_ids.destroy_all()
-        self.load_arch_defaults()
         self.walker_ids.destroy_all()
+        self.load_arch_defaults()
         jac_code.reset(self)
         sentinel_interp.reset(self)
 
@@ -51,12 +54,15 @@ class sentinel(element, jac_code, sentinel_interp):
         super().refresh()
         self.ir_load()
 
-    def register_code(self, text, dir='./'):
+    def register_code(self, text, dir='./', mode='default'):
         """
         Registers a program (set of walkers and architypes) written in Jac
         """
         self.reset()
-        self.register(text, dir)
+        if(mode == 'ir'):
+            self.apply_ir(text)
+        else:
+            self.register(text, dir)
         if(self.is_active):
             self.ir_load()
         return self.is_active
@@ -65,7 +71,6 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         Load walkers and architypes from IR
         """
-
         self.run_start(self._jac_ast)
 
         if(self.runtime_errors):
@@ -173,12 +178,16 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         from pprint import pformat
         from time import time
+        import sys
+        import io
         TY = '\033[33m'
         TG = '\033[32m'
         TR = '\033[31m'
         EC = '\033[m'
         num_failed = 0
         for i in self.testcases:
+            screen_out = [sys.stdout, sys.stderr]
+            buff_out = [io.StringIO(), io.StringIO()]
             destroy_set = []
             title = i['title']
             if(i['graph_ref']):
@@ -200,11 +209,14 @@ class sentinel(element, jac_code, sentinel_interp):
             wlk.prime(gph)
             if(i['spawn_ctx']):
                 self.run_spawn_ctx(jac_ir_to_ast(i['spawn_ctx']), wlk)
+
             stime = time()
             try:
                 if(not silent):
                     print(f"Testing {title}: ", end='')
+                sys.stdout, sys.stderr = buff_out[0], buff_out[1]
                 wlk.run()
+                sys.stdout, sys.stderr = screen_out[0], screen_out[1]
                 if(i['assert_block']):
                     wlk._loop_ctrl = None
                     wlk.scope_and_run(jac_ir_to_ast(
@@ -215,6 +227,7 @@ class sentinel(element, jac_code, sentinel_interp):
                 if(detailed and not silent):
                     print("REPORT: " + pformat(wlk.report))
             except Exception as e:
+                sys.stdout, sys.stderr = screen_out[0], screen_out[1]
                 i['passed'] = False
                 num_failed += 1
                 if(not silent):
@@ -229,7 +242,10 @@ class sentinel(element, jac_code, sentinel_interp):
         if(detailed):
             details = []
             for i in self.testcases:
-                details.append({'test': i['title'], 'passed': i['passed']})
+                details.append({'test': i['title'],
+                                'passed': i['passed'],
+                                'stdout': buff_out[0].getvalue(),
+                                'stderr': buff_out[1].getvalue()})
             summary['details'] = details
         return summary
 

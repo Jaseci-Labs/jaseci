@@ -100,7 +100,7 @@ class redis_hook(mem_hook):
 
     def list_glob_from_store(self):
         """Get list of globals to externally hooked general store"""
-        logger.warning(str(f"Globals can not (yet) be listed from Redis!"))
+        logger.warning("Globals can not (yet) be listed from Redis!")
         return []
 
     def destroy_glob_from_store(self, name):

@@ -4,6 +4,15 @@
 
 ### Updates
 
+- Major Feature: Multiple inheritance support on nodes and edges!
+- Improvement: Fixed and much improved `actions load local` functionality
+- Bug Fix: Globals imports of imports working
+- Improvement: Sentinel registering improved to include ir mode
+- Improvement: `edge` semantics improved
+- Major bug fix: Re registering new code was breaking architype abilities
+- Improvement: Tests now only show stdout and stderr on a test by test basis in detailed mode (Much cleaner)
+- Improvement: JSKit package architecture established, normalized, and standardized
+- New Lang Feature: Added list built in call of `.l::max`, `.l::min`, `.l::idx_of_max`, and `.l::idx_of_min`
 - Improvement: Api so super masters can `become` any master id, also jsctl can issue `master allusers`
 - New Lang Feature: Can now have `can` statements in spawn graphs after `has anchor rootname`
 - Improvement: `actions load module` added as capability where module strings are accepted

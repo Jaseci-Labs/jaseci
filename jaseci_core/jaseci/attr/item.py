@@ -26,4 +26,4 @@ class item(element):
         if(self.value):
             return super().__str__()+f':{self.value}'
         else:
-            return super().__str__()+f':None'
+            return super().__str__()+':None'
