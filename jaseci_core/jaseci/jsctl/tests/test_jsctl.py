@@ -92,10 +92,10 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(f'alias register s -value {snt_id}')
         self.call(f'alias register g -value {gph_id}')
         self.assertEqual(len(self.call_cast('graph get -gph g')), 1)
-        self.call(f'walker run init -snt s -nd g')
+        self.call('walker run init -snt s -nd g')
         self.assertEqual(len(self.call_cast('graph get -gph g')), 3)
-        self.call(f'alias clear')
-        self.assertEqual(len(self.call_cast(f'alias list').keys()), 0)
+        self.call('alias clear')
+        self.assertEqual(len(self.call_cast('alias list').keys()), 0)
 
     def test_jsctl_auto_aliases(self):
         """Tests that auto alias mapping api works"""
@@ -127,10 +127,10 @@ class jsctl_test(TestCaseHelper, TestCase):
             "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb "
             "-set_active true")
         self.call(
-            f'config set CONFIG_EXAMPLE -value TEST -do_check False')
-        self.call(f'config set APPLE -value Grape2 -do_check False')
-        self.call(f'config set "Banana" -value "Grape" -do_check False')
-        self.call(f'config set "Pear" -value "Banana" -do_check False')
+            'config set CONFIG_EXAMPLE -value TEST -do_check False')
+        self.call('config set APPLE -value Grape2 -do_check False')
+        self.call('config set "Banana" -value "Grape" -do_check False')
+        self.call('config set "Pear" -value "Banana" -do_check False')
         r = self.call('config get APPLE -do_check False')
         self.assertEqual(r.strip(), 'Grape2')
         r = self.call_cast('config list')
@@ -143,8 +143,8 @@ class jsctl_test(TestCaseHelper, TestCase):
             "-set_active true")
         snt_id = self.call_cast('sentinel list')[0]['jid']
         self.call(f'sentinel active set {snt_id}')
-        self.call(f'sentinel active get')
-        self.assertEqual(len(self.call_cast(f'walker list')), 2)
+        self.call('sentinel active get')
+        self.assertEqual(len(self.call_cast('walker list')), 2)
 
     def test_jsctl_init_auto_called(self):
         """Tests that alias mapping api works"""
@@ -161,7 +161,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(f'sentinel active set -snt {snt_id}')
         self.call(f'graph active set -gph {gph_id}')
         self.assertEqual(len(self.call_cast('graph get')), 1)
-        self.call(f'walker run init')
+        self.call('walker run init')
         self.assertEqual(len(self.call_cast('graph get')), 3)
 
     def test_public_apis_present(self):
@@ -246,6 +246,15 @@ class jsctl_test(TestCaseHelper, TestCase):
             "jaseci/jsctl/tests/teststest.jac")
         r = self.call_split("sentinel test -detailed true")
         self.assertEqual(len(r), 33)
+
+    def test_jsctl_multiple_registers_with_globals(self):
+        r = self.call_cast(
+            "sentinel register "
+            "jaseci/jsctl/tests/teststest.jir -mode ir")
+        r = self.call_cast(
+            "sentinel register "
+            "jaseci/jsctl/tests/teststest.jir -mode ir")
+        self.assertEqual(len(r), 1)
 
     def test_jsctl_run_tests_with_stdout(self):
         self.call(

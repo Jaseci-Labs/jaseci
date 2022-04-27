@@ -141,6 +141,10 @@ class jac_value():
         self.name = name
         self.end = end
         self.value = self.setup_value(value)
+        hack = self.parent.parent()
+        if(hack and '_assign_mode' in hack.__dict__ and hack._assign_mode and
+                isinstance(self.value, element)):
+            self.value.save()
 
     def setup_value(self, value):
         if (isinstance(self.ctx, element)):

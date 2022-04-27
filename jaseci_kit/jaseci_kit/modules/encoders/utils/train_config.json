@@ -9,7 +9,7 @@
     "warmup_steps": 100,
     "adam_epsilon": 1e-6,
     "max_grad_norm": 1,
-    "num_train_epochs": 10,
+    "num_train_epochs": 20,
     "gradient_accumulation_steps": 1,
     "fp16": false,
     "fp16_opt_level": "O1",

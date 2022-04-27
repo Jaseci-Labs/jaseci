@@ -56,7 +56,7 @@ class architype_api():
             ret['response'] = f'Successfully created {arch.name} architype'
         else:
             ret['errors'] = snt.errors
-            ret['response'] = f'Errors occured'
+            ret['response'] = 'Errors occured'
         return ret
 
     @interface.private_api()

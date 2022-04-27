@@ -71,7 +71,7 @@ config_setup()
 
 # API for getting the cosine similarity
 @ jaseci_action(act_group=['bi_enc'], allow_remote=True)
-def cosine_sim(vec_a: List[float], vec_b: List[float], meta):
+def cosine_sim(vec_a: List[float], vec_b: List[float]):
     """
     Caculate the cosine similarity score of two given vectors
     Param 1 - First vector
@@ -107,10 +107,11 @@ def infer(contexts: Union[List[str], List[List]],
     predicted_candidates = []
     try:
         if (context_type == "text") and (candidate_type == "text"):
-            con_embed = [get_context_emb(contexts)]
+            con_embed = []
+            con_embed = get_context_emb(contexts)
             cand_embed = get_candidate_emb(candidates)
         elif (context_type == "text") and (candidate_type == "embedding"):
-            con_embed = [get_context_emb(contexts)]
+            con_embed = get_context_emb(contexts)
             cand_embed = candidates
         elif (context_type == "embedding") and (candidate_type == "text"):
             con_embed = contexts
@@ -122,18 +123,32 @@ def infer(contexts: Union[List[str], List[List]],
         else:
             raise HTTPException(status_code=404, detail=str(
                 "input type not supported"))
-        for data in con_embed:
+        for data, cont in zip(con_embed, contexts):
             score_dat = []
-            for lbl in cand_embed:
-                if model_config["loss_type"] == "cos":
-                    score_dat.append(cosine_sim(
-                        vec_a=data, vec_b=lbl))
-                else:
-                    score_dat.append(dot_prod(vec_a=data, vec_b=lbl))
+            out_data = {
+                "context": str,
+                'candidate': [],
+                'score': []
+            }
             if candidate_type == "embedding":
+                for lbl in cand_embed:
+                    if model_config["loss_type"] == "cos":
+                        score_dat.append(cosine_sim(
+                            vec_a=data, vec_b=lbl))
                 predicted_candidates.append(int(np.argmax(score_dat)))
             else:
-                predicted_candidates.append(candidates[np.argmax(score_dat)])
+                for lbl, cand in zip(cand_embed, candidates):
+                    if model_config["loss_type"] == "cos":
+                        out_data['context'] = cont
+                        out_data["candidate"].append(cand)
+                        out_data["score"].append(cosine_sim(
+                            vec_a=data, vec_b=lbl))
+                    else:
+                        out_data['context'] = cont
+                        out_data["candidate"].append(cand)
+                        out_data["score"].append(float(dot_prod(
+                            vec_a=data, vec_b=lbl)))
+                predicted_candidates.append(out_data)
         return predicted_candidates
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(f'''input type can be
@@ -144,19 +159,38 @@ def infer(contexts: Union[List[str], List[List]],
 
 # API for training
 @ jaseci_action(act_group=['bi_enc'], allow_remote=True)
-def train(contexts: List, candidates: List, labels: List[int]):
+def train(dataset: Dict = None,
+          from_scratch=False,
+          training_parameters: Dict = None):
     """
     Take list of context, candidate, labels and trains the model
     """
     global model
+    train_data = {
+        'contexts': [],
+        'candidates': [],
+        'labels': []
+    }
+    if from_scratch is True:
+        save_model(model_config["model_save_path"])
+        config_setup()
     model.train()
     try:
+        if training_parameters is not None:
+            with open("utils/train_config.json", "w+") as jsonfile:
+                train_config.update(training_parameters)
+                json.dump(train_config, jsonfile, indent=4)
+        for data in dataset.keys():
+            for dat in dataset[data]:
+                train_data['contexts'].append(dat)
+                train_data['candidates'].append(data)
+                train_data['labels'].append(1)
         model = train_model(
             model=model,
             tokenizer=tokenizer,
-            contexts=contexts,
-            candidates=candidates,
-            labels=labels, train_config=train_config
+            contexts=train_data['contexts'],
+            candidates=train_data['candidates'],
+            labels=train_data['labels'], train_config=train_config
         )
         return "Model Training is complete."
     except Exception as e:
@@ -172,12 +206,14 @@ def get_context_emb(contexts: List):
     Take list of context and returns the embeddings
     """
     model.eval()
-    embedding = get_embeddings(
-        model=model,
-        tokenizer=tokenizer,
-        text_data=contexts,
-        embed_type="context",
-        train_config=train_config)
+    embedding = []
+    for cont in contexts:
+        embedding.append(get_embeddings(
+            model=model,
+            tokenizer=tokenizer,
+            text_data=cont,
+            embed_type="context",
+            train_config=train_config))
     return embedding
 
 # API for geting Candidates Embedding

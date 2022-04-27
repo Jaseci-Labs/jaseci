@@ -74,13 +74,6 @@ class jac_code():
             jac_ast_to_ir(ir)
         self.code_sig = hashlib.md5(self.code_ir.encode()).hexdigest()
         jac_code.refresh(self)  # should disregard overloaded versions
-        if(self._jac_ast and
-           (self.j_type == 'architype' or self.j_type == 'walker') and
-           (self._jac_ast.name == 'architype' or
-                self._jac_ast.name == 'walker')):
-            kid = self._jac_ast.kid
-            self.kind = f"{kid[0].token_text()}"
-            self.name = f"{kid[1].token_text()}"
 
     def parse_jac(self, code, dir, start_rule='start'):
         """Generate AST tree from Jac code text"""

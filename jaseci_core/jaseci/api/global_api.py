@@ -60,4 +60,4 @@ class global_api():
             for i in snt.get_deep_obj_list():
                 i.make_private()
         self._h.destroy_glob('GLOB_SENTINEL')
-        return {'response': f"Global sentinel cleared!"}
+        return {'response': "Global sentinel cleared!"}

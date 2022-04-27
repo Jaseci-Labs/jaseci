@@ -18,8 +18,8 @@ class architype_interp(interp):
     def run_architype(self, jac_ast):
         """
         architype:
-            KW_NODE NAME (COLON INT)? attr_block
-            | KW_EDGE NAME attr_block
+            KW_NODE NAME (COLON NAME)* attr_block
+            | KW_EDGE NAME (COLON NAME)* attr_block
             | KW_GRAPH NAME graph_block;
         """
         if(jac_ast is None):  # Using defaults
@@ -29,6 +29,14 @@ class architype_interp(interp):
             elif(self.kind == 'edge' and self.name in ['generic']):
                 return edge(m_id=self._m_id, h=self._h,
                             kind=self.kind, name=self.name)
+
+        def build_object(item):
+            for i in self.super_archs:
+                super_jac_ast = self.parent().arch_ids.get_obj_by_name(
+                    name=i, kind=item.kind).get_jac_ast().kid[-1]
+                self.run_attr_block(super_jac_ast, item)
+            self.run_attr_block(kid[-1], item)
+
         kid = self.set_cur_ast(jac_ast)
         self.push_scope(
             jac_scope(
@@ -38,13 +46,13 @@ class architype_interp(interp):
         if(kid[0].name == 'KW_NODE'):
             item = node(m_id=self._m_id, h=self._h,
                         kind=kid[0].token_text(), name=kid[1].token_text())
-            if(kid[2].name == 'COLON'):
-                item.dimension = int(kid[3].token_text())
-            self.run_attr_block(kid[-1], item)
+            if(kid[-2].name == 'INT'):
+                item.dimension = int(kid[-2].token_text())
+            build_object(item)
         elif(kid[0].name == 'KW_EDGE'):
             item = edge(m_id=self._m_id, h=self._h,
                         kind=kid[0].token_text(), name=kid[1].token_text())
-            self.run_attr_block(kid[-1], item)
+            build_object(item)
         elif (kid[0].name == 'KW_GRAPH'):
             item = self.run_graph_block(kid[-1])
         elif (jac_ast.name == 'graph_block'):  # used in jac tests
@@ -64,7 +72,6 @@ class architype_interp(interp):
         for i in kid:
             if(i.name == 'attr_stmt'):
                 self.run_attr_stmt(i, obj)
-        self._can_compiled_flag = True
 
     def run_can_block(self, jac_ast):
         """
@@ -108,7 +115,7 @@ class architype_interp(interp):
                               kid[3])
             return obj
         else:
-            self.rt_error(f"Graph didn't produce root node!",
+            self.rt_error("Graph didn't produce root node!",
                           kid[3])
             return None
 
@@ -139,7 +146,7 @@ class architype_interp(interp):
 
         if (root_name not in nodes_def):
             del nodes_def
-            self.rt_error(f"Graph didn't produce root node!",
+            self.rt_error("Graph didn't produce root node!",
                           kid[1])
             return None
 

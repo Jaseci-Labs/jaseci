@@ -4,15 +4,13 @@ from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 
 from jaseci_serv.base.models import JaseciObject
+from jaseci_serv.base.tests.mock_redis import mock_redis
 from jaseci.graph import node
 from jaseci.graph.graph import graph
 from jaseci.actor.sentinel import sentinel
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.redis_hook import redis_hook
-from jaseci_serv. jaseci_serv.settings import REDIS_HOST
 import jaseci.tests.jac_test_code as jtc
-
-import redis
 
 
 # Alias for create user
@@ -31,7 +29,7 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
             name='some dude',
         )
         self._h = mem_hook()
-        self.r = redis.Redis(host=REDIS_HOST, decode_responses=True)
+        self.r = mock_redis()
 
     def tearDown(self):
         super().tearDown()

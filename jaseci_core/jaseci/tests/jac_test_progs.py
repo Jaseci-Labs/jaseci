@@ -99,3 +99,172 @@ nd_equals_error_correct_line = \
         }
     }
     """
+
+strange_ability_bug = \
+    """
+    node plain {
+        can show with entry {
+            report "Showing";
+        }
+    }
+
+    walker init {
+        root {
+            spawn here --> node::plain;
+        }
+    }
+
+    walker travel {
+        take -->;
+    }
+    """
+
+node_inheritance = \
+    """
+    node plain {
+        has a=5, b=7, c=7, d=8;
+        can x with entry {
+            report "plain.x";
+        }
+        can y {
+            report "plain.y";
+        }
+    }
+
+    node plain2 {
+        has c=70, d=80;
+        can x with entry {
+            report "plain2.x";
+        }
+        can y {
+            report "plain2.y";
+        }
+    }
+
+    node super:plain:plain2 {
+        has a=55, c=7;
+        can x with entry {
+            ::plain:x;
+            report here.context;
+            report "super.x";
+        }
+        can y {
+            ::plain2:y;
+            report "super.y";
+        }
+    }
+
+    walker init {
+        root {
+            a=spawn here --> node::super;
+        }
+        take -->;
+        super {
+            here::y;
+        }
+    }
+    """
+
+node_inheritance_chain_check = \
+    """
+    node plain {
+        has a=5, b=7, c=7, d=8;
+        can x with entry {
+            report "plain.x";
+        }
+        can y {
+            report "plain.y";
+        }
+    }
+
+    node plain2 {
+        has c=70, d=80;
+        can x with entry {
+            report "plain2.x";
+        }
+        can y {
+            report "plain2.y";
+        }
+    }
+
+    node super:plain {
+        has a=55, c=7;
+        can x with entry {
+            ::plain:x;
+            report here.context;
+            report "super.x";
+        }
+        can y {
+            ::plain2:y;
+            report "super.y";
+        }
+    }
+
+    walker init {
+        root {
+            a=spawn here --> node::super;
+        }
+        take -->;
+        super {
+            here::y;
+        }
+    }
+    """
+
+global_reregistering = \
+    """
+    node plain;
+
+    global a = '556';
+
+    walker init {
+        root {
+            spawn here - -> node::plain;
+            spawn here - -> node::plain;
+            spawn here - -> node::plain;
+        }
+        report global.a;
+        take - ->;
+    }
+    """
+
+vector_cos_sim_check = \
+    """
+    node plain;
+
+    walker init {
+        a=[1,2,3];
+        b=[4,5,6];
+        report vector.cosine_sim(a,b);
+    }
+    """
+
+multi_breaks = \
+    """
+    node plain {
+        has anchor val=0;
+        can breakdance {
+            for i=0 to i<10 by i+=1 {
+                for j=0 to j<20 by j+=1:
+                    if(j==12) {
+                        val+=j;
+                        break;
+                    }
+                report "here";
+                if(i==6){
+                    val+=i;
+                    break;
+                }
+            }
+            break;
+            val+=100;
+        }
+    }
+
+    walker init {
+        nd=spawn here --> node::plain;
+        nd::breakdance;
+        nd::breakdance;
+        report nd.val;
+    }
+    """

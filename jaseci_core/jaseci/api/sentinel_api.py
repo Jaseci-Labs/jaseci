@@ -19,7 +19,7 @@ class sentinel_api():
 
     @interface.private_api(cli_args=['code'])
     def sentinel_register(self, name: str = 'default', code: str = '',
-                          code_dir: str = './',
+                          code_dir: str = './', mode: str = 'default',
                           encoded: bool = False, auto_run: str = 'init',
                           auto_gen_graph: bool = True, ctx: dict = {},
                           set_active: bool = True):
@@ -36,13 +36,11 @@ class sentinel_api():
             if(auto_gen_graph):
                 new_gph = self.graph_create(set_active=True)
         if(code):
-            if (encoded):
-                code = b64decode_str(code)
-            snt.register_code(code, code_dir)
-            snt.propagate_access()
+            self.sentinel_set(code=code, code_dir=code_dir, encoded=encoded,
+                              snt=snt, mode=mode)
             if(not snt.is_active):
                 return {'response': 'Error in jac code',
-                        'errors': snt.errors,
+                        'errors': snt.errors+snt.runtime_errors,
                         'success': False}
         if(snt.walker_ids.has_obj_by_name(auto_run) and self.active_gph_id):
             nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
@@ -103,17 +101,12 @@ class sentinel_api():
         """
         if (encoded):
             code = b64decode_str(code)
-        if(mode == 'code' or mode == 'default'):
-            snt.register_code(code, code_dir)
-        elif(mode == 'ir'):
-            snt.apply_ir(code)
-            snt.run_start(snt._jac_ast)
-            snt.propagate_access()
-            if(snt.runtime_errors):
-                snt.is_active = False
-        else:
+        if(mode not in ['code', 'default', 'ir']):
             return {'response': f'Invalid mode to set {snt}',
                     'success': False}
+        snt.register_code(code, dir=code_dir, mode=mode)
+        snt.propagate_access()
+
         if(snt.is_active):
             self.extract_snt_aliases(snt)
             return {'response': f'{snt} registered and active!',

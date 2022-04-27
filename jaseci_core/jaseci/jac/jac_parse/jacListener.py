@@ -566,6 +566,15 @@ class jacListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by jacParser#ability_op.
+    def enterAbility_op(self, ctx:jacParser.Ability_opContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#ability_op.
+    def exitAbility_op(self, ctx:jacParser.Ability_opContext):
+        pass
+
+
     # Enter a parse tree produced by jacParser#ref.
     def enterRef(self, ctx:jacParser.RefContext):
         pass

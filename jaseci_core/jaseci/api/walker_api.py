@@ -49,7 +49,7 @@ class walker_api():
             self.extract_wlk_aliases(snt, walk)
             return walk.serialize()
         else:
-            return [f'Walker not created, invalid code!']
+            return ['Walker not created, invalid code!']
 
     @interface.private_api(cli_args=['wlk'])
     def walker_get(self, wlk: walker, mode: str = 'default',
@@ -118,7 +118,7 @@ class walker_api():
             self.alias_register(f'spawned:walker:{name}', wlk.jid)
             return wlk.serialize()
         else:
-            return [f'Walker not found!']
+            return ['Walker not found!']
 
     @interface.private_api(cli_args=['name'])
     def walker_spawn_delete(self, name: str):
