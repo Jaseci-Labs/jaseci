@@ -135,11 +135,13 @@ def multipart_base64(url: str, files: list, header: dict):
     if not files:
         return {
             "status_code": 400,
-            "error": "Please include base64 using this format {\"field\":val,\"name\":val,\"base64\":val} using parameter `file` and `files` for array file"
+            "error": "Please include base64 using this format "
+                     "{\"field\":val,\"name\":val,\"base64\":val} "
+                     "using parameter `file` and `files` for array file"
         }
 
     formData = []
-    
+
     if files is not None:
         for f in files:
             formData.append(
@@ -166,7 +168,7 @@ def multipart_base64(url: str, files: list, header: dict):
 @jaseci_action()
 def file_download_base64(url: str, header: dict, encoding: str = "utf-8"):
     """Standard built in for download file from url"""
-    with requests.get(url, stream = True, headers = header) as res:
+    with requests.get(url, stream=True, headers=header) as res:
         res.raise_for_status()
         with BytesIO() as buffer:
             for chunk in res.iter_content(chunk_size=8192):
