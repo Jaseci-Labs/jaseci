@@ -4,6 +4,8 @@
 
 ### Updates
 
+- Improvement: JSCTL shows token on login
+- Major Feature: JSCTL has persistent log in sessions, and can logout
 - Improvement: `*` and `&` precedence hierarch locations improved.
 - Bug Fix: Indirect node field updates tag elements to be written to db
 - Major Feature: Multiple inheritance support on nodes and edges!

@@ -16,19 +16,17 @@ from jaseci.element.super_master import super_master
 from .book_tools import book
 
 session = None
-connection = None
 
 
 def reset_state():
-    global session, connection
+    global session
     session = {
         "filename": "js.session",
         "user": [super_master(h=mem_hook(), name='admin')],
-        "mem-only": session["mem-only"] if session is not None else False
+        "mem-only": session["mem-only"] if session is not None else False,
+        "connection": {'url': None, 'token': None, 'headers': None}
     }
     session['master'] = session['user'][0]
-
-    connection = {'url': None, 'token': None, 'headers': None}
 
 
 reset_state()
@@ -43,11 +41,12 @@ def jsctl(filename, mem_only):
     """
     The Jaseci Command Line Interface
     """
-    session['mem-only'] = mem_only
-    session['filename'] = filename if not mem_only else None
+    global session
     if (not mem_only and os.path.isfile(filename)):
         with open(filename, 'rb') as f:
-            session['master'] = pickle.load(f)
+            session = pickle.load(f)
+    session['mem-only'] = mem_only
+    session['filename'] = filename if not mem_only else None
 
 
 def remote_api_call(payload, api_name):
@@ -64,9 +63,9 @@ def remote_api_call(payload, api_name):
             elif(i in super_master._public_api):
                 path = '/js_public/'+api_name
             break
-    ret = requests.post(connection['url']+path,
+    ret = requests.post(session['connection']['url']+path,
                         json=payload,
-                        headers=connection['headers'])
+                        headers=session['connection']['headers'])
     if ret.status_code > 205:
         ret = f"Status Code Error {ret.status_code}"
     else:
@@ -100,7 +99,7 @@ def interface_api(api_name, is_public, **kwargs):
     if('other_fields' in kwargs):
         kwargs['other_fields'] = json.loads(kwargs['other_fields'])
     resolve_none_type(kwargs)
-    if(connection['token'] and connection['url']):
+    if(session['connection']['token'] and session['connection']['url']):
         out = remote_api_call(kwargs, api_name)
     elif(is_public):
         out = session['master'].public_interface_to_api(kwargs, api_name)
@@ -115,7 +114,7 @@ def interface_api(api_name, is_public, **kwargs):
         click.echo(f'[saved to {kwargs["output"]}]')
     if not session['mem-only']:
         with open(session['filename'], 'wb') as f:
-            pickle.dump(session['master'], f)
+            pickle.dump(session, f)
 
 
 def extract_api_tree():
@@ -203,13 +202,24 @@ def login(url, username, password):
     payload = {'email': username, 'password': password}
     r = requests.post(url+'/user/token/', data=payload).json()
     if('token' in r.keys()):
-        connection['token'] = r['token']
-        connection['url'] = url
-        connection['headers'] = {
+        session['connection']['token'] = r['token']
+        session['connection']['url'] = url
+        session['connection']['headers'] = {
             'Authorization': 'token ' + r['token']}
-        click.echo("Login successful!")
+        click.echo(f"Token: {r['token']}\nLogin successful!")
     else:
         click.echo(f"Login failed!\n{r}")
+
+
+@click.command(help="Command to log out of live Jaseci server")
+def logout():
+    if(session['connection']['token']):
+        session['connection']['token'] = None
+        session['connection']['url'] = None
+        session['connection']['headers'] = {}
+        click.echo(f"Logout successful!")
+    else:
+        click.echo(f"You are not logged in!")
 
 
 @click.command(help="Edit a file")
@@ -259,6 +269,7 @@ def tool(op, output):
 
 
 jsctl.add_command(login)
+jsctl.add_command(logout)
 jsctl.add_command(edit)
 jsctl.add_command(ls)
 jsctl.add_command(clear)
