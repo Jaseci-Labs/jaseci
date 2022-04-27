@@ -144,10 +144,10 @@ class jac_value():
 
     def setup_value(self, value):
         if (isinstance(self.ctx, element)):
+            if(self.parent.parent()._assign_mode):
+                self.ctx.save()
             self.is_element = self.ctx
             self.ctx = self.ctx.context
-            if(self.parent._assign_mode):
-                self.ctx.save()
         if value is not None:
             return value
         elif(self.ctx is not None and self.name is not None):
