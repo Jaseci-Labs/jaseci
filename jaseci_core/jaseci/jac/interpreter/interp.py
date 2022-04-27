@@ -789,20 +789,20 @@ class interp(machine_state):
 
     def run_ref(self, jac_ast):
         """
-        ref: '&' expression;
+        ref: '&' atom;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_expression(kid[1])
+        result = self.run_atom(kid[1])
         if (self.rt_check_type(result.value, element, kid[1])):
             result = jac_value(self, value=result.value.jid)
         return result
 
     def run_deref(self, jac_ast):
         """
-        deref: '*' expression;
+        deref: '*' atom;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_expression(kid[1])
+        result = self.run_atom(kid[1])
         if (is_urn(result.value)):
             result = jac_value(
                 self, value=jeu(result.value.replace('urn', 'jac'), self))

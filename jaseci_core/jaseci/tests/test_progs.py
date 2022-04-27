@@ -157,3 +157,4 @@ class jac_tests(TestCaseHelper, TestCase):
         report = mast.general_interface_to_api(
             api_name='walker_run', params={'name': 'init'})['report']
         self.assertFalse(report[0])
+        self.assertTrue(report[1])

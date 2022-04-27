@@ -271,12 +271,16 @@ multi_breaks = \
 
 reffy_deref_check = \
     """
-    node plain;
+    node plain{has expected_answer;}
 
     walker init {
-        spawn here --> node::plain;
+        nd = spawn here --> node::plain;
         spawn here --> node::plain;
 
         report *&-->[0] == *&-->[1];
+
+        actual_answer = -->[1];
+        nd.expected_answer = &-->[1];
+        report *&actual_answer == *nd.expected_answer;
     }
     """

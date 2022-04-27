@@ -197,9 +197,9 @@ atom_trailer:
 
 ability_op: DBL_COLON | DBL_COLON NAME COLON;
 
-ref: '&' expression;
+ref: '&' atom;
 
-deref: STAR_MUL expression;
+deref: STAR_MUL atom;
 
 built_in:
 	| string_built_in
