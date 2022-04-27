@@ -6,7 +6,8 @@ sidebar_position: 4
 
 Let's test out the JAC language by running a simple programs which utilizes control structures and output statments.
 
-```
+```jac
+
 walker init {
     x = 34 -30; 
     y = "Hello";
@@ -16,7 +17,7 @@ walker init {
 
 Think of the walker as a little robot friend who traverses the nodes and edges of graphs. We initialize the variable of x,y,z. 
 
-```
+```jac
 walker init {
     x = 34 -30; 
     y = "Hello";
@@ -32,7 +33,7 @@ if(z==3.45 or y=="Bye"){
 
 The IF  statment is very similiar to those of python. Note that after every line there is a semicolon .
 
-```
+```jac
 walker init {
     x = 34 -30; 
     y = "Hello";
@@ -48,7 +49,7 @@ std.out(x);
 ```
 std.out() prints any variable passed in to the function on to the terminal.
 
-```
+```jac
 walker init {
     x = 34 -30; 
     y = "Hello";
