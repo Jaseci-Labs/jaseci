@@ -268,3 +268,15 @@ multi_breaks = \
         report nd.val;
     }
     """
+
+reffy_deref_check = \
+    """
+    node plain;
+
+    walker init {
+        spawn here --> node::plain;
+        spawn here --> node::plain;
+
+        report *&-->[0] == *&-->[1];
+    }
+    """

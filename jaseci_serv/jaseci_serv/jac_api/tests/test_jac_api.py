@@ -883,3 +883,22 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         ret2 = res.data
         self.assertEqual(ret1, ret2)
+
+    def test_asim_bug_check3(self):
+        """Test public API for summoning walker"""
+        zsb_file = open(os.path.dirname(__file__) +
+                        "/zsb.jac").read()
+        payload = {'op': 'sentinel_register', 'name': 'zsb',
+                   'code': zsb_file}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        payload = {'op': 'walker_run', 'name': 'asim_bug_check4'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        ret1 = res.data
+        self.user.get_master()._h.clear_mem_cache()
+        payload = {'op': 'walker_run', 'name': 'asim_bug_check2'}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+        ret2 = res.data
+        self.assertEqual(ret1, ret2)

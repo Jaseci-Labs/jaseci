@@ -205,6 +205,11 @@ walker asim_bug_check3 {
     report -->;
 }
 
+walker asim_bug_check4 {
+    for i in -->:
+        i.bug_check="testing";
+    report -->;
+}
 
 walker pubinit:anyone {
     root {
