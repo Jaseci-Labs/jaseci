@@ -79,7 +79,7 @@ def resolve_none_type(kwargs):
             kwargs[i] = None
 
 
-def interface_api(api_name, is_public, **kwargs):
+def interface_api(api_name, is_public, is_cli_only, **kwargs):
     """
     Interfaces Master apis after processing arguments/parameters
     from cli
@@ -99,7 +99,8 @@ def interface_api(api_name, is_public, **kwargs):
     if('other_fields' in kwargs):
         kwargs['other_fields'] = json.loads(kwargs['other_fields'])
     resolve_none_type(kwargs)
-    if(session['connection']['token'] and session['connection']['url']):
+    if(not is_cli_only and session['connection']['token'] and
+       session['connection']['url']):
         out = remote_api_call(kwargs, api_name)
     elif(is_public):
         out = session['master'].public_interface_to_api(kwargs, api_name)
@@ -133,7 +134,7 @@ def extract_api_tree():
             api_root = api_root[j]
         api_root['leaf'] = ['_'.join(i['groups']), i['sig'],
                             i in session['master']._public_api,  i['doc'],
-                            i['cli_args']]
+                            i['cli_args'], i in session['master']._cli_api]
     return api_funcs
 
 
@@ -146,7 +147,7 @@ def build_cmd(group_func, func_name, leaf):
 
     f = functools.partial(
         copy_func(interface_api, func_name),
-        api_name=leaf[0], is_public=leaf[2])
+        api_name=leaf[0], is_public=leaf[2], is_cli_only=leaf[5])
     f.__name__ = func_name
     f.__doc__ = leaf[3]
 
