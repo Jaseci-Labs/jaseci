@@ -6,11 +6,13 @@ from config import train_file_path, clf_json_file_path
 
 def intent_to_label(intent):
     intent = intent.replace('_', '-')
+    intent = intent.replace(' ', '-')
     return f'__label__{intent}'
 
 
 def label_to_intent(label):
-    return label.replace('__label__', '')
+    label = label.replace('__label__', '')
+    return label.replace('-', ' ')
 
 
 def prep_label(intent):
