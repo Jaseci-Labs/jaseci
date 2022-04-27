@@ -7,10 +7,8 @@ model = T5ForConditionalGeneration.from_pretrained('t5-small')
 tokenizer = T5Tokenizer.from_pretrained('t5-small')
 device = torch.device('cpu')
 
-# summarize a large body of text using t5 model (small model) which returns data at a fast rate.
-@ jaseci_action(act_group=['t5_sum'], allow_remote=True)
-def t5_sum(text: str, min_length: int = 30, max_length: int = 100):
-
+# generates summary based on text
+def t5_generate_sum(text, min_length, max_length):
     preprocess_text = text.strip().replace("\n","")
     t5_prepared_Text = "summarize: "+preprocess_text
 
@@ -21,6 +19,13 @@ def t5_sum(text: str, min_length: int = 30, max_length: int = 100):
 
     output = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
 
+    return output
+
+# summarize a large body of text using t5 model (small model) which returns data at a fast rate.
+@ jaseci_action(act_group=['t5_sum'], allow_remote=True)
+def t5_sum(text: str, min_length: int = 30, max_length: int = 100):
+    output = t5_generate_sum(text, min_length, max_length)
+    
     return output
 
 if __name__ == "__main__":
