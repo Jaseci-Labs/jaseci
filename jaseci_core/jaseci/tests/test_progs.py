@@ -148,3 +148,13 @@ class jac_tests(TestCaseHelper, TestCase):
             api_name='walker_run', params={'name': 'init'})['report']
         self.assertEqual(len(report), 15)
         self.assertEqual(report[14], 180)
+
+    def test_reffy_deref_check(self):
+        self.logger_on()
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name='test', code=jtp.reffy_deref_check,
+                               auto_run="")
+        report = mast.general_interface_to_api(
+            api_name='walker_run', params={'name': 'init'})['report']
+        self.assertFalse(report[0])
+        self.assertTrue(report[1])

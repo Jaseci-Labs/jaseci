@@ -4,6 +4,8 @@
 
 ### Updates
 
+- Improvement: `*` and `&` precedence hierarch locations improved.
+- Bug Fix: Indirect node field updates tag elements to be written to db
 - Major Feature: Multiple inheritance support on nodes and edges!
 - Improvement: Fixed and much improved `actions load local` functionality
 - Bug Fix: Globals imports of imports working

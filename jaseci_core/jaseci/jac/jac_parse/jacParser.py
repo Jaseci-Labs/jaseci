@@ -428,44 +428,44 @@ def serializedATN():
         buf.write("\u0340\3\2\2\2\u034a\u0345\3\2\2\2\u034b}\3\2\2\2\u034c")
         buf.write("\u0351\7%\2\2\u034d\u034e\7%\2\2\u034e\u034f\7e\2\2\u034f")
         buf.write("\u0351\7$\2\2\u0350\u034c\3\2\2\2\u0350\u034d\3\2\2\2")
-        buf.write("\u0351\177\3\2\2\2\u0352\u0353\7\4\2\2\u0353\u0354\5`")
-        buf.write("\61\2\u0354\u0081\3\2\2\2\u0355\u0356\7X\2\2\u0356\u0357")
-        buf.write("\5`\61\2\u0357\u0083\3\2\2\2\u0358\u035f\3\2\2\2\u0359")
-        buf.write("\u035f\5\u008eH\2\u035a\u035f\5\u008aF\2\u035b\u035f\5")
-        buf.write("\u008cG\2\u035c\u035f\5\u0088E\2\u035d\u035f\5\u0086D")
-        buf.write("\2\u035e\u0358\3\2\2\2\u035e\u0359\3\2\2\2\u035e\u035a")
-        buf.write("\3\2\2\2\u035e\u035b\3\2\2\2\u035e\u035c\3\2\2\2\u035e")
-        buf.write("\u035d\3\2\2\2\u035f\u0085\3\2\2\2\u0360\u0361\5\u00bc")
-        buf.write("_\2\u0361\u0087\3\2\2\2\u0362\u0363\t\b\2\2\u0363\u0089")
-        buf.write("\3\2\2\2\u0364\u0376\7\36\2\2\u0365\u0366\7*\2\2\u0366")
-        buf.write("\u0367\5:\36\2\u0367\u0368\7+\2\2\u0368\u0376\3\2\2\2")
-        buf.write("\u0369\u036a\7\17\2\2\u036a\u036d\7%\2\2\u036b\u036d\7")
-        buf.write("(\2\2\u036c\u0369\3\2\2\2\u036c\u036b\3\2\2\2\u036d\u036e")
-        buf.write("\3\2\2\2\u036e\u0373\t\t\2\2\u036f\u0370\7\\\2\2\u0370")
-        buf.write("\u0371\5<\37\2\u0371\u0372\7]\2\2\u0372\u0374\3\2\2\2")
-        buf.write("\u0373\u036f\3\2\2\2\u0373\u0374\3\2\2\2\u0374\u0376\3")
-        buf.write("\2\2\2\u0375\u0364\3\2\2\2\u0375\u0365\3\2\2\2\u0375\u036c")
-        buf.write("\3\2\2\2\u0376\u008b\3\2\2\2\u0377\u0385\7\35\2\2\u0378")
-        buf.write("\u0379\7\16\2\2\u0379\u037c\7%\2\2\u037a\u037c\7\'\2\2")
-        buf.write("\u037b\u0378\3\2\2\2\u037b\u037a\3\2\2\2\u037c\u037d\3")
-        buf.write("\2\2\2\u037d\u0382\7e\2\2\u037e\u037f\7\\\2\2\u037f\u0380")
-        buf.write("\5<\37\2\u0380\u0381\7]\2\2\u0381\u0383\3\2\2\2\u0382")
-        buf.write("\u037e\3\2\2\2\u0382\u0383\3\2\2\2\u0383\u0385\3\2\2\2")
-        buf.write("\u0384\u0377\3\2\2\2\u0384\u037b\3\2\2\2\u0385\u008d\3")
-        buf.write("\2\2\2\u0386\u0387\7\13\2\2\u0387\u038a\7%\2\2\u0388\u038a")
-        buf.write("\7&\2\2\u0389\u0386\3\2\2\2\u0389\u0388\3\2\2\2\u038a")
-        buf.write("\u038b\3\2\2\2\u038b\u0390\7e\2\2\u038c\u038d\7\\\2\2")
-        buf.write("\u038d\u038e\5<\37\2\u038e\u038f\7]\2\2\u038f\u0391\3")
-        buf.write("\2\2\2\u0390\u038c\3\2\2\2\u0390\u0391\3\2\2\2\u0391\u008f")
-        buf.write("\3\2\2\2\u0392\u0394\5\u0092J\2\u0393\u0395\5\u00b6\\")
-        buf.write("\2\u0394\u0393\3\2\2\2\u0394\u0395\3\2\2\2\u0395\u039e")
-        buf.write("\3\2\2\2\u0396\u039b\5\u0098M\2\u0397\u0399\5\u0092J\2")
-        buf.write("\u0398\u039a\5\u00b6\\\2\u0399\u0398\3\2\2\2\u0399\u039a")
-        buf.write("\3\2\2\2\u039a\u039c\3\2\2\2\u039b\u0397\3\2\2\2\u039b")
-        buf.write("\u039c\3\2\2\2\u039c\u039e\3\2\2\2\u039d\u0392\3\2\2\2")
-        buf.write("\u039d\u0396\3\2\2\2\u039e\u0091\3\2\2\2\u039f\u03a0\7")
-        buf.write("\26\2\2\u03a0\u03a1\7%\2\2\u03a1\u03a2\7e\2\2\u03a2\u0093")
-        buf.write("\3\2\2\2\u03a3\u03a4\7-\2\2\u03a4\u03a5\7%\2\2\u03a5\u03a6")
+        buf.write("\u0351\177\3\2\2\2\u0352\u0353\7\4\2\2\u0353\u0354\5z")
+        buf.write(">\2\u0354\u0081\3\2\2\2\u0355\u0356\7X\2\2\u0356\u0357")
+        buf.write("\5z>\2\u0357\u0083\3\2\2\2\u0358\u035f\3\2\2\2\u0359\u035f")
+        buf.write("\5\u008eH\2\u035a\u035f\5\u008aF\2\u035b\u035f\5\u008c")
+        buf.write("G\2\u035c\u035f\5\u0088E\2\u035d\u035f\5\u0086D\2\u035e")
+        buf.write("\u0358\3\2\2\2\u035e\u0359\3\2\2\2\u035e\u035a\3\2\2\2")
+        buf.write("\u035e\u035b\3\2\2\2\u035e\u035c\3\2\2\2\u035e\u035d\3")
+        buf.write("\2\2\2\u035f\u0085\3\2\2\2\u0360\u0361\5\u00bc_\2\u0361")
+        buf.write("\u0087\3\2\2\2\u0362\u0363\t\b\2\2\u0363\u0089\3\2\2\2")
+        buf.write("\u0364\u0376\7\36\2\2\u0365\u0366\7*\2\2\u0366\u0367\5")
+        buf.write(":\36\2\u0367\u0368\7+\2\2\u0368\u0376\3\2\2\2\u0369\u036a")
+        buf.write("\7\17\2\2\u036a\u036d\7%\2\2\u036b\u036d\7(\2\2\u036c")
+        buf.write("\u0369\3\2\2\2\u036c\u036b\3\2\2\2\u036d\u036e\3\2\2\2")
+        buf.write("\u036e\u0373\t\t\2\2\u036f\u0370\7\\\2\2\u0370\u0371\5")
+        buf.write("<\37\2\u0371\u0372\7]\2\2\u0372\u0374\3\2\2\2\u0373\u036f")
+        buf.write("\3\2\2\2\u0373\u0374\3\2\2\2\u0374\u0376\3\2\2\2\u0375")
+        buf.write("\u0364\3\2\2\2\u0375\u0365\3\2\2\2\u0375\u036c\3\2\2\2")
+        buf.write("\u0376\u008b\3\2\2\2\u0377\u0385\7\35\2\2\u0378\u0379")
+        buf.write("\7\16\2\2\u0379\u037c\7%\2\2\u037a\u037c\7\'\2\2\u037b")
+        buf.write("\u0378\3\2\2\2\u037b\u037a\3\2\2\2\u037c\u037d\3\2\2\2")
+        buf.write("\u037d\u0382\7e\2\2\u037e\u037f\7\\\2\2\u037f\u0380\5")
+        buf.write("<\37\2\u0380\u0381\7]\2\2\u0381\u0383\3\2\2\2\u0382\u037e")
+        buf.write("\3\2\2\2\u0382\u0383\3\2\2\2\u0383\u0385\3\2\2\2\u0384")
+        buf.write("\u0377\3\2\2\2\u0384\u037b\3\2\2\2\u0385\u008d\3\2\2\2")
+        buf.write("\u0386\u0387\7\13\2\2\u0387\u038a\7%\2\2\u0388\u038a\7")
+        buf.write("&\2\2\u0389\u0386\3\2\2\2\u0389\u0388\3\2\2\2\u038a\u038b")
+        buf.write("\3\2\2\2\u038b\u0390\7e\2\2\u038c\u038d\7\\\2\2\u038d")
+        buf.write("\u038e\5<\37\2\u038e\u038f\7]\2\2\u038f\u0391\3\2\2\2")
+        buf.write("\u0390\u038c\3\2\2\2\u0390\u0391\3\2\2\2\u0391\u008f\3")
+        buf.write("\2\2\2\u0392\u0394\5\u0092J\2\u0393\u0395\5\u00b6\\\2")
+        buf.write("\u0394\u0393\3\2\2\2\u0394\u0395\3\2\2\2\u0395\u039e\3")
+        buf.write("\2\2\2\u0396\u039b\5\u0098M\2\u0397\u0399\5\u0092J\2\u0398")
+        buf.write("\u039a\5\u00b6\\\2\u0399\u0398\3\2\2\2\u0399\u039a\3\2")
+        buf.write("\2\2\u039a\u039c\3\2\2\2\u039b\u0397\3\2\2\2\u039b\u039c")
+        buf.write("\3\2\2\2\u039c\u039e\3\2\2\2\u039d\u0392\3\2\2\2\u039d")
+        buf.write("\u0396\3\2\2\2\u039e\u0091\3\2\2\2\u039f\u03a0\7\26\2")
+        buf.write("\2\u03a0\u03a1\7%\2\2\u03a1\u03a2\7e\2\2\u03a2\u0093\3")
+        buf.write("\2\2\2\u03a3\u03a4\7-\2\2\u03a4\u03a5\7%\2\2\u03a5\u03a6")
         buf.write("\7e\2\2\u03a6\u0095\3\2\2\2\u03a7\u03a8\7\22\2\2\u03a8")
         buf.write("\u03a9\7%\2\2\u03a9\u03aa\7e\2\2\u03aa\u0097\3\2\2\2\u03ab")
         buf.write("\u03af\5\u009aN\2\u03ac\u03af\5\u009cO\2\u03ad\u03af\5")
@@ -4963,21 +4963,20 @@ class jacParser ( Parser ):
             self.compare()
             self.state = 728
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,70,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
-                    self.state = 724
-                    _la = self._input.LA(1)
-                    if not(_la==jacParser.KW_AND or _la==jacParser.KW_OR):
-                        self._errHandler.recoverInline(self)
-                    else:
-                        self._errHandler.reportMatch(self)
-                        self.consume()
-                    self.state = 725
-                    self.compare() 
+            _la = self._input.LA(1)
+            while _la==jacParser.KW_AND or _la==jacParser.KW_OR:
+                self.state = 724
+                _la = self._input.LA(1)
+                if not(_la==jacParser.KW_AND or _la==jacParser.KW_OR):
+                    self._errHandler.recoverInline(self)
+                else:
+                    self._errHandler.reportMatch(self)
+                    self.consume()
+                self.state = 725
+                self.compare()
                 self.state = 730
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,70,self._ctx)
+                _la = self._input.LA(1)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5360,21 +5359,20 @@ class jacParser ( Parser ):
             self.factor()
             self.state = 770
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,75,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
-                    self.state = 766
-                    _la = self._input.LA(1)
-                    if not(((((_la - 86)) & ~0x3f) == 0 and ((1 << (_la - 86)) & ((1 << (jacParser.STAR_MUL - 86)) | (1 << (jacParser.DIV - 86)) | (1 << (jacParser.MOD - 86)))) != 0)):
-                        self._errHandler.recoverInline(self)
-                    else:
-                        self._errHandler.reportMatch(self)
-                        self.consume()
-                    self.state = 767
-                    self.factor() 
+            _la = self._input.LA(1)
+            while ((((_la - 86)) & ~0x3f) == 0 and ((1 << (_la - 86)) & ((1 << (jacParser.STAR_MUL - 86)) | (1 << (jacParser.DIV - 86)) | (1 << (jacParser.MOD - 86)))) != 0):
+                self.state = 766
+                _la = self._input.LA(1)
+                if not(((((_la - 86)) & ~0x3f) == 0 and ((1 << (_la - 86)) & ((1 << (jacParser.STAR_MUL - 86)) | (1 << (jacParser.DIV - 86)) | (1 << (jacParser.MOD - 86)))) != 0)):
+                    self._errHandler.recoverInline(self)
+                else:
+                    self._errHandler.reportMatch(self)
+                    self.consume()
+                self.state = 767
+                self.factor()
                 self.state = 772
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,75,self._ctx)
+                _la = self._input.LA(1)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5977,8 +5975,8 @@ class jacParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
+        def atom(self):
+            return self.getTypedRuleContext(jacParser.AtomContext,0)
 
 
         def getRuleIndex(self):
@@ -6004,7 +6002,7 @@ class jacParser ( Parser ):
             self.state = 848
             self.match(jacParser.T__1)
             self.state = 849
-            self.expression()
+            self.atom(0)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -6024,8 +6022,8 @@ class jacParser ( Parser ):
         def STAR_MUL(self):
             return self.getToken(jacParser.STAR_MUL, 0)
 
-        def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
+        def atom(self):
+            return self.getTypedRuleContext(jacParser.AtomContext,0)
 
 
         def getRuleIndex(self):
@@ -6051,7 +6049,7 @@ class jacParser ( Parser ):
             self.state = 851
             self.match(jacParser.STAR_MUL)
             self.state = 852
-            self.expression()
+            self.atom(0)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)

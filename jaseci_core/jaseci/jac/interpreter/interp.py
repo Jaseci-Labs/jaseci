@@ -428,12 +428,16 @@ class interp(machine_state):
                     return dest
                 return self.run_assignment(kid[1], dest=dest)
             elif(kid[1].name == "copy_assign"):
+                self._assign_mode = True
                 dest = self.run_connect(kid[0])
+                self._assign_mode = False
                 if(not check_can_write(dest)):
                     return dest
                 return self.run_copy_assign(kid[1], dest=dest)
             elif(kid[1].name == "inc_assign"):
+                self._assign_mode = True
                 dest = self.run_connect(kid[0])
+                self._assign_mode = False
                 if(not check_can_write(dest)):
                     return dest
                 return self.run_inc_assign(kid[1], dest=dest)
@@ -785,20 +789,20 @@ class interp(machine_state):
 
     def run_ref(self, jac_ast):
         """
-        ref: '&' expression;
+        ref: '&' atom;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_expression(kid[1])
+        result = self.run_atom(kid[1])
         if (self.rt_check_type(result.value, element, kid[1])):
             result = jac_value(self, value=result.value.jid)
         return result
 
     def run_deref(self, jac_ast):
         """
-        deref: '*' expression;
+        deref: '*' atom;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_expression(kid[1])
+        result = self.run_atom(kid[1])
         if (is_urn(result.value)):
             result = jac_value(
                 self, value=jeu(result.value.replace('urn', 'jac'), self))
@@ -1573,7 +1577,7 @@ class interp(machine_state):
         m = interp(parent_override=self.parent(), caller=self)
         m.current_node = nd
         arch = self.get_arch_for(nd)
-        m.push_scope(jac_scope(parent=nd,
+        m.push_scope(jac_scope(parent=self,
                                has_obj=nd,
                                action_sets=[arch.get_all_actions()]))
         m._jac_scope.inherit_agent_refs(self._jac_scope)
