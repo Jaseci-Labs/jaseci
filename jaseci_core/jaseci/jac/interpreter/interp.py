@@ -428,12 +428,16 @@ class interp(machine_state):
                     return dest
                 return self.run_assignment(kid[1], dest=dest)
             elif(kid[1].name == "copy_assign"):
+                self._assign_mode = True
                 dest = self.run_connect(kid[0])
+                self._assign_mode = False
                 if(not check_can_write(dest)):
                     return dest
                 return self.run_copy_assign(kid[1], dest=dest)
             elif(kid[1].name == "inc_assign"):
+                self._assign_mode = True
                 dest = self.run_connect(kid[0])
+                self._assign_mode = False
                 if(not check_can_write(dest)):
                     return dest
                 return self.run_inc_assign(kid[1], dest=dest)

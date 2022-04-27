@@ -199,6 +199,13 @@ walker asim_bug_check2 {
     report -->;
 }
 
+walker asim_bug_check3 {
+    for i in -->:
+        i.bug_check_deep['a']['b'][0]+=12;
+    report -->;
+}
+
+
 walker pubinit:anyone {
     root {
         take (--> node::botset) else {
