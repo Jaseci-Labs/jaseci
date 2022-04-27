@@ -1573,7 +1573,7 @@ class interp(machine_state):
         m = interp(parent_override=self.parent(), caller=self)
         m.current_node = nd
         arch = self.get_arch_for(nd)
-        m.push_scope(jac_scope(parent=nd,
+        m.push_scope(jac_scope(parent=self,
                                has_obj=nd,
                                action_sets=[arch.get_all_actions()]))
         m._jac_scope.inherit_agent_refs(self._jac_scope)

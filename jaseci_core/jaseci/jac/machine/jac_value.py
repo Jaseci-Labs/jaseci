@@ -145,6 +145,8 @@ class jac_value():
     def setup_value(self, value):
         if (isinstance(self.ctx, element)):
             self.is_element = self.ctx
+            if(self.parent._assign_mode):
+                self.is_element.save()
             self.ctx = self.ctx.context
         if value is not None:
             return value
@@ -157,9 +159,6 @@ class jac_value():
             return None
 
     def write(self, jac_ast, force=False):
-
-        if(self.is_element):
-            self.is_element.save()
         if(not force and self.is_element and self.name not in self.ctx.keys()
            and not self.parent.parent().
            check_in_arch_context(self.name, self.is_element)):

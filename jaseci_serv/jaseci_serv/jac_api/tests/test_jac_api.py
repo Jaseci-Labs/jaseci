@@ -863,6 +863,4 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format='json')
         ret2 = res.data
-        self.log(ret1)
-        self.log(ret2)
         self.assertEqual(ret1, ret2)

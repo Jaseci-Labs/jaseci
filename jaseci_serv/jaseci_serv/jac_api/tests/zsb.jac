@@ -1,4 +1,4 @@
-node botset {has bug_check, bug_check_deep=[4];}
+node botset {has bug_check, bug_check_deep={'a': {'b': [3]}};}
 
 node bot { has anchor name; }
 node log_chunk { has history; }
@@ -191,8 +191,7 @@ walker init {
 
 walker asim_bug_check1 {
     for i in -->:
-        i.bug_check="test";
-        i.bug_check_deep[0]=12;
+        i.bug_check_deep['a']['b'][0]=12;
     report -->;
 }
 
