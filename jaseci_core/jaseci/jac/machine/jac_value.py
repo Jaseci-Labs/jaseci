@@ -146,6 +146,8 @@ class jac_value():
         if (isinstance(self.ctx, element)):
             self.is_element = self.ctx
             self.ctx = self.ctx.context
+            if(self.parent._assign_mode):
+                self.ctx.save()
         if value is not None:
             return value
         elif(self.ctx is not None and self.name is not None):
