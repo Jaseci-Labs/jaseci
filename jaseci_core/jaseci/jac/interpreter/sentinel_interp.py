@@ -66,12 +66,19 @@ class sentinel_interp(interp):
     def load_architype(self, jac_ast):
         """
         architype:
-            KW_NODE NAME (COLON INT)? attr_block
-            | KW_EDGE NAME attr_block
+            KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
+            | KW_EDGE NAME (COLON NAME)* attr_block
             | KW_GRAPH NAME graph_block;
         """
         kid = self.set_cur_ast(jac_ast)
-        arch = architype(m_id=self._m_id, h=self._h, code_ir=jac_ast)
+        name = kid[1].token_text()
+        kind = kid[0].token_text()
+        arch = architype(m_id=self._m_id, h=self._h, code_ir=jac_ast,
+                         name=name, kind=kind)
+        if(len(kid) > 2 and kid[2].name == "COLON"):
+            for i in kid[2:]:
+                if(i.name == "NAME"):
+                    arch.super_archs.append(i.token_text())
         if(self.arch_ids.has_obj_by_name(arch.name, kind=arch.kind)):
             self.arch_ids.destroy_obj_by_name(arch.name, kind=arch.kind)
         self.arch_ids.add_obj(arch)
@@ -99,7 +106,11 @@ class sentinel_interp(interp):
         """
         walker: KW_WALKER NAME namespaces? walker_block;
         """
-        walk = walker(m_id=self._m_id, h=self._h, code_ir=jac_ast)
+        kid = self.set_cur_ast(jac_ast)
+        name = kid[1].token_text()
+        kind = kid[0].token_text()
+        walk = walker(m_id=self._m_id, h=self._h, code_ir=jac_ast,
+                      name=name, kind=kind)
         if(jac_ast.kid[2].name == 'namespaces'):
             walk.namespaces = self.run_namespaces(jac_ast.kid[2])
         if(self.walker_ids.has_obj_by_name(walk.name)):

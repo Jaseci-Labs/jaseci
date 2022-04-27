@@ -40,7 +40,7 @@ class sentinel_api():
                               snt=snt, mode=mode)
             if(not snt.is_active):
                 return {'response': 'Error in jac code',
-                        'errors': snt.errors,
+                        'errors': snt.errors+snt.runtime_errors,
                         'success': False}
         if(snt.walker_ids.has_obj_by_name(auto_run) and self.active_gph_id):
             nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
@@ -101,17 +101,12 @@ class sentinel_api():
         """
         if (encoded):
             code = b64decode_str(code)
-        if(mode == 'code' or mode == 'default'):
-            snt.register_code(code, code_dir)
-        elif(mode == 'ir'):
-            snt.apply_ir(code)
-            snt.ir_load()
-            snt.propagate_access()
-            if(snt.runtime_errors):
-                snt.is_active = False
-        else:
+        if(mode not in ['code', 'default', 'ir']):
             return {'response': f'Invalid mode to set {snt}',
                     'success': False}
+        snt.register_code(code, dir=code_dir, mode=mode)
+        snt.propagate_access()
+
         if(snt.is_active):
             self.extract_snt_aliases(snt)
             return {'response': f'{snt} registered and active!',

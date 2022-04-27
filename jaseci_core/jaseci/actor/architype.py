@@ -14,6 +14,7 @@ class architype(element, jac_code, architype_interp):
     """Architype class for Jaseci"""
 
     def __init__(self, code_ir=None, *args, **kwargs):
+        self.super_archs = list()
         self.entry_action_ids = id_list(self)
         self.activity_action_ids = id_list(self)
         self.exit_action_ids = id_list(self)
@@ -25,9 +26,17 @@ class architype(element, jac_code, architype_interp):
         """
         Create set of new object instances from architype if needed
         """
+        return self.run_architype(jac_ast=self.get_jac_ast())
+
+    def get_jac_ast(self):
         if(not self._jac_ast):
             self.refresh()
-        return self.run_architype(jac_ast=self._jac_ast)
+        return self._jac_ast
+
+    def get_all_actions(self):
+        return id_list(self, in_list=self.entry_action_ids +
+                       self.activity_action_ids +
+                       self.exit_action_ids)
 
     def destroy(self):
         """

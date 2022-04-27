@@ -41,9 +41,12 @@ class sentinel(element, jac_code, sentinel_interp):
 
     def reset(self):
         """Resets state of sentinel and unregister's code"""
+        self.version = None
+        self.global_vars = {}
+        self.testcases = []
         self.arch_ids.destroy_all()
-        self.load_arch_defaults()
         self.walker_ids.destroy_all()
+        self.load_arch_defaults()
         jac_code.reset(self)
         sentinel_interp.reset(self)
 
@@ -51,12 +54,15 @@ class sentinel(element, jac_code, sentinel_interp):
         super().refresh()
         self.ir_load()
 
-    def register_code(self, text, dir='./'):
+    def register_code(self, text, dir='./', mode='default'):
         """
         Registers a program (set of walkers and architypes) written in Jac
         """
         self.reset()
-        self.register(text, dir)
+        if(mode == 'ir'):
+            self.apply_ir(text)
+        else:
+            self.register(text, dir)
         if(self.is_active):
             self.ir_load()
         return self.is_active
@@ -65,7 +71,6 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         Load walkers and architypes from IR
         """
-
         self.run_start(self._jac_ast)
 
         if(self.runtime_errors):

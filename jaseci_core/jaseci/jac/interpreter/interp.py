@@ -29,10 +29,9 @@ class interp(machine_state):
         kid = self.set_cur_ast(jac_ast)
         if(kid[0].name == 'has_stmt'):
             self.run_has_stmt(kid[0], obj)
-        elif(kid[0].name == 'can_stmt'):
-            if(obj.j_type == 'walker'):
-                self.run_can_stmt(kid[0], obj)
-            #  Can statements in architype handled in architype load
+        elif(kid[0].name == 'can_stmt' and obj.j_type == 'walker'):
+            self.run_can_stmt(kid[0], obj)
+        #  Can statements in architype handled in architype load
 
     def run_has_stmt(self, jac_ast, obj):
         """
@@ -78,7 +77,8 @@ class interp(machine_state):
         if(var_name == '_private'):
             self.rt_error(
                 'Has variable name of `_private` not allowed!', kid[0])
-        elif (var_name not in obj.context.keys()):  # Runs only once
+        # Runs only once for walkers
+        elif (var_name not in obj.context.keys() or obj.j_type != 'walker'):
             jac_value(self, ctx=obj,
                       name=var_name, value=var_val).write(kid[0], force=True)
         if(is_private):
@@ -309,8 +309,8 @@ class interp(machine_state):
                 self.run_expression(kid[5])
                 loops += 1
                 if (self._loop_ctrl and self._loop_ctrl == 'break'):
+                    self._loop_ctrl = None
                     break
-                self._loop_ctrl = None
                 if(loops > self._loop_limit):
                     self.rt_error('Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
@@ -322,13 +322,14 @@ class interp(machine_state):
             if(not isinstance(lst, list)):
                 self.rt_error('Not a list for iteration!', kid[3])
             for i in lst:
+                self._loop_ctrl = None
                 var.value = i
                 var.write(kid[1])
                 self.run_code_block(kid[4])
                 loops += 1
                 if (self._loop_ctrl and self._loop_ctrl == 'break'):
+                    self._loop_ctrl = None
                     break
-                self._loop_ctrl = None
                 if(loops > self._loop_limit):
                     self.rt_error('Hit loop limit, breaking...', kid[0])
                     self._loop_ctrl = 'break'
@@ -340,11 +341,12 @@ class interp(machine_state):
         kid = self.set_cur_ast(jac_ast)
         loops = 0
         while self.run_expression(kid[1]).value:
+            self._loop_ctrl = None
             self.run_code_block(kid[2])
             loops += 1
             if (self._loop_ctrl and self._loop_ctrl == 'break'):
+                self._loop_ctrl = None
                 break
-            self._loop_ctrl = None
             if(loops > self._loop_limit):
                 self.rt_error('Hit loop limit, breaking...', kid[0])
                 self._loop_ctrl = 'break'
@@ -661,7 +663,7 @@ class interp(machine_state):
             | list_val
             | dict_val
             | LPAREN expression RPAREN
-            | DBL_COLON NAME spawn_ctx?
+            | ability_op NAME spawn_ctx?
             | atom atom_trailer+
             | spawn
             | ref
@@ -697,7 +699,7 @@ class interp(machine_state):
                              ctx=self.parent().global_vars, name=name)
         elif(kid[0].name == 'LPAREN'):
             return self.run_expression(kid[1])
-        elif(kid[0].name == 'DBL_COLON'):
+        elif(kid[0].name == 'ability_op'):
             return self.run_atom_trailer(jac_ast, None)
         elif(kid[0].name == 'atom'):
             ret = self.run_atom(kid[0])
@@ -714,7 +716,7 @@ class interp(machine_state):
             | DOT NAME
             | index_slice
             | LPAREN expr_list? RPAREN
-            | DBL_COLON NAME spawn_ctx?;
+            | ability_op NAME spawn_ctx?;
         """
         kid = self.set_cur_ast(jac_ast)
         if(atom_res is None):
@@ -752,15 +754,34 @@ class interp(machine_state):
             else:
                 self.rt_error('Unable to execute ability',
                               kid[0])
-        elif (kid[0].name == 'DBL_COLON'):
+        elif (kid[0].name == 'ability_op'):
+            arch = self.run_ability_op(kid[0], atom_res)
             if(len(kid) > 2):
                 self.run_spawn_ctx(kid[2], atom_res.value)
-            arch = self.get_arch_for(atom_res.value)
             self.call_ability(
                 nd=atom_res.value,
                 name=kid[1].token_text(),
-                act_list=arch.activity_action_ids)
+                act_list=arch.get_all_actions())
             return atom_res
+
+    def run_ability_op(self, jac_ast, atom_res):
+        """
+        ability_op: DBL_COLON | DBL_COLON NAME COLON;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        base_arch = self.get_arch_for(atom_res.value)
+        if(len(kid) > 1):
+            kind = atom_res.value.kind
+            name = kid[1].token_text()
+            if(name in base_arch.super_archs):
+                return self.parent().arch_ids.get_obj_by_name(
+                    name=kid[1].token_text(), kind=kind)
+            else:
+                self.rt_error(
+                    f"{name} is not a super arch of {base_arch.name}")
+                return None
+        else:
+            return base_arch
 
     def run_ref(self, jac_ast):
         """
@@ -1554,7 +1575,7 @@ class interp(machine_state):
         arch = self.get_arch_for(nd)
         m.push_scope(jac_scope(parent=nd,
                                has_obj=nd,
-                               action_sets=[arch.activity_action_ids]))
+                               action_sets=[arch.get_all_actions()]))
         m._jac_scope.inherit_agent_refs(self._jac_scope)
         try:
             m.run_code_block(jac_ir_to_ast(

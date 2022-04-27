@@ -20,6 +20,8 @@ graph dummy {
     }
 }
 
+global hey = "Hey";
+
 walker init {
     has num=4;
     report here.context;

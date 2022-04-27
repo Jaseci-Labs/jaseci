@@ -231,7 +231,9 @@ class ast():
             """Overloaded function that visits every node on exit"""
             top = self.node_stack.pop()
             if(top.name == 'import_module'):
-                self.node_stack[-1].kid += self.run_import_module(top)
+                for i in self.run_import_module(top):
+                    if i not in self.node_stack[-1].kid:
+                        self.node_stack[-1].kid.append(i)
 
         def visitTerminal(self, node):
             """Visits terminals as walker walks, adds ast node"""

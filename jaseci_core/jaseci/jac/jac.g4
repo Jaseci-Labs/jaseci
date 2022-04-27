@@ -24,8 +24,8 @@ global_var:
 	KW_GLOBAL NAME EQ expression (COMMA NAME EQ expression)* SEMI;
 
 architype:
-	KW_NODE NAME (COLON INT)? attr_block
-	| KW_EDGE NAME attr_block
+	KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
+	| KW_EDGE NAME (COLON NAME)* attr_block
 	| KW_GRAPH NAME graph_block;
 
 walker: KW_WALKER NAME namespaces? walker_block;
@@ -181,7 +181,7 @@ atom:
 	| list_val
 	| dict_val
 	| LPAREN expression RPAREN
-	| DBL_COLON NAME spawn_ctx?
+	| ability_op NAME spawn_ctx?
 	| atom atom_trailer+
 	| spawn
 	| ref
@@ -193,7 +193,9 @@ atom_trailer:
 	| DOT NAME
 	| index_slice
 	| LPAREN expr_list? RPAREN
-	| DBL_COLON NAME spawn_ctx?;
+	| ability_op NAME spawn_ctx?;
+
+ability_op: DBL_COLON | DBL_COLON NAME COLON;
 
 ref: '&' expression;
 
