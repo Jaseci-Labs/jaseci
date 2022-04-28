@@ -11,18 +11,18 @@ class graph(node):
 
     def __init__(self, *args, **kwargs):
         self.hd_node_ids = id_list(self)
-        node.__init__(self, name='root', kind='node', *args, **kwargs)
+        node.__init__(self, name="root", kind="node", *args, **kwargs)
 
     def get_all_nodes(self, node_list=None):
         """
         Returns all reachable nodes
         node_list is used internally for recursion
         """
-        if(not isinstance(node_list, list)):
+        if not isinstance(node_list, list):
             node_list = []
 
         # if cycle detected in path
-        if(self in node_list):
+        if self in node_list:
             return node_list
 
         node_list.append(self)
@@ -57,13 +57,13 @@ class graph(node):
         edge_map = [i.jid for i in edge_list]
 
         # Construct the graph string
-        dstr = ''
-        dstr += f'strict digraph {self.name} {{\n'
+        dstr = ""
+        dstr += f"strict digraph {self.name} {{\n"
         for n in node_list:
-            dstr += f'    {n.dot_str(node_map)}'
+            dstr += f"    {n.dot_str(node_map)}"
         for e in edge_list:
-            dstr += f'    {e.dot_str(node_map, edge_map)}'
-        dstr += '}'
+            dstr += f"    {e.dot_str(node_map, edge_map)}"
+        dstr += "}"
         return dstr
 
     def destroy(self):

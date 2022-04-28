@@ -21,7 +21,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install black flake8==3.7.9 isort
-        
+
     - name: Install jaseci_core
       run: |
         pip3 install jaseci_core/

@@ -18,4 +18,4 @@ class op(Enum):
     B_NIT = auto()  # [ref src1, typ, label]
     B_A = auto()  # [label]
     PLUS = auto()  # [dest, src, src]
-    END = auto()   # []
+    END = auto()  # []

@@ -14,17 +14,15 @@ def json_str_to_jsci_dict(input_str, parent_obj=None):
     try:
         obj_fields = json.loads(input_str)
     except ValueError:
-        logger.error(
-            str(f'Invalid jsci_obj string {input_str} on {parent_obj.id.urn}'))
+        logger.error(str(f"Invalid jsci_obj string {input_str} on {parent_obj.id.urn}"))
         obj_fields = {}
     for i in obj_fields.keys():
-        if(str(i).endswith("_ids") and isinstance(obj_fields[i], list)):
-            obj_fields[i] = id_list(
-                parent_obj=parent_obj, in_list=obj_fields[i])
+        if str(i).endswith("_ids") and isinstance(obj_fields[i], list):
+            obj_fields[i] = id_list(parent_obj=parent_obj, in_list=obj_fields[i])
     return obj_fields
 
 
-class mem_hook():
+class mem_hook:
     """
     Set of virtual functions to be used as hooks to allow access to
     the complete set of items across jaseci object types. This class contains
@@ -34,7 +32,8 @@ class mem_hook():
 
     def __init__(self):
         from jaseci.actions.live_actions import get_global_actions
-        self.mem = {'global': {}}
+
+        self.mem = {"global": {}}
         self.global_action_list = get_global_actions(self)
 
     def get_obj(self, caller_id, item_id, override=False):
@@ -42,57 +41,56 @@ class mem_hook():
         Get item from session cache by id, then try store
         TODO: May need to make this an object copy so you cant do mem writes
         """
-        if(item_id in self.mem.keys()):
+        if item_id in self.mem.keys():
             ret = self.mem[item_id]
-            if(override or ret.check_read_access(caller_id)):
+            if override or ret.check_read_access(caller_id):
                 return ret
         else:
             ret = self.get_obj_from_store(item_id)
             self.mem[item_id] = ret
-            if(override or (ret is not None and
-               ret.check_read_access(caller_id))):
+            if override or (ret is not None and ret.check_read_access(caller_id)):
                 return ret
 
     def has_obj(self, item_id):
         """
         Checks for object existance
         """
-        if(item_id in self.mem.keys()):
+        if item_id in self.mem.keys():
             return True
         else:
             return self.has_obj_in_store(item_id)
 
     def save_obj(self, caller_id, item, persist=False):
         """Save item to session cache, then to store"""
-        if(item.check_write_access(caller_id)):
+        if item.check_write_access(caller_id):
             self.mem[item.id] = item
-            if (persist):
+            if persist:
                 self.save_obj_to_store(item)
 
     def destroy_obj(self, caller_id, item, persist=False):
         """Destroy item from session cache then  store"""
-        if(item.check_write_access(caller_id)):
+        if item.check_write_access(caller_id):
             self.mem[item.id] = None
             del self.mem[item.id]
-            if(persist):
+            if persist:
                 self.destroy_obj_from_store(item)
 
     def get_glob(self, name):
         """
         Get global config from session cache by id, then try store
         """
-        if(name in self.mem['global'].keys()):
-            return self.mem['global'][name]
+        if name in self.mem["global"].keys():
+            return self.mem["global"][name]
         else:
             ret = self.get_glob_from_store(name)
-            self.mem['global'][name] = ret
+            self.mem["global"][name] = ret
             return ret
 
     def has_glob(self, name):
         """
         Checks for global config existance
         """
-        if(name in self.mem['global'].keys()):
+        if name in self.mem["global"].keys():
             return True
         else:
             return self.has_glob_in_store(name)
@@ -101,30 +99,30 @@ class mem_hook():
         """
         Util function for returning config if exists otherwise default
         """
-        if(self.has_glob(name)):
+        if self.has_glob(name):
             return self.get_glob(name)
         else:
             return default
 
     def save_glob(self, name, value, persist=True):
         """Save global config to session cache, then to store"""
-        self.mem['global'][name] = value
-        if (persist):
+        self.mem["global"][name] = value
+        if persist:
             self.save_glob_to_store(name, value)
 
     def list_glob(self):
         """Lists all configs present"""
         glob_list = self.list_glob_from_store()
-        if(glob_list):
+        if glob_list:
             return glob_list
         else:
-            return list(self.mem['global'].keys())
+            return list(self.mem["global"].keys())
 
     def destroy_glob(self, name, persist=True):
         """Destroy global config from session cache then store"""
-        self.mem['global'][name] = None
-        del self.mem['global'][name]
-        if(persist):
+        self.mem["global"][name] = None
+        del self.mem["global"][name]
+        if persist:
             self.destroy_glob_from_store(name)
 
     def clear_mem_cache(self):
@@ -179,7 +177,7 @@ class mem_hook():
         dist = {}
         for i in self.mem.keys():
             t = type(self.mem[i])
-            if(t in dist.keys()):
+            if t in dist.keys():
                 dist[t] += 1
             else:
                 dist[t] = 1

@@ -1,5 +1,4 @@
-prog0 = \
-    """
+prog0 = """
     node testnode:0 {
         has a, b, c;
         can std.log::a,b::>c with exit;
@@ -35,8 +34,7 @@ prog0 = \
     }
     """
 
-prog1 = \
-    """
+prog1 = """
     node testnode:0 {
         has a, b, c;
         can std.log::a,b::>c with exit;
@@ -221,8 +219,7 @@ prog1 = \
     }
     """
 
-edgey = \
-    """
+edgey = """
     node testnode;
 
     edge apple;
@@ -237,8 +234,7 @@ edgey = \
     }
     """
 
-edgey2 = \
-    """
+edgey2 = """
     node testnode;
 
     edge apple;
@@ -255,8 +251,7 @@ edgey2 = \
     }
     """
 
-edgey2b = \
-    """
+edgey2b = """
     node testnode;
 
     edge apple;
@@ -274,8 +269,7 @@ edgey2b = \
     }
     """
 
-edgey2c = \
-    """
+edgey2c = """
     node testnode;
 
     edge apple;
@@ -293,8 +287,7 @@ edgey2c = \
     }
     """
 
-edgey3 = \
-    """
+edgey3 = """
     node testnode;
 
     edge apple;
@@ -316,8 +309,7 @@ edgey3 = \
     """
 
 
-edgey4 = \
-    """
+edgey4 = """
     node testnode;
 
     edge apple;
@@ -335,8 +327,7 @@ edgey4 = \
     }
     """
 
-edgey5 = \
-    """
+edgey5 = """
     node testnode;
 
     edge apple;
@@ -355,8 +346,7 @@ edgey5 = \
     }
     """
 
-edgey6 = \
-    """
+edgey6 = """
     node testnode;
 
     edge apple;
@@ -372,8 +362,7 @@ edgey6 = \
     }
     """
 
-edgey7 = \
-    """
+edgey7 = """
     node testnode;
 
     edge apple;
@@ -394,8 +383,7 @@ edgey7 = \
     }
     """
 
-edge_access = \
-    """
+edge_access = """
     node testnode;
 
     edge apple {
@@ -419,8 +407,7 @@ edge_access = \
     }
     """
 
-has_assign = \
-    """
+has_assign = """
     node testnode {
         has a=8;
     }
@@ -437,8 +424,7 @@ has_assign = \
     """
 
 
-set_get_global = \
-    """
+set_get_global = """
     walker setter {
         root {
             std.set_global('globby', 59);
@@ -454,8 +440,7 @@ set_get_global = \
     }
     """
 
-set_get_global_dict = \
-    """
+set_get_global_dict = """
     walker setter {
         root {
             std.set_global('globby',
@@ -477,8 +462,7 @@ set_get_global_dict = \
     }
     """
 
-version_label = \
-    """
+version_label = """
     version: "alpha-1.0"
 
     walker setter {
@@ -496,8 +480,7 @@ version_label = \
     }
     """
 
-sharable = \
-    """
+sharable = """
     node life {
     }
 
@@ -512,8 +495,7 @@ sharable = \
     }
     """
 
-basic = \
-    """
+basic = """
     node life {
     }
 
@@ -527,8 +509,7 @@ basic = \
     }
     """
 
-visibility_builtins = \
-    """
+visibility_builtins = """
     node testnode {
         has yo, mama;
     }
@@ -558,8 +539,7 @@ visibility_builtins = \
     }
     """
 
-spawn_ctx_edge_node = \
-    """
+spawn_ctx_edge_node = """
     node person: has name, age, birthday, profession;
     edge friend: has meeting_place;
     edge family: has kind;
@@ -577,8 +557,7 @@ spawn_ctx_edge_node = \
     }
     """
 
-filter_ctx_edge_node = \
-    """
+filter_ctx_edge_node = """
     node person: has name, age, birthday, profession;
     edge friend: has meeting_place;
     edge family: has kind;
@@ -594,8 +573,7 @@ filter_ctx_edge_node = \
     }
     """
 
-null_handleing = \
-    """
+null_handleing = """
     node person: has name, age, birthday, profession;
 
     walker init {
@@ -615,8 +593,7 @@ null_handleing = \
     }
     """
 
-bool_type_convert = \
-    """
+bool_type_convert = """
     node person: has name;
 
     walker init {
@@ -630,8 +607,7 @@ bool_type_convert = \
     }
     """
 
-typecasts = \
-    """
+typecasts = """
     walker init {
         a=5.6;
         report (a+2);
@@ -646,8 +622,7 @@ typecasts = \
     }
     """
 
-typecasts_error = \
-    """
+typecasts_error = """
     walker init {
         a=5.6;
         report (a+2);
@@ -662,8 +637,7 @@ typecasts_error = \
     }
     """
 
-filter_on_context = \
-    """
+filter_on_context = """
     node testnode {
         has yo, mama;
     }
@@ -693,8 +667,7 @@ filter_on_context = \
     }
     """
 
-string_manipulation = \
-    """
+string_manipulation = """
     walker init {
         a=" tEsting me  ";
         report a[4];
@@ -731,8 +704,7 @@ string_manipulation = \
     }
     """
 
-list_manipulation = \
-    """
+list_manipulation = """
     walker init {
         a = [4];
         b=a.l::copy;
@@ -761,8 +733,7 @@ list_manipulation = \
     }
     """
 
-dict_manipulation = \
-    """
+dict_manipulation = """
     walker init {
         a = {'four':4, 'five':5};
         b=a.d::copy;
@@ -781,24 +752,21 @@ dict_manipulation = \
     }
     """
 
-string_join = \
-    """
+string_join = """
     walker init {
         a=['test', 'me', 'now'];
         report '_'.str::join(a);
     }
     """
 
-sub_list = \
-    """
+sub_list = """
     walker init {
         a=[1,2,3,4,5,6,7,8,9];
         report a[4:7];
     }
     """
 
-destroy_and_misc = \
-    """
+destroy_and_misc = """
     node person: has name, age, birthday, profession;
     edge friend: has meeting_place;
     edge family: has kind;
@@ -833,8 +801,7 @@ destroy_and_misc = \
     }
     """
 
-arbitrary_assign_on_element = \
-    """
+arbitrary_assign_on_element = """
     node person: has name, age, birthday, profession;
     walker init {
         some = spawn here --> node::person;
@@ -843,8 +810,7 @@ arbitrary_assign_on_element = \
     }
     """
 
-try_else_stmts = \
-    """
+try_else_stmts = """
     walker init {
         a=null;
         try {a=2/0;}
@@ -859,8 +825,7 @@ try_else_stmts = \
     }
     """
 
-node_edge_same_name = \
-    """
+node_edge_same_name = """
     node person: has name, age, birthday, profession;
     edge person: has meeting_place;
 
@@ -873,8 +838,7 @@ node_edge_same_name = \
     }
     """
 
-testcases = \
-    """
+testcases = """
     node testnode {
         has yo, mama;
     }
@@ -935,8 +899,7 @@ testcases = \
     """
 
 
-testcase_asserts = \
-    """
+testcase_asserts = """
     node testnode {
         has yo, mama;
     }
@@ -988,8 +951,7 @@ testcase_asserts = \
     }
     """
 
-report_not_to_jacset = \
-    """
+report_not_to_jacset = """
     node testnode {
         has yo, mama;
     }
@@ -1000,8 +962,7 @@ report_not_to_jacset = \
     }
     """
 
-walker_spawn_unwrap_check = \
-    """
+walker_spawn_unwrap_check = """
     node testnode {
         has yo, mama;
     }
@@ -1016,8 +977,7 @@ walker_spawn_unwrap_check = \
     }
     """
 
-std_get_report = \
-    """
+std_get_report = """
     walker init {
        report 3;
        report 5;
@@ -1028,8 +988,7 @@ std_get_report = \
     }
     """
 
-func_with_array_index = \
-    """
+func_with_array_index = """
     walker init {
        report 3;
        report 5;
@@ -1037,8 +996,7 @@ func_with_array_index = \
     }
     """
 
-rt_error_test1 = \
-    """
+rt_error_test1 = """
     walker init {
        spawn here --> node::generic;
        report -->[2];
@@ -1046,8 +1004,7 @@ rt_error_test1 = \
     """
 
 
-root_type_nodes = \
-    """
+root_type_nodes = """
     walker init {
        spawn here -[generic]-> node::root;
        report here.details['name'];
@@ -1055,23 +1012,20 @@ root_type_nodes = \
     }
     """
 
-invalid_key_error = \
-    """
+invalid_key_error = """
     walker init {
        report here.context['adfas'];
     }
     """
 
-auto_cast = \
-    """
+auto_cast = """
     walker init {
         report 1==1.0;
         report 1.0==1;
     }
     """
 
-no_error_on_dict_key_assign = \
-    """
+no_error_on_dict_key_assign = """
     walker init {
         a={};
         a['b']=4;
@@ -1079,14 +1033,12 @@ no_error_on_dict_key_assign = \
     }
     """
 
-report_status = \
-    """
+report_status = """
     walker init {report.status = 302; report "hello";}
     """
 
 
-graph_in_graph = \
-    """
+graph_in_graph = """
     graph one {
         has anchor graph_root;
         spawn {
@@ -1115,8 +1067,7 @@ graph_in_graph = \
     """
 
 
-min_max_on_list = \
-    """
+min_max_on_list = """
     walker init {
         a = [45, 3, 531.0, 3, 6, 531.1];
 
@@ -1127,8 +1078,7 @@ min_max_on_list = \
     }
     """
 
-edge_bug = \
-    """
+edge_bug = """
     node plain;
 
     edge g;
@@ -1151,8 +1101,7 @@ edge_bug = \
     }
     """
 
-rand_choice = \
-    """
+rand_choice = """
     walker init {
         a = [45, 3, 531.0, 3, 6, 531.1];
 

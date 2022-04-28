@@ -200,7 +200,7 @@ walker testWalker{
         take [some filter] else {
 
             // some additional logic if edge of filter not found
-        } 
+        }
     }
 }
 
@@ -249,4 +249,3 @@ walker myWalker{
 ```
 
 ![Diagram of a road map](/img/tutorial/intermediate/take-5.png)
-

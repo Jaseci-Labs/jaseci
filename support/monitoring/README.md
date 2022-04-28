@@ -24,12 +24,12 @@ You can install pods in the same namespaces as your workload namespaces or you c
 First we will add chart repository reference in our local
 
 ```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 ```
 
 #### Step 2 ####
 
-Then we will install the promethues service using below command. 
+Then we will install the promethues service using below command.
 
 If you are installing in your local kubernetes , run below command :
 
@@ -42,7 +42,7 @@ If you are using Cloud , For example here we use AWS :
 ```console
  helm install prometheus prometheus-community/prometheus \
     --set alertmanager.persistentVolume.storageClass="gp2" \
-    --set server.persistentVolume.storageClass="gp2" 
+    --set server.persistentVolume.storageClass="gp2"
 ```
 
 After this run the Prometheus server can be accessed via port 80 on the following DNS name from within your cluster:
@@ -52,10 +52,10 @@ Here, in place of \<namespace\> put the name of namespace where your service lie
 
 #### Step 3 ####
 
-Run below command to check all the pods has been successfully created. This will create 5 pods 
+Run below command to check all the pods has been successfully created. This will create 5 pods
 
 ```console
-kubectl get all 
+kubectl get all
 ```
 
 
@@ -77,7 +77,7 @@ promethues-server - It is the main promethues server pod which is responsible fo
 Use Port-forward to test if promethues is running in your local browser to check if all setup works and you are able to get the promethues running.
 
 ```console
-kubectl port-forward deploy/prometheus-server 8080:9090 
+kubectl port-forward deploy/prometheus-server 8080:9090
 ```
 
 
@@ -90,7 +90,7 @@ kubectl port-forward deploy/prometheus-server 8080:9090
 
 In the cloned repository folder , go to grafana/grafana.yaml file and update the URL to the promethues service URL as we noted doen in step 2 above, i.e prometheus-server.\<namespace\>.svc.cluster.local
 
-Please note that in the previous example, we did not create any specific namespace for prometheus so the \<namespace\> here (and later) should be replaced with **default** if you follow the tutorial completely. 
+Please note that in the previous example, we did not create any specific namespace for prometheus so the \<namespace\> here (and later) should be replaced with **default** if you follow the tutorial completely.
 
 This is required to connect Grafana to collect data from promethues .
 
@@ -125,18 +125,18 @@ helm install grafana grafana/grafana \
     --set persistence.enabled=true \
     --set adminPassword='<YOUR PASSWORD>' \
     --values helmcharts/grafana/grafana/grafana.yaml \
-    --set service.type=LoadBalancer 
+    --set service.type=LoadBalancer
 ```
 
 
-    
+
 
 #### Step 3 ####
 
 Run the following command to check if Grafana is deployed properly and you can able to see running grafana pods:
 
 ```console
-kubectl get all 
+kubectl get all
 ```
 
 #### Step 4 ####
@@ -146,7 +146,7 @@ Now, try to run grafana in your browser:
 If you running in your local kubernetes, run below :
 
 ```console
-kubectl port-forward deploy/grafana 80:80 
+kubectl port-forward deploy/grafana 80:80
 ```
 
 
@@ -156,7 +156,7 @@ if you have used AWS Cloud, and with Load Balancer as in step 2 , you will get a
 Run below code to get the External-IP for Grafana
 
 ```console
-kubectl get svc grafana 
+kubectl get svc grafana
 ```
 
 #### Step 5 ####

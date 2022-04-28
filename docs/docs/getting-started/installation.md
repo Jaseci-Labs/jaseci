@@ -20,7 +20,7 @@ import TabItem from '@theme/TabItem';
 To run commands for Jaseci we need a terminal that accepts bash arguments. We recommend using the Ubuntu terminal that comes as the default with WSL.
 
 1. Check if WSL is installed by running the following the Windows powershell terminal :
- 
+
  ```python
  wsl -l -v
  ```
@@ -44,7 +44,7 @@ pip3 --version
 ```
 If these packagesa are installed they will return a version number. Move to step x if a version number is present.
 
-6.Install Python3 and pip3 by running the following: 
+6.Install Python3 and pip3 by running the following:
 ```
 sudo apt update
 sudo apt install python3-dev python3-pip
@@ -76,7 +76,7 @@ pip3 --version
 ```
 If these packagesa are installed they will return a version number. Move to step x if a version number is present.
 
-6.Install Python3 and pip3 by running the following: 
+6.Install Python3 and pip3 by running the following:
 ```
 brew update
 brew install python
@@ -110,7 +110,7 @@ pip3 --version
 ```
 If these packagesa are installed they will return a version number. Move to step x if a version number is present.
 
-6.Install Python3 and pip3 by running the following: 
+6.Install Python3 and pip3 by running the following:
 ```
 sudo apt update
 sudo apt install python3-dev python3-pip
@@ -132,6 +132,3 @@ Once it shows a list of options and commands, you're installation is complete.
 </TabItem>
 
 </Tabs>
-
-
-

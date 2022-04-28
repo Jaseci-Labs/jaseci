@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Control Structures
 
-> Statements which allow you to control the execution flow of the program depending on a condition. 
+> Statements which allow you to control the execution flow of the program depending on a condition.
 > Currently the JAC language supports:
 > - IF - ELSE - ELIF
 > - Switch Case (not yet supported)
@@ -27,7 +27,7 @@ else: std.out("A is not equal to B");
 // or in code block form
 
 if(a == b){
-    std.out("A equals B");  
+    std.out("A equals B");
 }else{
     std.out("A is not equal to B");
 }
@@ -68,7 +68,7 @@ while(i>0) {
 ### For Loop
 
 ```jac
-// prototype 
+// prototype
 for (initialization statement) to (test_expression) by (update_statement){
     code to execute
 }

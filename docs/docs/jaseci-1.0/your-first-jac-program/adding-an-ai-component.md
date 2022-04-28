@@ -228,4 +228,3 @@ if __name__ == '__main__':
     print(japi.delete_sentinel(snt_id))
     print(japi.delete_graph(gph_id))
 ```
-
