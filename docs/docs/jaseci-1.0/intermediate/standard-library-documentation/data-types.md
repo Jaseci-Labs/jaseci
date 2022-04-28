@@ -19,7 +19,7 @@ a = []
 // initializing a list with data
 a = [1, 2, 3, 4];
 
-// modifying a specific index in a list 
+// modifying a specific index in a list
 a[0] = [1,1];
 
 // multi-dimensional lists access
@@ -49,11 +49,10 @@ lst.destroy(1)  // removed b
 // initializing an empty dictionary
 a = {}
 
-// initializing a dictionary with data 
+// initializing a dictionary with data
 a =  {"three": 3, "four": 4};
 
 // accessing objects in a dictionary
 a = {"one": {"inner": 44}, "two": 2};
 std.out(a['one']); // prints {"inner": 44} to the console
 ```
-

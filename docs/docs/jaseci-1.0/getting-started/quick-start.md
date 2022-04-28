@@ -8,11 +8,11 @@ Hi! The First thought comes to our mind after knowing that we have to learn a ne
 Let's achieve the answer together.
 
 # Jaseci is a computational model and a language in one unit
-In simple words, **Jaseci** provides a platform where you can implement the **SOTA** AI modules without taking the pain of training or hosting them. 
+In simple words, **Jaseci** provides a platform where you can implement the **SOTA** AI modules without taking the pain of training or hosting them.
 
 
 ## Starting With Jaseci
-1. Getting **Jac** in your local system: 
+1. Getting **Jac** in your local system:
    1. Pypi Installation : pip install jaseci-core (gets you the latest jac version)
    2. getting from the github :
       1.  git clone https://github.com/Jaseci-Labs/jaseci.git
@@ -20,12 +20,12 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
       3.   bash install.sh
 2. Starting With **jsctl** :
    1. once you execute  **jsctl** command in terminal, jaseci command line shell it activated.
-        
+
             jsctl
             Starting Jaseci Shell...
-            jaseci > 
+            jaseci >
    2.  type `help`
-        
+
             jaseci > help
 
             Documented commands (type help <topic>):
@@ -36,10 +36,10 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
 
             Undocumented commands:
             ======================
-            exit  help  quit 
-            
+            exit  help  quit
+
     3. You'll get all available commands  in **Jaseci**. For getting details on command you can type :
-         
+
             jaseci > graph --help
             Usage: graph [OPTIONS] COMMAND [ARGS]...
 
@@ -56,8 +56,8 @@ In simple words, **Jaseci** provides a platform where you can implement the **SO
             list    Provide complete list of all graph objects (list of root node...
             node    Group of `graph node` commands
 ## Coding the Jac File
-1. Before jumping into the code let's know about the building blocks of jac programming. Everything in **Jac** is about graph, therefore, **Nodes** and **Edges** are the main constituient of jac programming, now to traverse through graph **Jac** has a superman known as **Walker**. 
-   
+1. Before jumping into the code let's know about the building blocks of jac programming. Everything in **Jac** is about graph, therefore, **Nodes** and **Edges** are the main constituient of jac programming, now to traverse through graph **Jac** has a superman known as **Walker**.
+
 2. **Hello World** :
 Let's Start with our first Jac program.
 
@@ -105,7 +105,7 @@ root {
 }
 ```
 
-Executing the above code: 
+Executing the above code:
 ```
 jaseci > graph create
 {
@@ -139,16 +139,16 @@ edge dad;
 edge married;
 
 walker init { //declaring the walker
-    
+
     // the root block contains the code related to root node
     root { // declaring root block
-        spawn here --> node::man; // spawn a reserverd keyword to spwan or instantiate anything, a new node of type man, in this case. 
+        spawn here --> node::man; // spawn a reserverd keyword to spwan or instantiate anything, a new node of type man, in this case.
         spawn here --> node::woman; // spwaning a node of type `woman` from root `node`
         --> node::man <-[married]-> --> node::woman; // this line does 2 operations, firstly, take the edge from root node to node man, then create a bi-directional edge of type married from mam to woman
         take -->; // this line instructs to take the edge available, i.e. from man to woman
     }
 
-    // the woman block contains connection code with child 
+    // the woman block contains connection code with child
     woman {
         son = spawn here <-[mom]- node::person; // creates node of type person from current location i.e. from woman node and assign it to son
         son -[dad]-> <-[married]->;  // this line can also be written as :- son -[dad]-> node::man; , which mean create a edge from son to man.
@@ -163,7 +163,7 @@ The below graph can help us understand the jac code.
 
 ![Graph Family](/img/tutorial/getting_started/fam.jpg)
 
- 4. Hopefully we're starting to understand the nuances of jac. To get a better understanding let's take another example.  
+ 4. Hopefully we're starting to understand the nuances of jac. To get a better understanding let's take another example.
 ### code:
 
 ```jac
@@ -177,7 +177,7 @@ node person{
         std.out(byear," from ", visitor.info);
     }
     can reset{
-        ::set_back;  
+        ::set_back;
         std.out("resetting birth year to 2000 : ", here.context);
     }
     can set_back : byear = "2000-01-01";
@@ -193,7 +193,7 @@ walker init {
     root{
         ::setup;
         take --> ;
-    }   
+    }
     person{
         spawn here walker::setter;
         here::reset(name="Joe");
@@ -222,37 +222,37 @@ Lets get into details of the code :
 node person{ // declaring a node block person
     has name; // node person has a name
     has byear; // it also has birthyear as byear
-    can set_year with setter entry{ // node block has a can block that will only be 
-    
+    can set_year with setter entry{ // node block has a can block that will only be
+
     executed with setter entry
-        byear = visitor.year; //visitor is the object's active instance, wecan access 
+        byear = visitor.year; //visitor is the object's active instance, wecan access
         // the properties of object by calling "visitor.<property>"
     }
-    
+
     can print_out with exit{ //person node has another can block that will be executed with exit of the object instance
-        
-        std.out(byear," from ", visitor.info); //visitor.info provides the entiire details about the object call 
+
+        std.out(byear," from ", visitor.info); //visitor.info provides the entiire details about the object call
     }
     can reset{ // a rest block to test the activity other than setter
-        ::set_back;  // this statement is used to call the setback block 
+        ::set_back;  // this statement is used to call the setback block
         std.out("resetting birth year to 2000 : ", here.context); // here is another built-in property that can be used to access the data  of the current instance
     }
     can set_back : byear = "2000-01-01"; // if a block is a one-liner, it can also be declared with " : ", as declared in current line
 }
 
 walker init { //declaring the init walker start the execution, in jac walker can also have properties
-    has year=std.time_now(); // declaring year as a property 
+    has year=std.time_now(); // declaring year as a property
     can setup{ // has a setup block
         person1 = spawn here --> node::person(name="Ashish"); //spwaning a new node
         std.out("node id : ",person1); // prinit the variable gives us the node id
-        person1::reset; // call the reset block for current node 
+        person1::reset; // call the reset block for current node
     }
     root{ //the root block i excuted initially
         ::setup; // call the setup block
-        take --> ; // take the availalbe edge 
-    }   
+        take --> ; // take the availalbe edge
+    }
     person{ // the person block is executed next
-        spawn here walker::setter; // we're spawnning the setter walker on person1 node 
+        spawn here walker::setter; // we're spawnning the setter walker on person1 node
         here::reset(name="Joe");// from current position reset the name to Joe
     }
 }
@@ -264,7 +264,7 @@ walker setter{ // the setter walker which has a attribute which is used to set f
 
 From the above example we're able to understand how data and functions can be made available in node and walker, how we can use them.
 
-# Appendix 
+# Appendix
 ## Interface Parameters
 - config delete (name: str, do check: bool = True)
 - config exists (name: str)
@@ -331,40 +331,40 @@ From the above example we're able to understand how data and functions can be ma
 - walker spawn (name: str, snt: jaseci.actor.sentinel.sentinel = None)
 - walker unspawn (wlk: jaseci.actor.walker.walker)
 - walker summon (self, key: str, wlk: jaseci.actor.walker.walker, nd: jaseci.graph.node.node, ctx: dict = )
-        
-## Lexer Rules  
+
+## Lexer Rules
 
 - TYP_STRING: 'str';
 - TYP_INT : 'int';
-- TYP_FLOAT : 'float'; 
-- TYP_LIST: 'list '; 
-- TYP_DICT: 'dict '; 
-- TYP_BOOL: 'bool'; 
-- KW_TYPE: 'type '; 
-- KW_GRAPH : 'graph '; 
-- KW_STRICT: 'strict '; 
+- TYP_FLOAT : 'float';
+- TYP_LIST: 'list ';
+- TYP_DICT: 'dict ';
+- TYP_BOOL: 'bool';
+- KW_TYPE: 'type ';
+- KW_GRAPH : 'graph ';
+- KW_STRICT: 'strict ';
 - KW_DIGRAPH : 'digraph ';
 - KW_SUBGRAPH: 'subgraph ';
-- KW_NODE : 'node '; 
-- KW_IGNORE : 'ignore '; 
-- KW_TAKE : 'take'; 
-- KW_SPAWN: 'spawn'; 
-- KW_WITH: 'with '; 
-- KW_ENTRY: 'entry'; 
-- KW_EXIT: 'exit' ; 
-- KW_LENGTH: 'length '; 
-- KW_KEYS: 'keys '; 
-- KW_CONTEXT : 'context '; 
+- KW_NODE : 'node ';
+- KW_IGNORE : 'ignore ';
+- KW_TAKE : 'take';
+- KW_SPAWN: 'spawn';
+- KW_WITH: 'with ';
+- KW_ENTRY: 'entry';
+- KW_EXIT: 'exit' ;
+- KW_LENGTH: 'length ';
+- KW_KEYS: 'keys ';
+- KW_CONTEXT : 'context ';
 - KW_INFO: 'info';
-- KW_DETAILS:	'details'; 
+- KW_DETAILS:	'details';
 - KW_ACTIVITY :  'activity';
 - COLON : ' : ' ;
 - DBL_ COLON : ' :: ' ;
 - COLON_OUT:	'::>';
 - LBRACE : '{';
 - RBRACE : '}' ;
-- KW_EDGE : 'edge '; 
-- KW_WALKER:	'walker'; 
+- KW_EDGE : 'edge ';
+- KW_WALKER:	'walker';
 - SEMI :  ' ; ' ;
 - EQ : '= ' ;
 - PEQ : '+= ' ;
@@ -375,30 +375,30 @@ From the above example we're able to understand how data and functions can be ma
 - KW_AND : 'and ' I '&& ' ;
 - KW_OR:	'or' I  ' I I ' ;
 - KW_ IF:	' if ' ;
-- KW_ELIF: 'elif ' ; 
-- KW_ELSE : 'else'; 
+- KW_ELIF: 'elif ' ;
+- KW_ELSE : 'else';
 - KW_FOR : 'for';
 - KW_TO : 'to';
 - KW_BY : 'by ' ;
 - KW_WHILE :  'while ';
 - KW_CONTINUE:	'continue ';
-- KW_BREAK: 'break '; 
+- KW_BREAK: 'break ';
 - KW_DISENGAGE: 'disengage';
-- KW_SKIP: 'skip' ; 
-- KW_REPORT: 'report'; 
-- KW_DESTROY : 'destroy '; 
+- KW_SKIP: 'skip' ;
+- KW_REPORT: 'report';
+- KW_DESTROY : 'destroy ';
 - DOT: '.';
 - NOT: '!' I	'not' ;
 - EE: '== ' ;
 - LT : '< ' ;
 - GT: '> ' ;
 - LTE : '<= ' ;
-- GTE: '>= ' ; 
-- NE:	' !-' ; 
+- GTE: '>= ' ;
+- NE:	' !-' ;
 - KW_IN : 'in';
 - KW_ANCHOR : 'anchor';
-- KW_HAS : 'has'; 
-- KW_PRIVATE: 'private '; 
+- KW_HAS : 'has';
+- KW_PRIVATE: 'private ';
 - COMMA: ',';
 - KW_CAN: 'can ';
 - PLUS: '+' ;

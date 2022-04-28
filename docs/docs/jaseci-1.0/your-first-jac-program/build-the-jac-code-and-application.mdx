@@ -59,7 +59,7 @@ response = requests.post(url_user_create, json=payload)
 
 print(response.json())
 ```
- 
+
 </TabItem>
 <TabItem value="curl" label="cURL">
 
@@ -104,7 +104,7 @@ auth_token = auth['token']
 
 print(auth)
 ```
-    
+
 </TabItem>
 <TabItem value="curl" label="cURL">
 
@@ -170,7 +170,7 @@ print(graph)
 <TabItem value="jaseci-cli" label="Jaseci CLI (jsctl)">
 
     jsctl create graph -name 'Test graph'
-    
+
 </TabItem>
 
 <TabItem value="curl" label="cURL">
@@ -225,7 +225,7 @@ print(sentinel)
 <TabItem value="jaseci-cli" label="Jaseci CLI (jsctl)">
 
     jsctl create sentinel -name 'Test sentinel'
-    
+
 </TabItem>
 
 <TabItem value="curl" label="cURL">
@@ -279,7 +279,7 @@ print(response.json())
 <TabItem value="jaseci-cli" label="Jaseci CLI (jsctl)">
 
     jsctl set jac -snt <sentinel id> -code social.jac -encoded 0
-    
+
 </TabItem>
 
 <TabItem value="curl" label="cURL">
@@ -334,7 +334,7 @@ for name in names:
     member_nodes.append(member_node)
     print(f' - {member_node["context"]["name"]}')
 ```
-    
+
 </TabItem>
 
 <TabItem value="jaseci-cli" label="Jaseci CLI (jsctl)">
@@ -503,23 +503,23 @@ OUTPUT
 
 ```
 ADDING FRIENDS
-Jake's friends: 
+Jake's friends:
  - Amy
  - Gina
 
-Amy's friends: 
+Amy's friends:
  - Charles
  - Jake
 
-Charles's friends: 
+Charles's friends:
  - Rosa
  - Amy
 
-Rosa's friends: 
+Rosa's friends:
  - Gina
  - Charles
 
-Gina's friends: 
+Gina's friends:
  - Jake
  - Rosa
 ```

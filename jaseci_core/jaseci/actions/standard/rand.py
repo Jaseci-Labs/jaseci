@@ -1,14 +1,17 @@
 """Built in actions for Jaseci"""
 import random
+
 # import faker
 from datetime import datetime
 from datetime import timedelta
 from jaseci.actions.live_actions import jaseci_action
 
-lorem_words = ("adipisci aliquam amet consectetur dolor dolore dolorem eius "
-               "est et incidunt ipsum labore magnam modi neque non numquam "
-               "porro quaerat qui quia quisquam sed sit tempora ut velit "
-               "voluptatem").split()
+lorem_words = (
+    "adipisci aliquam amet consectetur dolor dolore dolorem eius "
+    "est et incidunt ipsum labore magnam modi neque non numquam "
+    "porro quaerat qui quia quisquam sed sit tempora ut velit "
+    "voluptatem"
+).split()
 
 
 @jaseci_action()
@@ -31,15 +34,15 @@ def choice(lst: list):
 
 
 @jaseci_action()
-def sentence(min_lenth: int = 4, max_length: int = 10, sep: str = ' '):
+def sentence(min_lenth: int = 4, max_length: int = 10, sep: str = " "):
     """Get a random sentence"""
     n = random.randint(min_lenth, max_length)
     s = sep.join(word() for _ in range(n))
-    return s[0].upper() + s[1:] + '.'
+    return s[0].upper() + s[1:] + "."
 
 
 @jaseci_action()
-def paragraph(min_lenth: int = 4, max_length: int = 8, sep: str = ' '):
+def paragraph(min_lenth: int = 4, max_length: int = 8, sep: str = " "):
     """Get a random paragraph"""
     n = random.randint(min_lenth, max_length)
     p = sep.join(sentence() for _ in range(n))
@@ -47,7 +50,7 @@ def paragraph(min_lenth: int = 4, max_length: int = 8, sep: str = ' '):
 
 
 @jaseci_action()
-def text(min_lenth: int = 3, max_length: int = 6, sep: str = '\n\n'):
+def text(min_lenth: int = 3, max_length: int = 6, sep: str = "\n\n"):
     """Get a random text"""
     n = random.randint(min_lenth, max_length)
     t = sep.join(paragraph() for _ in range(n))
@@ -65,6 +68,9 @@ def time(start_date: str, end_date: str):
     """Provide a random datetime between range"""
     start = datetime.fromisoformat(start_date)
     end = datetime.fromisoformat(end_date)
-    return (start + timedelta(
-        seconds=random.randint(0, int((end - start).total_seconds())),
-    )).isoformat()
+    return (
+        start
+        + timedelta(
+            seconds=random.randint(0, int((end - start).total_seconds())),
+        )
+    ).isoformat()

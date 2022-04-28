@@ -21,7 +21,7 @@ data:
      git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci;
      mkdir /docusaurus/jaseci-docs;
      cp -r /jaseci/docs/* /docusaurus/jaseci-docs/;
-     WEBSITE_NAME=jaseci-docs /init.sh 
+     WEBSITE_NAME=jaseci-docs /init.sh
 ---
 apiVersion: apps/v1
 kind: Deployment

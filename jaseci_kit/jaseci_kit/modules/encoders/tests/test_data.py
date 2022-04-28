@@ -128,7 +128,7 @@ test_cos_sim_request = {
         -0.011217450723052025,
         -0.13945266604423523,
         -0.30015814304351807,
-        -0.44322675466537476
+        -0.44322675466537476,
     ],
     "vec_b": [
         0.37329187989234924,
@@ -258,14 +258,11 @@ test_cos_sim_request = {
         0.07697200030088425,
         -0.19424647092819214,
         -0.40326178073883057,
-        -0.5231634974479675
-
-    ]
+        -0.5231634974479675,
+    ],
 }
 
-test_context_emb_request = {
-    "contexts": ["Share my location with Hillary's sister"]
-}
+test_context_emb_request = {"contexts": ["Share my location with Hillary's sister"]}
 
 test_context_emb_response = {
     "context_embed": [
@@ -396,13 +393,11 @@ test_context_emb_response = {
         -0.011217450723052025,
         -0.13945266604423523,
         -0.30015814304351807,
-        -0.44322675466537476
+        -0.44322675466537476,
     ]
 }
 
-test_candidate_emb_request = {
-    "candidates": ["sharecurrentlocation"]
-}
+test_candidate_emb_request = {"candidates": ["sharecurrentlocation"]}
 
 test_candidate_emb_response = {
     "candidate_embed": [
@@ -534,7 +529,7 @@ test_candidate_emb_response = {
             0.07697200030088425,
             -0.19424647092819214,
             -0.40326178073883057,
-            -0.5231634974479675
+            -0.5231634974479675,
         ]
     ]
 }
@@ -545,17 +540,17 @@ test_train_request = {
             "i want to learn more about credit score",
             "can you tell me more about credit score",
             "how do improve my credit score",
-            "how is my credit score calculated"
+            "how is my credit score calculated",
         ],
         "fair lending question": [
             "i want to learn more about redlining",
             "what can you tell me about fair lending",
-            "tell me about racial gap in homeownership"
+            "tell me about racial gap in homeownership",
         ],
         "choosing a lender": [
             "what kind of questions should I ask my lender",
             "how to find the best lender for me",
-            "help me choose a lender"
+            "help me choose a lender",
         ],
         "show home of interests": [
             "show me different homes in different cities. thank you",
@@ -567,13 +562,13 @@ test_train_request = {
             "can you provide a few houses for me to look at?",
             "based on my history and preferences, can you recommend a few homes for me?",
             "can you suggest three homes for me to take a look",
-            "Could you show me some homes that may be of interest to me?"
+            "Could you show me some homes that may be of interest to me?",
         ],
         "tell a joke": [
             "hey can you tell me a joke",
             "can you make me laugh?",
             "do you know of any jokes",
-            "i want to laugh, tell me a joke please"
+            "i want to laugh, tell me a joke please",
         ],
         "greeting": [
             "hello",
@@ -584,14 +579,14 @@ test_train_request = {
             "whats up",
             "what's going on",
             "what's good",
-            "how goes it"
+            "how goes it",
         ],
         "need links": [
             "can you give me some links on that",
             "i want to learn more on that, can you give me some links",
             "interesting, can you give me some additional resources for me read up on",
             "hook me up with some links please",
-            "alright send me some links to read up on"
+            "alright send me some links to read up on",
         ],
         "ask about home price": [
             "I am looking to buy a house, how is the housing market these days?",
@@ -634,7 +629,7 @@ test_train_request = {
             "What about price range in cities like california?",
             "what's the average range for a mid-size family home here? how much over are houses going?",
             "What is the median price of a two bedroom home in and around the Boston area in Massachusetts?",
-            "Im considering purchasing a house in this area and Im wondering what the prices are in this area?"
+            "Im considering purchasing a house in this area and Im wondering what the prices are in this area?",
         ],
         "purchase ready advice": [
             "Can you give me some tips on how to effectively save up for buying a home?",
@@ -661,7 +656,7 @@ test_train_request = {
             "What are the steps of home buying process and what should I be prepared for?",
             "Is there a spreadsheet for saving and budgetting i can access?",
             "How can I start saving up to buy a house?",
-            "How much money should I have saved in order to purchase a home ?"
+            "How much money should I have saved in order to purchase a home ?",
         ],
         "loan approval probability": [
             "What are my chances of getting an approval for a loan ?",
@@ -689,7 +684,7 @@ test_train_request = {
             "How likely is it that I will get approved for a mortgage loan?",
             "What are the qualifications of being approved for the best loan?",
             "Can you tell me how likely it will be for me to get approved for a home loan?",
-            "So what are my chances of getting approved for a loan?"
+            "So what are my chances of getting approved for a loan?",
         ],
         "agreement": [
             "yes let's do it",
@@ -711,7 +706,7 @@ test_train_request = {
             "you read my mind",
             "i was just going to say that",
             "good idea",
-            "good call"
+            "good call",
         ],
         "disagreement": [
             "i don't think so",
@@ -729,11 +724,11 @@ test_train_request = {
             "we can come back to this later",
             "let's revisit this later",
             "bad idea",
-            "bad call"
-        ]
+            "bad call",
+        ],
     },
     "from_scratch": False,
-    "training_parameters": {"num_train_epochs": 5}
+    "training_parameters": {"num_train_epochs": 5},
 }
 test_infer_request = {
     "contexts": ["Share my location with Hillary's sister"],
@@ -747,10 +742,10 @@ test_infer_request = {
         "requestride",
         "getdirections",
         "shareeta",
-        "getweather"
+        "getweather",
     ],
     "context_type": "text",
-    "candidate_type": "text"
+    "candidate_type": "text",
 }
 
 train_config_default = {
@@ -771,7 +766,7 @@ train_config_default = {
     "gpu": 0,
     "basepath": "logoutput",
     "seed": 12345,
-    "device": "cuda"
+    "device": "cuda",
 }
 
 
@@ -780,5 +775,5 @@ model_config_default = {
     "model_name": "prajjwal1/bert-tiny",
     "model_save_path": "modeloutput",
     "loss_function": "mse",
-    "loss_type": "dot"
+    "loss_type": "dot",
 }

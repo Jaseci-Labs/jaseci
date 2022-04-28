@@ -16,58 +16,64 @@ class test_ll_wall(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
         self.user = get_user_model().objects.create_user(
-            'JSCITfdfdEST_test@jaseci.com',
-            'password'
+            "JSCITfdfdEST_test@jaseci.com", "password"
         )
         self.client = APIClient()
         self.client.force_authenticate(self.user)
-        ll_loc = os.path.dirname(__file__) + '/ll_wall.jac'
-        ll_file = base64.b64encode(
-            open(ll_loc).read().encode()).decode()
-        payload = {'op': 'sentinel_register',
-                   'name': 'Something', 'code': ll_file, 'encoded': True}
+        ll_loc = os.path.dirname(__file__) + "/ll_wall.jac"
+        ll_file = base64.b64encode(open(ll_loc).read().encode()).decode()
+        payload = {
+            "op": "sentinel_register",
+            "name": "Something",
+            "code": ll_file,
+            "encoded": True,
+        }
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        payload = {'op': 'global_sentinel_set'}
+        payload = {"op": "global_sentinel_set"}
         res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
         self.user = get_user_model().objects.create_user(
-            'J2SCITfdfdEST_test@jaseci.com',
-            'password'
+            "J2SCITfdfdEST_test@jaseci.com", "password"
         )
         self.client = APIClient()
         self.client.force_authenticate(self.user)
         self.master = self.user.get_master()
-        payload = {'op': 'sentinel_active_global'}
+        payload = {"op": "sentinel_active_global"}
         res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format='json')
-        payload = {'op': 'graph_create'}
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "graph_create"}
         self.snt = self.master._h.get_obj(
-            self.master.jid, uuid.UUID(res.data['sentinel']['jid']))
+            self.master.jid, uuid.UUID(res.data["sentinel"]["jid"])
+        )
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.gph = self.master._h.get_obj(
-            self.master.jid, uuid.UUID(res.data['jid']))
-        lact.load_local_actions('jaseci_serv/jac_api/tests/infer.py')
+        self.gph = self.master._h.get_obj(self.master.jid, uuid.UUID(res.data["jid"]))
+        lact.load_local_actions("jaseci_serv/jac_api/tests/infer.py")
 
     def tearDown(self):
         super().tearDown()
 
     def run_walker(self, w_name, ctx, prime=None):
         """Helper to make calls to execute walkers"""
-        if(not prime):
-            payload = {'snt': self.snt.id.urn, 'name': w_name,
-                       'nd': self.gph.id.urn, 'ctx': ctx}
+        if not prime:
+            payload = {
+                "snt": self.snt.id.urn,
+                "name": w_name,
+                "nd": self.gph.id.urn,
+                "ctx": ctx,
+            }
         else:
-            payload = {'snt': self.snt.id.urn, 'name': w_name,
-                       'nd': prime, 'ctx': ctx}
-        res = self.client.post(
-            reverse('jac_api:walker_run'), payload, format='json')
+            payload = {"snt": self.snt.id.urn, "name": w_name, "nd": prime, "ctx": ctx}
+        res = self.client.post(reverse("jac_api:walker_run"), payload, format="json")
         return res.data
 
     def graph_node_set(self, nd_id, ctx):
         """Helper to set node context"""
-        payload = {'snt': self.snt.id.urn, 'nd': nd_id, 'ctx': ctx}
+        payload = {"snt": self.snt.id.urn, "nd": nd_id, "ctx": ctx}
         res = self.client.post(
-            reverse('jac_api:graph_node_set'), payload, format='json')
+            reverse("jac_api:graph_node_set"), payload, format="json"
+        )
         return res.data
 
     def test_ll_wall_get_gen_day(self):
@@ -75,33 +81,53 @@ class test_ll_wall(TestCaseHelper, TestCase):
         num_workettes = 112
 
         # generate random day workettes
-        self.run_walker('gen_day_workettes', {
-                        "date": "2021-07-12", "num_workettes": num_workettes})
+        self.run_walker(
+            "gen_day_workettes", {"date": "2021-07-12", "num_workettes": num_workettes}
+        )
 
-        data = self.run_walker('get_latest_day', {'show_report': 1})['report']
+        data = self.run_walker("get_latest_day", {"show_report": 1})["report"]
 
-        day_id = data[0][1]['jid']
-        day_date = data[0][1]['context']['day']
-        day_note = data[0][1]['context']['note']
+        day_id = data[0][1]["jid"]
+        day_date = data[0][1]["context"]["day"]
+        day_note = data[0][1]["context"]["note"]
 
-        data = self.run_walker('get_workettes_deep', {
-                               'show_report': 1}, prime=day_id)['report']
+        data = self.run_walker("get_workettes_deep", {"show_report": 1}, prime=day_id)[
+            "report"
+        ]
         self.assertEqual(len(data[0]), num_workettes)
 
         # certify day, should return day highlights
-        data = self.run_walker('set_day_highlight', {"highlight_items": [
-            {"id": data[0][0], "type": "Most proud accomplishment",
-                "color": "#464ff6", "icon": "0x1F3C6"},
-            {"id": data[0][1], "type": "Made You Happiest",
-             "color": "#6e30dd", "icon": "0x1F604"},
-            {"id": data[0][2], "type": "Required the Most Work",
-             "color": "#b926df", "icon": "0x1F4AA"}
-        ]}, prime=day_id)['report']
-        self.assertEqual(data[0][0][0][0][0]['jid'], day_id)
+        data = self.run_walker(
+            "set_day_highlight",
+            {
+                "highlight_items": [
+                    {
+                        "id": data[0][0],
+                        "type": "Most proud accomplishment",
+                        "color": "#464ff6",
+                        "icon": "0x1F3C6",
+                    },
+                    {
+                        "id": data[0][1],
+                        "type": "Made You Happiest",
+                        "color": "#6e30dd",
+                        "icon": "0x1F604",
+                    },
+                    {
+                        "id": data[0][2],
+                        "type": "Required the Most Work",
+                        "color": "#b926df",
+                        "icon": "0x1F4AA",
+                    },
+                ]
+            },
+            prime=day_id,
+        )["report"]
+        self.assertEqual(data[0][0][0][0][0]["jid"], day_id)
         self.assertEqual(data[0][0][0][0][1], day_date)
         self.assertEqual(data[0][0][0][1], day_note)
 
         # data[0][0][0][2] is the highlight items
         self.assertEqual(len(data[0][0][0][2]), 3)
 
-        data = self.run_walker('get_gen_day', {"date": "2021-07-13"})
+        data = self.run_walker("get_gen_day", {"date": "2021-07-13"})

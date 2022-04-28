@@ -1,5 +1,4 @@
-rand_std = \
-    """
+rand_std = """
     walker init
     {
         report rand.word();
@@ -9,8 +8,7 @@ rand_std = \
     }
     """
 
-file_io = \
-    """
+file_io = """
     walker init {
         fn="fileiotest.txt";
         a = {'a': 5};
@@ -25,8 +23,7 @@ file_io = \
     }
     """
 
-std_used_in_node_has_var = \
-    """
+std_used_in_node_has_var = """
     node testnode {has a=rand.sentence();}
 
     walker init

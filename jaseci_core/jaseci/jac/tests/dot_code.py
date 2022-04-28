@@ -1,5 +1,4 @@
-dot_node = \
-    """
+dot_node = """
     node test_node {has name;}
     graph test_graph {
         has anchor graph_root;
@@ -18,8 +17,7 @@ dot_node = \
     }
     """
 
-dot_node_no_dot_id = \
-    """
+dot_node_no_dot_id = """
     node test_node {has name;}
     graph test_graph {
         has anchor graph_root;
@@ -38,8 +36,7 @@ dot_node_no_dot_id = \
     }
     """
 
-spawn_graph_node = \
-    """
+spawn_graph_node = """
     node test_node {has name;}
     graph test_graph {
         has anchor graph_root;
@@ -59,8 +56,7 @@ spawn_graph_node = \
     }
     """
 
-dot_node_multi_stmts = \
-    """
+dot_node_multi_stmts = """
     node test_node {
         has name, date;
     }
@@ -84,8 +80,7 @@ dot_node_multi_stmts = \
     }
     """
 
-dot_edge = \
-    """
+dot_edge = """
     node test_node {
         has name;
     }
@@ -120,8 +115,7 @@ dot_edge = \
     }
     """
 
-dot_edge_with_attrs = \
-    """
+dot_edge_with_attrs = """
     node test_node {
         has name;
     }
@@ -157,8 +151,7 @@ dot_edge_with_attrs = \
     }
     """
 
-dot_edge_with_attrs_vars = \
-    """
+dot_edge_with_attrs_vars = """
     node test_node {
         has name;
     }
@@ -195,8 +188,7 @@ dot_edge_with_attrs_vars = \
     }
     """
 
-dot_graph = \
-    """
+dot_graph = """
     node year {
         has color;
     }
@@ -232,8 +224,7 @@ dot_graph = \
     }
     """
 
-dot_quoted_string = \
-    """
+dot_quoted_string = """
     node test_node {
         has name;
     }

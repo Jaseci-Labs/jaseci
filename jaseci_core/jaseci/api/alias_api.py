@@ -4,7 +4,7 @@ Alias api as a mixin
 from jaseci.api.interface import interface
 
 
-class alias_api():
+class alias_api:
     """Alias APIs for creating nicknames for UUIDs and other long strings
 
     The alias set of APIs provide a set of `alias' management functions for
@@ -23,7 +23,7 @@ class alias_api():
     def __init__(self):
         self.alias_map = {}
 
-    @interface.private_api(cli_args=['name'])
+    @interface.private_api(cli_args=["name"])
     def alias_register(self, name: str, value: str):
         """Create string to string alias mapping that caller can use.
 
@@ -41,7 +41,7 @@ class alias_api():
         """
         self.alias_map[name] = value
         self.save()
-        return {'response': f"Alias from '{name}' to '{value}' set!"}
+        return {"response": f"Alias from '{name}' to '{value}' set!"}
 
     @interface.private_api()
     def alias_list(self):
@@ -60,7 +60,7 @@ class alias_api():
         """
         return self.alias_map
 
-    @interface.private_api(cli_args=['name'])
+    @interface.private_api(cli_args=["name"])
     def alias_delete(self, name: str):
         """Delete an active string to string alias mapping.
 
@@ -76,14 +76,12 @@ class alias_api():
                 'response': Message of success/failure to remove alias
                 'success': True/False based on delete actually happening
         """
-        if(name in self.alias_map.keys()):
+        if name in self.alias_map.keys():
             del self.alias_map[name]
             self.save()
-            return {'response': f'Alias {name} successfully deleted',
-                    'success': True}
+            return {"response": f"Alias {name} successfully deleted", "success": True}
         else:
-            return {'response': f'Alias {name} not present',
-                    'success': False}
+            return {"response": f"Alias {name} not present", "success": False}
 
     @interface.private_api()
     def alias_clear(self):
@@ -101,13 +99,13 @@ class alias_api():
         n = len(self.alias_map.keys())
         self.alias_map = {}
         self.save()
-        return {'response': f'All {n} aliases deleted', 'removed': n}
+        return {"response": f"All {n} aliases deleted", "removed": n}
 
     def extract_snt_aliases(self, snt):
         """
         Extract and register all aliases from sentinel
         """
-        self.alias_register(f'sentinel:{snt.name}', snt.jid)
+        self.alias_register(f"sentinel:{snt.name}", snt.jid)
         for i in snt.walker_ids.obj_list():
             self.extract_wlk_aliases(snt, i)
         for i in snt.arch_ids.obj_list():
@@ -118,19 +116,19 @@ class alias_api():
         """
         Extract and register all aliases from walker
         """
-        self.alias_register(f'{snt.name}:walker:{wlk.name}', wlk.jid)
+        self.alias_register(f"{snt.name}:walker:{wlk.name}", wlk.jid)
 
     def extract_arch_aliases(self, snt, arch):
         """
         Extract and register all aliases from architype
         """
-        self.alias_register(f'{snt.name}:architype:{arch.name}', arch.jid)
+        self.alias_register(f"{snt.name}:architype:{arch.name}", arch.jid)
 
     def remove_snt_aliases(self, snt):
         """
         Extract and register all aliases from sentinel
         """
-        self.alias_delete(f'sentinel:{snt.name}')
+        self.alias_delete(f"sentinel:{snt.name}")
         for i in snt.walker_ids.obj_list():
             self.remove_wlk_aliases(snt, i)
         for i in snt.arch_ids.obj_list():
@@ -141,10 +139,10 @@ class alias_api():
         """
         Extract and register all aliases from walker
         """
-        self.alias_delete(f'{snt.name}:walker:{wlk.name}')
+        self.alias_delete(f"{snt.name}:walker:{wlk.name}")
 
     def remove_arch_aliases(self, snt, arch):
         """
         Extract and register all aliases from architype
         """
-        self.alias_delete(f'{snt.name}:architype:{arch.name}')
+        self.alias_delete(f"{snt.name}:architype:{arch.name}")

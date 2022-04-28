@@ -1,4 +1,5 @@
 import torch
+
 # import numpy as np
 # from datasets import load_metric
 # transformers library
@@ -19,9 +20,11 @@ def set_device():
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if device != "cuda":
-        print("WARNING: For this notebook to perform best, "
-              "if possible, in the menu under `Runtime` -> "
-              "`Change runtime type.`  select `GPU` ")
+        print(
+            "WARNING: For this notebook to perform best, "
+            "if possible, in the menu under `Runtime` -> "
+            "`Change runtime type.`  select `GPU` "
+        )
     else:
         print("GPU is enabled!")
     return device
@@ -50,6 +53,7 @@ def align_labels_with_tokens(labels, word_ids):
                 label += 1
             new_labels.append(label)
     return new_labels
+
 
 # tokenize_and_align_labels #######
 
@@ -88,11 +92,11 @@ def labelname(labels_name):
 
 def load_trained_model(model_path):
     global tokenizer, model
-    print(f'loading model from ** {model_path} ** started..')
+    print(f"loading model from ** {model_path} ** started..")
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     print("Tokenizer loaded successfull!")
     model = AutoModelForTokenClassification.from_pretrained(model_path)
-    print(f'loading model from ** {model_path} ** completed!')
+    print(f"loading model from ** {model_path} ** completed!")
     return tokenizer, model
 
     # print(f'loading model from ** {model_path} ** started..')
@@ -113,9 +117,7 @@ def save_trained_model(model, tokenizer, model_path):
     # model.save_model(model_path)
 
 
-def train_model(tokenized_datasets, args,
-                curr_model_path, id2label,
-                label2id, path):
+def train_model(tokenized_datasets, args, curr_model_path, id2label, label2id, path):
     """
     initialised model training and start training model
     """
@@ -124,8 +126,8 @@ def train_model(tokenized_datasets, args,
         curr_model_path,
         id2label=id2label,
         label2id=label2id,
-        ignore_mismatched_sizes=True
-        )
+        ignore_mismatched_sizes=True,
+    )
 
     # Setup huggingface trainer
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
@@ -136,7 +138,7 @@ def train_model(tokenized_datasets, args,
         eval_dataset=tokenized_datasets.shuffle().select(range(1)),
         data_collator=data_collator,
         # compute_metrics=compute_metrics,
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
     )
     print("************ model training is started ****************** ")
     trainer.train()

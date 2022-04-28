@@ -9,7 +9,7 @@ Let's test out the JAC language by running a simple programs which utilizes cont
 ```jac
 
 walker init {
-    x = 34 -30; 
+    x = 34 -30;
     y = "Hello";
     z = 3.45;
 
@@ -18,7 +18,7 @@ Jaseci uses a uique paradigm based around graphs, to traverse these graphs we us
 
 ```jac
 walker init {
-    x = 34 -30; 
+    x = 34 -30;
     y = "Hello";
     z = 3.45;
 
@@ -35,7 +35,7 @@ Note that after every line there is a semicolon .
 
 ```jac
 walker init {
-    x = 34 -30; 
+    x = 34 -30;
     y = "Hello";
     z = 3.45;
 
@@ -51,7 +51,7 @@ std.out() prints any variable passed in to the function on to the terminal.
 
 ```jac
 walker init {
-    x = 34 -30; 
+    x = 34 -30;
     y = "Hello";
     z = 3.45;
 
@@ -60,7 +60,7 @@ if(z==3.45 or y=="Bye"){
     x =x+1;
     y=y+" World" ;
 }
-    
+
 std.out(x);
 for i=0 to i<3 by i+=1:
     std.out(x-1,'-',y);

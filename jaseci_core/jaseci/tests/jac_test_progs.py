@@ -1,5 +1,4 @@
-bug_check1 = \
-    """
+bug_check1 = """
     node state {
         has cand_intents = [];
         # Collect possible intents from a given conversation state
@@ -39,16 +38,14 @@ bug_check1 = \
     """
 
 
-action_load_std_lib = \
-    """
+action_load_std_lib = """
     walker aload {
         report std.actload_local('jaseci/tests/infer.py');
     }
     """
 
 
-globals = \
-    """
+globals = """
     global a = "testing";
 
     walker init {
@@ -58,8 +55,7 @@ globals = \
     }
     """
 
-net_root_std_lib = \
-    """
+net_root_std_lib = """
     walker init {
         root {
             report [here.info['jid'], net.root().info['jid']];
@@ -73,8 +69,7 @@ net_root_std_lib = \
     """
 
 
-or_stmt = \
-    """
+or_stmt = """
     walker init {
         x = 3.4;
         y = "Hello";
@@ -83,8 +78,7 @@ or_stmt = \
     }
     """
 
-nd_equals_error_correct_line = \
-    """
+nd_equals_error_correct_line = """
     node plain{ has name="joe", noname;
     can stuff with entry {std.out(name + noname); }}
 
@@ -100,8 +94,7 @@ nd_equals_error_correct_line = \
     }
     """
 
-strange_ability_bug = \
-    """
+strange_ability_bug = """
     node plain {
         can show with entry {
             report "Showing";
@@ -119,8 +112,7 @@ strange_ability_bug = \
     }
     """
 
-node_inheritance = \
-    """
+node_inheritance = """
     node plain {
         has a=5, b=7, c=7, d=8;
         can x with entry {
@@ -165,8 +157,7 @@ node_inheritance = \
     }
     """
 
-node_inheritance_chain_check = \
-    """
+node_inheritance_chain_check = """
     node plain {
         has a=5, b=7, c=7, d=8;
         can x with entry {
@@ -211,8 +202,7 @@ node_inheritance_chain_check = \
     }
     """
 
-global_reregistering = \
-    """
+global_reregistering = """
     node plain;
 
     global a = '556';
@@ -228,8 +218,7 @@ global_reregistering = \
     }
     """
 
-vector_cos_sim_check = \
-    """
+vector_cos_sim_check = """
     node plain;
 
     walker init {
@@ -239,8 +228,7 @@ vector_cos_sim_check = \
     }
     """
 
-multi_breaks = \
-    """
+multi_breaks = """
     node plain {
         has anchor val=0;
         can breakdance {
@@ -269,8 +257,7 @@ multi_breaks = \
     }
     """
 
-reffy_deref_check = \
-    """
+reffy_deref_check = """
     node plain{has expected_answer;}
 
     walker init {

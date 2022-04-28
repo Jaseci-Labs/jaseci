@@ -19,7 +19,7 @@ from jaseci.utils.mem_hook import json_str_to_jsci_dict
 from jaseci.element.obj_mixins import hookable
 
 
-__version__ = '1.0.0'
+__version__ = "1.0.0"
 
 
 class element(hookable):
@@ -44,18 +44,27 @@ class element(hookable):
     json serializable types
     """
 
-    def __init__(self, m_id, h, parent_id=None, name='basic',
-                 kind='generic', auto_save=True, *args, **kwargs):
+    def __init__(
+        self,
+        m_id,
+        h,
+        parent_id=None,
+        name="basic",
+        kind="generic",
+        auto_save=True,
+        *args,
+        **kwargs,
+    ):
         self.name = name
         self.kind = kind
         self.jid = uuid.uuid4().urn
         self.j_parent = parent_id.urn if parent_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
         self.j_type = type(self).__name__
-        if(self.is_master()):
+        if self.is_master():
             m_id = self.jid
-        hookable.__init__(self, h, m_id,  *args, **kwargs)
-        if(auto_save):
+        hookable.__init__(self, h, m_id, *args, **kwargs)
+        if auto_save:
             self.save()
 
     @property
@@ -68,13 +77,13 @@ class element(hookable):
 
     @property
     def parent_id(self) -> uuid.UUID:
-        if (not self.j_parent):
+        if not self.j_parent:
             return None
         return uuid.UUID(self.j_parent)
 
     @parent_id.setter
     def parent_id(self, obj: uuid.UUID):
-        if (not obj):
+        if not obj:
             self.j_parent = None
         else:
             self.j_parent = obj.urn
@@ -90,14 +99,14 @@ class element(hookable):
     def is_master(self, super_check=False, silent=True):
         """Check if self is a master"""
         ret = True
-        if('master' not in self.j_type):
+        if "master" not in self.j_type:
             ret = False
-            if(not silent):
-                logger.error(f'{self} is not master')
-        if(super_check and 'super' not in self.j_type):
+            if not silent:
+                logger.error(f"{self} is not master")
+        if super_check and "super" not in self.j_type:
             ret = False
-            if(not silent):
-                logger.error(f'{self} does not have super master status')
+            if not silent:
+                logger.error(f"{self} does not have super master status")
         return ret
 
     def duplicate(self, persist_dup: bool = False):
@@ -109,9 +118,8 @@ class element(hookable):
         dup = type(self)(m_id=self._m_id, h=self._h, persist=persist_dup)
         id_save = dup.id
         for i in dup.__dict__.keys():
-            if(type(dup.__dict__[i]) == id_list):
-                setattr(dup, i, id_list(
-                    parent_obj=dup, in_list=self.__dict__[i]))
+            if type(dup.__dict__[i]) == id_list:
+                setattr(dup, i, id_list(parent_obj=dup, in_list=self.__dict__[i]))
             else:
                 setattr(dup, i, self.__dict__[i])
         dup.id = id_save
@@ -123,12 +131,12 @@ class element(hookable):
         """
         Duplicates elements by creating copy with new id
         """
-        if(self.j_type != obj.j_type):
+        if self.j_type != obj.j_type:
             return False
         for i in vars(self).keys():
-            if (not i.startswith('_') and not callable(getattr(self, i))):
-                if(i != 'jid' and i != 'j_timestamp'):
-                    if (getattr(self, i) != getattr(obj, i)):
+            if not i.startswith("_") and not callable(getattr(self, i)):
+                if i != "jid" and i != "j_timestamp":
+                    if getattr(self, i) != getattr(obj, i):
                         return False
         return True
 
@@ -141,7 +149,7 @@ class element(hookable):
         obj_fields = []
         element_fields = dir(element(m_id=self._m_id, h=mem_hook()))
         for i in vars(self).keys():
-            if not i.startswith('_') and i not in element_fields:
+            if not i.startswith("_") and i not in element_fields:
                 obj_fields.append(i)
         obj_dict = {}
         for i in obj_fields:
@@ -153,22 +161,32 @@ class element(hookable):
         Serialize Jaseci object
         """
         jdict = {}
-        key_fields = ['name', 'kind', 'jid', 'j_type', 'context',
-                      'anchor', 'j_timestamp', 'version']
+        key_fields = [
+            "name",
+            "kind",
+            "jid",
+            "j_type",
+            "context",
+            "anchor",
+            "j_timestamp",
+            "version",
+        ]
         for i in vars(self).keys():
-            if not i.startswith('_'):
-                if(not detailed and i not in key_fields):
+            if not i.startswith("_"):
+                if not detailed and i not in key_fields:
                     continue
                 jdict[i] = copy.copy(vars(self)[i])
-                if(not detailed and i == 'context'):
-                    if('_private' in jdict[i].keys()):
-                        for j in jdict[i]['_private']:
+                if not detailed and i == "context":
+                    if "_private" in jdict[i].keys():
+                        for j in jdict[i]["_private"]:
                             del jdict[i][j]
-                if (deep > 0 and isinstance(jdict[i], id_list)):
+                if deep > 0 and isinstance(jdict[i], id_list):
                     for j in range(len(jdict[i])):
                         jdict[i][j] = copy.copy(
-                            self._h.get_obj(self._m_id, uuid.UUID(
-                                jdict[i][j])).serialize(deep - 1))
+                            self._h.get_obj(
+                                self._m_id, uuid.UUID(jdict[i][j])
+                            ).serialize(deep - 1)
+                        )
         return jdict
 
     def json(self, deep=0, detailed=False):
@@ -177,8 +195,7 @@ class element(hookable):
 
         deep indicates number of levels to unwind uuids
         """
-        return json.dumps(self.serialize(deep, detailed=detailed),
-                          indent=4)
+        return json.dumps(self.serialize(deep, detailed=detailed), indent=4)
 
     def json_load(self, blob):
         """Loads self from json blob"""
@@ -192,20 +209,19 @@ class element(hookable):
 
     def get_deep_obj_list(self, objs=None):
         """Recursively get all contained Jaseci objects and return id_list"""
-        if(objs is None):
+        if objs is None:
             objs = []
         objs.append(self)
         for i in self.__dict__.keys():
-            if(str(i).endswith("_ids") and
-               isinstance(self.__dict__[i], id_list)):
+            if str(i).endswith("_ids") and isinstance(self.__dict__[i], id_list):
                 for j in self.__dict__[i].obj_list():
-                    if(j not in objs):
+                    if j not in objs:
                         j.get_deep_obj_list(objs=objs)
         return objs
 
     def propagate_access(self, set_access=None):
         """Propagate permission through id_lists hierarchy"""
-        if(set_access is None):
+        if set_access is None:
             set_access = self.j_access
         for i in self.get_deep_obj_list():
             i.j_access = set_access
@@ -220,7 +236,7 @@ class element(hookable):
         """
         String representation is of the form type:name:kind
         """
-        return self.j_type + ':' + self.kind + ':' + self.name + ':' + self.jid
+        return self.j_type + ":" + self.kind + ":" + self.name + ":" + self.jid
 
     def __repr__(self):
         return self.__str__()

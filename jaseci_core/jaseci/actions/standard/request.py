@@ -16,11 +16,11 @@ def get(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.get(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -35,11 +35,11 @@ def post(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.post(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -54,11 +54,11 @@ def put(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.put(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -73,11 +73,11 @@ def delete(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.delete(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -92,11 +92,11 @@ def head(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.head(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -111,11 +111,11 @@ def options(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.options(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -136,8 +136,8 @@ def multipart_base64(url: str, files: list, header: dict):
         return {
             "status_code": 400,
             "error": "Please include base64 using this format "
-                     "{\"field\":val,\"name\":val,\"base64\":val} "
-                     "using parameter `file` and `files` for array file"
+            '{"field":val,"name":val,"base64":val} '
+            "using parameter `file` and `files` for array file",
         }
 
     formData = []
@@ -147,21 +147,16 @@ def multipart_base64(url: str, files: list, header: dict):
             formData.append(
                 (
                     f["field"] if "field" in f else "file",
-                    (
-                        f["name"],
-                        BytesIO(
-                            b64decode(f["base64"])
-                        )
-                    )
+                    (f["name"], BytesIO(b64decode(f["base64"]))),
                 )
             )
 
     res = requests.post(url, files=formData, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 

@@ -1,5 +1,5 @@
 
-# What is JSKit ? 
+# What is JSKit ?
 JSKit contains the SOTA models that's made readily available for production usage. Let's look at the available models and there usage.
 
 ## 1. Encoders
@@ -8,7 +8,7 @@ Encoders module can be used for intent classification, it contains the Bi-Encode
 ### 1.1. List of API's  available
  #### **cosine_sim** - to calculate the similarity between two List of embeddings
  Request :
-``` 
+```
 requests.post(
         "/cosine_sim/",
         json={
@@ -41,7 +41,7 @@ Response:
 48.023
 ```
  #### **train** - for training the model in production environment
- Request : 
+ Request :
 ```
 requests.post(
             "/train/",
@@ -65,7 +65,7 @@ Response :
 ```
 "Model Training is complete."
 ```
- #### **infer** - to get the best matching candidate from the list provided 
+ #### **infer** - to get the best matching candidate from the list provided
  Request :
 ```
 requests.post(
@@ -88,10 +88,10 @@ requests.post(
                 ]
             }
         )
- ```   
-Response: 
+ ```
+Response:
 ```
-"bookrestaurant" 
+"bookrestaurant"
 ```
  #### **get_context_emb** - to get the embedding for contexts data
  Request :
@@ -103,13 +103,13 @@ requests.post(
                 }
             )
 ```
-Response : 
+Response :
 ```
 [-0.1938219964504242,..........]
 ```
  #### **get_candidate_emb** - for getting the embedding for candidates data
  Request :
-```    
+```
 requests.post(
             "/get_candidate_emb/",
             json={
@@ -122,7 +122,7 @@ Response :
 [-0.18731489777565002,,..........]
 ```
  #### **set_train_config** - for setting the training parameters
-Request : 
+Request :
 
 ```
 requests.post
@@ -149,28 +149,28 @@ requests.post
             "seed": 12345,
             "device": "cuda"
         }
-    }   
+    }
 )
 ```
 Response :
-    
-``` 
-"Config setup is complete." 
+
+```
+"Config setup is complete."
 ```
 
  #### **get_train_config** - for getting active training parameters
-Request : 
+Request :
 
 ```
 requests.post
 (
 "/get_train_config/",
-    json={}   
+    json={}
 )
 ```
 Response :
-    
-``` 
+
+```
 {
     "max_contexts_length": 128,
     "max_candidate_length": 64,
@@ -195,18 +195,18 @@ Response :
 
 
  #### **get_model_config** - for getting active model parameters
-Request : 
+Request :
 
 ```
 requests.post
 (
 "/get_model_config/",
-    json={}   
+    json={}
 )
 ```
 Response :
-    
-``` 
+
+```
 {
     "shared": false,
     "model_name": "prajjwal1/bert-tiny",
@@ -218,7 +218,7 @@ Response :
 
 
  #### **set_model_config** - for setting the model parameters
-Request : 
+Request :
 
 ```
 requests.post
@@ -231,18 +231,18 @@ requests.post
             "model_save_path": "modeloutput",
             "loss_function": "mse",
             "loss_type": "dot"
-        }     
+        }
     }
 )
 ```
 Response :
-    
-``` 
-"Config setup is complete." 
+
+```
+"Config setup is complete."
 ```
 
  #### **save_model** - for saving the model to a provided path
-Request : 
+Request :
 ```
 requests.post
 (
@@ -252,11 +252,11 @@ requests.post
         }
 )
 ```
-Response : 
-    
+Response :
+
 ```
 "[Saved model at] : mypath"
-``` 
+```
 
  #### **load_model** - for loading the model from the provided path
 Request :
@@ -269,16 +269,16 @@ requests.post
             }
 )
 ```
-Response: 
-    
-    "[loaded model from] : mypath" 
+Response:
+
+    "[loaded model from] : mypath"
 
 ### 1.2. Addtional Instructions
 
 1. You can use all model that are available on huggingface.co model library which is compatible with AutoModel
 2. Load and save models only accepts alphanumeric and '_' characters
-3. cosine_sim API expects both embedding provided should be of same length 
-4.  Resetting the model parameter through set_config api stores the live model in default location and reloads the default pretrainted model from huggingface Library  
+3. cosine_sim API expects both embedding provided should be of same length
+4.  Resetting the model parameter through set_config api stores the live model in default location and reloads the default pretrainted model from huggingface Library
 
 ## 2. Entity Extraction
 Entity Extraction module can be used to detect entities from the given context, it has two models one based on transformers and another on RNN architecture. These models will be used for extracting entities from the context.
@@ -286,7 +286,7 @@ Entity Extraction module can be used to detect entities from the given context, 
 
 ### 2.1. List of API's  available
 
-#### **entity_detection** - used to detect provided entities in the context 
+#### **entity_detection** - used to detect provided entities in the context
  Request :
  ```
 requests.post(
@@ -362,8 +362,8 @@ Response:
 "Model Training is Completed"
 ```
  #### **set_config** - Updates the configuration file with new model parameters
-Request : 
-```    
+Request :
+```
 requests.post(
             "/set_config/",
             json={
@@ -373,12 +373,12 @@ requests.post(
             )
 ```
 Response :
-```    
+```
 "Config setup is complete."
 ```
  #### **save_model** - for saving the model to the provided path
-Request : 
-```    
+Request :
+```
 requests.post(
             "/save_model/",
             json={
@@ -386,9 +386,9 @@ requests.post(
                 }
             )
 ```
-Response : 
-```    
-"[Saved model at] : mypath" 
+Response :
+```
+"[Saved model at] : mypath"
 ```
  #### **load_model** - for loading the model from the provided path
 Request :
@@ -400,9 +400,9 @@ requests.post(
                 }
             )
 ```
-Response: 
-```    
-"[loaded model from] : mypath" 
+Response:
+```
+"[loaded model from] : mypath"
 ```
 
 ### 2.2. Addtional Instructions
@@ -412,32 +412,32 @@ Parameter available for config setup
         1. Pre-trained LSTM / GRU : ["ner", "ner-fast","ner-large"]
         2. Huggingface model : all available models that can be intialized with AutoModel
         3. None : for load a RNN model from scratch
-   
+
     model_type :
         1. "TRFMODEL" : for huggingface models
         2. "LSTM" or "GRU" : RNN models
 
 ```
 ## 3. Text Segmenter
-Text Segmenter module has the ability to split text in multiple pragraph  depending on semantics similarity. 
+Text Segmenter module has the ability to split text in multiple pragraph  depending on semantics similarity.
 
 
 ### 3.1. List of API's  available
- #### **get_segements** - splits the text into mutiple segements as per the threshold provided, the value of thresold can be [ 0 - 1 ] where `0` would return entire text as it is and `1` would split text in sentences. 
-Request : 
-```    
+ #### **get_segements** - splits the text into mutiple segements as per the threshold provided, the value of thresold can be [ 0 - 1 ] where `0` would return entire text as it is and `1` would split text in sentences.
+Request :
+```
 requests.post(
     "/get_segements/",
     json=
     {
-        "text": "Labor statistics do reveal trends initially supportive of Bernard's thesis. From 1950 to 1990, the proportion of men in the labor forced decreased 9.4%, couples with a 28.8% increase of women who were in the labor force, suggesting a challenge to the traditional ideal of men working outside the home and women being relegated to domestic duties only. 200 years ago, having a fever or a cut can become life-threatening very quickly. Vaccines or treatments for many diseases did not exist as well. On the industrial front, progress was slow and time-consuming. Transportation was rather primitive and prohibitively expensive, ensuring that only the rich and famous could use it. The bright inexplicable pink of the tender flaky salmon, with golden olive oil-crisped edges. The deep green of the roasted asparagus calling us towards springtime. The pale yellow of the creamy leek drenched potatoes, speckled with bright pops of chives. I want to know how to use the NTXentLoss as in CPC model. I mean, I have a positive sample and N-1 negative samples. Many people dream about traveling the world for a living; and there are people that are actually able to do so that aren’t pilots, flight attendants, or businessmen. These people are known as travel bloggers and they get paid to visit and write about their major passion in life that is travel.", 
-        
+        "text": "Labor statistics do reveal trends initially supportive of Bernard's thesis. From 1950 to 1990, the proportion of men in the labor forced decreased 9.4%, couples with a 28.8% increase of women who were in the labor force, suggesting a challenge to the traditional ideal of men working outside the home and women being relegated to domestic duties only. 200 years ago, having a fever or a cut can become life-threatening very quickly. Vaccines or treatments for many diseases did not exist as well. On the industrial front, progress was slow and time-consuming. Transportation was rather primitive and prohibitively expensive, ensuring that only the rich and famous could use it. The bright inexplicable pink of the tender flaky salmon, with golden olive oil-crisped edges. The deep green of the roasted asparagus calling us towards springtime. The pale yellow of the creamy leek drenched potatoes, speckled with bright pops of chives. I want to know how to use the NTXentLoss as in CPC model. I mean, I have a positive sample and N-1 negative samples. Many people dream about traveling the world for a living; and there are people that are actually able to do so that aren’t pilots, flight attendants, or businessmen. These people are known as travel bloggers and they get paid to visit and write about their major passion in life that is travel.",
+
         "threshold": 0.85
     }
 )
 ```
-Response : 
-``` 
+Response :
+```
 [
   "Labor statistics do reveal trends initially supportive of Bernard's thesis. From 1950 to 1990, the proportion of men in the labor forced decreased 9.4%, couples with a 28.8% increase of women who were in the labor force, suggesting a challenge to the traditional ideal of men working outside the home and women being relegated to domestic duties only.",
   "200 years ago, having a fever or a cut can become life-threatening very quickly. Vaccines or treatments for many diseases did not exist as well. On the industrial front, progress was slow and time-consuming. Transportation was rather primitive and prohibitively expensive, ensuring that only the rich and famous could use it.",
@@ -448,15 +448,15 @@ Response :
 ```
  #### **load_model** - for loading the model from options : [ `wiki`, `legal` ]
 Request :
-    
+
     requests.post(
                 "/load_model/",
                 json={
                         "model_name": "wiki"
                     }
                 )
-Response: 
-    
+Response:
+
     "[Model Loaded] : wiki"
 
 ### 3. 2. Addtional Instructions
@@ -465,10 +465,10 @@ Response:
         model_name options for Pre-trained LM:
            1. wiki : trained for 3 epochs on wiki727 dataset
            2. legal : trained on legal documents (provides better performace for official docs)
-   
+
 
 ## 4. Fasttext
-FastText is an implentation of the open-source library that allows users to learn text representations and text classifiers. 
+FastText is an implentation of the open-source library that allows users to learn text representations and text classifiers.
 ### 4.1. List of API's available
 
 #### **train** - used to train the model for new classifiers
@@ -522,8 +522,8 @@ Response :
 }
 ```
  #### **save_model** - for saving the model to the provided path
-Request : 
-```    
+Request :
+```
 requests.post(
             "/save_model/",
             json={
@@ -531,8 +531,8 @@ requests.post(
                 }
             )
 ```
-Response : 
-```    
+Response :
+```
 "Model saved to mypath."
 ```
  #### **load_model** - for loading the model from the provided path
@@ -545,20 +545,20 @@ requests.post(
                 }
             )
 ```
-Response: 
-```    
-"Model Loaded From : mypath" 
+Response:
+```
+"Model Loaded From : mypath"
 ```
 ### 4. 2. Addtional Instructions
 1. Training parameter :
 ```
 train_with_existing :
-    True : appends the data to the active training set 
+    True : appends the data to the active training set
     False : creates a new training set with the data provided
 ```
 ### 5. USE_QA
 use_qa module uses the universal sentence encoder and distance metric to evaluate the distance between question and and probable answers
-### 5.1. List of API's available 
+### 5.1. List of API's available
 #### **question_encode** - encodes the question text and return a embedding of 512 length
 Request :
 ```
@@ -569,8 +569,8 @@ requests.post(
     }
 )
 ```
-Response: 
-```    
+Response:
+```
 [
   [
     0.015976766124367714,
@@ -586,7 +586,7 @@ Response:
 #### **answer_encode** - encodes the answer, context and return a embedding of 512 length
 Request :
 ```
-requests.post(         
+requests.post(
     "/answer_encode/",
     json={
             "answer": "New Delhi",
@@ -594,8 +594,8 @@ requests.post(
         }
 )
 ```
-Response: 
-```    
+Response:
+```
 [
   [
     -0.02469351328909397,
@@ -612,7 +612,7 @@ Response:
 #### **cos_sim_score** - calculates the cosine similarity between encodings
 Request :
 ```
-requests.post(         
+requests.post(
     "/cos_sim_score/",
     json={
         "q_emb":[
@@ -636,14 +636,14 @@ requests.post(
     }
 )
 ```
-Response: 
+Response:
 ```
-0.5570200427361625 
+0.5570200427361625
 ```
 #### **qa_score** - calculates the inner product between encodings
 Request :
 ```
-requests.post(         
+requests.post(
     "/qa_score/",
     json={
         "q_emb":[
@@ -667,15 +667,15 @@ requests.post(
     }
 )
 ```
-Response: 
-```   
+Response:
+```
 0.5570200627571644
 ```
 
 ### 6. USE_ENC
 use_enc module uses the universal sentence encoder and distance metric to evaluate the distance between two text encodings
 
-### 6.1. List of API's available 
+### 6.1. List of API's available
 #### **encode** - encodes the text and returns a embedding of 512 length
 Request :
 ```
@@ -686,8 +686,8 @@ requests.post(
     }
 )
 ```
-Response: 
-```    
+Response:
+```
 [
   [
     0.015976766124367714,
@@ -704,7 +704,7 @@ Response:
 #### **cos_sim_score** - calculates the cosine similarity between encodings
 Request :
 ```
-requests.post(         
+requests.post(
     "/cos_sim_score/",
     json={
         "q_emb":[
@@ -728,15 +728,15 @@ requests.post(
     }
 )
 ```
-Response: 
+Response:
 ```
-0.5570200427361625 
+0.5570200427361625
 ```
 
 ### 7. Summarization
 Summarization module can be used to produce extractive summary from text provided. it also accepts a URL from where it can scrape the summarize.
-### 7.1. List of API's available 
-#### **summarize** - summarizes the text and returns a the extractive summary of `sent_count` length  
+### 7.1. List of API's available
+#### **summarize** - summarizes the text and returns a the extractive summary of `sent_count` length
 Request :
 ```
 requests.post(
@@ -749,8 +749,8 @@ requests.post(
     }
 )
 ```
-Response: 
-```    
+Response:
+```
 [
   "The King of England was at war with him and had led a great army into Scotland to drive him out of the land.",
   "At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains.",
@@ -771,8 +771,8 @@ requests.post(
     }
 )
 ```
-Response: 
-```    
+Response:
+```
 [
   "Last year in March, Addverb inaugurated robot manufacturing facility called “Bot-Valley” in Noida, which is spread over 2.5 acres of land.",
   "and create highly skilled job opportunities leading to direct and indirect employment for over 3,000 people.",
@@ -784,7 +784,7 @@ Response:
 1. Summarizer Options :
 ```
 summarizer_type :
-    LexRankSummarizer : algorithm predicts if sentence which is similar to many other sentences of the text has a high probability of being important. 
+    LexRankSummarizer : algorithm predicts if sentence which is similar to many other sentences of the text has a high probability of being important.
     LsaSummarizer : algorithm based on term-document frequency techniques with singular value decomposition to summarize texts.
     LuhnSummarizer : algorithm's approach is based on TF-IDF (Term Frequency-Inverse Document Frequency).
 ```

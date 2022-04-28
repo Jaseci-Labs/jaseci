@@ -16,21 +16,19 @@ from jaseci.actions.live_actions import jaseci_action
 import torch
 import os
 from pathlib import Path
+
 config = configparser.ConfigParser()
-flair.device = torch.device('cpu')
+flair.device = torch.device("cpu")
 
 
 # 1. initialize each embedding we use
 embedding_types = [
-
     # GloVe embeddings
-    WordEmbeddings('glove'),
-
+    WordEmbeddings("glove"),
     # contextual string embeddings, forward
-    FlairEmbeddings('news-forward'),
-
+    FlairEmbeddings("news-forward"),
     # contextual string embeddings, backward
-    FlairEmbeddings('news-backward'),
+    FlairEmbeddings("news-backward"),
 ]
 
 # embedding stack consists of Flair and GloVe embeddings
@@ -48,19 +46,13 @@ def init_model():
     """create a tagger as per the model provided through config"""
 
     global tagger, NER_MODEL_NAME, NER_LABEL_TYPE, MODEL_TYPE
-    config.read(
-        os.path.join(
-            os.path.dirname(__file__),
-            'config.cfg'
-        )
-    )
-    NER_MODEL_NAME = config['TAGGER_MODEL']['NER_MODEL']
-    NER_LABEL_TYPE = config['LABEL_TYPE']['NER']
-    MODEL_TYPE = config['TAGGER_MODEL']['MODEL_TYPE']
+    config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
+    NER_MODEL_NAME = config["TAGGER_MODEL"]["NER_MODEL"]
+    NER_LABEL_TYPE = config["LABEL_TYPE"]["NER"]
+    MODEL_TYPE = config["TAGGER_MODEL"]["MODEL_TYPE"]
     if MODEL_TYPE.lower() == "trfmodel" and NER_MODEL_NAME.lower() != "none":
         tagger = TARSTagger(embeddings=NER_MODEL_NAME)
-    elif NER_MODEL_NAME.lower() != "none" and MODEL_TYPE.lower() in [
-            "lstm", "gru"]:
+    elif NER_MODEL_NAME.lower() != "none" and MODEL_TYPE.lower() in ["lstm", "gru"]:
         tagger = SequenceTagger.load(NER_MODEL_NAME)
     else:
         tagger = None
@@ -77,12 +69,11 @@ def train_entity(train_params: dict):
     """
     global tagger, NER_MODEL_NAME, MODEL_TYPE
     # define columns
-    columns = {0: 'text', 1: 'ner'}
+    columns = {0: "text", 1: "ner"}
     # directory where the data resides
-    data_folder = 'train'
+    data_folder = "train"
     # initializing the corpus
-    corpus: Corpus = ColumnCorpus(data_folder, columns,
-                                  train_file='train.txt')
+    corpus: Corpus = ColumnCorpus(data_folder, columns, train_file="train.txt")
     # make tag dictionary from the corpus
     tag_dictionary = corpus.make_tag_dictionary(tag_type=NER_LABEL_TYPE)
 
@@ -92,35 +83,39 @@ def train_entity(train_params: dict):
         if MODEL_TYPE.lower() in "trfmodel":
             val = random()
             tagger.add_and_switch_to_new_task(
-                "ner_train"+str(val), label_dictionary=tag_dictionary,
-                label_type=NER_LABEL_TYPE)
+                "ner_train" + str(val),
+                label_dictionary=tag_dictionary,
+                label_type=NER_LABEL_TYPE,
+            )
         elif tagger is None and MODEL_TYPE.lower() in ["lstm", "gru"]:
-            tagger = SequenceTagger(hidden_size=256,
-                                    embeddings=embeddings,
-                                    tag_dictionary=tag_dictionary,
-                                    tag_type=NER_LABEL_TYPE,
-                                    rnn_type=MODEL_TYPE)
+            tagger = SequenceTagger(
+                hidden_size=256,
+                embeddings=embeddings,
+                tag_dictionary=tag_dictionary,
+                tag_type=NER_LABEL_TYPE,
+                rnn_type=MODEL_TYPE,
+            )
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(
-            f"Model load error : {e}"))
+        raise HTTPException(status_code=404, detail=str(f"Model load error : {e}"))
     #  initialize the Sequence trainer with your corpus
     trainer = ModelTrainer(tagger, corpus)
     # train model
-    trainer.train(base_path=f'train/{NER_MODEL_NAME}',  # path to store model
-                  learning_rate=train_params["LR"],
-                  mini_batch_size=train_params["batch_size"],
-                  max_epochs=train_params["num_epoch"],
-                  train_with_test=True,
-                  train_with_dev=True
-                  )
+    trainer.train(
+        base_path=f"train/{NER_MODEL_NAME}",  # path to store model
+        learning_rate=train_params["LR"],
+        mini_batch_size=train_params["batch_size"],
+        max_epochs=train_params["num_epoch"],
+        train_with_test=True,
+        train_with_dev=True,
+    )
     #  Load trained Sequence Tagger model
-    tagger = tagger.load(f'train/{NER_MODEL_NAME}/final-model.pt')
+    tagger = tagger.load(f"train/{NER_MODEL_NAME}/final-model.pt")
     torch.cuda.empty_cache()
     print("model training and loading completed")
 
 
 # defining the api for entitydetection
-@jaseci_action(act_group=['ent_ext'], allow_remote=True)
+@jaseci_action(act_group=["ent_ext"], allow_remote=True)
 def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
     """
     API for detectiing provided entity in text
@@ -132,8 +127,10 @@ def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
                 if "trfmodel" in MODEL_TYPE.lower():
                     val = random()
                     tagger.add_and_switch_to_new_task(
-                        'Entity Detection Task'+str(val), ner_labels,
-                        label_type=NER_LABEL_TYPE)
+                        "Entity Detection Task" + str(val),
+                        ner_labels,
+                        label_type=NER_LABEL_TYPE,
+                    )
                 sentence = Sentence(text)
                 # predicting entities in the text
                 tagger.predict(sentence)
@@ -144,27 +141,32 @@ def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
                 for json_data in json_compatible_data["entities"]:
                     temp_dict = {}
                     temp_dict["entity_text"] = json_data["text"]
-                    temp_dict["entity_value"] = json_data["labels"][0][
-                        "_value"]
+                    temp_dict["entity_value"] = json_data["labels"][0]["_value"]
                     temp_dict["conf_score"] = json_data["labels"][0]["_score"]
                     temp_dict["start_pos"] = json_data["start_pos"]
                     temp_dict["end_pos"] = json_data["end_pos"]
-                    response_data_format['entities'].append(temp_dict)
+                    response_data_format["entities"].append(temp_dict)
                 return response_data_format
             else:
-                raise HTTPException(status_code=404, detail=str(
-                    "NER Labels are missing in request data"))
+                raise HTTPException(
+                    status_code=404,
+                    detail=str("NER Labels are missing in request data"),
+                )
         else:
-            raise HTTPException(status_code=404, detail=str(
-                "Text data is missing in request data"))
+            raise HTTPException(
+                status_code=404, detail=str("Text data is missing in request data")
+            )
     else:
-        raise HTTPException(status_code=404, detail=str(
-            "Please train the Model before Using"))
+        raise HTTPException(
+            status_code=404, detail=str("Please train the Model before Using")
+        )
 
 
-@jaseci_action(act_group=['ent_ext'], allow_remote=True)
-def train(train_data: List[dict],
-          train_params: Dict = {"num_epoch": 10, "batch_size": 8, "LR": 0.02}):
+@jaseci_action(act_group=["ent_ext"], allow_remote=True)
+def train(
+    train_data: List[dict],
+    train_params: Dict = {"num_epoch": 10, "batch_size": 8, "LR": 0.02},
+):
     """
     API for training the model
     """
@@ -173,14 +175,22 @@ def train(train_data: List[dict],
         for t_data in train_data:
             tag = []
             for ent in t_data["entities"]:
-                if ent['entity_value'] and ent['entity_type']:
-                    tag.append((ent['entity_value'], ent['entity_type'],
-                                ent["start_index"], ent["end_index"]))
+                if ent["entity_value"] and ent["entity_type"]:
+                    tag.append(
+                        (
+                            ent["entity_value"],
+                            ent["entity_type"],
+                            ent["start_index"],
+                            ent["end_index"],
+                        )
+                    )
                 else:
-                    raise HTTPException(status_code=404, detail=str(
-                        "Entity Data missing in request"))
-            data = data.append({"text": t_data["context"],
-                                "annotation": tag}, ignore_index=True)
+                    raise HTTPException(
+                        status_code=404, detail=str("Entity Data missing in request")
+                    )
+            data = data.append(
+                {"text": t_data["context"], "annotation": tag}, ignore_index=True
+            )
         # creating training data
         try:
             completed = create_data_new(data)
@@ -191,14 +201,17 @@ def train(train_data: List[dict],
             train_entity(train_params)
             return "Model Training is Completed"
         else:
-            raise HTTPException(status_code=500, detail=str(
-                "Issue encountered during train data creation"))
+            raise HTTPException(
+                status_code=500,
+                detail=str("Issue encountered during train data creation"),
+            )
     else:
-        raise HTTPException(status_code=404, detail=str(
-            "Need Data for Text and Entity"))
+        raise HTTPException(
+            status_code=404, detail=str("Need Data for Text and Entity")
+        )
 
 
-@jaseci_action(act_group=['ent_ext'], allow_remote=True)
+@jaseci_action(act_group=["ent_ext"], allow_remote=True)
 def save_model(model_path: str):
     """
     saves the model to the provided model_path
@@ -209,7 +222,7 @@ def save_model(model_path: str):
             if not model_path.isalnum():
                 raise HTTPException(
                     status_code=400,
-                    detail='Invalid model name,Only alphanumeric chars allowed'
+                    detail="Invalid model name,Only alphanumeric chars allowed",
                 )
             if type(model_path) is str:
                 model_path = Path(model_path)
@@ -218,11 +231,12 @@ def save_model(model_path: str):
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
     else:
-        raise HTTPException(status_code=404, detail=str(
-            "Please Initailize the model before saving"))
+        raise HTTPException(
+            status_code=404, detail=str("Please Initailize the model before saving")
+        )
 
 
-@jaseci_action(act_group=['ent_ext'], allow_remote=True)
+@jaseci_action(act_group=["ent_ext"], allow_remote=True)
 def load_model(model_path="default_path", default=False):
     """
     loads the model from the provided model_path
@@ -231,19 +245,20 @@ def load_model(model_path="default_path", default=False):
     try:
         if default is True:
             init_model()
-            return (f"[deafaul model loaded model from] : {config['TAGGER_MODEL']['NER_MODEL']}")  # noqa
+            return f"[deafaul model loaded model from] : {config['TAGGER_MODEL']['NER_MODEL']}"  # noqa
         if type(model_path) is str:
             model_path = Path(model_path)
         if (model_path / "final-model.pt").exists():
-            tagger.load_state_dict(tagger.load(
-                model_path / "final-model.pt").state_dict())
+            tagger.load_state_dict(
+                tagger.load(model_path / "final-model.pt").state_dict()
+            )
         tagger.to(device)
-        return (f'[loaded model from] : {model_path}')
+        return f"[loaded model from] : {model_path}"
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=['ent_ext'], allow_remote=True)
+@jaseci_action(act_group=["ent_ext"], allow_remote=True)
 def set_config(ner_model: str = None, model_type: str = None):
     """
     Update the configuration file with new model parameters
@@ -255,17 +270,12 @@ def set_config(ner_model: str = None, model_type: str = None):
     2. "LSTM" or "GRU" : RNN models
     """
     global config
-    config.read(
-        os.path.join(
-            os.path.dirname(__file__),
-            'config.cfg'
-        )
-    )
+    config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
 
     if ner_model or model_type:
-        config['TAGGER_MODEL']["NER_MODEL"] = ner_model
-        config['TAGGER_MODEL']["MODEL_TYPE"] = model_type
-    with open("config.cfg", 'w') as configfile:
+        config["TAGGER_MODEL"]["NER_MODEL"] = ner_model
+        config["TAGGER_MODEL"]["MODEL_TYPE"] = model_type
+    with open("config.cfg", "w") as configfile:
         config.write(configfile)
     try:
         init_model()
@@ -276,4 +286,5 @@ def set_config(ner_model: str = None, model_type: str = None):
 
 if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
+
     launch_server(port=8000)

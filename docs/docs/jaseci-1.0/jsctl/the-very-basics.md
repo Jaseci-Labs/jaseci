@@ -11,7 +11,7 @@ sidebar_position: 2
 In shell mode, all of the same Jaseci API functionality is available within a single session.
 
 to enter shell mode simply type: `jsctl` at the terminal without any arguments.
- 
+
  Here is an example of shell mode:
 
  ```
@@ -66,7 +66,7 @@ If you have been following so far, you can list all the .session files by runnin
 ls *.session
 ```
 
-This would output: 
+This would output:
 
 ```
 js.session
@@ -143,7 +143,3 @@ We can see the two graph objects, since they were saved to `js.session`
 ### In-memory mode
 
 Its important to note that there is also an in-memory mode that can be created buy using the `-m` or `--mem-only` flags. This flag is particularly useful when you’d simply like to tinker around with a machine in shell-mode or you’d like to script some behavior to be executed in Jac and have no need to maintain machine state after completion. We will be using in memory session mode quite a bit, so you’ll get a sense of its usage throughout this chapter. Next we actually see a workflow for tinkering.
-
-
-
-

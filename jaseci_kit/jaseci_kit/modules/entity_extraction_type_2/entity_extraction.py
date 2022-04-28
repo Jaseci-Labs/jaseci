@@ -43,24 +43,24 @@ def config_setup():
 config_setup()
 
 
-@jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def extract_entity(text: str = None):
 
     if model is not None and tokenizer is not None:
         try:
             classifier = pipeline(
-                'ner', model=model, tokenizer=tokenizer,
-                aggregation_strategy="first")
+                "ner", model=model, tokenizer=tokenizer, aggregation_strategy="first"
+            )
             entities = classifier(text)
             ents = []
             for i in range(len(entities)):
                 data = {
-                    "text": entities[i]['word'],
-                    "entity": entities[i]['entity_group'],
-                    "score": float(entities[i]['score']),
+                    "text": entities[i]["word"],
+                    "entity": entities[i]["entity_group"],
+                    "score": float(entities[i]["score"]),
                     # "word index" : entities[i]['index'],
-                    "start": entities[i]['start'],
-                    "end": entities[i]['end']
+                    "start": entities[i]["start"],
+                    "end": entities[i]["end"],
                 }
                 ents.append(data)
             torch.cuda.empty_cache()
@@ -69,21 +69,21 @@ def extract_entity(text: str = None):
             print(traceback.format_exc())
             raise HTTPException(status_code=500, detail=str(e))
     else:
-        raise HTTPException(status_code=404, detail=str(
-            "Please train model or load previous trained model"))
+        raise HTTPException(
+            status_code=404,
+            detail=str("Please train model or load previous trained model"),
+        )
+
 
 # load model to memory
 
 
-@jaseci_action(act_group=['extract_entity'], allow_remote=True)
-def load_model(model_path: str = 'default'):
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+def load_model(model_path: str = "default"):
     global model, tokenizer, curr_model_path
     curr_model_path = model_path
     if not os.path.exists(model_path):
-        raise HTTPException(
-            status_code=404,
-            detail='Model path is not available'
-        )
+        raise HTTPException(status_code=404, detail="Model path is not available")
     try:
         print("loading latest trained model to memory...")
         mod = load_trained_model(model_path)
@@ -95,14 +95,15 @@ def load_model(model_path: str = 'default'):
         print(traceback.format_exc())
         raise HTTPException(status_code=400, detail=str(e))
 
+
 # save model to disk
 
 
-@jaseci_action(act_group=['extract_entity'], allow_remote=True)
-def save_model(model_path: str = 'mymodel'):
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+def save_model(model_path: str = "mymodel"):
     try:
         save_trained_model(model, tokenizer, model_path)
-        print(f'current model {model_path} saved to disk.')
+        print(f"current model {model_path} saved to disk.")
         return {"status": f"model {model_path} saved Successfull!"}
     except Exception as e:
         print(traceback.format_exc())
@@ -110,7 +111,7 @@ def save_model(model_path: str = 'mymodel'):
 
 
 # load dataset
-@jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def load_dataset(text: str, entity: List[Dict]):
     global dataset, label_name
     try:
@@ -127,7 +128,7 @@ def load_dataset(text: str, entity: List[Dict]):
 
 
 # API for setting the training and model parameters
-@ jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def get_train_config():
     try:
         with open("config/train_config.json", "r") as jsonfile:
@@ -137,7 +138,7 @@ def get_train_config():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@ jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def set_train_config(training_parameters: Dict = None):
     global train_config
     try:
@@ -149,7 +150,7 @@ def set_train_config(training_parameters: Dict = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@ jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def get_model_config():
     try:
         with open("config/model_config.json", "r") as jsonfile:
@@ -159,7 +160,7 @@ def get_model_config():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@ jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def set_model_config(model_parameters: Dict = None):
     global model_config
     try:
@@ -175,14 +176,14 @@ def set_model_config(model_parameters: Dict = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def train():
     """
     creating model traing steps
     """
     # removing old checkpoint data
     try:
-        shutil.rmtree('checkpoint')
+        shutil.rmtree("checkpoint")
     except Exception as e:
         traceback.format_exc()
         print(str(e))
@@ -193,18 +194,18 @@ def train():
             global trainer
             args = TrainingArguments(
                 output_dir="checkpoint",
-                overwrite_output_dir=train_config['overwrite_output_dir'],
-                evaluation_strategy=train_config['evaluation_strategy'],
-                per_device_train_batch_size=train_config['train_batch_size'],
-                per_device_eval_batch_size=train_config['eval_batch_size'],
-                learning_rate=train_config['learning_rate'],
-                weight_decay=train_config['weight_decay'],
-                num_train_epochs=train_config['num_train_epochs']
+                overwrite_output_dir=train_config["overwrite_output_dir"],
+                evaluation_strategy=train_config["evaluation_strategy"],
+                per_device_train_batch_size=train_config["train_batch_size"],
+                per_device_eval_batch_size=train_config["eval_batch_size"],
+                learning_rate=train_config["learning_rate"],
+                weight_decay=train_config["weight_decay"],
+                num_train_epochs=train_config["num_train_epochs"],
             )
 
             # creating labels set
             label = labelname(label_name)
-            print("#$_"*10, label, label_name)
+            print("#$_" * 10, label, label_name)
             # Creating Tokeninzed Dataset
             print("creating tokeninzed dataset starting ..")
             tokenized_datasets = dataset.map(
@@ -214,25 +215,27 @@ def train():
             )
             print("creating tokeninzed dataset completed!")
 
-            trainer = train_model(tokenized_datasets, args,
-                                  curr_model_path,
-                                  label[0], label[1], 'default')
+            trainer = train_model(
+                tokenized_datasets, args, curr_model_path, label[0], label[1], "default"
+            )
             # save_model('default')
             # print('model saved.')
 
             print("loading latest trained model ...")
-            load_model('default')
+            load_model("default")
             print("latest trained model successfully loaded!")
         except Exception as e:
             print(traceback.format_exc())
             raise HTTPException(status_code=500, detail=str(e))
     else:
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(
-            "Please load dataset for model training!"))
+        raise HTTPException(
+            status_code=500, detail=str("Please load dataset for model training!")
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
-    print('DistilBert model Running ...')
-    launch_server(host='127.0.0.1', port=8000)
+
+    print("DistilBert model Running ...")
+    launch_server(host="127.0.0.1", port=8000)
