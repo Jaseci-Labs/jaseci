@@ -19,11 +19,6 @@ UserName = get_csv_data('addUsers.csv')
 qna = get_csv_data('qna.csv')
 
 
-def read_excel(columName):
-    df = pd.read_excel('qna.xlsx', sheet_name='Sheet1')  # can also index sheet by name or fetch all sheets
-    mylist = df[columName].tolist()
-    return mylist
-
 
 class SeqTask(SequentialTaskSet):
 
