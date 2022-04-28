@@ -158,6 +158,9 @@ class ast:
                 import_elements = list(
                     filter(lambda x: x.name == "element", parsed_ast.kid)
                 )
+                for i in parsed_ast.kid:
+                    if i.name == "import_module":
+                        import_elements += self.run_import_module(i)
                 if kid[2].name == "STAR_MUL":
                     return import_elements
                 else:

@@ -17,7 +17,7 @@ class sentinel_interp(interp):
 
     def run_start(self, jac_ast):
         """
-        start: ver_label? element+ EOF;
+        start: ver_label? element* EOF;
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "ver_label":
