@@ -14,8 +14,7 @@ walker init {
     z = 3.45;
 
 ```
-
-Think of the walker as a little robot friend who traverses the nodes and edges of graphs. We initialize the variable of x,y,z. 
+Jaseci uses a uique paradigm based around graphs, to traverse these graphs we use an component called Walker.Think of the walker as a little robot friend who traverses the nodes and edges of graphs. Variables are initialize by equating it to a value.
 
 ```jac
 walker init {
@@ -31,7 +30,8 @@ if(z==3.45 or y=="Bye"){
 }
 ```
 
-The IF  statment is very similiar to those of python. Note that after every line there is a semicolon .
+The  IF statment is very similiar to those of python. Conditions such as AND , OR and = can be used within the brackets of the IF statment.
+Note that after every line there is a semicolon .
 
 ```jac
 walker init {
@@ -69,9 +69,9 @@ report [x,y+'s'];
 }
 ```
 
-This FOR loop will run 3 times. Printing the values of (x -1) and the value of y. The report list adds data to the payload.
+This FOR loop will run 3 times. Printing the values of (x -1) and the value of y. The report list adds data to the payload.The Payload is returned and printed at the end of the program.
 
-Let's run the program by  oprning the terminal and running:
+Let's run the program by  opening the terminal and running:
 ```
  jsctl jac run class2.jac
 
@@ -79,4 +79,4 @@ Let's run the program by  oprning the terminal and running:
 
  Your Output should look like this:
 
- ![alt Output for code](/img/test-drive-output.png)
+ ![alt Output for code](/img/test-drive-output.png){align=center}
