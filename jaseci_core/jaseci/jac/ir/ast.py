@@ -38,6 +38,7 @@ class ast:
         self._start_rule = start_rule
         self.mod_name = mod_name if mod_name is not None else "@default"
         self._mod_dir = mod_dir
+        self._keep = False
         self.line = 0
         self.column = 0
         self.kid = []
@@ -158,13 +159,13 @@ class ast:
                 import_elements = list(
                     filter(lambda x: x.name == "element", parsed_ast.kid)
                 )
-                for i in parsed_ast.kid:
-                    if i.name == "import_module":
-                        import_elements += self.run_import_module(i)
                 if kid[2].name == "STAR_MUL":
-                    return import_elements
+                    ret = import_elements
                 else:
-                    return self.run_import_items(kid[2], import_elements)
+                    ret = self.run_import_items(kid[2], import_elements)
+                for i in ret:
+                    i._keep = True
+                return ret
             else:
                 return []
 
@@ -179,13 +180,17 @@ class ast:
             """
             kid = jac_ast.kid
             ret_elements = list(
-                filter(lambda x: x.kid[0].kid[0].name == kid[0].name, import_elements)
+                filter(
+                    lambda x: x._keep or x.kid[0].kid[0].name == kid[0].name,
+                    import_elements,
+                )
             )
             if kid[1].name == "import_names":
                 import_names = self.run_import_names(kid[1])
                 ret_elements = list(
                     filter(
-                        lambda x: x.kid[0].kid[1].token_text() in import_names,
+                        lambda x: x._keep
+                        or x.kid[0].kid[1].token_text() in import_names,
                         ret_elements,
                     )
                 )
@@ -195,6 +200,7 @@ class ast:
                         + "Module name not found!"
                     )
                     self.tree_root._parse_errors.append(err)
+
             if kid[-1].name == "import_items":
                 return ret_elements + self.run_import_items(kid[-1], import_elements)
 
