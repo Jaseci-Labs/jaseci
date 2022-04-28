@@ -22,7 +22,8 @@ def mark_as_remote(api):
 
 def serv_actions():
     """Returns fastAPI app interface for actions"""
-    app = FastAPI()
+    app = FastAPI(title='Jaseci Action Set API',
+                  description='A Jaseci Action Set',)
 
     @app.get("/")
     def home_redirect():
