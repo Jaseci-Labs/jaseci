@@ -14,7 +14,7 @@ walker init {
     z = 3.45;
 
 ```
-Jaseci uses a uique paradigm based around graphs, to traverse these graphs we use an component called Walker.Think of the walker as a little robot friend who traverses the nodes and edges of graphs. Variables are initialize by equating it to a value.
+Jaseci uses a unique paradigm based around graphs, to traverse these graphs we use an component called Walker.Think of the walker as a little robot friend who traverses the nodes and edges of graphs. Variables are initialize by equating it to a value.
 
 ```jac
 walker init {
