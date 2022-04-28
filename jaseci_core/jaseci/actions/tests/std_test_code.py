@@ -20,6 +20,7 @@ file_io = """
         file.append_str(fn, c);
         c=file.load_str(fn);
         report c;
+        file.delete(fn);
     }
     """
 

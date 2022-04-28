@@ -5,7 +5,6 @@ repos:
       - id: check-yaml
         args: [--allow-multiple-documents]
       - id: check-json
-      - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/psf/black
     rev: 22.3.0

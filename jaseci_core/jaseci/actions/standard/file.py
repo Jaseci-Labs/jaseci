@@ -1,5 +1,6 @@
 """Built in actions for Jaseci"""
 from jaseci.actions.live_actions import jaseci_action
+import os
 import json
 
 
@@ -40,3 +41,13 @@ def dump_json(fn: str, obj, indent: int = None):
     """Standard built in for dumping json to file from dictionary"""
     with open(fn, "w") as file:
         json.dump(obj, file, indent=indent)
+
+
+@jaseci_action()
+def delete(fn: str):
+    """Standard built in for deleting a file"""
+    if os.path.exists(fn):
+        os.remove(fn)
+        return True
+    else:
+        return False

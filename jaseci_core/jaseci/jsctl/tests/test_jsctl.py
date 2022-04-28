@@ -223,6 +223,15 @@ class jsctl_test(TestCaseHelper, TestCase):
         r = self.call_cast("walker run init")
         self.assertEqual(len(r["report"]), 8)
 
+    def test_jsctl_import_recursive(self):
+        self.call(
+            "sentinel register "
+            "jaseci/jsctl/tests/base5.jac -code_dir jaseci/jsctl/tests/ "
+            "-set_active true"
+        )
+        r = self.call_cast("walker run init")
+        self.assertEqual(r["report"][0], "plain")
+
     def test_jsctl_run_tests(self):
         self.call("sentinel register " "jaseci/jsctl/tests/teststest.jac")
         r = self.call_split("sentinel test")
