@@ -20,3 +20,5 @@ build
 .vscode
 js.session
 .idea
+jaseci_kit/jaseci_kit/modules/entity_extraction_type_2/train/train.txt
+jaseci_kit/jaseci_kit/modules/entity_extraction_type_2/train/train_backup_file.txt
