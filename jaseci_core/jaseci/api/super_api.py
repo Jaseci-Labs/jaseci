@@ -8,6 +8,9 @@ from jaseci.element.master import master
 class super_api:
     """Super APIs for creating nicknames for UUIDs and other long strings"""
 
+    def __init__(self):
+        self.caller = None
+
     @interface.admin_api(cli_args=["name"])
     def master_createsuper(
         self, name: str, set_active: bool = True, other_fields: dict = {}
@@ -35,7 +38,14 @@ class super_api:
     def master_become(self, mast: master):
         """
         Sets the default master master should use
-        FIXME: _caller does not persist accross http request!!
         """
-        self._caller = mast
+        self.caller = mast.jid
         return {"response": f"You are now {mast.name}"}
+
+    @interface.admin_api(cli_args=["mast"])
+    def master_unbecome(self):
+        """
+        Unsets the default master master should use
+        """
+        self.caller = None
+        return {"response": f"You are now {self.name}"}

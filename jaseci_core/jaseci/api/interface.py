@@ -116,8 +116,12 @@ class interface:
             api_name is the name of the api being mapped to
         """
         param_map = {}
-        if api_name.startswith("master_active"):
+        if api_name.startswith("master_active") or api_name.startswith(
+            "master_unbecome"
+        ):
             _caller = self
+        elif "caller" in self.__dict__ and self.caller:
+            _caller = self._h.get_obj(self._m_id, uuid.UUID(self.caller))
         else:
             _caller = self._caller
         if not hasattr(_caller, api_name):
