@@ -3,10 +3,11 @@
 from antlr4 import *
 from io import StringIO
 import sys
+
 if sys.version_info[1] > 5:
-	from typing import TextIO
+    from typing import TextIO
 else:
-	from typing.io import TextIO
+    from typing.io import TextIO
 
 
 def serializedATN():
@@ -17,8 +18,8 @@ def serializedATN():
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
         buf.write("\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31")
         buf.write("\t\31\4\32\t\32\4\33\t\33\4\34\t\34\4\35\t\35\4\36\t\36")
-        buf.write("\4\37\t\37\4 \t \4!\t!\4\"\t\"\4#\t#\4$\t$\4%\t%\4&\t")
-        buf.write("&\4\'\t\'\4(\t(\4)\t)\4*\t*\4+\t+\4,\t,\4-\t-\4.\t.\4")
+        buf.write('\4\37\t\37\4 \t \4!\t!\4"\t"\4#\t#\4$\t$\4%\t%\4&\t')
+        buf.write("&\4'\t'\4(\t(\4)\t)\4*\t*\4+\t+\4,\t,\4-\t-\4.\t.\4")
         buf.write("/\t/\4\60\t\60\4\61\t\61\4\62\t\62\4\63\t\63\4\64\t\64")
         buf.write("\4\65\t\65\4\66\t\66\4\67\t\67\48\t8\49\t9\4:\t:\4;\t")
         buf.write(";\4<\t<\4=\t=\4>\t>\4?\t?\4@\t@\4A\tA\4B\tB\4C\tC\4D\t")
@@ -64,12 +65,12 @@ def serializedATN():
         buf.write("\34\5\34\u0225\n\34\3\35\3\35\3\35\3\35\3\36\3\36\3\36")
         buf.write("\7\36\u022e\n\36\f\36\16\36\u0231\13\36\3\37\3\37\3\37")
         buf.write("\7\37\u0236\n\37\f\37\16\37\u0239\13\37\3 \3 \7 \u023d")
-        buf.write("\n \f \16 \u0240\13 \3 \3 \3 \5 \u0245\n \3!\3!\3!\3\"")
-        buf.write("\3\"\3\"\3\"\3\"\3\"\3\"\3\"\3\"\3\"\3\"\3\"\3\"\3\"\3")
-        buf.write("\"\3\"\3\"\3\"\5\"\u025c\n\"\3#\3#\3#\3#\7#\u0262\n#\f")
+        buf.write('\n \f \16 \u0240\13 \3 \3 \3 \5 \u0245\n \3!\3!\3!\3"')
+        buf.write('\3"\3"\3"\3"\3"\3"\3"\3"\3"\3"\3"\3"\3"\3')
+        buf.write('"\3"\3"\3"\5"\u025c\n"\3#\3#\3#\3#\7#\u0262\n#\f')
         buf.write("#\16#\u0265\13#\3#\5#\u0268\n#\3$\3$\3$\5$\u026d\n$\3")
         buf.write("%\3%\3%\3%\5%\u0273\n%\3%\3%\3%\3%\5%\u0279\n%\3%\5%\u027c")
-        buf.write("\n%\3&\3&\3&\3&\3\'\3\'\3\'\3(\3(\3(\3(\3(\3(\3(\3(\3")
+        buf.write("\n%\3&\3&\3&\3&\3'\3'\3'\3(\3(\3(\3(\3(\3(\3(\3(\3")
         buf.write("(\3(\3(\3(\3(\3(\5(\u0293\n(\3)\3)\3)\3)\3*\3*\3+\3+\3")
         buf.write("+\3,\3,\3,\3,\3-\3-\3-\3-\3-\3-\3-\3-\3-\3-\5-\u02ac\n")
         buf.write("-\3.\3.\3.\3.\5.\u02b2\n.\3/\3/\3/\3/\3\60\3\60\3\60\3")
@@ -113,13 +114,13 @@ def serializedATN():
         buf.write("\3h\3h\3i\3i\5i\u0489\ni\3j\3j\5j\u048d\nj\3k\3k\3k\3")
         buf.write("k\5k\u0493\nk\3l\3l\5l\u0497\nl\5l\u0499\nl\3l\3l\3l\3")
         buf.write("l\3m\3m\3m\2\3zn\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36")
-        buf.write(" \"$&(*,.\60\62\64\668:<>@BDFHJLNPRTVXZ\\^`bdfhjlnprt")
+        buf.write(' "$&(*,.\60\62\64\668:<>@BDFHJLNPRTVXZ\\^`bdfhjlnprt')
         buf.write("vxz|~\u0080\u0082\u0084\u0086\u0088\u008a\u008c\u008e")
         buf.write("\u0090\u0092\u0094\u0096\u0098\u009a\u009c\u009e\u00a0")
         buf.write("\u00a2\u00a4\u00a6\u00a8\u00aa\u00ac\u00ae\u00b0\u00b2")
         buf.write("\u00b4\u00b6\u00b8\u00ba\u00bc\u00be\u00c0\u00c2\u00c4")
         buf.write("\u00c6\u00c8\u00ca\u00cc\u00ce\u00d0\u00d2\u00d4\u00d6")
-        buf.write("\u00d8\2\17\4\2\33\34\"\"\4\2@ACC\3\2\62\65\3\2\678\3")
+        buf.write('\u00d8\2\17\4\2\33\34""\4\2@ACC\3\2\62\65\3\2\678\3')
         buf.write("\2VW\3\2XZ\3\2\37!\4\2\36\36ee\5\2\13\21\26\26,,\4\2\22")
         buf.write("\22\24\24\5\2\22\22\26\26,,\4\2\6\6\n\n\b\2\22\22\26\26")
         buf.write(",,`accee\2\u04f9\2\u00db\3\2\2\2\4\u00eb\3\2\2\2\6\u00f6")
@@ -127,7 +128,7 @@ def serializedATN():
         buf.write("\2\16\u013a\3\2\2\2\20\u0164\3\2\2\2\22\u0166\3\2\2\2")
         buf.write("\24\u016d\3\2\2\2\26\u0183\3\2\2\2\30\u0198\3\2\2\2\32")
         buf.write("\u019b\3\2\2\2\34\u019f\3\2\2\2\36\u01a3\3\2\2\2 \u01b2")
-        buf.write("\3\2\2\2\"\u01b6\3\2\2\2$\u01bb\3\2\2\2&\u01c0\3\2\2\2")
+        buf.write('\3\2\2\2"\u01b6\3\2\2\2$\u01bb\3\2\2\2&\u01c0\3\2\2\2')
         buf.write("(\u01d0\3\2\2\2*\u01dc\3\2\2\2,\u01de\3\2\2\2.\u01e3\3")
         buf.write("\2\2\2\60\u01f8\3\2\2\2\62\u0215\3\2\2\2\64\u0217\3\2")
         buf.write("\2\2\66\u021d\3\2\2\28\u0226\3\2\2\2:\u022a\3\2\2\2<\u0232")
@@ -220,12 +221,12 @@ def serializedATN():
         buf.write("\3\2\2\2\u0165\21\3\2\2\2\u0166\u0167\7-\2\2\u0167\u0169")
         buf.write("\7e\2\2\u0168\u016a\5\30\r\2\u0169\u0168\3\2\2\2\u0169")
         buf.write("\u016a\3\2\2\2\u016a\u016b\3\2\2\2\u016b\u016c\5\24\13")
-        buf.write("\2\u016c\23\3\2\2\2\u016d\u0171\7*\2\2\u016e\u0170\5\"")
+        buf.write('\2\u016c\23\3\2\2\2\u016d\u0171\7*\2\2\u016e\u0170\5"')
         buf.write("\22\2\u016f\u016e\3\2\2\2\u0170\u0173\3\2\2\2\u0171\u016f")
         buf.write("\3\2\2\2\u0171\u0172\3\2\2\2\u0172\u0175\3\2\2\2\u0173")
         buf.write("\u0171\3\2\2\2\u0174\u0176\5\32\16\2\u0175\u0174\3\2\2")
         buf.write("\2\u0175\u0176\3\2\2\2\u0176\u017b\3\2\2\2\u0177\u017a")
-        buf.write("\5B\"\2\u0178\u017a\5\36\20\2\u0179\u0177\3\2\2\2\u0179")
+        buf.write('\5B"\2\u0178\u017a\5\36\20\2\u0179\u0177\3\2\2\2\u0179')
         buf.write("\u0178\3\2\2\2\u017a\u017d\3\2\2\2\u017b\u0179\3\2\2\2")
         buf.write("\u017b\u017c\3\2\2\2\u017c\u017f\3\2\2\2\u017d\u017b\3")
         buf.write("\2\2\2\u017e\u0180\5\34\17\2\u017f\u017e\3\2\2\2\u017f")
@@ -243,12 +244,12 @@ def serializedATN():
         buf.write("\u019a\5:\36\2\u019a\31\3\2\2\2\u019b\u019c\7\32\2\2\u019c")
         buf.write("\u019d\7\33\2\2\u019d\u019e\5> \2\u019e\33\3\2\2\2\u019f")
         buf.write("\u01a0\7\32\2\2\u01a0\u01a1\7\34\2\2\u01a1\u01a2\5> \2")
-        buf.write("\u01a2\35\3\2\2\2\u01a3\u01a4\7\32\2\2\u01a4\u01a5\7\"")
+        buf.write('\u01a2\35\3\2\2\2\u01a3\u01a4\7\32\2\2\u01a4\u01a5\7"')
         buf.write("\2\2\u01a5\u01a6\5> \2\u01a6\37\3\2\2\2\u01a7\u01ab\7")
-        buf.write("*\2\2\u01a8\u01aa\5\"\22\2\u01a9\u01a8\3\2\2\2\u01aa\u01ad")
+        buf.write('*\2\2\u01a8\u01aa\5"\22\2\u01a9\u01a8\3\2\2\2\u01aa\u01ad')
         buf.write("\3\2\2\2\u01ab\u01a9\3\2\2\2\u01ab\u01ac\3\2\2\2\u01ac")
         buf.write("\u01ae\3\2\2\2\u01ad\u01ab\3\2\2\2\u01ae\u01b3\7+\2\2")
-        buf.write("\u01af\u01b0\7$\2\2\u01b0\u01b3\5\"\22\2\u01b1\u01b3\7")
+        buf.write('\u01af\u01b0\7$\2\2\u01b0\u01b3\5"\22\2\u01b1\u01b3\7')
         buf.write("\60\2\2\u01b2\u01a7\3\2\2\2\u01b2\u01af\3\2\2\2\u01b2")
         buf.write("\u01b1\3\2\2\2\u01b3!\3\2\2\2\u01b4\u01b7\5.\30\2\u01b5")
         buf.write("\u01b7\5\62\32\2\u01b6\u01b4\3\2\2\2\u01b6\u01b5\3\2\2")
@@ -256,7 +257,7 @@ def serializedATN():
         buf.write("\2\2\2\u01ba\u01bd\3\2\2\2\u01bb\u01b9\3\2\2\2\u01bb\u01bc")
         buf.write("\3\2\2\2\u01bc%\3\2\2\2\u01bd\u01bb\3\2\2\2\u01be\u01c1")
         buf.write("\5(\25\2\u01bf\u01c1\5*\26\2\u01c0\u01be\3\2\2\2\u01c0")
-        buf.write("\u01bf\3\2\2\2\u01c1\'\3\2\2\2\u01c2\u01c3\7*\2\2\u01c3")
+        buf.write("\u01bf\3\2\2\2\u01c1'\3\2\2\2\u01c2\u01c3\7*\2\2\u01c3")
         buf.write("\u01c4\5,\27\2\u01c4\u01c5\5$\23\2\u01c5\u01c6\7\31\2")
         buf.write("\2\u01c6\u01c7\5> \2\u01c7\u01c8\7+\2\2\u01c8\u01d1\3")
         buf.write("\2\2\2\u01c9\u01ca\7$\2\2\u01ca\u01cb\5,\27\2\u01cb\u01cc")
@@ -306,10 +307,10 @@ def serializedATN():
         buf.write("\u0234\u0236\5`\61\2\u0235\u0233\3\2\2\2\u0236\u0239\3")
         buf.write("\2\2\2\u0237\u0235\3\2\2\2\u0237\u0238\3\2\2\2\u0238=")
         buf.write("\3\2\2\2\u0239\u0237\3\2\2\2\u023a\u023e\7*\2\2\u023b")
-        buf.write("\u023d\5B\"\2\u023c\u023b\3\2\2\2\u023d\u0240\3\2\2\2")
+        buf.write('\u023d\5B"\2\u023c\u023b\3\2\2\2\u023d\u0240\3\2\2\2')
         buf.write("\u023e\u023c\3\2\2\2\u023e\u023f\3\2\2\2\u023f\u0241\3")
         buf.write("\2\2\2\u0240\u023e\3\2\2\2\u0241\u0245\7+\2\2\u0242\u0243")
-        buf.write("\7$\2\2\u0243\u0245\5B\"\2\u0244\u023a\3\2\2\2\u0244\u0242")
+        buf.write('\7$\2\2\u0243\u0245\5B"\2\u0244\u023a\3\2\2\2\u0244\u0242')
         buf.write("\3\2\2\2\u0245?\3\2\2\2\u0246\u0247\5:\36\2\u0247\u0248")
         buf.write("\5> \2\u0248A\3\2\2\2\u0249\u025c\5> \2\u024a\u025c\5")
         buf.write("@!\2\u024b\u024c\5`\61\2\u024c\u024d\7\60\2\2\u024d\u025c")
@@ -326,7 +327,7 @@ def serializedATN():
         buf.write("`\61\2\u025f\u0263\5> \2\u0260\u0262\5J&\2\u0261\u0260")
         buf.write("\3\2\2\2\u0262\u0265\3\2\2\2\u0263\u0261\3\2\2\2\u0263")
         buf.write("\u0264\3\2\2\2\u0264\u0267\3\2\2\2\u0265\u0263\3\2\2\2")
-        buf.write("\u0266\u0268\5L\'\2\u0267\u0266\3\2\2\2\u0267\u0268\3")
+        buf.write("\u0266\u0268\5L'\2\u0267\u0266\3\2\2\2\u0267\u0268\3")
         buf.write("\2\2\2\u0268E\3\2\2\2\u0269\u026a\7F\2\2\u026a\u026c\5")
         buf.write("> \2\u026b\u026d\5H%\2\u026c\u026b\3\2\2\2\u026c\u026d")
         buf.write("\3\2\2\2\u026dG\3\2\2\2\u026e\u0272\7;\2\2\u026f\u0270")
@@ -358,7 +359,7 @@ def serializedATN():
         buf.write("\u02af\3\2\2\2\u02b2[\3\2\2\2\u02b3\u02b4\7\27\2\2\u02b4")
         buf.write("\u02b5\5`\61\2\u02b5\u02b6\7\60\2\2\u02b6]\3\2\2\2\u02b7")
         buf.write("\u02b8\7\30\2\2\u02b8\u02bb\5`\61\2\u02b9\u02bc\7\60\2")
-        buf.write("\2\u02ba\u02bc\5L\'\2\u02bb\u02b9\3\2\2\2\u02bb\u02ba")
+        buf.write("\2\u02ba\u02bc\5L'\2\u02bb\u02b9\3\2\2\2\u02bb\u02ba")
         buf.write("\3\2\2\2\u02bc_\3\2\2\2\u02bd\u02c1\5h\65\2\u02be\u02c2")
         buf.write("\5b\62\2\u02bf\u02c2\5d\63\2\u02c0\u02c2\5f\64\2\u02c1")
         buf.write("\u02be\3\2\2\2\u02c1\u02bf\3\2\2\2\u02c1\u02c0\3\2\2\2")
@@ -428,44 +429,44 @@ def serializedATN():
         buf.write("\u0340\3\2\2\2\u034a\u0345\3\2\2\2\u034b}\3\2\2\2\u034c")
         buf.write("\u0351\7%\2\2\u034d\u034e\7%\2\2\u034e\u034f\7e\2\2\u034f")
         buf.write("\u0351\7$\2\2\u0350\u034c\3\2\2\2\u0350\u034d\3\2\2\2")
-        buf.write("\u0351\177\3\2\2\2\u0352\u0353\7\4\2\2\u0353\u0354\5`")
-        buf.write("\61\2\u0354\u0081\3\2\2\2\u0355\u0356\7X\2\2\u0356\u0357")
-        buf.write("\5`\61\2\u0357\u0083\3\2\2\2\u0358\u035f\3\2\2\2\u0359")
-        buf.write("\u035f\5\u008eH\2\u035a\u035f\5\u008aF\2\u035b\u035f\5")
-        buf.write("\u008cG\2\u035c\u035f\5\u0088E\2\u035d\u035f\5\u0086D")
-        buf.write("\2\u035e\u0358\3\2\2\2\u035e\u0359\3\2\2\2\u035e\u035a")
-        buf.write("\3\2\2\2\u035e\u035b\3\2\2\2\u035e\u035c\3\2\2\2\u035e")
-        buf.write("\u035d\3\2\2\2\u035f\u0085\3\2\2\2\u0360\u0361\5\u00bc")
-        buf.write("_\2\u0361\u0087\3\2\2\2\u0362\u0363\t\b\2\2\u0363\u0089")
-        buf.write("\3\2\2\2\u0364\u0376\7\36\2\2\u0365\u0366\7*\2\2\u0366")
-        buf.write("\u0367\5:\36\2\u0367\u0368\7+\2\2\u0368\u0376\3\2\2\2")
-        buf.write("\u0369\u036a\7\17\2\2\u036a\u036d\7%\2\2\u036b\u036d\7")
-        buf.write("(\2\2\u036c\u0369\3\2\2\2\u036c\u036b\3\2\2\2\u036d\u036e")
-        buf.write("\3\2\2\2\u036e\u0373\t\t\2\2\u036f\u0370\7\\\2\2\u0370")
-        buf.write("\u0371\5<\37\2\u0371\u0372\7]\2\2\u0372\u0374\3\2\2\2")
-        buf.write("\u0373\u036f\3\2\2\2\u0373\u0374\3\2\2\2\u0374\u0376\3")
-        buf.write("\2\2\2\u0375\u0364\3\2\2\2\u0375\u0365\3\2\2\2\u0375\u036c")
-        buf.write("\3\2\2\2\u0376\u008b\3\2\2\2\u0377\u0385\7\35\2\2\u0378")
-        buf.write("\u0379\7\16\2\2\u0379\u037c\7%\2\2\u037a\u037c\7\'\2\2")
-        buf.write("\u037b\u0378\3\2\2\2\u037b\u037a\3\2\2\2\u037c\u037d\3")
-        buf.write("\2\2\2\u037d\u0382\7e\2\2\u037e\u037f\7\\\2\2\u037f\u0380")
-        buf.write("\5<\37\2\u0380\u0381\7]\2\2\u0381\u0383\3\2\2\2\u0382")
-        buf.write("\u037e\3\2\2\2\u0382\u0383\3\2\2\2\u0383\u0385\3\2\2\2")
-        buf.write("\u0384\u0377\3\2\2\2\u0384\u037b\3\2\2\2\u0385\u008d\3")
-        buf.write("\2\2\2\u0386\u0387\7\13\2\2\u0387\u038a\7%\2\2\u0388\u038a")
-        buf.write("\7&\2\2\u0389\u0386\3\2\2\2\u0389\u0388\3\2\2\2\u038a")
-        buf.write("\u038b\3\2\2\2\u038b\u0390\7e\2\2\u038c\u038d\7\\\2\2")
-        buf.write("\u038d\u038e\5<\37\2\u038e\u038f\7]\2\2\u038f\u0391\3")
-        buf.write("\2\2\2\u0390\u038c\3\2\2\2\u0390\u0391\3\2\2\2\u0391\u008f")
-        buf.write("\3\2\2\2\u0392\u0394\5\u0092J\2\u0393\u0395\5\u00b6\\")
-        buf.write("\2\u0394\u0393\3\2\2\2\u0394\u0395\3\2\2\2\u0395\u039e")
-        buf.write("\3\2\2\2\u0396\u039b\5\u0098M\2\u0397\u0399\5\u0092J\2")
-        buf.write("\u0398\u039a\5\u00b6\\\2\u0399\u0398\3\2\2\2\u0399\u039a")
-        buf.write("\3\2\2\2\u039a\u039c\3\2\2\2\u039b\u0397\3\2\2\2\u039b")
-        buf.write("\u039c\3\2\2\2\u039c\u039e\3\2\2\2\u039d\u0392\3\2\2\2")
-        buf.write("\u039d\u0396\3\2\2\2\u039e\u0091\3\2\2\2\u039f\u03a0\7")
-        buf.write("\26\2\2\u03a0\u03a1\7%\2\2\u03a1\u03a2\7e\2\2\u03a2\u0093")
-        buf.write("\3\2\2\2\u03a3\u03a4\7-\2\2\u03a4\u03a5\7%\2\2\u03a5\u03a6")
+        buf.write("\u0351\177\3\2\2\2\u0352\u0353\7\4\2\2\u0353\u0354\5z")
+        buf.write(">\2\u0354\u0081\3\2\2\2\u0355\u0356\7X\2\2\u0356\u0357")
+        buf.write("\5z>\2\u0357\u0083\3\2\2\2\u0358\u035f\3\2\2\2\u0359\u035f")
+        buf.write("\5\u008eH\2\u035a\u035f\5\u008aF\2\u035b\u035f\5\u008c")
+        buf.write("G\2\u035c\u035f\5\u0088E\2\u035d\u035f\5\u0086D\2\u035e")
+        buf.write("\u0358\3\2\2\2\u035e\u0359\3\2\2\2\u035e\u035a\3\2\2\2")
+        buf.write("\u035e\u035b\3\2\2\2\u035e\u035c\3\2\2\2\u035e\u035d\3")
+        buf.write("\2\2\2\u035f\u0085\3\2\2\2\u0360\u0361\5\u00bc_\2\u0361")
+        buf.write("\u0087\3\2\2\2\u0362\u0363\t\b\2\2\u0363\u0089\3\2\2\2")
+        buf.write("\u0364\u0376\7\36\2\2\u0365\u0366\7*\2\2\u0366\u0367\5")
+        buf.write(":\36\2\u0367\u0368\7+\2\2\u0368\u0376\3\2\2\2\u0369\u036a")
+        buf.write("\7\17\2\2\u036a\u036d\7%\2\2\u036b\u036d\7(\2\2\u036c")
+        buf.write("\u0369\3\2\2\2\u036c\u036b\3\2\2\2\u036d\u036e\3\2\2\2")
+        buf.write("\u036e\u0373\t\t\2\2\u036f\u0370\7\\\2\2\u0370\u0371\5")
+        buf.write("<\37\2\u0371\u0372\7]\2\2\u0372\u0374\3\2\2\2\u0373\u036f")
+        buf.write("\3\2\2\2\u0373\u0374\3\2\2\2\u0374\u0376\3\2\2\2\u0375")
+        buf.write("\u0364\3\2\2\2\u0375\u0365\3\2\2\2\u0375\u036c\3\2\2\2")
+        buf.write("\u0376\u008b\3\2\2\2\u0377\u0385\7\35\2\2\u0378\u0379")
+        buf.write("\7\16\2\2\u0379\u037c\7%\2\2\u037a\u037c\7'\2\2\u037b")
+        buf.write("\u0378\3\2\2\2\u037b\u037a\3\2\2\2\u037c\u037d\3\2\2\2")
+        buf.write("\u037d\u0382\7e\2\2\u037e\u037f\7\\\2\2\u037f\u0380\5")
+        buf.write("<\37\2\u0380\u0381\7]\2\2\u0381\u0383\3\2\2\2\u0382\u037e")
+        buf.write("\3\2\2\2\u0382\u0383\3\2\2\2\u0383\u0385\3\2\2\2\u0384")
+        buf.write("\u0377\3\2\2\2\u0384\u037b\3\2\2\2\u0385\u008d\3\2\2\2")
+        buf.write("\u0386\u0387\7\13\2\2\u0387\u038a\7%\2\2\u0388\u038a\7")
+        buf.write("&\2\2\u0389\u0386\3\2\2\2\u0389\u0388\3\2\2\2\u038a\u038b")
+        buf.write("\3\2\2\2\u038b\u0390\7e\2\2\u038c\u038d\7\\\2\2\u038d")
+        buf.write("\u038e\5<\37\2\u038e\u038f\7]\2\2\u038f\u0391\3\2\2\2")
+        buf.write("\u0390\u038c\3\2\2\2\u0390\u0391\3\2\2\2\u0391\u008f\3")
+        buf.write("\2\2\2\u0392\u0394\5\u0092J\2\u0393\u0395\5\u00b6\\\2")
+        buf.write("\u0394\u0393\3\2\2\2\u0394\u0395\3\2\2\2\u0395\u039e\3")
+        buf.write("\2\2\2\u0396\u039b\5\u0098M\2\u0397\u0399\5\u0092J\2\u0398")
+        buf.write("\u039a\5\u00b6\\\2\u0399\u0398\3\2\2\2\u0399\u039a\3\2")
+        buf.write("\2\2\u039a\u039c\3\2\2\2\u039b\u0397\3\2\2\2\u039b\u039c")
+        buf.write("\3\2\2\2\u039c\u039e\3\2\2\2\u039d\u0392\3\2\2\2\u039d")
+        buf.write("\u0396\3\2\2\2\u039e\u0091\3\2\2\2\u039f\u03a0\7\26\2")
+        buf.write("\2\u03a0\u03a1\7%\2\2\u03a1\u03a2\7e\2\2\u03a2\u0093\3")
+        buf.write("\2\2\2\u03a3\u03a4\7-\2\2\u03a4\u03a5\7%\2\2\u03a5\u03a6")
         buf.write("\7e\2\2\u03a6\u0095\3\2\2\2\u03a7\u03a8\7\22\2\2\u03a8")
         buf.write("\u03a9\7%\2\2\u03a9\u03aa\7e\2\2\u03aa\u0097\3\2\2\2\u03ab")
         buf.write("\u03af\5\u009aN\2\u03ac\u03af\5\u009cO\2\u03ad\u03af\5")
@@ -597,56 +598,225 @@ def serializedATN():
         return buf.getvalue()
 
 
-class jacParser ( Parser ):
+class jacParser(Parser):
 
     grammarFileName = "jac.g4"
 
     atn = ATNDeserializer().deserialize(serializedATN())
 
-    decisionsToDFA = [ DFA(ds, i) for i, ds in enumerate(atn.decisionToState) ]
+    decisionsToDFA = [DFA(ds, i) for i, ds in enumerate(atn.decisionToState)]
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "'version'", "'&'", "'-->'", "'->'", "'<--'", 
-                     "'<-'", "'<-->'", "'--'", "'str'", "'int'", "'float'", 
-                     "'list'", "'dict'", "'bool'", "'type'", "'graph'", 
-                     "'strict'", "'digraph'", "'subgraph'", "'node'", "'ignore'", 
-                     "'take'", "'spawn'", "'with'", "'entry'", "'exit'", 
-                     "'length'", "'keys'", "'context'", "'info'", "'details'", 
-                     "'activity'", "'import'", "':'", "'::'", "'s::'", "'l::'", 
-                     "'d::'", "'::>'", "'{'", "'}'", "'edge'", "'walker'", 
-                     "'test'", "'assert'", "';'", "'='", "'+='", "'-='", 
-                     "'*='", "'/='", "':='", "<INVALID>", "<INVALID>", "'if'", 
-                     "'elif'", "'else'", "'for'", "'to'", "'by'", "'while'", 
-                     "'continue'", "'break'", "'disengage'", "'skip'", "'report'", 
-                     "'destroy'", "'try'", "'.'", "<INVALID>", "'=='", "'<'", 
-                     "'>'", "'<='", "'>='", "'!='", "'in'", "'anchor'", 
-                     "'has'", "'global'", "'private'", "','", "'can'", "'+'", 
-                     "'-'", "'*'", "'/'", "'%'", "'^'", "'('", "')'", "'['", 
-                     "']'", "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                     "'null'" ]
+    literalNames = [
+        "<INVALID>",
+        "'version'",
+        "'&'",
+        "'-->'",
+        "'->'",
+        "'<--'",
+        "'<-'",
+        "'<-->'",
+        "'--'",
+        "'str'",
+        "'int'",
+        "'float'",
+        "'list'",
+        "'dict'",
+        "'bool'",
+        "'type'",
+        "'graph'",
+        "'strict'",
+        "'digraph'",
+        "'subgraph'",
+        "'node'",
+        "'ignore'",
+        "'take'",
+        "'spawn'",
+        "'with'",
+        "'entry'",
+        "'exit'",
+        "'length'",
+        "'keys'",
+        "'context'",
+        "'info'",
+        "'details'",
+        "'activity'",
+        "'import'",
+        "':'",
+        "'::'",
+        "'s::'",
+        "'l::'",
+        "'d::'",
+        "'::>'",
+        "'{'",
+        "'}'",
+        "'edge'",
+        "'walker'",
+        "'test'",
+        "'assert'",
+        "';'",
+        "'='",
+        "'+='",
+        "'-='",
+        "'*='",
+        "'/='",
+        "':='",
+        "<INVALID>",
+        "<INVALID>",
+        "'if'",
+        "'elif'",
+        "'else'",
+        "'for'",
+        "'to'",
+        "'by'",
+        "'while'",
+        "'continue'",
+        "'break'",
+        "'disengage'",
+        "'skip'",
+        "'report'",
+        "'destroy'",
+        "'try'",
+        "'.'",
+        "<INVALID>",
+        "'=='",
+        "'<'",
+        "'>'",
+        "'<='",
+        "'>='",
+        "'!='",
+        "'in'",
+        "'anchor'",
+        "'has'",
+        "'global'",
+        "'private'",
+        "','",
+        "'can'",
+        "'+'",
+        "'-'",
+        "'*'",
+        "'/'",
+        "'%'",
+        "'^'",
+        "'('",
+        "')'",
+        "'['",
+        "']'",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "'null'",
+    ]
 
-    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "TYP_STRING", "TYP_INT", "TYP_FLOAT", 
-                      "TYP_LIST", "TYP_DICT", "TYP_BOOL", "KW_TYPE", "KW_GRAPH", 
-                      "KW_STRICT", "KW_DIGRAPH", "KW_SUBGRAPH", "KW_NODE", 
-                      "KW_IGNORE", "KW_TAKE", "KW_SPAWN", "KW_WITH", "KW_ENTRY", 
-                      "KW_EXIT", "KW_LENGTH", "KW_KEYS", "KW_CONTEXT", "KW_INFO", 
-                      "KW_DETAILS", "KW_ACTIVITY", "KW_IMPORT", "COLON", 
-                      "DBL_COLON", "STR_DBL_COLON", "LIST_DBL_COLON", "DICT_DBL_COLON", 
-                      "COLON_OUT", "LBRACE", "RBRACE", "KW_EDGE", "KW_WALKER", 
-                      "KW_TEST", "KW_ASSERT", "SEMI", "EQ", "PEQ", "MEQ", 
-                      "TEQ", "DEQ", "CPY_EQ", "KW_AND", "KW_OR", "KW_IF", 
-                      "KW_ELIF", "KW_ELSE", "KW_FOR", "KW_TO", "KW_BY", 
-                      "KW_WHILE", "KW_CONTINUE", "KW_BREAK", "KW_DISENGAGE", 
-                      "KW_SKIP", "KW_REPORT", "KW_DESTROY", "KW_TRY", "DOT", 
-                      "NOT", "EE", "LT", "GT", "LTE", "GTE", "NE", "KW_IN", 
-                      "KW_ANCHOR", "KW_HAS", "KW_GLOBAL", "KW_PRIVATE", 
-                      "COMMA", "KW_CAN", "PLUS", "MINUS", "STAR_MUL", "DIV", 
-                      "MOD", "POW", "LPAREN", "RPAREN", "LSQUARE", "RSQUARE", 
-                      "FLOAT", "STRING", "BOOL", "INT", "NULL", "NAME", 
-                      "COMMENT", "LINE_COMMENT", "PY_COMMENT", "WS", "ErrorChar" ]
+    symbolicNames = [
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "TYP_STRING",
+        "TYP_INT",
+        "TYP_FLOAT",
+        "TYP_LIST",
+        "TYP_DICT",
+        "TYP_BOOL",
+        "KW_TYPE",
+        "KW_GRAPH",
+        "KW_STRICT",
+        "KW_DIGRAPH",
+        "KW_SUBGRAPH",
+        "KW_NODE",
+        "KW_IGNORE",
+        "KW_TAKE",
+        "KW_SPAWN",
+        "KW_WITH",
+        "KW_ENTRY",
+        "KW_EXIT",
+        "KW_LENGTH",
+        "KW_KEYS",
+        "KW_CONTEXT",
+        "KW_INFO",
+        "KW_DETAILS",
+        "KW_ACTIVITY",
+        "KW_IMPORT",
+        "COLON",
+        "DBL_COLON",
+        "STR_DBL_COLON",
+        "LIST_DBL_COLON",
+        "DICT_DBL_COLON",
+        "COLON_OUT",
+        "LBRACE",
+        "RBRACE",
+        "KW_EDGE",
+        "KW_WALKER",
+        "KW_TEST",
+        "KW_ASSERT",
+        "SEMI",
+        "EQ",
+        "PEQ",
+        "MEQ",
+        "TEQ",
+        "DEQ",
+        "CPY_EQ",
+        "KW_AND",
+        "KW_OR",
+        "KW_IF",
+        "KW_ELIF",
+        "KW_ELSE",
+        "KW_FOR",
+        "KW_TO",
+        "KW_BY",
+        "KW_WHILE",
+        "KW_CONTINUE",
+        "KW_BREAK",
+        "KW_DISENGAGE",
+        "KW_SKIP",
+        "KW_REPORT",
+        "KW_DESTROY",
+        "KW_TRY",
+        "DOT",
+        "NOT",
+        "EE",
+        "LT",
+        "GT",
+        "LTE",
+        "GTE",
+        "NE",
+        "KW_IN",
+        "KW_ANCHOR",
+        "KW_HAS",
+        "KW_GLOBAL",
+        "KW_PRIVATE",
+        "COMMA",
+        "KW_CAN",
+        "PLUS",
+        "MINUS",
+        "STAR_MUL",
+        "DIV",
+        "MOD",
+        "POW",
+        "LPAREN",
+        "RPAREN",
+        "LSQUARE",
+        "RSQUARE",
+        "FLOAT",
+        "STRING",
+        "BOOL",
+        "INT",
+        "NULL",
+        "NAME",
+        "COMMENT",
+        "LINE_COMMENT",
+        "PY_COMMENT",
+        "WS",
+        "ErrorChar",
+    ]
 
     RULE_start = 0
     RULE_import_module = 1
@@ -757,152 +927,237 @@ class jacParser ( Parser ):
     RULE_dot_subgraph = 106
     RULE_dot_id = 107
 
-    ruleNames =  [ "start", "import_module", "ver_label", "import_items", 
-                   "import_names", "element", "global_var", "architype", 
-                   "walker", "walker_block", "test", "namespaces", "walk_entry_block", 
-                   "walk_exit_block", "walk_activity_block", "attr_block", 
-                   "attr_stmt", "can_block", "graph_block", "graph_block_spawn", 
-                   "graph_block_dot", "has_root", "has_stmt", "has_assign", 
-                   "can_stmt", "event_clause", "preset_in_out", "dotted_name", 
-                   "name_list", "expr_list", "code_block", "node_ctx_block", 
-                   "statement", "if_stmt", "try_stmt", "else_from_try", 
-                   "elif_stmt", "else_stmt", "for_stmt", "while_stmt", "ctrl_stmt", 
-                   "assert_stmt", "destroy_action", "report_action", "walker_action", 
-                   "ignore_action", "take_action", "expression", "assignment", 
-                   "copy_assign", "inc_assign", "connect", "logical", "compare", 
-                   "cmp_op", "nin", "arithmetic", "term", "factor", "power", 
-                   "atom", "atom_trailer", "ability_op", "ref", "deref", 
-                   "built_in", "cast_built_in", "obj_built_in", "dict_built_in", 
-                   "list_built_in", "string_built_in", "node_edge_ref", 
-                   "node_ref", "walker_ref", "graph_ref", "edge_ref", "edge_to", 
-                   "edge_from", "edge_any", "list_val", "index_slice", "dict_val", 
-                   "kv_pair", "spawn", "spawn_object", "spawn_edge", "node_spawn", 
-                   "graph_spawn", "walker_spawn", "spawn_ctx", "filter_ctx", 
-                   "spawn_assign", "filter_compare", "any_type", "dot_graph", 
-                   "dot_stmt_list", "dot_stmt", "dot_attr_stmt", "dot_attr_list", 
-                   "dot_a_list", "dot_edge_stmt", "dot_edgeRHS", "dot_edgeop", 
-                   "dot_node_stmt", "dot_node_id", "dot_port", "dot_subgraph", 
-                   "dot_id" ]
+    ruleNames = [
+        "start",
+        "import_module",
+        "ver_label",
+        "import_items",
+        "import_names",
+        "element",
+        "global_var",
+        "architype",
+        "walker",
+        "walker_block",
+        "test",
+        "namespaces",
+        "walk_entry_block",
+        "walk_exit_block",
+        "walk_activity_block",
+        "attr_block",
+        "attr_stmt",
+        "can_block",
+        "graph_block",
+        "graph_block_spawn",
+        "graph_block_dot",
+        "has_root",
+        "has_stmt",
+        "has_assign",
+        "can_stmt",
+        "event_clause",
+        "preset_in_out",
+        "dotted_name",
+        "name_list",
+        "expr_list",
+        "code_block",
+        "node_ctx_block",
+        "statement",
+        "if_stmt",
+        "try_stmt",
+        "else_from_try",
+        "elif_stmt",
+        "else_stmt",
+        "for_stmt",
+        "while_stmt",
+        "ctrl_stmt",
+        "assert_stmt",
+        "destroy_action",
+        "report_action",
+        "walker_action",
+        "ignore_action",
+        "take_action",
+        "expression",
+        "assignment",
+        "copy_assign",
+        "inc_assign",
+        "connect",
+        "logical",
+        "compare",
+        "cmp_op",
+        "nin",
+        "arithmetic",
+        "term",
+        "factor",
+        "power",
+        "atom",
+        "atom_trailer",
+        "ability_op",
+        "ref",
+        "deref",
+        "built_in",
+        "cast_built_in",
+        "obj_built_in",
+        "dict_built_in",
+        "list_built_in",
+        "string_built_in",
+        "node_edge_ref",
+        "node_ref",
+        "walker_ref",
+        "graph_ref",
+        "edge_ref",
+        "edge_to",
+        "edge_from",
+        "edge_any",
+        "list_val",
+        "index_slice",
+        "dict_val",
+        "kv_pair",
+        "spawn",
+        "spawn_object",
+        "spawn_edge",
+        "node_spawn",
+        "graph_spawn",
+        "walker_spawn",
+        "spawn_ctx",
+        "filter_ctx",
+        "spawn_assign",
+        "filter_compare",
+        "any_type",
+        "dot_graph",
+        "dot_stmt_list",
+        "dot_stmt",
+        "dot_attr_stmt",
+        "dot_attr_list",
+        "dot_a_list",
+        "dot_edge_stmt",
+        "dot_edgeRHS",
+        "dot_edgeop",
+        "dot_node_stmt",
+        "dot_node_id",
+        "dot_port",
+        "dot_subgraph",
+        "dot_id",
+    ]
 
     EOF = Token.EOF
-    T__0=1
-    T__1=2
-    T__2=3
-    T__3=4
-    T__4=5
-    T__5=6
-    T__6=7
-    T__7=8
-    TYP_STRING=9
-    TYP_INT=10
-    TYP_FLOAT=11
-    TYP_LIST=12
-    TYP_DICT=13
-    TYP_BOOL=14
-    KW_TYPE=15
-    KW_GRAPH=16
-    KW_STRICT=17
-    KW_DIGRAPH=18
-    KW_SUBGRAPH=19
-    KW_NODE=20
-    KW_IGNORE=21
-    KW_TAKE=22
-    KW_SPAWN=23
-    KW_WITH=24
-    KW_ENTRY=25
-    KW_EXIT=26
-    KW_LENGTH=27
-    KW_KEYS=28
-    KW_CONTEXT=29
-    KW_INFO=30
-    KW_DETAILS=31
-    KW_ACTIVITY=32
-    KW_IMPORT=33
-    COLON=34
-    DBL_COLON=35
-    STR_DBL_COLON=36
-    LIST_DBL_COLON=37
-    DICT_DBL_COLON=38
-    COLON_OUT=39
-    LBRACE=40
-    RBRACE=41
-    KW_EDGE=42
-    KW_WALKER=43
-    KW_TEST=44
-    KW_ASSERT=45
-    SEMI=46
-    EQ=47
-    PEQ=48
-    MEQ=49
-    TEQ=50
-    DEQ=51
-    CPY_EQ=52
-    KW_AND=53
-    KW_OR=54
-    KW_IF=55
-    KW_ELIF=56
-    KW_ELSE=57
-    KW_FOR=58
-    KW_TO=59
-    KW_BY=60
-    KW_WHILE=61
-    KW_CONTINUE=62
-    KW_BREAK=63
-    KW_DISENGAGE=64
-    KW_SKIP=65
-    KW_REPORT=66
-    KW_DESTROY=67
-    KW_TRY=68
-    DOT=69
-    NOT=70
-    EE=71
-    LT=72
-    GT=73
-    LTE=74
-    GTE=75
-    NE=76
-    KW_IN=77
-    KW_ANCHOR=78
-    KW_HAS=79
-    KW_GLOBAL=80
-    KW_PRIVATE=81
-    COMMA=82
-    KW_CAN=83
-    PLUS=84
-    MINUS=85
-    STAR_MUL=86
-    DIV=87
-    MOD=88
-    POW=89
-    LPAREN=90
-    RPAREN=91
-    LSQUARE=92
-    RSQUARE=93
-    FLOAT=94
-    STRING=95
-    BOOL=96
-    INT=97
-    NULL=98
-    NAME=99
-    COMMENT=100
-    LINE_COMMENT=101
-    PY_COMMENT=102
-    WS=103
-    ErrorChar=104
+    T__0 = 1
+    T__1 = 2
+    T__2 = 3
+    T__3 = 4
+    T__4 = 5
+    T__5 = 6
+    T__6 = 7
+    T__7 = 8
+    TYP_STRING = 9
+    TYP_INT = 10
+    TYP_FLOAT = 11
+    TYP_LIST = 12
+    TYP_DICT = 13
+    TYP_BOOL = 14
+    KW_TYPE = 15
+    KW_GRAPH = 16
+    KW_STRICT = 17
+    KW_DIGRAPH = 18
+    KW_SUBGRAPH = 19
+    KW_NODE = 20
+    KW_IGNORE = 21
+    KW_TAKE = 22
+    KW_SPAWN = 23
+    KW_WITH = 24
+    KW_ENTRY = 25
+    KW_EXIT = 26
+    KW_LENGTH = 27
+    KW_KEYS = 28
+    KW_CONTEXT = 29
+    KW_INFO = 30
+    KW_DETAILS = 31
+    KW_ACTIVITY = 32
+    KW_IMPORT = 33
+    COLON = 34
+    DBL_COLON = 35
+    STR_DBL_COLON = 36
+    LIST_DBL_COLON = 37
+    DICT_DBL_COLON = 38
+    COLON_OUT = 39
+    LBRACE = 40
+    RBRACE = 41
+    KW_EDGE = 42
+    KW_WALKER = 43
+    KW_TEST = 44
+    KW_ASSERT = 45
+    SEMI = 46
+    EQ = 47
+    PEQ = 48
+    MEQ = 49
+    TEQ = 50
+    DEQ = 51
+    CPY_EQ = 52
+    KW_AND = 53
+    KW_OR = 54
+    KW_IF = 55
+    KW_ELIF = 56
+    KW_ELSE = 57
+    KW_FOR = 58
+    KW_TO = 59
+    KW_BY = 60
+    KW_WHILE = 61
+    KW_CONTINUE = 62
+    KW_BREAK = 63
+    KW_DISENGAGE = 64
+    KW_SKIP = 65
+    KW_REPORT = 66
+    KW_DESTROY = 67
+    KW_TRY = 68
+    DOT = 69
+    NOT = 70
+    EE = 71
+    LT = 72
+    GT = 73
+    LTE = 74
+    GTE = 75
+    NE = 76
+    KW_IN = 77
+    KW_ANCHOR = 78
+    KW_HAS = 79
+    KW_GLOBAL = 80
+    KW_PRIVATE = 81
+    COMMA = 82
+    KW_CAN = 83
+    PLUS = 84
+    MINUS = 85
+    STAR_MUL = 86
+    DIV = 87
+    MOD = 88
+    POW = 89
+    LPAREN = 90
+    RPAREN = 91
+    LSQUARE = 92
+    RSQUARE = 93
+    FLOAT = 94
+    STRING = 95
+    BOOL = 96
+    INT = 97
+    NULL = 98
+    NAME = 99
+    COMMENT = 100
+    LINE_COMMENT = 101
+    PY_COMMENT = 102
+    WS = 103
+    ErrorChar = 104
 
-    def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
+    def __init__(self, input: TokenStream, output: TextIO = sys.stdout):
         super().__init__(input, output)
         self.checkVersion("4.9.2")
-        self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
+        self._interp = ParserATNSimulator(
+            self, self.atn, self.decisionsToDFA, self.sharedContextCache
+        )
         self._predicates = None
 
-
-
-
     class StartContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -910,56 +1165,49 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.EOF, 0)
 
         def ver_label(self):
-            return self.getTypedRuleContext(jacParser.Ver_labelContext,0)
+            return self.getTypedRuleContext(jacParser.Ver_labelContext, 0)
 
-
-        def import_module(self, i:int=None):
+        def import_module(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Import_moduleContext)
             else:
-                return self.getTypedRuleContext(jacParser.Import_moduleContext,i)
+                return self.getTypedRuleContext(jacParser.Import_moduleContext, i)
 
-
-        def element(self, i:int=None):
+        def element(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.ElementContext)
             else:
-                return self.getTypedRuleContext(jacParser.ElementContext,i)
-
+                return self.getTypedRuleContext(jacParser.ElementContext, i)
 
         def getRuleIndex(self):
             return jacParser.RULE_start
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterStart" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterStart"):
                 listener.enterStart(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitStart" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitStart"):
                 listener.exitStart(self)
-
-
-
 
     def start(self):
 
         localctx = jacParser.StartContext(self, self._ctx, self.state)
         self.enterRule(localctx, 0, self.RULE_start)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 217
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.T__0:
+            if _la == jacParser.T__0:
                 self.state = 216
                 self.ver_label()
-
 
             self.state = 222
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==jacParser.KW_IMPORT:
+            while _la == jacParser.KW_IMPORT:
                 self.state = 219
                 self.import_module()
                 self.state = 224
@@ -969,7 +1217,20 @@ class jacParser ( Parser ):
             self.state = 228
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE) | (1 << jacParser.KW_WALKER) | (1 << jacParser.KW_TEST))) != 0) or _la==jacParser.KW_GLOBAL:
+            while (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << jacParser.KW_GRAPH)
+                        | (1 << jacParser.KW_NODE)
+                        | (1 << jacParser.KW_EDGE)
+                        | (1 << jacParser.KW_WALKER)
+                        | (1 << jacParser.KW_TEST)
+                    )
+                )
+                != 0
+            ) or _la == jacParser.KW_GLOBAL:
                 self.state = 225
                 self.element()
                 self.state = 230
@@ -986,11 +1247,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Import_moduleContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1013,8 +1275,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.SEMI, 0)
 
         def import_items(self):
-            return self.getTypedRuleContext(jacParser.Import_itemsContext,0)
-
+            return self.getTypedRuleContext(jacParser.Import_itemsContext, 0)
 
         def STAR_MUL(self):
             return self.getToken(jacParser.STAR_MUL, 0)
@@ -1022,16 +1283,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_import_module
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterImport_module" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterImport_module"):
                 listener.enterImport_module(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitImport_module" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitImport_module"):
                 listener.exitImport_module(self)
-
-
-
 
     def import_module(self):
 
@@ -1046,7 +1304,13 @@ class jacParser ( Parser ):
             self.state = 237
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [jacParser.KW_GRAPH, jacParser.KW_NODE, jacParser.KW_EDGE, jacParser.KW_WALKER, jacParser.KW_GLOBAL]:
+            if token in [
+                jacParser.KW_GRAPH,
+                jacParser.KW_NODE,
+                jacParser.KW_EDGE,
+                jacParser.KW_WALKER,
+                jacParser.KW_GLOBAL,
+            ]:
                 self.state = 235
                 self.import_items()
                 pass
@@ -1073,11 +1337,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Ver_labelContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1093,22 +1358,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_ver_label
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterVer_label" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterVer_label"):
                 listener.enterVer_label(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitVer_label" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitVer_label"):
                 listener.exitVer_label(self)
-
-
-
 
     def ver_label(self):
 
         localctx = jacParser.Ver_labelContext(self, self._ctx, self.state)
         self.enterRule(localctx, 4, self.RULE_ver_label)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 244
@@ -1120,10 +1382,9 @@ class jacParser ( Parser ):
             self.state = 248
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.SEMI:
+            if _la == jacParser.SEMI:
                 self.state = 247
                 self.match(jacParser.SEMI)
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -1133,11 +1394,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Import_itemsContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1148,15 +1410,13 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.STAR_MUL, 0)
 
         def import_names(self):
-            return self.getTypedRuleContext(jacParser.Import_namesContext,0)
-
+            return self.getTypedRuleContext(jacParser.Import_namesContext, 0)
 
         def COMMA(self):
             return self.getToken(jacParser.COMMA, 0)
 
         def import_items(self):
-            return self.getTypedRuleContext(jacParser.Import_itemsContext,0)
-
+            return self.getTypedRuleContext(jacParser.Import_itemsContext, 0)
 
         def KW_NODE(self):
             return self.getToken(jacParser.KW_NODE, 0)
@@ -1173,22 +1433,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_import_items
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterImport_items" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterImport_items"):
                 listener.enterImport_items(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitImport_items" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitImport_items"):
                 listener.exitImport_items(self)
-
-
-
 
     def import_items(self):
 
         localctx = jacParser.Import_itemsContext(self, self._ctx, self.state)
         self.enterRule(localctx, 6, self.RULE_import_items)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 295
             self._errHandler.sync(self)
@@ -1214,12 +1471,11 @@ class jacParser ( Parser ):
                 self.state = 257
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.COMMA:
+                if _la == jacParser.COMMA:
                     self.state = 255
                     self.match(jacParser.COMMA)
                     self.state = 256
                     self.import_items()
-
 
                 pass
             elif token in [jacParser.KW_NODE]:
@@ -1243,12 +1499,11 @@ class jacParser ( Parser ):
                 self.state = 266
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.COMMA:
+                if _la == jacParser.COMMA:
                     self.state = 264
                     self.match(jacParser.COMMA)
                     self.state = 265
                     self.import_items()
-
 
                 pass
             elif token in [jacParser.KW_EDGE]:
@@ -1272,12 +1527,11 @@ class jacParser ( Parser ):
                 self.state = 275
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.COMMA:
+                if _la == jacParser.COMMA:
                     self.state = 273
                     self.match(jacParser.COMMA)
                     self.state = 274
                     self.import_items()
-
 
                 pass
             elif token in [jacParser.KW_GRAPH]:
@@ -1301,12 +1555,11 @@ class jacParser ( Parser ):
                 self.state = 284
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.COMMA:
+                if _la == jacParser.COMMA:
                     self.state = 282
                     self.match(jacParser.COMMA)
                     self.state = 283
                     self.import_items()
-
 
                 pass
             elif token in [jacParser.KW_GLOBAL]:
@@ -1330,12 +1583,11 @@ class jacParser ( Parser ):
                 self.state = 293
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.COMMA:
+                if _la == jacParser.COMMA:
                     self.state = 291
                     self.match(jacParser.COMMA)
                     self.state = 292
                     self.import_items()
-
 
                 pass
             else:
@@ -1349,11 +1601,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Import_namesContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1367,8 +1620,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.LBRACE, 0)
 
         def name_list(self):
-            return self.getTypedRuleContext(jacParser.Name_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Name_listContext, 0)
 
         def RBRACE(self):
             return self.getToken(jacParser.RBRACE, 0)
@@ -1376,16 +1628,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_import_names
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterImport_names" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterImport_names"):
                 listener.enterImport_names(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitImport_names" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitImport_names"):
                 listener.exitImport_names(self)
-
-
-
 
     def import_names(self):
 
@@ -1394,7 +1643,7 @@ class jacParser ( Parser ):
         try:
             self.state = 304
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,16,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 16, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 297
@@ -1415,7 +1664,6 @@ class jacParser ( Parser ):
                 self.match(jacParser.RBRACE)
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1424,43 +1672,37 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ElementContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def global_var(self):
-            return self.getTypedRuleContext(jacParser.Global_varContext,0)
-
+            return self.getTypedRuleContext(jacParser.Global_varContext, 0)
 
         def architype(self):
-            return self.getTypedRuleContext(jacParser.ArchitypeContext,0)
-
+            return self.getTypedRuleContext(jacParser.ArchitypeContext, 0)
 
         def walker(self):
-            return self.getTypedRuleContext(jacParser.WalkerContext,0)
-
+            return self.getTypedRuleContext(jacParser.WalkerContext, 0)
 
         def test(self):
-            return self.getTypedRuleContext(jacParser.TestContext,0)
-
+            return self.getTypedRuleContext(jacParser.TestContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_element
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterElement" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterElement"):
                 listener.enterElement(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitElement" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitElement"):
                 listener.exitElement(self)
-
-
-
 
     def element(self):
 
@@ -1501,40 +1743,40 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Global_varContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def KW_GLOBAL(self):
             return self.getToken(jacParser.KW_GLOBAL, 0)
 
-        def NAME(self, i:int=None):
+        def NAME(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.NAME)
             else:
                 return self.getToken(jacParser.NAME, i)
 
-        def EQ(self, i:int=None):
+        def EQ(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.EQ)
             else:
                 return self.getToken(jacParser.EQ, i)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(jacParser.ExpressionContext,i)
-
+                return self.getTypedRuleContext(jacParser.ExpressionContext, i)
 
         def SEMI(self):
             return self.getToken(jacParser.SEMI, 0)
 
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COMMA)
             else:
@@ -1543,22 +1785,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_global_var
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterGlobal_var" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterGlobal_var"):
                 listener.enterGlobal_var(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitGlobal_var" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitGlobal_var"):
                 listener.exitGlobal_var(self)
-
-
-
 
     def global_var(self):
 
         localctx = jacParser.Global_varContext(self, self._ctx, self.state)
         self.enterRule(localctx, 12, self.RULE_global_var)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 312
@@ -1572,7 +1811,7 @@ class jacParser ( Parser ):
             self.state = 322
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==jacParser.COMMA:
+            while _la == jacParser.COMMA:
                 self.state = 316
                 self.match(jacParser.COMMA)
                 self.state = 317
@@ -1595,28 +1834,28 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ArchitypeContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def KW_NODE(self):
             return self.getToken(jacParser.KW_NODE, 0)
 
-        def NAME(self, i:int=None):
+        def NAME(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.NAME)
             else:
                 return self.getToken(jacParser.NAME, i)
 
         def attr_block(self):
-            return self.getTypedRuleContext(jacParser.Attr_blockContext,0)
+            return self.getTypedRuleContext(jacParser.Attr_blockContext, 0)
 
-
-        def COLON(self, i:int=None):
+        def COLON(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COLON)
             else:
@@ -1632,22 +1871,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_GRAPH, 0)
 
         def graph_block(self):
-            return self.getTypedRuleContext(jacParser.Graph_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Graph_blockContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_architype
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterArchitype" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterArchitype"):
                 listener.enterArchitype(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitArchitype" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitArchitype"):
                 listener.exitArchitype(self)
-
-
-
 
     def architype(self):
 
@@ -1665,26 +1900,25 @@ class jacParser ( Parser ):
                 self.match(jacParser.NAME)
                 self.state = 333
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,19,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 19, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 329
                         self.match(jacParser.COLON)
                         self.state = 330
-                        self.match(jacParser.NAME) 
+                        self.match(jacParser.NAME)
                     self.state = 335
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,19,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 19, self._ctx)
 
                 self.state = 338
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,20,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 20, self._ctx)
                 if la_ == 1:
                     self.state = 336
                     self.match(jacParser.COLON)
                     self.state = 337
                     self.match(jacParser.INT)
-
 
                 self.state = 340
                 self.attr_block()
@@ -1697,16 +1931,16 @@ class jacParser ( Parser ):
                 self.match(jacParser.NAME)
                 self.state = 347
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,21,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 21, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 343
                         self.match(jacParser.COLON)
                         self.state = 344
-                        self.match(jacParser.NAME) 
+                        self.match(jacParser.NAME)
                     self.state = 349
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,21,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 21, self._ctx)
 
                 self.state = 350
                 self.attr_block()
@@ -1731,11 +1965,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class WalkerContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1746,32 +1981,27 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.NAME, 0)
 
         def walker_block(self):
-            return self.getTypedRuleContext(jacParser.Walker_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Walker_blockContext, 0)
 
         def namespaces(self):
-            return self.getTypedRuleContext(jacParser.NamespacesContext,0)
-
+            return self.getTypedRuleContext(jacParser.NamespacesContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_walker
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterWalker" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterWalker"):
                 listener.enterWalker(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitWalker" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitWalker"):
                 listener.exitWalker(self)
-
-
-
 
     def walker(self):
 
         localctx = jacParser.WalkerContext(self, self._ctx, self.state)
         self.enterRule(localctx, 16, self.RULE_walker)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 356
@@ -1781,10 +2011,9 @@ class jacParser ( Parser ):
             self.state = 359
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.COLON:
+            if _la == jacParser.COLON:
                 self.state = 358
                 self.namespaces()
-
 
             self.state = 361
             self.walker_block()
@@ -1796,11 +2025,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Walker_blockContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1810,54 +2040,46 @@ class jacParser ( Parser ):
         def RBRACE(self):
             return self.getToken(jacParser.RBRACE, 0)
 
-        def attr_stmt(self, i:int=None):
+        def attr_stmt(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Attr_stmtContext)
             else:
-                return self.getTypedRuleContext(jacParser.Attr_stmtContext,i)
-
+                return self.getTypedRuleContext(jacParser.Attr_stmtContext, i)
 
         def walk_entry_block(self):
-            return self.getTypedRuleContext(jacParser.Walk_entry_blockContext,0)
+            return self.getTypedRuleContext(jacParser.Walk_entry_blockContext, 0)
 
-
-        def statement(self, i:int=None):
+        def statement(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.StatementContext)
             else:
-                return self.getTypedRuleContext(jacParser.StatementContext,i)
+                return self.getTypedRuleContext(jacParser.StatementContext, i)
 
-
-        def walk_activity_block(self, i:int=None):
+        def walk_activity_block(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Walk_activity_blockContext)
             else:
-                return self.getTypedRuleContext(jacParser.Walk_activity_blockContext,i)
-
+                return self.getTypedRuleContext(jacParser.Walk_activity_blockContext, i)
 
         def walk_exit_block(self):
-            return self.getTypedRuleContext(jacParser.Walk_exit_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Walk_exit_blockContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_walker_block
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterWalker_block" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterWalker_block"):
                 listener.enterWalker_block(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitWalker_block" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitWalker_block"):
                 listener.exitWalker_block(self)
-
-
-
 
     def walker_block(self):
 
         localctx = jacParser.Walker_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 18, self.RULE_walker_block)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 363
@@ -1865,7 +2087,7 @@ class jacParser ( Parser ):
             self.state = 367
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==jacParser.KW_HAS or _la==jacParser.KW_CAN:
+            while _la == jacParser.KW_HAS or _la == jacParser.KW_CAN:
                 self.state = 364
                 self.attr_stmt()
                 self.state = 369
@@ -1874,21 +2096,65 @@ class jacParser ( Parser ):
 
             self.state = 371
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,25,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 25, self._ctx)
             if la_ == 1:
                 self.state = 370
                 self.walk_entry_block()
 
-
             self.state = 377
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,27,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 27, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 375
                     self._errHandler.sync(self)
                     token = self._input.LA(1)
-                    if token in [jacParser.T__1, jacParser.T__2, jacParser.T__4, jacParser.T__5, jacParser.T__6, jacParser.TYP_STRING, jacParser.TYP_INT, jacParser.TYP_FLOAT, jacParser.TYP_LIST, jacParser.TYP_DICT, jacParser.TYP_BOOL, jacParser.KW_TYPE, jacParser.KW_NODE, jacParser.KW_IGNORE, jacParser.KW_TAKE, jacParser.KW_SPAWN, jacParser.COLON, jacParser.DBL_COLON, jacParser.LBRACE, jacParser.KW_EDGE, jacParser.KW_ASSERT, jacParser.KW_IF, jacParser.KW_FOR, jacParser.KW_WHILE, jacParser.KW_CONTINUE, jacParser.KW_BREAK, jacParser.KW_DISENGAGE, jacParser.KW_SKIP, jacParser.KW_REPORT, jacParser.KW_DESTROY, jacParser.KW_TRY, jacParser.NOT, jacParser.KW_GLOBAL, jacParser.PLUS, jacParser.MINUS, jacParser.STAR_MUL, jacParser.LPAREN, jacParser.LSQUARE, jacParser.FLOAT, jacParser.STRING, jacParser.BOOL, jacParser.INT, jacParser.NULL, jacParser.NAME]:
+                    if token in [
+                        jacParser.T__1,
+                        jacParser.T__2,
+                        jacParser.T__4,
+                        jacParser.T__5,
+                        jacParser.T__6,
+                        jacParser.TYP_STRING,
+                        jacParser.TYP_INT,
+                        jacParser.TYP_FLOAT,
+                        jacParser.TYP_LIST,
+                        jacParser.TYP_DICT,
+                        jacParser.TYP_BOOL,
+                        jacParser.KW_TYPE,
+                        jacParser.KW_NODE,
+                        jacParser.KW_IGNORE,
+                        jacParser.KW_TAKE,
+                        jacParser.KW_SPAWN,
+                        jacParser.COLON,
+                        jacParser.DBL_COLON,
+                        jacParser.LBRACE,
+                        jacParser.KW_EDGE,
+                        jacParser.KW_ASSERT,
+                        jacParser.KW_IF,
+                        jacParser.KW_FOR,
+                        jacParser.KW_WHILE,
+                        jacParser.KW_CONTINUE,
+                        jacParser.KW_BREAK,
+                        jacParser.KW_DISENGAGE,
+                        jacParser.KW_SKIP,
+                        jacParser.KW_REPORT,
+                        jacParser.KW_DESTROY,
+                        jacParser.KW_TRY,
+                        jacParser.NOT,
+                        jacParser.KW_GLOBAL,
+                        jacParser.PLUS,
+                        jacParser.MINUS,
+                        jacParser.STAR_MUL,
+                        jacParser.LPAREN,
+                        jacParser.LSQUARE,
+                        jacParser.FLOAT,
+                        jacParser.STRING,
+                        jacParser.BOOL,
+                        jacParser.INT,
+                        jacParser.NULL,
+                        jacParser.NAME,
+                    ]:
                         self.state = 373
                         self.statement()
                         pass
@@ -1898,18 +2164,17 @@ class jacParser ( Parser ):
                         pass
                     else:
                         raise NoViableAltException(self)
-             
+
                 self.state = 379
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,27,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 27, self._ctx)
 
             self.state = 381
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.KW_WITH:
+            if _la == jacParser.KW_WITH:
                 self.state = 380
                 self.walk_exit_block()
-
 
             self.state = 383
             self.match(jacParser.RBRACE)
@@ -1921,11 +2186,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TestContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1942,57 +2208,48 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_BY, 0)
 
         def graph_ref(self):
-            return self.getTypedRuleContext(jacParser.Graph_refContext,0)
-
+            return self.getTypedRuleContext(jacParser.Graph_refContext, 0)
 
         def KW_GRAPH(self):
             return self.getToken(jacParser.KW_GRAPH, 0)
 
         def graph_block(self):
-            return self.getTypedRuleContext(jacParser.Graph_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Graph_blockContext, 0)
 
         def KW_WALKER(self):
             return self.getToken(jacParser.KW_WALKER, 0)
 
         def walker_block(self):
-            return self.getTypedRuleContext(jacParser.Walker_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Walker_blockContext, 0)
 
         def walker_ref(self):
-            return self.getTypedRuleContext(jacParser.Walker_refContext,0)
-
+            return self.getTypedRuleContext(jacParser.Walker_refContext, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def SEMI(self):
             return self.getToken(jacParser.SEMI, 0)
 
         def spawn_ctx(self):
-            return self.getTypedRuleContext(jacParser.Spawn_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Spawn_ctxContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_test
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterTest" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterTest"):
                 listener.enterTest(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitTest" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitTest"):
                 listener.exitTest(self)
-
-
-
 
     def test(self):
 
         localctx = jacParser.TestContext(self, self._ctx, self.state)
         self.enterRule(localctx, 20, self.RULE_test)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 385
@@ -2003,7 +2260,7 @@ class jacParser ( Parser ):
             self.match(jacParser.KW_WITH)
             self.state = 391
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,29,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 29, self._ctx)
             if la_ == 1:
                 self.state = 388
                 self.graph_ref()
@@ -2016,22 +2273,20 @@ class jacParser ( Parser ):
                 self.graph_block()
                 pass
 
-
             self.state = 393
             self.match(jacParser.KW_BY)
             self.state = 404
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,32,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 32, self._ctx)
             if la_ == 1:
                 self.state = 394
                 self.walker_ref()
                 self.state = 396
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.LPAREN:
+                if _la == jacParser.LPAREN:
                     self.state = 395
                     self.spawn_ctx()
-
 
                 self.state = 400
                 self._errHandler.sync(self)
@@ -2056,7 +2311,6 @@ class jacParser ( Parser ):
                 self.walker_block()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -2065,11 +2319,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class NamespacesContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2077,22 +2332,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.COLON, 0)
 
         def name_list(self):
-            return self.getTypedRuleContext(jacParser.Name_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Name_listContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_namespaces
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterNamespaces" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterNamespaces"):
                 listener.enterNamespaces(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitNamespaces" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitNamespaces"):
                 listener.exitNamespaces(self)
-
-
-
 
     def namespaces(self):
 
@@ -2112,11 +2363,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Walk_entry_blockContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2127,22 +2379,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_ENTRY, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_walk_entry_block
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterWalk_entry_block" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterWalk_entry_block"):
                 listener.enterWalk_entry_block(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitWalk_entry_block" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitWalk_entry_block"):
                 listener.exitWalk_entry_block(self)
-
-
-
 
     def walk_entry_block(self):
 
@@ -2164,11 +2412,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Walk_exit_blockContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2179,22 +2428,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_EXIT, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_walk_exit_block
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterWalk_exit_block" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterWalk_exit_block"):
                 listener.enterWalk_exit_block(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitWalk_exit_block" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitWalk_exit_block"):
                 listener.exitWalk_exit_block(self)
-
-
-
 
     def walk_exit_block(self):
 
@@ -2216,11 +2461,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Walk_activity_blockContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2231,22 +2477,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_ACTIVITY, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_walk_activity_block
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterWalk_activity_block" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterWalk_activity_block"):
                 listener.enterWalk_activity_block(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitWalk_activity_block" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitWalk_activity_block"):
                 listener.exitWalk_activity_block(self)
-
-
-
 
     def walk_activity_block(self):
 
@@ -2268,11 +2510,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Attr_blockContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2282,12 +2525,11 @@ class jacParser ( Parser ):
         def RBRACE(self):
             return self.getToken(jacParser.RBRACE, 0)
 
-        def attr_stmt(self, i:int=None):
+        def attr_stmt(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Attr_stmtContext)
             else:
-                return self.getTypedRuleContext(jacParser.Attr_stmtContext,i)
-
+                return self.getTypedRuleContext(jacParser.Attr_stmtContext, i)
 
         def COLON(self):
             return self.getToken(jacParser.COLON, 0)
@@ -2298,22 +2540,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_attr_block
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterAttr_block" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterAttr_block"):
                 listener.enterAttr_block(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitAttr_block" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitAttr_block"):
                 listener.exitAttr_block(self)
-
-
-
 
     def attr_block(self):
 
         localctx = jacParser.Attr_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 30, self.RULE_attr_block)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 432
             self._errHandler.sync(self)
@@ -2325,7 +2564,7 @@ class jacParser ( Parser ):
                 self.state = 425
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while _la==jacParser.KW_HAS or _la==jacParser.KW_CAN:
+                while _la == jacParser.KW_HAS or _la == jacParser.KW_CAN:
                     self.state = 422
                     self.attr_stmt()
                     self.state = 427
@@ -2358,35 +2597,31 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Attr_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def has_stmt(self):
-            return self.getTypedRuleContext(jacParser.Has_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.Has_stmtContext, 0)
 
         def can_stmt(self):
-            return self.getTypedRuleContext(jacParser.Can_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.Can_stmtContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_attr_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterAttr_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterAttr_stmt"):
                 listener.enterAttr_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitAttr_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitAttr_stmt"):
                 listener.exitAttr_stmt(self)
-
-
-
 
     def attr_stmt(self):
 
@@ -2417,46 +2652,43 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Can_blockContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def can_stmt(self, i:int=None):
+        def can_stmt(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Can_stmtContext)
             else:
-                return self.getTypedRuleContext(jacParser.Can_stmtContext,i)
-
+                return self.getTypedRuleContext(jacParser.Can_stmtContext, i)
 
         def getRuleIndex(self):
             return jacParser.RULE_can_block
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterCan_block" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterCan_block"):
                 listener.enterCan_block(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitCan_block" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitCan_block"):
                 listener.exitCan_block(self)
-
-
-
 
     def can_block(self):
 
         localctx = jacParser.Can_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 34, self.RULE_can_block)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 441
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==jacParser.KW_CAN:
+            while _la == jacParser.KW_CAN:
                 self.state = 438
                 self.can_stmt()
                 self.state = 443
@@ -2471,35 +2703,31 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Graph_blockContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def graph_block_spawn(self):
-            return self.getTypedRuleContext(jacParser.Graph_block_spawnContext,0)
-
+            return self.getTypedRuleContext(jacParser.Graph_block_spawnContext, 0)
 
         def graph_block_dot(self):
-            return self.getTypedRuleContext(jacParser.Graph_block_dotContext,0)
-
+            return self.getTypedRuleContext(jacParser.Graph_block_dotContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_graph_block
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterGraph_block" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterGraph_block"):
                 listener.enterGraph_block(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitGraph_block" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitGraph_block"):
                 listener.exitGraph_block(self)
-
-
-
 
     def graph_block(self):
 
@@ -2508,7 +2736,7 @@ class jacParser ( Parser ):
         try:
             self.state = 446
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,37,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 37, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 444
@@ -2521,7 +2749,6 @@ class jacParser ( Parser ):
                 self.graph_block_dot()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -2530,11 +2757,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Graph_block_spawnContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2542,19 +2770,16 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.LBRACE, 0)
 
         def has_root(self):
-            return self.getTypedRuleContext(jacParser.Has_rootContext,0)
-
+            return self.getTypedRuleContext(jacParser.Has_rootContext, 0)
 
         def can_block(self):
-            return self.getTypedRuleContext(jacParser.Can_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Can_blockContext, 0)
 
         def KW_SPAWN(self):
             return self.getToken(jacParser.KW_SPAWN, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def RBRACE(self):
             return self.getToken(jacParser.RBRACE, 0)
@@ -2568,16 +2793,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_graph_block_spawn
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterGraph_block_spawn" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterGraph_block_spawn"):
                 listener.enterGraph_block_spawn(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitGraph_block_spawn" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitGraph_block_spawn"):
                 listener.exitGraph_block_spawn(self)
-
-
-
 
     def graph_block_spawn(self):
 
@@ -2628,11 +2850,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Graph_block_dotContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2640,12 +2863,10 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.LBRACE, 0)
 
         def has_root(self):
-            return self.getTypedRuleContext(jacParser.Has_rootContext,0)
-
+            return self.getTypedRuleContext(jacParser.Has_rootContext, 0)
 
         def dot_graph(self):
-            return self.getTypedRuleContext(jacParser.Dot_graphContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_graphContext, 0)
 
         def RBRACE(self):
             return self.getToken(jacParser.RBRACE, 0)
@@ -2659,16 +2880,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_graph_block_dot
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterGraph_block_dot" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterGraph_block_dot"):
                 listener.enterGraph_block_dot(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitGraph_block_dot" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitGraph_block_dot"):
                 listener.exitGraph_block_dot(self)
-
-
-
 
     def graph_block_dot(self):
 
@@ -2711,11 +2929,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Has_rootContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2734,16 +2953,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_has_root
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterHas_root" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterHas_root"):
                 listener.enterHas_root(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitHas_root" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitHas_root"):
                 listener.exitHas_root(self)
-
-
-
 
     def has_root(self):
 
@@ -2767,23 +2983,23 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Has_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def KW_HAS(self):
             return self.getToken(jacParser.KW_HAS, 0)
 
-        def has_assign(self, i:int=None):
+        def has_assign(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Has_assignContext)
             else:
-                return self.getTypedRuleContext(jacParser.Has_assignContext,i)
-
+                return self.getTypedRuleContext(jacParser.Has_assignContext, i)
 
         def SEMI(self):
             return self.getToken(jacParser.SEMI, 0)
@@ -2794,7 +3010,7 @@ class jacParser ( Parser ):
         def KW_ANCHOR(self):
             return self.getToken(jacParser.KW_ANCHOR, 0)
 
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COMMA)
             else:
@@ -2803,22 +3019,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_has_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterHas_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterHas_stmt"):
                 listener.enterHas_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitHas_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitHas_stmt"):
                 listener.exitHas_stmt(self)
-
-
-
 
     def has_stmt(self):
 
         localctx = jacParser.Has_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 44, self.RULE_has_stmt)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 481
@@ -2826,25 +3039,23 @@ class jacParser ( Parser ):
             self.state = 483
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.KW_PRIVATE:
+            if _la == jacParser.KW_PRIVATE:
                 self.state = 482
                 self.match(jacParser.KW_PRIVATE)
-
 
             self.state = 486
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.KW_ANCHOR:
+            if _la == jacParser.KW_ANCHOR:
                 self.state = 485
                 self.match(jacParser.KW_ANCHOR)
-
 
             self.state = 488
             self.has_assign()
             self.state = 493
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==jacParser.COMMA:
+            while _la == jacParser.COMMA:
                 self.state = 489
                 self.match(jacParser.COMMA)
                 self.state = 490
@@ -2863,11 +3074,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Has_assignContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2878,22 +3090,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.EQ, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_has_assign
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterHas_assign" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterHas_assign"):
                 listener.enterHas_assign(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitHas_assign" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitHas_assign"):
                 listener.exitHas_assign(self)
-
-
-
 
     def has_assign(self):
 
@@ -2902,7 +3110,7 @@ class jacParser ( Parser ):
         try:
             self.state = 502
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,43,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 43, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 498
@@ -2919,7 +3127,6 @@ class jacParser ( Parser ):
                 self.expression()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -2928,42 +3135,40 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Can_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def KW_CAN(self):
             return self.getToken(jacParser.KW_CAN, 0)
 
-        def dotted_name(self, i:int=None):
+        def dotted_name(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Dotted_nameContext)
             else:
-                return self.getTypedRuleContext(jacParser.Dotted_nameContext,i)
-
+                return self.getTypedRuleContext(jacParser.Dotted_nameContext, i)
 
         def SEMI(self):
             return self.getToken(jacParser.SEMI, 0)
 
-        def preset_in_out(self, i:int=None):
+        def preset_in_out(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Preset_in_outContext)
             else:
-                return self.getTypedRuleContext(jacParser.Preset_in_outContext,i)
+                return self.getTypedRuleContext(jacParser.Preset_in_outContext, i)
 
-
-        def event_clause(self, i:int=None):
+        def event_clause(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Event_clauseContext)
             else:
-                return self.getTypedRuleContext(jacParser.Event_clauseContext,i)
+                return self.getTypedRuleContext(jacParser.Event_clauseContext, i)
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COMMA)
             else:
@@ -2973,32 +3178,28 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.NAME, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_can_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterCan_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterCan_stmt"):
                 listener.enterCan_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitCan_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitCan_stmt"):
                 listener.exitCan_stmt(self)
-
-
-
 
     def can_stmt(self):
 
         localctx = jacParser.Can_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 48, self.RULE_can_stmt)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 531
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,48,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 48, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 504
@@ -3008,17 +3209,16 @@ class jacParser ( Parser ):
                 self.state = 509
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.DBL_COLON:
+                if _la == jacParser.DBL_COLON:
                     self.state = 506
                     self.preset_in_out()
                     self.state = 507
                     self.event_clause()
 
-
                 self.state = 520
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while _la==jacParser.COMMA:
+                while _la == jacParser.COMMA:
                     self.state = 511
                     self.match(jacParser.COMMA)
                     self.state = 512
@@ -3026,12 +3226,11 @@ class jacParser ( Parser ):
                     self.state = 516
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
-                    if _la==jacParser.DBL_COLON:
+                    if _la == jacParser.DBL_COLON:
                         self.state = 513
                         self.preset_in_out()
                         self.state = 514
                         self.event_clause()
-
 
                     self.state = 522
                     self._errHandler.sync(self)
@@ -3050,15 +3249,13 @@ class jacParser ( Parser ):
                 self.state = 528
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.KW_WITH:
+                if _la == jacParser.KW_WITH:
                     self.state = 527
                     self.event_clause()
-
 
                 self.state = 530
                 self.code_block()
                 pass
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -3068,11 +3265,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Event_clauseContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -3089,28 +3287,24 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_ACTIVITY, 0)
 
         def name_list(self):
-            return self.getTypedRuleContext(jacParser.Name_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Name_listContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_event_clause
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterEvent_clause" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterEvent_clause"):
                 listener.enterEvent_clause(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitEvent_clause" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitEvent_clause"):
                 listener.exitEvent_clause(self)
-
-
-
 
     def event_clause(self):
 
         localctx = jacParser.Event_clauseContext(self, self._ctx, self.state)
         self.enterRule(localctx, 50, self.RULE_event_clause)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 533
@@ -3118,14 +3312,26 @@ class jacParser ( Parser ):
             self.state = 535
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.NAME:
+            if _la == jacParser.NAME:
                 self.state = 534
                 self.name_list()
 
-
             self.state = 537
             _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_ENTRY) | (1 << jacParser.KW_EXIT) | (1 << jacParser.KW_ACTIVITY))) != 0)):
+            if not (
+                (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << jacParser.KW_ENTRY)
+                            | (1 << jacParser.KW_EXIT)
+                            | (1 << jacParser.KW_ACTIVITY)
+                        )
+                    )
+                    != 0
+                )
+            ):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -3138,15 +3344,16 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Preset_in_outContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def DBL_COLON(self, i:int=None):
+        def DBL_COLON(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.DBL_COLON)
             else:
@@ -3156,26 +3363,21 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.COLON_OUT, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def expr_list(self):
-            return self.getTypedRuleContext(jacParser.Expr_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Expr_listContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_preset_in_out
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterPreset_in_out" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterPreset_in_out"):
                 listener.enterPreset_in_out(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitPreset_in_out" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitPreset_in_out"):
                 listener.exitPreset_in_out(self)
-
-
-
 
     def preset_in_out(self):
 
@@ -3187,11 +3389,10 @@ class jacParser ( Parser ):
             self.match(jacParser.DBL_COLON)
             self.state = 541
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,50,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 50, self._ctx)
             if la_ == 1:
                 self.state = 540
                 self.expr_list()
-
 
             self.state = 546
             self._errHandler.sync(self)
@@ -3217,15 +3418,16 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dotted_nameContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def NAME(self, i:int=None):
+        def NAME(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.NAME)
             else:
@@ -3237,16 +3439,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_dotted_name
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDotted_name" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDotted_name"):
                 listener.enterDotted_name(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDotted_name" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDotted_name"):
                 listener.exitDotted_name(self)
-
-
-
 
     def dotted_name(self):
 
@@ -3268,21 +3467,22 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Name_listContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def NAME(self, i:int=None):
+        def NAME(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.NAME)
             else:
                 return self.getToken(jacParser.NAME, i)
 
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COMMA)
             else:
@@ -3291,22 +3491,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_name_list
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterName_list" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterName_list"):
                 listener.enterName_list(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitName_list" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitName_list"):
                 listener.exitName_list(self)
-
-
-
 
     def name_list(self):
 
         localctx = jacParser.Name_listContext(self, self._ctx, self.state)
         self.enterRule(localctx, 56, self.RULE_name_list)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 552
@@ -3314,7 +3511,7 @@ class jacParser ( Parser ):
             self.state = 557
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==jacParser.COMMA:
+            while _la == jacParser.COMMA:
                 self.state = 553
                 self.match(jacParser.COMMA)
                 self.state = 554
@@ -3331,22 +3528,22 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Expr_listContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(jacParser.ExpressionContext,i)
+                return self.getTypedRuleContext(jacParser.ExpressionContext, i)
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COMMA)
             else:
@@ -3355,22 +3552,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_expr_list
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterExpr_list" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterExpr_list"):
                 listener.enterExpr_list(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitExpr_list" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitExpr_list"):
                 listener.exitExpr_list(self)
-
-
-
 
     def expr_list(self):
 
         localctx = jacParser.Expr_listContext(self, self._ctx, self.state)
         self.enterRule(localctx, 58, self.RULE_expr_list)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 560
@@ -3378,7 +3572,7 @@ class jacParser ( Parser ):
             self.state = 565
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==jacParser.COMMA:
+            while _la == jacParser.COMMA:
                 self.state = 561
                 self.match(jacParser.COMMA)
                 self.state = 562
@@ -3395,11 +3589,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Code_blockContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -3409,12 +3604,11 @@ class jacParser ( Parser ):
         def RBRACE(self):
             return self.getToken(jacParser.RBRACE, 0)
 
-        def statement(self, i:int=None):
+        def statement(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.StatementContext)
             else:
-                return self.getTypedRuleContext(jacParser.StatementContext,i)
-
+                return self.getTypedRuleContext(jacParser.StatementContext, i)
 
         def COLON(self):
             return self.getToken(jacParser.COLON, 0)
@@ -3422,22 +3616,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_code_block
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterCode_block" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterCode_block"):
                 listener.enterCode_block(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitCode_block" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitCode_block"):
                 listener.exitCode_block(self)
-
-
-
 
     def code_block(self):
 
         localctx = jacParser.Code_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 60, self.RULE_code_block)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 578
             self._errHandler.sync(self)
@@ -3449,7 +3640,67 @@ class jacParser ( Parser ):
                 self.state = 572
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.T__1) | (1 << jacParser.T__2) | (1 << jacParser.T__4) | (1 << jacParser.T__5) | (1 << jacParser.T__6) | (1 << jacParser.TYP_STRING) | (1 << jacParser.TYP_INT) | (1 << jacParser.TYP_FLOAT) | (1 << jacParser.TYP_LIST) | (1 << jacParser.TYP_DICT) | (1 << jacParser.TYP_BOOL) | (1 << jacParser.KW_TYPE) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_IGNORE) | (1 << jacParser.KW_TAKE) | (1 << jacParser.KW_SPAWN) | (1 << jacParser.COLON) | (1 << jacParser.DBL_COLON) | (1 << jacParser.LBRACE) | (1 << jacParser.KW_EDGE) | (1 << jacParser.KW_ASSERT) | (1 << jacParser.KW_IF) | (1 << jacParser.KW_FOR) | (1 << jacParser.KW_WHILE) | (1 << jacParser.KW_CONTINUE) | (1 << jacParser.KW_BREAK))) != 0) or ((((_la - 64)) & ~0x3f) == 0 and ((1 << (_la - 64)) & ((1 << (jacParser.KW_DISENGAGE - 64)) | (1 << (jacParser.KW_SKIP - 64)) | (1 << (jacParser.KW_REPORT - 64)) | (1 << (jacParser.KW_DESTROY - 64)) | (1 << (jacParser.KW_TRY - 64)) | (1 << (jacParser.NOT - 64)) | (1 << (jacParser.KW_GLOBAL - 64)) | (1 << (jacParser.PLUS - 64)) | (1 << (jacParser.MINUS - 64)) | (1 << (jacParser.STAR_MUL - 64)) | (1 << (jacParser.LPAREN - 64)) | (1 << (jacParser.LSQUARE - 64)) | (1 << (jacParser.FLOAT - 64)) | (1 << (jacParser.STRING - 64)) | (1 << (jacParser.BOOL - 64)) | (1 << (jacParser.INT - 64)) | (1 << (jacParser.NULL - 64)) | (1 << (jacParser.NAME - 64)))) != 0):
+                while (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << jacParser.T__1)
+                            | (1 << jacParser.T__2)
+                            | (1 << jacParser.T__4)
+                            | (1 << jacParser.T__5)
+                            | (1 << jacParser.T__6)
+                            | (1 << jacParser.TYP_STRING)
+                            | (1 << jacParser.TYP_INT)
+                            | (1 << jacParser.TYP_FLOAT)
+                            | (1 << jacParser.TYP_LIST)
+                            | (1 << jacParser.TYP_DICT)
+                            | (1 << jacParser.TYP_BOOL)
+                            | (1 << jacParser.KW_TYPE)
+                            | (1 << jacParser.KW_NODE)
+                            | (1 << jacParser.KW_IGNORE)
+                            | (1 << jacParser.KW_TAKE)
+                            | (1 << jacParser.KW_SPAWN)
+                            | (1 << jacParser.COLON)
+                            | (1 << jacParser.DBL_COLON)
+                            | (1 << jacParser.LBRACE)
+                            | (1 << jacParser.KW_EDGE)
+                            | (1 << jacParser.KW_ASSERT)
+                            | (1 << jacParser.KW_IF)
+                            | (1 << jacParser.KW_FOR)
+                            | (1 << jacParser.KW_WHILE)
+                            | (1 << jacParser.KW_CONTINUE)
+                            | (1 << jacParser.KW_BREAK)
+                        )
+                    )
+                    != 0
+                ) or (
+                    (((_la - 64)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 64))
+                        & (
+                            (1 << (jacParser.KW_DISENGAGE - 64))
+                            | (1 << (jacParser.KW_SKIP - 64))
+                            | (1 << (jacParser.KW_REPORT - 64))
+                            | (1 << (jacParser.KW_DESTROY - 64))
+                            | (1 << (jacParser.KW_TRY - 64))
+                            | (1 << (jacParser.NOT - 64))
+                            | (1 << (jacParser.KW_GLOBAL - 64))
+                            | (1 << (jacParser.PLUS - 64))
+                            | (1 << (jacParser.MINUS - 64))
+                            | (1 << (jacParser.STAR_MUL - 64))
+                            | (1 << (jacParser.LPAREN - 64))
+                            | (1 << (jacParser.LSQUARE - 64))
+                            | (1 << (jacParser.FLOAT - 64))
+                            | (1 << (jacParser.STRING - 64))
+                            | (1 << (jacParser.BOOL - 64))
+                            | (1 << (jacParser.INT - 64))
+                            | (1 << (jacParser.NULL - 64))
+                            | (1 << (jacParser.NAME - 64))
+                        )
+                    )
+                    != 0
+                ):
                     self.state = 569
                     self.statement()
                     self.state = 574
@@ -3477,35 +3728,31 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Node_ctx_blockContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def name_list(self):
-            return self.getTypedRuleContext(jacParser.Name_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Name_listContext, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_node_ctx_block
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterNode_ctx_block" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterNode_ctx_block"):
                 listener.enterNode_ctx_block(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitNode_ctx_block" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitNode_ctx_block"):
                 listener.exitNode_ctx_block(self)
-
-
-
 
     def node_ctx_block(self):
 
@@ -3525,78 +3772,64 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class StatementContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def node_ctx_block(self):
-            return self.getTypedRuleContext(jacParser.Node_ctx_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Node_ctx_blockContext, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def SEMI(self):
             return self.getToken(jacParser.SEMI, 0)
 
         def if_stmt(self):
-            return self.getTypedRuleContext(jacParser.If_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.If_stmtContext, 0)
 
         def try_stmt(self):
-            return self.getTypedRuleContext(jacParser.Try_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.Try_stmtContext, 0)
 
         def for_stmt(self):
-            return self.getTypedRuleContext(jacParser.For_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.For_stmtContext, 0)
 
         def while_stmt(self):
-            return self.getTypedRuleContext(jacParser.While_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.While_stmtContext, 0)
 
         def assert_stmt(self):
-            return self.getTypedRuleContext(jacParser.Assert_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.Assert_stmtContext, 0)
 
         def ctrl_stmt(self):
-            return self.getTypedRuleContext(jacParser.Ctrl_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.Ctrl_stmtContext, 0)
 
         def destroy_action(self):
-            return self.getTypedRuleContext(jacParser.Destroy_actionContext,0)
-
+            return self.getTypedRuleContext(jacParser.Destroy_actionContext, 0)
 
         def report_action(self):
-            return self.getTypedRuleContext(jacParser.Report_actionContext,0)
-
+            return self.getTypedRuleContext(jacParser.Report_actionContext, 0)
 
         def walker_action(self):
-            return self.getTypedRuleContext(jacParser.Walker_actionContext,0)
-
+            return self.getTypedRuleContext(jacParser.Walker_actionContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_statement
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterStatement" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterStatement"):
                 listener.enterStatement(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitStatement" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitStatement"):
                 listener.exitStatement(self)
-
-
-
 
     def statement(self):
 
@@ -3605,7 +3838,7 @@ class jacParser ( Parser ):
         try:
             self.state = 601
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,56,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 56, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 583
@@ -3684,7 +3917,6 @@ class jacParser ( Parser ):
                 self.walker_action()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -3693,11 +3925,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class If_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -3705,37 +3938,30 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_IF, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
-
-        def elif_stmt(self, i:int=None):
+        def elif_stmt(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Elif_stmtContext)
             else:
-                return self.getTypedRuleContext(jacParser.Elif_stmtContext,i)
-
+                return self.getTypedRuleContext(jacParser.Elif_stmtContext, i)
 
         def else_stmt(self):
-            return self.getTypedRuleContext(jacParser.Else_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.Else_stmtContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_if_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterIf_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterIf_stmt"):
                 listener.enterIf_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitIf_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitIf_stmt"):
                 listener.exitIf_stmt(self)
-
-
-
 
     def if_stmt(self):
 
@@ -3751,22 +3977,21 @@ class jacParser ( Parser ):
             self.code_block()
             self.state = 609
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,57,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 57, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 606
-                    self.elif_stmt() 
+                    self.elif_stmt()
                 self.state = 611
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,57,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 57, self._ctx)
 
             self.state = 613
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,58,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 58, self._ctx)
             if la_ == 1:
                 self.state = 612
                 self.else_stmt()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -3776,11 +4001,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Try_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -3788,26 +4014,21 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_TRY, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def else_from_try(self):
-            return self.getTypedRuleContext(jacParser.Else_from_tryContext,0)
-
+            return self.getTypedRuleContext(jacParser.Else_from_tryContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_try_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterTry_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterTry_stmt"):
                 listener.enterTry_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitTry_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitTry_stmt"):
                 listener.exitTry_stmt(self)
-
-
-
 
     def try_stmt(self):
 
@@ -3821,11 +4042,10 @@ class jacParser ( Parser ):
             self.code_block()
             self.state = 618
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,59,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 59, self._ctx)
             if la_ == 1:
                 self.state = 617
                 self.else_from_try()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -3835,11 +4055,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Else_from_tryContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -3847,8 +4068,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_ELSE, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def LPAREN(self):
             return self.getToken(jacParser.LPAREN, 0)
@@ -3865,26 +4085,23 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_else_from_try
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterElse_from_try" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterElse_from_try"):
                 listener.enterElse_from_try(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitElse_from_try" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitElse_from_try"):
                 listener.exitElse_from_try(self)
-
-
-
 
     def else_from_try(self):
 
         localctx = jacParser.Else_from_tryContext(self, self._ctx, self.state)
         self.enterRule(localctx, 70, self.RULE_else_from_try)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 633
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,62,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 62, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 620
@@ -3892,14 +4109,13 @@ class jacParser ( Parser ):
                 self.state = 624
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.LPAREN:
+                if _la == jacParser.LPAREN:
                     self.state = 621
                     self.match(jacParser.LPAREN)
                     self.state = 622
                     self.match(jacParser.NAME)
                     self.state = 623
                     self.match(jacParser.RPAREN)
-
 
                 self.state = 626
                 self.code_block()
@@ -3912,17 +4128,15 @@ class jacParser ( Parser ):
                 self.state = 630
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.KW_WITH:
+                if _la == jacParser.KW_WITH:
                     self.state = 628
                     self.match(jacParser.KW_WITH)
                     self.state = 629
                     self.match(jacParser.NAME)
 
-
                 self.state = 632
                 self.code_block()
                 pass
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -3932,11 +4146,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Elif_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -3944,26 +4159,21 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_ELIF, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_elif_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterElif_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterElif_stmt"):
                 listener.enterElif_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitElif_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitElif_stmt"):
                 listener.exitElif_stmt(self)
-
-
-
 
     def elif_stmt(self):
 
@@ -3985,11 +4195,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Else_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -3997,22 +4208,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_ELSE, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_else_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterElse_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterElse_stmt"):
                 listener.enterElse_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitElse_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitElse_stmt"):
                 listener.exitElse_stmt(self)
-
-
-
 
     def else_stmt(self):
 
@@ -4032,23 +4239,23 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class For_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def KW_FOR(self):
             return self.getToken(jacParser.KW_FOR, 0)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(jacParser.ExpressionContext,i)
-
+                return self.getTypedRuleContext(jacParser.ExpressionContext, i)
 
         def KW_TO(self):
             return self.getToken(jacParser.KW_TO, 0)
@@ -4057,8 +4264,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_BY, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def NAME(self):
             return self.getToken(jacParser.NAME, 0)
@@ -4069,16 +4275,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_for_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterFor_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterFor_stmt"):
                 listener.enterFor_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitFor_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitFor_stmt"):
                 listener.exitFor_stmt(self)
-
-
-
 
     def for_stmt(self):
 
@@ -4087,7 +4290,7 @@ class jacParser ( Parser ):
         try:
             self.state = 656
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,63,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 63, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 642
@@ -4120,7 +4323,6 @@ class jacParser ( Parser ):
                 self.code_block()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -4129,11 +4331,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class While_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4141,26 +4344,21 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_WHILE, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def code_block(self):
-            return self.getTypedRuleContext(jacParser.Code_blockContext,0)
-
+            return self.getTypedRuleContext(jacParser.Code_blockContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_while_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterWhile_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterWhile_stmt"):
                 listener.enterWhile_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitWhile_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitWhile_stmt"):
                 listener.exitWhile_stmt(self)
-
-
-
 
     def while_stmt(self):
 
@@ -4182,11 +4380,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Ctrl_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4202,27 +4401,37 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_ctrl_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterCtrl_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterCtrl_stmt"):
                 listener.enterCtrl_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitCtrl_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitCtrl_stmt"):
                 listener.exitCtrl_stmt(self)
-
-
-
 
     def ctrl_stmt(self):
 
         localctx = jacParser.Ctrl_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 80, self.RULE_ctrl_stmt)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 662
             _la = self._input.LA(1)
-            if not(((((_la - 62)) & ~0x3f) == 0 and ((1 << (_la - 62)) & ((1 << (jacParser.KW_CONTINUE - 62)) | (1 << (jacParser.KW_BREAK - 62)) | (1 << (jacParser.KW_SKIP - 62)))) != 0)):
+            if not (
+                (
+                    (((_la - 62)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 62))
+                        & (
+                            (1 << (jacParser.KW_CONTINUE - 62))
+                            | (1 << (jacParser.KW_BREAK - 62))
+                            | (1 << (jacParser.KW_SKIP - 62))
+                        )
+                    )
+                    != 0
+                )
+            ):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -4235,11 +4444,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Assert_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4247,22 +4457,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_ASSERT, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_assert_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterAssert_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterAssert_stmt"):
                 listener.enterAssert_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitAssert_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitAssert_stmt"):
                 listener.exitAssert_stmt(self)
-
-
-
 
     def assert_stmt(self):
 
@@ -4282,11 +4488,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Destroy_actionContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4294,8 +4501,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_DESTROY, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def SEMI(self):
             return self.getToken(jacParser.SEMI, 0)
@@ -4303,16 +4509,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_destroy_action
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDestroy_action" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDestroy_action"):
                 listener.enterDestroy_action(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDestroy_action" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDestroy_action"):
                 listener.exitDestroy_action(self)
-
-
-
 
     def destroy_action(self):
 
@@ -4334,11 +4537,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Report_actionContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4346,8 +4550,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_REPORT, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def SEMI(self):
             return self.getToken(jacParser.SEMI, 0)
@@ -4367,16 +4570,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_report_action
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterReport_action" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterReport_action"):
                 listener.enterReport_action(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitReport_action" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitReport_action"):
                 listener.exitReport_action(self)
-
-
-
 
     def report_action(self):
 
@@ -4385,7 +4585,7 @@ class jacParser ( Parser ):
         try:
             self.state = 681
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,64,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 64, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 671
@@ -4412,7 +4612,6 @@ class jacParser ( Parser ):
                 self.match(jacParser.SEMI)
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -4421,21 +4620,20 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Walker_actionContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def ignore_action(self):
-            return self.getTypedRuleContext(jacParser.Ignore_actionContext,0)
-
+            return self.getTypedRuleContext(jacParser.Ignore_actionContext, 0)
 
         def take_action(self):
-            return self.getTypedRuleContext(jacParser.Take_actionContext,0)
-
+            return self.getTypedRuleContext(jacParser.Take_actionContext, 0)
 
         def KW_DISENGAGE(self):
             return self.getToken(jacParser.KW_DISENGAGE, 0)
@@ -4446,16 +4644,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_walker_action
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterWalker_action" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterWalker_action"):
                 listener.enterWalker_action(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitWalker_action" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitWalker_action"):
                 listener.exitWalker_action(self)
-
-
-
 
     def walker_action(self):
 
@@ -4493,11 +4688,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Ignore_actionContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4505,8 +4701,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_IGNORE, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def SEMI(self):
             return self.getToken(jacParser.SEMI, 0)
@@ -4514,16 +4709,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_ignore_action
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterIgnore_action" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterIgnore_action"):
                 listener.enterIgnore_action(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitIgnore_action" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitIgnore_action"):
                 listener.exitIgnore_action(self)
-
-
-
 
     def ignore_action(self):
 
@@ -4545,11 +4737,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Take_actionContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4557,29 +4750,24 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_TAKE, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def SEMI(self):
             return self.getToken(jacParser.SEMI, 0)
 
         def else_stmt(self):
-            return self.getTypedRuleContext(jacParser.Else_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.Else_stmtContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_take_action
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterTake_action" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterTake_action"):
                 listener.enterTake_action(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitTake_action" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitTake_action"):
                 listener.exitTake_action(self)
-
-
-
 
     def take_action(self):
 
@@ -4613,43 +4801,37 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ExpressionContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def connect(self):
-            return self.getTypedRuleContext(jacParser.ConnectContext,0)
-
+            return self.getTypedRuleContext(jacParser.ConnectContext, 0)
 
         def assignment(self):
-            return self.getTypedRuleContext(jacParser.AssignmentContext,0)
-
+            return self.getTypedRuleContext(jacParser.AssignmentContext, 0)
 
         def copy_assign(self):
-            return self.getTypedRuleContext(jacParser.Copy_assignContext,0)
-
+            return self.getTypedRuleContext(jacParser.Copy_assignContext, 0)
 
         def inc_assign(self):
-            return self.getTypedRuleContext(jacParser.Inc_assignContext,0)
-
+            return self.getTypedRuleContext(jacParser.Inc_assignContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_expression
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterExpression" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterExpression"):
                 listener.enterExpression(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitExpression" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitExpression"):
                 listener.exitExpression(self)
-
-
-
 
     def expression(self):
 
@@ -4661,7 +4843,7 @@ class jacParser ( Parser ):
             self.connect()
             self.state = 703
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,67,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 67, self._ctx)
             if la_ == 1:
                 self.state = 700
                 self.assignment()
@@ -4674,7 +4856,6 @@ class jacParser ( Parser ):
                 self.state = 702
                 self.inc_assign()
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -4683,11 +4864,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class AssignmentContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4695,22 +4877,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.EQ, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_assignment
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterAssignment" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterAssignment"):
                 listener.enterAssignment(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitAssignment" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitAssignment"):
                 listener.exitAssignment(self)
-
-
-
 
     def assignment(self):
 
@@ -4730,11 +4908,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Copy_assignContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4742,22 +4921,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.CPY_EQ, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_copy_assign
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterCopy_assign" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterCopy_assign"):
                 listener.enterCopy_assign(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitCopy_assign" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitCopy_assign"):
                 listener.exitCopy_assign(self)
-
-
-
 
     def copy_assign(self):
 
@@ -4777,17 +4952,17 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Inc_assignContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def PEQ(self):
             return self.getToken(jacParser.PEQ, 0)
@@ -4804,27 +4979,38 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_inc_assign
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterInc_assign" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterInc_assign"):
                 listener.enterInc_assign(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitInc_assign" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitInc_assign"):
                 listener.exitInc_assign(self)
-
-
-
 
     def inc_assign(self):
 
         localctx = jacParser.Inc_assignContext(self, self._ctx, self.state)
         self.enterRule(localctx, 100, self.RULE_inc_assign)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 711
             _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.PEQ) | (1 << jacParser.MEQ) | (1 << jacParser.TEQ) | (1 << jacParser.DEQ))) != 0)):
+            if not (
+                (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << jacParser.PEQ)
+                            | (1 << jacParser.MEQ)
+                            | (1 << jacParser.TEQ)
+                            | (1 << jacParser.DEQ)
+                        )
+                    )
+                    != 0
+                )
+            ):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -4839,25 +5025,23 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ConnectContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def logical(self):
-            return self.getTypedRuleContext(jacParser.LogicalContext,0)
-
+            return self.getTypedRuleContext(jacParser.LogicalContext, 0)
 
         def edge_ref(self):
-            return self.getTypedRuleContext(jacParser.Edge_refContext,0)
-
+            return self.getTypedRuleContext(jacParser.Edge_refContext, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def NOT(self):
             return self.getToken(jacParser.NOT, 0)
@@ -4865,43 +5049,38 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_connect
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterConnect" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterConnect"):
                 listener.enterConnect(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitConnect" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitConnect"):
                 listener.exitConnect(self)
-
-
-
 
     def connect(self):
 
         localctx = jacParser.ConnectContext(self, self._ctx, self.state)
         self.enterRule(localctx, 102, self.RULE_connect)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 714
             self.logical()
             self.state = 721
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,69,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 69, self._ctx)
             if la_ == 1:
                 self.state = 716
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.NOT:
+                if _la == jacParser.NOT:
                     self.state = 715
                     self.match(jacParser.NOT)
-
 
                 self.state = 718
                 self.edge_ref()
                 self.state = 719
                 self.expression()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -4911,28 +5090,28 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class LogicalContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def compare(self, i:int=None):
+        def compare(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.CompareContext)
             else:
-                return self.getTypedRuleContext(jacParser.CompareContext,i)
+                return self.getTypedRuleContext(jacParser.CompareContext, i)
 
-
-        def KW_AND(self, i:int=None):
+        def KW_AND(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.KW_AND)
             else:
                 return self.getToken(jacParser.KW_AND, i)
 
-        def KW_OR(self, i:int=None):
+        def KW_OR(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.KW_OR)
             else:
@@ -4941,43 +5120,39 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_logical
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterLogical" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterLogical"):
                 listener.enterLogical(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitLogical" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitLogical"):
                 listener.exitLogical(self)
-
-
-
 
     def logical(self):
 
         localctx = jacParser.LogicalContext(self, self._ctx, self.state)
         self.enterRule(localctx, 104, self.RULE_logical)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 723
             self.compare()
             self.state = 728
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,70,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
-                    self.state = 724
-                    _la = self._input.LA(1)
-                    if not(_la==jacParser.KW_AND or _la==jacParser.KW_OR):
-                        self._errHandler.recoverInline(self)
-                    else:
-                        self._errHandler.reportMatch(self)
-                        self.consume()
-                    self.state = 725
-                    self.compare() 
+            _la = self._input.LA(1)
+            while _la == jacParser.KW_AND or _la == jacParser.KW_OR:
+                self.state = 724
+                _la = self._input.LA(1)
+                if not (_la == jacParser.KW_AND or _la == jacParser.KW_OR):
+                    self._errHandler.recoverInline(self)
+                else:
+                    self._errHandler.reportMatch(self)
+                    self.consume()
+                self.state = 725
+                self.compare()
                 self.state = 730
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,70,self._ctx)
+                _la = self._input.LA(1)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -4987,11 +5162,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class CompareContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4999,36 +5175,30 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.NOT, 0)
 
         def compare(self):
-            return self.getTypedRuleContext(jacParser.CompareContext,0)
+            return self.getTypedRuleContext(jacParser.CompareContext, 0)
 
-
-        def arithmetic(self, i:int=None):
+        def arithmetic(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.ArithmeticContext)
             else:
-                return self.getTypedRuleContext(jacParser.ArithmeticContext,i)
+                return self.getTypedRuleContext(jacParser.ArithmeticContext, i)
 
-
-        def cmp_op(self, i:int=None):
+        def cmp_op(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Cmp_opContext)
             else:
-                return self.getTypedRuleContext(jacParser.Cmp_opContext,i)
-
+                return self.getTypedRuleContext(jacParser.Cmp_opContext, i)
 
         def getRuleIndex(self):
             return jacParser.RULE_compare
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterCompare" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterCompare"):
                 listener.enterCompare(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitCompare" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitCompare"):
                 listener.exitCompare(self)
-
-
-
 
     def compare(self):
 
@@ -5045,22 +5215,52 @@ class jacParser ( Parser ):
                 self.state = 732
                 self.compare()
                 pass
-            elif token in [jacParser.T__1, jacParser.T__2, jacParser.T__4, jacParser.T__5, jacParser.T__6, jacParser.TYP_STRING, jacParser.TYP_INT, jacParser.TYP_FLOAT, jacParser.TYP_LIST, jacParser.TYP_DICT, jacParser.TYP_BOOL, jacParser.KW_TYPE, jacParser.KW_NODE, jacParser.KW_SPAWN, jacParser.DBL_COLON, jacParser.LBRACE, jacParser.KW_EDGE, jacParser.KW_GLOBAL, jacParser.PLUS, jacParser.MINUS, jacParser.STAR_MUL, jacParser.LPAREN, jacParser.LSQUARE, jacParser.FLOAT, jacParser.STRING, jacParser.BOOL, jacParser.INT, jacParser.NULL, jacParser.NAME]:
+            elif token in [
+                jacParser.T__1,
+                jacParser.T__2,
+                jacParser.T__4,
+                jacParser.T__5,
+                jacParser.T__6,
+                jacParser.TYP_STRING,
+                jacParser.TYP_INT,
+                jacParser.TYP_FLOAT,
+                jacParser.TYP_LIST,
+                jacParser.TYP_DICT,
+                jacParser.TYP_BOOL,
+                jacParser.KW_TYPE,
+                jacParser.KW_NODE,
+                jacParser.KW_SPAWN,
+                jacParser.DBL_COLON,
+                jacParser.LBRACE,
+                jacParser.KW_EDGE,
+                jacParser.KW_GLOBAL,
+                jacParser.PLUS,
+                jacParser.MINUS,
+                jacParser.STAR_MUL,
+                jacParser.LPAREN,
+                jacParser.LSQUARE,
+                jacParser.FLOAT,
+                jacParser.STRING,
+                jacParser.BOOL,
+                jacParser.INT,
+                jacParser.NULL,
+                jacParser.NAME,
+            ]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 733
                 self.arithmetic()
                 self.state = 739
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,71,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 71, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 734
                         self.cmp_op()
                         self.state = 735
-                        self.arithmetic() 
+                        self.arithmetic()
                     self.state = 741
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,71,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 71, self._ctx)
 
                 pass
             else:
@@ -5074,11 +5274,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Cmp_opContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5104,22 +5305,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_IN, 0)
 
         def nin(self):
-            return self.getTypedRuleContext(jacParser.NinContext,0)
-
+            return self.getTypedRuleContext(jacParser.NinContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_cmp_op
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterCmp_op" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterCmp_op"):
                 listener.enterCmp_op(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitCmp_op" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitCmp_op"):
                 listener.exitCmp_op(self)
-
-
-
 
     def cmp_op(self):
 
@@ -5180,11 +5377,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class NinContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5197,16 +5395,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_nin
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterNin" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterNin"):
                 listener.enterNin(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitNin" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitNin"):
                 listener.exitNin(self)
-
-
-
 
     def nin(self):
 
@@ -5226,28 +5421,28 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ArithmeticContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def term(self, i:int=None):
+        def term(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.TermContext)
             else:
-                return self.getTypedRuleContext(jacParser.TermContext,i)
+                return self.getTypedRuleContext(jacParser.TermContext, i)
 
-
-        def PLUS(self, i:int=None):
+        def PLUS(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.PLUS)
             else:
                 return self.getToken(jacParser.PLUS, i)
 
-        def MINUS(self, i:int=None):
+        def MINUS(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.MINUS)
             else:
@@ -5256,43 +5451,40 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_arithmetic
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterArithmetic" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterArithmetic"):
                 listener.enterArithmetic(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitArithmetic" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitArithmetic"):
                 listener.exitArithmetic(self)
-
-
-
 
     def arithmetic(self):
 
         localctx = jacParser.ArithmeticContext(self, self._ctx, self.state)
         self.enterRule(localctx, 112, self.RULE_arithmetic)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 757
             self.term()
             self.state = 762
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,74,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 74, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 758
                     _la = self._input.LA(1)
-                    if not(_la==jacParser.PLUS or _la==jacParser.MINUS):
+                    if not (_la == jacParser.PLUS or _la == jacParser.MINUS):
                         self._errHandler.recoverInline(self)
                     else:
                         self._errHandler.reportMatch(self)
                         self.consume()
                     self.state = 759
-                    self.term() 
+                    self.term()
                 self.state = 764
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,74,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 74, self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5302,34 +5494,34 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TermContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def factor(self, i:int=None):
+        def factor(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.FactorContext)
             else:
-                return self.getTypedRuleContext(jacParser.FactorContext,i)
+                return self.getTypedRuleContext(jacParser.FactorContext, i)
 
-
-        def STAR_MUL(self, i:int=None):
+        def STAR_MUL(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.STAR_MUL)
             else:
                 return self.getToken(jacParser.STAR_MUL, i)
 
-        def DIV(self, i:int=None):
+        def DIV(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.DIV)
             else:
                 return self.getToken(jacParser.DIV, i)
 
-        def MOD(self, i:int=None):
+        def MOD(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.MOD)
             else:
@@ -5338,43 +5530,59 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_term
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterTerm" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterTerm"):
                 listener.enterTerm(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitTerm" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitTerm"):
                 listener.exitTerm(self)
-
-
-
 
     def term(self):
 
         localctx = jacParser.TermContext(self, self._ctx, self.state)
         self.enterRule(localctx, 114, self.RULE_term)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 765
             self.factor()
             self.state = 770
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,75,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
-                    self.state = 766
-                    _la = self._input.LA(1)
-                    if not(((((_la - 86)) & ~0x3f) == 0 and ((1 << (_la - 86)) & ((1 << (jacParser.STAR_MUL - 86)) | (1 << (jacParser.DIV - 86)) | (1 << (jacParser.MOD - 86)))) != 0)):
-                        self._errHandler.recoverInline(self)
-                    else:
-                        self._errHandler.reportMatch(self)
-                        self.consume()
-                    self.state = 767
-                    self.factor() 
+            _la = self._input.LA(1)
+            while (((_la - 86)) & ~0x3F) == 0 and (
+                (1 << (_la - 86))
+                & (
+                    (1 << (jacParser.STAR_MUL - 86))
+                    | (1 << (jacParser.DIV - 86))
+                    | (1 << (jacParser.MOD - 86))
+                )
+            ) != 0:
+                self.state = 766
+                _la = self._input.LA(1)
+                if not (
+                    (
+                        (((_la - 86)) & ~0x3F) == 0
+                        and (
+                            (1 << (_la - 86))
+                            & (
+                                (1 << (jacParser.STAR_MUL - 86))
+                                | (1 << (jacParser.DIV - 86))
+                                | (1 << (jacParser.MOD - 86))
+                            )
+                        )
+                        != 0
+                    )
+                ):
+                    self._errHandler.recoverInline(self)
+                else:
+                    self._errHandler.reportMatch(self)
+                    self.consume()
+                self.state = 767
+                self.factor()
                 self.state = 772
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,75,self._ctx)
+                _la = self._input.LA(1)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5384,17 +5592,17 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class FactorContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def factor(self):
-            return self.getTypedRuleContext(jacParser.FactorContext,0)
-
+            return self.getTypedRuleContext(jacParser.FactorContext, 0)
 
         def PLUS(self):
             return self.getToken(jacParser.PLUS, 0)
@@ -5403,37 +5611,33 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.MINUS, 0)
 
         def power(self):
-            return self.getTypedRuleContext(jacParser.PowerContext,0)
-
+            return self.getTypedRuleContext(jacParser.PowerContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_factor
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterFactor" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterFactor"):
                 listener.enterFactor(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitFactor" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitFactor"):
                 listener.exitFactor(self)
-
-
-
 
     def factor(self):
 
         localctx = jacParser.FactorContext(self, self._ctx, self.state)
         self.enterRule(localctx, 116, self.RULE_factor)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 776
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,76,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 76, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 773
                 _la = self._input.LA(1)
-                if not(_la==jacParser.PLUS or _la==jacParser.MINUS):
+                if not (_la == jacParser.PLUS or _la == jacParser.MINUS):
                     self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
@@ -5448,7 +5652,6 @@ class jacParser ( Parser ):
                 self.power()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -5457,44 +5660,40 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class PowerContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def atom(self):
-            return self.getTypedRuleContext(jacParser.AtomContext,0)
+            return self.getTypedRuleContext(jacParser.AtomContext, 0)
 
-
-        def POW(self, i:int=None):
+        def POW(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.POW)
             else:
                 return self.getToken(jacParser.POW, i)
 
-        def factor(self, i:int=None):
+        def factor(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.FactorContext)
             else:
-                return self.getTypedRuleContext(jacParser.FactorContext,i)
-
+                return self.getTypedRuleContext(jacParser.FactorContext, i)
 
         def getRuleIndex(self):
             return jacParser.RULE_power
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterPower" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterPower"):
                 listener.enterPower(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitPower" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitPower"):
                 listener.exitPower(self)
-
-
-
 
     def power(self):
 
@@ -5506,16 +5705,16 @@ class jacParser ( Parser ):
             self.atom(0)
             self.state = 783
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,77,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 77, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 779
                     self.match(jacParser.POW)
                     self.state = 780
-                    self.factor() 
+                    self.factor()
                 self.state = 785
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,77,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 77, self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5525,11 +5724,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class AtomContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5558,76 +5758,62 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.DOT, 0)
 
         def node_edge_ref(self):
-            return self.getTypedRuleContext(jacParser.Node_edge_refContext,0)
-
+            return self.getTypedRuleContext(jacParser.Node_edge_refContext, 0)
 
         def list_val(self):
-            return self.getTypedRuleContext(jacParser.List_valContext,0)
-
+            return self.getTypedRuleContext(jacParser.List_valContext, 0)
 
         def dict_val(self):
-            return self.getTypedRuleContext(jacParser.Dict_valContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dict_valContext, 0)
 
         def LPAREN(self):
             return self.getToken(jacParser.LPAREN, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def RPAREN(self):
             return self.getToken(jacParser.RPAREN, 0)
 
         def ability_op(self):
-            return self.getTypedRuleContext(jacParser.Ability_opContext,0)
-
+            return self.getTypedRuleContext(jacParser.Ability_opContext, 0)
 
         def spawn_ctx(self):
-            return self.getTypedRuleContext(jacParser.Spawn_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Spawn_ctxContext, 0)
 
         def spawn(self):
-            return self.getTypedRuleContext(jacParser.SpawnContext,0)
-
+            return self.getTypedRuleContext(jacParser.SpawnContext, 0)
 
         def ref(self):
-            return self.getTypedRuleContext(jacParser.RefContext,0)
-
+            return self.getTypedRuleContext(jacParser.RefContext, 0)
 
         def deref(self):
-            return self.getTypedRuleContext(jacParser.DerefContext,0)
-
+            return self.getTypedRuleContext(jacParser.DerefContext, 0)
 
         def any_type(self):
-            return self.getTypedRuleContext(jacParser.Any_typeContext,0)
-
+            return self.getTypedRuleContext(jacParser.Any_typeContext, 0)
 
         def atom(self):
-            return self.getTypedRuleContext(jacParser.AtomContext,0)
+            return self.getTypedRuleContext(jacParser.AtomContext, 0)
 
-
-        def atom_trailer(self, i:int=None):
+        def atom_trailer(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Atom_trailerContext)
             else:
-                return self.getTypedRuleContext(jacParser.Atom_trailerContext,i)
-
+                return self.getTypedRuleContext(jacParser.Atom_trailerContext, i)
 
         def getRuleIndex(self):
             return jacParser.RULE_atom
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterAtom" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterAtom"):
                 listener.enterAtom(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitAtom" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitAtom"):
                 listener.exitAtom(self)
 
-
-
-    def atom(self, _p:int=0):
+    def atom(self, _p: int = 0):
         _parentctx = self._ctx
         _parentState = self.state
         localctx = jacParser.AtomContext(self, self._ctx, _parentState)
@@ -5638,7 +5824,7 @@ class jacParser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 812
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,79,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 79, self._ctx)
             if la_ == 1:
                 self.state = 787
                 self.match(jacParser.INT)
@@ -5709,11 +5895,10 @@ class jacParser ( Parser ):
                 self.match(jacParser.NAME)
                 self.state = 806
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,78,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 78, self._ctx)
                 if la_ == 1:
                     self.state = 805
                     self.spawn_ctx()
-
 
                 pass
 
@@ -5737,13 +5922,12 @@ class jacParser ( Parser ):
                 self.any_type()
                 pass
 
-
             self._ctx.stop = self._input.LT(-1)
             self.state = 822
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,81,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 81, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     if self._parseListeners is not None:
                         self.triggerExitRuleEvent()
                     _prevctx = localctx
@@ -5752,24 +5936,27 @@ class jacParser ( Parser ):
                     self.state = 814
                     if not self.precpred(self._ctx, 5):
                         from antlr4.error.Errors import FailedPredicateException
-                        raise FailedPredicateException(self, "self.precpred(self._ctx, 5)")
-                    self.state = 816 
+
+                        raise FailedPredicateException(
+                            self, "self.precpred(self._ctx, 5)"
+                        )
+                    self.state = 816
                     self._errHandler.sync(self)
                     _alt = 1
-                    while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                    while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
                         if _alt == 1:
                             self.state = 815
                             self.atom_trailer()
 
                         else:
                             raise NoViableAltException(self)
-                        self.state = 818 
+                        self.state = 818
                         self._errHandler.sync(self)
-                        _alt = self._interp.adaptivePredict(self._input,80,self._ctx)
-             
+                        _alt = self._interp.adaptivePredict(self._input, 80, self._ctx)
+
                 self.state = 824
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,81,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 81, self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5779,11 +5966,12 @@ class jacParser ( Parser ):
             self.unrollRecursionContexts(_parentctx)
         return localctx
 
-
     class Atom_trailerContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5791,15 +5979,13 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.DOT, 0)
 
         def built_in(self):
-            return self.getTypedRuleContext(jacParser.Built_inContext,0)
-
+            return self.getTypedRuleContext(jacParser.Built_inContext, 0)
 
         def NAME(self):
             return self.getToken(jacParser.NAME, 0)
 
         def index_slice(self):
-            return self.getTypedRuleContext(jacParser.Index_sliceContext,0)
-
+            return self.getTypedRuleContext(jacParser.Index_sliceContext, 0)
 
         def LPAREN(self):
             return self.getToken(jacParser.LPAREN, 0)
@@ -5808,40 +5994,34 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.RPAREN, 0)
 
         def expr_list(self):
-            return self.getTypedRuleContext(jacParser.Expr_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Expr_listContext, 0)
 
         def ability_op(self):
-            return self.getTypedRuleContext(jacParser.Ability_opContext,0)
-
+            return self.getTypedRuleContext(jacParser.Ability_opContext, 0)
 
         def spawn_ctx(self):
-            return self.getTypedRuleContext(jacParser.Spawn_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Spawn_ctxContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_atom_trailer
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterAtom_trailer" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterAtom_trailer"):
                 listener.enterAtom_trailer(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitAtom_trailer" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitAtom_trailer"):
                 listener.exitAtom_trailer(self)
-
-
-
 
     def atom_trailer(self):
 
         localctx = jacParser.Atom_trailerContext(self, self._ctx, self.state)
         self.enterRule(localctx, 122, self.RULE_atom_trailer)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 840
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,84,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 84, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 825
@@ -5871,10 +6051,55 @@ class jacParser ( Parser ):
                 self.state = 832
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.T__1) | (1 << jacParser.T__2) | (1 << jacParser.T__4) | (1 << jacParser.T__5) | (1 << jacParser.T__6) | (1 << jacParser.TYP_STRING) | (1 << jacParser.TYP_INT) | (1 << jacParser.TYP_FLOAT) | (1 << jacParser.TYP_LIST) | (1 << jacParser.TYP_DICT) | (1 << jacParser.TYP_BOOL) | (1 << jacParser.KW_TYPE) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_SPAWN) | (1 << jacParser.DBL_COLON) | (1 << jacParser.LBRACE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 70)) & ~0x3f) == 0 and ((1 << (_la - 70)) & ((1 << (jacParser.NOT - 70)) | (1 << (jacParser.KW_GLOBAL - 70)) | (1 << (jacParser.PLUS - 70)) | (1 << (jacParser.MINUS - 70)) | (1 << (jacParser.STAR_MUL - 70)) | (1 << (jacParser.LPAREN - 70)) | (1 << (jacParser.LSQUARE - 70)) | (1 << (jacParser.FLOAT - 70)) | (1 << (jacParser.STRING - 70)) | (1 << (jacParser.BOOL - 70)) | (1 << (jacParser.INT - 70)) | (1 << (jacParser.NULL - 70)) | (1 << (jacParser.NAME - 70)))) != 0):
+                if (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << jacParser.T__1)
+                            | (1 << jacParser.T__2)
+                            | (1 << jacParser.T__4)
+                            | (1 << jacParser.T__5)
+                            | (1 << jacParser.T__6)
+                            | (1 << jacParser.TYP_STRING)
+                            | (1 << jacParser.TYP_INT)
+                            | (1 << jacParser.TYP_FLOAT)
+                            | (1 << jacParser.TYP_LIST)
+                            | (1 << jacParser.TYP_DICT)
+                            | (1 << jacParser.TYP_BOOL)
+                            | (1 << jacParser.KW_TYPE)
+                            | (1 << jacParser.KW_NODE)
+                            | (1 << jacParser.KW_SPAWN)
+                            | (1 << jacParser.DBL_COLON)
+                            | (1 << jacParser.LBRACE)
+                            | (1 << jacParser.KW_EDGE)
+                        )
+                    )
+                    != 0
+                ) or (
+                    (((_la - 70)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 70))
+                        & (
+                            (1 << (jacParser.NOT - 70))
+                            | (1 << (jacParser.KW_GLOBAL - 70))
+                            | (1 << (jacParser.PLUS - 70))
+                            | (1 << (jacParser.MINUS - 70))
+                            | (1 << (jacParser.STAR_MUL - 70))
+                            | (1 << (jacParser.LPAREN - 70))
+                            | (1 << (jacParser.LSQUARE - 70))
+                            | (1 << (jacParser.FLOAT - 70))
+                            | (1 << (jacParser.STRING - 70))
+                            | (1 << (jacParser.BOOL - 70))
+                            | (1 << (jacParser.INT - 70))
+                            | (1 << (jacParser.NULL - 70))
+                            | (1 << (jacParser.NAME - 70))
+                        )
+                    )
+                    != 0
+                ):
                     self.state = 831
                     self.expr_list()
-
 
                 self.state = 834
                 self.match(jacParser.RPAREN)
@@ -5888,14 +6113,12 @@ class jacParser ( Parser ):
                 self.match(jacParser.NAME)
                 self.state = 838
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,83,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 83, self._ctx)
                 if la_ == 1:
                     self.state = 837
                     self.spawn_ctx()
 
-
                 pass
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5905,11 +6128,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Ability_opContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5925,16 +6149,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_ability_op
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterAbility_op" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterAbility_op"):
                 listener.enterAbility_op(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitAbility_op" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitAbility_op"):
                 listener.exitAbility_op(self)
-
-
-
 
     def ability_op(self):
 
@@ -5943,7 +6164,7 @@ class jacParser ( Parser ):
         try:
             self.state = 846
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,85,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 85, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 842
@@ -5960,7 +6181,6 @@ class jacParser ( Parser ):
                 self.match(jacParser.COLON)
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -5969,31 +6189,28 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class RefContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+        def atom(self):
+            return self.getTypedRuleContext(jacParser.AtomContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_ref
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRef" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterRef"):
                 listener.enterRef(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRef" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitRef"):
                 listener.exitRef(self)
-
-
-
 
     def ref(self):
 
@@ -6004,7 +6221,7 @@ class jacParser ( Parser ):
             self.state = 848
             self.match(jacParser.T__1)
             self.state = 849
-            self.expression()
+            self.atom(0)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -6013,34 +6230,31 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class DerefContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def STAR_MUL(self):
             return self.getToken(jacParser.STAR_MUL, 0)
 
-        def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+        def atom(self):
+            return self.getTypedRuleContext(jacParser.AtomContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_deref
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDeref" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDeref"):
                 listener.enterDeref(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDeref" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDeref"):
                 listener.exitDeref(self)
-
-
-
 
     def deref(self):
 
@@ -6051,7 +6265,7 @@ class jacParser ( Parser ):
             self.state = 851
             self.match(jacParser.STAR_MUL)
             self.state = 852
-            self.expression()
+            self.atom(0)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -6060,47 +6274,40 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Built_inContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def string_built_in(self):
-            return self.getTypedRuleContext(jacParser.String_built_inContext,0)
-
+            return self.getTypedRuleContext(jacParser.String_built_inContext, 0)
 
         def dict_built_in(self):
-            return self.getTypedRuleContext(jacParser.Dict_built_inContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dict_built_inContext, 0)
 
         def list_built_in(self):
-            return self.getTypedRuleContext(jacParser.List_built_inContext,0)
-
+            return self.getTypedRuleContext(jacParser.List_built_inContext, 0)
 
         def obj_built_in(self):
-            return self.getTypedRuleContext(jacParser.Obj_built_inContext,0)
-
+            return self.getTypedRuleContext(jacParser.Obj_built_inContext, 0)
 
         def cast_built_in(self):
-            return self.getTypedRuleContext(jacParser.Cast_built_inContext,0)
-
+            return self.getTypedRuleContext(jacParser.Cast_built_inContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_built_in
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterBuilt_in" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterBuilt_in"):
                 listener.enterBuilt_in(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitBuilt_in" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitBuilt_in"):
                 listener.exitBuilt_in(self)
-
-
-
 
     def built_in(self):
 
@@ -6109,7 +6316,7 @@ class jacParser ( Parser ):
         try:
             self.state = 860
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,86,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 86, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
 
@@ -6145,7 +6352,6 @@ class jacParser ( Parser ):
                 self.cast_built_in()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -6154,31 +6360,28 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Cast_built_inContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def any_type(self):
-            return self.getTypedRuleContext(jacParser.Any_typeContext,0)
-
+            return self.getTypedRuleContext(jacParser.Any_typeContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_cast_built_in
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterCast_built_in" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterCast_built_in"):
                 listener.enterCast_built_in(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitCast_built_in" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitCast_built_in"):
                 listener.exitCast_built_in(self)
-
-
-
 
     def cast_built_in(self):
 
@@ -6196,11 +6399,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Obj_built_inContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6216,27 +6420,37 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_obj_built_in
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterObj_built_in" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterObj_built_in"):
                 listener.enterObj_built_in(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitObj_built_in" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitObj_built_in"):
                 listener.exitObj_built_in(self)
-
-
-
 
     def obj_built_in(self):
 
         localctx = jacParser.Obj_built_inContext(self, self._ctx, self.state)
         self.enterRule(localctx, 134, self.RULE_obj_built_in)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 864
             _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_CONTEXT) | (1 << jacParser.KW_INFO) | (1 << jacParser.KW_DETAILS))) != 0)):
+            if not (
+                (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << jacParser.KW_CONTEXT)
+                            | (1 << jacParser.KW_INFO)
+                            | (1 << jacParser.KW_DETAILS)
+                        )
+                    )
+                    != 0
+                )
+            ):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -6249,11 +6463,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dict_built_inContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6264,8 +6479,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.LBRACE, 0)
 
         def name_list(self):
-            return self.getTypedRuleContext(jacParser.Name_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Name_listContext, 0)
 
         def RBRACE(self):
             return self.getToken(jacParser.RBRACE, 0)
@@ -6286,8 +6500,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.LPAREN, 0)
 
         def expr_list(self):
-            return self.getTypedRuleContext(jacParser.Expr_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Expr_listContext, 0)
 
         def RPAREN(self):
             return self.getToken(jacParser.RPAREN, 0)
@@ -6295,22 +6508,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_dict_built_in
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDict_built_in" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDict_built_in"):
                 listener.enterDict_built_in(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDict_built_in" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDict_built_in"):
                 listener.exitDict_built_in(self)
-
-
-
 
     def dict_built_in(self):
 
         localctx = jacParser.Dict_built_inContext(self, self._ctx, self.state)
         self.enterRule(localctx, 136, self.RULE_dict_built_in)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 883
             self._errHandler.sync(self)
@@ -6349,14 +6559,14 @@ class jacParser ( Parser ):
 
                 self.state = 876
                 _la = self._input.LA(1)
-                if not(_la==jacParser.KW_KEYS or _la==jacParser.NAME):
+                if not (_la == jacParser.KW_KEYS or _la == jacParser.NAME):
                     self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
                     self.consume()
                 self.state = 881
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,88,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 88, self._ctx)
                 if la_ == 1:
                     self.state = 877
                     self.match(jacParser.LPAREN)
@@ -6364,7 +6574,6 @@ class jacParser ( Parser ):
                     self.expr_list()
                     self.state = 879
                     self.match(jacParser.RPAREN)
-
 
                 pass
             else:
@@ -6378,11 +6587,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class List_built_inContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6405,8 +6615,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.LPAREN, 0)
 
         def expr_list(self):
-            return self.getTypedRuleContext(jacParser.Expr_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Expr_listContext, 0)
 
         def RPAREN(self):
             return self.getToken(jacParser.RPAREN, 0)
@@ -6414,16 +6623,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_list_built_in
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterList_built_in" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterList_built_in"):
                 listener.enterList_built_in(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitList_built_in" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitList_built_in"):
                 listener.exitList_built_in(self)
-
-
-
 
     def list_built_in(self):
 
@@ -6460,7 +6666,7 @@ class jacParser ( Parser ):
                 self.match(jacParser.NAME)
                 self.state = 896
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,91,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 91, self._ctx)
                 if la_ == 1:
                     self.state = 892
                     self.match(jacParser.LPAREN)
@@ -6468,7 +6674,6 @@ class jacParser ( Parser ):
                     self.expr_list()
                     self.state = 894
                     self.match(jacParser.RPAREN)
-
 
                 pass
             else:
@@ -6482,11 +6687,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class String_built_inContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6506,8 +6712,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.LPAREN, 0)
 
         def expr_list(self):
-            return self.getTypedRuleContext(jacParser.Expr_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Expr_listContext, 0)
 
         def RPAREN(self):
             return self.getToken(jacParser.RPAREN, 0)
@@ -6515,16 +6720,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_string_built_in
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterString_built_in" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterString_built_in"):
                 listener.enterString_built_in(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitString_built_in" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitString_built_in"):
                 listener.exitString_built_in(self)
-
-
-
 
     def string_built_in(self):
 
@@ -6552,7 +6754,7 @@ class jacParser ( Parser ):
             self.match(jacParser.NAME)
             self.state = 910
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,94,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 94, self._ctx)
             if la_ == 1:
                 self.state = 906
                 self.match(jacParser.LPAREN)
@@ -6560,7 +6762,6 @@ class jacParser ( Parser ):
                 self.expr_list()
                 self.state = 908
                 self.match(jacParser.RPAREN)
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -6570,39 +6771,34 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Node_edge_refContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def node_ref(self):
-            return self.getTypedRuleContext(jacParser.Node_refContext,0)
-
+            return self.getTypedRuleContext(jacParser.Node_refContext, 0)
 
         def filter_ctx(self):
-            return self.getTypedRuleContext(jacParser.Filter_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Filter_ctxContext, 0)
 
         def edge_ref(self):
-            return self.getTypedRuleContext(jacParser.Edge_refContext,0)
-
+            return self.getTypedRuleContext(jacParser.Edge_refContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_node_edge_ref
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterNode_edge_ref" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterNode_edge_ref"):
                 listener.enterNode_edge_ref(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitNode_edge_ref" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitNode_edge_ref"):
                 listener.exitNode_edge_ref(self)
-
-
-
 
     def node_edge_ref(self):
 
@@ -6618,32 +6814,34 @@ class jacParser ( Parser ):
                 self.node_ref()
                 self.state = 914
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,95,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 95, self._ctx)
                 if la_ == 1:
                     self.state = 913
                     self.filter_ctx()
 
-
                 pass
-            elif token in [jacParser.T__2, jacParser.T__4, jacParser.T__5, jacParser.T__6, jacParser.MINUS]:
+            elif token in [
+                jacParser.T__2,
+                jacParser.T__4,
+                jacParser.T__5,
+                jacParser.T__6,
+                jacParser.MINUS,
+            ]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 916
                 self.edge_ref()
                 self.state = 921
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,97,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 97, self._ctx)
                 if la_ == 1:
                     self.state = 917
                     self.node_ref()
                     self.state = 919
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,96,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input, 96, self._ctx)
                     if la_ == 1:
                         self.state = 918
                         self.filter_ctx()
-
-
-
 
                 pass
             else:
@@ -6657,11 +6855,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Node_refContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6677,16 +6876,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_node_ref
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterNode_ref" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterNode_ref"):
                 listener.enterNode_ref(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitNode_ref" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitNode_ref"):
                 listener.exitNode_ref(self)
-
-
-
 
     def node_ref(self):
 
@@ -6708,11 +6904,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Walker_refContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6728,16 +6925,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_walker_ref
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterWalker_ref" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterWalker_ref"):
                 listener.enterWalker_ref(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitWalker_ref" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitWalker_ref"):
                 listener.exitWalker_ref(self)
-
-
-
 
     def walker_ref(self):
 
@@ -6759,11 +6953,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Graph_refContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6779,16 +6974,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_graph_ref
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterGraph_ref" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterGraph_ref"):
                 listener.enterGraph_ref(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitGraph_ref" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitGraph_ref"):
                 listener.exitGraph_ref(self)
-
-
-
 
     def graph_ref(self):
 
@@ -6810,39 +7002,34 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Edge_refContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def edge_to(self):
-            return self.getTypedRuleContext(jacParser.Edge_toContext,0)
-
+            return self.getTypedRuleContext(jacParser.Edge_toContext, 0)
 
         def edge_from(self):
-            return self.getTypedRuleContext(jacParser.Edge_fromContext,0)
-
+            return self.getTypedRuleContext(jacParser.Edge_fromContext, 0)
 
         def edge_any(self):
-            return self.getTypedRuleContext(jacParser.Edge_anyContext,0)
-
+            return self.getTypedRuleContext(jacParser.Edge_anyContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_edge_ref
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterEdge_ref" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterEdge_ref"):
                 listener.enterEdge_ref(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitEdge_ref" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitEdge_ref"):
                 listener.exitEdge_ref(self)
-
-
-
 
     def edge_ref(self):
 
@@ -6851,7 +7038,7 @@ class jacParser ( Parser ):
         try:
             self.state = 940
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,99,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 99, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 937
@@ -6870,7 +7057,6 @@ class jacParser ( Parser ):
                 self.edge_any()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -6879,11 +7065,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Edge_toContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6900,32 +7087,27 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.RSQUARE, 0)
 
         def spawn_ctx(self):
-            return self.getTypedRuleContext(jacParser.Spawn_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Spawn_ctxContext, 0)
 
         def filter_ctx(self):
-            return self.getTypedRuleContext(jacParser.Filter_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Filter_ctxContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_edge_to
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterEdge_to" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterEdge_to"):
                 listener.enterEdge_to(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitEdge_to" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitEdge_to"):
                 listener.exitEdge_to(self)
-
-
-
 
     def edge_to(self):
 
         localctx = jacParser.Edge_toContext(self, self._ctx, self.state)
         self.enterRule(localctx, 152, self.RULE_edge_to)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 954
             self._errHandler.sync(self)
@@ -6942,14 +7124,14 @@ class jacParser ( Parser ):
                 self.state = 951
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.LSQUARE:
+                if _la == jacParser.LSQUARE:
                     self.state = 944
                     self.match(jacParser.LSQUARE)
                     self.state = 945
                     self.match(jacParser.NAME)
                     self.state = 948
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,100,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input, 100, self._ctx)
                     if la_ == 1:
                         self.state = 946
                         self.spawn_ctx()
@@ -6958,10 +7140,8 @@ class jacParser ( Parser ):
                         self.state = 947
                         self.filter_ctx()
 
-
                     self.state = 950
                     self.match(jacParser.RSQUARE)
-
 
                 self.state = 953
                 self.match(jacParser.T__3)
@@ -6977,11 +7157,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Edge_fromContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6998,32 +7179,27 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.RSQUARE, 0)
 
         def spawn_ctx(self):
-            return self.getTypedRuleContext(jacParser.Spawn_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Spawn_ctxContext, 0)
 
         def filter_ctx(self):
-            return self.getTypedRuleContext(jacParser.Filter_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Filter_ctxContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_edge_from
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterEdge_from" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterEdge_from"):
                 listener.enterEdge_from(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitEdge_from" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitEdge_from"):
                 listener.exitEdge_from(self)
-
-
-
 
     def edge_from(self):
 
         localctx = jacParser.Edge_fromContext(self, self._ctx, self.state)
         self.enterRule(localctx, 154, self.RULE_edge_from)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 968
             self._errHandler.sync(self)
@@ -7040,14 +7216,14 @@ class jacParser ( Parser ):
                 self.state = 965
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.LSQUARE:
+                if _la == jacParser.LSQUARE:
                     self.state = 958
                     self.match(jacParser.LSQUARE)
                     self.state = 959
                     self.match(jacParser.NAME)
                     self.state = 962
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,103,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input, 103, self._ctx)
                     if la_ == 1:
                         self.state = 960
                         self.spawn_ctx()
@@ -7056,10 +7232,8 @@ class jacParser ( Parser ):
                         self.state = 961
                         self.filter_ctx()
 
-
                     self.state = 964
                     self.match(jacParser.RSQUARE)
-
 
                 self.state = 967
                 self.match(jacParser.MINUS)
@@ -7075,11 +7249,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Edge_anyContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -7093,32 +7268,27 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.RSQUARE, 0)
 
         def spawn_ctx(self):
-            return self.getTypedRuleContext(jacParser.Spawn_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Spawn_ctxContext, 0)
 
         def filter_ctx(self):
-            return self.getTypedRuleContext(jacParser.Filter_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Filter_ctxContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_edge_any
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterEdge_any" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterEdge_any"):
                 listener.enterEdge_any(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitEdge_any" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitEdge_any"):
                 listener.exitEdge_any(self)
-
-
-
 
     def edge_any(self):
 
         localctx = jacParser.Edge_anyContext(self, self._ctx, self.state)
         self.enterRule(localctx, 156, self.RULE_edge_any)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 982
             self._errHandler.sync(self)
@@ -7135,14 +7305,14 @@ class jacParser ( Parser ):
                 self.state = 979
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.LSQUARE:
+                if _la == jacParser.LSQUARE:
                     self.state = 972
                     self.match(jacParser.LSQUARE)
                     self.state = 973
                     self.match(jacParser.NAME)
                     self.state = 976
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,106,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input, 106, self._ctx)
                     if la_ == 1:
                         self.state = 974
                         self.spawn_ctx()
@@ -7151,10 +7321,8 @@ class jacParser ( Parser ):
                         self.state = 975
                         self.filter_ctx()
 
-
                     self.state = 978
                     self.match(jacParser.RSQUARE)
-
 
                 self.state = 981
                 self.match(jacParser.T__3)
@@ -7170,11 +7338,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class List_valContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -7185,28 +7354,24 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.RSQUARE, 0)
 
         def expr_list(self):
-            return self.getTypedRuleContext(jacParser.Expr_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Expr_listContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_list_val
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterList_val" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterList_val"):
                 listener.enterList_val(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitList_val" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitList_val"):
                 listener.exitList_val(self)
-
-
-
 
     def list_val(self):
 
         localctx = jacParser.List_valContext(self, self._ctx, self.state)
         self.enterRule(localctx, 158, self.RULE_list_val)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 984
@@ -7214,10 +7379,55 @@ class jacParser ( Parser ):
             self.state = 986
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.T__1) | (1 << jacParser.T__2) | (1 << jacParser.T__4) | (1 << jacParser.T__5) | (1 << jacParser.T__6) | (1 << jacParser.TYP_STRING) | (1 << jacParser.TYP_INT) | (1 << jacParser.TYP_FLOAT) | (1 << jacParser.TYP_LIST) | (1 << jacParser.TYP_DICT) | (1 << jacParser.TYP_BOOL) | (1 << jacParser.KW_TYPE) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_SPAWN) | (1 << jacParser.DBL_COLON) | (1 << jacParser.LBRACE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 70)) & ~0x3f) == 0 and ((1 << (_la - 70)) & ((1 << (jacParser.NOT - 70)) | (1 << (jacParser.KW_GLOBAL - 70)) | (1 << (jacParser.PLUS - 70)) | (1 << (jacParser.MINUS - 70)) | (1 << (jacParser.STAR_MUL - 70)) | (1 << (jacParser.LPAREN - 70)) | (1 << (jacParser.LSQUARE - 70)) | (1 << (jacParser.FLOAT - 70)) | (1 << (jacParser.STRING - 70)) | (1 << (jacParser.BOOL - 70)) | (1 << (jacParser.INT - 70)) | (1 << (jacParser.NULL - 70)) | (1 << (jacParser.NAME - 70)))) != 0):
+            if (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << jacParser.T__1)
+                        | (1 << jacParser.T__2)
+                        | (1 << jacParser.T__4)
+                        | (1 << jacParser.T__5)
+                        | (1 << jacParser.T__6)
+                        | (1 << jacParser.TYP_STRING)
+                        | (1 << jacParser.TYP_INT)
+                        | (1 << jacParser.TYP_FLOAT)
+                        | (1 << jacParser.TYP_LIST)
+                        | (1 << jacParser.TYP_DICT)
+                        | (1 << jacParser.TYP_BOOL)
+                        | (1 << jacParser.KW_TYPE)
+                        | (1 << jacParser.KW_NODE)
+                        | (1 << jacParser.KW_SPAWN)
+                        | (1 << jacParser.DBL_COLON)
+                        | (1 << jacParser.LBRACE)
+                        | (1 << jacParser.KW_EDGE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 70)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 70))
+                    & (
+                        (1 << (jacParser.NOT - 70))
+                        | (1 << (jacParser.KW_GLOBAL - 70))
+                        | (1 << (jacParser.PLUS - 70))
+                        | (1 << (jacParser.MINUS - 70))
+                        | (1 << (jacParser.STAR_MUL - 70))
+                        | (1 << (jacParser.LPAREN - 70))
+                        | (1 << (jacParser.LSQUARE - 70))
+                        | (1 << (jacParser.FLOAT - 70))
+                        | (1 << (jacParser.STRING - 70))
+                        | (1 << (jacParser.BOOL - 70))
+                        | (1 << (jacParser.INT - 70))
+                        | (1 << (jacParser.NULL - 70))
+                        | (1 << (jacParser.NAME - 70))
+                    )
+                )
+                != 0
+            ):
                 self.state = 985
                 self.expr_list()
-
 
             self.state = 988
             self.match(jacParser.RSQUARE)
@@ -7229,23 +7439,23 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Index_sliceContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def LSQUARE(self):
             return self.getToken(jacParser.LSQUARE, 0)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(jacParser.ExpressionContext,i)
-
+                return self.getTypedRuleContext(jacParser.ExpressionContext, i)
 
         def RSQUARE(self):
             return self.getToken(jacParser.RSQUARE, 0)
@@ -7256,16 +7466,13 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_index_slice
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterIndex_slice" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterIndex_slice"):
                 listener.enterIndex_slice(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitIndex_slice" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitIndex_slice"):
                 listener.exitIndex_slice(self)
-
-
-
 
     def index_slice(self):
 
@@ -7274,7 +7481,7 @@ class jacParser ( Parser ):
         try:
             self.state = 1000
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,110,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 110, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 990
@@ -7299,7 +7506,6 @@ class jacParser ( Parser ):
                 self.match(jacParser.RSQUARE)
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -7308,11 +7514,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dict_valContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -7322,14 +7529,13 @@ class jacParser ( Parser ):
         def RBRACE(self):
             return self.getToken(jacParser.RBRACE, 0)
 
-        def kv_pair(self, i:int=None):
+        def kv_pair(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Kv_pairContext)
             else:
-                return self.getTypedRuleContext(jacParser.Kv_pairContext,i)
+                return self.getTypedRuleContext(jacParser.Kv_pairContext, i)
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COMMA)
             else:
@@ -7338,22 +7544,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_dict_val
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDict_val" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDict_val"):
                 listener.enterDict_val(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDict_val" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDict_val"):
                 listener.exitDict_val(self)
-
-
-
 
     def dict_val(self):
 
         localctx = jacParser.Dict_valContext(self, self._ctx, self.state)
         self.enterRule(localctx, 162, self.RULE_dict_val)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1002
@@ -7361,13 +7564,13 @@ class jacParser ( Parser ):
             self.state = 1011
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.STRING:
+            if _la == jacParser.STRING:
                 self.state = 1003
                 self.kv_pair()
                 self.state = 1008
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while _la==jacParser.COMMA:
+                while _la == jacParser.COMMA:
                     self.state = 1004
                     self.match(jacParser.COMMA)
                     self.state = 1005
@@ -7375,8 +7578,6 @@ class jacParser ( Parser ):
                     self.state = 1010
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
-
-
 
             self.state = 1013
             self.match(jacParser.RBRACE)
@@ -7388,11 +7589,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Kv_pairContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -7403,22 +7605,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.COLON, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_kv_pair
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterKv_pair" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterKv_pair"):
                 listener.enterKv_pair(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitKv_pair" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitKv_pair"):
                 listener.exitKv_pair(self)
-
-
-
 
     def kv_pair(self):
 
@@ -7440,11 +7638,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class SpawnContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -7452,22 +7651,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_SPAWN, 0)
 
         def spawn_object(self):
-            return self.getTypedRuleContext(jacParser.Spawn_objectContext,0)
-
+            return self.getTypedRuleContext(jacParser.Spawn_objectContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_spawn
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterSpawn" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterSpawn"):
                 listener.enterSpawn(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitSpawn" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitSpawn"):
                 listener.exitSpawn(self)
-
-
-
 
     def spawn(self):
 
@@ -7487,39 +7682,34 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Spawn_objectContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def node_spawn(self):
-            return self.getTypedRuleContext(jacParser.Node_spawnContext,0)
-
+            return self.getTypedRuleContext(jacParser.Node_spawnContext, 0)
 
         def walker_spawn(self):
-            return self.getTypedRuleContext(jacParser.Walker_spawnContext,0)
-
+            return self.getTypedRuleContext(jacParser.Walker_spawnContext, 0)
 
         def graph_spawn(self):
-            return self.getTypedRuleContext(jacParser.Graph_spawnContext,0)
-
+            return self.getTypedRuleContext(jacParser.Graph_spawnContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_spawn_object
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterSpawn_object" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterSpawn_object"):
                 listener.enterSpawn_object(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitSpawn_object" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitSpawn_object"):
                 listener.exitSpawn_object(self)
-
-
-
 
     def spawn_object(self):
 
@@ -7528,7 +7718,7 @@ class jacParser ( Parser ):
         try:
             self.state = 1025
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,113,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 113, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 1022
@@ -7547,7 +7737,6 @@ class jacParser ( Parser ):
                 self.graph_spawn()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -7556,35 +7745,31 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Spawn_edgeContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def edge_ref(self):
-            return self.getTypedRuleContext(jacParser.Edge_refContext,0)
-
+            return self.getTypedRuleContext(jacParser.Edge_refContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_spawn_edge
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterSpawn_edge" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterSpawn_edge"):
                 listener.enterSpawn_edge(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitSpawn_edge" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitSpawn_edge"):
                 listener.exitSpawn_edge(self)
-
-
-
 
     def spawn_edge(self):
 
@@ -7604,39 +7789,34 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Node_spawnContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def node_ref(self):
-            return self.getTypedRuleContext(jacParser.Node_refContext,0)
-
+            return self.getTypedRuleContext(jacParser.Node_refContext, 0)
 
         def spawn_edge(self):
-            return self.getTypedRuleContext(jacParser.Spawn_edgeContext,0)
-
+            return self.getTypedRuleContext(jacParser.Spawn_edgeContext, 0)
 
         def spawn_ctx(self):
-            return self.getTypedRuleContext(jacParser.Spawn_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Spawn_ctxContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_node_spawn
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterNode_spawn" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterNode_spawn"):
                 listener.enterNode_spawn(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitNode_spawn" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitNode_spawn"):
                 listener.exitNode_spawn(self)
-
-
-
 
     def node_spawn(self):
 
@@ -7646,21 +7826,19 @@ class jacParser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 1031
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,114,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 114, self._ctx)
             if la_ == 1:
                 self.state = 1030
                 self.spawn_edge()
-
 
             self.state = 1033
             self.node_ref()
             self.state = 1035
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,115,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 115, self._ctx)
             if la_ == 1:
                 self.state = 1034
                 self.spawn_ctx()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -7670,50 +7848,91 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Graph_spawnContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def graph_ref(self):
-            return self.getTypedRuleContext(jacParser.Graph_refContext,0)
-
+            return self.getTypedRuleContext(jacParser.Graph_refContext, 0)
 
         def spawn_edge(self):
-            return self.getTypedRuleContext(jacParser.Spawn_edgeContext,0)
-
+            return self.getTypedRuleContext(jacParser.Spawn_edgeContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_graph_spawn
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterGraph_spawn" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterGraph_spawn"):
                 listener.enterGraph_spawn(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitGraph_spawn" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitGraph_spawn"):
                 listener.exitGraph_spawn(self)
-
-
-
 
     def graph_spawn(self):
 
         localctx = jacParser.Graph_spawnContext(self, self._ctx, self.state)
         self.enterRule(localctx, 174, self.RULE_graph_spawn)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1038
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.T__1) | (1 << jacParser.T__2) | (1 << jacParser.T__4) | (1 << jacParser.T__5) | (1 << jacParser.T__6) | (1 << jacParser.TYP_STRING) | (1 << jacParser.TYP_INT) | (1 << jacParser.TYP_FLOAT) | (1 << jacParser.TYP_LIST) | (1 << jacParser.TYP_DICT) | (1 << jacParser.TYP_BOOL) | (1 << jacParser.KW_TYPE) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_SPAWN) | (1 << jacParser.DBL_COLON) | (1 << jacParser.LBRACE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 70)) & ~0x3f) == 0 and ((1 << (_la - 70)) & ((1 << (jacParser.NOT - 70)) | (1 << (jacParser.KW_GLOBAL - 70)) | (1 << (jacParser.PLUS - 70)) | (1 << (jacParser.MINUS - 70)) | (1 << (jacParser.STAR_MUL - 70)) | (1 << (jacParser.LPAREN - 70)) | (1 << (jacParser.LSQUARE - 70)) | (1 << (jacParser.FLOAT - 70)) | (1 << (jacParser.STRING - 70)) | (1 << (jacParser.BOOL - 70)) | (1 << (jacParser.INT - 70)) | (1 << (jacParser.NULL - 70)) | (1 << (jacParser.NAME - 70)))) != 0):
+            if (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << jacParser.T__1)
+                        | (1 << jacParser.T__2)
+                        | (1 << jacParser.T__4)
+                        | (1 << jacParser.T__5)
+                        | (1 << jacParser.T__6)
+                        | (1 << jacParser.TYP_STRING)
+                        | (1 << jacParser.TYP_INT)
+                        | (1 << jacParser.TYP_FLOAT)
+                        | (1 << jacParser.TYP_LIST)
+                        | (1 << jacParser.TYP_DICT)
+                        | (1 << jacParser.TYP_BOOL)
+                        | (1 << jacParser.KW_TYPE)
+                        | (1 << jacParser.KW_NODE)
+                        | (1 << jacParser.KW_SPAWN)
+                        | (1 << jacParser.DBL_COLON)
+                        | (1 << jacParser.LBRACE)
+                        | (1 << jacParser.KW_EDGE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 70)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 70))
+                    & (
+                        (1 << (jacParser.NOT - 70))
+                        | (1 << (jacParser.KW_GLOBAL - 70))
+                        | (1 << (jacParser.PLUS - 70))
+                        | (1 << (jacParser.MINUS - 70))
+                        | (1 << (jacParser.STAR_MUL - 70))
+                        | (1 << (jacParser.LPAREN - 70))
+                        | (1 << (jacParser.LSQUARE - 70))
+                        | (1 << (jacParser.FLOAT - 70))
+                        | (1 << (jacParser.STRING - 70))
+                        | (1 << (jacParser.BOOL - 70))
+                        | (1 << (jacParser.INT - 70))
+                        | (1 << (jacParser.NULL - 70))
+                        | (1 << (jacParser.NAME - 70))
+                    )
+                )
+                != 0
+            ):
                 self.state = 1037
                 self.spawn_edge()
-
 
             self.state = 1040
             self.graph_ref()
@@ -7725,39 +7944,34 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Walker_spawnContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def walker_ref(self):
-            return self.getTypedRuleContext(jacParser.Walker_refContext,0)
-
+            return self.getTypedRuleContext(jacParser.Walker_refContext, 0)
 
         def spawn_ctx(self):
-            return self.getTypedRuleContext(jacParser.Spawn_ctxContext,0)
-
+            return self.getTypedRuleContext(jacParser.Spawn_ctxContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_walker_spawn
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterWalker_spawn" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterWalker_spawn"):
                 listener.enterWalker_spawn(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitWalker_spawn" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitWalker_spawn"):
                 listener.exitWalker_spawn(self)
-
-
-
 
     def walker_spawn(self):
 
@@ -7771,11 +7985,10 @@ class jacParser ( Parser ):
             self.walker_ref()
             self.state = 1045
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,117,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 117, self._ctx)
             if la_ == 1:
                 self.state = 1044
                 self.spawn_ctx()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -7785,11 +7998,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Spawn_ctxContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -7799,14 +8013,13 @@ class jacParser ( Parser ):
         def RPAREN(self):
             return self.getToken(jacParser.RPAREN, 0)
 
-        def spawn_assign(self, i:int=None):
+        def spawn_assign(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Spawn_assignContext)
             else:
-                return self.getTypedRuleContext(jacParser.Spawn_assignContext,i)
+                return self.getTypedRuleContext(jacParser.Spawn_assignContext, i)
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COMMA)
             else:
@@ -7815,22 +8028,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_spawn_ctx
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterSpawn_ctx" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterSpawn_ctx"):
                 listener.enterSpawn_ctx(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitSpawn_ctx" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitSpawn_ctx"):
                 listener.exitSpawn_ctx(self)
-
-
-
 
     def spawn_ctx(self):
 
         localctx = jacParser.Spawn_ctxContext(self, self._ctx, self.state)
         self.enterRule(localctx, 178, self.RULE_spawn_ctx)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1047
@@ -7838,13 +8048,13 @@ class jacParser ( Parser ):
             self.state = 1056
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.NAME:
+            if _la == jacParser.NAME:
                 self.state = 1048
                 self.spawn_assign()
                 self.state = 1053
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while _la==jacParser.COMMA:
+                while _la == jacParser.COMMA:
                     self.state = 1049
                     self.match(jacParser.COMMA)
                     self.state = 1050
@@ -7852,8 +8062,6 @@ class jacParser ( Parser ):
                     self.state = 1055
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
-
-
 
             self.state = 1058
             self.match(jacParser.RPAREN)
@@ -7865,11 +8073,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Filter_ctxContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -7879,14 +8088,13 @@ class jacParser ( Parser ):
         def RPAREN(self):
             return self.getToken(jacParser.RPAREN, 0)
 
-        def filter_compare(self, i:int=None):
+        def filter_compare(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Filter_compareContext)
             else:
-                return self.getTypedRuleContext(jacParser.Filter_compareContext,i)
+                return self.getTypedRuleContext(jacParser.Filter_compareContext, i)
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COMMA)
             else:
@@ -7895,22 +8103,19 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_filter_ctx
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterFilter_ctx" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterFilter_ctx"):
                 listener.enterFilter_ctx(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitFilter_ctx" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitFilter_ctx"):
                 listener.exitFilter_ctx(self)
-
-
-
 
     def filter_ctx(self):
 
         localctx = jacParser.Filter_ctxContext(self, self._ctx, self.state)
         self.enterRule(localctx, 180, self.RULE_filter_ctx)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1060
@@ -7918,13 +8123,13 @@ class jacParser ( Parser ):
             self.state = 1069
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.NAME:
+            if _la == jacParser.NAME:
                 self.state = 1061
                 self.filter_compare()
                 self.state = 1066
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while _la==jacParser.COMMA:
+                while _la == jacParser.COMMA:
                     self.state = 1062
                     self.match(jacParser.COMMA)
                     self.state = 1063
@@ -7932,8 +8137,6 @@ class jacParser ( Parser ):
                     self.state = 1068
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
-
-
 
             self.state = 1071
             self.match(jacParser.RPAREN)
@@ -7945,11 +8148,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Spawn_assignContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -7960,22 +8164,18 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.EQ, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_spawn_assign
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterSpawn_assign" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterSpawn_assign"):
                 listener.enterSpawn_assign(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitSpawn_assign" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitSpawn_assign"):
                 listener.exitSpawn_assign(self)
-
-
-
 
     def spawn_assign(self):
 
@@ -7997,11 +8197,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Filter_compareContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -8009,26 +8210,21 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.NAME, 0)
 
         def cmp_op(self):
-            return self.getTypedRuleContext(jacParser.Cmp_opContext,0)
-
+            return self.getTypedRuleContext(jacParser.Cmp_opContext, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_filter_compare
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterFilter_compare" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterFilter_compare"):
                 listener.enterFilter_compare(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitFilter_compare" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitFilter_compare"):
                 listener.exitFilter_compare(self)
-
-
-
 
     def filter_compare(self):
 
@@ -8050,11 +8246,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Any_typeContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -8088,27 +8285,43 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_any_type
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterAny_type" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterAny_type"):
                 listener.enterAny_type(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitAny_type" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitAny_type"):
                 listener.exitAny_type(self)
-
-
-
 
     def any_type(self):
 
         localctx = jacParser.Any_typeContext(self, self._ctx, self.state)
         self.enterRule(localctx, 186, self.RULE_any_type)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1081
             _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.TYP_STRING) | (1 << jacParser.TYP_INT) | (1 << jacParser.TYP_FLOAT) | (1 << jacParser.TYP_LIST) | (1 << jacParser.TYP_DICT) | (1 << jacParser.TYP_BOOL) | (1 << jacParser.KW_TYPE) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0)):
+            if not (
+                (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << jacParser.TYP_STRING)
+                            | (1 << jacParser.TYP_INT)
+                            | (1 << jacParser.TYP_FLOAT)
+                            | (1 << jacParser.TYP_LIST)
+                            | (1 << jacParser.TYP_DICT)
+                            | (1 << jacParser.TYP_BOOL)
+                            | (1 << jacParser.KW_TYPE)
+                            | (1 << jacParser.KW_NODE)
+                            | (1 << jacParser.KW_EDGE)
+                        )
+                    )
+                    != 0
+                )
+            ):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -8121,11 +8334,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_graphContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -8133,8 +8347,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.LBRACE, 0)
 
         def dot_stmt_list(self):
-            return self.getTypedRuleContext(jacParser.Dot_stmt_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_stmt_listContext, 0)
 
         def RBRACE(self):
             return self.getToken(jacParser.RBRACE, 0)
@@ -8149,41 +8362,36 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_STRICT, 0)
 
         def dot_id(self):
-            return self.getTypedRuleContext(jacParser.Dot_idContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_idContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_dot_graph
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_graph" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_graph"):
                 listener.enterDot_graph(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_graph" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_graph"):
                 listener.exitDot_graph(self)
-
-
-
 
     def dot_graph(self):
 
         localctx = jacParser.Dot_graphContext(self, self._ctx, self.state)
         self.enterRule(localctx, 188, self.RULE_dot_graph)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1084
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.KW_STRICT:
+            if _la == jacParser.KW_STRICT:
                 self.state = 1083
                 self.match(jacParser.KW_STRICT)
 
-
             self.state = 1086
             _la = self._input.LA(1)
-            if not(_la==jacParser.KW_GRAPH or _la==jacParser.KW_DIGRAPH):
+            if not (_la == jacParser.KW_GRAPH or _la == jacParser.KW_DIGRAPH):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -8191,10 +8399,32 @@ class jacParser ( Parser ):
             self.state = 1088
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 94)) & ~0x3f) == 0 and ((1 << (_la - 94)) & ((1 << (jacParser.FLOAT - 94)) | (1 << (jacParser.STRING - 94)) | (1 << (jacParser.INT - 94)) | (1 << (jacParser.NAME - 94)))) != 0):
+            if (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << jacParser.KW_GRAPH)
+                        | (1 << jacParser.KW_NODE)
+                        | (1 << jacParser.KW_EDGE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 94)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 94))
+                    & (
+                        (1 << (jacParser.FLOAT - 94))
+                        | (1 << (jacParser.STRING - 94))
+                        | (1 << (jacParser.INT - 94))
+                        | (1 << (jacParser.NAME - 94))
+                    )
+                )
+                != 0
+            ):
                 self.state = 1087
                 self.dot_id()
-
 
             self.state = 1090
             self.match(jacParser.LBRACE)
@@ -8210,22 +8440,22 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_stmt_listContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def dot_stmt(self, i:int=None):
+        def dot_stmt(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Dot_stmtContext)
             else:
-                return self.getTypedRuleContext(jacParser.Dot_stmtContext,i)
+                return self.getTypedRuleContext(jacParser.Dot_stmtContext, i)
 
-
-        def SEMI(self, i:int=None):
+        def SEMI(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.SEMI)
             else:
@@ -8234,37 +8464,58 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_dot_stmt_list
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_stmt_list" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_stmt_list"):
                 listener.enterDot_stmt_list(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_stmt_list" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_stmt_list"):
                 listener.exitDot_stmt_list(self)
-
-
-
 
     def dot_stmt_list(self):
 
         localctx = jacParser.Dot_stmt_listContext(self, self._ctx, self.state)
         self.enterRule(localctx, 190, self.RULE_dot_stmt_list)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1100
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_SUBGRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.LBRACE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 94)) & ~0x3f) == 0 and ((1 << (_la - 94)) & ((1 << (jacParser.FLOAT - 94)) | (1 << (jacParser.STRING - 94)) | (1 << (jacParser.INT - 94)) | (1 << (jacParser.NAME - 94)))) != 0):
+            while (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << jacParser.KW_GRAPH)
+                        | (1 << jacParser.KW_SUBGRAPH)
+                        | (1 << jacParser.KW_NODE)
+                        | (1 << jacParser.LBRACE)
+                        | (1 << jacParser.KW_EDGE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 94)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 94))
+                    & (
+                        (1 << (jacParser.FLOAT - 94))
+                        | (1 << (jacParser.STRING - 94))
+                        | (1 << (jacParser.INT - 94))
+                        | (1 << (jacParser.NAME - 94))
+                    )
+                )
+                != 0
+            ):
                 self.state = 1094
                 self.dot_stmt()
                 self.state = 1096
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.SEMI:
+                if _la == jacParser.SEMI:
                     self.state = 1095
                     self.match(jacParser.SEMI)
-
 
                 self.state = 1102
                 self._errHandler.sync(self)
@@ -8278,53 +8529,46 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def dot_node_stmt(self):
-            return self.getTypedRuleContext(jacParser.Dot_node_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_node_stmtContext, 0)
 
         def dot_edge_stmt(self):
-            return self.getTypedRuleContext(jacParser.Dot_edge_stmtContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_edge_stmtContext, 0)
 
         def dot_attr_stmt(self):
-            return self.getTypedRuleContext(jacParser.Dot_attr_stmtContext,0)
+            return self.getTypedRuleContext(jacParser.Dot_attr_stmtContext, 0)
 
-
-        def dot_id(self, i:int=None):
+        def dot_id(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Dot_idContext)
             else:
-                return self.getTypedRuleContext(jacParser.Dot_idContext,i)
-
+                return self.getTypedRuleContext(jacParser.Dot_idContext, i)
 
         def EQ(self):
             return self.getToken(jacParser.EQ, 0)
 
         def dot_subgraph(self):
-            return self.getTypedRuleContext(jacParser.Dot_subgraphContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_subgraphContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_dot_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_stmt"):
                 listener.enterDot_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_stmt"):
                 listener.exitDot_stmt(self)
-
-
-
 
     def dot_stmt(self):
 
@@ -8333,7 +8577,7 @@ class jacParser ( Parser ):
         try:
             self.state = 1111
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,126,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 126, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 1103
@@ -8368,7 +8612,6 @@ class jacParser ( Parser ):
                 self.dot_subgraph()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -8377,17 +8620,17 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_attr_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def dot_attr_list(self):
-            return self.getTypedRuleContext(jacParser.Dot_attr_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_attr_listContext, 0)
 
         def KW_GRAPH(self):
             return self.getToken(jacParser.KW_GRAPH, 0)
@@ -8401,27 +8644,37 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_dot_attr_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_attr_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_attr_stmt"):
                 listener.enterDot_attr_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_attr_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_attr_stmt"):
                 listener.exitDot_attr_stmt(self)
-
-
-
 
     def dot_attr_stmt(self):
 
         localctx = jacParser.Dot_attr_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 194, self.RULE_dot_attr_stmt)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1113
             _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0)):
+            if not (
+                (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << jacParser.KW_GRAPH)
+                            | (1 << jacParser.KW_NODE)
+                            | (1 << jacParser.KW_EDGE)
+                        )
+                    )
+                    != 0
+                )
+            ):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -8436,55 +8689,52 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_attr_listContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def LSQUARE(self, i:int=None):
+        def LSQUARE(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.LSQUARE)
             else:
                 return self.getToken(jacParser.LSQUARE, i)
 
-        def RSQUARE(self, i:int=None):
+        def RSQUARE(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.RSQUARE)
             else:
                 return self.getToken(jacParser.RSQUARE, i)
 
-        def dot_a_list(self, i:int=None):
+        def dot_a_list(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Dot_a_listContext)
             else:
-                return self.getTypedRuleContext(jacParser.Dot_a_listContext,i)
-
+                return self.getTypedRuleContext(jacParser.Dot_a_listContext, i)
 
         def getRuleIndex(self):
             return jacParser.RULE_dot_attr_list
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_attr_list" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_attr_list"):
                 listener.enterDot_attr_list(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_attr_list" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_attr_list"):
                 listener.exitDot_attr_list(self)
-
-
-
 
     def dot_attr_list(self):
 
         localctx = jacParser.Dot_attr_listContext(self, self._ctx, self.state)
         self.enterRule(localctx, 196, self.RULE_dot_attr_list)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1121 
+            self.state = 1121
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
@@ -8493,17 +8743,39 @@ class jacParser ( Parser ):
                 self.state = 1118
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 94)) & ~0x3f) == 0 and ((1 << (_la - 94)) & ((1 << (jacParser.FLOAT - 94)) | (1 << (jacParser.STRING - 94)) | (1 << (jacParser.INT - 94)) | (1 << (jacParser.NAME - 94)))) != 0):
+                if (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << jacParser.KW_GRAPH)
+                            | (1 << jacParser.KW_NODE)
+                            | (1 << jacParser.KW_EDGE)
+                        )
+                    )
+                    != 0
+                ) or (
+                    (((_la - 94)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 94))
+                        & (
+                            (1 << (jacParser.FLOAT - 94))
+                            | (1 << (jacParser.STRING - 94))
+                            | (1 << (jacParser.INT - 94))
+                            | (1 << (jacParser.NAME - 94))
+                        )
+                    )
+                    != 0
+                ):
                     self.state = 1117
                     self.dot_a_list()
 
-
                 self.state = 1120
                 self.match(jacParser.RSQUARE)
-                self.state = 1123 
+                self.state = 1123
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if not (_la==jacParser.LSQUARE):
+                if not (_la == jacParser.LSQUARE):
                     break
 
         except RecognitionException as re:
@@ -8514,28 +8786,28 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_a_listContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def dot_id(self, i:int=None):
+        def dot_id(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Dot_idContext)
             else:
-                return self.getTypedRuleContext(jacParser.Dot_idContext,i)
+                return self.getTypedRuleContext(jacParser.Dot_idContext, i)
 
-
-        def EQ(self, i:int=None):
+        def EQ(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.EQ)
             else:
                 return self.getToken(jacParser.EQ, i)
 
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COMMA)
             else:
@@ -8544,25 +8816,22 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_dot_a_list
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_a_list" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_a_list"):
                 listener.enterDot_a_list(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_a_list" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_a_list"):
                 listener.exitDot_a_list(self)
-
-
-
 
     def dot_a_list(self):
 
         localctx = jacParser.Dot_a_listContext(self, self._ctx, self.state)
         self.enterRule(localctx, 198, self.RULE_dot_a_list)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1133 
+            self.state = 1133
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
@@ -8571,25 +8840,49 @@ class jacParser ( Parser ):
                 self.state = 1128
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.EQ:
+                if _la == jacParser.EQ:
                     self.state = 1126
                     self.match(jacParser.EQ)
                     self.state = 1127
                     self.dot_id()
 
-
                 self.state = 1131
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==jacParser.COMMA:
+                if _la == jacParser.COMMA:
                     self.state = 1130
                     self.match(jacParser.COMMA)
 
-
-                self.state = 1135 
+                self.state = 1135
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 94)) & ~0x3f) == 0 and ((1 << (_la - 94)) & ((1 << (jacParser.FLOAT - 94)) | (1 << (jacParser.STRING - 94)) | (1 << (jacParser.INT - 94)) | (1 << (jacParser.NAME - 94)))) != 0)):
+                if not (
+                    (
+                        ((_la) & ~0x3F) == 0
+                        and (
+                            (1 << _la)
+                            & (
+                                (1 << jacParser.KW_GRAPH)
+                                | (1 << jacParser.KW_NODE)
+                                | (1 << jacParser.KW_EDGE)
+                            )
+                        )
+                        != 0
+                    )
+                    or (
+                        (((_la - 94)) & ~0x3F) == 0
+                        and (
+                            (1 << (_la - 94))
+                            & (
+                                (1 << (jacParser.FLOAT - 94))
+                                | (1 << (jacParser.STRING - 94))
+                                | (1 << (jacParser.INT - 94))
+                                | (1 << (jacParser.NAME - 94))
+                            )
+                        )
+                        != 0
+                    )
+                ):
                     break
 
         except RecognitionException as re:
@@ -8600,55 +8893,57 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_edge_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def dot_edgeRHS(self):
-            return self.getTypedRuleContext(jacParser.Dot_edgeRHSContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_edgeRHSContext, 0)
 
         def dot_node_id(self):
-            return self.getTypedRuleContext(jacParser.Dot_node_idContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_node_idContext, 0)
 
         def dot_subgraph(self):
-            return self.getTypedRuleContext(jacParser.Dot_subgraphContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_subgraphContext, 0)
 
         def dot_attr_list(self):
-            return self.getTypedRuleContext(jacParser.Dot_attr_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_attr_listContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_dot_edge_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_edge_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_edge_stmt"):
                 listener.enterDot_edge_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_edge_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_edge_stmt"):
                 listener.exitDot_edge_stmt(self)
-
-
-
 
     def dot_edge_stmt(self):
 
         localctx = jacParser.Dot_edge_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 200, self.RULE_dot_edge_stmt)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1139
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [jacParser.KW_GRAPH, jacParser.KW_NODE, jacParser.KW_EDGE, jacParser.FLOAT, jacParser.STRING, jacParser.INT, jacParser.NAME]:
+            if token in [
+                jacParser.KW_GRAPH,
+                jacParser.KW_NODE,
+                jacParser.KW_EDGE,
+                jacParser.FLOAT,
+                jacParser.STRING,
+                jacParser.INT,
+                jacParser.NAME,
+            ]:
                 self.state = 1137
                 self.dot_node_id()
                 pass
@@ -8664,10 +8959,9 @@ class jacParser ( Parser ):
             self.state = 1143
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.LSQUARE:
+            if _la == jacParser.LSQUARE:
                 self.state = 1142
                 self.dot_attr_list()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -8677,57 +8971,52 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_edgeRHSContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def dot_edgeop(self, i:int=None):
+        def dot_edgeop(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Dot_edgeopContext)
             else:
-                return self.getTypedRuleContext(jacParser.Dot_edgeopContext,i)
+                return self.getTypedRuleContext(jacParser.Dot_edgeopContext, i)
 
-
-        def dot_node_id(self, i:int=None):
+        def dot_node_id(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Dot_node_idContext)
             else:
-                return self.getTypedRuleContext(jacParser.Dot_node_idContext,i)
+                return self.getTypedRuleContext(jacParser.Dot_node_idContext, i)
 
-
-        def dot_subgraph(self, i:int=None):
+        def dot_subgraph(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Dot_subgraphContext)
             else:
-                return self.getTypedRuleContext(jacParser.Dot_subgraphContext,i)
-
+                return self.getTypedRuleContext(jacParser.Dot_subgraphContext, i)
 
         def getRuleIndex(self):
             return jacParser.RULE_dot_edgeRHS
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_edgeRHS" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_edgeRHS"):
                 listener.enterDot_edgeRHS(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_edgeRHS" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_edgeRHS"):
                 listener.exitDot_edgeRHS(self)
-
-
-
 
     def dot_edgeRHS(self):
 
         localctx = jacParser.Dot_edgeRHSContext(self, self._ctx, self.state)
         self.enterRule(localctx, 202, self.RULE_dot_edgeRHS)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1150 
+            self.state = 1150
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
@@ -8736,7 +9025,15 @@ class jacParser ( Parser ):
                 self.state = 1148
                 self._errHandler.sync(self)
                 token = self._input.LA(1)
-                if token in [jacParser.KW_GRAPH, jacParser.KW_NODE, jacParser.KW_EDGE, jacParser.FLOAT, jacParser.STRING, jacParser.INT, jacParser.NAME]:
+                if token in [
+                    jacParser.KW_GRAPH,
+                    jacParser.KW_NODE,
+                    jacParser.KW_EDGE,
+                    jacParser.FLOAT,
+                    jacParser.STRING,
+                    jacParser.INT,
+                    jacParser.NAME,
+                ]:
                     self.state = 1146
                     self.dot_node_id()
                     pass
@@ -8747,10 +9044,10 @@ class jacParser ( Parser ):
                 else:
                     raise NoViableAltException(self)
 
-                self.state = 1152 
+                self.state = 1152
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if not (_la==jacParser.T__3 or _la==jacParser.T__7):
+                if not (_la == jacParser.T__3 or _la == jacParser.T__7):
                     break
 
         except RecognitionException as re:
@@ -8761,39 +9058,36 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_edgeopContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return jacParser.RULE_dot_edgeop
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_edgeop" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_edgeop"):
                 listener.enterDot_edgeop(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_edgeop" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_edgeop"):
                 listener.exitDot_edgeop(self)
-
-
-
 
     def dot_edgeop(self):
 
         localctx = jacParser.Dot_edgeopContext(self, self._ctx, self.state)
         self.enterRule(localctx, 204, self.RULE_dot_edgeop)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1154
             _la = self._input.LA(1)
-            if not(_la==jacParser.T__3 or _la==jacParser.T__7):
+            if not (_la == jacParser.T__3 or _la == jacParser.T__7):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -8806,41 +9100,37 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_node_stmtContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def dot_node_id(self):
-            return self.getTypedRuleContext(jacParser.Dot_node_idContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_node_idContext, 0)
 
         def dot_attr_list(self):
-            return self.getTypedRuleContext(jacParser.Dot_attr_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_attr_listContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_dot_node_stmt
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_node_stmt" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_node_stmt"):
                 listener.enterDot_node_stmt(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_node_stmt" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_node_stmt"):
                 listener.exitDot_node_stmt(self)
-
-
-
 
     def dot_node_stmt(self):
 
         localctx = jacParser.Dot_node_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 206, self.RULE_dot_node_stmt)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1156
@@ -8848,10 +9138,9 @@ class jacParser ( Parser ):
             self.state = 1158
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.LSQUARE:
+            if _la == jacParser.LSQUARE:
                 self.state = 1157
                 self.dot_attr_list()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -8861,41 +9150,37 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_node_idContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def dot_id(self):
-            return self.getTypedRuleContext(jacParser.Dot_idContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_idContext, 0)
 
         def dot_port(self):
-            return self.getTypedRuleContext(jacParser.Dot_portContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_portContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_dot_node_id
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_node_id" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_node_id"):
                 listener.enterDot_node_id(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_node_id" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_node_id"):
                 listener.exitDot_node_id(self)
-
-
-
 
     def dot_node_id(self):
 
         localctx = jacParser.Dot_node_idContext(self, self._ctx, self.state)
         self.enterRule(localctx, 208, self.RULE_dot_node_id)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1160
@@ -8903,10 +9188,9 @@ class jacParser ( Parser ):
             self.state = 1162
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.COLON:
+            if _la == jacParser.COLON:
                 self.state = 1161
                 self.dot_port()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -8916,46 +9200,43 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_portContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def COLON(self, i:int=None):
+        def COLON(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COLON)
             else:
                 return self.getToken(jacParser.COLON, i)
 
-        def dot_id(self, i:int=None):
+        def dot_id(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(jacParser.Dot_idContext)
             else:
-                return self.getTypedRuleContext(jacParser.Dot_idContext,i)
-
+                return self.getTypedRuleContext(jacParser.Dot_idContext, i)
 
         def getRuleIndex(self):
             return jacParser.RULE_dot_port
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_port" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_port"):
                 listener.enterDot_port(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_port" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_port"):
                 listener.exitDot_port(self)
-
-
-
 
     def dot_port(self):
 
         localctx = jacParser.Dot_portContext(self, self._ctx, self.state)
         self.enterRule(localctx, 210, self.RULE_dot_port)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1164
@@ -8965,12 +9246,11 @@ class jacParser ( Parser ):
             self.state = 1168
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.COLON:
+            if _la == jacParser.COLON:
                 self.state = 1166
                 self.match(jacParser.COLON)
                 self.state = 1167
                 self.dot_id()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -8980,11 +9260,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_subgraphContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -8992,8 +9273,7 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.LBRACE, 0)
 
         def dot_stmt_list(self):
-            return self.getTypedRuleContext(jacParser.Dot_stmt_listContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_stmt_listContext, 0)
 
         def RBRACE(self):
             return self.getToken(jacParser.RBRACE, 0)
@@ -9002,45 +9282,61 @@ class jacParser ( Parser ):
             return self.getToken(jacParser.KW_SUBGRAPH, 0)
 
         def dot_id(self):
-            return self.getTypedRuleContext(jacParser.Dot_idContext,0)
-
+            return self.getTypedRuleContext(jacParser.Dot_idContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_dot_subgraph
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_subgraph" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_subgraph"):
                 listener.enterDot_subgraph(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_subgraph" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_subgraph"):
                 listener.exitDot_subgraph(self)
-
-
-
 
     def dot_subgraph(self):
 
         localctx = jacParser.Dot_subgraphContext(self, self._ctx, self.state)
         self.enterRule(localctx, 212, self.RULE_dot_subgraph)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1174
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==jacParser.KW_SUBGRAPH:
+            if _la == jacParser.KW_SUBGRAPH:
                 self.state = 1170
                 self.match(jacParser.KW_SUBGRAPH)
                 self.state = 1172
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 94)) & ~0x3f) == 0 and ((1 << (_la - 94)) & ((1 << (jacParser.FLOAT - 94)) | (1 << (jacParser.STRING - 94)) | (1 << (jacParser.INT - 94)) | (1 << (jacParser.NAME - 94)))) != 0):
+                if (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << jacParser.KW_GRAPH)
+                            | (1 << jacParser.KW_NODE)
+                            | (1 << jacParser.KW_EDGE)
+                        )
+                    )
+                    != 0
+                ) or (
+                    (((_la - 94)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 94))
+                        & (
+                            (1 << (jacParser.FLOAT - 94))
+                            | (1 << (jacParser.STRING - 94))
+                            | (1 << (jacParser.INT - 94))
+                            | (1 << (jacParser.NAME - 94))
+                        )
+                    )
+                    != 0
+                ):
                     self.state = 1171
                     self.dot_id()
-
-
-
 
             self.state = 1176
             self.match(jacParser.LBRACE)
@@ -9056,11 +9352,12 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class Dot_idContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -9088,27 +9385,50 @@ class jacParser ( Parser ):
         def getRuleIndex(self):
             return jacParser.RULE_dot_id
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDot_id" ):
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterDot_id"):
                 listener.enterDot_id(self)
 
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDot_id" ):
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitDot_id"):
                 listener.exitDot_id(self)
-
-
-
 
     def dot_id(self):
 
         localctx = jacParser.Dot_idContext(self, self._ctx, self.state)
         self.enterRule(localctx, 214, self.RULE_dot_id)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1180
             _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << jacParser.KW_GRAPH) | (1 << jacParser.KW_NODE) | (1 << jacParser.KW_EDGE))) != 0) or ((((_la - 94)) & ~0x3f) == 0 and ((1 << (_la - 94)) & ((1 << (jacParser.FLOAT - 94)) | (1 << (jacParser.STRING - 94)) | (1 << (jacParser.INT - 94)) | (1 << (jacParser.NAME - 94)))) != 0)):
+            if not (
+                (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << jacParser.KW_GRAPH)
+                            | (1 << jacParser.KW_NODE)
+                            | (1 << jacParser.KW_EDGE)
+                        )
+                    )
+                    != 0
+                )
+                or (
+                    (((_la - 94)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 94))
+                        & (
+                            (1 << (jacParser.FLOAT - 94))
+                            | (1 << (jacParser.STRING - 94))
+                            | (1 << (jacParser.INT - 94))
+                            | (1 << (jacParser.NAME - 94))
+                        )
+                    )
+                    != 0
+                )
+            ):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -9121,9 +9441,7 @@ class jacParser ( Parser ):
             self.exitRule()
         return localctx
 
-
-
-    def sempred(self, localctx:RuleContext, ruleIndex:int, predIndex:int):
+    def sempred(self, localctx: RuleContext, ruleIndex: int, predIndex: int):
         if self._predicates == None:
             self._predicates = dict()
         self._predicates[60] = self.atom_sempred
@@ -9133,11 +9451,6 @@ class jacParser ( Parser ):
         else:
             return pred(localctx, predIndex)
 
-    def atom_sempred(self, localctx:AtomContext, predIndex:int):
-            if predIndex == 0:
-                return self.precpred(self._ctx, 5)
-         
-
-
-
-
+    def atom_sempred(self, localctx: AtomContext, predIndex: int):
+        if predIndex == 0:
+            return self.precpred(self._ctx, 5)

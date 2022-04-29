@@ -23,7 +23,7 @@ class item(element):
         self.save()
 
     def __str__(self):
-        if(self.value):
-            return super().__str__()+f':{self.value}'
+        if self.value:
+            return super().__str__() + f":{self.value}"
         else:
-            return super().__str__()+':None'
+            return super().__str__() + ":None"

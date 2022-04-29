@@ -12,7 +12,7 @@ from .test_data import (
     test_entity_training_fail2,
     test_entity_config_setup_blank,
     test_entity_config_setup_trf,
-    test_entity_config_setup_ner
+    test_entity_config_setup_ner,
 )
 
 
@@ -28,8 +28,7 @@ class entity_extraction_test(TestCaseHelper, TestCase):
 
     def test_entity_detection_pass(self):
         response = self.client.post(
-            "/entity_detection/",
-            json=test_entity_detection_request
+            "/entity_detection/", json=test_entity_detection_request
         )
         self.assertEqual(response.status_code, 200)
         for idx, ent in enumerate(test_entity_detection_response["entities"]):
@@ -45,8 +44,7 @@ class entity_extraction_test(TestCaseHelper, TestCase):
         )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json(),
-            {'detail': 'NER Labels are missing in request data'}
+            response.json(), {"detail": "NER Labels are missing in request data"}
         )
 
     def test_entity_detection_fail_text(self):
@@ -56,75 +54,39 @@ class entity_extraction_test(TestCaseHelper, TestCase):
         )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json(),
-            {'detail': 'Text data is missing in request data'}
+            response.json(), {"detail": "Text data is missing in request data"}
         )
 
     def test_entity_training_pass(self):
-        response = self.client.post(
-            "/train/",
-            json=test_entity_training_pass
-        )
+        response = self.client.post("/train/", json=test_entity_training_pass)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            "Model Training is Completed"
-        )
+        self.assertEqual(response.json(), "Model Training is Completed")
 
     def test_entity_training_fail(self):
-        response = self.client.post(
-            "/train/",
-            json=test_entity_training_fail)
+        response = self.client.post("/train/", json=test_entity_training_fail)
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(
-            response.json(),
-            {'detail': 'Need Data for Text and Entity'}
-        )
+        self.assertEqual(response.json(), {"detail": "Need Data for Text and Entity"})
 
     def test_entity_training_fail2(self):
-        response = self.client.post(
-            "/train/",
-            json=test_entity_training_fail2)
+        response = self.client.post("/train/", json=test_entity_training_fail2)
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(
-            response.json(),
-            {'detail': 'Entity Data missing in request'}
-        )
+        self.assertEqual(response.json(), {"detail": "Entity Data missing in request"})
 
     def test_entity_config_setup1(self):
-        response = self.client.post(
-            "/set_config/",
-            json=test_entity_config_setup_ner)
+        response = self.client.post("/set_config/", json=test_entity_config_setup_ner)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            "Config setup is complete."
-        )
+        self.assertEqual(response.json(), "Config setup is complete.")
 
     def test_entity_config_setup2(self):
-        response = self.client.post(
-            "/set_config/",
-            json=test_entity_config_setup_trf)
+        response = self.client.post("/set_config/", json=test_entity_config_setup_trf)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            "Config setup is complete."
-        )
-        response = self.client.post(
-            "/set_config/",
-            json=test_entity_config_setup_ner)
+        self.assertEqual(response.json(), "Config setup is complete.")
+        response = self.client.post("/set_config/", json=test_entity_config_setup_ner)
         self.assertEqual(response.status_code, 200)
 
     def test_entity_config_setup3(self):
-        response = self.client.post(
-            "/set_config/",
-            json=test_entity_config_setup_blank)
+        response = self.client.post("/set_config/", json=test_entity_config_setup_blank)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            "Config setup is complete."
-        )
-        response = self.client.post(
-            "/set_config/",
-            json=test_entity_config_setup_ner)
+        self.assertEqual(response.json(), "Config setup is complete.")
+        response = self.client.post("/set_config/", json=test_entity_config_setup_ner)
         self.assertEqual(response.status_code, 200)

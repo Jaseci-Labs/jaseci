@@ -4,6 +4,11 @@
 
 ### Updates
 
+- Improvement: import now works recursively through chain of files
+- Improvement: JSCTL shows token on login
+- Major Feature: JSCTL has persistent log in sessions, and can logout
+- Improvement: `*` and `&` precedence hierarch locations improved.
+- Bug Fix: Indirect node field updates tag elements to be written to db
 - Major Feature: Multiple inheritance support on nodes and edges!
 - Improvement: Fixed and much improved `actions load local` functionality
 - Bug Fix: Globals imports of imports working

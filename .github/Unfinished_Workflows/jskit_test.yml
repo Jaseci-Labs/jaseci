@@ -23,7 +23,7 @@ jobs:
         pip install black flake8==3.7.9 isort
         cd support/ai_ready_img
         pip3 install -r requirements.txt
-        
+
     - name: Install jaseci_core
       run: |
         pip3 install jaseci_core/

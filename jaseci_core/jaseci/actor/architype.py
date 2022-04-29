@@ -29,22 +29,27 @@ class architype(element, jac_code, architype_interp):
         return self.run_architype(jac_ast=self.get_jac_ast())
 
     def get_jac_ast(self):
-        if(not self._jac_ast):
+        if not self._jac_ast:
             self.refresh()
         return self._jac_ast
 
     def get_all_actions(self):
-        return id_list(self, in_list=self.entry_action_ids +
-                       self.activity_action_ids +
-                       self.exit_action_ids)
+        return id_list(
+            self,
+            in_list=self.entry_action_ids
+            + self.activity_action_ids
+            + self.exit_action_ids,
+        )
 
     def destroy(self):
         """
         Destroys self from memory and persistent storage
         """
-        des = self.activity_action_ids.obj_list() + \
-            self.entry_action_ids.obj_list() + \
-            self.exit_action_ids.obj_list()
+        des = (
+            self.activity_action_ids.obj_list()
+            + self.entry_action_ids.obj_list()
+            + self.exit_action_ids.obj_list()
+        )
         for i in des:
             i.destroy()
         super().destroy()

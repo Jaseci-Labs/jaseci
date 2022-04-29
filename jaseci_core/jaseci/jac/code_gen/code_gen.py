@@ -5,7 +5,7 @@ from jaseci.jac.machine.op_codes import op
 from jaseci.jac.machine.builtin_refs import ref
 
 
-class code_gen():
+class code_gen:
     """Shared code generator class across both sentinels and walkers"""
 
     def __init__(self):
@@ -17,9 +17,9 @@ class code_gen():
         attr_stmt: has_stmt | can_stmt;
         """
         kid = jac_ast.kid
-        if(kid[0].name == 'has_stmt'):
+        if kid[0].name == "has_stmt":
             self.gen_has_stmt(kid[0], obj)
-        elif(kid[0].name == 'can_stmt'):
+        elif kid[0].name == "can_stmt":
             self.gen_can_stmt(kid[0], obj)
 
     def gen_has_stmt(self, jac_ast, obj):
@@ -33,15 +33,15 @@ class code_gen():
         is_private = False
         is_anchor = False
         while True:
-            if(kid[0].name == 'KW_PRIVATE'):
+            if kid[0].name == "KW_PRIVATE":
                 kid = kid[1:]
                 is_private = True
-            if(kid[0].name == 'KW_ANCHOR'):
+            if kid[0].name == "KW_ANCHOR":
                 kid = kid[1:]
                 is_anchor = True
             self.gen_has_assign(kid[0], obj, is_private, is_anchor)
             kid = kid[1:]
-            if(not len(kid) or kid[0].name != 'COMMA'):
+            if not len(kid) or kid[0].name != "COMMA":
                 break
             else:
                 kid = kid[1:]
@@ -52,16 +52,14 @@ class code_gen():
         """
         kid = jac_ast.kid
         var_name = kid[0].token_text()
-        if(len(kid) > 1):
+        if len(kid) > 1:
             self.gen_expression(kid[2])
-        if(is_anchor):
+        if is_anchor:
             self.g_ins([op.SET_ANCHOR, obj, var_name])
-        if(var_name == '_private'):
-            self.gt_error(
-                'Has variable name of `_private` not allowed!', kid[0])
+        if var_name == "_private":
+            self.gt_error("Has variable name of `_private` not allowed!", kid[0])
         else:
-            self.g_ins([op.CREATE_CTX_VAR, obj, var_name,
-                       ref.RESULT_OUT, is_private])
+            self.g_ins([op.CREATE_CTX_VAR, obj, var_name, ref.RESULT_OUT, is_private])
 
     # def gen_can_stmt(self, jac_ast, obj):
     #     """
@@ -1006,6 +1004,6 @@ class code_gen():
 
     def next_lab(self):
         """Generate and return new label"""
-        lab = f'L{len(self.label)}'
+        lab = f"L{len(self.label)}"
         self.label.append(lab)
         return lab

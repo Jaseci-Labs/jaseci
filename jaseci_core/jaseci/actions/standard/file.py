@@ -1,12 +1,13 @@
 """Built in actions for Jaseci"""
 from jaseci.actions.live_actions import jaseci_action
+import os
 import json
 
 
 @jaseci_action()
 def load_str(fn: str, max_chars: int = None):
     """Standard built in for loading from file to string"""
-    with open(fn, 'r') as file:
+    with open(fn, "r") as file:
         data = file.read(max_chars)
     return data
 
@@ -14,7 +15,7 @@ def load_str(fn: str, max_chars: int = None):
 @jaseci_action()
 def load_json(fn: str):
     """Standard built in for loading json from file to dictionary"""
-    with open(fn, 'r') as file:
+    with open(fn, "r") as file:
         data = json.load(file)
     return data
 
@@ -22,7 +23,7 @@ def load_json(fn: str):
 @jaseci_action()
 def dump_str(fn: str, s: str):
     """Standard built in for dumping to file from string"""
-    with open(fn, 'w') as file:
+    with open(fn, "w") as file:
         num_chars = file.write(s)
     return num_chars
 
@@ -30,7 +31,7 @@ def dump_str(fn: str, s: str):
 @jaseci_action()
 def append_str(fn: str, s: str):
     """Standard built in for appending to file from string"""
-    with open(fn, 'a') as file:
+    with open(fn, "a") as file:
         num_chars = file.write(s)
     return num_chars
 
@@ -38,5 +39,15 @@ def append_str(fn: str, s: str):
 @jaseci_action()
 def dump_json(fn: str, obj, indent: int = None):
     """Standard built in for dumping json to file from dictionary"""
-    with open(fn, 'w') as file:
+    with open(fn, "w") as file:
         json.dump(obj, file, indent=indent)
+
+
+@jaseci_action()
+def delete(fn: str):
+    """Standard built in for deleting a file"""
+    if os.path.exists(fn):
+        os.remove(fn)
+        return True
+    else:
+        return False

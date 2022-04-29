@@ -15,141 +15,135 @@ import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMPLATE_DIR = os.path.join(BASE_DIR, 'ui/templates')
+TEMPLATE_DIR = os.path.join(BASE_DIR, "ui/templates")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '@%ad_kyis62uf7qf^w9kv(8$db4)%c$nnnjk^us=s@-gj*)aal'
+SECRET_KEY = "@%ad_kyis62uf7qf^w9kv(8$db4)%c$nnnjk^us=s@-gj*)aal"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'rest_framework',
-    'knox',
-    'django_rest_passwordreset',
-    'drf_yasg',
-    'jaseci_serv.base',
-    'jaseci_serv.user_api',
-    'jaseci_serv.obj_api',
-    'jaseci_serv.jac_api',
-    'corsheaders',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "knox",
+    "django_rest_passwordreset",
+    "drf_yasg",
+    "jaseci_serv.base",
+    "jaseci_serv.user_api",
+    "jaseci_serv.obj_api",
+    "jaseci_serv.jac_api",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
 
-ROOT_URLCONF = 'jaseci_serv.jaseci_serv.urls'
+ROOT_URLCONF = "jaseci_serv.jaseci_serv.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [TEMPLATE_DIR],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [TEMPLATE_DIR],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'jaseci_serv.jaseci_serv.wsgi.application'
+WSGI_APPLICATION = "jaseci_serv.jaseci_serv.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-if 'RDS_HOSTNAME' in os.environ:
+if "RDS_HOSTNAME" in os.environ:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ['RDS_DB_NAME'],
-            'USER': os.environ['RDS_USERNAME'],
-            'PASSWORD': os.environ['RDS_PASSWORD'],
-            'HOST': os.environ['RDS_HOSTNAME'],
-            'PORT': os.environ['RDS_PORT'],
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.environ["RDS_DB_NAME"],
+            "USER": os.environ["RDS_USERNAME"],
+            "PASSWORD": os.environ["RDS_PASSWORD"],
+            "HOST": os.environ["RDS_HOSTNAME"],
+            "PORT": os.environ["RDS_PORT"],
         }
     }
 
-elif 'POSTGRES_HOST' in os.environ:
+elif "POSTGRES_HOST" in os.environ:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'HOST': os.environ.get('POSTGRES_HOST'),
-            'NAME': os.environ.get('POSTGRES_USER'),
-            'USER': os.environ.get('POSTGRES_USER'),
-            'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
-            'PORT': os.getenv('POSTGRES_PORT', 5432),
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "HOST": os.environ.get("POSTGRES_HOST"),
+            "NAME": os.environ.get("POSTGRES_USER"),
+            "USER": os.environ.get("POSTGRES_USER"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
+            "PORT": os.getenv("POSTGRES_PORT", 5432),
         }
     }
 
 else:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'mydatabase',
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": "mydatabase",
         }
     }
 
 # Cover regular testing and django-coverage
-if 'test' in sys.argv or 'test_coverage' in sys.argv:
-    DATABASES['default']['ENGINE'] = 'django.db.backends.sqlite3'
-    DATABASES['default']['NAME'] = ':memory:'
+if "test" in sys.argv or "test_coverage" in sys.argv:
+    DATABASES["default"]["ENGINE"] = "django.db.backends.sqlite3"
+    DATABASES["default"]["NAME"] = ":memory:"
 
 # REDIS
-REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
-REDIS_PORT = os.getenv('REDIS_PORT', '6379')
-REDIS_URL = "redis://{host}:{port}/1".format(
-    host=REDIS_HOST,
-    port=REDIS_PORT
-)
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+REDIS_URL = "redis://{host}:{port}/1".format(host=REDIS_HOST, port=REDIS_PORT)
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.' +
-                'UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation."
+        + "UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.' +
-                'MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation." + "MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.' +
-                'CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation." + "CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.' +
-                'NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation." + "NumericPasswordValidator",
     },
 ]
 
@@ -157,9 +151,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -171,42 +165,42 @@ USE_TZ = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 # Sets global default user model to be custom
-AUTH_USER_MODEL = 'base.User'
+AUTH_USER_MODEL = "base.User"
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS':
-    'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 100,
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'knox.auth.TokenAuthentication',
-    ]
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 100,
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "knox.auth.TokenAuthentication",
+    ],
 }
 
 REST_KNOX = {
-    'TOKEN_TTL': None,
+    "TOKEN_TTL": None,
 }
 
-LOGIN_URL = '/ui/login'
-LOGIN_REDIRECT_URL = '/ui'
-LOGOUT_REDIRECT_URL = '/ui'
+LOGIN_URL = "/ui/login"
+LOGIN_REDIRECT_URL = "/ui"
+LOGOUT_REDIRECT_URL = "/ui"
 
 # Configs to Manage by Jaseci
-JASECI_CONFIGS = ['EMAIL_BACKEND',
-                  'EMAIL_USE_TLS',
-                  'EMAIL_HOST',
-                  'EMAIL_HOST_USER',
-                  'EMAIL_HOST_PASSWORD',
-                  'EMAIL_PORT',
-                  'EMAIL_DEFAULT_FROM',
-                  'EMAIL_ACTIVATION_SUBJ',
-                  'EMAIL_ACTIVATION_BODY',
-                  'EMAIL_ACTIVATION_HTML_BODY',
-                  'EMAIL_RESETPASS_SUBJ',
-                  'EMAIL_RESETPASS_BODY',
-                  'EMAIL_RESETPASS_HTML_BODY',
-                  'LOGIN_TOKEN_TTL_HOURS'
-                  ]
+JASECI_CONFIGS = [
+    "EMAIL_BACKEND",
+    "EMAIL_USE_TLS",
+    "EMAIL_HOST",
+    "EMAIL_HOST_USER",
+    "EMAIL_HOST_PASSWORD",
+    "EMAIL_PORT",
+    "EMAIL_DEFAULT_FROM",
+    "EMAIL_ACTIVATION_SUBJ",
+    "EMAIL_ACTIVATION_BODY",
+    "EMAIL_ACTIVATION_HTML_BODY",
+    "EMAIL_RESETPASS_SUBJ",
+    "EMAIL_RESETPASS_BODY",
+    "EMAIL_RESETPASS_HTML_BODY",
+    "LOGIN_TOKEN_TTL_HOURS",
+]
