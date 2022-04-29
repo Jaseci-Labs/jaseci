@@ -8,9 +8,6 @@ from jaseci.element.master import master
 class super_api:
     """Super APIs for creating nicknames for UUIDs and other long strings"""
 
-    def __init__(self):
-        self.caller = None
-
     @interface.admin_api(cli_args=["name"])
     def master_createsuper(
         self, name: str, set_active: bool = True, other_fields: dict = {}
