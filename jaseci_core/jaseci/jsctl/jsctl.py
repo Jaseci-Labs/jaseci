@@ -2,7 +2,6 @@
 Command line tool for Jaseci
 """
 
-from distutils.sysconfig import EXEC_PREFIX
 import click
 from click_shell import shell
 import os
@@ -229,7 +228,7 @@ def login(url, username, password):
     payload = {"email": username, "password": password}
     try:
         r = requests.post(url + "/user/token/", data=payload).json()
-    except Exception as e:
+    except Exception:
         r = {"error": "Invalid url, username, or password."}
     if "token" in r.keys():
         session["connection"]["token"] = r["token"]
@@ -237,7 +236,7 @@ def login(url, username, password):
         session["connection"]["headers"] = {"Authorization": "token " + r["token"]}
         click.echo(f"Token: {r['token']}\nLogin successful!")
     else:
-        click.echo(f"Login failed!\n")
+        click.echo("Login failed!\n")
 
 
 @click.command(help="Command to log out of live Jaseci server")
@@ -246,9 +245,9 @@ def logout():
         session["connection"]["token"] = None
         session["connection"]["url"] = None
         session["connection"]["headers"] = {}
-        click.echo(f"Logout successful!")
+        click.echo("Logout successful!")
     else:
-        click.echo(f"You are not logged in!")
+        click.echo("You are not logged in!")
 
 
 @click.command(help="Edit a file")

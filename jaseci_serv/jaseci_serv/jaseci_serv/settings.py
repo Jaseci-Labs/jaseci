@@ -118,10 +118,13 @@ else:
         }
     }
 
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
 # Cover regular testing and django-coverage
 if "test" in sys.argv or "test_coverage" in sys.argv:
     DATABASES["default"]["ENGINE"] = "django.db.backends.sqlite3"
     DATABASES["default"]["NAME"] = ":memory:"
+    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 # REDIS
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
