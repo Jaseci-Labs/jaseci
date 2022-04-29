@@ -1097,3 +1097,40 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         )
         ret2 = res.data
         self.assertEqual(ret1, ret2)
+
+    def test_serverside_superuser_become(self):
+        payload = {"op": "master_active_get"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        user_id = res.data["jid"]
+        payload = {"op": "graph_create"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        user_gph_id = res.data["jid"]
+        payload = {"op": "master_active_get"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        super_id = res.data["jid"]
+        self.assertNotEqual(user_id, super_id)
+        payload = {"op": "graph_list"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 0)
+        payload = {"op": "master_become", "mast": user_id}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "graph_list"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(user_gph_id, res.data[0]["jid"])
+        payload = {"op": "master_active_get"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(user_id, res.data["jid"])
