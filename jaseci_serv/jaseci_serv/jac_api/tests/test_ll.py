@@ -185,21 +185,6 @@ class test_ll(TestCaseHelper, TestCase):
         len_after = self.master._h.get_object_distribution()
         self.assertEqual(len_before, len_after)
 
-    def test_parent_suggestion(self):
-        if not lact.load_remote_actions("http://js-use-enc"):
-            self.skipTest("external resource not available")
-        """Test generating a suggested parent item for a given item"""
-        new_wkt = "clean up the house"
-        self.run_walker("gen_rand_life", {})
-        self.run_walker("get_gen_day", {})
-        data = self.run_walker("get_latest_day", {"show_report": 1})["report"]
-        w_id = data[0][1]["jid"]
-        data = self.run_walker(
-            "get_suggested_parent", {"new_wkt_name": new_wkt}, prime=w_id
-        )
-        self.assertTrue(len(data["report"]) > 0)
-        self.assertTrue(0 < data["report"][-1][1] < 1)
-
     def test_due_soon(self):
         """Test generating a list of suggested focus items for a given day"""
         self.run_walker("gen_rand_life", {})

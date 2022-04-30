@@ -3,13 +3,14 @@ Master api as a mixin
 """
 from jaseci.api.interface import interface
 from jaseci.utils.id_list import id_list
+import uuid
 
 
 class master_api:
     """Master APIs for creating nicknames for UUIDs and other long strings"""
 
     def __init__(self, head_master):
-        self._caller = self
+        self.caller = None
         self.head_master_id = head_master
         self.sub_master_ids = id_list(self)
 
@@ -59,7 +60,7 @@ class master_api:
         mas = self.sub_master_ids.get_obj_by_name(name)
         if not mas:
             return {"response": f"{name} not found"}
-        self._caller = mas
+        self.caller = mas.jid
         return {"response": f"You are now {mas.name}"}
 
     @interface.private_api()
@@ -67,7 +68,7 @@ class master_api:
         """
         Unsets the default sentinel master should use
         """
-        self._caller = self
+        self.caller = None
         return {"response": f"You are now {self.name}"}
 
     @interface.private_api()
@@ -75,7 +76,12 @@ class master_api:
         """
         Returns the default master master is using
         """
-        return self._caller.serialize(detailed=detailed)
+        if self.caller:
+            return self._h.get_obj(self._m_id, uuid.UUID(self.caller)).serialize(
+                detailed=detailed
+            )
+        else:
+            return self.serialize(detailed=detailed)
 
     @interface.private_api()
     def master_self(self, detailed: bool = False):

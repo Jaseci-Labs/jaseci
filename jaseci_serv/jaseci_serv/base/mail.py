@@ -2,17 +2,18 @@
 This module includes code related to configuring Jaseci's mail serving
 """
 from jaseci_serv.base.models import lookup_global_config
+from jaseci_serv.jaseci_serv.settings import EMAIL_BACKEND
 from django.core import mail
 from jaseci.utils.utils import logger
 
 
 email_config_defaults = {
-    "EMAIL_BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+    "EMAIL_BACKEND": EMAIL_BACKEND,
     "EMAIL_USE_TLS": True,
-    "EMAIL_HOST": "smtp.gmail.com",
-    "EMAIL_HOST_USER": "prod@lifelogify.com",
-    "EMAIL_DEFAULT_FROM": "hello@jaseci.com",
-    "EMAIL_HOST_PASSWORD": "pwzaijgtrupomcjy",
+    "EMAIL_HOST": "",
+    "EMAIL_HOST_USER": "",
+    "EMAIL_DEFAULT_FROM": "",
+    "EMAIL_HOST_PASSWORD": "",
     "EMAIL_PORT": 587,
 }
 
