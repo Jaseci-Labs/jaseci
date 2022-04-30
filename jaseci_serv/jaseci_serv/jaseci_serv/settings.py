@@ -118,7 +118,7 @@ else:
         }
     }
 
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 # Cover regular testing and django-coverage
 if "test" in sys.argv or "test_coverage" in sys.argv:
