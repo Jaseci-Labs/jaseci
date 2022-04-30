@@ -2,11 +2,11 @@
 from antlr4 import *
 from io import StringIO
 import sys
+
 if sys.version_info[1] > 5:
     from typing import TextIO
 else:
     from typing.io import TextIO
-
 
 
 def serializedATN():
@@ -17,8 +17,8 @@ def serializedATN():
         buf.write("\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23")
         buf.write("\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30")
         buf.write("\4\31\t\31\4\32\t\32\4\33\t\33\4\34\t\34\4\35\t\35\4\36")
-        buf.write("\t\36\4\37\t\37\4 \t \4!\t!\4\"\t\"\4#\t#\4$\t$\4%\t%")
-        buf.write("\4&\t&\4\'\t\'\4(\t(\4)\t)\4*\t*\4+\t+\4,\t,\4-\t-\4.")
+        buf.write('\t\36\4\37\t\37\4 \t \4!\t!\4"\t"\4#\t#\4$\t$\4%\t%')
+        buf.write("\4&\t&\4'\t'\4(\t(\4)\t)\4*\t*\4+\t+\4,\t,\4-\t-\4.")
         buf.write("\t.\4/\t/\4\60\t\60\4\61\t\61\4\62\t\62\4\63\t\63\4\64")
         buf.write("\t\64\4\65\t\65\4\66\t\66\4\67\t\67\48\t8\49\t9\4:\t:")
         buf.write("\4;\t;\4<\t<\4=\t=\4>\t>\4?\t?\4@\t@\4A\tA\4B\tB\4C\t")
@@ -41,8 +41,8 @@ def serializedATN():
         buf.write("\3\34\3\34\3\34\3\34\3\34\3\35\3\35\3\35\3\35\3\35\3\36")
         buf.write("\3\36\3\36\3\36\3\36\3\36\3\36\3\36\3\37\3\37\3\37\3\37")
         buf.write("\3\37\3 \3 \3 \3 \3 \3 \3 \3 \3!\3!\3!\3!\3!\3!\3!\3!")
-        buf.write("\3!\3\"\3\"\3\"\3\"\3\"\3\"\3\"\3#\3#\3$\3$\3$\3%\3%\3")
-        buf.write("%\3%\3&\3&\3&\3&\3\'\3\'\3\'\3\'\3(\3(\3(\3(\3)\3)\3*")
+        buf.write('\3!\3"\3"\3"\3"\3"\3"\3"\3#\3#\3$\3$\3$\3%\3%\3')
+        buf.write("%\3%\3&\3&\3&\3&\3'\3'\3'\3'\3(\3(\3(\3(\3)\3)\3*")
         buf.write("\3*\3+\3+\3+\3+\3+\3,\3,\3,\3,\3,\3,\3,\3-\3-\3-\3-\3")
         buf.write("-\3.\3.\3.\3.\3.\3.\3.\3/\3/\3\60\3\60\3\61\3\61\3\61")
         buf.write("\3\62\3\62\3\62\3\63\3\63\3\63\3\64\3\64\3\64\3\65\3\65")
@@ -66,8 +66,8 @@ def serializedATN():
         buf.write("f\ff\16f\u02ca\13f\3f\3f\3g\3g\7g\u02d0\ng\fg\16g\u02d3")
         buf.write("\13g\3g\3g\3h\3h\3h\3h\3i\3i\3\u02ba\2j\3\3\5\4\7\5\t")
         buf.write("\6\13\7\r\b\17\t\21\n\23\13\25\f\27\r\31\16\33\17\35\20")
-        buf.write("\37\21!\22#\23%\24\'\25)\26+\27-\30/\31\61\32\63\33\65")
-        buf.write("\34\67\359\36;\37= ?!A\"C#E$G%I&K\'M(O)Q*S+U,W-Y.[/]\60")
+        buf.write("\37\21!\22#\23%\24'\25)\26+\27-\30/\31\61\32\63\33\65")
+        buf.write("\34\67\359\36;\37= ?!A\"C#E$G%I&K'M(O)Q*S+U,W-Y.[/]\60")
         buf.write("_\61a\62c\63e\64g\65i\66k\67m8o9q:s;u<w=y>{?}@\177A\u0081")
         buf.write("B\u0083C\u0085D\u0087E\u0089F\u008bG\u008dH\u008fI\u0091")
         buf.write("J\u0093K\u0095L\u0097M\u0099N\u009bO\u009dP\u009fQ\u00a1")
@@ -75,12 +75,12 @@ def serializedATN():
         buf.write("Z\u00b3[\u00b5\\\u00b7]\u00b9^\u00bb_\u00bd`\u00bfa\u00c1")
         buf.write("b\u00c3c\u00c5d\u00c7e\u00c9f\u00cbg\u00cdh\u00cfi\u00d1")
         buf.write("j\3\2\t\3\2\62;\5\2\f\f\17\17$$\5\2\f\f\17\17))\5\2C\\")
-        buf.write("aac|\6\2\62;C\\aac|\4\2\f\f\17\17\5\2\13\f\17\17\"\"\2")
+        buf.write('aac|\6\2\62;C\\aac|\4\2\f\f\17\17\5\2\13\f\17\17""\2')
         buf.write("\u02ea\2\3\3\2\2\2\2\5\3\2\2\2\2\7\3\2\2\2\2\t\3\2\2\2")
         buf.write("\2\13\3\2\2\2\2\r\3\2\2\2\2\17\3\2\2\2\2\21\3\2\2\2\2")
         buf.write("\23\3\2\2\2\2\25\3\2\2\2\2\27\3\2\2\2\2\31\3\2\2\2\2\33")
         buf.write("\3\2\2\2\2\35\3\2\2\2\2\37\3\2\2\2\2!\3\2\2\2\2#\3\2\2")
-        buf.write("\2\2%\3\2\2\2\2\'\3\2\2\2\2)\3\2\2\2\2+\3\2\2\2\2-\3\2")
+        buf.write("\2\2%\3\2\2\2\2'\3\2\2\2\2)\3\2\2\2\2+\3\2\2\2\2-\3\2")
         buf.write("\2\2\2/\3\2\2\2\2\61\3\2\2\2\2\63\3\2\2\2\2\65\3\2\2\2")
         buf.write("\2\67\3\2\2\2\29\3\2\2\2\2;\3\2\2\2\2=\3\2\2\2\2?\3\2")
         buf.write("\2\2\2A\3\2\2\2\2C\3\2\2\2\2E\3\2\2\2\2G\3\2\2\2\2I\3")
@@ -106,7 +106,7 @@ def serializedATN():
         buf.write("\u00e8\3\2\2\2\17\u00eb\3\2\2\2\21\u00f0\3\2\2\2\23\u00f3")
         buf.write("\3\2\2\2\25\u00f7\3\2\2\2\27\u00fb\3\2\2\2\31\u0101\3")
         buf.write("\2\2\2\33\u0106\3\2\2\2\35\u010b\3\2\2\2\37\u0110\3\2")
-        buf.write("\2\2!\u0115\3\2\2\2#\u011b\3\2\2\2%\u0122\3\2\2\2\'\u012a")
+        buf.write("\2\2!\u0115\3\2\2\2#\u011b\3\2\2\2%\u0122\3\2\2\2'\u012a")
         buf.write("\3\2\2\2)\u0133\3\2\2\2+\u0138\3\2\2\2-\u013f\3\2\2\2")
         buf.write("/\u0144\3\2\2\2\61\u014a\3\2\2\2\63\u014f\3\2\2\2\65\u0155")
         buf.write("\3\2\2\2\67\u015a\3\2\2\29\u0161\3\2\2\2;\u0166\3\2\2")
@@ -158,7 +158,7 @@ def serializedATN():
         buf.write("\7v\2\2\u0111\u0112\7{\2\2\u0112\u0113\7r\2\2\u0113\u0114")
         buf.write("\7g\2\2\u0114 \3\2\2\2\u0115\u0116\7i\2\2\u0116\u0117")
         buf.write("\7t\2\2\u0117\u0118\7c\2\2\u0118\u0119\7r\2\2\u0119\u011a")
-        buf.write("\7j\2\2\u011a\"\3\2\2\2\u011b\u011c\7u\2\2\u011c\u011d")
+        buf.write('\7j\2\2\u011a"\3\2\2\2\u011b\u011c\7u\2\2\u011c\u011d')
         buf.write("\7v\2\2\u011d\u011e\7t\2\2\u011e\u011f\7k\2\2\u011f\u0120")
         buf.write("\7e\2\2\u0120\u0121\7v\2\2\u0121$\3\2\2\2\u0122\u0123")
         buf.write("\7f\2\2\u0123\u0124\7k\2\2\u0124\u0125\7i\2\2\u0125\u0126")
@@ -273,7 +273,7 @@ def serializedATN():
         buf.write("\u0266\7-\2\2\u0266\u00aa\3\2\2\2\u0267\u0268\7/\2\2\u0268")
         buf.write("\u00ac\3\2\2\2\u0269\u026a\7,\2\2\u026a\u00ae\3\2\2\2")
         buf.write("\u026b\u026c\7\61\2\2\u026c\u00b0\3\2\2\2\u026d\u026e")
-        buf.write("\7\'\2\2\u026e\u00b2\3\2\2\2\u026f\u0270\7`\2\2\u0270")
+        buf.write("\7'\2\2\u026e\u00b2\3\2\2\2\u026f\u0270\7`\2\2\u0270")
         buf.write("\u00b4\3\2\2\2\u0271\u0272\7*\2\2\u0272\u00b6\3\2\2\2")
         buf.write("\u0273\u0274\7+\2\2\u0274\u00b8\3\2\2\2\u0275\u0276\7")
         buf.write("]\2\2\u0276\u00ba\3\2\2\2\u0277\u0278\7_\2\2\u0278\u00bc")
@@ -327,7 +327,7 @@ class jacLexer(Lexer):
 
     atn = ATNDeserializer().deserialize(serializedATN())
 
-    decisionsToDFA = [ DFA(ds, i) for i, ds in enumerate(atn.decisionToState) ]
+    decisionsToDFA = [DFA(ds, i) for i, ds in enumerate(atn.decisionToState)]
 
     T__0 = 1
     T__1 = 2
@@ -434,71 +434,319 @@ class jacLexer(Lexer):
     WS = 103
     ErrorChar = 104
 
-    channelNames = [ u"DEFAULT_TOKEN_CHANNEL", u"HIDDEN" ]
+    channelNames = ["DEFAULT_TOKEN_CHANNEL", "HIDDEN"]
 
-    modeNames = [ "DEFAULT_MODE" ]
+    modeNames = ["DEFAULT_MODE"]
 
-    literalNames = [ "<INVALID>",
-            "'version'", "'&'", "'-->'", "'->'", "'<--'", "'<-'", "'<-->'", 
-            "'--'", "'str'", "'int'", "'float'", "'list'", "'dict'", "'bool'", 
-            "'type'", "'graph'", "'strict'", "'digraph'", "'subgraph'", 
-            "'node'", "'ignore'", "'take'", "'spawn'", "'with'", "'entry'", 
-            "'exit'", "'length'", "'keys'", "'context'", "'info'", "'details'", 
-            "'activity'", "'import'", "':'", "'::'", "'s::'", "'l::'", "'d::'", 
-            "'::>'", "'{'", "'}'", "'edge'", "'walker'", "'test'", "'assert'", 
-            "';'", "'='", "'+='", "'-='", "'*='", "'/='", "':='", "'if'", 
-            "'elif'", "'else'", "'for'", "'to'", "'by'", "'while'", "'continue'", 
-            "'break'", "'disengage'", "'skip'", "'report'", "'destroy'", 
-            "'try'", "'.'", "'=='", "'<'", "'>'", "'<='", "'>='", "'!='", 
-            "'in'", "'anchor'", "'has'", "'global'", "'private'", "','", 
-            "'can'", "'+'", "'-'", "'*'", "'/'", "'%'", "'^'", "'('", "')'", 
-            "'['", "']'", "'null'" ]
+    literalNames = [
+        "<INVALID>",
+        "'version'",
+        "'&'",
+        "'-->'",
+        "'->'",
+        "'<--'",
+        "'<-'",
+        "'<-->'",
+        "'--'",
+        "'str'",
+        "'int'",
+        "'float'",
+        "'list'",
+        "'dict'",
+        "'bool'",
+        "'type'",
+        "'graph'",
+        "'strict'",
+        "'digraph'",
+        "'subgraph'",
+        "'node'",
+        "'ignore'",
+        "'take'",
+        "'spawn'",
+        "'with'",
+        "'entry'",
+        "'exit'",
+        "'length'",
+        "'keys'",
+        "'context'",
+        "'info'",
+        "'details'",
+        "'activity'",
+        "'import'",
+        "':'",
+        "'::'",
+        "'s::'",
+        "'l::'",
+        "'d::'",
+        "'::>'",
+        "'{'",
+        "'}'",
+        "'edge'",
+        "'walker'",
+        "'test'",
+        "'assert'",
+        "';'",
+        "'='",
+        "'+='",
+        "'-='",
+        "'*='",
+        "'/='",
+        "':='",
+        "'if'",
+        "'elif'",
+        "'else'",
+        "'for'",
+        "'to'",
+        "'by'",
+        "'while'",
+        "'continue'",
+        "'break'",
+        "'disengage'",
+        "'skip'",
+        "'report'",
+        "'destroy'",
+        "'try'",
+        "'.'",
+        "'=='",
+        "'<'",
+        "'>'",
+        "'<='",
+        "'>='",
+        "'!='",
+        "'in'",
+        "'anchor'",
+        "'has'",
+        "'global'",
+        "'private'",
+        "','",
+        "'can'",
+        "'+'",
+        "'-'",
+        "'*'",
+        "'/'",
+        "'%'",
+        "'^'",
+        "'('",
+        "')'",
+        "'['",
+        "']'",
+        "'null'",
+    ]
 
-    symbolicNames = [ "<INVALID>",
-            "TYP_STRING", "TYP_INT", "TYP_FLOAT", "TYP_LIST", "TYP_DICT", 
-            "TYP_BOOL", "KW_TYPE", "KW_GRAPH", "KW_STRICT", "KW_DIGRAPH", 
-            "KW_SUBGRAPH", "KW_NODE", "KW_IGNORE", "KW_TAKE", "KW_SPAWN", 
-            "KW_WITH", "KW_ENTRY", "KW_EXIT", "KW_LENGTH", "KW_KEYS", "KW_CONTEXT", 
-            "KW_INFO", "KW_DETAILS", "KW_ACTIVITY", "KW_IMPORT", "COLON", 
-            "DBL_COLON", "STR_DBL_COLON", "LIST_DBL_COLON", "DICT_DBL_COLON", 
-            "COLON_OUT", "LBRACE", "RBRACE", "KW_EDGE", "KW_WALKER", "KW_TEST", 
-            "KW_ASSERT", "SEMI", "EQ", "PEQ", "MEQ", "TEQ", "DEQ", "CPY_EQ", 
-            "KW_AND", "KW_OR", "KW_IF", "KW_ELIF", "KW_ELSE", "KW_FOR", 
-            "KW_TO", "KW_BY", "KW_WHILE", "KW_CONTINUE", "KW_BREAK", "KW_DISENGAGE", 
-            "KW_SKIP", "KW_REPORT", "KW_DESTROY", "KW_TRY", "DOT", "NOT", 
-            "EE", "LT", "GT", "LTE", "GTE", "NE", "KW_IN", "KW_ANCHOR", 
-            "KW_HAS", "KW_GLOBAL", "KW_PRIVATE", "COMMA", "KW_CAN", "PLUS", 
-            "MINUS", "STAR_MUL", "DIV", "MOD", "POW", "LPAREN", "RPAREN", 
-            "LSQUARE", "RSQUARE", "FLOAT", "STRING", "BOOL", "INT", "NULL", 
-            "NAME", "COMMENT", "LINE_COMMENT", "PY_COMMENT", "WS", "ErrorChar" ]
+    symbolicNames = [
+        "<INVALID>",
+        "TYP_STRING",
+        "TYP_INT",
+        "TYP_FLOAT",
+        "TYP_LIST",
+        "TYP_DICT",
+        "TYP_BOOL",
+        "KW_TYPE",
+        "KW_GRAPH",
+        "KW_STRICT",
+        "KW_DIGRAPH",
+        "KW_SUBGRAPH",
+        "KW_NODE",
+        "KW_IGNORE",
+        "KW_TAKE",
+        "KW_SPAWN",
+        "KW_WITH",
+        "KW_ENTRY",
+        "KW_EXIT",
+        "KW_LENGTH",
+        "KW_KEYS",
+        "KW_CONTEXT",
+        "KW_INFO",
+        "KW_DETAILS",
+        "KW_ACTIVITY",
+        "KW_IMPORT",
+        "COLON",
+        "DBL_COLON",
+        "STR_DBL_COLON",
+        "LIST_DBL_COLON",
+        "DICT_DBL_COLON",
+        "COLON_OUT",
+        "LBRACE",
+        "RBRACE",
+        "KW_EDGE",
+        "KW_WALKER",
+        "KW_TEST",
+        "KW_ASSERT",
+        "SEMI",
+        "EQ",
+        "PEQ",
+        "MEQ",
+        "TEQ",
+        "DEQ",
+        "CPY_EQ",
+        "KW_AND",
+        "KW_OR",
+        "KW_IF",
+        "KW_ELIF",
+        "KW_ELSE",
+        "KW_FOR",
+        "KW_TO",
+        "KW_BY",
+        "KW_WHILE",
+        "KW_CONTINUE",
+        "KW_BREAK",
+        "KW_DISENGAGE",
+        "KW_SKIP",
+        "KW_REPORT",
+        "KW_DESTROY",
+        "KW_TRY",
+        "DOT",
+        "NOT",
+        "EE",
+        "LT",
+        "GT",
+        "LTE",
+        "GTE",
+        "NE",
+        "KW_IN",
+        "KW_ANCHOR",
+        "KW_HAS",
+        "KW_GLOBAL",
+        "KW_PRIVATE",
+        "COMMA",
+        "KW_CAN",
+        "PLUS",
+        "MINUS",
+        "STAR_MUL",
+        "DIV",
+        "MOD",
+        "POW",
+        "LPAREN",
+        "RPAREN",
+        "LSQUARE",
+        "RSQUARE",
+        "FLOAT",
+        "STRING",
+        "BOOL",
+        "INT",
+        "NULL",
+        "NAME",
+        "COMMENT",
+        "LINE_COMMENT",
+        "PY_COMMENT",
+        "WS",
+        "ErrorChar",
+    ]
 
-    ruleNames = [ "T__0", "T__1", "T__2", "T__3", "T__4", "T__5", "T__6", 
-                  "T__7", "TYP_STRING", "TYP_INT", "TYP_FLOAT", "TYP_LIST", 
-                  "TYP_DICT", "TYP_BOOL", "KW_TYPE", "KW_GRAPH", "KW_STRICT", 
-                  "KW_DIGRAPH", "KW_SUBGRAPH", "KW_NODE", "KW_IGNORE", "KW_TAKE", 
-                  "KW_SPAWN", "KW_WITH", "KW_ENTRY", "KW_EXIT", "KW_LENGTH", 
-                  "KW_KEYS", "KW_CONTEXT", "KW_INFO", "KW_DETAILS", "KW_ACTIVITY", 
-                  "KW_IMPORT", "COLON", "DBL_COLON", "STR_DBL_COLON", "LIST_DBL_COLON", 
-                  "DICT_DBL_COLON", "COLON_OUT", "LBRACE", "RBRACE", "KW_EDGE", 
-                  "KW_WALKER", "KW_TEST", "KW_ASSERT", "SEMI", "EQ", "PEQ", 
-                  "MEQ", "TEQ", "DEQ", "CPY_EQ", "KW_AND", "KW_OR", "KW_IF", 
-                  "KW_ELIF", "KW_ELSE", "KW_FOR", "KW_TO", "KW_BY", "KW_WHILE", 
-                  "KW_CONTINUE", "KW_BREAK", "KW_DISENGAGE", "KW_SKIP", 
-                  "KW_REPORT", "KW_DESTROY", "KW_TRY", "DOT", "NOT", "EE", 
-                  "LT", "GT", "LTE", "GTE", "NE", "KW_IN", "KW_ANCHOR", 
-                  "KW_HAS", "KW_GLOBAL", "KW_PRIVATE", "COMMA", "KW_CAN", 
-                  "PLUS", "MINUS", "STAR_MUL", "DIV", "MOD", "POW", "LPAREN", 
-                  "RPAREN", "LSQUARE", "RSQUARE", "FLOAT", "STRING", "BOOL", 
-                  "INT", "NULL", "NAME", "COMMENT", "LINE_COMMENT", "PY_COMMENT", 
-                  "WS", "ErrorChar" ]
+    ruleNames = [
+        "T__0",
+        "T__1",
+        "T__2",
+        "T__3",
+        "T__4",
+        "T__5",
+        "T__6",
+        "T__7",
+        "TYP_STRING",
+        "TYP_INT",
+        "TYP_FLOAT",
+        "TYP_LIST",
+        "TYP_DICT",
+        "TYP_BOOL",
+        "KW_TYPE",
+        "KW_GRAPH",
+        "KW_STRICT",
+        "KW_DIGRAPH",
+        "KW_SUBGRAPH",
+        "KW_NODE",
+        "KW_IGNORE",
+        "KW_TAKE",
+        "KW_SPAWN",
+        "KW_WITH",
+        "KW_ENTRY",
+        "KW_EXIT",
+        "KW_LENGTH",
+        "KW_KEYS",
+        "KW_CONTEXT",
+        "KW_INFO",
+        "KW_DETAILS",
+        "KW_ACTIVITY",
+        "KW_IMPORT",
+        "COLON",
+        "DBL_COLON",
+        "STR_DBL_COLON",
+        "LIST_DBL_COLON",
+        "DICT_DBL_COLON",
+        "COLON_OUT",
+        "LBRACE",
+        "RBRACE",
+        "KW_EDGE",
+        "KW_WALKER",
+        "KW_TEST",
+        "KW_ASSERT",
+        "SEMI",
+        "EQ",
+        "PEQ",
+        "MEQ",
+        "TEQ",
+        "DEQ",
+        "CPY_EQ",
+        "KW_AND",
+        "KW_OR",
+        "KW_IF",
+        "KW_ELIF",
+        "KW_ELSE",
+        "KW_FOR",
+        "KW_TO",
+        "KW_BY",
+        "KW_WHILE",
+        "KW_CONTINUE",
+        "KW_BREAK",
+        "KW_DISENGAGE",
+        "KW_SKIP",
+        "KW_REPORT",
+        "KW_DESTROY",
+        "KW_TRY",
+        "DOT",
+        "NOT",
+        "EE",
+        "LT",
+        "GT",
+        "LTE",
+        "GTE",
+        "NE",
+        "KW_IN",
+        "KW_ANCHOR",
+        "KW_HAS",
+        "KW_GLOBAL",
+        "KW_PRIVATE",
+        "COMMA",
+        "KW_CAN",
+        "PLUS",
+        "MINUS",
+        "STAR_MUL",
+        "DIV",
+        "MOD",
+        "POW",
+        "LPAREN",
+        "RPAREN",
+        "LSQUARE",
+        "RSQUARE",
+        "FLOAT",
+        "STRING",
+        "BOOL",
+        "INT",
+        "NULL",
+        "NAME",
+        "COMMENT",
+        "LINE_COMMENT",
+        "PY_COMMENT",
+        "WS",
+        "ErrorChar",
+    ]
 
     grammarFileName = "jac.g4"
 
-    def __init__(self, input=None, output:TextIO = sys.stdout):
+    def __init__(self, input=None, output: TextIO = sys.stdout):
         super().__init__(input, output)
         self.checkVersion("4.9.2")
-        self._interp = LexerATNSimulator(self, self.atn, self.decisionsToDFA, PredictionContextCache())
+        self._interp = LexerATNSimulator(
+            self, self.atn, self.decisionsToDFA, PredictionContextCache()
+        )
         self._actions = None
         self._predicates = None
-
-

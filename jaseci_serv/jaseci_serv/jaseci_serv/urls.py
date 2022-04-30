@@ -23,7 +23,7 @@ from drf_yasg import openapi
 schema_view = get_schema_view(
     openapi.Info(
         title="Jaseci API",
-        default_version='v1',
+        default_version="v1",
         description="Welcome to the world of Jaseci",
         terms_of_service="https://www.jaseci.org",
         contact=openapi.Contact(email="jason@jaseci.org"),
@@ -34,12 +34,14 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('docs/', schema_view.with_ui('swagger', cache_timeout=0),
-         name='schema-swagger-ui'),
-    path('redocs/', schema_view.with_ui('redoc', cache_timeout=0),
-         name='schema-redoc'),
-    path('admin/', admin.site.urls),
-    path('user/', include('jaseci_serv.user_api.urls')),
-    path('', include('jaseci_serv.jac_api.urls')),
-    path('', include('jaseci_serv.obj_api.urls')),
+    path(
+        "docs/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
+    path("redocs/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+    path("admin/", admin.site.urls),
+    path("user/", include("jaseci_serv.user_api.urls")),
+    path("", include("jaseci_serv.jac_api.urls")),
+    path("", include("jaseci_serv.obj_api.urls")),
 ]

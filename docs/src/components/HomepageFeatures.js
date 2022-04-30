@@ -27,7 +27,7 @@ const FeatureList = [
     description: (
       <>
         Powering the next generation of AI products. Jaseci powers apps
-        like <a href="https://myca.ai">myca.ai</a>, <a href="http://zeroshotbot.com/">zeroshotbot.com</a> and <a href="http://trueselph.com/">trueselph.com</a>. 
+        like <a href="https://myca.ai">myca.ai</a>, <a href="http://zeroshotbot.com/">zeroshotbot.com</a> and <a href="http://trueselph.com/">trueselph.com</a>.
         Build your next generation AI product today!
       </>
     ),

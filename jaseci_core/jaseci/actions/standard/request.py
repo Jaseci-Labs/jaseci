@@ -16,11 +16,11 @@ def get(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.get(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -35,11 +35,11 @@ def post(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.post(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -54,11 +54,11 @@ def put(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.put(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -73,11 +73,11 @@ def delete(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.delete(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -92,11 +92,11 @@ def head(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.head(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -111,11 +111,11 @@ def options(url: str, data: dict, header: dict):
     Return - response object
     """
     res = requests.options(url, json=data, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
@@ -135,38 +135,35 @@ def multipart_base64(url: str, files: list, header: dict):
     if not files:
         return {
             "status_code": 400,
-            "error": "Please include base64 using this format {\"field\":val,\"name\":val,\"base64\":val} using parameter `file` and `files` for array file"
+            "error": "Please include base64 using this format "
+            '{"field":val,"name":val,"base64":val} '
+            "using parameter `file` and `files` for array file",
         }
 
     formData = []
-    
+
     if files is not None:
         for f in files:
             formData.append(
                 (
                     f["field"] if "field" in f else "file",
-                    (
-                        f["name"],
-                        BytesIO(
-                            b64decode(f["base64"])
-                        )
-                    )
+                    (f["name"], BytesIO(b64decode(f["base64"]))),
                 )
             )
 
     res = requests.post(url, files=formData, headers=header)
-    ret = {'status_code': res.status_code}
+    ret = {"status_code": res.status_code}
     try:
-        ret['response'] = res.json()
+        ret["response"] = res.json()
     except Exception:
-        ret['response'] = res.text
+        ret["response"] = res.text
     return ret
 
 
 @jaseci_action()
 def file_download_base64(url: str, header: dict, encoding: str = "utf-8"):
     """Standard built in for download file from url"""
-    with requests.get(url, stream = True, headers = header) as res:
+    with requests.get(url, stream=True, headers=header) as res:
         res.raise_for_status()
         with BytesIO() as buffer:
             for chunk in res.iter_content(chunk_size=8192):

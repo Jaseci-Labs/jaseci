@@ -1,4 +1,4 @@
-node botset;
+node botset {has bug_check, bug_check_deep={'a': {'b': [3]}};}
 
 node bot { has anchor name; }
 node log_chunk { has history; }
@@ -187,6 +187,28 @@ walker init {
             disengage;
         }
     }
+}
+
+walker asim_bug_check1 {
+    for i in -->:
+        i.bug_check_deep['a']['b'][0]=12;
+    report -->;
+}
+
+walker asim_bug_check2 {
+    report -->;
+}
+
+walker asim_bug_check3 {
+    for i in -->:
+        i.bug_check_deep['a']['b'][0]+=12;
+    report -->;
+}
+
+walker asim_bug_check4 {
+    for i in -->:
+        i.bug_check="testing";
+    report -->;
 }
 
 walker pubinit:anyone {
