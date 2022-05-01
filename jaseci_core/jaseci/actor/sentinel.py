@@ -150,7 +150,7 @@ class sentinel(element, jac_code, sentinel_interp):
             return arch.run()
         else:
             ret = arch.run()
-            arch.destroy()
+            element.destroy(arch)
             return ret
 
     def check_in_arch_context(self, key_name, object):
