@@ -271,3 +271,23 @@ reffy_deref_check = """
         report *&actual_answer == *nd.expected_answer;
     }
     """
+
+vanishing_can_check = """
+    node plain {
+        has name;
+        can infer.year_from_date;
+    }
+
+    walker init {
+        root {
+            take --> node::plain else {
+                nd=spawn here --> node::plain;
+                report nd.info['jid'];
+                disengage;
+            }
+        }
+        plain {
+            report infer.year_from_date("2022-05-05");
+        }
+    }
+    """
