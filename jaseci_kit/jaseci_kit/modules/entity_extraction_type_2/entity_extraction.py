@@ -32,7 +32,7 @@ def config_setup():
 
 
 def load_parameter():
-    global MAX_LEN, TRAIN_BATCH_SIZE, VALID_BATCH_SIZE
+    global MAX_LEN, TRAIN_BATCH_SIZE, VALID_BATCH_SIZE, MODE
     global EPOCHS, LEARNING_RATE, MAX_GRAD_NORM, lab, model_save_path
     # global model_name
 
@@ -43,6 +43,7 @@ def load_parameter():
     LEARNING_RATE = train_config["LEARNING_RATE"]
     MAX_GRAD_NORM = train_config["MAX_GRAD_NORM"]
     EPOCHS = train_config["EPOCHS"]
+    MODE = train_config['MODE']
     lab = ['O']
     model_save_path = model_config['model_save_path']
 
@@ -62,9 +63,9 @@ enum = {
 
 
 @jaseci_action(act_group=['extract_entity'], allow_remote=True)
-def train(mode: str = "default",
-          epochs: int = 40,
-          train_data: List[dict] = None
+def train(mode: str = MODE,
+          epochs: int = EPOCHS,
+          train_data: List[dict] = []
           ):
     """
     API for training the model
@@ -133,10 +134,10 @@ def extract_entity(text: str = None):
 
 
 @jaseci_action(act_group=['extract_entity'], allow_remote=True)
-def load_model(model_path: str = 'default'):
+def load_model(model_path: str = 'default', local_file: bool = False):
     global curr_model_path
     curr_model_path = model_path
-    if not os.path.exists(model_path):
+    if local_file is True and not os.path.exists(model_path):
         raise HTTPException(
             status_code=404,
             detail='Model path is not available'
@@ -145,7 +146,7 @@ def load_model(model_path: str = 'default'):
         print("loading latest trained model to memory...")
         load_custom_model(model_path)
         print("model successfully load to memory!")
-        return {"status": f"model {model_path} Loaded in memory Successfull!"}
+        return {"status": "model Loaded Successfull!"}
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=400, detail=str(e))

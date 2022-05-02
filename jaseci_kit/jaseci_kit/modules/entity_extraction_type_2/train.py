@@ -7,11 +7,10 @@ from transformers import pipeline
 from utils.data_tokens import load_data
 from torch import cuda
 import os
-# import json
 
 
 device = 'cuda' if cuda.is_available() else 'cpu'
-print(device)
+print("Using device for training -> ", device)
 
 
 # # preparing dataset for training
@@ -112,7 +111,7 @@ def data_set(filename, lab, MAX_LEN, TRAIN_BATCH_SIZE):
     lab = list(id2label.values())
 
     train_dataset = data
-    print("FULL Dataset: {}".format(data.shape))
+    # print("FULL Dataset: {}".format(data.shape))
 
     training_set = dataset(train_dataset, tokenizer, MAX_LEN)
 
@@ -127,8 +126,8 @@ def data_set(filename, lab, MAX_LEN, TRAIN_BATCH_SIZE):
 def check_labels_ok():
     lst_data_labels = list(id2label.values())
     lst_model_labels = list(model.config.id2label.values())
-    print("lst_data_labels  ", lst_data_labels)
-    print("lst_model_labels ", lst_model_labels)
+    # print("lst_data_labels  ", lst_data_labels)
+    # print("lst_model_labels ", lst_model_labels)
     for label in lst_data_labels:
         if label not in lst_model_labels:
             return False
@@ -151,12 +150,10 @@ def train_model(model_name, EPOCHS, mode, lab_check,
             )
         return model
 
-        # lab_check
-        # mode
-
     if mode == 3 and lab_check is False:
-        return """data label and model labels is not matching
-                  please use default mode for training from scretch"""
+        resp1 = "data label and model labels is not matching"
+        resp2 = " please use default mode for training from scretch"
+        return resp1+resp2
 
     elif mode == 2:
         print("***"*10, "Model is loading from scratch in append mode")

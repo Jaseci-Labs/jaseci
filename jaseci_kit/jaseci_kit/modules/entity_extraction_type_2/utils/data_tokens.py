@@ -35,18 +35,18 @@ def load_data(filename, lab):
 
     # processing dataset
     # data = data_token('train.txt')
-    print("Number of tags: {}".format(len(data.Tag.unique())))
-    frequencies = data.Tag.value_counts()
-    print(frequencies)
-    tags = {}
-    for tag, count in zip(frequencies.index, frequencies):
-        if tag != "O":
-            if tag[2:5] not in tags.keys():
-                tags[tag[2:5]] = count
-            else:
-                tags[tag[2:5]] += count
-        continue
-    print(sorted(tags.items(), key=lambda x: x[1], reverse=True))
+    # print("Number of tags: {}".format(len(data.Tag.unique())))
+    # frequencies = data.Tag.value_counts()
+    # # print(frequencies)
+    # tags = {}
+    # for tag, count in zip(frequencies.index, frequencies):
+    #     if tag != "O":
+    #         if tag[2:5] not in tags.keys():
+    #             tags[tag[2:5]] = count
+    #         else:
+    #             tags[tag[2:5]] += count
+    #     continue
+    # print(sorted(tags.items(), key=lambda x: x[1], reverse=True))
     # let's create a new column called "sentence"
     # which groups the words by sentence
 
@@ -71,5 +71,5 @@ def load_data(filename, lab):
     id2label = {v: k for v, k in enumerate(labels_name)}
     data = data[["sentence", "word_labels"]].drop_duplicates().reset_index(
                                 drop=True)
-    print(label2id, id2label)
+    # print(label2id, id2label)
     return data, id2label, label2id
