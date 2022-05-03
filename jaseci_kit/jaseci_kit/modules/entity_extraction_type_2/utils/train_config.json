@@ -6,5 +6,5 @@
     "LEARNING_RATE": 2e-05,
     "MAX_GRAD_NORM": 10,
     "MODE": "default",
-    "epochs": 80
+    "epochs": 20
 }
