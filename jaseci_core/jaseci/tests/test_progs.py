@@ -158,7 +158,6 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report[14], 180)
 
     def test_reffy_deref_check(self):
-        self.logger_on()
         mast = master(h=mem_hook())
         mast.sentinel_register(name="test", code=jtp.reffy_deref_check, auto_run="")
         report = mast.general_interface_to_api(
@@ -166,3 +165,20 @@ class jac_tests(TestCaseHelper, TestCase):
         )["report"]
         self.assertFalse(report[0])
         self.assertTrue(report[1])
+
+    def test_vanishing_can_check(self):
+        mast = super_master(h=mem_hook())
+        mast.actions_load_local("jaseci/tests/infer.py")
+        mast.sentinel_register(name="test", code=jtp.vanishing_can_check, auto_run="")
+        mast.general_interface_to_api(api_name="walker_run", params={"name": "init"})
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )["report"]
+        self.assertEqual(report, ["2022-01-01T00:00:00"])
+        mast.propagate_access("public")
+        mast2 = super_master(h=mast._h)
+        mast.active_snt().run_architype(name="plain", kind="node", caller=mast2)
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )["report"]
+        self.assertEqual(report, ["2022-01-01T00:00:00"])
