@@ -39,12 +39,6 @@ def remove_pdf(filename: str):
     return False
 
 
-def safe_open_w(path):
-    """Open "path" for writing, creating any parent directories as needed."""
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    return open(path, "w")
-
-
 @jaseci_action(act_group=["pdf_ext"], allow_remote=True)
 def extract_pdf(url: str, metadata: bool = False):
     r"""REMOVE locaaly downloaded PDF
