@@ -1,7 +1,6 @@
 from sklearn.metrics import accuracy_score
 import torch
 from torch.utils.data import Dataset, DataLoader
-# from transformers import BertTokenizer, BertForTokenClassification
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from transformers import pipeline
 from utils.data_tokens import load_data
@@ -93,7 +92,6 @@ class dataset(Dataset):
         return {
             'ids': torch.tensor(ids, dtype=torch.long),
             'mask': torch.tensor(attn_mask, dtype=torch.long),
-            # 'token_type_ids': torch.tensor(token_ids, dtype=torch.long),
             'targets': torch.tensor(label_ids, dtype=torch.long)
         }
 
@@ -102,9 +100,9 @@ class dataset(Dataset):
 
 
 # LOADING TRAINING DATASET
-def data_set(filename, lab, MAX_LEN, TRAIN_BATCH_SIZE):
+def data_set(filename, MAX_LEN, TRAIN_BATCH_SIZE):
     global data, id2label, label2id, training_loader
-    ds = load_data(filename, lab)
+    ds = load_data(filename)
     data = ds[0]
     id2label = ds[1]
     label2id = ds[2]
@@ -126,12 +124,9 @@ def data_set(filename, lab, MAX_LEN, TRAIN_BATCH_SIZE):
 def check_labels_ok():
     lst_data_labels = list(id2label.values())
     lst_model_labels = list(model.config.id2label.values())
-    # print("lst_data_labels  ", lst_data_labels)
-    # print("lst_model_labels ", lst_model_labels)
     for label in lst_data_labels:
         if label not in lst_model_labels:
             return False
-        # print("data & model labels is same")
     return True
 
 
@@ -245,8 +240,6 @@ def load_custom_model(model_path):
     global model, tokenizer  # , id2label
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     model = AutoModelForTokenClassification.from_pretrained(model_path)
-    # # num_labels=15)
-    # id2label = model.config.id2label
     model.to(device)
 
 
@@ -266,54 +259,11 @@ def predict_text(sentence):
     for i in range(len(entities)):
         e_data = {
             "text": entities[i]['word'],
-            # "entity": id2label[int(entities[i]
-            # ['entity_group'].split('_')[1])],
             "entity": entities[i]['entity_group'],
             "score": float(entities[i]['score']),
-            # "word index" : entities[i]['index'],
             "start": entities[i]['start'],
             "end": entities[i]['end']
         }
         ents.append(e_data)
     torch.cuda.empty_cache()
     return ents
-
-    # # sentence = "India has a capital called Mumbai. On wednesday,
-    # # the president will give a presentation"
-    # inputs = tokenizer(sentence, padding='max_length', truncation=True,
-    #                    max_length=MAX_LEN, return_tensors="pt")
-    # # move to gpu
-    # ids = inputs["input_ids"].to(device)
-    # mask = inputs["attention_mask"].to(device)
-    # # forward pass
-    # outputs = model(ids, mask)
-    # logits = outputs[0]
-
-    # active_logits = logits.view(-1, model.num_labels)
-    # # shape (batch_size * seq_len, num_labels)
-    # flattened_predictions = torch.argmax(active_logits, axis=1)
-    # # shape (batch_size*seq_len,) - predictions at the token level
-
-    # tokens = tokenizer.convert_ids_to_tokens(ids.squeeze().tolist())
-    # token_predictions = [
-    #     id2label[i] for i in flattened_predictions.cpu().numpy()]
-    # wp_preds = list(zip(tokens, token_predictions))
-    # # list of tuples. Each tuple = (wordpiece, prediction)
-
-    # word_level_predictions = []
-    # for pair in wp_preds:
-    #     if (pair[0].startswith(" ##")) or (pair[0] in [
-    #                                        '[CLS]', '[SEP]', '[PAD]']):
-    #         # skip prediction
-    #         continue
-    #     else:
-    #         word_level_predictions.append(pair[1])
-
-    # # we join tokens, if they are not special ones
-    # str_rep = " ".join([t[0] for t in wp_preds if t[0] not in [
-    #                     '[CLS]', '[SEP]', '[PAD]']]).replace(" ##", "")
-    # # print(str_rep)
-    # # print(word_level_predictions)
-    # ents = {"text": str_rep, "entity": word_level_predictions}
-    # print(ents)
-    # return ents

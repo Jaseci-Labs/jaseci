@@ -31,29 +31,7 @@ def config_setup():
     load_custom_model(curr_model_path)
 
 
-def load_parameter():
-    global MAX_LEN, TRAIN_BATCH_SIZE, VALID_BATCH_SIZE, MODE
-    global EPOCHS, LEARNING_RATE, MAX_GRAD_NORM, lab, model_save_path
-    # global model_name
-
-    MAX_LEN = train_config["MAX_LEN"]
-    TRAIN_BATCH_SIZE = train_config["TRAIN_BATCH_SIZE"]
-    VALID_BATCH_SIZE = train_config["VALID_BATCH_SIZE"]
-    EPOCHS = train_config["EPOCHS"]
-    LEARNING_RATE = train_config["LEARNING_RATE"]
-    MAX_GRAD_NORM = train_config["MAX_GRAD_NORM"]
-    EPOCHS = train_config["EPOCHS"]
-    MODE = train_config['MODE']
-    lab = ['O']
-    model_save_path = model_config['model_save_path']
-
-    # model_name = model_config['model_name']
-
-
 config_setup()
-load_parameter()
-
-# def check_train_cond():
 
 enum = {
     "default": 1,
@@ -63,15 +41,17 @@ enum = {
 
 
 @jaseci_action(act_group=['extract_entity'], allow_remote=True)
-def train(mode: str = MODE,
-          epochs: int = EPOCHS,
+def train(mode: str = train_config['MODE'],
+          epochs: int = train_config["EPOCHS"],
           train_data: List[dict] = []
           ):
     """
     API for training the model
     """
     if epochs:
-        EPOCHS = epochs
+        train_config["EPOCHS"] = epochs
+    # else:
+    #     EPOCHS = train_config["EPOCHS"]
 
     if mode == "default":
         if os.path.exists("train/train_backup_file.txt"):
@@ -82,7 +62,13 @@ def train(mode: str = MODE,
     elif mode == 'append':
         train_file = 'train/train_backup_file.txt'
     else:
-        return "Please define mode of training"
+        st = {
+            "Status": "training failed",
+            "Error": "Please define training mode",
+            "Available mode": ['default', 'append', 'incremental']
+        }
+        raise HTTPException(status_code=400, detail=st)
+        # return st
 
     data = pd.DataFrame(columns=["text", "annotation"])
     if train_data:
@@ -106,13 +92,17 @@ def train(mode: str = MODE,
         if completed is True:
 
             # loading training dataset
-            data_set(train_file, lab, MAX_LEN, TRAIN_BATCH_SIZE)
+            data_set(train_file, train_config["MAX_LEN"],
+                     train_config["TRAIN_BATCH_SIZE"])
 
             # checking data and model labels
             data_lab = check_labels_ok()
             print("model training started")
-            status = train_model(curr_model_path, EPOCHS, enum[mode], data_lab,
-                                 LEARNING_RATE, MAX_GRAD_NORM, model_save_path)
+            status = train_model(curr_model_path, train_config["EPOCHS"],
+                                 enum[mode], data_lab,
+                                 train_config["LEARNING_RATE"],
+                                 train_config["MAX_GRAD_NORM"],
+                                 model_config['model_save_path'])
             print("model training Completed")
             return status
         else:
@@ -183,7 +173,6 @@ def set_train_config(training_parameters: Dict = None):
             train_config.update(training_parameters)
             json.dump(train_config, jsonfile, indent=4)
 
-        load_parameter()
         return "Config setup is complete."
     except Exception as e:
         print(traceback.format_exc())

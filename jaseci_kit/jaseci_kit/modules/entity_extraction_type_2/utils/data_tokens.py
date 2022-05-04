@@ -29,26 +29,9 @@ def data_token(filename):
     return df
 
 
-def load_data(filename, lab):
+def load_data(filename):
     # reading data from file
     data = data_token(filename)
-
-    # processing dataset
-    # data = data_token('train.txt')
-    # print("Number of tags: {}".format(len(data.Tag.unique())))
-    # frequencies = data.Tag.value_counts()
-    # # print(frequencies)
-    # tags = {}
-    # for tag, count in zip(frequencies.index, frequencies):
-    #     if tag != "O":
-    #         if tag[2:5] not in tags.keys():
-    #             tags[tag[2:5]] = count
-    #         else:
-    #             tags[tag[2:5]] += count
-    #     continue
-    # print(sorted(tags.items(), key=lambda x: x[1], reverse=True))
-    # let's create a new column called "sentence"
-    # which groups the words by sentence
 
     data['sentence'] = data[['Sentence #', 'Word', 'Tag']].groupby(
         ['Sentence #'])['Word'].transform(lambda x: ' '.join(x))
@@ -59,12 +42,6 @@ def load_data(filename, lab):
     # data.head(40)
 
     labels_name = sorted(list(data.Tag.unique()), reverse=True)
-    # for lb in labels_name:
-    #     if lb not in lab:
-    #         lab.append(lb)
-
-    # lab.extend(labels_name)
-    # labels_name = sorted(list(set(lab)), reverse=True)
 
     # labels = data.Tag.unique()
     label2id = {k: v for v, k in enumerate(labels_name)}

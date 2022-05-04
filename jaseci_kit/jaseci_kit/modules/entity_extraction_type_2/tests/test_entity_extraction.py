@@ -116,10 +116,3 @@ class entity_extraction_type2_test(TestCaseHelper, TestCase):
                 json=test_test_data
             )
         self.assertEqual(response.status_code, 200)
-        # self.assertEqual(response.json()[0]['text'], test_entities[0]['text']
-        # )
-        # self.assertEqual(response.json()[0]['entity'],
-        #                  test_entities[0]['entity'])
-        # self.assertEqual(response.json()[0]['start'],
-        #                  test_entities[0]['start'])
-        # self.assertEqual(response.json()[0]['end'], test_entities[0]['end'])
