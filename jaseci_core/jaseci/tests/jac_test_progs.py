@@ -1,5 +1,4 @@
-bug_check1 = \
-    """
+bug_check1 = """
     node state {
         has cand_intents = [];
         # Collect possible intents from a given conversation state
@@ -39,16 +38,14 @@ bug_check1 = \
     """
 
 
-action_load_std_lib = \
-    """
+action_load_std_lib = """
     walker aload {
         report std.actload_local('jaseci/tests/infer.py');
     }
     """
 
 
-globals = \
-    """
+globals = """
     global a = "testing";
 
     walker init {
@@ -58,8 +55,7 @@ globals = \
     }
     """
 
-net_root_std_lib = \
-    """
+net_root_std_lib = """
     walker init {
         root {
             report [here.info['jid'], net.root().info['jid']];
@@ -73,8 +69,7 @@ net_root_std_lib = \
     """
 
 
-or_stmt = \
-    """
+or_stmt = """
     walker init {
         x = 3.4;
         y = "Hello";
@@ -83,8 +78,7 @@ or_stmt = \
     }
     """
 
-nd_equals_error_correct_line = \
-    """
+nd_equals_error_correct_line = """
     node plain{ has name="joe", noname;
     can stuff with entry {std.out(name + noname); }}
 
@@ -96,6 +90,204 @@ nd_equals_error_correct_line = \
         plain {
             if(here.details['name'] == 'joe'):
                 report here.info;
+        }
+    }
+    """
+
+strange_ability_bug = """
+    node plain {
+        can show with entry {
+            report "Showing";
+        }
+    }
+
+    walker init {
+        root {
+            spawn here --> node::plain;
+        }
+    }
+
+    walker travel {
+        take -->;
+    }
+    """
+
+node_inheritance = """
+    node plain {
+        has a=5, b=7, c=7, d=8;
+        can x with entry {
+            report "plain.x";
+        }
+        can y {
+            report "plain.y";
+        }
+    }
+
+    node plain2 {
+        has c=70, d=80;
+        can x with entry {
+            report "plain2.x";
+        }
+        can y {
+            report "plain2.y";
+        }
+    }
+
+    node super:plain:plain2 {
+        has a=55, c=7;
+        can x with entry {
+            ::plain:x;
+            report here.context;
+            report "super.x";
+        }
+        can y {
+            ::plain2:y;
+            report "super.y";
+        }
+    }
+
+    walker init {
+        root {
+            a=spawn here --> node::super;
+        }
+        take -->;
+        super {
+            here::y;
+        }
+    }
+    """
+
+node_inheritance_chain_check = """
+    node plain {
+        has a=5, b=7, c=7, d=8;
+        can x with entry {
+            report "plain.x";
+        }
+        can y {
+            report "plain.y";
+        }
+    }
+
+    node plain2 {
+        has c=70, d=80;
+        can x with entry {
+            report "plain2.x";
+        }
+        can y {
+            report "plain2.y";
+        }
+    }
+
+    node super:plain {
+        has a=55, c=7;
+        can x with entry {
+            ::plain:x;
+            report here.context;
+            report "super.x";
+        }
+        can y {
+            ::plain2:y;
+            report "super.y";
+        }
+    }
+
+    walker init {
+        root {
+            a=spawn here --> node::super;
+        }
+        take -->;
+        super {
+            here::y;
+        }
+    }
+    """
+
+global_reregistering = """
+    node plain;
+
+    global a = '556';
+
+    walker init {
+        root {
+            spawn here - -> node::plain;
+            spawn here - -> node::plain;
+            spawn here - -> node::plain;
+        }
+        report global.a;
+        take - ->;
+    }
+    """
+
+vector_cos_sim_check = """
+    node plain;
+
+    walker init {
+        a=[1,2,3];
+        b=[4,5,6];
+        report vector.cosine_sim(a,b);
+    }
+    """
+
+multi_breaks = """
+    node plain {
+        has anchor val=0;
+        can breakdance {
+            for i=0 to i<10 by i+=1 {
+                for j=0 to j<20 by j+=1:
+                    if(j==12) {
+                        val+=j;
+                        break;
+                    }
+                report "here";
+                if(i==6){
+                    val+=i;
+                    break;
+                }
+            }
+            break;
+            val+=100;
+        }
+    }
+
+    walker init {
+        nd=spawn here --> node::plain;
+        nd::breakdance;
+        nd::breakdance;
+        report nd.val;
+    }
+    """
+
+reffy_deref_check = """
+    node plain{has expected_answer;}
+
+    walker init {
+        nd = spawn here --> node::plain;
+        spawn here --> node::plain;
+
+        report *&-->[0] == *&-->[1];
+
+        actual_answer = -->[1];
+        nd.expected_answer = &-->[1];
+        report *&actual_answer == *nd.expected_answer;
+    }
+    """
+
+vanishing_can_check = """
+    node plain {
+        has name;
+        can infer.year_from_date;
+    }
+
+    walker init {
+        root {
+            take --> node::plain else {
+                nd=spawn here --> node::plain;
+                report nd.info['jid'];
+                disengage;
+            }
+        }
+        plain {
+            report infer.year_from_date("2022-05-05");
         }
     }
     """

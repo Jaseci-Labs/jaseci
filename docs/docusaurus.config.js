@@ -82,7 +82,7 @@ const config = {
                 label: 'Github Discussions',
                 href: 'https://github.com/Jaseci-Labs/jaseci/discussions',
               },
-          
+
             ],
           },
           {

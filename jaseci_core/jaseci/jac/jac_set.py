@@ -1,4 +1,3 @@
-
 """
 Jac's set class for Jaseci
 
@@ -12,22 +11,24 @@ from jaseci.element.element import element
 class jac_set(list):
     """
     Jac set class for operations in Jac lang
+    (keeps append ordering and no dups)
     """
 
     def __init__(self, in_list=None):
-        if (in_list):
+        if in_list:
             for i in in_list:
-                self.append(i)
+                if i not in self:
+                    self.append(i)
 
     def append(self, item):
-        if(not isinstance(item, element) or not hasattr(item, 'anchor_value')):
-            logger.error(
-                f"Invalid {type(item)} object {item} to be added to jac_set!")
-        else:
+        if not isinstance(item, element) or not hasattr(item, "anchor_value"):
+            logger.error(f"Invalid {type(item)} object {item} to be added to jac_set!")
+        elif item not in self:
             list.append(self, item)
 
     def add_obj(self, item):
-        self.append(item)
+        if item not in self:
+            self.append(item)
 
     def obj_list(self):
         return self
@@ -36,7 +37,7 @@ class jac_set(list):
         """Returns reduced set where anchor value evals to other"""
         ret = jac_set()
         for i in self:
-            if (i.anchor_value() < other):
+            if i.anchor_value() < other:
                 ret.add_obj(i)
         return ret
 
@@ -44,7 +45,7 @@ class jac_set(list):
         """Returns reduced set where anchor value evals to other"""
         ret = jac_set()
         for i in self:
-            if (i.anchor_value() > other):
+            if i.anchor_value() > other:
                 ret.add_obj(i)
         return ret
 
@@ -52,7 +53,7 @@ class jac_set(list):
         """Returns reduced set where anchor value evals to other"""
         ret = jac_set()
         for i in self:
-            if (i.anchor_value() <= other):
+            if i.anchor_value() <= other:
                 ret.add_obj(i)
         return ret
 
@@ -60,7 +61,7 @@ class jac_set(list):
         """Returns reduced set where anchor value evals to other"""
         ret = jac_set()
         for i in self:
-            if (i.anchor_value() >= other):
+            if i.anchor_value() >= other:
                 ret.add_obj(i)
         return ret
 
@@ -68,7 +69,7 @@ class jac_set(list):
         """Returns reduced set where anchor value evals to other"""
         ret = jac_set()
         for i in self:
-            if (i.anchor_value() == other):
+            if i.anchor_value() == other:
                 ret.add_obj(i)
         return ret
 
@@ -76,7 +77,7 @@ class jac_set(list):
         """Returns reduced set where anchor value evals to other"""
         ret = jac_set()
         for i in self:
-            if (i.anchor_value() != other):
+            if i.anchor_value() != other:
                 ret.add_obj(i)
         return ret
 
@@ -86,7 +87,7 @@ class jac_set(list):
         for i in self:
             ret.add_obj(i)
         for i in other:
-            if (i not in ret):
+            if i not in ret:
                 ret.add_obj(i)
         return ret
 
@@ -94,7 +95,7 @@ class jac_set(list):
         """Returns new set with operation applied"""
         ret = jac_set()
         for i in self:
-            if(i not in other):
+            if i not in other:
                 ret.add_obj(i)
         return ret
 
@@ -102,7 +103,7 @@ class jac_set(list):
         """Returns new set with operation applied, mul is intersection"""
         ret = jac_set()
         for i in self:
-            if(i in other):
+            if i in other:
                 ret.add_obj(i)
         return ret
 
@@ -110,9 +111,9 @@ class jac_set(list):
         """Returns new set with operation applied, div is 'outersection'"""
         ret = jac_set()
         for i in self:
-            if(i not in other):
+            if i not in other:
                 ret.add_obj(i)
         for i in other:
-            if(i not in self):
+            if i not in self:
                 ret.add_obj(i)
         return ret

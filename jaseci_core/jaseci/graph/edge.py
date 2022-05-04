@@ -27,22 +27,27 @@ class edge(element, anchored):
 
     def from_node(self):
         """Returns node edge is pointing from"""
-        ret = self._h.get_obj(self._m_id, uuid.UUID(self.from_node_id)
-                              ) if self.from_node_id else None
-        if (not ret):
-            logger.critical(
-                str(f"{self} disconnected from source node"))
+        ret = (
+            self._h.get_obj(self._m_id, uuid.UUID(self.from_node_id))
+            if self.from_node_id
+            else None
+        )
+        if not ret:
+            logger.critical(str(f"{self} disconnected from source node"))
             return None
         else:
             return ret
 
     def to_node(self):
         """Returns node edge is pointing to"""
-        if (not self.to_node_id):
+        if not self.to_node_id:
             return None
-        ret = self._h.get_obj(self._m_id, uuid.UUID(self.to_node_id)
-                              ) if self.to_node_id else None
-        if (not ret):
+        ret = (
+            self._h.get_obj(self._m_id, uuid.UUID(self.to_node_id))
+            if self.to_node_id
+            else None
+        )
+        if not ret:
             logger.critical(str(f"{self} disconnected to target node"))
             return None
         else:
@@ -59,9 +64,7 @@ class edge(element, anchored):
             node_set.remove(node_obj.id.urn)
             return self._h.get_obj(self._m_id, uuid.UUID(node_set[0]))
         except ValueError:
-            logger.critical(
-                str(f"{self} disconnected to node {node_obj}")
-            )
+            logger.critical(str(f"{self} disconnected to node {node_obj}"))
             return None
 
     def set_from_node(self, node_obj):
@@ -70,11 +73,10 @@ class edge(element, anchored):
         TODO: should check prior nodes edge_ids if is a reset
         """
         if self.to_node_id:
-            if(not self.to_node().dimension_matches(node_obj,
-                                                    silent=False)):
+            if not self.to_node().dimension_matches(node_obj, silent=False):
                 return False
         self.from_node_id = node_obj.jid
-        if(self.jid not in node_obj.edge_ids):
+        if self.jid not in node_obj.edge_ids:
             node_obj.edge_ids.add_obj(self)
         self.save()
         return True
@@ -85,11 +87,10 @@ class edge(element, anchored):
         TODO: should check prior nodes edge_ids if is a reset
         """
         if self.from_node_id:
-            if(not self.from_node().dimension_matches(node_obj,
-                                                      silent=False)):
+            if not self.from_node().dimension_matches(node_obj, silent=False):
                 return False
         self.to_node_id = node_obj.jid
-        if(self.jid not in node_obj.edge_ids):
+        if self.jid not in node_obj.edge_ids:
             node_obj.edge_ids.add_obj(self)
         self.save()
         return True
@@ -105,28 +106,26 @@ class edge(element, anchored):
 
     def connects(self, source=None, target=None, ignore_direction=False):
         """Test if a node or nodes are connected by edge"""
-        if(not source and not target):
+        if not source and not target:
             return False
-        if(self.bidirected or ignore_direction):
-            if(source and source.id.urn not in
-               [self.from_node_id, self.to_node_id]):
+        if self.bidirected or ignore_direction:
+            if source and source.id.urn not in [self.from_node_id, self.to_node_id]:
                 return False
-            if(target and target.id.urn not in
-               [self.from_node_id, self.to_node_id]):
+            if target and target.id.urn not in [self.from_node_id, self.to_node_id]:
                 return False
         else:
-            if(source and source.id.urn != self.from_node_id):
+            if source and source.id.urn != self.from_node_id:
                 return False
-            if(target and target.id.urn != self.to_node_id):
+            if target and target.id.urn != self.to_node_id:
                 return False
         return True
 
     def set_context(self, ctx, arch=None):
         """Assign values to context of edge"""
-        if (arch is None):
+        if arch is None:
             arch = self
         for i in ctx.keys():
-            if (i not in arch.context.keys()):
+            if i not in arch.context.keys():
                 logger.warning(str(f"{i} not a context member of {self}"))
                 continue
             else:
@@ -150,33 +149,37 @@ class edge(element, anchored):
         DOT representation
         from_node -> to_node [context_key=contect_value]
         """
-        from_name = uuid.UUID(self.from_node(
-        ).jid).hex if node_map is None else node_map.index(
-            self.from_node().jid)
-        to_name = uuid.UUID(self.to_node(
-        ).jid).hex if node_map is None else node_map.index(
-            self.to_node().jid)
+        from_name = (
+            uuid.UUID(self.from_node().jid).hex
+            if node_map is None
+            else node_map.index(self.from_node().jid)
+        )
+        to_name = (
+            uuid.UUID(self.to_node().jid).hex
+            if node_map is None
+            else node_map.index(self.to_node().jid)
+        )
         dstr = f'"n{from_name}" -> "n{to_name}" '
 
         dstr += f'[ id="{uuid.UUID(self.jid).hex}"'
-        label = ''
-        if(edge_map):
-            label = f'e{edge_map.index(self.jid)}'
-        if(self.name != 'generic'):
-            label += f':{self.name}'
-        if(label):
+        label = ""
+        if edge_map:
+            label = f"e{edge_map.index(self.jid)}"
+        if self.name != "generic":
+            label += f":{self.name}"
+        if label:
             dstr += f', label="{label}"'
-        if(self.bidirected):
-            dstr += f', dir="both"'
+        if self.bidirected:
+            dstr += ', dir="both"'
 
         edge_dict = self.context
 
-        if (edge_dict):
+        if edge_dict:
             for k, v in edge_dict.items():
-                if(not isinstance(v, str) or v == ""):
+                if not isinstance(v, str) or v == "":
                     continue
                 dstr += f', {k}="{v[:32]}"'
 
-        dstr += ' ]'
+        dstr += " ]"
 
-        return dstr+'\n'
+        return dstr + "\n"

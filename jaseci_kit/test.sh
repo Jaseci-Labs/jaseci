@@ -4,11 +4,12 @@ then
     python3 -m unittest discover . -p "test_*.py"
     flake8 --exclude=settings.py,*migrations*,jac_parse,ci_app
 else
-    for MODEL in encoders entity_extraction fasttext text_segmenter use_enc use_qa
+    cd "jaseci_kit/modules"
+    for MODEL in encoders entity_extraction fasttext
     do
         cd $MODEL
-        python3 -m unittest discover . -p "test_*.py"
+        python -m unittest discover . -p "test_*.py"
         cd ..
     done
-    flake8 --exclude=settings.py,*migrations*,jac_parse,ci_app
+    # flake8 --exclude=settings.py,*migrations*,jac_parse,ci_app
 fi

@@ -28,7 +28,7 @@ walker date_get_year {
 Since the `rand` module is global its actions are accessible without a declaration.
 
 ```jac
-walker get_random_int {    
+walker get_random_int {
     report rand.integer(0, 10);
 }
 ```

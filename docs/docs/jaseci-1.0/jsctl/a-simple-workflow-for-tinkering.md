@@ -4,18 +4,18 @@ sidebar_position: 3
 
 # A simple workflow for Tinkering
 
-As you get to know `Jaseci` and `Jac`, you’ll want to try things and tinker a bit. 
+As you get to know `Jaseci` and `Jac`, you’ll want to try things and tinker a bit.
 
-In this section, we’ll get to know how `jsctl` can be used as the main platform for this play. 
+In this section, we’ll get to know how `jsctl` can be used as the main platform for this play.
 
 A typical flow will involve jumping into shell-mode, writing some code, running that code to observe output, and in visualizing the state of the graph, and rendering that graph in dot to see it’s visualization.
 
 ### Installing Graphvis
 
-Before we jump right in, let me strongly encourage you install Graphviz. Graphviz is open source graph visualization software package that includes a handy dandy command line tool call dot. 
+Before we jump right in, let me strongly encourage you install Graphviz. Graphviz is open source graph visualization software package that includes a handy dandy command line tool call dot.
 
-**`Dot`** is also a standardized and open graph description language that is a key primitive of Graphviz. 
-The `dot` tool in `Graphviz` takes `dot` code and renders it nicely. 
+**`Dot`** is also a standardized and open graph description language that is a key primitive of Graphviz.
+The `dot` tool in `Graphviz` takes `dot` code and renders it nicely.
 
 ##### Ubuntu:
 ```
@@ -101,7 +101,7 @@ Notice we’ve also set the `-set active` parameter to true. This parameter info
 
 ### Using the built in editor... or use your favorite
 
-Next, lets write some `Jac` code for our little program. `jsctl` has a built in editor that is simple yet powerful. You can use either this built in editor, or your favorite editor to create the `.jac` file for our toy program. 
+Next, lets write some `Jac` code for our little program. `jsctl` has a built in editor that is simple yet powerful. You can use either this built in editor, or your favorite editor to create the `.jac` file for our toy program.
 
 Let’s use the built in editor.
 
@@ -110,7 +110,7 @@ jaseci > edit fam.jac
 
 ```
 
-The edit command invokes the built in editor. Though it’s a terminal editor based on ncurses, you can basically use it much like you’d use any wysiwyg editor with features like standard cut `ctrl-c` and paste `ctrl-v`, mouse text selection, etc. For more detailed help cheat sheet see Appendix C. If you must use your own favorite editor, simply be sure that you save the fam.jac file in the same working directory from which you are running the Jaseci shell. 
+The edit command invokes the built in editor. Though it’s a terminal editor based on ncurses, you can basically use it much like you’d use any wysiwyg editor with features like standard cut `ctrl-c` and paste `ctrl-v`, mouse text selection, etc. For more detailed help cheat sheet see Appendix C. If you must use your own favorite editor, simply be sure that you save the fam.jac file in the same working directory from which you are running the Jaseci shell.
 
 Now type out the toy program in Jac Code:
 
@@ -136,7 +136,7 @@ man {
 
 ```
 
-Don’t worry if that look a little strange. For now, lets tinker around. Now save and quit the editor. 
+Don’t worry if that look a little strange. For now, lets tinker around. Now save and quit the editor.
 If you are using the built in editor thats simply:
 
 ```
@@ -144,7 +144,7 @@ ctrl-s
 ctrl-q combo
 ```
 
-Ok, now we should have a `fam.jac` file saved in our working directory. 
+Ok, now we should have a `fam.jac` file saved in our working directory.
 We can check from the Jaseci shell!
 
 ```
@@ -155,9 +155,9 @@ jaseci >
 ```
 
 ### Listing files
-We can list files from the shell prompt. 
+We can list files from the shell prompt.
 
-By default the ls command only lists files relevant to Jaseci (i.e., *.jac, *.dot, etc). 
+By default the ls command only lists files relevant to Jaseci (i.e., *.jac, *.dot, etc).
 
 To list all files simply add a `--all` or `-a`.
 
@@ -218,7 +218,7 @@ jaseci >
 The `alias` set of APIs are designed as an additional set of convenience tools to simplify the referencing of various objects (walkers, architypes, etc) in Jaseci. Instead of having to use the UUIDs to reference each object, an alias can be used to refer to any object. These aliases can be created or removed utilizing the `alias` APIs.
 
 
-Upon registering a sentinel, a set of aliases are automatically created for each object produced from processing the corresponding Jac program. The call to alias list lists all available aliases in the session. 
+Upon registering a sentinel, a set of aliases are automatically created for each object produced from processing the corresponding Jac program. The call to alias list lists all available aliases in the session.
 
 Here, we’re using this call to see the objects that were created for our toy program and validate it corresponds to the ones we would expect. Everything looks good!
 
@@ -254,11 +254,11 @@ jaseci >
 
 ```
 
-Here we’ve used the `graph get` core API to get a print out of the graph in dot format. 
+Here we’ve used the `graph get` core API to get a print out of the graph in dot format.
 
-By default graph get dumps out a list of all edge and node objects of the graph, however with the `-mode dot` parameter we’ve specified that the graph should be printed in dot. 
+By default graph get dumps out a list of all edge and node objects of the graph, however with the `-mode dot` parameter we’ve specified that the graph should be printed in dot.
 
-The `-o` flag specifies a file to dump the output of the command. Note that the `-o` flag for jsctl commands only outputs the formal returned data (json payload, or string) from a Jaseci Core API. 
+The `-o` flag specifies a file to dump the output of the command. Note that the `-o` flag for jsctl commands only outputs the formal returned data (json payload, or string) from a Jaseci Core API.
 Logging output, standard output, etc will not be saved to the file though anything reported by a walker using report will be saved. This output file directive is `jsctl` specific and work with any command given to `jsctl`.
 
 ### Using **Graphviz** for visualizing
@@ -271,10 +271,3 @@ dot -Tpdf fam.dot -o fam.pdf
 ```
 
 We can see the beautiful graph our toy Jac program has produced on its way to the standard output.
-
-
-
-
-
-
-

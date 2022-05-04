@@ -1,0 +1,10 @@
+{
+    "overwrite_output_dir": true,
+    "evaluation_strategy": "epoch",
+    "train_batch_size": 4,
+    "eval_batch_size": 4,
+    "learning_rate": 2e-05,
+    "weight_decay": 0.01,
+    "max_grad_norm": 1,
+    "num_train_epochs": 5
+}

@@ -24,8 +24,8 @@ global_var:
 	KW_GLOBAL NAME EQ expression (COMMA NAME EQ expression)* SEMI;
 
 architype:
-	KW_NODE NAME (COLON INT)? attr_block
-	| KW_EDGE NAME attr_block
+	KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
+	| KW_EDGE NAME (COLON NAME)* attr_block
 	| KW_GRAPH NAME graph_block;
 
 walker: KW_WALKER NAME namespaces? walker_block;
@@ -54,11 +54,13 @@ attr_block: LBRACE (attr_stmt)* RBRACE | COLON attr_stmt | SEMI;
 
 attr_stmt: has_stmt | can_stmt;
 
+can_block: (can_stmt)*;
+
 graph_block: graph_block_spawn | graph_block_dot;
 
 graph_block_spawn:
-	LBRACE has_root KW_SPAWN code_block RBRACE
-	| COLON has_root KW_SPAWN code_block SEMI;
+	LBRACE has_root can_block KW_SPAWN code_block RBRACE
+	| COLON has_root can_block KW_SPAWN code_block SEMI;
 
 graph_block_dot:
 	LBRACE has_root dot_graph RBRACE
@@ -179,7 +181,7 @@ atom:
 	| list_val
 	| dict_val
 	| LPAREN expression RPAREN
-	| DBL_COLON NAME spawn_ctx?
+	| ability_op NAME spawn_ctx?
 	| atom atom_trailer+
 	| spawn
 	| ref
@@ -191,11 +193,13 @@ atom_trailer:
 	| DOT NAME
 	| index_slice
 	| LPAREN expr_list? RPAREN
-	| DBL_COLON NAME spawn_ctx?;
+	| ability_op NAME spawn_ctx?;
 
-ref: '&' expression;
+ability_op: DBL_COLON | DBL_COLON NAME COLON;
 
-deref: STAR_MUL expression;
+ref: '&' atom;
+
+deref: STAR_MUL atom;
 
 built_in:
 	| string_built_in

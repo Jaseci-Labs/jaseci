@@ -11,4 +11,3 @@ Let's learn **Jaseci**.
 Welcome to the official **Jaseci Doucumentation**.
 
 Our **website** lives at **[jaseci.org](https://jaseci.org)**.
-
