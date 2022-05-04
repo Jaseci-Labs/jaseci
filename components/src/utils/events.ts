@@ -160,11 +160,26 @@ function runAction(action: JaseciAction, result?: any) {
       case 'callEndpoint':
         const method = parsedActionArgs[0];
         const body = typeof parsedActionArgs[1] === 'string' ? parsedActionArgs[1] : JSON.stringify(parsedActionArgs[1]);
+        const headers = parsedActionArgs[2] || { 'Content-Type': 'application/json' };
         console.log({ method, body });
-        const actions = await fetch(action?.endpoint, { method, body, headers: { 'Content-Type': 'application/json' } }).then(res => res.json());
-        if (!actions) throw new Error('No action returned from endpoint.');
-        Array.isArray(actions) ? actions.map(action => runAction(action)) : runAction(actions);
+        const fetchOptions: RequestInit = {
+          method,
+          headers,
+        };
 
+        if (method !== 'GET') {
+          fetchOptions.body = body;
+        }
+
+        const data = await fetch(action?.endpoint, fetchOptions).then(res => res.json());
+
+        if (!data) throw new Error('No action returned from endpoint.');
+
+        if (!action.onCompleted) {
+          // expect an action list from the endpoint response
+          Array.isArray(data) ? data.map(action => runAction(action)) : runAction(data);
+        }
+        runOnCompletedAction(action.onCompleted, data);
         break;
       default:
         new Function(`${actionName}.apply(this, ${JSON.stringify(parsedActionArgs)})`)();
@@ -172,6 +187,37 @@ function runAction(action: JaseciAction, result?: any) {
     }
   });
 }
+
+function runOnCompletedAction(onCompleted: JaseciAction, resolvedData?: any) {
+  if (!onCompleted) return;
+  let onCompletedString = JSON.stringify(onCompleted);
+
+  const data = resolvedData;
+  const resList = JSON.stringify(onCompleted).match(/res[(](.*?)[)]/g);
+  console.log({ resList });
+
+  const resPlaceholderValueMap = {};
+  // map references to values
+  resList.map(resRef => {
+    const accessedData = resRef.split('res(')?.[1]?.split(')')[0];
+    const evaluatedRes = resolvePath(data, accessedData, data);
+    resPlaceholderValueMap[resRef] = evaluatedRes;
+  });
+
+  // replace res() with resolved data
+  Object.keys(resPlaceholderValueMap).map(resRef => {
+    console.log(resPlaceholderValueMap[resRef]);
+    onCompletedString = onCompletedString.replaceAll(resRef, resPlaceholderValueMap[resRef]);
+  });
+
+  runAction(JSON.parse(onCompletedString));
+}
+
+const resolvePath = (object, path, defaultValue) =>
+  path
+    .split(/[\.\[\]\'\"]/)
+    .filter(p => p)
+    .reduce((o, p) => (o ? o[p] : defaultValue), object);
 
 /**
  * Attach events to the dom element based on the JSON structure

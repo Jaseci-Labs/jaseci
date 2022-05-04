@@ -35,9 +35,17 @@ const attachEvents = (renderedTag: string, events: JaseciComponent['events']) =>
 };
 
 const setOperations = (operations: JaseciComponent['operations'], componentName: string) => {
-  if (!localStorage.getItem(`op-${componentName}`)) {
-    localStorage.setItem(`op-${componentName}`, JSON.stringify(operations));
+  if (!global.__JSC_WEBKIT_OPERATIONS__[componentName]) {
+    // TODO: make this private
+    global.__JSC_WEBKIT_OPERATIONS__ = {
+      ...global.__JSC_WEBKIT_OPERATIONS__,
+      [componentName]: operations,
+    };
   }
+};
+
+export const getOperations = (componentName: string) => {
+  return global.__JSC_WEBKIT_OPERATIONS__[componentName];
 };
 
 const attachCSS = (renderedTag: string, css: JaseciComponent['css']) => {

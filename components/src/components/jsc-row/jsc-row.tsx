@@ -2,6 +2,7 @@ import { Component, Element, h, Prop } from '@stencil/core';
 import { ItemsPropValue, JustifyPropValue } from '../../types/propTypes';
 import { setUpEvents } from '../../utils/events';
 import { itemsValue, justifyValue } from '../../utils/propValueMappings';
+import { getOperations } from '../../utils/utils';
 
 @Component({
   tag: 'jsc-row',
@@ -10,6 +11,7 @@ import { itemsValue, justifyValue } from '../../utils/propValueMappings';
 })
 export class Row {
   @Element() host: HTMLElement;
+  @Prop() name: string;
   @Prop() css: string = JSON.stringify({});
   @Prop() events: string;
   @Prop() justify: JustifyPropValue = 'start';
@@ -27,6 +29,7 @@ export class Row {
     });
 
     setUpEvents(this.host, this.events);
+    this.operations = getOperations(this.name);
   }
 
   render() {

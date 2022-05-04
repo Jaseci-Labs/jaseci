@@ -1,5 +1,6 @@
 import { Component, Element, h, Prop } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
+import { getOperations } from '../../utils/utils';
 
 @Component({
   tag: 'jsc-text',
@@ -13,6 +14,7 @@ export class MyComponent {
   @Prop() operations: string;
   @Prop() css: string = JSON.stringify({});
   @Prop() events: string;
+  @Prop() name: string;
 
   @Element() host: HTMLElement;
 
@@ -23,6 +25,7 @@ export class MyComponent {
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);
+    this.operations = getOperations(this.name);
     // this.setUpState();
   }
 

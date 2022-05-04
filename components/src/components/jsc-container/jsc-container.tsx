@@ -1,5 +1,6 @@
 import { Component, Element, h, Prop } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
+import { getOperations } from '../../utils/utils';
 
 @Component({
   tag: 'jsc-container',
@@ -24,7 +25,7 @@ export class Container {
     });
 
     setUpEvents(this.host, this.events);
-    this.operations = JSON.parse(localStorage.getItem(`op-${this.name}`));
+    this.operations = getOperations(this.name);
   }
 
   render() {

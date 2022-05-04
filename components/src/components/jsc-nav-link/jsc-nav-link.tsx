@@ -1,5 +1,6 @@
 import { Component, Element, h, Prop } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
+import { getOperations } from '../../utils/utils';
 
 @Component({
   tag: 'jsc-nav-link',
@@ -7,6 +8,7 @@ import { setUpEvents } from '../../utils/events';
   shadow: true,
 })
 export class NavLink {
+  @Prop() name: string;
   @Prop() label: string;
   @Prop() href: string;
   @Prop() target: string;
@@ -17,6 +19,7 @@ export class NavLink {
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);
+    this.operations = getOperations(this.name);
   }
 
   render() {

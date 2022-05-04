@@ -9,6 +9,7 @@ import { ItemsPropValue, JustifyPropValue } from "./types/propTypes";
 export namespace Components {
     interface JscApp {
         "markup": JaseciComponent[];
+        "setGlobalConfig": (config: Record<string, any>) => Promise<void>;
         "setMarkup": (value: any) => Promise<void>;
     }
     interface JscButton {
@@ -46,6 +47,7 @@ export namespace Components {
     interface JscLabel {
         "htmlFor": string;
         "label": string;
+        "name": string;
         "operations": string;
     }
     interface JscNavBar {
@@ -63,6 +65,7 @@ export namespace Components {
         "events": string;
         "href": string;
         "label": string;
+        "name": string;
         "operations": string;
         "target": string;
     }
@@ -71,11 +74,13 @@ export namespace Components {
         "events": string;
         "items": ItemsPropValue;
         "justify": JustifyPropValue;
+        "name": string;
         "operations": string;
     }
     interface JscText {
         "css": string;
         "events": string;
+        "name": string;
         "operations": string;
         "state": string;
         "value": string;
@@ -234,6 +239,7 @@ declare namespace LocalJSX {
     interface JscLabel {
         "htmlFor"?: string;
         "label"?: string;
+        "name"?: string;
         "operations"?: string;
     }
     interface JscNavBar {
@@ -251,6 +257,7 @@ declare namespace LocalJSX {
         "events"?: string;
         "href"?: string;
         "label"?: string;
+        "name"?: string;
         "operations"?: string;
         "target"?: string;
     }
@@ -259,11 +266,13 @@ declare namespace LocalJSX {
         "events"?: string;
         "items"?: ItemsPropValue;
         "justify"?: JustifyPropValue;
+        "name"?: string;
         "operations"?: string;
     }
     interface JscText {
         "css"?: string;
         "events"?: string;
+        "name"?: string;
         "operations"?: string;
         "state"?: string;
         "value"?: string;

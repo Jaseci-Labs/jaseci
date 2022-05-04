@@ -2,6 +2,7 @@ import { Component, Element, h, Prop } from '@stencil/core';
 import { ItemsPropValue, JustifyPropValue } from '../../types/propTypes';
 import { setUpEvents } from '../../utils/events';
 import { itemsValue, justifyValue } from '../../utils/propValueMappings';
+import { getOperations } from '../../utils/utils';
 
 @Component({
   tag: 'jsc-column',
@@ -28,6 +29,7 @@ export class Column {
     });
 
     setUpEvents(this.host, this.events);
+    this.operations = getOperations(this.name);
   }
 
   render() {

@@ -1,4 +1,5 @@
 import { Component, h, Prop } from '@stencil/core';
+import { getOperations } from '../../utils/utils';
 
 @Component({
   tag: 'jsc-label',
@@ -7,8 +8,13 @@ import { Component, h, Prop } from '@stencil/core';
 })
 export class Label {
   @Prop() label: string;
+  @Prop() name: string;
   @Prop() htmlFor: string;
   @Prop() operations: string;
+
+  componentDidLoad() {
+    this.operations = getOperations(this.name);
+  }
 
   render() {
     return (

@@ -1,5 +1,6 @@
 import { Component, Element, h, Prop, Watch } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
+import { getOperations } from '../../utils/utils';
 
 @Component({
   tag: 'jsc-button',
@@ -17,6 +18,7 @@ export class Button {
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);
+    this.operations = getOperations(this.name);
   }
 
   @Watch('color')

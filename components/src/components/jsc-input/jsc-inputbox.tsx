@@ -1,5 +1,6 @@
 import { Component, Element, Event, EventEmitter, Fragment, h, Prop, Watch } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
+import { getOperations } from '../../utils/utils';
 
 @Component({
   tag: 'jsc-inputbox',
@@ -25,7 +26,7 @@ export class Input {
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);
-
+    this.operations = getOperations(this.name);
     this.setFullWidth();
   }
 

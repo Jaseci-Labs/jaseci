@@ -1,5 +1,6 @@
 import { Component, Element, h, Prop, Watch } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
+import { getOperations } from '../../utils/utils';
 
 @Component({
   tag: 'jsc-nav-bar',
@@ -26,6 +27,7 @@ export class NavBar {
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);
+    this.operations = getOperations(this.name);
   }
 
   render() {

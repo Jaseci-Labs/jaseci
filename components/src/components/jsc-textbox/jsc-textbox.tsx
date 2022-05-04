@@ -1,5 +1,6 @@
 import { Component, Element, Event, EventEmitter, Fragment, h, Prop, Watch } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
+import { getOperations } from '../../utils/utils';
 
 @Component({
   tag: 'jsc-textbox',
@@ -26,6 +27,7 @@ export class Textbox {
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);
+    this.operations = getOperations(this.name);
     this.setFullWidth();
   }
 

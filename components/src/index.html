@@ -1,28 +1,35 @@
 <!DOCTYPE html>
 <html dir="ltr" lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
-    <title>Stencil Component Starter</title>
 
-    <script type="module" src="/build/components.esm.js"></script>
-    <script nomodule src="/build/components.js"></script>
-    <link rel="stylesheet" href="/build/components.css" />
-  </head>
-  <style>
-    body {
-      width: 100%;
-      margin: 0;
-      height: 100%;
-    }
-  </style>
-  <body>
-    <jsc-app></jsc-app>
-    <!-- <my-component first="Stencil" last="'Don't call me a framework' JS"></my-component> -->
-    <script>
-      customElements.whenDefined('jsc-app').then(() => {
-        const app = document.querySelector('jsc-app');
-        app.markup = [
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
+  <title>Stencil Component Starter</title>
+
+  <script type="module" src="/build/components.esm.js"></script>
+  <script nomodule src="/build/components.js"></script>
+  <link rel="stylesheet" href="/build/components.css" />
+</head>
+<style>
+  body {
+    width: 100%;
+    margin: 0;
+    height: 100%;
+  }
+</style>
+
+<body>
+  <jsc-app></jsc-app>
+  <!-- <my-component first="Stencil" last="'Don't call me a framework' JS"></my-component> -->
+  <script>
+    customElements.whenDefined('jsc-app').then(() => {
+      const app = document.querySelector('jsc-app');
+      const config = { siteName: "Hello World" }
+
+      app.setGlobalConfig(config)
+
+      app.setMarkup(JSON.stringify(
+        [
           {
             component: 'Navbar',
             sections: {
@@ -31,7 +38,7 @@
                 { component: 'NavLink', props: { label: 'About', href: 'https://google.com', color: '#fff' } },
               ],
             },
-            props: { label: 'Jaseci App' },
+            props: { label: 'config(siteName)' },
             css: { background: '#000000' },
           },
           {
@@ -168,7 +175,7 @@
                   name: 'textBox1',
                   component: 'Textbox',
                   props: {
-                    placeholder: 'Enter a message...',
+                    placeholder: 'Enter a message for config(siteName)...',
                     label: 'Biography',
                     fullwidth: 'true',
                     margin: '10px 0',
@@ -256,6 +263,12 @@
                         operation: 'msgs.alertMessage',
                         args: ['new message', 'Cool shiz', 'bug?'],
                       },
+                      {
+                        fn: "callEndpoint",
+                        endpoint: "http://127.0.0.1:3334",
+                        args: ["GET"],
+                        onCompleted: { fn: "alert", args: ["👋 Hello res(hello)"] }
+                      }
                     ],
                   },
                 },
@@ -310,8 +323,10 @@
               ],
             },
           },
-        ];
-      });
-    </script>
-  </body>
+        ])
+      );
+    })
+  </script>
+</body>
+
 </html>
