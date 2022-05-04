@@ -198,6 +198,7 @@ graph main_graph {
 
 ```
 This last code block we created several nodes and connected them together. To move from node to node we use the intent to sepcify which route to take.
+
 ### Walker
 
 Now lets create a file called walker.jac
