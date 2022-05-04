@@ -21,7 +21,6 @@ def config_setup():
     m_config_fname = "utils/model_config.json"
     t_config_fname = "utils/train_config.json"
 
-    # conf = config(t_config_fname, m_config_fname)
     with open(t_config_fname, "r") as jsonfile:
         train_config = json.load(jsonfile)
     with open(m_config_fname, "r") as jsonfile:
@@ -33,56 +32,58 @@ def config_setup():
 
 config_setup()
 
-enum = {
-    "default": 1,
-    "append": 2,
-    "incremental": 3
-}
+enum = {"default": 1, "append": 2, "incremental": 3}
 
 
-@jaseci_action(act_group=['extract_entity'], allow_remote=True)
-def train(mode: str = train_config['MODE'],
-          epochs: int = train_config["EPOCHS"],
-          train_data: List[dict] = []
-          ):
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+def train(
+    mode: str = train_config["MODE"],
+    epochs: int = train_config["EPOCHS"],
+    train_data: List[dict] = [],
+):
     """
     API for training the model
     """
     if epochs:
         train_config["EPOCHS"] = epochs
-    # else:
-    #     EPOCHS = train_config["EPOCHS"]
 
     if mode == "default":
         if os.path.exists("train/train_backup_file.txt"):
             os.remove("train/train_backup_file.txt")
-        train_file = 'train/train.txt'
-    elif mode == 'incremental':
-        train_file = 'train/train.txt'
-    elif mode == 'append':
-        train_file = 'train/train_backup_file.txt'
+        train_file = "train/train.txt"
+    elif mode == "incremental":
+        train_file = "train/train.txt"
+    elif mode == "append":
+        train_file = "train/train_backup_file.txt"
     else:
         st = {
             "Status": "training failed",
             "Error": "Please define training mode",
-            "Available mode": ['default', 'append', 'incremental']
+            "Available mode": ["default", "append", "incremental"],
         }
         raise HTTPException(status_code=400, detail=st)
-        # return st
 
     data = pd.DataFrame(columns=["text", "annotation"])
     if train_data:
         for t_data in train_data:
             tag = []
             for ent in t_data["entities"]:
-                if ent['entity_value'] and ent['entity_type']:
-                    tag.append((ent['entity_value'], ent['entity_type'],
-                                ent["start_index"], ent["end_index"]))
+                if ent["entity_value"] and ent["entity_type"]:
+                    tag.append(
+                        (
+                            ent["entity_value"],
+                            ent["entity_type"],
+                            ent["start_index"],
+                            ent["end_index"],
+                        )
+                    )
                 else:
-                    raise HTTPException(status_code=404, detail=str(
-                        "Entity Data missing in request"))
-            data = data.append({"text": t_data["context"],
-                                "annotation": tag}, ignore_index=True)
+                    raise HTTPException(
+                        status_code=404, detail=str("Entity Data missing in request")
+                    )
+            data = data.append(
+                {"text": t_data["context"], "annotation": tag}, ignore_index=True
+            )
         # creating training data
         try:
             completed = create_data(data)
@@ -92,28 +93,36 @@ def train(mode: str = train_config['MODE'],
         if completed is True:
 
             # loading training dataset
-            data_set(train_file, train_config["MAX_LEN"],
-                     train_config["TRAIN_BATCH_SIZE"])
+            data_set(
+                train_file, train_config["MAX_LEN"], train_config["TRAIN_BATCH_SIZE"]
+            )
 
             # checking data and model labels
             data_lab = check_labels_ok()
             print("model training started")
-            status = train_model(curr_model_path, train_config["EPOCHS"],
-                                 enum[mode], data_lab,
-                                 train_config["LEARNING_RATE"],
-                                 train_config["MAX_GRAD_NORM"],
-                                 model_config['model_save_path'])
+            status = train_model(
+                curr_model_path,
+                train_config["EPOCHS"],
+                enum[mode],
+                data_lab,
+                train_config["LEARNING_RATE"],
+                train_config["MAX_GRAD_NORM"],
+                model_config["model_save_path"],
+            )
             print("model training Completed")
             return status
         else:
-            raise HTTPException(status_code=500, detail=str(
-                "Issue encountered during train data creation"))
+            raise HTTPException(
+                status_code=500,
+                detail=str("Issue encountered during train data creation"),
+            )
     else:
-        raise HTTPException(status_code=404, detail=str(
-            "Need Data for Text and Entity"))
+        raise HTTPException(
+            status_code=404, detail=str("Need Data for Text and Entity")
+        )
 
 
-@jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def extract_entity(text: str = None):
     try:
         data = predict_text(text)
@@ -123,15 +132,12 @@ def extract_entity(text: str = None):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@jaseci_action(act_group=['extract_entity'], allow_remote=True)
-def load_model(model_path: str = 'default', local_file: bool = False):
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+def load_model(model_path: str = "default", local_file: bool = False):
     global curr_model_path
     curr_model_path = model_path
     if local_file is True and not os.path.exists(model_path):
-        raise HTTPException(
-            status_code=404,
-            detail='Model path is not available'
-        )
+        raise HTTPException(status_code=404, detail="Model path is not available")
     try:
         print("loading latest trained model to memory...")
         load_custom_model(model_path)
@@ -142,11 +148,11 @@ def load_model(model_path: str = 'default', local_file: bool = False):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@jaseci_action(act_group=['extract_entity'], allow_remote=True)
-def save_model(model_path: str = 'mymodel'):
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+def save_model(model_path: str = "mymodel"):
     try:
         save_custom_model(model_path)
-        print(f'current model {model_path} saved to disk.')
+        print(f"current model {model_path} saved to disk.")
         return {"status": f"model {model_path} saved Successfull!"}
     except Exception as e:
         print(traceback.format_exc())
@@ -154,7 +160,7 @@ def save_model(model_path: str = 'mymodel'):
 
 
 # API for setting the training and model parameters
-@ jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def get_train_config():
     try:
         with open(t_config_fname, "r") as jsonfile:
@@ -165,7 +171,7 @@ def get_train_config():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@ jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def set_train_config(training_parameters: Dict = None):
     global train_config
     try:
@@ -179,7 +185,7 @@ def set_train_config(training_parameters: Dict = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@ jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def get_model_config():
     try:
         with open(m_config_fname, "r") as jsonfile:
@@ -190,7 +196,7 @@ def get_model_config():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@ jaseci_action(act_group=['extract_entity'], allow_remote=True)
+@jaseci_action(act_group=["extract_entity"], allow_remote=True)
 def set_model_config(model_parameters: Dict = None):
     global model_config
     try:
@@ -206,8 +212,7 @@ def set_model_config(model_parameters: Dict = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ###################################
-if __name__ == '__main__':
+if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
-    print('Model Running ...')
+
     launch_server(port=8000)

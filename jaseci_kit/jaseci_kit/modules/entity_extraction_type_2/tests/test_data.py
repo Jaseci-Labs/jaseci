@@ -1,16 +1,4 @@
 # flake8: noqa
-# import json
-# import os
-
-
-test_entity_extraction_request = {
-    "text": "The Humboldt University of Berlin is situated in Berlin, Germany",
-    "ner_labels": [
-        "PREDEFINED"
-    ]
-}
-
-
 test_train_config = {
   "training_parameters": {"EPOCHS": 50}
 }
@@ -34,13 +22,6 @@ test_entities = [
     "end": 32
   }
 ]
-
-# # Reading training data from json file
-# dirname = os.path.dirname(__file__)
-# fname = os.path.join(dirname, "test_train_data.json")
-# f = open(fname)
-# test_training_data = json.load(f)
-# f.close()
 
 test_training_data = [
 	{

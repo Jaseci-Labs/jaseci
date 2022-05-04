@@ -7,15 +7,14 @@ def data_token(filename):
     sentence = []
     sent = 0
     for line in f:
-        if len(line) == 0 or line.startswith('-DOCSTART') or line[0] == "\n":
+        if len(line) == 0 or line.startswith("-DOCSTART") or line[0] == "\n":
             if len(sentence) > 0:
                 split_labeled_text.append(sentence)
                 sentence = []
                 sent += 1
             continue
-        splits = line.split(' ')
-        sentence.append(("Sentence:"+str(sent),
-                         splits[0], splits[-1].rstrip("\n")))
+        splits = line.split(" ")
+        sentence.append(("Sentence:" + str(sent), splits[0], splits[-1].rstrip("\n")))
 
     if len(sentence) > 0:
         split_labeled_text.append(sentence)
@@ -33,20 +32,22 @@ def load_data(filename):
     # reading data from file
     data = data_token(filename)
 
-    data['sentence'] = data[['Sentence #', 'Word', 'Tag']].groupby(
-        ['Sentence #'])['Word'].transform(lambda x: ' '.join(x))
+    data["sentence"] = (
+        data[["Sentence #", "Word", "Tag"]]
+        .groupby(["Sentence #"])["Word"]
+        .transform(lambda x: " ".join(x))
+    )
     # let's also create a new column called "word_labels"
     # which groups the tags by sentence
-    data['word_labels'] = data[['Sentence #', 'Word', 'Tag']].groupby(
-        ['Sentence #'])['Tag'].transform(lambda x: ','.join(x))
-    # data.head(40)
+    data["word_labels"] = (
+        data[["Sentence #", "Word", "Tag"]]
+        .groupby(["Sentence #"])["Tag"]
+        .transform(lambda x: ",".join(x))
+    )
 
     labels_name = sorted(list(data.Tag.unique()), reverse=True)
 
-    # labels = data.Tag.unique()
     label2id = {k: v for v, k in enumerate(labels_name)}
     id2label = {v: k for v, k in enumerate(labels_name)}
-    data = data[["sentence", "word_labels"]].drop_duplicates().reset_index(
-                                drop=True)
-    # print(label2id, id2label)
+    data = data[["sentence", "word_labels"]].drop_duplicates().reset_index(drop=True)
     return data, id2label, label2id
