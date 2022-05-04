@@ -1,5 +1,5 @@
 transformers
 sentence-transformers
-pytorch
-fastapi
-uvicorn
+torch
+nltk
+sumy
