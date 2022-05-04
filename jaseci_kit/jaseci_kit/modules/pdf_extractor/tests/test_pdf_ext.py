@@ -1,6 +1,10 @@
 from unittest import TestCase
-from jaseci.utils.utils import TestCaseHelper
+
 from fastapi.testclient import TestClient
+from jaseci.utils.utils import TestCaseHelper
+
+from extractor import serv_actions
+
 from .test_data import (
     test_invalid_pdf_url_payload,
     test_metadata_disabled_payload,
@@ -14,7 +18,7 @@ class pdf_ext_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.client = TestClient()
+        self.client = TestClient(serv_actions())
 
     def tearDown(self) -> None:
         return super().tearDown()

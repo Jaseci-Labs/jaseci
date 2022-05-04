@@ -20,7 +20,7 @@ def download_pdf(url: str, filename: str):
                 f.write(chunk)
 
 
-def valid_url(url):
+def valid_url(url: str):
     r"""validating whether given url is a valid pdf url or not
     :param url: URL for the downloading a pdf file.
     """
@@ -61,10 +61,8 @@ def extract_pdf(url: str, metadata: bool = False):
                 data["content"] = [page.extractText() for page in pdf_reader.pages]
             remove_pdf(filename)
             return data
-        except Exception as e:
+        except Exception:
             remove_pdf(filename)
-            print(e)
-
             raise HTTPException(
                 status_code=500, detail="Unable to extract data from pdf"
             )
