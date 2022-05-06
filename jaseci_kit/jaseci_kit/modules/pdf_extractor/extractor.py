@@ -47,6 +47,19 @@ def remove_pdf(filename: str):
     return False
 
 
+def process_pdf(filename, metadata, data):
+    with open(filename, "rb") as pdf_file:
+        pdf_reader = PdfFileReader(pdf_file)
+        if metadata:
+            data.update({"metadata": {}})
+            md = dict(pdf_reader.documentInfo)
+            for k, v in md.items():
+                data["metadata"][re.sub("[^a-zA-Z0-9]+", "", k)] = v
+        data["pages"] = len(pdf_reader.pages)
+        data["content"] = [page.extractText() for page in pdf_reader.pages]
+    return data
+
+
 @jaseci_action(act_group=["pdf_ext"], allow_remote=True)
 def extract_pdf(url: str = None, path: str = None, metadata: bool = False):
     r"""REMOVE locaaly downloaded PDF
@@ -60,15 +73,7 @@ def extract_pdf(url: str = None, path: str = None, metadata: bool = False):
         if valid_url(url):
             try:
                 download_pdf(url, filename)
-                with open(filename, "rb") as pdf_file:
-                    pdf_reader = PdfFileReader(pdf_file)
-                    if metadata:
-                        data.update({"metadata": {}})
-                        md = dict(pdf_reader.documentInfo)
-                        for k, v in md.items():
-                            data["metadata"][re.sub("[^a-zA-Z0-9]+", "", k)] = v
-                    data["pages"] = len(pdf_reader.pages)
-                    data["content"] = [page.extractText() for page in pdf_reader.pages]
+                data = process_pdf(filename, metadata, data)
                 remove_pdf(filename)
                 return data
             except Exception as e:
@@ -83,23 +88,9 @@ def extract_pdf(url: str = None, path: str = None, metadata: bool = False):
 
     elif path != None:
         if valid_file_path(path):
-            with open(path, "rb") as pdf_file:
-                pdf_reader = PdfFileReader(pdf_file)
-
-                if metadata:
-                    data.update({"metadata": {}})
-                    md = dict(pdf_reader.documentInfo)
-
-                    for k, v in md.items():
-                        data["metadata"][re.sub("[^a-zA-Z0-9]+", "", k)] = v
-
-                data["pages"] = len(pdf_reader.pages)
-                data["content"] = [page.extractText() for page in pdf_reader.pages]
-
+            data = process_pdf(path, metadata, data)
             return data
-
         raise HTTPException(status_code=400, detail=str("Invalid path"))
-
     else:
         raise HTTPException(status_code=400, detail=str("Missing params url/path"))
 
