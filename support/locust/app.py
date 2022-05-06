@@ -1,7 +1,5 @@
 import time
 import csv
-import pandas as pd
-from locust import task, HttpUser, SequentialTaskSet, constant
 from locust_plugins.users import RestUser
 
 

@@ -1,0 +1,3 @@
+walker init {
+    report "Starting";
+}
