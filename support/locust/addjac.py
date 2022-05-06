@@ -23,8 +23,7 @@ walkerSequence = ['createPredefines', 'segmenter']
 
 class SeqTask(SequentialTaskSet):
     def on_start(self):
-		# add_users()
-        self.userName = "Not_exist"
+        self.userName = "Not_exist" # Initialize
         self.password = "Not_exist"
         self.zsb_token = "None"
         self.zsb_jid = "None"
@@ -33,6 +32,10 @@ class SeqTask(SequentialTaskSet):
 
     @task
     def create_user(self):
+        response = self.client.post("/user/token/", json = {"email": self.userName, "password": self.password}) # Try to login
+        self.user_created = response.status_code == 200
+        if (self.user_created):
+            return # If login success, return
         response = self.client.post("/user/create/", json = {
             "email" : self.userName,
             "password" : self.password,
