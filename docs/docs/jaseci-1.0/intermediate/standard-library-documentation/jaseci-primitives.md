@@ -58,11 +58,11 @@ When defining a walker, you also write specific code blocks that will only execu
      [Any code within this block will only be executed when the walker is on a person node]
    }
 
-   ...   
+   ...
 
    family{
     [Any code within this block will only be executed when the walker is on a family node]
-   }  
+   }
 
 }
 ```
@@ -84,4 +84,3 @@ walker [name_of_walker]{
     }
 }
 ```
-

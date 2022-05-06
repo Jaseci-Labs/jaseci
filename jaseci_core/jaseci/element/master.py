@@ -16,13 +16,22 @@ from jaseci.api.master_api import master_api
 from jaseci.api.jac_api import jac_api
 
 
-class master(element, interface, master_api, alias_api,
-             graph_api, object_api, sentinel_api, walker_api,
-             architype_api, jac_api):
+class master(
+    element,
+    interface,
+    master_api,
+    alias_api,
+    graph_api,
+    object_api,
+    sentinel_api,
+    walker_api,
+    architype_api,
+    jac_api,
+):
     """Main class for master functions for user"""
 
     def __init__(self, head_master=None, *args, **kwargs):
-        kwargs['m_id'] = None
+        kwargs["m_id"] = None
 
         element.__init__(self, kind="Jaseci Master", *args, **kwargs)
         master_api.__init__(self, head_master)

@@ -13,9 +13,8 @@ def cosine_sim(vec_a: list, vec_b: list):
 
     Return - float between 0 and 1
     """
-    result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) *
-                                     np.linalg.norm(vec_b))
-    return result.astype(float)[0]
+    result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
+    return float(result.astype(float))
 
 
 @jaseci_action()
@@ -40,8 +39,7 @@ def get_centroid(vec_list: list):
     Return - (centroid vector, cluster tightness)
     """
     centroid = np.mean(vec_list, axis=0)
-    tightness = np.mean([cosine_sim(vec, centroid)
-                         for vec in vec_list]).astype(float)
+    tightness = np.mean([cosine_sim(vec, centroid) for vec in vec_list]).astype(float)
     return [centroid, tightness]
 
 
@@ -68,7 +66,7 @@ def sort_by_key(data: dict, reverse=False, key_pos=None):
 
     Deprecated
     """
-    if (key_pos is not None):
+    if key_pos is not None:
         return sorted(data, key=itemgetter(key_pos), reverse=reverse)
     else:
         return sorted(data, reverse=reverse)

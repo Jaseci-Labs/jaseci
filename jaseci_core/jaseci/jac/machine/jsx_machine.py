@@ -31,8 +31,12 @@ class jsx_machine(machine_state):
             jac_scope(
                 parent=self,
                 has_obj=self,
-                action_sets=[self.activity_action_ids,
-                             self.current_node.activity_action_ids]))
+                action_sets=[
+                    self.activity_action_ids,
+                    self.current_node.activity_action_ids,
+                ],
+            )
+        )
 
     def POP_SCOPE(self, *args):
         """POP_SCOPE op code"""
@@ -41,8 +45,8 @@ class jsx_machine(machine_state):
     def SET_LIVE_VAR(self, *args):
         """SET_LIVE_VAR op code"""
         self._jac_scope.set_live_var(
-            name=args[0], value=self.get_ref(args[1]),
-            md_index=args[2], jac_ast=None)
+            name=args[0], value=self.get_ref(args[1]), md_index=args[2], jac_ast=None
+        )
 
     def SET_REF_VAR(self, *args):
         """SET_REF_VAR op code"""
@@ -58,36 +62,36 @@ class jsx_machine(machine_state):
         var_name = args[1]
         var_val = self.get_ref(args[2])
         is_private = args[3]
-        if (var_name not in obj.context.keys()):  # Runs has once per walk
+        if var_name not in obj.context.keys():  # Runs has once per walk
             obj.context[var_name] = var_val
-        if(is_private):
-            if('_private' in obj.context.keys()):
-                if(var_name not in obj.context['_private']):
-                    obj.context['_private'].append(var_name)
+        if is_private:
+            if "_private" in obj.context.keys():
+                if var_name not in obj.context["_private"]:
+                    obj.context["_private"].append(var_name)
             else:
-                obj.context['_private'] = [var_name]
+                obj.context["_private"] = [var_name]
 
     def SET_ANCHOR(self, *args):
         """SET_ANCHOR op code"""
         obj = args[0]
         var_name = args[1]
-        if('anchor' in dir(obj)):
-            if(obj.anchor is None):
+        if "anchor" in dir(obj):
+            if obj.anchor is None:
                 obj.anchor = var_name
 
     def B_NEQ(self, *args):
         """B_NEQ op code"""
-        if(self.get_ref(args[0]) != self.get_ref(args[1])):
+        if self.get_ref(args[0]) != self.get_ref(args[1]):
             self.PC += args[2]
 
     def B_NEQI(self, *args):
         """B_NEQI op code"""
-        if(self.get_ref(args[0]) != args[1]):
+        if self.get_ref(args[0]) != args[1]:
             self.PC += args[2]
 
     def B_NIT(self, *args):
         """B_NIT op code"""
-        if(not isinstance(self.get_ref(args[0]), args[1])):
+        if not isinstance(self.get_ref(args[0]), args[1]):
             self.PC += args[2]
 
     def B_A(self, *args):
@@ -96,8 +100,9 @@ class jsx_machine(machine_state):
 
     def PLUS(self, *args):
         """B_NEQ op code"""
-        self.set_ref(self.get_ref(args[0]), self.get_ref(
-            args[1]) + self.get_ref(args[2]))
+        self.set_ref(
+            self.get_ref(args[0]), self.get_ref(args[1]) + self.get_ref(args[2])
+        )
 
     def END(self, *args):
         """END op code"""

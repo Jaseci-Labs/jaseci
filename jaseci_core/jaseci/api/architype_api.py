@@ -7,7 +7,7 @@ from jaseci.actor.sentinel import sentinel
 from jaseci.utils.utils import b64decode_str
 
 
-class architype_api():
+class architype_api:
     """Architype APIs for creating and managing Jaseci architypes
 
     The architype set of APIs allow for the addition and removing of
@@ -20,9 +20,10 @@ class architype_api():
     a Jaseci instance is aware of.
     """
 
-    @interface.private_api(cli_args=['code'])
-    def architype_register(self, code: str, encoded: bool = False,
-                           snt: sentinel = None):
+    @interface.private_api(cli_args=["code"])
+    def architype_register(
+        self, code: str, encoded: bool = False, snt: sentinel = None
+    ):
         """Create an architype based on the code passed and return object.
 
         This register API allows for the creation or replacement/update of
@@ -45,23 +46,24 @@ class architype_api():
                 'errors': List of errors if register failed
                 'response': Message on outcome of register call
         """
-        ret = {'architype': None, 'success': False, 'errors': []}
-        if (encoded):
+        ret = {"architype": None, "success": False, "errors": []}
+        if encoded:
             code = b64decode_str(code)
         arch = snt.register_architype(code)
-        if(arch):
+        if arch:
             self.extract_arch_aliases(snt, arch)
-            ret['architype'] = arch.serialize()
-            ret['success'] = True
-            ret['response'] = f'Successfully created {arch.name} architype'
+            ret["architype"] = arch.serialize()
+            ret["success"] = True
+            ret["response"] = f"Successfully created {arch.name} architype"
         else:
-            ret['errors'] = snt.errors
-            ret['response'] = f'Errors occured'
+            ret["errors"] = snt.errors
+            ret["response"] = "Errors occured"
         return ret
 
     @interface.private_api()
-    def architype_get(self, arch: architype, mode: str = 'default',
-                      detailed: bool = False):
+    def architype_get(
+        self, arch: architype, mode: str = "default", detailed: bool = False
+    ):
         """Get an architype rendered with specific mode
 
         Args:
@@ -75,16 +77,15 @@ class architype_api():
                 'ir': Intermediate representation of architype
                 'architype': Architype object print
         """
-        if(mode == 'code'):
-            return {'code': arch._jac_ast.get_text()}
-        elif(mode == 'ir'):
-            return {'ir': arch.ir_dict()}
+        if mode == "code":
+            return {"code": arch._jac_ast.get_text()}
+        elif mode == "ir":
+            return {"ir": arch.ir_dict()}
         else:
-            return {'architype': arch.serialize(detailed=detailed)}
+            return {"architype": arch.serialize(detailed=detailed)}
 
-    @interface.private_api(cli_args=['code'])
-    def architype_set(self, arch: architype, code: str,
-                      mode: str = 'default'):
+    @interface.private_api(cli_args=["code"])
+    def architype_set(self, arch: architype, code: str, mode: str = "default"):
         """Set code/ir for a architype
 
         Args:
@@ -98,20 +99,28 @@ class architype_api():
                 'errors': List of errors if set failed
                 'response': Message on outcome of set call
         """
-        if(mode == 'code' or mode == 'default'):
+        if mode == "code" or mode == "default":
             arch.register(code)
-        elif(mode == 'ir'):
+        elif mode == "ir":
             arch.apply_ir(code)
         else:
-            return {'response': f'Invalid mode to set {arch}',
-                    'success': False, 'errors': []}
-        if(arch.is_active):
-            return {'response': f'{arch} registered and active!',
-                    'success': True, 'errors': []}
+            return {
+                "response": f"Invalid mode to set {arch}",
+                "success": False,
+                "errors": [],
+            }
+        if arch.is_active:
+            return {
+                "response": f"{arch} registered and active!",
+                "success": True,
+                "errors": [],
+            }
         else:
-            return {'response': f'{arch} registered and active!',
-                    'success': True,
-                    'errors': arch.errors}
+            return {
+                "response": f"{arch} registered and active!",
+                "success": True,
+                "errors": arch.errors,
+            }
 
     @interface.private_api()
     def architype_list(self, snt: sentinel = None, detailed: bool = False):
@@ -129,7 +138,7 @@ class architype_api():
             archs.append(i.serialize(detailed=detailed))
         return archs
 
-    @interface.private_api(cli_args=['arch'])
+    @interface.private_api(cli_args=["arch"])
     def architype_delete(self, arch: architype, snt: sentinel = None):
         """Permanently delete sentinel with given id
 
@@ -143,11 +152,12 @@ class architype_api():
                 'response': Message on outcome of command
         """
 
-        if(arch.jid not in snt.arch_ids):
-            return {'response': f'Architype {arch} not in sentinel {snt}',
-                    'success': False}
+        if arch.jid not in snt.arch_ids:
+            return {
+                "response": f"Architype {arch} not in sentinel {snt}",
+                "success": False,
+            }
         self.remove_arch_aliases(snt, arch)
         archid = arch.jid
         snt.arch_ids.destroy_obj(arch)
-        return {'response': f'Architype {archid} successfully deleted',
-                'success': True}
+        return {"response": f"Architype {archid} successfully deleted", "success": True}

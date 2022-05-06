@@ -54,8 +54,3 @@ At this point we can check if `jsctl` is ready by running the following command 
 ```
 jsctl --help
 ```
-
-
-
-
-
