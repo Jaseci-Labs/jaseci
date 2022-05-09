@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: jaseci-docs-new
+  name: jaseci-docs
 spec:
   selector:
-    pod: jaseci-docs-new
+    pod: jaseci-docs
   ports:
     - protocol: TCP
       port: 80
@@ -21,21 +21,23 @@ data:
      git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci;
      mkdir /docusaurus/jaseci-docs;
      cp -r /jaseci/docs/* /docusaurus/jaseci-docs/;
+     crontab /jaseci/docs/cronjob;
+     /usr/sbin/crond;
      WEBSITE_NAME=jaseci-docs /init.sh
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jaseci-docs-new
+  name: jaseci-docs
 spec:
   replicas: 1
   selector:
     matchLabels:
-      pod: jaseci-docs-new
+      pod: jaseci-docs
   template:
     metadata:
       labels:
-        pod: jaseci-docs-new
+        pod: jaseci-docs
     spec:
       containers:
         - name: docusaurus
