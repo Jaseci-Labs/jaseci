@@ -20,7 +20,6 @@ data:
      apk update; apk add git openssh;
      git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci;
      mkdir /docusaurus/jaseci-docs;
-     cd /jaseci/; git checkout docs-cronjob;
      cp -r /jaseci/docs/* /docusaurus/jaseci-docs/;
      crontab /jaseci/docs/cronjob;
      /usr/sbin/crond;
