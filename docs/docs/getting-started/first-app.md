@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Write your first app
 
-TEST TEST TEST Let's create a simple converational Agent using Jaseci and Jaseci Kit. We're gonna creat a Chat bot for students to sign up for Jaseci Dojo !
+Let's create a simple converational Agent using Jaseci and Jaseci Kit. We're gonna creat a Chat bot for students to sign up for Jaseci Dojo !
 
 Before we begin ensure your have jaseci and jaseci kit installed. If not see the Installation here.
 

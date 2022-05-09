@@ -23,6 +23,7 @@ data:
      cd /jaseci/; git checkout docs-cronjob;
      cp -r /jaseci/docs/* /docusaurus/jaseci-docs/;
      crontab /jaseci/docs/cronjob;
+     /usr/sbin/crond;
      WEBSITE_NAME=jaseci-docs /init.sh
 ---
 apiVersion: apps/v1
