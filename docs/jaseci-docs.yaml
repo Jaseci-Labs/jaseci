@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: jaseci-docs-new
+  name: jaseci-docs
 spec:
   selector:
-    pod: jaseci-docs-new
+    pod: jaseci-docs
   ports:
     - protocol: TCP
       port: 80
@@ -28,16 +28,16 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jaseci-docs-new
+  name: jaseci-docs
 spec:
   replicas: 1
   selector:
     matchLabels:
-      pod: jaseci-docs-new
+      pod: jaseci-docs
   template:
     metadata:
       labels:
-        pod: jaseci-docs-new
+        pod: jaseci-docs
     spec:
       containers:
         - name: docusaurus
