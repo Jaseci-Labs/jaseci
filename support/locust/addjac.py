@@ -2,6 +2,8 @@ import logging
 from locust import task, HttpUser, SequentialTaskSet, constant
 from locust_plugins.users import RestUser
 
+def format_output(userName:str, output:str):
+    print(f'{userName}: {output}')
 # Admin LOGIN
 # code = 'walker init {report "admin";}'
 def get_code(path: str)->str:
@@ -18,8 +20,10 @@ def gen_password(id : int)->str:
 
 
 UserID = 0
+actionLoaded = False
 
 walkerSequence = ['createPredefines', 'segmenter']
+actionList = ['http://fair-ner:80/']
 
 class SeqTask(SequentialTaskSet):
     def on_start(self):
@@ -29,13 +33,11 @@ class SeqTask(SequentialTaskSet):
         self.zsb_jid = "None"
         global UserID
         self.userName, self.password = gen_username(UserID), gen_password(UserID)
+        self.userID = UserID
+        UserID += 1
 
     @task
     def create_user(self):
-        response = self.client.post("/user/token/", json = {"email": self.userName, "password": self.password}) # Try to login
-        self.user_created = response.status_code == 200
-        if (self.user_created):
-            return # If login success, return
         response = self.client.post("/user/create/", json = {
             "email" : self.userName,
             "password" : self.password,
@@ -55,6 +57,7 @@ class SeqTask(SequentialTaskSet):
         response = self.client.post("/user/token/", json={"email": self.userName, "password": self.password})
         json_var = response.json()
         self.user_token = json_var['token']
+
     
     @task 
     def post_jac_prog(self):
@@ -64,6 +67,20 @@ class SeqTask(SequentialTaskSet):
             }
         response = self.client.post("/js/sentinel_register",headers = {'authorization' : f'Token {self.user_token}'}, json = req)
         self.sentinel_jid = response.json()[0]['jid']
+        # format_output(self.userName, response.text)
+
+    @task
+    def load_actions(self):
+        global actionList
+        global actionLoaded
+        if actionLoaded:
+            return
+        actionLoaded = True
+        for action in actionList:
+            response = self.client.post("/js_admin/actions_load_remote", headers = {'authorization' : f'Token {self.user_token}'}, json = {
+                'url': action
+                })
+            print(f"{action} loaded")
 
     @task
     def walker_run(self):
@@ -73,7 +90,9 @@ class SeqTask(SequentialTaskSet):
                     'snt': self.sentinel_jid
                     }
             response = self.client.post("/js/walker_run",headers = {'authorization' : f'Token {self.user_token}'}, json = req)
-            print(f"Wlaker {walkerName} Output: {response.json()}")
+            print(f"Walker {walkerName} Output: {response.json()}")
+    
+    
 
 class addJac(RestUser):
     host = "http://127.0.0.1:8888"
