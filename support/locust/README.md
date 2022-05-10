@@ -71,5 +71,7 @@ where
 
 ### Run Locust via Docker
 
-Coming Soon
+Make sure that you have a proper `dockerd` running. Run `sudo docker-compose up` to pull up the locust container. The container will listen on `0.0.0.0:8089`.
+
+**Note** If your Jaseci Server is running on `localhost`, please make sure that you send your locust test requests to `172.17.0.1:PORT`.
 
