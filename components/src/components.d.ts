@@ -42,6 +42,7 @@ export namespace Components {
         "name": string;
         "operations": string;
         "placeholder": string;
+        "type": string;
         "value": string;
     }
     interface JscLabel {
@@ -234,6 +235,7 @@ declare namespace LocalJSX {
         "onValueChanged"?: (event: CustomEvent<string>) => void;
         "operations"?: string;
         "placeholder"?: string;
+        "type"?: string;
         "value"?: string;
     }
     interface JscLabel {

@@ -12,6 +12,7 @@ export class Input {
   @Prop() css: string = JSON.stringify({});
   @Prop() name: string;
   @Prop() label: string;
+  @Prop() type: string = 'text';
   @Prop() events: string;
   @Prop() fullwidth: string;
   @Prop() placeholder: string;
@@ -51,6 +52,7 @@ export class Input {
             ...JSON.parse(this.css),
           }}
           value={this.value}
+          type={this.type}
           // use onInput since it's evaluates immediately
           onInput={this.onInputChangeValue.bind(this)}
           class={`input ${this.fullwidth === 'true' ? 'fullWidth' : ''}`}
