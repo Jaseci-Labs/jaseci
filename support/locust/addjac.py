@@ -8,7 +8,6 @@ def format_output(userName:str, output:str):
 # Admin LOGIN
 # code = 'walker init {report "admin";}'
 def get_code(path: str)->str:
-    print(os.path.abspath(path))
     file = open(path, 'r')
     code = file.read()
     file.close()
@@ -25,7 +24,7 @@ UserID = 0
 actionLoaded = False
 
 walkerSequence = ['createPredefines', 'segmenter']
-actionList = ['http://fair-ner:80/']
+actionList = ['http://fair-ner:80/', 'http://js-segmenter:80/']
 
 class SeqTask(SequentialTaskSet):
     def on_start(self):
