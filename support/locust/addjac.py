@@ -1,12 +1,14 @@
 import logging
-from locust import task, HttpUser, SequentialTaskSet, constant
-from locust_plugins.users import RestUser
+from locust import task, HttpUser, SequentialTaskSet, constant, HttpUser
+# from locust_plugins.users import RestUser
+import os
 
 def format_output(userName:str, output:str):
     print(f'{userName}: {output}')
 # Admin LOGIN
 # code = 'walker init {report "admin";}'
 def get_code(path: str)->str:
+    print(os.path.abspath(path))
     file = open(path, 'r')
     code = file.read()
     file.close()
@@ -55,6 +57,7 @@ class SeqTask(SequentialTaskSet):
     @task
     def generate_userToken(self):
         response = self.client.post("/user/token/", json={"email": self.userName, "password": self.password})
+        format_output(self.userName, response.text)
         json_var = response.json()
         self.user_token = json_var['token']
 
@@ -63,7 +66,7 @@ class SeqTask(SequentialTaskSet):
     def post_jac_prog(self):
         req = {
                 'name': 'jac_prog',
-                'code': get_code('../../examples/JPrime/jprime.jac'),
+                'code': get_code('sample_code/jprime.jac'),
             }
         response = self.client.post("/js/sentinel_register",headers = {'authorization' : f'Token {self.user_token}'}, json = req)
         self.sentinel_jid = response.json()[0]['jid']
@@ -94,7 +97,7 @@ class SeqTask(SequentialTaskSet):
     
     
 
-class addJac(RestUser):
+class addJac(HttpUser):
     host = "http://127.0.0.1:8888"
     tasks = [SeqTask]
     wait_time = constant(2)
