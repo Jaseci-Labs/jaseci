@@ -70,7 +70,7 @@ class ast:
 
     def parse_jac_str(self, jac_str):
         """Parse language and build ast from string"""
-        ast._ast_head_map[self.mod_name] = self
+        ast._ast_head_map[self._mod_dir + self.mod_name] = self
         input_stream = InputStream(jac_str)
         lexer = jacLexer(input_stream)
         stream = CommonTokenStream(lexer)
@@ -132,16 +132,17 @@ class ast:
             fn = os.path.join(
                 self.tree_root._mod_dir, parse_str_token(kid[-2].token_text())
             )
+            full_path = os.path.realpath(fn)
             mod_name = os.path.basename(fn)
+            mdir = os.path.dirname(full_path) + "/"
             from_mod = self.tree_root.mod_name
             logger.debug(f"Importing items from {mod_name} to {from_mod}...")
             parsed_ast = None
-            if mod_name in ast._ast_head_map.keys():
-                parsed_ast = ast._ast_head_map[mod_name]
+            if (mdir + mod_name) in ast._ast_head_map.keys():
+                parsed_ast = ast._ast_head_map[mdir + mod_name]
             elif os.path.isfile(fn):
                 with open(fn, "r") as file:
                     jac_text = file.read()
-                mdir = os.path.dirname(os.path.realpath(fn)) + "/"
                 parsed_ast = ast(
                     jac_text=jac_text,
                     mod_name=mod_name,

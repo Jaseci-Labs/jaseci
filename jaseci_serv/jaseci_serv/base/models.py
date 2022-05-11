@@ -77,17 +77,33 @@ class super_master(master, core_super):
             return {"response": "Errors occurred", "errors": serializer.errors}
 
     @interface.admin_api()
-    def master_allusers(self, num: int = 0, start_idx: int = 0):
+    def master_allusers(self, limit: int = 10, offset: int = 0, asc: bool = False):
         """
         Returns info on a set of users, num specifies the number of users to
         return and start idx specfies where to start
         """
+
+        if (limit < 0) or (offset < 0):
+            return {"response": "Error occured! Parameters must be `positive numbers`!"}
         users = get_user_model().objects.all()
-        start = start_idx if start_idx else 0
-        end = start_idx + num if num else len(users)
-        ret = []
-        for i in users[start:end]:
-            ret.append({"user": i.email, "jid": i.master.urn})
+
+        if not asc:
+            users = users.order_by("-time_created")
+        total = users.count()
+        end = offset + limit if limit else total
+        filtered_users = []
+
+        for i in users[offset:end]:
+            filtered_users.append(
+                {
+                    "user": i.email,
+                    "jid": i.master.urn,
+                    "name": i.name,
+                    "created_date": i.time_created.isoformat(),
+                }
+            )
+        ret = {"total": total, "data": filtered_users}
+
         return ret
 
 

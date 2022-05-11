@@ -31,6 +31,8 @@ We've built a command line tool to help you effectively work with Jaseci from yo
 4. Install Jaseci Serving from main branch: `cd jaseci_serv; source install.sh; cd -`
 5. (for AI) Install Jaseci Kit from main branch: `cd jaseci_kit; source install.sh; cd -`
 
+Note: You'll have to add `--max-line-length=88 --extend-ignore=E203` args to flake8 for linting. If you use VSCode you should update it there too. 
+
 ### Quickstart (Hello, World!)
 
 In this section we'll take a look at how easy it is to get up and running with a simple Hello World program in Jac.
