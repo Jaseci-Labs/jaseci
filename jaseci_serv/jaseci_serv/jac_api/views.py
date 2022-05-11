@@ -65,9 +65,19 @@ class AbstractJacAPIView(APIView):
         pl_peek = str(dict(request.data))[:256]
         logger.info(str(f"Incoming call to {type(self).__name__} with {pl_peek}"))
         self.start_time = time()
-        self.cmd = (
+
+        self.cmd = data = (
             request.data.dict() if type(request.data) is not dict else request.data
         )
+
+        if "ctx" in data:
+            ctx = data["ctx"].copy()
+            ctx["_context"] = data.copy()
+            data["ctx"] = ctx
+        else:
+            data["ctx"] = {"_context": data.copy()}
+
+        self.cmd.update(request.GET.dict())
         self.cmd.update(kwargs)
         self.set_caller(request)
         self.res = "Not valid interaction!"

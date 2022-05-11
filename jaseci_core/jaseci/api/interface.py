@@ -179,7 +179,6 @@ class interface:
         param_map = {}
         if not hasattr(self, api_name):
             return self.interface_error(f"{api_name} not a valid API")
-            return False
         func_sig = signature(getattr(self, api_name))
         for i in func_sig.parameters.keys():
             if i == "self":
@@ -201,7 +200,6 @@ class interface:
                     param_map[i] = val
                 else:
                     return self.interface_error(f"{type(val)} is not {p_type}")
-                    param_map[i] = None
             else:  # TODO: Can do type checks here too
                 param_map[i] = val
 

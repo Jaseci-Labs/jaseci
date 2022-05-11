@@ -17,6 +17,23 @@ class walker_api:
     def __init__(self):
         self.spawned_walker_ids = id_list(self)
 
+    @interface.public_api(url_args=["nd", "wlk"])
+    def walker_callback(self, nd: node, wlk: walker, key: str, ctx: dict = {}):
+        """
+        Public api for running walkers, namespace key must be provided
+        along with the walker id and node id
+        """
+
+        if key not in wlk.namespace_keys().values():
+            return self.bad_walk_response(["Not authorized to execute this walker"])
+
+        walk = wlk.duplicate()
+        walk.refresh()
+        walk.prime(nd, prime_ctx=ctx)
+        res = walk.run()
+        walk.destroy()
+        return res
+
     @interface.public_api(cli_args=["wlk"])
     def walker_summon(
         self, key: str, wlk: walker, nd: node, ctx: dict = {}, global_sync: bool = True
