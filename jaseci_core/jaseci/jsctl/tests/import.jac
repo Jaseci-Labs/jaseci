@@ -1,3 +1,5 @@
+import {*} with "./glob_imp.jac";
+
 walker init {
     has year = std.time_now();
     has person1;

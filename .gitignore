@@ -8,7 +8,7 @@ media
 migrations
 venv
 
-# General # 
+# General #
 *.egg-info/
 *.egg
 
@@ -20,3 +20,4 @@ build
 .vscode
 js.session
 .idea
+mydatabase

@@ -9,7 +9,7 @@ from jaseci.actor.sentinel import sentinel
 import uuid
 
 
-class graph_api():
+class graph_api:
     """
     Graph APIs
     """
@@ -25,18 +25,19 @@ class graph_api():
         """
         gph = graph(m_id=self._m_id, h=self._h)
         self.graph_ids.add_obj(gph)
-        if(set_active):
+        if set_active:
             self.graph_active_set(gph)
         return gph.serialize()
 
     @interface.private_api()
-    def graph_get(self, gph: graph = None,
-                  mode: str = 'default', detailed: bool = False):
+    def graph_get(
+        self, gph: graph = None, mode: str = "default", detailed: bool = False
+    ):
         """
         Return the content of the graph with mode
         Valid modes: {default, dot, }
         """
-        if(mode == 'dot'):
+        if mode == "dot":
             return gph.graph_dot_str()
         else:
             items = []
@@ -56,14 +57,14 @@ class graph_api():
             gphs.append(i.serialize(detailed=detailed))
         return gphs
 
-    @interface.private_api(cli_args=['gph'])
+    @interface.private_api(cli_args=["gph"])
     def graph_active_set(self, gph: graph):
         """
         Sets the default graph master should use
         """
         self.active_gph_id = gph.jid
-        self.alias_register('active:graph', gph.jid)
-        return [f'Graph {gph.id} set as default']
+        self.alias_register("active:graph", gph.jid)
+        return [f"Graph {gph.id} set as default"]
 
     @interface.private_api()
     def graph_active_unset(self):
@@ -71,57 +72,55 @@ class graph_api():
         Unsets the default sentinel master should use
         """
         self.active_gph_id = None
-        self.alias_delete('active:graph')
-        return ['Default graph unset']
+        self.alias_delete("active:graph")
+        return ["Default graph unset"]
 
     @interface.private_api()
     def graph_active_get(self, detailed: bool = False):
         """
         Returns the default graph master is using
         """
-        if(self.active_gph_id):
-            default = self._h.get_obj(
-                self._m_id, uuid.UUID(self.active_gph_id))
+        if self.active_gph_id:
+            default = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
             return default.serialize(detailed=detailed)
         else:
-            return ['No default graph is selected!']
+            return {"success": False, "response": "No default graph is selected!"}
 
-    @interface.private_api(cli_args=['gph'])
+    @interface.private_api(cli_args=["gph"])
     def graph_delete(self, gph: graph):
         """
         Permanently delete graph with given id
         """
-        if(self.active_gph_id == gph.jid):
+        if self.active_gph_id == gph.jid:
             self.graph_active_unset()
         self.graph_ids.destroy_obj(gph)
-        return [f'Graph {gph.id} successfully deleted']
+        return [f"Graph {gph.id} successfully deleted"]
 
-    @interface.private_api(cli_args=['nd'])
+    @interface.private_api(cli_args=["nd"])
     def graph_node_get(self, nd: node, ctx: list = None):
         """
         Returns value a given node
         """
         ret = {}
-        nd_ctx = nd.serialize(detailed=True)['context']
-        if(ctx):
+        nd_ctx = nd.serialize(detailed=True)["context"]
+        if ctx:
             for i in nd_ctx.keys():
                 if i in ctx:
                     ret[i] = nd_ctx[i]
         return ret
 
-    @interface.private_api(cli_args=['nd'])
+    @interface.private_api(cli_args=["nd"])
     def graph_node_set(self, nd: node, ctx: dict, snt: sentinel = None):
         """
         Assigns values to member variables of a given node using ctx object
         """
         nd.set_context(
-            ctx=ctx, arch=snt.run_architype(
-                nd.name, kind='node', caller=self))
+            ctx=ctx, arch=snt.run_architype(nd.name, kind="node", caller=self)
+        )
         return nd.serialize()
 
     def active_gph(self):
-        return self._h.get_obj(
-            self._m_id, uuid.UUID(self.active_gph_id))
+        return self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
 
     def destroy(self):
         """

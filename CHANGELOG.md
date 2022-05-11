@@ -1,9 +1,34 @@
 # Jaseci Change / Release Notes
 
+## Version 1.3.3
+
+### Updates
+
+- Improvement: import now works recursively through chain of files
+- Improvement: JSCTL shows token on login
+- Major Feature: JSCTL has persistent log in sessions, and can logout
+- Improvement: `*` and `&` precedence hierarch locations improved.
+- Bug Fix: Indirect node field updates tag elements to be written to db
+- Major Feature: Multiple inheritance support on nodes and edges!
+- Improvement: Fixed and much improved `actions load local` functionality
+- Bug Fix: Globals imports of imports working
+- Improvement: Sentinel registering improved to include ir mode
+- Improvement: `edge` semantics improved
+- Major bug fix: Re registering new code was breaking architype abilities
+- Improvement: Tests now only show stdout and stderr on a test by test basis in detailed mode (Much cleaner)
+- Improvement: JSKit package architecture established, normalized, and standardized
+- New Lang Feature: Added list built in call of `.l::max`, `.l::min`, `.l::idx_of_max`, and `.l::idx_of_min`
+- Improvement: Api so super masters can `become` any master id, also jsctl can issue `master allusers`
+- New Lang Feature: Can now have `can` statements in spawn graphs after `has anchor rootname`
+- Improvement: `actions load module` added as capability where module strings are accepted
+- New Feature: Added global root finder `net.root` to std lib and `net.min` to go with existing `net.max`
+- New Feature: New global element type and `global` keyword
+
 ## Version 1.3.2
 
 ### Updates
 
+- New Feature: Introduction of new standard library option for loading actions in Jac with `std.actload_local` and `std.actload_remote`
 - Improvement: Disallowing spawning of unlinked edges, i.e., `spawn --> node::generic` not allowed without `here`
 - New Feature: Random library adds random text generation lorem style with `rand.word()`, `rand.sentence()`, `rand.paragraph()`, and `rand.text()`.
 - New Feature: Standard input `std.input(prompt)` :-p

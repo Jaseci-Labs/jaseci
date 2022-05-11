@@ -184,8 +184,34 @@ spec:
         - name: jaseci-redis-master
           image: redis
           imagePullPolicy: IfNotPresent
+          command:
+            - redis-server
+            - "/redis-master/redis.conf"
           resources:
             limits:
               cpu: "0.2"
           ports:
             - containerPort: 6379
+          volumeMounts:
+            - mountPath: /redis-master-data
+              name: data
+            - mountPath: /redis-master
+              name: config
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: jaseci-redis-config
+            items:
+              - key: redis-config
+                path: redis.conf
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaseci-redis-config
+data:
+  redis-config: |
+    maxmemory 1000mb
+    maxmemory-policy allkeys-lru

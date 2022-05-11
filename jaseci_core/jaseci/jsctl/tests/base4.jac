@@ -1,4 +1,5 @@
-import {walker::setter, walker::init} with "./import.jac";
+import {*} with "./import.jac";
+import {global::say} with "./glob_imp.jac";
 
 node person {
     has name;
@@ -11,6 +12,6 @@ node person {
     }
     can reset {  # <-- Could add 'with activity' for equivalent behavior
         byear = "1995-01-01";
-        report ["resetting year to 1995:", here.context];
+        report [global.say, here.context];
     }
 }

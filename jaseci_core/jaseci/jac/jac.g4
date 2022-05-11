@@ -11,17 +11,21 @@ import_items:
 	KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
 	| KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
 	| KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
-	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?;
+	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?
+	| KW_GLOBAL (STAR_MUL | import_names) (COMMA import_items)?;
 
 import_names:
 	DBL_COLON NAME
 	| DBL_COLON LBRACE name_list RBRACE;
 
-element: architype | walker | test;
+element: global_var | architype | walker | test;
+
+global_var:
+	KW_GLOBAL NAME EQ expression (COMMA NAME EQ expression)* SEMI;
 
 architype:
-	KW_NODE NAME (COLON INT)? attr_block
-	| KW_EDGE NAME attr_block
+	KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
+	| KW_EDGE NAME (COLON NAME)* attr_block
 	| KW_GRAPH NAME graph_block;
 
 walker: KW_WALKER NAME namespaces? walker_block;
@@ -50,11 +54,13 @@ attr_block: LBRACE (attr_stmt)* RBRACE | COLON attr_stmt | SEMI;
 
 attr_stmt: has_stmt | can_stmt;
 
+can_block: (can_stmt)*;
+
 graph_block: graph_block_spawn | graph_block_dot;
 
 graph_block_spawn:
-	LBRACE has_root KW_SPAWN code_block RBRACE
-	| COLON has_root KW_SPAWN code_block SEMI;
+	LBRACE has_root can_block KW_SPAWN code_block RBRACE
+	| COLON has_root can_block KW_SPAWN code_block SEMI;
 
 graph_block_dot:
 	LBRACE has_root dot_graph RBRACE
@@ -170,11 +176,12 @@ atom:
 	| BOOL
 	| NULL
 	| NAME
+	| KW_GLOBAL DOT NAME
 	| node_edge_ref
 	| list_val
 	| dict_val
 	| LPAREN expression RPAREN
-	| DBL_COLON NAME spawn_ctx?
+	| ability_op NAME spawn_ctx?
 	| atom atom_trailer+
 	| spawn
 	| ref
@@ -186,11 +193,13 @@ atom_trailer:
 	| DOT NAME
 	| index_slice
 	| LPAREN expr_list? RPAREN
-	| DBL_COLON NAME spawn_ctx?;
+	| ability_op NAME spawn_ctx?;
 
-ref: '&' expression;
+ability_op: DBL_COLON | DBL_COLON NAME COLON;
 
-deref: STAR_MUL expression;
+ref: '&' atom;
+
+deref: STAR_MUL atom;
 
 built_in:
 	| string_built_in
@@ -401,6 +410,7 @@ NE: '!=';
 KW_IN: 'in';
 KW_ANCHOR: 'anchor';
 KW_HAS: 'has';
+KW_GLOBAL: 'global';
 KW_PRIVATE: 'private';
 COMMA: ',';
 KW_CAN: 'can';

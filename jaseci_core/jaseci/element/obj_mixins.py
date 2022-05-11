@@ -8,7 +8,7 @@ from jaseci.utils.utils import logger
 import uuid
 
 
-class anchored():
+class anchored:
     """Utility class for objects that hold anchor values"""
 
     def __init__(self):
@@ -16,15 +16,15 @@ class anchored():
 
     def anchor_value(self):
         """Returns value of anchor context object"""
-        if(self.anchor):
+        if self.anchor:
             return self.context[self.anchor]
         return None
 
 
-class sharable():
+class sharable:
     """Utility class for objects that are sharable between users"""
 
-    def __init__(self, m_id, mode='private'):
+    def __init__(self, m_id, mode="private"):
         self.set_master(m_id)
         self.j_access = mode
         self.j_r_acc_ids = id_list(self)
@@ -35,90 +35,93 @@ class sharable():
         return self.j_master
 
     def set_master(self, m_id):
-        if(m_id is None or m_id == 'anon'):
+        if m_id is None or m_id == "anon":
             m_id = uuid.UUID(int=0).urn
         self.j_master = m_id
 
     def make_public(self):
         """Make element publically accessible"""
-        self.j_access = 'public'
+        self.j_access = "public"
         self.save()
 
     def make_read_only(self):
         """Make element publically readable"""
-        self.j_access = 'read_only'
+        self.j_access = "read_only"
         self.save()
 
     def make_private(self):
         """Make element private"""
-        self.j_access = 'private'
+        self.j_access = "private"
         self.save()
 
     def is_public(self):
         """Check if element is publically accessible"""
-        return self.j_access == 'public' or \
-            self.j_master == uuid.UUID(int=0).urn
+        return self.j_access == "public" or self.j_master == uuid.UUID(int=0).urn
 
     def is_read_only(self):
         """Check if element is publically readable"""
-        return self.j_access == 'read_only'
+        return self.j_access == "read_only"
 
     def is_readable(self):
         """Check if element is publically readable"""
-        return self.j_access == 'read_only' or self.is_public()
+        return self.j_access == "read_only" or self.is_public()
 
     def is_private(self):
         """Check if element is private"""
-        return self.j_access == 'private'
+        return self.j_access == "private"
 
     def super_check(self, caller_id):
         """Quick check if caller is super master"""
-        if(not hasattr(self, "_h")):
+        if not hasattr(self, "_h"):
             return False
         user = self._h.get_obj(caller_id, uuid.UUID(caller_id), override=True)
-        if(user.j_type == 'super_master'):
+        if user.j_type == "super_master":
             return True
         return False
 
     def check_read_access(self, caller_id, silent=False):
-        if(caller_id == self._m_id or self.is_readable() or
-           caller_id in self.j_r_acc_ids or
-           caller_id in self.j_rw_acc_ids or
-           self.super_check(caller_id)):
+        if (
+            caller_id == self._m_id
+            or self.is_readable()
+            or caller_id in self.j_r_acc_ids
+            or caller_id in self.j_rw_acc_ids
+            or self.super_check(caller_id)
+        ):
             return True
-        if(not silent):
-            logger.error(str(
-                f'{caller_id} does not have permission to access {self}'))
+        if not silent:
+            logger.error(str(f"{caller_id} does not have permission to access {self}"))
         return False
 
     def check_write_access(self, caller_id, silent=False):
-        if(caller_id == self._m_id or self.is_public() or
-           caller_id in self.j_rw_acc_ids or
-           self.super_check(caller_id)):
+        if (
+            caller_id == self._m_id
+            or self.is_public()
+            or caller_id in self.j_rw_acc_ids
+            or self.super_check(caller_id)
+        ):
             return True
-        if(not silent):
-            logger.error(str(
-                f'{caller_id} does not have permission to access {self}'))
+        if not silent:
+            logger.error(str(f"{caller_id} does not have permission to access {self}"))
         return False
 
     def give_access(self, m, read_only=True):
         """Give access to a master (user)"""
-        if(not m.is_master()):
-            logger.error(f'{m} is not master!')
+        if not m.is_master():
+            logger.error(f"{m} is not master!")
             return False
-        if(read_only and m.jid not in self.j_r_acc_ids):
+        if read_only and m.jid not in self.j_r_acc_ids:
             self.j_r_acc_ids.add_obj(m)
-        elif(m.jid not in self.j_rw_acc_ids):
+        elif m.jid not in self.j_rw_acc_ids:
             self.j_rw_acc_ids.add_obj(m)
         return True
 
     def remove_access(self, m):
         """Remove access from a master (user)"""
         ret = False
-        if(m.jid in self.j_r_acc_ids):
+        if m.jid in self.j_r_acc_ids:
             self.j_r_acc_ids.remove_obj(m)
             ret = True
-        if(m.jid in self.j_rw_acc_ids):
+        if m.jid in self.j_rw_acc_ids:
             self.j_rw_acc_ids.remove_obj(m)
             ret = True
         return ret
@@ -134,9 +137,14 @@ class hookable(sharable):
 
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""
-        if(not silent and target._h != self._h):
-            logger.critical(str("Hook for {} does not match {}, {} != {}".
-                                format(target, self, target._h, self._h)))
+        if not silent and target._h != self._h:
+            logger.critical(
+                str(
+                    "Hook for {} does not match {}, {} != {}".format(
+                        target, self, target._h, self._h
+                    )
+                )
+            )
         return target._h == self._h
 
     def save(self):

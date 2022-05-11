@@ -4,16 +4,16 @@ from jaseci.utils.utils import app_logger, json_out
 from datetime import datetime
 from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 from jaseci.actions.live_actions import jaseci_action
+from jaseci.utils.utils import master_from_meta
 from jaseci.element.element import element
 import sys
-import uuid
 import json
 
 
 @jaseci_action()
 def log(*args):
     """Standard built in for printing output to log"""
-    result = ''
+    result = ""
     for i in args:
         result += json_out(jwv(i))
     app_logger.info(result)
@@ -27,8 +27,8 @@ def out(*args):
     print(*args)
 
 
-@jaseci_action(aliases=['input'])
-def js_input(prompt: str = ''):
+@jaseci_action(aliases=["input"])
+def js_input(prompt: str = ""):
     """Standard built in for printing output"""
     return input(prompt)
 
@@ -54,7 +54,7 @@ def sort_by_col(lst: list, col_num: int, reverse: bool = False):
 
 
 @jaseci_action()
-def time_now(meta):
+def time_now():
     """Get utc date time for now in iso format"""
     return datetime.utcnow().isoformat()
 
@@ -66,11 +66,11 @@ def set_global(name: str, value, meta):
     Param 1 - name
     Param 2 - value (must be json serializable)
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    if(not mast.is_master(super_check=True, silent=False)):
+    mast = master_from_meta(meta)
+    if not mast.is_master(super_check=True, silent=False):
         return False
     mast.global_set(name, json.dumps(value))
-    return json.loads(mast.global_get(name)['value'])
+    return json.loads(mast.global_get(name)["value"])
 
 
 @jaseci_action()
@@ -79,19 +79,55 @@ def get_global(name: str, meta):
     Set global variable visible to all walkers/users
     Param 1 - name
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    val = mast.global_get(name)['value']
-    if(val):
+    mast = master_from_meta(meta)
+    val = mast.global_get(name)["value"]
+    if val:
         return json.loads(val)
     else:
         return None
 
 
 @jaseci_action()
+def actload_local(filename: str, meta):
+    """
+    Load local actions to Jaseci
+    """
+    mast = master_from_meta(meta)
+    if not mast.is_master(super_check=True, silent=True):
+        meta["interp"].rt_error("Only super master can load actions.")
+        return False
+    return mast.actions_load_local(file=filename)["success"]
+
+
+@jaseci_action()
+def actload_remote(url: str, meta):
+    """
+    Load remote actions to Jaseci
+    """
+    mast = master_from_meta(meta)
+    if not mast.is_master(super_check=True, silent=True):
+        meta["interp"].rt_error("Only super master can load actions.")
+        return False
+    return mast.actions_load_remote(url=url)["success"]
+
+
+@jaseci_action()
+def actload_module(module: str, meta):
+    """
+    Load module actions to Jaseci
+    """
+    mast = master_from_meta(meta)
+    if not mast.is_master(super_check=True, silent=True):
+        meta["interp"].rt_error("Only super master can load actions.")
+        return False
+    return mast.actions_load_module(mod=module)["success"]
+
+
+@jaseci_action()
 def destroy_global(name: str, meta):
     """Get utc date time for now in iso format"""
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    if(not mast.is_master(super_check=True, silent=False)):
+    mast = master_from_meta(meta)
+    if not mast.is_master(super_check=True, silent=False):
         return False
     return mast.global_delete(name)
 
@@ -105,9 +141,8 @@ def set_perms(obj: element, mode: str, meta):
 
     Return - true/false whether successful
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    return mast.object_perms_set(obj=obj,
-                                 mode=mode)['success']
+    mast = master_from_meta(meta)
+    return mast.object_perms_set(obj=obj, mode=mode)["success"]
 
 
 @jaseci_action()
@@ -131,10 +166,8 @@ def grant_perms(obj: element, mast: element, read_only: bool, meta):
 
     Return - Sorted list
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    return mast.object_perms_grant(obj=obj,
-                                   mast=mast,
-                                   read_only=read_only)['success']
+    mast = master_from_meta(meta)
+    return mast.object_perms_grant(obj=obj, mast=mast, read_only=read_only)["success"]
 
 
 @jaseci_action()
@@ -146,9 +179,8 @@ def revoke_perms(obj: element, mast: element, meta):
 
     Return - Sorted list
     """
-    mast = meta['h'].get_obj(meta['m_id'], uuid.UUID(meta['m_id']))
-    return mast.object_perms_revoke(obj=obj,
-                                    mast=mast)['success']
+    mast = master_from_meta(meta)
+    return mast.object_perms_revoke(obj=obj, mast=mast)["success"]
 
 
 @jaseci_action()
@@ -156,4 +188,4 @@ def get_report(meta):
     """
     Get current report so far for walker run
     """
-    return meta['interp'].report
+    return meta["interp"].report

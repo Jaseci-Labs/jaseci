@@ -1,4 +1,3 @@
-
 """
 ID list class for Jaseci
 
@@ -20,7 +19,7 @@ class id_list(list):
 
     def __init__(self, parent_obj, in_list=None):
         self.parent_obj = parent_obj
-        if (in_list):
+        if in_list:
             for i in in_list:
                 self.append(i)
 
@@ -28,13 +27,11 @@ class id_list(list):
         """Adds a obj obj to Jaseci object"""
         self.parent_obj.check_hooks_match(obj)
         if not allow_dups and obj.jid in self:
-            if(not silent):
-                logger.warning(
-                    str(f"{obj} is already in {self.parent_obj}'s list")
-                )
+            if not silent:
+                logger.warning(str(f"{obj} is already in {self.parent_obj}'s list"))
         else:
             self.append(obj.jid)
-            if(not obj.parent_id):
+            if not obj.parent_id:
                 obj.parent_id = self.parent_obj.id
             obj.save()
             self.parent_obj.save()
@@ -58,32 +55,29 @@ class id_list(list):
         healing = []
         ret = None
         for i in self:
-            if (not self.parent_obj._h.has_obj(uuid.UUID(i))):
-                logger.critical(str(
-                    f'Self healing: {i} not found ' +
-                    f'in id_list of {self.parent_obj}!'))
+            if not self.parent_obj._h.has_obj(uuid.UUID(i)):
+                logger.critical(
+                    str(
+                        f"Self healing: {i} not found "
+                        + f"in id_list of {self.parent_obj}!"
+                    )
+                )
                 healing.append(i)
                 continue
-            obj = self.parent_obj._h.get_obj(
-                self.parent_obj._m_id, uuid.UUID(i))
-            if(obj.name == name):
-                if(kind and obj.kind != kind):
+            obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
+            if obj.name == name:
+                if kind and obj.kind != kind:
                     continue
-                ret = self.parent_obj._h.get_obj(
-                    self.parent_obj._m_id, uuid.UUID(i))
+                ret = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
                 break
         self.heal(healing)
-        if (not ret and not silent):
-            logger.error(
-                str(f"object for '{name}' not found in '{self.parent_obj}'!")
-            )
+        if not ret and not silent:
+            logger.error(str(f"object for '{name}' not found in '{self.parent_obj}'!"))
         return ret
 
     def has_obj_by_name(self, name, kind=None):
         """Returns whether a Jaseci obj exists by it's name"""
-        return self.get_obj_by_name(
-            name, kind, silent=True
-        ) is not None
+        return self.get_obj_by_name(name, kind, silent=True) is not None
 
     def remove_obj_by_name(self, name, kind=None):
         """Remove a Jaseci obj by it's name"""
@@ -98,16 +92,19 @@ class id_list(list):
         ret = []
         healing = []
         for i in self:
-            obj = self.parent_obj._h.get_obj(
-                self.parent_obj._m_id, uuid.UUID(i))
-            if (not obj):
-                logger.critical(str(
-                    f'Self healing: {i} not found ' +
-                    f'in id_list of {self.parent_obj}!'))
+            obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
+            if not obj:
+                logger.critical(
+                    str(
+                        f"Self healing: {i} not found "
+                        + f"in id_list of {self.parent_obj}!"
+                    )
+                )
                 healing.append(i)
             else:
-                ret.append(self.parent_obj._h.get_obj(
-                    self.parent_obj._m_id, uuid.UUID(i)))
+                ret.append(
+                    self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
+                )
         self.heal(healing)
         return ret
 
@@ -115,39 +112,42 @@ class id_list(list):
         """Remove a Jaseci obj obj by it's name"""
         for i in self.obj_list():
             self.remove_obj(i)
-        if (len(self)):
-            logger.critical(str(
-                f'Removeall all failed in id_list of {self.parent_obj} - ' +
-                f'still has {self}!'))
+        if len(self):
+            logger.critical(
+                str(
+                    f"Removeall all failed in id_list of {self.parent_obj} - "
+                    + f"still has {self}!"
+                )
+            )
 
     def destroy_all(self):
         """Remove a Jaseci obj obj by it's name"""
         for i in self.obj_list():
             self.destroy_obj(i)
-        if (len(self)):
-            logger.critical(str(
-                f'Destroy all failed in id_list of {self.parent_obj} - ' +
-                f'still has {self}!'))
+        if len(self):
+            logger.critical(
+                str(
+                    f"Destroy all failed in id_list of {self.parent_obj} - "
+                    + f"still has {self}!"
+                )
+            )
 
     def heal(self, healing):
-        if(len(healing)):
+        if len(healing):
             for i in healing:
                 self.remove(i)
             self.parent_obj.save()
 
     def first_obj(self):
         """Get first object in list"""
-        if(not self):
-            logger.error(
-                str(f"List in '{self.parent_obj}' is empty!")
-            )
+        if not self:
+            logger.error(str(f"List in '{self.parent_obj}' is empty!"))
             return None
-        return self.parent_obj._h.get_obj(
-            self.parent_obj._m_id, uuid.UUID(self[0]))
+        return self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(self[0]))
 
     def pop_first_obj(self):
         """Get first object in list"""
         ret = self.first_obj()
-        if(ret):
+        if ret:
             self.remove_obj(ret)
         return ret
