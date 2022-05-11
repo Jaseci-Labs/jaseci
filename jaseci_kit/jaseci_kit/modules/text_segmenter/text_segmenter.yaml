@@ -18,11 +18,10 @@ metadata:
   namespace: default
 data:
   prod_up: |-
-    git clone https://github.com/AshishMahendra/jaseci.git /jaseci/
+    git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
     cd /jaseci/jaseci_core/
-    git checkout text_segmentation_prod
     source install.sh
-    cd /jaseci/jskit/text_segmenter
+    cd /jaseci/jaseci_kit/jaseci_kit/modules/text_segmenter
     uvicorn text_segmenter:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
