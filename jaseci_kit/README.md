@@ -1,8 +1,37 @@
+# Jaseci Kit
+Jaseci Kit is a collection of state-of-the-art machine learning models that are readily available to load into jaseci.
 
-# What is JSKit ?
-JSKit contains the SOTA models that's made readily available for production usage. Let's look at the available models and there usage.
+# Model Directory
 
-## 1. Encoders
+## Encoders
+| Module | Model Name | Example | Type | Status | Description | Resources |
+| --- | --- | --- | --- | --- | --- | --- |
+| `use_enc` | USE Encoder | [Link](#6-useenc) | Zero-shot | Ready | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
+| `use_qa` | USE QA | [Link](#5-useqa) | Zero-shot | Ready | Sentence-level embedding pre-trained on Q&A data corpus | [Paper](https://arxiv.org/abs/1803.11175) |
+| `fast_enc` | FastText | [Link](#4-fasttext) | Training req. | Ready | FastText Text Classifier | [Paper](https://arxiv.org/abs/1712.09405) |
+| `bi_enc` | Bi-encoder | [Link](#1-encoders) | Training req./Zero-shot | Ready | Dual sentence-level encoders | [Paper](https://arxiv.org/abs/1803.11175) |
+| `poly_enc` | Poly-encoder |  | Training req./Zero-shot| Experimental | Poly Encoder | [Paper](https://arxiv.org/abs/1905.01969) |
+| `cross_enc` | Cross-encoder |  | Training req./Zero-shot | Experimental | Cross Encoder | [Paper](https://arxiv.org/abs/1905.01969) |
+
+## Entity
+| Module | Model Name | Example | Type | Status | Description | Resources |
+| --- | --- | --- | --- | --- | --- | --- |
+| `ent_ext` | Flair NER | [Link](#2-entity-extraction) | Training req. | Ready | Entity extraction using the FLAIR NER framework | |
+| `tfm_ner` | Transformer NER | | Training req. | Ready | Token classification on Transformer models, can be used for NER | [Huggingface](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification) |
+| `lstm_ner` | LSTM NER | | Traininig req. | Experimental | Entity extraction/Slot filling via Long-short Term Memory Network | |
+
+## Summarization
+| Module | Model Name | Example | Type | Status | Description | Resources |
+| --- | --- | --- | --- | --- | --- | --- |
+| `cl_summer` | Summarizer | | No Training req. | Ready | Extractive Summarization using Sumy | [Doc.](https://miso-belica.github.io/sumy/) |
+
+## Non-AI Tools
+| Module | Model Name | Example | Status | Description | Resources |
+| --- | --- | --- | --- | --- | --- |
+| `pdf_ext` | PDF Extractor | | Ready | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
+
+# Examples
+## 1. Bi
 Encoders module can be used for intent classification, it contains the Bi-Encoder and Poly-Encoder(coming soon) models.
 
 ### 1.1. List of API's  available
