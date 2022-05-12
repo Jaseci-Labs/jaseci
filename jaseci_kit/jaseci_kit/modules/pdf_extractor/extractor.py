@@ -29,6 +29,14 @@ def valid_url(url):
     return True if "application/pdf" in content_type else False
 
 
+def valid_file_path(path):
+    r"""validating whether given path is valid or not
+    :param path: Path of the pdf file"""
+    if os.path.exists(path):
+        return True
+    return False
+
+
 def remove_pdf(filename: str):
     r"""REMOVE locally downloaded PDF
     :param filename: filename for the deleting pdf file.
@@ -39,37 +47,52 @@ def remove_pdf(filename: str):
     return False
 
 
+def process_pdf(filename, metadata, data):
+    with open(filename, "rb") as pdf_file:
+        pdf_reader = PdfFileReader(pdf_file)
+        if metadata:
+            data.update({"metadata": {}})
+            md = dict(pdf_reader.documentInfo)
+            for k, v in md.items():
+                data["metadata"][re.sub("[^a-zA-Z0-9]+", "", k)] = v
+        data["pages"] = len(pdf_reader.pages)
+        data["content"] = [page.extractText() for page in pdf_reader.pages]
+    return data
+
+
 @jaseci_action(act_group=["pdf_ext"], allow_remote=True)
-def extract_pdf(url: str, metadata: bool = False):
+def extract_pdf(url: str = None, path: str = None, metadata: bool = False):
     r"""REMOVE locaaly downloaded PDF
     :param filename: filename for the deleting pdf file.
     :param metadata: boolean if you want to diaplay available metadata of PDF.
     """
+
     filename = str(uuid.uuid4().hex) + ".pdf"
     data = {"pages": 0, "content": None}
-    if valid_url(url):
-        try:
-            download_pdf(url, filename)
-            with open(filename, "rb") as pdf_file:
-                pdf_reader = PdfFileReader(pdf_file)
-                if metadata:
-                    data.update({"metadata": {}})
-                    md = dict(pdf_reader.documentInfo)
-                    for k, v in md.items():
-                        data["metadata"][re.sub("[^a-zA-Z0-9]+", "", k)] = v
-                data["pages"] = len(pdf_reader.pages)
-                data["content"] = [page.extractText() for page in pdf_reader.pages]
-            remove_pdf(filename)
-            return data
-        except Exception as e:
-            remove_pdf(filename)
-            print(e)
+    if url != None:
+        if valid_url(url):
+            try:
+                download_pdf(url, filename)
+                data = process_pdf(filename, metadata, data)
+                remove_pdf(filename)
+                return data
+            except Exception as e:
+                remove_pdf(filename)
+                print(e)
 
-            raise HTTPException(
-                status_code=500, detail="Unable to extract data from pdf"
-            )
+                raise HTTPException(
+                    status_code=500, detail="Unable to extract data from pdf"
+                )
+        else:
+            raise HTTPException(status_code=415, detail=str("Invalid file format"))
+
+    elif path != None:
+        if valid_file_path(path):
+            data = process_pdf(path, metadata, data)
+            return data
+        raise HTTPException(status_code=400, detail=str("Invalid path"))
     else:
-        raise HTTPException(status_code=415, detail=str("Invalid file format"))
+        raise HTTPException(status_code=400, detail=str("Missing params url/path"))
 
 
 if __name__ == "__main__":

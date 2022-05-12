@@ -6,7 +6,7 @@ sidebar_position: 4
 
 Let's create a simple converational Agent using Jaseci and Jaseci Kit. We're gonna creat a Chat bot for students to sign up for Jaseci Dojo !
 
-Before we begin ensure your have jaseci and jaseci kit installed. If not see the Installation here. 
+Before we begin ensure your have jaseci and jaseci kit installed. If not see the Installation here.
 
 Create a file called graph.jac. Here we are going to create the conversational flow for the chatbot .
 
@@ -64,8 +64,11 @@ graph main_graph {
     has anchor main_root
 
 ```
+
 The `graph` is a collection of initialized nodes. 
 The `has anchor` key word is used to identify the root node. The Root node is the node where the walker's traversal begins.
+The <strong>has anchor</strong> key word is used to state the root node. The Root node is the node where the walker's traversal begins.
+
 
 ```jac
 # state is the name of this node
@@ -89,8 +92,8 @@ spawn {
         message = "Welcome to Jaseci Dojo, how can i help?",
         prompts = ["class","times","prices","quit"]
     );
-  
-   
+
+
     # this creates a node that goes from main_root to class.
     prices = spawn main_root -[transition(intent="prices")] -> node::state(
         title = "prices",
@@ -107,7 +110,7 @@ spawn {
 
     # this create an edge from prices_12 back to prices.
      prices_12 -[transition(intent="more prices")] -> prices;
-    
+
 
 }
 
@@ -137,7 +140,7 @@ graph main_graph {
         message = "Welcome to Jaseci Dojo, how can i help?",
         prompts = ["class","times","prices","quit"]
     );
-    
+
     prices = spawn main_root -[transition(intent="prices")] -> node::state(
         title = "prices",
         message = "Prices Vary based on age",
@@ -174,7 +177,7 @@ graph main_graph {
 
     );
 
-    
+
 
     time = spawn class -[transition(intent="time")]-> node::state(
         title = "time",
@@ -190,8 +193,8 @@ graph main_graph {
         prompts = ['days',"quit"]
     );
 
-    
-   
+
+
 
      days = spawn time -[transition(intent="days")]-> node::state(
         title = "days",
@@ -199,7 +202,7 @@ graph main_graph {
         prompts = ['time',"quit"]
     );
 
-    
+
      other_time - [transition(intent="days")] -> days ;
      days - [transition(intent="time")] -> time ;
 

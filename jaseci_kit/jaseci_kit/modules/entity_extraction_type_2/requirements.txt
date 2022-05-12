@@ -1,0 +1,5 @@
+transformers
+pytorch
+fastapi
+uvicorn
+datasets
