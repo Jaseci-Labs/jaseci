@@ -1,3 +1,4 @@
+import json
 import logging
 from locust import task, HttpUser, SequentialTaskSet, constant, HttpUser
 # from locust_plugins.users import RestUser
@@ -21,8 +22,18 @@ actionLoaded = False
 
 # walkerSequence = ['createPredefines', 'segmenter']
 # actionList = ['http://flair-ner:80/', 'http://js-segmenter:80/']
-walkerSequence = ['init']
-actionList = []
+
+TEST_PATH = 'sample_code/medium'
+
+def load_config(path: str):
+    config_path = os.path.join(path, 'config.json')
+    config = json.load(open(config_path, "r"))
+    print(config)
+    src = config.get('src', '')
+    src = os.path.join(path, src)
+    config['src'] = src
+    return config
+
 
 class SeqTask(SequentialTaskSet):
     def on_start(self):
@@ -35,22 +46,6 @@ class SeqTask(SequentialTaskSet):
         self.userID = UserID
         UserID += 1
 
-    # @task
-    # def create_user(self):
-    #     response = self.client.post("/user/create/", json = {
-    #         "email" : self.userName,
-    #         "password" : self.password,
-    #         "is_activated": True,
-    #         "is_superuser": True
-    #     })
-    #     if response.status_code == 400:
-    #         logging.info(self.userName + " " + response.text)
-    #     elif response.status_code != 201:
-    #         logging.info(self.userName, " was not created")
-    #     else:
-    #         pass
-    #         # print("List: ", Users)
-    #         # print("User added: ", self.userName)
 
     @task
     def generate_userToken(self):
@@ -64,7 +59,7 @@ class SeqTask(SequentialTaskSet):
     def post_jac_prog(self):
         req = {
                 'name': 'jac_prog',
-                'code': get_code('sample_code/simple/walker.jac'),
+                'code': get_code(load_config(TEST_PATH)['src']),
             }
         response = self.client.post("/js/sentinel_register",headers = {'authorization' : f'Token {self.user_token}'}, json = req)
         self.sentinel_jid = response.json()[0]['jid']
@@ -77,18 +72,18 @@ class SeqTask(SequentialTaskSet):
         if actionLoaded:
             return
         actionLoaded = True
-        for action in actionList:
+        for action in load_config(TEST_PATH)['remote_actions']:
             response = self.client.post("/js_admin/actions_load_remote", headers = {'authorization' : f'Token {self.user_token}'}, json = {
                 'url': action
                 })
-            # print(f"response: {response.text}")
+            print(f"response: {response.text}")
 
-        # response = self.client.post('/js_admin/actions_list', headers = {'authorization' : f'Token {self.user_token}'})
-        # print(f"Actions list response: {response.text}")
+        response = self.client.post('/js_admin/actions_list', headers = {'authorization' : f'Token {self.user_token}'})
+        print(f"Actions list response: {response.text}")
 
     @task
     def walker_run(self):
-        for walkerName in walkerSequence:
+        for walkerName in load_config(TEST_PATH)['walkers']:
             req = {
                     'name': walkerName,
                     'snt': self.sentinel_jid

@@ -1,0 +1,6 @@
+{
+    "walkers" : ["init"],
+    "src" : "walker.jac",
+    "remote_actions" : ["http://js-use-enc:80/"],
+    "local_actions" : []
+}

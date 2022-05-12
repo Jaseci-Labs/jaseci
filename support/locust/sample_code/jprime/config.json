@@ -1,0 +1,6 @@
+{
+    "walkers": ["createPredefines", "segmenter"],
+    "remote_actions" : ["http://flair-ner:80/", "http://js-segmenter:80/"],
+    "src" : "jprime.jac",
+    "local_actions" : []
+}
