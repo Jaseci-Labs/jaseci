@@ -5,8 +5,6 @@ from fastapi.testclient import TestClient
 from .test_data import test_t5_sum_request
 
 class t5_sum_test_api(TestCaseHelper, TestCase):
-    """Unit test for T5 Summarization FastAPI server"""
-
     def setUp(self):
         super().setUp()
         self.client = TestClient(serv_actions())

@@ -17,7 +17,6 @@ def t5_generate_sum(text, min_length, max_length):
 
     tokenized_text = tokenizer.encode(t5_prepared_Text, return_tensors="pt").to(device)
 
-    # summmarize 
     summary_ids = model.generate(tokenized_text, num_beams=4, no_repeat_ngram_size=2, min_length=min_length, max_length=max_length,early_stopping=True)
 
     output = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
@@ -28,7 +27,6 @@ def t5_generate_sum(text, min_length, max_length):
 @ jaseci_action(act_group=['t5_sum'], allow_remote=True)
 def classifiy_text(text: str, min_length: int = 30, max_length: int = 100):
     output = t5_generate_sum(text, min_length, max_length)
-    
     return output
 
 if __name__ == "__main__":
