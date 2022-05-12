@@ -6,7 +6,7 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 ## Encoders
 | Module | Model Name | Example | Type | Status | Description | Resources |
 | --- | --- | --- | --- | --- | --- | --- |
-| `use_enc` | USE Encoder | [Link](#6-useenc) | Zero-shot | Ready | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
+| `use_enc` | USE Encoder | [Link](#use-encoder-useenc) | Zero-shot | Ready | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
 | `use_qa` | USE QA | [Link](#5-useqa) | Zero-shot | Ready | Sentence-level embedding pre-trained on Q&A data corpus | [Paper](https://arxiv.org/abs/1803.11175) |
 | `fast_enc` | FastText | [Link](#4-fasttext) | Training req. | Ready | FastText Text Classifier | [Paper](https://arxiv.org/abs/1712.09405) |
 | `bi_enc` | Bi-encoder | [Link](#1-encoders) | Training req./Zero-shot | Ready | Dual sentence-level encoders | [Paper](https://arxiv.org/abs/1803.11175) |
@@ -86,7 +86,8 @@ walker use_enc_example {
     predicted_cand = candidates[max_cand];
 }
 ```
-
+###################################################################
+## NOTE: content below needs update. This page is under construction.
 ### USE QA
 use_qa module uses the universal sentence encoder and distance metric to evaluate the distance between question and and probable answers
 ### 5.1. List of API's available
