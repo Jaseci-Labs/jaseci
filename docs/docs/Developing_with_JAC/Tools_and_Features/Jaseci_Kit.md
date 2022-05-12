@@ -4,6 +4,7 @@ sidebar_position: 2
 
 # Jaseci Kit
 
+
 Jaseci Kit is a collection of state-of-the-art machine learning models that are readily available to load into jaseci.
 
 ## Model Directory
@@ -39,6 +40,10 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 ## Install Jaseci Kit 
 
 Run :
+
+
+
+
 ```
 pip install jaseci-kit --upgrade
 
@@ -52,6 +57,7 @@ Jaseci default libraries can be seen by running :
 ```
 actions list 
 ```
+
 We can load additional models by running <strong>actions load module</strong> in the terminal followed by the name of the model we want to use.
 
 ## Using QA model
@@ -59,6 +65,9 @@ We can load additional models by running <strong>actions load module</strong> in
 use_qa module uses the universal sentence encoder and distance metric to evaluate the distance between question and and probable answers.
 To load the Question and Answer Model run in the jsctl terminal :
 
+
+
+To load the Question and Answer Module run :
 
 ```
 actions load module jaseci_kit.use_qa
@@ -107,6 +116,7 @@ jac run main.jac
 
 
 
+
 ## Using the Encode Model
 
 `use_enc` module uses the universal sentence encoder to generate sentence level embeddings.
@@ -149,3 +159,4 @@ walker use_enc_example {
 ```
 
 The above code takes in a list of answers and a question and then returns a report with the probability of each answer. The probability represents how likely each answer is to answer the question. The higher the probability the more likely it is to answer the question.
+
