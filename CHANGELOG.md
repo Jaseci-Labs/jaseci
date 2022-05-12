@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Improvement: import now works recursively through chain of files
 - Improvement: JSCTL shows token on login
 - Major Feature: JSCTL has persistent log in sessions, and can logout
 - Improvement: `*` and `&` precedence hierarch locations improved.

@@ -38,6 +38,7 @@ class ast:
         self._start_rule = start_rule
         self.mod_name = mod_name if mod_name is not None else "@default"
         self._mod_dir = mod_dir
+        self._keep = False
         self.line = 0
         self.column = 0
         self.kid = []
@@ -69,7 +70,7 @@ class ast:
 
     def parse_jac_str(self, jac_str):
         """Parse language and build ast from string"""
-        ast._ast_head_map[self.mod_name] = self
+        ast._ast_head_map[self._mod_dir + self.mod_name] = self
         input_stream = InputStream(jac_str)
         lexer = jacLexer(input_stream)
         stream = CommonTokenStream(lexer)
@@ -131,16 +132,17 @@ class ast:
             fn = os.path.join(
                 self.tree_root._mod_dir, parse_str_token(kid[-2].token_text())
             )
+            full_path = os.path.realpath(fn)
             mod_name = os.path.basename(fn)
+            mdir = os.path.dirname(full_path) + "/"
             from_mod = self.tree_root.mod_name
             logger.debug(f"Importing items from {mod_name} to {from_mod}...")
             parsed_ast = None
-            if mod_name in ast._ast_head_map.keys():
-                parsed_ast = ast._ast_head_map[mod_name]
+            if (mdir + mod_name) in ast._ast_head_map.keys():
+                parsed_ast = ast._ast_head_map[mdir + mod_name]
             elif os.path.isfile(fn):
                 with open(fn, "r") as file:
                     jac_text = file.read()
-                mdir = os.path.dirname(os.path.realpath(fn)) + "/"
                 parsed_ast = ast(
                     jac_text=jac_text,
                     mod_name=mod_name,
@@ -159,9 +161,12 @@ class ast:
                     filter(lambda x: x.name == "element", parsed_ast.kid)
                 )
                 if kid[2].name == "STAR_MUL":
-                    return import_elements
+                    ret = import_elements
                 else:
-                    return self.run_import_items(kid[2], import_elements)
+                    ret = self.run_import_items(kid[2], import_elements)
+                for i in ret:
+                    i._keep = True
+                return ret
             else:
                 return []
 
@@ -176,13 +181,17 @@ class ast:
             """
             kid = jac_ast.kid
             ret_elements = list(
-                filter(lambda x: x.kid[0].kid[0].name == kid[0].name, import_elements)
+                filter(
+                    lambda x: x._keep or x.kid[0].kid[0].name == kid[0].name,
+                    import_elements,
+                )
             )
             if kid[1].name == "import_names":
                 import_names = self.run_import_names(kid[1])
                 ret_elements = list(
                     filter(
-                        lambda x: x.kid[0].kid[1].token_text() in import_names,
+                        lambda x: x._keep
+                        or x.kid[0].kid[1].token_text() in import_names,
                         ret_elements,
                     )
                 )
@@ -192,6 +201,7 @@ class ast:
                         + "Module name not found!"
                     )
                     self.tree_root._parse_errors.append(err)
+
             if kid[-1].name == "import_items":
                 return ret_elements + self.run_import_items(kid[-1], import_elements)
 

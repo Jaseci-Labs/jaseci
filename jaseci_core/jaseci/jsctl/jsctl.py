@@ -226,14 +226,17 @@ def cmd_tree_builder(location, group_func=jsctl, cmd_str=""):
 def login(url, username, password):
     url = url[:-1] if url[-1] == "/" else url
     payload = {"email": username, "password": password}
-    r = requests.post(url + "/user/token/", data=payload).json()
+    try:
+        r = requests.post(url + "/user/token/", data=payload).json()
+    except Exception:
+        r = {"error": "Invalid url, username, or password."}
     if "token" in r.keys():
         session["connection"]["token"] = r["token"]
         session["connection"]["url"] = url
         session["connection"]["headers"] = {"Authorization": "token " + r["token"]}
         click.echo(f"Token: {r['token']}\nLogin successful!")
     else:
-        click.echo(f"Login failed!\n{r}")
+        click.echo("Login failed!\n")
 
 
 @click.command(help="Command to log out of live Jaseci server")
@@ -242,9 +245,9 @@ def logout():
         session["connection"]["token"] = None
         session["connection"]["url"] = None
         session["connection"]["headers"] = {}
-        click.echo(f"Logout successful!")
+        click.echo("Logout successful!")
     else:
-        click.echo(f"You are not logged in!")
+        click.echo("You are not logged in!")
 
 
 @click.command(help="Edit a file")

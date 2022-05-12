@@ -35,7 +35,14 @@ class super_api:
     def master_become(self, mast: master):
         """
         Sets the default master master should use
-        FIXME: _caller does not persist accross http request!!
         """
-        self._caller = mast
+        self.caller = mast.jid
         return {"response": f"You are now {mast.name}"}
+
+    @interface.admin_api(cli_args=["mast"])
+    def master_unbecome(self):
+        """
+        Unsets the default master master should use
+        """
+        self.caller = None
+        return {"response": f"You are now {self.name}"}

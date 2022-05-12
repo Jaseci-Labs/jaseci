@@ -17,9 +17,21 @@ We've built a command line tool to help you effectively work with Jaseci from yo
 1. Python 3
 2. pip3
 
-### Installation
+### Installation (for Users of Jaseci and Jac coders)
 
 1. Install Jaseci by running: `pip3 install jaseci`
+2. Install Jaseci Serving by running: `pip3 install jaseci-serv`
+3. (for AI) Install Jaseci Kit by running: `pip3 install jaseci-kit`
+
+### Installation (for Contributors of Jaseci)
+
+1. Install black: `pip3 install black`
+2. Install pre-commit: `pip3 install pre-commit; pre-commit install`
+3. Install Jaseci from main branch: `cd jaseci_core; source install.sh; cd -`
+4. Install Jaseci Serving from main branch: `cd jaseci_serv; source install.sh; cd -`
+5. (for AI) Install Jaseci Kit from main branch: `cd jaseci_kit; source install.sh; cd -`
+
+Note: You'll have to add `--max-line-length=88 --extend-ignore=E203` args to flake8 for linting. If you use VSCode you should update it there too. 
 
 ### Quickstart (Hello, World!)
 
