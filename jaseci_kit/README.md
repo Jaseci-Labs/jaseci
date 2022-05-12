@@ -31,6 +31,178 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 | `pdf_ext` | PDF Extractor | | Ready | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
 
 # Examples
+
+## Encoders
+
+###  USE Encoder (`use_enc`)
+`use_enc` module uses the universal sentence encoder to generate sentence level embeddings.
+The sentence level embeddings can then be used to calculate the similarity between two given text via cosine similarity and/or dot product.
+
+* `encode`: encodes the text and returns a embedding of 512 length
+    * Alternate name: `get_embedding`
+    * Input:
+        * `text` (string or list of strings): text to be encoded
+    * Return: Encoded embeddings
+* `cos_sim_score`:
+    * Input:
+        * `q_emb` (string or list of strings): first text to be embeded
+        * `a_emb` (string or list of strings): second text to be embedded
+    * Return: cosine similarity score
+* `text_simliarity`: calculate the simlarity score between given texts
+    * Input:
+        * `text1` (string): first text
+        * `text2` (string): second text
+    * Return: cosine similarity score
+* `text_classify`: use USE encoder as a classifier
+    * Input:
+        * `text` (string): text to classify
+        * `classes` (list of strings): candidate classification classes
+
+#### Example Jac Usage:
+```jac
+walker use_enc_example {
+    can use.encode, use.cos_sim_score;
+    has text = "What is the weather tomorrow?";
+    has candidates = [
+        "weather forecast",
+        "ask for direction",
+        "order food"
+    ];
+    text_emb = use.encode(text)[0];
+    cand_embs = use.encode(candidates); # use.encode handles string/list
+
+    max_score = 0;
+    max_cand = 0;
+    cand_idx = 0;
+    for cand_emb in cand_embs {
+        cos_score = use.cos_sim_score()
+        if (cos_score > max_score) {
+            max_score = cos_score
+            max_cand = cand_idx;
+        }
+        cand_idx += 1;
+    }
+
+    predicted_cand = candidates[max_cand];
+}
+```
+
+### USE QA
+use_qa module uses the universal sentence encoder and distance metric to evaluate the distance between question and and probable answers
+### 5.1. List of API's available
+#### **question_encode** - encodes the question text and return a embedding of 512 length
+Request :
+```
+requests.post(
+    "/question_encode/",
+    json={
+        "question": "Which city is capital of India?"
+    }
+)
+```
+Response:
+```
+[
+  [
+    0.015976766124367714,
+    0.05355389043688774,
+    -0.02080559730529785,
+    -0.09500843286514282,
+    ....,
+    ....,
+    ....
+  ]
+]
+```
+#### **answer_encode** - encodes the answer, context and return a embedding of 512 length
+Request :
+```
+requests.post(
+    "/answer_encode/",
+    json={
+            "answer": "New Delhi",
+            "context": "New Delhi is the capital of India and a part of the National Capital Territory of Delhi (NCT)."
+        }
+)
+```
+Response:
+```
+[
+  [
+    -0.02469351328909397,
+    0.018782570958137512,
+    -0.030687350779771805,
+    -0.03719259053468704,
+    ....,
+    ....,
+    ....
+  ]
+]
+```
+
+#### **cos_sim_score** - calculates the cosine similarity between encodings
+Request :
+```
+requests.post(
+    "/cos_sim_score/",
+    json={
+        "q_emb":[
+            0.015976766124367714,
+            0.05355389043688774,
+            -0.02080559730529785,
+            -0.09500843286514282,
+            ....,
+            ....,
+            ....
+        ],
+        "a_emb": [
+            -0.02469351328909397,
+            0.018782570958137512,
+            -0.030687350779771805,
+            -0.03719259053468704,
+            ....,
+            ....,
+            ....
+        ]
+    }
+)
+```
+Response:
+```
+0.5570200427361625
+```
+#### **qa_score** - calculates the inner product between encodings
+Request :
+```
+requests.post(
+    "/qa_score/",
+    json={
+        "q_emb":[
+            0.015976766124367714,
+            0.05355389043688774,
+            -0.02080559730529785,
+            -0.09500843286514282,
+            ....,
+            ....,
+            ....
+        ],
+        "a_emb": [
+            -0.02469351328909397,
+            0.018782570958137512,
+            -0.030687350779771805,
+            -0.03719259053468704,
+            ....,
+            ....,
+            ....
+        ]
+    }
+)
+```
+Response:
+```
+0.5570200627571644
+```
+
 ## 1. Bi
 Encoders module can be used for intent classification, it contains the Bi-Encoder and Poly-Encoder(coming soon) models.
 
@@ -584,182 +756,6 @@ Response:
 train_with_existing :
     True : appends the data to the active training set
     False : creates a new training set with the data provided
-```
-### 5. USE_QA
-use_qa module uses the universal sentence encoder and distance metric to evaluate the distance between question and and probable answers
-### 5.1. List of API's available
-#### **question_encode** - encodes the question text and return a embedding of 512 length
-Request :
-```
-requests.post(
-    "/question_encode/",
-    json={
-        "question": "Which city is capital of India?"
-    }
-)
-```
-Response:
-```
-[
-  [
-    0.015976766124367714,
-    0.05355389043688774,
-    -0.02080559730529785,
-    -0.09500843286514282,
-    ....,
-    ....,
-    ....
-  ]
-]
-```
-#### **answer_encode** - encodes the answer, context and return a embedding of 512 length
-Request :
-```
-requests.post(
-    "/answer_encode/",
-    json={
-            "answer": "New Delhi",
-            "context": "New Delhi is the capital of India and a part of the National Capital Territory of Delhi (NCT)."
-        }
-)
-```
-Response:
-```
-[
-  [
-    -0.02469351328909397,
-    0.018782570958137512,
-    -0.030687350779771805,
-    -0.03719259053468704,
-    ....,
-    ....,
-    ....
-  ]
-]
-```
-
-#### **cos_sim_score** - calculates the cosine similarity between encodings
-Request :
-```
-requests.post(
-    "/cos_sim_score/",
-    json={
-        "q_emb":[
-            0.015976766124367714,
-            0.05355389043688774,
-            -0.02080559730529785,
-            -0.09500843286514282,
-            ....,
-            ....,
-            ....
-        ],
-        "a_emb": [
-            -0.02469351328909397,
-            0.018782570958137512,
-            -0.030687350779771805,
-            -0.03719259053468704,
-            ....,
-            ....,
-            ....
-        ]
-    }
-)
-```
-Response:
-```
-0.5570200427361625
-```
-#### **qa_score** - calculates the inner product between encodings
-Request :
-```
-requests.post(
-    "/qa_score/",
-    json={
-        "q_emb":[
-            0.015976766124367714,
-            0.05355389043688774,
-            -0.02080559730529785,
-            -0.09500843286514282,
-            ....,
-            ....,
-            ....
-        ],
-        "a_emb": [
-            -0.02469351328909397,
-            0.018782570958137512,
-            -0.030687350779771805,
-            -0.03719259053468704,
-            ....,
-            ....,
-            ....
-        ]
-    }
-)
-```
-Response:
-```
-0.5570200627571644
-```
-
-### 6. USE_ENC
-use_enc module uses the universal sentence encoder and distance metric to evaluate the distance between two text encodings
-
-### 6.1. List of API's available
-#### **encode** - encodes the text and returns a embedding of 512 length
-Request :
-```
-requests.post(
-    "/encode/",
-    json={
-        "text": "Which city is capital of India?"
-    }
-)
-```
-Response:
-```
-[
-  [
-    0.015976766124367714,
-    0.05355389043688774,
-    -0.02080559730529785,
-    -0.09500843286514282,
-    ....,
-    ....,
-    ....
-  ]
-]
-```
-
-#### **cos_sim_score** - calculates the cosine similarity between encodings
-Request :
-```
-requests.post(
-    "/cos_sim_score/",
-    json={
-        "q_emb":[
-            0.015976766124367714,
-            0.05355389043688774,
-            -0.02080559730529785,
-            -0.09500843286514282,
-            ....,
-            ....,
-            ....
-        ],
-        "a_emb": [
-            -0.02469351328909397,
-            0.018782570958137512,
-            -0.030687350779771805,
-            -0.03719259053468704,
-            ....,
-            ....,
-            ....
-        ]
-    }
-)
-```
-Response:
-```
-0.5570200427361625
 ```
 
 ### 7. Summarization
