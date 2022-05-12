@@ -1,34 +1,36 @@
 import json
-import logging
 from locust import task, HttpUser, SequentialTaskSet, constant, HttpUser
-# from locust_plugins.users import RestUser
 import os
 from credentials import gen_username, gen_password
 
 def format_output(userName:str, output:str):
     print(f'{userName}: {output}')
-# Admin LOGIN
-# code = 'walker init {report "admin";}'
 def get_code(path: str)->str:
     file = open(path, 'r')
     code = file.read()
     file.close()
     return code
 
-
-
 UserID = 0
 actionLoaded = False
 
-# walkerSequence = ['createPredefines', 'segmenter']
-# actionList = ['http://flair-ner:80/', 'http://js-segmenter:80/']
+TEST_PATH = 'sample_code/simple'
 
-TEST_PATH = 'sample_code/medium'
+def print_response(response):
+    failure = False
+    if (response.status_code != 200 and response.status_code != 201):
+        failure = True
+    success = response.json().get('success', False)
+    if (not success):
+        failure = True
+    if (failure):
+        print(response.text)
+
+
 
 def load_config(path: str):
     config_path = os.path.join(path, 'config.json')
     config = json.load(open(config_path, "r"))
-    print(config)
     src = config.get('src', '')
     src = os.path.join(path, src)
     config['src'] = src
@@ -63,7 +65,6 @@ class SeqTask(SequentialTaskSet):
             }
         response = self.client.post("/js/sentinel_register",headers = {'authorization' : f'Token {self.user_token}'}, json = req)
         self.sentinel_jid = response.json()[0]['jid']
-        # format_output(self.userName, response.text)
 
     @task
     def load_actions(self):
@@ -76,7 +77,8 @@ class SeqTask(SequentialTaskSet):
             response = self.client.post("/js_admin/actions_load_remote", headers = {'authorization' : f'Token {self.user_token}'}, json = {
                 'url': action
                 })
-            print(f"response: {response.text}")
+            # print(f"response: {response.text}")
+            print_response(response)
 
         response = self.client.post('/js_admin/actions_list', headers = {'authorization' : f'Token {self.user_token}'})
         print(f"Actions list response: {response.text}")
@@ -88,10 +90,10 @@ class SeqTask(SequentialTaskSet):
                     'name': walkerName,
                     'snt': self.sentinel_jid
                     }
-            print(f"Walker {walkerName} running.")
+            # print(f"Walker {walkerName} running.")
             response = self.client.post("/js/walker_run",headers = {'authorization' : f'Token {self.user_token}'}, json = req)
             print(f"Walker {walkerName} finished. {response.text}")
-            print(f"Walker {walkerName} Output: {response.json()}")
+            # print(f"Walker {walkerName} Output: {response.json()}")
     
     
 
