@@ -17,7 +17,7 @@ class walker_api:
     def __init__(self):
         self.spawned_walker_ids = id_list(self)
 
-    @interface.public_api(url_args=["nd", "wlk"])
+    @interface.public_api(url_args=["nd", "wlk"], allowed_methods=["post", "get"])
     def walker_callback(self, nd: node, wlk: walker, key: str, ctx: dict = {}):
         """
         Public api for running walkers, namespace key must be provided

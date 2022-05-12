@@ -25,7 +25,14 @@ class interface:
         """
         self._pub_committer = None
 
-    def assimilate_api(api_list, func, cmd_group=None, cli_args=None, url_args=None):
+    def assimilate_api(
+        api_list,
+        func,
+        cmd_group=None,
+        cli_args=None,
+        url_args=None,
+        allowed_methods=None,
+    ):
         cmd_group = func.__name__.split("_") if cmd_group is None else cmd_group
         api_list.append(
             {
@@ -35,14 +42,20 @@ class interface:
                 "groups": cmd_group,
                 "cli_args": cli_args if cli_args is not None else [],
                 "url_args": url_args if url_args is not None else [],
+                "allowed_methods": allowed_methods,
             }
         )
         return func
 
-    def public_api(cmd_group=None, cli_args=None, url_args=None):
+    def public_api(cmd_group=None, cli_args=None, url_args=None, allowed_methods=None):
         def decorator_func(func):
             return interface.assimilate_api(
-                interface._public_api, func, cmd_group, cli_args, url_args
+                interface._public_api,
+                func,
+                cmd_group,
+                cli_args,
+                url_args,
+                allowed_methods,
             )
 
         return decorator_func
