@@ -104,7 +104,7 @@ walker entityExtractor {
   Chunk {
     // chunkEntities = ["Michigan", "Dream", "Jaseci"];
     // Definitely CALL THE AI HERE!!
-    entityExtraction = ent_ext.entity_detection(text = here.text)['entities'];
+    entityExtraction = ent_ext.entity_detection(text = here.text, ner_labels = ['I', 'Do', 'Not', 'Know'])['entities'];
     // This is the list of entities detect by the AI model.
     for entity in entityExtraction {
       for entityNode in entities {

@@ -2,6 +2,7 @@ import logging
 from locust import task, HttpUser, SequentialTaskSet, constant, HttpUser
 # from locust_plugins.users import RestUser
 import os
+from credentials import gen_username, gen_password
 
 def format_output(userName:str, output:str):
     print(f'{userName}: {output}')
@@ -13,18 +14,15 @@ def get_code(path: str)->str:
     file.close()
     return code
 
-def gen_username(id : int)->str:
-    return f'jaclang{id}@jaseci.org'
-
-def gen_password(id : int)->str:
-    return f'ilovejaclang{id}'
 
 
 UserID = 0
 actionLoaded = False
 
-walkerSequence = ['createPredefines', 'segmenter']
-actionList = ['http://fair-ner:80/', 'http://js-segmenter:80/']
+# walkerSequence = ['createPredefines', 'segmenter']
+# actionList = ['http://flair-ner:80/', 'http://js-segmenter:80/']
+walkerSequence = ['init']
+actionList = []
 
 class SeqTask(SequentialTaskSet):
     def on_start(self):
@@ -37,21 +35,22 @@ class SeqTask(SequentialTaskSet):
         self.userID = UserID
         UserID += 1
 
-    @task
-    def create_user(self):
-        response = self.client.post("/user/create/", json = {
-            "email" : self.userName,
-            "password" : self.password,
-            "is_activated": True,
-            "is_superuser": False
-        })
-        if response.status_code == 400:
-            logging.info(self.userName + " " + response.text)
-        elif response.status_code != 201:
-            logging.info(self.userName, " was not created")
-        else:
-            # print("List: ", Users)
-            print("User added: ", self.userName)
+    # @task
+    # def create_user(self):
+    #     response = self.client.post("/user/create/", json = {
+    #         "email" : self.userName,
+    #         "password" : self.password,
+    #         "is_activated": True,
+    #         "is_superuser": True
+    #     })
+    #     if response.status_code == 400:
+    #         logging.info(self.userName + " " + response.text)
+    #     elif response.status_code != 201:
+    #         logging.info(self.userName, " was not created")
+    #     else:
+    #         pass
+    #         # print("List: ", Users)
+    #         # print("User added: ", self.userName)
 
     @task
     def generate_userToken(self):
@@ -65,7 +64,7 @@ class SeqTask(SequentialTaskSet):
     def post_jac_prog(self):
         req = {
                 'name': 'jac_prog',
-                'code': get_code('sample_code/jprime.jac'),
+                'code': get_code('sample_code/simple/walker.jac'),
             }
         response = self.client.post("/js/sentinel_register",headers = {'authorization' : f'Token {self.user_token}'}, json = req)
         self.sentinel_jid = response.json()[0]['jid']
@@ -82,7 +81,10 @@ class SeqTask(SequentialTaskSet):
             response = self.client.post("/js_admin/actions_load_remote", headers = {'authorization' : f'Token {self.user_token}'}, json = {
                 'url': action
                 })
-            print(f"{action} loaded")
+            # print(f"response: {response.text}")
+
+        # response = self.client.post('/js_admin/actions_list', headers = {'authorization' : f'Token {self.user_token}'})
+        # print(f"Actions list response: {response.text}")
 
     @task
     def walker_run(self):
@@ -91,7 +93,9 @@ class SeqTask(SequentialTaskSet):
                     'name': walkerName,
                     'snt': self.sentinel_jid
                     }
+            print(f"Walker {walkerName} running.")
             response = self.client.post("/js/walker_run",headers = {'authorization' : f'Token {self.user_token}'}, json = req)
+            print(f"Walker {walkerName} finished. {response.text}")
             print(f"Walker {walkerName} Output: {response.json()}")
     
     
