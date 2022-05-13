@@ -6,12 +6,13 @@ sidebar_position: 4
 
 Let's create a simple converational Agent using Jaseci and Jaseci Kit. We're gonna creat a Chat bot for students to sign up for Jaseci Dojo !
 
-Before we begin ensure your have jaseci and jaseci kit installed. If not see the Installation here. 
+Before we begin ensure your have jaseci and jaseci kit installed. If not see the Installation here.
 
 Create a file called graph.jac. Here we are going to create the conversational flow for the chatbot .
 
 ```jac
 
+# state is the name of the node
 node state {
     has title;
     has message;
@@ -19,46 +20,58 @@ node state {
 }
 
 ```
-
-Nodes are the fundamental unit of  a gaph. These can be considered to be the steps in which the Walker can take. Here we are creating a blueprint for the creation of nodes of type state.
-The <strong>has</strong> keyword is used to declare an attribute of the node.
+Nodes can be thought of as the representation of an entity.
+Nodes are the fundamental unit of  a gaph. These can be considered to be the steps in which the Walker can take.
+* Nodes are composed of Context and excutable actions.
+* Nodes execute a set of actions upon entry and exit.
+ Here we are creating a `node` of name "state"
+The <strong>has</strong> keyword is used to declare a variable of the node.
 
 ```jac
 
+# state is the name of this node
 node state {
     has title;
     has message;
     has prompts;
 }
 
+# transition is the name of this edge
 edge transition {
     has intent;
 }
 ```
 
 Edges are the link between nodes. They walker will use these edges to determine the next node to traverse to.
-The <strong>has</strong> key word is used to declare the attribute "intent". This "intent" is what the Walker will use to to determine what node to go to next.
+The <strong>has</strong> key word is used to declare the variable "intent". This "intent" is what the Walker will use to to determine which node to go to next.
 
 ```jac
 
+# state is the name of this node
 node state {
     has title;
     has message;
     has prompts;
 }
-
+# transition is the name of this edge
 edge transition {
     has intent;
+}
 
+# main_graph is name of the graph
 graph main_graph {
 
     has anchor main_root
 
 ```
-The <strong>graph main_graph</strong>  is a collection of nodes. 
+
+The `graph` is a collection of initialized nodes. 
+The `has anchor` key word is used to identify the root node. The Root node is the node where the walker's traversal begins.
 The <strong>has anchor</strong> key word is used to state the root node. The Root node is the node where the walker's traversal begins.
 
+
 ```jac
+# state is the name of this node
 node state {
     has title;
     has message;
@@ -67,7 +80,7 @@ node state {
 
 edge transition {
     has intent;
-
+}
 graph main_graph {
 
     has anchor main_root
@@ -79,8 +92,8 @@ spawn {
         message = "Welcome to Jaseci Dojo, how can i help?",
         prompts = ["class","times","prices","quit"]
     );
-  
-   
+
+
     # this creates a node that goes from main_root to class.
     prices = spawn main_root -[transition(intent="prices")] -> node::state(
         title = "prices",
@@ -97,12 +110,12 @@ spawn {
 
     # this create an edge from prices_12 back to prices.
      prices_12 -[transition(intent="more prices")] -> prices;
-    
+
 
 }
 
 ```
-<strong>spawn</strong> is used to create to create child nodes, which is used to design flow of the conversational experience.
+`spawn` is used to create to create child nodes, which is used to design flow of the conversational experience.
 We are able to create additional edges to connnect nodes which which do not share a parent -child relationship. This is shown in the last line.
 
 ```jac
@@ -127,7 +140,7 @@ graph main_graph {
         message = "Welcome to Jaseci Dojo, how can i help?",
         prompts = ["class","times","prices","quit"]
     );
-    
+
     prices = spawn main_root -[transition(intent="prices")] -> node::state(
         title = "prices",
         message = "Prices Vary based on age",
@@ -164,7 +177,7 @@ graph main_graph {
 
     );
 
-    
+
 
     time = spawn class -[transition(intent="time")]-> node::state(
         title = "time",
@@ -180,8 +193,8 @@ graph main_graph {
         prompts = ['days',"quit"]
     );
 
-    
-   
+
+
 
      days = spawn time -[transition(intent="days")]-> node::state(
         title = "days",
@@ -189,7 +202,7 @@ graph main_graph {
         prompts = ['time',"quit"]
     );
 
-    
+
      other_time - [transition(intent="days")] -> days ;
      days - [transition(intent="time")] -> time ;
 
@@ -200,6 +213,7 @@ graph main_graph {
 This last code block we created several nodes and connected them together. To move from node to node we use the intent to sepcify which route to take.
 
 ### Walker
+* Walkers traverse the nodes of the graph triggering execution at the node level.
 
 Now lets create a file called walker.jac
 Here is where we will create  the method for traveral of the graph.
