@@ -816,12 +816,12 @@ summarizer_type :
     LuhnSummarizer : algorithm's approach is based on TF-IDF (Term Frequency-Inverse Document Frequency).
 ```
 
-## T5 Summarization
+## 8. T5 Summarization
 
 ###  T5 Summarization (`t5_sum`)
 `t5_sum` module is an encoder-decoder model pre-trained on a multi-task mixture of unsupervised and supervised tasks and for which each task is converted into a text-to-text format.
 
-* `classify_text`: use T5 as a classifier
+* `classify_text`: use T5 to classiy a body of text
     * Input:
         * `text` (string): text to classify
         * `min_length` (integer): the least amount of words you want returned from the model
@@ -839,12 +839,13 @@ walker summarization {
     classified_response = t5_sum.classify_text(text=text, min_length=min_length, max_length=max_length);
     
     report classified_response;
+}
     
 ```
 ###################################################################
 
 ### 5.1. List of API's available
-#### **classify_text** - classifies body of text
+#### **classify_text** - classifies a body of text
 Request :
 ```
 requests.post(
