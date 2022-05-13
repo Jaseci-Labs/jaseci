@@ -821,7 +821,7 @@ summarizer_type :
 ###  T5 Summarization (`t5_sum`)
 `t5_sum` module is an encoder-decoder model pre-trained on a multi-task mixture of unsupervised and supervised tasks and for which each task is converted into a text-to-text format.
 
-* `classify_text`: use T5 to classiy a body of text
+* `classify_text`: use T5 to classify a body of text
     * Input:
         * `text` (string): text to classify
         * `min_length` (integer): the least amount of words you want returned from the model
