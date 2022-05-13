@@ -1034,7 +1034,7 @@ no_error_on_dict_key_assign = """
     """
 
 report_status = """
-    walker init {report.status = 302; report "hello";}
+    walker init {report:status = 302; report "hello";}
     """
 
 
