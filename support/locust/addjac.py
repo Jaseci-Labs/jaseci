@@ -14,7 +14,7 @@ def get_code(path: str)->str:
 UserID = 0
 actionLoaded = False
 
-TEST_PATH = 'sample_code/simple'
+TEST_PATH = 'sample_code/flair_test_local'
 
 def print_response(response):
     failure = False
@@ -76,6 +76,12 @@ class SeqTask(SequentialTaskSet):
         for action in load_config(TEST_PATH)['remote_actions']:
             response = self.client.post("/js_admin/actions_load_remote", headers = {'authorization' : f'Token {self.user_token}'}, json = {
                 'url': action
+                })
+            # print(f"response: {response.text}")
+            print_response(response)
+        for action in load_config(TEST_PATH)['local_actions']:
+            response = self.client.post("/js_admin/actions_load_local", headers = {'authorization' : f'Token {self.user_token}'}, json = {
+                'file': action
                 })
             # print(f"response: {response.text}")
             print_response(response)
