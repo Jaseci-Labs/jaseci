@@ -4,6 +4,7 @@ from t5_sum import serv_actions
 from fastapi.testclient import TestClient
 from .test_data import test_t5_sum_request
 
+
 class t5_sum_test_api(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
@@ -13,9 +14,6 @@ class t5_sum_test_api(TestCaseHelper, TestCase):
         return super().tearDown()
 
     def test_t5_sum_detection_pass(self):
-        response = self.client.post(
-            "/t5_sum/",
-            json=test_t5_sum_request
-        )
-        
+        response = self.client.post("/t5_sum/", json=test_t5_sum_request)
+
         self.assertEqual(response.status_code, 200)
