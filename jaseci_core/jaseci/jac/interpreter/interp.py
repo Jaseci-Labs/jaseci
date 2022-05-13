@@ -393,12 +393,12 @@ class interp(machine_state):
         """
         report_action:
             KW_REPORT expression SEMI
-            | KW_REPORT DOT NAME EQ INT SEMI;
+                | KW_REPORT COLON NAME EQ expression SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
-        if kid[1].name == "DOT":
+        if kid[1].name == "COLON":
             if kid[2].token_text() in ["status", "status_code"]:
-                self.report_status = int(kid[4].token_text())
+                self.report_status = self.run_expression(kid[4]).value
             else:
                 self.rt_error("Invalid report attribute to set", kid[2])
         else:
