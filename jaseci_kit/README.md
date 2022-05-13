@@ -24,6 +24,7 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 | Module | Model Name | Example | Type | Status | Description | Resources |
 | --- | --- | --- | --- | --- | --- | --- |
 | `cl_summer` | Summarizer | | No Training req. | Ready | Extractive Summarization using Sumy | [Doc.](https://miso-belica.github.io/sumy/) |
+| `t5_sum` | Summarizer | | No Training req. | Ready | Abstractive Summarization using the T5 Model | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5) | 
 
 ## Non-AI Tools
 | Module | Model Name | Example | Status | Description | Resources |
@@ -814,6 +815,52 @@ summarizer_type :
     LsaSummarizer : algorithm based on term-document frequency techniques with singular value decomposition to summarize texts.
     LuhnSummarizer : algorithm's approach is based on TF-IDF (Term Frequency-Inverse Document Frequency).
 ```
+
+## T5 Summarization
+
+###  T5 Summarization (`t5_sum`)
+`t5_sum` module is an encoder-decoder model pre-trained on a multi-task mixture of unsupervised and supervised tasks and for which each task is converted into a text-to-text format.
+
+* `classify_text`: use T5 as a classifier
+    * Input:
+        * `text` (string): text to classify
+        * `min_length` (integer): the least amount of words you want returned from the model
+        * `max_length` (integer): the most amount of words you want returned from the model
+
+#### Example Jac Usage:
+```jac
+walker summarization {
+    can t5_sum.classify_text;
+    
+    has text;
+    has min_length = 30;
+    has max_length = 100;
+    
+    classified_response = t5_sum.classify_text(text=text, min_length=min_length, max_length=max_length);
+    
+    report classified_response;
+    
+```
+###################################################################
+
+### 5.1. List of API's available
+#### **classify_text** - classifies body of text
+Request :
+```
+requests.post(
+    "/classify_text/",
+    json= {
+    "text": "The US has passed the peak on new coronavirus cases, President Donald Trump said and predicted that some states would reopen this month. The US has over 637,000 confirmed Covid-19 cases and over 30,826 deaths, the highest for any country in the world. At the daily White House coronavirus briefing on Wednesday, Trump said new guidelines to reopen the country would be announced on Thursday after he speaks to governors. We'll be the comeback kids, all of us, he said. We want to get our country back. The Trump administration has previously fixed May 1 as a possible date to reopen the world's largest economy, but the president said some states may be able to return to normalcy earlier than that.",
+  "min_length": 30,
+  "max_length": 100
+}
+)
+```
+Response:
+```
+"the president predicts some states will reopen this month. the country has over 637,000 confirmed cases and over 30,826 deaths, the highest for any country in the world. we'll be the comeback kids, all of us."
+```
+
 ### Unfinished TODOs
 
 1. convert poly encoders to new interface
