@@ -121,6 +121,8 @@ class AbstractJacAPIView(APIView):
         # for i in self.caller._h.save_obj_list:
         #     self.caller._h.commit_obj_to_redis(i)
         status = self.pluck_status_code(api_result)
+        if isinstance(api_result, dict) and "report_custom" in api_result.keys():
+            api_result = api_result["report_custom"]
         return JResponse(self.caller, api_result, status=status)
 
 

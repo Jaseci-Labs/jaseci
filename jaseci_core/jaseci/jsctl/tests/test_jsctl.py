@@ -332,3 +332,24 @@ class jsctl_test(TestCaseHelper, TestCase):
         )
         r = self.call("walker run go")
         self.assertEqual(r.split()[0], "2020-01-01T00:00:00")
+
+    def test_jsctl_custom_report(self):
+        self.call(
+            "sentinel register " "jaseci/jsctl/tests/glob_imp.jac -set_active true"
+        )
+        r = self.call_cast("walker run cust_report")
+        self.assertEqual(r, {"a": "b"})
+
+    def test_jsctl_custom_report_off(self):
+        self.call(
+            "sentinel register " "jaseci/jsctl/tests/glob_imp.jac -set_active true"
+        )
+        r = self.call_cast("walker run cust_report_neutralize")
+        self.assertIn("success", r.keys())
+
+    def test_jsctl_disengage_report(self):
+        self.call(
+            "sentinel register " "jaseci/jsctl/tests/glob_imp.jac -set_active true"
+        )
+        r = self.call_cast("walker run disengage_report")
+        self.assertEqual(r, {"a": "b"})
