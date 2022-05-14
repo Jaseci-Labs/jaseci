@@ -29,6 +29,7 @@ class AbstractJacAPIView(APIView):
     The builder set of Jaseci APIs
     """
 
+    http_method_names = ["post"]
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
@@ -65,9 +66,28 @@ class AbstractJacAPIView(APIView):
         pl_peek = str(dict(request.data))[:256]
         logger.info(str(f"Incoming call to {type(self).__name__} with {pl_peek}"))
         self.start_time = time()
-        self.cmd = (
+
+        req_query = request.GET.dict()
+        req_headers = dict(request.headers)
+        req_data = self.cmd = (
             request.data.dict() if type(request.data) is not dict else request.data
         )
+
+        req_context = {
+            "method": request.method,
+            "headers": req_headers,
+            "query": req_query,
+            "body": req_data.copy(),
+        }
+
+        if "ctx" in req_data:
+            ctx = req_data["ctx"].copy()
+            ctx["_context"] = req_context
+            req_data["ctx"] = ctx
+        else:
+            req_data["ctx"] = {"_context": req_context}
+
+        self.cmd.update(req_query)
         self.cmd.update(kwargs)
         self.set_caller(request)
         self.res = "Not valid interaction!"
@@ -98,6 +118,7 @@ class AbstractAdminJacAPIView(AbstractJacAPIView):
     The abstract base for Jaseci Admin APIs
     """
 
+    http_method_names = ["post"]
     permission_classes = (IsAuthenticated, IsAdminUser)
 
 
@@ -106,7 +127,20 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
     The abstract base for Jaseci Admin APIs
     """
 
+    http_method_names = ["post"]
     permission_classes = (AllowAny,)
+
+    def get(self, request, **kwargs):
+        """
+        Public GET function that parses api signature to load parms
+        SuperSmart GET - can read signatures of master and process
+        bodies accordingly
+        """
+        self.proc_request(request, **kwargs)
+
+        api_result = self.caller.public_interface_to_api(self.cmd, type(self).__name__)
+        self.log_request_stats()
+        return self.issue_response(api_result)
 
     def post(self, request, **kwargs):
         """
