@@ -104,11 +104,12 @@ class walker_interp(interp):
         walker_action:
             ignore_action
             | take_action
-            | destroy_action
-            | KW_DISENGAGE SEMI;
+            | KW_DISENGAGE (report_action | SEMI);
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "KW_DISENGAGE":
+            if kid[1].name == "report_action":
+                self.run_report_action(kid[1])
             self._stopped = "stop"
             self.next_node_ids.remove_all()
         else:

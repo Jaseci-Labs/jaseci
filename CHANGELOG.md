@@ -4,6 +4,8 @@
 
 ### Updates
 
+- New Features: Report payloads can be customized with `report:custom`
+- Improvement: Disengage can now do disengage with report action
 - Improvement: import now works recursively through chain of files
 - Improvement: JSCTL shows token on login
 - Major Feature: JSCTL has persistent log in sessions, and can logout
@@ -23,6 +25,10 @@
 - Improvement: `actions load module` added as capability where module strings are accepted
 - New Feature: Added global root finder `net.root` to std lib and `net.min` to go with existing `net.max`
 - New Feature: New global element type and `global` keyword
+
+### Notes
+
+- Special report actions now use `:` instead of `.` eg `report.status = 200` is now `report:status = 200`
 
 ## Version 1.3.2
 

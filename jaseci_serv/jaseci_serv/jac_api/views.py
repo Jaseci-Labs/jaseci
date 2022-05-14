@@ -33,6 +33,17 @@ class AbstractJacAPIView(APIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
+    def get(self, request, **kwargs):
+        """
+        General GET function that parses api signature to load parms
+        SuperSmart GET - can read signatures of master and process
+        bodies accordingly
+        """
+        self.proc_request(request, **kwargs)
+        api_result = self.caller.general_interface_to_api(self.cmd, type(self).__name__)
+        self.log_request_stats()
+        return self.issue_response(api_result)
+
     def post(self, request, **kwargs):
         """
         General post function that parses api signature to load parms
@@ -110,6 +121,8 @@ class AbstractJacAPIView(APIView):
         # for i in self.caller._h.save_obj_list:
         #     self.caller._h.commit_obj_to_redis(i)
         status = self.pluck_status_code(api_result)
+        if isinstance(api_result, dict) and "report_custom" in api_result.keys():
+            api_result = api_result["report_custom"]
         return JResponse(self.caller, api_result, status=status)
 
 
