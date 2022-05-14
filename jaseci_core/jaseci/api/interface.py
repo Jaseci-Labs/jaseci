@@ -60,18 +60,28 @@ class interface:
 
         return decorator_func
 
-    def private_api(cmd_group=None, cli_args=None, url_args=None):
+    def private_api(cmd_group=None, cli_args=None, url_args=None, allowed_methods=None):
         def decorator_func(func):
             return interface.assimilate_api(
-                interface._private_api, func, cmd_group, cli_args, url_args
+                interface._private_api,
+                func,
+                cmd_group,
+                cli_args,
+                url_args,
+                allowed_methods,
             )
 
         return decorator_func
 
-    def admin_api(cmd_group=None, cli_args=None, url_args=None):
+    def admin_api(cmd_group=None, cli_args=None, url_args=None, allowed_methods=None):
         def decorator_func(func):
             return interface.assimilate_api(
-                interface._admin_api, func, cmd_group, cli_args, url_args
+                interface._admin_api,
+                func,
+                cmd_group,
+                cli_args,
+                url_args,
+                allowed_methods,
             )
 
         return decorator_func
