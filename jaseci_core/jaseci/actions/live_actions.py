@@ -70,9 +70,7 @@ def load_standard():
     import jaseci.actions.standard.file  # noqa
     import jaseci.actions.standard.vector  # noqa
     import jaseci.actions.standard.date  # noqa
-
-
-load_standard()
+    import jaseci.actions.standard.jaseci  # noqa
 
 
 def load_preconfig_actions(hook):
@@ -106,6 +104,8 @@ def get_global_actions(hook):
             or i.startswith("rand.")
             or i.startswith("vector.")
             or i.startswith("request.")
+            or i.startswith("date.")
+            or i.startswith("jaseci.")
         ):
             global_action_list.append(
                 action(
@@ -152,3 +152,6 @@ def gen_remote_func_hook(url, act_name, param_names):
         return res.json()
 
     return func
+
+
+load_standard()
