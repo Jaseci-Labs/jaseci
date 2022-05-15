@@ -5,16 +5,22 @@ from jaseci.element.super_master import super_master
 import functools
 
 
-def interface_api(api_name, is_public, meta, **kwargs):
+def interface_api(api_name, is_public, p_names, *args, meta):
     """
     Interfaces Master apis after processing arguments/parameters
     from cli
     """
     mast = master_from_meta(meta)
+    params = {}
+    if "self" in p_names:
+        p_names.remove("self")
+    for i in range(len(args)):
+        if i < len(p_names):
+            params[p_names[i]] = args[i]
     if is_public:
-        return mast.public_interface_to_api(kwargs, api_name)
+        return mast.public_interface_to_api(params, api_name)
     else:
-        return mast.general_interface_to_api(kwargs, api_name)
+        return mast.general_interface_to_api(params, api_name)
 
 
 def build_cmds():
@@ -28,13 +34,15 @@ def build_cmds():
         func_name = "_".join(i["groups"])
         f = functools.partial(
             copy_func(interface_api, func_name),
-            api_name=func_name,
-            is_public=i in super_master._public_api,
+            func_name,
+            i in super_master._public_api,
+            list(i["sig"].parameters.keys()),
         )
         f.__name__ = func_name
         f.__doc__ = i["doc"]
         f.__module__ = __name__
 
+        # original_args = inspect.getargspec(func).args
         globals()[func_name] = jaseci_action()(f)
 
 

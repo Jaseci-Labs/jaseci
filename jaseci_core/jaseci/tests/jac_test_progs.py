@@ -297,3 +297,9 @@ jasecilib_alias_list = """
         report jaseci.alias_list();
     }
     """
+
+jasecilib_params = """
+    walker init {
+        report jaseci.graph_list(true);
+    }
+    """
