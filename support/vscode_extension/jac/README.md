@@ -2,16 +2,25 @@
 
 README coming soon :)
 
+## Known Issues
+
+The Jac extensions provide language support for JAC (syntax highlighting) and useful tools that integrate with the Jaseci runtime.
+
+Full Guide for what to do is present here: https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide
+
+Helpful video is here: https://www.youtube.com/watch?v=5msZv-nKebI
+
+Example of syntax highlighting: https://github.com/microsoft/vscode/blob/main/extensions/cpp/syntaxes/c.tmLanguage.json, https://github.com/microsoft/vscode/blob/main/extensions/python/syntaxes/MagicPython.tmLanguage.json
+
 ## Features
 
-## Requirements
-
-## Extension Settings
-
-## Known Issues
+- JAC Language Support
+- DOT Language Support
+- View DOT Graph (CMD/CTRL + Shift + V)
 
 ## Release Notes
 
-### 1.0.0
+### 0.0.3
 
-Initial release of Jac VSCode extension
+- DOT Language Support
+- DOT Graph visualizer

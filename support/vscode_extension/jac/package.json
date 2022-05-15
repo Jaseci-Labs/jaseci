@@ -2,7 +2,7 @@
     "name": "jac",
     "displayName": "JAC",
     "description": "VSCode Extension for the JAC Programming Language",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "publisher": "jaseci-labs",
     "icon": "images/icon.png",
     "engines": {
@@ -11,22 +11,113 @@
     "categories": [
         "Programming Languages"
     ],
+    "activationEvents": [
+        "onCommand:jac.viewGraph",
+        "onCommand:jac.run"
+    ],
+    "main": "./out/extension.js",
     "contributes": {
-        "languages": [{
-            "id": "jac",
-            "aliases": ["Jac Programming Language", "jac"],
-            "extensions": [".jac"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "jac",
-            "scopeName": "source.jac",
-            "path": "./syntaxes/jac.tmLanguage.json"
-        }]
+        "languages": [
+            {
+                "id": "jac",
+                "aliases": [
+                    "Jac Programming Language",
+                    "jac"
+                ],
+                "extensions": [
+                    ".jac"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "jac",
+                "scopeName": "source.jac",
+                "path": "./syntaxes/jac.tmLanguage.json"
+            }
+        ]
     },
     "repository": {
         "type": "git",
         "url": "https://github.com/Jaseci-Labs/jaseci.git"
     },
-    "homepage": "https://www.jaseci.org/"
+    "homepage": "https://www.jaseci.org/",
+    "commands": [
+        {
+            "command": "jac.run",
+            "title": "JAC: Run",
+            "when": "editorTextFocus && editorLangId == dot"
+        },
+        {
+            "command": "jac.viewGraph",
+            "title": "JAC: View Graph",
+            "when": "editorTextFocus && editorLangId == dot"
+        }
+    ],
+    "keybindings": {
+        "command": "jac.viewGraph",
+        "key": "ctrl+shift+v",
+        "mac": "shift+cmd+v",
+        "when": "editorTextFocus && editorLangId == dot"
+    },
+    "languages": [
+        {
+            "id": "jac",
+            "aliases": [
+                "Jac Programming Language",
+                "jac"
+            ],
+            "extensions": [
+                ".jac"
+            ],
+            "configuration": "./language-configuration.json"
+        },
+        {
+            "id": "dot",
+            "aliases": [
+                "JAC (DOT)"
+            ],
+            "extensions": [
+                ".gv",
+                ".dot",
+                ".DOT"
+            ],
+            "configuration": "dot/dot.configuration.json"
+        }
+    ],
+    "grammars": [
+        {
+            "language": "jac",
+            "scopeName": "source.jac",
+            "path": "./syntaxes/jac.tmLanguage.json"
+        },
+        {
+            "language": "dot",
+            "scopeName": "source.dot",
+            "path": "dot/syntaxes/dot.tmLanguage"
+        }
+    ],
+    "scripts": {
+        "vscode:prepublish": "yarn run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "test-compile": "tsc -p ./"
+    },
+    "devDependencies": {
+        "@types/glob": "^7.2.0",
+        "@types/mocha": "^9.0.0",
+        "@types/node": "14.x",
+        "@types/vscode": "^1.66.0",
+        "@typescript-eslint/eslint-plugin": "^5.9.1",
+        "@typescript-eslint/parser": "^5.9.1",
+        "@vscode/test-electron": "^2.0.3",
+        "eslint": "^8.6.0",
+        "glob": "^7.2.0",
+        "mocha": "^9.1.3",
+        "typescript": "^4.5.4"
+    },
+    "dependencies": {
+        "@hpcc-js/wasm": "^1.14.1"
+    }
 }
