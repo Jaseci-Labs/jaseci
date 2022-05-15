@@ -1,3 +1,0 @@
-walker init {
-    report "Starting";
-}

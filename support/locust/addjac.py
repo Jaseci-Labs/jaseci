@@ -3,6 +3,7 @@ from locust import task, HttpUser, SequentialTaskSet, constant, HttpUser
 import os
 from credentials import gen_username, gen_password
 
+TEST_PATH = 'sample_code/bi_enc_test'
 def format_output(userName:str, output:str):
     print(f'{userName}: {output}')
 def get_code(path: str)->str:
@@ -14,7 +15,6 @@ def get_code(path: str)->str:
 UserID = 0
 actionLoaded = False
 
-TEST_PATH = 'sample_code/flair_test_local'
 
 def print_response(response):
     failure = False
