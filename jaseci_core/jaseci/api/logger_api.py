@@ -7,49 +7,48 @@ from jaseci.utils.utils import connect_logger_handler
 from logging.handlers import HTTPHandler
 
 
-class logger_api():
+class logger_api:
     """
     APIs for Jaseci Logging configuration
     """
 
-    @interface.admin_api(cli_args=['host'])
-    def logger_http_connect(self, host: str, port: int,
-                            url: str, log: str = 'all'):
+    @interface.admin_api(cli_args=["host"])
+    def logger_http_connect(self, host: str, port: int, url: str, log: str = "all"):
         """
         Connects internal logging to http(s) (log msgs sent via POSTs)
         Valid log params: {sys, app, all }
         """
         num = 0
-        if(log == 'sys' or log == 'all'):
+        if log == "sys" or log == "all":
             connect_logger_handler(
-                logger, HTTPHandler(host=f'{host}:{port}',
-                                    url=url, method='POST'))
+                logger, HTTPHandler(host=f"{host}:{port}", url=url, method="POST")
+            )
             num += 1
-        if(log == 'app' or log == 'all'):
+        if log == "app" or log == "all":
             connect_logger_handler(
-                app_logger, HTTPHandler(host=f'{host}:{port}',
-                                        url=url, method='POST'))
+                app_logger, HTTPHandler(host=f"{host}:{port}", url=url, method="POST")
+            )
             num += 1
-        return [f'{num} http handlers added!']
+        return [f"{num} http handlers added!"]
 
     @interface.admin_api()
-    def logger_http_clear(self, log: str = 'all'):
+    def logger_http_clear(self, log: str = "all"):
         """
         Connects internal logging to http(s) (log msgs sent via POSTs)
         Valid log params: {sys, app, all }
         """
         num = 0
-        if(log == 'sys' or log == 'all'):
+        if log == "sys" or log == "all":
             for i in logger.handlers:
-                if(i.__class__.__name__ == 'HTTPHandler'):
+                if i.__class__.__name__ == "HTTPHandler":
                     logger.removeHandler(i)
                     num += 1
-        if(log == 'app' or log == 'all'):
+        if log == "app" or log == "all":
             for i in app_logger.handlers:
-                if(i.__class__.__name__ == 'HTTPHandler'):
+                if i.__class__.__name__ == "HTTPHandler":
                     app_logger.removeHandler(i)
                     num += 1
-        return [f'{num} http handlers removed!']
+        return [f"{num} http handlers removed!"]
 
     @interface.admin_api()
     def logger_list(self):
@@ -62,4 +61,4 @@ class logger_api():
             core.append(str(type(i)))
         for i in app_logger.handlers:
             app.append(str(type(i)))
-        return {'core': core, 'app': app}
+        return {"core": core, "app": app}

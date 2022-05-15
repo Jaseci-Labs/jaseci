@@ -1,196 +1,4 @@
-ll_proto = \
-    """
-    node life {
-        has anchor owner;
-        can infer.year_from_date;
-    }
-
-    node year {
-        has anchor year;
-        can infer.month_from_date;
-    }
-
-    node month {
-        has anchor month;
-        can infer.year_from_date;
-        can infer.week_from_date;
-    }
-
-    node week {
-        has anchor week;
-        can infer.month_from_date;
-        can infer.day_from_date, date.day_from_date;
-    }
-
-    node day: has anchor day;
-
-    node workette {
-        has  name, order, date, owner, status, snooze_till;
-        has note, is_MIT, is_ritual;
-    }
-
-    edge past;
-
-    edge parent;
-
-    walker get_day {
-        has date;
-        life: take --> node::year == infer.year_from_date(date);
-        year: take --> node::month == infer.month_from_date(date);
-        month: take --> node::week == infer.week_from_date(date);
-        week: take --> node::day == date.day_from_date(date);
-        day: report here;
-        report false;
-    }
-
-    walker get_latest_day {
-        has before_date;
-        has anchor latest_day;
-        if(!before_date): before_date = std.time_now();
-        if(!latest_day): latest_day = 0;
-
-        life {
-            ignore --> node::year > infer.year_from_date(before_date);
-            take net.max(--> node::year);
-        }
-        year {
-            ignore node::month > infer.month_from_date(before_date);
-            take net.max(--> node::month)
-            else {
-                ignore here;
-                take <-- node::life;
-            }
-        }
-        month {
-            ignore node::week > infer.week_from_date(before_date);
-            take net.max(--> node::week)
-            else {
-                ignore here;
-                take <-- node::year == infer.year_from_date(before_date);
-            }
-        }
-        week {
-            ignore node::day > infer.day_from_date(before_date);
-            take net.max(--> node::day)
-            else {
-                ignore here;
-                take <-- node::month == infer.month_from_date(before_date);
-            }
-        }
-        day {
-            latest_day = here;
-            report here;
-        }
-    }
-
-    walker get_gen_day {
-        has date;
-        has anchor day_node;
-        if(!date): date=std.time_now();
-        root: take --> node::life;
-        life: take --> node::year == infer.year_from_date(date) else {
-                new = spawn here --> node::year ;
-                new.year = infer.year_from_date(date);
-                take --> node::year == infer.year_from_date(date);
-            }
-        year: take --> node::month == infer.month_from_date(date) else {
-                new = spawn here --> node::month;
-                new.month = infer.month_from_date(date);
-                take --> node::month == infer.month_from_date(date);
-            }
-        month: take --> node::week == infer.week_from_date(date) else {
-                new = spawn here --> node::week;
-                new.week = infer.week_from_date(date);
-                take --> node::week == infer.week_from_date(date);
-            }
-        week: take --> node::day == infer.day_from_date(date) else {
-                latest_day = spawn here walker::get_latest_day;
-                new = spawn here --> node::day;
-                new.day = infer.day_from_date(date);
-                if(latest_day and infer.day_from_date(date) ==
-                    infer.day_from_date(std.time_now())) {
-                    spawn latest_day walker::carry_forward(parent=new);
-                    take new;
-                }
-                elif(latest_day) {
-                    take latest_day;
-                }
-                else: take new;
-            }
-        day {
-            day_node = here;
-            take --> node::workette;
-        }
-        workette {
-            report here;
-            take --> node::workette;
-        }
-    }
-
-    walker get_sub_workettes {
-        report here;
-        workette: take --> node::workette;
-    }
-
-    walker carry_forward {
-        has parent;
-        day {
-            take --> node::workette;
-        }
-        workette {
-            if(here.status == 'done' or
-            here.status == 'eliminated') {
-                disengage;
-            }
-            new_workette = spawn here <-[past]- node::workette;
-            new_workette <-[parent]- parent;
-            new_workette := here;
-            spawn --> node::workette
-                walker::carry_forward(parent=new_workette);
-        }
-    }
-
-    walker gen_rand_life {
-        has num_workettes;
-        root: take --> node::life;
-
-        life {
-            num_workettes = 10;
-            num_days = rand.integer(2, 4);
-            for i=0 to i<num_days by i+=1 {
-                spawn here walker::get_gen_day(
-                    date=rand.time("2019-01-01", "2019-12-31")
-                );
-            }
-            take -->;
-        }
-        year, month, week { take -->; }
-        day, workette {
-            if(num_workettes == 0): disengage;
-            gen_num = rand.integer(5, 8);
-            for i=0 to i<gen_num by i+=1 {
-                spawn here -[parent]-> node::workette(name=rand.sentence());
-            }
-            take --> ;
-            num_workettes -= 1;
-        }
-    }
-
-    walker init {
-        has owner;
-        has anchor life_node;
-        take (--> node::life == owner) else {
-            life_node = spawn here --> node::life;
-            life_node.owner = owner;
-            disengage;
-        }
-    }
-
-
-    """
-
-prog0 = \
-    """
+prog0 = """
     node testnode:0 {
         has a, b, c;
         can std.log::a,b::>c with exit;
@@ -226,8 +34,7 @@ prog0 = \
     }
     """
 
-prog1 = \
-    """
+prog1 = """
     node testnode:0 {
         has a, b, c;
         can std.log::a,b::>c with exit;
@@ -412,8 +219,7 @@ prog1 = \
     }
     """
 
-edgey = \
-    """
+edgey = """
     node testnode;
 
     edge apple;
@@ -428,8 +234,7 @@ edgey = \
     }
     """
 
-edgey2 = \
-    """
+edgey2 = """
     node testnode;
 
     edge apple;
@@ -446,8 +251,7 @@ edgey2 = \
     }
     """
 
-edgey2b = \
-    """
+edgey2b = """
     node testnode;
 
     edge apple;
@@ -465,8 +269,7 @@ edgey2b = \
     }
     """
 
-edgey2c = \
-    """
+edgey2c = """
     node testnode;
 
     edge apple;
@@ -484,8 +287,7 @@ edgey2c = \
     }
     """
 
-edgey3 = \
-    """
+edgey3 = """
     node testnode;
 
     edge apple;
@@ -507,8 +309,7 @@ edgey3 = \
     """
 
 
-edgey4 = \
-    """
+edgey4 = """
     node testnode;
 
     edge apple;
@@ -526,8 +327,7 @@ edgey4 = \
     }
     """
 
-edgey5 = \
-    """
+edgey5 = """
     node testnode;
 
     edge apple;
@@ -546,8 +346,7 @@ edgey5 = \
     }
     """
 
-edgey6 = \
-    """
+edgey6 = """
     node testnode;
 
     edge apple;
@@ -563,8 +362,7 @@ edgey6 = \
     }
     """
 
-edgey7 = \
-    """
+edgey7 = """
     node testnode;
 
     edge apple;
@@ -585,8 +383,7 @@ edgey7 = \
     }
     """
 
-edge_access = \
-    """
+edge_access = """
     node testnode;
 
     edge apple {
@@ -604,14 +401,13 @@ edge_access = \
 
             e = -[apple]->.edge[0];
             e.v1 = 7;
-            e = --> node::testnode .edge[1];
+            e = (--> node::testnode).edge[1];
             e.x1=8;
         }
     }
     """
 
-has_assign = \
-    """
+has_assign = """
     node testnode {
         has a=8;
     }
@@ -628,8 +424,7 @@ has_assign = \
     """
 
 
-set_get_global = \
-    """
+set_get_global = """
     walker setter {
         root {
             std.set_global('globby', 59);
@@ -645,8 +440,7 @@ set_get_global = \
     }
     """
 
-set_get_global_dict = \
-    """
+set_get_global_dict = """
     walker setter {
         root {
             std.set_global('globby',
@@ -668,8 +462,7 @@ set_get_global_dict = \
     }
     """
 
-version_label = \
-    """
+version_label = """
     version: "alpha-1.0"
 
     walker setter {
@@ -687,8 +480,7 @@ version_label = \
     }
     """
 
-sharable = \
-    """
+sharable = """
     node life {
     }
 
@@ -703,8 +495,7 @@ sharable = \
     }
     """
 
-basic = \
-    """
+basic = """
     node life {
     }
 
@@ -718,8 +509,7 @@ basic = \
     }
     """
 
-visibility_builtins = \
-    """
+visibility_builtins = """
     node testnode {
         has yo, mama;
     }
@@ -749,8 +539,7 @@ visibility_builtins = \
     }
     """
 
-spawn_ctx_edge_node = \
-    """
+spawn_ctx_edge_node = """
     node person: has name, age, birthday, profession;
     edge friend: has meeting_place;
     edge family: has kind;
@@ -768,8 +557,7 @@ spawn_ctx_edge_node = \
     }
     """
 
-filter_ctx_edge_node = \
-    """
+filter_ctx_edge_node = """
     node person: has name, age, birthday, profession;
     edge friend: has meeting_place;
     edge family: has kind;
@@ -785,8 +573,7 @@ filter_ctx_edge_node = \
     }
     """
 
-null_handleing = \
-    """
+null_handleing = """
     node person: has name, age, birthday, profession;
 
     walker init {
@@ -806,8 +593,7 @@ null_handleing = \
     }
     """
 
-bool_type_convert = \
-    """
+bool_type_convert = """
     node person: has name;
 
     walker init {
@@ -821,8 +607,7 @@ bool_type_convert = \
     }
     """
 
-typecasts = \
-    """
+typecasts = """
     walker init {
         a=5.6;
         report (a+2);
@@ -837,8 +622,7 @@ typecasts = \
     }
     """
 
-typecasts_error = \
-    """
+typecasts_error = """
     walker init {
         a=5.6;
         report (a+2);
@@ -853,8 +637,7 @@ typecasts_error = \
     }
     """
 
-filter_on_context = \
-    """
+filter_on_context = """
     node testnode {
         has yo, mama;
     }
@@ -884,8 +667,7 @@ filter_on_context = \
     }
     """
 
-string_manipulation = \
-    """
+string_manipulation = """
     walker init {
         a=" tEsting me  ";
         report a[4];
@@ -903,11 +685,12 @@ string_manipulation = \
         report a.str::is_upper;
         report a.str::is_lower;
         report a.str::is_space;
+        report '{"a": 5}'.str::load_json;
         report a.str::count('t');
         report a.str::find('i');
-        report a.str::split;
-        report a.str::split('E');
-        report a.str::startswith('tEs');
+        report a.s::split;
+        report a.s::split('E');
+        report a.s::startswith('tEs');
         report a.str::endswith('me');
         report a.str::replace('me', 'you');
         report a.str::strip;
@@ -921,24 +704,69 @@ string_manipulation = \
     }
     """
 
-string_join = \
+list_manipulation = """
+    walker init {
+        a = [4];
+        b=a.l::copy;
+        b[0]+=1;
+        report a;
+        report b;
+        a.list::extend(b);
+        a.l::append(b[0]);
+        report a;
+        a.l::reverse;
+        report a;
+        a.list::sort;
+        report a;
+        a.l::reverse;
+        report a.l::index(4);
+        a.l::append(a.l::index(4));
+        report a;
+        a.l::insert(2, "apple");
+        a.l::remove(5);
+        report a;
+        a.l::pop;
+        report a.l::count(4);
+        report a;
+        a.l::clear;
+        report a;
+    }
     """
+
+dict_manipulation = """
+    walker init {
+        a = {'four':4, 'five':5};
+        b=a.d::copy;
+        b['four']+=1;
+        report a;
+        report b;
+        report a.dict::items;
+        report a.d::keys;
+        a.d::popitem;
+        report a;
+        report a.dict::values;
+        a.d::update({'four': 7});
+        report a;
+        a.d::pop('four');
+        report a;
+    }
+    """
+
+string_join = """
     walker init {
         a=['test', 'me', 'now'];
         report '_'.str::join(a);
     }
     """
 
-sub_list = \
-    """
+sub_list = """
     walker init {
         a=[1,2,3,4,5,6,7,8,9];
         report a[4:7];
     }
     """
 
-destroy_and_misc = \
-    """
+destroy_and_misc = """
     node person: has name, age, birthday, profession;
     edge friend: has meeting_place;
     edge family: has kind;
@@ -973,8 +801,7 @@ destroy_and_misc = \
     }
     """
 
-arbitrary_assign_on_element = \
-    """
+arbitrary_assign_on_element = """
     node person: has name, age, birthday, profession;
     walker init {
         some = spawn here --> node::person;
@@ -983,8 +810,7 @@ arbitrary_assign_on_element = \
     }
     """
 
-try_else_stmts = \
-    """
+try_else_stmts = """
     walker init {
         a=null;
         try {a=2/0;}
@@ -999,8 +825,7 @@ try_else_stmts = \
     }
     """
 
-node_edge_same_name = \
-    """
+node_edge_same_name = """
     node person: has name, age, birthday, profession;
     edge person: has meeting_place;
 
@@ -1013,8 +838,7 @@ node_edge_same_name = \
     }
     """
 
-testcases = \
-    """
+testcases = """
     node testnode {
         has yo, mama;
     }
@@ -1075,8 +899,7 @@ testcases = \
     """
 
 
-testcase_asserts = \
-    """
+testcase_asserts = """
     node testnode {
         has yo, mama;
     }
@@ -1128,8 +951,7 @@ testcase_asserts = \
     }
     """
 
-report_not_to_jacset = \
-    """
+report_not_to_jacset = """
     node testnode {
         has yo, mama;
     }
@@ -1140,8 +962,7 @@ report_not_to_jacset = \
     }
     """
 
-walker_spawn_unwrap_check = \
-    """
+walker_spawn_unwrap_check = """
     node testnode {
         has yo, mama;
     }
@@ -1153,5 +974,138 @@ walker_spawn_unwrap_check = \
 
     walker init {
         report &(spawn here walker::print);
+    }
+    """
+
+std_get_report = """
+    walker init {
+       report 3;
+       report 5;
+       report 6;
+       report 7;
+       report std.get_report();
+       report 8;
+    }
+    """
+
+func_with_array_index = """
+    walker init {
+       report 3;
+       report 5;
+       report std.get_report()[0];
+    }
+    """
+
+rt_error_test1 = """
+    walker init {
+       spawn here --> node::generic;
+       report -->[2];
+    }
+    """
+
+
+root_type_nodes = """
+    walker init {
+       spawn here -[generic]-> node::root;
+       report here.details['name'];
+       report -->[0].details['name'];
+    }
+    """
+
+invalid_key_error = """
+    walker init {
+       report here.context['adfas'];
+    }
+    """
+
+auto_cast = """
+    walker init {
+        report 1==1.0;
+        report 1.0==1;
+    }
+    """
+
+no_error_on_dict_key_assign = """
+    walker init {
+        a={};
+        a['b']=4;
+        report a;
+    }
+    """
+
+report_status = """
+    walker init {report:status = 302; report "hello";}
+    """
+
+
+graph_in_graph = """
+    graph one {
+        has anchor graph_root;
+        spawn {
+            graph_root = spawn node::generic;
+        }
+    }
+
+    graph two {
+        has anchor graph_root;
+        spawn {
+
+            graph_root = spawn node::generic;
+            day1 = spawn graph::one;
+
+            graph_root --> day1;
+        }
+    }
+
+    walker init {
+        root {
+            spawn here --> graph::two;
+        }
+        take -->;
+        report here;
+    }
+    """
+
+
+min_max_on_list = """
+    walker init {
+        a = [45, 3, 531.0, 3, 6, 531.1];
+
+        report a.l::max;
+        report a.l::min;
+        report a.l::idx_of_max;
+        report a.l::idx_of_min;
+    }
+    """
+
+edge_bug = """
+    node plain;
+
+    edge g;
+
+    walker init {
+        root {
+            nd = spawn here -[g]-> node::plain;
+            nd -[g]-> nd;
+            spawn nd -[g]-> node::plain;
+            spawn nd -[g]-> node::plain;
+            a = spawn nd <-[g]- node::plain;
+            spawn nd <-[g]- node::plain;
+            nd -[g]-> a;
+        }
+        take -[g]->;
+        plain {
+            report -[g]->.edge;
+            disengage;
+        }
+    }
+    """
+
+rand_choice = """
+    walker init {
+        a = [45, 3, 531.0, 3, 6, 531.1];
+
+        report a;
+        report rand.choice(a);
     }
     """

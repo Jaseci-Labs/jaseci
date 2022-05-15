@@ -1,6 +1,6 @@
 grammar jac;
 
-start: ver_label? import_module* element+ EOF;
+start: ver_label? import_module* element* EOF;
 
 import_module:
 	KW_IMPORT LBRACE (import_items | STAR_MUL) RBRACE KW_WITH STRING SEMI;
@@ -11,17 +11,21 @@ import_items:
 	KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
 	| KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
 	| KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
-	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?;
+	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?
+	| KW_GLOBAL (STAR_MUL | import_names) (COMMA import_items)?;
 
 import_names:
 	DBL_COLON NAME
 	| DBL_COLON LBRACE name_list RBRACE;
 
-element: architype | walker | test;
+element: global_var | architype | walker | test;
+
+global_var:
+	KW_GLOBAL NAME EQ expression (COMMA NAME EQ expression)* SEMI;
 
 architype:
-	KW_NODE NAME (COLON INT)? attr_block
-	| KW_EDGE NAME attr_block
+	KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
+	| KW_EDGE NAME (COLON NAME)* attr_block
 	| KW_GRAPH NAME graph_block;
 
 walker: KW_WALKER NAME namespaces? walker_block;
@@ -50,11 +54,13 @@ attr_block: LBRACE (attr_stmt)* RBRACE | COLON attr_stmt | SEMI;
 
 attr_stmt: has_stmt | can_stmt;
 
+can_block: (can_stmt)*;
+
 graph_block: graph_block_spawn | graph_block_dot;
 
 graph_block_spawn:
-	LBRACE has_root KW_SPAWN code_block RBRACE
-	| COLON has_root KW_SPAWN code_block SEMI;
+	LBRACE has_root can_block KW_SPAWN code_block RBRACE
+	| COLON has_root can_block KW_SPAWN code_block SEMI;
 
 graph_block_dot:
 	LBRACE has_root dot_graph RBRACE
@@ -127,9 +133,14 @@ assert_stmt: KW_ASSERT expression;
 
 destroy_action: KW_DESTROY expression SEMI;
 
-report_action: KW_REPORT expression SEMI;
+report_action:
+	KW_REPORT expression SEMI
+	| KW_REPORT COLON NAME EQ expression SEMI;
 
-walker_action: ignore_action | take_action | KW_DISENGAGE SEMI;
+walker_action:
+	ignore_action
+	| take_action
+	| KW_DISENGAGE (report_action | SEMI);
 
 ignore_action: KW_IGNORE expression SEMI;
 
@@ -159,11 +170,7 @@ term: factor ((STAR_MUL | DIV | MOD) factor)*;
 
 factor: (PLUS | MINUS) factor | power;
 
-power: func_call (POW factor)*;
-
-func_call:
-	atom (LPAREN expr_list? RPAREN)?
-	| atom? DBL_COLON NAME spawn_ctx?;
+power: atom (POW factor)*;
 
 atom:
 	INT
@@ -172,39 +179,59 @@ atom:
 	| BOOL
 	| NULL
 	| NAME
+	| KW_GLOBAL DOT NAME
 	| node_edge_ref
 	| list_val
 	| dict_val
 	| LPAREN expression RPAREN
+	| ability_op NAME spawn_ctx?
+	| atom atom_trailer+
 	| spawn
-	| atom DOT built_in
-	| atom DOT NAME
-	| atom index_slice
 	| ref
 	| deref
 	| any_type;
 
-ref: '&' expression;
+atom_trailer:
+	DOT built_in
+	| DOT NAME
+	| index_slice
+	| LPAREN expr_list? RPAREN
+	| ability_op NAME spawn_ctx?;
 
-deref: STAR_MUL expression;
+ability_op: DBL_COLON | DBL_COLON NAME COLON;
+
+ref: '&' atom;
+
+deref: STAR_MUL atom;
 
 built_in:
-	cast_built_in
-	| obj_built_in
+	| string_built_in
 	| dict_built_in
 	| list_built_in
-	| string_built_in;
+	| obj_built_in
+	| cast_built_in;
 
 cast_built_in: any_type;
 
 obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
 
-dict_built_in: KW_KEYS | LBRACE name_list RBRACE;
+dict_built_in:
+	KW_KEYS
+	| LBRACE name_list RBRACE
+	| (TYP_DICT DBL_COLON | DICT_DBL_COLON) (NAME | KW_KEYS) (
+		LPAREN expr_list RPAREN
+	)?;
 
-list_built_in: KW_LENGTH;
+list_built_in:
+	KW_LENGTH
+	| (TYP_LIST DBL_COLON | LIST_DBL_COLON) NAME (
+		LPAREN expr_list RPAREN
+	)?;
 
 string_built_in:
-	TYP_STRING DBL_COLON NAME (LPAREN expr_list RPAREN)?;
+	(TYP_STRING DBL_COLON | STR_DBL_COLON) NAME (
+		LPAREN expr_list RPAREN
+	)?;
 
 node_edge_ref:
 	node_ref filter_ctx?
@@ -240,15 +267,17 @@ dict_val: LBRACE (kv_pair (COMMA kv_pair)*)? RBRACE;
 
 kv_pair: STRING COLON expression;
 
-spawn: KW_SPAWN expression? spawn_object;
+spawn: KW_SPAWN spawn_object;
 
 spawn_object: node_spawn | walker_spawn | graph_spawn;
 
-node_spawn: edge_ref? node_ref spawn_ctx?;
+spawn_edge: expression edge_ref;
 
-graph_spawn: edge_ref graph_ref;
+node_spawn: spawn_edge? node_ref spawn_ctx?;
 
-walker_spawn: walker_ref spawn_ctx?;
+graph_spawn: spawn_edge? graph_ref;
+
+walker_spawn: expression walker_ref spawn_ctx?;
 
 spawn_ctx: LPAREN (spawn_assign (COMMA spawn_assign)*)? RPAREN;
 
@@ -340,6 +369,9 @@ KW_ACTIVITY: 'activity';
 KW_IMPORT: 'import';
 COLON: ':';
 DBL_COLON: '::';
+STR_DBL_COLON: 's::';
+LIST_DBL_COLON: 'l::';
+DICT_DBL_COLON: 'd::';
 COLON_OUT: '::>';
 LBRACE: '{';
 RBRACE: '}';
@@ -381,6 +413,7 @@ NE: '!=';
 KW_IN: 'in';
 KW_ANCHOR: 'anchor';
 KW_HAS: 'has';
+KW_GLOBAL: 'global';
 KW_PRIVATE: 'private';
 COMMA: ',';
 KW_CAN: 'can';

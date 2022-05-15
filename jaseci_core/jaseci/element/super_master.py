@@ -12,8 +12,9 @@ from jaseci.api.stripe_api import stripe_api
 from jaseci.api.actions_api import actions_api
 
 
-class super_master(master, logger_api, actions_api, config_api, global_api,
-                   super_api, stripe_api):
+class super_master(
+    master, logger_api, actions_api, config_api, global_api, super_api, stripe_api
+):
     """Master with admin APIs"""
 
     def __init__(self, *args, **kwargs):

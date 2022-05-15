@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class UserConfig(AppConfig):
-    name = 'user_api'
+    name = "jaseci_serv.user_api"

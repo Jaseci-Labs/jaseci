@@ -26,17 +26,14 @@ class redis_hook(mem_hook):
 
     def get_obj_from_store(self, item_id):
         loaded_obj = self.red.get(item_id.urn)
-        if(not loaded_obj):
-            logger.error(
-                str(f"Object {item_id} does not exist in Redis!")
-            )
+        if not loaded_obj:
+            logger.error(str(f"Object {item_id} does not exist in Redis!"))
             return None
 
         jdict = json.loads(loaded_obj)
-        j_type = jdict['j_type']
-        j_master = jdict['j_master']
-        class_for_type = \
-            utils.find_class_and_import(j_type, core_mod)
+        j_type = jdict["j_type"]
+        j_master = jdict["j_master"]
+        class_for_type = utils.find_class_and_import(j_type, core_mod)
         ret_obj = class_for_type(h=self, m_id=j_master, auto_save=False)
         ret_obj.json_load(loaded_obj)
 
@@ -46,7 +43,7 @@ class redis_hook(mem_hook):
         """
         Checks for object existance in store
         """
-        if (self.red.exists(item_id.urn)):
+        if self.red.exists(item_id.urn):
             return True
         return False
 
@@ -59,17 +56,14 @@ class redis_hook(mem_hook):
         except TypeError:
             logger.error(
                 str(f"Item {item} is not JSON serializable for redis store!"),
-                exc_info=True
+                exc_info=True,
             )
         except Exception as e:
-            logger.error(
-                str(f"Couldn't save {item} to redis! {e}"),
-                exc_info=True
-            )
+            logger.error(str(f"Couldn't save {item} to redis! {e}"), exc_info=True)
 
     def destroy_obj_from_store(self, item):
         self.red.delete(item.id.urn)
-        if(item in self.save_obj_list):
+        if item in self.save_obj_list:
             self.save_obj_list.remove(item)
 
     def get_glob_from_store(self, name):
@@ -77,12 +71,11 @@ class redis_hook(mem_hook):
         Get global config from externally hooked general store by name
         """
         loaded_val = self.red.get(name)
-        if (loaded_val):
+        if loaded_val:
             return loaded_val
         else:
             logger.error(
-                str(f"Global {name} does not exist in Django ORM!"),
-                exc_info=True
+                str(f"Global {name} does not exist in Django ORM!"), exc_info=True
             )
             return None
 
@@ -90,7 +83,7 @@ class redis_hook(mem_hook):
         """
         Checks for global config existance in store
         """
-        if (self.red.exists(name)):
+        if self.red.exists(name):
             return True
         return False
 
@@ -100,23 +93,20 @@ class redis_hook(mem_hook):
 
     def list_glob_from_store(self):
         """Get list of globals to externally hooked general store"""
-        logger.warning(str(f"Globals can not (yet) be listed from Redis!"))
+        logger.warning("Globals can not (yet) be listed from Redis!")
         return []
 
     def destroy_glob_from_store(self, name):
         """Destroy global config to externally hooked general store"""
         self.red.delete(name)
-        if(name in self.save_glob_dict.keys()):
+        if name in self.save_glob_dict.keys():
             del self.save_glob_dict[name]
 
     def commit_glob(self, name, value):
         try:
             self.red.set(name, value)
         except Exception as e:
-            logger.error(
-                str(f"Couldn't save {name} to redis! {e}"),
-                exc_info=True
-            )
+            logger.error(str(f"Couldn't save {name} to redis! {e}"), exc_info=True)
 
     def commit(self):
         """Write through all saves to store"""

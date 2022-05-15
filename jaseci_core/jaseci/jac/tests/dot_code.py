@@ -1,5 +1,4 @@
-dot_node = \
-    """
+dot_node = """
     node test_node {has name;}
     graph test_graph {
         has anchor graph_root;
@@ -18,8 +17,7 @@ dot_node = \
     }
     """
 
-dot_node_no_dot_id = \
-    """
+dot_node_no_dot_id = """
     node test_node {has name;}
     graph test_graph {
         has anchor graph_root;
@@ -38,8 +36,7 @@ dot_node_no_dot_id = \
     }
     """
 
-spawn_graph_node = \
-    """
+spawn_graph_node = """
     node test_node {has name;}
     graph test_graph {
         has anchor graph_root;
@@ -59,8 +56,7 @@ spawn_graph_node = \
     }
     """
 
-dot_node_multi_stmts = \
-    """
+dot_node_multi_stmts = """
     node test_node {
         has name, date;
     }
@@ -84,8 +80,7 @@ dot_node_multi_stmts = \
     }
     """
 
-dot_edge = \
-    """
+dot_edge = """
     node test_node {
         has name;
     }
@@ -120,8 +115,7 @@ dot_edge = \
     }
     """
 
-dot_edge_with_attrs = \
-    """
+dot_edge_with_attrs = """
     node test_node {
         has name;
     }
@@ -157,8 +151,44 @@ dot_edge_with_attrs = \
     }
     """
 
-dot_graph = \
+dot_edge_with_attrs_vars = """
+    node test_node {
+        has name;
+    }
+    edge special {
+        has name;
+    }
+    graph test_graph {
+        has anchor graph_root;
+        graph G {
+            graph_root [node=test_node, name=root]
+            node_1 [node=test_node, name=node_1]
+            node_2 [node=test_node, name=node_2]
+            graph_root -> node_1 [edge=special, name=edge_1]
+            graph_root -> node_2
+        }
+    }
+    walker init {
+        has nodes;
+        with entry {
+            nodes = [];
+        }
+        root {
+            spawn here --> graph::test_graph;
+            take --> node::test_node;
+        }
+        test_node {
+            for i in -[special]->.edge {
+                std.out(i.name);
+            }
+            for i in -[special(name == "edge_1")]-> {
+                std.out(i.name);
+            }
+        }
+    }
     """
+
+dot_graph = """
     node year {
         has color;
     }
@@ -191,5 +221,30 @@ dot_graph = \
         root {
             spawn here --> graph::test_graph;
         }
+    }
+    """
+
+dot_quoted_string = """
+    node test_node {
+        has name;
+    }
+    graph test_graph {
+        has anchor graph_root;
+        graph G {
+            graph_root [node=test_node, name=root]
+            node_1 [node=test_node, name="this has space"]
+            node_2 [node=test_node, name="another space"]
+            graph_root -> node_1
+            graph_root -> node_2
+        }
+    }
+    walker init {
+        root {
+            spawn here --> graph::test_graph;
+        }
+        test_node {
+            report here.name;
+        }
+        take -->;
     }
     """

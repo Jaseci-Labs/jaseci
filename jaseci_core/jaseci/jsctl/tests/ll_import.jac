@@ -1,4 +1,4 @@
-import {*} with "jaseci/jsctl/tests/ll_base.jac";
+import {*} with "./ll_base.jac";
 
 node life {
     has anchor owner, note, order, settings;

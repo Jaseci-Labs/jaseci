@@ -1,23 +1,25 @@
 - [How to start contributing](#how-to-start-contributing)
-  * [Working on a new feature or fixing a bug you found](#working-on-a-new-feature-or-fixing-a-bug-you-found)
-  * [Work on an existing issue](#work-on-an-existing-issue)
+  - [Working on a new feature or fixing a bug you found](#working-on-a-new-feature-or-fixing-a-bug-you-found)
+  - [Work on an existing issue](#work-on-an-existing-issue)
 - [How to contribute code](#how-to-contribute-code)
-  * [What is a Pull Request (PR)?](#what-is-a-pull-request--pr--)
-  * [How to open a PR and contribute code to Jaseci Open Source](#how-to-open-a-pr-and-contribute-code-to-jaseci-open-source)
-    + [1. Forking the Jaseci Repository](#1-forking-the-jaseci-repository)
-    + [2. Cloning the Forked Repository Locally](#2-cloning-the-forked-repository-locally)
-    + [3. Update your Forked Repository](#3-update-your-forked-repository)
-    + [4. Implement your code contribution on a feature branch](#4-implement-your-code-contribution-on-a-feature-branch)
-    + [5. Push changes to your forked repository on GitHub](#5-push-changes-to-your-forked-repository-on-github)
-    + [6. Opening the Pull Request on Jaseci Open Source](#6-opening-the-pull-request-on-jaseci-open-source)
-    + [8. Merging your PR and the final steps of your contribution](#8-merging-your-pr-and-the-final-steps-of-your-contribution)
-  * [Things to know about creating a PR](#things-to-know-about-creating-a-pr)
-    + [Opening issues before PRs](#opening-issues-before-prs)
-    + [Draft/Work-in-progress(WIP) PRs](#draft-work-in-progress-wip--prs)
-    + [Code style & Linting](#code-style---linting)
+  - [What is a Pull Request (PR)?](#what-is-a-pull-request--pr--)
+  - [How to open a PR and contribute code to Jaseci Open Source](#how-to-open-a-pr-and-contribute-code-to-jaseci-open-source)
+    - [1. Forking the Jaseci Repository](#1-forking-the-jaseci-repository)
+    - [2. Cloning the Forked Repository Locally](#2-cloning-the-forked-repository-locally)
+    - [3. Update your Forked Repository](#3-update-your-forked-repository)
+    - [4. Implement your code contribution on a feature branch](#4-implement-your-code-contribution-on-a-feature-branch)
+    - [5. Push changes to your forked repository on GitHub](#5-push-changes-to-your-forked-repository-on-github)
+    - [6. Opening the Pull Request on Jaseci Open Source](#6-opening-the-pull-request-on-jaseci-open-source)
+    - [8. Merging your PR and the final steps of your contribution](#8-merging-your-pr-and-the-final-steps-of-your-contribution)
+  - [Things to know about creating a PR](#things-to-know-about-creating-a-pr)
+    - [Opening issues before PRs](#opening-issues-before-prs)
+    - [Draft/Work-in-progress(WIP) PRs](#draft-work-in-progress-wip--prs)
+    - [Code style & Linting](#code-style---linting)
+
 ---
 
 ## How to start contributing
+
 Welcome to Jaseci! To start contributiong, we would like you to start with issues.
 
 ### Working on a new feature or fixing a bug you found
@@ -40,6 +42,7 @@ The Jaseci team will then work with you on the issue and the downstream pull req
 ---
 
 ## How to contribute code
+
 Code contribution will be in the form of Pull Request (PR) on Github.
 
 ### What is a Pull Request (PR)?
@@ -119,7 +122,7 @@ If you are ready to get feedback on your contribution from the Jaseci team, leav
 
 #### 8. Merging your PR and the final steps of your contribution
 
-A member from the Jaseci team will review your PR and might ask you to make additional changes and update. To update your PR, head back to the local copy of your repo, implement the changes requested and repeat the same steps above. Your PR will *automatically* be updated with your latest changes. Once you've implemented all of the suggested changes, tag the person who first reviewed your PR in a comment of the PR to ask them to review again.
+A member from the Jaseci team will review your PR and might ask you to make additional changes and update. To update your PR, head back to the local copy of your repo, implement the changes requested and repeat the same steps above. Your PR will _automatically_ be updated with your latest changes. Once you've implemented all of the suggested changes, tag the person who first reviewed your PR in a comment of the PR to ask them to review again.
 
 Finally, if your contribution is accepted, one of the Jaseci team member will merge it to the codebase!
 
@@ -140,6 +143,7 @@ Jaseci has a set of automated tests and PRs are required to pass these tests for
 #### Code style & Linting
 
 To standardize coding style, Jaseci code is enforeced by the flake8 linter and a set of linting rules. Please run the linting command to check your code style before creating a PR.
+
 ```
-flake8 --exclude=settings.py,*migrations*,jac_parse
+flake8 --exclude=settings.py,*migrations*,jac_parse --max-line-length=88 --extend-ignore = E203,
 ```

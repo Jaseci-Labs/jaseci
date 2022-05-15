@@ -1,5 +1,4 @@
-basic_arith = \
-    """
+basic_arith = """
     walker init {
         a = 4 + 4;
         b = 4 * -5;
@@ -10,15 +9,13 @@ basic_arith = \
     }
     """
 
-more_arith = \
-    """
+more_arith = """
     walker init {
         a = 4 ^ 4; b = 9 % 5; std.out(a, b);
     }
     """
 
-compare = \
-    """
+compare = """
     walker init {
         a = 5; b = 6;
         std.out(a == b,
@@ -31,8 +28,7 @@ compare = \
     }
     """
 
-logical = \
-    """
+logical = """
     walker init {
         a = true; b = false;
         std.out(a,
@@ -46,8 +42,7 @@ logical = \
     }
     """
 
-assignments = \
-    """
+assignments = """
     walker init {
         a = 4 + 4; std.out(a);
         a += 4 + 4; std.out(a);
@@ -60,16 +55,14 @@ assignments = \
     }
     """
 
-if_stmt = \
-    """
+if_stmt = """
     walker init {
         a = 4; b = 5;
         if(a < b): std.out("Hello!");
     }
     """
 
-else_stmt = \
-    """
+else_stmt = """
     walker init {
         a = 4; b = 5;
         if(a == b): std.out("A equals B");
@@ -77,8 +70,7 @@ else_stmt = \
     }
     """
 
-elif_stmt = \
-    """
+elif_stmt = """
     walker init {
         a = 4; b = 5;
         if(a == b): std.out("A equals B");
@@ -89,15 +81,13 @@ elif_stmt = \
     }
     """
 
-for_stmt = \
-    """
+for_stmt = """
     walker init {
         for i=0 to i<10 by i+=1:
             std.out("Hello", i, "times!");
     }
     """
-while_stmt = \
-    """
+while_stmt = """
     walker init {
         i = 5;
         while(i>0) {
@@ -107,8 +97,7 @@ while_stmt = \
     }
     """
 
-break_stmt = \
-    """
+break_stmt = """
     walker init {
         for i=0 to i<10 by i+=1 {
             std.out("Hello", i, "times!");
@@ -117,8 +106,7 @@ break_stmt = \
     }
     """
 
-continue_stmt = \
-    """
+continue_stmt = """
     walker init {
         i = 5;
         while(i>0) {
@@ -131,8 +119,21 @@ continue_stmt = \
     }
     """
 
-destroy_disconn = \
+continue_stmt2 = """
+    walker init {
+        z=10;
+
+        while(z>=0){
+            z-=1;
+            if(z<5){
+                continue;
+            }
+            std.out("hello", z);
+        }
+    }
     """
+
+destroy_disconn = """
     node testnode {
         has apple;
     }
@@ -151,8 +152,7 @@ destroy_disconn = \
     }
     """
 
-array_assign = \
-    """
+array_assign = """
     node testnode {
         has apple;
     }
@@ -175,8 +175,7 @@ array_assign = \
     }
     """
 
-array_md_assign = \
-    """
+array_md_assign = """
     node testnode {
         has apple;
     }
@@ -195,8 +194,7 @@ array_md_assign = \
     }
     """
 
-dereference = \
-    """
+dereference = """
     node testnode {
         has apple;
     }
@@ -209,8 +207,7 @@ dereference = \
     }
     """
 
-pre_post_walking = \
-    """
+pre_post_walking = """
     node testnode {
         has apple;
     }
@@ -234,8 +231,7 @@ pre_post_walking = \
     }
     """
 
-pre_post_walking_dis = \
-    """
+pre_post_walking_dis = """
     node testnode {
         has apple;
     }
@@ -261,8 +257,7 @@ pre_post_walking_dis = \
     }
     """
 
-length = \
-    """
+length = """
     node testnode {
         has apple;
     }
@@ -277,8 +272,7 @@ length = \
     }
     """
 
-sort_by_col = \
-    """
+sort_by_col = """
     walker init {
         lst=[['b', 333],['c',245],['a', 56]];
         std.out(lst);
@@ -289,8 +283,7 @@ sort_by_col = \
     }
     """
 
-list_remove = \
-    """
+list_remove = """
     node testnode { has lst; }
 
     walker init {
@@ -304,8 +297,7 @@ list_remove = \
     }
     """
 
-can_action = \
-    """
+can_action = """
     node testnode {
         has anchor A;
         can ptest {
@@ -325,8 +317,7 @@ can_action = \
     }
     """
 
-can_action_params = \
-    """
+can_action_params = """
     node testnode {
         has anchor A;
         can ptest {
@@ -347,8 +338,7 @@ can_action_params = \
     }
     """
 
-cross_scope_report = \
-    """
+cross_scope_report = """
     node testnode {
         has anchor A;
         can ptest {
@@ -373,8 +363,7 @@ cross_scope_report = \
     }
     """
 
-has_private = \
-    """
+has_private = """
     node testnode {
         has apple;
         has private banana, grape;
@@ -392,8 +381,7 @@ has_private = \
     }
     """
 
-array_idx_of_expr = \
-    """
+array_idx_of_expr = """
     node testnode {
         has apple;
     }
@@ -408,8 +396,7 @@ array_idx_of_expr = \
     }
     """
 
-dict_assign = \
-    """
+dict_assign = """
     node testnode {
         has apple;
     }
@@ -432,8 +419,7 @@ dict_assign = \
     }
     """
 
-dict_md_assign = \
-    """
+dict_md_assign = """
     node testnode {
         has apple;
     }
@@ -453,8 +439,7 @@ dict_md_assign = \
     }
     """
 
-dict_keys = \
-    """
+dict_keys = """
     node testnode {
         has apple;
     }
@@ -477,8 +462,7 @@ dict_keys = \
         }
     }
     """
-cond_dict_keys = \
-    """
+cond_dict_keys = """
     node testnode {
         has apple;
     }
@@ -498,8 +482,7 @@ cond_dict_keys = \
     }
     """
 
-soft_max = \
-    """
+soft_max = """
     walker init{
         can vector.softmax;
         scores = [3.0, 1.0, 0.2];
@@ -509,8 +492,7 @@ soft_max = \
     }
     """
 
-fam_example = \
-    """
+fam_example = """
     node man;
     node woman;
 
@@ -535,8 +517,7 @@ fam_example = \
     }
     """
 
-visitor_preset = \
-    """
+visitor_preset = """
     node person {
         has name;
         has byear;
@@ -562,8 +543,7 @@ visitor_preset = \
     }
     """
 
-visitor_local_aciton = \
-    """
+visitor_local_aciton = """
     node person {
         has name;
         has byear;
@@ -599,8 +579,7 @@ visitor_local_aciton = \
     }
     """
 
-copy_assign_to_edge = \
-    """
+copy_assign_to_edge = """
     node person: has name, age, birthday, profession;
     edge friend: has meeting_place;
     edge family: has kind;
