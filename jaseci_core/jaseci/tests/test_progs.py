@@ -182,3 +182,27 @@ class jac_tests(TestCaseHelper, TestCase):
             api_name="walker_run", params={"name": "init"}
         )["report"]
         self.assertEqual(report, ["2022-01-01T00:00:00"])
+
+    def test_jasecilib_alias_list(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.jasecilib_alias_list, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )["report"]
+        self.assertGreater(len(report[0].keys()), 3)
+
+    def test_jasecilib_params(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.jasecilib_params, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )["report"]
+        self.assertIn("j_r_acc_ids", report[0][0].keys())
+
+    def test_jasecilib_create_user(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.jasecilib_create_user, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )["report"]
+        self.assertEqual(report[0]["name"], ("daman@gmail.com",))
