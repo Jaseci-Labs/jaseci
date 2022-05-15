@@ -14,6 +14,6 @@ test_metadata_enabled_payload = {
 }
 
 test_metadata_disabled_payload = {
-    "url": "http://solutions.weblite.ca/pdfocrx/scansmpl.pdf",
+    "url": "http://www.africau.edu/images/default/sample.pdf",
     "metadata": False,
 }
