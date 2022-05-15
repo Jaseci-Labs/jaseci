@@ -291,3 +291,9 @@ vanishing_can_check = """
         }
     }
     """
+
+jasecilib_alias_list = """
+    walker init {
+        report jaseci.alias_list();
+    }
+    """

@@ -182,3 +182,11 @@ class jac_tests(TestCaseHelper, TestCase):
             api_name="walker_run", params={"name": "init"}
         )["report"]
         self.assertEqual(report, ["2022-01-01T00:00:00"])
+
+    def test_jasecilib_alias_list(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.jasecilib_alias_list, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )["report"]
+        self.log(report)
