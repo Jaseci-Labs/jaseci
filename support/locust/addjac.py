@@ -1,9 +1,10 @@
 from locust import task, HttpUser, SequentialTaskSet, constant, HttpUser
 import os
 from utils import gen_username, gen_password, load_config
+import prepare
 
 TEST_PATH = os.environ.get('LOCUST_TEST_SRC', '')
-SNT = os.environ.get('LOCUST_SNT', '')
+SNT = ''
 
 
 def format_output(userName: str, output: str):
@@ -68,3 +69,11 @@ class addJac(HttpUser):
     host = "http://127.0.0.1:8888"
     tasks = [SeqTask]
     wait_time = constant(2)
+
+
+token = prepare.login()
+SNT = prepare.registerSentinel(token)
+prepare.load_actions(token)
+prepare.setSentinelGlobal(token, SNT)
+print(SNT)
+

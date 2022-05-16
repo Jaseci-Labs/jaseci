@@ -35,26 +35,24 @@ def setSentinelGlobal(token: str, snt: str):
             )
 
 
-def load_actions(self):
+def load_actions(token: str):
     for action in utils.load_config(TEST_PATH)["remote_actions"]:
-        response = self.client.post(
-            "/js_admin/actions_load_remote",
-            headers={"authorization": f"Token {self.user_token}"},
+        response = requests.post(
+            HOST + "/js_admin/actions_load_remote",
+            headers={"authorization": f"Token {token}"},
             json={"url": action},
         )
     for action in utils.load_config(TEST_PATH)["local_actions"]:
-        response = self.client.post(
-            "/js_admin/actions_load_local",
-            headers={"authorization": f"Token {self.user_token}"},
+        response = requests.post(
+            HOST + "/js_admin/actions_load_local",
+            headers={"authorization": f"Token {token}"},
             json={"file": action},
         )
 
-    response = self.client.post(
-        "/js_admin/actions_list",
-        headers={"authorization": f"Token {self.user_token}"},
+    response = requests.post(
+        HOST + "/js_admin/actions_list",
+        headers={"authorization": f"Token {token}"},
     )
 
-token = login()
-snt = registerSentinel(token)
-setSentinelGlobal(token, snt)
-print(snt)
+    # print(response.text)
+
