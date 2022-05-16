@@ -84,7 +84,7 @@ def retrieveData():
         retrieveLogs(path, container)
 
 
-# atexit.register(killAll)
+atexit.register(killAll)
 confList = getConfig()
 for conf in confList:
     defConf = defaultizeConf(conf)
