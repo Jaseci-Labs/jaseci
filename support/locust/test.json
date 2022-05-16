@@ -1,18 +1,18 @@
 [
     {
         "hostName": "http://172.17.0.1:8888",
-        "containerName": "Locust_test_simple",
+        "testName": "simple",
         "testSRC": "sample_code/simple",
         "userNum": 5,
         "spawnRate": 1,
-        "duration": "1m"
+        "duration": "10s"
     },
     {
         "hostName": "http://172.17.0.1:8888",
-        "containerName": "Locust_test_simple_larger",
+        "testName": "larger",
         "testSRC": "sample_code/simple",
         "userNum": 10,
         "spawnRate": 1,
-        "duration": "1m"
+        "duration": "10s"
     }
 ]
