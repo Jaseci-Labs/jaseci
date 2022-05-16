@@ -3,7 +3,7 @@ from locust import task, HttpUser, SequentialTaskSet, constant, HttpUser
 import os
 from credentials import gen_username, gen_password
 
-TEST_PATH = "sample_code/bi_enc_test"
+TEST_PATH = "sample_code/simple"
 
 
 def format_output(userName: str, output: str):
