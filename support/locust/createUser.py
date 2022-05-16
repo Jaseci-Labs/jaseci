@@ -1,12 +1,13 @@
 import requests
-import credentials
+import utils
 
 targetServer = input("Target Server: ")
 UserNum = int(input("Number of Users: "))
 
+# Create all the users
 for i in range(UserNum):
-    username = credentials.gen_username(i)
-    password = credentials.gen_password(i)
+    username = utils.gen_username(i)
+    password = utils.gen_password(i)
     data = {
         "email": username,
         "password": password,
@@ -17,3 +18,4 @@ for i in range(UserNum):
     print(data)
     response = requests.post(URL, data=data)
     print(response.text)
+

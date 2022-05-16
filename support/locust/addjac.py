@@ -1,20 +1,15 @@
-import json
 from locust import task, HttpUser, SequentialTaskSet, constant, HttpUser
 import os
-from credentials import gen_username, gen_password
+from utils import gen_username, gen_password, load_config
 
-TEST_PATH = os.environ.get('LOCUST_TEST_SRC')
+TEST_PATH = os.environ.get('LOCUST_TEST_SRC', '')
+SNT = os.environ.get('LOCUST_SNT', '')
 
 
 def format_output(userName: str, output: str):
     print(f"{userName}: {output}")
 
 
-def get_code(path: str) -> str:
-    file = open(path, "r")
-    code = file.read()
-    file.close()
-    return code
 
 
 UserID = 0
@@ -32,13 +27,6 @@ def print_response(response):
         print(response.text)
 
 
-def load_config(path: str):
-    config_path = os.path.join(path, "config.json")
-    config = json.load(open(config_path, "r"))
-    src = config.get("src", "")
-    src = os.path.join(path, src)
-    config["src"] = src
-    return config
 
 
 class SeqTask(SequentialTaskSet):
@@ -61,53 +49,11 @@ class SeqTask(SequentialTaskSet):
         json_var = response.json()
         self.user_token = json_var["token"]
 
-    @task
-    def post_jac_prog(self):
-        req = {
-            "name": "jac_prog",
-            "code": get_code(load_config(TEST_PATH)["src"]),
-        }
-        response = self.client.post(
-            "/js/sentinel_register",
-            headers={"authorization": f"Token {self.user_token}"},
-            json=req,
-        )
-        self.sentinel_jid = response.json()[0]["jid"]
-
-    @task
-    def load_actions(self):
-        global actionList
-        global actionLoaded
-        if actionLoaded:
-            return
-        actionLoaded = True
-        for action in load_config(TEST_PATH)["remote_actions"]:
-            response = self.client.post(
-                "/js_admin/actions_load_remote",
-                headers={"authorization": f"Token {self.user_token}"},
-                json={"url": action},
-            )
-            # print(f"response: {response.text}")
-            print_response(response)
-        for action in load_config(TEST_PATH)["local_actions"]:
-            response = self.client.post(
-                "/js_admin/actions_load_local",
-                headers={"authorization": f"Token {self.user_token}"},
-                json={"file": action},
-            )
-            # print(f"response: {response.text}")
-            print_response(response)
-
-        response = self.client.post(
-            "/js_admin/actions_list",
-            headers={"authorization": f"Token {self.user_token}"},
-        )
-        print(f"Actions list response: {response.text}")
 
     @task
     def walker_run(self):
         for walkerName in load_config(TEST_PATH)["walkers"]:
-            req = {"name": walkerName, "snt": self.sentinel_jid}
+            req = {"name": walkerName, "snt": SNT}
             # print(f"Walker {walkerName} running.")
             response = self.client.post(
                 "/js/walker_run",
