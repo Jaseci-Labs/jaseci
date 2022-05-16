@@ -18,4 +18,3 @@ for i in range(UserNum):
     print(data)
     response = requests.post(URL, data=data)
     print(response.text)
-

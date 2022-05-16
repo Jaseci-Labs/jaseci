@@ -3,14 +3,12 @@ import os
 from utils import gen_username, gen_password, load_config
 import prepare
 
-TEST_PATH = os.environ.get('LOCUST_TEST_SRC', '')
-SNT = ''
+TEST_PATH = os.environ.get("LOCUST_TEST_SRC", "")
+SNT = ""
 
 
 def format_output(userName: str, output: str):
     print(f"{userName}: {output}")
-
-
 
 
 UserID = 0
@@ -26,8 +24,6 @@ def print_response(response):
         failure = True
     if failure:
         print(response.text)
-
-
 
 
 class SeqTask(SequentialTaskSet):
@@ -49,7 +45,6 @@ class SeqTask(SequentialTaskSet):
         format_output(self.userName, response.text)
         json_var = response.json()
         self.user_token = json_var["token"]
-
 
     @task
     def walker_run(self):
@@ -76,4 +71,3 @@ SNT = prepare.registerSentinel(token)
 prepare.load_actions(token)
 prepare.setSentinelGlobal(token, SNT)
 print(SNT)
-
