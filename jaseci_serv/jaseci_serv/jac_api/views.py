@@ -178,6 +178,10 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
         """Issue response from call"""
         # If committer set, results should be saved back
         status = self.pluck_status_code(api_result)
+
+        if isinstance(api_result, dict) and "report_custom" in api_result.keys():
+            api_result = api_result["report_custom"]
+
         if self.caller._pub_committer:
             return JResponse(self.caller._pub_committer, api_result, status=status)
         else:
