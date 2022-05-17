@@ -61,6 +61,7 @@ The sentence level embeddings can then be used to calculate the similarity betwe
 
 #### Example Jac Usage:
 ```jac
+# Use USE encoder for zero-shot intent classification
 walker use_enc_example {
     can use.encode, use.cos_sim_score;
     has text = "What is the weather tomorrow?";
@@ -144,6 +145,7 @@ The sentence level embeddings can then be used to calculate best match between q
     * Returns: 
 #### Example Jac Usage:
 ```jac
+# Use USE_QA model for zero-shot text classification
 walker use_qa_example {
     can use.qa_similarity;
     has questions = "What is your age?";
@@ -230,7 +232,7 @@ walker use_qa_example {
     ```
 * `set_train_config`:  
     * Input 
-        * `train_parameters` (Dict): dictionary of training parameters
+        * `train_parameters` (Dict): dictionary of training parameters. See the json example above under `get_train_config` for the list of available training parameters.
     * Returns: "Config setup is complete." if train configuration is completed successfully
 * `get_model_config`:  
     * Input: None
@@ -246,7 +248,7 @@ walker use_qa_example {
     ```
 * `set_model_config`:  
     * Input 
-        * `model_parameters`(Dict): dictionary of model parameters
+        * `model_parameters`(Dict): dictionary of model parameters. See the json example above under `get_model_config` for the list of available training parameters.
     * Returns: "Config setup is complete." if model configuration is completed successfully
 * `save_model`:  
     * Input 
@@ -260,6 +262,7 @@ walker use_qa_example {
 
 #### Example Jac Usage:
 ```jac
+# Train an bi-encoder model for intent classification
 walker bi_enc_example{
     has train_file = "train_bi.json";
     has from_scratch = true;
@@ -277,23 +280,30 @@ walker bi_enc_example{
         "shareeta",
         "getweather"
     ];
+
     can bi_enc.train,bi_enc.infer;
+
     train_data = file.load_json(train_file);
     
-    # code to train the model 
+    # Train the model 
     bi_enc.train(
-    dataset=train_data,
-    from_scratch=from_scratch,
-    training_parameters={
-        "num_train_epochs": num_train_epochs
-    }
+        dataset=train_data,
+        from_scratch=from_scratch,
+        training_parameters={
+            "num_train_epochs": num_train_epochs
+        }
     );
 
-    # code to get inference
-    resp_data = bi_enc.infer(contexts=contexts,
-    candidates=candidates,
-    context_type="text",
-    candidate_type="text"); # returns the list of context with the suitable candidates
+    # Use the model to perform inference
+    # returns the list of context with the suitable candidates
+    resp_data = bi_enc.infer(
+        contexts=contexts,
+        candidates=candidates,
+        context_type="text",
+        candidate_type="text"
+    );
+
+    # Iterate through the candidate labels and their predicted scores
     max_score = 0;
     max_intent = "";
     pred=resp_data[0];
@@ -305,11 +315,10 @@ walker bi_enc_example{
     }
     std.out("predicted intent : ",max_intent ," Conf_Score:", max_score);
 }
-
 ```
 
 ###  FastText Encoder (`fast_enc`)
-`fast_enc` module uses the facebook's fasttext used for efficient learning of word representations and sentence classification.
+`fast_enc` module uses the facebook's fasttext -- efficient learning of word representations and sentence classification.
 
 * `train`: used to train the Bi-Encoder for custom input
     * Input:
@@ -329,6 +338,7 @@ walker bi_enc_example{
     * Returns: "[loaded model from] : <model_path>" if model successfully loaded
 #### Example Jac Usage:
 ```jac
+# Train and inference with a fasttext classifier
 walker fast_enc_example {
     has train_file = "fast_enc_train.json";
     has train_with_existing = false;
@@ -347,28 +357,28 @@ walker fast_enc_example {
 
 ## Entity
 ###  Entity Extraction (`ent_ext`)
-`ent_ext` module uses flair's api train and detect entity from context, can be used as zeroshot 
+`ent_ext` module uses Flair named entity recognition architecture. Can either be used zero-shot or trained.
 
-* `train`: used to train the Bi-Encoder for custom input
+* `train`: used to train the Flair-based NER model
     * Input:
-        * `traindata`: (List(Dict)): a list dictionary containing contexts and list of entities in each context
+        * `traindata`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context
         ```
         [
             {
-                "context": "MINNETONKA , Minn .",
+                "context": "I used to live at London, UK",
                 "entities": [
-                            {
-                                "entity_value": "MINNETONKA",
-                                "entity_type": "LOC",
-                                "start_index": 0,
-                                "end_index": 10
-                            },
-                            {
-                                "entity_value": "Minn",
-                                "entity_type": "LOC",
-                                "start_index": 13,
-                                "end_index": 17
-                            }
+                    {
+                        "entity_value": "London",
+                        "entity_type": "LOC",
+                        "start_index": 13,
+                        "end_index": 18
+                    },
+                    {
+                        "entity_value": "Minn",
+                        "entity_type": "LOC",
+                        "start_index": 19,
+                        "end_index": 20
+                    }
                 ]
             }
         ]
@@ -406,6 +416,7 @@ walker fast_enc_example {
     * Returns: "Config setup is complete." if model successfully loaded
 #### Example Jac Usage:
 ```jac
+# Train and inference with an entity extraction model
 walker ent_ext_example {
 
     has train_file = "train_ner.json";
@@ -433,9 +444,9 @@ walker ent_ext_example {
 ```
 
 ###  Entity Extraction Using Transformers (`tfm_ner`)
-`tfm_ner` module uses transformer's api from huggingface to train and detect entity from context 
+`tfm_ner` module uses transformers to identify and extract entities. It uses TokenClassification method from Huggingface.
 
-* `train`: used to train the Bi-Encoder for custom input
+* `train`: used to train transformer NER model
     * Input:
         * `train_data`: (List(Dict)): a list dictionary containing contexts and list of entities in each context
         ```
@@ -492,7 +503,7 @@ walker ent_ext_example {
     ```
 * `set_train_config`:  
     * Input 
-        * `train_parameters` (Dict): dictionary of training parameters
+        * `train_parameters` (Dict): dictionary of training parameters. See the json example above for available configuration parameters.
     * Returns: "Config setup is complete." if train configuration is completed successfully
 * `get_model_config`:  
     * Input: None
@@ -505,10 +516,11 @@ walker ent_ext_example {
     ```
 * `set_model_config`:  
     * Input 
-        * `model_parameters`(Dict): dictionary of model parameters
+        * `model_parameters`(Dict): dictionary of model parameters. See the json example above for available configuration parameters.
     * Returns: "Config setup is complete." if model configuration is completed successfully
 #### Example Jac Usage:
 ```jac
+# Train and inference with a transformer-based NER model
 walker tfm_ner_example {
 
     has train_file = "train_ner.json";
@@ -519,19 +531,21 @@ walker tfm_ner_example {
     
     # Training the model
     tfm_ner.train(
-    mode = mode,
-    epochs = num_train_epochs,
-    train_data=train_data
+        mode = mode,
+        epochs = num_train_epochs,
+        train_data=train_data
     );
 
-    # Getting inference from the model
-    resp_data = tfm_ner.extract_entity(text="book a flight from kolkata to delhi,Can you explain to me,please,what Homeowners Warranty Program means,what it applies to,what is its purpose? Thank you. The Humboldt University of Berlin is situated in Berlin, Germany");
+    # Infer using the model
+    resp_data = tfm_ner.extract_entity(
+        text="book a flight from kolkata to delhi,Can you explain to me,please,what Homeowners Warranty Program means,what it applies to,what is its purpose? Thank you. The Humboldt University of Berlin is situated in Berlin, Germany"
+    );
     std.out(resp_data);
 }
 ```
 ## Summarization
 ### Summarizer (`cl_summer`)
-`cl_summer` uses sumy summarizer to create extractive summary.
+`cl_summer` uses the sumy summarizer to create extractive summary.
 
 * `summarize`: to get the extractive summary in provided sentences count.
     * Input 
@@ -545,41 +559,45 @@ walker tfm_ner_example {
     * Returns: List of Sentences that best summarizes the context
 #### Example Jac Usage:
 ```jac
+# Use the summarizer to summarize a given text blob or from a URL
 walker cl_summer_example {
-    has train_file = "summarize.json";
+    has text_file = "summarize.json";
     has sent_count = 5;
-    has summarizer_type=  "LsaSummarizer";
+    has summarizer_type = "LsaSummarizer";
     has url="https://in.mashable.com/";
     can cl_summer.summarize;
 
     # Getting Extractive summary from text
-    train_data = file.load_json(train_file);
-    resp_data = cl_summer.summarize(text=train_data.text,
-    url="none",
-    sent_count=sent_count,
-    summarizer_type=summarizer_type);
-    std.out(resp_data);
+    train_data = file.load_json(text_file);
+    resp_data = cl_summer.summarize(
+        text=train_data.text,
+        url="none",
+        sent_count=sent_count,
+        summarizer_type=summarizer_type
+    );
 
     # Getting Extractive summary from URL
-    resp_data_url = cl_summer.summarize(text="none",
-    url=url,
-    sent_count=sent_count,
-    summarizer_type=summarizer_type);
-    std.out(resp_data_url);
+    resp_data_url = cl_summer.summarize(
+        text="none",
+        url=url,
+        sent_count=sent_count,
+        summarizer_type=summarizer_type
+    );
 }
 ```
 
 ###  T5 Summarization (`t5_sum`)
-`t5_sum` module is an encoder-decoder model pre-trained on a multi-task mixture of unsupervised and supervised tasks and for which each task is converted into a text-to-text format.
+`t5_sum` uses the T5 transformer model to perform abstractive summary on a body of text.
 
-* `classify_text`: use T5 to classify a body of text
+* `classify_text`: use the T5 model to summarize a body of text
     * Input:
-        * `text` (string): text to classify
+        * `text` (string): text to summarize
         * `min_length` (integer): the least amount of words you want returned from the model
         * `max_length` (integer): the most amount of words you want returned from the model
 
 #### Example Jac Usage:
 ```jac
+# Use the T5 model to summarize a given piece of text
 walker summarization {
     can t5_sum.classify_text;
     
@@ -587,90 +605,8 @@ walker summarization {
     has min_length = 30;
     has max_length = 100;
     
-    classified_response = t5_sum.classify_text(text=text, min_length=min_length, max_length=max_length);
+    summarized_text = t5_sum.classify_text(text=text, min_length=min_length, max_length=max_length);
     
-    report classified_response;
+    report summarized_text;
 }
- ```   
-###################################################################
-## NOTE: content below needs update. This page is under construction.
-
-## 1. Text Segmenter
-Text Segmenter module has the ability to split text in multiple pragraph  depending on semantics similarity.
-
-
-### 1.1. List of API's  available
- #### **get_segements** - splits the text into mutiple segements as per the threshold provided, the value of thresold can be [ 0 - 1 ] where `0` would return entire text as it is and `1` would split text in sentences.
-Request :
 ```
-requests.post(
-    "/get_segements/",
-    json=
-    {
-        "text": "Labor statistics do reveal trends initially supportive of Bernard's thesis. From 1950 to 1990, the proportion of men in the labor forced decreased 9.4%, couples with a 28.8% increase of women who were in the labor force, suggesting a challenge to the traditional ideal of men working outside the home and women being relegated to domestic duties only. 200 years ago, having a fever or a cut can become life-threatening very quickly. Vaccines or treatments for many diseases did not exist as well. On the industrial front, progress was slow and time-consuming. Transportation was rather primitive and prohibitively expensive, ensuring that only the rich and famous could use it. The bright inexplicable pink of the tender flaky salmon, with golden olive oil-crisped edges. The deep green of the roasted asparagus calling us towards springtime. The pale yellow of the creamy leek drenched potatoes, speckled with bright pops of chives. I want to know how to use the NTXentLoss as in CPC model. I mean, I have a positive sample and N-1 negative samples. Many people dream about traveling the world for a living; and there are people that are actually able to do so that aren’t pilots, flight attendants, or businessmen. These people are known as travel bloggers and they get paid to visit and write about their major passion in life that is travel.",
-
-        "threshold": 0.85
-    }
-)
-```
-Response :
-```
-[
-  "Labor statistics do reveal trends initially supportive of Bernard's thesis. From 1950 to 1990, the proportion of men in the labor forced decreased 9.4%, couples with a 28.8% increase of women who were in the labor force, suggesting a challenge to the traditional ideal of men working outside the home and women being relegated to domestic duties only.",
-  "200 years ago, having a fever or a cut can become life-threatening very quickly. Vaccines or treatments for many diseases did not exist as well. On the industrial front, progress was slow and time-consuming. Transportation was rather primitive and prohibitively expensive, ensuring that only the rich and famous could use it.",
-  "The bright inexplicable pink of the tender flaky salmon, with golden olive oil-crisped edges. The deep green of the roasted asparagus calling us towards springtime. The pale yellow of the creamy leek drenched potatoes, speckled with bright pops of chives.",
-  "I want to know how to use the NTXentLoss as in CPC model. I mean, I have a positive sample and N-1 negative samples.",
-  "Many people dream about traveling the world for a living; and there are people that are actually able to do so that aren’t pilots, flight attendants, or businessmen. These people are known as travel bloggers and they get paid to visit and write about their major passion in life that is travel."
-]
-```
- #### **load_model** - for loading the model from options : [ `wiki`, `legal` ]
-Request :
-
-    requests.post(
-                "/load_model/",
-                json={
-                        "model_name": "wiki"
-                    }
-                )
-Response:
-
-    "[Model Loaded] : wiki"
-
-### 1. 2. Addtional Instructions
-1. Available Parameter for load_model api
-
-        model_name options for Pre-trained LM:
-           1. wiki : trained for 3 epochs on wiki727 dataset
-           2. legal : trained on legal documents (provides better performace for official docs)
-
-
-## 2. T5 Summarization
-
-###  T5 Summarization (`t5_sum`)
-`t5_sum` module is an encoder-decoder model pre-trained on a multi-task mixture of unsupervised and supervised tasks and for which each task is converted into a text-to-text format.
-
-###################################################################
-
-### 2.1. List of API's available
-#### **classify_text** - classifies a body of text
-Request :
-```
-requests.post(
-    "/classify_text/",
-    json= {
-    "text": "The US has passed the peak on new coronavirus cases, President Donald Trump said and predicted that some states would reopen this month. The US has over 637,000 confirmed Covid-19 cases and over 30,826 deaths, the highest for any country in the world. At the daily White House coronavirus briefing on Wednesday, Trump said new guidelines to reopen the country would be announced on Thursday after he speaks to governors. We'll be the comeback kids, all of us, he said. We want to get our country back. The Trump administration has previously fixed May 1 as a possible date to reopen the world's largest economy, but the president said some states may be able to return to normalcy earlier than that.",
-  "min_length": 30,
-  "max_length": 100
-}
-)
-```
-Response:
-```
-"the president predicts some states will reopen this month. the country has over 637,000 confirmed cases and over 30,826 deaths, the highest for any country in the world. we'll be the comeback kids, all of us."
-```
-
-### Unfinished TODOs
-
-1. convert poly encoders to new interface
-2. convert flair intent extraction to new interface
-3. Get Myca to stop using infer.py (and use date standard actions) then delete

@@ -1,5 +1,4 @@
 import os
-import sys
 import torch
 from typing import Dict, List, Union
 from fastapi import HTTPException
@@ -11,10 +10,9 @@ import random
 import json
 import shutil
 
-sys.path.append(os.path.dirname(__file__))
-from utils.evaluate import get_embeddings  # noqa
-from utils.models import BiEncoder  # noqa
-from utils.train import train_model  # noqa
+from .utils.evaluate import get_embeddings  # noqa
+from .utils.models import BiEncoder  # noqa
+from .utils.train import train_model  # noqa
 
 
 # device = torch.device("cpu")
