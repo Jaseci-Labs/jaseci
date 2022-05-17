@@ -24,7 +24,7 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 | Module | Model Name | Example | Type | Status | Description | Resources |
 | --- | --- | --- | --- | --- | --- | --- |
 | `cl_summer` | Summarizer | | No Training req. | Ready | Extractive Summarization using Sumy | [Doc.](https://miso-belica.github.io/sumy/) |
-| `t5_sum` | Summarizer | | No Training req. | Ready | Abstractive Summarization using the T5 Model | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5) | 
+| `t5_sum` | Summarizer | | No Training req. | Ready | Abstractive Summarization using the T5 Model | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf) | 
 
 ## Non-AI Tools
 | Module | Model Name | Example | Status | Description | Resources |
