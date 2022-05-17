@@ -84,4 +84,4 @@ All the tests will be created inside a separate docker container. The containers
 
 ### Retrieve the test data
 
-All available data are retrieved after you ran the script. They should be available under `results/<testName>/`. `logs.txt` is the log of the test. `data.tar` file should contain three CSV files. They are directly from locust. 
+All available data are retrieved after you ran the script. They should be available under `results/<testName>/`. `logs.txt` is the log of the test. `data.tar` file should contain four CSV files. They are directly from locust. 
