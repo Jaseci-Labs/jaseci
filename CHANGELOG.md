@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Feature: Added `jaseci` standard library as patch through to all jaseci core APIs
 - New Features: Report payloads can be customized with `report:custom`
 - Improvement: Disengage can now do disengage with report action
 - Improvement: import now works recursively through chain of files
