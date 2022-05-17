@@ -5,6 +5,11 @@ from knox.views import LoginView as KnoxLoginView
 from django.contrib.auth import login, get_user_model
 from django.contrib.auth.signals import user_logged_out
 from knox.auth import TokenAuthentication
+from dj_rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+
 
 from jaseci_serv.user_api.serializers import UserSerializer
 from jaseci_serv.user_api.serializers import SuperUserSerializer
@@ -105,3 +110,6 @@ class LogoutAllUsersView(APIView):
             u.auth_token_set.all().delete()
             user_logged_out.send(sender=u.__class__, request=request, user=u)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+
+

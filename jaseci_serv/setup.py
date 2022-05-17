@@ -17,6 +17,8 @@ setup(
         "sphinx>=2.4.3,<2.5.0",
         "django-cors-headers",
         "tblib",
+        "dj-rest-auth[with_social]",
+
     ],
     package_data={
         "": ["*.jac"],

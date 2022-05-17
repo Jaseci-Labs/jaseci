@@ -10,6 +10,15 @@ from jaseci_serv.base.models import master as core_master
 from time import time
 
 
+
+from dj_rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+
+
+
+
 class JResponse(Response):
     def __init__(self, master, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -186,3 +195,16 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
             return JResponse(self.caller._pub_committer, api_result, status=status)
         else:
             return Response(api_result, status=status)
+
+
+class FacebookLogin(SocialLoginView):
+    adapter_class = FacebookOAuth2Adapter
+
+
+class GoogleLogin(SocialLoginView): # if you want to use Authorization Code Grant, use this
+    adapter_class = GoogleOAuth2Adapter
+    callback_url = "/localhost:8000/testt/" # CALLBACK_URL_YOU_SET_ON_GOOGLE"
+    client_class = OAuth2Client
+
+# class GoogleLogin(SocialLoginView): # if you want to use Implicit Grant, use this
+#     adapter_class = GoogleOAuth2Adapter

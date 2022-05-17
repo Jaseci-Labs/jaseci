@@ -47,6 +47,16 @@ INSTALLED_APPS = [
     "jaseci_serv.obj_api",
     "jaseci_serv.jac_api",
     "corsheaders",
+    "rest_framework.authtoken",
+    "dj_rest_auth",
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'dj_rest_auth.registration',
+    'allauth.socialaccount.providers.facebook',
+    'allauth.socialaccount.providers.google',
+
 ]
 
 MIDDLEWARE = [
@@ -207,3 +217,11 @@ JASECI_CONFIGS = [
     "EMAIL_RESETPASS_HTML_BODY",
     "LOGIN_TOKEN_TTL_HOURS",
 ]
+
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
+SITE_ID = 1
