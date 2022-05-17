@@ -6,13 +6,28 @@ sidebar_position: 5
 
 ## How a JAC programs runs
 
+The JAC Promgrammming language builds its paradigm on traversal of Graphs. The Walker is used to traverse graphs . The graph is a combination of nodes and edges connected together. We create our graphs and walkers and specify their abilities.
+
+All traversal begins at the Init or default node. This `init` node will connect to the main root of our graph.
+
+
+![Pic of Main Root](/img/tutorial/intermediate/root.png)
+
+The Walkers are initialized and added on the root node and from there they begin traveral.
+The walkers decide which node to travel to based on which edge satisfies it's intent. The intent being a criteria meet by the edge.
+
+![Pic of Nodes and Edges](/img/tutorial/intermediate/graph.png) 
+
+The Walker can move from node to node but it can also jump to other nodes that are not in it's path or connected directly in the path.
+
+
 
 ## Common Code Elements in Jaseci
 
 
-Like many languages, Jaseci supports most code constructs.
+ Jaseci supports many common code constructs.
 
-### The IF statement
+### The select statement
 
 ```jac
 # simple If statement
@@ -22,7 +37,11 @@ walker init {
 
     if (x ==3.45) {
         std.out(x);
-    } else {
+    }
+    elif (x==3.56){
+        std.out("it's a match");
+    }
+     else {
         std.out(y);
     }
 }
@@ -159,6 +178,50 @@ walker [name_of_walker]{
 
 ## Specifying Operating Context
 
+The Graph can several types of nodes and these nodes can have their own unique abilities.Walkers can be written to perform specific actions when it on a specific node. Call functions or attributes for the node it is on top.
+```jac
+node state {
+    has title;
+    has message;
+    has prompts;
+}
+
+node input_state:state {
+    has input;
+}
+
+node closing_state:state;
+
+edge transition {
+    has intent;
+}
+
+walker talker {
+
+state, input_state{
+
+    #execute code specific to the state and input_state nodes
+
+    input_state{
+
+        #These operating context can be embedded within other operating context.
+        
+    }
+
+}
+
+closing_state{
+ 
+    #execute code specific to  closing_state nodes
+
+}
+
+}
+
+```
+ 
+
+
 ## Passing Arguments to Walkers , Nodes and Edges
 
 You can pass arguments to walkers , Nodes and Edges similarily to when passing arguments to functions in python.
@@ -215,7 +278,7 @@ walker myWalker{
 
 ## Walker - Node communication (visitor , here)
 
-There `here` keyword is used reference the node the walker is currently on.
+The `here` keyword is used reference the node the walker is currently on.
 
 ```jac 
 walker talker {
@@ -236,7 +299,17 @@ walker talker {
 }
 
 ```
+The `visitor` keyword is used to reference attributes of the walker from the node it is currently on.
 
+```jac
+node state{
+    has prev_value;
+
+    can getvalue with talker entry {
+        here.prev_value = visitor.value;
+        std.out(here.prev_value);
+    }
+}
 
 ## Telling Walkers where to walk (Take)
 
