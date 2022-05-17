@@ -1,77 +1,87 @@
-## Locust Load Test for JASECI API
-
-### Install Python 3.8 
-Install Python from offical Python Website
-
-```console
-https://www.python.org/downloads/release/python-380/
-```
-
-### Install Locust 
-
+# Locust Load Test for JASECI
 Locust is an easy-to-use, distributed, user load testing tool. It is intended for load-testing web sites (or other systems) and figuring out how many concurrent users a system can handle.
 
 The idea is that during a test, a swarm of locust users will attack your website. The behavior of each user is defined by you using Python code, and the swarming process is monitored from a web UI in real-time. This will help you battle test and identify bottlenecks in your code before letting real users in.
 
 Locust is completely event-based, and therefore it’s possible to support thousands of concurrent users on a single machine. In contrast to many other event-based apps it doesn’t use callbacks. Instead it uses light-weight processes, through gevent. Each locust swarming your site is actually running inside its own process (or greenlet, to be correct). This allows you to write very expressive scenarios in Python without complicating your code with callbacks.
 
+## Test without docker
+
+Our Locust test is available without docker container. You can run the program yourself on your laptop.
+
+### Set up the environment
+Install locust in Python.
 ```console
 pip install locust
 ```
-
-#### Install Pandas
-
-```console
-pip install pandas
+### Configure the test
+Create sufficient users for your following tests.
+```bash
+python createUser.py
+```
+Then create a folder in `sample_code/`. Set up a file `config.json` in the folder. Here is an example:
+```json
+{
+    "walkers" : ["init"], 
+    "src" : "walker.jac",
+    "remote_actions" : ["http://flair-ner:80/"],
+    "local_actions" : []
+}
 ```
 
+`walkers` is a list of walkers that you want to call (in sequence). `src` the name of the file that contains your code. `remote_actions` should contain a list of URLs of your remote services. `local_actions` should contain a list of names of your modules.
 
 
-#### Install Locust Plugins
-
-```console
-pip install locust_plugins
-```
-
-### Create Users for Load test
-
-To add users for load test , Edit the addUsers.csv files with new users in the format specified .
-
-After that run below command
-
-```console
-locust -f createUsers.py
+### Run the test
+The program reads the environment variable `LOCUST_TEST_SRC` for the location of the test configuration. So to run the test, please run
+```bash
+LOCUST_TEST_SRC='sample_code/<YOUR TEST>' locust -f createUsers.py
 ```
 
 Go to the link specified in console, e.x http://0.0.0.0:8089 and put the number of user same as what you added in csv file and run the application
 
+## Test with Docker
 
+With the help of docker, we can easily scale up the test and make it more complex.
 
-### Run Locust Load test through browser
+### Set up the environment
 
-```console
-locust -f app.py
+To run a docker tool written in Python, please install 
+```bash
+pip install docker
 ```
-
-Once you’ve started Locust using one of the above command lines, you should open up a browser and point it to http://127.0.0.1:8089. Then you should be greeted with something like this
-
-### Run Locust Load test via headless 
-
-You can run locust without the web UI - for example if you want to run it in some automated flow, like a CI server - by using the --headless flag together with -u and -r:
-
-```console
-locust -f app.py -u 2 -r 1 -t 5s --headless --print-stats --host=<Your Jaseci API URL>
+To build the image, please run
+```bash
+docker build -t locust-jac-test .
 ```
+**Note** Please make sure that your Jaseci service is exposed to `0.0.0.0` since we are going to access the service from docker, not local. With Kubernetes, we run 
+```bash
+kubectl port-forward <JASECI POD NAME> 8888:80 --address="0.0.0.0"
+```
+### Configure the tests
 
-where
+**Note** Please make sure that you have configured the tests properly as we did in the previous section.
 
--u specifies the number of Users to spawn, and 
--r specifies the hatch rate (number of users to spawn per second).
+Since we are not going to open a Web UI this time, we need some more information. Please give all the information in `test.json`. The file is a JSON list. An example element is 
+```json
+{
+    "hostName": "http://172.17.0.1:8888",
+    "testName": "simple",
+    "testSRC": "sample_code/simple",
+    "userNum": 5,
+    "spawnRate": 1,
+    "duration": "10s"
+}
+```
+`hostName` gives the URL of the host. Note that `localhost` on the host computer is mapped to `172.17.0.1` inside docker containers. `testName` is a simple name for the test. It will be included in the name of the container and the result that we retrieve. `testSRC` specifies the path to the specific test configuration. `userNum` specifies the number of users that we need to spawn in this test. `spawnRate` specfies the speed that we spawn the users (How many users created in one second). `duration` sets the time length of the test.
 
+### Run the test
+To run the test
+```bash
+python startDocker.py
+```
+All the tests will be created inside a separate docker container. The containers are named `Locust_<TESTNAME>`. All the tests should be run in parallel. When all the tests are done, the python script automatically removes and kills all the containers.
 
-### Run Locust via Docker
+### Retrieve the test data
 
-Make sure that you have a proper `dockerd` running. Run `sudo docker-compose up` to pull up the locust container. The container will listen on `0.0.0.0:8089`.
-
-**Note** If your Jaseci Server is running on `localhost`, please make sure that you send your locust test requests to `172.17.0.1:PORT`.
-
+All available data are retrieved after you ran the script. They should be available under `results/<testName>/`. `logs.txt` is the log of the test. `data.tar` file should contain three CSV files. They are directly from locust. 
