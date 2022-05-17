@@ -19,7 +19,7 @@ def login():
 # register sentinel, return the jid
 def registerSentinel(token: str):
     req = {
-        "name": "jac_prog",
+        "name": TEST_PATH,
         "code": utils.get_code(utils.load_config(TEST_PATH)["src"]),
     }
     response = requests.post(
