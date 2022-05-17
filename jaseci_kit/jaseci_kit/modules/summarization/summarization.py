@@ -10,20 +10,16 @@ from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
 import nltk
 
-nltk.download("punkt")
-nltk.download("stopwords")
+nltk.download('punkt')
+nltk.download('stopwords')
 
 # summarizes the text / url passed to the endpoint and
 # returns summary based on the sentences.
 
 
-@jaseci_action(act_group=["cl_summer"], allow_remote=True)
-def summarize(
-    text: str = "none",
-    url: str = "none",
-    sent_count: int = 1,
-    summarizer_type: str = "LsaSummarizer",
-):
+@ jaseci_action(act_group=['cl_summer'], allow_remote=True)
+def summarize(text: str = "none", url: str = "none", sent_count: int = 1,
+              summarizer_type: str = "LsaSummarizer"):
 
     LANGUAGE = "english"
 
@@ -38,13 +34,9 @@ def summarize(
         summarizer_type = LuhnSummarizer
 
     else:
-        raise HTTPException(
-            status_code=404,
-            detail=str(
-                """Supported type of summarizers are
-                LexRankSummarizer / LsaSummarizer / LuhnSummarizer."""
-            ),
-        )
+        raise HTTPException(status_code=404, detail=str(
+            """Supported type of summarizers are
+                LexRankSummarizer / LsaSummarizer / LuhnSummarizer."""))
 
     # checks if text / url key exists on the api payload
     if text != "none" and url == "none":
@@ -52,15 +44,11 @@ def summarize(
     elif text == "none" and url != "none":
         parser = HtmlParser.from_url(url, Tokenizer(LANGUAGE))
     elif text != "none" and url != "none":
-        raise HTTPException(
-            status_code=404,
-            detail=str("only one of the following key is required text / url."),
-        )
+        raise HTTPException(status_code=404, detail=str(
+            "only one of the following key is required text / url."))
     else:
-        raise HTTPException(
-            status_code=404,
-            detail=str("one of the following key is required text / url."),
-        )
+        raise HTTPException(status_code=404, detail=str(
+            "one of the following key is required text / url."))
 
     sentences = []
 
@@ -76,5 +64,4 @@ def summarize(
 
 if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
-
     launch_server(port=8000)
