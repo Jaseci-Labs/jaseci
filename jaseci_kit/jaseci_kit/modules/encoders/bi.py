@@ -3,15 +3,16 @@ import torch
 from typing import Dict, List, Union
 from fastapi import HTTPException
 from transformers import AutoModel, AutoConfig, AutoTokenizer
-from .utils.evaluate import get_embeddings
-from .utils.models import BiEncoder
 import traceback
 import numpy as np
-from .utils.train import train_model
 from jaseci.actions.live_actions import jaseci_action
 import random
 import json
 import shutil
+
+from .utils.evaluate import get_embeddings  # noqa
+from .utils.models import BiEncoder  # noqa
+from .utils.train import train_model  # noqa
 
 
 # device = torch.device("cpu")
