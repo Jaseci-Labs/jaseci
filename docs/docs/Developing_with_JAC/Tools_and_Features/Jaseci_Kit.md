@@ -42,8 +42,6 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 Run :
 
 
-
-
 ```
 pip install jaseci-kit --upgrade
 

@@ -18,7 +18,9 @@ class walker_api:
         self.spawned_walker_ids = id_list(self)
 
     @interface.public_api(url_args=["nd", "wlk"], allowed_methods=["post", "get"])
-    def walker_callback(self, nd: node, wlk: walker, key: str, ctx: dict = {}):
+    def walker_callback(
+        self, nd: node, wlk: walker, key: str, ctx: dict = {}, global_sync: bool = True
+    ):
         """
         Public api for running walkers, namespace key must be provided
         along with the walker id and node id
@@ -26,6 +28,9 @@ class walker_api:
 
         if key not in wlk.namespace_keys().values():
             return self.bad_walk_response(["Not authorized to execute this walker"])
+
+        if global_sync:
+            self.sync_walker_from_global_sent(wlk)
 
         walk = wlk.duplicate()
         walk.refresh()

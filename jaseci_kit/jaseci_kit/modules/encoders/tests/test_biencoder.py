@@ -4,7 +4,7 @@ from jaseci.utils.utils import TestCaseHelper
 from ..bi import serv_actions, config_setup
 from fastapi.testclient import TestClient
 
-from .test_data import (  # noqa
+from .test_data import (
     model_config_default,
     train_config_default,
     test_infer_request,
