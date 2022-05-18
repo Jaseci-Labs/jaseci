@@ -1,5 +1,4 @@
 import os
-import sys
 import torch
 from typing import Dict, List, Union
 from fastapi import HTTPException
