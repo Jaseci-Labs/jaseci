@@ -1,12 +1,10 @@
 import sys
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from bi import serv_actions, config_setup
+from ..bi import serv_actions, config_setup
 from fastapi.testclient import TestClient
-import os
 
-sys.path.append(os.path.dirname(__file__))
-from test_data import (  # noqa
+from .test_data import (  # noqa
     model_config_default,
     train_config_default,
     test_infer_request,
