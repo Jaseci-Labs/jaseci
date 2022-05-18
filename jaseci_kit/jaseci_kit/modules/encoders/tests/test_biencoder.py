@@ -1,7 +1,7 @@
 import sys
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from bi import serv_actions, config_setup
+from ..bi import serv_actions, config_setup
 from fastapi.testclient import TestClient
 
 from .test_data import (
