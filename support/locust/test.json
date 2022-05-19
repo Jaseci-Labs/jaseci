@@ -1,0 +1,27 @@
+[
+    {
+        "hostName": "http://172.17.0.1:8888",
+        "testName": "simple",
+        "testSRC": "sample_code/simple",
+        "userNum": 5,
+        "spawnRate": 1,
+        "duration": "10s"
+    },
+    {
+        "hostName": "http://172.17.0.1:8888",
+        "testName": "larger",
+        "testSRC": "sample_code/simple",
+        "userNum": 10,
+        "spawnRate": 1,
+        "duration": "10s"
+    },
+
+    {
+        "hostName": "http://172.17.0.1:8888",
+        "testName": "bi-enc",
+        "testSRC": "sample_code/bi_enc_test",
+        "userNum": 5,
+        "spawnRate": 1,
+        "duration": "20s"
+    }
+]
