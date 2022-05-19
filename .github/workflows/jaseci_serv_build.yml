@@ -1,4 +1,4 @@
-name: Jaseci Serv Tests
+name: jaseci_serv
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  unit-test:
+  build:
 
     runs-on: ubuntu-latest
 
@@ -29,12 +29,9 @@ jobs:
       run: |
         jsctl
 
-    - name: Install jaseci_serv
-      run: |
-        pip3 install jaseci_serv/
-
-    - name: jaseci_serv tests
+    - name: Install jaseci_serv and run tests
       if: always()
       run: |
         cd jaseci_serv/
+        source install_live.sh
         jsserv test
