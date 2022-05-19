@@ -1,4 +1,4 @@
-name: jaseci_core
+name: jaseci_core Unit Tests
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  tests:
     runs-on: ubuntu-latest
 
     steps:

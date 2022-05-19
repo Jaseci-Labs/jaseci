@@ -1,0 +1,7 @@
+
+{
+    "walkers" : ["init"],
+    "src" : "walker.jac",
+    "remote_actions" : ["http://flair-ner:80/"],
+    "local_actions" : []
+}
