@@ -1,4 +1,4 @@
-name: jaseci_serv
+name: jaseci_serv Tests
 
 on:
   push:
@@ -7,8 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-
+  tests:
     runs-on: ubuntu-latest
 
     steps:
