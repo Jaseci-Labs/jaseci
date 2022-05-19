@@ -135,9 +135,12 @@ destroy_action: KW_DESTROY expression SEMI;
 
 report_action:
 	KW_REPORT expression SEMI
-	| KW_REPORT DOT NAME EQ INT SEMI;
+	| KW_REPORT COLON NAME EQ expression SEMI;
 
-walker_action: ignore_action | take_action | KW_DISENGAGE SEMI;
+walker_action:
+	ignore_action
+	| take_action
+	| KW_DISENGAGE (report_action | SEMI);
 
 ignore_action: KW_IGNORE expression SEMI;
 

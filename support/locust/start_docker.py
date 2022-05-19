@@ -6,7 +6,6 @@ import json
 client = docker.from_env()
 containerList = []
 
-
 def getConfig(testConfigName: str):
     confData = json.load(open(testConfigName, "r"))
     return confData
@@ -105,6 +104,7 @@ def retrieveData():
 atexit.register(killAll)
 configName = input('Name of your test configuration:')
 confList = getConfig(configName)
+
 for conf in confList:
     defConf = defaultizeConf(conf)
     container = runConfLocust(defConf)

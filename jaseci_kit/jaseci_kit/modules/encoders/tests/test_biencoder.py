@@ -1,15 +1,17 @@
+import sys
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from bi import serv_actions, config_setup
+from ..bi import serv_actions, config_setup
 from fastapi.testclient import TestClient
+
 from .test_data import (
-    test_cos_sim_request,
+    model_config_default,
+    train_config_default,
+    test_infer_request,
     test_context_emb_request,
     test_candidate_emb_request,
     test_train_request,
-    test_infer_request,
-    train_config_default,
-    model_config_default,
+    test_cos_sim_request,
 )
 
 
@@ -52,7 +54,8 @@ class biencoder_test(TestCaseHelper, TestCase):
 
     def test_biencoder_train_config(self):
         response = self.client.post(
-            "/set_train_config/", json={"training_parameters": train_config_default}
+            "/set_train_config/",
+            json={"training_parameters": train_config_default},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), "Config setup is complete.")
@@ -95,7 +98,8 @@ class biencoder_test(TestCaseHelper, TestCase):
         self.assertEqual(response.status_code, 200)
         # step 4: setting training config to default
         response = self.client.post(
-            "/set_train_config/", json={"training_parameters": train_config_default}
+            "/set_train_config/",
+            json={"training_parameters": train_config_default},
         )
         self.assertEqual(response.status_code, 200)
         # step 5: saving the model
