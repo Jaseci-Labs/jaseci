@@ -34,9 +34,9 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 
 
 ## Non-AI Tools
-| Module    | Model Name    | Example | Status | Description                                | Resources                                        |
-| --------- | ------------- | ------- | ------ | ------------------------------------------ | ------------------------------------------------ |
-| `pdf_ext` | PDF Extractor |         | Ready  | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
+| Module    | Model Name    | Example                        | Status | Description                                | Resources                                        |
+| --------- | ------------- | ------------------------------ | ------ | ------------------------------------------ | ------------------------------------------------ |
+| `pdf_ext` | PDF Extractor | [Link](#pdf-extractor-pdf_ext) | Ready  | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
 
 # Examples
 
