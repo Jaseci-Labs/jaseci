@@ -4,32 +4,39 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 # Model Directory
 
 ## Encoders
-| Module      | Model Name    | Example                           | Type                    | Status       | Description                                                 | Resources                                 |
-| ----------- | ------------- | --------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
-| `use_enc`   | USE Encoder   | [Link](#use-encoder-useenc)       | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
-| `use_qa`    | USE QA        | [Link](#use-qa-useqa)             | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
-| `fast_enc`  | FastText      | [Link](#fasttext-encoder-fastenc) | Training req.           | Ready        | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
-| `bi_enc`    | Bi-encoder    | [Link](#bi-encoder-bienc)         | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
-| `poly_enc`  | Poly-encoder  |                                   | Training req./Zero-shot | Experimental | Poly Encoder                                                | [Paper](https://arxiv.org/abs/1905.01969) |
-| `cross_enc` | Cross-encoder |                                   | Training req./Zero-shot | Experimental | Cross Encoder                                               | [Paper](https://arxiv.org/abs/1905.01969) |
+| Module      | Model Name    | Example                            | Type                    | Status       | Description                                                 | Resources                                 |
+| ----------- | ------------- | ---------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
+| `use_enc`   | USE Encoder   | [Link](#use-encoder-use_enc)       | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
+| `use_qa`    | USE QA        | [Link](#use-qa-use_qa)             | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
+| `fast_enc`  | FastText      | [Link](#fasttext-encoder-fast_enc) | Training req.           | Ready        | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
+| `bi_enc`    | Bi-encoder    | [Link](#bi-encoder-bi_enc)         | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
+| `poly_enc`  | Poly-encoder  |                                    | Training req./Zero-shot | Experimental | Poly Encoder                                                | [Paper](https://arxiv.org/abs/1905.01969) |
+| `cross_enc` | Cross-encoder |                                    | Training req./Zero-shot | Experimental | Cross Encoder                                               | [Paper](https://arxiv.org/abs/1905.01969) |
 
 ## Entity
-| Module                | Model Name      | Example                                              | Type           | Status       | Description                                                       | Resources                                                                                               |
-| --------------------- | --------------- | ---------------------------------------------------- | -------------- | ------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `ent_ext`/ `lstm_ner` | Flair NER       | [Link](#entity-extraction-entext)                    | Training req.  | Ready        | Entity extraction using the FLAIR NER framework                   |                                                                                                         |
-| `tfm_ner`             | Transformer NER | [Link](#entity-extraction-using-transformers-tfmner) | Training req.  | Ready        | Token classification on Transformer models, can be used for NER   | [Huggingface](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification) |
-| `lstm_ner`            | LSTM NER        |                                                      | Traininig req. | Experimental | Entity extraction/Slot filling via Long-short Term Memory Network |                                                                                                         |
+| Module                | Model Name      | Example                                               | Type           | Status       | Description                                                       | Resources                                                                                               |
+| --------------------- | --------------- | ----------------------------------------------------- | -------------- | ------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `ent_ext`/ `lstm_ner` | Flair NER       | [Link](#entity-extraction-ent_ext)                    | Training req.  | Ready        | Entity extraction using the FLAIR NER framework                   |                                                                                                         |
+| `tfm_ner`             | Transformer NER | [Link](#entity-extraction-using-transformers-tfm_ner) | Training req.  | Ready        | Token classification on Transformer models, can be used for NER   | [Huggingface](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification) |
+| `lstm_ner`            | LSTM NER        |                                                       | Traininig req. | Experimental | Entity extraction/Slot filling via Long-short Term Memory Network |                                                                                                         |
 
 ## Summarization
-| Module      | Model Name | Example                         | Type             | Status | Description                                  | Resources                                                     |
-| ----------- | ---------- | ------------------------------- | ---------------- | ------ | -------------------------------------------- | ------------------------------------------------------------- |
-| `cl_summer` | Summarizer | [Link](#summarizer-clsummer)    | No Training req. | Ready  | Extractive Summarization using Sumy          | [Doc.](https://miso-belica.github.io/sumy/)                   |
+| Module      | Model Name | Example                         | Type             | Status | Description                                  | Resources                                                                                                    |
+| ----------- | ---------- | ------------------------------- | ---------------- | ------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `cl_summer` | Summarizer | [Link](#summarizer-clsummer)    | No Training req. | Ready  | Extractive Summarization using Sumy          | [Doc.](https://miso-belica.github.io/sumy/)                                                                  |
 | `t5_sum`    | Summarizer | [Link](#t5-summarization-t5sum) | No Training req. | Ready  | Abstractive Summarization using the T5 Model | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf) |
 
+
+## Text Processing
+| Module     | Model Name     | Example                          | Type             | Status      | Description                           | Resources                                                           |
+| ---------- | -------------- | -------------------------------- | ---------------- | ----------- | ------------------------------------- | ------------------------------------------------------------------- |
+| `text_seg` | Text Segmenter | [Link](#text-segmenter-text_seg) | No Training req. | Experimetal | Topical Change Detection in Documents | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec) |
+
+
 ## Non-AI Tools
-| Module    | Model Name    | Example | Status | Description                                | Resources                                        |
-| --------- | ------------- | ------- | ------ | ------------------------------------------ | ------------------------------------------------ |
-| `pdf_ext` | PDF Extractor |         | Ready  | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
+| Module    | Model Name    | Example                        | Status | Description                                | Resources                                        |
+| --------- | ------------- | ------------------------------ | ------ | ------------------------------------------ | ------------------------------------------------ |
+| `pdf_ext` | PDF Extractor | [Link](#pdf-extractor-pdf_ext) | Ready  | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
 
 # Examples
 
@@ -608,5 +615,64 @@ walker summarization {
     summarized_text = t5_sum.classify_text(text=text, min_length=min_length, max_length=max_length);
     
     report summarized_text;
+}
+```
+
+## Text Processing
+### Text Segmenter (`text_seg`)
+`text_seg` module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
+* `get_segements`: gets different topics in the context provided, given a threshold 
+    * Input 
+        * `text`(String): text the contain the entire context
+        * `threshold`(Float): range is between 0-1, make each sentence as segment if, threshold is 1.
+    * Returns: List of Sentences that best summarizes the context
+  
+* `load_model`: to load the available model for text segmentation
+    * Input 
+        * `model_name`(String): name of the transformer model to load, options are:
+            * `wiki`: trained on wikipedia data
+            * `legal`: trained on legal documents
+    * Returns: "[Model Loaded] : <model_name>"
+
+#### Example Jac Usage:
+```jac
+walker text_seg_example {
+    has data_file = "text_seg.json";
+    has threshold = 0.85;
+    can text_seg.get_segments, text_seg.load_model;
+
+    # loading the desired model
+    resp_data = text_seg.load_model(model_name='wiki');
+    std.out(resp_data);
+
+    # Getting Segments of different topic from text
+    data = file.load_json(data_file);
+    resp_data = text_seg.get_segments(text=data.text,
+    threshold=threshold);
+    std.out(resp_data);
+}
+```
+
+## Non-AI Tools
+### PDF Extractor (`pdf_ext`)
+`pdf_ext` module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
+* `extract_pdf`: gets different topics in the context provided, given a threshold 
+    * Input 
+        * `url`(String): gets the pdf from URL
+        * `path`(Float): gets the pdf from local path
+        * `metadata`(Bool): to display available metadata of PDF
+    * Returns: a json with number of pages the pdf had and content
+  
+#### Example Jac Usage:
+```jac
+walker pdf_ext_example {
+    has url = "http://www.africau.edu/images/default/sample.pdf";
+    has metadata = true;
+    can pdf_ext.extract_pdf;
+
+    # Getting the dat from PDF
+    resp_data = pdf_ext.extract_pdf(url=url,
+    metadata=metadata);
+    std.out(resp_data);
 }
 ```
