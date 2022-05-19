@@ -35,10 +35,6 @@ class SeqTask(SequentialTaskSet):
         global UserID
         self.userName, self.password = gen_username(UserID), gen_password(UserID)
         self.userID = UserID
-        token = prepare.login(userID = UserID)
-        # global SNT
-        self.snt = prepare.registerSentinel(token)
-        prepare.load_actions(token)
         UserID += 1
 
     @task
@@ -51,9 +47,20 @@ class SeqTask(SequentialTaskSet):
         self.user_token = json_var["token"]
 
     @task
+    def get_global_sentinel(self):
+        req = {
+                "snt": SNT
+                }
+        response = self.client.post(
+                '/js/sentinel_active_global',
+                headers = {"authorization": f"Token {self.user_token}"},
+                )
+        print(response.text)
+
+    @task
     def walker_run(self):
         for walkerName in load_config(TEST_PATH)["walkers"]:
-            req = {"name": walkerName, "snt": self.snt}
+            req = {"name": walkerName, "snt": SNT}
             # print(f"Walker {walkerName} running.")
             response = self.client.post(
                 "/js/walker_run",
@@ -61,7 +68,6 @@ class SeqTask(SequentialTaskSet):
                 json=req,
             )
             print(f"Walker {walkerName} finished. {response.text}")
-            # print(f"Walker {walkerName} Output: {response.json()}")
 
 
 class addJac(HttpUser):
@@ -72,3 +78,8 @@ class addJac(HttpUser):
 
 
 
+token = prepare.login(userID = 0)
+# global SNT
+SNT = prepare.registerSentinel(token)
+prepare.setSentinelGlobal(token = token, snt = SNT)
+prepare.load_actions(token)

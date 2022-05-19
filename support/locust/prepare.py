@@ -19,7 +19,7 @@ def login(userID: int):
 # register sentinel, return the jid
 def registerSentinel(token: str):
     req = {
-        "name": "jac_prog",
+        "name": "jac_prog_testers",
         "code": utils.get_code(utils.load_config(TEST_PATH)["src"]),
     }
     response = requests.post(
@@ -36,7 +36,7 @@ def setSentinelGlobal(token: str, snt: str):
         headers={"authorization": f"Token {token}"},
         json={"snt": snt},
     )
-    # print(response.text)
+    print("SET SENTINEL GLOBAL",response.text)
 
 
 def load_actions(token: str):
