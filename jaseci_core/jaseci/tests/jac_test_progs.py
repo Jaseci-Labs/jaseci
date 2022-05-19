@@ -291,3 +291,21 @@ vanishing_can_check = """
         }
     }
     """
+
+jasecilib_alias_list = """
+    walker init {
+        report jaseci.alias_list();
+    }
+    """
+
+jasecilib_params = """
+    walker init {
+        report jaseci.graph_list(true);
+    }
+    """
+
+jasecilib_create_user = """
+    walker init {
+        report jaseci.master_create("daman@gmail.com");
+    }
+    """
