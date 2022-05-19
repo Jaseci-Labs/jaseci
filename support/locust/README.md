@@ -1,23 +1,16 @@
 # Locust Load Test for JASECI
 Locust is an easy-to-use, distributed, user load testing tool. It is intended for load-testing web sites (or other systems) and figuring out how many concurrent users a system can handle.
 
-The idea is that during a test, a swarm of locust users will attack your website. The behavior of each user is defined by you using Python code, and the swarming process is monitored from a web UI in real-time. This will help you battle test and identify bottlenecks in your code before letting real users in.
+## Run Locust natively
 
-Locust is completely event-based, and therefore it’s possible to support thousands of concurrent users on a single machine. In contrast to many other event-based apps it doesn’t use callbacks. Instead it uses light-weight processes, through gevent. Each locust swarming your site is actually running inside its own process (or greenlet, to be correct). This allows you to write very expressive scenarios in Python without complicating your code with callbacks.
-
-## Test without docker
-
-Our Locust test is available without docker container. You can run the program yourself on your laptop.
-
-### Set up the environment
-Install locust in Python.
+### Install Locust
 ```console
 pip install locust
 ```
 ### Configure the test
-Create sufficient users for your following tests.
+Create test users. This following script will prompt you for the jaseci server URL and number of test users you wish to create.
 ```bash
-python createUser.py
+python create_users.py
 ```
 Then create a folder in `sample_code/`. Set up a file `config.json` in the folder. Here is an example:
 ```json
@@ -31,30 +24,26 @@ Then create a folder in `sample_code/`. Set up a file `config.json` in the folde
 
 `walkers` is a list of walkers that you want to call (in sequence). `src` the name of the file that contains your code. `remote_actions` should contain a list of URLs of your remote services. `local_actions` should contain a list of names of your modules.
 
-
 ### Run the test
-The program reads the environment variable `LOCUST_TEST_SRC` for the location of the test configuration. So to run the test, please run
+The program reads the environment variable `LOCUST_TEST_SRC` for the location of the test configuration and `LOCUST_HOST` for the jaseci server URL.
 ```bash
-LOCUST_TEST_SRC='sample_code/<YOUR TEST>' locust -f createUsers.py
+LOCUST_HOST='JASECI_URL' LOCUST_TEST_SRC='sample_code/<YOUR TEST>' locust -f run_jac.py
 ```
 
-Go to the link specified in console, e.x http://0.0.0.0:8089 and put the number of user same as what you added in csv file and run the application
+Go to the link specified in console, e.x http://0.0.0.0:8089 and specify the desired number of users for the load test and initiate the test. You can also change the server URL in the web UI.
 
-## Test with Docker
-
-With the help of docker, we can easily scale up the test and make it more complex.
+## Run Locust with docker
 
 ### Set up the environment
-
-To run a docker tool written in Python, please install 
+Install docker
 ```bash
 pip install docker
 ```
-To build the image, please run
+Build the custom docker image
 ```bash
 docker build -t locust-jac-test .
 ```
-**Note** Please make sure that your Jaseci service is exposed to `0.0.0.0` since we are going to access the service from docker, not local. With Kubernetes, we run 
+**Note** If you are testing a localhost jaseci, please make sure that your Jaseci service is exposed to `0.0.0.0` since we are going to access the service from docker, not local. To achieve that, run
 ```bash
 kubectl port-forward <JASECI POD NAME> 8888:80 --address="0.0.0.0"
 ```
@@ -62,7 +51,7 @@ kubectl port-forward <JASECI POD NAME> 8888:80 --address="0.0.0.0"
 
 **Note** Please make sure that you have configured the tests properly as we did in the previous section.
 
-Since we are not going to open a Web UI this time, we need some more information. Please give all the information in `test.json`. The file is a JSON list. An example element is 
+Since we are not going to open a Web UI this time, we need some more information. Please give all the information in `test.json`. Here is an example
 ```json
 {
     "hostName": "http://172.17.0.1:8888",
@@ -78,7 +67,7 @@ Since we are not going to open a Web UI this time, we need some more information
 ### Run the test
 To run the test
 ```bash
-python startDocker.py
+python start_docker.py
 ```
 All the tests will be created inside a separate docker container. The containers are named `Locust_<TESTNAME>`. All the tests should be run in parallel. When all the tests are done, the python script automatically removes and kills all the containers.
 
