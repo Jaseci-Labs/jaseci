@@ -35,6 +35,10 @@ class SeqTask(SequentialTaskSet):
         global UserID
         self.userName, self.password = gen_username(UserID), gen_password(UserID)
         self.userID = UserID
+        token = prepare.login(userID = UserID)
+        # global SNT
+        self.snt = prepare.registerSentinel(token)
+        prepare.load_actions(token)
         UserID += 1
 
     @task
@@ -49,7 +53,7 @@ class SeqTask(SequentialTaskSet):
     @task
     def walker_run(self):
         for walkerName in load_config(TEST_PATH)["walkers"]:
-            req = {"name": walkerName, "snt": SNT}
+            req = {"name": walkerName, "snt": self.snt}
             # print(f"Walker {walkerName} running.")
             response = self.client.post(
                 "/js/walker_run",
@@ -66,8 +70,5 @@ class addJac(HttpUser):
     wait_time = constant(2)
 
 
-token = prepare.login()
-SNT = prepare.registerSentinel(token)
-prepare.load_actions(token)
-prepare.setSentinelGlobal(token, SNT)
-print(SNT)
+
+
