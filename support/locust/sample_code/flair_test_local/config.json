@@ -1,0 +1,7 @@
+
+{
+    "walkers" : ["init"],
+    "src" : "walker.jac",
+    "remote_actions" : [],
+    "local_actions" : ["/jaseci/jaseci_kit/jaseci_kit/modules/entity_extraction/entity_extraction.py"]
+}
