@@ -1,3 +1,4 @@
+import json
 from rest_framework.views import APIView
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
@@ -8,6 +9,8 @@ from jaseci_serv.base.orm_hook import orm_hook
 from jaseci_serv.base.models import JaseciObject, GlobalVars
 from jaseci_serv.base.models import master as core_master
 from time import time
+from base64 import b64encode
+from io import BytesIO
 
 
 class JResponse(Response):
@@ -80,15 +83,37 @@ class AbstractJacAPIView(APIView):
 
         req_query = request.GET.dict()
         req_headers = dict(request.headers)
-        req_data = self.cmd = (
-            request.data.dict() if type(request.data) is not dict else request.data
-        )
+        req_content_type = req_headers["Content-Type"].split(";")[0]
+        req_files = {}
+
+        if (
+            req_content_type == "multipart/form-data"
+            and "jaseci-context" in request.FILES
+        ):
+            req_data = json.loads(
+                request.FILES.pop("jaseci-context")[0].read().decode("utf-8")
+            )
+            for key in request.FILES:
+                req_files[key] = []
+                for file in request.FILES.getlist(key):
+                    req_files[key].append(
+                        {
+                            "name": file.name,
+                            "base64": b64encode(file.file.getvalue()).decode("utf-8"),
+                            "content-type": file.content_type,
+                        }
+                    )
+        else:
+            req_data = (
+                request.data.dict() if type(request.data) is not dict else request.data
+            )
 
         req_context = {
             "method": request.method,
             "headers": req_headers,
             "query": req_query,
             "body": req_data.copy(),
+            "files": req_files,
         }
 
         if "ctx" in req_data:
@@ -98,8 +123,9 @@ class AbstractJacAPIView(APIView):
         else:
             req_data["ctx"] = {"_context": req_context}
 
-        self.cmd.update(req_query)
-        self.cmd.update(kwargs)
+        req_data.update(req_query)
+        req_data.update(kwargs)
+        self.cmd = req_data
         self.set_caller(request)
         self.res = "Not valid interaction!"
 
