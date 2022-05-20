@@ -85,7 +85,7 @@ class SeqTask(SequentialTaskSet):
                 headers={"authorization": f"Token {self.user_token}"},
                 json=req,
             )
-            print(f"Walker {walkerName} finished. {response.text}")
+            print(f"User {self.userName}: Walker {walkerName} finished. {response.text}")
 
     @task
     def delete_graph(self):
