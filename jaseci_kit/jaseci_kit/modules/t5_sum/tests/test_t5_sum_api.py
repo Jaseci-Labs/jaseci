@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from t5_sum import serv_actions
+from ..t5_sum import serv_actions
 from fastapi.testclient import TestClient
 from .test_data import test_t5_sum_request
 

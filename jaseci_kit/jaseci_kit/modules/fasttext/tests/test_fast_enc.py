@@ -1,12 +1,8 @@
-import sys
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from fasttext_classifier import serv_actions
+from ..fasttext_classifier import serv_actions
 from fastapi.testclient import TestClient
-import os
-
-sys.path.append(os.path.dirname(__file__))
-from test_data import test_train_request, test_predict_request  # noqa
+from .test_data import test_train_request, test_predict_request
 
 
 class FastText_test(TestCaseHelper, TestCase):

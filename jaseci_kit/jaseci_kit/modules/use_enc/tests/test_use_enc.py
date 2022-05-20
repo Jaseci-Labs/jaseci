@@ -1,12 +1,9 @@
-import sys
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from use_enc import serv_actions
+from ..use_enc import serv_actions
 from fastapi.testclient import TestClient
-import os
 
-sys.path.append(os.path.dirname(__file__))
-from test_data import test_text_similarity, test_text_classify  # noqa
+from .test_data import test_text_similarity, test_text_classify  # noqa
 
 
 class use_enc_test(TestCaseHelper, TestCase):

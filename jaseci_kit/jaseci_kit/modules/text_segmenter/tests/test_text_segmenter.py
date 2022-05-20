@@ -1,12 +1,8 @@
-import sys
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from text_segmenter import serv_actions
+from ..text_segmenter import serv_actions
 from fastapi.testclient import TestClient
-import os
-
-sys.path.append(os.path.dirname(__file__))
-from test_data import test_segment_request  # noqa
+from .test_data import test_segment_request
 
 
 class text_segementer_test(TestCaseHelper, TestCase):
