@@ -1218,3 +1218,24 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(reverse("jac_api:wapi", args=["testwalker"]), payload)
         self.assertEqual(res.data, {"a": "b"})
         self.assertEqual(res.status_code, status.HTTP_302_FOUND)
+
+    def test_jac_create_user_in_jac_django(self):
+        """Test API for running a walker"""
+        payload = {"op": "graph_create"}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {
+            "op": "sentinel_register",
+            "name": "Something",
+            "code": "walker testwalker{ report jaseci.master_create('a@b.com', true,  "
+            "{'password': 'yoyoyoyoyoyo', 'name': '', 'is_activated': true}); }",
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        payload = {}
+        res = self.client.post(reverse("jac_api:walker_list"), payload)
+        self.assertEqual(len(res.data), 1)
+        res = self.client.post(reverse("jac_api:wapi", args=["testwalker"]), payload)
+        self.assertIn("jid", res.data["report"][0].keys())
+        self.assertEqual(res.data["report"][0]["name"], "a@b.com")
