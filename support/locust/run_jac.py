@@ -61,19 +61,15 @@ class SeqTask(SequentialTaskSet):
         self.snt = prepare.registerSentinel(self.user_token)
         prepare.load_actions(self.user_token)
 
-    @task 
+    @task
     def create_graph(self):
 
-        headers={"authorization": f"Token {self.user_token}"}
+        headers = {"authorization": f"Token {self.user_token}"}
         response = self.client.post(
-                "/js/graph_create",
-                headers = headers,
-                json = {
-                    "set_active" : True
-                    }
-                )
+            "/js/graph_create", headers=headers, json={"set_active": True}
+        )
         print(response.text)
-        self.graph_id = response.json()['jid']
+        self.graph_id = response.json()["jid"]
 
     @task
     def walker_run(self):
@@ -85,27 +81,23 @@ class SeqTask(SequentialTaskSet):
                 headers={"authorization": f"Token {self.user_token}"},
                 json=req,
             )
-            print(f"User {self.userName}: Walker {walkerName} finished. {response.text}")
+            print(
+                f"User {self.userName}: Walker {walkerName} finished. {response.text}"
+            )
 
     @task
     def delete_graph(self):
 
-        headers={"authorization": f"Token {self.user_token}"}
+        headers = {"authorization": f"Token {self.user_token}"}
         response = self.client.post(
-                "/js/graph_delete",
-                headers = headers,
-                json = {
-                    "gph" : self.graph_id
-                    }
-                )
+            "/js/graph_delete", headers=headers, json={"gph": self.graph_id}
+        )
 
 
 class addJac(HttpUser):
     host = "http://127.0.0.1:8888"
     tasks = [SeqTask]
     wait_time = constant(2)
-
-
 
 
 # token = prepare.login(userID = 0)

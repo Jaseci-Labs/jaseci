@@ -36,7 +36,7 @@ def setSentinelGlobal(token: str, snt: str):
         headers={"authorization": f"Token {token}"},
         json={"snt": snt},
     )
-    print("SET SENTINEL GLOBAL",response.text)
+    print("SET SENTINEL GLOBAL", response.text)
 
 
 def load_actions(token: str):

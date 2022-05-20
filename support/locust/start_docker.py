@@ -23,11 +23,8 @@ def runLocust(
 ):
     global client
     volume = {
-            os.path.abspath("sample_code"):{
-                "bind": "/locust/sample_code",
-                "mode": "rw"
-                }
-            }
+        os.path.abspath("sample_code"): {"bind": "/locust/sample_code", "mode": "rw"}
+    }
     con = client.containers.create(
         image="locust-jac-test",
         name=containerName,
@@ -39,7 +36,7 @@ def runLocust(
             "LOCUST_DURATION": duration,
             "LOCUST_TEST_NAME": testName,
         },
-        volumes = volume
+        volumes=volume,
     )
     return con
 
