@@ -4,44 +4,21 @@
 const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
-/** @type {import('@docusaurus/types').Config} */
-const config = {
+
+module.exports = {
   title: 'Jaseci Official Documentation',
   tagline: 'Powering The Next Generation Of AI Products',
   url: 'https://your-docusaurus-test-site.com',
   baseUrl: '/',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenMarkdownLinks: 'throw',
   favicon: 'img/favicon.png',
   organizationName: 'Jaseci Labs', // Usually your GitHub org/user name.
   projectName: 'jaseci-docs', // Usually your repo name.
 
-  presets: [
-    [
-      '@docusaurus/preset-classic',
-      /** @type {import('@docusaurus/preset-classic').Options} */
-      ({
-        docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
-          // Please change this to your repo.
-          editUrl: 'https://github.com/facebook/docusaurus/edit/main/website/',
-        },
-        blog: {
-          showReadingTime: true,
-          // Please change this to your repo.
-          editUrl:
-            'https://github.com/facebook/docusaurus/edit/main/website/blog/',
-        },
-        theme: {
-          customCss: require.resolve('./src/css/custom.css'),
-        },
-      }),
-    ],
-  ],
-
   themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
-    ({
+   
+    {
       navbar: {
         title: '',
         logo: {
@@ -50,12 +27,19 @@ const config = {
         },
         items: [
           {
-            type: 'doc',
-            docId: 'intro',
+            to: 'docs/getting-started/introduction',
             position: 'left',
-            label: 'Docs',
+            label: 'Introduction',
+            activeBasePath:'docs/getting-started'
           },
-          // {to: '/blog', label: 'Blog', position: 'left'},
+          {to:'docs/Developing_with_JAC/Overview',activeBasePath:'docs/Developing_with_JAC',label:'Developing with JAC',position :'left'},
+          {to:'docs/Tools_and_Features/Overview',activeBasePath:'docs/Tools_and_Features',label:'Tools and Feature',position :'left'},
+          {to:'docs/scaling-jaseci-development/intro',activeBasePath:'docs/scaling-jaseci-development',label:'Scaling Jaseci Development',position :'left'},
+          {to:'docs/Samples_and_Tutorials/Overview',activeBasePath:'docs/Samples_and_Tutorials',label:'Samples and Tutorials',position :'left'},
+
+
+           //{to: '/blog', label: 'Blog', position: 'left'},
+           //{to: '/gettingStarted', label: 'Getting Started', position: 'left'},
           {
             href: 'https://github.com/Jaseci-Labs/jaseci',
             label: 'GitHub',
@@ -111,7 +95,28 @@ const config = {
         darkTheme: darkCodeTheme,
         additionalLanguages: ['jac', 'python']
       },
-    }),
+    },
+    presets: [
+      [
+        
+        '@docusaurus/preset-classic',
+      
+        {
+          docs: {
+            path: 'docs',
+            routeBasePath: 'docs',
+            sidebarPath: require.resolve('./sidebars.js'),
+            // Please change this to your repo.
+            editUrl: 'https://github.com/facebook/docusaurus/edit/main/website/',
+          },
+         
+          
+          theme: {
+            customCss: require.resolve('./src/css/custom.css'),
+          },
+        },
+      ]
+    ],
+    
 };
 
-module.exports = config;
