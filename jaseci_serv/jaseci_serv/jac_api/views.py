@@ -84,26 +84,30 @@ class AbstractJacAPIView(APIView):
         req_query = request.GET.dict()
         req_headers = dict(request.headers)
         req_content_type = req_headers["Content-Type"].split(";")[0]
-        req_files = {}
+        req_data = None
 
+        req_files = {}
         if (
             req_content_type == "multipart/form-data"
             and "jaseci-context" in request.FILES
         ):
-            req_data = json.loads(
-                request.FILES.pop("jaseci-context")[0].read().decode("utf-8")
-            )
-            for key in request.FILES:
-                req_files[key] = []
-                for file in request.FILES.getlist(key):
-                    req_files[key].append(
-                        {
-                            "name": file.name,
-                            "base64": b64encode(file.file.getvalue()).decode("utf-8"),
-                            "content-type": file.content_type,
-                        }
-                    )
-        else:
+            jaseci_context = request.FILES.pop("jaseci-context")[0]
+            if jaseci_context.content_type == "application/json":
+                req_data = json.loads(jaseci_context.read().decode("utf-8"))
+                for key in request.FILES:
+                    req_files[key] = []
+                    for file in request.FILES.getlist(key):
+                        req_files[key].append(
+                            {
+                                "name": file.name,
+                                "base64": b64encode(file.file.getvalue()).decode(
+                                    "utf-8"
+                                ),
+                                "content-type": file.content_type,
+                            }
+                        )
+
+        if req_data is None:
             req_data = (
                 request.data.dict() if type(request.data) is not dict else request.data
             )
