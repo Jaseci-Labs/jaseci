@@ -1,6 +1,6 @@
 [
     {
-        "hostName": "http://clarity31.eecs.umich.edu:8080",
+        "hostName": "http://172.17.0.1:8888",
         "testName": "simple",
         "testSRC": "sample_code/simple",
         "userNum": 5,
@@ -8,7 +8,7 @@
         "duration": "10s"
     },
     {
-        "hostName": "http://clarity31.eecs.umich.edu:8080",
+        "hostName": "http://172.17.0.1:8888",
         "testName": "larger",
         "testSRC": "sample_code/simple",
         "userNum": 10,
@@ -17,7 +17,7 @@
     },
 
     {
-        "hostName": "http://clarity31.eecs.umich.edu:8080",
+        "hostName": "http://172.17.0.1:8888",
         "testName": "bi-enc",
         "testSRC": "sample_code/bi_enc_test",
         "userNum": 5,
@@ -26,7 +26,7 @@
     },
 
     {
-        "hostName": "http://clarity31.eecs.umich.edu:8080",
+        "hostName": "http://172.17.0.1:8888",
         "testName": "jprime",
         "testSRC": "sample_code/jprime",
         "userNum": 5,
