@@ -61,8 +61,11 @@ class SeqTask(SequentialTaskSet):
     def get_sentinel(self):
         print(SNT)
         headers = {"authorization": f"Token {self.user_token}"}
-        response = self.client.post("/js/sentinel_active_global", headers = headers, json = {'detailed':  False})
-        print("GET_SNT:",response.text)
+        response = self.client.post(
+            "/js/sentinel_active_global", headers=headers, json={"detailed": False}
+        )
+        print("GET_SNT:", response.text)
+
     #     self.snt = prepare.registerSentinel(self.user_token)
     #     prepare.load_actions(self.user_token)
 
@@ -105,8 +108,8 @@ class addJac(HttpUser):
     wait_time = constant(2)
 
 
-token = prepare.login(userID = 0)
+token = prepare.login(userID=0)
 # # global SNT
 SNT = prepare.registerSentinel(token)
-prepare.setSentinelGlobal(token = token, snt = SNT)
+prepare.setSentinelGlobal(token=token, snt=SNT)
 prepare.load_actions(token)
