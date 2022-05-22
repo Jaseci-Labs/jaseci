@@ -76,7 +76,7 @@ walker createPredefines {
 walker segmenter {
   // This walker creates the segment nodes of a documentation
   has entities, intents;
-  can text_segmentor.get_segments;
+  can text_seg.get_segments;
   root {
     doc = spawn here -[Root2Doc]-> node::Doc;
     entities = -[PredefEntity]->;
@@ -86,7 +86,7 @@ walker segmenter {
   Doc {
     segs =['The University of Michigan is a university located in Ann Arbor.', 'The University of Michigan is recognized as one of the best engineering schools in US.', 'I like coding Jaseci in University of Michigan.'];
     here.text = 'The University of Michigan is a university located in Ann Arbor. It is recoginized as one of the best engineering schools in US. I like coding Jaseci in University of Michigan.';
-    segs = text_segmentor.get_segments(text = here.text, threshold = 0.95);
+    segs = text_seg.get_segments(text = here.text, threshold = 0.95);
     std.out(segs);
     // Please call the AI model API here instead.
     for i in segs{
@@ -104,7 +104,7 @@ walker entityExtractor {
   Chunk {
     // chunkEntities = ["Michigan", "Dream", "Jaseci"];
     // Definitely CALL THE AI HERE!!
-    entityExtraction = ent_ext.entity_detection(text = here.text)['entities'];
+    entityExtraction = ent_ext.entity_detection(text = here.text, ner_labels = spawn here walker::getEntities)['entities'];
     // This is the list of entities detect by the AI model.
     for entity in entityExtraction {
       for entityNode in entities {

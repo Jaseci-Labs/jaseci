@@ -70,7 +70,6 @@ walker createPredefines {
     for entity in entities{
       spawn here -[PredefEntity]-> node::Entity(name = entity, count = 0);
     }
-    report "";
   }
 }
 
