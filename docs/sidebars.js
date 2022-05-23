@@ -5,6 +5,11 @@ module.exports = {
 
   'Developing with JAC' : [
     'Developing_with_JAC/Overview',
+    {
+      type : 'category',
+      label : 'Language Features',
+      items : ['Developing_with_JAC/Language_Features/input_output','Developing_with_JAC/Language_Features/dataTypes','Developing_with_JAC/Language_Features/Operator','Developing_with_JAC/Language_Features/Operator']
+    },
     'Developing_with_JAC/Language_Feature',
     'Developing_with_JAC/Design_Philosophy_and_Patterns',
     'Developing_with_JAC/Testing_and_Degugging',
@@ -15,7 +20,6 @@ module.exports = {
  Started: {
    
   'Introduction': [
-     'getting-started/introduction',
      'getting-started/getting-to-know-jaseci',
      'getting-started/installation',
      'getting-started/set-up-editor',

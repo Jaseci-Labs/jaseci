@@ -9,13 +9,13 @@ Jaseci is a computational Model and language in one.Jaseci provides the ability 
 
 ## Feature of Jaseci
 
-1.<strong>Easy to learn</strong> :
+1. <strong>Easy to learn</strong> :
 Jaseci is a high level programming language. It is very easy to learn. The paradigm for Jaseci is based upon graphs.Once you underastand this new paradigm the language is simple.
 
-2.<strong>Free and Open Source </strong>
+2. <strong>Free and Open Source </strong>
 Jaseci is completely free. Jaseci can be installled by runnning a simple pip command in your terminal.The Source code is avaliable here.
 
-3.<strong>Dynamically typed Language</strong> :
+3. <strong>Dynamically typed Language</strong> :
 Variable types are decided at run time so there is no need to sepcify them.
 
 4. <strong>Data Spacial</strong>
