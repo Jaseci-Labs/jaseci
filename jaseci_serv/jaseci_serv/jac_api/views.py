@@ -83,41 +83,35 @@ class AbstractJacAPIView(APIView):
 
         req_query = request.GET.dict()
         req_headers = dict(request.headers)
-        req_content_type = req_headers["Content-Type"].split(";")[0]
-        req_data = None
 
-        req_files = {}
-        if (
-            req_content_type == "multipart/form-data"
-            and "jaseci-context" in request.FILES
-        ):
-            jaseci_context = request.FILES.pop("jaseci-context")[0]
-            if jaseci_context.content_type == "application/json":
-                req_data = json.loads(jaseci_context.read().decode("utf-8"))
-                for key in request.FILES:
-                    req_files[key] = []
-                    for file in request.FILES.getlist(key):
-                        req_files[key].append(
-                            {
-                                "name": file.name,
-                                "base64": b64encode(file.file.getvalue()).decode(
-                                    "utf-8"
-                                ),
-                                "content-type": file.content_type,
-                            }
-                        )
+        req_data = (
+            request.data.dict() if type(request.data) is not dict else request.data
+        )
 
-        if req_data is None:
-            req_data = (
-                request.data.dict() if type(request.data) is not dict else request.data
-            )
+        if "ctx" in request.FILES:
+            ctx = request.FILES.pop("ctx")[0]
+            if ctx.content_type == "application/json":
+                req_data["ctx"] = json.loads(ctx.read().decode("utf-8"))
+
+        req_body = req_data.copy()
+
+        for key in request.FILES:
+            req_data.pop(key)
+            req_body[key] = []
+            for file in request.FILES.getlist(key):
+                req_body[key].append(
+                    {
+                        "name": file.name,
+                        "base64": b64encode(file.file.getvalue()).decode("utf-8"),
+                        "content-type": file.content_type,
+                    }
+                )
 
         req_context = {
             "method": request.method,
             "headers": req_headers,
             "query": req_query,
-            "body": req_data.copy(),
-            "files": req_files,
+            "body": req_body,
         }
 
         if "ctx" in req_data:
