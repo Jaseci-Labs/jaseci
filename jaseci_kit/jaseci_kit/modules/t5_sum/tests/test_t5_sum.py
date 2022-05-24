@@ -1,5 +1,5 @@
 import unittest
-from t5_sum.t5_sum import t5_generate_sum
+from ..t5_sum import t5_generate_sum
 
 
 class test_t5_sum(unittest.TestCase):
