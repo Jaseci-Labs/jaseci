@@ -52,6 +52,13 @@ def load_actions(token: str):
             headers={"authorization": f"Token {token}"},
             json={"file": action},
         )
+    for action in utils.load_config(TEST_PATH)["module_actions"]:
+        response = requests.post(
+            HOST + "/js_admin/actions_load_module",
+            headers={"authorization": f"Token {token}"},
+            json={"mod": action},
+        )
+        print(response.text)
 
     response = requests.post(
         HOST + "/js_admin/actions_list",

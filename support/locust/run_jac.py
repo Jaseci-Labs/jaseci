@@ -105,7 +105,7 @@ class SeqTask(SequentialTaskSet):
 class addJac(HttpUser):
     host = "http://127.0.0.1:8888"
     tasks = [SeqTask]
-    wait_time = constant(2)
+    wait_time = constant(0)
 
 
 token = prepare.login(userID=0)

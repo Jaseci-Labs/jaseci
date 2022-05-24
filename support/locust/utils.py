@@ -16,6 +16,11 @@ def load_config(path: str):
     src = config.get("src", "")
     src = os.path.join(path, src)
     config["src"] = src
+    localActions = config.get("local_actions", [])
+    remoteActions = config.get("remote_actions", [])
+    moduleActions = config.get("module_actions", [])
+
+    config["local_actions"], config["remote_actions"], config["module_actions"] = localActions, remoteActions, moduleActions
     return config
 
 
