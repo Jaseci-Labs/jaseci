@@ -8,7 +8,7 @@ We have put together a demo that you can run to verify that Jaseci works on your
 
 ## Before continuing
 
-**Note**: Jaseci depends on Kubernetes to be up and running on your system. We assume that all the installation steps were successful. You can find a cheat sheet of Kubernetes resources here: <a href="/docs/resources/common">Kubernetes Cheat Sheet</a>.
+**Note**: Jaseci depends on Kubernetes to be up and running on your system. We assume that all the installation steps were successful. You can find a cheat sheet of Kubernetes resources here: <a href="/docs/jaseci-1.0/resources/common">Kubernetes Cheat Sheet</a>.
 
 ### Steps to start Jaseci Services
 

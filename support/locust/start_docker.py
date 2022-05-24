@@ -7,8 +7,8 @@ client = docker.from_env()
 containerList = []
 
 
-def getConfig():
-    confData = json.load(open("test.json", "r"))
+def getConfig(testConfigName: str):
+    confData = json.load(open(testConfigName, "r"))
     return confData
 
 
@@ -22,6 +22,9 @@ def runLocust(
     duration: str,
 ):
     global client
+    volume = {
+        os.path.abspath("sample_code"): {"bind": "/locust/sample_code", "mode": "rw"}
+    }
     con = client.containers.create(
         image="locust-jac-test",
         name=containerName,
@@ -33,6 +36,7 @@ def runLocust(
             "LOCUST_DURATION": duration,
             "LOCUST_TEST_NAME": testName,
         },
+        volumes=volume,
     )
     return con
 
@@ -103,7 +107,9 @@ def retrieveData():
 
 
 atexit.register(killAll)
-confList = getConfig()
+configName = input("Name of your test configuration:")
+confList = getConfig(configName)
+
 for conf in confList:
     defConf = defaultizeConf(conf)
     container = runConfLocust(defConf)
