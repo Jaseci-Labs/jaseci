@@ -20,7 +20,11 @@ def load_config(path: str):
     remoteActions = config.get("remote_actions", [])
     moduleActions = config.get("module_actions", [])
 
-    config["local_actions"], config["remote_actions"], config["module_actions"] = localActions, remoteActions, moduleActions
+    config["local_actions"], config["remote_actions"], config["module_actions"] = (
+        localActions,
+        remoteActions,
+        moduleActions,
+    )
     return config
 
 
