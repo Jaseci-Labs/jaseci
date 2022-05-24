@@ -58,7 +58,6 @@ def load_actions(token: str):
             headers={"authorization": f"Token {token}"},
             json={"mod": action},
         )
-        print(response.text)
 
     response = requests.post(
         HOST + "/js_admin/actions_list",
