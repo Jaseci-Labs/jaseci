@@ -1,31 +1,26 @@
-import unittest
-from ..t5_sum import t5_generate_sum
+from unittest import TestCase
+from jaseci.utils.utils import TestCaseHelper
+from ..t5_sum import serv_actions
+from fastapi.testclient import TestClient
+from .test_data import test_t5_sum_request
 
 
-class test_t5_sum(unittest.TestCase):
-    def test_t5_max_length(self):
-        text = "The US has passed the peak on new coronavirus cases, President Donald Trump said and predicted that some states would reopen this month. The US has over 637,000 confirmed Covid-19 cases and over 30,826 deaths, the highest for any country in the world. At the daily White House coronavirus briefing on Wednesday, Trump said new guidelines to reopen the country would be announced on Thursday after he speaks to governors. We'll be the comeback kids, all of us, he said. We want to get our country back. The Trump administration has previously fixed May 1 as a possible date to reopen the world's largest economy, but the president said some states may be able to return to normalcy earlier than that."
-        min_length = 30
-        max_length = 100
+class t5_sum_test_api(TestCaseHelper, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.client = TestClient(serv_actions())
 
-        response = t5_generate_sum(text, min_length, max_length)
+    def tearDown(self) -> None:
+        return super().tearDown()
 
-        self.assertTrue(len(response.split(" ")) <= max_length)
+    def test_t5_sum_detection_pass(self):
+        response = self.client.post("/classifiy_text/", json=test_t5_sum_request)
 
-    def test_t5_min_length(self):
-        text = "The US has passed the peak on new coronavirus cases, President Donald Trump said and predicted that some states would reopen this month. The US has over 637,000 confirmed Covid-19 cases and over 30,826 deaths, the highest for any country in the world. At the daily White House coronavirus briefing on Wednesday, Trump said new guidelines to reopen the country would be announced on Thursday after he speaks to governors. We'll be the comeback kids, all of us, he said. We want to get our country back. The Trump administration has previously fixed May 1 as a possible date to reopen the world's largest economy, but the president said some states may be able to return to normalcy earlier than that."
-        min_length = 30
-        max_length = 100
-
-        response = t5_generate_sum(text, min_length, max_length)
-
-        self.assertTrue(len(response.split(" ")) >= min_length)
-
-    def test_t5_generate_sum(self):
-        text = "The US has passed the peak on new coronavirus cases, President Donald Trump said and predicted that some states would reopen this month. The US has over 637,000 confirmed Covid-19 cases and over 30,826 deaths, the highest for any country in the world. At the daily White House coronavirus briefing on Wednesday, Trump said new guidelines to reopen the country would be announced on Thursday after he speaks to governors. We'll be the comeback kids, all of us, he said. We want to get our country back. The Trump administration has previously fixed May 1 as a possible date to reopen the world's largest economy, but the president said some states may be able to return to normalcy earlier than that."
-        min_length = 30
-        max_length = 100
-
-        response = t5_generate_sum(text, min_length, max_length)
-
-        self.assertTrue(len(response.split(" ")) != None)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            len(response.json().split(" ")) <= test_t5_sum_request["max_length"]
+        )
+        self.assertTrue(
+            len(response.json().split(" ")) >= test_t5_sum_request["min_length"]
+        )
+        self.assertTrue(len(response.json().split(" ")) is not None)
