@@ -35,4 +35,4 @@ jobs:
     - name: Run tests
       run: |
         cd jaseci_kit/
-        python -m unittest jaseci_kit/modules/encoders/test/test_biencoder.py
+        python -m unittest jaseci_kit.modules.encoders.tests.test_biencoder
