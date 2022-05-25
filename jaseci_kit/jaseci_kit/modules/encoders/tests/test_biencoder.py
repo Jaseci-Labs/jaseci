@@ -104,7 +104,6 @@ class biencoder_test(TestCaseHelper, TestCase):
         response = self.client.post("/save_model/", json={"model_path": "my_path"})
         # step 6: infer to test if trained model is giving desired candidate
         response = self.client.post("/infer/", json=test_infer_request)
-        print(response)
         self.assertEqual(response.status_code, 200)
         # self.assertEqual(response.json()[0], "sharecurrentlocation")
         # step 7: loading the siamese model
