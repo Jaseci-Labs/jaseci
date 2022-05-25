@@ -14,7 +14,7 @@ setup(
         "pandas>=1.4.1,<2.0.0",
         "flair == 0.10",
         "numpy >= 1.22.1, < 2.0.0",
-        "fasttext-wheel >=0.9.2, < 1.0.0",
+        "fasttext >=0.9.2, < 1.0.0",
         "spacy == 3.3.0",
     ],
     package_data={
