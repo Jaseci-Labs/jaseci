@@ -1,4 +1,3 @@
-import sys
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
 from ..bi import serv_actions, config_setup
