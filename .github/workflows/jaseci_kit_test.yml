@@ -3,8 +3,12 @@ name: jaseci_kit Tests
 on:
   push:
     branches: [ main ]
+    paths:
+      - jaseci_kit/**
   pull_request:
     branches: [ main ]
+    paths:
+      - jaseci_kit/**
 
 jobs:
   tests:
