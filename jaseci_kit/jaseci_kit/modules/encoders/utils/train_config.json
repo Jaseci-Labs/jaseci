@@ -16,5 +16,6 @@
     "gpu": 0,
     "basepath": "logoutput",
     "seed": 12345,
-    "device": "cuda"
+    "device": "cuda",
+    "EPOCHS": 50
 }

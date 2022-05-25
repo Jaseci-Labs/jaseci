@@ -163,10 +163,7 @@ def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
 
 
 @jaseci_action(act_group=["ent_ext"], allow_remote=True)
-def train(
-    train_data: List[dict],
-    train_params: Dict = {"num_epoch": 10, "batch_size": 8, "LR": 0.02},
-):
+def train(train_data: list, train_params: dict):
     """
     API for training the model
     """
