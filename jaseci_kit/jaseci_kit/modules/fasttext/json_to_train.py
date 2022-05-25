@@ -1,7 +1,7 @@
 import re
 import json
 
-from config import train_file_path, clf_json_file_path
+from .config import train_file_path, clf_json_file_path
 
 
 def intent_to_label(intent):

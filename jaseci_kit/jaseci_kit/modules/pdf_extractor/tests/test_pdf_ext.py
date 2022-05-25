@@ -3,7 +3,7 @@ from unittest import TestCase
 from fastapi.testclient import TestClient
 from jaseci.utils.utils import TestCaseHelper
 
-from extractor import serv_actions
+from ..extractor import serv_actions
 
 from .test_data import (
     test_invalid_pdf_url_payload,

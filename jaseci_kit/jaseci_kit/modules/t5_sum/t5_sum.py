@@ -1,14 +1,13 @@
 import torch
-
 from jaseci.actions.live_actions import jaseci_action
+from transformers import T5Tokenizer, T5ForConditionalGeneration  # , T5Config
 
-from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Config
-
-from fastapi import HTTPException
+# from fastapi import HTTPException
 
 model = T5ForConditionalGeneration.from_pretrained("t5-small")
 tokenizer = T5Tokenizer.from_pretrained("t5-small")
 device = torch.device("cpu")
+
 
 # generates summary based on text
 def t5_generate_sum(text, min_length, max_length):
@@ -31,7 +30,8 @@ def t5_generate_sum(text, min_length, max_length):
     return output
 
 
-# summarize a large body of text using t5 model (small model) which returns data at a fast rate.
+# summarize a large body of text using t5 model (small model)
+# which returns data at a fast rate.
 @jaseci_action(act_group=["t5_sum"], allow_remote=True)
 def classifiy_text(text: str, min_length: int = 30, max_length: int = 100):
     output = t5_generate_sum(text, min_length, max_length)
