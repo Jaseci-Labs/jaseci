@@ -19,7 +19,7 @@ from .test_data import (
 
 
 class entity_extraction_test(TestCaseHelper, TestCase):
-    """Unit test for EntityExtraction FadictI server"""
+    """Unit test for EntityExtraction FastAPI server"""
 
     def setUp(self):
         super().setUp()
@@ -35,7 +35,6 @@ class entity_extraction_test(TestCaseHelper, TestCase):
             "/entity_detection/", json=test_entity_detection_request
         )
         self.assertEqual(response.status_code, 200)
-        print(response.json())
         for idx, ent in enumerate(test_entity_detection_response["entities"]):
             ent.pop("conf_score")
             res_ent = response.json()["entities"][idx]
@@ -73,9 +72,6 @@ class entity_extraction_test(TestCaseHelper, TestCase):
     @unittest.skip("Very weird pydantic/fastapi request parameter errors")
     def test_entity_training_fail(self):
         response = self.client.post("/train/", json=test_entity_training_fail)
-        print("===========================")
-        print(response.text)
-        print("===========================")
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json(), {"detail": "Need Data for Text and Entity"})
 
