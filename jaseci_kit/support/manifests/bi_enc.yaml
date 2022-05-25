@@ -44,7 +44,7 @@ spec:
       containers:
         - name: bi-enc
           imagePullPolicy: IfNotPresent
-          image: jaseci/ai-ready-img
+          image: jaseci/jaseci-kit:latest
           resources:
             requests:
               memory: "2Gi"

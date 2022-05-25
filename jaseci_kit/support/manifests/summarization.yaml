@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: js-use-enc
+  name: summarization
 spec:
   selector:
-    pod: js-use-enc
+    pod: summarization
   ports:
     - protocol: TCP
       port: 80
@@ -14,42 +14,41 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: js-use-enc-up
+  name: summarization-up
   namespace: default
 data:
   prod_up: |-
     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
     cd /jaseci/jaseci_core/
     source install.sh
-    cd /jaseci/jaseci_kit
-    source install.sh
-    cd /jaseci/jaseci_kit/jaseci_kit/modules/use_enc
-    uvicorn jaseci_kit.use_enc:serv_actions --host 0.0.0.0 --port 80
+    cd /jaseci
+    cd /jaseci/jaseci_kit/jaseci_kit/modules/summarization
+    uvicorn summarization:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: js-use-enc
+  name: summarization
 spec:
   replicas: 1
   selector:
     matchLabels:
-      pod: js-use-enc
+      pod: summarization
   template:
     metadata:
       labels:
-        pod: js-use-enc
-      name: js-use-enc
+        pod: summarization
+      name: summarization
     spec:
       containers:
-        - name: js-use-enc
+        - name: summarization
           imagePullPolicy: IfNotPresent
-          image: jaseci/ai-ready-img
+          image: jaseci/jaseci-kit:latest
           resources:
             requests:
-              memory: "3Gi"
+              memory: "2Gi"
             limits:
-              memory: "3Gi"
+              memory: "2Gi"
           command: [bash, -c, "source script/prod_up"]
           ports:
             - containerPort: 80
@@ -60,4 +59,4 @@ spec:
       volumes:
         - name: prod-script
           configMap:
-            name: js-use-enc-up
+            name: summarization-up
