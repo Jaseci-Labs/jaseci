@@ -8,7 +8,11 @@ module.exports = {
     {
       type : 'category',
       label : 'Language Features',
-      items : ['Developing_with_JAC/Language_Features/input_output','Developing_with_JAC/Language_Features/dataTypes','Developing_with_JAC/Language_Features/Operator','Developing_with_JAC/Language_Features/ControlFlow','Developing_with_JAC/Language_Features/FileHnadling','Developing_with_JAC/Language_Features/OOP']
+      items : ['Developing_with_JAC/Language_Features/input_output','Developing_with_JAC/Language_Features/dataTypes','Developing_with_JAC/Language_Features/Operator','Developing_with_JAC/Language_Features/ControlFlow','Developing_with_JAC/Language_Features/FileHnadling','Developing_with_JAC/Language_Features/OOP', {
+        type : 'category',
+        label : 'Acion Modules',
+        items : ['Developing_with_JAC/Language_Features/input_output','Developing_with_JAC/Language_Features/dataTypes','Developing_with_JAC/Language_Features/Operator','Developing_with_JAC/Language_Features/ControlFlow','Developing_with_JAC/Language_Features/FileHnadling','Developing_with_JAC/Language_Features/OOP']
+      },]
     },
     'Developing_with_JAC/Design_Philosophy_and_Patterns',
     'Developing_with_JAC/Testing_and_Degugging',
@@ -37,7 +41,6 @@ Tools: {
 
   'Jaseci Tools' : [
     'Tools_and_Features/Overview',
-    'Tools_and_Features/Jaseci_Kit',
     'Tools_and_Features/Jaseci_Serv',
     'Tools_and_Features/Jaseci_Studio',
     'Tools_and_Features/VScode_PLugins'
@@ -82,6 +85,17 @@ Samples : {
     'Samples_and_Tutorials/Overview',
     'Samples_and_Tutorials/Recommender_System',
     'Samples_and_Tutorials/Conversational_AI_Application',
+
+  ]
+
+},
+
+Resources : {
+
+  'Resources' : [
+    'Resources/Architectural_Overview',
+    'Resources/API_Reference',
+    'Resources/FAQ',
 
   ]
 
