@@ -1,3 +1,4 @@
+import json
 from rest_framework.views import APIView
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
@@ -8,6 +9,8 @@ from jaseci_serv.base.orm_hook import orm_hook
 from jaseci_serv.base.models import JaseciObject, GlobalVars
 from jaseci_serv.base.models import master as core_master
 from time import time
+from base64 import b64encode
+from io import BytesIO
 
 
 class JResponse(Response):
@@ -80,26 +83,48 @@ class AbstractJacAPIView(APIView):
 
         req_query = request.GET.dict()
         req_headers = dict(request.headers)
-        req_data = self.cmd = (
+
+        req_data = (
             request.data.dict() if type(request.data) is not dict else request.data
         )
 
-        req_context = {
-            "method": request.method,
-            "headers": req_headers,
-            "query": req_query,
-            "body": req_data.copy(),
-        }
+        try:
+            if "ctx" in request.FILES:
+                ctx = request.FILES.pop("ctx")[0]
+                if ctx.content_type == "application/json":
+                    req_data["ctx"] = json.loads(ctx.read().decode("utf-8"))
+            elif "ctx" in req_data and type(req_data["ctx"]) is not dict:
+                req_data["ctx"] = json.loads(req_data["ctx"])
+        except ValueError:
+            logger.error(str(f"Invalid ctx format! Ignoring ctx parsing!"))
 
-        if "ctx" in req_data:
-            ctx = req_data["ctx"].copy()
-            ctx["_context"] = req_context
-            req_data["ctx"] = ctx
-        else:
-            req_data["ctx"] = {"_context": req_context}
+        req_body = req_data.copy()
 
-        self.cmd.update(req_query)
-        self.cmd.update(kwargs)
+        for key in request.FILES:
+            req_data.pop(key)
+            req_body[key] = []
+            for file in request.FILES.getlist(key):
+                req_body[key].append(
+                    {
+                        "name": file.name,
+                        "base64": b64encode(file.file.getvalue()).decode("utf-8"),
+                        "content-type": file.content_type,
+                    }
+                )
+
+        req_data.update(
+            {
+                "_req_ctx": {
+                    "method": request.method,
+                    "headers": req_headers,
+                    "query": req_query,
+                    "body": req_body,
+                }
+            }
+        )
+        req_data.update(req_query)
+        req_data.update(kwargs)
+        self.cmd = req_data
         self.set_caller(request)
         self.res = "Not valid interaction!"
 

@@ -105,24 +105,25 @@ class walker(element, jac_code, walker_interp, anchored):
                 i.destroy()
             return True
 
-    def prime(self, start_node, prime_ctx=None):
+    def prime(self, start_node, prime_ctx=None, request_ctx=None):
         """Place walker on node and get ready to step step"""
         self.clear_state()
         self.next_node_ids.add_obj(start_node)
         if prime_ctx:
             for i in prime_ctx.keys():
                 self.context[str(i)] = prime_ctx[i]
+        self.request_context = request_ctx
         self.profile["steps"] = self.current_step
         logger.debug(str(f"Walker {self.name} primed - {start_node}"))
 
-    def run(self, start_node=None, prime_ctx=None, profiling=False):
+    def run(self, start_node=None, prime_ctx=None, request_ctx=None, profiling=False):
         """Executes Walker to completion"""
         if profiling:
             pr = cProfile.Profile()
             pr.enable()
 
         if start_node:
-            self.prime(start_node, prime_ctx)
+            self.prime(start_node, prime_ctx, request_ctx)
 
         report_ret = {"success": True}
         try:
@@ -140,6 +141,7 @@ class walker(element, jac_code, walker_interp, anchored):
             logger.debug(str(f"Walker {self.name} did not arrive at report state"))
 
         report_ret["report"] = self.report
+
         if self.report_status:
             report_ret["status_code"] = self.report_status
         if self.report_custom:

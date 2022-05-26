@@ -21,6 +21,7 @@ class machine_state:
         self.report = []
         self.report_status = None
         self.report_custom = None
+        self.request_context = None
         self.runtime_errors = []
         self._parent_override = parent_override
         if not isinstance(self, element) and caller:
