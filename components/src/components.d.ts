@@ -7,6 +7,15 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ItemsPropValue, JustifyPropValue } from "./types/propTypes";
 export namespace Components {
+    interface JscAnchor {
+        "css": string;
+        "events": string;
+        "href": string;
+        "label": string;
+        "name": string;
+        "operations": string;
+        "target": string;
+    }
     interface JscApp {
         "markup": JaseciComponent[];
         "setGlobalConfig": (config: Record<string, any>) => Promise<void>;
@@ -20,6 +29,23 @@ export namespace Components {
         "name": string;
         "operations": string;
     }
+    interface JscCard {
+        "css": string;
+        "events": string;
+        "name": string;
+        "operations": any;
+        "outlineColor": 'red';
+        "radius": 'sm' | 'md' | 'lg' | 'full';
+        "shadow": 'sm' | 'md' | 'lg';
+        "variant": 'shadow' | 'outline';
+    }
+    interface JscChip {
+        "css": string;
+        "events": string;
+        "label": string;
+        "name": string;
+        "operations": any;
+    }
     interface JscColumn {
         "css": string;
         "events": string;
@@ -29,6 +55,19 @@ export namespace Components {
         "operations": string;
     }
     interface JscContainer {
+        "css": string;
+        "events": string;
+        "name": string;
+        "operations": any;
+    }
+    interface JscDatePicker {
+        "css": string;
+        "events": string;
+        "label": string;
+        "name": string;
+        "operations": any;
+    }
+    interface JscDivider {
         "css": string;
         "events": string;
         "name": string;
@@ -85,7 +124,7 @@ export namespace Components {
         "operations": string;
         "state": string;
         "value": string;
-        "variant": 'simple' | 'title';
+        "variant": 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     }
     interface JscTextbox {
         "css": string;
@@ -113,6 +152,12 @@ export namespace Components {
     }
 }
 declare global {
+    interface HTMLJscAnchorElement extends Components.JscAnchor, HTMLStencilElement {
+    }
+    var HTMLJscAnchorElement: {
+        prototype: HTMLJscAnchorElement;
+        new (): HTMLJscAnchorElement;
+    };
     interface HTMLJscAppElement extends Components.JscApp, HTMLStencilElement {
     }
     var HTMLJscAppElement: {
@@ -125,6 +170,18 @@ declare global {
         prototype: HTMLJscButtonElement;
         new (): HTMLJscButtonElement;
     };
+    interface HTMLJscCardElement extends Components.JscCard, HTMLStencilElement {
+    }
+    var HTMLJscCardElement: {
+        prototype: HTMLJscCardElement;
+        new (): HTMLJscCardElement;
+    };
+    interface HTMLJscChipElement extends Components.JscChip, HTMLStencilElement {
+    }
+    var HTMLJscChipElement: {
+        prototype: HTMLJscChipElement;
+        new (): HTMLJscChipElement;
+    };
     interface HTMLJscColumnElement extends Components.JscColumn, HTMLStencilElement {
     }
     var HTMLJscColumnElement: {
@@ -136,6 +193,18 @@ declare global {
     var HTMLJscContainerElement: {
         prototype: HTMLJscContainerElement;
         new (): HTMLJscContainerElement;
+    };
+    interface HTMLJscDatePickerElement extends Components.JscDatePicker, HTMLStencilElement {
+    }
+    var HTMLJscDatePickerElement: {
+        prototype: HTMLJscDatePickerElement;
+        new (): HTMLJscDatePickerElement;
+    };
+    interface HTMLJscDividerElement extends Components.JscDivider, HTMLStencilElement {
+    }
+    var HTMLJscDividerElement: {
+        prototype: HTMLJscDividerElement;
+        new (): HTMLJscDividerElement;
     };
     interface HTMLJscInputboxElement extends Components.JscInputbox, HTMLStencilElement {
     }
@@ -186,10 +255,15 @@ declare global {
         new (): HTMLMyComponentElement;
     };
     interface HTMLElementTagNameMap {
+        "jsc-anchor": HTMLJscAnchorElement;
         "jsc-app": HTMLJscAppElement;
         "jsc-button": HTMLJscButtonElement;
+        "jsc-card": HTMLJscCardElement;
+        "jsc-chip": HTMLJscChipElement;
         "jsc-column": HTMLJscColumnElement;
         "jsc-container": HTMLJscContainerElement;
+        "jsc-date-picker": HTMLJscDatePickerElement;
+        "jsc-divider": HTMLJscDividerElement;
         "jsc-inputbox": HTMLJscInputboxElement;
         "jsc-label": HTMLJscLabelElement;
         "jsc-nav-bar": HTMLJscNavBarElement;
@@ -201,6 +275,15 @@ declare global {
     }
 }
 declare namespace LocalJSX {
+    interface JscAnchor {
+        "css"?: string;
+        "events"?: string;
+        "href"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: string;
+        "target"?: string;
+    }
     interface JscApp {
         "markup"?: JaseciComponent[];
     }
@@ -212,6 +295,23 @@ declare namespace LocalJSX {
         "name"?: string;
         "operations"?: string;
     }
+    interface JscCard {
+        "css"?: string;
+        "events"?: string;
+        "name"?: string;
+        "operations"?: any;
+        "outlineColor"?: 'red';
+        "radius"?: 'sm' | 'md' | 'lg' | 'full';
+        "shadow"?: 'sm' | 'md' | 'lg';
+        "variant"?: 'shadow' | 'outline';
+    }
+    interface JscChip {
+        "css"?: string;
+        "events"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: any;
+    }
     interface JscColumn {
         "css"?: string;
         "events"?: string;
@@ -221,6 +321,19 @@ declare namespace LocalJSX {
         "operations"?: string;
     }
     interface JscContainer {
+        "css"?: string;
+        "events"?: string;
+        "name"?: string;
+        "operations"?: any;
+    }
+    interface JscDatePicker {
+        "css"?: string;
+        "events"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: any;
+    }
+    interface JscDivider {
         "css"?: string;
         "events"?: string;
         "name"?: string;
@@ -278,7 +391,7 @@ declare namespace LocalJSX {
         "operations"?: string;
         "state"?: string;
         "value"?: string;
-        "variant"?: 'simple' | 'title';
+        "variant"?: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     }
     interface JscTextbox {
         "css"?: string;
@@ -306,10 +419,15 @@ declare namespace LocalJSX {
         "middle"?: string;
     }
     interface IntrinsicElements {
+        "jsc-anchor": JscAnchor;
         "jsc-app": JscApp;
         "jsc-button": JscButton;
+        "jsc-card": JscCard;
+        "jsc-chip": JscChip;
         "jsc-column": JscColumn;
         "jsc-container": JscContainer;
+        "jsc-date-picker": JscDatePicker;
+        "jsc-divider": JscDivider;
         "jsc-inputbox": JscInputbox;
         "jsc-label": JscLabel;
         "jsc-nav-bar": JscNavBar;
@@ -324,10 +442,15 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "jsc-anchor": LocalJSX.JscAnchor & JSXBase.HTMLAttributes<HTMLJscAnchorElement>;
             "jsc-app": LocalJSX.JscApp & JSXBase.HTMLAttributes<HTMLJscAppElement>;
             "jsc-button": LocalJSX.JscButton & JSXBase.HTMLAttributes<HTMLJscButtonElement>;
+            "jsc-card": LocalJSX.JscCard & JSXBase.HTMLAttributes<HTMLJscCardElement>;
+            "jsc-chip": LocalJSX.JscChip & JSXBase.HTMLAttributes<HTMLJscChipElement>;
             "jsc-column": LocalJSX.JscColumn & JSXBase.HTMLAttributes<HTMLJscColumnElement>;
             "jsc-container": LocalJSX.JscContainer & JSXBase.HTMLAttributes<HTMLJscContainerElement>;
+            "jsc-date-picker": LocalJSX.JscDatePicker & JSXBase.HTMLAttributes<HTMLJscDatePickerElement>;
+            "jsc-divider": LocalJSX.JscDivider & JSXBase.HTMLAttributes<HTMLJscDividerElement>;
             "jsc-inputbox": LocalJSX.JscInputbox & JSXBase.HTMLAttributes<HTMLJscInputboxElement>;
             "jsc-label": LocalJSX.JscLabel & JSXBase.HTMLAttributes<HTMLJscLabelElement>;
             "jsc-nav-bar": LocalJSX.JscNavBar & JSXBase.HTMLAttributes<HTMLJscNavBarElement>;

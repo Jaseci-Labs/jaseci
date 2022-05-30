@@ -1,6 +1,7 @@
 :host {
   box-sizing: border-box;
   display: block;
+  padding: 4px;
 }
 
 .input {
@@ -11,6 +12,7 @@
   padding: 8px 12px;
   border: 1px solid var(--color-brand-7);
 }
+
 :focus.input {
   box-shadow: 0 0 0 0.15rem var(--color-brand-8);
 }

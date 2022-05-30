@@ -1,0 +1,45 @@
+:host {
+  display: block;
+  box-sizing: border-box;
+}
+
+.card {
+  background: #fff;
+  padding: 1.5rem;
+}
+
+.card-shadow_sm {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.card-shadow {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.card-shadow_md {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.card-shadow_lg {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.card-outline {
+  border: 1px solid;
+}
+
+.card-radius_sm {
+  border-radius: 0.125rem;
+}
+
+.card-radius_md {
+  border-radius: 0.25rem;
+}
+
+.card-radius_lg {
+  border-radius: 0.5rem;
+}
+
+.card-radius_full {
+  border-radius: 9999px;
+}

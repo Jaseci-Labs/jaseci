@@ -25,11 +25,7 @@
     customElements.whenDefined('jsc-app').then(() => {
       const app = document.querySelector('jsc-app');
       const config = {
-        siteName: "Hello World",
-        css: {
-          background: "#F2F6F9",
-          height: "100%"
-        }
+        siteName: "Comlogger",
       }
 
       app.setGlobalConfig(config)
@@ -48,75 +44,61 @@
             css: { background: '#000000' },
           },
           {
-
-            component: 'Row',
-            props: {
-              items: "center",
-              justify: "between",
-            },
+            component: 'Container',
             css: {
               width: '100%',
               height: '100%',
-              padding: '10px 300px',
+              padding: '10px',
               display: "flex",
+              justifyContent: "center"
             },
             sections: {
               children: [
                 {
                   component: "Text",
                   props: {
-                    variant: "h1",
-                    value: "Logs"
-                  },
-                },
-                {
-                  component: "Button",
-                  props: {
-                    label: "Add a Log"
+                    variant: "title",
+                    value: "Add a Log Item"
+
                   }
-                }
-              ]
-            },
-          },
-          {
-            component: "Card",
-            props: {
-              variant: "outline",
-              shadow: "md",
-              outlineColor: "red",
-              radius: "lg"
-            },
-            css: {
-              padding: "20px 20px",
-              borderColor: "blue"
-            },
-            sections: {
-              children: [
-                {
-                  component: "Text",
-                  props: {
-                    variant: "h2",
-                    value: "Logs"
-                  },
                 },
                 {
-                  component: "Textbox",
-                  props: {
-                    label: "Date",
+                  component: "Column",
+                  sections: {
+                    children: [
+                      {
+                        component: "Inputbox",
+                        props: {
+                          label: "Title",
+                          fullWidth: true
+                        }
+                      },
+                      {
+                        component: "Textbox",
+                        props: {
+                          label: "Description",
+                          fullWidth: true
+                        }
+                      },
+                      {
+                        component: "Button",
+                        props: {
+                          label: "Submit"
+                        }
+                      }
+                    ]
                   },
                   css: {
+                    width: "500px",
+                    height: "300px",
+                    display: "flex",
+                    paddingTop: "12px",
+                    gap: "24px"
                   }
                 }
               ]
-            }
+            },
           },
-
-          {
-            component: "DatePicker",
-            props: {
-              label: "Date"
-            }
-          }
         ])
       );
     })

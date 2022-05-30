@@ -20,4 +20,5 @@ export const config: Config = {
       baseUrl: 'http://localhost:3333',
     },
   ],
+  plugins: [],
 };

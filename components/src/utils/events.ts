@@ -99,6 +99,42 @@ function runAction(action: JaseciAction, result?: any) {
         update(component, propertyName, value);
         action?.onCompleted && runAction(action?.onCompleted);
         break;
+      case 'runForEach':
+        alert('yo');
+        console.log({ action });
+        const list = typeof action?.list === 'string' ? (JSON.parse(action?.list || '[]') as []) : action?.list;
+        console.log({ list });
+        list.forEach(item => {
+          let actionToRun = parsedActionArgs[0];
+          actionToRun = typeof actionToRun === 'string' ? actionToRun : JSON.stringify(action.args[0]);
+          if (typeof item === 'string' || typeof item === 'number') {
+            actionToRun = actionToRun.replaceAll('item()', item);
+          } else {
+            // get the list of accessed items
+            const accessedItems = actionToRun.match(/item[(](.*?)[)]/g);
+            // get the value within the item's parenthesises
+            const accessedItemsValues = accessedItems?.map(accessedItem => {
+              const accessedItemPath = accessedItem.split('item(')?.[1]?.split(')')[0];
+              // evalue the item value based on the path provided
+              const value = resolvePath(item, accessedItemPath, item);
+
+              return { item: accessedItem, path: accessedItemPath, resolvedValue: value };
+            });
+
+            // for each item in the list, replace the item() with the value
+            accessedItemsValues?.forEach(accessedItem => {
+              actionToRun = actionToRun.replaceAll(accessedItem.item, accessedItem.resolvedValue);
+            });
+          }
+
+          console.log({ actionToRun });
+          actionToRun = JSON.parse(actionToRun);
+
+          runAction(actionToRun);
+        });
+
+        break;
+
       case 'add':
         const val1 = parsedActionArgs[0];
         const val2 = parsedActionArgs[1];
@@ -198,7 +234,7 @@ function runOnCompletedAction(onCompleted: JaseciAction, resolvedData?: any) {
 
   const resPlaceholderValueMap = {};
   // map references to values
-  resList.map(resRef => {
+  resList?.map(resRef => {
     const accessedData = resRef.split('res(')?.[1]?.split(')')[0];
     const evaluatedRes = resolvePath(data, accessedData, data);
     resPlaceholderValueMap[resRef] = evaluatedRes;
@@ -206,9 +242,14 @@ function runOnCompletedAction(onCompleted: JaseciAction, resolvedData?: any) {
 
   // replace res() with resolved data
   Object.keys(resPlaceholderValueMap).map(resRef => {
-    console.log(resPlaceholderValueMap[resRef]);
-    onCompletedString = onCompletedString.replaceAll(resRef, resPlaceholderValueMap[resRef]);
+    console.log({ resolved: resPlaceholderValueMap[resRef] });
+    onCompletedString = onCompletedString.replaceAll(
+      resRef,
+      typeof resPlaceholderValueMap[resRef] === 'object' ? '"' + JSON.stringify(resPlaceholderValueMap[resRef]) + '"' : resPlaceholderValueMap[resRef],
+    );
   });
+
+  console.log({ onCompletedString: JSON.parse(onCompletedString) });
 
   runAction(JSON.parse(onCompletedString));
 }
@@ -232,6 +273,14 @@ function linkEvents(host: HTMLElement, events: JaseciComponent['events']) {
           });
         });
 
+        break;
+      }
+      case 'onMount': {
+        events['onMount'].map(action => {
+          setTimeout(() => {
+            runAction(action);
+          }, 1000);
+        });
         break;
       }
       case 'onEnterKeyPress': {

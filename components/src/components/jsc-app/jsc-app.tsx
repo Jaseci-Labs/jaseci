@@ -1,5 +1,6 @@
-import { Component, h, Method, Prop } from '@stencil/core';
+import { Component, Element, h, Method, Prop } from '@stencil/core';
 import { renderComponentTree } from '../../utils/utils';
+import serialize from 'serialize-javascript';
 
 @Component({
   tag: 'jsc-app',
@@ -7,6 +8,7 @@ import { renderComponentTree } from '../../utils/utils';
   shadow: true,
 })
 export class App {
+  @Element() el: HTMLElement;
   @Prop({ mutable: true }) markup: JaseciComponent[];
 
   isJsonString(str) {
@@ -16,6 +18,13 @@ export class App {
       return false;
     }
     return true;
+  }
+
+  componentDidRender() {
+    console.log(this.getGlobalCss());
+    // give style the global css
+    Object.assign(this.el.style, this.getGlobalCss());
+    console.log(this.el.style.cssText);
   }
 
   componentDidLoad() {
@@ -45,6 +54,11 @@ export class App {
 
   getGlobalConfig() {
     return global.__JSC_WEBKIT_CONFIG__;
+  }
+
+  // get global css from a global variable
+  getGlobalCss() {
+    return this.getGlobalConfig().css;
   }
 
   parseConfig(markupString: string) {

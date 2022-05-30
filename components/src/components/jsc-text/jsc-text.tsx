@@ -1,4 +1,4 @@
-import { Component, Element, h, Prop } from '@stencil/core';
+import { Component, Element, Fragment, h, Prop } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
 
@@ -7,8 +7,8 @@ import { getOperations } from '../../utils/utils';
   styleUrl: 'jsc-text.css',
   shadow: true,
 })
-export class MyComponent {
-  @Prop() variant: 'simple' | 'title' = 'simple';
+export class Text {
+  @Prop() variant: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' = 'p';
   @Prop() value: string;
   @Prop() state: string = JSON.stringify({ counterValue: 2 });
   @Prop() operations: string;
@@ -30,6 +30,23 @@ export class MyComponent {
   }
 
   render() {
-    return <p style={JSON.parse(this.css)}>{this.value}</p>;
+    switch (this.variant) {
+      case 'p':
+        return <span style={JSON.parse(this.css)}>{this.value}</span>;
+      case 'h1':
+        return <h1 style={JSON.parse(this.css)}>{this.value}</h1>;
+      case 'h2':
+        return <h2 style={JSON.parse(this.css)}>{this.value}</h2>;
+      case 'h3':
+        return <h3 style={JSON.parse(this.css)}>{this.value}</h3>;
+      case 'h4':
+        return <h4 style={JSON.parse(this.css)}>{this.value}</h4>;
+      case 'h5':
+        return <h5 style={JSON.parse(this.css)}>{this.value}</h5>;
+      case 'h6':
+        return <h6 style={JSON.parse(this.css)}>{this.value}</h6>;
+      default:
+        return <span style={JSON.parse(this.css)}>{this.value}</span>;
+    }
   }
 }

@@ -12,6 +12,11 @@ export const componentMap: Record<Exclude<ComponentNames, 'App'>, ComponentTags>
   Inputbox: 'jsc-inputbox',
   Textbox: 'jsc-textbox',
   Text: 'jsc-text',
+  Card: 'jsc-card',
+  DatePicker: 'jsc-date-picker',
+  Divider: 'jsc-divider',
+  Anchor: 'jsc-anchor',
+  Chip: 'jsc-chip',
 };
 
 const renderTag = (componentTag: ComponentTags, config: { withChildren: Boolean }) => `<${componentTag}>${config.withChildren ? '{children}' : ''}</${componentTag}>`;

@@ -1,5 +1,36 @@
-type ComponentTags = 'jsc-app' | 'jsc-nav-bar' | 'jsc-nav-link' | 'jsc-container' | 'jsc-row' | 'jsc-button' | 'jsc-inputbox' | 'jsc-textbox' | 'jsc-column' | 'jsc-text';
-type ComponentNames = 'App' | 'Navbar' | 'NavLink' | 'Container' | 'Row' | 'Column' | 'Button' | 'Inputbox' | 'Textbox' | 'Text';
+type ComponentTags =
+  | 'jsc-app'
+  | 'jsc-nav-bar'
+  | 'jsc-nav-link'
+  | 'jsc-container'
+  | 'jsc-row'
+  | 'jsc-button'
+  | 'jsc-inputbox'
+  | 'jsc-textbox'
+  | 'jsc-column'
+  | 'jsc-text'
+  | 'jsc-card'
+  | 'jsc-date-picker'
+  | 'jsc-divider'
+  | 'jsc-anchor'
+  | 'jsc-chip';
+
+type ComponentNames =
+  | 'App'
+  | 'Navbar'
+  | 'NavLink'
+  | 'Container'
+  | 'Row'
+  | 'Column'
+  | 'Button'
+  | 'Inputbox'
+  | 'Textbox'
+  | 'Text'
+  | 'Card'
+  | 'DatePicker'
+  | 'Divider'
+  | 'Anchor'
+  | 'Chip';
 
 interface JaseciComponent {
   name?: string;
@@ -18,6 +49,7 @@ type JaseciAction = {
   key?: string;
   // used to specify operation in runOperation
   operation?: string;
+  list?: string;
   cond?: ActionCondition[];
   onCompleted?: JaseciAction;
 } & JaseciCallEndpointAction;
@@ -32,7 +64,7 @@ type JaseciOperation = {
 };
 
 type JaseciComponentProps = Record<string, unknown>;
-type JaseciEventName = 'onClick' | 'onKeyPress' | 'onEnterKeyPress';
-type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add' | 'runOperation' | 'callEndpoint';
+type JaseciEventName = 'onClick' | 'onKeyPress' | 'onEnterKeyPress' | 'onMount';
+type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add' | 'runOperation' | 'callEndpoint' | 'runForEach';
 type ActionConditionName = 'eq' | 'neq' | 'gt' | 'lt';
 type ActionCondition = `${string}::#${ActionConditionName}::${string}`;
