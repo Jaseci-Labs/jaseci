@@ -1,7 +1,7 @@
+import spacy
 from fastapi import HTTPException
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-import en_core_web_sm as english_model
 from jaseci.actions.live_actions import jaseci_action
 
 # loading segmentation model from hugging face
@@ -9,8 +9,10 @@ tokenizer = AutoTokenizer.from_pretrained("dennlinger/roberta-cls-consec")
 model = AutoModelForSequenceClassification.from_pretrained(
     "dennlinger/roberta-cls-consec"
 )
+# Download the pretrained model pipeline
+spacy.cli.download("en_core_web_sm")
 # loading space model for sentence tokenization
-spacy = english_model.load()
+pipeline = spacy.load("en_core_web_sm")
 
 
 def segmentation(text, threshold=0.85):
@@ -20,7 +22,7 @@ def segmentation(text, threshold=0.85):
     syntactical similarity.
     """
     # spliting the raw test into sentences
-    doc = spacy(text)
+    doc = pipeline(text)
     sentences = [sent.text.strip() for sent in doc.sents]
     index = 0
     sub_segments = []

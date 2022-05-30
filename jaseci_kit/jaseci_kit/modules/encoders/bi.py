@@ -34,7 +34,7 @@ def config_setup():
     Loading configurations from utils/config.cfg and
     initialize tokenizer and model
     """
-    global model, tokenizer, model_config, train_config
+    global model, tokenizer, model_config, train_config, t_config_fname, m_config_fname
     dirname = os.path.dirname(__file__)
     m_config_fname = os.path.join(dirname, "utils/model_config.json")
     t_config_fname = os.path.join(dirname, "utils/train_config.json")
@@ -173,7 +173,7 @@ def train(dataset: Dict = None, from_scratch=False, training_parameters: Dict = 
     model.train()
     try:
         if training_parameters is not None:
-            with open("utils/train_config.json", "w+") as jsonfile:
+            with open(t_config_fname, "w+") as jsonfile:
                 train_config.update(training_parameters)
                 json.dump(train_config, jsonfile, indent=4)
         for data in dataset.keys():
@@ -239,7 +239,7 @@ def get_candidate_emb(candidates: List):
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
 def get_train_config():
     try:
-        with open("utils/train_config.json", "r") as jsonfile:
+        with open(t_config_fname, "r") as jsonfile:
             data = json.load(jsonfile)
         return data
     except Exception as e:
@@ -250,7 +250,7 @@ def get_train_config():
 def set_train_config(training_parameters: Dict = None):
     global train_config
     try:
-        with open("utils/train_config.json", "w+") as jsonfile:
+        with open(t_config_fname, "w+") as jsonfile:
             train_config.update(training_parameters)
             json.dump(train_config, jsonfile, indent=4)
         return "Config setup is complete."
@@ -261,7 +261,7 @@ def set_train_config(training_parameters: Dict = None):
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
 def get_model_config():
     try:
-        with open("utils/model_config.json", "r") as jsonfile:
+        with open(m_config_fname, "r") as jsonfile:
             data = json.load(jsonfile)
         return data
     except Exception as e:
@@ -273,7 +273,7 @@ def set_model_config(model_parameters: Dict = None):
     global model_config
     try:
         save_model(model_config["model_save_path"])
-        with open("utils/model_config.json", "w+") as jsonfile:
+        with open(m_config_fname, "w+") as jsonfile:
             model_config.update(model_parameters)
             json.dump(model_config, jsonfile, indent=4)
 
@@ -338,7 +338,7 @@ def load_model(model_path):
     if not os.path.exists(model_path):
         raise HTTPException(status_code=404, detail="Model path is not available")
     try:
-        with open("utils/model_config.json", "r") as jsonfile:
+        with open(m_config_fname, "r") as jsonfile:
             model_config_data = json.load(jsonfile)
         if model_config_data["shared"] is True:
             trf_config = AutoConfig.from_pretrained(model_path, local_files_only=True)

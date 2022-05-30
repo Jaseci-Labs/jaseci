@@ -28,9 +28,10 @@ def construct_params(p_spec, args):
         p_type = p_spec[i].annotation
         p_default = p_type(p_default) if p_default is not p_spec[i].empty else None
         if arg_count < len(args):
-            params[i] = args
+            params[i] = args[arg_count]
         else:
             params[i] = p_default
+        arg_count += 1
     return params
 
 

@@ -728,7 +728,7 @@ test_train_request = {
         ],
     },
     "from_scratch": False,
-    "training_parameters": {"num_train_epochs": 5},
+    "training_parameters": {"num_train_epochs": 2},
 }
 test_infer_request = {
     "contexts": ["Share my location with Hillary's sister"],
