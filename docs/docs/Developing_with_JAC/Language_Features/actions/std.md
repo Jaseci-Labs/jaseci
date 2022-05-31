@@ -1,7 +1,7 @@
 ---
 title :  Standard  Actions
 ---
-
+### Logging output
 ```jac 
 
 # printing output to log
@@ -12,6 +12,7 @@ data = {
 result  = std.log(data)
 
 ```
+### Output
 ```jac 
 data = {
     "type" : "String",
@@ -22,19 +23,20 @@ data = {
 std.out(data)
 
 ```
-
+### Input 
 ```jac 
 # takes input from the terminal 
 # any string passed will be printed on to the screen
 std.input("> ")
 ```
+### Standar Error
 ```jac 
 # printing to standard error
 
 std.eer()
 
 ```
-
+### Sort Columns
 ```jac 
 # Sorts in place list of lists by column
 # Param 1 - list
@@ -44,13 +46,13 @@ std.eer()
 sorted_list = std.sort_by_col()
 
 ```
-
+### UTC time
 ```jac 
 # Get utc date time for now in iso format
 time  = std.time_now()
 
 ```
-
+### Set Global Variable
 ```jac 
 
 # set global varibale visible to all walker
@@ -60,7 +62,7 @@ time  = std.time_now()
 global_variable = std.set_global(name,value);
 
 ```
-
+### Get Global Variable
 ```jac 
 # get global variable
 # name : name of variable

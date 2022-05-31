@@ -3,7 +3,7 @@ sidebar_position: 3
 ---
 
 # Setting up Code Editor
-Visual Studio code is a ppular IDE used by developers of all operating systems. This IDE comes with a Jac extension to aid in your coding Journey.
+Visual Studio code is a popular IDE used by developers of all operating systems. This IDE comes with a Jac extension to aid in your coding Journey.
 
 1. If you already have VS code installed move to step 3. Download Visual Studio code by selecting [here](https://code.visualstudio.com/)
 

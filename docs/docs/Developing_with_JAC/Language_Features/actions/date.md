@@ -1,12 +1,13 @@
 ---
 title :  Date Actions
+sidebar_position : 1
 ---
 Jaseci has it's own set of built in Date Functions 
 
 This functions takes a string of the date in iso format and returns the year.
 ```jac
 
-date. quantize_to_year()
+date.quantize_to_year()
 ```
 This functions takes a string of the date in iso format and returns the month
 ```jac
