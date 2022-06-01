@@ -1,7 +1,7 @@
 ---
 title : Multiple Inheritance 
 ---
-Jaseci allows for Entities to perform multiple inheritance.
+Jaseci allows for multiple inheritance.
 
 ```jac
 node state {

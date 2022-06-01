@@ -3,7 +3,7 @@ title: Modelling Strucutres with Nodes,Edges and Graphs
 ---
 
 
-Nodes , Edges and Graphs are vital to any Jaseci program. 
+Nodes , Edges and Graphs form the base of any JAC program.
 
 ### Nodes
 A node is a representation of an entity.

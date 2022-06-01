@@ -3,8 +3,7 @@ title: Operating Context
 ---
 # Specifying Operating Context
 
-
-The Graph can several types of nodes and these nodes can have their own unique abilities.Walkers can be written to perform specific actions when it on a specific node. Call functions or attributes for the node it is on top.
+several types Nodes can be created and each can  have several unique abilities. The abilities of specific nodes can be activated when a walkers traverese on to it . This can be done by specifying an operating context. This allows a walker to execute any of the nodes ability that it is currently on. The operating context of each type of node must be specified for it to be used.
 ```jac
 node state {
     has title;

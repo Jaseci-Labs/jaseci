@@ -2,7 +2,7 @@
 title :  Request Actions
 ---
 
-Jaseci allows for in code use of common  request methods.
+Jaseci allows for in-code use of common  request methods.
 ### Get Request
 ```jac 
 # make get request 

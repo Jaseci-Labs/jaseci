@@ -1,7 +1,7 @@
 ---
 title: Loops
 ---
-Loops are written similiar to python it run a specicif amount of time as in the case of the "For" loop or until a condition is meet as in the case for the "While" loop.
+Loops are written similiar to python it run a specific amount of time as in the case of the "For" loop or until a condition is meet as in the case for the "While" loop.
 
 ```jac
 walker init {

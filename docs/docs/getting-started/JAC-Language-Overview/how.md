@@ -2,7 +2,7 @@
 title: How a JAC program runs
 ---
 
-The JAC Promgrammming language builds its paradigm on the traversal of Graphs. The Walker is used to traverse graphs . The graph is a combination of nodes and edges connected together. We create our graphs and walkers and specify their abilities.
+The JAC Promgrammming language builds its paradigm on the traversal of Graphs. Graphs comprises of nodes and edges . Nodes have abilities that can be activated when a walker travers on it. The Walker traverse the graph and decides which paths to take by using the edges. 
 
 All traversal begins at the Init or default node. This `init` node will connect to the main root of our graph.
 
@@ -14,4 +14,4 @@ The walkers decide which node to travel to based on which edge satisfies it's in
 
 ![Pic of Nodes and Edges](/img/tutorial/intermediate/graph.png) 
 
-The Walker can move from node to node but it can also jump to other nodes that are not in it's path or connected directly in the path.
+The Walker can move from node to node along edges. It can also be spawned directly on any node without the need for a traversal

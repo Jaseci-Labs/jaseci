@@ -3,7 +3,7 @@ title :  File Actions
 ---
 ### Load file to string 
 ```jac 
-# Coverts file to string , max_chars is set to none by default
+# Converts file to string , max_chars is set to none by default
 Testfile = file.load_str(test.txt, max_chars = 1000)
 ```
 ### Load Json file to dictionary

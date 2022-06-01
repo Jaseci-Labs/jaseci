@@ -2,14 +2,14 @@
 title :  Date Actions
 sidebar_position : 1
 ---
-Jaseci has it's own set of built in Date Functions 
+Jaseci has it's own set of built-in Date Functions 
 
-This functions takes a string of the date in iso format and returns the year.
+This function takes a string of the date in ISO format and returns the year
 ```jac
 
 date.quantize_to_year()
 ```
-This functions takes a string of the date in iso format and returns the month
+This function takes a string of the date in ISO format and returns the month
 ```jac
 date.quantize_to_month()
 ```
@@ -18,10 +18,10 @@ date.quantize_to_month()
 date.quantize_to_week()
 ```
 ```jac
-date. quantize_to_day()
+date.quantize_to_day()
 ```
 ```jac
-date. date_day_diff()
+date.date_day_diff()
 ```
 
 ```

@@ -2,7 +2,7 @@
 title: Passing Arguments to Walker,Nodes, Edges
 ---
 
-You can pass arguments to walkers , Nodes and Edges similarily to when passing arguments to functions in python.
+You can pass arguments to walkers , Nodes and Edges, in a similar way as passing arguments to functions in python.
 
 ### Passing Arguments to Walkers
 
