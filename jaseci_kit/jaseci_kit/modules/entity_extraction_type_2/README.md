@@ -1,7 +1,109 @@
-### Example Jac Usage:(model training)
-#### Create jac programm (main.jac)
+### Example Jac : model training
 
+### Create a file (main.jac)
 
+### creating nodes tfm_ner in main.jac
+```
+node model_dir;
+node tfm_ner {
+}
+
+```
+
+initialize module for training and infer inside node tfm_ner
+```
+node model_dir;
+node tfm_ner {
+    # train,infer, eval
+    can tfm_ner.extract_entity, tfm_ner.train;
+}
+
+```
+adding module for infer entity inside node tfm_ner
+```
+node model_dir;
+node tfm_ner {
+    # train,infer, eval
+    can tfm_ner.extract_entity, tfm_ner.train;
+
+    # infer entity from text
+    can infer with predict_entity_from_tfm entry {
+        report tfm_ner.extract_entity(
+            text = visitor.text
+        );
+    }
+
+```
+adding module for training and evaluation
+```
+node tfm_ner {
+    # train,infer, eval
+    can tfm_ner.extract_entity, tfm_ner.train;
+
+    # extracting entities
+    can infer with predict_entity_from_tfm entry {
+        report tfm_ner.extract_entity(
+            text = visitor.text
+        );
+    }
+
+    ## train and evaluate model 
+    can train_and_eval with train_and_eval_tfm entry {
+        train_data = file.load_json(visitor.train_file);
+        eval_data = file.load_json(visitor.eval_file);
+        test_data = file.load_json(visitor.test_file);
+        std.out("corpus : ",train_data.length," train + ",eval_data.length," dev +",test_data.length," test sentences");
+        tfm_ner.train(
+            mode = visitor.mode,
+            epochs = visitor.num_train_epochs.int,
+            train_data = train_data,
+            dev_data = eval_data,
+            test_data = test_data
+            );
+        std.out("training and evaluation done ");
+        }
+}
+
+```
+### creating edge ner_model
+```
+node model_dir;
+node tfm_ner {
+    # train,infer, eval
+    can tfm_ner.extract_entity, tfm_ner.train;
+
+    # extracting entities
+    can infer with predict_entity_from_tfm entry {
+        report tfm_ner.extract_entity(
+            text = visitor.text
+        );
+    }
+
+    ## train and evaluate
+    can train_and_eval with train_and_eval_tfm entry {
+
+        train_data = file.load_json(visitor.train_file);
+        eval_data = file.load_json(visitor.eval_file);
+        test_data = file.load_json(visitor.test_file);
+        std.out("corpus : ",train_data.length," train + ",eval_data.length," dev +",test_data.length," test sentences");
+        tfm_ner.train(
+            mode = visitor.mode,
+            epochs = visitor.num_train_epochs.int,
+            train_data = train_data,
+            dev_data = eval_data,
+            test_data = test_data
+            );
+        std.out("training and evaluation done ");
+        }
+}
+
+# adding edge
+edge ner_model {
+    has model_type;
+}
+``` 
+
+### Creating graph name of ner_eval_graph
 ```
 node model_dir;
 node tfm_ner {
@@ -34,6 +136,97 @@ node tfm_ner {
 }
 
 
+edge ner_model {
+    has model_type;
+}
+
+# Adding Graph
+graph ner_eval_graph {
+    has anchor ner_model_dir;
+    spawn {
+        ner_model_dir = spawn node::model_dir;
+        tfm_ner_node = spawn node::tfm_ner;
+        ner_model_dir -[ner_model(model_type="tfm_ner")]-> tfm_ner_node;
+    }
+}
+```
+
+### initialize walker init
+```
+walker init {
+    root {
+       spawn here --> graph::ner_eval_graph; 
+    }
+}
+```
+
+### creating walker train_and_eval_tfm for getting parameter and calling training module
+```
+# creating walker 
+walker train_and_eval_tfm {
+    has train_file;
+    has eval_file;
+    has test_file;
+    has num_train_epochs;
+    has mode;
+
+    # Train all NER models on the train set
+    # and evaluate them on the eval set
+    # report accuracy performance across all NER models
+    root {
+        take --> node::model_dir;
+    }
+    model_dir {
+        take -->;
+    }
+}
+```
+### creating walker predict_entity_from_tfm for getting parametre text and infer entity
+```
+walker predict_entity_from_tfm{
+    has text;
+
+    root {
+        take --> node::model_dir;
+    }
+    model_dir {
+        take -->;
+    }
+}
+```
+
+
+#### final jac programm (main.jac)
+```
+node model_dir;
+node tfm_ner {
+    # train,infer, eval
+    can tfm_ner.extract_entity, tfm_ner.train;
+
+    # extracting entities
+    can infer with predict_entity_from_tfm entry {
+        report tfm_ner.extract_entity(
+            text = visitor.text
+        );
+    }
+
+    ## train and evaluate
+    can train_and_eval with train_and_eval_tfm entry {
+
+        train_data = file.load_json(visitor.train_file);
+        eval_data = file.load_json(visitor.eval_file);
+        test_data = file.load_json(visitor.test_file);
+        std.out("corpus : ",train_data.length," train + ",eval_data.length," dev +",test_data.length," test sentences");
+        tfm_ner.train(
+            mode = visitor.mode,
+            epochs = visitor.num_train_epochs.int,
+            train_data = train_data,
+            dev_data = eval_data,
+            test_data = test_data
+            );
+        std.out("training and evaluation done ");
+        }
+}
 
 
 edge ner_model {
@@ -85,9 +278,11 @@ walker predict_entity_from_tfm{
         take -->;
     }
 }
-
 ```
-Run jaseci 
+
+### Steps for running main.jac file and train and evaluate tfm_ner model
+
+open terminal and run jaseci by command
 
 ```
 jsctl
