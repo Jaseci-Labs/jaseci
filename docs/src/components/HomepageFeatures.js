@@ -1,29 +1,63 @@
 import React from 'react';
 import clsx from 'clsx';
 import styles from './HomepageFeatures.module.css';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 
 const FeatureList = [
   {
-    title: '60% less effort',
-    Svg: require('../../static/img/undraw_docusaurus_mountain.svg').default,
+    title: 'Introduction to Jaseci',
+    Svg: require('../../static/img/tutorial/landingpage/introduction to jaseci.svg').default,
+    imgUrl: 'img/tutorial/landingpage/introduction_to_jaseci.png',
     description: (
       <>
-        Developing AI models with Jaseci is way faster. Its requires 60% less effort when building with Jaseci.
+        Developing AI models with Jaseci is way faster. Its requires 60% less effort when building with Jaseci. Get started  <a href="/docs/getting-started/getting-to-know-jaseci">Here</a>
       </>
     ),
   },
   {
-    title: 'Programming Language',
-    Svg: require('../../static/img/undraw_docusaurus_tree.svg').default,
+    title: 'Developing with Jaseci',
+    Svg: require('../../static/img/tutorial/landingpage/developing with jaseci.svg').default,
+    imgUrl : 'img/tutorial/landingpage/developing_with_jaseci.png',
     description: (
       <>
-        Jaseci uses the <a>Jac</a> Programming language which is used for interacting with the Jaseci Engine, giving developers control over Jaseci when building AI powered Apps.
+        Jaseci uses the <a>JAC</a> Programming language which is used for interacting with the Jaseci Engine, giving developers control over Jaseci when building AI powered Apps. Get started  <a href="/docs/Developing_with_JAC/Overview">Here</a>
       </>
     ),
   },
   {
-    title: 'Three Creations',
-    Svg: require('../../static/img/undraw_docusaurus_react.svg').default,
+    title: 'Tools and Features',
+    Svg: require('../../static/img/tutorial/landingpage/tools and features.svg').default,
+    imgUrl: 'img/tutorial/landingpage/tools_and_features.png',
+    description: (
+      <>
+        Jaseci comes with powerful tools to speed up and empower your development. Jaseci Kit , Jaseci Studio, VS code plugins are all avaliable for you !
+      </>
+    ),
+  },
+  {
+    title: 'Scaling Jaseci Deployment ',
+    Svg: require('../../static/img/tutorial/landingpage/jaseci deployment.svg').default,
+    imgUrl: 'img/tutorial/landingpage/jaseci_deployment.png',
+    description: (
+      <>
+        Jaseci provides out-of-box production-grade containerization and orchestration so you can stand up a production-ready stack in minutes. With novel load balancing and facilitation techniques, your production Jaseci cluster scales intelligently with your application’s demand.
+      </>
+    ),
+  },
+  {
+    title: 'Samples and Tutorials',
+    Svg: require('../../static/img/tutorial/landingpage/tutorials.svg').default,
+    imgUrl: 'img/tutorial/landingpage/tutorials.png',
+    description: (
+      <>
+        Don't know where or what to start building ? Well checkout some of starter projects to guide you on your adventures.
+      </>
+    ),
+  },
+  {
+    title: 'Resources',
+    Svg: require('../../static/img/tutorial/landingpage/introduction to jaseci.svg').default,
+    imgUrl: 'img/tutorial/landingpage/resources.png',
     description: (
       <>
         Powering the next generation of AI products. Jaseci powers apps
@@ -34,18 +68,20 @@ const FeatureList = [
   },
 ];
 
-function Feature({Svg, title, description}) {
-  return (
-    <div className={clsx('col col--4')}>
-      <div className="text--center">
-        <Svg className={styles.featureSvg} alt={title} />
-      </div>
-      <div className="text--center padding-horiz--md">
+function Feature({imgUrl,Svg, title, description}) {
+ 
+const imageUrl = useBaseUrl(imgUrl);
+return (
+    <div className={clsx('col col--4', styles.feature)}>
+        {imageUrl && (
+            <div className="text--center">
+                <a href="./"><img className={styles.featureSvg} src={imageUrl} alt={title}/></a>
+            </div>
+        )}
         <h3>{title}</h3>
         <p>{description}</p>
-      </div>
     </div>
-  );
+);
 }
 
 export default function HomepageFeatures() {

@@ -24,7 +24,7 @@ To run commands for Jaseci we need a terminal that accepts bash arguments. We re
  ```python
  wsl -l -v
  ```
- This will return the  the flavour of the distribution used for WSL. The version column will show the version of WSL.
+ This will return  the flavour of the distribution used for WSL. The version column will show the version of WSL.
 
 2. If no version is specified open windows powershell in  adminstrator mode and install WSL by running :
     ```
@@ -42,7 +42,7 @@ To run commands for Jaseci we need a terminal that accepts bash arguments. We re
 python3 --version
 pip3 --version
 ```
-If these packagesa are installed they will return a version number. Move to step x if a version number is present.
+If these packages are installed they will return a version number. Move to step x if a version number is present.
 
 6.Install Python3 and pip3 by running the following:
 ```
@@ -69,12 +69,12 @@ Once it shows a list of options and commands, you're installation is complete
 
 ### Install Python and Pip packet Manager
 
-5. Check version of Python and Pip by running :
+5. Check the version of Python and Pip by running :
 ```
 python3 --version
 pip3 --version
 ```
-If these packagesa are installed they will return a version number. Move to step x if a version number is present.
+If these packages are installed they will return a version number. Move to step x if a version number is present.
 
 6.Install Python3 and pip3 by running the following:
 ```
@@ -103,12 +103,12 @@ Once it shows a list of options and commands, you're installation is complete.
 
 ### Install Python and Pip packet Manager
 
-5. Check version of Python and Pip by running :
+5. Check the version of Python and Pip by running :
 ```
 python3 --version
 pip3 --version
 ```
-If these packagesa are installed they will return a version number. Move to step x if a version number is present.
+If these packages are installed they will return a version number. Move to step x if a version number is present.
 
 6.Install Python3 and pip3 by running the following:
 ```
@@ -127,7 +127,7 @@ pip install jaseci-kit
 ```
 jsctl
 ```
-Once it shows a list of options and commands, you're installation is complete.
+Once it shows a list of options and commands, your installation is complete.
 
 </TabItem>
 

@@ -32,10 +32,11 @@ module.exports = {
             label: 'Introduction',
             activeBasePath:'docs/getting-started'
           },
-          {to:'docs/Developing_with_JAC/Overview',activeBasePath:'docs/Developing_with_JAC',label:'Developing with JAC',position :'left'},
+          {to:'docs/Developing_with_JAC/Overview',activeBasePath:'docs/Developing_with_JAC',label:'Development',position :'left'},
           {to:'docs/Tools_and_Features/Overview',activeBasePath:'docs/Tools_and_Features',label:'Tools and Features',position :'left'},
-          {to:'docs/scaling-jaseci-development/intro',activeBasePath:'docs/scaling-jaseci-development',label:'Scaling Jaseci Development',position :'left'},
-          {to:'docs/Samples_and_Tutorials/Overview',activeBasePath:'docs/Samples_and_Tutorials',label:'Samples and Tutorials',position :'left'},
+          {to:'docs/scaling-jaseci-development/intro',activeBasePath:'docs/scaling-jaseci-development',label:'Deployment',position :'left'},
+          {to:'docs/Samples_and_Tutorials/Overview',activeBasePath:'docs/Samples_and_Tutorials',label:'Samples',position :'left'},
+          {to:'docs/Resources/Architectural_Overview',activeBasePath:'docs/Resources',label:'Resources',position :'left'},
 
 
            //{to: '/blog', label: 'Blog', position: 'left'},

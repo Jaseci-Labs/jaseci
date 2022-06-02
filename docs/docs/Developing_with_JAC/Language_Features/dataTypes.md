@@ -4,7 +4,7 @@ title : Data Types
 
 
 ## Data types
-JAseci is a dynamically typed language so there is no need to specify the data type.
+JAC is a dynamically typed language so there is no need to declare the data type.
 ```jac
 walker init {
     a=5;
