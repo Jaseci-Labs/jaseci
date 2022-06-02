@@ -20,7 +20,7 @@ const FeatureList = [
     imgUrl : 'img/tutorial/landingpage/developing_with_jaseci.png',
     description: (
       <>
-        Jaseci uses the <a>Jac</a> Programming language which is used for interacting with the Jaseci Engine, giving developers control over Jaseci when building AI powered Apps. Get started  <a href="/docs/Developing_with_JAC/Overview">Here</a>
+        Jaseci uses the <a>JAC</a> Programming language which is used for interacting with the Jaseci Engine, giving developers control over Jaseci when building AI powered Apps. Get started  <a href="/docs/Developing_with_JAC/Overview">Here</a>
       </>
     ),
   },

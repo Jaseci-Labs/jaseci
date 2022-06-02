@@ -20,7 +20,7 @@ std.input();
 ```
 
 ## Data types
-Jaseci is a dynamically typed language so there is no need to declare the data type.
+JAC is a dynamically typed language so there is no need to declare the data type.
 ```jac
 walker init {
     a=5;

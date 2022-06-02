@@ -3,7 +3,8 @@ title: Operating Context
 ---
 # Specifying Operating Context
 
-several types Nodes can be created and each can  have several unique abilities. The abilities of specific nodes can be activated when a walkers traverese on to it . This can be done by specifying an operating context. This allows a walker to execute any of the nodes ability that it is currently on. The operating context of each type of node must be specified for it to be used.
+Several types Of  Nodes can be created and each can  have several unique abilities. The abilities of specific nodes can be activated when a walkers traverese on to it . This can be done by specifying an operating context. This allows a walker to execute any of the nodes ability that it is currently on. The operating context of each type of node must be specified for it to be used.
+
 ```jac
 node state {
     has title;

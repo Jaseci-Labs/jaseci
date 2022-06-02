@@ -1,7 +1,7 @@
 ---
 title : Multiple Inheritance 
 ---
-Jaseci allows for multiple inheritance.
+JAC allows for multiple inheritance.
 
 ```jac
 node state {
