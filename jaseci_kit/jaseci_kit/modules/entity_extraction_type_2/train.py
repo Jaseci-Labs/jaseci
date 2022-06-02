@@ -449,7 +449,7 @@ def train_model(
                 str(datetime.now()) + "    ", f"Training epoch: {epoch + 1}/{epochs}",
             )
 
-            # epochs train
+            # calling function epochs train
             status = train(epoch, optimizer, training_loader, max_grad_norm)
             print(
                 str(datetime.now()) + "    ",
@@ -474,7 +474,6 @@ def train_model(
                 str(datetime.now()) + "    ",
                 f"Training accuracy epochexcept('O') : {status[0][2]}",
             )
-
             print(
                 str(datetime.now()) + "    ",
                 f"evaluation loss epoch: {status[1][0]}",
@@ -567,7 +566,6 @@ def train_model(
             print(str(datetime.now()) + "    ", "Classification Report")
             print(str(datetime.now()) + "    ", "--" * 30)
             print(st[1])
-
             print(str(datetime.now()) + "    ", "--" * 30, file=out)
             print(str(datetime.now()) + "    ", "--" * 30)
             totaltime = datetime.now() - time1
