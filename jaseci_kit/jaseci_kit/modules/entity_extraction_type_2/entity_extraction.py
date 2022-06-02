@@ -1,14 +1,25 @@
 import traceback
 from fastapi import HTTPException
 from jaseci.actions.live_actions import jaseci_action
-from typing import Dict, List
-from .train import predict_text, train_model
-from .train import load_custom_model, save_custom_model
-import json
-from .train import data_set, check_labels_ok
+from typing import Dict, List, Optional
 import os
 import pandas as pd
-from .entity_utils import create_data, create_data1
+import json
+import warnings
+
+# import sys
+# sys.path.append(os.path.dirname(__file__))
+from .train import (
+    predict_text,
+    train_model,
+    load_custom_model,
+    save_custom_model,
+    data_set,
+    check_labels_ok,
+)
+from .entity_utils import create_data, create_data_new
+
+warnings.filterwarnings("ignore")
 
 
 def config_setup():
@@ -36,26 +47,88 @@ config_setup()
 enum = {"default": 1, "append": 2, "incremental": 3}
 
 
-@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+# creating train eval and test dataset
+def create_train_data(dataset, fname):
+    data = pd.DataFrame(columns=["text", "annotation"])
+    for t_data in dataset:
+        tag = []
+        for ent in t_data["entities"]:
+            if ent["entity_value"] and ent["entity_type"]:
+                tag.append(
+                    (
+                        ent["entity_value"],
+                        ent["entity_type"],
+                        ent["start_index"],
+                        ent["end_index"],
+                    )
+                )
+            else:
+                raise HTTPException(
+                    status_code=404, detail=str("Entity Data missing in request")
+                )
+        data = data.append(
+            {"text": t_data["context"], "annotation": tag}, ignore_index=True
+        )
+    # creating training data
+    # print(data)
+    try:
+        completed = create_data(data, fname)
+    except Exception as e:
+        completed = create_data_new(data, fname)
+        print(f"Exception  : {e}")
+    return completed
+
+
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
+def extract_entity(text: str = None):
+    try:
+        data = predict_text(text)
+        return data
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def train(
     mode: str = train_config["MODE"],
     epochs: int = train_config["EPOCHS"],
     train_data: List[dict] = [],
+    dev_data: Optional[List[dict]] = [],
+    test_data: Optional[List[dict]] = [],
 ):
     """
     API for training the model
     """
+    if not os.path.exists("train/logs"):
+        os.makedirs("train/logs")
     if epochs:
         train_config["EPOCHS"] = epochs
 
-    if mode == "default":
+    if mode == "default" or mode == "incremental":
         if os.path.exists("train/train_backup_file.txt"):
             os.remove("train/train_backup_file.txt")
+        if os.path.exists("train/dev_backup_file.txt"):
+            os.remove("train/dev_backup_file.txt")
+        if os.path.exists("train/test_backup_file.txt"):
+            os.remove("train/test_backup_file.txt")
+
+        if os.path.exists("train/train.txt"):
+            os.remove("train/train.txt")
+        if os.path.exists("train/dev.txt"):
+            os.remove("train/dev.txt")
+        if os.path.exists("train/test.txt"):
+            os.remove("train/test.txt")
+
         train_file = "train/train.txt"
-    elif mode == "incremental":
-        train_file = "train/train.txt"
+        dev_file = "train/dev.txt"
+        test_file = "train/test.txt"
+
     elif mode == "append":
         train_file = "train/train_backup_file.txt"
+        dev_file = "train/dev_backup_file.txt"
+        test_file = "train/test_backup_file.txt"
+
     else:
         st = {
             "Status": "training failed",
@@ -64,38 +137,24 @@ def train(
         }
         raise HTTPException(status_code=400, detail=st)
 
-    data = pd.DataFrame(columns=["text", "annotation"])
-    if train_data:
-        for t_data in train_data:
-            tag = []
-            for ent in t_data["entities"]:
-                if ent["entity_value"] and ent["entity_type"]:
-                    tag.append(
-                        (
-                            ent["entity_value"],
-                            ent["entity_type"],
-                            ent["start_index"],
-                            ent["end_index"],
-                        )
-                    )
-                else:
-                    raise HTTPException(
-                        status_code=404, detail=str("Entity Data missing in request")
-                    )
-            data = data.append(
-                {"text": t_data["context"], "annotation": tag}, ignore_index=True
-            )
-        # creating training data
-        try:
-            completed = create_data(data)
-        except Exception as e:
-            completed = create_data1(data)
-            print(f"Exception  : {e}")
+    # data = pd.DataFrame(columns=["text", "annotation"])
+    if len(dev_data) != 0:
+        create_train_data(dev_data, "dev")
+
+    if len(test_data) != 0:
+        create_train_data(test_data, "test")
+
+    if len(train_data) != 0:
+        completed = create_train_data(train_data, "train")
         if completed is True:
 
             # loading training dataset
             data_set(
-                train_file, train_config["MAX_LEN"], train_config["TRAIN_BATCH_SIZE"]
+                train_file,
+                dev_file,
+                test_file,
+                train_config["MAX_LEN"],
+                train_config["TRAIN_BATCH_SIZE"],
             )
 
             # checking data and model labels
@@ -123,17 +182,7 @@ def train(
         )
 
 
-@jaseci_action(act_group=["extract_entity"], allow_remote=True)
-def extract_entity(text: str = None):
-    try:
-        data = predict_text(text)
-        return data
-    except Exception as e:
-        print(traceback.format_exc())
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def load_model(model_path: str = "default", local_file: bool = False):
     global curr_model_path
     curr_model_path = model_path
@@ -149,7 +198,7 @@ def load_model(model_path: str = "default", local_file: bool = False):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def save_model(model_path: str = "mymodel"):
     try:
         save_custom_model(model_path)
@@ -161,7 +210,7 @@ def save_model(model_path: str = "mymodel"):
 
 
 # API for setting the training and model parameters
-@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def get_train_config():
     try:
         with open(t_config_fname, "r") as jsonfile:
@@ -172,7 +221,7 @@ def get_train_config():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def set_train_config(training_parameters: Dict = None):
     global train_config
     try:
@@ -186,7 +235,7 @@ def set_train_config(training_parameters: Dict = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def get_model_config():
     try:
         with open(m_config_fname, "r") as jsonfile:
@@ -197,7 +246,7 @@ def get_model_config():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["extract_entity"], allow_remote=True)
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def set_model_config(model_parameters: Dict = None):
     global model_config
     try:
