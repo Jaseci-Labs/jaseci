@@ -208,6 +208,29 @@ snt_details = jaseci.sentinel_test(snt);
 message = jaseci.sentinel_active_set(snt);
 ```
 
+### Remove Default Sentinel
+```jac 
+# Unsets the default sentinel master should use
+messsage = jaseci.sentinel_active_unset();
+```
 
+### Set Global Sentinel 
+```jac 
+# Sets the default master sentinel to the global sentinel
+response  = jaseci.sentinel_active_global();
+```
+### Return default Sentinel
+```jac 
+#  Returns the default sentinel master is using
+response = jaseci.sentinel_active_get();
+```
+
+### Delete Sentinel
+```jac 
+# Permanently delete sentinel with given id
+snt : sentinel - sentinel to be deleted
+
+message = jaseci.sentinel_delete(snt);
+```
 
 
