@@ -445,10 +445,7 @@ def train_model(
                 f"Training epoch: {epoch + 1}/{epochs}",
                 file=out,
             )
-            print(
-                str(datetime.now()) + "    ", f"Training epoch: {epoch + 1}/{epochs}",
-            )
-
+            print(str(datetime.now()) + "    ", f"Training epoch: {epoch + 1}/{epochs}")
             # calling function epochs train
             status = train(epoch, optimizer, training_loader, max_grad_norm)
             print(
