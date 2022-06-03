@@ -1,20 +1,29 @@
+from itsdangerous import Serializer
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 from rest_framework import renderers, status
 from knox.views import LoginView as KnoxLoginView
 from django.contrib.auth import login, get_user_model
 from django.contrib.auth.signals import user_logged_out
+
 from knox.auth import TokenAuthentication
 
 from jaseci_serv.user_api.serializers import UserSerializer
 from jaseci_serv.user_api.serializers import SuperUserSerializer
 from jaseci_serv.user_api.serializers import AuthTokenSerializer
+from jaseci_serv.user_api.serializers import (FacebookSocialAuthSerializer, 
+        GoogleSocialAuthSerializer)
 from jaseci_serv.user_api.serializers import send_activation_email
 from jaseci_serv.base.models import lookup_global_config
 from datetime import timedelta
 
 from rest_framework.response import Response
 import base64
+
+from yaml import serialize
+
+
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -105,3 +114,38 @@ class LogoutAllUsersView(APIView):
             u.auth_token_set.all().delete()
             user_logged_out.send(sender=u.__class__, request=request, user=u)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+
+class GoogleSSOView(GenericAPIView):
+    serializer_class = GoogleSocialAuthSerializer
+
+    def post(self, request):
+        """
+        POST with "auth_token"
+        send an "id_token" from google
+        """
+        data = self.serializer_class(data=request.data)
+        if data.is_valid(raise_exception=True):
+            auth_token = data.validated_data("auth_token")
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response(data.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FacebookSSOView(GenericAPIView):
+    serializer_class = FacebookSocialAuthSerializer
+
+    def post(self, request):
+        """
+        POST with "auth_token"
+        send an "id_token" from google
+        """
+        data = self.serializer_class(data=request.data)
+        if data.is_valid(raise_exception=True):
+            auth_token = data.validated_data("auth_token")
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response(data.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
