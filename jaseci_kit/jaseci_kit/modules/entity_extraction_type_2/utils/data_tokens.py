@@ -47,7 +47,5 @@ def load_data(filename):
 
     labels_name = sorted(list(data.Tag.unique()), reverse=True)
 
-    # label2id = {k: v for v, k in enumerate(labels_name)}
-    # id2label = {v: k for v, k in enumerate(labels_name)}
     data = data[["sentence", "word_labels"]].drop_duplicates().reset_index(drop=True)
-    return data, labels_name  # id2label, label2id
+    return data, labels_name

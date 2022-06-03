@@ -92,7 +92,6 @@ def create_data(df, filename):
         os.makedirs("train")
     with open(filepath, "w", encoding="utf-8") as f, open(filepath1, "a") as f1:
         for text, annotation in zip(df.text, df.annotation):
-            # text = clean(text)
             match_list = []
             for i in annotation:
                 a, text_ = matcher(text, i[0])
@@ -125,7 +124,6 @@ def create_data_new(df, filename):
                 split_sent[split_sent.index(ent_val.split()[0])] = (
                     split_sent[split_sent.index(ent_val.split()[0])] + "t"
                 )
-                # print(tags)
                 if len(ent_val.split()) > 1:
                     for ent in ent_val.split()[1:]:
                         tags[split_sent.index(ent)] = "I-" + e_type

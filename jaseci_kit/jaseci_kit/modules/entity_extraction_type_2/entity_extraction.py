@@ -6,9 +6,6 @@ import os
 import pandas as pd
 import json
 import warnings
-
-# import sys
-# sys.path.append(os.path.dirname(__file__))
 from .train import (
     predict_text,
     train_model,
@@ -70,7 +67,6 @@ def create_train_data(dataset, fname):
             {"text": t_data["context"], "annotation": tag}, ignore_index=True
         )
     # creating training data
-    # print(data)
     try:
         completed = create_data(data, fname)
     except Exception as e:
@@ -137,7 +133,6 @@ def train(
         }
         raise HTTPException(status_code=400, detail=st)
 
-    # data = pd.DataFrame(columns=["text", "annotation"])
     if len(dev_data) != 0:
         create_train_data(dev_data, "dev")
 
@@ -187,7 +182,7 @@ def load_model(model_path: str = "default", local_file: bool = False):
     global curr_model_path
     curr_model_path = model_path
     if local_file is True and not os.path.exists(model_path):
-        raise HTTPException(status_code=404, detail="Model path is not available")
+        return "Model path is not available"
     try:
         print("loading latest trained model to memory...")
         load_custom_model(model_path)
@@ -225,8 +220,8 @@ def get_train_config():
 def set_train_config(training_parameters: Dict = None):
     global train_config
     try:
+        train_config.update(training_parameters)
         with open(t_config_fname, "w+") as jsonfile:
-            train_config.update(training_parameters)
             json.dump(train_config, jsonfile, indent=4)
 
         return "Config setup is complete."
@@ -251,8 +246,8 @@ def set_model_config(model_parameters: Dict = None):
     global model_config
     try:
         save_model(model_config["model_save_path"])
+        model_config.update(model_parameters)
         with open(m_config_fname, "w+") as jsonfile:
-            model_config.update(model_parameters)
             json.dump(model_config, jsonfile, indent=4)
 
         config_setup()
