@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from transformers import pipeline
-from utils.data_tokens import load_data
+from .utils.data_tokens import load_data
 from torch import cuda
 import os
 from datetime import datetime
