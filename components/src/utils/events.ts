@@ -75,7 +75,7 @@ function parseArgs(args: unknown[] = [], config?: ParseArgsConfig, result?: any)
   return config?.withOriginal ? originalArgsWithNewArgs : newArgs;
 }
 
-function getComponentByName(componentName: string) {
+function getComponentByName(componentName: string): Element | (Element & { refetchData: () => void }) {
   return window.document.querySelector('jsc-app').shadowRoot.querySelector(`[name='${componentName}']`);
 }
 
@@ -152,11 +152,20 @@ function runAction(action: JaseciAction, result?: any) {
 
         action?.onCompleted && runAction(action?.onCompleted);
         break;
+      case 'refreshDatagrid':
+        const datagridComponentName: string = actionArgs[0] as string;
+        if (typeof datagridComponentName !== 'string') throw new Error('Component name must be a string');
+        const datagridComponent = getComponentByName(datagridComponentName) as Element & { refetchData: () => void };
+        if (datagridComponent.refetchData) {
+          datagridComponent.refetchData();
+        }
+        break;
       case 'runOperation':
         const operation = action?.operation;
         const [opComponentName, operationName] = operation.split('.');
         // get the operation component
         const opComponent = getComponentByName(opComponentName);
+        console.log({ opComponent, opComponentName });
         // get the structure of the operation
         const componentOperations = (opComponent as HTMLElement & { operations: Record<string, JaseciOperation> }).operations;
         const operationStructure = componentOperations[operationName];
@@ -191,6 +200,18 @@ function runAction(action: JaseciAction, result?: any) {
         updatedOperationStructure['run'].map(action => runAction(action as any));
         console.log({ updatedOperationStructure });
 
+        break;
+
+      case 'storeValue':
+        if (action?.target === 'localstorage') {
+          localStorage.setItem(parsedActionArgs[0], parsedActionArgs[1]);
+        }
+
+        action?.onCompleted && runAction(action?.onCompleted);
+        break;
+
+      case 'navigate':
+        window.location.href = parsedActionArgs[0];
         break;
 
       case 'callEndpoint':

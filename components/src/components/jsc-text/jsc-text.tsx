@@ -1,4 +1,4 @@
-import { Component, Element, Fragment, h, Prop } from '@stencil/core';
+import { Component, Element, h, Prop } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
 

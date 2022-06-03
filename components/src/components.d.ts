@@ -18,7 +18,7 @@ export namespace Components {
     }
     interface JscApp {
         "markup": JaseciComponent[];
-        "setGlobalConfig": (config: Record<string, any>) => Promise<void>;
+        "setGlobalConfig": (config: Record<string, any> & { css: Record<string, string>; }) => Promise<void>;
         "setMarkup": (value: any) => Promise<void>;
     }
     interface JscButton {
@@ -60,12 +60,51 @@ export namespace Components {
         "name": string;
         "operations": any;
     }
+    interface JscDatagrid {
+        "css": string;
+        "currentPage": number;
+        "events": string;
+        "headings": string;
+        "itemsPerPage": number;
+        "maxPages": number;
+        "name": string;
+        "operations": any;
+        "refetchData": () => Promise<void>;
+        "rowData": [][];
+        "rows": { context: any }[];
+        "server": string;
+        "snt": string;
+        "sortOrder": {};
+        "token": string;
+        "variant": 'striped' | 'default';
+        "walker": string;
+    }
+    interface JscDatalist {
+        "body": string;
+        "css": string;
+        "data": [];
+        "events": string;
+        "getters": string;
+        "items": ItemsPropValue;
+        "justify": JustifyPropValue;
+        "layout": 'Column' | 'Row' | 'None';
+        "layoutProps": string;
+        "name": string;
+        "operations": string;
+        "server": string;
+        "snt": string;
+        "template": string;
+        "token": string;
+        "walker": string;
+    }
     interface JscDatePicker {
         "css": string;
         "events": string;
         "label": string;
         "name": string;
         "operations": any;
+        "type": 'date' | 'datetime';
+        "value": string;
     }
     interface JscDivider {
         "css": string;
@@ -194,6 +233,18 @@ declare global {
         prototype: HTMLJscContainerElement;
         new (): HTMLJscContainerElement;
     };
+    interface HTMLJscDatagridElement extends Components.JscDatagrid, HTMLStencilElement {
+    }
+    var HTMLJscDatagridElement: {
+        prototype: HTMLJscDatagridElement;
+        new (): HTMLJscDatagridElement;
+    };
+    interface HTMLJscDatalistElement extends Components.JscDatalist, HTMLStencilElement {
+    }
+    var HTMLJscDatalistElement: {
+        prototype: HTMLJscDatalistElement;
+        new (): HTMLJscDatalistElement;
+    };
     interface HTMLJscDatePickerElement extends Components.JscDatePicker, HTMLStencilElement {
     }
     var HTMLJscDatePickerElement: {
@@ -262,6 +313,8 @@ declare global {
         "jsc-chip": HTMLJscChipElement;
         "jsc-column": HTMLJscColumnElement;
         "jsc-container": HTMLJscContainerElement;
+        "jsc-datagrid": HTMLJscDatagridElement;
+        "jsc-datalist": HTMLJscDatalistElement;
         "jsc-date-picker": HTMLJscDatePickerElement;
         "jsc-divider": HTMLJscDividerElement;
         "jsc-inputbox": HTMLJscInputboxElement;
@@ -286,6 +339,7 @@ declare namespace LocalJSX {
     }
     interface JscApp {
         "markup"?: JaseciComponent[];
+        "onOnRender"?: (event: CustomEvent<string>) => void;
     }
     interface JscButton {
         "color"?: string;
@@ -326,12 +380,50 @@ declare namespace LocalJSX {
         "name"?: string;
         "operations"?: any;
     }
+    interface JscDatagrid {
+        "css"?: string;
+        "currentPage"?: number;
+        "events"?: string;
+        "headings"?: string;
+        "itemsPerPage"?: number;
+        "maxPages"?: number;
+        "name"?: string;
+        "operations"?: any;
+        "rowData"?: [][];
+        "rows"?: { context: any }[];
+        "server"?: string;
+        "snt"?: string;
+        "sortOrder"?: {};
+        "token"?: string;
+        "variant"?: 'striped' | 'default';
+        "walker"?: string;
+    }
+    interface JscDatalist {
+        "body"?: string;
+        "css"?: string;
+        "data"?: [];
+        "events"?: string;
+        "getters"?: string;
+        "items"?: ItemsPropValue;
+        "justify"?: JustifyPropValue;
+        "layout"?: 'Column' | 'Row' | 'None';
+        "layoutProps"?: string;
+        "name"?: string;
+        "operations"?: string;
+        "server"?: string;
+        "snt"?: string;
+        "template"?: string;
+        "token"?: string;
+        "walker"?: string;
+    }
     interface JscDatePicker {
         "css"?: string;
         "events"?: string;
         "label"?: string;
         "name"?: string;
         "operations"?: any;
+        "type"?: 'date' | 'datetime';
+        "value"?: string;
     }
     interface JscDivider {
         "css"?: string;
@@ -426,6 +518,8 @@ declare namespace LocalJSX {
         "jsc-chip": JscChip;
         "jsc-column": JscColumn;
         "jsc-container": JscContainer;
+        "jsc-datagrid": JscDatagrid;
+        "jsc-datalist": JscDatalist;
         "jsc-date-picker": JscDatePicker;
         "jsc-divider": JscDivider;
         "jsc-inputbox": JscInputbox;
@@ -449,6 +543,8 @@ declare module "@stencil/core" {
             "jsc-chip": LocalJSX.JscChip & JSXBase.HTMLAttributes<HTMLJscChipElement>;
             "jsc-column": LocalJSX.JscColumn & JSXBase.HTMLAttributes<HTMLJscColumnElement>;
             "jsc-container": LocalJSX.JscContainer & JSXBase.HTMLAttributes<HTMLJscContainerElement>;
+            "jsc-datagrid": LocalJSX.JscDatagrid & JSXBase.HTMLAttributes<HTMLJscDatagridElement>;
+            "jsc-datalist": LocalJSX.JscDatalist & JSXBase.HTMLAttributes<HTMLJscDatalistElement>;
             "jsc-date-picker": LocalJSX.JscDatePicker & JSXBase.HTMLAttributes<HTMLJscDatePickerElement>;
             "jsc-divider": LocalJSX.JscDivider & JSXBase.HTMLAttributes<HTMLJscDividerElement>;
             "jsc-inputbox": LocalJSX.JscInputbox & JSXBase.HTMLAttributes<HTMLJscInputboxElement>;

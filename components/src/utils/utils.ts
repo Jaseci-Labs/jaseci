@@ -1,3 +1,6 @@
+import { operationsStore } from './../store/operationsStore';
+import { storeProp } from '../store/propsStore';
+let globalOperations = {};
 export function format(first: string, middle: string, last: string): string {
   return (first || '') + (middle ? ` ${middle}` : '') + (last ? ` ${last}` : '');
 }
@@ -17,6 +20,9 @@ export const componentMap: Record<Exclude<ComponentNames, 'App'>, ComponentTags>
   Divider: 'jsc-divider',
   Anchor: 'jsc-anchor',
   Chip: 'jsc-chip',
+  Datagrid: 'jsc-datagrid',
+  Datalist: 'jsc-datalist',
+  Datarow: 'jsc-datarow',
 };
 
 const renderTag = (componentTag: ComponentTags, config: { withChildren: Boolean }) => `<${componentTag}>${config.withChildren ? '{children}' : ''}</${componentTag}>`;
@@ -24,7 +30,12 @@ const renderTag = (componentTag: ComponentTags, config: { withChildren: Boolean 
 // converts props to a string of html attributes to append to the tag
 const attachProps = (renderedTag: string, props: JaseciComponent['props']) => {
   const propsString = Object.keys(props)
-    .map(key => `${key}="${props[key]}"`)
+    .map(key => {
+      const prop = storeProp(renderedTag, key, props[key]);
+      console.log({ prop });
+
+      return `${key}="${prop}"`;
+    })
     .join(' ');
 
   return renderedTag.replace('>', ` ${propsString}>`);
@@ -40,17 +51,16 @@ const attachEvents = (renderedTag: string, events: JaseciComponent['events']) =>
 };
 
 const setOperations = (operations: JaseciComponent['operations'], componentName: string) => {
-  if (!global.__JSC_WEBKIT_OPERATIONS__[componentName]) {
-    // TODO: make this private
-    global.__JSC_WEBKIT_OPERATIONS__ = {
-      ...global.__JSC_WEBKIT_OPERATIONS__,
+  if (!globalOperations[componentName]) {
+    globalOperations = {
+      ...globalOperations,
       [componentName]: operations,
     };
   }
 };
 
 export const getOperations = (componentName: string) => {
-  return global.__JSC_WEBKIT_OPERATIONS__[componentName];
+  return globalOperations[componentName];
 };
 
 const attachCSS = (renderedTag: string, css: JaseciComponent['css']) => {

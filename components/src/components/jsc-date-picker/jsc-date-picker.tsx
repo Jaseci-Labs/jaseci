@@ -12,8 +12,10 @@ export class DatePicker {
   @Prop() css: string = JSON.stringify({});
   @Prop({ mutable: true }) events: string;
   @Prop() name: string;
+  @Prop() type: 'date' | 'datetime' = 'date';
   @Prop() label: string;
   @Prop({ mutable: true }) operations;
+  @Prop({ reflect: true }) value: string;
 
   componentDidLoad() {
     Object.assign(this.host.style, {
@@ -27,6 +29,6 @@ export class DatePicker {
   }
 
   render() {
-    return <jsc-inputbox label={this.label} type="date"></jsc-inputbox>;
+    return <jsc-inputbox onValueChanged={value => (this.value = value.target['value'])} label={this.label} type={this.type === 'date' ? 'date' : 'datetime-local'}></jsc-inputbox>;
   }
 }

@@ -13,6 +13,9 @@ type ComponentTags =
   | 'jsc-date-picker'
   | 'jsc-divider'
   | 'jsc-anchor'
+  | 'jsc-datagrid'
+  | 'jsc-datarow'
+  | 'jsc-datalist'
   | 'jsc-chip';
 
 type ComponentNames =
@@ -30,6 +33,9 @@ type ComponentNames =
   | 'DatePicker'
   | 'Divider'
   | 'Anchor'
+  | 'Datagrid'
+  | 'Datarow'
+  | 'Datalist'
   | 'Chip';
 
 interface JaseciComponent {
@@ -50,6 +56,7 @@ type JaseciAction = {
   // used to specify operation in runOperation
   operation?: string;
   list?: string;
+  target?: 'localstorage';
   cond?: ActionCondition[];
   onCompleted?: JaseciAction;
 } & JaseciCallEndpointAction;
@@ -65,6 +72,6 @@ type JaseciOperation = {
 
 type JaseciComponentProps = Record<string, unknown>;
 type JaseciEventName = 'onClick' | 'onKeyPress' | 'onEnterKeyPress' | 'onMount';
-type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add' | 'runOperation' | 'callEndpoint' | 'runForEach';
+type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add' | 'runOperation' | 'callEndpoint' | 'runForEach' | 'refreshDatagrid' | 'storeValue' | 'navigate';
 type ActionConditionName = 'eq' | 'neq' | 'gt' | 'lt';
 type ActionCondition = `${string}::#${ActionConditionName}::${string}`;
