@@ -1,7 +1,7 @@
+import spacy
 from fastapi import HTTPException
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-import en_core_web_sm as english_model
 from jaseci.actions.live_actions import jaseci_action
 
 # loading segmentation model from hugging face
@@ -9,8 +9,10 @@ tokenizer = AutoTokenizer.from_pretrained("dennlinger/roberta-cls-consec")
 model = AutoModelForSequenceClassification.from_pretrained(
     "dennlinger/roberta-cls-consec"
 )
+# Download the pretrained model pipeline
+spacy.cli.download("en_core_web_sm")
 # loading space model for sentence tokenization
-spacy = english_model.load()
+pipeline = spacy.load("en_core_web_sm")
 
 
 def segmentation(text, threshold=0.85):
@@ -20,7 +22,7 @@ def segmentation(text, threshold=0.85):
     syntactical similarity.
     """
     # spliting the raw test into sentences
-    doc = spacy(text)
+    doc = pipeline(text)
     sentences = [sent.text.strip() for sent in doc.sents]
     index = 0
     sub_segments = []
@@ -55,7 +57,7 @@ def segmentation(text, threshold=0.85):
     return segments
 
 
-@jaseci_action(act_group=["text_segmentor"], allow_remote=True)
+@jaseci_action(act_group=["text_seg"], allow_remote=True)
 def get_segments(text: str, threshold: float = 0.7):
     try:
         segmented_text = segmentation(text=text, threshold=threshold)
@@ -64,7 +66,7 @@ def get_segments(text: str, threshold: float = 0.7):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["text_segmentor"], allow_remote=True)
+@jaseci_action(act_group=["text_seg"], allow_remote=True)
 def load_model(model_name: str):  # modelname could be ("wiki", "legal")
     global model, tokenizer
     if model_name == "wiki":

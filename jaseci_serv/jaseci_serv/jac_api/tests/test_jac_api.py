@@ -114,6 +114,69 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         )
         self.assertEqual(len(res.data["report"]), 0)
 
+    def test_serverside_sentinel_global_public_access_callback(self):
+        """Test public API for walker callback"""
+        zsb_file = open(os.path.dirname(__file__) + "/public.jac").read()
+        payload = {"op": "sentinel_register", "name": "public", "code": zsb_file}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 2)
+        payload = {"op": "global_sentinel_set"}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "sentinel_active_global"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertTrue(res.data["success"])
+        payload = {"op": "graph_create"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "walker_spawn_create", "name": "callback"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "walker_get", "mode": "keys", "wlk": "spawned:walker:callback"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        key = res.data["anyone"]
+        payload = {"op": "alias_list"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        walk = res.data["spawned:walker:callback"].split(":")[2]
+        nd = res.data["active:graph"].split(":")[2]
+        payload = {"op": "walker_callback", "key": key, "wlk": walk, "nd": nd}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}', args=[payload["nd"], payload["wlk"]])
+            + "?keys="
+            + key,
+            payload,
+            format="json",
+        )
+        self.assertEqual(res.data["updated"], False)
+        self.assertEqual(res.status_code, 200)
+        zsb_file = open(os.path.dirname(__file__) + "/public_updated.jac").read()
+        payload = {"op": "sentinel_register", "name": "public", "code": zsb_file}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 1)
+        payload = {"op": "walker_callback", "key": key, "wlk": walk, "nd": nd}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}', args=[payload["nd"], payload["wlk"]])
+            + "?keys="
+            + key,
+            payload,
+            format="json",
+        )
+        self.assertEqual(res.data["updated"], True)
+        self.assertEqual(res.status_code, 201)
+
 
 class PrivateJacApiTests(TestCaseHelper, TestCase):
     """Test the authorized user node API"""
@@ -1155,3 +1218,24 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(reverse("jac_api:wapi", args=["testwalker"]), payload)
         self.assertEqual(res.data, {"a": "b"})
         self.assertEqual(res.status_code, status.HTTP_302_FOUND)
+
+    def test_jac_create_user_in_jac_django(self):
+        """Test API for running a walker"""
+        payload = {"op": "graph_create"}
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        payload = {
+            "op": "sentinel_register",
+            "name": "Something",
+            "code": "walker testwalker{ report jaseci.master_create('a@b.com', true,  "
+            "{'password': 'yoyoyoyoyoyo', 'name': '', 'is_activated': true}); }",
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        payload = {}
+        res = self.client.post(reverse("jac_api:walker_list"), payload)
+        self.assertEqual(len(res.data), 1)
+        res = self.client.post(reverse("jac_api:wapi", args=["testwalker"]), payload)
+        self.assertIn("jid", res.data["report"][0].keys())
+        self.assertEqual(res.data["report"][0]["name"], "a@b.com")
