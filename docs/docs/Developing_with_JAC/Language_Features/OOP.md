@@ -14,4 +14,8 @@ node input_state:state {
     has input;
 }
 
+node output_state :input:state{
+    has output;
+}
+
 ```
