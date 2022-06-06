@@ -151,6 +151,7 @@ export namespace Components {
     interface JscRow {
         "css": string;
         "events": string;
+        "gap": string;
         "items": ItemsPropValue;
         "justify": JustifyPropValue;
         "name": string;
@@ -471,6 +472,7 @@ declare namespace LocalJSX {
     interface JscRow {
         "css"?: string;
         "events"?: string;
+        "gap"?: string;
         "items"?: ItemsPropValue;
         "justify"?: JustifyPropValue;
         "name"?: string;

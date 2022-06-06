@@ -7,7 +7,7 @@ import { getOperations } from '../../utils/utils';
 @Component({
   tag: 'jsc-row',
   styleUrl: 'jsc-row.css',
-  shadow: true,
+  shadow: false,
 })
 export class Row {
   @Element() host: HTMLElement;
@@ -16,15 +16,19 @@ export class Row {
   @Prop() events: string;
   @Prop() justify: JustifyPropValue = 'start';
   @Prop() items: ItemsPropValue = 'start';
+  @Prop() gap: string;
   @Prop() operations: string;
 
   componentDidLoad() {
     const childrenSlot = this.host.querySelector('div[slot=children]') as HTMLSlotElement;
+    console.log({ childrenSlot });
 
     Object.assign((childrenSlot as HTMLElement).style, {
       'box-sizing': 'border-box',
+      'display': 'flex',
       'justifyContent': justifyValue[this.justify],
       'alignItems': itemsValue[this.items],
+      'gap': this.gap,
       ...JSON.parse(this.css),
     });
 

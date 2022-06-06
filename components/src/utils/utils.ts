@@ -1,4 +1,3 @@
-import { operationsStore } from './../store/operationsStore';
 import { storeProp } from '../store/propsStore';
 let globalOperations = {};
 export function format(first: string, middle: string, last: string): string {

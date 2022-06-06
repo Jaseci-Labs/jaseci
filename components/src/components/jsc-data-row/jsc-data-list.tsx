@@ -1,4 +1,4 @@
-import { Component, Element, Fragment, h, Prop } from '@stencil/core';
+import { Component, Element, Fragment, h, Host, Prop } from '@stencil/core';
 import { getProp } from '../../store/propsStore';
 import { ItemsPropValue, JustifyPropValue } from '../../types/propTypes';
 import { formatRowContent, getRowValue } from '../../utils/datagrid';
@@ -27,7 +27,7 @@ export class Datalist {
   @Prop() template: string;
   @Prop() getters: string;
   @Prop() body: string;
-  @Prop() layoutProps: string;
+  @Prop({ attribute: 'layoutprops' }) layoutProps: string;
 
   fetchData() {
     fetch(`${this.server}/js/walker_run`, {
@@ -79,17 +79,25 @@ export class Datalist {
   }
 
   getChildren(withChildren: boolean = true) {
-    console.log({ data: this.data });
-    return `<div ${withChildren ? 'slot="children"' : ''}>${this.renderRows(this.data, getProp(this.getters), getProp(this.template))}</div>`;
+    let layoutProps = getProp(this.layoutProps, {});
+    layoutProps = Object.keys(layoutProps).map(propName => `${propName}="${layoutProps[propName]}"`);
+
+    const innerHtml = `<div ${withChildren ? 'slot="children"' : ''}>${this.renderRows(this.data, getProp(this.getters), getProp(this.template))}</div>`;
+
+    if (this.layout === 'Column') {
+      return `<jsc-column ${layoutProps}>${innerHtml}</jsc-column>`;
+    }
+
+    if (this.layout === 'Row') {
+      return `<jsc-row ${layoutProps}>${innerHtml}</jsc-row>`;
+    }
+
+    if (this.layout === 'None') {
+      return innerHtml;
+    }
   }
 
   render() {
-    return (
-      <Fragment>
-        {this.layout === 'Column' && <jsc-column {...getProp(this.layoutProps)} innerHTML={this.getChildren()}></jsc-column>}
-        {this.layout === 'Row' && <jsc-row {...getProp(this.layoutProps)} innerHTML={this.getChildren()}></jsc-row>}
-        {this.layout === 'None' && <div {...getProp(this.layoutProps)} innerHTML={this.getChildren()}></div>}
-      </Fragment>
-    );
+    return <div innerHTML={this.getChildren()}></div>;
   }
 }
