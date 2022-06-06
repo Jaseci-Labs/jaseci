@@ -34,7 +34,7 @@
 4. Initializing module for `train and validation` inside `node tfm_ner`
     
     ```
-    ## train and validation model 
+    # train and validation model 
     can train_and_val with train_and_val_tfm entry {
         train_data = file.load_json(visitor.train_file);
         val_data = file.load_json(visitor.val_file);
@@ -133,7 +133,7 @@
 ### Now we are adding all `steps(from 2 to 10)` inside `main.jac` file
 
 ### Final jac programm `(main.jac)`
-    ```
+
     node model_dir;
     node tfm_ner {
         # train,infer
@@ -214,8 +214,6 @@
             take -->;
         }
     }
-    ```
-
 
 
 
