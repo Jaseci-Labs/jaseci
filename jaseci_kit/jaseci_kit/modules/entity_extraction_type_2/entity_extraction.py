@@ -90,7 +90,7 @@ def train(
     mode: str = train_config["MODE"],
     epochs: int = train_config["EPOCHS"],
     train_data: List[dict] = [],
-    dev_data: Optional[List[dict]] = [],
+    val_data: Optional[List[dict]] = [],
     test_data: Optional[List[dict]] = [],
 ):
     """
@@ -104,25 +104,25 @@ def train(
     if mode == "default" or mode == "incremental":
         if os.path.exists("train/train_backup_file.txt"):
             os.remove("train/train_backup_file.txt")
-        if os.path.exists("train/dev_backup_file.txt"):
-            os.remove("train/dev_backup_file.txt")
+        if os.path.exists("train/val_backup_file.txt"):
+            os.remove("train/val_backup_file.txt")
         if os.path.exists("train/test_backup_file.txt"):
             os.remove("train/test_backup_file.txt")
 
         if os.path.exists("train/train.txt"):
             os.remove("train/train.txt")
-        if os.path.exists("train/dev.txt"):
-            os.remove("train/dev.txt")
+        if os.path.exists("train/val.txt"):
+            os.remove("train/val.txt")
         if os.path.exists("train/test.txt"):
             os.remove("train/test.txt")
 
         train_file = "train/train.txt"
-        dev_file = "train/dev.txt"
+        val_file = "train/val.txt"
         test_file = "train/test.txt"
 
     elif mode == "append":
         train_file = "train/train_backup_file.txt"
-        dev_file = "train/dev_backup_file.txt"
+        val_file = "train/val_backup_file.txt"
         test_file = "train/test_backup_file.txt"
 
     else:
@@ -133,8 +133,8 @@ def train(
         }
         raise HTTPException(status_code=400, detail=st)
 
-    if len(dev_data) != 0:
-        create_train_data(dev_data, "dev")
+    if len(val_data) != 0:
+        create_train_data(val_data, "val")
 
     if len(test_data) != 0:
         create_train_data(test_data, "test")
@@ -146,7 +146,7 @@ def train(
             # loading training dataset
             data_set(
                 train_file,
-                dev_file,
+                val_file,
                 test_file,
                 train_config["MAX_LEN"],
                 train_config["TRAIN_BATCH_SIZE"],
