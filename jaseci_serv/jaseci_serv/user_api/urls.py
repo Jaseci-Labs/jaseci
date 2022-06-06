@@ -17,8 +17,13 @@ urlpatterns = [
         "password_reset/",
         include("django_rest_passwordreset.urls", namespace="password_reset"),
     ),
-    path("sso/", include([
-        path('google/', views.GoogleSSOView.as_view()),
-        path('facebook/', views.FacebookSSOView.as_view()),
-    ]))
+    path(
+        "sso/",
+        include(
+            [
+                path("google/", views.GoogleSSOView.as_view()),
+                path("facebook/", views.FacebookSSOView.as_view()),
+            ]
+        ),
+    ),
 ]

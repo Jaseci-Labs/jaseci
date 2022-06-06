@@ -1,4 +1,3 @@
-from itsdangerous import Serializer
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView
@@ -12,18 +11,16 @@ from knox.auth import TokenAuthentication
 from jaseci_serv.user_api.serializers import UserSerializer
 from jaseci_serv.user_api.serializers import SuperUserSerializer
 from jaseci_serv.user_api.serializers import AuthTokenSerializer
-from jaseci_serv.user_api.serializers import (FacebookSocialAuthSerializer, 
-        GoogleSocialAuthSerializer)
+from jaseci_serv.user_api.serializers import (
+    FacebookSocialAuthSerializer,
+    GoogleSocialAuthSerializer
+)
 from jaseci_serv.user_api.serializers import send_activation_email
 from jaseci_serv.base.models import lookup_global_config
 from datetime import timedelta
 
 from rest_framework.response import Response
 import base64
-
-from yaml import serialize
-
-
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -127,7 +124,7 @@ class GoogleSSOView(GenericAPIView):
         data = self.serializer_class(data=request.data)
         if data.is_valid(raise_exception=True):
             auth_token = data.validated_data("auth_token")
-            return Response(data, status=status.HTTP_200_OK)
+            return Response(auth_token, status=status.HTTP_200_OK)
         else:
             return Response(data.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -143,9 +140,6 @@ class FacebookSSOView(GenericAPIView):
         data = self.serializer_class(data=request.data)
         if data.is_valid(raise_exception=True):
             auth_token = data.validated_data("auth_token")
-            return Response(data, status=status.HTTP_200_OK)
+            return Response(auth_token, status=status.HTTP_200_OK)
         else:
             return Response(data.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-

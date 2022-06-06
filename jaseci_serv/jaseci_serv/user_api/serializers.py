@@ -13,8 +13,6 @@ from .register import register_social_user
 from rest_framework.exceptions import AuthenticationFailed
 
 
-
-
 def send_activation_email(request, email):
     """Construct activation email body"""
     code = base64.b64encode(email.encode()).decode()
@@ -100,26 +98,24 @@ class AuthTokenSerializer(serializers.Serializer):
 
 class FacebookSocialAuthSerializer(serializers.Serializer):
     """Handles serialization of facebook related data"""
+
     auth_token = serializers.CharField()
 
     def validate_auth_token(self, auth_token):
         user_data = facebook.Facebook.validate(auth_token)
 
         try:
-            user_id = user_data['id']
-            email = user_data['email']
-            name = user_data['name']
-            provider = 'facebook'
+            user_id = user_data["id"]
+            email = user_data["email"]
+            name = user_data["name"]
+            provider = "facebook"
             return register_social_user(
-                provider=provider,
-                user_id=user_id,
-                email=email,
-                name=name
+                provider=provider, user_id=user_id, email=email, name=name
             )
-        except Exception as identifier:
+        except Exception as e:
 
             raise serializers.ValidationError(
-                'The token  is invalid or expired. Please login again.'
+                "The token is invalid or expired. Please login again."
             )
 
 
@@ -129,21 +125,21 @@ class GoogleSocialAuthSerializer(serializers.Serializer):
     def validate_auth_token(self, auth_token):
         user_data = google.Google.validate(auth_token)
         try:
-            user_data['sub']
-        except:
+            user_data["sub"]
+        except Exception as e:
             raise serializers.ValidationError(
-                'The token is invalid or expired. Please login again.'
+                "The token is invalid or expired. Please login again."
             )
 
-        if user_data['aud'] != settings.GOOGLE_CLIENT_ID:
+        if user_data["aud"] != settings.GOOGLE_CLIENT_ID:
 
-            raise AuthenticationFailed('oops, who are you?')
+            raise AuthenticationFailed("oops, who are you?")
 
-        user_id = user_data['sub']
-        email = user_data['email']
-        name = user_data['name']
-        provider = 'google'
+        user_id = user_data["sub"]
+        email = user_data["email"]
+        name = user_data["name"]
+        provider = "google"
 
         return register_social_user(
-            provider=provider, user_id=user_id, email=email, name=name)
-
+            provider=provider, user_id=user_id, email=email, name=name
+        )
