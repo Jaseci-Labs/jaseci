@@ -1,0 +1,7 @@
+{
+    "walkers" : ["init"],
+    "src" : "walker.jac",
+    "remote_actions" : [],
+    "local_actions" : [],
+    "module_actions" : ["jaseci_kit.bi_enc"]
+}

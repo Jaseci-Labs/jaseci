@@ -23,4 +23,4 @@ They form a hierarchy of time components and tasks. In this model a workette is 
 
 ![Hierarchy Diagram](/img/tutorial/myca-a-jaseci-product/myca_hierarchy_diagram.png)
 
-Next let’s take a look at the [Jac implementation](/docs/myca-a-jaseci-product/data-model) of the myca graph.
+Next let’s take a look at the [Jac implementation](/docs/jaseci-1.0/myca-a-jaseci-product/data-model) of the myca graph.

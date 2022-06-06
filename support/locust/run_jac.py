@@ -46,6 +46,39 @@ class SeqTask(SequentialTaskSet):
         json_var = response.json()
         self.user_token = json_var["token"]
 
+    # @task
+    # def get_global_sentinel(self):
+    #     req = {
+    #             "snt": SNT
+    #             }
+    #     response = self.client.post(
+    #             '/js/sentinel_active_global',
+    #             headers = {"authorization": f"Token {self.user_token}"},
+    #             )
+    #     print(response.text)
+    # @task
+    @task
+    def get_sentinel(self):
+        print(SNT)
+        headers = {"authorization": f"Token {self.user_token}"}
+        response = self.client.post(
+            "/js/sentinel_active_global", headers=headers, json={"detailed": False}
+        )
+        print("GET_SNT:", response.text)
+
+    #     self.snt = prepare.registerSentinel(self.user_token)
+    #     prepare.load_actions(self.user_token)
+
+    @task
+    def create_graph(self):
+
+        headers = {"authorization": f"Token {self.user_token}"}
+        response = self.client.post(
+            "/js/graph_create", headers=headers, json={"set_active": True}
+        )
+        print(response.text)
+        self.graph_id = response.json()["jid"]
+
     @task
     def walker_run(self):
         for walkerName in load_config(TEST_PATH)["walkers"]:
@@ -56,18 +89,27 @@ class SeqTask(SequentialTaskSet):
                 headers={"authorization": f"Token {self.user_token}"},
                 json=req,
             )
-            print(f"Walker {walkerName} finished. {response.text}")
-            # print(f"Walker {walkerName} Output: {response.json()}")
+            print(
+                f"User {self.userName}: Walker {walkerName} finished. {response.text}"
+            )
+
+    @task
+    def delete_graph(self):
+
+        headers = {"authorization": f"Token {self.user_token}"}
+        response = self.client.post(
+            "/js/graph_delete", headers=headers, json={"gph": self.graph_id}
+        )
 
 
 class addJac(HttpUser):
     host = "http://127.0.0.1:8888"
     tasks = [SeqTask]
-    wait_time = constant(2)
+    wait_time = constant(0)
 
 
-token = prepare.login()
+token = prepare.login(userID=0)
+# # global SNT
 SNT = prepare.registerSentinel(token)
+prepare.setSentinelGlobal(token=token, snt=SNT)
 prepare.load_actions(token)
-prepare.setSentinelGlobal(token, SNT)
-print(SNT)

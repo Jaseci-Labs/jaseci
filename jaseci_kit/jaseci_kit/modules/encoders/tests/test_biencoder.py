@@ -1,4 +1,3 @@
-import sys
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
 from ..bi import serv_actions, config_setup
@@ -61,7 +60,6 @@ class biencoder_test(TestCaseHelper, TestCase):
         self.assertEqual(response.json(), "Config setup is complete.")
         response = self.client.post("/get_train_config/", json={})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), train_config_default)
 
     def test_biencoder_model_config(self):
         response = self.client.post(

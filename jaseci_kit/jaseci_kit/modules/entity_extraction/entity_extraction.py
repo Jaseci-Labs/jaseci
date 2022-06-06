@@ -275,7 +275,7 @@ def set_config(ner_model: str = None, model_type: str = None):
     if ner_model or model_type:
         config["TAGGER_MODEL"]["NER_MODEL"] = ner_model
         config["TAGGER_MODEL"]["MODEL_TYPE"] = model_type
-    with open("config.cfg", "w") as configfile:
+    with open(os.path.join(os.path.dirname(__file__), "config.cfg"), "w") as configfile:
         config.write(configfile)
     try:
         init_model()

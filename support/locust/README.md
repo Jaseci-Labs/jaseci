@@ -30,7 +30,7 @@ The program reads the environment variable `LOCUST_TEST_SRC` for the location of
 LOCUST_HOST='JASECI_URL' LOCUST_TEST_SRC='sample_code/<YOUR TEST>' locust -f run_jac.py
 ```
 
-Go to the link specified in console, e.x http://0.0.0.0:8089 and specify the desired number of users for the load test and initiate the test. You can also change the server URL in the web UI.
+Go to the link specified in console, e.x http://0.0.0.0:8089 and specify the desired number of users for the load test and initiate the test. Please make sure that the host url is the same with LOCUST\_HOST.
 
 ## Run Locust with docker
 

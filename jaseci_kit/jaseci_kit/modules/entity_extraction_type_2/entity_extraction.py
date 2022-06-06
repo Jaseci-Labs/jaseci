@@ -2,13 +2,13 @@ import traceback
 from fastapi import HTTPException
 from jaseci.actions.live_actions import jaseci_action
 from typing import Dict, List
-from train import predict_text, train_model
-from train import load_custom_model, save_custom_model
+from .train import predict_text, train_model
+from .train import load_custom_model, save_custom_model
 import json
-from train import data_set, check_labels_ok
+from .train import data_set, check_labels_ok
 import os
 import pandas as pd
-from entity_utils import create_data, create_data1
+from .entity_utils import create_data, create_data1
 
 
 def config_setup():
@@ -18,8 +18,9 @@ def config_setup():
     """
     global train_config, model_config, curr_model_path
     global t_config_fname, m_config_fname
-    m_config_fname = "utils/model_config.json"
-    t_config_fname = "utils/train_config.json"
+    dirname = os.path.dirname(__file__)
+    m_config_fname = os.path.join(dirname, "utils/model_config.json")
+    t_config_fname = os.path.join(dirname, "utils/train_config.json")
 
     with open(t_config_fname, "r") as jsonfile:
         train_config = json.load(jsonfile)
