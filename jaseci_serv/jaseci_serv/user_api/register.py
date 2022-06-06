@@ -1,9 +1,8 @@
-from django.contrib.auth import authenticate
 import os
-from rest_framework.exceptions import AuthenticationFailed
-from django.contrib.auth import get_user_model
-from django.conf import settings
 
+from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model
+from rest_framework.exceptions import AuthenticationFailed
 
 # def generate_username(name):
 

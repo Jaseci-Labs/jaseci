@@ -1,26 +1,22 @@
-from rest_framework import generics, permissions
-from rest_framework.views import APIView
-from rest_framework.generics import GenericAPIView
-from rest_framework import renderers, status
-from knox.views import LoginView as KnoxLoginView
-from django.contrib.auth import login, get_user_model
-from django.contrib.auth.signals import user_logged_out
-
-from knox.auth import TokenAuthentication
-
-from jaseci_serv.user_api.serializers import UserSerializer
-from jaseci_serv.user_api.serializers import SuperUserSerializer
-from jaseci_serv.user_api.serializers import AuthTokenSerializer
-from jaseci_serv.user_api.serializers import (
-    FacebookSocialAuthSerializer,
-    GoogleSocialAuthSerializer
-)
-from jaseci_serv.user_api.serializers import send_activation_email
-from jaseci_serv.base.models import lookup_global_config
+import base64
 from datetime import timedelta
 
+from django.contrib.auth import get_user_model, login
+from django.contrib.auth.signals import user_logged_out
+from knox.auth import TokenAuthentication
+from knox.views import LoginView as KnoxLoginView
+from rest_framework import generics, permissions, renderers, status
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-import base64
+from rest_framework.views import APIView
+
+from jaseci_serv.base.models import lookup_global_config
+from jaseci_serv.user_api.serializers import (AuthTokenSerializer,
+                                              FacebookSocialAuthSerializer,
+                                              GoogleSocialAuthSerializer,
+                                              SuperUserSerializer,
+                                              UserSerializer,
+                                              send_activation_email)
 
 
 class CreateUserView(generics.CreateAPIView):

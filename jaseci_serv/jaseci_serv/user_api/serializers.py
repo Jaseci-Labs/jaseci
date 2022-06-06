@@ -1,16 +1,18 @@
-from django.contrib.auth import get_user_model, authenticate
-from django.utils.translation import ugettext_lazy as _
-
-from rest_framework import serializers
 import base64
-from django.urls import reverse
-from django.dispatch import receiver
-from django_rest_passwordreset.signals import reset_password_token_created
-from jaseci_serv.base.mail import email_config
+
 from django.conf import settings
-from .sso_provider import google, facebook
-from .register import register_social_user
+from django.contrib.auth import authenticate, get_user_model
+from django.dispatch import receiver
+from django.urls import reverse
+from django.utils.translation import ugettext_lazy as _
+from django_rest_passwordreset.signals import reset_password_token_created
+from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
+
+from jaseci_serv.base.mail import email_config
+
+from .register import register_social_user
+from .sso_provider import facebook, google
 
 
 def send_activation_email(request, email):
