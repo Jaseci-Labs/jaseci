@@ -7,7 +7,7 @@
 `tfm_ner`: module based on transformers to identify and extract entities. It uses TokenClassification method from Huggingface.
 
 
-`Example`: performing training and evaluation task on `tfm_ner` with the help of `jac` programing.
+`Example`: performing training and validation task on `tfm_ner` with the help of `jac` programing.
 
 
 ### Starting write jac code for `tfm_ner` task 
@@ -31,23 +31,23 @@
 
     ```
 
-4. Initializing module for `train and evaluation` inside `node tfm_ner`
+4. Initializing module for `train and validation` inside `node tfm_ner`
     
     ```
-    ## train and evaluate model 
-    can train_and_eval with train_and_eval_tfm entry {
+    ## train and validation model 
+    can train_and_val with train_and_val_tfm entry {
         train_data = file.load_json(visitor.train_file);
-        eval_data = file.load_json(visitor.eval_file);
+        val_data = file.load_json(visitor.val_file);
         test_data = file.load_json(visitor.test_file);
-        std.out("corpus : ",train_data.length," train + ",eval_data.length," dev +",test_data.length," test sentences");
+        std.out("corpus : ",train_data.length," train + ",val_data.length," val +",test_data.length," test sentences");
         tfm_ner.train(
             mode = visitor.mode,
             epochs = visitor.num_train_epochs.int,
             train_data = train_data,
-            dev_data = eval_data,
+            dev_data = val_data,
             test_data = test_data
             );
-        std.out("training and evaluation done ");
+        std.out("training and validation done ");
         }
     
 
@@ -71,10 +71,10 @@
     }
     ``` 
 
-7. Adding `graph` name of `ner_eval_graph` for initializing node . 
+7. Adding `graph` name of `ner_val_graph` for initializing node . 
     ```
     # Adding Graph
-    graph ner_eval_graph {
+    graph ner_val_graph {
         has anchor ner_model_dir;
         spawn {
             ner_model_dir = spawn node::model_dir;
@@ -88,22 +88,22 @@
     ```
     walker init {
         root {
-        spawn here --> graph::ner_eval_graph; 
+        spawn here --> graph::ner_val_graph; 
         }
     }
     ```
-9. Creating `walker` name of `train_and_eval_tfm` for getting parameter from context and calling ability `training and evaluation` model.
+9. Creating `walker` name of `train_and_val_tfm` for getting parameter from context and calling ability `training and validation` model.
     ```
     # creating walker 
-    walker train_and_eval_tfm {
+    walker train_and_val_tfm {
         has train_file;
-        has eval_file;
+        has val_file;
         has test_file;
         has num_train_epochs;
         has mode;
 
         # Train NER models on the train set
-        # and evaluate them on the eval set (Optional)
+        # and validate them on the val set (Optional)
         # and test them on the test set (Optional)
 
         # report accuracy performance of NER model on inside dir creating on place of current path `main.jac` file "train/logs/"
@@ -136,7 +136,7 @@
     ```
     node model_dir;
     node tfm_ner {
-        # train,infer, eval
+        # train,infer
         can tfm_ner.extract_entity, tfm_ner.train;
 
         # extracting entities
@@ -146,21 +146,21 @@
             );
         }
 
-        ## train and evaluate
-        can train_and_eval with train_and_eval_tfm entry {
+        ## train and validate
+        can train_and_val with train_and_val_tfm entry {
 
             train_data = file.load_json(visitor.train_file);
-            eval_data = file.load_json(visitor.eval_file);
+            val_data = file.load_json(visitor.val_file);
             test_data = file.load_json(visitor.test_file);
-            std.out("corpus : ",train_data.length," train + ",eval_data.length," dev +",test_data.length," test sentences");
+            std.out("corpus : ",train_data.length," train + ",val_data.length," dev +",test_data.length," test sentences");
             tfm_ner.train(
                 mode = visitor.mode,
                 epochs = visitor.num_train_epochs.int,
                 train_data = train_data,
-                dev_data = eval_data,
+                dev_data = val_data,
                 test_data = test_data
                 );
-            std.out("training and evaluation done ");
+            std.out("training and validation done ");
             }
     }
 
@@ -169,7 +169,7 @@
         has model_type;
     }
 
-    graph ner_eval_graph {
+    graph ner_val_graph {
         has anchor ner_model_dir;
         spawn {
             ner_model_dir = spawn node::model_dir;
@@ -181,20 +181,20 @@
 
     walker init {
         root {
-        spawn here --> graph::ner_eval_graph; 
+        spawn here --> graph::ner_val_graph; 
         }
     }
 
     ## creating walker 
-    walker train_and_eval_tfm {
+    walker train_and_val_tfm {
         has train_file;
-        has eval_file;
+        has val_file;
         has test_file;
         has num_train_epochs;
         has mode;
 
         # Train all NER models on the train set
-        # and evaluate them on the eval set
+        # and validate them on the val set
         # report accuracy performance across all NER models
         root {
             take --> node::model_dir;
@@ -219,7 +219,7 @@
 
 
 
-### Steps for running main.jac` file and train and evaluate tfm_ner model
+### Steps for running main.jac` file and train and validate tfm_ner model
 
 1. Open terminal and run jaseci by command
     
@@ -277,7 +277,7 @@
             }
         ]
         ```
-     * `eval_data`: (List(Dict)): a list dictionary containing contexts and list of entities in each context
+     * `val_data`: (List(Dict)): a list dictionary containing contexts and list of entities in each context
         ```
         [
             {
@@ -322,47 +322,29 @@
         ]
         ```
 
-6. for train model run walker `train_and_eval_models` with jac by run cmd:
+6. for train model run walker `train_and_val_tfm` with jac by run cmd:
     ```
-    walker run train_and_eval_models -ctx "{\"train_file\":\"dataset/train.json\",\"eval_file\":\"dataset/dev.json\",\"test_file\":\"dataset/test.json\",\"num_train_epochs\":\"10\",\"mode\":\"default\"}"
+    walker run train_and_val_tfm -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/dev.json\",\"test_file\":\"dataset/test.json\",\"num_train_epochs\":\"10\",\"mode\":\"default\"}"
     ```
 
-7. `Result` : after running `train_and_eval_models` walker you will get logs on console below format
+7. `Result` : after running `train_and_val_tfm` walker you will get logs on console below format
 
     ```
-    2022-06-01 10:53:21.033712     Training epoch: 1/15
-    2022-06-01 10:53:21.550641     Training loss per 100 training steps: 2.237579345703125
-    2022-06-01 10:55:22.277295     Training loss per 100 training steps: 0.5347430409476308
-    2022-06-01 10:58:01.659007     Training loss epoch: 0.3391421662278511
-    2022-06-01 10:58:01.659043     Training accuracy epoch: 0.9104983621756423
-    2022-06-01 10:58:01.659056     Training accuracy epochexcept('O') : 0.5919401402227067
-    2022-06-01 10:58:01.659079     evaluation loss epoch: 0.09548642354396482
-    2022-06-01 10:58:01.659088     evaluation accuracy epoch: 0.9743775487732153
-    2022-06-01 10:58:01.659097     evaluation accuracy epoch except('O') : 0.8941230627589382
-    2022-06-01 10:58:02.322026     model saved successful to : train/model_save_checkpoint
-    2022-06-01 10:58:02.322090     Epoch 1 total time taken : 0:04:41.288424
-    2022-06-01 10:58:02.322105     ------------------------------------------------------------
-    2022-06-01 10:58:02.322119     Training epoch: 2/15
-    2022-06-01 10:58:02.866552     Training loss per 100 training steps: 0.09209490567445755
-    2022-06-01 11:00:13.298555     Training loss per 100 training steps: 0.07785731317973373
-    2022-06-01 11:02:53.564629     Training loss epoch: 0.07312824366492542
-    2022-06-01 11:02:53.564664     Training accuracy epoch: 0.9799573343351519
-    2022-06-01 11:02:53.564679     Training accuracy epochexcept('O') : 0.9126455743435653
-    2022-06-01 11:02:53.564700     evaluation loss epoch: 0.07342989133515705
-    2022-06-01 11:02:53.564710     evaluation accuracy epoch: 0.9794031554630792
-    2022-06-01 11:02:53.564718     evaluation accuracy epoch except('O') : 0.9315636028847629
-    2022-06-01 11:02:56.476696     model saved successful to : train/model_save_checkpoint
-    2022-06-01 11:02:56.476761     Epoch 2 total time taken : 0:04:54.154651
-    2022-06-01 11:02:56.476776     ------------------------------------------------------------
-    2022-06-01 11:02:56.476791     Training epoch: 3/15
-    2022-06-01 11:02:57.038975     Training loss per 100 training steps: 0.031212003901600838
-    2022-06-01 11:05:07.675648     Training loss per 100 training steps: 0.045618000633940836
-    2022-06-01 11:07:40.095328     Training loss epoch: 0.04381770853552237
-    2022-06-01 11:07:40.095367     Training accuracy epoch: 0.9882465879142729
-    2022-06-01 11:07:40.095379     Training accuracy epochexcept('O') : 0.9512166381900665
-    2022-06-01 11:07:40.095410     evaluation loss epoch: 0.06000439737302562
-    2022-06-01 11:07:40.095423     evaluation accuracy epoch: 0.9843478724432414
-    2022-06-01 11:07:40.095437     evaluation accuracy epoch except('O') : 0.9360902255639098
-    2022-06-01 11:07:43.036175     model saved successful to : train/model_save_checkpoint
-    2022-06-01 11:07:43.036236     Epoch 3 total time taken : 0:04:46.559454
+    2022-06-06 11:23:46.832007    Training epoch: 1/50
+    2022-06-06 11:23:46.847969    Training loss per 100 training steps: 0.9243220090866089
+    2022-06-06 11:23:47.186904    Training loss epoch: 0.8817697350795453
+    2022-06-06 11:23:47.191905    Training accuracy epoch: 0.11538461538461539
+    2022-06-06 11:23:47.330845    Validation loss epoch: 0.7973677378434402
+    2022-06-06 11:23:47.336076    Validation accuracy epoch: 0.038461538461538464
+    2022-06-06 11:23:47.442199    Epoch 1 total time taken : 0:00:00.610192
+    2022-06-06 11:23:47.448885    ------------------------------------------------------------
+    2022-06-06 11:23:47.456886    Training epoch: 2/50
+    2022-06-06 11:23:47.474848    Training loss per 100 training steps: 0.8383979797363281
+    2022-06-06 11:23:47.814906    Training loss epoch: 0.7714704366830679
+    2022-06-06 11:23:47.820939    Training accuracy epoch: 0.023076923076923078
+    2022-06-06 11:23:47.969910    Validation loss epoch: 0.70741940003175
+    2022-06-06 11:23:47.976287    Validation accuracy epoch: 0.0
+    2022-06-06 11:23:48.075297    Epoch 2 total time taken : 0:00:00.618411
+    2022-06-06 11:23:48.081293    ------------------------------------------------------------
+    
     ```

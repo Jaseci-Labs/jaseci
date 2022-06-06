@@ -109,9 +109,9 @@ class dataset(Dataset):
 
 
 # LOADING TRAINING DATASET
-def data_set(filename, filename1, filename2, max_len, train_batch_size):
+def data_set(t_file, v_file, ts_file, max_len, train_batch_size):
     global id2label, label2id, training_loader, val_loader, target_labels, test_loader
-    ds = load_data(filename)
+    ds = load_data(t_file)
     train_dataset = ds[0]
     data_labels = ds[1]
     label2id = {k: v for v, k in enumerate(data_labels)}
@@ -122,8 +122,8 @@ def data_set(filename, filename1, filename2, max_len, train_batch_size):
     training_loader = DataLoader(training_set, **train_params)
 
     # val dataset
-    if os.path.exists(filename1):
-        ds1 = load_data(filename1)
+    if os.path.exists(v_file):
+        ds1 = load_data(v_file)
         val_dataset = ds1[0]
         data_labels1 = data_labels + [lab for lab in ds1[1] if lab not in data_labels]
         label2id = {k: v for v, k in enumerate(data_labels1)}
@@ -142,8 +142,8 @@ def data_set(filename, filename1, filename2, max_len, train_batch_size):
         data_labels1 = data_labels
 
     # test dataset
-    if os.path.exists(filename2):
-        ds2 = load_data(filename2)
+    if os.path.exists(ts_file):
+        ds2 = load_data(ts_file)
         test_dataset = ds2[0]
         data_labels2 = data_labels1 + [lab for lab in ds2[1] if lab not in data_labels1]
         label2id = {k: v for v, k in enumerate(data_labels2)}
