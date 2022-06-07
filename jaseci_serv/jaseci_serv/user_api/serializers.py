@@ -134,7 +134,6 @@ class GoogleSocialAuthSerializer(serializers.Serializer):
             )
 
         if user_data["aud"] != settings.GOOGLE_CLIENT_ID:
-
             raise AuthenticationFailed("oops, who are you?")
 
         user_id = user_data["sub"]

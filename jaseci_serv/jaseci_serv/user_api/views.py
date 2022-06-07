@@ -119,7 +119,7 @@ class GoogleSSOView(GenericAPIView):
         """
         data = self.serializer_class(data=request.data)
         if data.is_valid(raise_exception=True):
-            auth_token = data.validated_data("auth_token")
+            auth_token = data.validated_data.get("auth_token")
             return Response(auth_token, status=status.HTTP_200_OK)
         else:
             return Response(data.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -135,7 +135,7 @@ class FacebookSSOView(GenericAPIView):
         """
         data = self.serializer_class(data=request.data)
         if data.is_valid(raise_exception=True):
-            auth_token = data.validated_data("auth_token")
+            auth_token = data.validated_data.get("auth_token")
             return Response(auth_token, status=status.HTTP_200_OK)
         else:
             return Response(data.errors, status=status.HTTP_400_BAD_REQUEST)
