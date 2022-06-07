@@ -546,8 +546,177 @@ response  = jaseci.master_become(mast);
 response = jaseci.master_become();
 ```
 
+## Stripe   
+ Set of APIs to expose Stripe Management
 
+ ### Create Product 
+ ```jac 
+ # name : string - default "VIP Plan"
+ # description : string - default " Plan description"
 
+ message = jaseci.stripe_product_create(name,desciption);
+ ```
+
+### Modify Product Price 
+```jac 
+# productId : string - id of product to be modified 
+# amount : float - amount for product ,default is 50
+# interval : string - default  "month"
+
+message = jaseci.stripe_product_price_set(productId,amount,interval);
+```
+
+### List Products 
+```jac 
+# retrieve all products
+# detailed : boolean - details of all products
+ product_list = jaseci.stripe_product_list();
+ ```
+
+ ### Create Customer 
+ ```jac 
+ # paymentId : string - id of payment method
+ # name : string - name of customer 
+ # email : string - email of customer
+ # description : string  - description of customer
+
+ message =  jaseci.stripe_customer_create(paymentId,name,email,description);
+ ```
+### Get Customer Information
+```jac 
+# retrieve customer information
+#customerId : string - id to identify customer
+
+message = jaseci.stripe_customer_get(customerId);
+```
+
+### Add Customer Payment Method
+```jac 
+# paymentMethodId : string - id of payment method
+# customerId  : string - id to uniquely identify customer 
+message = jaseci.stripe_customer_payment_add(paymentId,customerId);
+```
+
+### Remove Customer Payment method
+```jac 
+
+# paymentMethodId : string - id of payment method
+
+message = jaseci.stripe_customer_payment_delete(paymentId);
+```
+
+### Customer's List of payment Method
+```jac 
+# get list of customer payment method
+# customerId : string - id to uniquely identify customer
+
+payment_methods = jaseci.stripe_customer_payment_get(customerId);
+```
+### Update Customer default payment
+```jac 
+# paymentMethodId : string - id of payment method
+# customerId  : string - id to uniquely identify customer 
+
+message = jaseci.stripe_customer_payment_default(customeId,paymentMethodId);
+```
+
+### Create Customer Subscription
+```jac 
+# create customer subscription
+# paymentId : string - id pf payment method
+# priceId : string - id for price 
+# customerId: string - id to uniquely identify customer 
+
+message = jaseci.stripe_subscription_create(paymentId,priceId,customerId);
+```
+
+### Cancel Customer Subscription
+```jac 
+# subscriptionId : string - id to uniquley identify subscription
+message  = jaseci.stripe_subscription_delete(subscriptionId);
+```
+### Get Customer Subscription 
+```jac 
+# retrieve customer subscription 
+# customerId : string - id to uniquely identify customer
+
+customer_subscription = jaseci.stripe_subscription_get(customerId);
+```
+
+### Invoice List
+```jac 
+# retrieve customer list of invoices
+# customerId : string - id to uniquely identify customer`
+# subscriptionId : string - id to uniquley identify subscription
+# limit : int - max amount of invoices to return
+# lastitem : string - id of item from where the return should start default is " " 
+
+invoices = jaseci.stripe_invoice_list(customerId,subscriptionId,limit,lastitem);
+```
+### Load actions 
+
+## Load modules locally
+```jac 
+# hot load a python module and assimlate any jaseci action
+# file  string - module to be loaded
+success_message  = jaseci.actions_load_local(file);
+```
+### Load modules remote
+```jac 
+#  Hot load an actions set from live pod at URL
+# url : string - link to module to be loaded
+success_message = jaseci.actions_load_remote(url);
+```
+### Load modules local
+```jac
+mod : string - name of module to be loaded
+
+success_messsage = jaseci,actions_load_module(mod);
+```
+### List actions
+```jac 
+actions = jaseci.actions_list();
+```
+## Configurations APIs
+
+### Get config
+```jac 
+# get a Connfig
+# name : string - name of configurations
+# do_check : boolean - deafult is True
+
+confid_details = jaseci.config_get(name,do_check);
+```
+###  Set Config
+```jac 
+# name :string - name of configuration
+# value : string - value to set 
+# do_check : boolean - deafult is True
+
+config_details = jaseci.config_set(name,value,do_check);
+```
+### List Config
+```jac 
+
+configs = jaseci.config_list();
+```
+### List Valid Config
+```jac 
+
+valid_configs = jaseci.config_index();
+```
+### Configuration exits
+```jac 
+# name : string - name of configuration
+config_exist = jaseci.config_exists(name);
+```
+### Delete Configurations 
+```jac 
+#name : string
+# do_check : boolean - deafult is True
+
+message = jaseci.config_delete(name,do_check);
+```
 
 
 
