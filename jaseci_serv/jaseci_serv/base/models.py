@@ -190,6 +190,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = "email"
 
+    # def tokens(self):
+    #     refresh = RefreshToken.for_user(self)
+
+    #     return {
+    #         'refresh': str(refresh),
+    #         'access': str(refresh.access_token)
+    #     }
+
+
     def get_master(self):
         """Returns main user Jaseci node"""
         return self._h.get_obj(caller_id=self.master.urn, item_id=self.master)

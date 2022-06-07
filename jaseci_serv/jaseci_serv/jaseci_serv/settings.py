@@ -208,10 +208,8 @@ JASECI_CONFIGS = [
     "LOGIN_TOKEN_TTL_HOURS",
 ]
 
-GOOGLE_CLIENT_ID = (
-    "567159388205-0maq10v694s11gbigc2iiq6buqv82bvm.apps.googleusercontent.com"
-)
-GOOGLE_CLIENT_SECRET = "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"
+GOOGLE_CLIENT_ID = "582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
 
 SOCIAL_SECRET = "4wgs54h4wb#fd@ESTne56EHb5BNYTENG$W$Gev"
 # SITE_ID = 1

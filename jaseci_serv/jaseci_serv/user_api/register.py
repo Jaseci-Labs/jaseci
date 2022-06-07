@@ -3,6 +3,7 @@ import os
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework.exceptions import AuthenticationFailed
+from knox.models import AuthToken
 
 # def generate_username(name):
 
@@ -18,10 +19,11 @@ def register_social_user(provider, user_id, email, name):
     filtered_user_by_email = get_user_model().objects.filter(email=email)
     if filtered_user_by_email.exists():
 
-        if provider == filtered_user_by_email[0].auth_provider:
+        if provider == filtered_user_by_email.first().auth_provider:
 
             registered_user = authenticate(
                 email=email, password=settings.SOCIAL_SECRET)
+            print(registered_user)
 
             return {
                 # 'username': registered_user.username,
@@ -38,16 +40,18 @@ def register_social_user(provider, user_id, email, name):
         user = {
             # 'username': generate_username(name),
             'email': email,
-            'password': os.environ.get('SOCIAL_SECRET')}
-        user = get_user_model.objects.create_user(**user)
+            'password': settings.SOCIAL_SECRET}
+        user = get_user_model().objects.create_user(**user)
         user.is_verified = True
         user.auth_provider = provider
+        user.is_staff = False
+        user.is_admin = False
         user.save()
+        tokens = AuthToken.objects.create(user)
 
-        new_user = authenticate(
-            email=email, password=os.environ.get('SOCIAL_SECRET'))
+        auth_user = authenticate(
+            email=email, password=settings.SOCIAL_SECRET)
         return {
-            'email': new_user.email,
-            # 'username': new_user.username,
-            'tokens': new_user.tokens()
+            'email': auth_user.email ,
+            'tokens': tokens[0]
         }
