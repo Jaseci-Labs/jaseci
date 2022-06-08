@@ -1,5 +1,4 @@
 from random import random
-import flair
 from typing import List, Optional, Dict
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -16,9 +15,13 @@ from jaseci.actions.live_actions import jaseci_action
 import torch
 import os
 from pathlib import Path
+from datetime import datetime
+import warnings
+
+warnings.filterwarnings("ignore")
 
 config = configparser.ConfigParser()
-flair.device = torch.device("cpu")
+# flair.device = torch.device("cpu")
 
 
 # 1. initialize each embedding we use
@@ -34,19 +37,20 @@ embedding_types = [
 # embedding stack consists of Flair and GloVe embeddings
 embeddings = StackedEmbeddings(embeddings=embedding_types)
 
-device = torch.device("cpu")
+# device = torch.device("cpu")
 # uncomment this if you wish to use GPU to train
 # this is commented out because this causes issues with
 # unittest on machines with GPU
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # tagger = None
 
 
-def init_model():
+def init_model(reload=False):
     """create a tagger as per the model provided through config"""
 
-    global tagger, NER_MODEL_NAME, NER_LABEL_TYPE, MODEL_TYPE
-    config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
+    global tagger, NER_MODEL_NAME, NER_LABEL_TYPE, MODEL_TYPE, config
+    if reload is False:
+        config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
     NER_MODEL_NAME = config["TAGGER_MODEL"]["NER_MODEL"]
     NER_LABEL_TYPE = config["LABEL_TYPE"]["NER"]
     MODEL_TYPE = config["TAGGER_MODEL"]["MODEL_TYPE"]
@@ -54,8 +58,8 @@ def init_model():
         tagger = TARSTagger(embeddings=NER_MODEL_NAME)
     elif NER_MODEL_NAME.lower() != "none" and MODEL_TYPE.lower() in ["lstm", "gru"]:
         tagger = SequenceTagger.load(NER_MODEL_NAME)
-    else:
-        tagger = None
+    elif MODEL_TYPE.lower() in "tars" and NER_MODEL_NAME.lower() != "none":
+        tagger = TARSTagger.load(NER_MODEL_NAME)
     print(f"loaded mode : [{NER_MODEL_NAME}]")
 
 
@@ -80,7 +84,7 @@ def train_entity(train_params: dict):
     # make the model aware of the desired set of labels from the new corpus
     # initialize sequence tagger
     try:
-        if MODEL_TYPE.lower() in "trfmodel":
+        if MODEL_TYPE.lower() in ["trfmodel", "tars"]:
             val = random()
             tagger.add_and_switch_to_new_task(
                 "ner_train" + str(val),
@@ -114,7 +118,117 @@ def train_entity(train_params: dict):
     print("model training and loading completed")
 
 
-# defining the api for entitydetection
+# creating train val and test dataset
+def create_train_data(dataset, fname):
+    data = pd.DataFrame(columns=["text", "annotation"])
+    for t_data in dataset:
+        tag = []
+        for ent in t_data["entities"]:
+            if ent["entity_value"] and ent["entity_type"]:
+                tag.append(
+                    (
+                        ent["entity_value"],
+                        ent["entity_type"],
+                        ent["start_index"],
+                        ent["end_index"],
+                    )
+                )
+            else:
+                raise HTTPException(
+                    status_code=404, detail=str("Entity Data missing in request")
+                )
+        data = data.append(
+            {"text": t_data["context"], "annotation": tag}, ignore_index=True
+        )
+    # creating training data
+    try:
+        completed = create_data(data, fname)
+    except Exception as e:
+        completed = create_data_new(data, fname)
+        print(f"Exception  : {e}")
+    return completed
+
+
+def train_and_val_entity(train_params: dict):
+    """
+    funtion for training the model
+    """
+    global tagger, NER_MODEL_NAME, MODEL_TYPE
+    # define columns
+    columns = {0: "text", 1: "ner"}
+    # directory where the data resides
+    data_folder = "train"
+    # initializing the corpus
+    corpus: Corpus = ColumnCorpus(
+        data_folder,
+        columns,
+        train_file="train.txt",
+        dev_file="val.txt",
+        test_file="test.txt",
+    )
+    cp_path = Path("train/tars-ner/checkpoint.pt")
+    if (cp_path).exists():
+        print("in exists : ", cp_path)
+        tagger = TARSTagger.load(cp_path)
+        # make tag dictionary from the corpus
+        tag_dictionary = corpus.make_tag_dictionary(tag_type=NER_LABEL_TYPE)
+
+        # make the model aware of the desired set of labels from the new corpus
+        # initialize sequence tagger
+        try:
+            tagger.add_and_switch_to_new_task(
+                "ner_train_nerd",
+                label_dictionary=tag_dictionary,
+                label_type=NER_LABEL_TYPE,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=404, detail=str(f"Model load error : {e}"))
+        #  initialize the Sequence trainer with your corpus
+        trainer = ModelTrainer(tagger, corpus)
+        # train model
+        trainer.resume(
+            model=tagger,  # path to store model
+            learning_rate=train_params["LR"],
+            mini_batch_size=train_params["batch_size"],
+            max_epochs=train_params["num_epoch"],
+            train_with_test=False,
+            train_with_dev=False,
+            embeddings_storage_mode="cuda",
+            checkpoint=True,
+        )
+    else:
+        # make tag dictionary from the corpus
+        tag_dictionary = corpus.make_tag_dictionary(tag_type=NER_LABEL_TYPE)
+
+        # make the model aware of the desired set of labels from the new corpus
+        # initialize sequence tagger
+        try:
+            tagger.add_and_switch_to_new_task(
+                "ner_train_nerd",
+                label_dictionary=tag_dictionary,
+                label_type=NER_LABEL_TYPE,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=404, detail=str(f"Model load error : {e}"))
+        #  initialize the Sequence trainer with your corpus
+        trainer = ModelTrainer(tagger, corpus)
+        # train model
+        trainer.train(
+            base_path=f"train/{NER_MODEL_NAME}",  # path to store model
+            learning_rate=train_params["LR"],
+            mini_batch_size=train_params["batch_size"],
+            max_epochs=train_params["num_epoch"],
+            train_with_test=False,
+            train_with_dev=False,
+            checkpoint=True,
+        )
+    #  Load trained Sequence Tagger model
+    tagger = tagger.load(f"train/{NER_MODEL_NAME}/final-model.pt")
+    torch.cuda.empty_cache()
+    print("model training and loading completed")
+
+
+# defining the api for entity detection
 @jaseci_action(act_group=["ent_ext"], allow_remote=True)
 def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
     """
@@ -124,7 +238,7 @@ def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
     if tagger is not None:
         if text:
             if ner_labels:
-                if "trfmodel" in MODEL_TYPE.lower():
+                if MODEL_TYPE.lower() in ["trfmodel", "tars"]:
                     val = random()
                     tagger.add_and_switch_to_new_task(
                         "Entity Detection Task" + str(val),
@@ -164,41 +278,28 @@ def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
 
 @jaseci_action(act_group=["ent_ext"], allow_remote=True)
 def train(
-    train_data: List[dict],
+    train_data: List[dict] = [],
+    val_data: Optional[List[dict]] = [],
+    test_data: Optional[List[dict]] = [],
     train_params: Dict = {"num_epoch": 10, "batch_size": 8, "LR": 0.02},
 ):
     """
     API for training the model
     """
-    data = pd.DataFrame(columns=["text", "annotation"])
-    if train_data:
-        for t_data in train_data:
-            tag = []
-            for ent in t_data["entities"]:
-                if ent["entity_value"] and ent["entity_type"]:
-                    tag.append(
-                        (
-                            ent["entity_value"],
-                            ent["entity_type"],
-                            ent["start_index"],
-                            ent["end_index"],
-                        )
-                    )
-                else:
-                    raise HTTPException(
-                        status_code=404, detail=str("Entity Data missing in request")
-                    )
-            data = data.append(
-                {"text": t_data["context"], "annotation": tag}, ignore_index=True
-            )
-        # creating training data
-        try:
-            completed = create_data_new(data)
-        except Exception as e:
-            completed = create_data(data)
-            print(f"Exception  : {e}")
+    time1 = datetime.now()
+
+    if len(val_data) != 0:
+        create_train_data(val_data, "val")
+
+    if len(test_data) != 0:
+        create_train_data(test_data, "test")
+
+    if len(train_data) != 0:
+        completed = create_train_data(train_data, "train")
         if completed is True:
-            train_entity(train_params)
+            train_and_val_entity(train_params)
+            total_time = datetime.now() - time1
+            print(f"total time taken to complete Training : {total_time}")
             return "Model Training is Completed"
         else:
             raise HTTPException(
@@ -275,10 +376,10 @@ def set_config(ner_model: str = None, model_type: str = None):
     if ner_model or model_type:
         config["TAGGER_MODEL"]["NER_MODEL"] = ner_model
         config["TAGGER_MODEL"]["MODEL_TYPE"] = model_type
-    with open(os.path.join(os.path.dirname(__file__), "config.cfg"), "w") as configfile:
+    with open("config.cfg", "w") as configfile:
         config.write(configfile)
     try:
-        init_model()
+        init_model(reload=True)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return "Config setup is complete."
