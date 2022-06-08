@@ -1,4 +1,3 @@
-import unittest
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
 from ..fasttext_classifier import serv_actions
@@ -16,7 +15,6 @@ class FastText_test(TestCaseHelper, TestCase):
     def tearDown(self) -> None:
         return super().tearDown()
 
-    @unittest.skip("Strange pydantic/fastapi request parameters failure")
     def test_fasttext_combined(self):
         # step 1: Training the model
         response = self.client.post("/train/", json=test_train_request)
