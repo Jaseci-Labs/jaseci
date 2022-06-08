@@ -205,6 +205,32 @@ Starting write jac code for classifying entities from text:
 
     7. After calligg step 6 entity outpu will be stored in `result.json` file 
         ```
+        {
+            "text": "They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses",
+            "entities": [
+                {
+                    "entity_text": "Bennett Park",
+                    "entity_value": "building",
+                    "conf_score": 0.9999510645866394,
+                    "start_pos": 70,
+                    "end_pos": 82
+                },
+                {
+                    "entity_text": "Tiger Stadium",
+                    "entity_value": "building",
+                    "conf_score": 0.9999762773513794,
+                    "start_pos": 108,
+                    "end_pos": 121
+                },
+                {
+                    "entity_text": "Comerica Park",
+                    "entity_value": "building",
+                    "conf_score": 0.999976634979248,
+                    "start_pos": 156,
+                    "end_pos": 169
+                }
+            ]
+        }
         ```
 
 
@@ -524,44 +550,94 @@ Starting write jac code for training flair ner model and then classifying entiti
 
     6. Calling walker for `model train and validation` and pass `input data` in context from step 5 by cmd:
         ```
-        walker run train_and_val_flair -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/dev.json\",\"test_file\":\"dataset/test.json\",\"model_name\":\"prajjwal1/bert-tiny\",\"model_type\":\"trfmodel\",\"num_train_epochs\":\"10\",\"batch_size\":\"8\",\"learning_rate\":\"0.02\"}"
+        walker run train_and_val_flair -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/dev.json\",\"test_file\":\"dataset/test.json\",\"model_name\":\"tars-ner\",\"model_type\":\"tars\",\"num_train_epochs\":\"2\",\"batch_size\":\"8\",\"learning_rate\":\"0.02\"}"
         ```
 
     7. After calling step model training will be started and you will get results on console.
         `Console logs`
         ```
-        2022-06-07 19:15:48,039 ----------------------------------------------------------------------------------------------------
-        2022-06-07 19:15:48,039 Corpus: "Corpus: 80 train + 20 dev + 20 test sentences"
-        2022-06-07 19:15:48,039 ----------------------------------------------------------------------------------------------------
-        2022-06-07 19:15:48,040 Parameters:
-        2022-06-07 19:15:48,040  - learning_rate: "0.02"
-        2022-06-07 19:15:48,041  - mini_batch_size: "8"
-        2022-06-07 19:15:48,042  - patience: "3"
-        2022-06-07 19:15:48,047  - anneal_factor: "0.5"
-        2022-06-07 19:15:48,050  - max_epochs: "10"
-        2022-06-07 19:15:48,050  - shuffle: "True"
-        2022-06-07 19:15:48,052  - train_with_dev: "False"
-        2022-06-07 19:15:48,052  - batch_growth_annealing: "False"
-        2022-06-07 19:15:48,053 ----------------------------------------------------------------------------------------------------
-        2022-06-07 19:15:48,053 Model training base path: "train\prajjwal1\bert-tiny"
-        2022-06-07 19:15:48,054 ----------------------------------------------------------------------------------------------------
-        2022-06-07 19:15:48,054 Device: cuda:0
-        2022-06-07 19:15:48,058 ----------------------------------------------------------------------------------------------------
-        2022-06-07 19:15:48,060 Embeddings storage mode: cpu
-        2022-06-07 19:15:48,067 ----------------------------------------------------------------------------------------------------
-        2022-06-07 19:15:48,416 epoch 1 - iter 1/10 - loss 1.85155192 - samples/sec: 24.19 - lr: 0.020000
-        2022-06-07 19:15:48,730 epoch 1 - iter 2/10 - loss 1.30620119 - samples/sec: 25.56 - lr: 0.020000
-        2022-06-07 19:15:49,248 epoch 1 - iter 3/10 - loss 1.06608053 - samples/sec: 15.49 - lr: 0.020000
-        2022-06-07 19:15:49,529 epoch 1 - iter 4/10 - loss 0.88059333 - samples/sec: 28.41 - lr: 0.020000
-        2022-06-07 19:15:49,823 epoch 1 - iter 5/10 - loss 0.74124464 - samples/sec: 27.23 - lr: 0.020000
-        2022-06-07 19:15:50,032 epoch 1 - iter 6/10 - loss 0.68382501 - samples/sec: 38.25 - lr: 0.020000
-        2022-06-07 19:15:50,309 epoch 1 - iter 7/10 - loss 0.61733453 - samples/sec: 29.02 - lr: 0.020000
-        2022-06-07 19:15:50,566 epoch 1 - iter 8/10 - loss 0.59231687 - samples/sec: 31.28 - lr: 0.020000
-        2022-06-07 19:15:50,810 epoch 1 - iter 9/10 - loss 0.56157529 - samples/sec: 32.82 - lr: 0.020000
-        2022-06-07 19:15:51,117 epoch 1 - iter 10/10 - loss 0.52164928 - samples/sec: 26.10 - lr: 0.020000
-        2022-06-07 19:15:51,118 ----------------------------------------------------------------------------------------------------
-        2022-06-07 19:15:51,120 EPOCH 1 done: loss 0.5216 - lr 0.0200000
-        2022-06-07 19:15:54,183 DEV : loss 0.07136827294948334 - f1-score (micro avg)  0.0
-        2022-06-07 19:15:54,185 BAD EPOCHS (no improvement): 0
-        ``` 
+        2022-06-08 12:00:21,453 ----------------------------------------------------------------------------------------------------
+        2022-06-08 12:00:21,453 Corpus: "Corpus: 80 train + 20 dev + 20 test sentences"
+        2022-06-08 12:00:21,453 ----------------------------------------------------------------------------------------------------
+        2022-06-08 12:00:21,453 Parameters:
+        2022-06-08 12:00:21,453  - learning_rate: "0.02"
+        2022-06-08 12:00:21,453  - mini_batch_size: "8"
+        2022-06-08 12:00:21,453  - patience: "3"
+        2022-06-08 12:00:21,453  - anneal_factor: "0.5"
+        2022-06-08 12:00:21,453  - max_epochs: "2"
+        2022-06-08 12:00:21,453  - shuffle: "True"
+        2022-06-08 12:00:21,453  - train_with_dev: "False"
+        2022-06-08 12:00:21,453  - batch_growth_annealing: "False"
+        2022-06-08 12:00:21,453 ----------------------------------------------------------------------------------------------------
+        2022-06-08 12:00:21,453 Model training base path: "train/tars-ner"
+        2022-06-08 12:00:21,453 ----------------------------------------------------------------------------------------------------
+        2022-06-08 12:00:21,453 Device: cuda:0
+        2022-06-08 12:00:21,453 ----------------------------------------------------------------------------------------------------
+        2022-06-08 12:00:21,453 Embeddings storage mode: cpu
+        2022-06-08 12:00:21,455 ----------------------------------------------------------------------------------------------------
+        2022-06-08 12:00:22,631 epoch 1 - iter 1/10 - loss 0.60523161 - samples/sec: 7.19 - lr: 0.020000
+        2022-06-08 12:00:23,408 epoch 1 - iter 2/10 - loss 0.51332167 - samples/sec: 10.30 - lr: 0.020000
+        2022-06-08 12:00:24,033 epoch 1 - iter 3/10 - loss 0.62513998 - samples/sec: 12.79 - lr: 0.020000
+        2022-06-08 12:00:25,106 epoch 1 - iter 4/10 - loss 0.57849901 - samples/sec: 7.46 - lr: 0.020000
+        2022-06-08 12:00:26,077 epoch 1 - iter 5/10 - loss 0.54225198 - samples/sec: 8.24 - lr: 0.020000
+        2022-06-08 12:00:26,688 epoch 1 - iter 6/10 - loss 0.50653757 - samples/sec: 13.10 - lr: 0.020000
+        2022-06-08 12:00:27,573 epoch 1 - iter 7/10 - loss 0.47263640 - samples/sec: 9.04 - lr: 0.020000
+        2022-06-08 12:00:28,070 epoch 1 - iter 8/10 - loss 0.45762492 - samples/sec: 16.10 - lr: 0.020000
+        2022-06-08 12:00:28,931 epoch 1 - iter 9/10 - loss 0.45796768 - samples/sec: 9.29 - lr: 0.020000
+        2022-06-08 12:00:29,892 epoch 1 - iter 10/10 - loss 0.43133600 - samples/sec: 8.33 - lr: 0.020000
+        2022-06-08 12:00:29,893 ----------------------------------------------------------------------------------------------------
+        2022-06-08 12:00:29,893 EPOCH 1 done: loss 0.4313 - lr 0.0200000
+        2022-06-08 12:00:38,203 DEV : loss 0.10980782216621005 - f1-score (micro avg)  0.069
+        2022-06-08 12:00:38,203 BAD EPOCHS (no improvement): 0
+        2022-06-08 12:00:40,378 saving best model
+        2022-06-08 12:00:42,539 ----------------------------------------------------------------------------------------------------
+        2022-06-08 12:00:43,461 epoch 2 - iter 1/10 - loss 0.18578914 - samples/sec: 9.71 - lr: 0.020000
+        2022-06-08 12:00:44,440 epoch 2 - iter 2/10 - loss 0.24499737 - samples/sec: 8.17 - lr: 0.020000
+        2022-06-08 12:00:45,482 epoch 2 - iter 3/10 - loss 0.23535200 - samples/sec: 7.67 - lr: 0.020000
+        2022-06-08 12:00:46,256 epoch 2 - iter 4/10 - loss 0.23531097 - samples/sec: 10.34 - lr: 0.020000
+        2022-06-08 12:00:46,948 epoch 2 - iter 5/10 - loss 0.23616702 - samples/sec: 11.56 - lr: 0.020000
+        2022-06-08 12:00:47,570 epoch 2 - iter 6/10 - loss 0.28713835 - samples/sec: 12.88 - lr: 0.020000
+        2022-06-08 12:00:48,801 epoch 2 - iter 7/10 - loss 0.27177298 - samples/sec: 6.50 - lr: 0.020000
+        2022-06-08 12:00:49,622 epoch 2 - iter 8/10 - loss 0.25330073 - samples/sec: 9.75 - lr: 0.020000
+        2022-06-08 12:00:50,855 epoch 2 - iter 9/10 - loss 0.23808518 - samples/sec: 6.49 - lr: 0.020000
+        2022-06-08 12:00:51,468 epoch 2 - iter 10/10 - loss 0.24134582 - samples/sec: 13.05 - lr: 0.020000
+        2022-06-08 12:00:51,470 ----------------------------------------------------------------------------------------------------
+        2022-06-08 12:00:51,470 EPOCH 2 done: loss 0.2413 - lr 0.0200000
+        2022-06-08 12:00:59,574 DEV : loss 0.06216340040996651 - f1-score (micro avg)  0.075
+        2022-06-08 12:00:59,574 BAD EPOCHS (no improvement): 0
+        2022-06-08 12:01:06,280 saving best model
+        2022-06-08 12:01:15,103 ----------------------------------------------------------------------------------------------------
+        2022-06-08 12:01:15,104 loading file train/tars-ner/best-model.pt
+        2022-06-08 12:01:31,248 0.0698	0.0811	0.075	0.0417
+        2022-06-08 12:01:31,248 
+        Results:
+        - F-score (micro) 0.075
+        - F-score (macro) 0.0368
+        - Accuracy 0.0417
+        By class:
+                                       precision    recall  f1-score   support
+
+                 person-artist/author     0.2857    0.4000    0.3333         5
+                   organization-other     0.2000    0.1667    0.1818         6
+                    person-politician     0.0000    0.0000    0.0000         0
+              building-sportsfacility     0.0000    0.0000    0.0000         4
+                         location-GPE     0.0000    0.0000    0.0000         5
+            organization-sportsleague     0.0000    0.0000    0.0000         2
+              organization-sportsteam     0.0000    0.0000    0.0000         4
+                 organization-company     0.0000    0.0000    0.0000         1
+                        product-other     0.0000    0.0000    0.0000         2
+                     building-airport     0.0000    0.0000    0.0000         3
+               organization-education     0.0000    0.0000    0.0000         2
+                       person-soldier     0.0000    0.0000    0.0000         2
+                     product-airplane     0.0000    0.0000    0.0000         1
+                        location-road     0.0000    0.0000    0.0000         0
+
+                            micro avg     0.0698    0.0811    0.0750        37
+                            macro avg     0.0347    0.0405    0.0368        37
+                         weighted avg     0.0710    0.0811    0.0745        37
+                          samples avg     0.0417    0.0417    0.0417        37
+
+        2022-06-08 12:01:31,248 ----------------------------------------------------------------------------------------------------
+
+        ```
 
