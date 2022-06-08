@@ -81,18 +81,19 @@ def clean(text):
     return text
 
 
-def create_data(df):
+def create_data(df, filename):
     """
     The function responsible for the creation of data in the said format.
     """
-    filepath = "train/train.txt"
-    filepath1 = "train/train_backup_file.txt"
+    data_filepath = f"train/{filename}.txt"
+    backup_filepath = f"train/{filename}_backup_file.txt"
 
     if not os.path.exists("train"):
         os.makedirs("train")
-    with open(filepath, "w") as f, open(filepath1, "a") as f1:
+    with open(data_filepath, "w", encoding="utf-8") as d_file_p, open(
+        backup_filepath, "a"
+    ) as b_file_p:
         for text, annotation in zip(df.text, df.annotation):
-            text = clean(text)
             match_list = []
             for i in annotation:
                 a, text_ = matcher(text, i[0])
@@ -100,18 +101,21 @@ def create_data(df):
 
             d = mark_sentence(text, match_list)
             for i in d.keys():
-                f.writelines(i + " " + d[i] + "\n")
-                f1.writelines(i + " " + d[i] + "\n")
-            f.writelines("\n")
-            f1.writelines("\n")
+                d_file_p.writelines(i + " " + d[i] + "\n")
+                b_file_p.writelines(i + " " + d[i] + "\n")
+            d_file_p.writelines("\n")
+            b_file_p.writelines("\n")
     return True
 
 
-def create_data_new(df):
-    filepath = "train/train.txt"
+def create_data_new(df, filename):
+    data_filepath = f"train/{filename}.txt"
+    backup_filepath = f"train/{filename}_backup_file.txt"
     if not os.path.exists("train"):
         os.makedirs("train")
-    with open(filepath, "w") as f:
+    with open(data_filepath, "w", encoding="utf-8") as d_file_p, open(
+        backup_filepath, "a"
+    ) as b_file_p:
         for text, annotation in zip(df.text, df.annotation):
             text = clean(text)
             text = clean(text)
@@ -124,7 +128,6 @@ def create_data_new(df):
                 split_sent[split_sent.index(ent_val.split()[0])] = (
                     split_sent[split_sent.index(ent_val.split()[0])] + "t"
                 )
-                # print(tags)
                 if len(ent_val.split()) > 1:
                     for ent in ent_val.split()[1:]:
                         tags[split_sent.index(ent)] = "I-" + e_type
@@ -132,33 +135,8 @@ def create_data_new(df):
                             split_sent[split_sent.index(ent)] + "t"
                         )
             for w, t in zip(text.split(), tags):
-                f.writelines(w + " " + t + "\n")
-            f.writelines("\n")
-    return True
-
-
-def create_data1(df):
-    """
-    The function responsible for the creation of data in the said format.
-    """
-    filepath = "train/train.txt"
-    filepath1 = "train/train_backup_file.txt"
-    if not os.path.exists("train"):
-        os.makedirs("train")
-    with open(filepath, "w") as f, open(filepath1, "a") as f1:
-        for text, annotation in zip(df.text, df.annotation):
-            split_sent = text.split()
-            tags = ["O"] * len(split_sent)
-            for i in annotation:
-                e_type = i[1]
-                # print(e_type)
-                ent_val = text[i[2] : i[3]]
-                # print(i, e_type, ent_val)
-                tags[split_sent.index(ent_val.split()[0])] = e_type
-
-            for i in range(len(tags)):
-                f.writelines(split_sent[i] + " " + tags[i] + "\n")
-                f1.writelines(split_sent[i] + " " + tags[i] + "\n")
-            f.writelines("\n")
-            f1.writelines("\n")
+                d_file_p.writelines(w + " " + t + "\n")
+                b_file_p.writelines(w + " " + t + "\n")
+            d_file_p.writelines("\n")
+            b_file_p.writelines("\n")
     return True

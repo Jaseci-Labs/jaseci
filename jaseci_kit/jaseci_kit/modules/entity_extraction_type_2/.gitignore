@@ -1,5 +1,2 @@
-modelout*
-mymodel
-default
-train/*.txt
+train
 *Zone.Identifier
