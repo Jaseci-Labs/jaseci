@@ -232,3 +232,9 @@ walker global_actions {
         report global.info['request_context'];
     }
 }
+
+walker simple {
+    with entry {
+        report global.info['request_context']["body"];
+    }
+}

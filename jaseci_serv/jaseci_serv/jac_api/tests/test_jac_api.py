@@ -1294,3 +1294,58 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             ],
         }
         self.assertEquals(res, default_res)
+
+    def test_multipart_json_file(self):
+        """Test global action triggers"""
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
+        with open(os.path.dirname(__file__) + "/test.json", "rb") as ctx:
+            form = {
+                "name": "simple",
+                "ctx": ctx,
+                "nd": "active:graph",
+                "snt": "active:sentinel",
+            }
+            res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
+
+        default_res = {
+            "success": True,
+            "report": [
+                {
+                    "name": "simple",
+                    "nd": "active:graph",
+                    "snt": "active:sentinel",
+                    "ctx": {"sample": "sample"},
+                }
+            ],
+        }
+        self.assertEquals(res, default_res)
+
+    def test_multipart_json_string(self):
+        """Test global action triggers"""
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
+
+        form = {
+            "name": "simple",
+            "ctx": '{"sample":"sample"}',
+            "nd": "active:graph",
+            "snt": "active:sentinel",
+        }
+
+        res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
+
+        default_res = {
+            "success": True,
+            "report": [
+                {
+                    "name": "simple",
+                    "nd": "active:graph",
+                    "snt": "active:sentinel",
+                    "ctx": {"sample": "sample"},
+                }
+            ],
+        }
+        self.assertEquals(res, default_res)
