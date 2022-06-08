@@ -75,19 +75,7 @@ class AbstractJacAPIView(APIView):
             )
         )
 
-    def proc_request(self, request, **kwargs):
-        """Parse request to field set"""
-        pl_peek = str(dict(request.data))[:256]
-        logger.info(str(f"Incoming call to {type(self).__name__} with {pl_peek}"))
-        self.start_time = time()
-
-        req_query = request.GET.dict()
-        req_headers = dict(request.headers)
-
-        req_data = (
-            request.data.dict() if type(request.data) is not dict else request.data
-        )
-
+    def proc_prime_ctx(self, request, req_data):
         try:
             if "ctx" in request.FILES:
                 ctx = request.FILES.pop("ctx")[0]
@@ -98,8 +86,9 @@ class AbstractJacAPIView(APIView):
         except ValueError:
             logger.error(str(f"Invalid ctx format! Ignoring ctx parsing!"))
 
-        req_body = req_data.copy()
+        return req_data.copy()
 
+    def proc_file_ctx(self, request, req_data, req_body):
         for key in request.FILES:
             req_data.pop(key)
             req_body[key] = []
@@ -112,17 +101,34 @@ class AbstractJacAPIView(APIView):
                     }
                 )
 
+    def proc_request_ctx(self, request, req_data, req_body):
+        req_query = request.GET.dict()
         req_data.update(
             {
                 "_req_ctx": {
                     "method": request.method,
-                    "headers": req_headers,
+                    "headers": dict(request.headers),
                     "query": req_query,
                     "body": req_body,
                 }
             }
         )
         req_data.update(req_query)
+
+    def proc_request(self, request, **kwargs):
+        """Parse request to field set"""
+        pl_peek = str(dict(request.data))[:256]
+        logger.info(str(f"Incoming call to {type(self).__name__} with {pl_peek}"))
+        self.start_time = time()
+
+        req_data = (
+            request.data.dict() if type(request.data) is not dict else request.data
+        )
+
+        req_body = self.proc_prime_ctx(request, req_data)
+        self.proc_file_ctx(request, req_data, req_body)
+        self.proc_request_ctx(request, req_data, req_body)
+
         req_data.update(kwargs)
         self.cmd = req_data
         self.set_caller(request)
