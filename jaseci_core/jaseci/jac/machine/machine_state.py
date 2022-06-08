@@ -4,6 +4,7 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
+from copy import copy
 from jaseci.utils.utils import logger
 from jaseci.actions.live_actions import live_actions, load_preconfig_actions
 
@@ -177,3 +178,12 @@ class machine_state:
             jac_ast,
         )
         return False
+
+    def get_info(self):
+        return {
+            "report": copy(self.report),
+            "report_status": self.report_status,
+            "report_custom": self.report_custom,
+            "request_context": self.request_context,
+            "runtime_errors": self.runtime_errors,
+        }

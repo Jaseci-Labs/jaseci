@@ -1239,3 +1239,58 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(reverse("jac_api:wapi", args=["testwalker"]), payload)
         self.assertIn("jid", res.data["report"][0].keys())
         self.assertEqual(res.data["report"][0]["name"], "a@b.com")
+
+    def test_global_ref(self):
+        """Test global action triggers"""
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "walker_run", "name": "global_actions"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        ).data
+
+        # It should return the error too for global.b since it was not yet set
+
+        default_res = {
+            "success": False,
+            "report": [
+                "test",
+                None,
+                {"a": "test"},
+                {
+                    "report": ["test", None, {"a": "test"}],
+                    "report_status": None,
+                    "report_custom": None,
+                    "request_context": {
+                        "method": "POST",
+                        "headers": {
+                            "Cookie": "",
+                            "Content-Length": "43",
+                            "Content-Type": "application/json",
+                        },
+                        "query": {},
+                        "body": {"op": "walker_run", "name": "global_actions"},
+                    },
+                    "runtime_errors": [
+                        "zsb:global_actions - line 229, col 22 - rule NAME - Global not defined - b"
+                    ],
+                },
+                {
+                    "method": "POST",
+                    "headers": {
+                        "Cookie": "",
+                        "Content-Length": "43",
+                        "Content-Type": "application/json",
+                    },
+                    "query": {},
+                    "body": {"op": "walker_run", "name": "global_actions"},
+                },
+            ],
+            "errors": [
+                "zsb:global_actions - line 229, col 22 - rule NAME - Global not defined - b"
+            ],
+        }
+        self.assertEquals(res, default_res)

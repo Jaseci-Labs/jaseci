@@ -172,6 +172,8 @@ factor: (PLUS | MINUS) factor | power;
 
 power: atom (POW factor)*;
 
+global_ref: KW_GLOBAL DOT (obj_built_in | NAME);
+
 atom:
 	INT
 	| FLOAT
@@ -179,7 +181,7 @@ atom:
 	| BOOL
 	| NULL
 	| NAME
-	| KW_GLOBAL DOT NAME
+	| global_ref
 	| node_edge_ref
 	| list_val
 	| dict_val

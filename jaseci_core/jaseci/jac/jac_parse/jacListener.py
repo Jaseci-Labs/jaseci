@@ -489,6 +489,14 @@ class jacListener(ParseTreeListener):
     def exitPower(self, ctx: jacParser.PowerContext):
         pass
 
+    # Enter a parse tree produced by jacParser#global_ref.
+    def enterGlobal_ref(self, ctx: jacParser.Global_refContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#global_ref.
+    def exitGlobal_ref(self, ctx: jacParser.Global_refContext):
+        pass
+
     # Enter a parse tree produced by jacParser#atom.
     def enterAtom(self, ctx: jacParser.AtomContext):
         pass
