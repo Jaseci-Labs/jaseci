@@ -96,6 +96,7 @@ Resources : {
     'Resources/Architectural_Overview',
     'Resources/API_Reference',
     'Resources/FAQ',
+    'Resources/appendix'
 
   ]
 
