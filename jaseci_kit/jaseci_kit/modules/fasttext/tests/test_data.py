@@ -1,10 +1,14 @@
+# fmt: off
+# the above line of code is to disbale black linting
+# so it doesn't add a extra ',' at end of every list
+# which in turns furether create issue while parsing through fast api
 test_train_request = {
     "traindata": {
         "tell a joke": [
             "hey can you tell me a joke",
             "can you make me laugh?",
             "do you know of any jokes",
-            "i want to laugh, tell me a joke please",
+            "i want to laugh, tell me a joke please"
         ],
         "greeting": [
             "hello",
@@ -15,7 +19,7 @@ test_train_request = {
             "whats up",
             "what's going on",
             "what's good",
-            "how goes it",
+            "how goes it"
         ],
         "agreement": [
             "yes let's do it",
@@ -37,7 +41,7 @@ test_train_request = {
             "you read my mind",
             "i was just going to say that",
             "good idea",
-            "good call",
+            "good call"
         ],
         "disagreement": [
             "i don't think so",
@@ -55,10 +59,10 @@ test_train_request = {
             "we can come back to this later",
             "let's revisit this later",
             "bad idea",
-            "bad call",
-        ],
+            "bad call"
+        ]
     },
-    "train_with_existing": True,
+    "train_with_existing": True
 }
 
 test_predict_request = {"sentences": ["what's going on"]}
