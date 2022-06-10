@@ -6,10 +6,10 @@ This tutorial shows you how to train a Bi-Encoder with a custom training loop to
 
 
 1. Preparing dataset [link](#1-praparing-dataset)
-2. Import `Bi-Encoder(bi_enc)` module in jac [link](#2-import-bi-encoderbienc-module-in-jac)
+2. Import `Bi-Encoder(bi_enc)` module in jac [link](#2-import-bi-encoderbi_enc-module-in-jac)
 3. Train the model [link](#3-train-the-model)
-4. Evaluate the model's effectiveness [link](#4-evaluation-of-the-model-effectiveness-br)
-5. Use the trained model to make predictions [link](#5-use-the-trained-model-to-make-predictions-br)
+4. Evaluate the model's effectiveness [link](#4-evaluation-of-the-model-effectiveness-)
+5. Use the trained model to make predictions [link](#5-use-the-trained-model-to-make-predictions-)
 
 
 ## **Walk through** 
