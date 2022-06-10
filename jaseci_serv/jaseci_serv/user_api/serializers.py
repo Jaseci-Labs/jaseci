@@ -134,7 +134,7 @@ class GoogleSocialAuthSerializer(serializers.Serializer):
                 "The token is invalid or expired. Please login again."
             )
         google_config = socialauth_config().get_auth_conf(auth_type="google")
-        if user_data["aud"] != google_config['GOOGLE_CLIENT_ID']:
+        if user_data["aud"] != google_config["GOOGLE_CLIENT_ID"]:
             raise AuthenticationFailed("oops, can't recognize this account?")
 
         user_id = user_data["sub"]

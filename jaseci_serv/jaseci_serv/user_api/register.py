@@ -21,23 +21,22 @@ def register_social_user(provider, user_id, email, name):
         if provider == filtered_user_by_email.first().auth_provider:
 
             registered_user = authenticate(
-                email=email, password=social_auth.get_social_secret())
+                email=email, password=social_auth.get_social_secret()
+            )
 
             return {
-                'email': registered_user.email,
-                "message": "user already authenticated."}
+                "email": registered_user.email,
+                "message": "user already authenticated.",
+            }
 
         else:
             raise AuthenticationFailed(
-                detail='Please continue your login using ' +
-                filtered_user_by_email[0].auth_provider
+                detail="Please continue your login using "
+                + filtered_user_by_email[0].auth_provider
             )
 
     else:
-        user = {
-            'email': email,
-            'password': social_auth.get_social_secret()
-        }
+        user = {"email": email, "password": social_auth.get_social_secret()}
         user = get_user_model().objects.create_user(**user)
         user.is_verified = True
         user.auth_provider = provider
@@ -45,9 +44,5 @@ def register_social_user(provider, user_id, email, name):
         user.is_admin = False
         user.save()
         tokens = AuthToken.objects.create(user)
-        auth_user = authenticate(
-            email=email, password=social_auth.get_social_secret())
-        return {
-            'email': auth_user.email ,
-            'token': tokens[1]
-        }
+        auth_user = authenticate(email=email, password=social_auth.get_social_secret())
+        return {"email": auth_user.email, "token": tokens[1]}

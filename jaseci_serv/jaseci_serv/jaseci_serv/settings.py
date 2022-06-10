@@ -126,15 +126,15 @@ if "test" in sys.argv or "test_coverage" in sys.argv:
     DATABASES["default"]["NAME"] = ":memory:"
     EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
     GLOBAL_SOCIAL_SECRET = "4wgs54h4wb#fd@ESTne56EHb5BNYTENG$W$Gev"
-    SOCIAL_AUTH_CREDS= {
-        "google":{
+    SOCIAL_AUTH_CREDS = {
+        "google": {
             "GOOGLE_CLIENT_ID": "582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com",
-            "GOOGLE_CLIENT_SECRET": "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"
+            "GOOGLE_CLIENT_SECRET": "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",
         },
         "facebook": {
             "FACEBOOK_CLIENT_ID": "582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com",
-            "FACEBOOK_CLIENT_SECRET": "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"
-        }
+            "FACEBOOK_CLIENT_SECRET": "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",
+        },
     }
 
 # REDIS
@@ -203,18 +203,20 @@ LOGOUT_REDIRECT_URL = "/ui"
 
 GLOBAL_SOCIAL_SECRET = "4wgs54h4wb#fd@ESTne56EHb5BNYTENG$W$Gev"
 
-SOCIAL_AUTH_CREDS= {
+SOCIAL_AUTH_CREDS = {
     "google": {
-        "GOOGLE_CLIENT_ID": os.environ.get("GOOGLE_CLIENT_ID"),   #"582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com"
-        "GOOGLE_CLIENT_SECRET": os.environ.get("GOOGLE_CLIENT_SECRET") # "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"
+        "GOOGLE_CLIENT_ID": os.environ.get(
+            "GOOGLE_CLIENT_ID"
+        ),  # "582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com"
+        "GOOGLE_CLIENT_SECRET": os.environ.get(
+            "GOOGLE_CLIENT_SECRET"
+        ),  # "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"
     },
     "facebook": {
         "FACEBOOK_CLIENT_ID": os.environ.get("FACEBOOK_CLIENT_ID"),
-        "FACEBOOK_CLIENT_SECRET": os.environ.get("FACEBOOK_CLIENT_SECRET")
-    }
-
+        "FACEBOOK_CLIENT_SECRET": os.environ.get("FACEBOOK_CLIENT_SECRET"),
+    },
 }
-
 
 
 # Configs to Manage by Jaseci
@@ -237,19 +239,4 @@ JASECI_CONFIGS = [
     "GLOBAL_SOCIAL_SECRET",
 ]
 
-
-
-# SITE_ID = 1
-
 AUTH_PROVIDERS = {"facebook": "facebook", "google": "google", "email": "email"}
-
-
-# SOCIALACCOUNT_LOGIN_ON_GET = True
-# ACCOUNT_AUTHENTICATION_METHOD = 'email'
-# ACCOUNT_EMAIL_REQUIRED = True
-# ACCOUNT_UNIQUE_EMAIL = True
-# ACCOUNT_USERNAME_REQUIRED = False
-
-
-# ACCOUNT_USER_USERNAME_FIELD = "email"
-# USER_MODEL_USERNAME_FIELD = None

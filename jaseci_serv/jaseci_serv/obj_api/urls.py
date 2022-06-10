@@ -9,4 +9,6 @@ router.register("global", views.ConfigViewSet)
 
 app_name = "obj_api"
 
-urlpatterns = [path("", include(router.urls)),]
+urlpatterns = [
+    path("", include(router.urls)),
+]
