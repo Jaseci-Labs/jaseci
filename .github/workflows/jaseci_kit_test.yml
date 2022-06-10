@@ -1,0 +1,49 @@
+name: jaseci_kit Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - jaseci_kit/**
+  pull_request:
+    branches: [ main ]
+    paths:
+      - jaseci_kit/**
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set swap space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 5
+
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.8"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+
+    - name: Install jaseci_core
+      run: |
+        pip3 install jaseci_core/
+
+    - name: Install jaseci_kit
+      run: |
+        pip3 install jaseci_kit/
+
+    - name: Verify jaseci_kit installation
+      run: |
+        python -c "import jaseci_kit"
+
+    - name: Run tests
+      continue-on-error: true
+      run: |
+        cd jaseci_kit/
+        source test.sh

@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def data_token(filename):
-    f = open(filename)
+    f = open(filename, "r", encoding="utf8")
     split_labeled_text = []
     sentence = []
     sent = 0
@@ -15,7 +15,7 @@ def data_token(filename):
             continue
         splits = line.split(" ")
         sentence.append(("Sentence:" + str(sent), splits[0], splits[-1].rstrip("\n")))
-
+    f.close()
     if len(sentence) > 0:
         split_labeled_text.append(sentence)
         sentence = []
@@ -47,7 +47,5 @@ def load_data(filename):
 
     labels_name = sorted(list(data.Tag.unique()), reverse=True)
 
-    label2id = {k: v for v, k in enumerate(labels_name)}
-    id2label = {v: k for v, k in enumerate(labels_name)}
     data = data[["sentence", "word_labels"]].drop_duplicates().reset_index(drop=True)
-    return data, id2label, label2id
+    return data, labels_name
