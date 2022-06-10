@@ -5,11 +5,11 @@
 This tutorial shows you how to train a Bi-Encoder with a custom training loop to categorize contexts by candidates. In this you use jaseci(jac) and python.
 
 
-1. Preparing dataset 
-2. Import `Bi-Encoder(bi_enc)` module in jac
-3. Train the model
-4. Evaluate the model's effectiveness
-5. Use the trained model to make predictions
+1. Preparing dataset [link](#1-praparing-dataset)
+2. Import `Bi-Encoder(bi_enc)` module in jac [link](#2-import-bi-encoderbienc-module-in-jac)
+3. Train the model [link](#3-train-the-model)
+4. Evaluate the model's effectiveness [link](#4-evaluation-of-the-model-effectiveness-br)
+5. Use the trained model to make predictions [link](#5-use-the-trained-model-to-make-predictions-br)
 
 
 ## **Walk through** 
@@ -34,7 +34,7 @@ SNIPS is a popular intent classificawtion datasets that covers intents such as `
 We need to do a little data format conversion to create a version of SNIPS that work with our biencoder implemenation.
 For this part, we are going to use Python. First, 
 
-1. `import the dataset` from huggingface [dataset](https://huggingface.co/datasets/snips_built_in_intents).
+1. `Import the dataset` from huggingface [dataset library](https://huggingface.co/datasets/snips_built_in_intents).
     ```python
     # import library
     from datasets import load_dataset
@@ -44,7 +44,7 @@ For this part, we are going to use Python. First,
     If imported successsfuly, you should see the data format to be something like this
     > {"text": ["Share my location with Hillary's sister", "Send my current location to my father"], "label": [5, 5]}
 
-2. `Converting the format`: Now are converting the format from the SNIPS out of the box to the format that can be ingested by biencoder.
+2. `Converting the format` from the SNIPS out of the box to the format that can be ingested by biencoder.
     ```python
     import pandas as pd
     from sklearn.model_selection import train_test_split
@@ -164,9 +164,9 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         ```
     4. Initialize module `train` and `infer` inside `bi_encoder node`
         `bi_enc.train` take training argument and start traing `bi_enc` module
-        ```
+        ```python
         can train_bi_enc with train_bi_enc entry{
-        #Code snippet for training the model
+        # Code snippet for training the model
         train_data = file.load_json(visitor.train_file);
         
         # Train the model 
@@ -178,7 +178,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
                 }
             );
         }
-
+        # prediction on test dataset
         can infer with train_bi_enc exit{
             # Use the model to perform inference
             # returns the list of context with the suitable candidates
@@ -210,6 +210,35 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
                     });
             }
             report [result];
+        }
+        # predict indivisual intent on new text
+        can predict with predict entry{        
+        # Use the model to perform inference
+        # returns the list of context with the suitable candidates
+        test_data = file.load_json(visitor.test_data_file);
+        resp_data = bi_enc.infer(
+            contexts=test_data["contexts"],
+            candidates=test_data["candidates"],
+            context_type=test_data["context_type"],
+            candidate_type=test_data["candidate_type"]
+            );
+        # the infer action returns all the candidate with the confidence scores
+        # Iterate through the candidate labels and their predicted scores
+        pred = resp_data[0]
+        context = pred["contexts"]
+        max_score = 0;
+        max_intent = "";
+        for j=0 to j<pred["candidate"].length by j+=1 {
+            if (pred["score"][j] > max_score){
+                max_intent = pred["candidate"][j];
+                max_score = pred["score"][j];
+            }
+        }
+        report [{
+                "context":text,
+                "pred intent":max_intent,
+                "Conf_Score":max_score
+                }];
         }
         ```
         **Parameter details**
@@ -278,6 +307,20 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         `num_train_epochs` : **20** </br>
         `test_file` : local path of **test_bi.json** file </br>
     
+    9. Declaring walker for `predicting intents` on new text
+        ```  
+        walker predict{
+            has test_data_file = "test_dataset.json";    
+
+            root {
+                take --> node::model_dir;
+            }
+            model_dir {
+                take -->;
+            }
+        }
+        ```
+
         **Final bi_encoder.jac** program
         we are conmbining all steps from **2 to 8** inside **bi_encoder.jac**
         ```python
@@ -333,6 +376,36 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
                 }
                 report [result];
             }
+
+            # predict indivisual intent on new text
+            can predict with predict entry{        
+            # Use the model to perform inference
+            # returns the list of context with the suitable candidates
+            test_data = file.load_json(visitor.test_data_file);
+            resp_data = bi_enc.infer(
+                contexts=test_data["contexts"],
+                candidates=test_data["candidates"],
+                context_type=test_data["context_type"],
+                candidate_type=test_data["candidate_type"]
+                );
+            # the infer action returns all the candidate with the confidence scores
+            # Iterate through the candidate labels and their predicted scores
+            pred = resp_data[0]
+            context = pred["contexts"]
+            max_score = 0;
+            max_intent = "";
+            for j=0 to j<pred["candidate"].length by j+=1 {
+                if (pred["score"][j] > max_score){
+                    max_intent = pred["candidate"][j];
+                    max_score = pred["score"][j];
+                }
+            }
+            report [{
+                "context":text,
+                "pred intent":max_intent,
+                "Conf_Score":max_score
+                }];
+            }
         }
 
 
@@ -372,6 +445,19 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
                 take -->;
             }
         }
+
+        # declaring walker for predicting intents on new text
+        walker predict{
+            # passing input data for prediction
+            has test_data_file = "test_dataset.json";    
+
+            root {
+                take --> node::model_dir;
+            }
+            model_dir {
+                take -->;
+            }
+        }
         ```
     **Steps for running `bi_encoder.jac` programm**
     1. Build `bi_encoder.jac` by run cmd
@@ -381,7 +467,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
     3. Calling walker `train_bi_enc` with `default parameter` for training `bi_enc` module by cmd
         > walker run train_bi_enc </br>
     
-    After `3 step` running logging will shown on console </br>
+    After `3rd step` running logging will shown on console </br>
     **`training logs`**
     ```
     jaseci > walker run train_bi_enc
@@ -425,50 +511,105 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
     Epoch: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 5/5 [00:22<00:00,  4.49s/batch]
     
     ```
+### **4. Evaluation of the model effectiveness** </br>
+    Performing model effectiveness on `test_bi.json` dataset </br>
+    **Sample Result Data**
 
-    **Inference `result` on `test_bi.json`**
+    [
+        {
+            "context": "I want a table for friday 8pm for 2 people at Katz's Delicatessen",
+            "pred intent": "BookRestaurant",
+            "true intent": "BookRestaurant",
+            "Conf_Score": 16.789536811645576
+        },
+        {
+            "context": "Is Vertigo Sky Lounge more expensive than the bar I usually go to in New York?",
+            "pred intent": "ComparePlaces",
+            "true intent": "ComparePlaces",
+            "Conf_Score": 10.970629125448095
+        },
+        {
+            "context": "Directions to Disneyworld avoiding traffic",
+            "pred intent": "GetDirections",
+            "true intent": "GetDirections",
+            "Conf_Score": 18.088717110248858
+        },
+        {
+            "context": "Show me the fastest itinerary to my Airbnb on a Friday night",
+            "pred intent": "GetDirections",
+            "true intent": "GetDirections",
+            "Conf_Score": 12.83485819143171
+        },
+        {
+            "context": "Is there any traffic on US 20?",
+            "pred intent": "GetTrafficInformation",
+            "true intent": "GetTrafficInformation",
+            "Conf_Score": 12.378884709882225
+        },
+        {
+            "context": "Can I take my bike to go to work today?",
+            "pred intent": "GetTrafficInformation",
+            "true intent": "GetWeather",
+            "Conf_Score": 13.005006348394783
+        },
+        {
+            "context": "Book a Lyft car to go to 33 greene street",
+            "pred intent": "RequestRide",
+            "true intent": "RequestRide",
+            "Conf_Score": 18.330015462917917
+        },
+        
+        {
+            "context": "Get me a ride to the airport",
+            "pred intent": "RequestRide",
+            "true intent": "RequestRide",
+            "Conf_Score": 27.063900934951988
+        },
+        {
+            "context": "Find me the finest sushi restaurant in the area of my next meeting",
+            "pred intent": "SearchPlace",
+            "true intent": "SearchPlace",
+            "Conf_Score": 13.798050719287755
+        }
+    ]
+
+### **5. Use the trained model to make predictions** </br>
+* Create new input data for prdiction stored in `test_dataset.json` file (can take any name) </br>
+
+    **Input data**
+
+        {
+            "contexts": [
+                "We are a party of 4 people and we want to book a table at Seven Hills for sunset"
+            ],
+            "candidates": [
+                "BookRestaurant",
+                "ComparePlaces",
+                "GetDirections",
+                "GetPlaceDetails",
+                "GetTrafficInformation",
+                "GetWeather",
+                "RequestRide",
+                "SearchPlace",
+                "ShareCurrentLocation",
+                "ShareETA"
+            ],
+            "context_type": "text",
+            "candidate_type": "text"
+        }
+
+* Calling walker for predict intents by cmd
+    ```
+    walker run predict
+    ```
+    **Output Result**
+
     ```
      [
-        {
-          "context": "We are a party of 4 people and we want to book a table at Seven Hills for sunset",
-          "predicted intent": "BookRestaurant",
-          "Conf_Score": 6.875568016339256
-        },
-        {
-          "context": "Book a table at Saddle Peak Lodge for my diner with friends tonight",
-          "predicted intent": "BookRestaurant",
-          "Conf_Score": 8.29900637832673
-        },
-        {
-          "context": "How do I go to Montauk avoiding tolls?",
-          "predicted intent": "GetDirections",
-          "Conf_Score": 2.9064500455793087
-        },
-        {
-          "context": "What's happening this week at Smalls Jazz Club?",
-          "predicted intent": "GetWeather",
-          "Conf_Score": 5.134972962952694
-        },
-        {
-          "context": "Will it rain tomorrow near my all day event?",
-          "predicted intent": "GetWeather",
-          "Conf_Score": 13.8709731523643
-        },
-        {
-          "context": "Send my current location to Anna",
-          "predicted intent": "ShareCurrentLocation",
-          "Conf_Score": 13.069706572586623
-        },
-        {
-          "context": "Share my ETA with Jo",
-          "predicted intent": "ShareETA",
-          "Conf_Score": 13.607459699093246
-        },
-        {
-          "context": "Share my ETA with the Snips team",
-          "predicted intent": "ShareETA",
-          "Conf_Score": 10.038374795126789
-        }
-      ]
-    ```
-    
+      {
+        "context": "We are a party of 4 people and we want to book a table at Seven Hills for sunset",
+        "pred intent": "BookRestaurant",
+        "Conf_Score": 19.72020419731474
+      }
+    ]
+    ```      
