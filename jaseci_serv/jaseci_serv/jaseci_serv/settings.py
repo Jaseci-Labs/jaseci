@@ -125,6 +125,17 @@ if "test" in sys.argv or "test_coverage" in sys.argv:
     DATABASES["default"]["ENGINE"] = "django.db.backends.sqlite3"
     DATABASES["default"]["NAME"] = ":memory:"
     EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    GLOBAL_SOCIAL_SECRET = "4wgs54h4wb#fd@ESTne56EHb5BNYTENG$W$Gev"
+    SOCIAL_AUTH_CREDS= {
+        "google":{
+            "GOOGLE_CLIENT_ID": "582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com",
+            "GOOGLE_CLIENT_SECRET": "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"
+        },
+        "facebook": {
+            "FACEBOOK_CLIENT_ID": "582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com",
+            "FACEBOOK_CLIENT_SECRET": "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"
+        }
+    }
 
 # REDIS
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -190,6 +201,22 @@ LOGIN_URL = "/ui/login"
 LOGIN_REDIRECT_URL = "/ui"
 LOGOUT_REDIRECT_URL = "/ui"
 
+GLOBAL_SOCIAL_SECRET = "4wgs54h4wb#fd@ESTne56EHb5BNYTENG$W$Gev"
+
+SOCIAL_AUTH_CREDS= {
+    "google": {
+        "GOOGLE_CLIENT_ID": os.environ.get("GOOGLE_CLIENT_ID"),   #"582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com"
+        "GOOGLE_CLIENT_SECRET": os.environ.get("GOOGLE_CLIENT_SECRET") # "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"
+    },
+    "facebook": {
+        "FACEBOOK_CLIENT_ID": os.environ.get("FACEBOOK_CLIENT_ID"),
+        "FACEBOOK_CLIENT_SECRET": os.environ.get("FACEBOOK_CLIENT_SECRET")
+    }
+
+}
+
+
+
 # Configs to Manage by Jaseci
 JASECI_CONFIGS = [
     "EMAIL_BACKEND",
@@ -206,12 +233,12 @@ JASECI_CONFIGS = [
     "EMAIL_RESETPASS_BODY",
     "EMAIL_RESETPASS_HTML_BODY",
     "LOGIN_TOKEN_TTL_HOURS",
+    "SOCIAL_AUTH_CREDS",
+    "GLOBAL_SOCIAL_SECRET",
 ]
 
-GOOGLE_CLIENT_ID = "582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
 
-SOCIAL_SECRET = "4wgs54h4wb#fd@ESTne56EHb5BNYTENG$W$Gev"
+
 # SITE_ID = 1
 
 AUTH_PROVIDERS = {"facebook": "facebook", "google": "google", "email": "email"}

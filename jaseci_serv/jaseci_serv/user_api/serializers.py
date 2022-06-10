@@ -10,6 +10,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 
 from jaseci_serv.base.mail import email_config
+from jaseci_serv.base.socialauth import socialauth_config
 
 from .register import register_social_user
 from .sso_provider import facebook, google
@@ -132,9 +133,9 @@ class GoogleSocialAuthSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 "The token is invalid or expired. Please login again."
             )
-
-        if user_data["aud"] != settings.GOOGLE_CLIENT_ID:
-            raise AuthenticationFailed("oops, who are you?")
+        google_config = socialauth_config().get_auth_conf(auth_type="google")
+        if user_data["aud"] != google_config['GOOGLE_CLIENT_ID']:
+            raise AuthenticationFailed("oops, can't recognize this account?")
 
         user_id = user_data["sub"]
         email = user_data["email"]

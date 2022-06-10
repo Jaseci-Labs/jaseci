@@ -9,7 +9,7 @@ from rest_framework import generics, permissions, renderers, status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from jaseci_serv.base.models import lookup_global_config
 from jaseci_serv.user_api.serializers import (AuthTokenSerializer,
                                               FacebookSocialAuthSerializer,
@@ -123,6 +123,18 @@ class GoogleSSOView(GenericAPIView):
             return Response(auth_token, status=status.HTTP_200_OK)
         else:
             return Response(data.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GoogleSSOScriptView(GenericAPIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        # TODO: make views to directly generate HTMl code snippet 
+        # for user which they can paste into their html page
+        return Response({"sucess": True}, status=status.HTTP_200_OK)
+        
+
 
 
 class FacebookSSOView(GenericAPIView):
