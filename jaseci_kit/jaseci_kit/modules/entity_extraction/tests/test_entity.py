@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from entity_extraction import serv_actions
+from ..entity_extraction import serv_actions
 from fastapi.testclient import TestClient
 from .test_data import (
     test_entity_detection_request,
@@ -28,6 +28,8 @@ class entity_extraction_test(TestCaseHelper, TestCase):
         return super().tearDown()
 
     def test_entity_detection_pass(self):
+        response = self.client.post("/set_config/", json=test_entity_config_setup_ner)
+        self.assertEqual(response.status_code, 200)
         response = self.client.post(
             "/entity_detection/", json=test_entity_detection_request
         )
@@ -37,6 +39,8 @@ class entity_extraction_test(TestCaseHelper, TestCase):
             res_ent = response.json()["entities"][idx]
             res_ent.pop("conf_score")
             self.assertEqual(res_ent, ent)
+        response = self.client.post("/set_config/", json=test_entity_config_setup_trf)
+        self.assertEqual(response.status_code, 200)
 
     def test_entity_detection_fail_ner(self):
         response = self.client.post(

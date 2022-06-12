@@ -44,11 +44,17 @@ spec:
           image: awesometic/docusaurus
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source /script/prod_up"]
+          resources:
+            requests:
+              memory: "2Gi"
           ports:
             - containerPort: 80
           volumeMounts:
             - name: prod-script
               mountPath: /script
+          env:
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=2048"
       volumes:
         - name: prod-script
           configMap:
