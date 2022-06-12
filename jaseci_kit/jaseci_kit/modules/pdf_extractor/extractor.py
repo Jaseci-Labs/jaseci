@@ -11,7 +11,7 @@ from fastapi import HTTPException
 def download_pdf(url: str, filename: str):
     r"""method for downloading PDF from URL
     :param url: URL for the downloading a pdf file.
-    :param filename: filename for saveing downloaded pdf locally.
+    :param filename: filename for saving downloaded pdf locally.
     """
     with requests.get(url, stream=True) as req:
         req.raise_for_status()
@@ -20,7 +20,7 @@ def download_pdf(url: str, filename: str):
                 f.write(chunk)
 
 
-def valid_url(url):
+def valid_url(url: str):
     r"""validating whether given url is a valid pdf url or not
     :param url: URL for the downloading a pdf file.
     """
@@ -62,9 +62,9 @@ def process_pdf(filename, metadata, data):
 
 @jaseci_action(act_group=["pdf_ext"], allow_remote=True)
 def extract_pdf(url: str = None, path: str = None, metadata: bool = False):
-    r"""REMOVE locaaly downloaded PDF
+    r"""REMOVE locally downloaded PDF
     :param filename: filename for the deleting pdf file.
-    :param metadata: boolean if you want to diaplay available metadata of PDF.
+    :param metadata: boolean if you want to display available metadata of PDF.
     """
 
     filename = str(uuid.uuid4().hex) + ".pdf"
@@ -76,9 +76,8 @@ def extract_pdf(url: str = None, path: str = None, metadata: bool = False):
                 data = process_pdf(filename, metadata, data)
                 remove_pdf(filename)
                 return data
-            except Exception as e:
+            except Exception:
                 remove_pdf(filename)
-                print(e)
 
                 raise HTTPException(
                     status_code=500, detail="Unable to extract data from pdf"

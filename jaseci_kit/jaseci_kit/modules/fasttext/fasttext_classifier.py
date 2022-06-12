@@ -5,11 +5,10 @@ import shutil
 from typing import List, Dict
 import fasttext
 import traceback
-
 from fastapi import HTTPException
 from jaseci.actions.live_actions import jaseci_action
-from json_to_train import json_to_train, prep_sentence, label_to_intent
-from config import (
+from .json_to_train import json_to_train, prep_sentence, label_to_intent
+from .config import (
     model_file_path,
     train_file_path,
     clf_json_file_path,

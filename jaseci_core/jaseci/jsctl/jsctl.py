@@ -116,6 +116,8 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
         out = session["master"].public_interface_to_api(kwargs, api_name)
     else:
         out = session["master"].general_interface_to_api(kwargs, api_name)
+    if isinstance(out, dict) and "report_custom" in out.keys():
+        out = out["report_custom"]
     if isinstance(out, dict) or isinstance(out, list):
         out = json.dumps(out, indent=2)
     click.echo(out)

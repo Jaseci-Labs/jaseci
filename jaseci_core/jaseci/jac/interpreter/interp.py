@@ -393,12 +393,14 @@ class interp(machine_state):
         """
         report_action:
             KW_REPORT expression SEMI
-            | KW_REPORT DOT NAME EQ INT SEMI;
+                | KW_REPORT COLON NAME EQ expression SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
-        if kid[1].name == "DOT":
+        if kid[1].name == "COLON":
             if kid[2].token_text() in ["status", "status_code"]:
-                self.report_status = int(kid[4].token_text())
+                self.report_status = self.run_expression(kid[4]).value
+            elif kid[2].token_text() == "custom":
+                self.report_custom = self.run_expression(kid[4]).value
             else:
                 self.rt_error("Invalid report attribute to set", kid[2])
         else:
@@ -1472,10 +1474,7 @@ class interp(machine_state):
             tr = jac_value(self, value=walk.anchor_value())
             tr.unwrap()
             ret.append(tr.value)
-            self.report += walk.report
-            if walk.report_status:
-                self.report_status = walk.report_status
-            self.runtime_errors += walk.runtime_errors
+            self.inherit_runtime_state(walk)
             walk.destroy()
         return jac_value(self, value=ret[0] if len(ret) == 1 else ret)
 
@@ -1579,10 +1578,7 @@ class interp(machine_state):
             m.run_code_block(jac_ir_to_ast(act_list.get_obj_by_name(name).value))
         except Exception as e:
             self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
-        self.report += m.report
-        if m.report_status:
-            self.report_status = m.report_status
-        self.runtime_errors += m.runtime_errors
+        self.inherit_runtime_state(m)
 
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
