@@ -655,6 +655,33 @@ class interp(machine_state):
                     break
             return result
 
+    def run_global_ref(self, jac_ast):
+        """
+        global_ref: KW_GLOBAL DOT (obj_built_in | NAME);
+        """
+        kid = self.set_cur_ast(jac_ast)
+        if kid[2].name == "obj_built_in":
+            kid = self.set_cur_ast(kid[2])
+            if kid[0].name == "KW_CONTEXT":
+                return jac_value(self, value=self.parent().global_vars)
+            elif kid[0].name == "KW_INFO":
+                # Add additional accessible fields
+                return jac_value(self, value=self.get_info())
+            else:
+                self.rt_error(f"Global {kid[0].name} not yet", jac_ast)
+                return jac_value(
+                    self,
+                )
+        else:
+            token = kid[2].token_text()
+            if token not in self.parent().global_vars:
+                self.rt_error(f"Global not defined - {token}", kid[2])
+                return jac_value(
+                    self,
+                )
+
+            return jac_value(self, ctx=self.parent().global_vars, name=token)
+
     def run_atom(self, jac_ast):
         """
         atom:
@@ -664,7 +691,7 @@ class interp(machine_state):
             | BOOL
             | NULL
             | NAME
-            | KW_GLOBAL DOT NAME
+            | global_ref
             | node_edge_ref
             | list_val
             | dict_val
@@ -696,14 +723,8 @@ class interp(machine_state):
                     self,
                 )
             return val
-        elif kid[0].name == "KW_GLOBAL":
-            name = kid[2].token_text()
-            if name not in self.parent().global_vars:
-                self.rt_error(f"Global not defined - {name}", kid[2])
-                return jac_value(
-                    self,
-                )
-            return jac_value(self, ctx=self.parent().global_vars, name=name)
+        elif kid[0].name == "global_ref":
+            return self.run_global_ref(kid[0])
         elif kid[0].name == "LPAREN":
             return self.run_expression(kid[1])
         elif kid[0].name == "ability_op":
