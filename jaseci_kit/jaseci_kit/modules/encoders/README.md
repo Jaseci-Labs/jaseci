@@ -5,11 +5,11 @@
 This tutorial shows you how to train a Bi-Encoder with a custom training loop to categorize contexts by candidates. In this you use jaseci(jac) and python.
 
 
-1. Preparing dataset [link](#1-praparing-dataset)
-2. Import `Bi-Encoder(bi_enc)` module in jac [link](#2-import-bi-encoderbi_enc-module-in-jac)
-3. Train the model [link](#3-train-the-model)
-4. Evaluate the model's effectiveness [link](#4-evaluation-of-the-model-effectiveness-)
-5. Use the trained model to make predictions [link](#5-use-the-trained-model-to-make-predictions-)
+1. Preparing [dataset](#1-praparing-dataset)
+2. Import [Bi-Encoder(bi_enc)](#2-import-bi-encoderbi_enc-module-in-jac) module in jac
+3. [Train](#3-train-the-model) the model
+4. [Evaluate](#4-evaluation-of-the-model-effectiveness-) the model's effectiveness
+5. Use the trained model to make [predictions](#5-use-the-trained-model-to-make-predictions-)
 
 
 ## **Walk through** 
@@ -211,7 +211,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
             }
             report [result];
         }
-        # predict indivisual intent on new text
+        # predict intent on new text
         can predict with predict entry{        
         # Use the model to perform inference
         # returns the list of context with the suitable candidates
@@ -377,7 +377,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
                 report [result];
             }
 
-            # predict indivisual intent on new text
+            # predict intent on new text
             can predict with predict entry{        
             # Use the model to perform inference
             # returns the list of context with the suitable candidates
