@@ -30,15 +30,17 @@ class Promon:
             nodeUtil = node["value"][1]
             res[nodeName] = nodeUtil
         return res
-    
-    def cpu_utilization_per_pod_cores(self)->dict :
-      util = self.prom.get_current_metric_value('sum(irate(container_cpu_usage_seconds_total{pod!=\"\"}[10m])) by (pod)')
-      res = {}
-      for pod in util:
-        podName = pod['metric']['pod']
-        value = pod["value"][1]
-        res[podName] = float(value)
-      return res
+
+    def cpu_utilization_per_pod_cores(self) -> dict:
+        util = self.prom.get_current_metric_value(
+            'sum(irate(container_cpu_usage_seconds_total{pod!=""}[10m])) by (pod)'
+        )
+        res = {}
+        for pod in util:
+            podName = pod["metric"]["pod"]
+            value = pod["value"][1]
+            res[podName] = float(value)
+        return res
 
     def mem_total_bytes(self) -> dict:
         util = self.prom.get_current_metric_value(
@@ -73,6 +75,17 @@ class Promon:
             res[nodeName] = nodeUtil
         return res
 
+    def mem_utilization_per_pod_bytes(self) -> dict:
+        util = self.prom.get_current_metric_value(
+            'sum(container_memory_working_set_bytes{pod!=""}) by (pod)'
+        )
+        res = {}
+        for pod in util:
+            podName = pod["metric"]["pod"]
+            value = pod["value"][1]
+            res[podName] = float(value)
+        return res
+
     def node_pods(self) -> list:
         util = self.prom.get_current_metric_value("kube_pod_info")
         res = {}
@@ -85,6 +98,27 @@ class Promon:
             res[node].add(pod)
         return res
 
+    def pod_info(self) -> dict:
+        util = self.prom.get_current_metric_value("kube_pod_info")
+        res = {}
+        for pod in util:
+            podName = pod["metric"]["pod"]
+            res[podName] = pod["metric"]
+
+        cpu = self.cpu_utilization_per_pod_cores()
+        for pod in util:
+            podName = pod["metric"]["pod"]
+            pod_cpu = cpu.get(podName, 0)
+            res[podName]["cpu_utilization_cores"] = pod_cpu
+
+        mem = self.mem_utilization_per_pod_bytes()
+        for pod in util:
+            podName = pod["metric"]["pod"]
+            pod_mem = mem.get(podName, 0)
+            res[podName]["mem_utilization_bytes"] = pod_mem
+
+        return res
+
 
 p = Promon("http://clarity31.eecs.umich.edu:8082")
-print(p.cpu_utilization_per_pod_cores())
+print(p.pod_info())
