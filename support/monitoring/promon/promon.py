@@ -1,5 +1,6 @@
 from prometheus_api_client import PrometheusConnect
 
+
 class Promon:
     def __init__(self, url: str):
         self.prom = PrometheusConnect(url=url, disable_ssl=True)
@@ -139,6 +140,7 @@ class Promon:
             value = pod["value"][1]
             res[podName] = float(value)
         return res
+
     def pod_info(self) -> dict:
         util = self.prom.get_current_metric_value("kube_pod_info")
         res = {}
@@ -171,4 +173,3 @@ class Promon:
             res[podName]["network_tran_bytes"] = pod_tran
 
         return res
-
