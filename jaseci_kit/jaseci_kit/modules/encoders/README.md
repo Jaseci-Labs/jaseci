@@ -149,7 +149,6 @@ For this part, we are going to use Python. First,
 ### **3. Train the model**  
 For this tutorial, we are going to `train and infer` the `biencoder` for `intent classification` its `train` on snips `train datasets` and `infer` on `test dataset`, which is categorizing an incoming text into a one of predefined intents.
 
-**Let's Jump into the coding Section**
 * **Creating Jac Program (`train and infer` bi_enc)**
     1. Create a file by name `bi_encoder.jac`
     2. Create node `model_dir` and `bi_encoder` in `bi_encoder.jac` file        
