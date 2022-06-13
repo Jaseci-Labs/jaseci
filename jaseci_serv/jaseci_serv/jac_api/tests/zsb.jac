@@ -220,3 +220,21 @@ walker pubinit:anyone {
         }
     }
 }
+
+global a = "test";
+
+walker global_actions {
+    with entry {
+        report global.a;
+        report global.b;
+        report global.context;
+        report global.info;
+        report global.info['request_context'];
+    }
+}
+
+walker simple {
+    with entry {
+        report global.info['request_context']["body"];
+    }
+}
