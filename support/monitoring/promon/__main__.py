@@ -24,5 +24,32 @@ class Promon:
       res[nodeName] = nodeUtil
     return res
 
+  def mem_total_bytes(self)->dict:
+    util = self.prom.get_current_metric_value("sum(node_memory_MemTotal_bytes) by (node)")
+    res = {}
+    for node in util:
+      nodeName = node["metric"]["node"]
+      nodeUtil = node["value"][1]
+      res[nodeName] = nodeUtil
+    return res
+
+  def mem_utilization_bytes(self)->dict:
+    util = self.prom.get_current_metric_value("sum(node_memory_Active_bytes) by (node)")
+    res = {}
+    for node in util:
+      nodeName = node["metric"]["node"]
+      nodeUtil = node["value"][1]
+      res[nodeName] = nodeUtil
+    return res
+  
+  def mem_utilization_percentage(self)->dict:
+    util = self.prom.get_current_metric_value("sum(node_memory_Active_bytes / node_memory_MemTotal_bytes * 100 ) by (node)")
+    res = {}
+    for node in util:
+      nodeName = node["metric"]["node"]
+      nodeUtil = node["value"][1]
+      res[nodeName] = nodeUtil
+    return res
+
 p = Promon("http://clarity31.eecs.umich.edu:8082")
-print(p.cpu_utilization_percentage(), p.cpu_utilization_core())
+print(p.mem_utilization_percentage())
