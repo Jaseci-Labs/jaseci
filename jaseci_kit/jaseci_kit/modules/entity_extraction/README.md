@@ -1,18 +1,18 @@
 ### Entity Extraction Using `FLAIR NER(ent_ext)`
 
-### **FLAIR NER**`(ent_ext)` module uses Flair named entity recognition architecture. it Can either be used zero-shot or trained.
+### **FLAIR NER**`(ent_ext)` module uses flair named entity recognition architecture. It can either be used zero-shot or few-shot entity recognition.
 
-For this tutorial we are going to leaverage the flair ner `Zero-shot classification` and `tain test and validation` Use Case
+For this tutorial we are going to leaverage the flair ner `Zero-shot classification` and `Few-shot classification` Use Case
 
-**USE CASE I : Zero-Shot entity detection** [link](#use-case-i--zero-shot-entity-detection-classify-entity-without-training-ner-data)
-1. Import Flair Ner(ent_ext) module [link](#1-import-flair-ner-module-in-jac)
-2. Classify Entity [link](#2-classify-entity-)
+**USE CASE I : [Zero-Shot entity detection](#use-case-i--zero-shot-entity-detection-classify-entity-without-training-ner-data)**
+1. Import [flair ner(ent_ext)](#1-import-flair-ner-module-in-jac) module
+2. [Classify Entity](#2-classify-entity-)
 
 
-**USE CASE II : Train, test and validate module(`ent_ext`)** [link](#use-case-ii--train-test-and-validate-moduleent_ext)
-1. Preparing dataset [link](#1-creating-input-datasets)
-2. Import Flair Ner(ent_ext) module [link](#2-import-flair-nerent_ext-module-in-jac)
-3. Train, test and validate the model [link](#3-train-test-and-validate-model)
+**USE CASE II : [Few-shot classification(`ent_ext`)](#use-case-ii--few-shot-classification)**
+1. Preparing [dataset](#1-creating-input-datasets)
+2. Import [flair ner(ent_ext)](#2-import-flair-nerent_ext-module-in-jac) module
+3. [Few-shot classification](#3-few-shot-classification-train-test-and-validate-model)
 
 
 # **Walk through** 
@@ -253,7 +253,8 @@ for this tutorial we are going to classify entity text with `flair ner(ent_ext)`
 
 
 
-## **Use Case II : Train, test and validate module(`ent_ext`)**
+## **Use Case II : Few-shot classification**
+In Few shot classification we are going train, test and validate `ent_ext` module
 
 ### 1. Creating Input Datasets
 For `train` `test` and `validation` we are going to prepare dataset we are creating list of dict and storing in json file by name `train.json, validation.json and test.json`
@@ -362,9 +363,9 @@ and storing dataset file in directory name `dataset` and put all required file i
     ```
     actions load module jaseci_kit.ent_ext
     ```
-### **3. Train, Test and Validate model**
+### **3. Few-shot classification `(Train, Test and Validate model)`**
 
-For this tutorial we are going to train ther model on train dataset and validate the model on validation dataset and final test dataset on test dataset.
+For this tutorial we are going to train the model on train dataset and validate the model on validation dataset and final test model on the test dataset.
 
 * **Creating Jac Program**
     1. create a file by name `flair_ner.jac`
