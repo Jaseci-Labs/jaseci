@@ -30,6 +30,15 @@ class Promon:
             nodeUtil = node["value"][1]
             res[nodeName] = nodeUtil
         return res
+    
+    def cpu_utilization_per_pod_cores(self)->dict :
+      util = self.prom.get_current_metric_value('sum(irate(container_cpu_usage_seconds_total{pod!=\"\"}[10m])) by (pod)')
+      res = {}
+      for pod in util:
+        podName = pod['metric']['pod']
+        value = pod["value"][1]
+        res[podName] = float(value)
+      return res
 
     def mem_total_bytes(self) -> dict:
         util = self.prom.get_current_metric_value(
@@ -78,4 +87,4 @@ class Promon:
 
 
 p = Promon("http://clarity31.eecs.umich.edu:8082")
-print(p.node_pods())
+print(p.cpu_utilization_per_pod_cores())
