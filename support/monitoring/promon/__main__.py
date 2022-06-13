@@ -108,6 +108,39 @@ class Promon:
             nodeUtil = node["value"][1]
             res[nodeName] = nodeUtil
         return res
+    
+    def network_receive_per_pod_bytes(self):
+        util = self.prom.get_current_metric_value(
+            "sum (rate (container_network_receive_bytes_total{pod!=\"\"}[10m])) by (pod)"
+        )
+        res = {}
+        for pod in util:
+            podName = pod["metric"]["pod"]
+            value = pod["value"][1]
+            res[podName] = float(value)
+        return res
+    
+    def network_transmit_bytes(self) -> float:
+        util = self.prom.get_current_metric_value(
+            "sum (rate (node_network_transmit_bytes_total{}[10m])) by (node)"
+        )
+        res = {}
+        for node in util:
+            nodeName = node["metric"]["node"]
+            nodeUtil = node["value"][1]
+            res[nodeName] = nodeUtil
+        return res
+
+    def network_transmit_per_pod_bytes(self):
+        util = self.prom.get_current_metric_value(
+            "sum (rate (container_network_transmit_bytes_total{pod!=\"\"}[10m])) by (pod)"
+        )
+        res = {}
+        for pod in util:
+            podName = pod["metric"]["pod"]
+            value = pod["value"][1]
+            res[podName] = float(value)
+        return res
 
     def pod_info(self) -> dict:
         util = self.prom.get_current_metric_value("kube_pod_info")
@@ -132,4 +165,4 @@ class Promon:
 
 
 p = Promon("http://clarity31.eecs.umich.edu:8082")
-print(p.network_receive_bytes())
+print(p.network_transmit_per_pod_bytes())
