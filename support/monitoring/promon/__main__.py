@@ -50,6 +50,18 @@ class Promon:
       nodeUtil = node["value"][1]
       res[nodeName] = nodeUtil
     return res
+  
+  def node_pods(self)->list:
+    util = self.prom.get_current_metric_value("kube_pod_info")
+    res = {}
+    for pod in util:
+      info = pod["metric"]
+      node = info["node"]
+      pod = info["pod"]
+      if res.get(node) is None:
+        res[node] = set()
+      res[node].add(pod)
+    return res
 
 p = Promon("http://clarity31.eecs.umich.edu:8082")
-print(p.mem_utilization_percentage())
+print(p.node_pods())
