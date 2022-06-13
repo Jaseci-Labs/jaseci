@@ -1,7 +1,4 @@
-from numpy import double
 from prometheus_api_client import PrometheusConnect
-import pprint
-
 
 class Promon:
     def __init__(self, url: str):
@@ -142,7 +139,6 @@ class Promon:
             value = pod["value"][1]
             res[podName] = float(value)
         return res
-
     def pod_info(self) -> dict:
         util = self.prom.get_current_metric_value("kube_pod_info")
         res = {}
@@ -176,7 +172,3 @@ class Promon:
 
         return res
 
-
-p = Promon("http://clarity31.eecs.umich.edu:8082")
-pp = pprint.PrettyPrinter(indent=4)
-pp.pprint(p.pod_info())
