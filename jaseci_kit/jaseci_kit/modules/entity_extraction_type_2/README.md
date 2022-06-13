@@ -8,8 +8,8 @@ This tutorial show you how to train test and validate **tfm_ner** module.
 
 # Transformer NER
 1. Preparing [Dataset](#1-preparing-dataset)
-2. Import [tfm_ner](#2-import-tfmner-module-in-jaseci) module
-3. Model [training and validation](#2-import-tfm_ner-module-in-jaseci)
+2. Import [tfm_ner](#2-import-tfm_ner-module-in-jaseci) module
+3. Model [training and validation](#3-model-training-and-validation)
 
 ## **1. Preparing Dataset**
 For train, test and validation dataset, we are going to creating list of dict and storing in json file by name `train.json`, `validation.json` and `test.json` and storing dataset file in directory name dataset and put all required file in this.
