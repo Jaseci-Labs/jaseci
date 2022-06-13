@@ -98,6 +98,17 @@ class Promon:
             res[node].add(pod)
         return res
 
+    def network_receive_bytes(self) -> float:
+        util = self.prom.get_current_metric_value(
+            "sum (rate (node_network_receive_bytes_total{}[10m])) by (node)"
+        )
+        res = {}
+        for node in util:
+            nodeName = node["metric"]["node"]
+            nodeUtil = node["value"][1]
+            res[nodeName] = nodeUtil
+        return res
+
     def pod_info(self) -> dict:
         util = self.prom.get_current_metric_value("kube_pod_info")
         res = {}
@@ -121,4 +132,4 @@ class Promon:
 
 
 p = Promon("http://clarity31.eecs.umich.edu:8082")
-print(p.pod_info())
+print(p.network_receive_bytes())
