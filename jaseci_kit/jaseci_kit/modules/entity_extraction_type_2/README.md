@@ -1,28 +1,117 @@
-##  Entity Extraction Using Transformers (`tfm_ner`)
+#  Entity Extraction Using Transformers (`tfm_ner`)
 
+**What is NER:** named entity recognition (NER) — sometimes referred to as entity chunking, extraction, or identification — is the task of identifying and categorizing key information (entities) in text. An entity can be any word or series of words that consistently refers to the same thing. Every detected entity is classified into a predetermined category.
 
-`what is NER`: named entity recognition (NER) — sometimes referred to as entity chunking, extraction, or identification — is the task of identifying and categorizing key information (entities) in text. An entity can be any word or series of words that consistently refers to the same thing. Every detected entity is classified into a predetermined category.
+**`tfm_ner`**: module based on transformers to identify and extract entities. It uses TokenClassification method from Huggingface.
 
+This tutorial show you how to train test and validate **tfm_ner** module.
 
-`tfm_ner`: module based on transformers to identify and extract entities. It uses TokenClassification method from Huggingface.
+# Transformer NER
+1. Preparing [Dataset](#1-preparing-dataset)
+2. Import [tfm_ner](#2-import-tfmner-module-in-jaseci) module
+3. Model [training and validation](#3-model-training-and-validation)
 
+## **1. Preparing Dataset**
+For train, test and validation dataset, we are going to creating list of dict and storing in json file by name `train.json`, `validation.json` and `test.json` and storing dataset file in directory name dataset and put all required file in this.
 
-`Example`: performing training and validation task on `tfm_ner` with the help of `jac` programing.
+* **`train_data`:**: (List(Dict)): a list dictionary containing contexts and list of entities in each context.
 
+    ```
+    [{
+        "context": "However a loophole in the law allowed Buddharakkita and Jayewardene evade the death penalty as the Capital Punishment Repeal Act allowed for a sentence of death to a person convicted for murder committed prior to December 2 1959 and not for the offence of conspiracy to commit murder",
+        "entities": [
+            {
+                "entity_value": "Buddharakkita",
+                "entity_type": "person",
+                "start_index": 38,
+                "end_index": 51
+            },
+            {
+                "entity_value": "Jayewardene",
+                "entity_type": "person",
+                "start_index": 56,
+                "end_index": 67
+            },
+            {
+                "entity_value": "Capital Punishment Repeal Act",
+                "entity_type": "event",
+                "start_index": 99,
+                "end_index": 128
+            }
+        ]
+        }
+    ]
+    ```
+* **`val_data`:** (List(Dict)): a list dictionary containing contexts and list of entities in each context
+    ```
+    [
+        {
+            "context": "The Stavros Niarchos Foundation Cultural Center inaugurated in 2016 will house the National Library of Greece and the Greek National Opera",
+            "entities": [
+                {
+                    "entity_value": "Stavros Niarchos Foundation Cultural Center",
+                    "entity_type": "building",
+                    "start_index": 4,
+                    "end_index": 47
+                },
+                {
+                    "entity_value": "National Library of Greece",
+                    "entity_type": "building",
+                    "start_index": 83,
+                    "end_index": 109
+                },
+                {
+                    "entity_value": "Greek National Opera",
+                    "entity_type": "building",
+                    "start_index": 118,
+                    "end_index": 138
+                }
+            ]
+        }
+    ]
+    ```
+* **`test_data`:** (List(Dict)): a list dictionary containing contexts and list of entities in each context
+    ```
+    [
+        {
+            "context": "The project proponents told the Australian Financial Review in December that year that they had been able to demonstrate that the market for backpacker tourism was less affected by these events and that they intended to apply for an air operator 's certificate in January 2004",
+            "entities": [
+                {
+                    "entity_value": "Australian Financial Review",
+                    "entity_type": "organization",
+                    "start_index": 32,
+                    "end_index": 59
+                }
+            ]
+        }
+    ]
+    ```
 
-### Starting write jac code for `tfm_ner` task 
+## **2. Import `tfm_ner` module in jaseci**
+1. Open terminal and run jaseci by cmd
+    ```
+    jsctl -m
+    ```
+2. Load module tfm_ner in jac by cmd
+    ```
+    actions load module 
+    ```
 
+## **3. Model training and validation**
+For this tutorial we are going to train the model on train dataset and validate the model on validation dataset and finaly we test model on the test dataset.
+
+**1. Creating Jac Program**
 1. `Create a file (main.jac)`
-    
+
 2. Create node `model_dir` and  `tfm_ner` in `main.jac`
 
     ```
     node model_dir;
     node tfm_ner {}
     ```
-3. Initializing `node tfm_ner` and adding abilty:-
-    * `train`, `infer`, `load model`, `save model`, `get_train_config`, `set_train_config`
+3. Initializing `node tfm_ner` and adding abilty:- `train`, `infer`
 
+    here we are importing ability to train and infer model.
     ```
     node tfm_ner {
         # train, infer
@@ -32,6 +121,7 @@
     ```
 
 4. Initializing module for `train and validation` inside `node tfm_ner`
+    In this step we are initializing `training` and `validation` of tfm_ner model. It will take 5 parameter train, test, val (file contain `list of dict`) and mode and epochs
     
     ```
     # train and validation model 
@@ -49,11 +139,10 @@
             );
         std.out("training and validation done ");
         }
-    
-
     ```
 5. adding module for `infer entity` inside node `tfm_ner`
-    
+
+    `Infer` module will take text input and return entities list.
     ```
     # infer entity from text
     can infer with predict_entity_from_tfm entry {
@@ -61,7 +150,6 @@
             text = visitor.text
         );
     }
-
     ```
 6. Adding `edge` name of  `ner_model` in `main.jac` file for connecting nodes inside graph.
     ```
@@ -129,11 +217,11 @@
         }
     }
     ```
+* **Now we are adding all `steps(from 2 to 10)` inside `main.jac` file**
 
-### Now we are adding all `steps(from 2 to 10)` inside `main.jac` file
+* **Final jac programm `(main.jac)`**
 
-### Final jac programm `(main.jac)`
-
+    ```
     node model_dir;
     node tfm_ner {
         # train,infer
@@ -215,112 +303,31 @@
         }
     }
 
+**2. Steps for running `main.jac` file** and `train` and `validate` tfm_ner model
 
-
-### Steps for running main.jac` file and train and validate tfm_ner model
-
-1. Open terminal and run jaseci by command
-    
-    ```
-    jsctl OR jsctl -m
-    ```
-
-2. To load the Transformer Entity Extraction Module run :
-    ```
-    actions load module jaseci_kit.tfm_ner
-    ```
-
-3. Build main.jac by run:
-
+1. Build main.jac by run:
     ```
     jac build main.jac
     ```
 
-4. Activate sentinal by run cmd:
+2. Activate sentinal by run cmd:
     ```
     sentinel set -snt active:sentinel -mode ir main.jir
     ```
 
-5. Create `Training Input`
+3.  ### Create **`Training Input`**
     * `mode`: (String): mode for training the model, available options are :
-            * `default`: train the model from scratch
-            * `incremental`: providing more training data for current set of entities
-            * `append`: changing the number of entities (model is restarted and trained with all of traindata)
+            * `default`: train the model from scratch.
+            * `incremental`: providing more training data for current set of entities.
+            * `append`: changing the number of entities (model is restarted and trained with all of traindata).
     * `epochs `: (int): Number of epoch you want model to train.
+    * `train_file`: `list[dict]` train data file name.
+    * `val_file`: `list[dict]` validation data file name.
+    * `test_file`: `list[dict]` test data file name.
 
-    * `train_data`: (List(Dict)): a list dictionary containing contexts and list of entities in each context
-        ```
-        [{
-            "context": "However a loophole in the law allowed Buddharakkita and Jayewardene evade the death penalty as the Capital Punishment Repeal Act allowed for a sentence of death to a person convicted for murder committed prior to December 2 1959 and not for the offence of conspiracy to commit murder",
-            "entities": [
-                {
-                    "entity_value": "Buddharakkita",
-                    "entity_type": "person",
-                    "start_index": 38,
-                    "end_index": 51
-                },
-                {
-                    "entity_value": "Jayewardene",
-                    "entity_type": "person",
-                    "start_index": 56,
-                    "end_index": 67
-                },
-                {
-                    "entity_value": "Capital Punishment Repeal Act",
-                    "entity_type": "event",
-                    "start_index": 99,
-                    "end_index": 128
-                }
-            ]
-            }
-        ]
-        ```
-     * `val_data`: (List(Dict)): a list dictionary containing contexts and list of entities in each context
-        ```
-        [
-            {
-                "context": "The Stavros Niarchos Foundation Cultural Center inaugurated in 2016 will house the National Library of Greece and the Greek National Opera",
-                "entities": [
-                    {
-                        "entity_value": "Stavros Niarchos Foundation Cultural Center",
-                        "entity_type": "building",
-                        "start_index": 4,
-                        "end_index": 47
-                    },
-                    {
-                        "entity_value": "National Library of Greece",
-                        "entity_type": "building",
-                        "start_index": 83,
-                        "end_index": 109
-                    },
-                    {
-                        "entity_value": "Greek National Opera",
-                        "entity_type": "building",
-                        "start_index": 118,
-                        "end_index": 138
-                    }
-                ]
-            }
-        ]
-        ```
-     * `test_data`: (List(Dict)): a list dictionary containing contexts and list of entities in each context
-        ```
-        [
-            {
-                "context": "The project proponents told the Australian Financial Review in December that year that they had been able to demonstrate that the market for backpacker tourism was less affected by these events and that they intended to apply for an air operator 's certificate in January 2004",
-                "entities": [
-                    {
-                        "entity_value": "Australian Financial Review",
-                        "entity_type": "organization",
-                        "start_index": 32,
-                        "end_index": 59
-                    }
-                ]
-            }
-        ]
-        ```
+    
 
-6. for train model run walker `train_and_val_tfm` with jac by run cmd:
+6. for train model run walker `train_and_val_tfm` with jac by run cmd
     ```
     walker run train_and_val_tfm -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/dev.json\",\"test_file\":\"dataset/test.json\",\"num_train_epochs\":\"10\",\"mode\":\"default\"}"
     ```
