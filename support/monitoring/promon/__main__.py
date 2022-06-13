@@ -1,5 +1,6 @@
 from numpy import double
 from prometheus_api_client import PrometheusConnect
+import pprint
 
 
 class Promon:
@@ -108,10 +109,10 @@ class Promon:
             nodeUtil = node["value"][1]
             res[nodeName] = nodeUtil
         return res
-    
+
     def network_receive_per_pod_bytes(self):
         util = self.prom.get_current_metric_value(
-            "sum (rate (container_network_receive_bytes_total{pod!=\"\"}[10m])) by (pod)"
+            'sum (rate (container_network_receive_bytes_total{pod!=""}[10m])) by (pod)'
         )
         res = {}
         for pod in util:
@@ -119,7 +120,7 @@ class Promon:
             value = pod["value"][1]
             res[podName] = float(value)
         return res
-    
+
     def network_transmit_bytes(self) -> float:
         util = self.prom.get_current_metric_value(
             "sum (rate (node_network_transmit_bytes_total{}[10m])) by (node)"
@@ -133,7 +134,7 @@ class Promon:
 
     def network_transmit_per_pod_bytes(self):
         util = self.prom.get_current_metric_value(
-            "sum (rate (container_network_transmit_bytes_total{pod!=\"\"}[10m])) by (pod)"
+            'sum (rate (container_network_transmit_bytes_total{pod!=""}[10m])) by (pod)'
         )
         res = {}
         for pod in util:
@@ -161,8 +162,21 @@ class Promon:
             pod_mem = mem.get(podName, 0)
             res[podName]["mem_utilization_bytes"] = pod_mem
 
+        recv = self.network_receive_per_pod_bytes()
+        for pod in util:
+            podName = pod["metric"]["pod"]
+            pod_recv = recv.get(podName, 0)
+            res[podName]["network_recv_bytes"] = pod_recv
+
+        tran = self.network_transmit_per_pod_bytes()
+        for pod in util:
+            podName = pod["metric"]["pod"]
+            pod_tran = tran.get(podName, 0)
+            res[podName]["network_tran_bytes"] = pod_tran
+
         return res
 
 
 p = Promon("http://clarity31.eecs.umich.edu:8082")
-print(p.network_transmit_per_pod_bytes())
+pp = pprint.PrettyPrinter(indent=4)
+pp.pprint(p.pod_info())
