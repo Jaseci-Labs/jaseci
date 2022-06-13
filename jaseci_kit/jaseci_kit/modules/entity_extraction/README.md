@@ -6,12 +6,12 @@ For this tutorial we are going to leaverage the flair ner `Zero-shot classificat
 
 **USE CASE I : Zero-Shot entity detection** [link](#use-case-i--zero-shot-entity-detection-classify-entity-without-training-ner-data)
 1. Import Flair Ner(ent_ext) module [link](#1-import-flair-ner-module-in-jac)
-2. Classify Entity [link](#2-classify-entity)
+2. Classify Entity [link](#2-classify-entity-)
 
 
-**USE CASE II : Train, test and validate module(`ent_ext`)** [link](#use-case-ii--train-test-and-validate-moduleentext)
+**USE CASE II : Train, test and validate module(`ent_ext`)** [link](#use-case-ii--train-test-and-validate-moduleent_ext)
 1. Preparing dataset [link](#1-creating-input-datasets)
-2. Import Flair Ner(ent_ext) module [link](#2-import-flair-nerentext-module-in-jac)
+2. Import Flair Ner(ent_ext) module [link](#2-import-flair-nerent_ext-module-in-jac)
 3. Train, test and validate the model [link](#3-train-test-and-validate-model)
 
 
@@ -122,7 +122,7 @@ for this tutorial we are going to classify entity text with `flair ner(ent_ext)`
         ```
         it take arguments from context and call ability to set model configuration `set_config` and `infer_zero_shot` for detecting entity from text and store `result` in `result.json file`
 
-* After combining all the steps from **2 to 9** in single 
+* After combining all the steps from **2 to 9** in single file `zero_shot_ner.jac`
     * **File zero_shot_ner.jac**
 
         ```
