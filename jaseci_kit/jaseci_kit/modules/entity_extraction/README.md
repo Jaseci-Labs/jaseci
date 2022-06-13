@@ -9,7 +9,7 @@ For this tutorial we are going to leaverage the flair ner `Zero-shot classificat
 2. [Classify Entity](#2-classify-entity-)
 
 
-**USE CASE II : [Few-shot classification(`ent_ext`)](#use-case-ii--few-shot-classification)**
+**USE CASE II : [Few-shot classification](#use-case-ii--few-shot-classification)**
 1. Preparing [dataset](#1-creating-input-datasets)
 2. Import [flair ner(ent_ext)](#2-import-flair-nerent_ext-module-in-jac) module
 3. [Few-shot classification](#3-few-shot-classification-train-test-and-validate-model)
