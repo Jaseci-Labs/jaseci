@@ -10,9 +10,12 @@ This tutorial show you how to train test and validate **tfm_ner** module.
 1. Preparing [Dataset](#1-preparing-dataset)
 2. Import [tfm_ner](#2-import-tfm_ner-module-in-jaseci) module
 3. Model [training and validation](#3-model-training-and-validation)
+4. [Predicting entities](#4-predicting-entities)
 
 ## **1. Preparing Dataset**
-For train, test and validation dataset, we are going to creating list of dict and storing in json file by name `train.json`, `validation.json` and `test.json` and storing dataset file in directory name dataset and put all required file in this.
+For train, test and validation dataset, we are going to creating list of dict and storing in json file by name `train.json`, `validation.json` and `test.json` for demonstration perpose we are using here [conll2003 dataset](https://huggingface.co/datasets/conll2003) and storing dataset file in directory name `dataset` and put all required file in this directory.
+
+**Example Dataset file `data format`**
 
 * **`train_data`:**: (List(Dict)): a list dictionary containing contexts and list of entities in each context.
 
@@ -332,7 +335,7 @@ For this tutorial we are going to train the model on train dataset and validate 
     walker run train_and_val_tfm -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/dev.json\",\"test_file\":\"dataset/test.json\",\"num_train_epochs\":\"10\",\"mode\":\"default\"}"
     ```
 
-7. `Result` : after running `train_and_val_tfm` walker you will get logs on console below format
+7. `Result` : after running `train_and_val_tfm` walker you will get logs on console below format or you can seen full logs inside `train` folder.
 
     ```
     2022-06-06 11:23:46.832007    Training epoch: 1/50
@@ -351,5 +354,76 @@ For this tutorial we are going to train the model on train dataset and validate 
     2022-06-06 11:23:47.976287    Validation accuracy epoch: 0.0
     2022-06-06 11:23:48.075297    Epoch 2 total time taken : 0:00:00.618411
     2022-06-06 11:23:48.081293    ------------------------------------------------------------
-    
+    ............
+    ............
+    ............
+    2022-06-01 07:07:56.382809     Training epoch: 50/50
+    2022-06-01 07:08:22.558677     Training loss epoch: 0.06641783774011399
+    2022-06-01 07:08:22.558712     Training accuracy epoch: 0.9109369783381449
+    2022-06-01 07:08:22.558778     evaluation loss epoch: 0.16095292149111629
+    2022-06-01 07:08:22.558790     evaluation accuracy epoch: 0.8269142243363511
+    2022-06-01 07:08:22.647852     Epoch 50 total time taken : 0:00:26.265050
+    2022-06-01 07:08:22.647874     ------------------------------------------------------------
+    2022-06-01 07:08:22.797730     Model Training is Completed
+    2022-06-01 07:08:22.797769     ------------------------------------------------------------
+    2022-06-01 07:08:22.797779     Total time taken to completed training :  0:22:06.770898
+    2022-06-01 07:08:22.797795     ------------------------------------------------------------
+    2022-06-01 07:08:22.797807     Model testing is started
+    2022-06-01 07:08:22.797819     ------------------------------------------------------------
+    2022-06-01 07:08:27.092534     f1_score(macro) : 0.6822521889259535
+    2022-06-01 07:08:27.092573     Accuracy : 0.7892490767336889 
+    2022-06-01 07:08:27.092581     Classification Report
+    2022-06-01 07:08:27.092584     ------------------------------------------------------------
+                precision    recall  f1-score   support
+
+            O       0.00      0.00      0.00         0
+        I-PER       0.91      0.90      0.91      2496
+        I-ORG       0.82      0.68      0.74      1018
+        I-MISC      0.84      0.54      0.66       236
+        I-LOC       0.66      0.64      0.65       252
+        B-PER       0.84      0.85      0.85      2714
+        B-ORG       0.83      0.71      0.77      2513
+        B-MISC      0.82      0.64      0.72       991
+        B-LOC       0.85      0.84      0.85      1965
+
+     accuracy                           0.79     12185
+    macro avg       0.73      0.65      0.68     12185
+    weighted avg    0.85      0.79      0.82     12185
+
+    2022-06-01 07:08:27.092694     ------------------------------------------------------------
+    2022-06-01 07:08:27.092707     Total time taken to completed testing :  0:00:04.294899
+    2022-06-01 07:08:27.092722     ------------------------------------------------------------ 
+
+    ```
+## **4. Predicting Entities**
+* for predicting entities we are going call walker `predict_entity_from_tfm` and provide text input in context and will get output `list of entities` available in text data. calling walker by cmd
+
+    ```
+    walker run predict_entity_from_tfm -ctx "{\"text\":\"Spanish Farm Minister Loyola de Palacio had earlier accused Fischler at an EU farm ministers meeting of causing unjustified alarm through dangerous generalisation\"}"
+    ```
+* After run command will get `output` as `entities list`
+    ```
+    [
+        {
+            "entity_value": "spanish",
+            "entity_type": "B-location-GPE",
+            "score": 0.727814257144928,
+            "start_index": 0,
+            "end_index": 7
+        },
+        {
+            "entity_value": "fis",
+            "entity_type": "B-person-politician",
+            "score": 0.41122329235076904,
+            "start_index": 60,
+            "end_index": 63
+        },
+        {
+            "entity_value": "##ler",
+            "entity_type": "B-person-politician",
+            "score": 0.5834726095199585,
+            "start_index": 65,
+            "end_index": 68
+        }
+    ]
     ```
