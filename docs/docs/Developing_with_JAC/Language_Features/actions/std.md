@@ -40,10 +40,10 @@ std.eer()
 ```jac 
 # Sorts in place list of lists by column
 # Param 1 - list
-# Param 2 - col number
-# Param 3 - boolean as to whether things should be reversed
+# Param 2 - col number (optional)
+# Param 3 - boolean as to whether things should be reversed (optional)
 #Return - Sorted list
-sorted_list = std.sort_by_col()
+sorted_list = std.sort_by_col(param1,param2)
 
 ```
 ### UTC time
