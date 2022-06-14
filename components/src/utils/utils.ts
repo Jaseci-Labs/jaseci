@@ -1,28 +1,9 @@
 import { storeProp } from '../store/propsStore';
+import { componentMap } from './registry';
 let globalOperations = {};
 export function format(first: string, middle: string, last: string): string {
   return (first || '') + (middle ? ` ${middle}` : '') + (last ? ` ${last}` : '');
 }
-
-export const componentMap: Record<Exclude<ComponentNames, 'App'>, ComponentTags> = {
-  Navbar: 'jsc-nav-bar',
-  NavLink: 'jsc-nav-link',
-  Container: 'jsc-container',
-  Row: 'jsc-row',
-  Column: 'jsc-column',
-  Button: 'jsc-button',
-  Inputbox: 'jsc-inputbox',
-  Textbox: 'jsc-textbox',
-  Text: 'jsc-text',
-  Card: 'jsc-card',
-  DatePicker: 'jsc-date-picker',
-  Divider: 'jsc-divider',
-  Anchor: 'jsc-anchor',
-  Chip: 'jsc-chip',
-  Datagrid: 'jsc-datagrid',
-  Datalist: 'jsc-datalist',
-  Datarow: 'jsc-datarow',
-};
 
 const renderTag = (componentTag: ComponentTags, config: { withChildren: Boolean }) => `<${componentTag}>${config.withChildren ? '{children}' : ''}</${componentTag}>`;
 
@@ -69,10 +50,17 @@ const attachCSS = (renderedTag: string, css: JaseciComponent['css']) => {
 
 // creates a single tag and attaches the props in the correct format
 export const renderComponent = (jaseciComponent: JaseciComponent) => {
+  console.log({ listeners: jaseciComponent.listeners });
   const renderedTag = renderTag(componentMap[jaseciComponent.component], {
     withChildren: !!jaseciComponent.sections && Object.keys(jaseciComponent.sections).length > 0,
   });
-  const componentWithProps = attachProps(renderedTag, jaseciComponent.props || {});
+  const componentWithProps = attachProps(
+    renderedTag,
+    {
+      ...jaseciComponent.props,
+      listeners: jaseciComponent.listeners,
+    } || {},
+  );
   const componentWithName = attachName(componentWithProps, jaseciComponent.name);
   const componentWithEvents = attachEvents(componentWithName, jaseciComponent.events);
   setOperations(jaseciComponent.operations, jaseciComponent.name);

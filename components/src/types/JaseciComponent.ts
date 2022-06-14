@@ -16,6 +16,8 @@ type ComponentTags =
   | 'jsc-datagrid'
   | 'jsc-datarow'
   | 'jsc-datalist'
+  | 'jsc-dialog'
+  | 'jsc-popover'
   | 'jsc-chip';
 
 type ComponentNames =
@@ -36,6 +38,8 @@ type ComponentNames =
   | 'Datagrid'
   | 'Datarow'
   | 'Datalist'
+  | 'Dialog'
+  | 'Popover'
   | 'Chip';
 
 interface JaseciComponent {
@@ -46,6 +50,7 @@ interface JaseciComponent {
   sections?: Record<string, Array<JaseciComponent>>;
   events?: Record<JaseciEventName, Array<JaseciAction>>;
   operations?: Record<string, JaseciOperation>;
+  listeners?: Record<string, Record<string, any>>;
   css?: Record<string, string>;
 }
 
@@ -72,6 +77,6 @@ type JaseciOperation = {
 
 type JaseciComponentProps = Record<string, unknown>;
 type JaseciEventName = 'onClick' | 'onKeyPress' | 'onEnterKeyPress' | 'onMount';
-type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add' | 'runOperation' | 'callEndpoint' | 'runForEach' | 'refreshDatagrid' | 'storeValue' | 'navigate';
+type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add' | 'runOperation' | 'callEndpoint' | 'runForEach' | 'refreshDatagrid' | 'storeValue' | 'navigate' | 'emit';
 type ActionConditionName = 'eq' | 'neq' | 'gt' | 'lt';
 type ActionCondition = `${string}::#${ActionConditionName}::${string}`;

@@ -1,3 +1,4 @@
+import { emit } from './events/emit';
 import { checkCond } from './conditions';
 import { renderComponentTree } from './utils';
 
@@ -75,7 +76,7 @@ function parseArgs(args: unknown[] = [], config?: ParseArgsConfig, result?: any)
   return config?.withOriginal ? originalArgsWithNewArgs : newArgs;
 }
 
-function getComponentByName(componentName: string): Element | (Element & { refetchData: () => void }) {
+export function getComponentByName(componentName: string): Element | (Element & { refetchData: () => void }) {
   return window.document.querySelector('jsc-app').shadowRoot.querySelector(`[name='${componentName}']`);
 }
 
@@ -159,6 +160,9 @@ function runAction(action: JaseciAction, result?: any) {
         if (datagridComponent.refetchData) {
           datagridComponent.refetchData();
         }
+        break;
+      case 'emit':
+        emit(parsedActionArgs[0]);
         break;
       case 'runOperation':
         const operation = action?.operation;

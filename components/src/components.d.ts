@@ -106,6 +106,22 @@ export namespace Components {
         "type": 'date' | 'datetime';
         "value": string;
     }
+    interface JscDialog {
+        "closeDialog": () => Promise<void>;
+        "css": string;
+        "events": string;
+        "listeners": string;
+        "name": string;
+        "open": string;
+        "operations": any;
+        "title": string;
+    }
+    interface JscDialogContainer {
+        "closeDialog": () => void;
+        "label"?: string;
+        "playExitAnimation": () => Promise<any>;
+        "setLabel": (label: string) => Promise<void>;
+    }
     interface JscDivider {
         "css": string;
         "events": string;
@@ -147,6 +163,29 @@ export namespace Components {
         "name": string;
         "operations": string;
         "target": string;
+    }
+    interface JscPopover {
+        "closePopover": () => Promise<void>;
+        "css": string;
+        "events": string;
+        "left": string;
+        "listeners": string;
+        "name": string;
+        "open": string;
+        "openPopover": () => Promise<void>;
+        "operations": any;
+        "target": string;
+        "title": string;
+        "togglePopover": () => Promise<void>;
+        "top": string;
+    }
+    interface JscPopoverContainer {
+        "closePopover": () => void;
+        "left": string;
+        "open": boolean;
+        "playExitAnimation": () => Promise<any>;
+        "playPresenceAnimation": () => Promise<void>;
+        "top": string;
     }
     interface JscRow {
         "css": string;
@@ -252,6 +291,18 @@ declare global {
         prototype: HTMLJscDatePickerElement;
         new (): HTMLJscDatePickerElement;
     };
+    interface HTMLJscDialogElement extends Components.JscDialog, HTMLStencilElement {
+    }
+    var HTMLJscDialogElement: {
+        prototype: HTMLJscDialogElement;
+        new (): HTMLJscDialogElement;
+    };
+    interface HTMLJscDialogContainerElement extends Components.JscDialogContainer, HTMLStencilElement {
+    }
+    var HTMLJscDialogContainerElement: {
+        prototype: HTMLJscDialogContainerElement;
+        new (): HTMLJscDialogContainerElement;
+    };
     interface HTMLJscDividerElement extends Components.JscDivider, HTMLStencilElement {
     }
     var HTMLJscDividerElement: {
@@ -281,6 +332,18 @@ declare global {
     var HTMLJscNavLinkElement: {
         prototype: HTMLJscNavLinkElement;
         new (): HTMLJscNavLinkElement;
+    };
+    interface HTMLJscPopoverElement extends Components.JscPopover, HTMLStencilElement {
+    }
+    var HTMLJscPopoverElement: {
+        prototype: HTMLJscPopoverElement;
+        new (): HTMLJscPopoverElement;
+    };
+    interface HTMLJscPopoverContainerElement extends Components.JscPopoverContainer, HTMLStencilElement {
+    }
+    var HTMLJscPopoverContainerElement: {
+        prototype: HTMLJscPopoverContainerElement;
+        new (): HTMLJscPopoverContainerElement;
     };
     interface HTMLJscRowElement extends Components.JscRow, HTMLStencilElement {
     }
@@ -317,11 +380,15 @@ declare global {
         "jsc-datagrid": HTMLJscDatagridElement;
         "jsc-datalist": HTMLJscDatalistElement;
         "jsc-date-picker": HTMLJscDatePickerElement;
+        "jsc-dialog": HTMLJscDialogElement;
+        "jsc-dialog-container": HTMLJscDialogContainerElement;
         "jsc-divider": HTMLJscDividerElement;
         "jsc-inputbox": HTMLJscInputboxElement;
         "jsc-label": HTMLJscLabelElement;
         "jsc-nav-bar": HTMLJscNavBarElement;
         "jsc-nav-link": HTMLJscNavLinkElement;
+        "jsc-popover": HTMLJscPopoverElement;
+        "jsc-popover-container": HTMLJscPopoverContainerElement;
         "jsc-row": HTMLJscRowElement;
         "jsc-text": HTMLJscTextElement;
         "jsc-textbox": HTMLJscTextboxElement;
@@ -426,6 +493,19 @@ declare namespace LocalJSX {
         "type"?: 'date' | 'datetime';
         "value"?: string;
     }
+    interface JscDialog {
+        "css"?: string;
+        "events"?: string;
+        "listeners"?: string;
+        "name"?: string;
+        "open"?: string;
+        "operations"?: any;
+        "title"?: string;
+    }
+    interface JscDialogContainer {
+        "closeDialog"?: () => void;
+        "label"?: string;
+    }
     interface JscDivider {
         "css"?: string;
         "events"?: string;
@@ -468,6 +548,24 @@ declare namespace LocalJSX {
         "name"?: string;
         "operations"?: string;
         "target"?: string;
+    }
+    interface JscPopover {
+        "css"?: string;
+        "events"?: string;
+        "left"?: string;
+        "listeners"?: string;
+        "name"?: string;
+        "open"?: string;
+        "operations"?: any;
+        "target"?: string;
+        "title"?: string;
+        "top"?: string;
+    }
+    interface JscPopoverContainer {
+        "closePopover"?: () => void;
+        "left"?: string;
+        "open"?: boolean;
+        "top"?: string;
     }
     interface JscRow {
         "css"?: string;
@@ -523,11 +621,15 @@ declare namespace LocalJSX {
         "jsc-datagrid": JscDatagrid;
         "jsc-datalist": JscDatalist;
         "jsc-date-picker": JscDatePicker;
+        "jsc-dialog": JscDialog;
+        "jsc-dialog-container": JscDialogContainer;
         "jsc-divider": JscDivider;
         "jsc-inputbox": JscInputbox;
         "jsc-label": JscLabel;
         "jsc-nav-bar": JscNavBar;
         "jsc-nav-link": JscNavLink;
+        "jsc-popover": JscPopover;
+        "jsc-popover-container": JscPopoverContainer;
         "jsc-row": JscRow;
         "jsc-text": JscText;
         "jsc-textbox": JscTextbox;
@@ -548,11 +650,15 @@ declare module "@stencil/core" {
             "jsc-datagrid": LocalJSX.JscDatagrid & JSXBase.HTMLAttributes<HTMLJscDatagridElement>;
             "jsc-datalist": LocalJSX.JscDatalist & JSXBase.HTMLAttributes<HTMLJscDatalistElement>;
             "jsc-date-picker": LocalJSX.JscDatePicker & JSXBase.HTMLAttributes<HTMLJscDatePickerElement>;
+            "jsc-dialog": LocalJSX.JscDialog & JSXBase.HTMLAttributes<HTMLJscDialogElement>;
+            "jsc-dialog-container": LocalJSX.JscDialogContainer & JSXBase.HTMLAttributes<HTMLJscDialogContainerElement>;
             "jsc-divider": LocalJSX.JscDivider & JSXBase.HTMLAttributes<HTMLJscDividerElement>;
             "jsc-inputbox": LocalJSX.JscInputbox & JSXBase.HTMLAttributes<HTMLJscInputboxElement>;
             "jsc-label": LocalJSX.JscLabel & JSXBase.HTMLAttributes<HTMLJscLabelElement>;
             "jsc-nav-bar": LocalJSX.JscNavBar & JSXBase.HTMLAttributes<HTMLJscNavBarElement>;
             "jsc-nav-link": LocalJSX.JscNavLink & JSXBase.HTMLAttributes<HTMLJscNavLinkElement>;
+            "jsc-popover": LocalJSX.JscPopover & JSXBase.HTMLAttributes<HTMLJscPopoverElement>;
+            "jsc-popover-container": LocalJSX.JscPopoverContainer & JSXBase.HTMLAttributes<HTMLJscPopoverContainerElement>;
             "jsc-row": LocalJSX.JscRow & JSXBase.HTMLAttributes<HTMLJscRowElement>;
             "jsc-text": LocalJSX.JscText & JSXBase.HTMLAttributes<HTMLJscTextElement>;
             "jsc-textbox": LocalJSX.JscTextbox & JSXBase.HTMLAttributes<HTMLJscTextboxElement>;

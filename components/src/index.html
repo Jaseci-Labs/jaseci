@@ -44,7 +44,7 @@
                 { component: 'NavLink', props: { label: 'Logout', href: 'https://google.com', color: '#fff' } },
               ],
             },
-            props: { label: 'config(siteName)' },
+            props: { label: '{{config:siteName}}' },
             css: { background: '#000000' },
           },
           {
@@ -189,6 +189,112 @@
                       }
                     ]
                   },
+                },
+                {
+                  "name": "myDialog",
+                  "component": "Dialog",
+                  "props": {
+                    "title": "This is a dialog",
+                    "open": "false"
+                  },
+                  "listeners": {
+                    "openDialog": {
+                      "open": "true",
+                    },
+                    "closeDialog": {
+                      "$call": [
+                        { method: "closeDialog" },
+                      ]
+                    }
+                  },
+                  "sections": {
+                    "contents": [
+                      {
+                        "component": "Text",
+                        "props": {
+                          "value": "Hello"
+                        }
+                      },
+                      {
+                        "component": "Button",
+                        "props": {
+                          "label": "Close this dialog"
+                        },
+                        "events": {
+                          "onClick": [{ "fn": "emit", "args": ["myDialog.closeDialog"] }]
+                        }
+                      }
+                    ]
+                  },
+                },
+                {
+                  "name": "myPopover",
+                  "component": "Popover",
+                  "props": {
+                    "open": "false",
+                    "target": "popoverTrigger"
+                  },
+                  "sections": {
+                    "contents": [
+                      { "component": "Text", "props": { "value": "Hello world!!" } },
+                      { "component": "Text", "props": { "value": "Hello world!!" } },
+                      { "component": "Text", "props": { "value": "Hello world!!" } },
+                      { "component": "Text", "props": { "value": "Hello world!!" } },
+                      { "component": "Text", "props": { "value": "Hello world!!" } }
+                    ]
+                  },
+                  "listeners": {
+                    "open": {
+                      "$call": [{ method: "openPopover" }],
+                    },
+                    "toggle": {
+                      "$call": [
+                        { method: "togglePopover" },
+                      ]
+                    }
+                  }
+                },
+                {
+                  "name": "popoverTrigger",
+                  "component": "Button",
+                  "props": {
+                    "label": "Open Popover"
+                  },
+                  "events": {
+                    "onClick": [
+                      {
+                        "fn": "emit",
+                        "args": ["myPopover.toggle"]
+                      },
+                      {
+                        "fn": "emit",
+                        "args": ["popoverTrigger.showCloseText"]
+                      }
+                    ]
+                  },
+                  "listeners": {
+                    "showCloseText": {
+                      "label": "Close Popover"
+                    },
+                    "showOpenText": {
+                      "label": "Close Popover"
+                    }
+                  }
+                },
+                {
+                  "component": "Button",
+                  "props": {
+                    "label": "Open Dialog"
+                  },
+                  "events": {
+                    "onClick": [
+                      {
+                        "fn": "emit",
+                        "args": ["myDialog.openDialog"]
+                      },
+
+                    ]
+                  }
                 }
               ]
             }

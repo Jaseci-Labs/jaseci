@@ -9,12 +9,19 @@ export function storeProp(renderedTag: string, propName: string, value: any) {
   let result: string = value;
 
   Object.keys(complexProps).forEach(tagName => {
-    if (renderedTag.includes(tagName)) {
-      if (complexProps[tagName].includes(propName)) {
-        const id = nanoid();
-        propsStore.state.props[id] = value;
+    if (propName === 'listeners') {
+      const id = nanoid();
+      propsStore.state.props[id] = value;
 
-        result = id;
+      result = id;
+    } else {
+      if (renderedTag.includes(tagName)) {
+        if (complexProps[tagName].includes(propName)) {
+          const id = nanoid();
+          propsStore.state.props[id] = value;
+
+          result = id;
+        }
       }
     }
   });
