@@ -1,6 +1,6 @@
 ### Entity Extraction Using `FLAIR NER(ent_ext)`
 
-### **FLAIR NER**`(ent_ext)` module uses flair named entity recognition architecture. It can either be used zero-shot or few-shot entity recognition.
+### **FLAIR NER**`(ent_ext)` module uses flair named entity recognition architecture. It can either be used `zero-shot` or `few-shot` entity recognition.
 
 For this tutorial we are going to leaverage the flair ner `Zero-shot classification` and `Few-shot classification` Use Case
 
@@ -27,10 +27,10 @@ For this tutorial we are going to leaverage the flair ner `Zero-shot classificat
     actions load module jaseci_kit.ent_ext
     ```
 ### **2. Classify Entity** : 
-for this tutorial we are going to classify entity text with `flair ner(ent_ext)` module on `tars-ner` pretrained model.
+For this tutorial we are going to classify entity text with `flair ner(ent_ext)` module on `tars-ner` pretrained model.
 
 * Creating jac program for **zero-shot(ent_ext)**
-    1. create a file by name `zero_shot_ner.jac`
+    1. Create a file by name `zero_shot_ner.jac`
 
     2. Create node `model_dir` and `flair_ner` in `zero_shot_ner.jac` file
         ```
@@ -45,7 +45,7 @@ for this tutorial we are going to classify entity text with `flair ner(ent_ext)`
             }
         ```
 
-    4. initializing module for `set_config` inside node `flair_ner`
+    4. Initializing module for `set_config` inside node `flair_ner`
 
         `set_config` will get parameter from context and load model in module. its take two argument `model_name(str)` an `model_type(str)`.
         ```
@@ -120,10 +120,10 @@ for this tutorial we are going to classify entity text with `flair ner(ent_ext)`
             }
         }
         ```
-        it take arguments from context and call ability to set model configuration `set_config` and `infer_zero_shot` for detecting entity from text and store `result` in `result.json file`
+        It take arguments from context and call ability to set model configuration `set_config` and `infer_zero_shot` for detecting entity from text and store `result` in `result.json file`
 
-* After combining all the steps from **2 to 9** in single file `zero_shot_ner.jac`
-    * **File zero_shot_ner.jac**
+
+    * **Final jac program `zero_shot_ner.jac`**
 
         ```
         node model_dir;
@@ -188,7 +188,7 @@ for this tutorial we are going to classify entity text with `flair ner(ent_ext)`
         }
         ```
 
-* steps for calling jac program `use case 1` and `infer_zero_shot entity` from new text.
+* Steps for calling jac program `use case 1` and `infer_zero_shot entity` from new text.
         
     1. Build `zero_shot_ner.jac` by run cmd
         ```
@@ -198,30 +198,22 @@ for this tutorial we are going to classify entity text with `flair ner(ent_ext)`
         ```
         sentinel set -snt active:sentinel -mode ir zero_shot_ner.jir
         ```
-    3. `entity_detection`: detects all availabe entities from the provided context
-        * ### Input:
+    3. Module `entity_detection`: detects all availabe entities from the provided context
+        * ### Input Data:
             * `model_name`: name of model which we are using for zero-shot entity detection e.g. `tars-ner`
-            * `model_type : type of model using in entity detection e.g. `tars` 
-            * `text (string)`: context to detect entities.
+            * `model_type` : type of model using in entity detection e.g. `tars` 
+            * `text (string)`: context to detect entities. e.g. "They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses"
             * `ner_labels(list of strings)`: List of entities, e.g. `["LOC","PER"]`
             
         * ### output
             * `Result`: Created a json file that stored `input text` and `predicted entities` in result.json file`
 
-    6. Calling walker for `entity_detection` and pass `input data` in context by cmd:
-        * `Create Input Data`:-
+    6. Run the following command to execute walker for `entity_detection` and pass [`Input Data`](#input-data) in context.
+        ```
+        walker run infer_zero_shot -ctx "{\"model_name\":\"tars-ner\",\"model_type\":\"tars\",\"text\":\"They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses\",\"labels\":[\"building\", \"organization\"]}"
+        ```
 
-            * `model_name` : `tars-ner`
-            * `model_type` : `tars`
-            * `text`: "They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses"
-            * `labels` : ["building", "organization"]
-
-        * `calling walker by cmd:`
-            ```
-            walker run infer_zero_shot -ctx "{\"model_name\":\"tars-ner\",\"model_type\":\"tars\",\"text\":\"They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses\",\"labels\":[\"building\", \"organization\"]}"
-            ```
-
-    7. After calligg step 6 entity outpu will be stored in `result.json` file 
+    7. After executing step 6 entity output will be stored in `result.json` file 
         ```
         {
             "text": "They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses",
@@ -257,37 +249,34 @@ for this tutorial we are going to classify entity text with `flair ner(ent_ext)`
 In Few shot classification we are going train, test and validate `ent_ext` module
 
 ### 1. Creating Input Datasets
-For `train` `test` and `validation` we are going to prepare dataset we are creating list of dict and storing in json file by name `train.json, validation.json and test.json`
+
+For `train` `test` and `validation` we are going to prepare dataset from [Conll2003](https://huggingface.co/datasets/conll2003) dataset, we are creating list of dict and storing in json file by name `train.json, validation.json and test.json`, 
 and storing dataset file in directory name `dataset` and put all required file in this.
+
 
 * **train_file : `dataset/train.json`**
     ```
     [
         {
-            "context": "He sang a broad repertoire at that house including appearances in the world premieres Ildebrando Pizzetti 's Lo straniero 1930 King Hanóch Ermanno Wolf-Ferrari 's La vedova scaltra 1931 Innkeeper Licinio Refice 's Cecilia 1934 Bishop Urbano and Franco Alfano 's Cyrano de Bergerac 1936 Carbon",
+            "context": "EU rejects German call to boycott British lamb",
             "entities": [
                 {
-                    "entity_value": "Hanóch",
-                    "entity_type": "person-politician",
-                    "start_index": 132,
-                    "end_index": 138
-                }
-            ]
-        },
-        {
-            "context": "The show was revived for a reunion of the 63rd Division held at the Statler Hilton Hotel in New York City in July 1965",
-            "entities": [
-                {
-                    "entity_value": "Statler Hilton Hotel",
-                    "entity_type": "building-hotel",
-                    "start_index": 68,
-                    "end_index": 88
+                    "entity_value": "EU",
+                    "entity_type": "ORG",
+                    "start_index": 0,
+                    "end_index": 2
                 },
                 {
-                    "entity_value": "New York City",
-                    "entity_type": "location-GPE",
-                    "start_index": 92,
-                    "end_index": 105
+                    "entity_value": "German",
+                    "entity_type": "MISC",
+                    "start_index": 11,
+                    "end_index": 17
+                },
+                {
+                    "entity_value": "British",
+                    "entity_type": "MISC",
+                    "start_index": 34,
+                    "end_index": 41
                 }
             ]
         }
@@ -297,24 +286,13 @@ and storing dataset file in directory name `dataset` and put all required file i
     ```
     [
         {
-            "context": "When reconstruction of the building was complete the rear half of the building was named Budig Hall for then KU Chancellor Gene Budig",
+            "context": "CRICKET LEICESTERSHIRE TAKE OVER AT TOP AFTER INNINGS VICTORY",
             "entities": [
                 {
-                    "entity_value": "KU",
-                    "entity_type": "organization-education",
-                    "start_index": 109,
-                    "end_index": 111
-                }
-            ]
-        },
-        {
-            "context": "Nannu 's younger brother Shamsul Haq Monju played as a right-back for the Mohammedan Sporting Club",
-            "entities": [
-                {
-                    "entity_value": "Mohammedan Sporting Club",
-                    "entity_type": "organization-sportsteam",
-                    "start_index": 74,
-                    "end_index": 98
+                    "entity_value": "LEICESTERSHIRE",
+                    "entity_type": "ORG",
+                    "start_index": 8,
+                    "end_index": 22
                 }
             ]
         }
@@ -324,30 +302,25 @@ and storing dataset file in directory name `dataset` and put all required file i
     ```
     [
         {
-            "context": "The City of Bradenton talked A 's owner Charlie Finley into staying at McKechnie until",
+            "context": "The former Soviet republic was playing in an Asian Cup finals tie for the first time",
             "entities": [
                 {
-                    "entity_value": "City of Bradenton",
-                    "entity_type": "location-GPE",
-                    "start_index": 4,
-                    "end_index": 21
+                    "entity_value": "Soviet",
+                    "entity_type": "MISC",
+                    "start_index": 11,
+                    "end_index": 17
                 },
                 {
-                    "entity_value": "McKechnie",
-                    "entity_type": "organization-sportsleague",
-                    "start_index": 71,
-                    "end_index": 80
-                }
-            ]
-        },
-        {
-            "context": "When reconstruction of the building was complete the rear half of the building was named Budig Hall for then KU Chancellor Gene Budig",
-            "entities": [
+                    "entity_value": "Asian",
+                    "entity_type": "MISC",
+                    "start_index": 45,
+                    "end_index": 50
+                },
                 {
-                    "entity_value": "KU",
-                    "entity_type": "organization-education",
-                    "start_index": 109,
-                    "end_index": 111
+                    "entity_value": "Asian",
+                    "entity_type": "MISC",
+                    "start_index": 45,
+                    "end_index": 50
                 }
             ]
         }
@@ -368,7 +341,7 @@ and storing dataset file in directory name `dataset` and put all required file i
 For this tutorial we are going to train the model on train dataset and validate the model on validation dataset and final test model on the test dataset.
 
 * **Creating Jac Program**
-    1. create a file by name `flair_ner.jac`
+    1. Create a file by name `flair_ner.jac`
 
     2. Create node `model_dir` and `flair_ner` in `flair_ner.jac` file
         ```
@@ -382,7 +355,7 @@ For this tutorial we are going to train the model on train dataset and validate 
             ent_ext.set_config, can ent_ext.train;
             }
         ```
-    4. initializing module for `set_config` inside node `flair_ner`
+    4. Initializing module for `set_config` inside node `flair_ner`
         ```
         can set_config with infer_zero_shot entry{
             report ent_ext.set_config(
@@ -391,10 +364,10 @@ For this tutorial we are going to train the model on train dataset and validate 
             );
         }
         ```
-        **set_config** will take two argument `model_name(str)` an `model_type(str)`.
+        **set_config** will take two argument `model_name(str)` and `model_type(str)`.
         and load model for training and validation.
 
-    5. initializing module for `train` inside node `flair_ner`
+    5. Initializing module for `train` and `infer` inside node `flair_ner`
         ```
         can train with train_and_val_flair entry{
             # train the model with a given dataset
@@ -412,6 +385,13 @@ For this tutorial we are going to train the model on train dataset and validate 
                     "batch_size": visitor.batch_size.int,
                     "LR": visitor.learning_rate.float
                     });
+        }
+
+        can infer with predict_flair entry{
+            report ent_ext.entity_detection(
+                text = visitor.text,
+                ner_labels = visitor.ner_labels.list
+            );
         }
         ```
         **train** will take 4 parameter describing in upcoming steps [parameter_description](#input-data-for-train-and-validation)
@@ -471,12 +451,28 @@ For this tutorial we are going to train the model on train dataset and validate 
             }
         }
         ```
-        here we are initialize some default argument and also we are providing all argument from context. it take arguments from context and call ability to set model configuration `set_config` and `train` is for training, val and test model on new datasets.
+        Here we are initialize some default argument and also we are providing all argument from context. it take arguments from context and call ability to set model configuration `set_config` and `train` is for training, val and test model on new datasets.
+
+    10. Creating walker for `predicting` `entities` from trained flair model.
+        ```
+        # infer
+        walker predict_flair{
+            has text;
+            #declare default labels
+            has ner_labels = ["PER","ORG", "LOC", "MISC"];
+
+            root {
+                take --> node::model_dir;
+            }
+            model_dir {
+                take -->;
+            }
+
+        }
+        ```
 
 
-        Now we commbining all the steps from `2 to 9` in single file `flair_ner.jac`
-
-* **final Jac Program**
+* **Final Jac Program**
     * `flair_ner.jac`
         ```
         node model_dir;
@@ -509,6 +505,13 @@ For this tutorial we are going to train the model on train dataset and validate 
                         "batch_size": visitor.batch_size.int,
                         "LR": visitor.learning_rate.float
                         });
+            }
+
+            can infer with predict_flair entry{
+                report ent_ext.entity_detection(
+                    text = visitor.text,
+                    ner_labels = visitor.ner_labels.list
+                );
             }
         }
 
@@ -557,6 +560,21 @@ For this tutorial we are going to train the model on train dataset and validate 
                 take -->;
             }
         }
+
+        # infer
+        walker predict_flair{
+            has text;
+            #declare default labels
+            has ner_labels = ["PER","ORG", "LOC", "MISC"];
+
+            root {
+                take --> node::model_dir;
+            }
+            model_dir {
+                take -->;
+            }
+
+        }
         ```
 
 * **Steps for calling jac program(`flair_ner.jac`)**
@@ -568,7 +586,7 @@ For this tutorial we are going to train the model on train dataset and validate 
         ```
         sentinel set -snt active:sentinel -mode ir flair_ner.jir
         ```
-    3. `Create train and validation context`: train model on train dataset file and validate and test on validate and test dataset file.
+    3. Create `train and validation context`: train model on train dataset file and validate and test on validate and test dataset file.
         * ### Input data for train and validation:
             * `train_file(List(Dict))` : training dataset file
             * `val_file(List(Dict))`: validation datase file
@@ -579,94 +597,116 @@ For this tutorial we are going to train the model on train dataset and validate 
             * `batch_size(int)`: `8`
             * `learning_rate(float)`:`0.02`
     
-    4. Calling walker for `model train and validation` and pass `input data` in context from step 3 by cmd:
+    4. Run the following command to execute walker for `model train and validation` and pass [`input data`](#input-data-for-train-and-validation) in context.
         ```
-        walker run train_and_val_flair -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/dev.json\",\"test_file\":\"dataset/test.json\",\"model_name\":\"tars-ner\",\"model_type\":\"tars\",\"num_train_epochs\":\"2\",\"batch_size\":\"8\",\"learning_rate\":\"0.02\"}"
+        walker run train_and_val_flair -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/dev.json\",\"test_file\":\"dataset/test.json\",\"model_name\":\"prajjwal1/bert-tiny\",\"model_type\":\"trfmodel\",\"num_train_epochs\":\"10\",\"batch_size\":\"8\",\"learning_rate\":\"0.02\"}"
     
-    5. After calling step 4 model training will be started and you will get results on console.
+    5. You'll find the following logs in train folder inside model name.
         `Console logs`
         ```
-        2022-06-08 12:00:21,453 ----------------------------------------------------------------------------------------------------
-        2022-06-08 12:00:21,453 Corpus: "Corpus: 80 train + 20 dev + 20 test sentences"
-        2022-06-08 12:00:21,453 ----------------------------------------------------------------------------------------------------
-        2022-06-08 12:00:21,453 Parameters:
-        2022-06-08 12:00:21,453  - learning_rate: "0.02"
-        2022-06-08 12:00:21,453  - mini_batch_size: "8"
-        2022-06-08 12:00:21,453  - patience: "3"
-        2022-06-08 12:00:21,453  - anneal_factor: "0.5"
-        2022-06-08 12:00:21,453  - max_epochs: "2"
-        2022-06-08 12:00:21,453  - shuffle: "True"
-        2022-06-08 12:00:21,453  - train_with_dev: "False"
-        2022-06-08 12:00:21,453  - batch_growth_annealing: "False"
-        2022-06-08 12:00:21,453 ----------------------------------------------------------------------------------------------------
-        2022-06-08 12:00:21,453 Model training base path: "train/tars-ner"
-        2022-06-08 12:00:21,453 ----------------------------------------------------------------------------------------------------
-        2022-06-08 12:00:21,453 Device: cuda:0
-        2022-06-08 12:00:21,453 ----------------------------------------------------------------------------------------------------
-        2022-06-08 12:00:21,453 Embeddings storage mode: cpu
-        2022-06-08 12:00:21,455 ----------------------------------------------------------------------------------------------------
-        2022-06-08 12:00:22,631 epoch 1 - iter 1/10 - loss 0.60523161 - samples/sec: 7.19 - lr: 0.020000
-        2022-06-08 12:00:23,408 epoch 1 - iter 2/10 - loss 0.51332167 - samples/sec: 10.30 - lr: 0.020000
-        2022-06-08 12:00:24,033 epoch 1 - iter 3/10 - loss 0.62513998 - samples/sec: 12.79 - lr: 0.020000
-        2022-06-08 12:00:25,106 epoch 1 - iter 4/10 - loss 0.57849901 - samples/sec: 7.46 - lr: 0.020000
-        2022-06-08 12:00:26,077 epoch 1 - iter 5/10 - loss 0.54225198 - samples/sec: 8.24 - lr: 0.020000
-        2022-06-08 12:00:26,688 epoch 1 - iter 6/10 - loss 0.50653757 - samples/sec: 13.10 - lr: 0.020000
-        2022-06-08 12:00:27,573 epoch 1 - iter 7/10 - loss 0.47263640 - samples/sec: 9.04 - lr: 0.020000
-        2022-06-08 12:00:28,070 epoch 1 - iter 8/10 - loss 0.45762492 - samples/sec: 16.10 - lr: 0.020000
-        2022-06-08 12:00:28,931 epoch 1 - iter 9/10 - loss 0.45796768 - samples/sec: 9.29 - lr: 0.020000
-        2022-06-08 12:00:29,892 epoch 1 - iter 10/10 - loss 0.43133600 - samples/sec: 8.33 - lr: 0.020000
-        2022-06-08 12:00:29,893 ----------------------------------------------------------------------------------------------------
-        2022-06-08 12:00:29,893 EPOCH 1 done: loss 0.4313 - lr 0.0200000
-        2022-06-08 12:00:38,203 DEV : loss 0.10980782216621005 - f1-score (micro avg)  0.069
-        2022-06-08 12:00:38,203 BAD EPOCHS (no improvement): 0
-        2022-06-08 12:00:40,378 saving best model
-        2022-06-08 12:00:42,539 ----------------------------------------------------------------------------------------------------
-        2022-06-08 12:00:43,461 epoch 2 - iter 1/10 - loss 0.18578914 - samples/sec: 9.71 - lr: 0.020000
-        2022-06-08 12:00:44,440 epoch 2 - iter 2/10 - loss 0.24499737 - samples/sec: 8.17 - lr: 0.020000
-        2022-06-08 12:00:45,482 epoch 2 - iter 3/10 - loss 0.23535200 - samples/sec: 7.67 - lr: 0.020000
-        2022-06-08 12:00:46,256 epoch 2 - iter 4/10 - loss 0.23531097 - samples/sec: 10.34 - lr: 0.020000
-        2022-06-08 12:00:46,948 epoch 2 - iter 5/10 - loss 0.23616702 - samples/sec: 11.56 - lr: 0.020000
-        2022-06-08 12:00:47,570 epoch 2 - iter 6/10 - loss 0.28713835 - samples/sec: 12.88 - lr: 0.020000
-        2022-06-08 12:00:48,801 epoch 2 - iter 7/10 - loss 0.27177298 - samples/sec: 6.50 - lr: 0.020000
-        2022-06-08 12:00:49,622 epoch 2 - iter 8/10 - loss 0.25330073 - samples/sec: 9.75 - lr: 0.020000
-        2022-06-08 12:00:50,855 epoch 2 - iter 9/10 - loss 0.23808518 - samples/sec: 6.49 - lr: 0.020000
-        2022-06-08 12:00:51,468 epoch 2 - iter 10/10 - loss 0.24134582 - samples/sec: 13.05 - lr: 0.020000
-        2022-06-08 12:00:51,470 ----------------------------------------------------------------------------------------------------
-        2022-06-08 12:00:51,470 EPOCH 2 done: loss 0.2413 - lr 0.0200000
-        2022-06-08 12:00:59,574 DEV : loss 0.06216340040996651 - f1-score (micro avg)  0.075
-        2022-06-08 12:00:59,574 BAD EPOCHS (no improvement): 0
-        2022-06-08 12:01:06,280 saving best model
-        2022-06-08 12:01:15,103 ----------------------------------------------------------------------------------------------------
-        2022-06-08 12:01:15,104 loading file train/tars-ner/best-model.pt
-        2022-06-08 12:01:31,248 0.0698	0.0811	0.075	0.0417
-        2022-06-08 12:01:31,248 
+        2022-06-14 10:58:47,583 ----------------------------------------------------------------------------------------------------
+        2022-06-14 10:58:47,583 Corpus: "Corpus: 14041 train + 3250 dev + 3453 test sentences"
+        2022-06-14 10:58:47,583 ----------------------------------------------------------------------------------------------------
+        2022-06-14 10:58:47,583 Parameters:
+        2022-06-14 10:58:47,584  - learning_rate: "0.02"
+        2022-06-14 10:58:47,584  - mini_batch_size: "128"
+        2022-06-14 10:58:47,584  - patience: "3"
+        2022-06-14 10:58:47,584  - anneal_factor: "0.5"
+        2022-06-14 10:58:47,584  - max_epochs: "10"
+        2022-06-14 10:58:47,584  - shuffle: "True"
+        2022-06-14 10:58:47,584  - train_with_dev: "False"
+        2022-06-14 10:58:47,584  - batch_growth_annealing: "False"
+        2022-06-14 10:58:47,584 ----------------------------------------------------------------------------------------------------
+        2022-06-14 10:58:47,584 Model training base path: "train/prajjwal1/bert-tiny"
+        2022-06-14 10:58:47,584 ----------------------------------------------------------------------------------------------------
+        2022-06-14 10:58:47,584 Device: cuda:0
+        2022-06-14 10:58:47,584 ----------------------------------------------------------------------------------------------------
+        2022-06-14 10:58:47,584 Embeddings storage mode: cpu
+        2022-06-14 10:58:47,585 ----------------------------------------------------------------------------------------------------
+        2022-06-14 10:59:11,725 epoch 1 - iter 11/110 - loss 0.46690662 - samples/sec: 58.35 - lr: 0.020000
+        2022-06-14 10:59:36,854 epoch 1 - iter 22/110 - loss 0.35627199 - samples/sec: 56.04 - lr: 0.020000
+        2022-06-14 10:59:56,318 epoch 1 - iter 33/110 - loss 0.32018351 - samples/sec: 72.35 - lr: 0.020000
+        2022-06-14 11:00:16,082 epoch 1 - iter 44/110 - loss 0.30274213 - samples/sec: 71.25 - lr: 0.020000
+        2022-06-14 11:00:35,760 epoch 1 - iter 55/110 - loss 0.28451030 - samples/sec: 71.56 - lr: 0.020000
+        2022-06-14 11:00:58,241 epoch 1 - iter 66/110 - loss 0.26581275 - samples/sec: 62.64 - lr: 0.020000
+        2022-06-14 11:01:24,133 epoch 1 - iter 77/110 - loss 0.25145255 - samples/sec: 54.39 - lr: 0.020000
+        2022-06-14 11:01:48,914 epoch 1 - iter 88/110 - loss 0.24174765 - samples/sec: 56.82 - lr: 0.020000
+        2022-06-14 11:02:15,320 epoch 1 - iter 99/110 - loss 0.23233378 - samples/sec: 53.33 - lr: 0.020000
+        2022-06-14 11:02:40,455 epoch 1 - iter 110/110 - loss 0.22324374 - samples/sec: 56.03 - lr: 0.020000
+        2022-06-14 11:02:40,455 ----------------------------------------------------------------------------------------------------
+        2022-06-14 11:02:40,456 EPOCH 1 done: loss 0.2232 - lr 0.0200000
+        2022-06-14 11:04:15,844 DEV : loss 0.08416544854674485 - f1-score (micro avg)  0.1417
+        2022-06-14 11:04:15,876 BAD EPOCHS (no improvement): 0
+        2022-06-14 11:04:15,922 saving best model
+        ..............
+        ..............
+        ..............
+
+        2022-06-14 11:48:43,609 epoch 10 - iter 11/110 - loss 0.05611527 - samples/sec: 61.04 - lr: 0.020000
+        2022-06-14 11:49:06,084 epoch 10 - iter 22/110 - loss 0.05563375 - samples/sec: 62.66 - lr: 0.020000
+        2022-06-14 11:49:29,709 epoch 10 - iter 33/110 - loss 0.05567900 - samples/sec: 59.61 - lr: 0.020000
+        2022-06-14 11:49:52,993 epoch 10 - iter 44/110 - loss 0.05584901 - samples/sec: 60.48 - lr: 0.020000
+        2022-06-14 11:50:16,497 epoch 10 - iter 55/110 - loss 0.05558204 - samples/sec: 59.91 - lr: 0.020000
+        2022-06-14 11:50:39,222 epoch 10 - iter 66/110 - loss 0.05536536 - samples/sec: 61.97 - lr: 0.020000
+        2022-06-14 11:51:03,463 epoch 10 - iter 77/110 - loss 0.05519602 - samples/sec: 58.09 - lr: 0.020000
+        2022-06-14 11:51:27,246 epoch 10 - iter 88/110 - loss 0.05550491 - samples/sec: 59.21 - lr: 0.020000
+        2022-06-14 11:51:50,920 epoch 10 - iter 99/110 - loss 0.05559963 - samples/sec: 59.48 - lr: 0.020000
+        2022-06-14 11:52:13,645 epoch 10 - iter 110/110 - loss 0.05556217 - samples/sec: 61.97 - lr: 0.020000
+        2022-06-14 11:52:13,646 ----------------------------------------------------------------------------------------------------
+        2022-06-14 11:52:13,646 EPOCH 10 done: loss 0.0556 - lr 0.0200000
+        2022-06-14 11:53:51,555 DEV : loss 0.03640907264452083 - f1-score (micro avg)  0.7614
+        2022-06-14 11:53:51,587 BAD EPOCHS (no improvement): 0
+        2022-06-14 11:53:51,634 saving best model
+        2022-06-14 11:53:51,725 ----------------------------------------------------------------------------------------------------
+        2022-06-14 11:53:51,726 loading file train/prajjwal1/bert-tiny/best-model.pt
+        2022-06-14 11:53:54,423 No model_max_length in Tokenizer's config.json - setting it to 512. Specify desired model_max_length by passing it as attribute to embedding instance.
+        2022-06-14 11:55:30,534 0.7138	0.7305	0.7221	0.6166
+        2022-06-14 11:55:30,534 
         Results:
-        - F-score (micro) 0.075
-        - F-score (macro) 0.0368
-        - Accuracy 0.0417
+        - F-score (micro) 0.7221
+        - F-score (macro) 0.5625
+        - Accuracy 0.6166
+
         By class:
-                                       precision    recall  f1-score   support
+                    precision    recall  f1-score   support
 
-                 person-artist/author     0.2857    0.4000    0.3333         5
-                   organization-other     0.2000    0.1667    0.1818         6
-                    person-politician     0.0000    0.0000    0.0000         0
-              building-sportsfacility     0.0000    0.0000    0.0000         4
-                         location-GPE     0.0000    0.0000    0.0000         5
-            organization-sportsleague     0.0000    0.0000    0.0000         2
-              organization-sportsteam     0.0000    0.0000    0.0000         4
-                 organization-company     0.0000    0.0000    0.0000         1
-                        product-other     0.0000    0.0000    0.0000         2
-                     building-airport     0.0000    0.0000    0.0000         3
-               organization-education     0.0000    0.0000    0.0000         2
-                       person-soldier     0.0000    0.0000    0.0000         2
-                     product-airplane     0.0000    0.0000    0.0000         1
-                        location-road     0.0000    0.0000    0.0000         0
+                PER     0.7186    0.8751    0.7892      1617
+                LOC     0.7645    0.8118    0.7874      1668
+                ORG     0.6902    0.5527    0.6138      1661
+                MISC    0.6192    0.6254    0.6223       702
+             <STOP>     0.0000    0.0000    0.0000         0
 
-                            micro avg     0.0698    0.0811    0.0750        37
-                            macro avg     0.0347    0.0405    0.0368        37
-                         weighted avg     0.0710    0.0811    0.0745        37
-                          samples avg     0.0417    0.0417    0.0417        37
+          micro avg     0.7138    0.7305    0.7221      5648
+          macro avg     0.5585    0.5730    0.5625      5648
+        weighted avg    0.7115    0.7305    0.7164      5648
+        samples avg     0.6166    0.6166    0.6166      5648
 
-        2022-06-08 12:01:31,248 ----------------------------------------------------------------------------------------------------
+        ```
 
+    10. Run the following command to execute walker `predict_flair` for predicting entities.
+        ```
+        walker run predict_flair -ctx "{\"text\":\"Two goals from defensive errors in the last six minutes allowed Japan to come from behind and collect all three points from their opening meeting against Syria\"}"
+        ```
+        After executing walker `predict_flair` will get output e.g.
+        ```
+        [
+            {
+                "entities": [
+                    {
+                        "entity_text": "Japan",
+                        "entity_value": "LOC",
+                        "conf_score": 0.9944729208946228,
+                        "start_pos": 64,
+                        "end_pos": 69
+                    },
+                    {
+                        "entity_text": "Syria",
+                        "entity_value": "LOC",
+                        "conf_score": 0.9952408075332642,
+                        "start_pos": 154,
+                        "end_pos": 159
+                    }
+                ]
+            }
+        ]
         ```
