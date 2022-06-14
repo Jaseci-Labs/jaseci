@@ -1,4 +1,5 @@
 import json
+from tempfile import _TemporaryFileWrapper
 from rest_framework.views import APIView
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
@@ -86,22 +87,35 @@ class AbstractJacAPIView(APIView):
         except ValueError:
             logger.error(str(f"Invalid ctx format! Ignoring ctx parsing!"))
 
-        return req_data.copy()
-
-    def proc_file_ctx(self, request, req_data, req_body):
+    def proc_file_ctx(self, request, req_data):
         for key in request.FILES:
-            req_data.pop(key)
-            req_body[key] = []
-            for file in request.FILES.getlist(key):
-                req_body[key].append(
-                    {
-                        "name": file.name,
-                        "base64": b64encode(file.file.getvalue()).decode("utf-8"),
-                        "content-type": file.content_type,
-                    }
-                )
 
-    def proc_request_ctx(self, request, req_data, req_body):
+            req_data.pop(key)
+            file_ref = (
+                req_data["ctx"]
+                if "ctx" in req_data and type(req_data["ctx"]) is dict
+                else req_data
+            )
+            file_ref[key] = []
+
+            for file in request.FILES.getlist(key):
+
+                file_type = type(file.file)
+                if file_type is BytesIO:
+                    file_base64 = b64encode(file.file.getvalue()).decode("utf-8")
+                elif file_type is _TemporaryFileWrapper:
+                    file_base64 = b64encode(file.file.read()).decode("utf-8")
+
+                if "file_base64" in vars():
+                    file_ref[key].append(
+                        {
+                            "name": file.name,
+                            "base64": file_base64,
+                            "content-type": file.content_type,
+                        }
+                    )
+
+    def proc_request_ctx(self, request, req_data):
         req_query = request.GET.dict()
         req_data.update(
             {
@@ -109,7 +123,7 @@ class AbstractJacAPIView(APIView):
                     "method": request.method,
                     "headers": dict(request.headers),
                     "query": req_query,
-                    "body": req_body,
+                    "body": req_data.copy(),
                 }
             }
         )
@@ -125,11 +139,12 @@ class AbstractJacAPIView(APIView):
             request.data.dict() if type(request.data) is not dict else request.data
         )
 
-        req_body = self.proc_prime_ctx(request, req_data)
-        self.proc_file_ctx(request, req_data, req_body)
-        self.proc_request_ctx(request, req_data, req_body)
-
         req_data.update(kwargs)
+
+        self.proc_prime_ctx(request, req_data)
+        self.proc_file_ctx(request, req_data)
+        self.proc_request_ctx(request, req_data)
+
         self.cmd = req_data
         self.set_caller(request)
         self.res = "Not valid interaction!"
