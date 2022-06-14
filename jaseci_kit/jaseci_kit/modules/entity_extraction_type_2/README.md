@@ -114,7 +114,7 @@ For this tutorial we are going to train the model on train dataset and validate 
     ```
 3. Initializing `node tfm_ner` and adding abilty:- `train`, `infer`
 
-    here we are importing ability to train and infer model.
+    Here we are importing ability to train and infer model.
     ```
     node tfm_ner {
         # train, infer
@@ -143,7 +143,7 @@ For this tutorial we are going to train the model on train dataset and validate 
         std.out("training and validation done ");
         }
     ```
-5. adding module for `infer entity` inside node `tfm_ner`
+5. Adding module for `infer entity` inside node `tfm_ner`
 
     `Infer` module will take text input and return entities list.
     ```
@@ -220,7 +220,6 @@ For this tutorial we are going to train the model on train dataset and validate 
         }
     }
     ```
-* **Now we are adding all `steps(from 2 to 10)` inside `main.jac` file**
 
 * **Final jac programm `(main.jac)`**
 
@@ -313,12 +312,12 @@ For this tutorial we are going to train the model on train dataset and validate 
     jac build main.jac
     ```
 
-2. Activate sentinal by run cmd:
+2. Run the following command to Activate sentinal:
     ```
     sentinel set -snt active:sentinel -mode ir main.jir
     ```
 
-3.  ### Create **`Training Input`**
+3.  Create `Training Input`
     * `mode`: (String): mode for training the model, available options are :
             * `default`: train the model from scratch.
             * `incremental`: providing more training data for current set of entities.
@@ -327,15 +326,14 @@ For this tutorial we are going to train the model on train dataset and validate 
     * `train_file`: `list[dict]` train data file name.
     * `val_file`: `list[dict]` validation data file name.
     * `test_file`: `list[dict]` test data file name.
+       
 
-    
-
-6. for train model run walker `train_and_val_tfm` with jac by run cmd
+6. Run the following command to execute walker `train_and_val_tfm`
     ```
-    walker run train_and_val_tfm -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/dev.json\",\"test_file\":\"dataset/test.json\",\"num_train_epochs\":\"10\",\"mode\":\"default\"}"
+    walker run train_and_val_tfm -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/dev.json\",\"test_file\":\"dataset/test.json\",\"num_train_epochs\":\"50\",\"mode\":\"default\"}"
     ```
 
-7. `Result` : after running `train_and_val_tfm` walker you will get logs on console below format or you can seen full logs inside `train` folder.
+7. You'll find the following logs in `train` folder.
 
     ```
     2022-06-06 11:23:46.832007    Training epoch: 1/50
@@ -396,34 +394,21 @@ For this tutorial we are going to train the model on train dataset and validate 
 
     ```
 ## **4. Predicting Entities**
-* for predicting entities we are going call walker `predict_entity_from_tfm` and provide text input in context and will get output `list of entities` available in text data. calling walker by cmd
+* For predicting entities we are going execute walker `predict_entity_from_tfm` and provide text input in context and will get output `list of entities` available in text-data.
+Run the following command to execute walker `predict_entity_from_tfm`
 
     ```
-    walker run predict_entity_from_tfm -ctx "{\"text\":\"Spanish Farm Minister Loyola de Palacio had earlier accused Fischler at an EU farm ministers meeting of causing unjustified alarm through dangerous generalisation\"}"
+    walker run predict_entity_from_tfm -ctx "{\"text\":\"It was the second costly blunder by Syria in four minute\"}"
     ```
-* After run command will get `output` as `entities list`
+* After executing walker `predict_entity_from_tfm` , will get `predicted entities` list as
     ```
     [
         {
-            "entity_value": "spanish",
-            "entity_type": "B-location-GPE",
-            "score": 0.727814257144928,
-            "start_index": 0,
-            "end_index": 7
-        },
-        {
-            "entity_value": "fis",
-            "entity_type": "B-person-politician",
-            "score": 0.41122329235076904,
-            "start_index": 60,
-            "end_index": 63
-        },
-        {
-            "entity_value": "##ler",
-            "entity_type": "B-person-politician",
-            "score": 0.5834726095199585,
-            "start_index": 65,
-            "end_index": 68
+            "entity_value": "syria",
+            "entity_type": "B-LOC",
+            "score": 0.8613966703414917,
+            "start_index": 36,
+            "end_index": 41
         }
     ]
     ```
