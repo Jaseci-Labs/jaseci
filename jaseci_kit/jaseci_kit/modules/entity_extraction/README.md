@@ -205,7 +205,7 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
             * `text (string)`: context to detect entities. e.g. "They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses"
             * `ner_labels(list of strings)`: List of entities, e.g. `["LOC","PER"]`
             
-        * ### output
+        * ### Output
             * `Result`: Created a json file that stored `input text` and `predicted entities` in result.json file`
 
     6. Run the following command to execute walker for `entity_detection` and pass [`Input Data`](#input-data) in context.
