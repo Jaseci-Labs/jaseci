@@ -13,7 +13,7 @@ export version= {version no}  i.e 1.3.3.16
 
 ### Install docker
 
-Run below command to apply the use_enc.yaml to substitute the value of version in Config Map
+Run below command to apply the use_enc.yaml/use_qa.yaml to substitute the value of version in Config Map
 ```bash
 envsubst < use_qa.yaml | kubectl apply -f -
 ```
