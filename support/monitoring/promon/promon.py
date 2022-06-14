@@ -141,6 +141,28 @@ class Promon:
             res[podName] = float(value)
         return res
 
+    def disk_total_bytes(self) -> dict:
+        util = self.prom.get_current_metric_value(
+            'sum(avg (node_filesystem_size_bytes{mountpoint!="/boot", fstype!="tmpfs"}) without (mountpoint)) by (node)'
+        )
+        res = {}
+        for node in util:
+            nodeName = node["metric"]["node"]
+            nodeUtil = node["value"][1]
+            res[nodeName] = nodeUtil
+        return res
+
+    def disk_free_bytes(self) -> dict:
+        util = self.prom.get_current_metric_value(
+            'sum(avg (node_filesystem_free_bytes{mountpoint!="/boot", fstype!="tmpfs"}) without (mountpoint)) by (node)'
+        )
+        res = {}
+        for node in util:
+            nodeName = node["metric"]["node"]
+            nodeUtil = node["value"][1]
+            res[nodeName] = nodeUtil
+        return res
+
     def pod_info(self) -> dict:
         util = self.prom.get_current_metric_value("kube_pod_info")
         res = {}
