@@ -1,17 +1,33 @@
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
-config.load_kube_config()  # or config.load_kube_config()
-
-configuration = client.Configuration()
-
+# Configs can be set in Configuration class directly or using helper utility
+config.load_kube_config()
 api_instance = client.CoreV1Api()
 
-namespace = "default"  # str | see @Max Lobur's answer on how to get this
-name = "jaseci-redis-5f98d98bc4-dmxch"  # str | Pod name, e.g. via api_instance.list_namespaced_pod(namespace)
 
-try:
-    api_response = api_instance.delete_namespaced_pod(name, namespace)
-    print(api_response)
-except ApiException as e:
-    print("Exception when calling CoreV1Api->delete_namespaced_pod: %s\n" % e)
+def get_pod_list():
+    print("Listing pods with their IPs:")
+    ret = api_instance.list_pod_for_all_namespaces(watch=False)
+    res = []
+    for i in ret.items:
+        print("%s\t%s\t%s" % (i.status.pod_ip, i.metadata.namespace, i.metadata.name))
+        res.append(i.metadata)
+    return res
+
+
+def kill_jaseci_redis_pod():
+    namespace = ""  # str | see @Max Lobur's answer on how to get this
+    name = ""  # str | Pod name, e.g. via api_instance.list_namespaced_pod(namespace)
+
+    for i in get_pod_list():
+        if i.name.startswith("jaseci-redis"):
+            name = i.name
+            namespace = i.namespace
+            break
+
+    try:
+        api_response = api_instance.delete_namespaced_pod(name, namespace)
+        print(api_response)
+    except ApiException as e:
+        print("Exception when calling CoreV1Api->delete_namespaced_pod: %s\n" % e)
