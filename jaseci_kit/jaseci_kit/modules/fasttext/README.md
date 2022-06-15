@@ -42,6 +42,7 @@ For this part, we are going to use Python. First,
     If imported successsfuly, you should see the data format to be something like this
     > {"text": ["Share my location with Hillary's sister", "Send my current location to my father"], "label": [5, 5]}
 
+
 2. `Converting the format` from the SNIPS out of the box to the format that can be ingested by biencoder.
     ```python
     import pandas as pd
