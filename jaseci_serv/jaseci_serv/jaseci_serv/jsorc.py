@@ -31,3 +31,7 @@ def kill_jaseci_redis_pod():
         print(api_response)
     except ApiException as e:
         print("Exception when calling CoreV1Api->delete_namespaced_pod: %s\n" % e)
+
+
+if __name__ == "__main__":
+    kill_jaseci_redis_pod()
