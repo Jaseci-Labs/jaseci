@@ -11,7 +11,7 @@ Jaseci Serv allows for the development of APIs to interact with your JAC Program
 
 *2.Install Jaseci-Serv*
 ```
-pip install jaseci
+pip install jaseci-serv
 ```
 
 let's open a new terminal in our working directory and run :
@@ -19,17 +19,15 @@ let's open a new terminal in our working directory and run :
 ```
 jsserv makemigrations base
 ```
-This will create a database that will be used to run a aseci instance of our application. It creates a mydatabase file in your working directory.
+This will create a database that will be used to run a jaseci instance of our application. It creates a mydatabase file in your working directory.
 
 ```
 jsserv migrate
-
 ```
 Install the Schema and Database.
 
 ```
 jsserv runserver 0.0.0.0:8000
-
 ```
 This will start your Jaseci Server to run your application. Visit localhost:8000 .
 
@@ -64,7 +62,7 @@ jsctl jac build main.jac
 
 In new terminal 1
 
-*Register a new Sentinel :
+* Register a new Sentinel :
 
 ```
 sentinel register -name main -mode ir main.jir
