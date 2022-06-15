@@ -17,8 +17,8 @@ def get_pod_list():
 
 
 def kill_jaseci_redis_pod():
-    namespace = ""  # str | see @Max Lobur's answer on how to get this
-    name = ""  # str | Pod name, e.g. via api_instance.list_namespaced_pod(namespace)
+    namespace = ""
+    name = ""
 
     for i in get_pod_list():
         if i.name.startswith("jaseci-redis"):
