@@ -714,9 +714,14 @@ For this tutorial we are going to train the model on train dataset and validate 
 ## **Experiment and methodology**
 * **Zero-Shot entity detection**
 
-    Let us further look our `zero-shot entity` detection on [Few-Nerd Dataset](https://ningding97.github.io/fewnerd/), Few-NERD is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains `8 coarse-grained` types, `66 fine-grained` types, 188,200 sentences, 491,711 entities and 4,601,223 tokens. Three benchmark tasks are built, one is supervised (Few-NERD (SUP)) and the other two are few-shot (Few-NERD (INTRA) and Few-NERD (INTER)).
+    Let us further look our `zero-shot entity` detection on [Few-Nerd Dataset](https://ningding97.github.io/fewnerd/), Few-NERD is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains `8 coarse-grained(Major)` types, `66 fine-grained(All)` labels types. Three benchmark tasks are built, one is supervised (Few-NERD (SUP)) and the other two are few-shot (Few-NERD (INTRA) and Few-NERD (INTER)).
 
-    For zero-shot entity-detection we using flair **tars-ner** model.
+    ### **Dataset details**
+    | Dataset Name                   | train dataset             | validation dataset         | test dataset          |
+    |--------------------------------|---------------------------|----------------------------|-----------------------|
+    | FEW-NERD (SUP)                 | 131767                    | 18824                      | 37648                 |
+
+    For zero-shot entity-detection we are using flair **tars-ner** model.
 
     **Results**
 
