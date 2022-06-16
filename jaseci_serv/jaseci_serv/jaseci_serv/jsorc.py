@@ -26,6 +26,19 @@ class KubeController:
             namespace=namespace, body=config
         )
 
+    def get_deployment_conf(self, name: str, namespace: str = "default"):
+        api_response = self.app_api.read_namespaced_deployment(
+            name=name, namespace=namespace
+        )
+        print(api_response)
+        return api_response
+
+    def patch_deployment_conf(self, config, name: str, namespace: str = "default"):
+        api_response = self.app_api.patch_namespaced_deployment(
+            name=name, namespace=namespace, body=config
+        )
+        print(api_response)
+
     def kill_deployment(self, name: str, namespace: str = "default"):
         try:
             api_response = self.app_api.delete_namespaced_deployment(
@@ -38,5 +51,8 @@ class KubeController:
 
 if __name__ == "__main__":
     k = KubeController()
-    k.create_deployment(yaml.safe_load(open("jaseci.yaml", "r")))
+    # k.create_deployment(yaml.safe_load(open("jaseci.yaml", "r")))
+    conf = k.get_deployment_conf("jaseci-redis")
+    conf.spec.replicas = 3
+    k.patch_deployment_conf(conf, "jaseci-redis")
     # k.kill_deployment("jaseci-redis")
