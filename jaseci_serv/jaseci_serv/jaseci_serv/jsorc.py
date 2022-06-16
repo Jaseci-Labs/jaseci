@@ -18,11 +18,9 @@ def get_pod_list():
     return res
 
 
-def create_jaseci_redis_deployment(config: str, namespace: str = "default"):
-    with open(config, "r") as f:
-        dep_yaml = yaml.safe_load(f)
-        res = app_api.create_namespaced_deployment(namespace=namespace, body=dep_yaml)
-        print(res)
+def create_jaseci_redis_deployment(config: dict, namespace: str = "default"):
+    print(config)
+    return app_api.create_namespaced_deployment(namespace=namespace, body=config)
 
 
 def kill_jaseci_redis_pod(name: str, namespace: str = "default"):
@@ -36,5 +34,5 @@ def kill_jaseci_redis_pod(name: str, namespace: str = "default"):
 
 
 if __name__ == "__main__":
-    # create_jaseci_redis_deployment("jaseci.yaml")
-    kill_jaseci_redis_pod("jaseci-redis")
+    create_jaseci_redis_deployment(yaml.safe_load(open("jaseci.yaml", "r")))
+    # kill_jaseci_redis_pod("jaseci-redis")
