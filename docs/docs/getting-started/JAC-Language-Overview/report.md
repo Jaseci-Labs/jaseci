@@ -1,5 +1,5 @@
 ---
-title: Grabbing Results from reports 
+title: Results from reports 
 ---
 
 * It can be thought of as a global list that can be appended to by any walker throughout the request.

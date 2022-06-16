@@ -1,5 +1,5 @@
 ---
-title: Passing Arguments to Walker,Nodes, Edges
+title: Passing Arguments
 ---
 
 You can pass arguments to walkers , Nodes and Edges, in a similar way as passing arguments to functions in python.
