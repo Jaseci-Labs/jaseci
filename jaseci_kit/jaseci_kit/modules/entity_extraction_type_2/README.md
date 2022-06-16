@@ -415,19 +415,18 @@ Run the following command to execute walker `predict_entity_from_tfm`
     ```
 
 # **5. Experiments and methodology**
-Here we are going to descrive our experiments and methodology which we are using in  model training and evaluation.
+Let us further look into our model training and evaluation methodology
 
 ## **Evaluation of tfm_ner with `tiny-bert` and `bert`**
-Here we are using `tiny-bert` model and `bert-base-uncase` model for comparing performance of model.
+We are evaluating `tiny-bert` and `bert-base-uncased` model on following datasets.
+
 
 ## **Dataset description**
-In this we are using 2 dataset
+We are using two different dataset.
 
-**1. CONLL2003 [dataset](https://huggingface.co/datasets/conll2003)**
-   * Conll dataset have **4 labels(PER, ORG, LOC, MISC)**.
+**1. CONLL2003 [dataset](https://huggingface.co/datasets/conll2003)** is a named entity recognition dataset released as a part of CoNLL-2003 shared task. CoNLL-2003 dataset have **4 labels**(PER, ORG, LOC, MISC).
 
-**2. NERD [dataset](https://ningding97.github.io/fewnerd/)**
-   * FEW-NERD(SUP) have **66 full labels** and **8 Major labels**.
+**2. FEW-NERD [dataset](https://ningding97.github.io/fewnerd/)** is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains 8 coarse-grained types, 66 fine-grained types, FEW-NERD(SUP) have **66 labels** and **8 Major labels**.
 
 ### **Dataset details**
 | Dataset Name                   | train dataset             | validation dataset         | test dataset          |
@@ -435,14 +434,13 @@ In this we are using 2 dataset
 | Conll2003	                     | 14041                     | 3250	                      | 3453                  |
 | FEW-NERD (SUP)                 | 131767                    | 18824                      | 37648                 |
 
-Here we have two diffrent dataset and diffrent model configuration so we are performing evaluation on both dataset and models and getting insight from results.
 
 
 
 ## **Training methodology**
-For training model we are using hugging face pytorch model for token classification and we are using here default training parameter and importing model with hugging face pretrained library .
+For training model we are using pytorch model from huggingface for token classification .
 
-* **Default training parameter**.
+* **Default training parameter are following**.
     ```
     "MAX_LEN": 128,
     "TRAIN_BATCH_SIZE": 64,
@@ -456,31 +454,30 @@ For training model we are using hugging face pytorch model for token classificat
     * **RAM** : **`32GB`**
     * **GPU** : **`TESLA T4`**
     * **Memory GPU** : **`16GB`**
-    
-    We are training model upto 50 epochs on default training parameter and getting following `results`.
 
     ### **Results**
-    ### Training on 1% data from `FEW-NERD(SUP)` Dataset on `major labels`
-    | Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       | Epochs	        | LR	        | Dataset_Name    | Time Taken(avg) |
-    |--------------------------|----------------------|-----------------|---------------------|-----------------|---------------|-----------------|-----------------|
-    |bert-base-uncased         | 0.691030008          | 0.688788764	    | 0.635250789         |	50	            | 0.00002       | FEW-NERD(SUP)   | 2HR+20MIN       |
-    |prajjwal1/bert-tiny       | 0.218407038	      | 0.218201805     | 0.209082379	      | 50	            | 0.00002	    | FEW-NERD(SUP)   | 26MIN           |
-    ### Training on 5% data from `FEW-NERD(SUP)` Dataset on `full labels`
+    ### Training on sample data from `FEW-NERD(SUP)` Dataset on `major labels`
+    | Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       |Time Taken(avg)  |
+    |--------------------------|----------------------|-----------------|---------------------|-----------------|
+    |bert-base-uncased         | 0.691030008          | 0.688788764	    | 0.635250789         | 2HR+20MIN       |
+    |prajjwal1/bert-tiny       | 0.218407038	      | 0.218201805     | 0.209082379	      | 26MIN           |
 
-    | Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       | Epochs	        | LR	        | Dataset_Name    | Time Taken(avg) |
-    |--------------------------|----------------------|-----------------|---------------------|-----------------|---------------|-----------------|-----------------|
-    |bert-base-uncased         | 0.58411808           | 0.583044593	    | 0.570228655         |	50	            | 0.00002       | FEW-NERD(SUP)   | 3HR+36MIN       |
-    |prajjwal1/bert-tiny       | 0.190007991	      | 0.189403068     | 0.054631549	      | 50	            | 0.00002	    | FEW-NERD(SUP)   | 35MIN           |
+    ### Training on sample data from `FEW-NERD(SUP)` Dataset
+    | Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       | Time Taken(avg) |
+    |--------------------------|----------------------|-----------------|---------------------|-----------------|
+    |bert-base-uncased         | 0.58411808           | 0.583044593	    | 0.570228655         | 3HR+36MIN       |
+    |prajjwal1/bert-tiny       | 0.190007991	      | 0.189403068     | 0.054631549	      | 35MIN           |
 
-    ### Training on `CONLL2003` full dataset
-    | Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       | Epochs	        | LR	        | Dataset_Name    | Time Taken(avg) |
-    |--------------------------|----------------------|-----------------|---------------------|-----------------|---------------|-----------------|-----------------|
-    |bert-base-uncased         | 0.95859598           | 0.98597485	    | 0.81                |	50	            | 0.00002       | FEW-NERD(SUP)   | 3HR+45MIN       |
-    |prajjwal1/bert-tiny       | 0.826914224	      | 0.789249077     | 0.682252189	      | 50	            | 0.00002	    | FEW-NERD(SUP)   | 35MIN           |
+    ### Training on `CONLL2003` dataset
+    | Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       | Time Taken(avg) |
+    |--------------------------|----------------------|-----------------|---------------------|-----------------|
+    |bert-base-uncased         | 0.95859598           | 0.98597485	    | 0.81                | 3HR+45MIN       |
+    |prajjwal1/bert-tiny       | 0.826914224	      | 0.789249077     | 0.682252189	      | 35MIN           |
 
     After comparing these results we will get the insight from this
     * **Number of labels upto 4**
-        * if we want to early train and infer model then we can go with small model `tiny-bert`
-        * if we want to higher accuracy result we need to go with large model e.g. `bert-base-uncased`
+        * We prefare training time, we need to go with small model e.g. `tiny-bert`
+        * We are focussing higher accuracy result, we need to go with bigger model e.g. `bert-base-uncased`
+
     * **Number of labels greater then 4**
-        * if we have more then 4 labels in dataset then we need to go with larger model so we will get good `accuracy` and `f1-score`
+        * We need to go with bigger model so we will get higher `accuracy` and `f1-score` e.g. `bert-base-uncased`
