@@ -510,10 +510,37 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
     Epoch: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 5/5 [00:22<00:00,  4.49s/batch]
     
     ```
-### **4. Evaluation of the model effectiveness** </br>
-    Performing model effectiveness on `test_bi.json` dataset </br>
-    **Sample Result Data**
+### **4. Evaluation of the model effectiveness**
 
+* Performing model effectiveness on `test_bi.json` dataset.
+
+    ```
+    Model testing Accuracy : 0.9090909090909091
+    Model testing F1_Score : 0.886656034024455
+
+    Model classification Report
+
+                            precision    recall  f1-score   support
+
+            BookRestaurant       1.00      1.00      1.00        14
+             ComparePlaces       0.57      1.00      0.73         4
+             GetDirections       1.00      1.00      1.00         7
+           GetPlaceDetails       1.00      0.80      0.89        10
+     GetTrafficInformation       1.00      0.50      0.67         4
+                GetWeather       0.90      1.00      0.95         9
+               RequestRide       0.83      1.00      0.91         5
+               SearchPlace       0.80      0.67      0.73         6
+      ShareCurrentLocation       1.00      1.00      1.00         3
+                  ShareETA       1.00      1.00      1.00         4
+
+                  accuracy                           0.91        66
+                 macro avg       0.91      0.90      0.89        66
+              weighted avg       0.93      0.91      0.91        66
+    ```
+
+
+    **Sample Result Data**
+    ```
     [
         {
             "context": "I want a table for friday 8pm for 2 people at Katz's Delicatessen",
@@ -571,6 +598,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
             "Conf_Score": 13.798050719287755
         }
     ]
+    ```
 
 ### **5. Use the trained model to make predictions** </br>
 * Create new input data for prdiction stored in `test_dataset.json` file (can take any name) </br>
