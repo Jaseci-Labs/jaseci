@@ -1,5 +1,6 @@
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
+import yaml
 
 # Configs can be set in Configuration class directly or using helper utility
 config.load_kube_config()
@@ -15,6 +16,13 @@ def get_pod_list():
         print("%s\t%s\t%s" % (i.status.pod_ip, i.metadata.namespace, i.metadata.name))
         res.append(i.metadata)
     return res
+
+
+def create_jaseci_redis_deployment():
+    with open("jaseci.yaml", "r") as f:
+        dep_yaml = yaml.safe_load(f)
+        res = app_api.create_namespaced_deployment(namespace="default", body=dep_yaml)
+        print(res)
 
 
 def kill_jaseci_redis_pod():
@@ -37,4 +45,5 @@ def kill_jaseci_redis_pod():
 
 
 if __name__ == "__main__":
-    kill_jaseci_redis_pod()
+    create_jaseci_redis_deployment()
+    # kill_jaseci_redis_pod()
