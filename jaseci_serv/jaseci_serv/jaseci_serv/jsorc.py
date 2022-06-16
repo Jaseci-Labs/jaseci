@@ -20,13 +20,13 @@ class KubeController:
             res.append(i.metadata)
         return res
 
-    def create_jaseci_redis_deployment(self, config: dict, namespace: str = "default"):
+    def create_deployment(self, config: dict, namespace: str = "default"):
         print(config)
         return self.app_api.create_namespaced_deployment(
             namespace=namespace, body=config
         )
 
-    def kill_jaseci_redis_deployment(self, name: str, namespace: str = "default"):
+    def kill_deployment(self, name: str, namespace: str = "default"):
         try:
             api_response = self.app_api.delete_namespaced_deployment(
                 name=name, namespace=namespace
@@ -38,5 +38,5 @@ class KubeController:
 
 if __name__ == "__main__":
     k = KubeController()
-    k.create_jaseci_redis_deployment(yaml.safe_load(open("jaseci.yaml", "r")))
-    # k.kill_jaseci_redis_pod("jaseci-redis")
+    k.create_deployment(yaml.safe_load(open("jaseci.yaml", "r")))
+    # k.kill_deployment("jaseci-redis")
