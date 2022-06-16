@@ -14,7 +14,7 @@ For this tutorial we are going to leaverage the flair ner `Zero-shot classificat
 2. Import [flair ner(ent_ext)](#2-import-flair-nerent_ext-module-in-jac) module
 3. [Few-shot classification](#3-few-shot-classification-train-test-and-validate-model)
 
-**[Eperiment and methodology]()**
+**[Eperiment and methodology](#experiment-and-methodology)**
 
 # **Walk through** 
 ## **USE CASE I** : `Zero-Shot entity detection` Classify entity without training `NER Data`:
