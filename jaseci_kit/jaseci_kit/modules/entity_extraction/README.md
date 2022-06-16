@@ -14,6 +14,7 @@ For this tutorial we are going to leaverage the flair ner `Zero-shot classificat
 2. Import [flair ner(ent_ext)](#2-import-flair-nerent_ext-module-in-jac) module
 3. [Few-shot classification](#3-few-shot-classification-train-test-and-validate-model)
 
+**[Eperiment and methodology]()**
 
 # **Walk through** 
 ## **USE CASE I** : `Zero-Shot entity detection` Classify entity without training `NER Data`:
@@ -710,3 +711,33 @@ For this tutorial we are going to train the model on train dataset and validate 
             }
         ]
         ```
+## **Experiment and methodology**
+* **Zero-Shot entity detection**
+
+    Let us further look our `zero-shot entity` detection on [Few-Nerd Dataset](https://ningding97.github.io/fewnerd/), Few-NERD is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains `8 coarse-grained` types, `66 fine-grained` types, 188,200 sentences, 491,711 entities and 4,601,223 tokens. Three benchmark tasks are built, one is supervised (Few-NERD (SUP)) and the other two are few-shot (Few-NERD (INTRA) and Few-NERD (INTER)).
+
+    For zero-shot entity-detection we using flair **tars-ner** model.
+
+    **Results**
+
+    ## Zero-shot performance on FEW-NERD(INTER) test Dataset.
+    | Labels          | Accuracy        | F1_Score     |
+    |-----------------|-----------------|--------------|
+    | All             | 0.32053081      | 0.305329825  |
+    | Major           | 0.475163372	    | 0.447818008  |
+
+
+    ## Zero-shot performance on FEW-NERD(INTRA) test Dataset.
+    | Labels          | Accuracy         | F1_Score     |
+    |-----------------|------------------|--------------|
+    | All             | 0.143001171      | 0.171142318  |
+    | Major           | 0.540210805	     | 0.462717092  |
+
+
+    ## Zero-shot performance on FEW-NERD(SUB) test Dataset.
+    | Labels          | Accuracy         | F1_Score     |
+    |-----------------|------------------|--------------|
+    | All             | 0.105859864      | 0.128166615  |
+    | Major           | 0.475106014	     | 0.431429256  |
+
+    From this results we will get following insight, if we have number of labels is less, we will get higher accuracy and f1_score.
