@@ -39,6 +39,14 @@ class KubeController:
         )
         print(api_response)
 
+    def deployment_set_scale(
+        self, name: str, namespace: str = "default", scale: int = 1
+    ):
+        # This is just a small shortcut to set the scale of a deployment
+        conf = self.get_deployment_conf(name, namespace)
+        conf.spec.replicas = scale
+        self.patch_deployment_conf(conf, name, namespace)
+
     def kill_deployment(self, name: str, namespace: str = "default"):
         try:
             api_response = self.app_api.delete_namespaced_deployment(
@@ -52,7 +60,5 @@ class KubeController:
 if __name__ == "__main__":
     k = KubeController()
     # k.create_deployment(yaml.safe_load(open("jaseci.yaml", "r")))
-    conf = k.get_deployment_conf("jaseci-redis")
-    conf.spec.replicas = 3
-    k.patch_deployment_conf(conf, "jaseci-redis")
+    k.deployment_set_scale("jaseci-redis", scale=2)
     # k.kill_deployment("jaseci-redis")
