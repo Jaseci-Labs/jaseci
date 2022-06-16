@@ -11,7 +11,7 @@ This tutorial show you how to train test and validate **tfm_ner** module.
 2. Import [tfm_ner](#2-import-tfm_ner-module-in-jaseci) module
 3. Model [training and validation](#3-model-training-and-validation)
 4. [Predicting entities](#4-predicting-entities)
-5. [Experiments](#5-experiments-and-methodology) and methodology
+5. [Experiments and methodology](#5-experiments-and-methodology)
 
 ## **1. Preparing Dataset**
 For train, test and validation dataset, we are going to creating list of dict and storing in json file by name `train.json`, `validation.json` and `test.json` for demonstration perpose we are using here [conll2003 dataset](https://huggingface.co/datasets/conll2003) and storing dataset file in directory name `dataset` and put all required file in this directory.
@@ -426,7 +426,7 @@ We are using two different dataset.
 
 **1. CONLL2003 [dataset](https://huggingface.co/datasets/conll2003)** is a named entity recognition dataset released as a part of CoNLL-2003 shared task. CoNLL-2003 dataset have **4 labels**(PER, ORG, LOC, MISC).
 
-**2. FEW-NERD [dataset](https://ningding97.github.io/fewnerd/)** is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains 8 coarse-grained types, 66 fine-grained types, FEW-NERD(SUP) have **66 labels** and **8 Major labels**.
+**2. FEW-NERD [dataset](https://ningding97.github.io/fewnerd/)** is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains `8 coarse-grained(Major)` types, `66 fine-grained(All)` types labels.
 
 ### **Dataset details**
 | Dataset Name                   | train dataset             | validation dataset         | test dataset          |
