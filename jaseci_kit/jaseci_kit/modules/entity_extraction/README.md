@@ -734,7 +734,7 @@ For this tutorial we are going to train the model on train dataset and validate 
     | Major           | 0.540210805	     | 0.462717092  |
 
 
-    ## Zero-shot performance on FEW-NERD(SUB) test Dataset.
+    ## Zero-shot performance on FEW-NERD(SUP) test Dataset.
     | Labels          | Accuracy         | F1_Score     |
     |-----------------|------------------|--------------|
     | All             | 0.105859864      | 0.128166615  |
