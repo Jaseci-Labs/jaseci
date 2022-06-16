@@ -420,24 +420,26 @@ Here we are going to descrive our experiments and methodology which we are using
 ## **Evaluation of tfm_ner with `tiny-bert` and `bert`**
 Here we are using `tiny-bert` model and `bert-base-uncase` model for comparing performance of model.
 
-## **Dataset Size**
+## **Dataset description**
 In this we are using 2 dataset
 
-**1. Conll2003 [dataset](https://huggingface.co/datasets/conll2003)**
+**1. CONLL2003 [dataset](https://huggingface.co/datasets/conll2003)**
    * Conll dataset have **4 labels(PER, ORG, LOC, MISC)**.
 
 **2. NERD [dataset](https://ningding97.github.io/fewnerd/)**
    * FEW-NERD(SUP) have **66 full labels** and **8 Major labels**.
 
-Here we have two diffrent dataset and diffrent model configuration so we are performing evaluation on both dataset and models and getting insight from results.
-
-## **Dataset details**
+### **Dataset details**
 | Dataset Name                   | train dataset             | validation dataset         | test dataset          |
 |--------------------------------|---------------------------|----------------------------|-----------------------|
 | Conll2003	                     | 14041                     | 3250	                      | 3453                  |
 | FEW-NERD (SUP)                 | 131767                    | 18824                      | 37648                 |
 
-### **Training methodology**
+Here we have two diffrent dataset and diffrent model configuration so we are performing evaluation on both dataset and models and getting insight from results.
+
+
+
+## **Training methodology**
 For training model we are using hugging face pytorch model for token classification and we are using here default training parameter and importing model with hugging face pretrained library .
 
 * **Default training parameter**.
@@ -450,13 +452,14 @@ For training model we are using hugging face pytorch model for token classificat
     "MAX_GRAD_NORM": 10,
     "MODE": "default"
     ```
-### **`Machine` description which we are using for training model**
-* **RAM** : **`32GB`**
-* **GPU** : **`TESLA T4`**
-* **Memory GPU** : **`16GB`**
-* We are training model upto 50 epochs on default training parameter getting results.
+    ### **`Machine` description for training model**
+    * **RAM** : **`32GB`**
+    * **GPU** : **`TESLA T4`**
+    * **Memory GPU** : **`16GB`**
+    
+    We are training model upto 50 epochs on default training parameter and getting following `results`.
 
-    **Results**
+    ### **Results**
     ### Training on 1% data from `FEW-NERD(SUP)` Dataset on `major labels`
     | Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       | Epochs	        | LR	        | Dataset_Name    | Time Taken(avg) |
     |--------------------------|----------------------|-----------------|---------------------|-----------------|---------------|-----------------|-----------------|
