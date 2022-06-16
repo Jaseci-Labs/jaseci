@@ -26,7 +26,7 @@ class KubeController:
             namespace=namespace, body=config
         )
 
-    def kill_jaseci_redis_pod(self, name: str, namespace: str = "default"):
+    def kill_jaseci_redis_deployment(self, name: str, namespace: str = "default"):
         try:
             api_response = self.app_api.delete_namespaced_deployment(
                 name=name, namespace=namespace
