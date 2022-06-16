@@ -4,6 +4,7 @@ from kubernetes.client.rest import ApiException
 # Configs can be set in Configuration class directly or using helper utility
 config.load_kube_config()
 api_instance = client.CoreV1Api()
+app_api = client.AppsV1Api()
 
 
 def get_pod_list():
@@ -27,7 +28,9 @@ def kill_jaseci_redis_pod():
             break
 
     try:
-        api_response = api_instance.delete_namespaced_pod(name, namespace)
+        api_response = app_api.delete_namespaced_deployment(
+            name="jaseci-redis", namespace="default"
+        )
         print(api_response)
     except ApiException as e:
         print("Exception when calling CoreV1Api->delete_namespaced_pod: %s\n" % e)
