@@ -498,4 +498,4 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
             }
         ]
     }
-    ```      
+    ```
