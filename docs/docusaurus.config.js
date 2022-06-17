@@ -110,6 +110,12 @@ module.exports = {
             // Please change this to your repo.
             editUrl: 'https://github.com/facebook/docusaurus/edit/main/website/',
           },
+          sitemap: {
+            changefreq: 'always',
+            priority: 0.5,
+            ignorePatterns: ['/tags/**'],
+            filename: 'sitemap.xml',
+          },
          
           
           theme: {

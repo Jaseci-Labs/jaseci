@@ -24,7 +24,7 @@ $ yarn build
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service.
 
-### Deployment
+### Deployment~
 
 ```
 $ GIT_USER=<Your GitHub username> USE_SSH=true yarn deploy

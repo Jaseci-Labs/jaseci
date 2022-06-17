@@ -50,7 +50,6 @@ def clean(text):
         "#",
         "$",
         "%",
-        "&",
         "(",
         ")",
         "/",
@@ -66,31 +65,29 @@ def clean(text):
         "[",
         "\\",
         "]",
-        "_",
         "`",
         "{",
         "}",
         "~",
-        "'",
         ",",
+        '"',
     ]
     for i in text:
         if i in filters:
-            text = text.replace(i, " " + i)
-
+            text = text.replace(i, " ")
     return text
 
 
-def create_data(df):
+def create_data(df, filename):
     """
     The function responsible for the creation of data in the said format.
     """
-    filepath = "train/train.txt"
+    filepath = f"train/{filename}.txt"
     if not os.path.exists("train"):
         os.makedirs("train")
-    with open(filepath, "w") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         for text, annotation in zip(df.text, df.annotation):
-            text = clean(text)
+            # text = clean(text)
             match_list = []
             for i in annotation:
                 a, text_ = matcher(text, i[0])
@@ -104,13 +101,12 @@ def create_data(df):
     return True
 
 
-def create_data_new(df):
-    filepath = "train/train.txt"
+def create_data_new(df, filename):
+    filepath = f"train/{filename}.txt"
     if not os.path.exists("train"):
         os.makedirs("train")
-    with open(filepath, "w") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         for text, annotation in zip(df.text, df.annotation):
-            text = clean(text)
             text = clean(text)
             split_sent = text.split()
             tags = ["O"] * len(split_sent)

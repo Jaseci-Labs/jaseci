@@ -24,7 +24,7 @@ Allows for data spacial reasoning , problem solving and programming.
 5.<strong>Abstraction without Compromise: </strong >
 Imagine an intuitive programming language used to wield a scalable eco-system of optimized AI models appearing as simple as add, subtract, multiply and divide operations in traditional programming languages.
 
-6.<strong>Ecncapsulates sophiscated ecosystem of bleeding edge tools: </strong>
+6.<strong>Encapsulates sophiscated ecosystem of bleeding edge tools: </strong>
  Advanced AI models can be leveraged easily when using Jaseci to make complex training and development easier.
 
 7.<strong>New featues constantly being added: </strong>

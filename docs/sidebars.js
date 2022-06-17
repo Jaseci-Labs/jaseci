@@ -11,7 +11,7 @@ module.exports = {
       items : ['Developing_with_JAC/Language_Features/input_output','Developing_with_JAC/Language_Features/dataTypes','Developing_with_JAC/Language_Features/Operator','Developing_with_JAC/Language_Features/ControlFlow','Developing_with_JAC/Language_Features/FileHnadling','Developing_with_JAC/Language_Features/OOP', {
         type : 'category',
         label : 'Acion Modules',
-        items : ['Developing_with_JAC/Language_Features/actions/date','Developing_with_JAC/Language_Features/actions/file','Developing_with_JAC/Language_Features/actions/net','Developing_with_JAC/Language_Features/actions/rand','Developing_with_JAC/Language_Features/actions/request','Developing_with_JAC/Language_Features/actions/std','Developing_with_JAC/Language_Features/actions/vectors'],
+        items : ['Developing_with_JAC/Language_Features/actions/date','Developing_with_JAC/Language_Features/actions/file','Developing_with_JAC/Language_Features/actions/net','Developing_with_JAC/Language_Features/actions/rand','Developing_with_JAC/Language_Features/actions/request','Developing_with_JAC/Language_Features/actions/std','Developing_with_JAC/Language_Features/actions/vectors','Developing_with_JAC/Language_Features/actions/jaseci'],
       },]
     },
     'Developing_with_JAC/Design_Philosophy_and_Patterns',
@@ -30,7 +30,7 @@ module.exports = {
      {
       type : 'category',
       label : 'JAC Language Overview',
-      items : ['getting-started/JAC-Language-Overview/how','getting-started/JAC-Language-Overview/select','getting-started/JAC-Language-Overview/loops','getting-started/JAC-Language-Overview/ModelStructures','getting-started/JAC-Language-Overview/ModelBehaivour','getting-started/JAC-Language-Overview/operatingContext','getting-started/JAC-Language-Overview/passingArguments','getting-started/JAC-Language-Overview/report','getting-started/JAC-Language-Overview/nodeCommuniation','getting-started/JAC-Language-Overview/take']
+      items : ['getting-started/JAC-Language-Overview/how','getting-started/JAC-Language-Overview/controlflow','getting-started/JAC-Language-Overview/ModelStructures','getting-started/JAC-Language-Overview/ModelBehaivour','getting-started/JAC-Language-Overview/operatingContext','getting-started/JAC-Language-Overview/passingArguments','getting-started/JAC-Language-Overview/report','getting-started/JAC-Language-Overview/nodeCommuniation','getting-started/JAC-Language-Overview/take']
     }
 
 
@@ -72,7 +72,7 @@ Tools: {
     {
       type : 'category',
       label : 'Non AI tools',
-      items : ['Tools_and_Features/Jaseci_Kit/textSegement']
+      items : ['Tools_and_Features/Jaseci_Kit/pdfExtractor']
     },
 
   ]
@@ -96,6 +96,7 @@ Resources : {
     'Resources/Architectural_Overview',
     'Resources/API_Reference',
     'Resources/FAQ',
+    'Resources/appendix'
 
   ]
 
