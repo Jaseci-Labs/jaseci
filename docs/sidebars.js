@@ -30,7 +30,7 @@ module.exports = {
      {
       type : 'category',
       label : 'JAC Language Overview',
-      items : ['getting-started/JAC-Language-Overview/how','getting-started/JAC-Language-Overview/select','getting-started/JAC-Language-Overview/loops','getting-started/JAC-Language-Overview/ModelStructures','getting-started/JAC-Language-Overview/ModelBehaivour','getting-started/JAC-Language-Overview/operatingContext','getting-started/JAC-Language-Overview/passingArguments','getting-started/JAC-Language-Overview/report','getting-started/JAC-Language-Overview/nodeCommuniation','getting-started/JAC-Language-Overview/take']
+      items : ['getting-started/JAC-Language-Overview/how','getting-started/JAC-Language-Overview/controlflow','getting-started/JAC-Language-Overview/ModelStructures','getting-started/JAC-Language-Overview/ModelBehaivour','getting-started/JAC-Language-Overview/operatingContext','getting-started/JAC-Language-Overview/passingArguments','getting-started/JAC-Language-Overview/report','getting-started/JAC-Language-Overview/nodeCommuniation','getting-started/JAC-Language-Overview/take']
     }
 
 
@@ -72,7 +72,7 @@ Tools: {
     {
       type : 'category',
       label : 'Non AI tools',
-      items : ['Tools_and_Features/Jaseci_Kit/textSegement']
+      items : ['Tools_and_Features/Jaseci_Kit/pdfExtractor']
     },
 
   ]

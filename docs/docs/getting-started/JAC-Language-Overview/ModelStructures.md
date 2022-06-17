@@ -1,5 +1,5 @@
 ---
-title: Modelling Strucutres with Nodes,Edges and Graphs
+title: Modelling Structures 
 ---
 
 
