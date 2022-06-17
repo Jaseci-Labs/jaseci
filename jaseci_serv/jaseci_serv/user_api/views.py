@@ -19,6 +19,7 @@ from jaseci_serv.user_api.serializers import (
     UserSerializer,
     send_activation_email,
 )
+from jaseci_serv.base.socialauth import socialauth_config
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -119,10 +120,19 @@ class GoogleSSOView(GenericAPIView):
         POST with "auth_token"
         send an "id_token" from google
         """
-        data = self.serializer_class(data=request.data)
+        data = self.serializer_class(data=request.data, context={"request": request})
         if data.is_valid(raise_exception=True):
             auth_token = data.validated_data.get("auth_token")
-            return Response(auth_token, status=status.HTTP_200_OK)
+            if auth_token["user"] is not None:
+                login(
+                    request,
+                    auth_token["user"],
+                    backend="django.contrib.auth.backends.ModelBackend",
+                )
+            return Response(
+                {"token": auth_token["token"], "exp": auth_token["exp"]},
+                status=status.HTTP_200_OK,
+            )
         else:
             return Response(data.errors, status=status.HTTP_400_BAD_REQUEST)
 

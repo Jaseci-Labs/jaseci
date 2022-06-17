@@ -7,6 +7,26 @@ from rest_framework import status
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 
+AUTH_TOKEN = (
+    "eyJhbGciOiJSUzI1NiIsImtpZCI6IjU4MGFkYjBjMzJhMTc1ZDk1MG"
+    "ExYzE5MDFjMTgyZmMxNzM0MWRkYzQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJhY2NvdW50c"
+    "y5nb29nbGUuY29tIiwiYXpwIjoiNTgyMjk2MjI1MjQ1LTNrcWkwNGQ4OWFobGsxa3I4ajE1a"
+    "jF1b2xjaTBocnRxLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwiYXVkIjoiNTgyMjk2Mj"
+    "I1MjQ1LTNrcWkwNGQ4OWFobGsxa3I4ajE1ajF1b2xjaTBocnRxLmFwcHMuZ29vZ2xldXNlcm"
+    "NvbnRlbnQuY29tIiwic3ViIjoiMTE0NTQzMTI0MTU3MTI2NjYyMzA1IiwiaGQiOiJqYXNlY"
+    "2kub3JnIiwiZW1haWwiOiJzaHlhbS5zdW5kZXJAamFzZWNpLm9yZyIsImVtYWlsX3Zlcmlm"
+    "aWVkIjp0cnVlLCJhdF9oYXNoIjoidGFpSFBIa3g0NDZoZ2lRdFl1TDRjZyIsIm5hbWUiOiJT"
+    "aHlhbSBTdW5kZXIiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY"
+    "29tL2EvQUFUWEFKeHVVb0pSUXdKdWZvZWdDUU5yaDZxZ0xid3NqZVZjQ2xrUlBnQUU9czk2LWM"
+    "iLCJnaXZlbl9uYW1lIjoiU2h5YW0iLCJmYW1pbHlfbmFtZSI6IlN1bmRlciIsImxvY2FsZSI6Im"
+    "VuIiwiaWF0IjoxNjU1NDM0MjU2LCJleHAiOjE2NTU0Mzc4NTYsImp0aSI6IjU1MTdiMmQzZjFiNTM3"
+    "MzliNzc5YmEyNzE4NTg1MTc4MDg3NGY5MWEifQ.eKv6XDGj4aTLZwz60c594UuN3UmIBlbKeGL-RlUl"
+    "RfHGzQBOmltzru4JDoGYOlejo59Ls5VjI5ys113h0-Z6BN6Hvef4Tt4tsfHg5G79MznFzVh-9ELHpZG2"
+    "j_7LSncj22xUo1cQ5-eucNtFC8Rgzz8rhOsQSdH3t6lBXaOwbHUqE0K-1MDt9782C79aKrn3cnU"
+    "1Sr-40obJ9qX5Bf-5GVfnF2j6uUAuEZKwXBnohG-OYfjVa8YLhRA7ZGqHBBi4lDbmCtuhINueji"
+    "wFgz-tLml6pBA4cqtNgdPC99KgVXkMjOAZjVla1yN8jQDObcPYYI1AN7voMlYyBAmEOhU8uA"
+)
+
 
 # Consts for url
 CREATE_USER_URL = reverse("user_api:create")
@@ -14,6 +34,7 @@ TOKEN_URL = reverse("user_api:token")
 MANAGE_URL = reverse("user_api:manage")
 LOGOUT_EVERYONE_URL = reverse("user_api:logout_everyone")
 PASSWORD_RESET_URL = reverse("user_api:password_reset:reset-password-request")
+GOOGLE_SSO_URL = reverse("user_api:google_login")
 # Alias for create user
 create_user = get_user_model().objects.create_user
 create_superuser = get_user_model().objects.create_superuser
@@ -314,3 +335,19 @@ class user_api_tests_private(TestCaseHelper, TestCase):
         self.assertEqual(self.user.name, payload["name"])
         self.assertTrue(self.user.check_password(payload["password"]))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_valid_google_id_token(self):
+        """Test updating the user profile for authenticated user"""
+        payload = {"auth_token": AUTH_TOKEN}
+
+        res = self.client.post(GOOGLE_SSO_URL, payload)
+        # self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("token", res.json().keys())
+
+    def test_invalid_google_id_token(self):
+        """Test updating the user profile for authenticated user"""
+        payload = {"auth_token": AUTH_TOKEN}
+
+        res = self.client.post(GOOGLE_SSO_URL, payload)
+        # self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("token", res.json().keys())

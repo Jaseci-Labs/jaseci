@@ -21,8 +21,10 @@ urlpatterns = [
         "sso/",
         include(
             [
-                path("google/", views.GoogleSSOView.as_view()),
-                path("facebook/", views.FacebookSSOView.as_view()),
+                path("google/", views.GoogleSSOView.as_view(), name="google_login"),
+                path(
+                    "facebook/", views.FacebookSSOView.as_view(), name="facebook_login"
+                ),
             ]
         ),
     ),
