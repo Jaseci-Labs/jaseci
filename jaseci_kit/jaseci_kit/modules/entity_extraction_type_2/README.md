@@ -431,8 +431,8 @@ We are using two different dataset.
 ### **Dataset details**
 | Dataset Name                   | train dataset             | validation dataset         | test dataset          |
 |--------------------------------|---------------------------|----------------------------|-----------------------|
-| Conll2003	                     | 14041                     | 3250	                      | 3453                  |
-| FEW-NERD (SUP)                 | 131767                    | 18824                      | 37648                 |
+| Conll2003	                     | 14,041                    | 3,250	                  | 3,453                 |
+| FEW-NERD (SUP)                 | 131,767                   | 18,824                     | 37,648                |
 
 
 
@@ -459,20 +459,20 @@ For training model we are using pytorch model from huggingface for token classif
     ### Training on sample data from `FEW-NERD(SUP)` Dataset on `major labels`
     | Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       |Time Taken(avg)  |
     |--------------------------|----------------------|-----------------|---------------------|-----------------|
-    |bert-base-uncased         | 0.691030008          | 0.688788764	    | 0.635250789         | 2HR+20MIN       |
-    |prajjwal1/bert-tiny       | 0.218407038	      | 0.218201805     | 0.209082379	      | 26MIN           |
+    |bert-base-uncased         | 0.6910               | 0.6888	        | 0.6353              | 2HR+20MIN       |
+    |prajjwal1/bert-tiny       | 0.2184	              | 0.2182          | 0.2090	          | 26MIN           |
 
     ### Training on sample data from `FEW-NERD(SUP)` Dataset
     | Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       | Time Taken(avg) |
     |--------------------------|----------------------|-----------------|---------------------|-----------------|
-    |bert-base-uncased         | 0.58411808           | 0.583044593	    | 0.570228655         | 3HR+36MIN       |
-    |prajjwal1/bert-tiny       | 0.190007991	      | 0.189403068     | 0.054631549	      | 35MIN           |
+    |bert-base-uncased         | 0.5841               | 0.5830	        | 0.5702              | 3HR+36MIN       |
+    |prajjwal1/bert-tiny       | 0.1900	              | 0.1894          | 0.0546    	      | 35MIN           |
 
     ### Training on `CONLL2003` dataset
     | Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       | Time Taken(avg) |
     |--------------------------|----------------------|-----------------|---------------------|-----------------|
-    |bert-base-uncased         | 0.95859598           | 0.98597485	    | 0.81                | 3HR+45MIN       |
-    |prajjwal1/bert-tiny       | 0.826914224	      | 0.789249077     | 0.682252189	      | 35MIN           |
+    |bert-base-uncased         | 0.9585               | 0.9859	        | 0.8100              | 3HR+45MIN       |
+    |prajjwal1/bert-tiny       | 0.8269	              | 0.7892          | 0.6823              | 35MIN           |
 
     After comparing these results we will get the insight from this
     * **Number of labels upto 4**
