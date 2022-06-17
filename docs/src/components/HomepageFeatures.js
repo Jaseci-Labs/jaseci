@@ -1,7 +1,7 @@
 import React from 'react';
-import clsx from 'clsx';
 import styles from './HomepageFeatures.module.css';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import classNames from 'classnames';
 
 const FeatureList = [
   {
@@ -77,7 +77,7 @@ function Feature({imgUrl,href, title, description}) {
  
 const imageUrl = useBaseUrl(imgUrl);
 return (
-    <div className={clsx('col col--4', styles.feature)}>
+    <div className={classNames('col col--4', styles.feature)}>
         {imageUrl && (
             <div className="text--center">
                 <a href= {href} ><img className={styles.featureSvg} src={imageUrl} alt={title}/></a>
