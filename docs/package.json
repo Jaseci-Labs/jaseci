@@ -20,6 +20,7 @@
     "@mdx-js/react": "^1.6.21",
     "@svgr/webpack": "^5.5.0",
     "caniuse-lite": "^1.0.30001355",
+    "classnames": "^2.3.1",
     "clsx": "^1.1.1",
     "file-loader": "^6.2.0",
     "prism-react-renderer": "^1.2.1",
