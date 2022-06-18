@@ -184,6 +184,6 @@ Click ‘Import’.
 
 This will show monitoring dashboard for all cluster nodes
 
-
+Generally, this dashboard contains a set of necessary panels. It monitors CPU and memory utilization for the nodes and for each pod. 
 
 ##### Credits https://www.eksworkshop.com/
