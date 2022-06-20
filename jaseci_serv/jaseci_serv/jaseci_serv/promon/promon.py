@@ -15,7 +15,7 @@ class Promon:
         res = {}
         for node in util:
             nodeName = node["metric"]["node"]
-            nodeUtil = node["value"][1]
+            nodeUtil = float(node["value"][1])
             res[nodeName] = nodeUtil
         return res
 
@@ -26,7 +26,7 @@ class Promon:
         res = {}
         for node in util:
             nodeName = node["metric"]["node"]
-            nodeUtil = node["value"][1]
+            nodeUtil = float(node["value"][1])
             res[nodeName] = nodeUtil
         return res
 
@@ -37,7 +37,7 @@ class Promon:
         res = {}
         for pod in util:
             podName = pod["metric"]["pod"]
-            value = pod["value"][1]
+            value = float(pod["value"][1])
             res[podName] = float(value)
         return res
 
@@ -48,7 +48,7 @@ class Promon:
         res = {}
         for node in util:
             nodeName = node["metric"]["node"]
-            nodeUtil = node["value"][1]
+            nodeUtil = float(node["value"][1])
             res[nodeName] = nodeUtil
         return res
 
@@ -59,7 +59,7 @@ class Promon:
         res = {}
         for node in util:
             nodeName = node["metric"]["node"]
-            nodeUtil = node["value"][1]
+            nodeUtil = float(node["value"][1])
             res[nodeName] = nodeUtil
         return res
 
@@ -70,7 +70,7 @@ class Promon:
         res = {}
         for node in util:
             nodeName = node["metric"]["node"]
-            nodeUtil = node["value"][1]
+            nodeUtil = float(node["value"][1])
             res[nodeName] = nodeUtil
         return res
 
@@ -81,7 +81,7 @@ class Promon:
         res = {}
         for pod in util:
             podName = pod["metric"]["pod"]
-            value = pod["value"][1]
+            value = float(pod["value"][1])
             res[podName] = float(value)
         return res
 
@@ -104,7 +104,7 @@ class Promon:
         res = {}
         for node in util:
             nodeName = node["metric"]["node"]
-            nodeUtil = node["value"][1]
+            nodeUtil = float(node["value"][1])
             res[nodeName] = nodeUtil
         return res
 
@@ -126,7 +126,7 @@ class Promon:
         res = {}
         for node in util:
             nodeName = node["metric"]["node"]
-            nodeUtil = node["value"][1]
+            nodeUtil = float(node["value"][1])
             res[nodeName] = nodeUtil
         return res
 
@@ -148,7 +148,7 @@ class Promon:
         res = {}
         for node in util:
             nodeName = node["metric"]["node"]
-            nodeUtil = node["value"][1]
+            nodeUtil = float(node["value"][1])
             res[nodeName] = nodeUtil
         return res
 
@@ -159,7 +159,7 @@ class Promon:
         res = {}
         for node in util:
             nodeName = node["metric"]["node"]
-            nodeUtil = node["value"][1]
+            nodeUtil = float(node["value"][1])
             res[nodeName] = nodeUtil
         return res
 
