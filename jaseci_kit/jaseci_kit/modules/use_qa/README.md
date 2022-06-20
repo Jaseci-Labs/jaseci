@@ -6,7 +6,7 @@ For this tutorial we are going to leverage the `USE QA` for **text classificatio
 
 
 1. Preparing [dataset](#1-praparing-dataset) for evaluation
-2. Import [Use-QA(use_qa)](#2-import-use-qauseqa-module-in-jac) module in jac
+2. Import [Use-QA(use_qa)](#2-import-use-qause_qa-module-in-jac) module in jac
 3. Evaluate the models [effectiveness](#3-evaluate-the-models-effectiveness)
 
 # **Walk through**

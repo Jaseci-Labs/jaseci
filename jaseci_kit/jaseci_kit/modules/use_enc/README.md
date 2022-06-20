@@ -7,7 +7,7 @@ For this tutorial we are going to leverage the `Use encoder` for **Zero-shot tex
 
 
 1. Preparing [dataset](#1-praparing-dataset) for evaluation
-2. Import [Use-Encoder(use_enc)](#2-import-use-encoderuseenc-module-in-jac) module in jac
+2. Import [Use-Encoder(use_enc)](#2-import-use-encoderuse_enc-module-in-jac) module in jac
 3. Evaluate the models [effectiveness](#3-evaluate-the-models-effectiveness)
 
 # **Walk through**
