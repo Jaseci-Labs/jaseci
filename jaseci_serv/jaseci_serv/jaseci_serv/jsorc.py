@@ -1,3 +1,4 @@
+from promon import Promon
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 import yaml
@@ -5,7 +6,7 @@ import yaml
 
 class KubeController:
     # Configs can be set in Configuration class directly or using helper utility
-    config.load_kube_config()
+    config = config.load_kube_config()
     api_instance = client.CoreV1Api()
     app_api = client.AppsV1Api()
 
@@ -57,8 +58,17 @@ class KubeController:
             print("Exception when calling CoreV1Api->delete_namespaced_pod: %s\n" % e)
 
 
+
+class Monitor:
+    def __init__(self, promonUrl: str):
+        self.promon = Promon(promonUrl)
+        self.contriller = KubeController()
+
+    def check(self):
+        cpu = self.promon.cpu_utilization_percentage()
+        print(cpu)
+
 if __name__ == "__main__":
+    m = Monitor("http://localhost:8080")
+    m.check()
     k = KubeController()
-    # k.create_deployment(yaml.safe_load(open("jaseci.yaml", "r")))
-    k.deployment_set_scale("jaseci-redis", scale=2)
-    # k.kill_deployment("jaseci-redis")
