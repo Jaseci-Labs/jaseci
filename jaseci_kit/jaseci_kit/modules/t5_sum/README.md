@@ -2,7 +2,7 @@
 
 Module `t5_sum` uses the T5 transformer model to perform abstractive summary on a body of text.
 
-1. Import [`t5_sum`](#1-import-summarizer-t5sum-module-in-jac) module in jac
+1. Import [`t5_sum`](#1-import-summarizer-t5_sum-module-in-jac) module in jac
 2. [Summarization](#2-summarization)
 
 # **Walk through**

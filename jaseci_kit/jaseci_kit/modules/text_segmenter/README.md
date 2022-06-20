@@ -2,7 +2,7 @@
 
 Module `text_seg` implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
 
-1. Import [`text_seg`](#1-import-textsegementer-textseg-module-in-jac) module in jac
+1. Import [`text_seg`](#1-import-text_segementer-text_seg-module-in-jac) module in jac
 2. Get [segments](#2-get-segments)
 
 # **Walk through**

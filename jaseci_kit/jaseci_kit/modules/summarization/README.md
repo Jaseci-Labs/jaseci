@@ -2,7 +2,7 @@
 
 Module `cl_summer` uses the sumy summarizer to create extractive summary from text.
 
-1. Import [`cl_summer`](#1-import-summarizer-clsummer-module-in-jac) module in jac
+1. Import [`cl_summer`](#1-import-summarizer-cl_summer-module-in-jac) module in jac
 2. [Summarizer](#2-summarizer)
 
 # **Walk through**
