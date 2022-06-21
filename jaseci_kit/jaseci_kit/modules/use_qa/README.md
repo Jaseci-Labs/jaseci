@@ -1,5 +1,5 @@
 # **USE QA (`use_qa`)**
-Module `use_qa` uses the `multilingual-qa` to generate sentence level embeddings. The sentence level embeddings can then be used to calculate best match between question and available answers via cosine similarity and/or dist_score.
+Module `use_qa` uses the [`multilingual-qa`](https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/3) to generate sentence level embeddings. The sentence level embeddings can then be used to calculate best match between question and available answers via cosine similarity and/or dist_score.
 
 For this tutorial we are going to leverage the `USE QA` for **text classification**.
 
