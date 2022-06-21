@@ -825,12 +825,13 @@ class interp(machine_state):
         """
         kid = self.set_cur_ast(jac_ast)
         result = self.run_atom(kid[1])
-        if is_urn(result.value):
-            result = jac_value(
-                self, value=jeu(result.value.replace("urn", "jac"), self)
-            )
-        else:
-            self.rt_error(f"{result.value} not valid reference", kid[1])
+        if not isinstance(result.value, node):
+            if is_urn(result.value):
+                result = jac_value(
+                    self, value=jeu(result.value.replace("urn", "jac"), self)
+                )
+            else:
+                self.rt_error(f"{result.value} not valid reference", kid[1])
         return result
 
     def run_built_in(self, jac_ast, atom_res):
