@@ -1,6 +1,6 @@
 # **Summarization(`t5_sum`)**
 
-Module `t5_sum` uses the T5 transformer model to perform abstractive summary on a body of text.
+Module `t5_sum` uses the hugging face T5 transformer model to extract summary from text.
 
 1. Import [`t5_sum`](#1-import-summarizer-t5_sum-module-in-jac) module in jac
 2. [Summarization](#2-summarization)
@@ -19,7 +19,7 @@ Module `t5_sum` uses the T5 transformer model to perform abstractive summary on 
 
 
 ## **2. Summarization**
-For this tutorial, we are going to leverage the **Summarizer** (`t5_sum`) from text. 
+For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which would generate the summary from text. 
 
 * Creating Jac Program for **summarizer** (`t5_sum`)
 
