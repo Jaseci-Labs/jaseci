@@ -1,10 +1,12 @@
 import React from 'react';
-import styles from './HomepageFeatures.module.css';
+import clsx from 'clsx';
+import styles from './styles.module.css';
 import useBaseUrl from '@docusaurus/useBaseUrl';
-import classNames from 'classnames';
+
+
 
 const FeatureList = [
-  {
+ {
     title: 'Introduction to Jaseci',
     imgUrl: 'img/tutorial/landingpage/introduction_to_jaseci.png',
     href : '/docs/getting-started/getting-to-know-jaseci',
@@ -75,30 +77,31 @@ const FeatureList = [
 
 function Feature({imgUrl,href, title, description}) {
  
-const imageUrl = useBaseUrl(imgUrl);
-return (
-    <div className={classNames('col col--4', styles.feature)}>
-        {imageUrl && (
-            <div className="text--center">
-                <a href= {href} ><img className={styles.featureSvg} src={imageUrl} alt={title}/></a>
-            </div>
-        )}
-        <h3>{title}</h3>
-        <p>{description}</p>
-    </div>
-);
-}
-
-export default function HomepageFeatures() {
+  const imageUrl = useBaseUrl(imgUrl);
   return (
-    <section className={styles.features}>
-      <div className="container">
-        <div className="row">
-          {FeatureList.map((props, idx) => (
-            <Feature key={idx} {...props} />
-          ))}
-        </div>
+      <div className={clsx('col col--4', styles.feature)}>
+          {imageUrl && (
+              <div className="text--center">
+                  <a href= {href} ><img className={styles.featureSvg} src={imageUrl} alt={title}/></a>
+              </div>
+          )}
+          <h3>{title}</h3>
+          <p>{description}</p>
       </div>
-    </section>
   );
-}
+  }
+  
+  export default function HomepageFeatures() {
+    return (
+      <section className={styles.features}>
+        <div className="container">
+          <div className="row">
+            {FeatureList.map((props, idx) => (
+              <Feature key={idx} {...props} />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+  
