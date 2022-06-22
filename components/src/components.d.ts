@@ -203,16 +203,8 @@ export namespace Components {
         "name": string;
         "operations": string;
     }
-    interface JscTab {
-        "css": string;
-        "events": string;
-        "label": string;
-        "name": string;
-        "operations": any;
-        "selectedTab": string;
-        "tabsEl": HTMLJscTabsElement;
-    }
     interface JscTabs {
+        "container": HTMLElement;
         "content": string;
         "css": string;
         "events": string;
@@ -220,6 +212,8 @@ export namespace Components {
         "openTab": (tabName: string) => Promise<void>;
         "operations": any;
         "selectedTab": string;
+        "tabs": string;
+        "tabsComps": { name: string; label: string; render: JaseciComponent[] }[];
     }
     interface JscText {
         "css": string;
@@ -378,12 +372,6 @@ declare global {
         prototype: HTMLJscRowElement;
         new (): HTMLJscRowElement;
     };
-    interface HTMLJscTabElement extends Components.JscTab, HTMLStencilElement {
-    }
-    var HTMLJscTabElement: {
-        prototype: HTMLJscTabElement;
-        new (): HTMLJscTabElement;
-    };
     interface HTMLJscTabsElement extends Components.JscTabs, HTMLStencilElement {
     }
     var HTMLJscTabsElement: {
@@ -429,7 +417,6 @@ declare global {
         "jsc-popover": HTMLJscPopoverElement;
         "jsc-popover-container": HTMLJscPopoverContainerElement;
         "jsc-row": HTMLJscRowElement;
-        "jsc-tab": HTMLJscTabElement;
         "jsc-tabs": HTMLJscTabsElement;
         "jsc-text": HTMLJscTextElement;
         "jsc-textbox": HTMLJscTextboxElement;
@@ -624,22 +611,16 @@ declare namespace LocalJSX {
         "name"?: string;
         "operations"?: string;
     }
-    interface JscTab {
-        "css"?: string;
-        "events"?: string;
-        "label"?: string;
-        "name"?: string;
-        "operations"?: any;
-        "selectedTab"?: string;
-        "tabsEl"?: HTMLJscTabsElement;
-    }
     interface JscTabs {
+        "container"?: HTMLElement;
         "content"?: string;
         "css"?: string;
         "events"?: string;
         "name"?: string;
         "operations"?: any;
         "selectedTab"?: string;
+        "tabs"?: string;
+        "tabsComps"?: { name: string; label: string; render: JaseciComponent[] }[];
     }
     interface JscText {
         "css"?: string;
@@ -698,7 +679,6 @@ declare namespace LocalJSX {
         "jsc-popover": JscPopover;
         "jsc-popover-container": JscPopoverContainer;
         "jsc-row": JscRow;
-        "jsc-tab": JscTab;
         "jsc-tabs": JscTabs;
         "jsc-text": JscText;
         "jsc-textbox": JscTextbox;
@@ -729,7 +709,6 @@ declare module "@stencil/core" {
             "jsc-popover": LocalJSX.JscPopover & JSXBase.HTMLAttributes<HTMLJscPopoverElement>;
             "jsc-popover-container": LocalJSX.JscPopoverContainer & JSXBase.HTMLAttributes<HTMLJscPopoverContainerElement>;
             "jsc-row": LocalJSX.JscRow & JSXBase.HTMLAttributes<HTMLJscRowElement>;
-            "jsc-tab": LocalJSX.JscTab & JSXBase.HTMLAttributes<HTMLJscTabElement>;
             "jsc-tabs": LocalJSX.JscTabs & JSXBase.HTMLAttributes<HTMLJscTabsElement>;
             "jsc-text": LocalJSX.JscText & JSXBase.HTMLAttributes<HTMLJscTextElement>;
             "jsc-textbox": LocalJSX.JscTextbox & JSXBase.HTMLAttributes<HTMLJscTextboxElement>;

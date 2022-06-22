@@ -36,4 +36,5 @@ export function getProp(id: string, fallback?: any) {
 export const complexProps: Partial<Record<ComponentTags, Array<string>>> = {
   'jsc-datagrid': ['rows', 'headings'],
   'jsc-datalist': ['getters', 'template', 'layoutProps', 'body'],
+  'jsc-tabs': ['tabs'],
 };
