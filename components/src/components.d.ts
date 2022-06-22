@@ -214,6 +214,7 @@ export namespace Components {
         "selectedTab": string;
         "tabs": string;
         "tabsComps": { name: string; label: string; render: JaseciComponent[] }[];
+        "variant": 'boxed' | 'lifted' | 'basic' | 'bordered';
     }
     interface JscText {
         "css": string;
@@ -621,6 +622,7 @@ declare namespace LocalJSX {
         "selectedTab"?: string;
         "tabs"?: string;
         "tabsComps"?: { name: string; label: string; render: JaseciComponent[] }[];
+        "variant"?: 'boxed' | 'lifted' | 'basic' | 'bordered';
     }
     interface JscText {
         "css"?: string;

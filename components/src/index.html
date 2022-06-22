@@ -304,6 +304,7 @@
                   "name": "myTabs",
                   "component": "Tabs",
                   "props": {
+                    "variant": "lifted",
                     "tabs": [
                       {
                         "name": "tab1",
@@ -313,7 +314,13 @@
                       {
                         "name": "tab2",
                         "label": "Settings",
-                        "render": [{ "component": "Text", "props": { "value": "Tab 2 content" } }]
+                        "render": [
+                          { "component": "Text", "props": { "value": "Tab 2 content" } },
+                          {
+                            "component": "Button", "props": { "label": "Click Me" },
+                            "events": { "onClick": [{ "fn": "emit", "args": ["myDialog.openDialog"] }] }
+                          },
+                        ]
                       },
                       {
                         "name": "tab3",
@@ -321,6 +328,9 @@
                         "render": [{ "component": "Text", "props": { "value": "Tab 3 content dddddddddd df dfdfdf dfdfdfd dfdfdfdf df dfd fdfdfd fdf dfdfdfdfdfdfdfdf dfd fdf df d dfdfd dfd dd dfdf" } }]
                       },
                     ]
+                  },
+                  "css": {
+                    "marginTop": "20px"
                   }
                 }
               ]

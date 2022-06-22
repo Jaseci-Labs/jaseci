@@ -21,6 +21,7 @@ export class Tabs {
   @Prop() tabs: string;
   @Prop() tabsComps: { name: string; label: string; render: JaseciComponent[] }[];
   @Prop() content: string;
+  @Prop() variant: 'boxed' | 'lifted' | 'basic' | 'bordered' = 'bordered';
   @Prop() container: HTMLElement;
 
   @Method()
@@ -28,7 +29,7 @@ export class Tabs {
     this.container.classList.add('opacity-0');
     setTimeout(() => {
       this.selectedTab = tabName;
-      this.content = `<div class="tab-contents">${renderComponentTree(this.tabsComps?.find(tab => tab.name === this.selectedTab)?.render)}</div>`;
+      this.content = `${renderComponentTree(this.tabsComps?.find(tab => tab.name === this.selectedTab)?.render)}`;
       this.container.classList.remove('opacity-0');
     }, 100);
   }
@@ -36,7 +37,7 @@ export class Tabs {
   componentDidLoad() {
     // tab is given a unique name if none is provided, to keep the api layer simple
     this.tabsComps = getProp(this.tabs).map(tab => ({ ...tab, name: tab.name || nanoid() }));
-    this.selectedTab = this.tabsComps[0].name;
+    this.openTab(this.tabsComps[0].name);
 
     Object.assign(this.host.style, {
       'box-sizing': 'border-box',
@@ -51,11 +52,21 @@ export class Tabs {
   render() {
     return (
       <Fragment>
-        <div class="tabs">
+        <div class={clsx('tabs', this.variant === 'boxed' && 'tabs-boxed')}>
           {this.tabsComps?.map(tab => (
             <Fragment>
               {tab && tab?.label && (
-                <a class={clsx('tab tab-bordered', this.selectedTab === tab.name && 'tab-active')} onClick={() => this.openTab(tab.name)}>
+                <a
+                  class={clsx(
+                    'tab',
+                    this.selectedTab === tab.name && 'tab-active',
+                    this.variant && {
+                      'tab-bordered': this.variant === 'bordered',
+                      'tab-lifted': this.variant === 'lifted',
+                    },
+                  )}
+                  onClick={() => this.openTab(tab.name)}
+                >
                   {tab?.label}
                 </a>
               )}
@@ -67,7 +78,7 @@ export class Tabs {
           <slot name="tabs"></slot>
         </div>
 
-        <div innerHTML={this.content || `<div></div>`} ref={el => (this.container = el)} class="transition-all duration-150 opacity-0 min-h-[50px]"></div>
+        <div innerHTML={this.content || `<div></div>`} ref={el => (this.container = el)} class="transition-all duration-150 opacity-0 min-h-[50px] block"></div>
       </Fragment>
     );
   }
