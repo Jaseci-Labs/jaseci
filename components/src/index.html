@@ -26,6 +26,7 @@
       const app = document.querySelector('jsc-app');
       const config = {
         siteName: "Hello World",
+        theme: "luxury",
         css: {
           background: "#F2F6F9",
           height: "100%"
@@ -45,7 +46,6 @@
               ],
             },
             props: { label: '{{config:siteName}}' },
-            css: { background: '#000000' },
           },
           {
 
@@ -72,7 +72,8 @@
                 {
                   component: "Button",
                   props: {
-                    label: "Add a Log"
+                    label: "Add a Log",
+                    palette: "accent"
                   }
                 }
               ]
@@ -88,7 +89,6 @@
             },
             css: {
               padding: "20px 20px",
-              borderColor: "blue"
             },
             sections: {
               children: [
@@ -100,9 +100,22 @@
                   },
                 },
                 {
+                  component: "Inputbox",
+                  props: {
+                    label: "Full Name",
+                    altLabel: "Enter name",
+                    placeholder: "An input field",
+                    palette: "accent",
+                  },
+                  css: {
+                  }
+                },
+                {
                   component: "Textbox",
                   props: {
                     label: "Date",
+                    placeholder: "Hello world...",
+                    palette: "accent",
                   },
                   css: {
                   }
@@ -232,7 +245,8 @@
                   "component": "Popover",
                   "props": {
                     "open": "false",
-                    "target": "popoverTrigger"
+                    "target": "popoverTrigger",
+                    "title": "A simple popover"
                   },
                   "sections": {
                     "contents": [
@@ -258,7 +272,7 @@
                   "name": "popoverTrigger",
                   "component": "Button",
                   "props": {
-                    "label": "Open Popover"
+                    "label": "Toggle Popover"
                   },
                   "events": {
                     "onClick": [
@@ -266,25 +280,15 @@
                         "fn": "emit",
                         "args": ["myPopover.toggle"]
                       },
-                      {
-                        "fn": "emit",
-                        "args": ["popoverTrigger.showCloseText"]
-                      }
+
                     ]
                   },
-                  "listeners": {
-                    "showCloseText": {
-                      "label": "Close Popover"
-                    },
-                    "showOpenText": {
-                      "label": "Close Popover"
-                    }
-                  }
                 },
                 {
                   "component": "Button",
                   "props": {
-                    "label": "Open Dialog"
+                    "label": "Open Dialog",
+                    "size": "sm"
                   },
                   "events": {
                     "onClick": [
@@ -293,6 +297,32 @@
                         "args": ["myDialog.openDialog"]
                       },
 
+                    ]
+                  }
+                },
+                {
+                  "name": "myTabs",
+                  "component": "Tabs",
+                  "sections": {
+                    "tabs": [
+                      {
+                        "name": "tab1", "component": "Tab", "props": { "label": "Gallery" },
+                        "sections": {
+                          "contents": [{ "component": "Text", "props": { "value": "Tab 1 content" } }]
+                        }
+                      },
+                      {
+                        "name": "tab2", "component": "Tab", "props": { "label": "Settings" },
+                        "sections": {
+                          "contents": [{ "component": "Text", "props": { "value": "Tab 2 content" } }]
+                        }
+                      },
+                      {
+                        "name": "tab3", "component": "Tab", "props": { "label": "Messages" },
+                        "sections": {
+                          "contents": [{ "component": "Text", "props": { "value": "Tab 3 content dddddddddd df dfdfdf dfdfdfd dfdfdfdf df dfd fdfdfd fdf dfdfdfdfdfdfdfdf dfd fdf df d dfdfd dfd dd dfdf" } }]
+                        }
+                      },
                     ]
                   }
                 }

@@ -1,6 +1,6 @@
 import { Component, Event, Element, EventEmitter, h, Method, Prop } from '@stencil/core';
 import { renderComponentTree } from '../../utils/utils';
-import { configStore } from '../../store/configStore';
+import { configStore, getTheme } from '../../store/configStore';
 
 @Component({
   tag: 'jsc-app',
@@ -50,7 +50,7 @@ export class App {
 
   @Method()
   async setGlobalConfig(config: Record<string, any> & { css: Record<string, string> }) {
-    configStore.state.config = config;
+    configStore.state.config = { ...configStore.state.config, ...config };
   }
 
   getGlobalConfig() {
@@ -100,8 +100,8 @@ export class App {
 
   render() {
     return (
-      <div>
-        <div innerHTML={renderComponentTree(this.markup)}></div>
+      <div data-theme={getTheme()}>
+        <div innerHTML={renderComponentTree(this.markup)} class="bg-base-200"></div>
       </div>
     );
   }

@@ -1,7 +1,9 @@
 import { Config } from '@stencil/core';
+import tailwind, { tailwindHMR } from 'stencil-tailwind-plugin';
 
 export const config: Config = {
   namespace: 'components',
+  devServer: { reloadStrategy: 'hmr' },
   globalStyle: 'src/global/global.css',
   outputTargets: [
     {
@@ -20,5 +22,12 @@ export const config: Config = {
       baseUrl: 'http://localhost:3333',
     },
   ],
-  plugins: [],
+  plugins: [
+    tailwind({
+      tailwindConf: {
+        plugins: [require('@tailwindcss/typography'), require('daisyui')],
+      },
+    }),
+    tailwindHMR(),
+  ],
 };

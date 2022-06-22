@@ -1,4 +1,5 @@
 import { Component, Element, Event, EventEmitter, Fragment, h, Prop, Watch } from '@stencil/core';
+import clsx from 'clsx';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
 
@@ -12,11 +13,13 @@ export class Input {
   @Prop() css: string = JSON.stringify({});
   @Prop() name: string;
   @Prop() label: string;
+  @Prop() altLabel: string;
   @Prop() type: string = 'text';
   @Prop() events: string;
   @Prop() fullwidth: string;
   @Prop() placeholder: string;
   @Prop() operations: string;
+  @Prop() palette: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
   @Element() host: HTMLElement;
 
   @Event() valueChanged: EventEmitter<string>;
@@ -44,8 +47,13 @@ export class Input {
 
   render() {
     return (
-      <Fragment>
-        {this.label && <jsc-label htmlFor={this.name} label={this.label}></jsc-label>}
+      <div class={clsx('form-control w-full', this.fullwidth !== 'true' && 'max-w-xs')}>
+        {this.label && (
+          <label class="label">
+            <span class="label-text">{this.label}</span>
+            {this.altLabel && <span class="label-text-alt">{this.altLabel}</span>}
+          </label>
+        )}
         <input
           name={this.name}
           style={{
@@ -55,10 +63,24 @@ export class Input {
           type={this.type}
           // use onInput since it's evaluates immediately
           onInput={this.onInputChangeValue.bind(this)}
-          class={`input ${this.fullwidth === 'true' ? 'fullWidth' : ''}`}
+          class={clsx(
+            `input input-bordered w-full`,
+            this.fullwidth !== 'true' && 'max-w-xs',
+            this.palette && {
+              'input-primary': this.palette === 'primary',
+              'input-secondary': this.palette === 'secondary',
+              'input-accent': this.palette === 'accent',
+              'input-success': this.palette === 'success',
+              'input-info': this.palette === 'info',
+              'input-warning': this.palette === 'warning',
+              'input-error': this.palette === 'error',
+            },
+          )}
           placeholder={this.placeholder}
         ></input>
-      </Fragment>
+        {/* register some classes so they aren't purged by daisy-ui */}
+        {false && <input class="input-primary input-secondary input-accent input-info input-error input-warning input-success input-sm input-lg input-xs input-xl"></input>}
+      </div>
     );
   }
 }

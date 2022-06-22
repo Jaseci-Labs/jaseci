@@ -114,7 +114,7 @@ export class JscDatagrid {
   render() {
     return (
       <div>
-        <table cellspacing={0}>
+        <table cellspacing={0} class="table">
           <thead class="table-head">
             <tr>
               {getProp(this.headings).map(heading => (
@@ -161,7 +161,7 @@ export class JscDatagrid {
                 // last cell
                 if (index === getProp(this.headings).length - 1) {
                   return (
-                    <td style={{ padding: '8px 8px' }}>
+                    <td class="w-8 h-8">
                       <span class="page-indicator">
                         Page {this.currentPage}/{this.maxPages}
                       </span>

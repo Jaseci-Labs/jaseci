@@ -10,6 +10,7 @@ export class PopoverContainer {
   @Prop() left: string;
   @Prop() top: string;
   @Prop() open: boolean;
+  @Prop() label: string;
 
   container: HTMLDivElement;
 
@@ -65,7 +66,7 @@ export class PopoverContainer {
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h4 style={{ fontSize: '12px', minHeight: '12px' }}></h4>
+          <h4 style={{ fontSize: '12px', minHeight: '12px' }}>{this.label}</h4>
 
           <button
             onClick={() => {

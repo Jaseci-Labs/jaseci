@@ -1,4 +1,5 @@
 import { Component, Element, Event, EventEmitter, Fragment, h, Prop, Watch } from '@stencil/core';
+import clsx from 'clsx';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
 
@@ -13,9 +14,11 @@ export class Textbox {
   @Prop() fullwidth: string;
   @Prop() name: string;
   @Prop() label: string;
+  @Prop() altLabel: string;
   @Prop() css: string = JSON.stringify({});
   @Prop() operations: string;
   @Prop() events: string;
+  @Prop() palette: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
 
   @Element() host: HTMLElement;
 
@@ -44,19 +47,36 @@ export class Textbox {
 
   render() {
     return (
-      <Fragment>
-        {this.label && <jsc-label htmlFor={this.name} label={this.label}></jsc-label>}
+      <div class={clsx('form-control w-full', this.fullwidth !== 'true' && 'max-w-xs')}>
+        {this.label && (
+          <label class="label">
+            <span class="label-text">{this.label}</span>
+            {this.altLabel && <span class="label-text-alt">{this.altLabel}</span>}
+          </label>
+        )}
 
         <textarea
           style={{
             ...JSON.parse(this.css),
           }}
           value={this.value}
-          class={`textbox ${this.fullwidth === 'true' ? 'fullWidth' : ''}`}
+          class={clsx(
+            `textarea textarea-bordered`,
+            this.fullwidth !== 'true' && 'max-w-xs',
+            this.palette && {
+              'textarea-primary': this.palette === 'primary',
+              'textarea-secondary': this.palette === 'secondary',
+              'textarea-accent': this.palette === 'accent',
+              'textarea-success': this.palette === 'success',
+              'textarea-info': this.palette === 'info',
+              'textarea-warning': this.palette === 'warning',
+              'textarea-error': this.palette === 'error',
+            },
+          )}
           onInput={this.onInputChangeValue.bind(this)}
           placeholder={this.placeholder}
         ></textarea>
-      </Fragment>
+      </div>
     );
   }
 }

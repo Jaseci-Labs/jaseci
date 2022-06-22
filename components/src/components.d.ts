@@ -28,15 +28,17 @@ export namespace Components {
         "label": string;
         "name": string;
         "operations": string;
+        "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "size": 'sm' | 'md' | 'lg' | 'xs';
+        "variant": 'default' | 'link';
     }
     interface JscCard {
         "css": string;
         "events": string;
         "name": string;
         "operations": any;
-        "outlineColor": 'red';
         "radius": 'sm' | 'md' | 'lg' | 'full';
-        "shadow": 'sm' | 'md' | 'lg';
+        "shadow": 'sm' | 'md' | 'lg' | 'xl';
         "variant": 'shadow' | 'outline';
     }
     interface JscChip {
@@ -123,18 +125,22 @@ export namespace Components {
         "setLabel": (label: string) => Promise<void>;
     }
     interface JscDivider {
+        "color"?: string;
         "css": string;
         "events": string;
         "name": string;
         "operations": any;
+        "size"?: string;
     }
     interface JscInputbox {
+        "altLabel": string;
         "css": string;
         "events": string;
         "fullwidth": string;
         "label": string;
         "name": string;
         "operations": string;
+        "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder": string;
         "type": string;
         "value": string;
@@ -181,6 +187,7 @@ export namespace Components {
     }
     interface JscPopoverContainer {
         "closePopover": () => void;
+        "label": string;
         "left": string;
         "open": boolean;
         "playExitAnimation": () => Promise<any>;
@@ -196,6 +203,24 @@ export namespace Components {
         "name": string;
         "operations": string;
     }
+    interface JscTab {
+        "css": string;
+        "events": string;
+        "label": string;
+        "name": string;
+        "operations": any;
+        "selectedTab": string;
+        "tabsEl": HTMLJscTabsElement;
+    }
+    interface JscTabs {
+        "content": string;
+        "css": string;
+        "events": string;
+        "name": string;
+        "openTab": (tabName: string) => Promise<void>;
+        "operations": any;
+        "selectedTab": string;
+    }
     interface JscText {
         "css": string;
         "events": string;
@@ -206,12 +231,14 @@ export namespace Components {
         "variant": 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     }
     interface JscTextbox {
+        "altLabel": string;
         "css": string;
         "events": string;
         "fullwidth": string;
         "label": string;
         "name": string;
         "operations": string;
+        "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder": string;
         "value": string;
     }
@@ -351,6 +378,18 @@ declare global {
         prototype: HTMLJscRowElement;
         new (): HTMLJscRowElement;
     };
+    interface HTMLJscTabElement extends Components.JscTab, HTMLStencilElement {
+    }
+    var HTMLJscTabElement: {
+        prototype: HTMLJscTabElement;
+        new (): HTMLJscTabElement;
+    };
+    interface HTMLJscTabsElement extends Components.JscTabs, HTMLStencilElement {
+    }
+    var HTMLJscTabsElement: {
+        prototype: HTMLJscTabsElement;
+        new (): HTMLJscTabsElement;
+    };
     interface HTMLJscTextElement extends Components.JscText, HTMLStencilElement {
     }
     var HTMLJscTextElement: {
@@ -390,6 +429,8 @@ declare global {
         "jsc-popover": HTMLJscPopoverElement;
         "jsc-popover-container": HTMLJscPopoverContainerElement;
         "jsc-row": HTMLJscRowElement;
+        "jsc-tab": HTMLJscTabElement;
+        "jsc-tabs": HTMLJscTabsElement;
         "jsc-text": HTMLJscTextElement;
         "jsc-textbox": HTMLJscTextboxElement;
         "my-component": HTMLMyComponentElement;
@@ -416,15 +457,17 @@ declare namespace LocalJSX {
         "label"?: string;
         "name"?: string;
         "operations"?: string;
+        "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "size"?: 'sm' | 'md' | 'lg' | 'xs';
+        "variant"?: 'default' | 'link';
     }
     interface JscCard {
         "css"?: string;
         "events"?: string;
         "name"?: string;
         "operations"?: any;
-        "outlineColor"?: 'red';
         "radius"?: 'sm' | 'md' | 'lg' | 'full';
-        "shadow"?: 'sm' | 'md' | 'lg';
+        "shadow"?: 'sm' | 'md' | 'lg' | 'xl';
         "variant"?: 'shadow' | 'outline';
     }
     interface JscChip {
@@ -507,12 +550,15 @@ declare namespace LocalJSX {
         "label"?: string;
     }
     interface JscDivider {
+        "color"?: string;
         "css"?: string;
         "events"?: string;
         "name"?: string;
         "operations"?: any;
+        "size"?: string;
     }
     interface JscInputbox {
+        "altLabel"?: string;
         "css"?: string;
         "events"?: string;
         "fullwidth"?: string;
@@ -520,6 +566,7 @@ declare namespace LocalJSX {
         "name"?: string;
         "onValueChanged"?: (event: CustomEvent<string>) => void;
         "operations"?: string;
+        "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder"?: string;
         "type"?: string;
         "value"?: string;
@@ -563,6 +610,7 @@ declare namespace LocalJSX {
     }
     interface JscPopoverContainer {
         "closePopover"?: () => void;
+        "label"?: string;
         "left"?: string;
         "open"?: boolean;
         "top"?: string;
@@ -576,6 +624,23 @@ declare namespace LocalJSX {
         "name"?: string;
         "operations"?: string;
     }
+    interface JscTab {
+        "css"?: string;
+        "events"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: any;
+        "selectedTab"?: string;
+        "tabsEl"?: HTMLJscTabsElement;
+    }
+    interface JscTabs {
+        "content"?: string;
+        "css"?: string;
+        "events"?: string;
+        "name"?: string;
+        "operations"?: any;
+        "selectedTab"?: string;
+    }
     interface JscText {
         "css"?: string;
         "events"?: string;
@@ -586,6 +651,7 @@ declare namespace LocalJSX {
         "variant"?: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     }
     interface JscTextbox {
+        "altLabel"?: string;
         "css"?: string;
         "events"?: string;
         "fullwidth"?: string;
@@ -593,6 +659,7 @@ declare namespace LocalJSX {
         "name"?: string;
         "onValueChanged"?: (event: CustomEvent<string>) => void;
         "operations"?: string;
+        "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder"?: string;
         "value"?: string;
     }
@@ -631,6 +698,8 @@ declare namespace LocalJSX {
         "jsc-popover": JscPopover;
         "jsc-popover-container": JscPopoverContainer;
         "jsc-row": JscRow;
+        "jsc-tab": JscTab;
+        "jsc-tabs": JscTabs;
         "jsc-text": JscText;
         "jsc-textbox": JscTextbox;
         "my-component": MyComponent;
@@ -660,6 +729,8 @@ declare module "@stencil/core" {
             "jsc-popover": LocalJSX.JscPopover & JSXBase.HTMLAttributes<HTMLJscPopoverElement>;
             "jsc-popover-container": LocalJSX.JscPopoverContainer & JSXBase.HTMLAttributes<HTMLJscPopoverContainerElement>;
             "jsc-row": LocalJSX.JscRow & JSXBase.HTMLAttributes<HTMLJscRowElement>;
+            "jsc-tab": LocalJSX.JscTab & JSXBase.HTMLAttributes<HTMLJscTabElement>;
+            "jsc-tabs": LocalJSX.JscTabs & JSXBase.HTMLAttributes<HTMLJscTabsElement>;
             "jsc-text": LocalJSX.JscText & JSXBase.HTMLAttributes<HTMLJscTextElement>;
             "jsc-textbox": LocalJSX.JscTextbox & JSXBase.HTMLAttributes<HTMLJscTextboxElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;

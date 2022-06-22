@@ -12,6 +12,8 @@ export class Divider {
   @Prop() css: string = JSON.stringify({});
   @Prop({ mutable: true }) events: string;
   @Prop() name: string;
+  @Prop() color?: string = 'rgb(206, 212, 218)';
+  @Prop() size?: string = '1px';
   @Prop({ mutable: true }) operations;
 
   componentDidLoad() {
@@ -29,6 +31,6 @@ export class Divider {
   }
 
   render() {
-    return <div class="divider"></div>;
+    return <div class="divider" style={{ borderTopColor: this.color, borderWidth: this.size }}></div>;
   }
 }

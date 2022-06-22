@@ -18,8 +18,6 @@ export class Container {
   @Prop({ mutable: true }) operations;
   @Prop() listeners: string;
 
-  dialogContainer: any;
-
   @Watch('open')
   watchOpen(open: string) {
     if (open === 'false') this.closeDialog();
@@ -34,9 +32,7 @@ export class Container {
 
   @Method()
   async closeDialog() {
-    if (this.open === 'true') {
-      this.dialogContainer.playExitAnimation().then(() => (this.open = 'false'));
-    }
+    this.open = 'false';
   }
 
   componentDidLoad() {
@@ -55,15 +51,26 @@ export class Container {
 
   render() {
     return (
-      <div>
-        {this.open === 'true' && (
+      <div onClick={() => this.closeDialog()}>
+        <input type="checkbox" id="my-modal-4" checked={this.open === 'true'} class="modal-toggle" />
+        <label htmlFor="my-modal-4" class="modal" onClick={e => e.stopPropagation()}>
+          <label class="modal-box relative" htmlFor="">
+            <label htmlFor="my-modal-3" class="btn btn-sm btn-circle absolute right-2 top-2" onClick={() => this.closeDialog()}>
+              ✕
+            </label>
+            <h3 class="text-lg font-bold mb-2">{this.title}</h3>
+            <slot name="contents"></slot>
+            {/* <p class="py-4">You've been selected for a chance to get one year of subscription to use Wikipedia for free!</p> */}
+          </label>
+        </label>
+
+        {/* {this.open === 'true' && (
           <jsc-dialog-container label={this.title} closeDialog={() => this.closeDialog()} ref={el => (this.dialogContainer = el)}>
             <div slot="contents">
-              <slot name="contents"></slot>
             </div>
           </jsc-dialog-container>
         )}
-        <div class={clsx('modal-overlay', this.open === 'false' && 'hidden')} onClick={() => this.closeDialog()} data-hidden={!open} />
+        <div class={clsx('modal-overlay', this.open === 'false' && 'hidden')} onClick={() => this.closeDialog()} data-hidden={!open} /> */}
       </div>
     );
   }

@@ -18,6 +18,8 @@ type ComponentTags =
   | 'jsc-datalist'
   | 'jsc-dialog'
   | 'jsc-popover'
+  | 'jsc-tabs'
+  | 'jsc-tab'
   | 'jsc-chip';
 
 type ComponentNames =
@@ -40,6 +42,8 @@ type ComponentNames =
   | 'Datalist'
   | 'Dialog'
   | 'Popover'
+  | 'Tabs'
+  | 'Tab'
   | 'Chip';
 
 interface JaseciComponent {

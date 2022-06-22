@@ -18,4 +18,6 @@ export const componentMap: Record<Exclude<ComponentNames, 'App'>, ComponentTags>
   Datarow: 'jsc-datarow',
   Dialog: 'jsc-dialog',
   Popover: 'jsc-popover',
+  Tabs: 'jsc-tabs',
+  Tab: 'jsc-tab',
 };

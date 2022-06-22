@@ -1,8 +1,7 @@
-import { Component, Element, h, Listen, Method, Prop, Watch } from '@stencil/core';
+import { Component, Element, h, Listen, Method, Prop } from '@stencil/core';
 import clsx from 'clsx';
 import { getComponentByName, setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
-import { animate, spring } from 'motion';
 
 @Component({
   tag: 'jsc-popover',
@@ -63,7 +62,7 @@ export class Popover {
       this.open = 'true';
       const targetComponent = getComponentByName(this.target);
       const targetRect = targetComponent.getBoundingClientRect();
-      const offsetY = 100;
+      const offsetY = 220;
 
       this.top = `${targetRect.top + window.scrollY - (offsetY + contentsHeight)}px`;
       this.left = `${targetRect.left + window.scrollX}px`;
@@ -84,6 +83,7 @@ export class Popover {
       <div>
         <jsc-popover-container
           closePopover={() => this.closePopover()}
+          label={this.title}
           class={clsx(this.open === 'false' && 'hidden')}
           open={this.open === 'true'}
           top={this.top}

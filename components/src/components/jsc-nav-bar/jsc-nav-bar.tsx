@@ -1,4 +1,5 @@
 import { Component, Element, h, Prop, Watch } from '@stencil/core';
+import { configStore, getTheme } from '../../store/configStore';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
 
@@ -32,9 +33,15 @@ export class NavBar {
 
   render() {
     return (
-      <div class="jsc_nav_bar" style={JSON.parse(this.css)}>
-        <p class="jsc_nav_bar__label">{this.label}</p>
-        <slot name="links"></slot>
+      <div data-theme={getTheme()} class="navbar bg-neutral text-neutral-content" style={JSON.parse(this.css)}>
+        <div class="flex-1">
+          <a class="btn btn-ghost normal-case text-xl">{this.label}</a>
+        </div>
+        <div class="flex-none pr-2">
+          <ul class="menu menu-horizontal p-0">
+            <slot name="links"></slot>
+          </ul>
+        </div>
       </div>
     );
   }

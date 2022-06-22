@@ -2,6 +2,7 @@ import { Component, Element, h, Prop } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
 import clsx from 'clsx';
+import { getTheme } from '../../store/configStore';
 
 @Component({
   tag: 'jsc-card',
@@ -13,10 +14,9 @@ export class Card {
   @Prop() css: string = JSON.stringify({});
   @Prop({ mutable: true }) events: string;
   @Prop() name: string;
-  @Prop() shadow: 'sm' | 'md' | 'lg' = 'md';
+  @Prop() shadow: 'sm' | 'md' | 'lg' | 'xl' = 'md';
   @Prop() radius: 'sm' | 'md' | 'lg' | 'full' = 'lg';
-  @Prop() variant: 'shadow' | 'outline';
-  @Prop() outlineColor: 'red';
+  @Prop() variant: 'shadow' | 'outline' = 'outline';
   @Prop({ mutable: true }) operations;
 
   componentDidLoad() {
@@ -33,26 +33,30 @@ export class Card {
   render() {
     return (
       <div
-        style={{ borderColor: '#DBDBDB' }}
+        data-theme={getTheme()}
         class={clsx(
-          ['card'],
+          ['card bg-base-100'],
           [
             this.variant === 'shadow' && {
-              'card-shadow_sm': this.shadow === 'sm',
-              'card-shadow_md': this.shadow === 'md',
-              'card-shadow_lg': this.shadow === 'lg',
+              'shadow-sm': this.shadow === 'sm',
+              'shadow-md': this.shadow === 'md',
+              'shadow-lg': this.shadow === 'lg',
+              'shadow-xl': this.shadow === 'xl',
             },
-            this.variant === 'outline' && 'card-outline',
+            this.variant === 'outline' && 'card-bordered',
           ],
-          [
-            this.radius === 'sm' && 'card-radius_sm',
-            this.radius === 'md' && 'card-radius_md',
-            this.radius === 'lg' && 'card-radius_lg',
-            this.radius === 'full' && 'card-radius_full',
-          ],
+          // [
+          //   this.radius === 'sm' && 'card-radius_sm',
+          //   this.radius === 'md' && 'card-radius_md',
+          //   this.radius === 'lg' && 'card-radius_lg',
+          //   this.radius === 'full' && 'card-radius_full',
+          // ],
         )}
       >
-        <slot name="children"></slot>
+        <div class="card-body">
+          <h2 class="card-title">Shoes!</h2>
+          <slot name="children"></slot>
+        </div>
       </div>
     );
   }
