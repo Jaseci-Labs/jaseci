@@ -2,6 +2,7 @@ from promon import Promon
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 import yaml
+import multiprocessing
 
 
 class KubeController:
@@ -88,12 +89,29 @@ class Monitor:
                     config=yaml.safe_load(open("jaseci.yaml", "r"))
                 )
 
+def daemon():
+    m = Monitor("http://localhost:8080")
+    while True:
+        m.check("minikube", "default", "jaseci-redis")
+
+def startMonitoring():
+    monitor = multiprocessing.Process(target = daemon)
+    monitor.start()
+    return monitor
+
+def waitMonitoring(monitorThread):
+    monitorThread.join()
+
+def stopMonitoring(monitorThread):
+    monitorThread.terminate()
 
 if __name__ == "__main__":
-    m = Monitor("http://localhost:8080")
-    m.check(
-        nodeName="minikube",
-        deploymentName="jaseci-redis",
-        deploymentNameSpace="default",
-    )
-    k = KubeController()
+    monitorThread = startMonitoring()
+    stopMonitoring(monitorThread)
+    # m = Monitor("http://localhost:8080")
+    # m.check(
+    #     nodeName="minikube",
+    #     deploymentName="jaseci-redis",
+    #     deploymentNameSpace="default",
+    # )
+    # k = KubeController()
