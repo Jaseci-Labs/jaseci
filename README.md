@@ -8,7 +8,7 @@ Jaseci can be installed on a single machine or on a Kubernetes cluster.
 
 The setup section is split into two parts: 
 - a standalone local setup
-- a cloud and kubernetes setup *(Work in Progress)*
+- a cloud and kubernetes setup *(Coming Soon)*
 
 ### Setup (Local)
 
