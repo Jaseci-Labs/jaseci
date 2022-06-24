@@ -39,14 +39,12 @@ class KubeController:
         api_response = self.app_api.read_namespaced_deployment(
             name=name, namespace=namespace
         )
-        print(api_response)
         return api_response
 
     def patch_deployment_conf(self, config, name: str, namespace: str = "default"):
         api_response = self.app_api.patch_namespaced_deployment(
             name=name, namespace=namespace, body=config
         )
-        print(api_response)
 
     def deployment_set_scale(
         self, name: str, namespace: str = "default", scale: int = 1
@@ -94,10 +92,33 @@ class Monitor:
                     config=yaml.safe_load(open("jaseci.yaml", "r"))
                 )
 
+    def strategy_service_cpu(self):
+        cpu = self.promon.cpu_utilization_per_pod_cores()
+        count = 0
+        total = 0
+        for podName in cpu.keys():
+            if podName.startswith("jaseci-redis"):
+                count = count + 1
+                total = total + cpu[podName]
+
+        avg = total / count
+        print(avg)
+        if avg > 0.001:
+            conf = self.controller.get_deployment_conf("jaseci-redis", "default")
+            replicas = conf.spec.replicas + 1
+            print(f"Num of Replicas: {replicas}")
+            self.controller.deployment_set_scale("jaseci-redis", "default", replicas)
+        if avg < 0.001:
+            conf = self.controller.get_deployment_conf("jaseci-redis", "default")
+            replicas = conf.spec.replicas - 1
+            print(f"Num of Replicas: {replicas}")
+            self.controller.deployment_set_scale("jaseci-redis", "default", replicas)
+
 def daemon(k8sConf, prometheusURL: str):
     m = Monitor(prometheusURL, k8sConf)
     while True:
-        m.strategy_redis_cpu("minikube", "default", "jaseci-redis")
+        # m.strategy_redis_cpu("minikube", "default", "jaseci-redis")
+        m.strategy_service_cpu()
         time.sleep(10)
 
 def startMonitoring(k8sConf, prometheusURL: str):
