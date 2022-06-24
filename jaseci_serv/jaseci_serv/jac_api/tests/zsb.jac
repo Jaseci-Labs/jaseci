@@ -238,3 +238,29 @@ walker simple {
         report global.info['request_context']["body"];
     }
 }
+
+walker simple_with_file {
+    has fileTypeField;
+
+    with entry {
+        report global.info['request_context']["body"]["ctx"]["fileTypeField"];
+        report fileTypeField;
+    }
+}
+
+walker simple_custom_payload_with_file {
+    has fileTypeField;
+
+    with entry {
+
+        if not(fileTypeField) {
+            report true;
+        }
+
+        if not(global.info['request_context']["body"]["ctx"]) {
+            report true;
+        }
+
+        report global.info['request_context']["body"]["fileTypeField"];
+    }
+}
