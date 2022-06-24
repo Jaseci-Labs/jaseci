@@ -8,13 +8,13 @@ import multiprocessing
 
 class KubeController:
     # Configs can be set in Configuration class directly or using helper utility
-    aconfig = client.Configuration()
-    aconfig.host = "http://clarity31.eecs.umich.edu:8084"
-    aconfig.verify_ssl = False
 
-    api_instance = client.CoreV1Api(aconfig)
-    app_client = client.ApiClient(aconfig)
-    app_api = client.AppsV1Api(app_client)
+    def __init__(self, configuration):
+        self.config = configuration
+        self.api_instance = client.CoreV1Api(self.config)
+        self.app_client = client.ApiClient(self.config)
+        self.app_api = client.AppsV1Api(self.app_client)
+
 
     def get_pod_list(self):
         ret = self.api_instance.list_pod_for_all_namespaces(watch=False)
@@ -66,9 +66,9 @@ class KubeController:
 
 
 class Monitor:
-    def __init__(self, promonUrl: str):
+    def __init__(self, promonUrl: str, k8sconfig):
         self.promon = Promon(promonUrl)
-        self.controller = KubeController()
+        self.controller = KubeController(k8sconfig)
 
     def strategy_redis_cpu(self, nodeName: str, deploymentNameSpace: str, deploymentName: str):
         cpu = self.promon.cpu_utilization_percentage()
@@ -95,7 +95,10 @@ class Monitor:
                 )
 
 def daemon():
-    m = Monitor("http://clarity31.eecs.umich.edu:8082")
+    k8sconf = client.Configuration()
+    k8sconf.host = "http://clarity31.eecs.umich.edu:8084"
+    k8sconf.verify_ssl = False
+    m = Monitor("http://clarity31.eecs.umich.edu:8082", k8sconf)
     while True:
         m.strategy_redis_cpu("minikube", "default", "jaseci-redis")
         time.sleep(10)
