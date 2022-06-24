@@ -1,4 +1,5 @@
 from promon import Promon
+import time
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 import yaml
@@ -7,9 +8,13 @@ import multiprocessing
 
 class KubeController:
     # Configs can be set in Configuration class directly or using helper utility
-    config = config.load_kube_config()
-    api_instance = client.CoreV1Api()
-    app_api = client.AppsV1Api()
+    aconfig = client.Configuration()
+    aconfig.host = "http://clarity31.eecs.umich.edu:8084"
+    aconfig.verify_ssl = False
+
+    api_instance = client.CoreV1Api(aconfig)
+    app_client = client.ApiClient(aconfig)
+    app_api = client.AppsV1Api(app_client)
 
     def get_pod_list(self):
         ret = self.api_instance.list_pod_for_all_namespaces(watch=False)
@@ -65,7 +70,7 @@ class Monitor:
         self.promon = Promon(promonUrl)
         self.controller = KubeController()
 
-    def check(self, nodeName: str, deploymentNameSpace: str, deploymentName: str):
+    def strategy_redis_cpu(self, nodeName: str, deploymentNameSpace: str, deploymentName: str):
         cpu = self.promon.cpu_utilization_percentage()
         cpu_usage = cpu[nodeName]
         print(f"Detect CPU Usage: {cpu_usage}")
@@ -90,9 +95,10 @@ class Monitor:
                 )
 
 def daemon():
-    m = Monitor("http://localhost:8080")
+    m = Monitor("http://clarity31.eecs.umich.edu:8082")
     while True:
-        m.check("minikube", "default", "jaseci-redis")
+        m.strategy_redis_cpu("minikube", "default", "jaseci-redis")
+        time.sleep(10)
 
 def startMonitoring():
     monitor = multiprocessing.Process(target = daemon)
@@ -107,7 +113,7 @@ def stopMonitoring(monitorThread):
 
 if __name__ == "__main__":
     monitorThread = startMonitoring()
-    stopMonitoring(monitorThread)
+    waitMonitoring(monitorThread)
     # m = Monitor("http://localhost:8080")
     # m.check(
     #     nodeName="minikube",
