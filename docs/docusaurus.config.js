@@ -8,7 +8,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const config = {
   title: 'Jaseci Offical Documentation',
   tagline: 'Powering The Next Generation Of AI Products',
-  url: 'https://your-docusaurus-test-site.com',
+  url: 'https://docs.jaseci.org/',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
