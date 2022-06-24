@@ -94,17 +94,14 @@ class Monitor:
                     config=yaml.safe_load(open("jaseci.yaml", "r"))
                 )
 
-def daemon():
-    k8sconf = client.Configuration()
-    k8sconf.host = "http://clarity31.eecs.umich.edu:8084"
-    k8sconf.verify_ssl = False
-    m = Monitor("http://clarity31.eecs.umich.edu:8082", k8sconf)
+def daemon(k8sConf, prometheusURL: str):
+    m = Monitor(prometheusURL, k8sConf)
     while True:
         m.strategy_redis_cpu("minikube", "default", "jaseci-redis")
         time.sleep(10)
 
-def startMonitoring():
-    monitor = multiprocessing.Process(target = daemon)
+def startMonitoring(k8sConf, prometheusURL: str):
+    monitor = multiprocessing.Process(target = daemon, args = (k8sConf, prometheusURL))
     monitor.start()
     return monitor
 
@@ -114,8 +111,14 @@ def waitMonitoring(monitorThread):
 def stopMonitoring(monitorThread):
     monitorThread.terminate()
 
+def remoteK8sConf(K8sURL: str):
+    k8sconf = client.Configuration()
+    k8sconf.host = K8sURL
+    k8sconf.verify_ssl = False
+    return k8sconf
+
 if __name__ == "__main__":
-    monitorThread = startMonitoring()
+    monitorThread = startMonitoring(k8sConf = remoteK8sConf("http://clarity31.eecs.umich.edu:8084"), prometheusURL = "http://clarity31.eecs.umich.edu:8082")
     waitMonitoring(monitorThread)
     # m = Monitor("http://localhost:8080")
     # m.check(
