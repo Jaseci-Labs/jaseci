@@ -239,6 +239,9 @@ def login(url, username, password):
         click.echo(f"Token: {r['token']}\nLogin successful!")
     else:
         click.echo("Login failed!\n")
+    if not session["mem-only"]:
+        with open(session["filename"], "wb") as f:
+            pickle.dump(session, f)
 
 
 @click.command(help="Command to log out of live Jaseci server")
