@@ -18,7 +18,7 @@ export class Textbox {
   @Prop() css: string = JSON.stringify({});
   @Prop() operations: string;
   @Prop() events: string;
-  @Prop() palette: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+  @Prop() palette: 'primary' | 'secondary' | 'accent';
 
   @Element() host: HTMLElement;
 
@@ -67,10 +67,6 @@ export class Textbox {
               'textarea-primary': this.palette === 'primary',
               'textarea-secondary': this.palette === 'secondary',
               'textarea-accent': this.palette === 'accent',
-              'textarea-success': this.palette === 'success',
-              'textarea-info': this.palette === 'info',
-              'textarea-warning': this.palette === 'warning',
-              'textarea-error': this.palette === 'error',
             },
           )}
           onInput={this.onInputChangeValue.bind(this)}

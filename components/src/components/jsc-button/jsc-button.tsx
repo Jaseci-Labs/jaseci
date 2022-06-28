@@ -18,7 +18,7 @@ export class Button {
   @Prop() color: string;
   @Prop() css: string = JSON.stringify({});
   @Prop() operations: string;
-  @Prop() palette: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+  @Prop() palette: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error' | 'ghost';
   @Prop() size: 'sm' | 'md' | 'lg' | 'xs' = 'md';
 
   componentDidLoad() {

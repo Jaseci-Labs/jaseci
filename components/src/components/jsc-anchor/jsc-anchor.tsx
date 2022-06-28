@@ -1,4 +1,5 @@
-import { Component, Element, h, Prop } from '@stencil/core';
+import { Component, Element, Fragment, h, Prop } from '@stencil/core';
+import clsx from 'clsx';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
 
@@ -14,6 +15,8 @@ export class NavLink {
   @Prop() target: string;
   @Prop() css: string = JSON.stringify({});
   @Prop() events: string;
+  @Prop() hover: 'true' | 'false' = 'false';
+  @Prop() palette: 'primary' | 'secondary' | 'accent' | 'neutral';
   @Prop() operations: string;
   @Element() host: HTMLElement;
 
@@ -24,9 +27,26 @@ export class NavLink {
 
   render() {
     return (
-      <a class="jsc_anchor" href={this.href} target={this.target} style={JSON.parse(this.css)}>
-        {this.label}
-      </a>
+      <Fragment>
+        <a
+          class={clsx(
+            'link',
+            {
+              'link-primary': this.palette === 'primary',
+              'link-secondary': this.palette === 'secondary',
+              'link-accent': this.palette === 'accent',
+              'link-neutral': this.palette === 'neutral',
+            },
+            this.hover === 'true' && 'link-hover',
+          )}
+          href={this.href}
+          target={this.target}
+          style={JSON.parse(this.css)}
+        >
+          {this.label}
+        </a>
+        {false && <a class="link-primary link-secondary link-accent link-hover link-neutral"></a>}
+      </Fragment>
     );
   }
 }

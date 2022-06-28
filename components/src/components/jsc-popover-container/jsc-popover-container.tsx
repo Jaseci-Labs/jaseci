@@ -63,6 +63,7 @@ export class PopoverContainer {
           padding: '16px',
           borderRadius: '8px',
           boxShadow: 'rgba(0, 0, 0, 0.15) 0px 1px 4px 0px, rgba(0, 0, 0, 0.02) 0px 0px 2px 1px',
+          zIndex: '200',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

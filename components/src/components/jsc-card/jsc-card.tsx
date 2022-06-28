@@ -14,6 +14,7 @@ export class Card {
   @Prop() css: string = JSON.stringify({});
   @Prop({ mutable: true }) events: string;
   @Prop() name: string;
+  @Prop() title: string;
   @Prop() shadow: 'sm' | 'md' | 'lg' | 'xl' = 'md';
   @Prop() radius: 'sm' | 'md' | 'lg' | 'full' = 'lg';
   @Prop() variant: 'shadow' | 'outline' = 'outline';
@@ -35,7 +36,7 @@ export class Card {
       <div
         data-theme={getTheme()}
         class={clsx(
-          ['card bg-base-100'],
+          ['card bg-base-200'],
           [
             this.variant === 'shadow' && {
               'shadow-sm': this.shadow === 'sm',
@@ -54,7 +55,7 @@ export class Card {
         )}
       >
         <div class="card-body">
-          <h2 class="card-title">Shoes!</h2>
+          <h2 class="card-title">{this.title}</h2>
           <slot name="children"></slot>
         </div>
       </div>
