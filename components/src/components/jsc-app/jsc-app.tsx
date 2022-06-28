@@ -101,7 +101,7 @@ export class App {
   render() {
     return (
       <div data-theme={getTheme()}>
-        <div innerHTML={renderComponentTree(this.markup)} class="bg-base-200"></div>
+        <div innerHTML={renderComponentTree(this.markup)} class="bg-base-100"></div>
       </div>
     );
   }
