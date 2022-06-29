@@ -113,8 +113,9 @@ const config = {
         copyright: `Copyright © ${new Date().getFullYear()} Jaseci Labs, Inc. Built with Docusaurus.`,
       },
       prism: {
-        theme: lightCodeTheme,
+        theme: require('prism-react-renderer/themes/dracula'),
         darkTheme: darkCodeTheme,
+        
       },
     }),
 };
