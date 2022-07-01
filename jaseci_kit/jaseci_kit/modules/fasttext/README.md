@@ -465,7 +465,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
     ```
 
 ### **5. Use the trained model to make predictions** </br>
-* Create new input data for prdiction stored in `test_dataset.json` file (can take any name) </br>
+* Create new input data for prdiction stored in a file for example - `test_dataset.json`</br>
 **Input data**
     ```
     {
