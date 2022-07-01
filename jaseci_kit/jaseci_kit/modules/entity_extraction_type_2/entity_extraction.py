@@ -15,6 +15,7 @@ from .train import (
     check_labels_ok,
 )
 from .entity_utils import create_data, create_data_new
+import mlflow
 
 warnings.filterwarnings("ignore")
 
@@ -260,4 +261,5 @@ def set_model_config(model_parameters: Dict = None):
 if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
 
+    mlflow.set_tracking_uri("http://localhost:5000")
     launch_server(port=8000)

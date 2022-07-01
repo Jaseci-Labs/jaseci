@@ -7,10 +7,16 @@ from .utils.data_tokens import load_data
 from torch import cuda
 import os
 from datetime import datetime
-
+import mlflow
 
 device = "cuda" if cuda.is_available() else "cpu"
 print("Using device for training -> ", device)
+
+experiment_id = mlflow.get_experiment_by_name("TFM_NER_Type_2")
+if experiment_id is None:
+    experiment_id = mlflow.create_experiment("TFM_NER_Type_2")
+else:
+    experiment_id = experiment_id.experiment_id
 
 
 # Logging
@@ -232,6 +238,8 @@ def train_score(optimizer, training_loader, max_grad_norm):
             y_true.append(tr_labels[i].cpu().item())
             y_pred.append(tr_preds[i].cpu().item())
     tr_acc = accuracy_score(y_true, y_pred)
+    mlflow.log_metric("Train Epoch Loss", epoch_loss, step=nb_tr_steps)
+    mlflow.log_metric("Train Epoch Accuracy", tr_acc, step=nb_tr_steps)
     logs(
         str(datetime.now()) + "    ",
         f"Training loss epoch: {epoch_loss}",
@@ -242,6 +250,7 @@ def train_score(optimizer, training_loader, max_grad_norm):
         f"Training accuracy epoch: {tr_acc}",
         logs_file_name,
     )
+    return tr_acc
 
 
 # Tracking variables
@@ -285,6 +294,8 @@ def val_score(val_loader, model):
             y_true.append(ev_labels[i].cpu().item())
             y_pred.append(ev_preds[i].cpu().item())
     ev_acc = accuracy_score(y_true, y_pred)
+    mlflow.log_metric("Val epoch loss", ev_epoch_loss, step=nb_ev_steps)
+    mlflow.log_metric("Val epoch accuracy", ev_acc, step=nb_ev_steps)
     logs(
         str(datetime.now()) + "    ",
         f"Validation loss epoch: {ev_epoch_loss}",
@@ -295,6 +306,7 @@ def val_score(val_loader, model):
         f"Validation accuracy epoch: {ev_acc}",
         logs_file_name,
     )
+    return ev_acc
 
 
 # Tracking variables
@@ -333,15 +345,20 @@ def test_score(test_loader, model):
         if tst_labels[i].cpu().item() != 0:
             y_true.append(tst_labels[i].cpu().item())
             y_pred.append(tst_preds[i].cpu().item())
+    labs = model.config.id2label
+    y_true = [labs[int(e)] for e in y_true]
+    y_pred = [labs[int(e)] for e in y_pred]
     tst_acc = accuracy_score(y_true, y_pred)
     cr = classification_report(
         y_true,
         y_pred,
-        target_names=sorted(target_labels[1:], reverse=True),
+        # target_names=sorted(target_labels[1:], reverse=True),
         zero_division=0,
     )
 
     f_macro = f1_score(y_true, y_pred, average="macro")
+    mlflow.log_metric("Test f1_macro", f_macro)
+    mlflow.log_metric("Test accuracy", tst_acc)
     logs(str(datetime.now()) + "    ", f"f1_score(macro) : {f_macro} ", logs_file_name)
     logs(str(datetime.now()) + "    ", f"Accuracy : {tst_acc} ", logs_file_name)
     logs(str(datetime.now()) + "    ", "Classification Report", logs_file_name)
@@ -352,9 +369,10 @@ def test_score(test_loader, model):
 
 def train(epoch, optimizer, training_loader, max_grad_norm):
     model.train()
-    train_score(optimizer, training_loader, max_grad_norm)
+    acc = train_score(optimizer, training_loader, max_grad_norm)
     if val_loader is not None:
-        val_score(val_loader, model)
+        acc = val_score(val_loader, model)
+    return acc
 
 
 # DEFINING MODEL training
@@ -414,53 +432,72 @@ def train_model(
     model.to(device)
     optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate)
 
+    training_parameters = {
+        "Epochs": epochs,
+        "Optimizer": optimizer,
+        "Learning Rate": learning_rate,
+    }
     # Defining the training function on the 80% of the dataset
     # for tuning the bert model
-    for epoch in range(epochs):
-        t0 = datetime.now()
+    with mlflow.start_run(experiment_id=experiment_id, nested=True):
+        mlflow.log_params(training_parameters)
+        best_acc = 0
+        for epoch in range(epochs):
+            t0 = datetime.now()
+            logs(
+                str(datetime.now()) + "    ",
+                f"Training epoch: {epoch + 1}/{epochs}",
+                logs_file_name,
+            )
+            # calling function epochs train
+            acc = train(epoch, optimizer, training_loader, max_grad_norm)
+            if acc > best_acc:
+                best_acc = acc
+                # saving model on epochs
+                save_custom_model(f"{model_save_path}/curr_checkpoint/{model_name}")
+                mlflow.log_artifacts(
+                    f"{model_save_path}/curr_checkpoint/{model_name}",
+                    artifact_path="model_pytorch",
+                )
+
+            logs(
+                str(datetime.now()) + "    ",
+                f"Epoch {epoch + 1} total time taken : {datetime.now() - t0}",
+                logs_file_name,
+            )
+            logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
+
+        # writing checkpoint
+        total_time = datetime.now() - start_time
         logs(
-            str(datetime.now()) + "    ",
-            f"Training epoch: {epoch + 1}/{epochs}",
-            logs_file_name,
+            str(datetime.now()) + "    ", "Model Training is Completed", logs_file_name
         )
-        # calling function epochs train
-        train(epoch, optimizer, training_loader, max_grad_norm)
-        # saving model on epochs
-        save_custom_model(f"{model_save_path}/curr_checkpoint/{model_name}")
+        logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
         logs(
             str(datetime.now()) + "    ",
-            f"Epoch {epoch + 1} total time taken : {datetime.now() - t0}",
+            "Total time taken to completed training : ",
+            str(total_time),
             logs_file_name,
         )
         logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
 
-    # writing checkpoint
-    total_time = datetime.now() - start_time
-    logs(str(datetime.now()) + "    ", "Model Training is Completed", logs_file_name)
-    logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-    logs(
-        str(datetime.now()) + "    ",
-        "Total time taken to completed training : ",
-        str(total_time),
-        logs_file_name,
-    )
-    logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-
-    # ###################### testing started ##########################
-    if test_loader is not None:
-        logs(str(datetime.now()) + "    ", "Model testing is started", logs_file_name)
-        logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-        time1 = datetime.now()
-        test_score(test_loader, model)
-        logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-        totaltime = datetime.now() - time1
-        logs(
-            str(datetime.now()) + "    ",
-            "Total time taken to completed testing : ",
-            str(totaltime),
-            logs_file_name,
-        )
-        logs(str(datetime.now()) + "    ", "--" * 30, "", logs_file_name)
+        # ###################### testing started ##########################
+        if test_loader is not None:
+            logs(
+                str(datetime.now()) + "    ", "Model testing is started", logs_file_name
+            )
+            logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
+            time1 = datetime.now()
+            test_score(test_loader, model)
+            logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
+            totaltime = datetime.now() - time1
+            logs(
+                str(datetime.now()) + "    ",
+                "Total time taken to completed testing : ",
+                str(totaltime),
+                logs_file_name,
+            )
+            logs(str(datetime.now()) + "    ", "--" * 30, "", logs_file_name)
 
     # Clearing cuda memory
     torch.cuda.empty_cache()
