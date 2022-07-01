@@ -96,7 +96,7 @@ spec:
             - containerPort: {{ .Values.image.db.port }}
           volumeMounts:
             - name: {{ include "jaseci.fullname" . }}-db-volume
-              mountPath: /var/lib/postgresql/data
+              mountPath: {{ .Values.volumeMount.db.mountPath }}
               subPath: {{ include "jaseci.fullname" . }}
 
       volumes:
@@ -107,29 +107,27 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jaseci-redis
+  name: {{ include "jaseci.fullname" . }}-redis
 spec:
   replicas: 1
   selector:
     matchLabels:
-      pod: jaseci-redis
+      pod: {{ include "jaseci.fullname" . }}-redis
   template:
     metadata:
       labels:
-        pod: jaseci-redis
+        pod: {{ include "jaseci.fullname" . }}-redis
     spec:
       containers:
-        - name: jaseci-redis-master
-          image: redis
+        - name: {{ include "jaseci.fullname" . }}-redis-master
+          image: {{ .Values.image.redis.repository }}
           imagePullPolicy: IfNotPresent
-          command:
-            - redis-server
-            - "/redis-master/redis.conf"
+          {{- with .Values.image.redis.command }}
+          {{ end }}
           resources:
-            limits:
-              cpu: "0.2"
+          {{- toYaml .Values.redis.resources | nindent 12 }}
           ports:
-            - containerPort: 6379
+            - containerPort: {{ .Values.image.redis.port }}
           volumeMounts:
             - mountPath: /redis-master-data
               name: data
@@ -140,7 +138,7 @@ spec:
           emptyDir: {}
         - name: config
           configMap:
-            name: jaseci-redis-config
+            name: {{ include "jaseci.fullname" . }}-redis-config
             items:
               - key: redis-config
                 path: redis.conf

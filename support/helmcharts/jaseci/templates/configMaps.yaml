@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: {{ include "jaseci.fullname" . }}-up
 data:
-  prod_up: |
+  {{ .Values.configMap.filename }}: |
 {{ .Files.Get .Values.configMap.filename | indent 4 }}
 ---
 

@@ -13,3 +13,27 @@ spec:
       name: http
   selector:
     {{- include "jaseci.selectorLabels" . | nindent 4 }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "jaseci.fullname" . }}-db
+spec:
+  selector:
+    pod: {{ include "jaseci.fullname" . }}-db
+  ports:
+    - protocol: TCP
+      port: {{ .Values.image.db.port }}
+      targetPort: {{ .Values.image.db.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "jaseci.fullname" . }}-redis
+spec:
+  selector:
+    pod: {{ include "jaseci.fullname" . }}-redis
+  ports:
+    - protocol: TCP
+      port: {{ .Values.image.redis.port }}
+      targetPort: {{ .Values.image.redis.port }}

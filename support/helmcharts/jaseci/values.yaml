@@ -13,6 +13,12 @@ image:
     repository: postgres:alpine
     port: 5432
     storage: 10Gi
+  redis:
+    repository: redis
+    command:
+      - redis-server
+      - "/redis-master/redis.conf"
+    port: 6379
 
 imagePullSecrets: []
 
@@ -28,8 +34,10 @@ configMap:
     maxmemorypolicy: maxmemory-policy allkeys-lru
 
 volumeMount:
-  name: "prod-script"
+  name: prod-script
   mountPath: /script
+  db:
+    mountPath: /var/lib/postgresql/data
 
 service:
   type: ClusterIP
@@ -39,12 +47,14 @@ ingress:
   enabled: false
 
 resources: 
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
    requests:
-  #   cpu: 100m
      memory: 350Mi
+
+redis:
+  resources:
+    limits:
+      cpu: "0.2"
+
 
 autoscaling:
   enabled: true
