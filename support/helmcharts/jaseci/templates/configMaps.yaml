@@ -1,6 +1,17 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.configMap.name }}
+  name: {{ include "jaseci.fullname" . }}-up
 data:
-  {{ .Values.ConfigMap.data }}
+  prod_up: |
+{{ .Files.Get .Values.configMap.filename | indent 4 }}
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "jaseci.fullname" . }}-redis-config
+data:
+  redis-config: |
+{{ .Values.configMap.redis.maxmemory | indent 4 }}
+{{ .Values.configMap.redis.maxmemorypolicy | indent 4 }}

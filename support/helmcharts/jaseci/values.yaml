@@ -8,44 +8,28 @@ image:
   repository: python:3-slim
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  command: [bash, -c, "source script/prod_up"]
+  db:
+    repository: postgres:alpine
+    port: 5432
+    storage: 10Gi
 
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  create: false
 
-configMap
- name: jaseci-up
- data: prod_up: |-
-    git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
-    cd /jaseci/jaseci_core/
-    source install.sh
-    cd /jaseci/jaseci_kit
-    source install.sh
-    cd /jaseci/jaseci_kit/jaseci_kit/modules/use_enc
-    uvicorn jaseci_kit.use_enc:serv_actions --host 0.0.0.0 --port 80
 
-podAnnotations: {}
+configMap:
+  filename: prod_up
+  redis:
+    maxmemory: maxmemory 1000mb
+    maxmemorypolicy: maxmemory-policy allkeys-lru
 
-podSecurityContext: {}
-  # fsGroup: 2000
-
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+volumeMount:
+  name: "prod-script"
+  mountPath: /script
 
 service:
   type: ClusterIP
@@ -53,19 +37,6 @@ service:
 
 ingress:
   enabled: false
-  className: ""
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  hosts:
-    - host: chart-example.local
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
 
 resources: 
   # limits:
@@ -81,9 +52,3 @@ autoscaling:
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}

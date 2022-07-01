@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "jaseci.fullname" . }}
-  labels:
-    {{- include "jaseci.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -24,39 +22,126 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "jaseci.serviceAccountName" . }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: {{ .Values.deployment.command }}
+          command: {{ .Values.image.command }}
           ports:
             - name: http
               containerPort: 80
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jaseci.fullname" . }}-db-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jaseci.fullname" . }}-db-credentials
+                  key: password
+
+            - name: POSTGRES_HOST
+              value: {{ include "jaseci.fullname" . }}-db
+
+            - name: REDIS_HOST
+              value: {{ include "jaseci.fullname" . }}-redis
+
+          volumeMounts:
+            - name: {{ .Values.volumeMount.name }}
+              mountPath: {{ .Values.volumeMount.mountPath }}
+
+      volumes:
+        - name: {{ .Values.volumeMount.name  }}
+          configMap:
+            name: {{ include "jaseci.fullname" . }}-up
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jaseci.fullname" . }}-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: {{ include "jaseci.fullname" . }}-db
+  template:
+    metadata:
+      labels:
+        pod: {{ include "jaseci.fullname" . }}-db
+    spec:
+      containers:
+        - name: {{ include "jaseci.fullname" . }}-db
+          image:  {{ .Values.image.db.repository }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jaseci.fullname" . }}-db-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jaseci.fullname" . }}-db-credentials
+                  key: password
+
+          ports:
+            - containerPort: {{ .Values.image.db.port }}
+          volumeMounts:
+            - name: {{ include "jaseci.fullname" . }}-db-volume
+              mountPath: /var/lib/postgresql/data
+              subPath: {{ include "jaseci.fullname" . }}
+
+      volumes:
+        - name: {{ include "jaseci.fullname" . }}-db-volume
+          persistentVolumeClaim:
+            claimName: {{ include "jaseci.fullname" . }}-db-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaseci-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: jaseci-redis
+  template:
+    metadata:
+      labels:
+        pod: jaseci-redis
+    spec:
+      containers:
+        - name: jaseci-redis-master
+          image: redis
+          imagePullPolicy: IfNotPresent
+          command:
+            - redis-server
+            - "/redis-master/redis.conf"
+          resources:
+            limits:
+              cpu: "0.2"
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - mountPath: /redis-master-data
+              name: data
+            - mountPath: /redis-master
+              name: config
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: jaseci-redis-config
+            items:
+              - key: redis-config
+                path: redis.conf
+---
