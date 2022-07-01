@@ -15,6 +15,7 @@ value = net.max(jac_set)
 ```jac
 # returns object (node,edges) with the lowest anchor value
 node year {
+  
     has_anchor year_num;
 }
 
