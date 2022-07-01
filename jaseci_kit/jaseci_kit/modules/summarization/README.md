@@ -19,7 +19,7 @@ Module `cl_summer` uses the `sumy summarizer` to extract summary from text.
 
 
 ## **2. Summarizer**
-For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) which would be generate the summary from text. 
+For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) which would help us to generate summary of the provided text.
 
 * Creating Jac Program for **summarizer** (`cl_summer`)
 
@@ -52,35 +52,31 @@ For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) whi
                 );      
         }
         ```
-        `summarize`: to get the extractive summary in provided sentences count.
+        `summarize`: to get the extractive summary of the text in the given number of sentence counts .
 
         **Parameter details**
-        * Input
-            * `model_name(String)`: name of the transformer model to load, options are:
-                * `wiki` : trained on wikipedia data
-                * `legal`: trained on legal documents
 
-            * **Input Data**
+        * **Input Data**
+        
+            **data.json** file
+            ```
+            {
+                "text": "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and   rude. The King of England was at war with him and had led a great army into Scotland to drive him out of the land. Battle after battle had been fought. Six times Bruce had led his brave little army against his foes and six times his men had been beaten and driven into flight. At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains. One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him. He was tired and unhappy. He was ready to give up all hope. It seemed to him that there was no use for him to try to do anything more. As he lay thinking, he saw a spider over his head making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. 'Poor thing,' said Bruce: 'you, too, know what it is to fail.', But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as, he watched her swing herself out upon the slender line. Would she fail again? No! The thread was carried safely to the beam and fastened there.",
+                "url": "none",
+                "sent_count": 5,
+                "summarizer_type": "LsaSummarizer"
+            }
+            ```
+            * `text(String)`: text the contain the entire context
+            * `url(String)`: the link to the webpage
+            * `sent_count(int)`: number of sentence you want in the summary
+            * `summarizer_type(String)`: name of the summarizer type, available options are:
+                * LsaSummarizer
+                * LexRankSummarizer
+                * LuhnSummarizer
 
-                **data.json** file
-                ```
-                {
-                    "text": "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and   rude. The King of England was at war with him and had led a great army into Scotland to drive him out of the land. Battle after battle had been fought. Six times Bruce had led his brave little army against his foes and six times his men had been beaten and driven into flight. At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains. One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him. He was tired and unhappy. He was ready to give up all hope. It seemed to him that there was no use for him to try to do anything more. As he lay thinking, he saw a spider over his head making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. 'Poor thing,' said Bruce: 'you, too, know what it is to fail.', But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as, he watched her swing herself out upon the slender line. Would she fail again? No! The thread was carried safely to the beam and fastened there.",
-                    "url": "none",
-                    "sent_count": 5,
-                    "summarizer_type": "LsaSummarizer"
-                }
-                ```
-                * `text(String)`: text the contain the entire context
-                * `url(String)`: the link to the webpage
-                * `sent_count(int)`: number of sentence you want in the summary
-                * `summarizer_type(String)`: name of the summarizer type, available options are:
-                    * LsaSummarizer
-                    * LexRankSummarizer
-                    * LuhnSummarizer
-
-            * **Output**
-            List of Sentences that best summarizes the context
+        * **Output**
+        List of Sentences that best summarizes the context
 
     5. Adding edge name of `summ_model` in `summarizer.jac` file for connecting nodes inside graph.
         ```
