@@ -28,7 +28,7 @@ serviceAccount:
 
 
 configMap:
-  filename: prod_up
+  filename: dev_up
   redis:
     maxmemory: maxmemory 1000mb
     maxmemorypolicy: maxmemory-policy allkeys-lru
