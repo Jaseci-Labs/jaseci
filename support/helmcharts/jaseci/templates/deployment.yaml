@@ -1,0 +1,145 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jaseci.fullname" . }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "jaseci.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "jaseci.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: {{- toYaml .Values.image.command | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jaseci.fullname" . }}-db-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jaseci.fullname" . }}-db-credentials
+                  key: password
+
+            - name: POSTGRES_HOST
+              value: {{ include "jaseci.fullname" . }}-db
+
+            - name: REDIS_HOST
+              value: {{ include "jaseci.fullname" . }}-redis
+
+          volumeMounts:
+            - name: {{ .Values.volumeMount.name }}
+              mountPath: {{ .Values.volumeMount.mountPath }}
+
+      volumes:
+        - name: {{ .Values.volumeMount.name  }}
+          configMap:
+            name: {{ include "jaseci.fullname" . }}-up
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jaseci.fullname" . }}-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: {{ include "jaseci.fullname" . }}-db
+  template:
+    metadata:
+      labels:
+        pod: {{ include "jaseci.fullname" . }}-db
+    spec:
+      containers:
+        - name: {{ include "jaseci.fullname" . }}-db
+          image:  {{ .Values.image.db.repository }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jaseci.fullname" . }}-db-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jaseci.fullname" . }}-db-credentials
+                  key: password
+
+          ports:
+            - containerPort: {{ .Values.image.db.port }}
+          volumeMounts:
+            - name: {{ include "jaseci.fullname" . }}-db-volume
+              mountPath: {{ .Values.volumeMount.db.mountPath }}
+              subPath: {{ include "jaseci.fullname" . }}
+
+      volumes:
+        - name: {{ include "jaseci.fullname" . }}-db-volume
+          persistentVolumeClaim:
+            claimName: {{ include "jaseci.fullname" . }}-db-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jaseci.fullname" . }}-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: {{ include "jaseci.fullname" . }}-redis
+  template:
+    metadata:
+      labels:
+        pod: {{ include "jaseci.fullname" . }}-redis
+    spec:
+      containers:
+        - name: {{ include "jaseci.fullname" . }}-redis-master
+          image: {{ .Values.image.redis.repository }}
+          imagePullPolicy: IfNotPresent
+          {{- with .Values.image.redis.command }}
+          {{ end }}
+          resources:
+          {{- toYaml .Values.redis.resources | nindent 12 }}
+          ports:
+            - containerPort: {{ .Values.image.redis.port }}
+          volumeMounts:
+            - mountPath: /redis-master-data
+              name: data
+            - mountPath: /redis-master
+              name: config
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ include "jaseci.fullname" . }}-redis-config
+            items:
+              - key: redis-config
+                path: redis.conf
+---

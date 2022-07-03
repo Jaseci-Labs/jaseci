@@ -1,0 +1,64 @@
+# Default values for jaseci.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: python:3-slim
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  command: [bash, -c, "source script/prod_up"]
+  db:
+    repository: postgres:alpine
+    port: 5432
+    storage: 10Gi
+  redis:
+    repository: redis
+    command:
+      - redis-server
+      - "/redis-master/redis.conf"
+    port: 6379
+
+imagePullSecrets: []
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+
+
+configMap:
+  filename: dev_up
+  redis:
+    maxmemory: maxmemory 1000mb
+    maxmemorypolicy: maxmemory-policy allkeys-lru
+
+volumeMount:
+  name: prod-script
+  mountPath: /script
+  db:
+    mountPath: /var/lib/postgresql/data
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+
+resources: 
+   requests:
+     memory: 350Mi
+
+redis:
+  resources:
+    limits:
+      cpu: "0.2"
+
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
