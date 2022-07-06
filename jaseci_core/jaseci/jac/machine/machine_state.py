@@ -132,6 +132,8 @@ class machine_state:
             "args": e.args,
             "line": jac_ast.line,
             "col": jac_ast.column,
+            "name": self.name if hasattr(self, "name") else "blank",
+            "rule": jac_ast.name,
         }
 
     def rt_log_str(self, msg, jac_ast=None):
