@@ -6,16 +6,16 @@ import os
 import pandas as pd
 import json
 import warnings
-from .train import (
+from train import (
     predict_text,
     train_model,
     load_custom_model,
     save_custom_model,
     data_set,
     check_labels_ok,
+    transition,
 )
-from .entity_utils import create_data, create_data_new
-import mlflow
+from entity_utils import create_data, create_data_new
 
 warnings.filterwarnings("ignore")
 
@@ -195,6 +195,16 @@ def load_model(model_path: str = "default", local_file: bool = False):
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
+def model_stage(
+    model_name: str = "tfm_ner_type2", version: int = 2, stage: str = "Staging"
+):
+    if stage not in ["Staging", "Production"]:
+        return "please provide currect staging name"
+    transition(model_name, version, stage)
+    return f"model deployed to stage : {stage} "
+
+
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def save_model(model_path: str = "mymodel"):
     try:
         save_custom_model(model_path)
@@ -261,5 +271,4 @@ def set_model_config(model_parameters: Dict = None):
 if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
 
-    mlflow.set_tracking_uri("http://localhost:5000")
     launch_server(port=8000)

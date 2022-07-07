@@ -3,20 +3,25 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from transformers import pipeline
-from .utils.data_tokens import load_data
+from utils.data_tokens import load_data
 from torch import cuda
 import os
 from datetime import datetime
 import mlflow
+from mlflow.tracking import MlflowClient
 
 device = "cuda" if cuda.is_available() else "cpu"
 print("Using device for training -> ", device)
 
-experiment_id = mlflow.get_experiment_by_name("TFM_NER_Type_2")
+tracking_uri = "sqlite:///mlrunsdb15.db"
+mlflow.set_tracking_uri(tracking_uri)
+experiment_id = mlflow.get_experiment_by_name("TFM_NER")
 if experiment_id is None:
-    experiment_id = mlflow.create_experiment("TFM_NER_Type_2")
+    experiment_id = mlflow.create_experiment("TFM_NER")
+    experiment_id = mlflow.get_experiment_by_name("TFM_NER").experiment_id
 else:
     experiment_id = experiment_id.experiment_id
+print("experiment_id : ", experiment_id)
 
 
 # Logging
@@ -439,7 +444,12 @@ def train_model(
     }
     # Defining the training function on the 80% of the dataset
     # for tuning the bert model
-    with mlflow.start_run(experiment_id=experiment_id, nested=True):
+    with mlflow.start_run(
+        run_name="ner_type_2",
+        experiment_id=experiment_id,
+        nested=True,
+        description="Huggingface transformer based ner model",
+    ):
         mlflow.log_params(training_parameters)
         best_acc = 0
         for epoch in range(epochs):
@@ -453,12 +463,7 @@ def train_model(
             acc = train(epoch, optimizer, training_loader, max_grad_norm)
             if acc > best_acc:
                 best_acc = acc
-                # saving model on epochs
                 save_custom_model(f"{model_save_path}/curr_checkpoint/{model_name}")
-                mlflow.log_artifacts(
-                    f"{model_save_path}/curr_checkpoint/{model_name}",
-                    artifact_path="model_pytorch",
-                )
 
             logs(
                 str(datetime.now()) + "    ",
@@ -467,7 +472,14 @@ def train_model(
             )
             logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
 
-        # writing checkpoint
+        mlflow.log_artifacts(
+            f"{model_save_path}/curr_checkpoint/{model_name}",
+            artifact_path="pytorch_model/model",
+        )
+        mlflow.pytorch.log_model(
+            model, artifact_path="pytorch_model", registered_model_name="tfm_ner_type2",
+        )
+
         total_time = datetime.now() - start_time
         logs(
             str(datetime.now()) + "    ", "Model Training is Completed", logs_file_name
@@ -506,9 +518,22 @@ def train_model(
 
 def load_custom_model(model_path):
     global model, tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForTokenClassification.from_pretrained(model_path)
-    model.to(device)
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        model = AutoModelForTokenClassification.from_pretrained(model_path)
+        model.to(device)
+    except Exception:
+        tokenizer = AutoTokenizer.from_pretrained(model_path + "/model")
+        model = AutoModelForTokenClassification.from_pretrained(model_path + "/model")
+        model.to(device)
+
+
+# create stages of model defaulr ("Staging", "Production")
+def transition(model_name, version, stage):
+    client = MlflowClient()
+    client.transition_model_version_stage(
+        name=model_name, version=version, stage=stage, archive_existing_versions=True
+    )
 
 
 def save_custom_model(model_path):
