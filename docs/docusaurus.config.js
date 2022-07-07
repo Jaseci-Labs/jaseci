@@ -117,6 +117,14 @@ const config = {
         darkTheme: darkCodeTheme,
         
       },
+      algolia: {
+        appId: 'HUG2QGQRE1',
+
+        // Public API key: it is safe to commit it
+        apiKey: '7a6664cfbef4e4a9a738d3d1140b236c',
+  
+        indexName: 'jaseci',
+      },
     }),
 };
 
