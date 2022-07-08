@@ -590,11 +590,13 @@ class jac_tests(TestCaseHelper, TestCase):
             rep[0],
             {
                 "args": ("division by zero",),
-                "col": 8,
-                "line": 5,
+                "col": 15,
+                "line": 4,
                 "mod": "basic",
                 "msg": "division by zero",
                 "type": "ZeroDivisionError",
+                "name": "init",
+                "rule": "connect",
             },
         )
         self.assertEqual(rep[1], "dont need err")

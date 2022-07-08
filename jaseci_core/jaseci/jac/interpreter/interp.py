@@ -4,7 +4,6 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
-import logging
 from jaseci.utils.utils import is_jsonable, is_urn, parse_str_token
 from jaseci.element.element import element
 from jaseci.graph.node import node
@@ -13,7 +12,7 @@ from jaseci.attr.action import action
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.ir.jac_code import jac_ast_to_ir, jac_ir_to_ast
 from jaseci.jac.machine.jac_scope import jac_scope
-from jaseci.jac.machine.machine_state import machine_state
+from jaseci.jac.machine.machine_state import machine_state, TryException
 
 from jaseci.jac.machine.jac_value import jac_value
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
@@ -539,10 +538,7 @@ class interp(machine_state):
                             j.attach_bidirected(i, [use_edge])
             return tret
         except Exception as e:
-            if isinstance(e, TryException):
-                raise e
-            else:
-                raise TryException(self.jac_exception(e, jac_ast))
+            self.jac_try_exception(e, jac_ast)
 
     def run_logical(self, jac_ast):
         """
@@ -700,10 +696,7 @@ class interp(machine_state):
                 return jac_value(self, ctx=self.parent().global_vars, name=token)
 
         except Exception as e:
-            if isinstance(e, TryException):
-                raise e
-            else:
-                raise TryException(self.jac_exception(e, jac_ast))
+            self.jac_try_exception(e, jac_ast)
 
     def run_atom(self, jac_ast):
         """
@@ -762,10 +755,7 @@ class interp(machine_state):
                 return self.run_rule(kid[0])
 
         except Exception as e:
-            if isinstance(e, TryException):
-                raise e
-            else:
-                raise TryException(self.jac_exception(e, jac_ast))
+            self.jac_try_exception(e, jac_ast)
 
     def run_atom_trailer(self, jac_ast, atom_res):
         """
@@ -817,10 +807,7 @@ class interp(machine_state):
                 )
                 return atom_res
         except Exception as e:
-            if isinstance(e, TryException):
-                raise e
-            else:
-                raise TryException(self.jac_exception(e, jac_ast))
+            self.jac_try_exception(e, jac_ast)
 
     def run_ability_op(self, jac_ast, atom_res):
         """
@@ -1648,9 +1635,3 @@ class interp(machine_state):
         #     self.rt_error(
         #         f"Cannot execute this type of code here! {e}", jac_ast)
         #     return None
-
-
-class TryException(Exception):
-    def __init__(self, ref: dict):
-        super().__init__(ref["msg"])
-        self.ref = ref
