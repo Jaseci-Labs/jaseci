@@ -40,8 +40,9 @@ For this part, we are going to use Python. First,
     from datasets import load_dataset
     # load dataset
     dataset = load_dataset("snips_built_in_intents")
+    print(dataset["train"][:2])
     ```
-    If imported successsfuly, you should see the data format to be something like this
+    If imported successsfuly, you should see the data format to be something like this in output
     > {"text": ["Share my location with Hillary's sister", "Send my current location to my father"], "label": [5, 5]}
 
 2. `Converting the format` from the SNIPS out of the box to the format that can be ingested by biencoder.
@@ -192,7 +193,6 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
             # Iterate through the candidate labels and their predicted scores
             result = [];
             for pred in resp_data.list{
-                // pred=resp_data[0];
                 text = pred["context"];
                 max_score = 0;
                 max_intent = "";
@@ -357,7 +357,6 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
 
                 result = [];
                 for pred in resp_data.list{
-                    // pred=resp_data[0];
                     text = pred["context"];
                     max_score = 0;
                     max_intent = "";
@@ -379,7 +378,6 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
             # predict intent on new text
             can predict with predict entry{        
             # Use the model to perform inference
-            # returns the list of context with the suitable candidates
             test_data = file.load_json(visitor.test_data_file);
             resp_data = bi_enc.infer(
                 contexts=test_data["contexts"],
@@ -387,10 +385,10 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
                 context_type=test_data["context_type"],
                 candidate_type=test_data["candidate_type"]
                 );
+            
             # the infer action returns all the candidate with the confidence scores
             # Iterate through the candidate labels and their predicted scores
-            pred = resp_data[0]
-            context = pred["contexts"]
+            pred = resp_data[0];
             max_score = 0;
             max_intent = "";
             for j=0 to j<pred["candidate"].length by j+=1 {
@@ -400,9 +398,9 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
                 }
             }
             report [{
-                "context":text,
-                "pred intent":max_intent,
-                "Conf_Score":max_score
+                "context": pred["context"],
+                "pred intent": max_intent,
+                "Conf_Score": max_score
                 }];
             }
         }
@@ -463,6 +461,9 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         > jac build bi_encoder.jac
     2. Activate sentinal by run cmd
         > sentinel set -snt active:sentinel -mode ir bi_encoder.jir
+        
+        **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
+        > sentinel register -set_active true -mode ir bi_encoder.jir
     3. Calling walker `train_bi_enc` with `default parameter` for training `bi_enc` module by cmd
         > walker run train_bi_enc </br>
     
@@ -627,7 +628,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
 
 * Calling walker for predict intents by cmd
     ```
-    walker run predict
+    walker run predict -ctx "{\"test_data_file\":\"test_dataset.json\"}"
     ```
     **Output Result**
 
