@@ -4,6 +4,8 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
+
+import threading
 from jaseci.utils.utils import is_jsonable, is_urn, parse_str_token
 from jaseci.element.element import element
 from jaseci.graph.node import node
@@ -259,6 +261,26 @@ class interp(machine_state):
         except Exception as e:
             if len(kid) > 2:
                 self.run_else_from_try(kid[2], e)
+
+    def run_async_stmt(self, jac_ast):
+
+        holder = []
+        th = threading.Thread(target=self.run_async, args=(jac_ast,))
+        th.start()
+
+        return jac_value(self, value=holder)
+
+    def run_async(self, jac_ast):
+        kid = self.set_cur_ast(jac_ast)
+        operator = kid[1].name
+        if operator == "COLON":
+            self.run_expression(kid[2])
+        elif operator == "LBRACE":
+            for i in kid:
+                if i.name == "statement" and not self._loop_ctrl:
+                    self.run_statement(jac_ast=i)
+        else:
+            self.rt_error("Invalid async syntax!", jac_ast)
 
     def run_else_from_try(self, jac_ast, e):
         """

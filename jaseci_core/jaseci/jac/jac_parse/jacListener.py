@@ -289,6 +289,14 @@ class jacListener(ParseTreeListener):
     def exitTry_stmt(self, ctx: jacParser.Try_stmtContext):
         pass
 
+    # Enter a parse tree produced by jacParser#async_stmt.
+    def enterAsync_stmt(self, ctx: jacParser.Async_stmtContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#async_stmt.
+    def exitAsync_stmt(self, ctx: jacParser.Async_stmtContext):
+        pass
+
     # Enter a parse tree produced by jacParser#else_from_try.
     def enterElse_from_try(self, ctx: jacParser.Else_from_tryContext):
         pass

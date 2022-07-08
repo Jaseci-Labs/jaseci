@@ -113,6 +113,8 @@ if_stmt: KW_IF expression code_block elif_stmt* else_stmt?;
 
 try_stmt: KW_TRY code_block else_from_try?;
 
+async_stmt: KW_ASYNC (LBRACE statement* RBRACE | COLON expression);
+
 else_from_try:
 	KW_ELSE (LPAREN NAME RPAREN)? code_block
 	| KW_ELSE (KW_WITH NAME)? code_block;
@@ -181,6 +183,7 @@ atom:
 	| BOOL
 	| NULL
 	| NAME
+	| async_stmt
 	| global_ref
 	| node_edge_ref
 	| list_val
@@ -404,6 +407,8 @@ KW_SKIP: 'skip';
 KW_REPORT: 'report';
 KW_DESTROY: 'destroy';
 KW_TRY: 'try';
+KW_ASYNC: 'async';
+KW_AWAIT: 'await';
 DOT: '.';
 NOT: '!' | 'not';
 EE: '==';
