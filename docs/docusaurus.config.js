@@ -60,9 +60,9 @@ const config = {
           {to: 'docs/getting-started/getting-to-know-jaseci', activeBasePath:'docs/getting-started',label: 'Introduction', position: 'left'},
           {to:'docs/Developing_with_JAC/Overview',activeBasePath:'docs/Developing_with_JAC',label:'Development',position :'left'},
           {to:'docs/Tools_and_Features/Overview',activeBasePath:'docs/Tools_and_Features',label:'Tools and Features',position :'left'},
-          {to:'docs/scaling-jaseci-development/intro',activeBasePath:'docs/scaling-jaseci-development',label:'Deployment',position :'left'},
-          {to:'docs/Samples_and_Tutorials/Overview',activeBasePath:'docs/Samples_and_Tutorials',label:'Samples',position :'left'},
-          {to:'docs/Resources/Architectural_Overview',activeBasePath:'docs/Resources',label:'Resources',position :'left'},
+          //{to:'docs/scaling-jaseci-development/intro',activeBasePath:'docs/scaling-jaseci-development',label:'Deployment',position :'left'},
+          //{to:'docs/Samples_and_Tutorials/Overview',activeBasePath:'docs/Samples_and_Tutorials',label:'Samples',position :'left'},
+          //{to:'docs/Resources/Architectural_Overview',activeBasePath:'docs/Resources',label:'Resources',position :'left'},
           {
             href: 'https://github.com/Jaseci-Labs/jaseci',
             label: 'GitHub',
@@ -116,6 +116,14 @@ const config = {
         theme: require('prism-react-renderer/themes/dracula'),
         darkTheme: darkCodeTheme,
         
+      },
+      algolia: {
+        appId: 'HUG2QGQRE1',
+
+        // Public API key: it is safe to commit it
+        apiKey: '7a6664cfbef4e4a9a738d3d1140b236c',
+  
+        indexName: 'jaseci',
       },
     }),
 };
