@@ -44,4 +44,9 @@ urlpatterns = [
     path("user/", include("jaseci_serv.user_api.urls")),
     path("", include("jaseci_serv.jac_api.urls")),
     path("", include("jaseci_serv.obj_api.urls")),
+    # path('auth/', include('dj_rest_auth.urls')),
+    # path('auth/facebook/', FacebookLogin.as_view(), name='fb_login')
+    # path('auth/google/', GoogleLogin.as_view(), name='google_login')
+    # path('registration/', include('dj_rest_auth.registration.urls')),
+
 ]
