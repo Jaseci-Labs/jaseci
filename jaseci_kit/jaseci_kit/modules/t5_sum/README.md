@@ -42,7 +42,7 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
         ```python
         # summarizer
         can summarize with summarizer entry{
-            data = file.load_json(visitor.data);
+            data = file.load_json(visitor.dataset);
             report t5_sum.classifiy_text(
                 text = data["text"],
                 min_length = data["min_length"],
@@ -50,10 +50,10 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
                 );
         }
         ```
-        `classify_text`: use the T5 model to summarize a body of text
+        `classifiy_text`: use the T5 model to summarize a body of text
 
         **Parameter details**
-        * **Input Data**  **`data.json`** file
+        * **Input Data**  **`dataset.json`** file
 
             ```
             {
@@ -100,7 +100,7 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
         ```python
         # declaring walker for summerize text
         walker summarizer{
-            has dataset="data.json";
+            has dataset="dataset.json";
 
             root {
                 take --> node::model_dir;
@@ -119,7 +119,7 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
 
             # summarizer
             can summarize with summarizer entry{
-                data = file.load_json(visitor.data);
+                data = file.load_json(visitor.dataset);
                 
                 report t5_sum.classifiy_text(
                     text = data["text"],
