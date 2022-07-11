@@ -11,6 +11,10 @@ class object_api:
     ...
     """
 
+    def __init__(self):
+        self.perm_default = "private"
+        self._valid_perms = ["public", "private", "read_only"]
+
     @interface.private_api(cli_args=["name"])
     def global_get(self, name: str):
         """
@@ -31,15 +35,27 @@ class object_api:
     @interface.private_api(cli_args=["obj"])
     def object_perms_set(self, obj: element, mode: str):
         """Sets object access mode for any Jaseci object."""
-        valid_perms = ["public", "private", "read_only"]
         ret = {}
-        if mode not in valid_perms:
+        if mode not in self._valid_perms:
             ret["success"] = False
-            ret["response"] = f"{mode} not valid, must be in {valid_perms}"
+            ret["response"] = f"{mode} not valid, must be in {self._valid_perms}"
         else:
             getattr(obj, "make_" + mode)()
             ret["success"] = True
             ret["response"] = f"{obj} set to {mode}"
+        return ret
+
+    @interface.private_api(cli_args=["mode"])
+    def object_perms_default(self, mode: str):
+        """Sets object access mode for any Jaseci object."""
+        ret = {}
+        if mode not in self._valid_perms:
+            ret["success"] = False
+            ret["response"] = f"{mode} not valid, must be in {self._valid_perms}"
+        else:
+            self.perm_default = mode
+            ret["success"] = True
+            ret["response"] = f"Default access for future objects set to {mode}"
         return ret
 
     @interface.private_api(cli_args=["obj"])
