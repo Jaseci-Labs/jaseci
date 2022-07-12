@@ -84,9 +84,9 @@ walker use_enc_example {
     max_cand = 0;
     cand_idx = 0;
     for cand_emb in cand_embs {
-        cos_score = use.cos_sim_score()
+        cos_score = use.cos_sim_score(cand_emb, text_emb);
         if (cos_score > max_score) {
-            max_score = cos_score
+            max_score = cos_score;
             max_cand = cand_idx;
         }
         cand_idx += 1;
@@ -368,23 +368,73 @@ walker fast_enc_example {
 
 * `train`: used to train the Flair-based NER model
     * Input:
-        * `traindata`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context
+        * `trai_ndata`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context
         ```
         [
             {
-                "context": "I used to live at London, UK",
+                "context": "EU rejects German call to boycott British lamb",
                 "entities": [
                     {
-                        "entity_value": "London",
-                        "entity_type": "LOC",
-                        "start_index": 13,
-                        "end_index": 18
+                        "entity_value": "EU",
+                        "entity_type": "ORG",
+                        "start_index": 0,
+                        "end_index": 2
                     },
                     {
-                        "entity_value": "Minn",
-                        "entity_type": "LOC",
-                        "start_index": 19,
-                        "end_index": 20
+                        "entity_value": "German",
+                        "entity_type": "MISC",
+                        "start_index": 11,
+                        "end_index": 17
+                    },
+                    {
+                        "entity_value": "British",
+                        "entity_type": "MISC",
+                        "start_index": 34,
+                        "end_index": 41
+                    }
+                ]
+            }
+        ]
+        ```
+        * `val_data`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context
+        ```
+        [
+            {
+                "context": "CRICKET LEICESTERSHIRE TAKE OVER AT TOP AFTER INNINGS VICTORY",
+                "entities": [
+                    {
+                        "entity_value": "LEICESTERSHIRE",
+                        "entity_type": "ORG",
+                        "start_index": 8,
+                        "end_index": 22
+                    }
+                ]
+            }
+        ]
+        ```
+        * `test_data`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context
+        ```
+        [
+            {
+                "context": "The former Soviet republic was playing in an Asian Cup finals tie for the first time",
+                "entities": [
+                    {
+                        "entity_value": "Soviet",
+                        "entity_type": "MISC",
+                        "start_index": 11,
+                        "end_index": 17
+                    },
+                    {
+                        "entity_value": "Asian",
+                        "entity_type": "MISC",
+                        "start_index": 45,
+                        "end_index": 50
+                    },
+                    {
+                        "entity_value": "Asian",
+                        "entity_type": "MISC",
+                        "start_index": 45,
+                        "end_index": 50
                     }
                 ]
             }
@@ -426,23 +476,28 @@ walker fast_enc_example {
 # Train and inference with an entity extraction model
 walker ent_ext_example {
 
-    has train_file = "train_ner.json";
+    has train_file = "train_data.json";
+    has val_file = "val_data.json";
+    has test_file = "test_data.json";
     has from_scratch = true;
     has num_train_epochs = 20;
     has batch_size = 8;
     has learning_rate = 0.02;
-    can ent_ext.entity_detection,ent_ext.train;
+    can ent_ext.entity_detection, ent_ext.train;
     train_data = file.load_json(train_file);
+    val_data = file.load_json(val_file);
+    test_data = file.load_json(test_file);
 
     # Training the model
     ent_ext.train(
-    train_data=train_data,
-    train_params={
-        "num_epoch": num_train_epochs,
-        "batch_size": batch_size,
-        "LR": learning_rate
-    }
-    );
+        train_data = train_data,
+        val_data = val_data,
+        test_data = test_data,
+        train_params = {
+            "num_epoch": num_train_epochs,
+            "batch_size": batch_size,
+            "LR": learning_rate
+            });
 
     # Getting inference from the model
     resp_data = ent_ext.entity_detection(text="book a flight from kolkata to delhi",ner_labels= ["LOC"]);
@@ -564,14 +619,19 @@ walker tfm_ner_example {
             * `LexRankSummarizer`
             * `LuhnSummarizer`
     * Returns: List of Sentences that best summarizes the context
-#### Example Jac Usage:
+    * **Input text file `summarize.json`**
+        ```
+        {
+            "text": "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and   rude. The King of England was at war with him and had led a great army into Scotland to drive him out of the land. Battle after battle had been fought. Six times Bruce had led his brave little army against his foes and six times his men had been beaten and driven into flight. At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains. One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him. He was tired and unhappy. He was ready to give up all hope. It seemed to him that there was no use for him to try to do anything more. As he lay thinking, he saw a spider over his head making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. 'Poor thing,' said Bruce: 'you, too, know what it is to fail.', But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as, he watched her swing herself out upon the slender line. Would she fail again? No! The thread was carried safely to the beam and fastened there."
+        }
+        ```
+#### Example Jac Usage for given text blob:
 ```jac
-# Use the summarizer to summarize a given text blob or from a URL
+# Use the summarizer to summarize a given text blob
 walker cl_summer_example {
     has text_file = "summarize.json";
     has sent_count = 5;
     has summarizer_type = "LsaSummarizer";
-    has url="https://in.mashable.com/";
     can cl_summer.summarize;
 
     # Getting Extractive summary from text
@@ -582,6 +642,18 @@ walker cl_summer_example {
         sent_count=sent_count,
         summarizer_type=summarizer_type
     );
+    report resp_data;
+}
+```
+
+#### Example Jac Usage for given URL
+```jac
+# Use the summarizer to summarize a given URL
+walker cl_summer_example {
+    has sent_count = 5;
+    has summarizer_type = "LsaSummarizer";
+    has url="https://in.mashable.com/";
+    can cl_summer.summarize;
 
     # Getting Extractive summary from URL
     resp_data_url = cl_summer.summarize(
@@ -590,37 +662,47 @@ walker cl_summer_example {
         sent_count=sent_count,
         summarizer_type=summarizer_type
     );
+    report resp_data_url;
 }
 ```
 
 ###  T5 Summarization (`t5_sum`)
 `t5_sum` uses the T5 transformer model to perform abstractive summary on a body of text.
 
-* `classify_text`: use the T5 model to summarize a body of text
-    * Input:
+* `classifiy_text`: use the T5 model to summarize a body of text
+    * **Input**:
         * `text` (string): text to summarize
         * `min_length` (integer): the least amount of words you want returned from the model
         * `max_length` (integer): the most amount of words you want returned from the model
+    * **Input datafile**
+    `**data.json**`
+        ```
+        {
+            "text": "The US has passed the peak on new coronavirus cases, President Donald Trump said and predicted that some states would reopen this month. The US has over 637,000 confirmed Covid-19 cases and over 30,826 deaths, the highest for any country in the world. At the daily White House coronavirus briefing on Wednesday, Trump said new guidelines to reopen the country would be announced on Thursday after he speaks to governors. We'll be the comeback kids, all of us, he said. We want to get our country back. The Trump administration has  previously fixed May 1 as a possible date to reopen the world's largest economy, but the president said some states may be able to return to normalcy earlier than that.",
+            "min_length": 30,
+            "max_length": 100
+        }
+        ```
 
 #### Example Jac Usage:
 ```jac
 # Use the T5 model to summarize a given piece of text
 walker summarization {
-    can t5_sum.classify_text;
-    
-    has text;
-    has min_length = 30;
-    has max_length = 100;
-    
-    summarized_text = t5_sum.classify_text(text=text, min_length=min_length, max_length=max_length);
-    
+    can t5_sum.classifiy_text;
+    has data = "data.json";
+    data = file.load_json(data);
+    summarized_text = t5_sum.classifiy_text(
+        text = data["text"], 
+        min_length = data["min_length"], 
+        max_length = data["max_length"]
+        );
     report summarized_text;
 }
 ```
 
 ## Text Processing
 ### Text Segmenter (`text_seg`)
-`text_seg` module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
+`text_seg` Text segmentation is a method of splitting a document into smaller parts, which is usually called segments. It is widely used in text processing. Each segment has its relevant meaning. Those segments categorized as word, sentence, topic, phrase etc. module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
 * `get_segements`: gets different topics in the context provided, given a threshold 
     * Input 
         * `text`(String): text the contain the entire context
@@ -633,7 +715,12 @@ walker summarization {
             * `wiki`: trained on wikipedia data
             * `legal`: trained on legal documents
     * Returns: "[Model Loaded] : <model_name>"
-
+* **Input data file `text_seg.json`**
+    ```
+    {
+        "text": "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude. The King of England was at war with him and had led a great army into Scotland to drive him out of the land. Battle after battle had been fought. Six times Bruce had led his brave little army against his foes and six times his men had been beaten and driven into flight. At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains. One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him. He was tired and unhappy. He was ready to give up all hope. It seemed to him that there was no use for him to try to do anything more. As he lay thinking, he saw a spider over his head making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. 'Poor thing,' said Bruce: 'you, too, know what it is to fail. But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as he watched her swing herself out upon the slender line. Would she fail again? No! The thread was carried safely to the beam and fastened there."
+    }
+    ```
 #### Example Jac Usage:
 ```jac
 walker text_seg_example {
@@ -647,8 +734,10 @@ walker text_seg_example {
 
     # Getting Segments of different topic from text
     data = file.load_json(data_file);
-    resp_data = text_seg.get_segments(text=data.text,
-    threshold=threshold);
+    resp_data = text_seg.get_segments(
+        text=data.text,
+        threshold=threshold
+        );
     std.out(resp_data);
 }
 ```
