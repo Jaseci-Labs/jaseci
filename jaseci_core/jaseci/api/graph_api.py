@@ -119,6 +119,15 @@ class graph_api:
         )
         return nd.serialize()
 
+    @interface.cli_api(cli_args=["file"])
+    def graph_walk(self, nd: node = None):
+        cmd = ""
+        while cmd not in ["quit", "q", "exit"]:
+            print(
+                "location - " + ":".join([nd.kind, nd.name, nd.jid.strip("urn:uuid:")])
+            )
+            cmd = input("graph_walk_mode > ")
+
     def active_gph(self):
         return self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
 
