@@ -12,7 +12,6 @@ from mlflow.tracking import MlflowClient
 
 device = "cuda" if cuda.is_available() else "cpu"
 print("Using device for training -> ", device)
-
 tracking_uri = "sqlite:///mlrunsdb15.db"
 mlflow.set_tracking_uri(tracking_uri)
 experiment_id = mlflow.get_experiment_by_name("TFM_NER")
@@ -33,6 +32,14 @@ def logs(*args):
         print(data)
         f.write(data)
         f.write("\n")
+
+
+# create stages of model defaulr ("Staging", "Production")
+def transition(model_name, version, stage):
+    client = MlflowClient()
+    client.transition_model_version_stage(
+        name=model_name, version=version, stage=stage, archive_existing_versions=True
+    )
 
 
 # # preparing dataset for training
@@ -476,10 +483,22 @@ def train_model(
             f"{model_save_path}/curr_checkpoint/{model_name}",
             artifact_path="pytorch_model/model",
         )
+        mod_name = "tfm_ner_type2"
+
         mlflow.pytorch.log_model(
-            model, artifact_path="pytorch_model", registered_model_name="tfm_ner_type2",
+            model, artifact_path="pytorch_model", registered_model_name=mod_name
         )
 
+        # staging latest register model
+        client = MlflowClient()
+        ver_lst = []
+        for mv in client.search_model_versions(f"name='{mod_name}'"):
+            ver_lst.append(dict(mv))
+        mod_name = ver_lst[-1]["name"]
+        version = ver_lst[-1]["version"]
+        transition(model_name=mod_name, version=version, stage="Staging")
+
+        # logging
         total_time = datetime.now() - start_time
         logs(
             str(datetime.now()) + "    ", "Model Training is Completed", logs_file_name
@@ -526,14 +545,6 @@ def load_custom_model(model_path):
         tokenizer = AutoTokenizer.from_pretrained(model_path + "/model")
         model = AutoModelForTokenClassification.from_pretrained(model_path + "/model")
         model.to(device)
-
-
-# create stages of model defaulr ("Staging", "Production")
-def transition(model_name, version, stage):
-    client = MlflowClient()
-    client.transition_model_version_stage(
-        name=model_name, version=version, stage=stage, archive_existing_versions=True
-    )
 
 
 def save_custom_model(model_path):

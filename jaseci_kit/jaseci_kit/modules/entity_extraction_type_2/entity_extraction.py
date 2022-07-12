@@ -230,7 +230,6 @@ def model_stage(
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def model_verion(name: str = "tfm_ner_type2"):
     mv = model_versions(name)
-    print(mv)
     return mv
 
 
