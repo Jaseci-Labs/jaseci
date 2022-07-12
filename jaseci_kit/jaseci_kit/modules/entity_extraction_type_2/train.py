@@ -559,3 +559,58 @@ def predict_text(sentence):
             }
         )
     return ents
+
+
+def model_versions(name):
+    client = MlflowClient()
+    mv_lst = []
+    for mv in client.search_model_versions(f"name='{name}'"):
+        mv_lst.append(dict(mv))
+    return mv_lst
+
+
+def load_model_production(prod_path, prod_model_name, prod_version):
+    global model_prod, tokenizer_prod
+    try:
+        tokenizer_prod = AutoTokenizer.from_pretrained(prod_path)
+        model_prod = AutoModelForTokenClassification.from_pretrained(prod_path)
+        model_prod.to(device)
+    except Exception:
+        tokenizer_prod = AutoTokenizer.from_pretrained(prod_path + "/model")
+        model_prod = AutoModelForTokenClassification.from_pretrained(
+            prod_path + "/model"
+        )
+        model_prod.to(device)
+
+        # changing model stage production
+        client = MlflowClient()
+        client.transition_model_version_stage(
+            name=prod_model_name,
+            version=prod_version,
+            stage="Production",
+            archive_existing_versions=True,
+        )
+
+
+def prod_infer(sentence):
+    pipe_prod = pipeline(
+        "ner",
+        model=model_prod.to("cpu"),
+        tokenizer=tokenizer_prod,
+        aggregation_strategy="simple",
+    )
+    ent_prod = pipe_prod(sentence)
+    print(ent_prod)
+    ents = []
+    for itm in ent_prod:
+        ents.append(
+            {
+                "entity_value": itm["word"],
+                "entity_type": itm["entity_group"],
+                # "entity_type": itm["entity"],
+                "score": float(itm["score"]),
+                "start_index": itm["start"],
+                "end_index": itm["end"],
+            }
+        )
+    return ents

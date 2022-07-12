@@ -14,6 +14,9 @@ from train import (
     data_set,
     check_labels_ok,
     transition,
+    model_versions,
+    load_model_production,
+    prod_infer,
 )
 from entity_utils import create_data, create_data_new
 
@@ -80,6 +83,16 @@ def create_train_data(dataset, fname):
 def extract_entity(text: str = None):
     try:
         data = predict_text(text)
+        return data
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
+def prod_extract_entity(text: str = None):
+    try:
+        data = prod_infer(text)
         return data
     except Exception as e:
         print(traceback.format_exc())
@@ -195,6 +208,16 @@ def load_model(model_path: str = "default", local_file: bool = False):
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
+def production_load_model(
+    prod_model_path: str = "default",
+    prod_model_name: str = "tfm_ner_type2",
+    prod_version: int = 1,
+):
+    load_model_production(prod_model_path, prod_model_name, prod_version)
+    return "Model loadded successfull in production"
+
+
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def model_stage(
     model_name: str = "tfm_ner_type2", version: int = 2, stage: str = "Staging"
 ):
@@ -202,6 +225,13 @@ def model_stage(
         return "please provide currect staging name"
     transition(model_name, version, stage)
     return f"model deployed to stage : {stage} "
+
+
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
+def model_verion(name: str = "tfm_ner_type2"):
+    mv = model_versions(name)
+    print(mv)
+    return mv
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
