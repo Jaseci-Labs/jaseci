@@ -16,7 +16,9 @@ live_actions = {}
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
     """Decorator for Jaseci Action interface"""
-    caller_globals = dict(inspect.getmembers(inspect.stack()[1][0]))["f_globals"]
+    caller_globals = dict(inspect.getmembers(inspect.currentframe().f_back))[
+        "f_globals"
+    ]
     if allow_remote and "serv_actions" not in caller_globals:
         caller_globals["serv_actions"] = serv_actions
 
