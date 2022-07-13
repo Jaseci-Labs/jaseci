@@ -5,7 +5,7 @@ This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
 
-import threading
+from concurrent.futures import Future
 from jaseci.utils.utils import is_jsonable, is_urn, parse_str_token
 from jaseci.element.element import element
 from jaseci.graph.node import node
@@ -264,11 +264,9 @@ class interp(machine_state):
 
     def run_async_stmt(self, jac_ast):
 
-        holder = []
-        th = threading.Thread(target=self.run_async, args=(jac_ast,))
-        th.start()
+        future = self.executor(self.run_async, jac_ast)
 
-        return jac_value(self, value=holder)
+        return jac_value(self, value=future)
 
     def run_async(self, jac_ast):
         kid = self.set_cur_ast(jac_ast)
@@ -778,7 +776,9 @@ class interp(machine_state):
             elif kid[1].name == "NAME":
                 d = atom_res.value
                 n = kid[1].token_text()
-                if self.rt_check_type(d, [dict, element], kid[0]):
+                if self.rt_check_type(d, [dict, element, Future], kid[0]):
+                    if isinstance(d, Future):
+                        return jac_value(self, value=getattr(d, n))
                     ret = jac_value(self, ctx=d, name=n)
                     ret.unwrap()
                     return ret
@@ -799,6 +799,8 @@ class interp(machine_state):
                     self.rt_error(f"{e}", jac_ast)
                     ret = None
                 return jac_value(self, value=ret)
+            elif callable(atom_res.value):
+                return jac_value(self, value=atom_res.value(*param_list))
             else:
                 self.rt_error("Unable to execute ability", kid[0])
         elif kid[0].name == "ability_op":
