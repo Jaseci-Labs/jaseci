@@ -4,6 +4,9 @@
 
 ### Updates
 
+- Bug Fix: Mem leak on graph node setting fixed
+- Major Feature: Jsctl graph walking tooling
+- Improvement: Optimized the self generation of jaseci internal APIs
 - New Feature: Added `jaseci` standard library as patch through to all jaseci core APIs
 - New Features: Report payloads can be customized with `report:custom`
 - Improvement: Disengage can now do disengage with report action

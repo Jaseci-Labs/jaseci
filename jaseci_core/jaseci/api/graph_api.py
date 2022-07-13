@@ -114,9 +114,9 @@ class graph_api:
         """
         Assigns values to member variables of a given node using ctx object
         """
-        nd.set_context(
-            ctx=ctx, arch=snt.run_architype(nd.name, kind="node", caller=self)
-        )
+        temp_ref_nd = snt.run_architype(nd.name, kind="node", caller=self)
+        nd.set_context(ctx=ctx, arch=temp_ref_nd)
+        temp_ref_nd.destroy()
         return nd.serialize()
 
     @interface.cli_api(cli_args=["file"])
