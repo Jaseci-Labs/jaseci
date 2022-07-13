@@ -40,7 +40,21 @@ def config_setup():
         model_config = json.load(jsonfile)
 
     curr_model_path = model_config["model_name"]
-    load_custom_model(curr_model_path)
+    staging_model_path = model_config["staging_model_path"]
+    if staging_model_path is not None:
+        load_custom_model(staging_model_path)
+        curr_model_path = staging_model_path
+    else:
+        load_custom_model(curr_model_path)
+
+    prod_model_path = model_config["prod_model_path"]
+
+    if prod_model_path is not None:
+        load_model_production(
+            prod_path=prod_model_path,
+            prod_model_name=model_config["prod_model_name"],
+            prod_version=model_config["model_version"],
+        )
 
 
 config_setup()
@@ -179,7 +193,10 @@ def train(
                 model_config["model_save_path"],
             )
             print("model training Completed")
-            return status
+            model_config.update({"staging_model_path": status[0] + "/model"})
+            with open(m_config_fname, "w+") as jsonfile:
+                json.dump(model_config, jsonfile, indent=4)
+            return status[1]
         else:
             raise HTTPException(
                 status_code=500,
@@ -214,11 +231,20 @@ def production_load_model(
     prod_version: int = 1,
 ):
     load_model_production(prod_model_path, prod_model_name, prod_version)
+    model_config.update(
+        {
+            "prod_model_path": prod_model_path + "/model",
+            "prod_model_name": prod_model_name,
+            "model_version": prod_version,
+        }
+    )
+    with open(m_config_fname, "w+") as jsonfile:
+        json.dump(model_config, jsonfile, indent=4)
     return "Model loadded successfull in production"
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
-def model_stage(
+def change_model_stage(
     model_name: str = "tfm_ner_type2", version: int = 2, stage: str = "Staging"
 ):
     if stage not in ["Staging", "Production"]:
@@ -228,7 +254,7 @@ def model_stage(
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
-def model_verion(name: str = "tfm_ner_type2"):
+def get_model_verion(name: str = "tfm_ner_type2"):
     mv = model_versions(name)
     return mv
 

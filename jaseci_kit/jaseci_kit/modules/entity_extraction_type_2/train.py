@@ -1,3 +1,4 @@
+import shutil
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -394,12 +395,12 @@ def train_model(
     global model, tokenizer, logs_file_name
     # log file
     logs_file_name = (
-        datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + "_tfm_ner_training_logs.txt"
+        datetime.now().strftime("%Y%m%d_%H%M%S") + "_tfm_ner_training_logs.txt"
     )
 
     def create_model():
         # ## saving current model
-        save_custom_model(f"{model_save_path}/{model_name}")
+        # save_custom_model(f"{model_save_path}/{model_name}")
         model = AutoModelForTokenClassification.from_pretrained(
             model_name,
             ignore_mismatched_sizes=True,
@@ -488,6 +489,9 @@ def train_model(
         mlflow.pytorch.log_model(
             model, artifact_path="pytorch_model", registered_model_name=mod_name
         )
+        # delete temp model data
+        if os.path.exists(f"{model_save_path}/curr_checkpoint"):
+            shutil.rmtree(f"{model_save_path}/curr_checkpoint")
 
         # staging latest register model
         client = MlflowClient()
@@ -496,6 +500,7 @@ def train_model(
             ver_lst.append(dict(mv))
         mod_name = ver_lst[-1]["name"]
         version = ver_lst[-1]["version"]
+        source_path = ver_lst[-1]["source"]
         transition(model_name=mod_name, version=version, stage="Staging")
 
         # logging
@@ -532,7 +537,7 @@ def train_model(
 
     # Clearing cuda memory
     torch.cuda.empty_cache()
-    return f"model training is completed. total time taken {total_time}"
+    return source_path, f"model training is completed. total time taken {total_time}"
 
 
 def load_custom_model(model_path):
