@@ -50,6 +50,11 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      algolia: {
+        appId: 'HUG2QGQRE1',
+        apiKey: '7a6664cfbef4e4a9a738d3d1140b236c',
+        indexName: 'jaseci',
+      },
       navbar: {
         title: '',
         logo: {
@@ -64,11 +69,17 @@ const config = {
           //{to:'docs/Samples_and_Tutorials/Overview',activeBasePath:'docs/Samples_and_Tutorials',label:'Samples',position :'left'},
           //{to:'docs/Resources/Architectural_Overview',activeBasePath:'docs/Resources',label:'Resources',position :'left'},
           {
+            href: 'https://www.jaseci.org/',
+            label: 'Jaseci.org',
+            position: 'right',
+          },
+          {
             href: 'https://github.com/Jaseci-Labs/jaseci',
             label: 'GitHub',
             position: 'right',
           },
         ],
+        
       },
       footer: {
         style: 'dark',
@@ -117,14 +128,7 @@ const config = {
         darkTheme: darkCodeTheme,
         
       },
-      algolia: {
-        appId: 'HUG2QGQRE1',
-
-        // Public API key: it is safe to commit it
-        apiKey: '7a6664cfbef4e4a9a738d3d1140b236c',
-  
-        indexName: 'jaseci',
-      },
+     
     }),
 };
 
