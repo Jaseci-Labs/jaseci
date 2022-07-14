@@ -35,7 +35,7 @@ aimodels:
 
 ```
 
-below variables need o be defined, an example below, you can copy it and change the values as needed
+the variables of object need to be defined, an example below, you can copy it and change the values as needed
 
 ```bash
 
