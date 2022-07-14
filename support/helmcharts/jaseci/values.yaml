@@ -72,18 +72,18 @@ aimodels:
       - uvicorn jaseci_kit.use_enc:serv_actions --host 0.0.0.0 --port 80
     resources: 
       requests:
-          memory: 1Gi
+          memory: 3Gi
       limits:
-          memory: 1Gi
+          memory: 3Gi
   - name: js-use-qa
     script:
       - pip install jaseci-kit==1.3.3.19
       - uvicorn jaseci_kit.use_qa:serv_actions --host 0.0.0.0 --port 80    
     resources: 
       requests:
-          memory: 1Gi
+          memory: 3Gi
       limits:
-          memory: 1Gi
+          memory: 3Gi
 
   - name: summarization
     script:
@@ -95,8 +95,8 @@ aimodels:
       - uvicorn summarization:serv_actions --host 0.0.0.0 --port 80  
     resources: 
       requests:
-          memory: 1Gi
+          memory: 3Gi
       limits:
-          memory: 1Gi
+          memory: 3Gi
 
 
