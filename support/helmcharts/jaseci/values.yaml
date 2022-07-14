@@ -72,15 +72,31 @@ aimodels:
       - uvicorn jaseci_kit.use_enc:serv_actions --host 0.0.0.0 --port 80
     resources: 
       requests:
-          memory: 2Gi
+          memory: 1Gi
       limits:
-          memory: 2Gi
+          memory: 1Gi
   - name: js-use-qa
     script:
       - pip install jaseci-kit==1.3.3.19
       - uvicorn jaseci_kit.use_qa:serv_actions --host 0.0.0.0 --port 80    
     resources: 
       requests:
-          memory: 2Gi
+          memory: 1Gi
       limits:
-          memory: 2Gi
+          memory: 1Gi
+
+  - name: summarization
+    script:
+      - git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
+      - cd /jaseci/jaseci_core/
+      - source install.sh
+      - cd /jaseci
+      - cd /jaseci/jaseci_kit/jaseci_kit/modules/summarization
+      - uvicorn summarization:serv_actions --host 0.0.0.0 --port 80  
+    resources: 
+      requests:
+          memory: 1Gi
+      limits:
+          memory: 1Gi
+
+
