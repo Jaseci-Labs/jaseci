@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import include, path
 
 from . import views
 
@@ -17,4 +17,23 @@ urlpatterns = [
         "password_reset/",
         include("django_rest_passwordreset.urls", namespace="password_reset"),
     ),
+    path(
+        "sso/",
+        include(
+            [
+                path("google/", views.GoogleSSOView.as_view(), name="google_login"),
+                path(
+                    "facebook/", views.FacebookSSOView.as_view(), name="facebook_login"
+                ),
+            ]
+        ),
+    ),
+    # path(
+    #     "sso/scripts",include(
+    #         [
+    #             path("google/", views.GoogleSSOScriptView.as_view()),
+    #             # path("facebook/", views.FacebookSSOScriptView.as_view()),
+    #         ]
+    #     ),
+    # ),
 ]

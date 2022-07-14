@@ -1,12 +1,19 @@
-from django.contrib.auth import get_user_model, authenticate
-from django.utils.translation import ugettext_lazy as _
-
-from rest_framework import serializers
 import base64
-from django.urls import reverse
+
+from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model
 from django.dispatch import receiver
+from django.urls import reverse
+from django.utils.translation import ugettext_lazy as _
 from django_rest_passwordreset.signals import reset_password_token_created
+from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
+
 from jaseci_serv.base.mail import email_config
+from jaseci_serv.base.socialauth import socialauth_config
+
+from .register import register_social_user
+from .sso_provider import facebook, google
 
 
 def send_activation_email(request, email):
@@ -90,3 +97,54 @@ class AuthTokenSerializer(serializers.Serializer):
 
         attrs["user"] = user
         return attrs
+
+
+class FacebookSocialAuthSerializer(serializers.Serializer):
+    """Handles serialization of facebook related data"""
+
+    auth_token = serializers.CharField()
+
+    def validate_auth_token(self, auth_token):
+        user_data = facebook.Facebook.validate(auth_token)
+
+        try:
+            user_id = user_data["id"]
+            email = user_data["email"]
+            name = user_data["name"]
+            provider = "facebook"
+            return register_social_user(
+                provider=provider, user_id=user_id, email=email, name=name
+            )
+        except Exception as e:
+
+            raise serializers.ValidationError(
+                "The token is invalid or expired. Please login again."
+            )
+
+
+class GoogleSocialAuthSerializer(serializers.Serializer):
+    auth_token = serializers.CharField()
+
+    def validate_auth_token(self, auth_token):
+        user_data = google.Google.validate(auth_token)
+        try:
+            user_data["sub"]
+        except Exception as e:
+            raise serializers.ValidationError(
+                "The token is invalid or expired. Please login again."
+            )
+        google_config = socialauth_config().get_auth_conf(auth_type="google")
+        if user_data["aud"] != google_config["GOOGLE_CLIENT_ID"]:
+            raise AuthenticationFailed("oops, can't recognize this account?")
+
+        user_id = user_data["sub"]
+        email = user_data["email"]
+        name = user_data["name"]
+        provider = "google"
+        return register_social_user(
+            request=self.context.get("request"),
+            provider=provider,
+            user_id=user_id,
+            email=email,
+            name=name,
+        )

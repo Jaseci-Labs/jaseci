@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from django.conf import settings
 
 from django.db import models
 from django.contrib.auth.models import (
@@ -170,8 +171,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_activated = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
+    auth_provider = models.CharField(
+        max_length=255,
+        blank=False,
+        null=False,
+        default=settings.AUTH_PROVIDERS.get("email"),
+    )
+
     is_superuser = models.BooleanField(default=False)
     master = models.UUIDField(default=uuid.uuid4)
+
     objects = UserManager()
 
     def __init__(self, *args, **kwargs):
@@ -180,6 +189,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         PermissionsMixin.__init__(self, *args, **kwargs)
 
     USERNAME_FIELD = "email"
+
+    # def tokens(self):
+    #     refresh = RefreshToken.for_user(self)
+
+    #     return {
+    #         'refresh': str(refresh),
+    #         'access': str(refresh.access_token)
+    #     }
 
     def get_master(self):
         """Returns main user Jaseci node"""

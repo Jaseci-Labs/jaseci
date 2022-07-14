@@ -1,20 +1,25 @@
-from rest_framework import generics, permissions
-from rest_framework.views import APIView
-from rest_framework import renderers, status
-from knox.views import LoginView as KnoxLoginView
-from django.contrib.auth import login, get_user_model
-from django.contrib.auth.signals import user_logged_out
-from knox.auth import TokenAuthentication
-
-from jaseci_serv.user_api.serializers import UserSerializer
-from jaseci_serv.user_api.serializers import SuperUserSerializer
-from jaseci_serv.user_api.serializers import AuthTokenSerializer
-from jaseci_serv.user_api.serializers import send_activation_email
-from jaseci_serv.base.models import lookup_global_config
+import base64
 from datetime import timedelta
 
+from django.contrib.auth import get_user_model, login
+from django.contrib.auth.signals import user_logged_out
+from knox.auth import TokenAuthentication
+from knox.views import LoginView as KnoxLoginView
+from rest_framework import generics, permissions, renderers, status
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-import base64
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from jaseci_serv.base.models import lookup_global_config
+from jaseci_serv.user_api.serializers import (
+    AuthTokenSerializer,
+    FacebookSocialAuthSerializer,
+    GoogleSocialAuthSerializer,
+    SuperUserSerializer,
+    UserSerializer,
+    send_activation_email,
+)
+from jaseci_serv.base.socialauth import socialauth_config
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -105,3 +110,54 @@ class LogoutAllUsersView(APIView):
             u.auth_token_set.all().delete()
             user_logged_out.send(sender=u.__class__, request=request, user=u)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+
+class GoogleSSOView(GenericAPIView):
+    serializer_class = GoogleSocialAuthSerializer
+
+    def post(self, request):
+        """
+        POST with "auth_token"
+        send an "id_token" from google
+        """
+        data = self.serializer_class(data=request.data, context={"request": request})
+        if data.is_valid(raise_exception=True):
+            auth_token = data.validated_data.get("auth_token")
+            if auth_token["user"] is not None:
+                login(
+                    request,
+                    auth_token["user"],
+                    backend="django.contrib.auth.backends.ModelBackend",
+                )
+            return Response(
+                {"token": auth_token["token"], "exp": auth_token["exp"]},
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(data.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GoogleSSOScriptView(GenericAPIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        # TODO: make views to directly generate HTMl code snippet
+        # for user which they can paste into their html page
+        return Response({"sucess": True}, status=status.HTTP_200_OK)
+
+
+class FacebookSSOView(GenericAPIView):
+    serializer_class = FacebookSocialAuthSerializer
+
+    def post(self, request):
+        """
+        POST with "auth_token"
+        send an "id_token" from google
+        """
+        data = self.serializer_class(data=request.data)
+        if data.is_valid(raise_exception=True):
+            auth_token = data.validated_data.get("auth_token")
+            return Response(auth_token, status=status.HTTP_200_OK)
+        else:
+            return Response(data.errors, status=status.HTTP_400_BAD_REQUEST)
