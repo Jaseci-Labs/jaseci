@@ -20,7 +20,7 @@ helm install jaseci .
 
 Its very easy to add any ai model you wish to add that uses Jaseci KIT docker image.
 
-In values.yaml file, aimodels acts as a list of ai model you want to install with jaseci. Each model needs to be added below as a new object below aimodels like below
+In values.yaml file, aimodels acts as a list of ai model you want to install with jaseci. Each model needs to be added below as a new object below aimodels like :
 
 ```bash
 
