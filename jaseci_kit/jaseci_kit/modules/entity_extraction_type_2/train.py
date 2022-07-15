@@ -13,8 +13,12 @@ from mlflow.tracking import MlflowClient
 
 device = "cuda" if cuda.is_available() else "cpu"
 print("Using device for training -> ", device)
-tracking_uri = "sqlite:///mlrunsdb15.db"
+
+# adding tracking url for storing parameter and merics data
+tracking_uri = "sqlite:///mlrunsdb1.db"
 mlflow.set_tracking_uri(tracking_uri)
+
+# getting experiment Id if None then creat new one
 experiment_id = mlflow.get_experiment_by_name("TFM_NER")
 if experiment_id is None:
     experiment_id = mlflow.create_experiment("TFM_NER")
@@ -35,7 +39,7 @@ def logs(*args):
         f.write("\n")
 
 
-# create stages of model defaulr ("Staging", "Production")
+# changing stages of register model default values("Staging", "Production")
 def transition(model_name, version, stage):
     client = MlflowClient()
     client.transition_model_version_stage(
@@ -251,8 +255,12 @@ def train_score(optimizer, training_loader, max_grad_norm):
             y_true.append(tr_labels[i].cpu().item())
             y_pred.append(tr_preds[i].cpu().item())
     tr_acc = accuracy_score(y_true, y_pred)
+
+    # wirting metics in database or in local directry
     mlflow.log_metric("Train Epoch Loss", epoch_loss, step=nb_tr_steps)
     mlflow.log_metric("Train Epoch Accuracy", tr_acc, step=nb_tr_steps)
+
+    # creating training logs
     logs(
         str(datetime.now()) + "    ",
         f"Training loss epoch: {epoch_loss}",
@@ -307,8 +315,11 @@ def val_score(val_loader, model):
             y_true.append(ev_labels[i].cpu().item())
             y_pred.append(ev_preds[i].cpu().item())
     ev_acc = accuracy_score(y_true, y_pred)
+    # wirting metics in database or in local directry
     mlflow.log_metric("Val epoch loss", ev_epoch_loss, step=nb_ev_steps)
     mlflow.log_metric("Val epoch accuracy", ev_acc, step=nb_ev_steps)
+
+    # creating logs
     logs(
         str(datetime.now()) + "    ",
         f"Validation loss epoch: {ev_epoch_loss}",
@@ -370,8 +381,11 @@ def test_score(test_loader, model):
     )
 
     f_macro = f1_score(y_true, y_pred, average="macro")
+    # wirting metics in database or in local directry
     mlflow.log_metric("Test f1_macro", f_macro)
     mlflow.log_metric("Test accuracy", tst_acc)
+
+    # creating logs
     logs(str(datetime.now()) + "    ", f"f1_score(macro) : {f_macro} ", logs_file_name)
     logs(str(datetime.now()) + "    ", f"Accuracy : {tst_acc} ", logs_file_name)
     logs(str(datetime.now()) + "    ", "Classification Report", logs_file_name)
@@ -452,12 +466,15 @@ def train_model(
     }
     # Defining the training function on the 80% of the dataset
     # for tuning the bert model
+
+    # start training with MLFlow
     with mlflow.start_run(
         run_name="ner_type_2",
         experiment_id=experiment_id,
         nested=True,
         description="Huggingface transformer based ner model",
     ):
+        # writing parameters
         mlflow.log_params(training_parameters)
         best_acc = 0
         for epoch in range(epochs):
@@ -480,12 +497,14 @@ def train_model(
             )
             logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
 
+        # storing model data on cloud or local storage with log_artifact
         mlflow.log_artifacts(
             f"{model_save_path}/curr_checkpoint/{model_name}",
             artifact_path="pytorch_model/model",
         )
         mod_name = "tfm_ner_type2"
 
+        # logging model data and registering model for versioning
         mlflow.pytorch.log_model(
             model, artifact_path="pytorch_model", registered_model_name=mod_name
         )
@@ -493,7 +512,7 @@ def train_model(
         if os.path.exists(f"{model_save_path}/curr_checkpoint"):
             shutil.rmtree(f"{model_save_path}/curr_checkpoint")
 
-        # staging latest register model
+        # getting latest model version and registring model as Staging
         client = MlflowClient()
         ver_lst = []
         for mv in client.search_model_versions(f"name='{mod_name}'"):
@@ -578,6 +597,7 @@ def predict_text(sentence):
 
 
 def model_versions(name):
+    # getting all available model version on passed parameters name.
     client = MlflowClient()
     mv_lst = []
     for mv in client.search_model_versions(f"name='{name}'"):

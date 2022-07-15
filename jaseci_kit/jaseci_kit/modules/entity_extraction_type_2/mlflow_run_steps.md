@@ -14,13 +14,13 @@ mlflow server --backend-store-uri sqlite:///mlrunsdb15.db --default-artifact-roo
 ```
 python entity_extraction.py
 ```
-## 3. Run url in brouser for executing api
+## 3. Run url in browser for executing api
 ```
 http://127.0.0.1:8000/
 ```
 1. pass data and execute model training 
 
-## 4. For view logging in brouser by executing below url
+## 4. For view logging in browser  by executing below url
 ```
 http://127.0.0.1:5000/
 ```

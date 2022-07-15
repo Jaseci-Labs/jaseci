@@ -57,8 +57,10 @@ def config_setup():
         )
 
 
+# calling the default configuration from "model config and train config file"
 config_setup()
 
+# creating variable for training mode
 enum = {"default": 1, "append": 2, "incremental": 3}
 
 
@@ -93,6 +95,7 @@ def create_train_data(dataset, fname):
     return completed
 
 
+# createing api for infer new data in staging
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def extract_entity(text: str = None):
     try:
@@ -226,7 +229,7 @@ def load_model(model_path: str = "default", local_file: bool = False):
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def production_load_model(
-    prod_model_path: str = "default",
+    prod_model_path: str = "registered_model_path",
     prod_model_name: str = "tfm_ner_type2",
     prod_version: int = 1,
 ):
@@ -254,8 +257,8 @@ def change_model_stage(
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
-def get_model_verion(name: str = "tfm_ner_type2"):
-    mv = model_versions(name)
+def get_model_verion(model_name: str = "tfm_ner_type2"):
+    mv = model_versions(model_name)
     return mv
 
 
