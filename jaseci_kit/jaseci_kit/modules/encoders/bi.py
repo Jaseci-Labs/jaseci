@@ -10,9 +10,24 @@ import random
 import json
 import shutil
 
-from .utils.evaluate import get_embeddings  # noqa
-from .utils.models import BiEncoder  # noqa
-from .utils.train import train_model  # noqa
+from utils.evaluate import get_embeddings  # noqa
+from utils.models import BiEncoder  # noqa
+from utils.train import train_model  # noqa
+import mlflow
+from mlflow.tracking import MlflowClient
+
+# adding tracking url for storing parameter and merics data
+tracking_uri = "sqlite:///mlrunsdb.db"
+mlflow.set_tracking_uri(tracking_uri)
+
+# getting experiment Id if None then creat new one
+experiment_id = mlflow.get_experiment_by_name("BI_ENCODER")
+if experiment_id is None:
+    experiment_id = mlflow.create_experiment("BI_ENCODER")
+    experiment_id = mlflow.get_experiment_by_name("BI_ENCODER").experiment_id
+else:
+    experiment_id = experiment_id.experiment_id
+print("experiment_id : ", experiment_id)
 
 
 # device = torch.device("cpu")
@@ -34,7 +49,8 @@ def config_setup():
     Loading configurations from utils/config.cfg and
     initialize tokenizer and model
     """
-    global model, tokenizer, model_config, train_config, t_config_fname, m_config_fname
+    global model, prod_model, tokenizer, prod_tokenizer, model_config
+    global train_config, t_config_fname, m_config_fname
     dirname = os.path.dirname(__file__)
     m_config_fname = os.path.join(dirname, "utils/model_config.json")
     t_config_fname = os.path.join(dirname, "utils/train_config.json")
@@ -70,6 +86,14 @@ def config_setup():
 
 
 config_setup()
+
+
+# changing stages of register model default values("Staging", "Production")
+def transition(model_name, version, stage):
+    client = MlflowClient()
+    client.transition_model_version_stage(
+        name=model_name, version=version, stage=stage, archive_existing_versions=True
+    )
 
 
 # API for getting the cosine similarity
@@ -159,6 +183,67 @@ def infer(
         )
 
 
+@jaseci_action(act_group=["bi_enc"], allow_remote=True)
+def production_infer(
+    contexts: Union[List[str], List[List]],
+    candidates: Union[List[str], List[List]],
+    context_type: str,
+    candidate_type: str,
+):
+    """
+    Take list of context, candidate and return nearest candidate to the context
+    """
+    model_prod.eval()
+    predicted_candidates = []
+    try:
+        if (context_type == "text") and (candidate_type == "text"):
+            con_embed = []
+            con_embed = get_context_emb(contexts)
+            cand_embed = get_candidate_emb(candidates)
+        elif (context_type == "text") and (candidate_type == "embedding"):
+            con_embed = get_context_emb(contexts)
+            cand_embed = candidates
+        elif (context_type == "embedding") and (candidate_type == "text"):
+            con_embed = contexts
+            cand_embed = get_candidate_emb(candidates)
+
+        elif (context_type == "embedding") and (candidate_type == "embedding"):
+            con_embed = contexts
+            cand_embed = candidates
+        else:
+            raise HTTPException(status_code=404, detail=str("input type not supported"))
+        for data, cont in zip(con_embed, contexts):
+            score_dat = []
+            out_data = {"context": str, "candidate": [], "score": []}
+            if candidate_type == "embedding":
+                for lbl in cand_embed:
+                    if model_config["loss_type"] == "cos":
+                        score_dat.append(cosine_sim(vec_a=data, vec_b=lbl))
+                predicted_candidates.append(int(np.argmax(score_dat)))
+            else:
+                for lbl, cand in zip(cand_embed, candidates):
+                    if model_config["loss_type"] == "cos":
+                        out_data["context"] = cont
+                        out_data["candidate"].append(cand)
+                        out_data["score"].append(cosine_sim(vec_a=data, vec_b=lbl))
+                    else:
+                        out_data["context"] = cont
+                        out_data["candidate"].append(cand)
+                        out_data["score"].append(float(dot_prod(vec_a=data, vec_b=lbl)))
+                predicted_candidates.append(out_data)
+        return predicted_candidates
+    except Exception as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(
+                f"""input type can be
+         'embedding' or 'text', context and
+        candidate type should match the content of contexts and candidates.
+        Exception : {e}"""
+            ),
+        )
+
+
 # API for training
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
 def train(dataset: Dict = None, from_scratch=False, training_parameters: Dict = None):
@@ -170,29 +255,62 @@ def train(dataset: Dict = None, from_scratch=False, training_parameters: Dict = 
     if from_scratch is True:
         save_model(model_config["model_save_path"])
         config_setup()
-    model.train()
-    try:
-        if training_parameters is not None:
-            with open(t_config_fname, "w+") as jsonfile:
-                train_config.update(training_parameters)
-                json.dump(train_config, jsonfile, indent=4)
-        for data in dataset.keys():
-            for dat in dataset[data]:
-                train_data["contexts"].append(dat)
-                train_data["candidates"].append(data)
-                train_data["labels"].append(1)
-        model = train_model(
-            model=model,
-            tokenizer=tokenizer,
-            contexts=train_data["contexts"],
-            candidates=train_data["candidates"],
-            labels=train_data["labels"],
-            train_config=train_config,
-        )
-        return "Model Training is complete."
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+    with mlflow.start_run(
+        run_name="BI_ENCODER", experiment_id=experiment_id, nested=True
+    ):
+        model.train()
+        try:
+            if training_parameters is not None:
+                with open(t_config_fname, "w+") as jsonfile:
+                    train_config.update(training_parameters)
+                    json.dump(train_config, jsonfile, indent=4)
+            for data in dataset.keys():
+                for dat in dataset[data]:
+                    train_data["contexts"].append(dat)
+                    train_data["candidates"].append(data)
+                    train_data["labels"].append(1)
+            model = train_model(
+                model=model,
+                tokenizer=tokenizer,
+                contexts=train_data["contexts"],
+                candidates=train_data["candidates"],
+                labels=train_data["labels"],
+                train_config=train_config,
+            )
+            mlflow.log_params(train_config)
+            # saving temp model
+            save_model("tmp")
+            # logging artifact model data
+            mlflow.log_artifacts(
+                "tmp", artifact_path="bi_model/model",
+            )
+            mod_name = "BI_ENCODER"
+
+            # logging model data and registering model for versioning
+            mlflow.pytorch.log_model(
+                model, artifact_path="bi_model", registered_model_name=mod_name
+            )
+            # delete temp model data
+            if os.path.exists("tmp"):
+                shutil.rmtree("tmp")
+
+            # getting latest model version and registring model as Staging
+            client = MlflowClient()
+            ver_lst = []
+            for mv in client.search_model_versions(f"name='{mod_name}'"):
+                ver_lst.append(dict(mv))
+            mod_name = ver_lst[-1]["name"]
+            version = ver_lst[-1]["version"]
+            source_path = ver_lst[-1]["source"]
+            transition(model_name=mod_name, version=version, stage="Staging")
+            model_config.update({"staging_model_path": source_path + "/model"})
+            with open(m_config_fname, "w+") as jsonfile:
+                json.dump(model_config, jsonfile, indent=4)
+
+            return "Model Training is complete."
+        except Exception as e:
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=str(e))
 
 
 # API for geting Context Embedding
@@ -233,6 +351,16 @@ def get_candidate_emb(candidates: List):
         train_config=train_config,
     )
     return embedding
+
+
+# getting all available model version on passed parameters name.
+@jaseci_action(act_group=["bi_enc"], allow_remote=True)
+def get_model_verions(model_name: str = "BI_ENCODER"):
+    client = MlflowClient()
+    mv_lst = []
+    for mv in client.search_model_versions(f"name='{model_name}'"):
+        mv_lst.append(dict(mv))
+    return mv_lst
 
 
 # API for setting the training and model parameters
@@ -373,6 +501,88 @@ def load_model(model_path):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def load_production_model(model_path):
+    global model_prod, tokenizer_prod
+    with open(m_config_fname, "r") as jsonfile:
+        model_config_data = json.load(jsonfile)
+    if model_config_data["shared"] is True:
+        trf_config = AutoConfig.from_pretrained(model_path, local_files_only=True)
+        tokenizer_prod = AutoTokenizer.from_pretrained(
+            model_path, do_lower_case=True, clean_text=False
+        )
+        cont_bert = AutoModel.from_pretrained(model_path, local_files_only=True)
+        cand_bert = cont_bert
+        print(f"Loading shared model from : {model_path}")
+    else:
+        cand_bert_path = os.path.join(model_path, "cand_bert")
+        cont_bert_path = os.path.join(model_path, "cont_bert")
+        print(f"Loading non-shared model from : {model_path}")
+        cont_bert = AutoModel.from_pretrained(cont_bert_path, local_files_only=True)
+        cand_bert = AutoModel.from_pretrained(cand_bert_path, local_files_only=True)
+        trf_config = AutoConfig.from_pretrained(cont_bert_path, local_files_only=True)
+        tokenizer_prod = AutoTokenizer.from_pretrained(
+            cand_bert_path, do_lower_case=True, clean_text=False
+        )
+    model_prod = BiEncoder(
+        config=trf_config,
+        cont_bert=cont_bert,
+        cand_bert=cand_bert,
+        shared=model_config_data["shared"],
+        loss_type=model_config["loss_type"],
+        loss_function=model_config["loss_function"],
+    )
+    model_prod.to(train_config["device"])
+
+
+@jaseci_action(act_group=["bi_enc"], allow_remote=True)
+def production_load_model(
+    prod_model_path: str = "registered_model_path",
+    prod_model_name: str = "BI_ENCODER",
+    version: int = 1,
+):
+    """
+    loads the model from the provided model_path
+    """
+    if not os.path.exists(prod_model_path + "/model"):
+        raise HTTPException(status_code=404, detail="Model path is not available")
+    try:
+        load_production_model(prod_model_path + "/model")
+        client = MlflowClient()
+        client.transition_model_version_stage(
+            name=prod_model_name,
+            version=version,
+            stage="Production",
+            archive_existing_versions=True,
+        )
+        model_config.update(
+            {
+                "prod_model_path": prod_model_path + "/model",
+                "prod_model_name": prod_model_name,
+                "prod_model_version": version,
+            }
+        )
+        with open(m_config_fname, "w+") as jsonfile:
+            json.dump(model_config, jsonfile, indent=4)
+        return f"[loaded model from] : {prod_model_path + '/model'}"
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# production loading model.
+def prod_model():
+    """
+    loads the model from the provided production model_path
+    """
+    try:
+        load_production_model(model_config["prod_model_path"])
+    except Exception:
+        print("Production model is not available, Please load from rtegistered models.")
+
+
+prod_model()
 
 
 if __name__ == "__main__":

@@ -3,5 +3,9 @@
     "model_name": "prajjwal1/bert-tiny",
     "model_save_path": "modeloutput",
     "loss_function": "mse",
-    "loss_type": "dot"
+    "loss_type": "dot",
+    "staging_model_path": "./mlruns/1/1e7f5db02f3342d58450a440f5a737fd/artifacts/bi_model/model",
+    "prod_model_path": "./mlruns/1/1e7f5db02f3342d58450a440f5a737fd/artifacts/bi_model/model",
+    "prod_model_name": "BI_ENCODER",
+    "prod_model_version": 1
 }

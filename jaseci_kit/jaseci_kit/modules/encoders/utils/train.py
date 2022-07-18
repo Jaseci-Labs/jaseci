@@ -5,6 +5,7 @@ from tqdm.autonotebook import trange
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 from . import tokenizer as token_util
 import math
+import mlflow
 
 
 def train_model(model, tokenizer, contexts, candidates, labels, train_config):
@@ -138,6 +139,13 @@ def train_model(model, tokenizer, contexts, candidates, labels, train_config):
             loss : {tr_loss/nb_tr_steps}
             LR : {optimizer.param_groups[0]['lr']}\n"""
         )
+        metr = {
+            "Epoch": epoch + 1,
+            "Loss": tr_loss / nb_tr_steps,
+            "LR": optimizer.param_groups[0]["lr"],
+        }
+        mlflow.log_metrics(metr)
+
         log_wf.write(f"{epoch+1}\t{tr_loss/nb_tr_steps}\n")
     log_wf.close()
     return model
