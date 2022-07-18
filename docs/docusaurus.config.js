@@ -4,21 +4,57 @@
 const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
-
-module.exports = {
-  title: 'Jaseci Official Documentation',
+/** @type {import('@docusaurus/types').Config} */
+const config = {
+  title: 'Jaseci Offical Documentation',
   tagline: 'Powering The Next Generation Of AI Products',
-  url: 'https://your-docusaurus-test-site.com',
+  url: 'https://docs.jaseci.org/',
   baseUrl: '/',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'throw',
+  onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.png',
+
+  // GitHub pages deployment config.
+  // If you aren't using GitHub pages, you don't need these.
   organizationName: 'Jaseci Labs', // Usually your GitHub org/user name.
-  projectName: 'jaseci-docs', // Usually your repo name.
+  projectName: 'jaseci', // Usually your repo name.
+
+  // Even if you don't use internalization, you can use this field to set useful
+  // metadata like html lang. For example, if your site is Chinese, you may want
+  // to replace "en" with "zh-Hans".
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en'],
+  },
+
+  presets: [
+    [
+      'classic',
+      /** @type {import('@docusaurus/preset-classic').Options} */
+      ({
+        docs: {
+          sidebarPath: require.resolve('./sidebars.js'),
+          // Please change this to your repo.
+          // Remove this to remove the "edit this page" links.
+          editUrl:
+            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+        },
+        
+        theme: {
+          customCss: require.resolve('./src/css/custom.css'),
+        },
+      }),
+    ],
+  ],
 
   themeConfig:
-   
-    {
+    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
+    ({
+      algolia: {
+        appId: 'HUG2QGQRE1',
+        apiKey: '7a6664cfbef4e4a9a738d3d1140b236c',
+        indexName: 'jaseci',
+      },
       navbar: {
         title: '',
         logo: {
@@ -26,65 +62,61 @@ module.exports = {
           src: 'img/jaseci_logo.png',
         },
         items: [
-          {
-            to: 'docs/getting-started/getting-to-know-jaseci',
-            position: 'left',
-            label: 'Introduction',
-            activeBasePath:'docs/getting-started'
-          },
+          {to: 'docs/getting-started/getting-to-know-jaseci', activeBasePath:'docs/getting-started',label: 'Introduction', position: 'left'},
           {to:'docs/Developing_with_JAC/Overview',activeBasePath:'docs/Developing_with_JAC',label:'Development',position :'left'},
           {to:'docs/Tools_and_Features/Overview',activeBasePath:'docs/Tools_and_Features',label:'Tools and Features',position :'left'},
-          {to:'docs/scaling-jaseci-development/intro',activeBasePath:'docs/scaling-jaseci-development',label:'Deployment',position :'left'},
-          {to:'docs/Samples_and_Tutorials/Overview',activeBasePath:'docs/Samples_and_Tutorials',label:'Samples',position :'left'},
-          {to:'docs/Resources/Architectural_Overview',activeBasePath:'docs/Resources',label:'Resources',position :'left'},
-
-
-           //{to: '/blog', label: 'Blog', position: 'left'},
-           //{to: '/gettingStarted', label: 'Getting Started', position: 'left'},
+          //{to:'docs/scaling-jaseci-development/intro',activeBasePath:'docs/scaling-jaseci-development',label:'Deployment',position :'left'},
+          //{to:'docs/Samples_and_Tutorials/Overview',activeBasePath:'docs/Samples_and_Tutorials',label:'Samples',position :'left'},
+          //{to:'docs/Resources/Architectural_Overview',activeBasePath:'docs/Resources',label:'Resources',position :'left'},
+          {
+            href: 'https://www.jaseci.org/',
+            label: 'Jaseci.org',
+            position: 'right',
+          },
           {
             href: 'https://github.com/Jaseci-Labs/jaseci',
             label: 'GitHub',
             position: 'right',
           },
         ],
+        
       },
       footer: {
         style: 'dark',
         links: [
           {
-            title: 'Tutorial',
+            title: 'Docs',
             items: [
               {
-                label: 'Docs',
-                to: '/docs/getting-started/getting-to-know-jaseci',
+                label: 'Tutorial',
+                to: 'docs/getting-started/getting-to-know-jaseci',
               },
             ],
           },
           {
-            title: 'Forum',
+            title: 'Community',
             items: [
               {
-                label: 'Github Discussions',
-                href: 'https://github.com/Jaseci-Labs/jaseci/discussions',
+                label: 'Stack Overflow',
+                href: '/',
               },
-
+              {
+                label: 'Discord',
+                href: '/',
+              },
+              {
+                label: 'Twitter',
+                href: '/',
+              },
             ],
           },
           {
-            title: 'Open source',
+            title: 'More',
             items: [
+              
               {
                 label: 'GitHub',
                 href: 'https://github.com/Jaseci-Labs/jaseci',
-              },
-            ],
-          },
-          {
-            title: 'Official website',
-            items: [
-              {
-                label: 'Jaseci.org',
-                href: 'https://www.jaseci.org/',
               },
             ],
           },
@@ -94,36 +126,10 @@ module.exports = {
       prism: {
         theme: require('prism-react-renderer/themes/dracula'),
         darkTheme: darkCodeTheme,
-        additionalLanguages: ['jac', 'python']
-      },
-    },
-    presets: [
-      [
         
-        '@docusaurus/preset-classic',
-      
-        {
-          docs: {
-            path: 'docs',
-            routeBasePath: 'docs',
-            sidebarPath: require.resolve('./sidebars.js'),
-            // Please change this to your repo.
-            editUrl: 'https://github.com/facebook/docusaurus/edit/main/website/',
-          },
-          sitemap: {
-            changefreq: 'always',
-            priority: 0.5,
-            ignorePatterns: ['/tags/**'],
-            filename: 'sitemap.xml',
-          },
-         
-          
-          theme: {
-            customCss: require.resolve('./src/css/custom.css'),
-          },
-        },
-      ]
-    ],
-    
+      },
+     
+    }),
 };
 
+module.exports = config;

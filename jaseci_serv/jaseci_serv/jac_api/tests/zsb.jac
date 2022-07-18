@@ -238,3 +238,70 @@ walker simple {
         report global.info['request_context']["body"];
     }
 }
+
+walker simple_with_file {
+    has fileTypeField;
+
+    with entry {
+        report global.info['request_context']["body"]["ctx"]["fileTypeField"];
+        report fileTypeField;
+    }
+}
+
+walker simple_custom_payload_with_file {
+    has fileTypeField;
+
+    with entry {
+
+        if not(fileTypeField) {
+            report true;
+        }
+
+        if not(global.info['request_context']["body"]["ctx"]) {
+            report true;
+        }
+
+        report global.info['request_context']["body"]["fileTypeField"];
+    }
+}
+
+walker walker_exception_no_try_else {
+    can request.get;
+    with entry {
+        request.get("invalidUrl");
+    }
+}
+
+walker walker_exception_with_try_else {
+    can request.get;
+    with entry {
+        try {
+            request.get("invalidUrl");
+        } else with error {
+            report error;
+            report:error = error;
+        }
+    }
+}
+
+walker walker_exception_with_try_else_multiple_line {
+    can request.get;
+    with entry {
+        try {
+            std.log("######");
+            std.log("######");
+
+
+            std.log("######");
+
+            request.get("invalidUrl", {}, {});
+
+            std.log("######");
+            std.log("######");
+            std.log("######");
+        } else with error {
+            report error;
+            report:error = error;
+        }
+    }
+}
