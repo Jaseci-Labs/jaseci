@@ -39,6 +39,8 @@ class machine_state:
         self._cur_jac_ast = None
         self._executor = None
         self._executor_max_worker = 4
+        self._running_thread = []
+        self._completed = False
 
     def parent(self):
         if self._parent_override:
@@ -60,9 +62,17 @@ class machine_state:
         self._scope_stack.append(scope)
         self._jac_scope = scope
 
-    def pop_scope(self):
-        self._scope_stack.pop()
-        self._jac_scope = self._scope_stack[-1]
+    def pop_scope(self, future=None):
+        if self._completed:
+            if len(self._running_thread) < 1:
+                self._scope_stack.pop()
+                self._jac_scope = self._scope_stack[-1]
+            else:
+                temp = []
+                for thread in self._running_thread:
+                    if thread.running():
+                        temp.append(thread)
+                self._running_thread = temp
 
     def set_cur_ast(self, jac_ast):
         self._cur_jac_ast = jac_ast
@@ -198,4 +208,7 @@ class machine_state:
             self._executor = ThreadPoolExecutor(max_workers=max_worker)
 
         if not (task is None):
-            return self._executor.submit(task, *args)
+            future = self._executor.submit(task, *args)
+            self._running_thread.append(future)
+            future.add_done_callback(self.pop_scope)
+            return future

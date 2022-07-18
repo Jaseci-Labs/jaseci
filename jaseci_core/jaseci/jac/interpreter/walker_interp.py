@@ -211,3 +211,6 @@ class walker_interp(interp):
         self._jac_scope.set_agent_refs(cur_node=self.current_node, cur_walker=self)
 
         run_func(jac_ast)
+
+        self._completed = True
+        self.pop_scope()
