@@ -312,7 +312,7 @@ def train(dataset: Dict = None, from_scratch=False, training_parameters: Dict = 
             raise HTTPException(status_code=500, detail=str(e))
 
 
-# API for geting Context Embedding
+# API for geting Context Embeddings
 @jaseci_action(act_group=["bi_enc"], aliases=["encode_context"], allow_remote=True)
 def get_context_emb(contexts: List):
     """
