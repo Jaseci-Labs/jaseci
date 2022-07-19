@@ -9,7 +9,6 @@ from jaseci.actions.live_actions import jaseci_action
 import random
 import json
 import shutil
-
 from utils.evaluate import get_embeddings  # noqa
 from utils.models import BiEncoder  # noqa
 from utils.train import train_model  # noqa
@@ -335,8 +334,6 @@ def get_context_emb(contexts: List):
 
 
 # API for geting Candidates Embedding
-
-
 @jaseci_action(act_group=["bi_enc"], aliases=["encode_candidate"], allow_remote=True)
 def get_candidate_emb(candidates: List):
     """
@@ -508,27 +505,33 @@ def load_production_model(model_path):
     with open(m_config_fname, "r") as jsonfile:
         model_config_data = json.load(jsonfile)
     if model_config_data["shared"] is True:
-        trf_config = AutoConfig.from_pretrained(model_path, local_files_only=True)
+        trf_config_prod = AutoConfig.from_pretrained(model_path, local_files_only=True)
         tokenizer_prod = AutoTokenizer.from_pretrained(
             model_path, do_lower_case=True, clean_text=False
         )
-        cont_bert = AutoModel.from_pretrained(model_path, local_files_only=True)
-        cand_bert = cont_bert
+        cont_bert_prod = AutoModel.from_pretrained(model_path, local_files_only=True)
+        cand_bert_prod = cont_bert_prod
         print(f"Loading shared model from : {model_path}")
     else:
         cand_bert_path = os.path.join(model_path, "cand_bert")
         cont_bert_path = os.path.join(model_path, "cont_bert")
         print(f"Loading non-shared model from : {model_path}")
-        cont_bert = AutoModel.from_pretrained(cont_bert_path, local_files_only=True)
-        cand_bert = AutoModel.from_pretrained(cand_bert_path, local_files_only=True)
-        trf_config = AutoConfig.from_pretrained(cont_bert_path, local_files_only=True)
+        cont_bert_prod = AutoModel.from_pretrained(
+            cont_bert_path, local_files_only=True
+        )
+        cand_bert_prod = AutoModel.from_pretrained(
+            cand_bert_path, local_files_only=True
+        )
+        trf_config_prod = AutoConfig.from_pretrained(
+            cont_bert_path, local_files_only=True
+        )
         tokenizer_prod = AutoTokenizer.from_pretrained(
             cand_bert_path, do_lower_case=True, clean_text=False
         )
     model_prod = BiEncoder(
-        config=trf_config,
-        cont_bert=cont_bert,
-        cand_bert=cand_bert,
+        config=trf_config_prod,
+        cont_bert=cont_bert_prod,
+        cand_bert=cand_bert_prod,
         shared=model_config_data["shared"],
         loss_type=model_config["loss_type"],
         loss_function=model_config["loss_function"],
