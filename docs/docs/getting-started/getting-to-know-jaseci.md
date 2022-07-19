@@ -10,9 +10,32 @@ sidebar_position: 1
 
 ## Why Jaseci?
 
-Over the last decade we came a far way when it comes to building and developing AI models but most of the solutions out there, well, they require lots of work when compared to a system like Jaseci, which brings to the table an all in one solution to building simple to complex AI models.
+- Jaseci has powerful AI models which any developer can leverage in their application quickly and easily.
+- Jaseci Diffuse Runtime System , this runtime system handles the orchestraation , configuration and optimization of the full cloud compute stack and inter-machine resources such as container formation , scaling and optimization . In essence it provids all the technoloy needed to develop an AI application in one platform.
+- Reduce Development teams which comprises of Devops Engineer , Front and Backend Engineer , AI engineers to a single Jaseci Engineer.
+- Solve problems with graph representation of data.
+- Accelearate Development time of any AI application.
+- APIs are automatically genearted .
 
-Lets' imagine a developer wants to build an AI model to classify and group similar photos of Animals or Cars. The developer would begin by researching what AI models to use to accomplish the work he is trying to do. Once we finalizes on a model from hundreds of models existing models he would have to integrate the model into python then build out APIs for training and testing. What we've just mentioned would take days, maybe even weeks if you haven't got a good grip of knowledge of AI models... Because of this long pain staking process we were motivated to build Jaseci.
+## How Jaseci works 
+
+Jaseci brings together the Application Developement , AI Models and Code Infrastructure together in to one solution. Using the JAc Programming language you are able to load  AI models and create APIs . 
+Jaseci can be either a centralized or Distributed system. It depends how the developer creates their sentinel. What is a sentinel ? A sentinel is the logic that interacts and changes Graph data. All  users of your program will have their own sentinel , this allows for much flexibilty for backend code as it can be specific to each user. Each user also have their own Graph . In reality their 'own graph'  is just their information virtually segmented from the main graph.
+
+[insert pic of super user sentinel]
+
+### Centralized System. 
+
+When you create any JAC program you can easily expose your Program to API calls.The Centralized system has a main Sentinel . This main sentinel is set to be globall accessible and active . This is the Sentinel users will connect to , to interact and make changes to their graph.
+
+[inserts pics of centralized design]
+
+### Distributed System 
+Each person can have their own sentinel. Users can create their Sentiensl based on JAC code they have written. This Sentinel can be made live and is capable of interacting with the users's graph data. This allows for much flexibility with each users own backend code.
+[inserts pics o distributed system]
+
+
+
 
 ## Solutions Jaseci provides
 
