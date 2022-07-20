@@ -127,72 +127,20 @@ def infer(
     candidates: Union[List[str], List[List]],
     context_type: str,
     candidate_type: str,
+    model_stage: str = "staging"
 ):
     """
     Take list of context, candidate and return nearest candidate to the context
     """
-    model.eval()
-    predicted_candidates = []
-    try:
-        if (context_type == "text") and (candidate_type == "text"):
-            con_embed = []
-            con_embed = get_context_emb(contexts)
-            cand_embed = get_candidate_emb(candidates)
-        elif (context_type == "text") and (candidate_type == "embedding"):
-            con_embed = get_context_emb(contexts)
-            cand_embed = candidates
-        elif (context_type == "embedding") and (candidate_type == "text"):
-            con_embed = contexts
-            cand_embed = get_candidate_emb(candidates)
-
-        elif (context_type == "embedding") and (candidate_type == "embedding"):
-            con_embed = contexts
-            cand_embed = candidates
-        else:
-            raise HTTPException(status_code=404, detail=str("input type not supported"))
-        for data, cont in zip(con_embed, contexts):
-            score_dat = []
-            out_data = {"context": str, "candidate": [], "score": []}
-            if candidate_type == "embedding":
-                for lbl in cand_embed:
-                    if model_config["loss_type"] == "cos":
-                        score_dat.append(cosine_sim(vec_a=data, vec_b=lbl))
-                predicted_candidates.append(int(np.argmax(score_dat)))
-            else:
-                for lbl, cand in zip(cand_embed, candidates):
-                    if model_config["loss_type"] == "cos":
-                        out_data["context"] = cont
-                        out_data["candidate"].append(cand)
-                        out_data["score"].append(cosine_sim(vec_a=data, vec_b=lbl))
-                    else:
-                        out_data["context"] = cont
-                        out_data["candidate"].append(cand)
-                        out_data["score"].append(float(dot_prod(vec_a=data, vec_b=lbl)))
-                predicted_candidates.append(out_data)
-        return predicted_candidates
-    except Exception as e:
+    if model_stage.lower() == "staging":
+        model.eval()
+    elif model_stage.lower() == "production":
+        model_prod.eval()
+    else:
         raise HTTPException(
             status_code=404,
-            detail=str(
-                f"""input type can be
-         'embedding' or 'text', context and
-        candidate type should match the content of contexts and candidates.
-        Exception : {e}"""
-            ),
+            detail=str("model_stage can be 'staging' or 'production'")
         )
-
-
-@jaseci_action(act_group=["bi_enc"], allow_remote=True)
-def production_infer(
-    contexts: Union[List[str], List[List]],
-    candidates: Union[List[str], List[List]],
-    context_type: str,
-    candidate_type: str,
-):
-    """
-    Take list of context, candidate and return nearest candidate to the context
-    """
-    model_prod.eval()
     predicted_candidates = []
     try:
         if (context_type == "text") and (candidate_type == "text"):
@@ -350,7 +298,7 @@ def get_candidate_emb(candidates: List):
     return embedding
 
 
-# getting all available model version on passed parameters name.
+# getting all available model versions on experiment run_name.
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
 def get_model_verions(model_name: str = "BI_ENCODER"):
     client = MlflowClient()
