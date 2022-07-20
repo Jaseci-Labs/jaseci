@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import json
 import warnings
-from train import (
+from .train import (
     predict_text,
     train_model,
     load_custom_model,
@@ -18,7 +18,7 @@ from train import (
     load_model_production,
     prod_infer,
 )
-from entity_utils import create_data, create_data_new
+from .entity_utils import create_data, create_data_new
 
 warnings.filterwarnings("ignore")
 
@@ -95,7 +95,7 @@ def create_train_data(dataset, fname):
     return completed
 
 
-# createing api for infer new data in staging
+# creating api for infer new data in staging
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def extract_entity(text: str = None):
     try:

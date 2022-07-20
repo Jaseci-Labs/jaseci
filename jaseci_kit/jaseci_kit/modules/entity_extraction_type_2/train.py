@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from transformers import pipeline
-from utils.data_tokens import load_data
+from .utils.data_tokens import load_data
 from torch import cuda
 import os
 from datetime import datetime
@@ -256,7 +256,7 @@ def train_score(optimizer, training_loader, max_grad_norm):
             y_pred.append(tr_preds[i].cpu().item())
     tr_acc = accuracy_score(y_true, y_pred)
 
-    # wirting metics in database or in local directry
+    # logging training result in database or in local directry
     mlflow.log_metric("Train Epoch Loss", epoch_loss, step=nb_tr_steps)
     mlflow.log_metric("Train Epoch Accuracy", tr_acc, step=nb_tr_steps)
 
@@ -315,7 +315,7 @@ def val_score(val_loader, model):
             y_true.append(ev_labels[i].cpu().item())
             y_pred.append(ev_preds[i].cpu().item())
     ev_acc = accuracy_score(y_true, y_pred)
-    # wirting metics in database or in local directry
+    # logging validation result in database or in local directry
     mlflow.log_metric("Val epoch loss", ev_epoch_loss, step=nb_ev_steps)
     mlflow.log_metric("Val epoch accuracy", ev_acc, step=nb_ev_steps)
 
@@ -373,15 +373,10 @@ def test_score(test_loader, model):
     y_true = [labs[int(e)] for e in y_true]
     y_pred = [labs[int(e)] for e in y_pred]
     tst_acc = accuracy_score(y_true, y_pred)
-    cr = classification_report(
-        y_true,
-        y_pred,
-        # target_names=sorted(target_labels[1:], reverse=True),
-        zero_division=0,
-    )
+    cr = classification_report(y_true, y_pred, zero_division=0,)
 
     f_macro = f1_score(y_true, y_pred, average="macro")
-    # wirting metics in database or in local directry
+    # logging testing result in database or in local directry
     mlflow.log_metric("Test f1_macro", f_macro)
     mlflow.log_metric("Test accuracy", tst_acc)
 
@@ -413,8 +408,7 @@ def train_model(
     )
 
     def create_model():
-        # ## saving current model
-        # save_custom_model(f"{model_save_path}/{model_name}")
+        # loading current model
         model = AutoModelForTokenClassification.from_pretrained(
             model_name,
             ignore_mismatched_sizes=True,
@@ -453,7 +447,7 @@ def train_model(
     else:
         logs(
             str(datetime.now()) + "    ",
-            "same model is retraining in incremental mode",
+            "same model is re-training in incremental mode",
             logs_file_name,
         )
     model.to(device)
@@ -504,7 +498,7 @@ def train_model(
         )
         mod_name = "tfm_ner_type2"
 
-        # logging model data and registering model for versioning
+        # logging model data for model versioning
         mlflow.pytorch.log_model(
             model, artifact_path="pytorch_model", registered_model_name=mod_name
         )
@@ -512,7 +506,7 @@ def train_model(
         if os.path.exists(f"{model_save_path}/curr_checkpoint"):
             shutil.rmtree(f"{model_save_path}/curr_checkpoint")
 
-        # getting latest model version and registring model as Staging
+        # getting latest model version and register model as Staging
         client = MlflowClient()
         ver_lst = []
         for mv in client.search_model_versions(f"name='{mod_name}'"):
@@ -522,7 +516,7 @@ def train_model(
         source_path = ver_lst[-1]["source"]
         transition(model_name=mod_name, version=version, stage="Staging")
 
-        # logging
+        # creating log
         total_time = datetime.now() - start_time
         logs(
             str(datetime.now()) + "    ", "Model Training is Completed", logs_file_name
@@ -597,7 +591,7 @@ def predict_text(sentence):
 
 
 def model_versions(name):
-    # getting all available model version on passed parameters name.
+    # getting all available model version with specific experiment name.
     client = MlflowClient()
     mv_lst = []
     for mv in client.search_model_versions(f"name='{name}'"):
