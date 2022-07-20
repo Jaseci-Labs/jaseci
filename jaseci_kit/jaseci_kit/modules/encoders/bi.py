@@ -127,7 +127,7 @@ def infer(
     candidates: Union[List[str], List[List]],
     context_type: str,
     candidate_type: str,
-    model_stage: str = "staging"
+    model_stage: str = "staging",
 ):
     """
     Take list of context, candidate and return nearest candidate to the context
@@ -138,8 +138,7 @@ def infer(
         model_prod.eval()
     else:
         raise HTTPException(
-            status_code=404,
-            detail=str("model_stage can be 'staging' or 'production'")
+            status_code=404, detail=str("model_stage can be 'staging' or 'production'")
         )
     predicted_candidates = []
     try:
@@ -229,7 +228,8 @@ def train(dataset: Dict = None, from_scratch=False, training_parameters: Dict = 
             save_model("tmp")
             # logging artifact model data
             mlflow.log_artifacts(
-                "tmp", artifact_path="bi_model/model",
+                "tmp",
+                artifact_path="bi_model/model",
             )
             mod_name = "BI_ENCODER"
 
