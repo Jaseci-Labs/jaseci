@@ -30,11 +30,11 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
         node model_dir;
         node summarizer{};
         ```
-    3. import `t5_sum.classifiy_text` ability inside node `summarizer`.
+    3. import `t5_sum.classify_text` ability inside node `summarizer`.
 
         ```
         # import ability
-        can t5_sum.classifiy_text;
+        can t5_sum.classify_text;
         ```
 
     4. Initialize module `summarize` inside `summarizer` node.
@@ -43,14 +43,14 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
         # summarizer
         can summarize with summarizer entry{
             data = file.load_json(visitor.dataset);
-            report t5_sum.classifiy_text(
+            report t5_sum.classify_text(
                 text = data["text"],
                 min_length = data["min_length"],
                 max_length = data["max_length"]
                 );
         }
         ```
-        `classifiy_text`: use the T5 model to summarize a body of text
+        `classify_text`: use the T5 model to summarize a body of text
 
         **Parameter details**
         * **Input Data**  **`dataset.json`** file
@@ -115,13 +115,13 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
         node model_dir;
         node summarizer{
             # import ability
-            can t5_sum.classifiy_text;
+            can t5_sum.classify_text;
 
             # summarizer
             can summarize with summarizer entry{
                 data = file.load_json(visitor.dataset);
                 
-                report t5_sum.classifiy_text(
+                report t5_sum.classify_text(
                     text = data["text"],
                     min_length = data["min_length"],
                     max_length = data["max_length"]

@@ -368,7 +368,7 @@ walker fast_enc_example {
 
 * `train`: used to train the Flair-based NER model
     * Input:
-        * `trai_ndata`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context
+        * `train_data`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context.
         ```
         [
             {
@@ -669,7 +669,7 @@ walker cl_summer_example {
 ###  T5 Summarization (`t5_sum`)
 `t5_sum` uses the T5 transformer model to perform abstractive summary on a body of text.
 
-* `classifiy_text`: use the T5 model to summarize a body of text
+* `classify_text`: use the T5 model to summarize a body of text
     * **Input**:
         * `text` (string): text to summarize
         * `min_length` (integer): the least amount of words you want returned from the model
@@ -688,10 +688,10 @@ walker cl_summer_example {
 ```jac
 # Use the T5 model to summarize a given piece of text
 walker summarization {
-    can t5_sum.classifiy_text;
+    can t5_sum.classify_text;
     has data = "data.json";
     data = file.load_json(data);
-    summarized_text = t5_sum.classifiy_text(
+    summarized_text = t5_sum.classify_text(
         text = data["text"], 
         min_length = data["min_length"], 
         max_length = data["max_length"]
