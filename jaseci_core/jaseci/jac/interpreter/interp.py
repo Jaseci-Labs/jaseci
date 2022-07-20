@@ -1038,6 +1038,8 @@ class interp(machine_state):
             try:
                 if op == "reverse":
                     result = jac_value(self, value=atom_res.value.reverse())
+                elif op == "reversed":
+                    result = jac_value(self, value=list(reversed(atom_res.value)))
                 elif op == "copy":
                     result = jac_value(self, value=atom_res.value.copy())
                 elif op == "sort":

@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Improvement: Added `reversed` to set of list builtin functions
 - Bug Fix: Mem leak on graph node setting fixed
 - Major Feature: Jsctl graph walking tooling
 - Improvement: Optimized the self generation of jaseci internal APIs
