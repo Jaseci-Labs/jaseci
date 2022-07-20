@@ -22,19 +22,20 @@ sidebar_position: 1
 Jaseci brings together the Application Developement , AI Models and Code Infrastructure together in to one solution. Using the JAc Programming language you are able to load  AI models and create APIs . 
 Jaseci can be either a centralized or Distributed system. It depends how the developer creates their sentinel. What is a sentinel ? A sentinel is the logic that interacts and changes Graph data. All  users of your program will have their own sentinel , this allows for much flexibilty for backend code as it can be specific to each user. Each user also have their own Graph . In reality their 'own graph'  is just their information virtually segmented from the main graph.
 
-[insert pic of super user sentinel]
+![Diagram of superuser](/img/tutorial/getting_started/Superuser.jpeg)
 
 ### Centralized System. 
 
 When you create any JAC program you can easily expose your Program to API calls.The Centralized system has a main Sentinel . This main sentinel is set to be globall accessible and active . This is the Sentinel users will connect to , to interact and make changes to their graph.
 
-[inserts pics of centralized design]
+![Diagram of centeralized system](/img/tutorial/centralized.jpeg)
+
 
 ### Distributed System 
 Each person can have their own sentinel. Users can create their Sentiensl based on JAC code they have written. This Sentinel can be made live and is capable of interacting with the users's graph data. This allows for much flexibility with each users own backend code.
 [inserts pics o distributed system]
 
-
+![Diagram of Distributed system](/img/tutorial/Distributed.jpeg)
 
 
 ## Solutions Jaseci provides

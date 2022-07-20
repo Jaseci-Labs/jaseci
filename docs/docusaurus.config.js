@@ -54,6 +54,8 @@ const config = {
         appId: 'HUG2QGQRE1',
         apiKey: '7a6664cfbef4e4a9a738d3d1140b236c',
         indexName: 'jaseci',
+        contextualSearch : true,
+        placeholder : 'Search Jaseci Docs'
       },
       navbar: {
         title: '',
