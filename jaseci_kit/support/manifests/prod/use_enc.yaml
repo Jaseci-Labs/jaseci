@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: js-use-qa
+  name: js-use-enc
 spec:
   selector:
-    pod: js-use-qa
+    pod: js-use-enc
   ports:
     - protocol: TCP
       port: 80
@@ -14,33 +14,30 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: js-use-qa-up
+  name: js-use-enc-up
   namespace: default
 data:
   prod_up: |-
-    git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
-    cd /jaseci/jaseci_core/
-    source install.sh
-    cd /jaseci/jaseci_kit/jaseci_kit/modules/use_qa/
-    uvicorn use_qa:serv_actions --host 0.0.0.0 --port 80
+    pip install jaseci-kit==$version
+    uvicorn jaseci_kit.use_enc:serv_actions --host 0.0.0.0 --port 80 --workers 4
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: js-use-qa
+  name: js-use-enc
 spec:
   replicas: 1
   selector:
     matchLabels:
-      pod: js-use-qa
+      pod: js-use-enc
   template:
     metadata:
       labels:
-        pod: js-use-qa
-      name: js-use-qa
+        pod: js-use-enc
+      name: js-use-enc
     spec:
       containers:
-        - name: js-use-qa
+        - name: js-use-enc
           imagePullPolicy: IfNotPresent
           image: jaseci/jaseci-kit:latest
           resources:
@@ -58,4 +55,4 @@ spec:
       volumes:
         - name: prod-script
           configMap:
-            name: js-use-qa-up
+            name: js-use-enc-up
