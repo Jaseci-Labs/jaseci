@@ -41,6 +41,19 @@ class architype(element, jac_code, architype_interp):
             + self.exit_action_ids,
         )
 
+    def arch_with_supers(self):
+        archs = [self]
+        for i in self.super_archs:
+            obj = self.parent().arch_ids.get_obj_by_name(name=i, kind=self.kind)
+            archs += obj.arch_with_supers()
+        return archs
+
+    def is_instance(self, name):
+        names = []
+        for i in self.arch_with_supers():
+            names += i.super_archs + [i.name]
+        return name in names
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage

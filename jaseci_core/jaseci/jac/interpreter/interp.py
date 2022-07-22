@@ -1206,7 +1206,7 @@ class interp(machine_state):
             result = jac_set()
             if len(kid) > 1:
                 for i in self.viable_nodes().obj_list():
-                    if i.name == kid[2].token_text():
+                    if self.get_arch_for(i).is_instance(kid[2].token_text()):
                         result.add_obj(i)
             else:
                 result += self.viable_nodes()
@@ -1264,7 +1264,9 @@ class interp(machine_state):
         for i in (
             self.current_node.outbound_edges() + self.current_node.bidirected_edges()
         ):
-            if len(kid) > 2 and i.name != kid[2].token_text():
+            if len(kid) > 2 and not self.get_arch_for(i).is_instance(
+                kid[2].token_text()
+            ):
                 continue
             result.add_obj(i)
         if len(kid) > 2 and kid[3].name == "filter_ctx":
@@ -1284,7 +1286,9 @@ class interp(machine_state):
         for i in (
             self.current_node.inbound_edges() + self.current_node.bidirected_edges()
         ):
-            if len(kid) > 2 and i.name != kid[2].token_text():
+            if len(kid) > 2 and not self.get_arch_for(i).is_instance(
+                kid[2].token_text()
+            ):
                 continue
             result.add_obj(i)
         if len(kid) > 2 and kid[3].name == "filter_ctx":
@@ -1303,7 +1307,9 @@ class interp(machine_state):
         kid = self.set_cur_ast(jac_ast)
         result = jac_set()
         for i in self.current_node.attached_edges():
-            if len(kid) > 2 and i.name != kid[2].token_text():
+            if len(kid) > 2 and not self.get_arch_for(i).is_instance(
+                kid[2].token_text()
+            ):
                 continue
             result.add_obj(i)
         if len(kid) > 2 and kid[3].name == "filter_ctx":
