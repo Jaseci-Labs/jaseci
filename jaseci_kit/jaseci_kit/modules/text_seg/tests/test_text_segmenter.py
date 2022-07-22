@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from ..text_segmenter import serv_actions
+from ..text_seg import serv_actions
 from fastapi.testclient import TestClient
 from .test_data import test_segment_request
 

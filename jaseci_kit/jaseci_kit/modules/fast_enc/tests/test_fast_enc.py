@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from ..fasttext_classifier import serv_actions
+from ..fast_enc import serv_actions
 from fastapi.testclient import TestClient
 from .test_data import test_train_request, test_predict_request
 
