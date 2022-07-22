@@ -1,0 +1,62 @@
+
+{{- $kitimage := .Values.image.jasecikit }}
+{{- $top := . -}}
+{{- range $aimodels := .Values.aimodels }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ tpl .name $top }}
+spec:
+  selector:
+    pod: {{ tpl .name $top }}
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      name: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ tpl .name $top }}-up
+data:
+  prod_up: |
+{{- range .script }}
+{{ . | indent 4}}
+{{ end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ tpl .name $top }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: {{ tpl .name $top }}
+  template:
+    metadata:
+      labels:
+        pod: {{ tpl .name $top }}
+      name: {{ tpl .name $top }}
+    spec:
+      containers:
+        - name: {{ tpl .name $top }}
+          imagePullPolicy: IfNotPresent
+          image: {{ $kitimage }}
+          resources:
+            {{- toYaml .resources  | nindent 12 }}
+          command: [bash, -c, "source script/prod_up" ]
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+
+      volumes:
+        - name: prod-script
+          configMap:
+            name: {{ tpl .name $top }}-up
+---
+{{- end }}
