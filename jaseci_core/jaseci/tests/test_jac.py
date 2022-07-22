@@ -6,6 +6,8 @@ from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
 from jaseci.element.super_master import super_master
 from jaseci.element.master import master
+import jaseci.actions.live_actions as lact
+import os
 
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
@@ -143,6 +145,7 @@ class jac_tests(TestCaseHelper, TestCase):
         Test that arch_ids in sents bind contents to actual nodes
         scalably (node contexts dont get deleted when arch_ids deleted)
         """
+        lact.load_local_actions(os.path.dirname(__file__) + "/infer.py")
         gph = graph(m_id="anon", h=mem_hook())
         sent = sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog1)
@@ -502,6 +505,17 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(rep[9], [5, "apple", 4])
         self.assertEqual(rep[10], [])
 
+    def test_list_reversed(self):
+        gph = graph(m_id="anon", h=mem_hook())
+        sent = sentinel(m_id="anon", h=gph._h)
+        sent.register_code(jtc.list_reversed)
+        test_walker = sent.walker_ids.get_obj_by_name("init")
+        test_walker.prime(gph)
+        test_walker.run()
+        rep = test_walker.report
+        self.assertEqual(rep[0], [7, 2, 4])
+        self.assertEqual(rep[1], [4, 2, 7])
+
     def test_dict_manipulation(self):
         gph = graph(m_id="anon", h=mem_hook())
         sent = sentinel(m_id="anon", h=gph._h)
@@ -590,11 +604,13 @@ class jac_tests(TestCaseHelper, TestCase):
             rep[0],
             {
                 "args": ("division by zero",),
-                "col": 8,
-                "line": 5,
+                "col": 15,
+                "line": 4,
                 "mod": "basic",
                 "msg": "division by zero",
                 "type": "ZeroDivisionError",
+                "name": "init",
+                "rule": "connect",
             },
         )
         self.assertEqual(rep[1], "dont need err")

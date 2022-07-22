@@ -43,7 +43,7 @@ class mem_hook:
         """
         if item_id in self.mem.keys():
             ret = self.mem[item_id]
-            if override or ret.check_read_access(caller_id):
+            if override or (ret is not None and ret.check_read_access(caller_id)):
                 return ret
         else:
             ret = self.get_obj_from_store(item_id)

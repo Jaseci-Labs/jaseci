@@ -37,6 +37,7 @@ class master(
         master_api.__init__(self, head_master)
         alias_api.__init__(self)
         config_api.__init__(self)
+        object_api.__init__(self)
         graph_api.__init__(self)
         walker_api.__init__(self)
         sentinel_api.__init__(self)
