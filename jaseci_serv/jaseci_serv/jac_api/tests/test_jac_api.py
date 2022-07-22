@@ -1296,7 +1296,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEquals(res, default_res)
 
     def test_multipart_json_file(self):
-        """Test global action triggers"""
+        """Test multipart using json file as ctx parameter"""
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
         payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
         self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
@@ -1323,7 +1323,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEquals(res, default_res)
 
     def test_multipart_json_string(self):
-        """Test global action triggers"""
+        """Test multipart using json string as ctx parameter"""
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
         payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
         self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
@@ -1351,7 +1351,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEquals(res, default_res)
 
     def test_multipart_with_additional_file(self):
-        """Test global action triggers"""
+        """Test multipart with additional file"""
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
         payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
         self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
@@ -1378,7 +1378,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEquals(res, default_res)
 
     def test_multipart_custom_payload_with_additional_file(self):
-        """Test global action triggers"""
+        """Test multipart custom payload (non ctx format) with additional file"""
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
         payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
         self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
@@ -1402,3 +1402,83 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
         default_res = {"success": True, "report": [True, True, default_file]}
         self.assertEquals(res, default_res)
+
+    def test_try_catch(self):
+        """Test try catch triggers"""
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
+
+        payload = {"op": "walker_run", "name": "walker_exception_no_try_else"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        ).data
+
+        self.assertTrue(
+            res["stack_trace"].index(
+                "get() missing 2 required positional arguments: 'data' and 'header'"
+            )
+            > -1
+        )
+
+        self.assertEqual(
+            res["errors"][0],
+            "zsb:walker_exception_no_try_else - line 271, col 20 - rule atom - Internal Exception: get() missing 2 required positional arguments: 'data' and 'header'",
+        )
+
+        payload = {"op": "walker_run", "name": "walker_exception_with_try_else"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        ).data
+
+        expected_report = [
+            {
+                "type": "TypeError",
+                "mod": "zsb",
+                "msg": "get() missing 2 required positional arguments: 'data' and 'header'",
+                "args": (
+                    "get() missing 2 required positional arguments: 'data' and 'header'",
+                ),
+                "line": 279,
+                "col": 23,
+                "name": "walker_exception_with_try_else",
+                "rule": "atom_trailer",
+            }
+        ]
+
+        self.assertFalse("stack_trace" in res)
+        self.assertEqual(expected_report, res["report"])
+        self.assertEqual(
+            res["errors"][0],
+            "zsb:walker_exception_with_try_else - line 279, col 23 - rule atom_trailer - get() missing 2 required positional arguments: 'data' and 'header'",
+        )
+
+        payload = {
+            "op": "walker_run",
+            "name": "walker_exception_with_try_else_multiple_line",
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        ).data
+
+        expected_report = [
+            {
+                "type": "MissingSchema",
+                "mod": "zsb",
+                "msg": "Invalid URL 'invalidUrl': No scheme supplied. Perhaps you meant http://invalidUrl?",
+                "args": (
+                    "Invalid URL 'invalidUrl': No scheme supplied. Perhaps you meant http://invalidUrl?",
+                ),
+                "line": 297,
+                "col": 23,
+                "name": "walker_exception_with_try_else_multiple_line",
+                "rule": "atom_trailer",
+            }
+        ]
+
+        self.assertFalse("stack_trace" in res)
+        self.assertEqual(expected_report, res["report"])
+        self.assertEqual(
+            res["errors"][0],
+            "zsb:walker_exception_with_try_else_multiple_line - line 297, col 23 - rule atom_trailer - Invalid URL 'invalidUrl': No scheme supplied. Perhaps you meant http://invalidUrl?",
+        )

@@ -24,9 +24,15 @@ class anchored:
 class sharable:
     """Utility class for objects that are sharable between users"""
 
-    def __init__(self, m_id, mode="private"):
+    def __init__(self, m_id, mode=None):
         self.set_master(m_id)
-        self.j_access = mode
+        self.j_access = (
+            mode
+            if mode is not None
+            else self._h.get_obj(self._m_id, uuid.UUID(self._m_id)).perm_default
+            if self._h.get_obj(self._m_id, uuid.UUID(self._m_id))
+            else "private"
+        )
         self.j_r_acc_ids = id_list(self)
         self.j_rw_acc_ids = id_list(self)
 

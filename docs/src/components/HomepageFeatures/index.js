@@ -37,7 +37,42 @@ const FeatureList = [
         Jaseci comes with powerful tools to speed up and empower your development. Jaseci Kit , Jaseci Studio, VS code plugins are all avaliable for you !
       </>
     ),
-  },
+  }
+];
+
+function Feature({imgUrl,href, title, description}) {
+ 
+  const imageUrl = useBaseUrl(imgUrl);
+  return (
+      <div className={clsx('col col--4', styles.feature)}>
+          {imageUrl && (
+              <div className="text--center">
+                  <a href= {href} ><img className={styles.featureSvg} src={imageUrl} alt={title}/></a>
+              </div>
+          )}
+          <h3>{title}</h3>
+          <p>{description}</p>
+      </div>
+  );
+  }
+  
+  export default function HomepageFeatures() {
+    return (
+      <section className={styles.features}>
+        <div className="container">
+          <div className="row">
+            {FeatureList.map((props, idx) => (
+              <Feature key={idx} {...props} />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+  
+
+  /*
+  ,
   {
     title: 'Scaling Jaseci Deployment ',
     imgUrl: 'img/tutorial/landingpage/jaseci_deployment.png',
@@ -73,35 +108,4 @@ const FeatureList = [
       </>
     ),
   },
-];
-
-function Feature({imgUrl,href, title, description}) {
- 
-  const imageUrl = useBaseUrl(imgUrl);
-  return (
-      <div className={clsx('col col--4', styles.feature)}>
-          {imageUrl && (
-              <div className="text--center">
-                  <a href= {href} ><img className={styles.featureSvg} src={imageUrl} alt={title}/></a>
-              </div>
-          )}
-          <h3>{title}</h3>
-          <p>{description}</p>
-      </div>
-  );
-  }
-  
-  export default function HomepageFeatures() {
-    return (
-      <section className={styles.features}>
-        <div className="container">
-          <div className="row">
-            {FeatureList.map((props, idx) => (
-              <Feature key={idx} {...props} />
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-  
+  */
