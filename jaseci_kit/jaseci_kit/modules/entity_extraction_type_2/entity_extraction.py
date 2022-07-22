@@ -6,19 +6,16 @@ import os
 import pandas as pd
 import json
 import warnings
-from .train import (
+from train import (
     predict_text,
-    train_model,
+    training,
     load_custom_model,
     save_custom_model,
     data_set,
     check_labels_ok,
-    transition,
     model_versions,
-    load_model_production,
-    prod_infer,
 )
-from .entity_utils import create_data, create_data_new
+from entity_utils import create_data, create_data_new
 
 warnings.filterwarnings("ignore")
 
@@ -47,19 +44,9 @@ def config_setup():
     else:
         load_custom_model(curr_model_path)
 
-    prod_model_path = model_config["prod_model_path"]
-
-    if prod_model_path is not None:
-        load_model_production(
-            prod_path=prod_model_path,
-            prod_model_name=model_config["prod_model_name"],
-            prod_version=model_config["model_version"],
-        )
-
 
 # calling the default configuration from "model config and train config file"
 config_setup()
-
 # creating variable for training mode
 enum = {"default": 1, "append": 2, "incremental": 3}
 
@@ -107,17 +94,12 @@ def extract_entity(text: str = None):
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
-def prod_extract_entity(text: str = None):
-    try:
-        data = prod_infer(text)
-        return data
-    except Exception as e:
-        print(traceback.format_exc())
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def train(
+    use_mlflow: bool = True,
+    tracking_uri: str = "sqlite:///mlrunsdb.db",
+    exp_name: str = "tfm_ner",
+    exp_run_name: str = "transformer_ner",
+    description: str = "Running the latest model on fincorp dataset",
     mode: str = train_config["MODE"],
     epochs: int = train_config["EPOCHS"],
     train_data: List[dict] = [],
@@ -186,17 +168,22 @@ def train(
             # checking data and model labels
             data_lab = check_labels_ok()
             print("model training started")
-            status = train_model(
-                curr_model_path,
-                train_config["EPOCHS"],
-                enum[mode],
-                data_lab,
-                train_config["LEARNING_RATE"],
-                train_config["MAX_GRAD_NORM"],
-                model_config["model_save_path"],
+            status = training(
+                model_name=curr_model_path,
+                epochs=train_config["EPOCHS"],
+                mode=enum[mode],
+                lab_check=data_lab,
+                learning_rate=train_config["LEARNING_RATE"],
+                max_grad_norm=train_config["MAX_GRAD_NORM"],
+                model_save_path=model_config["model_save_path"],
+                use_mlflow=use_mlflow,
+                tracking_uri=tracking_uri,
+                exp_name=exp_name,
+                exp_run_name=exp_run_name,
+                description=description,
             )
             print("model training Completed")
-            model_config.update({"staging_model_path": status[0] + "/model"})
+            model_config.update({"staging_model_path": status[0]})
             with open(m_config_fname, "w+") as jsonfile:
                 json.dump(model_config, jsonfile, indent=4)
             return status[1]
@@ -228,37 +215,8 @@ def load_model(model_path: str = "default", local_file: bool = False):
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
-def production_load_model(
-    prod_model_path: str = "registered_model_path",
-    prod_model_name: str = "tfm_ner_type2",
-    prod_version: int = 1,
-):
-    load_model_production(prod_model_path, prod_model_name, prod_version)
-    model_config.update(
-        {
-            "prod_model_path": prod_model_path + "/model",
-            "prod_model_name": prod_model_name,
-            "model_version": prod_version,
-        }
-    )
-    with open(m_config_fname, "w+") as jsonfile:
-        json.dump(model_config, jsonfile, indent=4)
-    return "Model loadded successfull in production"
-
-
-@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
-def change_model_stage(
-    model_name: str = "tfm_ner_type2", version: int = 2, stage: str = "Staging"
-):
-    if stage not in ["Staging", "Production"]:
-        return "please provide currect staging name"
-    transition(model_name, version, stage)
-    return f"model deployed to stage : {stage} "
-
-
-@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
-def get_model_verion(model_name: str = "tfm_ner_type2"):
-    mv = model_versions(model_name)
+def get_model_verion(registered_model_name: str = "tfm_ner"):
+    mv = model_versions(registered_model_name)
     return mv
 
 

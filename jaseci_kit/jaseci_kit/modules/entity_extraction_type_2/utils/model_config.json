@@ -1,8 +1,5 @@
 {
     "model_name": "prajjwal1/bert-tiny",
     "model_save_path": "train",
-    "staging_model_path": "./mlruns/1/27b4dbb6ff2f46d2bd19e1654aae1a32/artifacts/pytorch_model/model",
-    "prod_model_path": "./mlruns/1/33cacccd1ec34af592cbd2483c80d3af/artifacts/pytorch_model/model",
-    "prod_model_name": "tfm_ner_type2",
-    "model_version": 1
+    "staging_model_path": "./mlruns/1/2cf0a0dc40ae42a7ae01fc818e80e972/artifacts/pytorch_model/model"
 }

@@ -7,7 +7,7 @@
 ## 1. Run mlflow server by command:
 
 ```
-mlflow server --backend-store-uri sqlite:///mlrunsdb15.db --default-artifact-root file:/mlruns -h 0.0.0.0 -p 5000
+mlflow server --backend-store-uri sqlite:///mlrunsdb.db --default-artifact-root file:/mlruns -h 0.0.0.0 -p 5000
 ```
 
 ## 2. Run Experiment by command:
