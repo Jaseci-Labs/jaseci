@@ -818,10 +818,8 @@ class interp(machine_state):
         if len(kid) > 1:
             kind = atom_res.value.kind
             name = kid[1].token_text()
-            if name in base_arch.super_archs:
-                return self.parent().arch_ids.get_obj_by_name(
-                    name=kid[1].token_text(), kind=kind
-                )
+            if name in base_arch.derived_types():
+                return self.parent().arch_ids.get_obj_by_name(name=name, kind=kind)
             else:
                 self.rt_error(f"{name} is not a super arch of {base_arch.name}")
                 return None

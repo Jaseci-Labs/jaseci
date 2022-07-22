@@ -121,14 +121,12 @@ class jac_tests(TestCaseHelper, TestCase):
         )
 
     def test_inherited_ref(self):
-        self.logger_on()
         mast = master(h=mem_hook())
         mast.sentinel_register(name="test", code=jtp.inherited_ref, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
         )
-        self.log(report)
-        self.assertEqual(len(report["report"]), 9)
+        self.assertEqual(len(report["report"]), 12)
 
     def test_node_inheritance_chain_check(self):
         mast = master(h=mem_hook())

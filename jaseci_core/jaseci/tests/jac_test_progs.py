@@ -190,6 +190,7 @@ inherited_ref = """
             ::plain:x;
             report here.context;
             report "super.x";
+            ::z;
         }
         can y {
             ::plain2:y;
