@@ -194,7 +194,8 @@ class walker_interp(interp):
                 self.run_preset_in_out(jac_ir_to_ast(i.preset_in_out), nd, i)
             else:
                 self.call_ability(nd=nd, name=i.name, act_list=act_list)
-            already_executed.append(i.name)
+            if not i.preset_in_out:  # All preset in and outs get executed
+                already_executed.append(i.name)
 
     def viable_nodes(self):
         """Returns all nodes that shouldnt be ignored"""
