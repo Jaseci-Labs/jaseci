@@ -369,3 +369,30 @@ root_is_node_type = """
         report here.type;
     }
     """
+
+walker_with_exit_after_node = """
+    node echeck {
+        has a=3;
+        can dostuff with exit {
+            report a;
+        }
+    }
+
+    walker init {
+        has a=0;
+        with entry {
+            a+=1;
+        }
+        root {
+            spawn here --> node::echeck;
+            spawn here --> node::echeck;
+            spawn here --> node::echeck;
+            spawn here --> node::echeck;
+        }
+        take -->;
+        report a;
+        with exit {
+            report 43;
+        }
+    }
+    """

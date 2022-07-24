@@ -54,8 +54,6 @@ class walker_interp(interp):
                 self.run_statement(i)
             if i.name == "walk_activity_block":
                 self.run_walk_activity_block(i)
-            if i.name == "walk_exit_block":
-                self.run_walk_exit_block(i)
 
         # self.trigger_activity_actions()
         archs = self.get_arch_for(self.current_node).arch_with_supers()
@@ -63,6 +61,9 @@ class walker_interp(interp):
         for i in archs:
             act_list += i.exit_action_ids
         self.auto_trigger_node_actions(nd=self.current_node, act_list=act_list)
+
+        if kid[-2].name == "walk_exit_block":
+            self.run_walk_exit_block(kid[-2])
 
     def run_node_ctx_block(self, jac_ast):
         """
