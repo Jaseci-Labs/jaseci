@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from ..entity_extraction import serv_actions
+from ..tfm_ner import serv_actions
 from fastapi.testclient import TestClient
 from .test_data import (
     test_train_config,

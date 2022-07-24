@@ -1,1 +1,1 @@
-from .modules.entity_extraction_type_2.entity_extraction import *  # noqa
+from .modules.ent_ext.ent_ext import *  # noqa
