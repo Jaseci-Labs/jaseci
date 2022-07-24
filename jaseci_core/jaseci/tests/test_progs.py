@@ -214,3 +214,12 @@ class jac_tests(TestCaseHelper, TestCase):
             api_name="walker_run", params={"name": "init"}
         )["report"]
         self.assertEqual(report[0]["name"], "daman@gmail.com")
+
+    def test_root_is_node_type(self):
+        self.logger_on()
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.root_is_node_type, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(report["report"][0], "JAC_TYPE.NODE")

@@ -363,3 +363,9 @@ jasecilib_create_user = """
         report jaseci.master_create("daman@gmail.com");
     }
     """
+
+root_is_node_type = """
+    walker init {
+        report here.type;
+    }
+    """
