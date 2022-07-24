@@ -1,5 +1,14 @@
 # Jaseci Change / Release Notes
 
+## Version 1.3.4
+
+### Updates
+
+[Todo] - Add new traversals, change -->, make copy elegant for pass by ref issues
+
+- Bug Fix: Root nodes now return valid `.type`
+- Bug Fix: With exit within walker now executes after exit events in nodes
+
 ## Version 1.3.3
 
 ### Updates

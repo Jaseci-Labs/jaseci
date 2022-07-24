@@ -536,7 +536,7 @@ class interp(machine_state):
                             j.attach_outbound(i, [use_edge])
                         else:
                             j.attach_bidirected(i, [use_edge])
-            return tret
+            return bret
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
 
