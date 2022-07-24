@@ -6,8 +6,13 @@
 
 [Todo] - Add new traversals, change -->, make copy elegant for pass by ref issues
 
+- Improvement: The connect operator between 2 nodes now returns the left-hand side. (e.g., `n1 --> n2 --> n3` will create an intuitive chain of connections not `n1 --> n3 <-- n2`)
 - Bug Fix: Root nodes now return valid `.type`
 - Bug Fix: With exit within walker now executes after exit events in nodes
+
+### Notes
+
+- Behavior change for jac programs utilizing chained connection operators. Connection orders are now intuitive (e.g., `n1 --> n2 --> n3` will create an intuitive chain of connections not `n1 --> n3 <-- n2`)
 
 ## Version 1.3.3
 
