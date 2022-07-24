@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: flair-ner
+  name: text-seg
 spec:
   selector:
-    pod: flair-ner
+    pod: text-seg
   ports:
     - protocol: TCP
       port: 80
@@ -14,7 +14,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: flair-ner-up
+  name: text-seg-up
   namespace: default
 data:
   prod_up: |-
@@ -23,31 +23,31 @@ data:
     source install.sh
     cd /jaseci/jaseci_kit/
     source install.sh
-    pip install flair==0.10
-    cd /jaseci/jaseci_kit/jaseci_kit/modules/entity_extraction
-    uvicorn jaseci_kit.ent_ext:serv_actions --host 0.0.0.0 --port 80
+    cd /jaseci/jaseci_kit/jaseci_kit/modules/text_seg
+    uvicorn jaseci_kit.text_seg:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: flair-ner
+  name: text-seg
 spec:
   replicas: 1
   selector:
     matchLabels:
-      pod: flair-ner
+      pod: text-seg
   template:
     metadata:
       labels:
-        pod: flair-ner
-      name: flair-ner
+        pod: text-seg
+      name: text-seg
     spec:
       containers:
-        - name: flair-ner
-          imagePullPolicy: IfNotPresent
+        - name: text-seg
           image: jaseci/jaseci-kit:latest
           resources:
             requests:
+              memory: "3Gi"
+            limits:
               memory: "3Gi"
           command: [bash, -c, "source script/prod_up"]
           ports:
@@ -59,4 +59,4 @@ spec:
       volumes:
         - name: prod-script
           configMap:
-            name: flair-ner-up
+            name: text-seg-up
