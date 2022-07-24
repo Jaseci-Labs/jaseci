@@ -4,8 +4,7 @@
 
 ### Updates
 
-[Todo] - Add new traversals, change -->, make copy elegant for pass by ref issues
-
+- Improvement: Added deep copy for lists and dictionaries
 - Improvement: The connect operator between 2 nodes now returns the left-hand side. (e.g., `n1 --> n2 --> n3` will create an intuitive chain of connections not `n1 --> n3 <-- n2`)
 - Bug Fix: Root nodes now return valid `.type`
 - Bug Fix: With exit within walker now executes after exit events in nodes
