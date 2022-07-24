@@ -146,7 +146,7 @@ Now, try to run grafana in your browser:
 If you running in your local kubernetes, run below :
 
 ```console
-kubectl port-forward deploy/grafana 80:80
+kubectl port-forward deploy/grafana 80:3000
 ```
 
 
@@ -174,7 +174,7 @@ For creating a dashboard to monitor the cluster:
 
 Click '+' button on left panel and select ‘Import’.
 
-Enter 3119 dashboard id under Grafana.com Dashboard.
+Copy paste the json file in grafana-dashboards folder. 
 
 Click ‘Load’.
 
@@ -184,25 +184,6 @@ Click ‘Import’.
 
 This will show monitoring dashboard for all cluster nodes
 
-## Pods Monitoring Dashboard ##
-
-Click '+' button on left panel and select ‘Import’.
-
-Enter 6417 dashboard id under Grafana.com Dashboard.
-
-Click ‘Load’.
-
-Enter Kubernetes Pods Monitoring as the Dashboard name.
-
-Click change to set the Unique identifier (uid).
-
-Select ‘Prometheus’ as the endpoint under prometheus data sources drop down.s
-
-Click ‘Import’.
-
-
-
-
-
+Generally, this dashboard contains a set of necessary panels. It monitors CPU and memory utilization for the nodes and for each pod. 
 
 ##### Credits https://www.eksworkshop.com/
