@@ -8,7 +8,9 @@ import math
 import mlflow
 
 
-def train_model(model, tokenizer, contexts, candidates, labels, train_config):
+def train_model(
+    use_mlflow, model, tokenizer, contexts, candidates, labels, train_config
+):
 
     context_transform = token_util.SelectionJoinTransform(
         tokenizer=tokenizer, max_len=train_config["max_contexts_length"]
@@ -139,12 +141,14 @@ def train_model(model, tokenizer, contexts, candidates, labels, train_config):
             loss : {tr_loss/nb_tr_steps}
             LR : {optimizer.param_groups[0]['lr']}\n"""
         )
-        metr = {
-            "Epoch": epoch + 1,
-            "Loss": tr_loss / nb_tr_steps,
-            "LR": optimizer.param_groups[0]["lr"],
-        }
-        mlflow.log_metrics(metr)
+
+        if use_mlflow is True:
+            metr = {
+                "Epoch": epoch + 1,
+                "Loss": tr_loss / nb_tr_steps,
+                "LR": optimizer.param_groups[0]["lr"],
+            }
+            mlflow.log_metrics(metr)
 
         log_wf.write(f"{epoch+1}\t{tr_loss/nb_tr_steps}\n")
     log_wf.close()

@@ -15,25 +15,34 @@ from utils.train import train_model  # noqa
 import mlflow
 from mlflow.tracking import MlflowClient
 
-# adding tracking url for storing parameter and merics data
-tracking_uri = "sqlite:///mlrunsdb.db"
-mlflow.set_tracking_uri(tracking_uri)
-
-# getting experiment Id if None then creat new one
-experiment_id = mlflow.get_experiment_by_name("BI_ENCODER")
-if experiment_id is None:
-    experiment_id = mlflow.create_experiment("BI_ENCODER")
-    experiment_id = mlflow.get_experiment_by_name("BI_ENCODER").experiment_id
-else:
-    experiment_id = experiment_id.experiment_id
-print("experiment_id : ", experiment_id)
-
 
 # device = torch.device("cpu")
 # uncomment this if you wish to use GPU to train
 # this is commented out because this causes issues with
 # unittest on machines with GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+# getting experiment Id if None then creat new one
+def start_mlflow_exp(tracking_uri, tfm_exp_name):
+    # adding tracking url for storing parameter and merics data
+    mlflow.set_tracking_uri(tracking_uri)
+    # getting experiment Id if None then creat new one
+    experiment_id = mlflow.get_experiment_by_name(tfm_exp_name)
+    if experiment_id is None:
+        experiment_id = mlflow.create_experiment(tfm_exp_name)
+    else:
+        experiment_id = experiment_id.experiment_id
+    print("experiment_id : ", experiment_id)
+    return experiment_id
+
+
+# changing stages of register model default values("Staging", "Production")
+def transition(model_name, version, stage):
+    client = MlflowClient()
+    client.transition_model_version_stage(
+        name=model_name, version=version, stage=stage, archive_existing_versions=True
+    )
 
 
 # funtion to set seed for the module
@@ -87,14 +96,6 @@ def config_setup():
 config_setup()
 
 
-# changing stages of register model default values("Staging", "Production")
-def transition(model_name, version, stage):
-    client = MlflowClient()
-    client.transition_model_version_stage(
-        name=model_name, version=version, stage=stage, archive_existing_versions=True
-    )
-
-
 # API for getting the cosine similarity
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
 def cosine_sim(vec_a: List[float], vec_b: List[float]):
@@ -127,19 +128,11 @@ def infer(
     candidates: Union[List[str], List[List]],
     context_type: str,
     candidate_type: str,
-    model_stage: str = "staging",
 ):
     """
     Take list of context, candidate and return nearest candidate to the context
     """
-    if model_stage.lower() == "staging":
-        model.eval()
-    elif model_stage.lower() == "production":
-        model_prod.eval()
-    else:
-        raise HTTPException(
-            status_code=404, detail=str("model_stage can be 'staging' or 'production'")
-        )
+    model.eval()
     predicted_candidates = []
     try:
         if (context_type == "text") and (candidate_type == "text"):
@@ -190,74 +183,107 @@ def infer(
         )
 
 
+def training(use_mlflow, model, training_parameters, dataset, train_data):
+    model.train()
+    if training_parameters is not None:
+        with open(t_config_fname, "w+") as jsonfile:
+            train_config.update(training_parameters)
+            json.dump(train_config, jsonfile, indent=4)
+    for data in dataset.keys():
+        for dat in dataset[data]:
+            train_data["contexts"].append(dat)
+            train_data["candidates"].append(data)
+            train_data["labels"].append(1)
+    model = train_model(
+        use_mlflow=use_mlflow,
+        model=model,
+        tokenizer=tokenizer,
+        contexts=train_data["contexts"],
+        candidates=train_data["candidates"],
+        labels=train_data["labels"],
+        train_config=train_config,
+    )
+    return model
+
+
 # API for training
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
-def train(dataset: Dict = None, from_scratch=False, training_parameters: Dict = None):
+def train(
+    use_mlflow: bool = True,
+    tracking_uri: str = "sqlite:///mlrunsdb.db",
+    exp_name: str = "bi_encoder",
+    exp_run_name: str = "bi_encoder",
+    description: str = "Running the latest model on snips dataset",
+    dataset: Dict = None,
+    from_scratch=False,
+    training_parameters: Dict = None,
+):
     """
     Take list of context, candidate, labels and trains the model
     """
     global model
-    train_data = {"contexts": [], "candidates": [], "labels": []}
-    if from_scratch is True:
-        save_model(model_config["model_save_path"])
-        config_setup()
-    with mlflow.start_run(
-        run_name="BI_ENCODER", experiment_id=experiment_id, nested=True
-    ):
-        model.train()
-        try:
-            if training_parameters is not None:
-                with open(t_config_fname, "w+") as jsonfile:
-                    train_config.update(training_parameters)
-                    json.dump(train_config, jsonfile, indent=4)
-            for data in dataset.keys():
-                for dat in dataset[data]:
-                    train_data["contexts"].append(dat)
-                    train_data["candidates"].append(data)
-                    train_data["labels"].append(1)
-            model = train_model(
-                model=model,
-                tokenizer=tokenizer,
-                contexts=train_data["contexts"],
-                candidates=train_data["candidates"],
-                labels=train_data["labels"],
-                train_config=train_config,
-            )
-            mlflow.log_params(train_config)
-            # saving temp model
-            save_model("tmp")
-            # logging artifact model data
-            mlflow.log_artifacts(
-                "tmp",
-                artifact_path="bi_model/model",
-            )
-            mod_name = "BI_ENCODER"
+    try:
 
-            # logging model data and registering model for versioning
-            mlflow.pytorch.log_model(
-                model, artifact_path="bi_model", registered_model_name=mod_name
-            )
-            # delete temp model data
-            if os.path.exists("tmp"):
-                shutil.rmtree("tmp")
+        train_data = {"contexts": [], "candidates": [], "labels": []}
+        if from_scratch is True:
+            save_model(model_config["model_save_path"])
+            config_setup()
 
-            # getting latest model version and registring model as Staging
-            client = MlflowClient()
-            ver_lst = []
-            for mv in client.search_model_versions(f"name='{mod_name}'"):
-                ver_lst.append(dict(mv))
-            mod_name = ver_lst[-1]["name"]
-            version = ver_lst[-1]["version"]
-            source_path = ver_lst[-1]["source"]
-            transition(model_name=mod_name, version=version, stage="Staging")
-            model_config.update({"staging_model_path": source_path + "/model"})
-            with open(m_config_fname, "w+") as jsonfile:
-                json.dump(model_config, jsonfile, indent=4)
+        if use_mlflow is True:
+            experiment_id = start_mlflow_exp(tracking_uri, exp_name)
+            # start training with MLFlow
+            with mlflow.start_run(
+                run_name=exp_run_name,
+                experiment_id=experiment_id,
+                nested=True,
+                description=description,
+            ):
+                model = training(
+                    use_mlflow, model, training_parameters, dataset, train_data
+                )
 
+                mlflow.log_params(train_config)
+                # saving temp model
+                save_model("tmp")
+                # logging artifact model data
+                mlflow.log_artifacts(
+                    "tmp",
+                    artifact_path="bi_model/model",
+                )
+
+                # logging model data and registering model for versioning
+                mlflow.pytorch.log_model(
+                    model, artifact_path="bi_model", registered_model_name=exp_run_name
+                )
+                # delete temp model data
+                if os.path.exists("tmp"):
+                    shutil.rmtree("tmp")
+
+                # getting latest model version and registring model as Staging
+                client = MlflowClient()
+
+                ver_lst = [
+                    dict(mv)
+                    for mv in client.search_model_versions(f"name='{exp_run_name}'")
+                ]
+
+                version = ver_lst[-1]["version"]
+                source_path = ver_lst[-1]["source"] + "/model"
+
+                transition(model_name=exp_run_name, version=version, stage="Staging")
+                model_config.update({"staging_model_path": source_path + "/model"})
+                with open(m_config_fname, "w+") as jsonfile:
+                    json.dump(model_config, jsonfile, indent=4)
+
+                return "Model Training is complete."
+
+        else:
+            training(use_mlflow, model, training_parameters, dataset, train_data)
             return "Model Training is complete."
-        except Exception as e:
-            traceback.print_exc()
-            raise HTTPException(status_code=500, detail=str(e))
+
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # API for geting Context Embeddings
