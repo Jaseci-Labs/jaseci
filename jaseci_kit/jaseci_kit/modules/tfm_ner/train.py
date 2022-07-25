@@ -1,16 +1,39 @@
+import shutil
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 import torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from transformers import pipeline
-from .utils.data_tokens import load_data
+from utils.data_tokens import load_data
 from torch import cuda
 import os
 from datetime import datetime
-
+import mlflow
+from mlflow.tracking import MlflowClient
 
 device = "cuda" if cuda.is_available() else "cpu"
 print("Using device for training -> ", device)
+
+
+def start_mlflow_exp(tracking_uri, tfm_exp_name):
+    # adding tracking url for storing parameter and merics data
+    mlflow.set_tracking_uri(tracking_uri)
+    # getting experiment Id if None then creat new one
+    experiment_id = mlflow.get_experiment_by_name(tfm_exp_name)
+    if experiment_id is None:
+        experiment_id = mlflow.create_experiment(tfm_exp_name)
+    else:
+        experiment_id = experiment_id.experiment_id
+    print("experiment_id : ", experiment_id)
+    return experiment_id
+
+
+# changing stages of register model default values("Staging", "Production")
+def transition(model_name, version, stage):
+    client = MlflowClient()
+    client.transition_model_version_stage(
+        name=model_name, version=version, stage=stage, archive_existing_versions=True
+    )
 
 
 # Logging
@@ -24,8 +47,8 @@ def logs(*args):
         f.write("\n")
 
 
-# # preparing dataset for training
-# ### TOKENIZE DATASET
+# preparing dataset for training
+# TOKENIZE DATASET
 def tokenize_and_preserve_labels(sentence, text_labels, tokenizer):
     """
     Word piece tokenization makes it difficult to match word labels
@@ -172,7 +195,7 @@ def check_labels_ok():
     return True
 
 
-def train_score(optimizer, training_loader, max_grad_norm):
+def train_score(optimizer, training_loader, max_grad_norm, use_mlflow):
     tr_loss, tr_accuracy = 0, 0
     nb_tr_examples, nb_tr_steps = 0, 0
     tr_preds, tr_labels = [], []
@@ -232,6 +255,13 @@ def train_score(optimizer, training_loader, max_grad_norm):
             y_true.append(tr_labels[i].cpu().item())
             y_pred.append(tr_preds[i].cpu().item())
     tr_acc = accuracy_score(y_true, y_pred)
+
+    # logging training result in database or in local directry
+    if use_mlflow is True:
+        mlflow.log_metric("Train Epoch Loss", epoch_loss, step=nb_tr_steps)
+        mlflow.log_metric("Train Epoch Accuracy", tr_acc, step=nb_tr_steps)
+
+    # creating training logs
     logs(
         str(datetime.now()) + "    ",
         f"Training loss epoch: {epoch_loss}",
@@ -242,10 +272,11 @@ def train_score(optimizer, training_loader, max_grad_norm):
         f"Training accuracy epoch: {tr_acc}",
         logs_file_name,
     )
+    return tr_acc
 
 
 # Tracking variables
-def val_score(val_loader, model):
+def val_score(val_loader, model, use_mlflow):
     ev_loss, ev_accuracy = 0, 0
     nb_ev_steps, nb_ev_examples = 0, 0
     ev_preds, ev_labels = [], []
@@ -285,6 +316,12 @@ def val_score(val_loader, model):
             y_true.append(ev_labels[i].cpu().item())
             y_pred.append(ev_preds[i].cpu().item())
     ev_acc = accuracy_score(y_true, y_pred)
+    # logging validation result in database or in local directry
+    if use_mlflow is True:
+        mlflow.log_metric("Val epoch loss", ev_epoch_loss, step=nb_ev_steps)
+        mlflow.log_metric("Val epoch accuracy", ev_acc, step=nb_ev_steps)
+
+    # creating logs
     logs(
         str(datetime.now()) + "    ",
         f"Validation loss epoch: {ev_epoch_loss}",
@@ -295,10 +332,11 @@ def val_score(val_loader, model):
         f"Validation accuracy epoch: {ev_acc}",
         logs_file_name,
     )
+    return ev_acc
 
 
 # Tracking variables
-def test_score(test_loader, model):
+def test_score(test_loader, model, use_mlflow):
     tst_accuracy = 0
     nb_tst_steps, nb_tst_examples = 0, 0
     tst_preds, tst_labels = [], []
@@ -333,15 +371,23 @@ def test_score(test_loader, model):
         if tst_labels[i].cpu().item() != 0:
             y_true.append(tst_labels[i].cpu().item())
             y_pred.append(tst_preds[i].cpu().item())
+    labs = model.config.id2label
+    y_true = [labs[int(e)] for e in y_true]
+    y_pred = [labs[int(e)] for e in y_pred]
     tst_acc = accuracy_score(y_true, y_pred)
     cr = classification_report(
         y_true,
         y_pred,
-        target_names=sorted(target_labels[1:], reverse=True),
         zero_division=0,
     )
 
     f_macro = f1_score(y_true, y_pred, average="macro")
+    # logging testing result in database or in local directry
+    if use_mlflow is True:
+        mlflow.log_metric("Test f1_macro", f_macro)
+        mlflow.log_metric("Test accuracy", tst_acc)
+
+    # creating logs
     logs(str(datetime.now()) + "    ", f"f1_score(macro) : {f_macro} ", logs_file_name)
     logs(str(datetime.now()) + "    ", f"Accuracy : {tst_acc} ", logs_file_name)
     logs(str(datetime.now()) + "    ", "Classification Report", logs_file_name)
@@ -350,72 +396,16 @@ def test_score(test_loader, model):
     return "testing done!"
 
 
-def train(epoch, optimizer, training_loader, max_grad_norm):
-    model.train()
-    train_score(optimizer, training_loader, max_grad_norm)
-    if val_loader is not None:
-        val_score(val_loader, model)
-
-
-# DEFINING MODEL training
-def train_model(
-    model_name, epochs, mode, lab_check, learning_rate, max_grad_norm, model_save_path
+def start_model_training(
+    epochs,
+    optimizer,
+    max_grad_norm,
+    model_save_path,
+    model_name,
+    start_time,
+    use_mlflow,
 ):
-    global model, tokenizer, logs_file_name
-    # log file
-    logs_file_name = (
-        datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + "_tfm_ner_training_logs.txt"
-    )
-
-    def create_model():
-        # ## saving current model
-        save_custom_model(f"{model_save_path}/{model_name}")
-        model = AutoModelForTokenClassification.from_pretrained(
-            model_name,
-            ignore_mismatched_sizes=True,
-            num_labels=len(label2id),
-            id2label=id2label,
-            label2id=label2id,
-        )
-        return model
-
-    # training start time
-    start_time = datetime.now()
-
-    if mode == 1:
-        logs(
-            str(datetime.now()) + "    ",
-            "Model is loading from scratch in default mode",
-            logs_file_name,
-        )
-        model = create_model()
-        logs(str(datetime.now()) + "    ", model, logs_file_name)
-
-    elif mode == 2:
-        logs(
-            str(datetime.now()) + "    ",
-            "Model is loading from scratch in append mode",
-            logs_file_name,
-        )
-        model = create_model()
-        logs(str(datetime.now()) + "    ", model, logs_file_name)
-
-    elif mode == 3 and lab_check is False:
-        resp1 = "data label and model labels is not matching"
-        resp2 = " please use default mode for training from scretch"
-        return resp1 + resp2
-
-    else:
-        logs(
-            str(datetime.now()) + "    ",
-            "same model is retraining in incremental mode",
-            logs_file_name,
-        )
-    model.to(device)
-    optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate)
-
-    # Defining the training function on the 80% of the dataset
-    # for tuning the bert model
+    best_acc = 0
     for epoch in range(epochs):
         t0 = datetime.now()
         logs(
@@ -424,34 +414,40 @@ def train_model(
             logs_file_name,
         )
         # calling function epochs train
-        train(epoch, optimizer, training_loader, max_grad_norm)
-        # saving model on epochs
-        save_custom_model(f"{model_save_path}/curr_checkpoint/{model_name}")
+        model.train()
+        acc = train_score(optimizer, training_loader, max_grad_norm, use_mlflow)
+        if val_loader is not None:
+            acc = val_score(val_loader, model, use_mlflow)
+        # acc = train(epoch, optimizer, training_loader, max_grad_norm)
+        if acc > best_acc:
+            best_acc = acc
+            save_custom_model(f"{model_save_path}/model/{model_name}")
+
         logs(
             str(datetime.now()) + "    ",
             f"Epoch {epoch + 1} total time taken : {datetime.now() - t0}",
             logs_file_name,
         )
         logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-
-    # writing checkpoint
-    total_time = datetime.now() - start_time
-    logs(str(datetime.now()) + "    ", "Model Training is Completed", logs_file_name)
-    logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-    logs(
-        str(datetime.now()) + "    ",
-        "Total time taken to completed training : ",
-        str(total_time),
-        logs_file_name,
-    )
-    logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
+        total_time = datetime.now() - start_time
+        logs(
+            str(datetime.now()) + "    ", "Model Training is Completed", logs_file_name
+        )
+        logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
+        logs(
+            str(datetime.now()) + "    ",
+            "Total time taken to completed training : ",
+            str(total_time),
+            logs_file_name,
+        )
+        logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
 
     # ###################### testing started ##########################
     if test_loader is not None:
         logs(str(datetime.now()) + "    ", "Model testing is started", logs_file_name)
         logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
         time1 = datetime.now()
-        test_score(test_loader, model)
+        test_score(test_loader, model, use_mlflow)
         logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
         totaltime = datetime.now() - time1
         logs(
@@ -462,16 +458,153 @@ def train_model(
         )
         logs(str(datetime.now()) + "    ", "--" * 30, "", logs_file_name)
 
+
+def create_model(model_name, id2label, label2id):
+    # loading current model
+    model = AutoModelForTokenClassification.from_pretrained(
+        model_name,
+        ignore_mismatched_sizes=True,
+        num_labels=len(label2id),
+        id2label=id2label,
+        label2id=label2id,
+    )
+    return model
+
+
+# DEFINING MODEL training
+def training(
+    model_name,
+    epochs,
+    mode,
+    lab_check,
+    learning_rate,
+    max_grad_norm,
+    model_save_path,
+    use_mlflow,
+    tracking_uri,
+    exp_name,
+    exp_run_name,
+    description,
+):
+    global model, tokenizer, logs_file_name
+    # log file
+    logs_file_name = (
+        datetime.now().strftime("%Y%m%d_%H%M%S") + "_tfm_ner_training_logs.txt"
+    )
+    # training start time
+    start_time = datetime.now()
+    if mode == 1:
+        logs(
+            str(datetime.now()) + "    ",
+            "Model is loading from scratch in default mode",
+            logs_file_name,
+        )
+        model = create_model(model_name, id2label, label2id)
+        logs(str(datetime.now()) + "    ", model, logs_file_name)
+
+    elif mode == 2:
+        logs(
+            str(datetime.now()) + "    ",
+            "Model is loading from scratch in append mode",
+            logs_file_name,
+        )
+        model = create_model(model_name, id2label, label2id)
+        logs(str(datetime.now()) + "    ", model, logs_file_name)
+
+    elif mode == 3 and lab_check is False:
+        resp1 = "data label and model labels is not matching"
+        resp2 = " please use default mode for training from scretch"
+        return resp1 + resp2
+
+    else:
+        logs(
+            str(datetime.now()) + "    ",
+            "same model is re-training in incremental mode",
+            logs_file_name,
+        )
+    model.to(device)
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate)
+
+    if use_mlflow is True:
+        experiment_id = start_mlflow_exp(tracking_uri, exp_name)
+        # start training with MLFlow
+        with mlflow.start_run(
+            run_name=exp_run_name,
+            experiment_id=experiment_id,
+            nested=True,
+            description=description,
+        ):
+            # writing parameters
+            mlflow.log_params(
+                {
+                    "Epochs": epochs,
+                    "Optimizer": optimizer,
+                    "Learning Rate": learning_rate,
+                }
+            )
+            # starting model training
+            start_model_training(
+                epochs,
+                optimizer,
+                max_grad_norm,
+                model_save_path,
+                model_name,
+                start_time,
+                use_mlflow,
+            )
+
+            # storing model data on cloud or local storage with log_artifact
+            mlflow.log_artifacts(
+                f"{model_save_path}/model/{model_name}",
+                artifact_path="pytorch_model/model",
+            )
+
+            # logging model data for model versioning
+            mlflow.pytorch.log_model(
+                model, artifact_path="pytorch_model", registered_model_name=exp_run_name
+            )
+
+            # delete temp model data
+            if os.path.exists(f"{model_save_path}/model"):
+                shutil.rmtree(f"{model_save_path}/model")
+
+            # getting latest model version and register model as Staging
+            client = MlflowClient()
+            ver_lst = [
+                dict(mv)
+                for mv in client.search_model_versions(f"name='{exp_run_name}'")
+            ]
+            client.search_registered_models()
+            version = ver_lst[-1]["version"]
+            source_path = ver_lst[-1]["source"] + "/model"
+            transition(model_name=exp_run_name, version=version, stage="Staging")
+    else:
+        start_model_training(
+            epochs,
+            optimizer,
+            max_grad_norm,
+            model_save_path,
+            model_name,
+            start_time,
+            use_mlflow,
+        )
+        source_path = f"{model_save_path}/model/{model_name}"
+
     # Clearing cuda memory
     torch.cuda.empty_cache()
-    return f"model training is completed. total time taken {total_time}"
+    return source_path, "Model training is completed."
 
 
 def load_custom_model(model_path):
     global model, tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForTokenClassification.from_pretrained(model_path)
-    model.to(device)
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        model = AutoModelForTokenClassification.from_pretrained(model_path)
+        model.to(device)
+    except Exception:
+        tokenizer = AutoTokenizer.from_pretrained(model_path + "/model")
+        model = AutoModelForTokenClassification.from_pretrained(model_path + "/model")
+        model.to(device)
 
 
 def save_custom_model(model_path):
@@ -497,3 +630,12 @@ def predict_text(sentence):
             }
         )
     return ents
+
+
+def model_versions(name):
+    # getting all available model version with specific experiment name.
+    client = MlflowClient()
+    mv_lst = []
+    for mv in client.search_model_versions(f"name='{name}'"):
+        mv_lst.append(dict(mv))
+    return mv_lst

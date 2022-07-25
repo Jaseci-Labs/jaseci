@@ -6,15 +6,16 @@ import os
 import pandas as pd
 import json
 import warnings
-from .train import (
+from train import (
     predict_text,
-    train_model,
+    training,
     load_custom_model,
     save_custom_model,
     data_set,
     check_labels_ok,
+    model_versions,
 )
-from .entity_utils import create_data, create_data_new
+from entity_utils import create_data, create_data_new
 
 warnings.filterwarnings("ignore")
 
@@ -36,11 +37,17 @@ def config_setup():
         model_config = json.load(jsonfile)
 
     curr_model_path = model_config["model_name"]
-    load_custom_model(curr_model_path)
+    staging_model_path = model_config["staging_model_path"]
+    if staging_model_path is not None:
+        load_custom_model(staging_model_path)
+        curr_model_path = staging_model_path
+    else:
+        load_custom_model(curr_model_path)
 
 
+# calling the default configuration from "model config and train config file"
 config_setup()
-
+# creating variable for training mode
 enum = {"default": 1, "append": 2, "incremental": 3}
 
 
@@ -75,6 +82,7 @@ def create_train_data(dataset, fname):
     return completed
 
 
+# creating api for infer new data in staging
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def extract_entity(text: str = None):
     try:
@@ -87,6 +95,11 @@ def extract_entity(text: str = None):
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def train(
+    use_mlflow: bool = True,
+    tracking_uri: str = "sqlite:///mlrunsdb.db",
+    exp_name: str = "tfm_ner",
+    exp_run_name: str = "transformer_ner",
+    description: str = "Running the latest model on fincorp dataset",
     mode: str = train_config["MODE"],
     epochs: int = train_config["EPOCHS"],
     train_data: List[dict] = [],
@@ -155,17 +168,25 @@ def train(
             # checking data and model labels
             data_lab = check_labels_ok()
             print("model training started")
-            status = train_model(
-                curr_model_path,
-                train_config["EPOCHS"],
-                enum[mode],
-                data_lab,
-                train_config["LEARNING_RATE"],
-                train_config["MAX_GRAD_NORM"],
-                model_config["model_save_path"],
+            status = training(
+                model_name=curr_model_path,
+                epochs=train_config["EPOCHS"],
+                mode=enum[mode],
+                lab_check=data_lab,
+                learning_rate=train_config["LEARNING_RATE"],
+                max_grad_norm=train_config["MAX_GRAD_NORM"],
+                model_save_path=model_config["model_save_path"],
+                use_mlflow=use_mlflow,
+                tracking_uri=tracking_uri,
+                exp_name=exp_name,
+                exp_run_name=exp_run_name,
+                description=description,
             )
             print("model training Completed")
-            return status
+            model_config.update({"staging_model_path": status[0]})
+            with open(m_config_fname, "w+") as jsonfile:
+                json.dump(model_config, jsonfile, indent=4)
+            return status[1]
         else:
             raise HTTPException(
                 status_code=500,
@@ -191,6 +212,12 @@ def load_model(model_path: str = "default", local_file: bool = False):
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
+def get_model_verion(registered_model_name: str = "tfm_ner"):
+    mv = model_versions(registered_model_name)
+    return mv
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
