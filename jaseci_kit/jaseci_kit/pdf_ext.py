@@ -1,1 +1,1 @@
-from .modules.pdf_extractor.extractor import *  # noqa
+from .modules.pdf_ext.pdf_ext import *  # noqa
