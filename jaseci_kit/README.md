@@ -362,7 +362,6 @@ walker fast_enc_example {
 }
 ```
 
-
 ## Entity
 ###  Entity Extraction (`ent_ext`)
 `ent_ext` module uses Flair named entity recognition architecture. Can either be used zero-shot or trained.
