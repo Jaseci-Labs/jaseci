@@ -4,7 +4,7 @@
 
 ### Updates
 
-- Major Feature: Can now specify various forms of breadth first and depth first search on `take` commands
+- Major Feature: Can now specify various forms of breadth first and depth first search on `take` commands (e.g., `take:bfs`, `take:dfs`, and `take:b` and `take:d` for short)
 - Improvement: Added deep copy for lists and dictionaries
 - Improvement: The connect operator between 2 nodes now returns the left-hand side. (e.g., `n1 --> n2 --> n3` will create an intuitive chain of connections not `n1 --> n3 <-- n2`)
 - Bug Fix: Root nodes now return valid `.type`
