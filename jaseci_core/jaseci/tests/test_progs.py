@@ -225,7 +225,6 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report["report"][0], "JAC_TYPE.NODE")
 
     def test_walker_with_exit_after_node(self):
-        self.logger_on()
         mast = master(h=mem_hook())
         mast.sentinel_register(
             name="test", code=jtp.walker_with_exit_after_node, auto_run=""
@@ -234,3 +233,19 @@ class jac_tests(TestCaseHelper, TestCase):
             api_name="walker_run", params={"name": "init"}
         )
         self.assertEqual(report["report"], [1, 1, 3, 1, 3, 1, 3, 1, 3, 43])
+
+    def test_depth_first_take(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.depth_first_take, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(report["report"], [1, 2, 3, 4, 5, 6, 7])
+
+    def test_breadth_first_take(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.breadth_first_take, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(report["report"], [1, 2, 5, 3, 4, 6, 7])

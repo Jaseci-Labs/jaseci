@@ -136,15 +136,31 @@ class walker_interp(interp):
     def run_take_action(self, jac_ast):
         """
         take_action:
-            KW_TAKE expression (SEMI | else_stmt);
+            KW_TAKE (COLON NAME)? expression (SEMI | else_stmt);
         """
         kid = self.set_cur_ast(jac_ast)
+        style = "b"
+        if kid[1].name == "COLON":
+            style = kid[2].token_text()
+            kid = kid[2:]
         result = self.run_expression(kid[1]).value
         before = len(self.next_node_ids)
         if isinstance(result, node):
-            self.next_node_ids.add_obj(result, allow_dups=True)
+            if style in ["b", "bfs"]:
+                self.next_node_ids.add_obj(result, allow_dups=True)
+            elif style in ["d", "dfs"]:
+                self.next_node_ids.add_obj(result, push_front=True, allow_dups=True)
+            else:
+                self.rt_error(f"{style} is invalid take operation", kid[0])
         elif isinstance(result, jac_set):
-            self.next_node_ids.add_obj_list(result, allow_dups=True)
+            if style in ["b", "bfs"]:
+                self.next_node_ids.add_obj_list(result, allow_dups=True)
+            elif style in ["d", "dfs"]:
+                self.next_node_ids.add_obj_list(
+                    result, push_front=True, allow_dups=True
+                )
+            else:
+                self.rt_error(f"{style} is invalid take operation", kid[0])
         elif result:
             self.rt_error(f"{result} is not destination type (i.e., nodes)", kid[1])
         after = len(self.next_node_ids)

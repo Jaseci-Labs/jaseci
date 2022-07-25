@@ -396,3 +396,56 @@ walker_with_exit_after_node = """
         }
     }
     """
+
+
+depth_first_take = """
+    node a {
+        has num;
+    }
+
+    walker init {
+        root {
+            n1=spawn node::a(num=1);
+            n2=spawn node::a(num=2);
+            n3=spawn node::a(num=3);
+            n4=spawn node::a(num=4);
+            n5=spawn node::a(num=5);
+            n6=spawn node::a(num=6);
+            n7=spawn node::a(num=7);
+
+            here --> n1 --> n2 --> n3;
+                            n2 --> n4;
+                     n1 --> n5 --> n6;
+                            n5 --> n7;
+        }
+
+        a: report here.num;
+        take:dfs -->;
+    }
+    """
+
+breadth_first_take = """
+    node a {
+        has num;
+    }
+
+    walker init {
+        root {
+            n1=spawn node::a(num=1);
+            n2=spawn node::a(num=2);
+            n3=spawn node::a(num=3);
+            n4=spawn node::a(num=4);
+            n5=spawn node::a(num=5);
+            n6=spawn node::a(num=6);
+            n7=spawn node::a(num=7);
+
+            here --> n1 --> n2 --> n3;
+                            n2 --> n4;
+                     n1 --> n5 --> n6;
+                            n5 --> n7;
+        }
+
+        a: report here.num;
+        take:bfs -->;
+    }
+    """

@@ -23,22 +23,27 @@ class id_list(list):
             for i in in_list:
                 self.append(i)
 
-    def add_obj(self, obj, allow_dups=False, silent=False):
+    def add_obj(self, obj, push_front=False, allow_dups=False, silent=False):
         """Adds a obj obj to Jaseci object"""
         self.parent_obj.check_hooks_match(obj)
         if not allow_dups and obj.jid in self:
             if not silent:
                 logger.warning(str(f"{obj} is already in {self.parent_obj}'s list"))
         else:
-            self.append(obj.jid)
+            if push_front:
+                self.insert(0, obj.jid)
+            else:
+                self.append(obj.jid)
             if not obj.parent_id:
                 obj.parent_id = self.parent_obj.id
             obj.save()
             self.parent_obj.save()
 
-    def add_obj_list(self, obj_list, allow_dups=False, silent=False):
+    def add_obj_list(self, obj_list, push_front=False, allow_dups=False, silent=False):
+        if push_front:
+            obj_list.reverse()
         for i in obj_list:
-            self.add_obj(i, allow_dups=allow_dups, silent=silent)
+            self.add_obj(i, push_front=push_front, allow_dups=allow_dups, silent=silent)
 
     def remove_obj(self, obj):
         """Remove a Jaseci obj from list"""
