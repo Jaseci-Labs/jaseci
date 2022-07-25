@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: tfm-ner
+  name: ent-ext
 spec:
   selector:
-    pod: tfm-ner
+    pod: ent-ext
   ports:
     - protocol: TCP
       port: 80
@@ -14,42 +14,40 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tfm-ner-up
+  name: ent-ext-up
   namespace: default
 data:
   prod_up: |-
     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
-    pip install datasets
     cd /jaseci/jaseci_core/
     source install.sh
     cd /jaseci/jaseci_kit/
     source install.sh
-    cd /jaseci/jaseci_kit/jaseci_kit/modules/tfm_ner
-    uvicorn jaseci_kit.tfm_ner:serv_actions --host 0.0.0.0 --port 80
+    pip install flair==0.10
+    cd /jaseci/jaseci_kit/jaseci_kit/modules/ent_ext
+    uvicorn jaseci_kit.ent_ext:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tfm-ner
+  name: ent-ext
 spec:
   replicas: 1
   selector:
     matchLabels:
-      pod: tfm-ner
+      pod: ent-ext
   template:
     metadata:
       labels:
-        pod: tfm-ner
-      name: tfm-ner
+        pod: ent-ext
+      name: ent-ext
     spec:
       containers:
-        - name: tfm-ner
+        - name: ent-ext
           imagePullPolicy: IfNotPresent
           image: jaseci/jaseci-kit:latest
           resources:
             requests:
-              memory: "3Gi"
-            limits:
               memory: "3Gi"
           command: [bash, -c, "source script/prod_up"]
           ports:
@@ -61,4 +59,4 @@ spec:
       volumes:
         - name: prod-script
           configMap:
-            name: tfm-ner-up
+            name: ent-ext-up

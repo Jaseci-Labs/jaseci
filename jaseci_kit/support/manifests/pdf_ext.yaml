@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: tfm-ner
+  name: pdf-ext
 spec:
   selector:
-    pod: tfm-ner
+    pod: pdf-ext
   ports:
     - protocol: TCP
       port: 80
@@ -14,38 +14,37 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tfm-ner-up
+  name: pdf-ext-up
   namespace: default
 data:
   prod_up: |-
     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
-    pip install datasets
     cd /jaseci/jaseci_core/
     source install.sh
-    cd /jaseci/jaseci_kit/
+    cd /jaseci/jaseci_kit
     source install.sh
-    cd /jaseci/jaseci_kit/jaseci_kit/modules/tfm_ner
-    uvicorn jaseci_kit.tfm_ner:serv_actions --host 0.0.0.0 --port 80
+    cd /jaseci/jaseci_kit/jaseci_kit/modules/pdf_ext
+    uvicorn jaseci_kit.pdf_ext:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tfm-ner
+  name: pdf-ext
 spec:
   replicas: 1
   selector:
     matchLabels:
-      pod: tfm-ner
+      pod: pdf-ext
   template:
     metadata:
       labels:
-        pod: tfm-ner
-      name: tfm-ner
+        pod: pdf-ext
+      name: pdf-ext
     spec:
       containers:
-        - name: tfm-ner
-          imagePullPolicy: IfNotPresent
+        - name: pdf-ext
           image: jaseci/jaseci-kit:latest
+          imagePullPolicy: IfNotPresent
           resources:
             requests:
               memory: "3Gi"
@@ -61,4 +60,4 @@ spec:
       volumes:
         - name: prod-script
           configMap:
-            name: tfm-ner-up
+            name: pdf-ext-up

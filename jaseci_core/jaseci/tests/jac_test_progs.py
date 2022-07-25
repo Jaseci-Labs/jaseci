@@ -157,6 +157,60 @@ node_inheritance = """
     }
     """
 
+inherited_ref = """
+    node plain {
+        has a=5, b=7, c=7, d=8;
+        can x with entry {
+            report "plain.x";
+        }
+        can y {
+            report "plain.y";
+        }
+        can z with entry {
+            report "Z triggered";
+        }
+    }
+
+    node plain2:plain {
+        has c=70, d=80;
+        can x with entry {
+            report "plain2.x";
+        }
+        can y {
+            report "plain2.y";
+        }
+        can z with entry {
+            report "New Z triggered";
+        }
+    }
+
+    node super:plain2 {
+        has a=55, c=7;
+        can x with entry {
+            ::plain:x;
+            report here.context;
+            report "super.x";
+            ::z;
+        }
+        can y {
+            ::plain2:y;
+            report "super.y";
+        }
+    }
+
+    walker init {
+        root {
+            spawn here --> node::super;
+            spawn here --> node::plain;
+            spawn here --> node::plain2;
+        }
+        take --> node::plain;
+        plain {
+            report here;
+        }
+    }
+    """
+
 node_inheritance_chain_check = """
     node plain {
         has a=5, b=7, c=7, d=8;

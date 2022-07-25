@@ -114,10 +114,19 @@ class graph_api:
         """
         Assigns values to member variables of a given node using ctx object
         """
-        nd.set_context(
-            ctx=ctx, arch=snt.run_architype(nd.name, kind="node", caller=self)
-        )
+        temp_ref_nd = snt.run_architype(nd.name, kind="node", caller=self)
+        nd.set_context(ctx=ctx, arch=temp_ref_nd)
+        temp_ref_nd.destroy()
         return nd.serialize()
+
+    @interface.cli_api(cli_args=["file"])
+    def graph_walk(self, nd: node = None):
+        cmd = ""
+        while cmd not in ["quit", "q", "exit"]:
+            print(
+                "location - " + ":".join([nd.kind, nd.name, nd.jid.strip("urn:uuid:")])
+            )
+            cmd = input("graph_walk_mode > ")
 
     def active_gph(self):
         return self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
