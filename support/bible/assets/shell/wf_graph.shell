@@ -1,0 +1,11 @@
+jaseci > graph create -set_active true
+{
+  "context": {},
+  "anchor": null,
+  "name": "root",
+  "kind": "generic",
+  "jid": "urn:uuid:7aa6caff-7a46-4a29-a3b0-b144218312fa",
+  "j_timestamp": "2021-08-15T21:34:31.797494",
+  "j_type": "graph"
+}
+jaseci >
