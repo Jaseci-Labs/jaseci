@@ -16,7 +16,8 @@ graph dummy {
         graph_root = spawn node::testnode (yo="Hey yo!");
         n1=spawn node::apple(v1="I'm apple");
         n2=spawn node::banana(x1="I'm banana");
-        graph_root --> n1 --> n2;
+        graph_root --> n2;
+        n1 --> n2;
     }
 }
 
