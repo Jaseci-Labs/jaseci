@@ -1,7 +1,7 @@
 # YOLOv5 requirements
 # Usage: pip install -r requirements.txt
-import sys
-sys.path.insert(0, './yolov5')
+# import sys
+# sys.path.insert(0, './yolov5')
 
 # Base ----------------------------------------
 matplotlib>=3.2.2

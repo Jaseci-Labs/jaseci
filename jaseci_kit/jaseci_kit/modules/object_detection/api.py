@@ -26,7 +26,7 @@ def load_model(
         model = torch.hub.load(
             "ultralytics/yolov5",
             "custom",
-            path="yolov5/runs/train/exp/weights/" + name + ".pt",
+            path="model/" + name + ".pt",
         )
     except:
         return {"message": "Couldn't load model."}
@@ -72,7 +72,7 @@ def detect(
 
             payload = {"image_base64": base64EncodeImage(img)}
 
-            with open("yolov5/data/images/" + str(uuid.uuid4()) + ".jpg", "wb") as file:
+            with open("images/" + str(uuid.uuid4()) + ".jpg", "wb") as file:
                 file.write(base64.b64decode(base64EncodeImage(img)))
 
             json_results[idx].append(payload)
