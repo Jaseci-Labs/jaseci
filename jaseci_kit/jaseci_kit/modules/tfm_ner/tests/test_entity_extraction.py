@@ -42,7 +42,16 @@ class entity_extraction_type2_test(TestCaseHelper, TestCase):
         # __________________
         response = self.client.post(
             "/train/",
-            json={"mode": "default", "epochs": 60, "train_data": test_training_data},
+            json={
+                "use_mlflow": True,
+                "tracking_uri": "sqlite:///mlrunsdb.db",
+                "exp_name": "tfm_ner",
+                "exp_run_name": "transformer_ner",
+                "description": "Running the latest model on fincorp dataset",
+                "mode": "default",
+                "epochs": 60,
+                "train_data": test_training_data,
+            },
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), "model training is completed.")

@@ -37,12 +37,12 @@ def config_setup():
         model_config = json.load(jsonfile)
 
     curr_model_path = model_config["model_name"]
-    staging_model_path = model_config["staging_model_path"]
-    if staging_model_path is not None:
-        load_custom_model(staging_model_path)
-        curr_model_path = staging_model_path
-    else:
-        load_custom_model(curr_model_path)
+    # staging_model_path = model_config["staging_model_path"]
+    # if staging_model_path is not None:
+    #     load_custom_model(staging_model_path)
+    #     curr_model_path = staging_model_path
+    # else:
+    load_custom_model(curr_model_path)
 
 
 # calling the default configuration from "model config and train config file"
@@ -95,7 +95,7 @@ def extract_entity(text: str = None):
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def train(
-    use_mlflow: bool = True,
+    use_mlflow: bool = False,
     tracking_uri: str = "sqlite:///mlrunsdb.db",
     exp_name: str = "tfm_ner",
     exp_run_name: str = "transformer_ner",

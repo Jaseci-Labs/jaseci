@@ -186,6 +186,7 @@ def data_set(t_file, v_file, ts_file, max_len, train_batch_size):
     return True
 
 
+# ch3cking the labels is matching with current model config
 def check_labels_ok():
     lst_data_labels = list(id2label.values())
     lst_model_labels = list(model.config.id2label.values())
@@ -195,6 +196,7 @@ def check_labels_ok():
     return True
 
 
+# checking training score
 def train_score(optimizer, training_loader, max_grad_norm, use_mlflow):
     tr_loss, tr_accuracy = 0, 0
     nb_tr_examples, nb_tr_steps = 0, 0
@@ -275,7 +277,7 @@ def train_score(optimizer, training_loader, max_grad_norm, use_mlflow):
     return tr_acc
 
 
-# Tracking variables
+# checking val score and  Tracking variables
 def val_score(val_loader, model, use_mlflow):
     ev_loss, ev_accuracy = 0, 0
     nb_ev_steps, nb_ev_examples = 0, 0
@@ -335,7 +337,7 @@ def val_score(val_loader, model, use_mlflow):
     return ev_acc
 
 
-# Tracking variables
+# checking testing score and Tracking variables
 def test_score(test_loader, model, use_mlflow):
     tst_accuracy = 0
     nb_tst_steps, nb_tst_examples = 0, 0
@@ -396,6 +398,7 @@ def test_score(test_loader, model, use_mlflow):
     return "testing done!"
 
 
+# function for start model training sepratly
 def start_model_training(
     epochs,
     optimizer,
@@ -428,19 +431,17 @@ def start_model_training(
             f"Epoch {epoch + 1} total time taken : {datetime.now() - t0}",
             logs_file_name,
         )
-        logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-        total_time = datetime.now() - start_time
-        logs(
-            str(datetime.now()) + "    ", "Model Training is Completed", logs_file_name
-        )
-        logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-        logs(
-            str(datetime.now()) + "    ",
-            "Total time taken to completed training : ",
-            str(total_time),
-            logs_file_name,
-        )
-        logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
+    logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
+    total_time = datetime.now() - start_time
+    logs(str(datetime.now()) + "    ", "Model Training is Completed", logs_file_name)
+    logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
+    logs(
+        str(datetime.now()) + "    ",
+        "Total time taken to completed training : ",
+        str(total_time),
+        logs_file_name,
+    )
+    logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
 
     # ###################### testing started ##########################
     if test_loader is not None:
@@ -459,6 +460,7 @@ def start_model_training(
         logs(str(datetime.now()) + "    ", "--" * 30, "", logs_file_name)
 
 
+# changing model layer if labels is changing
 def create_model(model_name, id2label, label2id):
     # loading current model
     model = AutoModelForTokenClassification.from_pretrained(
@@ -471,7 +473,7 @@ def create_model(model_name, id2label, label2id):
     return model
 
 
-# DEFINING MODEL training
+# DEFINING MODEL training for api
 def training(
     model_name,
     epochs,
@@ -574,7 +576,7 @@ def training(
                 dict(mv)
                 for mv in client.search_model_versions(f"name='{exp_run_name}'")
             ]
-            client.search_registered_models()
+            # client.search_registered_models()
             version = ver_lst[-1]["version"]
             source_path = ver_lst[-1]["source"] + "/model"
             transition(model_name=exp_run_name, version=version, stage="Staging")
@@ -592,7 +594,7 @@ def training(
 
     # Clearing cuda memory
     torch.cuda.empty_cache()
-    return source_path, "Model training is completed."
+    return source_path, "model training is completed."
 
 
 def load_custom_model(model_path):
@@ -616,22 +618,26 @@ def save_custom_model(model_path):
 
 # predicting entities
 def predict_text(sentence):
-    pipe = pipeline("ner", model=model.to("cpu"), tokenizer=tokenizer)
+    pipe = pipeline(
+        "ner", model=model.to("cpu"), tokenizer=tokenizer, aggregation_strategy="first"
+    )
     entities = pipe(sentence)
+    # print(entities)
     ents = []
     for itm in entities:
         ents.append(
             {
-                "entity_value": itm["word"],
-                "entity_type": itm["entity"],
+                "text": itm["word"],
+                "entity": itm["entity_group"],
                 "score": float(itm["score"]),
-                "start_index": itm["start"],
-                "end_index": itm["end"],
+                "start": itm["start"],
+                "end": itm["end"],
             }
         )
     return ents
 
 
+# checking all available model versions
 def model_versions(name):
     # getting all available model version with specific experiment name.
     client = MlflowClient()

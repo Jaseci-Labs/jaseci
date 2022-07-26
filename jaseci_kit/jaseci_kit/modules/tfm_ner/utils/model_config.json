@@ -1,4 +1,5 @@
 {
     "model_name": "prajjwal1/bert-tiny",
-    "model_save_path": "train"
+    "model_save_path": "modeloutput1",
+    "staging_model_path": "./mlruns/1/65b46f6d9c224d5785ea968b94bf560d/artifacts/pytorch_model/model"
 }
