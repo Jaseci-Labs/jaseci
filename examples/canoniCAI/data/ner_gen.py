@@ -1,3 +1,7 @@
+"""
+AUTO GENERATE TRAINING FILE FROM NER BASED ON THE UTTERANCE, SLOT TYPE AND VALUE YOU IMPUTTED.
+"""
+
 import json
 
 file_name = "flair_ner.json"
