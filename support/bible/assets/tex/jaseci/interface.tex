@@ -1,0 +1,126 @@
+\chapter{Interfacing a Jaseci Machine}
+\jacdot{dia_api_server_client}{.5}{Jaseci Interface Architecture}
+Now that we know what Jaseci is all about, next lets roll up our sleeves and jump in. One of the best ways to jump into Jaseci world is to gather some sample Jac programs and start tinkering with them.
+\par
+Before we jump right into it, it's important to have a bit of an understanding of the the way the interface itself is architected from in the implementation of the Jaseci stack. Jaseci has a module that serves as its  the core interface (summarized in Table~\ref{tab:jsAPI}) to the Jaseci machine. This interface is expressed as a set of method functions within a python class in Jaseci  called \texttt{master}. (By the way, don't worry, it's ok to use ``master'', its not racialist, see Rant~\ref{rant:racistmaster} for more context). The `client' expressions of that interface in the forms of a command line tool \texttt{jsctl} and a server-side REST API built using Django~\footnote{Django ~\cite{django} is a Python web framework for rapid development and clean, pragmatic design}. Figure~\ref{dot:dia_api_server_client} illustrates this architecture representing the relationship between core APIs and client side expressions.
+
+If I may say so myself the code architecture of interface generation from function signatures is elegant, sexy, and takes advantage of the best python has to offer in terms of its support for introspection. With this approach, as the set of functions and their semantics change in the \texttt{master} API class, both the JSCTL Cli tool and the REST Server-side API changes. We dig into this and tons more in the Part~\ref{part:crafting}, so we'll leave the discussion on implementation architecture there for the moment. Lets jump right into how we get started playing with some \gls{leet} Jaseci \gls{haxor}ing. First we start with JSCTL then dive into the REST API.
+
+
+\section{JSCTL: The Jaseci Command Line Interface}
+JSCTL or \texttt{jsctl} is a command line tool that provides full access to Jaseci. This tool is installed alongside the installation of the Jaseci Core package and should be accessible from the command line from anywhere. Let's say you've just checked out the Jaseci repo and you're in head folder. You should be able to execute the following.
+\par
+\shellout{jsctl_setup.shell}
+\par
+Here we've installed the Jaseci python package that can be imported into any python project with a directive such as \texttt{import jaseci}, and at the same time, we've installed the \texttt{jsctl} command line tool into our OS environment. At this point we can issue a call to say \texttt{jsctl --help} for any working directory.
+\begin{nerd}
+    Python Code~\ref{py:setup.py} shows the implementation of \texttt{setup.py} that is responsible for deploying the jsctl tool upon \texttt{pip3} installation of Jaseci Core.
+    \pycode{setup.py}{setup.py for Jaseci Core}
+\end{nerd}
+
+\subsection{The Very Basics: CLI vs Shell-mode, and Session Files }
+This command line tool provides full access to the Jaseci core APIs via the command line, or a shell mode. In shell mode, all of the same Jaseci API functionally is available within a single session. To invoke shell-mode, simply execute \texttt{jsctl} without any commands and jsctl will enter shell mode as per the example below.
+\par
+\shellout{jsctl_shell_mode.shell}
+\par
+Here we launched \texttt{jsctl} directly into shell mode for a single session and we can issue various calls to the Jaseci API for that session. In this example we issue a single call to \texttt{graph create}, which creates a graph within the Jaseci session with a single root node, then exit the shell with \texttt{exit}.
+\par
+The exact behavior can be achieved without ever entering the shell directly from the command line as shown below.
+\par
+\shellout{jsctl_cli_mode.shell}
+\par
+All such calls to Jaseci's API (summarized in Table~\ref{tab:jsAPI}) can be issued either through shell-mode and CLI mode.
+\paragraph{Session Files}
+At this point, it's important to understand how sessions work. In a nutshell, a session captures the complete state of a jaseci machine. This state includes the status of memory, graphs, walkers, configurations, etc. The complete state of a Jaseci machine can be captured in a \texttt{.session} file. Every time state changes for a given session via the \texttt{jsctl} tool the assigned session file is updated. If you've been following along so far, try this.
+\par
+\shellout{session_default.shell}
+\par
+Note from the first call to \texttt{ls} we have a session file that has been created call \texttt{js.session}. This is the default session file \texttt{jsctl} creates and utilizes when called either in cli mode or shell mode. After listing session files, notices the call to \texttt{graph list} which lists the root nodes of all graphs created within a Jaseci machine's state. Note \texttt{jsctl} lists two such graph root nodes. Indeed these nodes correspond to the ones we've just created when contrasting cli mode and shell mode above. Having these two graphs demonstrates that across both instantiations of \texttt{jsctl} the same session, \texttt{js.session}, is being used. Now try the following.
+\par
+\shellout{new_session.shell}
+\par
+Here we see that we can use the \texttt{-f} or \texttt{--filename} flag to specify the session file to use. In this case we list the graphs of the session corresponding to \texttt{mynew.session} and see the JSON representation of an empty list of objects. We then list session files and see that one was created for \texttt{mynew.session}. If we were to now type \texttt{jsctl --filename js.session graph list}, we would see a list of the two graph objects that we created earlier.
+\paragraph{In-memory mode}
+Its important to note that there is also an in-memory mode that can be created buy using the \texttt{-m} or \texttt{--mem-only} flags. This flag is particularly useful when you'd simply like to tinker around with a machine in shell-mode or you'd like to script some behavior to be executed in Jac and have no need to maintain machine state after completion. We will be using in memory session mode quite a bit, so you'll get a sense of its usage throughout this chapter. Next we actually see a workflow for tinkering.
+
+\subsection{A Simple Workflow for Tinkering}
+
+As you get to know Jaseci and Jac, you'll want to try things and tinker a bit. In this section, we'll get to know how \texttt{jsctl} can be used as the main platform for this play. A typical flow will involve jumping into shell-mode, writing some code, running that code to observe output, and in visualizing the state of the graph, and rendering that graph in dot to see it's visualization.
+\paragraph{Install Graphvis}
+Before we jump right in, let me strongly encourage you install Graphviz. Graphviz is open source graph visualization software package that includes a handy dandy command line tool call \texttt{dot}. Dot is also a standardized and open graph description language that is a key primitive of Graphviz. The \texttt{dot} tool in Graphviz takes dot code and renders it nicely. Graphviz is super easy to install. In Ubuntu simply type \texttt{sudo apt install graphviz}, or on mac type \texttt{brew install graphviz} and you're done! You should be able to call \texttt{dot} from the command line.
+\par
+Ok, lets start with a scenario. Say you'd like to write your first Jac program which will include some nodes, edges, and walkers and you'd like to print to standard output and see what the graph looks like after you run an interesting walker. Let role play.
+\par
+Lets hop into a \texttt{jsctl} shell.
+\par
+\shellout{wf_init.shell}
+\par
+Good, we're in! And we've set the session to be an in-memory session so no session file will be created or saved. For this play session we only care about the Jac program we write, which will be saved. The state of the Jaseci machine we run our toy program on doesn't really matter to us.
+\par
+Now that we've got our shell running, we first want to create a blank graph. Remember, all walkers, Jaseci's primary unit of computation, must run on a node. As default, we can use the root node of a freshly created graph, hence we need to create a base graph. But oh no! We're a bit rusty and have forgotten how create our initial graph using \texttt{jsctl}. Let's navigate the help menu to jog our memories.
+\par
+\shellout{wf_help_nav.shell}
+\par
+Ohhh yeah! That's it. After simply using \texttt{help} from the shell we were able to navigate to the relevant info for \texttt{graph create}. Let's use this newly gotten wisdom.
+\par
+\shellout{wf_graph.shell}
+\par
+Great! With this command a graph is created and a single root node is born. \texttt{jsctl} shares with us the details of this root graph node. In Jaseci, graphs are referenced by their root nodes and every graph has a single root node.
+\par
+Notice we've also set the \texttt{-set\_active} parameter to true. This parameter informs Jaseci to use the root node of this graph (in particular the UUID of this root node) as the default parameter to all future calls to Jaseci Core APIs that have a parameter specifying a graph or node to operate on. This global designation that this graph is the `active' graph is a convenience feature so we the user doesn't have to specify this parameter for future calls. Of course this can be overridden, more on that later.
+\par
+Next, lets write some Jac code for our little program. \texttt{jsctl} has a built in editor that is simple yet powerful. You can use either this built in editor, or your favorite editor to create the \texttt{.jac} file for our toy program. Let's use the built in editor.
+\par
+\shellout{wf_edit_jac.shell}
+\par
+The \texttt{edit} command invokes the built in editor. Though it's a terminal editor based on \texttt{ncurses}, you can basically use it much like you'd use any wysiwyg editor with features like standard cut \texttt{ctrl-c} and paste \texttt{ctrl-v}, mouse text selection, etc. It's based on the phenomenal pure python project from Google called \texttt{ci\_edit}. For more detailed help cheat sheet see Appendix~\ref{ci_help}. If you must use your own favorite editor, simply be sure that you save the fam.jac file in the same working directory from which you are running the Jaseci shell. Now type out the toy program in Jac Code~\ref{jac:fam.jac}.
+\par
+\jaccode{fam.jac}{Jac Family Toy Program}
+\par
+Don't worry if that looks like the most cryptic \gls{gobbledygook} you've ever seen in your life. As you learn the Jac language, all will become clear. For now, lets tinker around. Now save and quit the editor. If you are using the built in editor thats simply a \texttt{ctrl-s, ctrl-q} combo.
+\par
+Ok, now we should have a \texttt{fam.jac} file saved in our working directory. We can check from the Jaseci shell!
+\par
+\shellout{wf_ls.shell}
+\par
+We can list files from the shell prompt. By default the \texttt{ls} command only lists files relevant to Jaseci (i.e., \texttt{*.jac}, \texttt{*.dot}, etc). To list all files simply add a \texttt{--all} or \texttt{-a}.
+\par
+Now, on to what is on of the key operations. Lets ``register'' a \gls{sentinel} based on our Jac program. A sentinel is the abstraction Jaseci uses to encapsulate compiled walkers and architype nodes and edges. You can think of registering a sentinel as compiling your jac program. The walkers of a given sentinel can then be invoked and run on arbitrary nodes of any graph. Let's register our Jac toy program.
+\par
+\shellout{wf_sent_reg.shell}
+\par
+Ok, theres a lot that just happened there. First, we see some logging output that informs us that the Jac code is being processed (which really means the Jac program is being parsed and IR being generated). If there are any syntax errors or other issues, this is where the error output will be printed along with any problematic lines of code and such. If all goes well, we see the next logging output that the code has been successfully registered. The formal output is the relevant details of the successfully created sentinel. Note, that we've also made this the ``active'' sentinel meaning it will be used as the default setting for any calls to Jaseci Core APIs that require a sentinel be specified. At this point, Jaseci has registered our code and we are ready to run walkers!
+\par
+But first, lets take a quick look at some of the objects loaded into our Jaseci machine. For this I'll briefly introduce the \texttt{alias} group of APIs.
+\par
+\shellout{wf_aliases.shell}
+\par
+The \texttt{alias} set of APIs are designed as an additional set of convenience tools to simplify the referencing of various objects (walkers, architypes, etc) in Jaseci. Instead of having to use the UUIDs to reference each object, an alias can be used to refer to any object. These aliases can be created or removed utilizing the \texttt{alias} APIs.
+\par
+Upon registering a sentinel, a set of aliases are automatically created for each object produced from processing the corresponding Jac program. The call to \texttt{alias list} lists all available aliases in the session. Here, we're using this call to see the objects that were created for our toy program and validate it corresponds to the ones we would expect from the Jac Program represented in JC~\ref{jac:fam.jac}. Everything looks good!
+\par
+Now, for the big moment! lets run our walker on the root node of the graph we created and see what happens!
+\par
+\shellout{wf_run_walker.shell}
+\par
+Sweet!! We see the standard output we'd expect from our toy program. Hrm, as we'd expect, when it comes to the family, the man doesn't do much it seems.
+\par
+But there were many semantics to what our toy program does. How do we visualize that the graph produced by or program is right. Well we're in luck! We can use Jaseci `dot' features to take a look at our graph!!
+\par
+\shellout{wf_dot_render.shell}
+\par
+\jacdot{fam}{.3}{Graph for \texttt{fam.jac}}
+Here we've used the \texttt{graph get} core API to get a print out of the graph in dot format. By default \texttt{graph get} dumps out a list of all edge and node objects of the graph, however with the \texttt{-mode dot} parameter we've specified that the graph should be printed in dot. The \texttt{-o} flag specifies a file to dump the output of the command. Note that the \texttt{-o} flag for \texttt{jsctl} commands only outputs the formal returned data (json payload, or string) from a Jaseci Core API. Logging output, standard output, etc will not be saved to the file though anything reported by a walker using \texttt{report} will be saved. This output file directive is \texttt{jsctl} specific and work with any command given to \texttt{jsctl}.
+\par
+To see a pretty visual of the graph itself, we can use the \texttt{dot} command from Graphviz. Simply type \texttt{dot -Tpdf fam.dot -o fam.pdf} and Voila! We can see the beautiful graph our toy Jac program has produced on its way to the standard output.
+\par
+Awesomeness! We are Jac \Gls{haxor}s now!
+
+\section{Jaseci REST API}
+
+\section{Full Spec of Jaseci Core APIs}
+
+\subsection{Cheatsheet}
+\printtabJSAPI
+
+% \input{assets/tex/api_spec.tex}

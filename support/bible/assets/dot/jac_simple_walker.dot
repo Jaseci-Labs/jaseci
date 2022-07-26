@@ -1,0 +1,8 @@
+strict digraph root {
+    "n0" [ id="aa85df84e73a49e98e62359ced378731", label="n0:root"  ]
+    "n1" [ id="188c0d402f13401596bd93d1836f2905", label="n1:plain"  ]
+    "n2" [ id="6acf138005b24dadbb6e87eae4bc1e88", label="n2:plain"  ]
+    "n0" -> "n2" [ id="c421fe05cbb349b28e56e20d39d7885f", label="e0" ]
+    "n0" -> "n1" [ id="60f03f46cbef43b89d46fb59be6829f8", label="e1" ]
+    "n1" -> "n2" [ id="32d55cb121e04b40850ec906374b118d", label="e2", dir="both" ]
+}

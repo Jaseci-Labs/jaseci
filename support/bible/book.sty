@@ -1,0 +1,181 @@
+\ProvidesPackage{book}
+\usepackage[table]{xcolor}
+\definecolor{light-gray}{HTML}{E5E4E2}
+\definecolor{light-cyan}{HTML}{FFFEFD}
+
+\usepackage[utf8]{inputenc}
+\usepackage{subcaption}
+\usepackage[font={footnotesize, it}]{caption}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage[export]{adjustbox}
+\usepackage{grffile}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{footnote}
+\usepackage[toc]{glossaries}
+\newglossary[tlg]{technical}{tld}{tdn}{Techinical Terms}
+\makeglossaries
+\usepackage{hyperref}
+\hypersetup{
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black,
+    hyperindex=true,
+    bookmarks=true,
+    pdfa,
+    colorlinks=true,
+    breaklinks=true,
+    bookmarksopen=true,
+    unicode=true
+}
+
+% Set the dimensions of the pages.
+\usepackage[margin=1in]{geometry}
+\setlength\paperwidth{7.5in}
+\setlength\paperheight{9.25in}
+\setlength\textwidth{5.2in}
+\setlength\textheight{7.2in}
+
+
+\setlength\parindent{0pt}
+\setlength{\parskip}{1em}
+
+% To fix table of content spacing
+\usepackage{tocloft}
+\raggedbottom
+
+% For front page
+\usepackage{pagecolor}
+\usepackage{setspace}
+\usepackage{ulem}
+
+%Table colors
+
+
+%----------------------------------- LISTINGS  ------------------------------
+\usepackage{listings}
+
+\lstdefinelanguage{jac}
+{
+    % list of keywords
+    keywords={ import, node, ignore, take, entry, activity, exit, spawn, with,
+            edge, walker, and, or, if, elif, else, for, with, by, while,
+            continue, break, disengage, report, anchor, has, can, true, false,
+            context, info, details, try, strict, length, test, type, str,
+            int, float, list, dict, bool, digraph, subgraph, test, by, in, to,
+            skip, assert
+        },
+    sensitive=false, % keywords are not case-sensitive
+    morecomment=[l]{//}, % l is for line comment
+    morecomment=[l]{\#}, % l is for line comment
+    morecomment=[s]{/*}{*/}, % s is for start and end delimiter
+    morestring=[b]", % defines that strings are enclosed in double quotes
+    morestring=[b]',
+}
+
+\lstdefinelanguage{shell}
+{
+    % list of keywords
+    keywords={
+        },
+}
+
+\lstdefinestyle{gram}{
+basicstyle=\footnotesize\ttfamily\color{olive},%
+breaklines=true,%                                      allow line breaks
+moredelim=[s][\color{green!50!black}\ttfamily]{'}{'},% single quotes in green
+moredelim=*[s][\color{black}\ttfamily]{options}{\}},%  options in black (until trailing })
+commentstyle={\color{gray}\itshape},%                  gray italics for comments
+morecomment=[l]{//},%                                  define // comment
+emph={%
+        STRING%                                            literal strings listed here
+    },emphstyle={\color{blue}\ttfamily},%              and formatted in blue
+alsoletter={:,|,;},%
+morekeywords={:,|,;},%                                 define the special characters
+keywordstyle={\color{black}},%                         and format them in black
+}
+
+\renewcommand{\lstlistlistingname}{List of \lstlistingname s}% List of Listings -> List of Algorithms
+
+\DeclareCaptionFont{white}{\color{white}\footnotesize\upshape\ttfamily}
+% \DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{#1#2#3}}}
+\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white,margin=2pt}
+\lstset{ %
+    language=jac,                                     % choose the language of the code
+    frame=single,	                                % adds a frame around the code
+    columns=fullflexible,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+    backgroundcolor=\color{gray!10},
+    captionpos=t,
+    basicstyle=\footnotesize\upshape\ttfamily,      % the size of the fonts that are used for the code
+     numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+    numbersep=10pt,                   % how far the line-numbers are from the code
+    numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
+    keywordstyle=\bfseries\color{green!55!black},
+    commentstyle=\itshape\color{purple!70!black},
+    identifierstyle=\color{blue!60!black},
+    stringstyle=\color{orange},
+    xleftmargin=5.8pt,
+    xrightmargin=5.8pt,
+}
+
+\newcommand{\pycode}[2]{\renewcommand{\lstlistingname}{Python Code}\par\begin{minipage}{\linewidth}\lstinputlisting[label=py:#1, language=Python, caption={#2}]{assets/code/#1}\end{minipage}\par}
+
+\newcommand{\jaccode}[2]{\renewcommand{\lstlistingname}{Jac Code}\par\begin{minipage}{\linewidth}\lstinputlisting[label=jac:#1, language=jac, caption={#2}]{assets/code/#1}\end{minipage}\par}
+
+\newcommand{\gramcode}[2]{\renewcommand{\lstlistingname}{Grammar}\par\lstinputlisting[label=gram:#1, language=shell, style=gram, numbers=left, caption={#2}]{assets/code/#1}\par}
+
+\newcommand{\gramcoderange}[4]{\renewcommand{\lstlistingname}{Grammar}\par\begin{minipage}{\linewidth}\lstinputlisting[label=gram:#1:#3:#4, language=shell, style=gram, numbers=left, caption={#2}, firstline=#3, lastline=#4, firstnumber=#3]{assets/code/#1}\footnotesize{(full grammar in Appendix~\ref{fullgrammar})}\end{minipage}\par}
+
+\newcommand{\shellout}[1]{\par\begin{minipage}{\linewidth}\lstinputlisting[language=shell,numbers=none]{assets/shell/#1}\end{minipage}\par}
+
+%----------------------------------- NERD ALERT BOX  ------------------------------
+\usepackage[many]{tcolorbox}
+\usepackage{wrapfig}
+
+\newcounter{nerd}
+\newtcolorbox[use counter=nerd]
+  {nerd}[1][]
+  {title=Nerd Alert~\thetcbcounter~\emph{\footnotesize (time to let your eyes glaze over)},
+   left=0pt,
+   right=0pt,
+   fonttitle=\bfseries,
+   coltitle=black,
+   colframe=orange!40,
+   colback=orange!5,
+   #1
+}
+
+
+%DOT GRAPH BOX
+\newcommand{\jacdot}[3]{\begin{wrapfigure}{r}{#2\linewidth}
+    \centering
+    \includegraphics[width=.98\linewidth, frame]{assets/dot/#1.dot.pdf}
+    \caption[]{#3}
+    \label{dot:#1}
+\end{wrapfigure}
+}
+
+%DOT GRAPH BOX without wrapping
+\newcommand{\jacdotnw}[3]{\begin{figure}
+    \centering
+    \includegraphics[width=#2\linewidth, frame]{assets/dot/#1.dot.pdf}
+    \caption[]{#3}
+    \label{dot:#1}
+\end{figure}
+}
+
+%Nicer \texttt
+\usepackage{color,soul}
+\definecolor{Light}{gray}{.90}
+\sethlcolor{Light}
+
+\let\OldTexttt\texttt
+\renewcommand{\texttt}[1]{\OldTexttt{\hl{#1}}}
+
+\usepackage{python}
+
