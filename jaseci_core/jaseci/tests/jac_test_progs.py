@@ -363,3 +363,89 @@ jasecilib_create_user = """
         report jaseci.master_create("daman@gmail.com");
     }
     """
+
+root_is_node_type = """
+    walker init {
+        report here.type;
+    }
+    """
+
+walker_with_exit_after_node = """
+    node echeck {
+        has a=3;
+        can dostuff with exit {
+            report a;
+        }
+    }
+
+    walker init {
+        has a=0;
+        with entry {
+            a+=1;
+        }
+        root {
+            spawn here --> node::echeck;
+            spawn here --> node::echeck;
+            spawn here --> node::echeck;
+            spawn here --> node::echeck;
+        }
+        take -->;
+        report a;
+        with exit {
+            report 43;
+        }
+    }
+    """
+
+
+depth_first_take = """
+    node a {
+        has num;
+    }
+
+    walker init {
+        root {
+            n1=spawn node::a(num=1);
+            n2=spawn node::a(num=2);
+            n3=spawn node::a(num=3);
+            n4=spawn node::a(num=4);
+            n5=spawn node::a(num=5);
+            n6=spawn node::a(num=6);
+            n7=spawn node::a(num=7);
+
+            here --> n1 --> n2 --> n3;
+                            n2 --> n4;
+                     n1 --> n5 --> n6;
+                            n5 --> n7;
+        }
+
+        a: report here.num;
+        take:dfs -->;
+    }
+    """
+
+breadth_first_take = """
+    node a {
+        has num;
+    }
+
+    walker init {
+        root {
+            n1=spawn node::a(num=1);
+            n2=spawn node::a(num=2);
+            n3=spawn node::a(num=3);
+            n4=spawn node::a(num=4);
+            n5=spawn node::a(num=5);
+            n6=spawn node::a(num=6);
+            n7=spawn node::a(num=7);
+
+            here --> n1 --> n2 --> n3;
+                            n2 --> n4;
+                     n1 --> n5 --> n6;
+                            n5 --> n7;
+        }
+
+        a: report here.num;
+        take:bfs -->;
+    }
+    """

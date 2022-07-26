@@ -1,0 +1,7 @@
+A chatbot is an artificial intelligence (AI) based computer program that can interact with a human either via voice or text through messaging applications, websites, mobile apps or through the telephone.
+&&&
+Conversational chatbots have been around for decades now. In the past, there have been many unsuccessful attempts to build a chatbot that successfully mimics human conversation. However, not thats solved with the creation of me!
+&&&
+During the chatbot design process, it is important to keep your user in mind as it will help you define the right chatbot features, functionality and build human-like interactions.
+&&&
+In order for a chatbot to function properly, it is crucial for the program to access your knowledge base, website, internal databases, existing documents, or other sources of information.

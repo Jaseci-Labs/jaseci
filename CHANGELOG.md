@@ -1,5 +1,19 @@
 # Jaseci Change / Release Notes
 
+## Version 1.3.4
+
+### Updates
+
+- Major Feature: Can now specify various forms of breadth first and depth first search on `take` commands (e.g., `take:bfs`, `take:dfs`, and `take:b` and `take:d` for short)
+- Improvement: Added deep copy for lists and dictionaries
+- Improvement: The connect operator between 2 nodes now returns the left-hand side. (e.g., `n1 --> n2 --> n3` will create an intuitive chain of connections not `n1 --> n3 <-- n2`)
+- Bug Fix: Root nodes now return valid `.type`
+- Bug Fix: With exit within walker now executes after exit events in nodes
+
+### Notes
+
+- Behavior change for jac programs utilizing chained connection operators. Connection orders are now intuitive (e.g., `n1 --> n2 --> n3` will create an intuitive chain of connections not `n1 --> n3 <-- n2`)
+
 ## Version 1.3.3
 
 ### Updates
