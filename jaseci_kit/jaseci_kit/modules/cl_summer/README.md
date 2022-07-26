@@ -119,7 +119,7 @@ For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) whi
             }
         }
         ```
-        **Final get_seg.jac program**
+        **Final summarizer.jac program**
         ```python
         node model_dir;
         node summarizer{
@@ -128,7 +128,7 @@ For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) whi
 
             # summarizer
             can summarize with summarizer entry{
-                data = file.load_json(visitor.dataset);
+                data = file.load_json(visitor.data);
                 
                 report cl_summer.summarize(
                     text = data["text"],

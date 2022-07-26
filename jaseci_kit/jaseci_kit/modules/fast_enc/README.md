@@ -38,6 +38,7 @@ For this part, we are going to use Python. First,
     from datasets import load_dataset
     # load dataset
     dataset = load_dataset("snips_built_in_intents")
+    print(dataset["train"][:2])
     ```
     If imported successsfuly, you should see the data format to be something like this
     > {"text": ["Share my location with Hillary's sister", "Send my current location to my father"], "label": [5, 5]}
@@ -89,8 +90,8 @@ For this part, we are going to use Python. First,
         "labels": []
         }
     for itm in test_data:
-        data["candidates"].append(itm)
-        data["labels"].extend(test_data[itm])
+        data["labels"].append(itm)
+        data["contexts"].extend(test_data[itm])
     # write data in json file 'test.json'
     with open("test.json", "w", encoding="utf8") as f:
             f.write(json.dumps(data, indent = 4))
@@ -169,7 +170,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
             );
         }
 
-        can test with train_and_test_fasttext exit{
+        can tests with train_and_test_fasttext exit{
             std.out("fasttext validation started...");
             # Use the model to perform inference
             # returns the list of context with the suitable intents
@@ -287,7 +288,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
             }
                 
 
-            can test with train_and_test_fasttext exit{
+            can tests with train_and_test_fasttext exit{
                 std.out("fasttext validation started...");
                 # Use the model to perform inference
                 # returns the list of context with the suitable candidates
@@ -366,6 +367,9 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
         > jac build fasttext.jac
     2. Run the following command to Activate sentinal
         > sentinel set -snt active:sentinel -mode ir fasttext.jir
+    
+        **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
+        > sentinel register -set_active true -mode ir fasttext.jir
     3. Run the following command to execute  walker `train_and_test_fasttext` with `default parameter` for training `fast_enc` module.
         > walker run train_and_test_fasttext </br>
     
