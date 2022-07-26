@@ -1,1 +1,1 @@
-from .modules.fasttext.fasttext_classifier import *  # noqa
+from .modules.fast_enc.fast_enc import *  # noqa

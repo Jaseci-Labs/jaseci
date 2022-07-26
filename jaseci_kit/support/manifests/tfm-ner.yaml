@@ -24,7 +24,7 @@ data:
     source install.sh
     cd /jaseci/jaseci_kit/
     source install.sh
-    cd /jaseci/jaseci_kit/jaseci_kit/modules/entity_extraction_type_2
+    cd /jaseci/jaseci_kit/jaseci_kit/modules/tfm_ner
     uvicorn jaseci_kit.tfm_ner:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1

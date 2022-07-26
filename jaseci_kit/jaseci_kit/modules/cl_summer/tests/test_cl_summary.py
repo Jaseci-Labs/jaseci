@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from ..summarization import serv_actions
+from ..cl_summer import serv_actions
 from fastapi.testclient import TestClient
 from .test_data import test_predict_request, test_predict_request_url
 
