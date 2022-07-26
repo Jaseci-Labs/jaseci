@@ -19,6 +19,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Graphs as First Class Citizens}
 
+\subsection{Connect and Spawn operations}
+
 %%%%%%%
 \par
 \jaccode{jac_simple_walker.jac}{Simple walker creating and connected nodes}
@@ -44,8 +46,13 @@
 \par
 \jacdotnw{jac_connect_chain}{.3}{Graph in memory for JC~\ref{jac:jac_connect_chain.jac}}
 
+Another incredibly useful notion to consider about connect operations is that they can be chained.
+The same graph shown in Figure~\ref{dot:jac_connect_chain} can be achieved with the chained usage of the connect operation in line 8 of JC~\ref{jac:jac_connect_chain.jac}. Here nodes are chained in an intuitive left-to-right manor. Relatively sophisticated graph structures can be rapidly expressed using chained connect operations.
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Walkers as First Class Citizens}
+\section{Walkers as the second First Class Citizens}
 
 %%%%%%%
 \par
