@@ -18,6 +18,25 @@
 }
 
 \subsection{Breadth First vs Depth First Walks}
+\par
+\jacdotnw{jac_walk_bfs}{.7}{Graph in memory for JC~\ref{jac:jac_walk_bfs.jac}}
+If you've played with the basic \texttt{take} command a bit you would notice that by default it results in a breadth first traversal of a graph.
+However, the \texttt{take} command is indeed quite flexible.
+You can specify an orientation of the \texttt{take} command to navigate with a breadth first or a depth first traversal.
+\par
+\jaccode{jac_walk_bfs.jac}{Breadth first navigation with take vs depth first}
+\par
+Take for example the program shown in JC~\ref{jac:jac_walk_bfs.jac}.
+First we observe the definition of a static three level binary tree with the graph \texttt{example} on line 3.
+This is a vanilla structure as depicted in Figure~\ref{dot:jac_walk_bfs}.
+Two walkers are present in this example, one walker \texttt{walk\_with\_breadth}, for which we observe a call to \texttt{take:bfs -->;} indicating a breadth first traversal, and another walker \texttt{walk\_with\_breadth}, for which we observe a call to \texttt{take:bfs -->;} indicating a depth first traversal.
+\par
+As can be seen in its output,
+\par
+\shellout{jac_walk_bfs.jac.output}
+The print statement on line 34 demonstrate the order of nodes visited correspond to the specified traversal order.
+\par
+Additionally, the short hand of \texttt{take:b -->;}, or \texttt{take:d -->;} could be used to specify breadth first or depth first traversals respectively.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Ignoring and Deleting}

@@ -1,6 +1,4 @@
-node plain {
-    has name;
-}
+node plain: has name;
 
 graph example {
     has anchor head;
@@ -17,11 +15,21 @@ graph example {
     }
 }
 
-walker init {
-    root {
-        spawn here --> graph::example;
-    }
-
-    plain: report here.name;
+walker walk_with_breadth {
+    has anchor node_order = [];
+    node_order.l::append(here.name);
     take:bfs -->;
+}
+
+walker walk_with_depth {
+    has anchor node_order = [];
+    node_order.l::append(here.name);
+    take:dfs -->;
+}
+
+walker init {
+    start = spawn here --> graph::example;
+    b_order = spawn start walker::walk_with_breadth;
+    d_order = spawn start walker::walk_with_depth;
+    std.out("Walk with Breadth:",b_order,"\nWalk with Depth:",d_order);
 }
