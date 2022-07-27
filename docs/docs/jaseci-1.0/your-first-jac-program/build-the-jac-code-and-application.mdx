@@ -1,0 +1,624 @@
+---
+sidebar_position: 3
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Build the Jac code (and application)
+
+In this section we make use of the Jac code previously covered and combine it into a functioning demo program. We also describe how to authenticate with the Jaseci service.
+
+The demo provides various examples of interacting with the Jac code. These serve as a frontend with logic that loads the code and executes various walkers to reach a desired result.
+
+The examples are as follows:
+
+- `Python (Requests)`: This is the primary demo. It uses Python with the `requests` library to define the demo logic and make calls to the Jaseci API.
+- `cURL`: A curl representation of the API calls used in the Python example that can be used on the command line. See API docs [here - coming soon].
+- `Jaseci CLI (jsctl)`: A `jsctl` representation of the API calls used in the Python example that can be used on the command line. Learn about jsctl [here coming soon].
+- Jac: A `Jac` representation of the logic in the Python example. This serves as a comparison to highlight how Jac can be used in a similar way to other programming languages despite its unique architecture.
+
+
+### Jac code
+
+<!-- TODO: add official link -->
+You can find the full Jac code for the social network [here](full-demo-code.mdx). This is what we'll be referencing and using in the various examples.
+
+## Authentication
+
+For the `Python` and `cURL` examples we need to authenticate before interacting with the API. First we'll create a user then grab an authentication token which must be used in the header of subsequent requests to the API.
+
+jsctl runs as a standalone binary, so those examples don't require authentication. Similarly, the `Jac` examples run directly within Jaseci and don't require authentication.
+
+## Create user
+
+<Tabs>
+<TabItem value="python-requests" label="Python (requests)" default>
+
+```python
+import requests
+# set api base url
+api_base_url = 'http://localhost:8888'
+
+# API URLs
+url_user_create = f"{api_base_url}/user/create/"
+url_user_token = f"{api_base_url}/user/token/"
+url_create_graph = f"{api_base_url}/jac/create_graph"
+url_create_sentinel = f"{api_base_url}/jac/create_sentinel"
+url_set_jac = f"{api_base_url}/jac/set_jac"
+url_run = f"{api_base_url}/jac/run"
+
+payload = {
+"name": "Test User",
+"email": "test@example.com",
+"password": "testpassword",
+"is_activated": True
+}
+
+response = requests.post(url_user_create, json=payload)
+
+print(response.json())
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+    curl --request POST 'http://hostname/user/create/' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "name": "Test User",
+        "email": "test@example.com",
+        "password": "testpassword",
+        "is_activated": true
+    }'
+
+</TabItem>
+</Tabs>
+
+OUTPUT
+
+```
+{
+    "id": 1,
+    "email": "test@example.com",
+    "name": "Test User",
+    "is_activated": true
+}
+```
+
+## Get auth token
+
+<Tabs>
+<TabItem value="python-requests" label="Python (requests)" default>
+
+```python
+payload = {
+"email": "test@example.com",
+"password": "testpassword"
+}
+
+response = requests.post(url_user_token, json=payload)
+auth = response.json()
+
+auth_token = auth['token']
+
+print(auth)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+
+      curl --request POST 'http://<hostname>/user/token/' \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+          "email": "test@example.com",
+          "password": "testpassword"
+      }'
+
+
+  </TabItem>
+
+</Tabs>
+
+OUTPUT
+
+```
+{
+    "expiry": null,
+    "token": "4c72aa82a8417eb2fd7f59ead9592b3fe564b55c18d9706e9ddfab3e98c24350"
+}
+```
+
+
+## Using auth token
+
+The auth token is used in the HTTP `Authorization` header in the following format:
+
+```
+Authorization: Token <auth token>
+```
+
+## Setting up the graph
+
+### Create graph
+
+A graph is created to be used as the root node upon which walkers are run, and the network is built. We'll keep a note of the graphs's Jaseci object ID (jid) for use later on in the demo.
+
+<Tabs>
+<TabItem value="python-requests" label="Python (requests)" default>
+
+```python
+headers = {
+'Authorization': f'Token {auth_token}'
+}
+
+payload = {
+"name": "Test graph"
+}
+
+response = requests.post(url_create_graph, headers=headers, json=payload)
+graph = response.json()
+
+graph_id = graph['jid']
+
+print(graph)
+```
+
+</TabItem>
+
+<TabItem value="jaseci-cli" label="Jaseci CLI (jsctl)">
+
+    jsctl create graph -name 'Test graph'
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+    curl --request POST 'http://<hostname>/jac/create_graph' \
+    --header 'Authorization: Token <auth token>' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "name": "Test graph"
+    }'
+
+</TabItem>
+</Tabs>
+
+OUTPUT
+
+```
+{
+    "context": {},
+    "anchor": null,
+    "name": "Test graph",
+    "kind": "root",
+    "jid": "urn:uuid:493849ca-169d-4362-aa22-f7da4225653e",
+    "j_type": "graph"
+}
+```
+
+
+### Create sentinel
+
+Now we need a sentinel to encapsulate the Jac program code. This includes node, edge, and walker definitions. Walkers are run through a sentinel on a specific node or graph.
+
+We'll also keep a note of the sentinel's `jid` for later use.
+
+<Tabs>
+<TabItem value="python-requests" label="Python (requests)" default>
+
+```python
+payload = {
+"name": "Test sentinel"
+}
+
+response = requests.post(url_create_sentinel, headers=headers, json=payload)
+sentinel = response.json()
+
+sentinel_id = sentinel['jid']
+
+print(sentinel)
+```
+
+</TabItem>
+<TabItem value="jaseci-cli" label="Jaseci CLI (jsctl)">
+
+    jsctl create sentinel -name 'Test sentinel'
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+    curl --request POST 'http://<hostname>/jac/create_sentinel' \
+    --header 'Authorization: Token <auth token>' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "name": "Test sentinel"
+    }'
+
+</TabItem>
+</Tabs>
+
+OUTPUT
+
+```
+{
+    "name": "Test sentinel",
+    "kind": "generic",
+    "jid": "urn:uuid:fd0e9621-11cb-4d8f-980a-dad7e704363a",
+    "j_type": "sentinel"
+}
+```
+
+### Set Jac code
+
+Now that we have a sentinel we initialize it with the social network code.
+
+
+<Tabs>
+<TabItem value="python-requests" label="Python (requests)" default>
+
+```python
+with open("social.jac") as f:
+    code = f.read()
+
+payload = {
+"snt": sentinel_id,
+"code": code,
+"encoded": False
+}
+
+response = requests.post(url_set_jac, headers=headers, json=payload)
+
+print(response.json())
+```
+
+</TabItem>
+
+<TabItem value="jaseci-cli" label="Jaseci CLI (jsctl)">
+
+    jsctl set jac -snt <sentinel id> -code social.jac -encoded 0
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+    curl --request POST 'http://<hostname>/jac/set_jac' \
+    --header 'Authorization: Token <auth token>' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "snt": "<sentinel id>",
+        "code": "<jac code>",
+        "encoded": false
+    }'
+
+</TabItem>
+</Tabs>
+
+OUTPUT
+
+```
+[
+    "Sentinel fd0e9621-11cb-4d8f-980a-dad7e704363a registered and active!"
+]
+```
+
+## Using the network
+
+We can now work on the logic that makes use of the social network Jac code.
+
+First we generate the `person` nodes on the network making use of the `join` walker.
+
+### [Demo] `join` walker: creates members and prints them
+
+<Tabs>
+<TabItem value="python-requests" label="Python (requests)" default>
+
+```python
+member_nodes = []
+names = ['Jake', 'Amy', 'Charles', 'Rosa', 'Gina']
+print("CREATING MEMBERS")
+for name in names:
+    payload = {
+        "name": "join",
+        "snt": sentinel_id,
+        "nd": graph_id,  # we use the graph id here to run the walker on the root node
+        "ctx": {
+            'name': name
+        }
+    }
+    response = requests.post(url_run, headers=headers, json=payload)
+    walker_result = response.json()
+    member_node = walker_result[0]
+    member_nodes.append(member_node)
+    print(f' - {member_node["context"]["name"]}')
+```
+
+</TabItem>
+
+<TabItem value="jaseci-cli" label="Jaseci CLI (jsctl)">
+
+    # NOTE: this example just shows running the walker and excludes any additional logic
+
+    jsctl run -snt <sentinel id> -nd <node id> -name join -ctx '{"name": "Jake"}'
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+    # NOTE: this example just shows running the walker and excludes any additional logic
+
+    curl --request POST 'http://<hostname>/jac/run' \
+    --header 'Authorization: Token <auth token>' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "name": "join",
+        "snt": "<sentinel id>",
+        "nd": "<node id>",
+        "ctx": {
+            "name": "Jake"
+        }
+    }'
+
+</TabItem>
+
+<TabItem value="jac" label="Jac">
+
+```jac
+walker demo_create_members {
+    has members;
+
+    with entry {
+        std.out("CREATING MEMBERS");
+        members = ["Jake", "Amy", "Charles", "Rosa", "Gina"];
+        for name in members {
+            spawn here walker::join(name=name);
+        }
+    }
+
+    root {
+        take -->;
+    }
+
+    person {
+        std.out(" - " + here.name);
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+OUTPUT
+
+```
+CREATING MEMBERS
+ - Jake
+ - Amy
+ - Charles
+ - Rosa
+ - Gina
+```
+
+Then we create `friend` associations with the `add_friend` walker. For each member, we will add as a friend the member that comes immediately after in the list (with wrap around). This will make it so each member has two friends, the member that comes before, and the one that comes after in the list. It will also create mutual friends among adjacent list elements.
+
+### [Demo] `add_friend` walker: adds friends for each member and prints them
+
+<Tabs>
+<TabItem value="python-requests" label="Python (requests)" default>
+
+```python
+# add friends
+print('ADDING FRIENDS')
+for i, member in enumerate(member_nodes):
+    new_friend = member_nodes[(i + 1) % len(member_nodes)]
+    payload = {
+        "name": "add_friend",
+        "snt": sentinel_id,
+        'nd': member['jid'],  # run on person node we want to add friend to
+        'ctx': {
+            'new_friend': new_friend['jid']
+        }
+    }
+    response = requests.post(url_run, headers=headers, json=payload)
+
+# get and display friends
+for member in member_nodes:
+    payload = {
+        "name": "get_friend_list",
+        "snt": sentinel_id,
+        'nd': member['jid'],  # run on person node we want the friend list for
+    }
+    response = requests.post(url_run, headers=headers, json=payload)
+    friend_list = response.json()
+
+    print(f'{member["context"]["name"]}\'s friends:')
+    for friend in friend_list:
+        print(f' - {friend["context"]["name"]}')
+```
+
+</TabItem>
+
+<TabItem value="jaseci-cli" label="Jaseci CLI (jsctl)">
+
+    # NOTE: this example just shows running the walker and excludes any additional logic
+
+    jsctl run -snt <sentinel id> -nd <node id> -name add_friend -ctx '{"new_friend": "<person node id>"}'
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+    # NOTE: this example just shows running the walker and excludes any additional logic
+
+    curl --request POST 'http://<hostname>/jac/run' \
+    --header 'Authorization: Token <auth token>' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "name": "add_friend",
+        "snt": "<sentinel id>",
+        "nd": "<person node id>",
+        "ctx": {
+            "new_friend": "<person node id>"
+        }
+    }'
+
+</TabItem>
+
+<TabItem value="jac" label="Jac">
+
+```jac
+    walker demo_add_friends {
+        has members;
+
+        with entry {
+            std.out("ADDING FRIENDS");
+            members = spawn here walker::get_members;
+
+            for i=0 to i<members.length by i+=1 {
+                member = members[i];
+                new_friend = members[(i+1) % members.length];
+                spawn member walker::add_friend(new_friend=new_friend);
+            }
+        }
+
+        root {
+            take -->;
+        }
+
+        person {
+            std.out(here.name + "'s friends: ");
+            for f in <-[friend]-> {
+                std.out(" - " + f.name);
+            }
+            std.out("");
+        }
+    }
+```
+
+</TabItem>
+</Tabs>
+
+OUTPUT
+
+```
+ADDING FRIENDS
+Jake's friends:
+ - Amy
+ - Gina
+
+Amy's friends:
+ - Charles
+ - Jake
+
+Charles's friends:
+ - Rosa
+ - Amy
+
+Rosa's friends:
+ - Gina
+ - Charles
+
+Gina's friends:
+ - Jake
+ - Rosa
+```
+
+Now that we have a network of members with friends we can make friend suggestions.
+
+### [Demo] `get_suggested_friends` walker: gets the suggested friends for each member and prints them
+
+<Tabs>
+<TabItem value="python-requests" label="Python (requests)" default>
+
+```python
+print('GETTING SUGGESTED FRIENDS')
+for member in member_nodes:
+    payload = {
+        "name": "get_suggested_friends",
+        "snt": sentinel_id,
+        "nd": member['jid'],  # run on person node we want the suggested friends for
+    }
+    response = requests.post(url_run, headers=headers, json=payload)
+    suggested = response.json()
+    print(f'Suggestions for: {member["context"]["name"]}')
+    for sug in suggested:
+        print(f' - {sug["context"]["name"]}')
+    print()
+```
+
+</TabItem>
+
+<TabItem value="jaseci-cli" label="Jaseci CLI (jsctl)">
+
+    # NOTE: this example just shows running the walker and excludes any additional logic
+
+    jsctl run -snt <sentinel id> -nd <person node id> -name get_suggested_friends
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+    # NOTE: this example just shows running the walker and excludes any additional logic
+
+    curl --request POST 'http://<hostname>/jac/run' \
+    --header 'Authorization: Token <auth token>' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "name": "get_suggested_friends",
+        "snt": "<sentinel id>",
+        "nd": "<person node id>"
+    }'
+
+</TabItem>
+
+<TabItem value="jac" label="Jac">
+
+```jac
+walker demo_get_suggested_friends {
+    with entry {
+        std.out("GETTING SUGGESTED FRIENDS");
+        members = spawn here walker::get_members;
+
+        for member in members {
+            std.out(member.name + "'s suggestions");
+            for suggested in spawn member walker::get_suggested_friends {
+                std.out(" - " + suggested.name);
+            }
+            std.out("");
+        }
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+OUTPUT
+
+```
+GETTING SUGGESTED FRIENDS
+Jake's suggestions
+ - Charles
+ - Rosa
+
+Amy's suggestions
+ - Rosa
+ - Gina
+
+Charles's suggestions
+ - Gina
+ - Jake
+
+Rosa's suggestions
+ - Jake
+ - Amy
+
+Gina's suggestions
+ - Amy
+ - Charles
+```
+
+### Putting it all together
+
+Take a look at the full demo code with all parts combined [here]('#').
