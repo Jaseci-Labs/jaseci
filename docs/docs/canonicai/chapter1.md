@@ -9,10 +9,12 @@ We are building a Conversational AI.
 Conversational AI is a type of artificial intelligence that enables consumers to interact with computer applications the way they would with other humans.
 
 ### Real world examples of conversational AI
-Amazon Alexa (Voice) 
+* Amazon Alexa (Voice) 
+
 ![Amazon Alexa (Voice) ](https://imageio.forbes.com/specials-images/imageserve/6022e0a7644b9ab003f0dcb7/iPhone-screenshots-of-the-Alexa-app-s-new-Light-and-Dark-modes/960x0.jpg?format=jpg&width=700)
 
-Example of a text-based chatbot ( Website )
+* Example of a text-based chatbot ( Website )
+
 ![Example of a text-based chatbot](https://cdn2.hubspot.net/hubfs/4056626/BotHomePage.png)
 
 ## What AI will be used
