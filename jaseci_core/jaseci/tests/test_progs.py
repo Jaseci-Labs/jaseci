@@ -249,3 +249,13 @@ class jac_tests(TestCaseHelper, TestCase):
             api_name="walker_run", params={"name": "init"}
         )
         self.assertEqual(report["report"], [1, 2, 5, 3, 4, 6, 7])
+
+    def test_inheritance_override_here_check(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(
+            name="test", code=jtp.inheritance_override_here_check, auto_run=""
+        )
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(report["report"], [9, 9, 10])

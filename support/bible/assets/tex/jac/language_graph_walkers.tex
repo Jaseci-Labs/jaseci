@@ -78,7 +78,7 @@ Walkers are entry points to all valid jac programs
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Architypes and Actions}
+\section{Architypes}
 
 %%%%%%%
 \par
@@ -104,6 +104,9 @@ Walkers are entry points to all valid jac programs
 \shellout{jac_copy_assign.jac.output}
 \par
 \jacdotnw{jac_copy_assign}{.5}{Graph in memory for JC~\ref{jac:jac_copy_assign.jac}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Actions and Abilities}
 
 %%%%%%%
 \par
@@ -131,14 +134,22 @@ Walkers are entry points to all valid jac programs
 
 %%%%%%%
 \par
-\jaccode{jac_local_action.jac}{Specifying your own actions
-}
+\jaccode{jac_local_action.jac}{Abilities in nodes}
+\subsection{here and visitor, the `this' references of Jac}
+Observe the usage of \texttt{here} and \texttt{visitor} in the \texttt{person} node architype in JC~\ref{jac:jac_local_action.jac}.
+These are synonymous to the this reference present in many other languages except \texttt{here} point to the current node scope relevant to the execution point in the program and \texttt{visitor} points to the relevant walker scope relevant to that given point of execution. These references provide full access to all \texttt{has} variables and builtin attributes and operations of the referenced object instance.
+\par
+Do note that in the context of the \texttt{person} node abilities in JC~\ref{jac:jac_local_action.jac} a here reference to say \texttt{here.name = "joe";} would be equivalent to simply \texttt{name = "joe";} however to capture the \texttt{here.context} (or info/details/etc) the \texttt{here} reference becomes quite useful. The similar relationship applies to using \texttt{visitor} in walker abilities.
+
 \par
 \shellout{jac_preset_action.jac.output}
 %%%%%%%
 \par
-\jaccode{jac_local_wlk_action.jac}{Walkers can have actions, and calling own actions
+\jaccode{jac_local_wlk_action.jac}{Actions and Abilities in Walkers
 }
 \par [here and visitor should be present everywhere]
 \par [here should point to wherever the walker is on at all times]
 \par [directly accessing variables in a nodes ability will not necesarily map to here]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Inheritance}

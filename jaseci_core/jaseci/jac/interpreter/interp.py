@@ -1623,7 +1623,7 @@ class interp(machine_state):
         m.push_scope(
             jac_scope(parent=self, has_obj=nd, action_sets=[arch.get_all_actions()])
         )
-        m._jac_scope.inherit_agent_refs(self._jac_scope)
+        m._jac_scope.inherit_agent_refs(self._jac_scope, nd)
         try:
             m.run_code_block(jac_ir_to_ast(act_list.get_obj_by_name(name).value))
         except Exception as e:

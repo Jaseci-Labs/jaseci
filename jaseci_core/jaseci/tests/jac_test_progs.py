@@ -449,3 +449,36 @@ breadth_first_take = """
         take:bfs -->;
     }
     """
+
+
+inheritance_override_here_check = """
+    node a {
+        has x=5, y=3, z=1;
+        can sum {
+            z = x+y+z;
+            report z;
+        }
+    }
+
+    node b:a {
+        can sum {
+            z = x-y-z;
+            report x-y;
+        }
+    }
+
+    node c:a {
+        can sum {
+            ::a:sum;
+            z=z+1;
+            report here.z;
+        }
+    }
+
+    walker init {
+        n1 = spawn here --> node::a;
+        n2 = spawn here --> node::c;
+        -->[0]::sum;
+        -->[1]::sum;
+    }
+    """
