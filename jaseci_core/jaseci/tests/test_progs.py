@@ -251,7 +251,6 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report["report"], [1, 2, 5, 3, 4, 6, 7])
 
     def test_inheritance_override_here_check(self):
-        self.logger_on()
         mast = master(h=mem_hook())
         mast.sentinel_register(
             name="test", code=jtp.inheritance_override_here_check, auto_run=""
