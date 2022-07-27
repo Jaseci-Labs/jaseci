@@ -275,3 +275,8 @@ walker init {
 ```
 
 Once we run main.jac we can use the Chatbot. Play around with graph and add your own nodes and link other nodes together to create an even better chatbot.
+
+To run your code:
+```
+jsctl jac run main.jac
+```
