@@ -18,13 +18,13 @@ graph example {
 walker walk_with_breadth {
     has anchor node_order = [];
     node_order.l::append(here.name);
-    take:bfs -->;
+    take:bfs -->; #take:b can also be used
 }
 
 walker walk_with_depth {
     has anchor node_order = [];
     node_order.l::append(here.name);
-    take:dfs -->;
+    take:dfs -->; #take:d can also be used
 }
 
 walker init {
