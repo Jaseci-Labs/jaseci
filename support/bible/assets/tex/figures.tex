@@ -61,29 +61,29 @@
         \rowcolors{1}{light-cyan}{light-gray}
         \begin{tabular}{l p{3cm} p{6cm}}
             \toprule
-            \textbf{Op}               & \textbf{Args}                                 & \textbf{Description}                                                                                                   \\
+            \textbf{Op}                                           & \textbf{Args}                                                                                                                                                  & \textbf{Description} \\
             \midrule
-            \lstinline{.str::upper}      & none                                          &                                                                                                                        \\
-            \lstinline{.str::lower}      & none                                          &                                                                                                                        \\
-            \lstinline{.str::title}      & none                                          &                                                                                                                        \\
-            \lstinline{.str::capitalize} & none                                          &                                                                                                                        \\
-            \lstinline{.str::swap\_case} & none                                          &                                                                                                                        \\
-            \lstinline{.str::is\_alnum}  & none                                          &                                                                                                                        \\
-            \lstinline{.str::is\_digit}  & none                                          &                                                                                                                        \\
-            \lstinline{.str::is\_title}  & none                                          &                                                                                                                        \\
-            \lstinline{.str::is\_upper}  & none                                          &                                                                                                                        \\
-            \lstinline{.str::is\_lower}  & none                                          &                                                                                                                        \\
-            \lstinline{.str::is\_space}  & none                                          &                                                                                                                        \\
-            \lstinline{.str::load\_json} & none                                          &                                                                                                                        \\
-            \lstinline{.str::count}      & (\textbf{substr}, start, end) & Returns the number of occurrences of a substring in the given string. Start and end specify range of indices to search \\
-            \lstinline{.str::find}       &   (\textbf{substr}, start, end)                                             &    Returns the index of first occurrence of the substring (if found). If not found, it returns -1. Start and end specify range of indices to search.                                                                                                                   \\
-            \lstinline{.str::split}      & \emph{optional} (separator, maxsplit)                                     &   Breaks up a string at the specified separator for maxsplit number of times and returns a list of strings. Default separators is ` ' and maxsplit is unlimited.                                                                                                                   \\
-            \lstinline{.str::startswith} &                                               &                                                                                                                        \\
-            \lstinline{.str::endswith}   &                                               &                                                                                                                        \\
-            \lstinline{.str::replace}    &                                               &                                                                                                                        \\
-            \lstinline{.str::strip}      & optional,                                     &                                                                                                                        \\
-            \lstinline{.str::lstrip}     & optional,                                     &                                                                                                                        \\
-            \lstinline{.str::rstrip}     & optional,                                     &                                                                                                                        \\
+            \lstinline{.str::upper}                               & none                                                                                                                                                           &                      \\
+            \lstinline{.str::lower}                               & none                                                                                                                                                           &                      \\
+            \lstinline{.str::title}                               & none                                                                                                                                                           &                      \\
+            \lstinline{.str::capitalize}                          & none                                                                                                                                                           &                      \\
+            \lstinline{.str::swap\_case}                          & none                                                                                                                                                           &                      \\
+            \lstinline{.str::is\_alnum}                           & none                                                                                                                                                           &                      \\
+            \lstinline{.str::is\_digit}                           & none                                                                                                                                                           &                      \\
+            \lstinline{.str::is\_title}                           & none                                                                                                                                                           &                      \\
+            \lstinline{.str::is\_upper}                           & none                                                                                                                                                           &                      \\
+            \lstinline{.str::is\_lower}                           & none                                                                                                                                                           &                      \\
+            \lstinline{.str::is\_space}                           & none                                                                                                                                                           &                      \\
+            \lstinline{.str::load\_json}                          & none                                                                                                                                                           &                      \\
+            \lstinline{.str::count}      & (\textbf{substr}, start, end)            & Returns the number of occurrences of a substring in the given string. Start and end specify range of indices to search                                                                \\
+            \lstinline{.str::find}       &   (\textbf{substr}, start, end)            & Returns the index of first occurrence of the substring (if found). If not found, it returns -1. Start and end specify range of indices to search.                                     \\
+            \lstinline{.str::split}      & \emph{optional} (separator, maxsplit) & Breaks up a string at the specified separator for maxsplit number of times and returns a list of strings. Default separators is ` ' and maxsplit is unlimited.                        \\
+            \lstinline{.str::startswith}                          &                                                                                                                                                                &                      \\
+            \lstinline{.str::endswith}                            &                                                                                                                                                                &                      \\
+            \lstinline{.str::replace}                             &                                                                                                                                                                &                      \\
+            \lstinline{.str::strip}                               & optional,                                                                                                                                                      &                      \\
+            \lstinline{.str::lstrip}                              & optional,                                                                                                                                                      &                      \\
+            \lstinline{.str::rstrip}                              & optional,                                                                                                                                                      &                      \\
             \bottomrule
         \end{tabular}
         \caption{Complete Library of String Operations}
@@ -98,23 +98,24 @@
         \centering
         \begin{tabular}{l l l}
             \toprule
-            \textbf{Op}             & \textbf{Args} & \textbf{Description} \\
+            \textbf{Op}                     & \textbf{Args} & \textbf{Description} \\
             \midrule
-            \lstinline{.list::max}    & none          &                      \\
-            \lstinline{.list::min}    & none          &                      \\
-            \lstinline{.list::idx\_of\_max}    & none          &                      \\
-            \lstinline{.list::idx\_of\_min}    & none          &                      \\
-            \lstinline{.list::copy}    & none          &                      \\
-            \lstinline{.list::sort}    & none          &                      \\
-            \lstinline{.list::reverse} & none          &                      \\
-            \lstinline{.list::clear}   & none          &                      \\
-            \lstinline{.list::pop}     & optional,     &                      \\
-            \lstinline{.list::index}   &               &                      \\
-            \lstinline{.list::append}  &               &                      \\
-            \lstinline{.list::extend}  &               &                      \\
-            \lstinline{.list::insert}  &               &                      \\
-            \lstinline{.list::remove}  &               &                      \\
-            \lstinline{.list::count}   &               &                      \\
+            \lstinline{.list::max}          & none          &                      \\
+            \lstinline{.list::min}          & none          &                      \\
+            \lstinline{.list::idx\_of\_max} & none          &                      \\
+            \lstinline{.list::idx\_of\_min} & none          &                      \\
+            \lstinline{.list::copy}         & none          &  Returns a shallow copy of the list  \\
+            \lstinline{.list::deepcopy}     & none          &  Returns a deep copy of the list  \\
+            \lstinline{.list::sort}         & none          &                      \\
+            \lstinline{.list::reverse}      & none          &                      \\
+            \lstinline{.list::clear}        & none          &                      \\
+            \lstinline{.list::pop}          & optional,     &                      \\
+            \lstinline{.list::index}        &               &                      \\
+            \lstinline{.list::append}       &               &                      \\
+            \lstinline{.list::extend}       &               &                      \\
+            \lstinline{.list::insert}       &               &                      \\
+            \lstinline{.list::remove}       &               &                      \\
+            \lstinline{.list::count}        &               &                      \\
             \bottomrule
         \end{tabular}
         \caption{Precedence of operations in Jac}
@@ -129,16 +130,17 @@
         \centering
         \begin{tabular}{l l l}
             \toprule
-            \textbf{Op}             & \textbf{Args} & \textbf{Description} \\
+            \textbf{Op}                 & \textbf{Args} & \textbf{Description}                      \\
             \midrule
-            \lstinline{.dict::items}   & none          &                      \\
-            \lstinline{.dict::copy}    & none          &                      \\
-            \lstinline{.dict::keys}    & none          &                      \\
-            \lstinline{.dict::clear}   & none          &                      \\
-            \lstinline{.dict::popitem} & none          &                      \\
-            \lstinline{.dict::values}  & none          &                      \\
-            \lstinline{.dict::pop}     &               &                      \\
-            \lstinline{.dict::update}  &               &                      \\
+            \lstinline{.dict::items}    & none          &                                           \\
+            \lstinline{.dict::copy}     & none          & Returns a shallow copy of the dictionary \\
+            \lstinline{.dict::deepcopy} & none          & Returns a deep copy of the dictionary     \\
+            \lstinline{.dict::keys}     & none          &                                           \\
+            \lstinline{.dict::clear}    & none          &                                           \\
+            \lstinline{.dict::popitem}  & none          &                                           \\
+            \lstinline{.dict::values}   & none          &                                           \\
+            \lstinline{.dict::pop}      &               &                                           \\
+            \lstinline{.dict::update}   &               &                                           \\
             \bottomrule
         \end{tabular}
         \caption{Precedence of operations in Jac}
