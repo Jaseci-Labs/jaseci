@@ -9,10 +9,11 @@ from jaseci.actions.live_actions import jaseci_action
 import random
 import json
 import shutil
-
 from .utils.evaluate import get_embeddings  # noqa
 from .utils.models import BiEncoder  # noqa
 from .utils.train import train_model  # noqa
+import mlflow
+from mlflow.tracking import MlflowClient
 
 
 # device = torch.device("cpu")
@@ -20,6 +21,28 @@ from .utils.train import train_model  # noqa
 # this is commented out because this causes issues with
 # unittest on machines with GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+# getting experiment Id if None then creat new one
+def start_mlflow_exp(tracking_uri, tfm_exp_name):
+    # adding tracking url for storing parameter and merics data
+    mlflow.set_tracking_uri(tracking_uri)
+    # getting experiment Id if None then creat new one
+    experiment_id = mlflow.get_experiment_by_name(tfm_exp_name)
+    if experiment_id is None:
+        experiment_id = mlflow.create_experiment(tfm_exp_name)
+    else:
+        experiment_id = experiment_id.experiment_id
+    print("experiment_id : ", experiment_id)
+    return experiment_id
+
+
+# changing stages of register model default values("Staging", "Production")
+def transition(model_name, version, stage):
+    client = MlflowClient()
+    client.transition_model_version_stage(
+        name=model_name, version=version, stage=stage, archive_existing_versions=True
+    )
 
 
 # funtion to set seed for the module
@@ -159,43 +182,110 @@ def infer(
         )
 
 
+def training(use_mlflow, model, training_parameters, dataset, train_data):
+    model.train()
+    if training_parameters is not None:
+        with open(t_config_fname, "w+") as jsonfile:
+            train_config.update(training_parameters)
+            json.dump(train_config, jsonfile, indent=4)
+    for data in dataset.keys():
+        for dat in dataset[data]:
+            train_data["contexts"].append(dat)
+            train_data["candidates"].append(data)
+            train_data["labels"].append(1)
+    model = train_model(
+        use_mlflow=use_mlflow,
+        model=model,
+        tokenizer=tokenizer,
+        contexts=train_data["contexts"],
+        candidates=train_data["candidates"],
+        labels=train_data["labels"],
+        train_config=train_config,
+    )
+    return model
+
+
 # API for training
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
-def train(dataset: Dict = None, from_scratch=False, training_parameters: Dict = None):
+def train(
+    use_mlflow: bool = False,
+    tracking_uri: str = "sqlite:///mlrunsdb.db",
+    exp_name: str = "bi_encoder",
+    exp_run_name: str = "bi_encoder",
+    description: str = "Running the latest model on snips dataset",
+    dataset: Dict = None,
+    from_scratch=False,
+    training_parameters: Dict = None,
+):
     """
     Take list of context, candidate, labels and trains the model
     """
     global model
-    train_data = {"contexts": [], "candidates": [], "labels": []}
-    if from_scratch is True:
-        save_model(model_config["model_save_path"])
-        config_setup()
-    model.train()
     try:
-        if training_parameters is not None:
-            with open(t_config_fname, "w+") as jsonfile:
-                train_config.update(training_parameters)
-                json.dump(train_config, jsonfile, indent=4)
-        for data in dataset.keys():
-            for dat in dataset[data]:
-                train_data["contexts"].append(dat)
-                train_data["candidates"].append(data)
-                train_data["labels"].append(1)
-        model = train_model(
-            model=model,
-            tokenizer=tokenizer,
-            contexts=train_data["contexts"],
-            candidates=train_data["candidates"],
-            labels=train_data["labels"],
-            train_config=train_config,
-        )
-        return "Model Training is complete."
+
+        train_data = {"contexts": [], "candidates": [], "labels": []}
+        if from_scratch is True:
+            save_model(model_config["model_save_path"])
+            config_setup()
+
+        if use_mlflow is True:
+            experiment_id = start_mlflow_exp(tracking_uri, exp_name)
+            # start training with MLFlow
+            with mlflow.start_run(
+                run_name=exp_run_name,
+                experiment_id=experiment_id,
+                nested=True,
+                description=description,
+            ):
+                model = training(
+                    use_mlflow, model, training_parameters, dataset, train_data
+                )
+
+                mlflow.log_params(train_config)
+                # saving temp model
+                save_model("tmp")
+                # logging artifact model data
+                mlflow.log_artifacts(
+                    "tmp",
+                    artifact_path="bi_model/model",
+                )
+
+                # logging model data and registering model for versioning
+                mlflow.pytorch.log_model(
+                    model, artifact_path="bi_model", registered_model_name=exp_run_name
+                )
+                # delete temp model data
+                if os.path.exists("tmp"):
+                    shutil.rmtree("tmp")
+
+                # getting latest model version and registring model as Staging
+                client = MlflowClient()
+
+                ver_lst = [
+                    dict(mv)
+                    for mv in client.search_model_versions(f"name='{exp_run_name}'")
+                ]
+
+                version = ver_lst[-1]["version"]
+                source_path = ver_lst[-1]["source"] + "/model"
+
+                transition(model_name=exp_run_name, version=version, stage="Staging")
+                model_config.update({"staging_model_path": source_path + "/model"})
+                with open(m_config_fname, "w+") as jsonfile:
+                    json.dump(model_config, jsonfile, indent=4)
+
+                return "Model Training is complete."
+
+        else:
+            training(use_mlflow, model, training_parameters, dataset, train_data)
+            return "Model Training is complete."
+
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# API for geting Context Embedding
+# API for geting Context Embeddings
 @jaseci_action(act_group=["bi_enc"], aliases=["encode_context"], allow_remote=True)
 def get_context_emb(contexts: List):
     """
@@ -217,8 +307,6 @@ def get_context_emb(contexts: List):
 
 
 # API for geting Candidates Embedding
-
-
 @jaseci_action(act_group=["bi_enc"], aliases=["encode_candidate"], allow_remote=True)
 def get_candidate_emb(candidates: List):
     """
@@ -233,6 +321,16 @@ def get_candidate_emb(candidates: List):
         train_config=train_config,
     )
     return embedding
+
+
+# getting all available model versions on experiment run_name.
+@jaseci_action(act_group=["bi_enc"], allow_remote=True)
+def get_model_verions(model_name: str = "BI_ENCODER"):
+    client = MlflowClient()
+    mv_lst = []
+    for mv in client.search_model_versions(f"name='{model_name}'"):
+        mv_lst.append(dict(mv))
+    return mv_lst
 
 
 # API for setting the training and model parameters
@@ -373,6 +471,94 @@ def load_model(model_path):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def load_production_model(model_path):
+    global model_prod, tokenizer_prod
+    with open(m_config_fname, "r") as jsonfile:
+        model_config_data = json.load(jsonfile)
+    if model_config_data["shared"] is True:
+        trf_config_prod = AutoConfig.from_pretrained(model_path, local_files_only=True)
+        tokenizer_prod = AutoTokenizer.from_pretrained(
+            model_path, do_lower_case=True, clean_text=False
+        )
+        cont_bert_prod = AutoModel.from_pretrained(model_path, local_files_only=True)
+        cand_bert_prod = cont_bert_prod
+        print(f"Loading shared model from : {model_path}")
+    else:
+        cand_bert_path = os.path.join(model_path, "cand_bert")
+        cont_bert_path = os.path.join(model_path, "cont_bert")
+        print(f"Loading non-shared model from : {model_path}")
+        cont_bert_prod = AutoModel.from_pretrained(
+            cont_bert_path, local_files_only=True
+        )
+        cand_bert_prod = AutoModel.from_pretrained(
+            cand_bert_path, local_files_only=True
+        )
+        trf_config_prod = AutoConfig.from_pretrained(
+            cont_bert_path, local_files_only=True
+        )
+        tokenizer_prod = AutoTokenizer.from_pretrained(
+            cand_bert_path, do_lower_case=True, clean_text=False
+        )
+    model_prod = BiEncoder(
+        config=trf_config_prod,
+        cont_bert=cont_bert_prod,
+        cand_bert=cand_bert_prod,
+        shared=model_config_data["shared"],
+        loss_type=model_config["loss_type"],
+        loss_function=model_config["loss_function"],
+    )
+    model_prod.to(train_config["device"])
+
+
+@jaseci_action(act_group=["bi_enc"], allow_remote=True)
+def production_load_model(
+    prod_model_path: str = "registered_model_path",
+    prod_model_name: str = "BI_ENCODER",
+    version: int = 1,
+):
+    """
+    loads the model from the provided model_path
+    """
+    if not os.path.exists(prod_model_path + "/model"):
+        raise HTTPException(status_code=404, detail="Model path is not available")
+    try:
+        load_production_model(prod_model_path + "/model")
+        client = MlflowClient()
+        client.transition_model_version_stage(
+            name=prod_model_name,
+            version=version,
+            stage="Production",
+            archive_existing_versions=True,
+        )
+        model_config.update(
+            {
+                "prod_model_path": prod_model_path + "/model",
+                "prod_model_name": prod_model_name,
+                "prod_model_version": version,
+            }
+        )
+        with open(m_config_fname, "w+") as jsonfile:
+            json.dump(model_config, jsonfile, indent=4)
+        return f"[loaded model from] : {prod_model_path + '/model'}"
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# production loading model.
+def prod_model():
+    """
+    loads the model from the provided production model_path
+    """
+    try:
+        load_production_model(model_config["prod_model_path"])
+    except Exception:
+        print("Production model is not available, Please load from rtegistered models.")
+
+
+prod_model()
 
 
 if __name__ == "__main__":
