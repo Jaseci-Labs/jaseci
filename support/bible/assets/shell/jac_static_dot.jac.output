@@ -1,0 +1,36 @@
+{
+  "success": true,
+  "report": [
+    {
+      "context": {},
+      "anchor": null,
+      "name": "root",
+      "kind": "generic",
+      "jid": "urn:uuid:0ac65923-90b5-4c10-bda0-65ec6a2c36e7",
+      "j_timestamp": "2022-03-21T00:41:16.715258",
+      "j_type": "graph"
+    },
+    {
+      "context": {
+        "name": "root"
+      },
+      "anchor": null,
+      "name": "test_node",
+      "kind": "node",
+      "jid": "urn:uuid:60e68110-7a11-446e-a333-57d75d12e7d7",
+      "j_timestamp": "2022-03-21T00:41:16.750759",
+      "j_type": "node"
+    },
+    {
+      "context": {
+        "name": "node_1"
+      },
+      "anchor": null,
+      "name": "test_node",
+      "kind": "node",
+      "jid": "urn:uuid:fecae690-a50d-4f2c-91e2-e8ec083c5443",
+      "j_timestamp": "2022-03-21T00:41:16.750876",
+      "j_type": "node"
+    }
+  ]
+}

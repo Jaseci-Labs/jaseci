@@ -1,0 +1,155 @@
+\chapter{Graphs, Architypes, and Walkers in Jac}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Structure of a Jac Program}
+
+\par [Introduce structure of a jac program] \par
+\par [Specify the differnce between graph architypes, graph instantiations, and walkers]\par
+\par [Present simple program that utilizes the structures]\par
+\par [Present variations on articulating the same program]\par
+\par [Code blocks]\par
+
+\begin{nerd}
+    Grammar~\ref{gram:jac.g4:3:16} shows the lines from the formal grammar for Jac that presents the high level structure of a Jac program.
+    \gramcoderange{jac.g4}{Jac grammar clip relevant to arithmetic}{3}{16}
+\end{nerd}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Graphs as First Class Citizens}
+
+\subsection{Connect and Spawn operations}
+
+%%%%%%%
+\par
+\jaccode{jac_simple_walker.jac}{Simple walker creating and connected nodes}
+\par
+\jacdotnw{jac_simple_walker}{.3}{Graph in memory for JC~\ref{jac:jac_simple_walker.jac}}
+
+
+%%%%%%%
+\par
+\jaccode{jac_named_node_edge.jac}{Creating named node types}
+\par
+\jacdotnw{jac_named_node_edge}{.3}{Graph in memory for JC~\ref{jac:jac_named_node_edge.jac}}
+
+%%%%%%%
+\par
+\jaccode{jac_spawn_connect.jac}{Connecting nodes within spawn statement}
+\par
+\jacdotnw{jac_spawn_connect}{.3}{Graph in memory for JC~\ref{jac:jac_spawn_connect.jac}}
+
+%%%%%%%
+\par
+\jaccode{jac_connect_chain.jac}{Chaining node connections using the connect operator}
+\par
+\jacdotnw{jac_connect_chain}{.3}{Graph in memory for JC~\ref{jac:jac_connect_chain.jac}}
+
+Another incredibly useful notion to consider about connect operations is that they can be chained.
+The same graph shown in Figure~\ref{dot:jac_connect_chain} can be achieved with the chained usage of the connect operation in line 8 of JC~\ref{jac:jac_connect_chain.jac}. Here nodes are chained in an intuitive left-to-right manor. Relatively sophisticated graph structures can be rapidly expressed using chained connect operations.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Walkers as the second First Class Citizens}
+
+%%%%%%%
+\par
+\jaccode{jac_walker_spawn_walker.jac}{Walkers spawning other walkers}
+\par
+\shellout{jac_walker_spawn_walker.jac.output}
+\par
+\jacdotnw{jac_walker_spawn_walker}{.3}{Graph in memory for JC~\ref{jac:jac_walker_spawn_walker.jac}}
+
+%%%%%%%
+\par
+\jaccode{jac_walker_returns.jac}{Getting returned values from spawned walkers}
+\par
+\shellout{jac_walker_returns.jac.output}
+\par
+\jacdotnw{jac_walker_returns}{.3}{Graph in memory for JC~\ref{jac:jac_walker_returns.jac}}
+\par
+\jaccode{jac_walker_returns_alt.jac}{Increasing elegance by remembering spawns are expressions}
+
+%%%%%%%
+Walkers are entry points to all valid jac programs
+\par
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Architypes}
+
+%%%%%%%
+\par
+\jaccode{jac_contexts.jac}{Binding member contexts to nodes and edges
+}
+\par
+\shellout{jac_contexts.jac.output}
+\par
+\jacdotnw{jac_contexts}{.3}{Graph in memory for JC~\ref{jac:jac_contexts.jac}}
+
+%%%%%%%
+\par
+\jaccode{jac_contexts_alt.jac}{Binding contexts with less code
+}
+\par
+\shellout{jac_contexts_alt.jac.output}
+
+%%%%%%%
+\par
+\jaccode{jac_copy_assign.jac}{Copy assigning from node to node
+}
+\par
+\shellout{jac_copy_assign.jac.output}
+\par
+\jacdotnw{jac_copy_assign}{.5}{Graph in memory for JC~\ref{jac:jac_copy_assign.jac}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Actions and Abilities}
+
+%%%%%%%
+\par
+\jacdotnw{jac_action}{.3}{Graph in memory for JC~\ref{jac:jac_action.jac} and~\ref{jac:jac_node_action.jac}}
+\par
+\jaccode{jac_action.jac}{Basic action in walker
+}
+\par
+\shellout{jac_action.jac.output}
+\par
+\jaccode{jac_node_action.jac}{Basic action in node
+}
+
+%%%%%%%
+\par
+\jaccode{jac_preset_action.jac}{Basic action with presets and event triggers
+}
+\par
+\shellout{jac_preset_action.jac.output}
+\par
+\jaccode{jac_node_act_note.jac}{Basic action with presets and event triggers
+}
+\par [Only nodes can have with entry/exit`' and presets]
+\par [can leave output (push returns) in node and walker]
+
+%%%%%%%
+\par
+\jaccode{jac_local_action.jac}{Abilities in nodes}
+\subsection{here and visitor, the `this' references of Jac}
+Observe the usage of \texttt{here} and \texttt{visitor} in the \texttt{person} node architype in JC~\ref{jac:jac_local_action.jac}.
+These are synonymous to the this reference present in many other languages except \texttt{here} point to the current node scope relevant to the execution point in the program and \texttt{visitor} points to the relevant walker scope relevant to that given point of execution. These references provide full access to all \texttt{has} variables and builtin attributes and operations of the referenced object instance.
+\par
+Do note that in the context of the \texttt{person} node abilities in JC~\ref{jac:jac_local_action.jac} a here reference to say \texttt{here.name = "joe";} would be equivalent to simply \texttt{name = "joe";} however to capture the \texttt{here.context} (or info/details/etc) the \texttt{here} reference becomes quite useful. The similar relationship applies to using \texttt{visitor} in walker abilities.
+
+\par
+\shellout{jac_preset_action.jac.output}
+%%%%%%%
+\par
+\jaccode{jac_local_wlk_action.jac}{Actions and Abilities in Walkers
+}
+\par [here and visitor should be present everywhere]
+\par [here should point to wherever the walker is on at all times]
+\par [directly accessing variables in a nodes ability will not necesarily map to here]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Inheritance}

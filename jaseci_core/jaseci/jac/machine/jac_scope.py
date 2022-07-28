@@ -41,8 +41,8 @@ class jac_scope:
         self.local_scope["here"] = jac_elem_wrap(cur_node)
         self.local_scope["visitor"] = jac_elem_wrap(cur_walker)
 
-    def inherit_agent_refs(self, src_scope):
-        self.local_scope["here"] = src_scope.local_scope["here"]
+    def inherit_agent_refs(self, src_scope, src_node):  # used for calls of abilities
+        self.local_scope["here"] = jac_elem_wrap(src_node)
         self.local_scope["visitor"] = src_scope.local_scope["visitor"]
 
     def get_aganet_refs(self):
