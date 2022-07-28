@@ -144,7 +144,10 @@ class edge(element, anchored):
             target.edge_ids.remove_obj(self)
         element.destroy(self)
 
-    def dot_str(self, node_map=None, edge_map=None):
+    def handle_str(self, str):
+        return str[:32].replace('"', '\\"')
+
+    def dot_str(self, node_map=None, edge_map=None, detailed=False):
         """
         DOT representation
         from_node -> to_node [context_key=contect_value]
@@ -174,11 +177,11 @@ class edge(element, anchored):
 
         edge_dict = self.context
 
-        if edge_dict:
+        if edge_dict and detailed:
             for k, v in edge_dict.items():
                 if not isinstance(v, str) or v == "":
                     continue
-                dstr += f', {k}="{v[:32]}"'
+                dstr += f', {k}="{self.handle_str(v)}"'
 
         dstr += " ]"
 
