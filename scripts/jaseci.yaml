@@ -215,4 +215,3 @@ data:
   redis-config: |
     maxmemory 1000mb
     maxmemory-policy allkeys-lru
-
