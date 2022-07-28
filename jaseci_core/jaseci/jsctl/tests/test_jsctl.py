@@ -78,6 +78,10 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call("walker run gen_rand_life")
         r = self.call("graph get -mode dot")
         self.assertIn('"n0" -> "n', r)
+        self.assertNotIn('week="', r)
+
+        r = self.call("graph get -mode dot -detailed true")
+        self.assertIn('"n0" -> "n', r)
         self.assertIn('week="', r)
 
     def test_jsctl_aliases(self):

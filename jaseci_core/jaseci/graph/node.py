@@ -354,7 +354,10 @@ class node(element, anchored):
             i.destroy()
         super().destroy()
 
-    def dot_str(self, node_map=None):
+    def handle_str(self, str):
+        return str[:32].replace('"', '\\"')
+
+    def dot_str(self, node_map=None, detailed=False):
         """
         DOT representation
         """
@@ -368,11 +371,11 @@ class node(element, anchored):
 
         node_dict = self.context
 
-        if node_dict:
+        if node_dict and detailed:
             for k, v in node_dict.items():
                 if not isinstance(v, str) or v == "":
                     continue
-                dstr += f', {k}="{v[:32]}"'
+                dstr += f', {k}="{self.handle_str(v)}"'
 
         dstr += " ]"
 
