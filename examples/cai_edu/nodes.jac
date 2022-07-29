@@ -20,7 +20,11 @@ node cai_state {
         }
     }
 
-    can gen_response {}
+    # Generate response
+    can gen_response {
+        visitor.response =
+            "Sorry I can't handle that just yet! Anything else I can help you with";
+    }
 
     # Process incoming request through NLU engines
     can nlu {
