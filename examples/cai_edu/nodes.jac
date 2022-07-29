@@ -1,31 +1,26 @@
 # Parent class for conversational AI state
 node cai_state {
     has name;
-    has cand_intents;
-
-    # Collect the list of possible intents at this state
-    can collect_intents {
-        here.cand_intents = [];
-        for i in -[intent_transition]->.edge {
-            here.cand_intents.l::append(i.intent);
-        }
-    }
+    has prepared_entities = {
+            "name": "Tony Stark",
+            "address": "10880 Malibu Point"
+    };
 
     # Classify the intent of the question
     can classify_intent {
         # NOTE: Hardcode to select the first intent from the list
-        visitor.predicted_intent = here.cand_intents[0];
+        visitor.predicted_intent = visitor.intent_override;
     }
 
     # Extract words of interests from the question
     can extract_entities {
         # NOTE: Hardcode to select the first intent from the list
-        visitor.extracted_entities = [
-            "name", "address"
-        ];
+        for ent in visitor.entity_override {
+            visitor.extracted_entities[ent] = prepared_entities[ent];
+        }
     }
 
-    can gen_response;
+    can gen_response {}
 
     # Process incoming request through NLU engines
     can nlu {

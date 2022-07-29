@@ -3,21 +3,22 @@ import {*} with "./edges.jac";
 
 walker talk {
     has question;
+    has intent_override, entity_override;
     has predicted_intent, extracted_entities;
     has traveled = false;
     has response;
 
     cai_state {
         if (!traveled) {
-            ::nlu;
-            take -[entity_transition(entities=extract_entities.d:keys)]-> else {
-                take -[intent_transition(intent=predicted_intent)] -> else {
+            here::nlu;
+            take -[entity_transition(entities=extract_entities.d::keys)]-> node::cai_state else {
+                take -[intent_transition(intent=predicted_intent)]-> node::cai_state else {
                     take here;
                 }
             }
             traveled = true;
         } else {
-            ::nlg;
+            here::nlg;
             report {"response": response};
         }
     }
@@ -26,7 +27,7 @@ walker talk {
 graph tesla_sales_rep {
     has anchor state_cai_root;
     spawn {
-        state_cai_root = spanw node::cai_root;
+        state_cai_root = spawn node::cai_root;
         state_collect_info  = spawn node::collect_info;
         state_confirmation = spawn node::confirmation;
         state_confirmed = spawn node::confirmed;
@@ -55,6 +56,7 @@ graph tesla_sales_rep {
         state_confirmation -[intent_transition(
             intent = "cancel"
         )]-> state_canceled;
+    }
 }
 
 walker init {
