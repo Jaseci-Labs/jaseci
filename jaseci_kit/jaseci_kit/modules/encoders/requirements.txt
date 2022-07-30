@@ -3,3 +3,4 @@ sentence-transformers
 pytorch
 fastapi
 uvicorn
+mlflow
