@@ -24,7 +24,6 @@ export class Card {
     Object.assign(this.host.style, {
       'box-sizing': 'border-box',
       'overflowX': 'auto',
-      ...JSON.parse(this.css),
     });
 
     setUpEvents(this.host, this.events);
@@ -35,6 +34,9 @@ export class Card {
     return (
       <div
         data-theme={getTheme()}
+        style={{
+          ...JSON.parse(this.css),
+        }}
         class={clsx(
           ['card bg-base-200'],
           [

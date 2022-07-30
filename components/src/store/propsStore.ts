@@ -29,7 +29,7 @@ export function storeProp(renderedTag: string, propName: string, value: any) {
   return result;
 }
 
-export function getProp(id: string, fallback?: any) {
+export function getProp<T extends any[] | Record<any, any>>(id: string, fallback?: any): T {
   return propsStore.state.props[id] || fallback;
 }
 
@@ -37,4 +37,12 @@ export const complexProps: Partial<Record<ComponentTags, Array<string>>> = {
   'jsc-datagrid': ['rows', 'headings'],
   'jsc-datalist': ['getters', 'template', 'layoutProps', 'body'],
   'jsc-tabs': ['tabs'],
+  'jsc-dropdown': ['buttonProps', 'items'],
+  'jsc-nav-bar': ['links'],
+  'jsc-select': ['options'],
+  'jsc-radio-group': ['options'],
+  'jsc-breadcrumbs': ['links'],
+  'jsc-button-group': ['buttons'],
+  'jsc-hero': ['action'],
+  'jsc-stat': ['stats'],
 };

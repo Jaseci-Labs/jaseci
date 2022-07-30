@@ -6,6 +6,7 @@ type ComponentTags =
   | 'jsc-row'
   | 'jsc-button'
   | 'jsc-inputbox'
+  | 'jsc-speech-input'
   | 'jsc-textbox'
   | 'jsc-column'
   | 'jsc-text'
@@ -20,17 +21,52 @@ type ComponentTags =
   | 'jsc-popover'
   | 'jsc-tabs'
   | 'jsc-tab'
+  | 'jsc-dropdown'
+  | 'jsc-select'
+  | 'jsc-tooltip'
+  | 'jsc-radio'
+  | 'jsc-radio-group'
+  | 'jsc-checkbox'
+  | 'jsc-toggle'
+  | 'jsc-range'
+  | 'jsc-alert'
+  | 'jsc-collapse'
+  | 'jsc-avatar'
+  | 'jsc-carousel'
+  | 'jsc-badge'
+  | 'jsc-button-group'
+  | 'jsc-progress'
+  | 'jsc-rating'
+  | 'jsc-drawer'
+  | 'jsc-breadcrumbs'
+  | 'jsc-hero'
+  | 'jsc-stat'
   | 'jsc-chip';
 
 type ComponentNames =
   | 'App'
   | 'Navbar'
+  | 'Stat'
+  | 'Hero'
+  | 'Progress'
+  | 'Badge'
+  | 'ButtonGroup'
+  | 'Drawer'
   | 'NavLink'
+  | 'Carousel'
+  | 'Avatar'
+  | 'Collapse'
+  | 'Range'
+  | 'Checkbox'
+  | 'Toggle'
   | 'Container'
   | 'Row'
+  | 'Radio'
+  | 'RadioGroup'
   | 'Column'
   | 'Button'
   | 'Inputbox'
+  | 'SpeechInput'
   | 'Textbox'
   | 'Text'
   | 'Card'
@@ -44,6 +80,12 @@ type ComponentNames =
   | 'Popover'
   | 'Tabs'
   | 'Tab'
+  | 'Breadcrumbs'
+  | 'Rating'
+  | 'Select'
+  | 'Dropdown'
+  | 'Alert'
+  | 'Tooltip'
   | 'Chip';
 
 interface JaseciComponent {
@@ -62,6 +104,7 @@ type JaseciAction = {
   fn: JaseciActionName;
   args: Array<string | number>;
   key?: string;
+  theme?: string;
   // used to specify operation in runOperation
   operation?: string;
   list?: string;
@@ -81,6 +124,22 @@ type JaseciOperation = {
 
 type JaseciComponentProps = Record<string, unknown>;
 type JaseciEventName = 'onClick' | 'onKeyPress' | 'onEnterKeyPress' | 'onMount';
-type JaseciActionName = 'alert' | 'update' | 'log' | 'append' | 'add' | 'runOperation' | 'callEndpoint' | 'runForEach' | 'refreshDatagrid' | 'storeValue' | 'navigate' | 'emit';
+type JaseciActionName =
+  | 'alert'
+  | 'update'
+  | 'log'
+  | 'append'
+  | 'add'
+  | 'runOperation'
+  | 'callEndpoint'
+  | 'runForEach'
+  | 'refreshDatagrid'
+  | 'storeValue'
+  | 'navigate'
+  | 'emit'
+  | 'showToast'
+  | 'speechToText'
+  | 'textToSpeech'
+  | 'setTheme';
 type ActionConditionName = 'eq' | 'neq' | 'gt' | 'lt';
 type ActionCondition = `${string}::#${ActionConditionName}::${string}`;

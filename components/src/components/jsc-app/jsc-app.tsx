@@ -102,6 +102,7 @@ export class App {
     return (
       <div data-theme={getTheme()}>
         <div innerHTML={renderComponentTree(this.markup)} class="bg-base-100"></div>
+        <jsc-toast></jsc-toast>
       </div>
     );
   }

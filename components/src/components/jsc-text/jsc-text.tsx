@@ -10,18 +10,12 @@ import { getOperations } from '../../utils/utils';
 export class Text {
   @Prop() variant: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' = 'p';
   @Prop() value: string;
-  @Prop() state: string = JSON.stringify({ counterValue: 2 });
   @Prop() operations: string;
   @Prop() css: string = JSON.stringify({});
   @Prop() events: string;
   @Prop() name: string;
 
   @Element() host: HTMLElement;
-
-  // try this to add arbitrary state to components
-  // setUpState() {
-  // this.host['counterValue'] = 200;
-  // }
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);

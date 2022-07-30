@@ -26,8 +26,10 @@
     "generate": "stencil generate"
   },
   "dependencies": {
+    "@radix-ui/colors": "^0.1.8",
     "@stencil/core": "^2.13.0",
     "@stencil/store": "^1.5.0",
+    "artyom.js": "^1.0.6",
     "clsx": "^1.1.1",
     "daisyui": "^2.15.4",
     "dayjs": "^1.11.2",
@@ -41,6 +43,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.2",
+    "@types/artyom.js": "^1.0.6",
     "@types/jest": "^27.0.3",
     "@types/node": "^18.0.0",
     "jest": "^27.4.5",

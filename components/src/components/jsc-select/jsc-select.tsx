@@ -9,7 +9,7 @@ import { getOperations } from '../../utils/utils';
   styleUrl: 'jsc-select.css',
   shadow: true,
 })
-export class Input {
+export class Select {
   @Prop({ reflect: true }) value: string;
   @Prop() css: string = JSON.stringify({});
   @Prop() name: string;
@@ -89,7 +89,7 @@ export class Input {
         </select>
         {/* register some classes so they aren't purged by daisy-ui */}
         {false && (
-          <select class="select-primary select-secondary select-accent select-info select-error select-warning select-success select-sm select-lg select-xs select-xl"></select>
+          <select class="select-xl select-primary select-secondary select-accent select-info select-success select-warning select-error select-lg select-sm select-xs"></select>
         )}
       </div>
     );

@@ -1,5 +1,5 @@
 :root {
-  --card-border-fallback:
+  --card-border-fallback: ;
 }
 
 :host {
@@ -13,8 +13,7 @@
   }
 } */
 
-
 .card-bordered {
-  border-color: var(--card-border, hsl(var(--b2, var(--b1))/var(--tw-border-opacity)))
-    /* @apply card-border-color */
+  border-color: var(--card-border, hsl(var(--b2, var(--b1)) / var(--tw-border-opacity)));
+  /* @apply card-border-color */
 }

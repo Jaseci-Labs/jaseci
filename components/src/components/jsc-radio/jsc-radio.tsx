@@ -8,7 +8,7 @@ import { getOperations } from '../../utils/utils';
   styleUrl: 'jsc-radio.css',
   shadow: true,
 })
-export class Input {
+export class Radio {
   @Prop({ reflect: true }) value: string;
   @Prop() css: string = JSON.stringify({});
   @Prop() name: string;
@@ -75,7 +75,7 @@ export class Input {
             placeholder={this.placeholder}
           ></input>
         </label>
-        {false && <input class="radio-primary radio-secondary radio-accent radio-info radio-error radio-warning radio-success radio-sm radio-lg radio-xs radio-xl"></input>}
+        {false && <input class="radio-info radio-error radio-warning radio-success radio-xl radio-primary radio-secondary radio-accent radio-xs radio-sm radio-lg"></input>}
       </div>
     );
   }

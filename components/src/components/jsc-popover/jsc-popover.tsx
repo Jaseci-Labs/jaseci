@@ -61,8 +61,9 @@ export class Popover {
       if (this.open === 'true') return;
       this.open = 'true';
       const targetComponent = getComponentByName(this.target);
+      console.log({ target: this.target, comp: targetComponent, contentsHeight });
       const targetRect = targetComponent.getBoundingClientRect();
-      const offsetY = 220;
+      const offsetY = 220 + 100;
 
       this.top = `${targetRect.top + window.scrollY - (offsetY + contentsHeight)}px`;
       this.left = `${targetRect.left + window.scrollX}px`;

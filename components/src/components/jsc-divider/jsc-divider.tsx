@@ -1,4 +1,5 @@
 import { Component, Element, h, Prop } from '@stencil/core';
+import clsx from 'clsx';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
 
@@ -12,6 +13,8 @@ export class Divider {
   @Prop() css: string = JSON.stringify({});
   @Prop({ mutable: true }) events: string;
   @Prop() name: string;
+  @Prop() label?: string;
+  @Prop() orientation?: string;
   @Prop() color?: string = 'rgb(206, 212, 218)';
   @Prop() size?: string = '1px';
   @Prop({ mutable: true }) operations;
@@ -31,6 +34,6 @@ export class Divider {
   }
 
   render() {
-    return <div class="divider" style={{ borderTopColor: this.color, borderWidth: this.size }}></div>;
+    return <div class={clsx('divider', this.orientation === 'vertical' && 'divider-horizontal')}>{this.label}</div>;
   }
 }

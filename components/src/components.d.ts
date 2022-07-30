@@ -7,13 +7,23 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ItemsPropValue, JustifyPropValue } from "./types/propTypes";
 export namespace Components {
+    interface JscAlert {
+        "css": string;
+        "events": string;
+        "message": string;
+        "name": string;
+        "operations": any;
+        "palette": 'success' | 'info' | 'warning' | 'error';
+    }
     interface JscAnchor {
         "css": string;
         "events": string;
+        "hover": 'true' | 'false';
         "href": string;
         "label": string;
         "name": string;
         "operations": string;
+        "palette": 'primary' | 'secondary' | 'accent' | 'neutral';
         "target": string;
     }
     interface JscApp {
@@ -21,16 +31,55 @@ export namespace Components {
         "setGlobalConfig": (config: Record<string, any> & { css: Record<string, string>; }) => Promise<void>;
         "setMarkup": (value: any) => Promise<void>;
     }
+    interface JscAvatar {
+        "css": string;
+        "events": string;
+        "name": string;
+        "operations": any;
+        "placeholder": string;
+        "size": string;
+        "src": string;
+        "variant": string;
+    }
+    interface JscBadge {
+        "css": string;
+        "events": string;
+        "label": string;
+        "name": string;
+        "operations": any;
+        "palette": string;
+        "size": string;
+    }
+    interface JscBreadcrumbs {
+        "css": string;
+        "events": string;
+        "label": string;
+        "links": string;
+        "name": string;
+        "operations": string;
+    }
     interface JscButton {
+        "active": string;
         "color": string;
         "css": string;
         "events": string;
         "label": string;
         "name": string;
+        "noRadius": string;
         "operations": string;
-        "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "palette": 'primary' | 'secondary' | 'accent' | 'link' | 'info' | 'success' | 'warning' | 'error' | 'ghost';
         "size": 'sm' | 'md' | 'lg' | 'xs';
+        "tooltip": string;
+        "tooltipPalette": string;
+        "tooltipPosition": string;
         "variant": 'default' | 'link';
+    }
+    interface JscButtonGroup {
+        "buttons": string;
+        "css": string;
+        "events": string;
+        "name": string;
+        "operations": any;
     }
     interface JscCard {
         "css": string;
@@ -39,7 +88,32 @@ export namespace Components {
         "operations": any;
         "radius": 'sm' | 'md' | 'lg' | 'full';
         "shadow": 'sm' | 'md' | 'lg' | 'xl';
+        "title": string;
         "variant": 'shadow' | 'outline';
+    }
+    interface JscCarousel {
+        "css": string;
+        "events": string;
+        "label": string;
+        "name": string;
+        "operations": any;
+        "palette": string;
+        "placeholder": string;
+        "size": string;
+        "slide": string;
+    }
+    interface JscCheckbox {
+        "css": string;
+        "events": string;
+        "fullwidth": string;
+        "label": string;
+        "name": string;
+        "operations": string;
+        "palette": 'primary' | 'secondary' | 'accent';
+        "placeholder": string;
+        "size": 'xs' | 'sm' | 'md' | 'lg';
+        "type": string;
+        "value": string;
     }
     interface JscChip {
         "css": string;
@@ -47,6 +121,15 @@ export namespace Components {
         "label": string;
         "name": string;
         "operations": any;
+    }
+    interface JscCollapse {
+        "css": string;
+        "events": string;
+        "icon": 'plus' | 'arrow';
+        "label": string;
+        "name": string;
+        "operations": any;
+        "palette": 'primary' | 'secondary' | 'accent';
     }
     interface JscColumn {
         "css": string;
@@ -87,8 +170,6 @@ export namespace Components {
         "data": [];
         "events": string;
         "getters": string;
-        "items": ItemsPropValue;
-        "justify": JustifyPropValue;
         "layout": 'Column' | 'Row' | 'None';
         "layoutProps": string;
         "name": string;
@@ -128,9 +209,49 @@ export namespace Components {
         "color"?: string;
         "css": string;
         "events": string;
+        "label"?: string;
         "name": string;
         "operations": any;
+        "orientation"?: string;
         "size"?: string;
+    }
+    interface JscDrawer {
+        "closeDrawer": () => Promise<void>;
+        "css": string;
+        "events": string;
+        "listeners": string;
+        "name": string;
+        "open": string;
+        "operations": any;
+        "title": string;
+    }
+    interface JscDropdown {
+        "buttonProps": string;
+        "css": string;
+        "events": string;
+        "items": string;
+        "label": string;
+        "name": string;
+        "operations": any;
+    }
+    interface JscDropdownItem {
+        "css": string;
+        "events": string;
+        "href": string;
+        "label": string;
+        "name": string;
+        "operations": string;
+        "target": string;
+    }
+    interface JscHero {
+        "action": string;
+        "backgroundImage": string;
+        "css": string;
+        "description": string;
+        "events": string;
+        "label": string;
+        "name": string;
+        "operations": any;
     }
     interface JscInputbox {
         "altLabel": string;
@@ -158,6 +279,7 @@ export namespace Components {
           * The title of the app bar.
          */
         "label": string;
+        "links": string;
         "name": string;
         "operations": string;
     }
@@ -194,6 +316,70 @@ export namespace Components {
         "playPresenceAnimation": () => Promise<void>;
         "top": string;
     }
+    interface JscProgress {
+        "css": string;
+        "events": string;
+        "max": number;
+        "name": string;
+        "operations": any;
+        "palette": string;
+        "size": string;
+        "value": number;
+    }
+    interface JscRadio {
+        "altLabel": string;
+        "css": string;
+        "events": string;
+        "fullwidth": string;
+        "label": string;
+        "name": string;
+        "operations": string;
+        "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "placeholder": string;
+        "type": string;
+        "value": string;
+    }
+    interface JscRadioGroup {
+        "css": string;
+        "events": string;
+        "fullwidth": string;
+        "label": string;
+        "name": string;
+        "operations": string;
+        "options": string;
+        "palette": string;
+        "placeholder": string;
+        "type": string;
+        "value": string;
+    }
+    interface JscRange {
+        "altLabel": string;
+        "css": string;
+        "defaultValue": string;
+        "events": string;
+        "fullwidth": string;
+        "label": string;
+        "max": string;
+        "min": string;
+        "name": string;
+        "operations": string;
+        "palette": 'primary' | 'secondary' | 'accent';
+        "placeholder": string;
+        "showValue": string;
+        "size": 'xs' | 'sm' | 'md' | 'lg';
+        "type": string;
+        "value": string;
+    }
+    interface JscRating {
+        "css": string;
+        "events": string;
+        "label": string;
+        "name": string;
+        "operations": string;
+        "palette": 'primary' | 'secondary' | 'accent' | 'neutral' | 'warning' | 'error' | 'info' | 'success';
+        "stars": string;
+        "value": string;
+    }
     interface JscRow {
         "css": string;
         "events": string;
@@ -202,6 +388,45 @@ export namespace Components {
         "justify": JustifyPropValue;
         "name": string;
         "operations": string;
+    }
+    interface JscSelect {
+        "altLabel": string;
+        "css": string;
+        "events": string;
+        "fullwidth": string;
+        "label": string;
+        "name": string;
+        "operations": string;
+        "options": string;
+        "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "placeholder": string;
+        "type": string;
+        "value": string;
+    }
+    interface JscSpeechInput {
+        "active": boolean;
+        "altLabel": string;
+        "css": string;
+        "events": string;
+        "fullwidth": string;
+        "label": string;
+        "name": string;
+        "operations": string;
+        "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "placeholder": string;
+        "type": string;
+        "value": string;
+    }
+    interface JscStat {
+        "css": string;
+        "description": string;
+        "events": string;
+        "label": string;
+        "name": string;
+        "operations": any;
+        "stats": string;
+        "total": string;
+        "value": string;
     }
     interface JscTabs {
         "container": HTMLElement;
@@ -221,7 +446,6 @@ export namespace Components {
         "events": string;
         "name": string;
         "operations": string;
-        "state": string;
         "value": string;
         "variant": 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     }
@@ -233,9 +457,37 @@ export namespace Components {
         "label": string;
         "name": string;
         "operations": string;
-        "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "palette": 'primary' | 'secondary' | 'accent';
         "placeholder": string;
         "value": string;
+    }
+    interface JscToast {
+        "css": string;
+        "events": string;
+        "name": string;
+        "operations": any;
+    }
+    interface JscToggle {
+        "altLabel": string;
+        "css": string;
+        "events": string;
+        "fullwidth": string;
+        "label": string;
+        "name": string;
+        "operations": string;
+        "palette": 'primary' | 'secondary' | 'accent' | 'info' | 'success' | 'warning' | 'error';
+        "placeholder": string;
+        "size": 'xs' | 'sm' | 'md' | 'lg';
+        "type": string;
+        "value": string;
+    }
+    interface JscTooltip {
+        "css": string;
+        "events": string;
+        "label": string;
+        "name": string;
+        "operations": any;
+        "target": string;
     }
     interface MyComponent {
         /**
@@ -253,6 +505,12 @@ export namespace Components {
     }
 }
 declare global {
+    interface HTMLJscAlertElement extends Components.JscAlert, HTMLStencilElement {
+    }
+    var HTMLJscAlertElement: {
+        prototype: HTMLJscAlertElement;
+        new (): HTMLJscAlertElement;
+    };
     interface HTMLJscAnchorElement extends Components.JscAnchor, HTMLStencilElement {
     }
     var HTMLJscAnchorElement: {
@@ -265,11 +523,35 @@ declare global {
         prototype: HTMLJscAppElement;
         new (): HTMLJscAppElement;
     };
+    interface HTMLJscAvatarElement extends Components.JscAvatar, HTMLStencilElement {
+    }
+    var HTMLJscAvatarElement: {
+        prototype: HTMLJscAvatarElement;
+        new (): HTMLJscAvatarElement;
+    };
+    interface HTMLJscBadgeElement extends Components.JscBadge, HTMLStencilElement {
+    }
+    var HTMLJscBadgeElement: {
+        prototype: HTMLJscBadgeElement;
+        new (): HTMLJscBadgeElement;
+    };
+    interface HTMLJscBreadcrumbsElement extends Components.JscBreadcrumbs, HTMLStencilElement {
+    }
+    var HTMLJscBreadcrumbsElement: {
+        prototype: HTMLJscBreadcrumbsElement;
+        new (): HTMLJscBreadcrumbsElement;
+    };
     interface HTMLJscButtonElement extends Components.JscButton, HTMLStencilElement {
     }
     var HTMLJscButtonElement: {
         prototype: HTMLJscButtonElement;
         new (): HTMLJscButtonElement;
+    };
+    interface HTMLJscButtonGroupElement extends Components.JscButtonGroup, HTMLStencilElement {
+    }
+    var HTMLJscButtonGroupElement: {
+        prototype: HTMLJscButtonGroupElement;
+        new (): HTMLJscButtonGroupElement;
     };
     interface HTMLJscCardElement extends Components.JscCard, HTMLStencilElement {
     }
@@ -277,11 +559,29 @@ declare global {
         prototype: HTMLJscCardElement;
         new (): HTMLJscCardElement;
     };
+    interface HTMLJscCarouselElement extends Components.JscCarousel, HTMLStencilElement {
+    }
+    var HTMLJscCarouselElement: {
+        prototype: HTMLJscCarouselElement;
+        new (): HTMLJscCarouselElement;
+    };
+    interface HTMLJscCheckboxElement extends Components.JscCheckbox, HTMLStencilElement {
+    }
+    var HTMLJscCheckboxElement: {
+        prototype: HTMLJscCheckboxElement;
+        new (): HTMLJscCheckboxElement;
+    };
     interface HTMLJscChipElement extends Components.JscChip, HTMLStencilElement {
     }
     var HTMLJscChipElement: {
         prototype: HTMLJscChipElement;
         new (): HTMLJscChipElement;
+    };
+    interface HTMLJscCollapseElement extends Components.JscCollapse, HTMLStencilElement {
+    }
+    var HTMLJscCollapseElement: {
+        prototype: HTMLJscCollapseElement;
+        new (): HTMLJscCollapseElement;
     };
     interface HTMLJscColumnElement extends Components.JscColumn, HTMLStencilElement {
     }
@@ -331,6 +631,30 @@ declare global {
         prototype: HTMLJscDividerElement;
         new (): HTMLJscDividerElement;
     };
+    interface HTMLJscDrawerElement extends Components.JscDrawer, HTMLStencilElement {
+    }
+    var HTMLJscDrawerElement: {
+        prototype: HTMLJscDrawerElement;
+        new (): HTMLJscDrawerElement;
+    };
+    interface HTMLJscDropdownElement extends Components.JscDropdown, HTMLStencilElement {
+    }
+    var HTMLJscDropdownElement: {
+        prototype: HTMLJscDropdownElement;
+        new (): HTMLJscDropdownElement;
+    };
+    interface HTMLJscDropdownItemElement extends Components.JscDropdownItem, HTMLStencilElement {
+    }
+    var HTMLJscDropdownItemElement: {
+        prototype: HTMLJscDropdownItemElement;
+        new (): HTMLJscDropdownItemElement;
+    };
+    interface HTMLJscHeroElement extends Components.JscHero, HTMLStencilElement {
+    }
+    var HTMLJscHeroElement: {
+        prototype: HTMLJscHeroElement;
+        new (): HTMLJscHeroElement;
+    };
     interface HTMLJscInputboxElement extends Components.JscInputbox, HTMLStencilElement {
     }
     var HTMLJscInputboxElement: {
@@ -367,11 +691,59 @@ declare global {
         prototype: HTMLJscPopoverContainerElement;
         new (): HTMLJscPopoverContainerElement;
     };
+    interface HTMLJscProgressElement extends Components.JscProgress, HTMLStencilElement {
+    }
+    var HTMLJscProgressElement: {
+        prototype: HTMLJscProgressElement;
+        new (): HTMLJscProgressElement;
+    };
+    interface HTMLJscRadioElement extends Components.JscRadio, HTMLStencilElement {
+    }
+    var HTMLJscRadioElement: {
+        prototype: HTMLJscRadioElement;
+        new (): HTMLJscRadioElement;
+    };
+    interface HTMLJscRadioGroupElement extends Components.JscRadioGroup, HTMLStencilElement {
+    }
+    var HTMLJscRadioGroupElement: {
+        prototype: HTMLJscRadioGroupElement;
+        new (): HTMLJscRadioGroupElement;
+    };
+    interface HTMLJscRangeElement extends Components.JscRange, HTMLStencilElement {
+    }
+    var HTMLJscRangeElement: {
+        prototype: HTMLJscRangeElement;
+        new (): HTMLJscRangeElement;
+    };
+    interface HTMLJscRatingElement extends Components.JscRating, HTMLStencilElement {
+    }
+    var HTMLJscRatingElement: {
+        prototype: HTMLJscRatingElement;
+        new (): HTMLJscRatingElement;
+    };
     interface HTMLJscRowElement extends Components.JscRow, HTMLStencilElement {
     }
     var HTMLJscRowElement: {
         prototype: HTMLJscRowElement;
         new (): HTMLJscRowElement;
+    };
+    interface HTMLJscSelectElement extends Components.JscSelect, HTMLStencilElement {
+    }
+    var HTMLJscSelectElement: {
+        prototype: HTMLJscSelectElement;
+        new (): HTMLJscSelectElement;
+    };
+    interface HTMLJscSpeechInputElement extends Components.JscSpeechInput, HTMLStencilElement {
+    }
+    var HTMLJscSpeechInputElement: {
+        prototype: HTMLJscSpeechInputElement;
+        new (): HTMLJscSpeechInputElement;
+    };
+    interface HTMLJscStatElement extends Components.JscStat, HTMLStencilElement {
+    }
+    var HTMLJscStatElement: {
+        prototype: HTMLJscStatElement;
+        new (): HTMLJscStatElement;
     };
     interface HTMLJscTabsElement extends Components.JscTabs, HTMLStencilElement {
     }
@@ -391,6 +763,24 @@ declare global {
         prototype: HTMLJscTextboxElement;
         new (): HTMLJscTextboxElement;
     };
+    interface HTMLJscToastElement extends Components.JscToast, HTMLStencilElement {
+    }
+    var HTMLJscToastElement: {
+        prototype: HTMLJscToastElement;
+        new (): HTMLJscToastElement;
+    };
+    interface HTMLJscToggleElement extends Components.JscToggle, HTMLStencilElement {
+    }
+    var HTMLJscToggleElement: {
+        prototype: HTMLJscToggleElement;
+        new (): HTMLJscToggleElement;
+    };
+    interface HTMLJscTooltipElement extends Components.JscTooltip, HTMLStencilElement {
+    }
+    var HTMLJscTooltipElement: {
+        prototype: HTMLJscTooltipElement;
+        new (): HTMLJscTooltipElement;
+    };
     interface HTMLMyComponentElement extends Components.MyComponent, HTMLStencilElement {
     }
     var HTMLMyComponentElement: {
@@ -398,11 +788,19 @@ declare global {
         new (): HTMLMyComponentElement;
     };
     interface HTMLElementTagNameMap {
+        "jsc-alert": HTMLJscAlertElement;
         "jsc-anchor": HTMLJscAnchorElement;
         "jsc-app": HTMLJscAppElement;
+        "jsc-avatar": HTMLJscAvatarElement;
+        "jsc-badge": HTMLJscBadgeElement;
+        "jsc-breadcrumbs": HTMLJscBreadcrumbsElement;
         "jsc-button": HTMLJscButtonElement;
+        "jsc-button-group": HTMLJscButtonGroupElement;
         "jsc-card": HTMLJscCardElement;
+        "jsc-carousel": HTMLJscCarouselElement;
+        "jsc-checkbox": HTMLJscCheckboxElement;
         "jsc-chip": HTMLJscChipElement;
+        "jsc-collapse": HTMLJscCollapseElement;
         "jsc-column": HTMLJscColumnElement;
         "jsc-container": HTMLJscContainerElement;
         "jsc-datagrid": HTMLJscDatagridElement;
@@ -411,43 +809,107 @@ declare global {
         "jsc-dialog": HTMLJscDialogElement;
         "jsc-dialog-container": HTMLJscDialogContainerElement;
         "jsc-divider": HTMLJscDividerElement;
+        "jsc-drawer": HTMLJscDrawerElement;
+        "jsc-dropdown": HTMLJscDropdownElement;
+        "jsc-dropdown-item": HTMLJscDropdownItemElement;
+        "jsc-hero": HTMLJscHeroElement;
         "jsc-inputbox": HTMLJscInputboxElement;
         "jsc-label": HTMLJscLabelElement;
         "jsc-nav-bar": HTMLJscNavBarElement;
         "jsc-nav-link": HTMLJscNavLinkElement;
         "jsc-popover": HTMLJscPopoverElement;
         "jsc-popover-container": HTMLJscPopoverContainerElement;
+        "jsc-progress": HTMLJscProgressElement;
+        "jsc-radio": HTMLJscRadioElement;
+        "jsc-radio-group": HTMLJscRadioGroupElement;
+        "jsc-range": HTMLJscRangeElement;
+        "jsc-rating": HTMLJscRatingElement;
         "jsc-row": HTMLJscRowElement;
+        "jsc-select": HTMLJscSelectElement;
+        "jsc-speech-input": HTMLJscSpeechInputElement;
+        "jsc-stat": HTMLJscStatElement;
         "jsc-tabs": HTMLJscTabsElement;
         "jsc-text": HTMLJscTextElement;
         "jsc-textbox": HTMLJscTextboxElement;
+        "jsc-toast": HTMLJscToastElement;
+        "jsc-toggle": HTMLJscToggleElement;
+        "jsc-tooltip": HTMLJscTooltipElement;
         "my-component": HTMLMyComponentElement;
     }
 }
 declare namespace LocalJSX {
+    interface JscAlert {
+        "css"?: string;
+        "events"?: string;
+        "message"?: string;
+        "name"?: string;
+        "operations"?: any;
+        "palette"?: 'success' | 'info' | 'warning' | 'error';
+    }
     interface JscAnchor {
         "css"?: string;
         "events"?: string;
+        "hover"?: 'true' | 'false';
         "href"?: string;
         "label"?: string;
         "name"?: string;
         "operations"?: string;
+        "palette"?: 'primary' | 'secondary' | 'accent' | 'neutral';
         "target"?: string;
     }
     interface JscApp {
         "markup"?: JaseciComponent[];
         "onOnRender"?: (event: CustomEvent<string>) => void;
     }
+    interface JscAvatar {
+        "css"?: string;
+        "events"?: string;
+        "name"?: string;
+        "operations"?: any;
+        "placeholder"?: string;
+        "size"?: string;
+        "src"?: string;
+        "variant"?: string;
+    }
+    interface JscBadge {
+        "css"?: string;
+        "events"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: any;
+        "palette"?: string;
+        "size"?: string;
+    }
+    interface JscBreadcrumbs {
+        "css"?: string;
+        "events"?: string;
+        "label"?: string;
+        "links"?: string;
+        "name"?: string;
+        "operations"?: string;
+    }
     interface JscButton {
+        "active"?: string;
         "color"?: string;
         "css"?: string;
         "events"?: string;
         "label"?: string;
         "name"?: string;
+        "noRadius"?: string;
         "operations"?: string;
-        "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "palette"?: 'primary' | 'secondary' | 'accent' | 'link' | 'info' | 'success' | 'warning' | 'error' | 'ghost';
         "size"?: 'sm' | 'md' | 'lg' | 'xs';
+        "tooltip"?: string;
+        "tooltipPalette"?: string;
+        "tooltipPosition"?: string;
         "variant"?: 'default' | 'link';
+    }
+    interface JscButtonGroup {
+        "buttons"?: string;
+        "css"?: string;
+        "events"?: string;
+        "name"?: string;
+        "operations"?: any;
     }
     interface JscCard {
         "css"?: string;
@@ -456,7 +918,33 @@ declare namespace LocalJSX {
         "operations"?: any;
         "radius"?: 'sm' | 'md' | 'lg' | 'full';
         "shadow"?: 'sm' | 'md' | 'lg' | 'xl';
+        "title"?: string;
         "variant"?: 'shadow' | 'outline';
+    }
+    interface JscCarousel {
+        "css"?: string;
+        "events"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: any;
+        "palette"?: string;
+        "placeholder"?: string;
+        "size"?: string;
+        "slide"?: string;
+    }
+    interface JscCheckbox {
+        "css"?: string;
+        "events"?: string;
+        "fullwidth"?: string;
+        "label"?: string;
+        "name"?: string;
+        "onValueChanged"?: (event: CustomEvent<string>) => void;
+        "operations"?: string;
+        "palette"?: 'primary' | 'secondary' | 'accent';
+        "placeholder"?: string;
+        "size"?: 'xs' | 'sm' | 'md' | 'lg';
+        "type"?: string;
+        "value"?: string;
     }
     interface JscChip {
         "css"?: string;
@@ -464,6 +952,15 @@ declare namespace LocalJSX {
         "label"?: string;
         "name"?: string;
         "operations"?: any;
+    }
+    interface JscCollapse {
+        "css"?: string;
+        "events"?: string;
+        "icon"?: 'plus' | 'arrow';
+        "label"?: string;
+        "name"?: string;
+        "operations"?: any;
+        "palette"?: 'primary' | 'secondary' | 'accent';
     }
     interface JscColumn {
         "css"?: string;
@@ -503,8 +1000,6 @@ declare namespace LocalJSX {
         "data"?: [];
         "events"?: string;
         "getters"?: string;
-        "items"?: ItemsPropValue;
-        "justify"?: JustifyPropValue;
         "layout"?: 'Column' | 'Row' | 'None';
         "layoutProps"?: string;
         "name"?: string;
@@ -541,9 +1036,48 @@ declare namespace LocalJSX {
         "color"?: string;
         "css"?: string;
         "events"?: string;
+        "label"?: string;
         "name"?: string;
         "operations"?: any;
+        "orientation"?: string;
         "size"?: string;
+    }
+    interface JscDrawer {
+        "css"?: string;
+        "events"?: string;
+        "listeners"?: string;
+        "name"?: string;
+        "open"?: string;
+        "operations"?: any;
+        "title"?: string;
+    }
+    interface JscDropdown {
+        "buttonProps"?: string;
+        "css"?: string;
+        "events"?: string;
+        "items"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: any;
+    }
+    interface JscDropdownItem {
+        "css"?: string;
+        "events"?: string;
+        "href"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: string;
+        "target"?: string;
+    }
+    interface JscHero {
+        "action"?: string;
+        "backgroundImage"?: string;
+        "css"?: string;
+        "description"?: string;
+        "events"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: any;
     }
     interface JscInputbox {
         "altLabel"?: string;
@@ -572,6 +1106,7 @@ declare namespace LocalJSX {
           * The title of the app bar.
          */
         "label"?: string;
+        "links"?: string;
         "name"?: string;
         "operations"?: string;
     }
@@ -603,6 +1138,73 @@ declare namespace LocalJSX {
         "open"?: boolean;
         "top"?: string;
     }
+    interface JscProgress {
+        "css"?: string;
+        "events"?: string;
+        "max"?: number;
+        "name"?: string;
+        "operations"?: any;
+        "palette"?: string;
+        "size"?: string;
+        "value"?: number;
+    }
+    interface JscRadio {
+        "altLabel"?: string;
+        "css"?: string;
+        "events"?: string;
+        "fullwidth"?: string;
+        "label"?: string;
+        "name"?: string;
+        "onValueChanged"?: (event: CustomEvent<string>) => void;
+        "operations"?: string;
+        "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "placeholder"?: string;
+        "type"?: string;
+        "value"?: string;
+    }
+    interface JscRadioGroup {
+        "css"?: string;
+        "events"?: string;
+        "fullwidth"?: string;
+        "label"?: string;
+        "name"?: string;
+        "onValueChanged"?: (event: CustomEvent<string>) => void;
+        "operations"?: string;
+        "options"?: string;
+        "palette"?: string;
+        "placeholder"?: string;
+        "type"?: string;
+        "value"?: string;
+    }
+    interface JscRange {
+        "altLabel"?: string;
+        "css"?: string;
+        "defaultValue"?: string;
+        "events"?: string;
+        "fullwidth"?: string;
+        "label"?: string;
+        "max"?: string;
+        "min"?: string;
+        "name"?: string;
+        "onValueChanged"?: (event: CustomEvent<string>) => void;
+        "operations"?: string;
+        "palette"?: 'primary' | 'secondary' | 'accent';
+        "placeholder"?: string;
+        "showValue"?: string;
+        "size"?: 'xs' | 'sm' | 'md' | 'lg';
+        "type"?: string;
+        "value"?: string;
+    }
+    interface JscRating {
+        "css"?: string;
+        "events"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: string;
+        "palette"?: 'primary' | 'secondary' | 'accent' | 'neutral' | 'warning' | 'error' | 'info' | 'success';
+        "stars"?: string;
+        "value"?: string;
+    }
     interface JscRow {
         "css"?: string;
         "events"?: string;
@@ -611,6 +1213,47 @@ declare namespace LocalJSX {
         "justify"?: JustifyPropValue;
         "name"?: string;
         "operations"?: string;
+    }
+    interface JscSelect {
+        "altLabel"?: string;
+        "css"?: string;
+        "events"?: string;
+        "fullwidth"?: string;
+        "label"?: string;
+        "name"?: string;
+        "onValueChanged"?: (event: CustomEvent<string>) => void;
+        "operations"?: string;
+        "options"?: string;
+        "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "placeholder"?: string;
+        "type"?: string;
+        "value"?: string;
+    }
+    interface JscSpeechInput {
+        "active"?: boolean;
+        "altLabel"?: string;
+        "css"?: string;
+        "events"?: string;
+        "fullwidth"?: string;
+        "label"?: string;
+        "name"?: string;
+        "onValueChanged"?: (event: CustomEvent<string>) => void;
+        "operations"?: string;
+        "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "placeholder"?: string;
+        "type"?: string;
+        "value"?: string;
+    }
+    interface JscStat {
+        "css"?: string;
+        "description"?: string;
+        "events"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: any;
+        "stats"?: string;
+        "total"?: string;
+        "value"?: string;
     }
     interface JscTabs {
         "container"?: HTMLElement;
@@ -629,7 +1272,6 @@ declare namespace LocalJSX {
         "events"?: string;
         "name"?: string;
         "operations"?: string;
-        "state"?: string;
         "value"?: string;
         "variant"?: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     }
@@ -642,9 +1284,38 @@ declare namespace LocalJSX {
         "name"?: string;
         "onValueChanged"?: (event: CustomEvent<string>) => void;
         "operations"?: string;
-        "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+        "palette"?: 'primary' | 'secondary' | 'accent';
         "placeholder"?: string;
         "value"?: string;
+    }
+    interface JscToast {
+        "css"?: string;
+        "events"?: string;
+        "name"?: string;
+        "operations"?: any;
+    }
+    interface JscToggle {
+        "altLabel"?: string;
+        "css"?: string;
+        "events"?: string;
+        "fullwidth"?: string;
+        "label"?: string;
+        "name"?: string;
+        "onValueChanged"?: (event: CustomEvent<string>) => void;
+        "operations"?: string;
+        "palette"?: 'primary' | 'secondary' | 'accent' | 'info' | 'success' | 'warning' | 'error';
+        "placeholder"?: string;
+        "size"?: 'xs' | 'sm' | 'md' | 'lg';
+        "type"?: string;
+        "value"?: string;
+    }
+    interface JscTooltip {
+        "css"?: string;
+        "events"?: string;
+        "label"?: string;
+        "name"?: string;
+        "operations"?: any;
+        "target"?: string;
     }
     interface MyComponent {
         /**
@@ -661,11 +1332,19 @@ declare namespace LocalJSX {
         "middle"?: string;
     }
     interface IntrinsicElements {
+        "jsc-alert": JscAlert;
         "jsc-anchor": JscAnchor;
         "jsc-app": JscApp;
+        "jsc-avatar": JscAvatar;
+        "jsc-badge": JscBadge;
+        "jsc-breadcrumbs": JscBreadcrumbs;
         "jsc-button": JscButton;
+        "jsc-button-group": JscButtonGroup;
         "jsc-card": JscCard;
+        "jsc-carousel": JscCarousel;
+        "jsc-checkbox": JscCheckbox;
         "jsc-chip": JscChip;
+        "jsc-collapse": JscCollapse;
         "jsc-column": JscColumn;
         "jsc-container": JscContainer;
         "jsc-datagrid": JscDatagrid;
@@ -674,16 +1353,31 @@ declare namespace LocalJSX {
         "jsc-dialog": JscDialog;
         "jsc-dialog-container": JscDialogContainer;
         "jsc-divider": JscDivider;
+        "jsc-drawer": JscDrawer;
+        "jsc-dropdown": JscDropdown;
+        "jsc-dropdown-item": JscDropdownItem;
+        "jsc-hero": JscHero;
         "jsc-inputbox": JscInputbox;
         "jsc-label": JscLabel;
         "jsc-nav-bar": JscNavBar;
         "jsc-nav-link": JscNavLink;
         "jsc-popover": JscPopover;
         "jsc-popover-container": JscPopoverContainer;
+        "jsc-progress": JscProgress;
+        "jsc-radio": JscRadio;
+        "jsc-radio-group": JscRadioGroup;
+        "jsc-range": JscRange;
+        "jsc-rating": JscRating;
         "jsc-row": JscRow;
+        "jsc-select": JscSelect;
+        "jsc-speech-input": JscSpeechInput;
+        "jsc-stat": JscStat;
         "jsc-tabs": JscTabs;
         "jsc-text": JscText;
         "jsc-textbox": JscTextbox;
+        "jsc-toast": JscToast;
+        "jsc-toggle": JscToggle;
+        "jsc-tooltip": JscTooltip;
         "my-component": MyComponent;
     }
 }
@@ -691,11 +1385,19 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "jsc-alert": LocalJSX.JscAlert & JSXBase.HTMLAttributes<HTMLJscAlertElement>;
             "jsc-anchor": LocalJSX.JscAnchor & JSXBase.HTMLAttributes<HTMLJscAnchorElement>;
             "jsc-app": LocalJSX.JscApp & JSXBase.HTMLAttributes<HTMLJscAppElement>;
+            "jsc-avatar": LocalJSX.JscAvatar & JSXBase.HTMLAttributes<HTMLJscAvatarElement>;
+            "jsc-badge": LocalJSX.JscBadge & JSXBase.HTMLAttributes<HTMLJscBadgeElement>;
+            "jsc-breadcrumbs": LocalJSX.JscBreadcrumbs & JSXBase.HTMLAttributes<HTMLJscBreadcrumbsElement>;
             "jsc-button": LocalJSX.JscButton & JSXBase.HTMLAttributes<HTMLJscButtonElement>;
+            "jsc-button-group": LocalJSX.JscButtonGroup & JSXBase.HTMLAttributes<HTMLJscButtonGroupElement>;
             "jsc-card": LocalJSX.JscCard & JSXBase.HTMLAttributes<HTMLJscCardElement>;
+            "jsc-carousel": LocalJSX.JscCarousel & JSXBase.HTMLAttributes<HTMLJscCarouselElement>;
+            "jsc-checkbox": LocalJSX.JscCheckbox & JSXBase.HTMLAttributes<HTMLJscCheckboxElement>;
             "jsc-chip": LocalJSX.JscChip & JSXBase.HTMLAttributes<HTMLJscChipElement>;
+            "jsc-collapse": LocalJSX.JscCollapse & JSXBase.HTMLAttributes<HTMLJscCollapseElement>;
             "jsc-column": LocalJSX.JscColumn & JSXBase.HTMLAttributes<HTMLJscColumnElement>;
             "jsc-container": LocalJSX.JscContainer & JSXBase.HTMLAttributes<HTMLJscContainerElement>;
             "jsc-datagrid": LocalJSX.JscDatagrid & JSXBase.HTMLAttributes<HTMLJscDatagridElement>;
@@ -704,16 +1406,31 @@ declare module "@stencil/core" {
             "jsc-dialog": LocalJSX.JscDialog & JSXBase.HTMLAttributes<HTMLJscDialogElement>;
             "jsc-dialog-container": LocalJSX.JscDialogContainer & JSXBase.HTMLAttributes<HTMLJscDialogContainerElement>;
             "jsc-divider": LocalJSX.JscDivider & JSXBase.HTMLAttributes<HTMLJscDividerElement>;
+            "jsc-drawer": LocalJSX.JscDrawer & JSXBase.HTMLAttributes<HTMLJscDrawerElement>;
+            "jsc-dropdown": LocalJSX.JscDropdown & JSXBase.HTMLAttributes<HTMLJscDropdownElement>;
+            "jsc-dropdown-item": LocalJSX.JscDropdownItem & JSXBase.HTMLAttributes<HTMLJscDropdownItemElement>;
+            "jsc-hero": LocalJSX.JscHero & JSXBase.HTMLAttributes<HTMLJscHeroElement>;
             "jsc-inputbox": LocalJSX.JscInputbox & JSXBase.HTMLAttributes<HTMLJscInputboxElement>;
             "jsc-label": LocalJSX.JscLabel & JSXBase.HTMLAttributes<HTMLJscLabelElement>;
             "jsc-nav-bar": LocalJSX.JscNavBar & JSXBase.HTMLAttributes<HTMLJscNavBarElement>;
             "jsc-nav-link": LocalJSX.JscNavLink & JSXBase.HTMLAttributes<HTMLJscNavLinkElement>;
             "jsc-popover": LocalJSX.JscPopover & JSXBase.HTMLAttributes<HTMLJscPopoverElement>;
             "jsc-popover-container": LocalJSX.JscPopoverContainer & JSXBase.HTMLAttributes<HTMLJscPopoverContainerElement>;
+            "jsc-progress": LocalJSX.JscProgress & JSXBase.HTMLAttributes<HTMLJscProgressElement>;
+            "jsc-radio": LocalJSX.JscRadio & JSXBase.HTMLAttributes<HTMLJscRadioElement>;
+            "jsc-radio-group": LocalJSX.JscRadioGroup & JSXBase.HTMLAttributes<HTMLJscRadioGroupElement>;
+            "jsc-range": LocalJSX.JscRange & JSXBase.HTMLAttributes<HTMLJscRangeElement>;
+            "jsc-rating": LocalJSX.JscRating & JSXBase.HTMLAttributes<HTMLJscRatingElement>;
             "jsc-row": LocalJSX.JscRow & JSXBase.HTMLAttributes<HTMLJscRowElement>;
+            "jsc-select": LocalJSX.JscSelect & JSXBase.HTMLAttributes<HTMLJscSelectElement>;
+            "jsc-speech-input": LocalJSX.JscSpeechInput & JSXBase.HTMLAttributes<HTMLJscSpeechInputElement>;
+            "jsc-stat": LocalJSX.JscStat & JSXBase.HTMLAttributes<HTMLJscStatElement>;
             "jsc-tabs": LocalJSX.JscTabs & JSXBase.HTMLAttributes<HTMLJscTabsElement>;
             "jsc-text": LocalJSX.JscText & JSXBase.HTMLAttributes<HTMLJscTextElement>;
             "jsc-textbox": LocalJSX.JscTextbox & JSXBase.HTMLAttributes<HTMLJscTextboxElement>;
+            "jsc-toast": LocalJSX.JscToast & JSXBase.HTMLAttributes<HTMLJscToastElement>;
+            "jsc-toggle": LocalJSX.JscToggle & JSXBase.HTMLAttributes<HTMLJscToggleElement>;
+            "jsc-tooltip": LocalJSX.JscTooltip & JSXBase.HTMLAttributes<HTMLJscTooltipElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
         }
     }

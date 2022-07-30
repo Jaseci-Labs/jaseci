@@ -2,17 +2,3 @@
   display: block;
   box-sizing: border-box;
 }
-
-.divider {
-  border-width: 1px;
-  border-right-style: initial;
-  border-bottom-style: initial;
-  border-left-style: initial;
-  border-right-color: initial;
-  border-bottom-color: initial;
-  border-left-color: initial;
-  border-image: initial;
-  border-top-color: rgb(206, 212, 218);
-  border-top-style: solid;
-  margin: 12px 0px;
-}

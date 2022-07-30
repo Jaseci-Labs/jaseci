@@ -1,4 +1,4 @@
-import { Component, Element, Event, EventEmitter, Fragment, h, Prop, Watch } from '@stencil/core';
+import { Component, Element, Event, EventEmitter, h, Prop, Watch } from '@stencil/core';
 import clsx from 'clsx';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
@@ -79,7 +79,7 @@ export class Input {
           placeholder={this.placeholder}
         ></input>
         {/* register some classes so they aren't purged by daisy-ui */}
-        {false && <input class="input-primary input-secondary input-accent input-info input-error input-warning input-success input-sm input-lg input-xs input-xl"></input>}
+        {false && <input class="input-xl input-primary input-secondary input-accent input-info input-success input-warning input-error input-lg input-sm input-xs"></input>}
       </div>
     );
   }

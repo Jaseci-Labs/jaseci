@@ -16,8 +16,6 @@ export class Datalist {
   @Prop() data: [];
   @Prop() css: string = JSON.stringify({});
   @Prop() events: string;
-  @Prop() justify: JustifyPropValue = 'start';
-  @Prop() items: ItemsPropValue = 'start';
   @Prop() operations: string;
   @Prop() server: string;
   @Prop() walker: string;

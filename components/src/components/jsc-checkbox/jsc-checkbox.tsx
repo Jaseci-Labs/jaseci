@@ -13,7 +13,6 @@ export class Checkbox {
   @Prop() css: string = JSON.stringify({});
   @Prop() name: string;
   @Prop() label: string;
-  @Prop() altLabel: string;
   @Prop() type: string = 'text';
   @Prop() events: string;
   @Prop() fullwidth: string;

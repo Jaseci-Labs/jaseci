@@ -16,10 +16,39 @@ export class Button {
   @Prop() name: string;
   @Prop() variant: 'default' | 'link' = 'default';
   @Prop() color: string;
+  @Prop() active: string;
+  @Prop() tooltip: string;
+  @Prop({ attribute: 'tooltipposition' }) tooltipPosition: string;
+  @Prop({ attribute: 'tooltippalette' }) tooltipPalette: string;
+  @Prop() noRadius: string;
   @Prop() css: string = JSON.stringify({});
   @Prop() operations: string;
-  @Prop() palette: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error' | 'ghost';
+  @Prop() palette: 'primary' | 'secondary' | 'accent' | 'link' | 'info' | 'success' | 'warning' | 'error' | 'ghost';
   @Prop() size: 'sm' | 'md' | 'lg' | 'xs' = 'md';
+
+  renderButton = () => (
+    <button
+      data-theme={getTheme()}
+      name={this.name}
+      style={JSON.parse(this.css as any)}
+      class={clsx([
+        `btn`,
+        'w-full',
+        this.palette && `btn-${this.palette}`,
+        this.variant === 'link' && ['btn-link'],
+        this.active === 'true' && ['btn-active'],
+        this.noRadius === 'true' && ['rounded-none'],
+        this.size && {
+          'btn-sm': this.size === 'sm',
+          'btn-lg': this.size === 'lg',
+          'btn-md': this.size === 'md',
+          'btn-xs': this.size === 'xs',
+        },
+      ])}
+    >
+      {this.label}
+    </button>
+  );
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);
@@ -37,27 +66,35 @@ export class Button {
   render() {
     return (
       <Fragment>
-        {/* register some classes so they aren't purged by daisy-ui */}
-        {false && <button class="btn-primary btn-seconary btn-info btn-accent btn-ghost btn-link btn-info btn-success btn-warning btn-error btn-xs"></button>}
+        {this.tooltip ? (
+          <div
+            class={clsx(
+              'tooltip',
+              this.tooltipPalette && {
+                'tooltip-primary': this.tooltipPalette === 'primary',
+                'tooltip-secondary': this.tooltipPalette === 'secondary',
+                'tooltip-accent': this.tooltipPalette === 'accent',
+                'tooltip-info': this.tooltipPalette === 'info',
+                'tooltip-success': this.tooltipPalette === 'success',
+                'tooltip-warning': this.tooltipPalette === 'warning',
+                'tooltip-error': this.tooltipPalette === 'error',
+              },
+              this.tooltipPosition && {
+                'tooltip-bottom': this.tooltipPosition === 'bottom',
+                'tooltip-left': this.tooltipPosition === 'left',
+                'tooltip-right': this.tooltipPosition === 'right',
+              },
+            )}
+            data-tip={this.tooltip}
+          >
+            {this.renderButton()}
+          </div>
+        ) : (
+          <Fragment>{this.renderButton()}</Fragment>
+        )}
 
-        <button
-          data-theme={getTheme()}
-          name={this.name}
-          style={JSON.parse(this.css as any)}
-          class={clsx([
-            `btn`,
-            this.palette && `btn-${this.palette}`,
-            this.variant === 'link' && ['btn-link'],
-            this.size && {
-              'btn-sm': this.size === 'sm',
-              'btn-lg': this.size === 'lg',
-              'btn-md': this.size === 'md',
-              'btn-xs': this.size === 'xs',
-            },
-          ])}
-        >
-          {this.label}
-        </button>
+        {/* register some classes so they aren't purged by daisy-ui */}
+        {false && <button class="btn-seconary btn-primary btn-accent btn-info btn-info btn-success btn-warning btn-error btn-ghost btn-link btn-xs w-full"></button>}
       </Fragment>
     );
   }

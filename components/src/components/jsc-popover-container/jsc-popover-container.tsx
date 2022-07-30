@@ -69,27 +69,9 @@ export class PopoverContainer {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h4 style={{ fontSize: '12px', minHeight: '12px' }}>{this.label}</h4>
 
-          <button
-            onClick={() => {
-              this.closePopover();
-            }}
-            class="close-button"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="icon icon-tabler icon-tabler-x"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="#0569DB"
-              fill="none"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
+          <button class="ml-4 btn btn-circle btn-xs" onClick={() => this.closePopover()}>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>

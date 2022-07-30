@@ -10,3 +10,7 @@ export const configStore = createStore({
 export const getTheme = () => {
   return configStore.state.config.theme;
 };
+
+export const setTheme = (theme: string) => {
+  return (configStore.state.config.theme = theme);
+};

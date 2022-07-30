@@ -1,6 +1,9 @@
 import { emit } from './events/emit';
 import { checkCond } from './conditions';
 import { renderComponentTree } from './utils';
+import { configStore, setTheme } from '../store/configStore';
+import { toastStore } from '../store/toastStore';
+import { textToSpeech } from './events/speech';
 
 export function setUpEvents(host: HTMLElement, events: string) {
   if (events) {
@@ -164,6 +167,9 @@ function runAction(action: JaseciAction, result?: any) {
       case 'emit':
         emit(parsedActionArgs[0]);
         break;
+      case 'textToSpeech':
+        textToSpeech(parsedActionArgs[0]);
+        break;
       case 'runOperation':
         const operation = action?.operation;
         const [opComponentName, operationName] = operation.split('.');
@@ -206,6 +212,18 @@ function runAction(action: JaseciAction, result?: any) {
 
         break;
 
+      case 'showToast':
+        type ToastConfig = typeof toastStore.state.config;
+
+        const toastConfig = parsedActionArgs[0] as ToastConfig;
+        toastStore.set('config', { message: toastConfig.message, timeout: toastConfig.timeout });
+        toastStore.set('hidden', false);
+
+        setTimeout(() => {
+          toastStore.set('hidden', true);
+        }, toastConfig.timeout);
+
+        break;
       case 'storeValue':
         if (action?.target === 'localstorage') {
           localStorage.setItem(parsedActionArgs[0], parsedActionArgs[1]);
@@ -214,6 +232,9 @@ function runAction(action: JaseciAction, result?: any) {
         action?.onCompleted && runAction(action?.onCompleted);
         break;
 
+      case 'setTheme':
+        setTheme(parsedActionArgs[0]);
+        break;
       case 'navigate':
         window.location.href = parsedActionArgs[0];
         break;
