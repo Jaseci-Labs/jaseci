@@ -144,14 +144,15 @@ class edge(element, anchored):
             target.edge_ids.remove_obj(self)
         element.destroy(self)
 
-    def handle_str(self, str):
-        return str[:32].replace('"', '\\"')
-
     def dot_str(self, node_map=None, edge_map=None, detailed=False):
         """
         DOT representation
         from_node -> to_node [context_key=contect_value]
         """
+
+        def handle_str(str):
+            return str[:32].replace('"', '\\"')
+
         from_name = (
             uuid.UUID(self.from_node().jid).hex
             if node_map is None
@@ -176,12 +177,15 @@ class edge(element, anchored):
             dstr += ', dir="both"'
 
         edge_dict = self.context
+        if "_private" in edge_dict:
+            for i in edge_dict["_private"]:
+                edge_dict.pop(i)
 
         if edge_dict and detailed:
             for k, v in edge_dict.items():
                 if not isinstance(v, str) or v == "":
                     continue
-                dstr += f', {k}="{self.handle_str(v)}"'
+                dstr += f', {k}="{handle_str(v)}"'
 
         dstr += " ]"
 

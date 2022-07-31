@@ -216,7 +216,6 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report[0]["name"], "daman@gmail.com")
 
     def test_root_is_node_type(self):
-        self.logger_on()
         mast = master(h=mem_hook())
         mast.sentinel_register(name="test", code=jtp.root_is_node_type, auto_run="")
         report = mast.general_interface_to_api(
@@ -259,3 +258,12 @@ class jac_tests(TestCaseHelper, TestCase):
             api_name="walker_run", params={"name": "init"}
         )
         self.assertEqual(report["report"], [9, 9, 10])
+
+    def test_dot_private_hidden(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.dot_private_hidden, auto_run="")
+        mast.general_interface_to_api(api_name="walker_run", params={"name": "init"})
+        report = mast.general_interface_to_api(
+            api_name="graph_get", params={"mode": "dot", "detailed": True}
+        )
+        self.assertNotIn("j=", report)
