@@ -40,7 +40,6 @@ test_training_data = [
             },
         ],
     },
-    {"context": '" We were made to sweat to win , " he said .', "entities": []},
     {
         "context": "ONE ROMANIAN DIES IN BUS CRASH IN BULGARIA .",
         "entities": [
@@ -132,7 +131,6 @@ test_training_data = [
             },
         ],
     },
-    {"context": "The accident was being investigated , police added .", "entities": []},
     {
         "context": "-- Sofia Newsroom , 359-2-84561",
         "entities": [
@@ -161,7 +159,6 @@ test_training_data = [
             },
         ],
     },
-    {"context": "*", "entities": []},
     {
         "context": "( Note - contents are displayed in reverse order to that in the printed Journal )",
         "entities": [
@@ -173,7 +170,6 @@ test_training_data = [
             }
         ],
     },
-    {"context": "*", "entities": []},
     {
         "context": "Corrigendum to Commission Regulation ( EC ) No 1464/96 of 25 July 1996 relating to a standing invitation to tender to determine levies and / or refunds on exports of white sugar ( OJ No L 187 of 26.7.1996 )",
         "entities": [
@@ -259,7 +255,6 @@ test_training_data = [
             },
         ],
     },
-    {"context": "1996-08-22", "entities": []},
     {
         "context": "In Home Health Inc said on Thursday it will appeal to the U.S. Federal District Court in Minneapolis a decision by the Health Care Financing Administration ( HCFA ) that denied reimbursement of certain costs under Medicaid .",
         "entities": [
@@ -479,7 +474,6 @@ test_training_data = [
             },
         ],
     },
-    {"context": "1996-08-22", "entities": []},
     {
         "context": "Best Products Co Chairman and Chief Executive Daniel Levy said Thursday he expected the company 's second-quarter results to be similar to the $ 34.6 million loss posted in the first quarter .",
         "entities": [
@@ -586,7 +580,6 @@ test_training_data = [
             }
         ],
     },
-    {"context": "It currently operates 169 stores in 23 states .", "entities": []},
     {
         "context": "For last year 's second quarter , which ended July 29 , 1995 , Best posted a loss of $ 7.1 million , or $ 0.23 per share , on sales of $ 311.9 million .",
         "entities": [
@@ -595,18 +588,6 @@ test_training_data = [
                 "entity_type": "ORG",
                 "start_index": 63,
                 "end_index": 67,
-            }
-        ],
-    },
-    {"context": "Measles exposure can lead to bowel disease - study .", "entities": []},
-    {
-        "context": "LONDON 1996-08-23",
-        "entities": [
-            {
-                "entity_value": "LONDON",
-                "entity_type": "LOC",
-                "start_index": 0,
-                "end_index": 6,
             }
         ],
     },
@@ -701,7 +682,6 @@ test_training_data = [
             }
         ],
     },
-    {"context": "Exposure to viruses can often cause birth defects .", "entities": []},
     {
         "context": "Most notably , women who get rubella ( German measles ) have a high risk of a stillborn baby .",
         "entities": [
@@ -802,17 +782,6 @@ test_training_data = [
         "entities": [
             {
                 "entity_value": "London",
-                "entity_type": "LOC",
-                "start_index": 0,
-                "end_index": 6,
-            }
-        ],
-    },
-    {
-        "context": "LONDON 1996-08-22",
-        "entities": [
-            {
-                "entity_value": "LONDON",
                 "entity_type": "LOC",
                 "start_index": 0,
                 "end_index": 6,
@@ -968,17 +937,6 @@ test_training_data = [
                 "start_index": 33,
                 "end_index": 42,
             },
-        ],
-    },
-    {
-        "context": "LONDON 1996-08-22",
-        "entities": [
-            {
-                "entity_value": "LONDON",
-                "entity_type": "LOC",
-                "start_index": 0,
-                "end_index": 6,
-            }
         ],
     },
 ]

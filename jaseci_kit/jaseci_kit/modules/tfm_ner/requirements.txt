@@ -3,3 +3,4 @@ pytorch
 fastapi
 uvicorn
 datasets
+mlflow
