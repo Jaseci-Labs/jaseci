@@ -28,31 +28,8 @@
 \par
 \jaccode{jac_fileio.jac}{File I/O Example}
 
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Static Graph Creation}
-
-\subsection{Static DOT Graphs}
 %%%%%%%
 \par
-\jaccode{jac_static_dot.jac}{A DOT style static graph}
-\par
-\shellout{jac_static_dot.jac.output}
-%%%%%%%
-\par
-\jaccode{jac_static_dot2.jac}{Another DOT style static graph}
-\par
-\shellout{jac_static_dot2.jac.output}
+\section{Visualizing Graph with Dot Output}
 
-\subsection{Static Spawn Graphs}
-%%%%%%%
-\par
-\jaccode{jac_static_spawn.jac}{A Spawn style static graph}
-
-%%%%%%%
-\par
-\jaccode{jac_static_spawn_dot.jac}{Associated DOT style static graph}
-
-
+A very useful feature of the Jaseci stack is the ability to dump a snapshot of a graph in memory as \texttt{dot} output. There are two core interfaces to access this feature.  The first is the \texttt{graph get} api. Simply set the \texttt{mode} parameter to ``dot'' and a dot representation of the graph will be printed. This API is present in both \texttt{jsctl} and the REST api. The other is to use texttt{jac dot [filename]}. This will run the program specified in filename, then print the state of the graph at the end of the program run as dot output. This \texttt{jac dot} api is only available through \texttt{jsctl}. For both of these apis, a \texttt{detailed} parameter can be used to get more information embedded in the dot output. In particular, any context variables that are string will be included in the nodes and edges of the dot output.

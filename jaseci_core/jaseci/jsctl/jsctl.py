@@ -300,7 +300,12 @@ def reset():
 def tool(op, output):
     out = ""
     if op == "cheatsheet":
-        out = f"{book().api_cheatsheet(extract_api_tree())}"
+        out = (
+            f"{book().api_cheatsheet(extract_api_tree())}".replace("_", "\_")
+            .replace("&\n", "\\\\\n")
+            .replace("self, ", "")
+            .replace("(self)", "()")
+        )
     elif op == "classes":
         out = book().api_spec()
     click.echo(out)
