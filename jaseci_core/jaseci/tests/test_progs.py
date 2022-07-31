@@ -1,4 +1,3 @@
-from ast import NotIn
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph

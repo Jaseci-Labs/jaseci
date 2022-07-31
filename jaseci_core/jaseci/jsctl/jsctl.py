@@ -301,7 +301,7 @@ def tool(op, output):
     out = ""
     if op == "cheatsheet":
         out = (
-            f"{book().api_cheatsheet(extract_api_tree())}".replace("_", "\_")
+            f"{book().api_cheatsheet(extract_api_tree())}".replace("_", "\\_")
             .replace("&\n", "\\\\\n")
             .replace("self, ", "")
             .replace("(self)", "()")
