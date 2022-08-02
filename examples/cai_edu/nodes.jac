@@ -8,13 +8,13 @@ node cai_state {
 
     # Classify the intent of the question
     can classify_intent {
-        # NOTE: Hardcode to select the first intent from the list
+        # NOTE: Hardcode intent for now
         visitor.predicted_intent = visitor.intent_override;
     }
 
     # Extract words of interests from the question
     can extract_entities {
-        # NOTE: Hardcode to select the first intent from the list
+        # NOTE: Hardcode entities for now
         for ent in visitor.entity_override {
             visitor.extracted_entities[ent] = prepared_entities[ent];
         }
@@ -22,6 +22,7 @@ node cai_state {
 
     # Generate response
     can gen_response {
+        # Default response
         visitor.response =
             "Sorry I can't handle that just yet! Anything else I can help you with";
     }
@@ -38,11 +39,31 @@ node cai_state {
     }
 }
 
+# node cai_va_state:cai_state {
+#     intent
+#     entities
+# }
+# node faq_state:cai_state {
+#     can nlu
+#     {
+#         use_qa stuff
+#     }
+#     can gen_response
+# }
+# collect_info:cai_va_state
+
 node collect_info:cai_state {
     has name = "collect_info";
     can gen_response {
-        visitor.response =
-            "To set you up for a test drive, we will need your name and address.";
+        if ("name" in visitor.extracted_entities and
+                "address" not in visitor.extracted_entities):
+            visitor.response = "What is your address?"
+        elif ("address" in visitor.extracted_entities and
+                "name" not in visitor.extracted_entities):
+            visitor.response = "What is your name?"
+        else:
+            visitor.response =
+                "To set you up with a test drive, we will need your name and address.";
     }
 }
 

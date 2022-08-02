@@ -12,7 +12,7 @@ walker talk {
         if (!traveled) {
             here::nlu;
             # Entity transition takes precedance over intent transition
-            take -[entity_transition(entities=extract_entities.d::keys)]-> node::cai_state else {
+            take -[entity_transition(entities=extracted_entities.d::keys)]-> node::cai_state else {
                 take -[intent_transition(intent=predicted_intent)]-> node::cai_state else {
                     # Fall back to stay at current state if no valid transitions can be taken
                     take here;
