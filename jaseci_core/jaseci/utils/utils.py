@@ -1,5 +1,4 @@
 import io
-import multiprocessing
 import pstats
 import cProfile
 import pdb
@@ -32,7 +31,7 @@ def connect_logger_handler(target_logger, handler, level=logging.WARN):
     target_logger.addHandler(handler)
 
 
-logger = multiprocessing.get_logger()
+logger = logging.getLogger("core")
 if len(logger.handlers) < 1:
     connect_logger_handler(logger, logging.StreamHandler(), logging.INFO)
 
@@ -43,7 +42,7 @@ if len(app_logger.handlers) < 1:
 
 def log_var_out(val):
     """Print to log"""
-    if not multiprocessing.get_logger().disabled:
+    if not logging.getLogger("core").disabled:
         logger.info(pformat(val))
 
 
@@ -212,18 +211,16 @@ class TestCaseHelper:
 
     def logger_off(self):
         """Turn off logging output"""
-        multiprocessing.get_logger().disabled = True
+        logging.getLogger("core").disabled = True
         logging.getLogger("app").disabled = True
 
     def logger_on(self):
         """Turn on logging output"""
-        multiprocessing.get_logger().disabled = False
+        logging.getLogger("core").disabled = False
         logging.getLogger("app").disabled = False
 
     def is_logger_off(self):
-        return (
-            multiprocessing.get_logger().disabled and logging.getLogger("app").disabled
-        )
+        return logging.getLogger("core").disabled and logging.getLogger("app").disabled
 
     def log(self, val):
         """Print to log"""
