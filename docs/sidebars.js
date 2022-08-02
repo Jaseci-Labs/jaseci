@@ -87,6 +87,11 @@ const sidebars = {
         label : 'Non AI tools',
         items : ['Tools_and_Features/Jaseci_Kit/pdfExtractor']
       },
+      {
+        type : 'category',
+        label : 'Object Decetion',
+        items : ['Tools_and_Features/Jaseci_Kit/yolov5']
+      },
   
     ]
   
