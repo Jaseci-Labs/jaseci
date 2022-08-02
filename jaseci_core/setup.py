@@ -12,6 +12,7 @@ setup(
         "fastapi[all]>=0.75.0,<1.0.0",
         "requests",
         "redis",
+        "celery>=5,<6",
         "flake8",
         "stripe",
         "pydantic",
