@@ -733,6 +733,14 @@ list_manipulation = """
     }
     """
 
+list_reversed = """
+    walker init {
+        a = [4, 2, 7];
+        report a.l::reversed;
+        report a;
+    }
+    """
+
 dict_manipulation = """
     walker init {
         a = {'four':4, 'five':5};

@@ -34,12 +34,26 @@ class architype(element, jac_code, architype_interp):
         return self._jac_ast
 
     def get_all_actions(self):
-        return id_list(
-            self,
-            in_list=self.entry_action_ids
-            + self.activity_action_ids
-            + self.exit_action_ids,
-        )
+        actions = id_list(self)
+        for i in self.arch_with_supers():
+            actions += i.entry_action_ids + i.activity_action_ids + i.exit_action_ids
+        return actions
+
+    def arch_with_supers(self):
+        archs = [self]
+        for i in self.super_archs:
+            obj = self.parent().arch_ids.get_obj_by_name(name=i, kind=self.kind)
+            archs += obj.arch_with_supers()
+        return archs
+
+    def derived_types(self):
+        names = []
+        for i in self.arch_with_supers():
+            names += i.super_archs + [i.name]
+        return names
+
+    def is_instance(self, name):
+        return name in self.derived_types()
 
     def destroy(self):
         """

@@ -38,8 +38,10 @@ For this part, we are going to use Python. First,
     from datasets import load_dataset
     # load dataset
     dataset = load_dataset("snips_built_in_intents")
+    print(dataset["train"][:2])
     ```
-    If imported successsfuly, you should see the data format to be something like this
+    If imported successsfuly, you should see the data format to be something like this in output
+
     > {"text": ["Share my location with Hillary's sister", "Send my current location to my father"], "label": [5, 5]}
 
 2. `Converting the format` from the SNIPS out of the box to the format that can be ingested by use_encoder.
@@ -77,16 +79,19 @@ For this part, we are going to use Python. First,
     test_data = CreateData(test)
 
     data = []
+    classes = []
     for itms in test_data:
+        if itms not in classes:
+            classes.append(itms)
         for text in test_data[itms]:
             data.append({
                 "text": text,
                 "class":itms
                 })
-        
+    test_dataset = {"text":data, "classes":classes}
     # write data in json file 'test.json'
     with open("test.json", "w", encoding="utf8") as f:
-            f.write(json.dumps(data, indent = 4))
+            f.write(json.dumps(test_dataset, indent = 4))
     ```
     **The resulting format should look something like this.**
    * **test.json**
@@ -321,6 +326,8 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         ```
         sentinel set -snt active:sentinel -mode ir use_enc.jir
         ```
+        **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
+        > sentinel register -set_active true -mode ir use_enc.jir
     * Execute the walker `eval_text_classification` with default parameter for evaluation `use_enc` module by following command
         ```
         walker run eval_text_classification

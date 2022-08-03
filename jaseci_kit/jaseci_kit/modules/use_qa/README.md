@@ -37,6 +37,7 @@ For this part, we are going to use Python. First,
     from datasets import load_dataset
     # load dataset
     dataset = load_dataset("snips_built_in_intents")
+    print(dataset["train"][:2])
     ```
     If imported successsfuly, you should see the data format to be something like this
     > {"text": ["Share my location with Hillary's sister", "Send my current location to my father"], "label": [5, 5]}
@@ -76,16 +77,19 @@ For this part, we are going to use Python. First,
     test_data = CreateData(test)
 
     data = []
+    classes = []
     for itms in test_data:
+        if itms not in classes:
+            classes.append(itms)
         for text in test_data[itms]:
             data.append({
                 "text": text,
                 "class":itms
                 })
-        
+    test_dataset = {"text":data, "classes":classes}
     # write data in json file 'test.json'
     with open("test.json", "w", encoding="utf8") as f:
-            f.write(json.dumps(data, indent = 4))
+            f.write(json.dumps(test_dataset, indent = 4))
     ```
     **The resulting format should look something like this.**
    * **test.json**
@@ -272,7 +276,7 @@ For this tutorial, we are going to `evaluation of text classification` with `use
                         );
                     result.list::append({"text":text,"class_true":class_true,"class_pred":resp["match"]});
                 }
-                fn = "result_use_enc.json";
+                fn = "result_use_qa.json";
                 file.dump_json(fn, result);        
             }
         }
@@ -321,11 +325,13 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         ```
         sentinel set -snt active:sentinel -mode ir use_qa.jir
         ```
+        **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
+        > sentinel register -set_active true -mode ir use_qa.jir
     * Execute the walker `eval_text_classification` with default parameter for evaluation `use_qa` module by following command
         ```
         walker run eval_text_classification
         ```
-    After executing walker `eval_text_classification` result data will store in file `result_use_enc.json` in your current local path.
+    After executing walker `eval_text_classification` result data will store in file `result_use_qa.json` in your current local path.
 
     **Evaluation Result**
     ```
