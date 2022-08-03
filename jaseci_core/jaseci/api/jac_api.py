@@ -102,7 +102,7 @@ class jac_api:
 
     @interface.cli_api(cli_args=["file"])
     def jac_dot(
-        self, file: str, walk: str = "init", ctx: dict = {}, profiling: bool = False
+        self, file: str, walk: str = "init", ctx: dict = {}, detailed: bool = False
     ):
         """
         Command line tooling for a walker then output graph in both .jac code
@@ -130,9 +130,9 @@ class jac_api:
             snt=faux.active_snt(),
             nd=faux.active_gph(),
             ctx=ctx,
-            profiling=profiling,
+            profiling=False,
         )
-        return faux.graph_get(gph=faux.active_gph(), mode="dot")
+        return faux.graph_get(gph=faux.active_gph(), mode="dot", detailed=detailed)
 
     def faux_master(self):
         from jaseci.element.super_master import super_master

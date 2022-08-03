@@ -239,6 +239,9 @@ def login(url, username, password):
         click.echo(f"Token: {r['token']}\nLogin successful!")
     else:
         click.echo("Login failed!\n")
+    if not session["mem-only"]:
+        with open(session["filename"], "wb") as f:
+            pickle.dump(session, f)
 
 
 @click.command(help="Command to log out of live Jaseci server")
@@ -297,7 +300,12 @@ def reset():
 def tool(op, output):
     out = ""
     if op == "cheatsheet":
-        out = f"{book().api_cheatsheet(extract_api_tree())}"
+        out = (
+            f"{book().api_cheatsheet(extract_api_tree())}".replace("_", "\\_")
+            .replace("&\n", "\\\\\n")
+            .replace("self, ", "")
+            .replace("(self)", "()")
+        )
     elif op == "classes":
         out = book().api_spec()
     click.echo(out)

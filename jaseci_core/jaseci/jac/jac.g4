@@ -144,7 +144,8 @@ walker_action:
 
 ignore_action: KW_IGNORE expression SEMI;
 
-take_action: KW_TAKE expression (SEMI | else_stmt);
+take_action:
+	KW_TAKE (COLON NAME)? expression (SEMI | else_stmt);
 
 expression: connect (assignment | copy_assign | inc_assign)?;
 
@@ -172,6 +173,8 @@ factor: (PLUS | MINUS) factor | power;
 
 power: atom (POW factor)*;
 
+global_ref: KW_GLOBAL DOT (obj_built_in | NAME);
+
 atom:
 	INT
 	| FLOAT
@@ -179,7 +182,7 @@ atom:
 	| BOOL
 	| NULL
 	| NAME
-	| KW_GLOBAL DOT NAME
+	| global_ref
 	| node_edge_ref
 	| list_val
 	| dict_val

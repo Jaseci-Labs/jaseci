@@ -1,0 +1,12 @@
+{
+    "personal_info": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "address": "123 Main St",
+        "city": "Ann Arbor",
+        "state": "MI",
+        "zip": "48104",
+        "dob": "1985-10-24",
+        "email": "john@doe.com"
+    }
+}

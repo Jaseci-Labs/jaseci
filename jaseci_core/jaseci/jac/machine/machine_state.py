@@ -4,6 +4,7 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
+from copy import copy
 from jaseci.utils.utils import logger
 from jaseci.actions.live_actions import live_actions, load_preconfig_actions
 
@@ -21,6 +22,7 @@ class machine_state:
         self.report = []
         self.report_status = None
         self.report_custom = None
+        self.request_context = None
         self.runtime_errors = []
         self._parent_override = parent_override
         if not isinstance(self, element) and caller:
@@ -122,6 +124,12 @@ class machine_state:
             self.rt_error(f"Builtin action not found - {func_name}", jac_ast)
         return func_name
 
+    def jac_try_exception(self, e: Exception, jac_ast):
+        if isinstance(e, TryException):
+            raise e
+        else:
+            raise TryException(self.jac_exception(e, jac_ast))
+
     def jac_exception(self, e: Exception, jac_ast):
         return {
             "type": type(e).__name__,
@@ -130,6 +138,8 @@ class machine_state:
             "args": e.args,
             "line": jac_ast.line,
             "col": jac_ast.column,
+            "name": self.name if hasattr(self, "name") else "blank",
+            "rule": jac_ast.name,
         }
 
     def rt_log_str(self, msg, jac_ast=None):
@@ -176,3 +186,18 @@ class machine_state:
             jac_ast,
         )
         return False
+
+    def get_info(self):
+        return {
+            "report": copy(self.report),
+            "report_status": self.report_status,
+            "report_custom": self.report_custom,
+            "request_context": self.request_context,
+            "runtime_errors": self.runtime_errors,
+        }
+
+
+class TryException(Exception):
+    def __init__(self, ref: dict):
+        super().__init__(ref["msg"])
+        self.ref = ref

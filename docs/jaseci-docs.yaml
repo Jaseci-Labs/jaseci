@@ -55,6 +55,8 @@ spec:
           env:
             - name: NODE_OPTIONS
               value: "--max-old-space-size=2048"
+            - name: RUN_MODE
+              value: "production"
       volumes:
         - name: prod-script
           configMap:

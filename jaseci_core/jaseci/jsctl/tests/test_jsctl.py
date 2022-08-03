@@ -78,6 +78,10 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call("walker run gen_rand_life")
         r = self.call("graph get -mode dot")
         self.assertIn('"n0" -> "n', r)
+        self.assertNotIn('week="', r)
+
+        r = self.call("graph get -mode dot -detailed true")
+        self.assertIn('"n0" -> "n', r)
         self.assertIn('week="', r)
 
     def test_jsctl_aliases(self):
@@ -353,3 +357,12 @@ class jsctl_test(TestCaseHelper, TestCase):
         )
         r = self.call_cast("walker run disengage_report")
         self.assertEqual(r, {"a": "b"})
+
+    def test_jsctl_set_global_default_perms(self):
+        self.call("object perms default public")
+        self.call(
+            "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb " "-set_active true"
+        )
+        gphs = self.call_cast("graph get -detailed true")
+        for i in gphs:
+            self.assertEqual(i["j_access"], "public")

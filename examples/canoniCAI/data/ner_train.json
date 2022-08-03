@@ -1,0 +1,29 @@
+{
+               "text": "The Humboldt University of Berlin is situated in Berlin, Germany",
+               "entity": [
+                   {
+                       "entity_value": "Humboldt University of Berlin",
+                       "entity_name": "University",
+                       "start_index": 4,
+                       "end_index": 33
+                   },
+                   {
+                       "entity_value": "Berlin",
+                       "entity_name": "City",
+                       "start_index": 49,
+                       "end_index": 55
+                   },
+                   {
+                       "entity_value": "Germany",
+                       "entity_name": "Country",
+                       "start_index": 57,
+                       "end_index": 64
+                   },
+                   {
+                       "entity_value": "situated",
+                       "entity_name": "Verb",
+                       "start_index": 38,
+                       "end_index": 45
+                   }
+               ]
+}
