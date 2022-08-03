@@ -18,6 +18,7 @@ setup(
         "spacy == 3.3.0",
         "sumy >= 0.9.0, < 0.10.0",
         "PyPDF2 >= 1.27.12, < 1.28",
+        "mlflow == 1.27.0",
     ],
     package_data={
         "": ["*.json", "*.cfg"],
