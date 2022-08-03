@@ -309,7 +309,7 @@ take -[intent_transition(intent=predicted_intent)]-> node::cai_state else {
     }
 ```
 
-For more information about what the take statement and take, else statement works. Reference the [Jaseci Documentation](https://docs.jaseci.org/) 
+For more information about what the take statement and take, else statement works. Reference the [Jaseci Documentation](https://docs.jaseci.org/docs/getting-started/JAC-Language-Overview/take) 
 
 ### The Flow 
 NLU ➝ traversal ➝ NLG ➝ return response
