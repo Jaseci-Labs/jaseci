@@ -13,6 +13,9 @@ from time import time
 from base64 import b64encode
 from io import BytesIO
 
+from datetime import timedelta
+from knox.models import AuthToken
+
 
 class JResponse(Response):
     def __init__(self, master, *args, **kwargs):
@@ -55,6 +58,11 @@ class AbstractJacAPIView(APIView):
         bodies accordingly
         """
         self.proc_request(request, **kwargs)
+
+        async_result = self.trigger_async(self.cmd, type(self).__name__, request.user)
+        if not (async_result is None):
+            return Response(async_result, status=200)
+
         api_result = self.caller.general_interface_to_api(self.cmd, type(self).__name__)
         self.log_request_stats()
         return self.issue_response(api_result)
@@ -171,6 +179,25 @@ class AbstractJacAPIView(APIView):
             api_result = api_result["report_custom"]
         return JResponse(self.caller, api_result, status=status)
 
+    def trigger_async(self, request, api, user=None):
+        if "async" in self.cmd and (
+            self.cmd["async"] == True
+            or self.cmd["async"] == "true"
+            or self.cmd["async"] == "True"
+        ):
+            self.cmd.pop("async")
+            result = self.caller._h.queue(user).delay(
+                token=None
+                if user is None
+                else AuthToken.objects.create(user=user, expiry=timedelta(seconds=300))[
+                    1
+                ],
+                api=api,
+                body=request,
+            )
+            return {"task_id": result.task_id}
+        return None
+
 
 class AbstractAdminJacAPIView(AbstractJacAPIView):
     """
@@ -208,6 +235,10 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
         bodies accordingly
         """
         self.proc_request(request, **kwargs)
+
+        async_result = self.trigger_async(self.cmd, type(self).__name__)
+        if not (async_result is None):
+            return Response(async_result, status=200)
 
         api_result = self.caller.public_interface_to_api(self.cmd, type(self).__name__)
         self.log_request_stats()

@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     "jaseci_serv.obj_api",
     "jaseci_serv.jac_api",
     "corsheaders",
+    "django_celery_results",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -207,3 +209,8 @@ JASECI_CONFIGS = [
     "EMAIL_RESETPASS_HTML_BODY",
     "LOGIN_TOKEN_TTL_HOURS",
 ]
+
+DJANGO_CELERY_BEAT_TZ_AWARE = False
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+TASK_HOOK = True
