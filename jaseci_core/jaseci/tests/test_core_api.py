@@ -129,3 +129,23 @@ class core_api_test(TestCaseHelper, TestCase):
         r = self.call(self.mast, api)
         self.assertIn("response", r)
         self.assertNotIn("error", r)
+
+    def test_graph_node_set_mem_leak_fix(self):
+        api = ["graph_create", {}]
+        r = self.call(self.mast, api)
+        before = len(self.mast._h.mem)
+        jid = r["jid"]
+        api = ["graph_node_set", {"nd": jid, "ctx": {}}]
+        r = self.call(self.mast, api)
+        api = ["graph_node_set", {"nd": jid, "ctx": {}}]
+        r = self.call(self.mast, api)
+        api = ["graph_node_set", {"nd": jid, "ctx": {}}]
+        r = self.call(self.mast, api)
+        api = ["graph_node_set", {"nd": jid, "ctx": {}}]
+        r = self.call(self.mast, api)
+        api = ["graph_node_set", {"nd": jid, "ctx": {}}]
+        r = self.call(self.mast, api)
+        api = ["graph_node_set", {"nd": jid, "ctx": {}}]
+        r = self.call(self.mast, api)
+        after = len(self.mast._h.mem)
+        self.assertEqual(before, after)

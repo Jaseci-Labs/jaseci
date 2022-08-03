@@ -1,1 +1,1 @@
-from .modules.encoders.bi import *  # noqa
+from .modules.encoders.bi_enc import *  # noqa

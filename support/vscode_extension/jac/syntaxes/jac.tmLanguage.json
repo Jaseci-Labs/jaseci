@@ -50,21 +50,6 @@
                     "match": "\\s*\\b(?<!\\.)(report|destroy|here|take|in)\\b(?=.*[-\\\\])"
                 },
                 {
-                    "comment": "Highlights 'node' in node::name",
-                    "match": "\\s*\\b(?<!\\.)(node|walker|graph)\\b(.*[:\\\\])(\\w+)\\b",
-                    "captures": {
-                        "1": {
-                            "name": "keyword.control.flow.jac"
-                        },
-                        "2": {
-                            "name": "keyword.operator.jac"
-                        },
-                        "3": {
-                            "name": "support.function.functional_calls.jac"
-                        }
-                    }
-                },
-                {
                     "match": "\\b(null|true|false)\\b",
                     "name": "constant.language.c"
                 }

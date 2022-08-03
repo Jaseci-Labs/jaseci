@@ -1,0 +1,63 @@
+
+\documentclass[oneside]{book}
+\usepackage{book}
+\title{Jaseci and Jac}
+\author{Jason Mars}
+
+\input{assets/tex/figures.tex}
+\input{assets/tex/glossary.tex}
+
+\begin{document}
+
+\input{assets/tex/front/cover.tex}
+\normalem
+\input{assets/tex/front/toc.tex}
+
+\input{assets/tex/front/preface.tex}
+
+\input{assets/tex/front/introduction.tex}
+
+
+
+\part{World of Jaseci}
+\label{part:jsword}
+\input{assets/tex/jaseci/overview.tex}
+
+\input{assets/tex/jaseci/abstractions.tex}
+
+\input{assets/tex/jaseci/architecture.tex}
+
+\input{assets/tex/jaseci/interface.tex}
+
+\part{The Jac Programming Language}
+\label{part:jacd}
+\input{assets/tex/jac/language_basics.tex}
+
+\input{assets/tex/jac/language_graph_walkers.tex}
+
+\input{assets/tex/jac/language_navigating.tex}
+
+\input{assets/tex/jac/language_actions.tex}
+
+\input{assets/tex/jac/language_tests_etc.tex}
+
+\part{Jaseci AI Kit}
+
+\part{Crafting Jaseci}
+\label{part:crafting}
+\input{assets/tex/js_arch/core_impl.tex}
+
+\input{assets/tex/js_arch/serv_impl.tex}
+
+\input{assets/tex/back/epilogue.tex}
+
+\appendix
+\input{assets/tex/front/jumpin.tex}
+
+\input{assets/tex/back/rants.tex}
+
+\input{assets/tex/back/jac_gram.tex}
+
+\bibliographystyle{plain}
+\bibliography{book}
+\end{document}

@@ -1,0 +1,15 @@
+haxor@linux:~$ jsctl -m
+Starting Jaseci Shell...
+jaseci > actions list
+[
+  "net.max",
+  "net.min",
+  "net.root",
+  "rand.seed",
+  ...
+  "date.quantize_to_month",
+  "date.quantize_to_week",
+  "date.quantize_to_day",
+  "date.date_day_diff"
+]
+jaseci >

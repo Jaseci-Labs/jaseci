@@ -1,5 +1,5 @@
 ---
-title: The Select Statement
+title: Select Statement
 ---
 
 
