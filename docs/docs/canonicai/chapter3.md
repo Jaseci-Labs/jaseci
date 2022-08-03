@@ -147,7 +147,7 @@ node canceled:cai_state {
 ```
 As you can see here, all of the conversational state node have something in common, that's why it is very important to use inheritance, because this code instead of being 200 lines of code it can be over 1000+ lines of code and it could be very hard to manage and read.
 
-You can go to [jaseci docs](https://docs.jaseci.org/) for more information on inheritance. If you are still confused about inheritance and how it works.
+You can go to [jaseci docs](https://docs.jaseci.org/docs/Developing_with_JAC/Language_Features/OOP) for more information on inheritance. If you are still confused about inheritance and how it works.
 
 ### **Nodes (States)**
 ### collect_info state
@@ -241,33 +241,22 @@ spawn {
 ### connecting the nodes with the two types of edges
 There are two types of edges: intent_transition edge and entity_transition edge and we will use these to connect states (nodes) to each other. 
 
+Intent Transition Example:
 ```
-spawn {
     state_cai_root -[intent_transition(
             intent = "I would like to test drive"
         )]-> state_collect_info;
+```
+Here we have a intent transition going from the cai_root state to the collect_info state. This intent transition has its intent variable set to ""I would like to test drive"", which will be checked later in the walker "talk" to evaluate whether or not this transition should be triggered or not.
 
+Entity Transition Example:
+```
         state_collect_info -[entity_transition(
             entities = ["name", "address"]
         )]-> state_confirmation;
-
-        state_confirmation -[intent_transition(
-            intent = "yes"
-        )]-> state_confirmed;
-
-        state_confirmation -[intent_transition(
-            intent = "no"
-        )]-> state_collect_info;
-
-        state_collect_info -[intent_transition(
-            intent = "collect information"
-        )]-> state_canceled;
-
-        state_confirmation -[intent_transition(
-            intent = "cancel"
-        )]-> state_canceled;
-}
 ```
+Here we have an entity transiton going from the collect_info state to the confirm state. This entity transition has its entities variable set as "name" and "address", which will be checked later in the talk walker to evaluate if this transition should be triggered or not.
+
 
 ### the anchor node
 The anchor node is the main node or the starting node for the conversational AI state. This node is mandatory for the application. 
