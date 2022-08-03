@@ -101,9 +101,12 @@ const sidebars = {
   Samples : {
 
     'Sample Projects' : [
-      'Samples_and_Tutorials/Overview',
-      'Samples_and_Tutorials/Recommender_System',
-      'Samples_and_Tutorials/Conversational_AI_Application',
+      {
+        type : 'category',
+        label : 'Building an AI conversatioanl Agent',
+        items : ['Samples_and_Tutorials/canonicai/chapter1','Samples_and_Tutorials/canonicai/chapter2']
+      },
+  
   
     ]
   
