@@ -38,7 +38,7 @@ class graph_api:
         Valid modes: {default, dot, }
         """
         if mode == "dot":
-            return gph.graph_dot_str(detailed)
+            return gph.graph_dot_str(detailed=detailed)
         else:
             items = []
             for i in gph.get_all_nodes():

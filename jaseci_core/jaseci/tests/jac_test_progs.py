@@ -482,3 +482,15 @@ inheritance_override_here_check = """
         -->[1]::sum;
     }
     """
+
+dot_private_hidden = """
+    node a {
+        has x="56";
+        has private j="5566669";
+    }
+
+    walker init {
+        n1 = spawn here --> node::a;
+        n2 = spawn here --> node::a;
+    }
+    """
