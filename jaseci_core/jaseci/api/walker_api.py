@@ -6,7 +6,6 @@ from jaseci.actor.walker import walker
 from jaseci.graph.node import node
 from jaseci.actor.sentinel import sentinel
 from jaseci.utils.utils import b64decode_str
-from jaseci.utils import task_hook
 from jaseci.utils.id_list import id_list
 
 
@@ -269,19 +268,10 @@ class walker_api:
         """
         Create blank or code loaded walker and return object
         """
-        if task_hook._task_hook is None:
+        if not self._h.task_hook_ready():
             return "Task hook is not yet initialized!"
 
         if "task_id" not in _req_ctx["query"] or not (_req_ctx["query"]["task_id"]):
-            task_list = task_hook._task_hook.control.inspect()
-            return {
-                "scheduled": task_list.scheduled(),
-                "active": task_list.active(),
-                "reserved": task_list.reserved(),
-            }
+            return self._h.inspect_tasks()
         else:
-            return {
-                "state": task_hook._task_hook.AsyncResult(
-                    _req_ctx["query"]["task_id"]
-                ).state
-            }
+            return self._h.get_by_task_id(_req_ctx["query"]["task_id"])

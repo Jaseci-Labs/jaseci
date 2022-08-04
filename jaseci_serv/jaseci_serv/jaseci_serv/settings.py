@@ -117,6 +117,7 @@ else:
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": "mydatabase",
+            "TEST": {"NAME": "test"},
         }
     }
 
@@ -124,8 +125,6 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 # Cover regular testing and django-coverage
 if "test" in sys.argv or "test_coverage" in sys.argv:
-    DATABASES["default"]["ENGINE"] = "django.db.backends.sqlite3"
-    DATABASES["default"]["NAME"] = ":memory:"
     EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 # REDIS
@@ -213,4 +212,4 @@ JASECI_CONFIGS = [
 DJANGO_CELERY_BEAT_TZ_AWARE = False
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
-TASK_HOOK = True
+TASK_HOOK = "runserver" in sys.argv or "test" in sys.argv
