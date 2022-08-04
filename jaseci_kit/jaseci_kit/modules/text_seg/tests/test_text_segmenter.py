@@ -23,7 +23,7 @@ class text_segementer_test(TestCaseHelper, TestCase):
 
     def test_load_model(self):
         # step 4: Loading the model "wiki"/"legal"
-        response = self.client.post("/load_model/", json={"model_name": "wiki"})
+        response = self.client.post("/seg_load_model/", json={"model_name": "wiki"})
         self.assertEqual(response.status_code, 200)
-        response = self.client.post("/load_model/", json={"model_name": "legal"})
+        response = self.client.post("/seg_load_model/", json={"model_name": "legal"})
         self.assertEqual(response.status_code, 200)

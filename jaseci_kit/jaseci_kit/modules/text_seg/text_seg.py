@@ -67,7 +67,7 @@ def get_segments(text: str, threshold: float = 0.7):
 
 
 @jaseci_action(act_group=["text_seg"], allow_remote=True)
-def load_model(model_name: str):  # modelname could be ("wiki", "legal")
+def seg_load_model(model_name: str):  # modelname could be ("wiki", "legal")
     global model, tokenizer
     if model_name == "wiki":
         tokenizer = AutoTokenizer.from_pretrained("dennlinger/bert-wiki-paragraphs")
