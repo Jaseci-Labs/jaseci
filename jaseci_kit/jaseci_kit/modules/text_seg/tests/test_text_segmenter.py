@@ -15,7 +15,7 @@ class text_segementer_test(TestCaseHelper, TestCase):
     def tearDown(self) -> None:
         return super().tearDown()
 
-    def test_summarizer_text(self):
+    def test_segmentation(self):
         # getting inference from the model
         response = self.client.post("/get_segments/", json=test_segment_request)
         self.assertEqual(response.status_code, 200)

@@ -1,4 +1,5 @@
 from unittest import TestCase
+import unittest
 from jaseci.utils.utils import TestCaseHelper
 from ..fast_enc import serv_actions
 from fastapi.testclient import TestClient
@@ -15,6 +16,7 @@ class FastText_test(TestCaseHelper, TestCase):
     def tearDown(self) -> None:
         return super().tearDown()
 
+    @unittest.skip("skipping tests with training")
     def test_fasttext_combined(self):
         # step 1: Training the model
         response = self.client.post("/train/", json=test_train_request)

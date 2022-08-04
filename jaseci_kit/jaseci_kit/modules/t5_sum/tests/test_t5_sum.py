@@ -14,8 +14,7 @@ class t5_sum_test_api(TestCaseHelper, TestCase):
         return super().tearDown()
 
     def test_t5_sum_detection_pass(self):
-        response = self.client.post("/classifiy_text/", json=test_t5_sum_request)
-
+        response = self.client.post("/classify_text/", json=test_t5_sum_request)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(
             len(response.json().split(" ")) <= test_t5_sum_request["max_length"]
