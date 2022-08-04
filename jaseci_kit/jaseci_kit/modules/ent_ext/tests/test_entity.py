@@ -1,4 +1,5 @@
 from unittest import TestCase
+import unittest
 from jaseci.utils.utils import TestCaseHelper
 from ..ent_ext import serv_actions
 from fastapi.testclient import TestClient
@@ -62,11 +63,13 @@ class entity_extraction_test(TestCaseHelper, TestCase):
             response.json(), {"detail": "Text data is missing in request data"}
         )
 
+    @unittest.skip("skipping tests with training")
     def test_entity_training_pass(self):
         response = self.client.post("/train/", json=test_entity_training_pass)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), "Model Training is Completed")
 
+    @unittest.skip("skipping tests with training")
     def test_entity_training_fail(self):
         response = self.client.post("/train/", json=test_entity_training_fail)
         self.assertEqual(response.status_code, 404)
@@ -91,6 +94,7 @@ class entity_extraction_test(TestCaseHelper, TestCase):
         response = self.client.post("/set_config/", json=test_entity_config_setup_ner)
         self.assertEqual(response.status_code, 200)
 
+    @unittest.skip("skipping tests with training")
     def test_entity_training_validate(self):
         response = self.client.post("/set_config/", json=test_entity_config_setup_trf)
         self.assertEqual(response.status_code, 200)
