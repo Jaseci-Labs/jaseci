@@ -108,17 +108,12 @@ class walker_interp(interp):
         walker_action:
             ignore_action
             | take_action
-            | KW_DISENGAGE (report_action | SEMI);
+            | disengage_action
+            | yeild_action;
         """
         kid = self.set_cur_ast(jac_ast)
-        if kid[0].name == "KW_DISENGAGE":
-            if kid[1].name == "report_action":
-                self.run_report_action(kid[1])
-            self._stopped = "stop"
-            self.next_node_ids.remove_all()
-        else:
-            expr_func = getattr(self, f"run_{kid[0].name}")
-            expr_func(kid[0])
+        expr_func = getattr(self, f"run_{kid[0].name}")
+        expr_func(kid[0])
 
     def run_ignore_action(self, jac_ast):
         """
@@ -167,6 +162,22 @@ class walker_interp(interp):
         if before >= after and kid[2].name == "else_stmt":
             self.run_else_stmt(kid[2])
         after = len(self.next_node_ids)
+
+    def run_disengage_action(self, jac_ast):
+        """
+        disengage_action: KW_DISENGAGE (report_action | SEMI);
+        """
+        kid = self.set_cur_ast(jac_ast)
+        if kid[1].name == "report_action":
+            self.run_report_action(kid[1])
+        self._stopped = "stop"
+        self.next_node_ids.remove_all()
+
+    def run_yeild_action(self, jac_ast):
+        """
+        yeild_action: KW_YIELD (report_action | disengage_action);
+        """
+        kid = self.set_cur_ast(jac_ast)
 
     def run_preset_in_out(self, jac_ast, obj, act):
         """
