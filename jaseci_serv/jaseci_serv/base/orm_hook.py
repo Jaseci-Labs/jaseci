@@ -15,6 +15,8 @@ from redis import Redis
 import uuid
 import json
 
+from django_celery_results.models import TaskResult
+
 
 def find_class_and_import(j_type, core_mod):
     if j_type == "master":
@@ -226,3 +228,8 @@ class orm_hook(mem_hook):
             h=orm_hook(objects=JaseciObject.objects, globs=GlobalVars.objects),
             persist=False,
         )
+
+    def get_task_result_data(self, task_id):
+        """Get TaskResult by task_id"""
+
+        return TaskResult.objects.get(task_id=task_id).result

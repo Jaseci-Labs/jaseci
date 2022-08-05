@@ -8,8 +8,6 @@ from .task_config import QUIET
 from .tasks import queue, dynamic_request
 from celery import Celery
 
-from django_celery_results.models import TaskResult
-
 
 class task_hook:
 
@@ -76,7 +74,7 @@ class task_hook:
         res = {"state": task.state}
 
         if task.ready():
-            task_result = TaskResult.objects.get(task_id=task_id).result
+            task_result = self.get_task_result_data(task_id)
             try:
                 res["result"] = json.loads(task_result)
             except ValueError as e:
@@ -143,3 +141,8 @@ class task_hook:
 
     def generate_basic_master(self):
         """Generate basic master"""
+
+    def get_task_result_data(self, task_id):
+        """Get TaskResult by task_id"""
+
+        return "Django not initialized!"
