@@ -2,38 +2,37 @@ import {*} with "./nodes.jac";
 import {*} with "./edges.jac";
 
 walker talk {
-    has question="", interactive=true;
+    has question="";
     has if_nlu=false;
-    has predicted_intent, extracted_entities;
+    has predicted_intent, extracted_entities = {};
     has response;
 
     root {
         take --> node::cai_state;
     }
 
-    # cai_state {
-    cai_root, collect_info, confirmation, confirmed, canceled {
-        std.out("at cai_state");
-        if (interactive and question == "") {
+    cai_state {
+        if (question == "") {
             question = std.input("> ");
             if_nlu = false;
         }
 
         if (!if_nlu) {
             predicted_intent = null;
-            extracted_entities = null;
             here::nlu;
             if_nlu = true;
+        } else {
+            # Clear the predicted intent if a NLU based transition has happened
+            # This is to prevent infinite loop in certain situation
+            predicted_intent = null;
         }
 
         take -[entity_transition(entities==extracted_entities.d::keys)]-> node::cai_state else {
             take -[intent_transition(intent==predicted_intent)]-> node::cai_state else {
                 here::nlg;
-                if (interactive) {
-                    std.out(response);
-                    question = "";
-                    take here;
-                } else: report repsonse;
+                std.out(response);
+                question = "";
+                take --> node::cai_root else: take here;
             }
         }
     }
@@ -71,11 +70,21 @@ graph tesla_sales_rep {
         state_confirmation -[intent_transition(
             intent = "cancel"
         )]-> state_canceled;
+
+        state_confirmed --> state_cai_root;
+        state_canceled --> state_cai_root;
     }
 }
 
 walker init {
     root {
         spawn here --> graph::tesla_sales_rep;
+    }
+}
+
+walker interactive {
+    root {
+        spawn here walker::init;
+        spawn here walker::talk;
     }
 }

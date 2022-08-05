@@ -27,10 +27,10 @@ node cai_state {
         # Note: a simple hardcoded entity extraction model
         # To be replaced with an AI model in a later chapter
         if ("name" in visitor.question.str::lower):
-            visitor.extract_entities["name"] = example_entities["name"];
+            visitor.extracted_entities["name"] = example_entities["name"];
 
         if ("address" in visitor.question.str::lower):
-            visitor.extract_entities["address"] = example_entities["address"];
+            visitor.extracted_entities["address"] = example_entities["address"];
     }
 
     # Generate response
