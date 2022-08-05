@@ -10,10 +10,7 @@ from jaseci.utils import utils
 from jaseci.utils.utils import logger
 import jaseci as core_mod
 from jaseci.utils.mem_hook import mem_hook, json_str_to_jsci_dict
-from jaseci.utils.task_hook import task_hook
-from .tasks import dynamic_request, public_queue, queue
 from jaseci_serv.jaseci_serv.settings import REDIS_HOST, TASK_HOOK
-from jaseci_serv.jaseci_serv.task_config import QUIET
 from redis import Redis
 import uuid
 import json
@@ -60,7 +57,7 @@ class redis_cache:
             return None
 
 
-class orm_hook(mem_hook, task_hook):
+class orm_hook(mem_hook):
     """
     Hooks Django ORM database for Jaseci objects to Jaseci's core engine.
     """
@@ -74,16 +71,7 @@ class orm_hook(mem_hook, task_hook):
         self.skip_redis_update = False
         self.save_obj_list = set()
         self.save_glob_dict = {}
-        mem_hook.__init__(self)
-        if TASK_HOOK:
-            task_hook.__init__(
-                self,
-                "jaseci_serv.jaseci_serv.task_config",
-                queue,
-                public_queue,
-                dynamic_request,
-                quiet=QUIET,
-            )
+        super().__init__(enable_task=TASK_HOOK)
 
     def get_obj_from_store(self, item_id):
         loaded_obj = self.red.get(item_id.urn)
@@ -226,3 +214,15 @@ class orm_hook(mem_hook, task_hook):
         for i in self.save_glob_dict.keys():
             self.commit_glob(name=i, value=self.save_glob_dict[i])
         self.save_glob_dict = {}
+
+    def generate_basic_master(self):
+        from jaseci_serv.base.models import (
+            JaseciObject,
+            GlobalVars,
+            master as core_master,
+        )
+
+        return core_master(
+            h=orm_hook(objects=JaseciObject.objects, globs=GlobalVars.objects),
+            persist=False,
+        )

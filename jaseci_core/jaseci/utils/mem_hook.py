@@ -1,6 +1,8 @@
 from .id_list import id_list
 from .utils import logger
 
+from jaseci.task.task_hook import task_hook
+
 import json
 
 
@@ -22,7 +24,7 @@ def json_str_to_jsci_dict(input_str, parent_obj=None):
     return obj_fields
 
 
-class mem_hook:
+class mem_hook(task_hook):
     """
     Set of virtual functions to be used as hooks to allow access to
     the complete set of items across jaseci object types. This class contains
@@ -30,11 +32,14 @@ class mem_hook:
     to the objects. They return jaseci core types.
     """
 
-    def __init__(self):
+    def __init__(self, enable_task=False):
         from jaseci.actions.live_actions import get_global_actions
 
         self.mem = {"global": {}}
         self.global_action_list = get_global_actions(self)
+
+        if enable_task:
+            super().__init__()
 
     def get_obj(self, caller_id, item_id, override=False):
         """

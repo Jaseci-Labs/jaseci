@@ -1,62 +1,19 @@
-import logging
 import re
 
 from copy import deepcopy
 from typing import Tuple
 from requests import post, get
 from requests.exceptions import HTTPError
-from jaseci.utils.utils import logger
 from celery import Task
-
-from knox.models import AuthToken
-from knox.settings import CONSTANTS
-from django.utils import timezone
 
 
 class queue(Task):
-    def run(self, *args, **kwargs):
+    def run(self, queue_id):
+        from .task_hook import task_hook
 
-        token = kwargs.get("token")
-        api = kwargs.get("api")
-        body = kwargs.get("body")
+        ret = task_hook.consume(queue_id)
 
-        try:
-            return (
-                AuthToken.objects.get(
-                    token_key=token[: CONSTANTS.TOKEN_KEY_LENGTH],
-                    expiry__gte=timezone.now(),
-                )
-                .user.get_master()
-                .general_interface_to_api(body, api)
-            )
-        except AuthToken.DoesNotExist as e:
-            logging.error(e)
-            return {"err_msg": "Forbidden Request!"}
-
-
-class public_queue(Task):
-
-    _caller = None
-
-    def get_caller(self):
-
-        from .orm_hook import orm_hook
-        from .models import JaseciObject, GlobalVars
-        from .models import master as core_master
-
-        if self._caller is None:
-            self._caller = core_master(
-                h=orm_hook(objects=JaseciObject.objects, globs=GlobalVars.objects),
-                persist=False,
-            )
-
-        return self._caller
-
-    def run(self, *args, **kwargs):
-        api = kwargs.get("api")
-        body = kwargs.get("body")
-
-        return self.get_caller().public_interface_to_api(body, api)
+        return ret
 
 
 class dynamic_request(Task):
