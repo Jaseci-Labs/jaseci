@@ -4,4 +4,3 @@ edge intent_transition {
 edge entity_transition {
     has entities;
 }
-edge back_to_root;
