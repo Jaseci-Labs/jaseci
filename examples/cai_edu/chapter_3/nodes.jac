@@ -39,19 +39,6 @@ node cai_state {
     }
 }
 
-# node cai_va_state:cai_state {
-#     intent
-#     entities
-# }
-# node faq_state:cai_state {
-#     can nlu
-#     {
-#         use_qa stuff
-#     }
-#     can gen_response
-# }
-# collect_info:cai_va_state
-
 node collect_info:cai_state {
     has name = "collect_info";
     can gen_response {
