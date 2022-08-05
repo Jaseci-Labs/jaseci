@@ -140,12 +140,17 @@ report_action:
 walker_action:
 	ignore_action
 	| take_action
-	| KW_DISENGAGE (report_action | SEMI);
+	| disengage_action
+	| yeild_action;
 
 ignore_action: KW_IGNORE expression SEMI;
 
 take_action:
 	KW_TAKE (COLON NAME)? expression (SEMI | else_stmt);
+
+disengage_action: KW_DISENGAGE (report_action | SEMI);
+
+yeild_action: KW_YIELD (report_action | disengage_action);
 
 expression: connect (assignment | copy_assign | inc_assign)?;
 
@@ -401,6 +406,7 @@ KW_WHILE: 'while';
 KW_CONTINUE: 'continue';
 KW_BREAK: 'break';
 KW_DISENGAGE: 'disengage';
+KW_YIELD: 'yield';
 KW_SKIP: 'skip';
 KW_REPORT: 'report';
 KW_DESTROY: 'destroy';

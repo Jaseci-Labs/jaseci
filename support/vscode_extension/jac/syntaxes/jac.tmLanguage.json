@@ -38,7 +38,7 @@
                 },
                 {
                     "name": "keyword.control.jac",
-                    "match": "\\b(if|elif|else|while|for|while|global|in|by|to|report|take|ignore|skip|disengage|break|continue|destroy|spawn|entry|exit|assert)\\b"
+                    "match": "\\b(if|elif|else|while|for|while|global|in|by|to|report|take|ignore|skip|disengage|break|continue|destroy|spawn|entry|exit|assert|yield)\\b"
                 },
                 {
                     "name": "variable.other.property",

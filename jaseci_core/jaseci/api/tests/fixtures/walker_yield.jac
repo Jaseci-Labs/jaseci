@@ -1,4 +1,4 @@
-walker init {
+walker test_yield {
     has a=6;
 
     if(a < 10) {
@@ -6,5 +6,29 @@ walker init {
         report a;
         yield;
     }
+    else {
+        report "should start over now";
+    }
 }
 
+walker test_yield_report {
+    has a=6;
+
+    if(a < 10) {
+        a+=1;
+        yield report a;
+    }
+    else {
+        report "should start over now";
+    }
+}
+
+walker test_yield_disengage {
+    has a=6;
+
+    if(a < 10) {
+        a+=1;
+        yield disengage report a;
+        report "test"; #should not be printed
+    }
+}
