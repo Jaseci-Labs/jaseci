@@ -35,7 +35,6 @@ class walker_api:
 
         if key not in wlk.namespace_keys().values():
             return self.bad_walk_response(["Not authorized to execute this walker"])
-
         if global_sync:
             self.sync_walker_from_global_sent(wlk)
 
@@ -44,7 +43,7 @@ class walker_api:
         res = self.walker_execute(
             wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
         )
-        self.yield_or_destroy(walk)
+        walk.destroy()
         return res
 
     @interface.public_api(cli_args=["wlk"])
@@ -63,14 +62,15 @@ class walker_api:
         """
         if key not in wlk.namespace_keys().values():
             return self.bad_walk_response(["Not authorized to execute this walker"])
-        if global_sync:  # Test needed
+        if global_sync:
             self.sync_walker_from_global_sent(wlk)
+
         walk = wlk.duplicate()
         walk.refresh()
         res = self.walker_execute(
             wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
         )
-        self.yield_or_destroy(walk)
+        walk.destroy()
         return res
 
     @interface.private_api(cli_args=["code"])
@@ -218,13 +218,15 @@ class walker_api:
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.
         """
-        wlk = snt.spawn_walker(name, caller=self)
-        if not wlk:
+        wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
+        if wlk is None:
+            wlk = snt.spawn_walker(name, caller=self)
+        if wlk is None:
             return self.bad_walk_response([f"Walker {name} not found!"])
         res = self.walker_execute(
             wlk=wlk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=profiling
         )
-        wlk.destroy()
+        self.yield_or_destroy_walker(wlk)
         return res
 
     @interface.private_api(cli_args=["name"], url_args=["name"])
@@ -249,10 +251,14 @@ class walker_api:
         for i in self.spawned_walker_ids.obj_list():
             i.destroy()
 
-    def yield_or_destroy(self, wlk):
+    def yield_or_destroy_walker(self, wlk):
         """Helper for auto destroying walkers"""
         if not wlk.yielded:
             wlk.destroy()
+            if wlk.jid in self.yielded_walkers_ids:
+                self.yielded_walkers_ids.remove(wlk)
+        else:
+            self.yielded_walkers_ids.add_obj(wlk, silent=True)
 
     def bad_walk_response(self, errors=list()):
         return {"report": [], "success": False, "errors": errors}
