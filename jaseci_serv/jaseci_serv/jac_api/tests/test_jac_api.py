@@ -1255,6 +1255,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         # It should return the error too for global.b since it was not yet set
 
         default_res = {
+            "yielded": False,
             "success": False,
             "report": [
                 "test",
@@ -1293,6 +1294,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                 "zsb:global_actions - line 229, col 22 - rule NAME - Global not defined - b"
             ],
         }
+        del res["final_node"]
         self.assertEquals(res, default_res)
 
     def test_multipart_json_file(self):
@@ -1320,6 +1322,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                 }
             ],
         }
+        del res["yielded"]
+        del res["final_node"]
         self.assertEquals(res, default_res)
 
     def test_multipart_json_string(self):
@@ -1348,6 +1352,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                 }
             ],
         }
+        del res["yielded"]
+        del res["final_node"]
         self.assertEquals(res, default_res)
 
     def test_multipart_with_additional_file(self):
@@ -1375,6 +1381,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             }
         ]
         default_res = {"success": True, "report": [default_file, default_file]}
+        del res["yielded"]
+        del res["final_node"]
         self.assertEquals(res, default_res)
 
     def test_multipart_custom_payload_with_additional_file(self):
@@ -1401,6 +1409,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         ]
 
         default_res = {"success": True, "report": [True, True, default_file]}
+        del res["yielded"]
+        del res["final_node"]
         self.assertEquals(res, default_res)
 
     def test_try_catch(self):

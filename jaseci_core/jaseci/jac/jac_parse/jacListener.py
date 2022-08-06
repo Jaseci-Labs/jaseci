@@ -393,12 +393,12 @@ class jacListener(ParseTreeListener):
     def exitDisengage_action(self, ctx: jacParser.Disengage_actionContext):
         pass
 
-    # Enter a parse tree produced by jacParser#yeild_action.
-    def enterYeild_action(self, ctx: jacParser.Yeild_actionContext):
+    # Enter a parse tree produced by jacParser#yield_action.
+    def enterYield_action(self, ctx: jacParser.Yield_actionContext):
         pass
 
-    # Exit a parse tree produced by jacParser#yeild_action.
-    def exitYeild_action(self, ctx: jacParser.Yeild_actionContext):
+    # Exit a parse tree produced by jacParser#yield_action.
+    def exitYield_action(self, ctx: jacParser.Yield_actionContext):
         pass
 
     # Enter a parse tree produced by jacParser#expression.

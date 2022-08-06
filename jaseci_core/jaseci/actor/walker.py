@@ -102,13 +102,17 @@ class walker(element, jac_code, walker_interp, anchored):
                 )
             )
             for i in self.destroy_node_ids.obj_list():
+                if i.jid == self.current_node_id:
+                    self.current_node_id = None
                 i.destroy()
+                self.destroy_node_ids.remove_obj(i)
             return True
 
     def prime(self, start_node, prime_ctx=None, request_ctx=None):
         """Place walker on node and get ready to step step"""
-        self.clear_state()
-        self.next_node_ids.add_obj(start_node)
+        if not self.yielded:
+            self.clear_state()
+        self.next_node_ids.add_obj(start_node, push_front=True)
         if prime_ctx:
             for i in prime_ctx.keys():
                 self.context[str(i)] = prime_ctx[i]
@@ -126,8 +130,10 @@ class walker(element, jac_code, walker_interp, anchored):
             self.prime(start_node, prime_ctx, request_ctx)
 
         report_ret = {"success": True}
+        self.yielded = False
+
         try:
-            while self.step():
+            while self.step() and not self.yielded:
                 pass
         except Exception as e:
             import traceback as tb
@@ -138,9 +144,10 @@ class walker(element, jac_code, walker_interp, anchored):
         self.save()
 
         if not self.report:
-            logger.debug(str(f"Walker {self.name} did not arrive at report state"))
-
+            logger.debug(str(f"Walker {self.name} did not have anything to report"))
         report_ret["report"] = self.report
+        report_ret["final_node"] = self.current_node_id
+        report_ret["yielded"] = self.yielded
 
         if self.report_status:
             report_ret["status_code"] = self.report_status

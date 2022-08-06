@@ -109,7 +109,7 @@ class walker_interp(interp):
             ignore_action
             | take_action
             | disengage_action
-            | yeild_action;
+            | yield_action;
         """
         kid = self.set_cur_ast(jac_ast)
         expr_func = getattr(self, f"run_{kid[0].name}")
@@ -173,11 +173,14 @@ class walker_interp(interp):
         self._stopped = "stop"
         self.next_node_ids.remove_all()
 
-    def run_yeild_action(self, jac_ast):
+    def run_yield_action(self, jac_ast):
         """
-        yeild_action: KW_YIELD (report_action | disengage_action);
+        yield_action:
+            KW_YIELD (report_action | disengage_action | SEMI);
         """
         kid = self.set_cur_ast(jac_ast)
+        if kid[1].name == "report_action":
+            self.run_report_action(kid[1])
 
     def run_preset_in_out(self, jac_ast, obj, act):
         """

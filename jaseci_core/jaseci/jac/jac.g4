@@ -141,7 +141,7 @@ walker_action:
 	ignore_action
 	| take_action
 	| disengage_action
-	| yeild_action;
+	| yield_action;
 
 ignore_action: KW_IGNORE expression SEMI;
 
@@ -150,7 +150,8 @@ take_action:
 
 disengage_action: KW_DISENGAGE (report_action | SEMI);
 
-yeild_action: KW_YIELD (report_action | disengage_action);
+yield_action:
+	KW_YIELD (report_action | disengage_action | SEMI);
 
 expression: connect (assignment | copy_assign | inc_assign)?;
 

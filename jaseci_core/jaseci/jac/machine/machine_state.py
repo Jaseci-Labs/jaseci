@@ -19,6 +19,7 @@ class machine_state:
     """Shared interpreter class across both sentinels and walkers"""
 
     def __init__(self, parent_override=None, caller=None):
+        self.yielded = False
         self.report = []
         self.report_status = None
         self.report_custom = None
@@ -44,6 +45,7 @@ class machine_state:
             return element.parent(self)
 
     def reset(self):
+        self.yielded = False
         self.report = []
         self.report_status = None
         self.report_custom = None
@@ -69,6 +71,7 @@ class machine_state:
 
     def inherit_runtime_state(self, mach):
         """Inherits runtime output state from another machine"""
+        self.yielded = mach.yielded
         self.report += mach.report
         if mach.report_status:
             self.report_status = mach.report_status
