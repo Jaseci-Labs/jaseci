@@ -176,11 +176,18 @@ class walker_interp(interp):
     def run_yield_action(self, jac_ast):
         """
         yield_action:
-            KW_YIELD (report_action | disengage_action | SEMI);
+            KW_YIELD (
+                report_action
+                | disengage_action
+                | take_action
+                | SEMI
+            );
         """
         kid = self.set_cur_ast(jac_ast)
-        if kid[1].name == "report_action":
-            self.run_report_action(kid[1])
+        if kid[1].name != "SEMI":
+            expr_func = getattr(self, f"run_{kid[1].name}")
+            expr_func(kid[1])
+        self.yield_walk()
 
     def run_preset_in_out(self, jac_ast, obj, act):
         """

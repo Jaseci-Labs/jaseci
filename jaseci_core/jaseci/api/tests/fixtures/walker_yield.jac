@@ -32,3 +32,13 @@ walker test_yield_disengage {
         report "test"; #should not be printed
     }
 }
+
+walker test_yield_take {
+    has a=6;
+
+    if(a < 10) {
+        a+=1;
+        yield take here;
+        report "test"; #should not be printed
+    }
+}

@@ -151,7 +151,12 @@ take_action:
 disengage_action: KW_DISENGAGE (report_action | SEMI);
 
 yield_action:
-	KW_YIELD (report_action | disengage_action | SEMI);
+	KW_YIELD (
+		report_action
+		| disengage_action
+		| take_action
+		| SEMI
+	);
 
 expression: connect (assignment | copy_assign | inc_assign)?;
 

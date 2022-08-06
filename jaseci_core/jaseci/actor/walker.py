@@ -23,6 +23,7 @@ class walker(element, jac_code, walker_interp, anchored):
     """Walker class for Jaseci"""
 
     def __init__(self, code_ir=None, *args, **kwargs):
+        self.yielded = False
         self.activity_action_ids = id_list(self)
         self.namespaces = []
         self.context = {}
@@ -43,6 +44,9 @@ class walker(element, jac_code, walker_interp, anchored):
     @property
     def current_node(self):
         if not self.current_node_id:
+            return None
+        elif not self._h.has_obj(uuid.UUID(self.current_node_id)):
+            self.current_node_id = None
             return None
         else:
             return self._h.get_obj(self._m_id, uuid.UUID(self.current_node_id))
@@ -172,6 +176,10 @@ class walker(element, jac_code, walker_interp, anchored):
 
         return report_ret
 
+    def yield_walk(self):
+        """Instructs walker to yield (stop walking and keep state)"""
+        self.yielded = True
+
     def log_history(self, name, value):
         """Helper function for logging history of walker's activities"""
         if isinstance(value, element):
@@ -185,6 +193,7 @@ class walker(element, jac_code, walker_interp, anchored):
 
     def clear_state(self):
         """Clears walker state after report"""
+        self.yielded = False
         self.profile = {}
         self.current_step = 0
         self.next_node_ids.remove_all()

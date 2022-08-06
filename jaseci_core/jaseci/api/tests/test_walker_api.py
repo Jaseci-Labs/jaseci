@@ -13,4 +13,10 @@ class walker_api_test(core_test):
             self.mast,
             ["walker_run", {"name": "test_yield"}],
         )
+        self.assertEqual(ret["report"][0], 7)
+        ret = self.call(
+            self.mast,
+            ["walker_run", {"name": "test_yield"}],
+        )
         self.log(ret)
+        # self.assertEqual(ret["report"][0], 8)

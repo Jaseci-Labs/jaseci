@@ -16,6 +16,7 @@ class walker_api:
 
     def __init__(self):
         self.spawned_walker_ids = id_list(self)
+        self.yielded_walkers_ids = id_list(self)
 
     @interface.public_api(url_args=["nd", "wlk"], allowed_methods=["post", "get"])
     def walker_callback(
@@ -40,9 +41,10 @@ class walker_api:
 
         walk = wlk.duplicate()
         walk.refresh()
-        walk.prime(nd, prime_ctx=ctx, request_ctx=_req_ctx)
-        res = walk.run()
-        walk.destroy()
+        res = self.walker_execute(
+            wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
+        )
+        self.yield_or_destroy(walk)
         return res
 
     @interface.public_api(cli_args=["wlk"])
@@ -65,9 +67,10 @@ class walker_api:
             self.sync_walker_from_global_sent(wlk)
         walk = wlk.duplicate()
         walk.refresh()
-        walk.prime(nd, prime_ctx=ctx, request_ctx=_req_ctx)
-        res = walk.run()
-        walk.destroy()
+        res = self.walker_execute(
+            wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
+        )
+        self.yield_or_destroy(walk)
         return res
 
     @interface.private_api(cli_args=["code"])
@@ -245,6 +248,11 @@ class walker_api:
         """
         for i in self.spawned_walker_ids.obj_list():
             i.destroy()
+
+    def yield_or_destroy(self, wlk):
+        """Helper for auto destroying walkers"""
+        if not wlk.yielded:
+            wlk.destroy()
 
     def bad_walk_response(self, errors=list()):
         return {"report": [], "success": False, "errors": errors}
