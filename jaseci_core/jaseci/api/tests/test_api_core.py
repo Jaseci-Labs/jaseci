@@ -3,7 +3,7 @@ from jaseci.utils.utils import TestCaseHelper
 from jaseci.element.super_master import super_master
 from jaseci.element.master import master
 from jaseci.utils.mem_hook import mem_hook
-import jaseci.tests.jac_test_code as jtc
+import os
 
 
 class core_test(TestCaseHelper, TestCase):
@@ -11,13 +11,8 @@ class core_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.mast = super_master(h=mem_hook())
-        self.mast2 = super_master(h=self.mast._h)
-        self.mast.sentinel_register(name="test", code=jtc.basic)
-
-        self.lms = master(h=mem_hook())
-        self.lms2 = master(h=self.lms._h)
-        self.lms.sentinel_register(name="test", code=jtc.basic)
+        self.smast = super_master(h=mem_hook())
+        self.mast = master(h=self.smast._h)
 
     def tearDown(self):
         super().tearDown()
@@ -25,3 +20,7 @@ class core_test(TestCaseHelper, TestCase):
     def call(self, mast, pl):
         ret = mast.general_interface_to_api(api_name=pl[0], params=pl[1])
         return ret
+
+    def load_jac(self, fn):
+        with open(os.path.dirname(__file__) + "/fixtures/" + fn) as f:
+            return f.read()
