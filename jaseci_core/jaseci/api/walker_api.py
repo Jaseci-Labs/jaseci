@@ -254,9 +254,9 @@ class walker_api:
     def yield_or_destroy_walker(self, wlk):
         """Helper for auto destroying walkers"""
         if not wlk.yielded:
-            wlk.destroy()
             if wlk.jid in self.yielded_walkers_ids:
-                self.yielded_walkers_ids.remove(wlk)
+                self.yielded_walkers_ids.remove_obj(wlk)
+            wlk.destroy()
         else:
             self.yielded_walkers_ids.add_obj(wlk, silent=True)
 

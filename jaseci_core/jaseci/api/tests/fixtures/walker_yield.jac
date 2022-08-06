@@ -42,3 +42,5 @@ walker test_yield_take {
         report "test"; #should not be printed
     }
 }
+
+# Need traveling yield test that also check with entry and exit
