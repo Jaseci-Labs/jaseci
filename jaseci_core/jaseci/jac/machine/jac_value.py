@@ -184,19 +184,16 @@ class jac_value:
 
     def self_destruct(self, jac_ast):
         if self.is_element and self.name in self.ctx.keys():
-            self.parent.rt_error(
-                f"Deleting {self.name} in graph element "
-                f"{type(self.is_element)} is not allowed, try setting to null",
-                jac_ast,
-            )
-            return
-        if self.ctx is not None:
+            self.ctx[self.name] = None  # assumes interp has destroyed element
+        elif self.ctx is not None:
             try:
                 del self.ctx[self.name]
             except Exception as e:
                 self.parent.rt_error(f"{e}", jac_ast)
         else:
-            self.parent.rt_error(f"{self.value} is not destroyable", jac_ast)
+            self.parent.rt_error(
+                f"{self.value} is not destroyable, try setting to null", jac_ast
+            )
 
     def wrap(self, serialize_mode=False):
         "Caller for recursive wrap"

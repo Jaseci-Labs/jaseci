@@ -494,3 +494,21 @@ dot_private_hidden = """
         n2 = spawn here --> node::a;
     }
     """
+
+check_destroy_node_has_var = """
+    node a {
+        has x;
+    }
+
+    walker create {
+        n = spawn here --> node::a;
+        n.x = spawn node::a;
+        report n.x.type;
+    }
+
+    walker remove {
+        n=-->[0];
+        destroy n.x;
+        report n.x.type;
+    }
+"""
