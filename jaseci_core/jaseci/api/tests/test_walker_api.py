@@ -89,3 +89,17 @@ class walker_api_test(core_test):
         after = self.mast._h.get_object_distribution()
         self.assertEqual(before, after)
         self.assertEqual(ret["report"], [{"id": 2}])
+
+    def test_walker_smart_yield_no_future(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "smart_yield_no_future"}])
+        before = self.mast._h.get_object_distribution()
+        ret = self.call(self.mast, ["walker_run", {"name": "smart_yield_no_future"}])
+        ret = self.call(self.mast, ["walker_run", {"name": "smart_yield_no_future"}])
+        ret = self.call(self.mast, ["walker_run", {"name": "smart_yield_no_future"}])
+        after = self.mast._h.get_object_distribution()
+        self.assertEqual(before, after)
+        self.assertEqual(ret["report"], [{}])
