@@ -31,6 +31,7 @@ walker test_yield_disengage {
         yield disengage report a;
         report "test"; #should not be printed
     }
+    else: report "should start over now";
 }
 
 walker test_yield_take {
@@ -38,9 +39,11 @@ walker test_yield_take {
 
     if(a < 10) {
         a+=1;
+        report a;
         yield take here;
-        report "test"; #should not be printed
+        report "test"; #should be printed
     }
+    else: report "should start over now";
 }
 
 # Need traveling yield test that also check with entry and exit
