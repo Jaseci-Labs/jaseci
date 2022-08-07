@@ -130,7 +130,7 @@ class walker(element, jac_code, walker_interp, anchored):
             pr = cProfile.Profile()
             pr.enable()
 
-        if start_node:
+        if start_node and (not self.yielded or not len(self.next_node_ids)):
             self.prime(start_node, prime_ctx, request_ctx)
 
         report_ret = {"success": True}

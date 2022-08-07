@@ -75,3 +75,17 @@ class walker_api_test(core_test):
         self.assertEqual(ret["report"], ["should start over now"])
         ret = self.call(self.mast, ["walker_run", {"name": "test_yield_take"}])
         self.assertEqual(ret["report"], [7, "test"])
+
+    def test_walker_smart_yield(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "smart_yield"}])
+        before = self.mast._h.get_object_distribution()
+        ret = self.call(self.mast, ["walker_run", {"name": "smart_yield"}])
+        ret = self.call(self.mast, ["walker_run", {"name": "smart_yield"}])
+        ret = self.call(self.mast, ["walker_run", {"name": "smart_yield"}])
+        after = self.mast._h.get_object_distribution()
+        self.assertEqual(before, after)
+        self.assertEqual(ret["report"], [{"id": 2}])

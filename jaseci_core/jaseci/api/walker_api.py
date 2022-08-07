@@ -200,9 +200,9 @@ class walker_api:
         """
         Executes walker (assumes walker is primed)
         """
-        if prime:
-            self.walker_prime(wlk=wlk, nd=prime, ctx=ctx, _req_ctx=_req_ctx)
-        return wlk.run(request_ctx=_req_ctx, profiling=profiling)
+        return wlk.run(
+            start_node=prime, prime_ctx=ctx, request_ctx=_req_ctx, profiling=profiling
+        )
 
     @interface.private_api(cli_args=["name"])
     def walker_run(

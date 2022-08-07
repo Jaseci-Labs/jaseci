@@ -46,4 +46,19 @@ walker test_yield_take {
     else: report "should start over now";
 }
 
-# Need traveling yield test that also check with entry and exit
+global node_count=0;
+
+node simple {has id;}
+
+walker smart_yield {
+    with entry {
+        t=here;
+        for i=0 to i<10 by i+=1 {
+            t = spawn t --> node::simple(id=global.node_count);
+            global.node_count+=1;
+        }
+    }
+    report here.context;
+    yield;
+    take -->;
+}
