@@ -81,3 +81,15 @@ walker smart_yield_no_future {
     take -->;
     yield disengage; #hops of graph so must prime for specified continue node
 }
+
+walker deep_yield {
+    has steps=0;
+    with entry {
+        for i=0 to i<15 by i+=1 {
+            spawn here walker::smart_yield;
+        }
+    }
+    take -->;
+    steps+=1;
+    with exit {report steps;}
+}

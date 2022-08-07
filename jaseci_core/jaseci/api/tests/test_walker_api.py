@@ -103,3 +103,12 @@ class walker_api_test(core_test):
         after = self.mast._h.get_object_distribution()
         self.assertEqual(before, after)
         self.assertEqual(ret["report"], [{}])
+
+    def test_walker_deep_yield(self):
+        self.logger_on()
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
+        self.log(ret["report"])
