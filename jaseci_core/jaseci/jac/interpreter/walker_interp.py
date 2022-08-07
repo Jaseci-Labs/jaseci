@@ -62,7 +62,7 @@ class walker_interp(interp):
             act_list += i.exit_action_ids
         self.auto_trigger_node_actions(nd=self.current_node, act_list=act_list)
 
-        if kid[-2].name == "walk_exit_block":
+        if not self.yielded and kid[-2].name == "walk_exit_block":
             self.run_walk_exit_block(kid[-2])
 
     def run_node_ctx_block(self, jac_ast):

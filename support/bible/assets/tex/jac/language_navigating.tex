@@ -58,3 +58,25 @@ Additionally, the short hand of \texttt{take:b -->;}, or \texttt{take:d -->;} co
 \par
 \jaccode{jac_report.jac}{Building reports as you walk
 }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Yielding Walkers}
+
+So far, we've looked at walkers that will walk the graph carrying state in context (\lstinline{has} variables).
+But you may be wonder what happens after its walk? And does it keep that state like nodes and edges? Short answer is no.
+At the end of each walk a walker's state is cleared by default while node/edge state persists.
+That being said, there are situations where you'd want a walker to keep its state across runs, and perhaps, you may even want a walker to stop during a walk and wait to be explicitly called again updating just a few of it's dynamic state.
+This is where the \lstinline{yield} keyword comes in.
+\par
+The \lstinline{yield} keyword instructs the walker to stop walking and wait to be called again.
+There are a number of important semantics of \lstinline{yield}s:
+\begin{itemize}
+    \item Upon this \lstinline{yield}, a report is returned back and cleared.
+    \item Additional report items from further walking will be return on subsequent \lstinline{yield}s or walk completion.
+    \item Like the \lstinline{take} command, the entire body of the walker will execute on the current node and actually yield at the end of this execution.
+    \item If a start node (aka a `prime' node) is specified when continuing a walker after a \lstinline{yield}, if there are additional walk locations the walker is scheduled to travel to, the walker will ignore this prime node and continue from where it left off on its journey.
+    \item If there are no nodes scheduled for the walker to go to next, a prime node must be specified (or the walker will continue from root by default).
+    \item \lstinline{with entry} and \lstinline{with exit} code blocks in the walker are not executed upon continuing from a \lstinline{yield} or executing a \lstinline{yeild} respectively. They execute only once starting and ending a walk though there may be many yields in between.
+\end{itemize}
+

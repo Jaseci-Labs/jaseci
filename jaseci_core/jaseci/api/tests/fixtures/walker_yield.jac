@@ -1,5 +1,8 @@
 walker test_yield {
     has a=6;
+    with entry {
+        report "entering";
+    }
 
     if(a < 10) {
         a+=1;
@@ -8,6 +11,9 @@ walker test_yield {
     }
     else {
         report "should start over now";
+    }
+    with exit {
+        report "exiting";
     }
 }
 
