@@ -50,3 +50,35 @@ the variables of object need to be defined, an example below, you can copy it an
           memory: 2Gi
 
 ```
+
+
+
+###  Adding Ingress for Production workload.
+
+For Production use case its better to activate Ingress for more secured and optimal usage.
+
+To Activate, In values.yaml, Please update Ingress values as below
+
+```bash
+
+ingress:
+  enabled: true   # to enabled ingress
+  className: nginx-ingress   # Type of ingress controller, example nginx-ingress
+  # annotations: add annotation for SSL , Add Cloud Specific annotions for SSL
+  hosts:
+    - host: test.xyz.com   # host URL for your jaseci services
+      paths:
+        - path: /
+          pathType: Prefix
+
+
+```
+
+To Install Nginx-Controller, you can install it from below helm command
+
+```bash
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+helm install nginx-ingress ingress-nginx/ingress-nginx
+
+```

@@ -45,7 +45,7 @@ class graph(node):
 
         return list(edge_set)
 
-    def graph_dot_str(self):
+    def graph_dot_str(self, detailed=False):
         """
         DOT representation for graph.
         NOTE: This is different from the dot_str method for node intentionally
@@ -60,9 +60,9 @@ class graph(node):
         dstr = ""
         dstr += f"strict digraph {self.name} {{\n"
         for n in node_list:
-            dstr += f"    {n.dot_str(node_map)}"
+            dstr += f"    {n.dot_str(node_map, detailed)}"
         for e in edge_list:
-            dstr += f"    {e.dot_str(node_map, edge_map)}"
+            dstr += f"    {e.dot_str(node_map, edge_map, detailed)}"
         dstr += "}"
         return dstr
 

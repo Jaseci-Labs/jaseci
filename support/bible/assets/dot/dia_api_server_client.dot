@@ -1,0 +1,7 @@
+digraph G {
+ main [shape=box3d, label="Core Jaseci APIs"]; /* this is a comment */
+ jsctl [shape=box3d, label="JSCTL Cli/Shell", style=filled,fillcolor=".7 .3 1.0"]
+ serve [shape=box3d, label="JS REST API Server", style=filled, fillcolor=".7 .3 1.0"]
+ main -> jsctl [weight=8,label="generated", fontsize=10];
+ main -> serve [weight=8,label="generated", fontsize=10];
+}

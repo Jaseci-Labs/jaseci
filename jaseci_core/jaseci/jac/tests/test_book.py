@@ -346,14 +346,13 @@ class jac_book_tests(TestCaseHelper, TestCase):
         self.assertIn('"name": "init"', outsplit[2])
 
     def test_book_visitor_local_aciton(self):
-        self.logger_on()
         self.sent.register_code(jtc.visitor_local_aciton)
         gen_walker = self.sent.walker_ids.get_obj_by_name("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         outsplit = self.new_stdout.getvalue().split("\n")
         self.assertIn('"byear": null', outsplit[0])
-        self.assertIn("to 1995: {}", outsplit[1])
+        self.assertIn("to 1995: {", outsplit[1])
         self.assertIn("setter", outsplit[2])
         self.assertIn('"byear": "1995-01-01"', outsplit[3])
         self.assertIn('"name": "init"', outsplit[4])

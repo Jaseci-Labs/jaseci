@@ -25,6 +25,7 @@ Conversational AI is a type of artificial intelligence that enables consumers to
 Intent classification (Text classification) is the process of assigning tags or categories to text according to its content. It's one of the fundamental tasks in Natural Language Processing (NLP) with broad applications such as sentiment analysis, topic labeling, spam detection, and intent detection.
 
 #### A (simple) diagram illustrating the input and output of Intent Classification
+
 ![Alt text](./images/intent_classification.png?raw=true)
 
 Explanation Of The Current Nodes:
@@ -38,7 +39,11 @@ When a user inputs a query either via speech or text it goes to the intent class
 #### A new version of the diagram with the real example
 ![Alt text](./images/intent_classification_example.png?raw=true "Title")
 
+
 In this section, We will explain in real life how the flow works. Let's start with the current user. The user asked "Is it cold outside?" and keep in mind that a there will also be predefined classes that will also be fed to the Conversation AI and these classes of user intent are weather, fruits, music and greeting. What these classes are, its like, one word that would translate the meaning of an entire query a user may ask. So for example if the user asked "These bananas look very green", this statement belongs to the intent class **fruits**, and the word fruit translated the entire meaning of that statement the user asked. So the goal of the intent classification model is to look at classes of predefined words and based on the user input, try to figure out which class belongs to, or would suit the meaning of the user input. So, when the user input and the classes of intent get passed to the intent classification model it will figure out based on probability which intent belongs to that user query in this real example case that would be **weather**.
+
+#### Real example
+![Real Example For Intent Classification](./images/real_example_ic.png "Title")
 
 ### Entity extraction
 #### What is Entity extraction?
@@ -64,6 +69,7 @@ Great, let's explain this. Let's say we are talking to a bot that interviews peo
 ![Real Example For Entity extraction](./images/real_example_er.png "Title")
 
 This is another example of the AI figuring out based on the training data where certain keywords are located and mapping it to a class.
+
 
 ### Sentence Encoding
 #### What is Sentence Encoding?

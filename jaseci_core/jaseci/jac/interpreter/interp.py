@@ -16,7 +16,7 @@ from jaseci.jac.machine.machine_state import machine_state, TryException
 
 from jaseci.jac.machine.jac_value import jac_value
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
-from copy import copy
+from copy import copy, deepcopy
 
 
 class interp(machine_state):
@@ -536,7 +536,7 @@ class interp(machine_state):
                             j.attach_outbound(i, [use_edge])
                         else:
                             j.attach_bidirected(i, [use_edge])
-            return tret
+            return bret
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
 
@@ -982,6 +982,8 @@ class interp(machine_state):
                     )
                 elif op == "copy":
                     result = jac_value(self, value=atom_res.value.copy())
+                elif op == "deepcopy":
+                    result = jac_value(self, value=deepcopy(atom_res.value))
                 elif op == "keys":
                     result = jac_value(self, value=list(atom_res.value.keys()))
                 elif op == "clear":
@@ -1040,6 +1042,8 @@ class interp(machine_state):
                     result = jac_value(self, value=list(reversed(atom_res.value)))
                 elif op == "copy":
                     result = jac_value(self, value=atom_res.value.copy())
+                elif op == "deepcopy":
+                    result = jac_value(self, value=deepcopy(atom_res.value))
                 elif op == "sort":
                     result = jac_value(self, value=atom_res.value.sort())
                 elif op == "clear":
@@ -1619,7 +1623,7 @@ class interp(machine_state):
         m.push_scope(
             jac_scope(parent=self, has_obj=nd, action_sets=[arch.get_all_actions()])
         )
-        m._jac_scope.inherit_agent_refs(self._jac_scope)
+        m._jac_scope.inherit_agent_refs(self._jac_scope, nd)
         try:
             m.run_code_block(jac_ir_to_ast(act_list.get_obj_by_name(name).value))
         except Exception as e:

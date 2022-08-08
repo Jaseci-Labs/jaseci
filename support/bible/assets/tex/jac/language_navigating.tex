@@ -1,0 +1,101 @@
+\chapter{Walkers Navigating Graphs}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Taking Edges (and Nodes?)}
+
+\subsection{Basic Walks}
+
+%%%%%%%
+\par
+\jaccode{jac_take.jac}{Basic example of walker traveling graph
+}
+
+%%%%%%%
+\par
+\jaccode{jac_take_fanout.jac}{Fan out style takes
+}
+
+\subsection{Breadth First vs Depth First Walks}
+\par
+\jacdotnw{jac_walk_bfs}{.7}{Graph in memory for JC~\ref{jac:jac_walk_bfs.jac}}
+If you've played with the basic \texttt{take} command a bit you would notice that by default it results in a breadth first traversal of a graph.
+However, the \texttt{take} command is indeed quite flexible.
+You can specify an orientation of the \texttt{take} command to navigate with a breadth first or a depth first traversal.
+\par
+\jaccode{jac_walk_bfs.jac}{Breadth first navigation with take vs depth first}
+\par
+Take for example the program shown in JC~\ref{jac:jac_walk_bfs.jac}.
+First we observe the definition of a static three level binary tree with the graph \texttt{example} on line 3.
+This is a vanilla structure as depicted in Figure~\ref{dot:jac_walk_bfs}.
+Two walkers are present in this example, one walker \texttt{walk\_with\_breadth}, for which we observe a call to \texttt{take:bfs -->;} indicating a breadth first traversal, and another walker \texttt{walk\_with\_breadth}, for which we observe a call to \texttt{take:bfs -->;} indicating a depth first traversal.
+\par
+As can be seen in its output,
+\par
+\shellout{jac_walk_bfs.jac.output}
+The print statement on line 34 demonstrate the order of nodes visited correspond to the specified traversal order.
+\par
+Additionally, the short hand of \texttt{take:b -->;}, or \texttt{take:d -->;} could be used to specify breadth first or depth first traversals respectively.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Ignoring and Deleting}
+
+%%%%%%%
+\par
+\jaccode{jac_ignore.jac}{Ignoring edges during walk
+}
+
+%%%%%%%
+\par
+\jaccode{jac_destroy.jac}{Destorying nodes/edges during walk
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Reporting Back as you Travel}
+
+%%%%%%%
+\par
+\jaccode{jac_report.jac}{Building reports as you walk
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Yielding Walkers}
+
+So far, we've looked at walkers that will walk the graph carrying state in context (\lstinline{has} variables).
+But you may be wonder what happens after its walk? And does it keep that state like nodes and edges? Short answer is no.
+At the end of each walk a walker's state is cleared by default while node/edge state persists.
+That being said, there are situations where you'd want a walker to keep its state across runs, and perhaps, you may even want a walker to stop during a walk and wait to be explicitly called again updating just a few of it's dynamic state.
+This is where the \lstinline{yield} keyword comes in.
+\par
+Lets look at an example of yield in action.
+\par
+\jaccode{jac_walker_yield.jac}{Simple example of yielding walkers}
+
+
+\par
+The \lstinline{yield} keyword in JC~\ref{jac:jac_walker_yield.jac} instructs the walker \lstinline{simple_yield} to stop walking and wait to be called again, even though the walker is instructed to \lstinline{take -->} edges. In this example, a single next node location is queued up and the walker reports a single \lstinline{here.context} each time it's called, taking only 1 edge per call.
+
+\par
+Also note \lstinline{yield} can be followed by a number of operations as a shorthand. For example line 14 and 15 in JC~\ref{jac:jac_walker_yield.jac} could be combined to a single line with \lstinline{yield take -->;}. We call this a yield-take. Shorthands include,
+\begin{itemize}
+    \item Yield-Take: \lstinline{yield take -->;}
+    \item Yield-Report: \lstinline{yield report "hi";}
+    \item Yield-Disengage: \lstinline{yield disengage;} and \lstinline{yield disengage report "bye";}
+\end{itemize}
+In each of these cases, the \lstinline{take}, \lstinline{report}, and \lstinline{disengage} executes with the yield.
+
+\par
+There are a number of important semantics of \lstinline{yield} to keep in mind:
+\begin{enumerate}
+    \item Upon this \lstinline{yield}, a report is returned back and cleared.
+    \item Additional report items from further walking will be return on subsequent \lstinline{yield}s or walk completion.
+    \item Like the \lstinline{take} command, the entire body of the walker will execute on the current node and actually yield at the end of this execution.
+    \begin{itemize}
+        \item \emph{Note: Keep in mind \lstinline{yield} can be combined with \lstinline{disengage} and \lstinline{skip} commands.}
+    \end{itemize}
+    \item If a start node (aka a `prime' node) is specified when continuing a walker after a \lstinline{yield}, if there are additional walk locations the walker is scheduled to travel to, the walker will ignore this prime node and continue from where it left off on its journey.
+    \item If there are no nodes scheduled for the walker to go to next, a prime node must be specified (or the walker will continue from root by default).
+    \item \lstinline{with entry} and \lstinline{with exit} code blocks in the walker are not executed upon continuing from a \lstinline{yield} or executing a \lstinline{yeild} respectively. They execute only once starting and ending a walk though there may be many yields in between.
+\end{enumerate}

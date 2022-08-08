@@ -16,6 +16,7 @@ class walker_api:
 
     def __init__(self):
         self.spawned_walker_ids = id_list(self)
+        self.yielded_walkers_ids = id_list(self)
 
     @interface.public_api(url_args=["nd", "wlk"], allowed_methods=["post", "get"])
     def walker_callback(
@@ -34,14 +35,14 @@ class walker_api:
 
         if key not in wlk.namespace_keys().values():
             return self.bad_walk_response(["Not authorized to execute this walker"])
-
         if global_sync:
             self.sync_walker_from_global_sent(wlk)
 
         walk = wlk.duplicate()
         walk.refresh()
-        walk.prime(nd, prime_ctx=ctx, request_ctx=_req_ctx)
-        res = walk.run()
+        res = self.walker_execute(
+            wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
+        )
         walk.destroy()
         return res
 
@@ -61,12 +62,14 @@ class walker_api:
         """
         if key not in wlk.namespace_keys().values():
             return self.bad_walk_response(["Not authorized to execute this walker"])
-        if global_sync:  # Test needed
+        if global_sync:
             self.sync_walker_from_global_sent(wlk)
+
         walk = wlk.duplicate()
         walk.refresh()
-        walk.prime(nd, prime_ctx=ctx, request_ctx=_req_ctx)
-        res = walk.run()
+        res = self.walker_execute(
+            wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
+        )
         walk.destroy()
         return res
 
@@ -197,9 +200,9 @@ class walker_api:
         """
         Executes walker (assumes walker is primed)
         """
-        if prime:
-            self.walker_prime(wlk=wlk, nd=prime, ctx=ctx, _req_ctx=_req_ctx)
-        return wlk.run(request_ctx=_req_ctx, profiling=profiling)
+        return wlk.run(
+            start_node=prime, prime_ctx=ctx, request_ctx=_req_ctx, profiling=profiling
+        )
 
     @interface.private_api(cli_args=["name"])
     def walker_run(
@@ -215,13 +218,15 @@ class walker_api:
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.
         """
-        wlk = snt.spawn_walker(name, caller=self)
-        if not wlk:
+        wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
+        if wlk is None:
+            wlk = snt.spawn_walker(name, caller=self)
+        if wlk is None:
             return self.bad_walk_response([f"Walker {name} not found!"])
         res = self.walker_execute(
             wlk=wlk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=profiling
         )
-        wlk.destroy()
+        self.yield_or_destroy_walker(wlk)
         return res
 
     @interface.private_api(cli_args=["name"], url_args=["name"])
@@ -245,6 +250,15 @@ class walker_api:
         """
         for i in self.spawned_walker_ids.obj_list():
             i.destroy()
+
+    def yield_or_destroy_walker(self, wlk):
+        """Helper for auto destroying walkers"""
+        if not wlk.yielded:
+            if wlk.jid in self.yielded_walkers_ids:
+                self.yielded_walkers_ids.remove_obj(wlk)
+            wlk.destroy()
+        else:
+            self.yielded_walkers_ids.add_obj(wlk, silent=True)
 
     def bad_walk_response(self, errors=list()):
         return {"report": [], "success": False, "errors": errors}

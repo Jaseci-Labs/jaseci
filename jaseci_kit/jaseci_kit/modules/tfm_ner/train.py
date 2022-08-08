@@ -333,13 +333,11 @@ def test_score(test_loader, model):
         if tst_labels[i].cpu().item() != 0:
             y_true.append(tst_labels[i].cpu().item())
             y_pred.append(tst_preds[i].cpu().item())
+    labs = model.config.id2label
+    y_true = [labs[int(e)] for e in y_true]
+    y_pred = [labs[int(e)] for e in y_pred]
     tst_acc = accuracy_score(y_true, y_pred)
-    cr = classification_report(
-        y_true,
-        y_pred,
-        target_names=sorted(target_labels[1:], reverse=True),
-        zero_division=0,
-    )
+    cr = classification_report(y_true, y_pred, zero_division=0)
 
     f_macro = f1_score(y_true, y_pred, average="macro")
     logs(str(datetime.now()) + "    ", f"f1_score(macro) : {f_macro} ", logs_file_name)

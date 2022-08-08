@@ -1,0 +1,11 @@
+Testing "assert should be valid": [PASSED in 0.00s]
+Testing "assert should fail": [FAILED in 0.00s]
+('JAC Assert Failed', '<-- [ 0 ] . v1 == "I\'m Apple" ')
+Testing "assert should fail, add internal except": [FAILED in 0.00s]
+('JAC Assert Failed', '<-- [ 10 ] . v1 == "I\'m apple" ', IndexError('list index out of range'))
+{
+  "tests": 3,
+  "passed": 1,
+  "failed": 2,
+  "success": false
+}
