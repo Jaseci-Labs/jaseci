@@ -88,7 +88,7 @@ and see how similar it is to a class "greeting" so when we pass the both to sepe
 #### Real example
 ![Real Example For Sentence Encoder](./images/real_example_se.png "Title")
 
-This is a real life example where it applies from a day to day basis in our lives. Sentence encoder is widely used in many modern AI applications.
+This is a real life example where it applies from a day to day basis in our lives. Sentence encoder is widely used in many modern AI applications across the world.
 
 ### The AI models we will use in this tutorial
 
