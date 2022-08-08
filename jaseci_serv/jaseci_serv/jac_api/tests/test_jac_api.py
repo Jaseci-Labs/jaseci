@@ -238,14 +238,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
 
         self.assertEqual("SUCCESS", res.data["state"])
 
-        expected_report = {
-            "success": True,
-            "report": [],
-            "status_code": 200,
-            "report_custom": {"updated": False},
-        }
-
-        self.assertEqual(expected_report, res.data["result"])
+        self.assertTrue(res.data["result"]["success"])
 
 
 class PrivateJacApiTests(TestCaseHelper, TestCase):
@@ -1322,50 +1315,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        # It should return the error too for global.b since it was not yet set
-
-        default_res = {
-            "yielded": False,
-            "success": False,
-            "report": [
-                "test",
-                None,
-                {"a": "test"},
-                {
-                    "report": ["test", None, {"a": "test"}],
-                    "report_status": None,
-                    "report_custom": None,
-                    "request_context": {
-                        "method": "POST",
-                        "headers": {
-                            "Cookie": "",
-                            "Content-Length": "43",
-                            "Content-Type": "application/json",
-                        },
-                        "query": {},
-                        "body": {"op": "walker_run", "name": "global_actions"},
-                    },
-                    "runtime_errors": [
-                        "zsb:global_actions - line 229, col 22 - rule NAME - Global not defined - b"
-                    ],
-                },
-                {
-                    "method": "POST",
-                    "headers": {
-                        "Cookie": "",
-                        "Content-Length": "43",
-                        "Content-Type": "application/json",
-                    },
-                    "query": {},
-                    "body": {"op": "walker_run", "name": "global_actions"},
-                },
-            ],
-            "errors": [
-                "zsb:global_actions - line 229, col 22 - rule NAME - Global not defined - b"
-            ],
-        }
-        del res["final_node"]
-        self.assertEquals(res, default_res)
+        self.assertFalse(res["success"])
+        self.assertEquals(payload, res["report"][4]["body"])
 
     def test_multipart_json_file(self):
         """Test multipart using json file as ctx parameter"""
@@ -1381,20 +1332,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             }
             res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
 
-        default_res = {
-            "success": True,
-            "report": [
-                {
-                    "name": "simple",
-                    "nd": "active:graph",
-                    "snt": "active:sentinel",
-                    "ctx": {"sample": "sample"},
-                }
-            ],
-        }
-        del res["yielded"]
-        del res["final_node"]
-        self.assertEquals(res, default_res)
+        self.assertTrue(res["success"])
+        self.assertEquals({"sample": "sample"}, res["report"][0]["ctx"])
 
     def test_multipart_json_string(self):
         """Test multipart using json string as ctx parameter"""
@@ -1411,20 +1350,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
         res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
 
-        default_res = {
-            "success": True,
-            "report": [
-                {
-                    "name": "simple",
-                    "nd": "active:graph",
-                    "snt": "active:sentinel",
-                    "ctx": {"sample": "sample"},
-                }
-            ],
-        }
-        del res["yielded"]
-        del res["final_node"]
-        self.assertEquals(res, default_res)
+        self.assertTrue(res["success"])
+        self.assertEquals({"sample": "sample"}, res["report"][0]["ctx"])
 
     def test_multipart_with_additional_file(self):
         """Test multipart with additional file"""
@@ -1450,10 +1377,10 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                 "content-type": "application/json",
             }
         ]
-        default_res = {"success": True, "report": [default_file, default_file]}
-        del res["yielded"]
-        del res["final_node"]
-        self.assertEquals(res, default_res)
+
+        self.assertTrue(res["success"])
+        self.assertEquals(default_file, res["report"][0])
+        self.assertEquals(default_file, res["report"][1])
 
     def test_multipart_custom_payload_with_additional_file(self):
         """Test multipart custom payload (non ctx format) with additional file"""
@@ -1478,10 +1405,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             }
         ]
 
-        default_res = {"success": True, "report": [True, True, default_file]}
-        del res["yielded"]
-        del res["final_node"]
-        self.assertEquals(res, default_res)
+        self.assertTrue(res["success"])
+        self.assertEquals(default_file, res["report"][2])
 
     def test_try_catch(self):
         """Test try catch triggers"""
@@ -1509,24 +1434,10 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        # ignore some field on assert
-        # remove python specific message since this may vary on python version
-        del res["report"][0]["msg"]
-        del res["report"][0]["args"]
-
-        expected_report = [
-            {
-                "type": "TypeError",
-                "mod": "zsb",
-                "line": 14,
-                "col": 23,
-                "name": "walker_exception_with_try_else",
-                "rule": "atom_trailer",
-            }
-        ]
-
         self.assertFalse("stack_trace" in res)
-        self.assertEqual(expected_report, res["report"])
+        self.assertEqual("walker_exception_with_try_else", res["report"][0]["name"])
+        self.assertEqual(14, res["report"][0]["line"])
+        self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
             "zsb:walker_exception_with_try_else - line 14, col 23 - rule atom_trailer - ",
             res["errors"][0],
@@ -1536,28 +1447,17 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             "op": "walker_run",
             "name": "walker_exception_with_try_else_multiple_line",
         }
+
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        # ignore some field on assert
-        # remove python specific message since this may vary on python version
-        del res["report"][0]["msg"]
-        del res["report"][0]["args"]
-
-        expected_report = [
-            {
-                "type": "MissingSchema",
-                "mod": "zsb",
-                "line": 32,
-                "col": 23,
-                "name": "walker_exception_with_try_else_multiple_line",
-                "rule": "atom_trailer",
-            }
-        ]
-
         self.assertFalse("stack_trace" in res)
-        self.assertEqual(expected_report, res["report"])
+        self.assertEqual(
+            "walker_exception_with_try_else_multiple_line", res["report"][0]["name"]
+        )
+        self.assertEqual(32, res["report"][0]["line"])
+        self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
             "zsb:walker_exception_with_try_else_multiple_line - line 32, col 23 - rule atom_trailer - ",
             res["errors"][0],
