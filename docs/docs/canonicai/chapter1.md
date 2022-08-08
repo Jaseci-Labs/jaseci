@@ -42,9 +42,6 @@ When a user inputs a query either via speech or text it goes to the intent class
 
 In this section, We will explain in real life how the flow works. Let's start with the current user. The user asked "Is it cold outside?" and keep in mind that a there will also be predefined classes that will also be fed to the Conversation AI and these classes of user intent are weather, fruits, music and greeting. What these classes are, its like, one word that would translate the meaning of an entire query a user may ask. So for example if the user asked "These bananas look very green", this statement belongs to the intent class **fruits**, and the word fruit translated the entire meaning of that statement the user asked. So the goal of the intent classification model is to look at classes of predefined words and based on the user input, try to figure out which class belongs to, or would suit the meaning of the user input. So, when the user input and the classes of intent get passed to the intent classification model it will figure out based on probability which intent belongs to that user query in this real example case that would be **weather**.
 
-#### Real example
-![Real Example For Intent Classification](./images/real_example_ic.png "Title")
-
 ### Entity extraction
 #### What is Entity extraction?
 Entity extraction is a text analysis technique that uses Natural Language Processing (NLP) to automatically pull out specific data from unstructured text, and classifies it according to predefined categories. Entity extraction, also known as named entity extraction (NER), enables machines to automatically identify or extract entities, like product name, event, and location. It’s used by search engines to understand queries, chatbots to interact with humans, and teams to automate tedious tasks like data entry.
