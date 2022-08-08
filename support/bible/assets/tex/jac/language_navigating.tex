@@ -105,9 +105,11 @@ There are a number of important semantics of \lstinline{yield} to keep in mind:
 
 \subsection{Walkers Yielding Other Walkers (i.e., Yielding Deeply)}
 
-In addition to the utility of calling walkers that yield from client, walkers also benefit from this abstraction when calling other walkers during a non-yielding walk.
+In addition to the utility of calling walkers that yield from client, walkers also benefit from this abstraction when calling other walkers during a non-yielding walk. Lets take a look at a code example.
 \par
 \jaccode{jac_walker_deep_yield.jac}{Walkers yielding other walkers}
 \par
+\jacdot{jac_walker_deep_yield}{.35}{Graph in memory for JC~\ref{jac:jac_walker_deep_yield.jac}}
 As shown in JC~\ref{jac:jac_walker_deep_yield.jac}, the walker \lstinline{deep_yield} does not yield itself, but enjoys the semantics of the yield command in \lstinline{simple_yield}.
-\jacdotnw{jac_walker_deep_yield}{.7}{Graph in memory for JC~\ref{jac:jac_walk_bfs.jac}}
+\par
+Figure~\ref{dot:jac_walker_deep_yield} shows the graph created by JC~\ref{jac:jac_walker_deep_yield.jac}. Though \lstinline{deep_yield} does not yield, tt calls \lstinline{simple_yield} 16 times and exits. These 16 calls trigger \lstinline{walker::simple_yield} which in turn creates four chained nodes off of the root node then walks the chain one step at a time while yielding after each step. The result is this very nice 17 node graph with a root node and 3 subtrees with 4 connected nodes each. Yep, this yeilding semantic is very handy indeed!
