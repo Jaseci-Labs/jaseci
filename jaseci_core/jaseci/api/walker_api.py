@@ -226,7 +226,7 @@ class walker_api:
         res = self.walker_execute(
             wlk=wlk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=profiling
         )
-        self.yield_or_destroy_walker(wlk)
+        wlk.register_yield_or_destroy(self.yielded_walkers_ids)
         return res
 
     @interface.private_api(cli_args=["name"], url_args=["name"])
@@ -250,15 +250,6 @@ class walker_api:
         """
         for i in self.spawned_walker_ids.obj_list():
             i.destroy()
-
-    def yield_or_destroy_walker(self, wlk):
-        """Helper for auto destroying walkers"""
-        if not wlk.yielded:
-            if wlk.jid in self.yielded_walkers_ids:
-                self.yielded_walkers_ids.remove_obj(wlk)
-            wlk.destroy()
-        else:
-            self.yielded_walkers_ids.add_obj(wlk, silent=True)
 
     def bad_walk_response(self, errors=list()):
         return {"report": [], "success": False, "errors": errors}

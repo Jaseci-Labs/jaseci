@@ -67,6 +67,13 @@ class machine_state:
         self._cur_jac_ast = jac_ast
         return jac_ast.kid
 
+    def destroy(self):
+        """
+        Destroys self from memory and persistent storage
+        """
+        for i in self.yielded_walkers_ids.obj_list():
+            i.destroy()
+
     # Helper Functions ##################
 
     def inherit_runtime_state(self, mach):

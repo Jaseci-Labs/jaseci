@@ -1,4 +1,5 @@
 from .test_api_core import core_test
+from jaseci.actor.walker import walker
 
 
 class walker_api_test(core_test):
@@ -111,4 +112,37 @@ class walker_api_test(core_test):
             ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
-        self.log(ret["report"])
+        self.assertEqual(
+            ret["report"],
+            [
+                {},
+                {"id": 0},
+                {"id": 1},
+                {"id": 2},
+                {"id": 3},
+                {"id": 4},
+                {"id": 5},
+                {"id": 6},
+                {"id": 7},
+                {"id": 8},
+                {"id": 9},
+                {},
+                {"id": 0},
+                {"id": 1},
+                {"id": 2},
+                11,
+            ],
+        )
+
+    def test_walker_deep_yield_no_leak(self):
+        self.logger_on()
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
+        )
+        before = self.mast._h.get_object_distribution()[walker]
+        ret = self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
+        ret = self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
+        ret = self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
+        after = self.mast._h.get_object_distribution()[walker]
+        self.assertEqual(before, after)

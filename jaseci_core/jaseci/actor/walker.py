@@ -212,4 +212,14 @@ class walker(element, jac_code, walker_interp, anchored):
         """
         for i in self.activity_action_ids.obj_list():
             i.destroy()
+        walker_interp.destroy(self)
         super().destroy()
+
+    def register_yield_or_destroy(self, yield_ids):
+        """Helper for auto destroying walkers"""
+        if not self.yielded:
+            if self.jid in yield_ids:
+                yield_ids.remove_obj(self)
+            self.destroy()
+        else:
+            yield_ids.add_obj(self, silent=True)
