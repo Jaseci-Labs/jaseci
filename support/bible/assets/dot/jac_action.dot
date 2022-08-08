@@ -1,0 +1,5 @@
+strict digraph root {
+    "n0" [ id="406ce1045cb34a42b104f7d482f91f73", label="n0:root"  ]
+    "n1" [ id="61229fe53d1b44638c45b8bb471641f1", label="n1:person" , name="Josh", birthday="1995-05-20" ]
+    "n0" -> "n1" [ id="bfc19adb61c94309ba170aa95dee1fc0", label="e0" ]
+}

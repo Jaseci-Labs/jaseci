@@ -23,8 +23,8 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
 
 * Creating Jac Program **text segmenter** (`text_seg`)
 
-    1. Create a file by name text_seg.jac
-    2. Create node model_dir and `text_seg` in `text_seg.jac` file.
+    1. Create a file by name **`segment.jac`**
+    2. Create node model_dir and `text_seg` in `segment.jac` file.
 
         ```
         node model_dir;
@@ -80,7 +80,7 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
             * **Output**
             List of Sentences that best summarizes the context
 
-    5. Adding edge name of `seg_model` in `text_seg.jac` file for connecting nodes inside graph.
+    5. Adding edge name of `seg_model` in `segment.jac` file for connecting nodes inside graph.
         ```
         # adding edge
         edge seg_model {
@@ -121,7 +121,7 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
             }
         }
         ```
-        **Final get_seg.jac program**
+        **Final `segment.jac` program**
         ```python
         node model_dir;
         node text_seg{
@@ -184,18 +184,21 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
             }
         }
         ```
-    * **Steps for running `text_seg.jac` program**
+    * **Steps for running `segment.jac` program**
 
-        * Execute the follow command for Build `text_seg.jac`
+        * Execute the follow command for Build `segment.jac`
 
             ```
-            jac build text_seg.jac
+            jac build segment.jac
             ```
         * Execute the follow command to Activate sentinal
 
             ```
-            sentinel set -snt active:sentinel -mode ir text_seg.jir
+            sentinel set -snt active:sentinel -mode ir segment.jir
             ```
+            **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
+            > sentinel register -set_active true -mode ir segment.jir
+
         * Execute the walker `text_segment` with default parameter for `text segmentation (text_seg)` module by following command
             ```
             walker run text_segment

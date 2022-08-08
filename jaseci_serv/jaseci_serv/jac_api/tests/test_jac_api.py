@@ -1405,7 +1405,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
     def test_try_catch(self):
         """Test try catch triggers"""
-        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        zsb_file = open(os.path.dirname(__file__) + "/try-syntax.jac").read()
         payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
         self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
 
@@ -1414,16 +1414,14 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        self.assertTrue(
-            res["stack_trace"].index(
-                "get() missing 2 required positional arguments: 'data' and 'header'"
-            )
-            > -1
+        self.assertIn(
+            "in jac_try_exception\n    raise TryException(self.jac_exception(e, jac_ast))\njaseci.jac.machine.machine_state.TryException: ",
+            res["stack_trace"],
         )
 
-        self.assertEqual(
+        self.assertIn(
+            "zsb:walker_exception_no_try_else - line 6, col 20 - rule atom - Internal Exception: ",
             res["errors"][0],
-            "zsb:walker_exception_no_try_else - line 271, col 20 - rule atom - Internal Exception: get() missing 2 required positional arguments: 'data' and 'header'",
         )
 
         payload = {"op": "walker_run", "name": "walker_exception_with_try_else"}
@@ -1431,15 +1429,16 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
+        # ignore some field on assert
+        # remove python specific message since this may vary on python version
+        del res["report"][0]["msg"]
+        del res["report"][0]["args"]
+
         expected_report = [
             {
                 "type": "TypeError",
                 "mod": "zsb",
-                "msg": "get() missing 2 required positional arguments: 'data' and 'header'",
-                "args": (
-                    "get() missing 2 required positional arguments: 'data' and 'header'",
-                ),
-                "line": 279,
+                "line": 14,
                 "col": 23,
                 "name": "walker_exception_with_try_else",
                 "rule": "atom_trailer",
@@ -1448,9 +1447,9 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
         self.assertFalse("stack_trace" in res)
         self.assertEqual(expected_report, res["report"])
-        self.assertEqual(
+        self.assertIn(
+            "zsb:walker_exception_with_try_else - line 14, col 23 - rule atom_trailer - ",
             res["errors"][0],
-            "zsb:walker_exception_with_try_else - line 279, col 23 - rule atom_trailer - get() missing 2 required positional arguments: 'data' and 'header'",
         )
 
         payload = {
@@ -1461,15 +1460,16 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
+        # ignore some field on assert
+        # remove python specific message since this may vary on python version
+        del res["report"][0]["msg"]
+        del res["report"][0]["args"]
+
         expected_report = [
             {
                 "type": "MissingSchema",
                 "mod": "zsb",
-                "msg": "Invalid URL 'invalidUrl': No scheme supplied. Perhaps you meant http://invalidUrl?",
-                "args": (
-                    "Invalid URL 'invalidUrl': No scheme supplied. Perhaps you meant http://invalidUrl?",
-                ),
-                "line": 297,
+                "line": 32,
                 "col": 23,
                 "name": "walker_exception_with_try_else_multiple_line",
                 "rule": "atom_trailer",
@@ -1478,7 +1478,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
         self.assertFalse("stack_trace" in res)
         self.assertEqual(expected_report, res["report"])
-        self.assertEqual(
+        self.assertIn(
+            "zsb:walker_exception_with_try_else_multiple_line - line 32, col 23 - rule atom_trailer - ",
             res["errors"][0],
-            "zsb:walker_exception_with_try_else_multiple_line - line 297, col 23 - rule atom_trailer - Invalid URL 'invalidUrl': No scheme supplied. Perhaps you meant http://invalidUrl?",
         )

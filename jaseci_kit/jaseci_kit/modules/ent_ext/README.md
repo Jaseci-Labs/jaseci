@@ -199,6 +199,8 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
         ```
         sentinel set -snt active:sentinel -mode ir zero_shot_ner.jir
         ```
+        **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
+        > sentinel register -set_active true -mode ir zero_shot_ner.jir
     3. Module `entity_detection`: detects all availabe entities from the provided context
         * ### Input Data:
             * `model_name`: name of model which we are using for zero-shot entity detection e.g. `tars-ner`
@@ -353,7 +355,7 @@ For this tutorial we are going to train the model on train dataset and validate 
         ```
         node flair_ner{
             # set ability model configuration and train model
-            ent_ext.set_config, can ent_ext.train;
+            ent_ext.set_config, can ent_ext.train, ent_ext.entity_detection;
             }
         ```
     4. Initializing module for `set_config` inside node `flair_ner`
@@ -479,7 +481,7 @@ For this tutorial we are going to train the model on train dataset and validate 
         node model_dir;
         node flair_ner {
             # load the model actions here
-            can ent_ext.set_config, ent_ext.train;
+            can ent_ext.set_config, ent_ext.train, ent_ext.entity_detection;
 
 
             can set_config with train_and_val_flair entry{
@@ -587,6 +589,8 @@ For this tutorial we are going to train the model on train dataset and validate 
         ```
         sentinel set -snt active:sentinel -mode ir flair_ner.jir
         ```
+        **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
+        > sentinel register -set_active true -mode ir flair_ner.jir
     3. Create `train and validation context`: train model on train dataset file and validate and test on validate and test dataset file.
         * ### Input data for train and validation:
             * `train_file(List(Dict))` : training dataset file
@@ -600,7 +604,7 @@ For this tutorial we are going to train the model on train dataset and validate 
     
     4. Run the following command to execute walker for `model train and validation` and pass [`input data`](#input-data-for-train-and-validation) in context.
         ```
-        walker run train_and_val_flair -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/dev.json\",\"test_file\":\"dataset/test.json\",\"model_name\":\"prajjwal1/bert-tiny\",\"model_type\":\"trfmodel\",\"num_train_epochs\":\"10\",\"batch_size\":\"8\",\"learning_rate\":\"0.02\"}"
+        walker run train_and_val_flair -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/val.json\",\"test_file\":\"dataset/test.json\",\"model_name\":\"prajjwal1/bert-tiny\",\"model_type\":\"trfmodel\",\"num_train_epochs\":\"10\",\"batch_size\":\"8\",\"learning_rate\":\"0.02\"}"
     
     5. You'll find the following logs in train folder inside model name.
         `Console logs`

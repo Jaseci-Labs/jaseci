@@ -144,7 +144,8 @@ walker_action:
 
 ignore_action: KW_IGNORE expression SEMI;
 
-take_action: KW_TAKE expression (SEMI | else_stmt);
+take_action:
+	KW_TAKE (COLON NAME)? expression (SEMI | else_stmt);
 
 expression: connect (assignment | copy_assign | inc_assign)?;
 
