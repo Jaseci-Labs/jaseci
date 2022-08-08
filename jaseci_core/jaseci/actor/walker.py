@@ -116,7 +116,8 @@ class walker(element, jac_code, walker_interp, anchored):
         """Place walker on node and get ready to step step"""
         if not self.yielded:
             self.clear_state()
-        self.next_node_ids.add_obj(start_node, push_front=True)
+        if not self.yielded or not len(self.next_node_ids):  # modus ponens
+            self.next_node_ids.add_obj(start_node, push_front=True)
         if prime_ctx:
             for i in prime_ctx.keys():
                 self.context[str(i)] = prime_ctx[i]
