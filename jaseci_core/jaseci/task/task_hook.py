@@ -113,25 +113,26 @@ class task_hook:
 
         que = task_hook.queues.pop(queue_id)
 
-        caller = task_hook.main_hook.get_obj(
-            "override", uuid.UUID(que["caller"]), override=True
-        )
         kwargs = que.get("kwargs", {})
 
-        if caller is None:
-            for types in que.get("jid_types", []):
-                kwargs[types] = task_hook.main_hook.get_obj(
-                    "override", uuid.UUID(kwargs[types]), override=True
-                )
+        if task_hook.main_hook.has_obj(uuid.UUID(que["caller"])):
+            caller = task_hook.main_hook.get_obj(
+                "override", uuid.UUID(que["caller"]), override=True
+            )
 
-            return getattr(task_hook.get_basic_master(), que["api_name"])(**kwargs)
-        else:
             for types in que.get("jid_types", []):
                 kwargs[types] = task_hook.main_hook.get_obj(
                     caller._m_id, uuid.UUID(kwargs[types])
                 )
 
             return getattr(caller, que["api_name"])(**kwargs)
+        else:
+            for types in que.get("jid_types", []):
+                kwargs[types] = task_hook.main_hook.get_obj(
+                    "override", uuid.UUID(kwargs[types]), override=True
+                )
+
+            return getattr(task_hook.get_basic_master(), que["api_name"])(**kwargs)
 
     def get_basic_master():
         if task_hook.basic_master is None:
