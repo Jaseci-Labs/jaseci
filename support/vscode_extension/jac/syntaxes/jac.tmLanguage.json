@@ -33,7 +33,7 @@
                     "name": "support.type.jac"
                 },
                 {
-                    "match": "\\b(edge|graph|node|digraph|subgraph)\\b",
+                    "match": "\\b(edge|graph|node|walker|digraph|subgraph)\\b",
                     "name": "storage.type.entity.jac"
                 },
                 {
@@ -56,7 +56,7 @@
             ]
         },
         "entity_block_definition": {
-            "begin": "^\\s*(node|walker|graph)\\s+([A-Za-z][\\w]*|(?:\\w+(?:(?:\\,\\s?|\\:)(?:\\w+|\\s\\w))+))(\\s*({)|;)",
+            "begin": "^\\s*(node|edge|walker|graph)\\s+([A-Za-z][\\w]*|(?:\\w+(?:(?:\\,\\s?|\\:)(?:\\w+|\\s\\w))+))(\\s*({)|;)",
             "name": "source.jac.embedded.source",
             "beginCaptures": {
                 "1": {
