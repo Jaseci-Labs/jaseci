@@ -18,9 +18,9 @@ class queue(Task):
 
 class dynamic_request(Task):
     json_escape = re.compile("[^a-zA-Z0-9_]")
-    internal = re.compile("\(([a-zA-Z0-9_\.\[\]\$\#\@]*?)\)")
-    full = re.compile("^\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@]*?)\}\}$")
-    partial = re.compile("\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@]*?)\}\}")
+    internal = re.compile("\(([a-zA-Z0-9_\.\[\]\$\#\@\!]*?)\)")
+    full = re.compile("^\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}$")
+    partial = re.compile("\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}")
 
     def get_deep_value(self, data, keys, default):
         if len(keys) == 0:
@@ -60,6 +60,8 @@ class dynamic_request(Task):
                     return self.get_deep_value(holder[2], keys, default)
                 else:
                     return holder[2]
+            elif key == "!":
+                return holder[3]
         return default
 
     def compare(self, condition, expected, actual):
@@ -133,6 +135,7 @@ class dynamic_request(Task):
         requests = kwargs.get("requests")
         persistence = kwargs.get("persistence", {})
         container = kwargs.get("container", {})
+        index = container.get("index", "0")
 
         if "parent_current" in container:
             container["current"] = container["parent_current"]
@@ -145,10 +148,10 @@ class dynamic_request(Task):
                             persistence,
                             container["current"],
                             container.get("parent_current", {}),
+                            index,
                         ),
                         req,
                     )
-
                 self.save((persistence, req), req, "save_req_to")
 
                 method = req["method"].upper()
@@ -171,14 +174,16 @@ class dynamic_request(Task):
 
                 if "__def_loop__" in req:
                     def_loop = req["__def_loop__"]
-                    for loop in self.get_value(
-                        (persistence, container["current"]), def_loop["by"], []
+                    for idx, loop in enumerate(
+                        self.get_value(
+                            (persistence, container["current"]), def_loop["by"], []
+                        )
                     ):
                         if "filter" in def_loop and not self.and_condition(
                             (persistence, loop), def_loop["filter"]
                         ):
                             continue
-                        loop_container = {"parent_current": loop}
+                        loop_container = {"parent_current": loop, "index": str(idx)}
                         self.run(
                             requests=deepcopy(def_loop["requests"]),
                             persistence=persistence,
@@ -205,3 +210,5 @@ class dynamic_request(Task):
                     if "parent_current" in container:
                         raise err
                     break
+
+        return persistence
