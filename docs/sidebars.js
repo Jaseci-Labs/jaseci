@@ -104,7 +104,7 @@ const sidebars = {
       {
         type : 'category',
         label : 'Building an AI conversatioanl Agent',
-        items : ['Samples_and_Tutorials/canonicai/chapter1','Samples_and_Tutorials/canonicai/chapter2']
+        items : ['Samples_and_Tutorials/canonicai/chapter1','Samples_and_Tutorials/canonicai/chapter2','Samples_and_Tutorials/canonicai/chapter3']
       },
   
   
