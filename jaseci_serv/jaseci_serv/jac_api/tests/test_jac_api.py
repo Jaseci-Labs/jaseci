@@ -1255,6 +1255,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         # It should return the error too for global.b since it was not yet set
 
         default_res = {
+            "yielded": False,
             "success": False,
             "report": [
                 "test",
@@ -1293,6 +1294,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                 "zsb:global_actions - line 229, col 22 - rule NAME - Global not defined - b"
             ],
         }
+        del res["final_node"]
         self.assertEquals(res, default_res)
 
     def test_multipart_json_file(self):
@@ -1320,6 +1322,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                 }
             ],
         }
+        del res["yielded"]
+        del res["final_node"]
         self.assertEquals(res, default_res)
 
     def test_multipart_json_string(self):
@@ -1348,6 +1352,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                 }
             ],
         }
+        del res["yielded"]
+        del res["final_node"]
         self.assertEquals(res, default_res)
 
     def test_multipart_with_additional_file(self):
@@ -1375,6 +1381,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             }
         ]
         default_res = {"success": True, "report": [default_file, default_file]}
+        del res["yielded"]
+        del res["final_node"]
         self.assertEquals(res, default_res)
 
     def test_multipart_custom_payload_with_additional_file(self):
@@ -1401,6 +1409,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         ]
 
         default_res = {"success": True, "report": [True, True, default_file]}
+        del res["yielded"]
+        del res["final_node"]
         self.assertEquals(res, default_res)
 
     def test_try_catch(self):
@@ -1482,3 +1492,58 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             "zsb:walker_exception_with_try_else_multiple_line - line 32, col 23 - rule atom_trailer - ",
             res["errors"][0],
         )
+
+    def test_check_json_global_dict(self):
+        """Test set get global objects (as json)"""
+        from jaseci.tests.jac_test_code import set_get_global_dict
+
+        payload = {
+            "op": "sentinel_register",
+            "name": "zsb",
+            "code": set_get_global_dict,
+        }
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "walker_run", "name": "setter"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "walker_run", "name": "getter"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(res.data["report"][0]["max_bot_count"], 10)
+
+    def quick_call(self, bywho, ops):
+        return bywho.post(reverse(f'jac_api:{ops["op"]}'), ops, format="json")
+
+    def test_walker_smart_yield(self):
+        testfile = open(os.path.dirname(__file__) + "/various.jac").read()
+        self.quick_call(
+            self.client, {"op": "sentinel_register", "name": "test", "code": testfile}
+        )
+        ret = self.quick_call(self.client, {"op": "walker_run", "name": "smart_yield"})
+        ret = self.quick_call(self.client, {"op": "walker_run", "name": "smart_yield"})
+        ret = self.quick_call(self.client, {"op": "walker_run", "name": "smart_yield"})
+        ret = self.quick_call(self.client, {"op": "walker_run", "name": "smart_yield"})
+        self.assertEqual(ret.data["report"], [{"id": 2}])
+
+    def test_walker_smart_yield_no_future(self):
+        testfile = open(os.path.dirname(__file__) + "/various.jac").read()
+        self.quick_call(
+            self.client, {"op": "sentinel_register", "name": "test", "code": testfile}
+        )
+        ret = self.quick_call(
+            self.client, {"op": "walker_run", "name": "smart_yield_no_future"}
+        )
+        ret = self.quick_call(
+            self.client, {"op": "walker_run", "name": "smart_yield_no_future"}
+        )
+        ret = self.quick_call(
+            self.client, {"op": "walker_run", "name": "smart_yield_no_future"}
+        )
+        ret = self.quick_call(
+            self.client, {"op": "walker_run", "name": "smart_yield_no_future"}
+        )
+        self.assertEqual(ret.data["report"], [{}])

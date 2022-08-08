@@ -13,6 +13,7 @@ from jaseci.element.element import element
 
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.machine.jac_scope import jac_scope
+from jaseci.utils.id_list import id_list
 
 
 class machine_state:
@@ -24,6 +25,7 @@ class machine_state:
         self.report_custom = None
         self.request_context = None
         self.runtime_errors = []
+        self.yielded_walkers_ids = id_list(self)
         self._parent_override = parent_override
         if not isinstance(self, element) and caller:
             self._m_id = caller._m_id
@@ -64,6 +66,13 @@ class machine_state:
     def set_cur_ast(self, jac_ast):
         self._cur_jac_ast = jac_ast
         return jac_ast.kid
+
+    def destroy(self):
+        """
+        Destroys self from memory and persistent storage
+        """
+        for i in self.yielded_walkers_ids.obj_list():
+            i.destroy()
 
     # Helper Functions ##################
 

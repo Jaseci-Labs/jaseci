@@ -1,6 +1,7 @@
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
+from jaseci.graph.node import node
 from jaseci.element.super_master import super_master
 from jaseci.element.master import master
 from jaseci.utils.utils import TestCaseHelper
@@ -106,6 +107,7 @@ class jac_tests(TestCaseHelper, TestCase):
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
         )
+        del report["final_node"]
         self.assertEqual(
             report,
             {
@@ -117,6 +119,7 @@ class jac_tests(TestCaseHelper, TestCase):
                     "super.y",
                 ],
                 "success": True,
+                "yielded": False,
             },
         )
 
@@ -267,3 +270,19 @@ class jac_tests(TestCaseHelper, TestCase):
             api_name="graph_get", params={"mode": "dot", "detailed": True}
         )
         self.assertNotIn("j=", report)
+
+    def test_check_destroy_node_has_var(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(
+            name="test", code=jtp.check_destroy_node_has_var, auto_run=""
+        )
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "create"}
+        )
+        self.assertEqual(mast._h.get_object_distribution()[node], 2)
+        self.assertEqual(report["report"][0], "JAC_TYPE.NODE")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "remove"}
+        )
+        self.assertEqual(mast._h.get_object_distribution()[node], 1)
+        self.assertEqual(report["report"][0], "JAC_TYPE.NULL")

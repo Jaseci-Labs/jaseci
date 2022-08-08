@@ -58,3 +58,58 @@ Additionally, the short hand of \texttt{take:b -->;}, or \texttt{take:d -->;} co
 \par
 \jaccode{jac_report.jac}{Building reports as you walk
 }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Yielding Walkers}
+
+So far, we've looked at walkers that will walk the graph carrying state in context (\lstinline{has} variables).
+But you may be wonder what happens after its walk? And does it keep that state like nodes and edges? Short answer is no.
+At the end of each walk a walker's state is cleared by default while node/edge state persists.
+That being said, there are situations where you'd want a walker to keep its state across runs, and perhaps, you may even want a walker to stop during a walk and wait to be explicitly called again updating just a few of it's dynamic state.
+This is where the \lstinline{yield} keyword comes in.
+\par
+Lets look at an example of yield in action.
+\par
+\jaccode{jac_walker_yield.jac}{Simple example of yielding walkers}
+
+
+\par
+The \lstinline{yield} keyword in JC~\ref{jac:jac_walker_yield.jac} instructs the walker \lstinline{simple_yield} to stop walking and wait to be called again, even though the walker is instructed to \lstinline{take -->} edges. In this example, a single next node location is queued up and the walker reports a single \lstinline{here.context} each time it's called, taking only 1 edge per call.
+
+\subsection{Yield Shorthands}
+\par
+Also note \lstinline{yield} can be followed by a number of operations as a shorthand. For example line 14 and 15 in JC~\ref{jac:jac_walker_yield.jac} could be combined to a single line with \lstinline{yield take -->;}. We call this a yield-take. Shorthands include,
+\begin{itemize}
+    \item Yield-Take: \lstinline{yield take -->;}
+    \item Yield-Report: \lstinline{yield report "hi";}
+    \item Yield-Disengage: \lstinline{yield disengage;} and \lstinline{yield disengage report "bye";}
+\end{itemize}
+In each of these cases, the \lstinline{take}, \lstinline{report}, and \lstinline{disengage} executes with the yield.
+
+\subsection{Technical Semantics of Yield}
+\par
+There are a number of important semantics of \lstinline{yield} to keep in mind:
+\begin{enumerate}
+    \item Upon a \lstinline{yield}, a report is returned back and cleared.
+    \item Additional report items from further walking will be return on subsequent \lstinline{yield}s or walk completion.
+    \item Like the \lstinline{take} command, the entire body of the walker will execute on the current node and actually yield at the end of this execution.
+          \begin{itemize}
+              \item \emph{Note: Keep in mind \lstinline{yield} can be combined with \lstinline{disengage} and \lstinline{skip} commands.}
+          \end{itemize}
+    \item If a start node (aka a `prime' node) is specified when continuing a walker after a \lstinline{yield}, if there are additional walk locations the walker is scheduled to travel to, the walker will ignore this prime node and continue from where it left off on its journey.
+    \item If there are no nodes scheduled for the walker to go to next, a prime node must be specified (or the walker will continue from root by default).
+    \item \lstinline{with entry} and \lstinline{with exit} code blocks in the walker are not executed upon continuing from a \lstinline{yield} or executing a \lstinline{yeild} respectively. They execute only once starting and ending a walk though there may be many yields in between.
+    \item The state of which walkers are yielded and to be continued vs which walkers are being freshly run is kept at the level of the \texttt{master} (user) abstraction in Jaseci. At the moment, walkers that are summoned as public has undefined yield semantics. Developers should leverage the more lower level \texttt{walker spawn} and \texttt{walker execute} APIs for customized yield behaviors.
+\end{enumerate}
+
+\subsection{Walkers Yielding Other Walkers (i.e., Yielding Deeply)}
+
+In addition to the utility of calling walkers that yield from client, walkers also benefit from this abstraction when calling other walkers during a non-yielding walk. Lets take a look at a code example.
+\par
+\jaccode{jac_walker_deep_yield.jac}{Walkers yielding other walkers}
+\par
+\jacdot{jac_walker_deep_yield}{.35}{Graph in memory for JC~\ref{jac:jac_walker_deep_yield.jac}}
+As shown in JC~\ref{jac:jac_walker_deep_yield.jac}, the walker \lstinline{deep_yield} does not yield itself, but enjoys the semantics of the yield command in \lstinline{simple_yield}.
+\par
+Figure~\ref{dot:jac_walker_deep_yield} shows the graph created by JC~\ref{jac:jac_walker_deep_yield.jac}. Though \lstinline{deep_yield} does not yield, tt calls \lstinline{simple_yield} 16 times and exits. These 16 calls trigger \lstinline{walker::simple_yield} which in turn creates four chained nodes off of the root node then walks the chain one step at a time while yielding after each step. The result is this very nice 17 node graph with a root node and 3 subtrees with 4 connected nodes each. Yep, this yeilding semantic is very handy indeed!

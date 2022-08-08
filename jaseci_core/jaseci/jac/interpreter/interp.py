@@ -1223,7 +1223,13 @@ class interp(machine_state):
         walker_ref: KW_WALKER DBL_COLON NAME;
         """
         kid = self.set_cur_ast(jac_ast)
-        return self.parent().spawn_walker(kid[2].token_text(), caller=self)
+        name = kid[2].token_text()
+        wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
+        if wlk is None:
+            wlk = self.parent().spawn_walker(name, caller=self)
+        if wlk is None:
+            self.rt_error(f"No walker {name} exists!", kid[2])
+        return wlk
 
     def run_graph_ref(self, jac_ast):
         """
@@ -1525,7 +1531,7 @@ class interp(machine_state):
             tr.unwrap()
             ret.append(tr.value)
             self.inherit_runtime_state(walk)
-            walk.destroy()
+            walk.register_yield_or_destroy(self.yielded_walkers_ids)
         return jac_value(self, value=ret[0] if len(ret) == 1 else ret)
 
     def run_spawn_ctx(self, jac_ast, obj):
@@ -1613,6 +1619,12 @@ class interp(machine_state):
             return jac_value(self, value=type)
         else:
             self.rt_error("Unrecognized type", kid[0])
+
+    def destroy(self):
+        """
+        Destroys self from memory and persistent storage
+        """
+        super().destroy()
 
     # Helper Functions ##################
 
