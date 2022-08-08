@@ -3,7 +3,7 @@
 ### Two main stages in handling a conversational AI request
 ![Two Stages](/img/tutorial/images/nlu_nlg.png?raw=true "Title")
 
-There are two stages which handles the conversational aspect of the AI and they are NLU (Natural Language Understand) and NLG (Natural Language Generation).
+There are two stages which handles the conversational aspect of  AI  they are NLU (Natural Language Understand) and NLG (Natural Language Generation).
 
 * **NLU (Natural Language Understand)**: Natural language understanding is a branch of artificial intelligence that uses computer software to understand input in the form of sentences using text or speech. **What does NLU do?** If you look at the diagram above it intakes the user query and the NLU uses two component: intent classification (understanding the meaning of the utterance) and entity extraction (collects important words from the utterance) and this process gives the conversational AI the understanding of what the user is actually trying to say.
 
@@ -12,10 +12,10 @@ There are two stages which handles the conversational aspect of the AI and they 
 ### **What do each node abilities do?**
 
 * **classifiy_intent**: Figures out the user intention in any given question.
-* **extract_entities**: Extract words of interests from the question
+* **extract_entities**: Extract words of interests from the question.
 * **gen_response**: Generate a suitable response for the user.
 * **nlu**: Process incoming request through NLU engines using intent classification or entity extraction AI models.
-* **nlg**: Construct natural language response
+* **nlg**: Construct natural language responses.
 
 
 ### **Inheritance**
@@ -41,7 +41,7 @@ node bus:vehicle {
 }
 ```
 In the above code snippet. This is a very basic example of inheritance. We created a node named car and bus but since they are related and simply share the same property and node ability we created a node named vehicle and inherit its attributes. Imagine life without inheritance, the code will look like this.
-``` 
+```jac
 node car {
     has plate_number = "RAC001";
     
