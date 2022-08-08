@@ -7,7 +7,7 @@ helm repo add elastic https://helm.elastic.co
 ```
 
 
-## Installing Elastci Search
+## Installing Elastic Search
 
 Use the Elastic helm Chart in this Repository to install ElasticSearch as it has been modified for single node Setup unlike available in elastic helm chart repo.
 
