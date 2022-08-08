@@ -1,9 +1,15 @@
 # INSTALLING ELK STACK ON JASECI 
 
+For installing ELK, we need to first add the reference for the helm repository in our local
+
+```bash
+helm repo add elastic https://helm.elastic.co
+```
+
 
 ## Installing Elastci Search
 
-Use the Elastic helm Chart in this Repository to install ElasticSearch as it has been modified for single node Setup.
+Use the Elastic helm Chart in this Repository to install ElasticSearch as it has been modified for single node Setup unlike available in elastic helm chart repo.
 
 ```bash
 
