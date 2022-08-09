@@ -12,8 +12,6 @@ setup(
         "fastapi[all]>=0.75.0,<1.0.0",
         "requests",
         "redis",
-        "django-celery-results>=2.3",
-        "django-celery-beat>=2.2",
         "celery>=5,<6",
         "flake8",
         "stripe",
