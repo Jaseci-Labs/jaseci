@@ -297,15 +297,10 @@ def reset():
     type=str,
     help="Filename to dump output of this command call.",
 )
-def tool(op, output):
+def booktool(op, output):
     out = ""
     if op == "cheatsheet":
-        out = (
-            f"{book().api_cheatsheet(extract_api_tree())}".replace("_", "\\_")
-            .replace("&\n", "\\\\\n")
-            .replace("self, ", "")
-            .replace("(self)", "()")
-        )
+        out = f"{book().api_cheatsheet(extract_api_tree())}"
     elif op == "classes":
         out = book().api_spec()
     click.echo(out)
@@ -321,7 +316,7 @@ jsctl.add_command(edit)
 jsctl.add_command(ls)
 jsctl.add_command(clear)
 jsctl.add_command(reset)
-jsctl.add_command(tool)
+jsctl.add_command(booktool)
 cmd_tree_builder(extract_api_tree())
 
 

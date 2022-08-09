@@ -1,0 +1,84 @@
+\texttt{walker callback} & \texttt{nd: node (*req), wlk: walker (*req), key: str (*req), ctx: dict, \_req\_ctx: dict, global\_sync: bool} \\ \hline
+\texttt{walker summon} & \texttt{key: str (*req), wlk: walker (*req), nd: node (*req), ctx: dict, \_req\_ctx: dict, global\_sync: bool} \\ \hline
+\texttt{walker register} & \texttt{snt: sentinel, code: str, encoded: bool} \\ \hline
+\texttt{walker get} & \texttt{wlk: walker (*req), mode: str, detailed: bool} \\ \hline
+\texttt{walker set} & \texttt{wlk: walker (*req), code: str (*req), mode: str} \\ \hline
+\texttt{walker list} & \texttt{snt: sentinel, detailed: bool} \\ \hline
+\texttt{walker delete} & \texttt{wlk: walker (*req), snt: sentinel} \\ \hline
+\texttt{walker spawn create} & \texttt{name: str (*req), snt: sentinel} \\ \hline
+\texttt{walker spawn delete} & \texttt{name: str (*req)} \\ \hline
+\texttt{walker spawn list} & \texttt{detailed: bool} \\ \hline
+\texttt{walker prime} & \texttt{wlk: walker (*req), nd: node, ctx: dict, \_req\_ctx: dict} \\ \hline
+\texttt{walker execute} & \texttt{wlk: walker (*req), prime: node, ctx: dict, \_req\_ctx: dict, profiling: bool} \\ \hline
+\texttt{walker run} & \texttt{name: str (*req), nd: node, ctx: dict, \_req\_ctx: dict, snt: sentinel, profiling: bool} \\ \hline
+\texttt{alias register} & \texttt{name: str (*req), value: str (*req)} \\ \hline
+\texttt{alias list} & \texttt{n/a} \\ \hline
+\texttt{alias delete} & \texttt{name: str (*req)} \\ \hline
+\texttt{alias clear} & \texttt{n/a} \\ \hline
+\texttt{global get} & \texttt{name: str (*req)} \\ \hline
+\texttt{global set} & \texttt{name: str (*req), value: str (*req)} \\ \hline
+\texttt{global delete} & \texttt{name: str (*req)} \\ \hline
+\texttt{global sentinel set} & \texttt{snt: sentinel} \\ \hline
+\texttt{global sentinel unset} & \texttt{n/a} \\ \hline
+\texttt{object get} & \texttt{obj: element (*req), depth: int, detailed: bool} \\ \hline
+\texttt{object perms get} & \texttt{obj: element (*req)} \\ \hline
+\texttt{object perms set} & \texttt{obj: element (*req), mode: str (*req)} \\ \hline
+\texttt{object perms default} & \texttt{mode: str (*req)} \\ \hline
+\texttt{object perms grant} & \texttt{obj: element (*req), mast: element (*req), read\_only: bool} \\ \hline
+\texttt{object perms revoke} & \texttt{obj: element (*req), mast: element (*req)} \\ \hline
+\texttt{graph create} & \texttt{set\_active: bool} \\ \hline
+\texttt{graph get} & \texttt{gph: graph, mode: str, detailed: bool} \\ \hline
+\texttt{graph list} & \texttt{detailed: bool} \\ \hline
+\texttt{graph active set} & \texttt{gph: graph (*req)} \\ \hline
+\texttt{graph active unset} & \texttt{n/a} \\ \hline
+\texttt{graph active get} & \texttt{detailed: bool} \\ \hline
+\texttt{graph delete} & \texttt{gph: graph (*req)} \\ \hline
+\texttt{graph node get} & \texttt{nd: node (*req), ctx: list} \\ \hline
+\texttt{graph node set} & \texttt{nd: node (*req), ctx: dict (*req), snt: sentinel} \\ \hline
+\texttt{graph walk (cli only)} & \texttt{nd: node} \\ \hline
+\texttt{sentinel register} & \texttt{name: str, code: str, code\_dir: str, mode: str, encoded: bool, auto\_run: str, auto\_gen\_graph: bool, ctx: dict, set\_active: bool} \\ \hline
+\texttt{sentinel pull} & \texttt{set\_active: bool, on\_demand: bool} \\ \hline
+\texttt{sentinel get} & \texttt{snt: sentinel, mode: str, detailed: bool} \\ \hline
+\texttt{sentinel set} & \texttt{code: str (*req), code\_dir: str, encoded: bool, snt: sentinel, mode: str} \\ \hline
+\texttt{sentinel list} & \texttt{detailed: bool} \\ \hline
+\texttt{sentinel test} & \texttt{snt: sentinel, detailed: bool} \\ \hline
+\texttt{sentinel active set} & \texttt{snt: sentinel (*req)} \\ \hline
+\texttt{sentinel active unset} & \texttt{n/a} \\ \hline
+\texttt{sentinel active global} & \texttt{detailed: bool} \\ \hline
+\texttt{sentinel active get} & \texttt{detailed: bool} \\ \hline
+\texttt{sentinel delete} & \texttt{snt: sentinel (*req)} \\ \hline
+\texttt{wapi} & \texttt{name: str (*req), nd: node, ctx: dict, \_req\_ctx: dict, snt: sentinel, profiling: bool} \\ \hline
+\texttt{architype register} & \texttt{code: str (*req), encoded: bool, snt: sentinel} \\ \hline
+\texttt{architype get} & \texttt{arch: architype (*req), mode: str, detailed: bool} \\ \hline
+\texttt{architype set} & \texttt{arch: architype (*req), code: str (*req), mode: str} \\ \hline
+\texttt{architype list} & \texttt{snt: sentinel, detailed: bool} \\ \hline
+\texttt{architype delete} & \texttt{arch: architype (*req), snt: sentinel} \\ \hline
+\texttt{master create} & \texttt{name: str (*req), set\_active: bool, other\_fields: dict} \\ \hline
+\texttt{master get} & \texttt{name: str (*req), mode: str, detailed: bool} \\ \hline
+\texttt{master list} & \texttt{detailed: bool} \\ \hline
+\texttt{master active set} & \texttt{name: str (*req)} \\ \hline
+\texttt{master active unset} & \texttt{n/a} \\ \hline
+\texttt{master active get} & \texttt{detailed: bool} \\ \hline
+\texttt{master self} & \texttt{detailed: bool} \\ \hline
+\texttt{master delete} & \texttt{name: str (*req)} \\ \hline
+\texttt{master createsuper} & \texttt{name: str (*req), set\_active: bool, other\_fields: dict} \\ \hline
+\texttt{master allusers} & \texttt{num: int, start\_idx: int} \\ \hline
+\texttt{master become} & \texttt{mast: master (*req)} \\ \hline
+\texttt{master unbecome} & \texttt{n/a} \\ \hline
+\texttt{config get} & \texttt{name: str (*req), do\_check: bool} \\ \hline
+\texttt{config set} & \texttt{name: str (*req), value: str (*req), do\_check: bool} \\ \hline
+\texttt{config list} & \texttt{n/a} \\ \hline
+\texttt{config index} & \texttt{n/a} \\ \hline
+\texttt{config exists} & \texttt{name: str (*req)} \\ \hline
+\texttt{config delete} & \texttt{name: str (*req), do\_check: bool} \\ \hline
+\texttt{logger http connect} & \texttt{host: str (*req), port: int (*req), url: str (*req), log: str} \\ \hline
+\texttt{logger http clear} & \texttt{log: str} \\ \hline
+\texttt{logger list} & \texttt{n/a} \\ \hline
+\texttt{actions load local} & \texttt{file: str (*req)} \\ \hline
+\texttt{actions load remote} & \texttt{url: str (*req)} \\ \hline
+\texttt{actions load module} & \texttt{mod: str (*req)} \\ \hline
+\texttt{actions list} & \texttt{name: str} \\ \hline
+\texttt{jac build (cli only)} & \texttt{file: str (*req), out: str} \\ \hline
+\texttt{jac test (cli only)} & \texttt{file: str (*req), detailed: bool} \\ \hline
+\texttt{jac run (cli only)} & \texttt{file: str (*req), walk: str, ctx: dict, profiling: bool} \\ \hline
+\texttt{jac dot (cli only)} & \texttt{file: str (*req), walk: str, ctx: dict, detailed: bool} \\ \hline

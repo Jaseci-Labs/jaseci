@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Deprecation: Stripe API soft removed.
 - New Feature: Can now pluck lists of values from collections of nodes and edges.
 - Major Language Feature: Introducing the `yeild` feature. See bible for details
 - Improvement/Bug: Here behavior is now specified for ability calls and inheritance in intuitive way

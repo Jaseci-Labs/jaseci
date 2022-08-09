@@ -1,0 +1,1 @@
+jsctl -m booktool cheatsheet -o assets/tex/js_generated/api_cheatsheet.tex

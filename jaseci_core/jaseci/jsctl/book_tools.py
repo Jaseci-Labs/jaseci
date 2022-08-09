@@ -6,18 +6,40 @@ import jaseci
 
 
 class book:
+    def format_params(self, sig):
+        ret = ""
+        for i in sig.parameters:
+            if i == "self":
+                continue
+            if len(ret):
+                ret += ", "
+            ret += i + ": " + sig.parameters[i].annotation.__name__
+            default = sig.parameters[i].default
+            if default == sig.parameters[i].empty:
+                ret += " (*req)"
+        return ret if len(ret) else "n/a"
+
     def api_cheatsheet(self, root, out=None, str=""):
         if out is None:
             out = []
         if "leaf" in root.keys():
-            out.append(str + f'& {root["leaf"][1]} &\n')
+            line = "\\texttt{" + str.strip()
+            if root["leaf"][5]:  # cli_only
+                line += " (cli only)"
+            line += (
+                "} "
+                + "& \\texttt{"
+                + f'{self.format_params(root["leaf"][1])}'
+                + "} \\\\ \\hline\n"
+            )
+            out.append(line)
             return
         for i in root.keys():
             self.api_cheatsheet(root[i], out, str + f"{i} ")
         ret = ""
         for i in out:
             ret += i
-        return ret
+        return ret.replace("_", "\\_").replace("self, ", "").replace("(self)", "()")
 
     def api_spec(self):
         ret = ""
