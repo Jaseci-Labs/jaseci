@@ -302,7 +302,7 @@ def booktool(op, output):
     if op == "cheatsheet":
         out = f"{book().api_cheatsheet(extract_api_tree())}"
     elif op == "stdlib":
-        book().std_library()
+        out = book().std_library()
     elif op == "classes":
         out = book().api_spec()
     click.echo(out)

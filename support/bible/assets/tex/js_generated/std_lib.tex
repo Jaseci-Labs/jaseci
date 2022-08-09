@@ -1,0 +1,112 @@
+\subsection{date}
+\rowcolors{1}{light-cyan}{light-gray}\begin{longtable}{|p{4cm} | p{6cm}|}\toprule\rowcolor{white}\textbf{Action}&\textbf{Args}\\\midrule\lstinline$date.quantize_to_year$ & \lstinline$date: str (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$date.quantize_to_month$ & \lstinline$date: str (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$date.quantize_to_week$ & \lstinline$date: str (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$date.quantize_to_day$ & \lstinline$date: str (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$date.date_day_diff$ & \lstinline$start_date: str (*req), end_date: str (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\bottomrule\hiderowcolors\caption{date Actions in Jac}\label{tab:datestd}\end{longtable}\subsection{file}
+\rowcolors{1}{light-cyan}{light-gray}\begin{longtable}{|p{4cm} | p{6cm}|}\toprule\rowcolor{white}\textbf{Action}&\textbf{Args}\\\midrule\lstinline$file.load_str$ & \lstinline$fn: str (*req), max_chars: int$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$file.load_json$ & \lstinline$fn: str (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$file.dump_str$ & \lstinline$fn: str (*req), s: str (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$file.append_str$ & \lstinline$fn: str (*req), s: str (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$file.dump_json$ & \lstinline$fn: str (*req), obj: _empty (*req), indent: int$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$file.delete$ & \lstinline$fn: str (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\bottomrule\hiderowcolors\caption{file Actions in Jac}\label{tab:filestd}\end{longtable}\subsection{net}
+\rowcolors{1}{light-cyan}{light-gray}\begin{longtable}{|p{4cm} | p{6cm}|}\toprule\rowcolor{white}\textbf{Action}&\textbf{Args}\\\midrule\lstinline$net.max$ & \lstinline$item_set: jac_set (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$net.min$ & \lstinline$item_set: jac_set (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$net.root$ & \lstinline$meta: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\bottomrule\hiderowcolors\caption{net Actions in Jac}\label{tab:netstd}\end{longtable}\subsection{rand}
+\rowcolors{1}{light-cyan}{light-gray}\begin{longtable}{|p{4cm} | p{6cm}|}\toprule\rowcolor{white}\textbf{Action}&\textbf{Args}\\\midrule\lstinline$rand.seed$ & \lstinline$val: int (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$rand.integer$ & \lstinline$start: int (*req), end: int (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$rand.choice$ & \lstinline$lst: list (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$rand.sentence$ & \lstinline$min_lenth: int, max_length: int, sep: str$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$rand.paragraph$ & \lstinline$min_lenth: int, max_length: int, sep: str$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$rand.text$ & \lstinline$min_lenth: int, max_length: int, sep: str$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$rand.word$ & \lstinline$n/a$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$rand.time$ & \lstinline$start_date: str (*req), end_date: str (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\bottomrule\hiderowcolors\caption{rand Actions in Jac}\label{tab:randstd}\end{longtable}\subsection{request}
+\rowcolors{1}{light-cyan}{light-gray}\begin{longtable}{|p{4cm} | p{6cm}|}\toprule\rowcolor{white}\textbf{Action}&\textbf{Args}\\\midrule\lstinline$request.get$ & \lstinline$url: str (*req), data: dict (*req), header: dict (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$request.post$ & \lstinline$url: str (*req), data: dict (*req), header: dict (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$request.put$ & \lstinline$url: str (*req), data: dict (*req), header: dict (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$request.delete$ & \lstinline$url: str (*req), data: dict (*req), header: dict (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$request.head$ & \lstinline$url: str (*req), data: dict (*req), header: dict (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$request.options$ & \lstinline$url: str (*req), data: dict (*req), header: dict (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$request.multipart_base64$ & \lstinline$url: str (*req), files: list (*req), header: dict (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$request.file_download_base64$ & \lstinline$url: str (*req), header: dict (*req), encoding: str$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\bottomrule\hiderowcolors\caption{request Actions in Jac}\label{tab:requeststd}\end{longtable}\subsection{std}
+\rowcolors{1}{light-cyan}{light-gray}\begin{longtable}{|p{4cm} | p{6cm}|}\toprule\rowcolor{white}\textbf{Action}&\textbf{Args}\\\midrule\lstinline$std.log$ & \lstinline$args: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.out$ & \lstinline$args: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.js_input$ & \lstinline$prompt: str$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.err$ & \lstinline$args: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.sort_by_col$ & \lstinline$lst: list (*req), col_num: int (*req), reverse: bool$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.time_now$ & \lstinline$n/a$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.set_global$ & \lstinline$name: str (*req), value: _empty (*req), meta: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.get_global$ & \lstinline$name: str (*req), meta: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.actload_local$ & \lstinline$filename: str (*req), meta: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.actload_remote$ & \lstinline$url: str (*req), meta: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.actload_module$ & \lstinline$module: str (*req), meta: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.destroy_global$ & \lstinline$name: str (*req), meta: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.set_perms$ & \lstinline$obj: element (*req), mode: str (*req), meta: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.get_perms$ & \lstinline$obj: element (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.grant_perms$ & \lstinline$obj: element (*req), mast: element (*req), read_only: bool (*req), meta: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.revoke_perms$ & \lstinline$obj: element (*req), mast: element (*req), meta: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$std.get_report$ & \lstinline$meta: _empty (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\bottomrule\hiderowcolors\caption{std Actions in Jac}\label{tab:stdstd}\end{longtable}\subsection{vector}
+\rowcolors{1}{light-cyan}{light-gray}\begin{longtable}{|p{4cm} | p{6cm}|}\toprule\rowcolor{white}\textbf{Action}&\textbf{Args}\\\midrule\lstinline$vector.cosine_sim$ & \lstinline$vec_a: list (*req), vec_b: list (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$vector.dot_product$ & \lstinline$vec_a: list (*req), vec_b: list (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$vector.get_centroid$ & \lstinline$vec_list: list (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$vector.softmax$ & \lstinline$vec_list: list (*req)$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\lstinline$vector.sort_by_key$ & \lstinline$data: dict (*req), reverse: _empty, key_pos: _empty$ \\ \hline
+\multicolumn{2}{|l|}{coming soon} \\ \hline
+\bottomrule\hiderowcolors\caption{vector Actions in Jac}\label{tab:vectorstd}\end{longtable}

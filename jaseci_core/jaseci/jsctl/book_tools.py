@@ -1,7 +1,7 @@
 from jaseci.utils.utils import obj_class_cache, build_class_dict
 
 # from pprint import pformat
-from inspect import getdoc
+from inspect import getdoc, signature
 import jaseci
 
 
@@ -23,35 +23,34 @@ class book:
         if out is None:
             out = []
         if "leaf" in root.keys():
-            line = "\\texttt{" + str.strip()
+            line = "\\lstinline$" + str.strip()
             if root["leaf"][5]:  # cli_only
                 line += " (cli only)"
             line += (
-                "} "
-                + "& \\texttt{"
+                "$ "
+                + "& \\lstinline$"
                 + f'{self.format_params(root["leaf"][1])}'
-                + "} \\\\ \\hline\n"
+                + "$ \\\\ \\hline\n"
             )
             out.append(line)
             return
         for i in root.keys():
             self.api_cheatsheet(root[i], out, str + f"{i} ")
-        ret = ""
-        for i in out:
-            ret += i
-        return ret.replace("_", "\\_").replace("self, ", "").replace("(self)", "()")
+        return "".join(out)
 
     def get_stdlib_pre_table(self):
-        clip = "\\begin{table}[ht]\\footnotesize\\centering\\begin{tabular}{l l l}\\toprule\\textbf{Action}&\\textbf{Args}&\\textbf{Description}\\\\\\midrule"
+        clip = "\\rowcolors{1}{light-cyan}{light-gray}\\begin{longtable}{|p{4cm} | p{6cm}|}\\toprule\\rowcolor{white}\\textbf{Action}&\\textbf{Args}\\\\\\midrule"
+        return clip
 
     def get_stdlib_post_table(self, act="default"):
         clip = (
-            "\\bottomrule\\end{tabular}\\caption{"
+            "\\bottomrule\\hiderowcolors\\caption{"
             + act
             + " Actions in Jac}\\label{tab:"
             + act
-            + "std}\\end{table}"
+            + "std}\\end{longtable}"
         )
+        return clip
 
     def std_library(self):
         import jaseci.actions.standard as stdact
@@ -73,9 +72,29 @@ class book:
                     if callable(val) and modname + "." + name in live_actions
                 ]
             )
-
+        out = []
         for i in all_action_sets:
-            pass
+            lib = i[0]
+            if lib == "jaseci":
+                continue
+            out += ["\subsection{" + lib + "}\n", self.get_stdlib_pre_table()]
+
+            i = i[1:]
+            for j in i:
+                line = (
+                    "\\lstinline$"
+                    + lib
+                    + "."
+                    + j[0]
+                    + "$ & \\lstinline$"
+                    + f"{self.format_params(signature(j[1]))}"
+                    + "$ \\\\ \\hline\n"
+                )
+                out.append(line)
+                line = "\\multicolumn{2}{|l|}{coming soon} \\\\ \\hline\n"
+                out.append(line)
+            out.append(self.get_stdlib_post_table(lib))
+        return "".join(out)
 
     def api_spec(self):
         ret = ""

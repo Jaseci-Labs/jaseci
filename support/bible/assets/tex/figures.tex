@@ -149,43 +149,6 @@
     \end{table}
 }
 
-\newcommand{\printtabDateStd}{
-    \begin{table}[ht]\footnotesize\centering\begin{tabular}{l l l}\toprule\textbf{Action}&\textbf{Args}&\textbf{Description}\\\midrule
-            \lstinline{date.quantize_to_year}    & (date: str)          &                                          \\
-            \lstinline{date.quantize_to_month}     & (date: str)          &  \\
-            \lstinline{date.quantize_to_week} & (date: str)          &    \\
-            \lstinline{date.quantize_to_day}     & (date: str)          &                                          \\
-            \lstinline{date.date_day_diff}    & (start\_date: str, end\_date: str)          &                                          \\
-            \bottomrule
-        \end{tabular}
-        \caption{Date Actions in Jac}
-        \label{tab:datestd} % Unique label used for referencing the table in-text
-        %\addcontentsline{toc}{table}{Table \ref{tab:jacprecedence}} % Uncomment to add the table to the table of contents
-    \end{table}
-}
-
-\newcommand{\printtabFileStd}{
-    \begin{table}[ht]
-        \footnotesize
-        \centering
-        \begin{tabular}{l l l}
-            \toprule
-            \textbf{Action}                 & \textbf{Args} & \textbf{Description}                     \\
-            \midrule
-            \lstinline{file.load_str}    & (fn: str, max\_chars: int = None)          &                                          \\
-            \lstinline{file.load_json}     & (fn: str)         &  \\
-            \lstinline{file.dump_str} & (fn: str, s: str)          &    \\
-            \lstinline{file.append_str}     & (fn: str, s: str)          &                                          \\
-            \lstinline{file.dump_json}    & (fn: str, obj, indent: int = None)          &                                          \\
-            \lstinline{file.delete}    & (fn: str)         &                                          \\
-            \bottomrule
-        \end{tabular}
-        \caption{Date Actions in Jac}
-        \label{tab:filestd} % Unique label used for referencing the table in-text
-        %\addcontentsline{toc}{table}{Table \ref{tab:jacprecedence}} % Uncomment to add the table to the table of contents
-    \end{table}
-}
-
 \newcommand{\printtabJSAPI}{
     \rowcolors{1}{light-cyan}{light-gray}
     \begin{longtable}{l | p{10cm}}
