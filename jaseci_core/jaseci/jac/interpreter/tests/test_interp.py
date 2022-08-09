@@ -12,4 +12,6 @@ class interpreter_test(core_test):
             ["sentinel_register", {"code": self.load_jac("lang_features.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "has_var_plucking"}])
-        self.assertEqual(ret["report"], [["points_to", "points_to", "points_to"]])
+        self.assertEqual(
+            ret["report"], [["node0", "node1", "node2"], ["edge0", "edge1", "edge2"]]
+        )
