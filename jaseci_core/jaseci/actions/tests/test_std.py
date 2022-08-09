@@ -30,6 +30,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertGreater(len(report[3]), len(report[2]))
 
     def test_file_io(self):
+        self.logger_on()
         gph = graph(m_id="anon", h=mem_hook())
         sent = sentinel(m_id="anon", h=gph._h)
         sent.register_code(stc.file_io)
