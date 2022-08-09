@@ -30,7 +30,7 @@ class sharable:
             mode
             if mode is not None
             else self._h.get_obj(self._m_id, uuid.UUID(self._m_id)).perm_default
-            if self._h.get_obj(self._m_id, uuid.UUID(self._m_id))
+            if self._h.has_obj(uuid.UUID(self._m_id))
             else "private"
         )
         self.j_r_acc_ids = id_list(self)

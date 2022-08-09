@@ -565,7 +565,7 @@ class jac_tests(TestCaseHelper, TestCase):
         rep = test_walker.report
         self.assertEqual(rep[0], "Josh")
         self.assertEqual(
-            rep[1], {"name": "Josh", "age": 32, "birthday": None, "profession": None}
+            rep[1], {"name": None, "age": 32, "birthday": None, "profession": None}
         )
         self.assertEqual(
             rep[2], {"age": 32, "birthday": None, "name": "pete", "profession": None}
