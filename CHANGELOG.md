@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Major Language Feature: Introducing the `yeild` feature. See bible for details
 - Improvement/Bug: Here behavior is now specified for ability calls and inheritance in intuitive way
 - Major Feature: Can now specify various forms of breadth first and depth first search on `take` commands (e.g., `take:bfs`, `take:dfs`, and `take:b` and `take:d` for short)
 - Improvement: Added deep copy for lists and dictionaries

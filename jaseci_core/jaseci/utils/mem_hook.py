@@ -47,7 +47,8 @@ class mem_hook:
                 return ret
         else:
             ret = self.get_obj_from_store(item_id)
-            self.mem[item_id] = ret
+            if ret is not None:
+                self.mem[item_id] = ret
             if override or (ret is not None and ret.check_read_access(caller_id)):
                 return ret
 
@@ -83,7 +84,8 @@ class mem_hook:
             return self.mem["global"][name]
         else:
             ret = self.get_glob_from_store(name)
-            self.mem["global"][name] = ret
+            if name is not None:
+                self.mem["global"][name] = ret
             return ret
 
     def has_glob(self, name):
