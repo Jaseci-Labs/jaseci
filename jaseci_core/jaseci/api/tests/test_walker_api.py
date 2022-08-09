@@ -1,9 +1,11 @@
-from .test_api_core import core_test
+from jaseci.utils.test_core import core_test
 from jaseci.actor.walker import walker
 
 
 class walker_api_test(core_test):
     """Unit tests for Jac Walker APIs"""
+
+    fixture_src = __file__
 
     def test_walker_yield(self):
         self.call(
@@ -170,8 +172,8 @@ class walker_api_test(core_test):
             ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
         )
         before = self.mast._h.get_object_distribution()[walker]
-        ret = self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
-        ret = self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
-        ret = self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
+        self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
+        self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
+        self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
         after = self.mast._h.get_object_distribution()[walker]
         self.assertEqual(before, after)

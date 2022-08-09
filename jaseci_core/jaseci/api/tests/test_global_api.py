@@ -1,4 +1,4 @@
-from .test_api_core import core_test
+from jaseci.utils.test_core import core_test
 import jaseci.tests.jac_test_code as jtc
 from jaseci.element.master import master
 from jaseci.utils.mem_hook import mem_hook

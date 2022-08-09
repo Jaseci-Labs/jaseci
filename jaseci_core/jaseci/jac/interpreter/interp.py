@@ -777,8 +777,20 @@ class interp(machine_state):
                 elif kid[1].name == "NAME":
                     d = atom_res.value
                     n = kid[1].token_text()
-                    if self.rt_check_type(d, [dict, element], kid[0]):
-                        ret = jac_value(self, ctx=d, name=n)
+                    if self.rt_check_type(d, [dict, element, jac_set], kid[0]):
+                        if not isinstance(d, jac_set):
+                            ret = jac_value(self, ctx=d, name=n)
+                        else:
+                            plucked = []
+                            for i in d:
+                                if n in i.context.keys():
+                                    plucked.append(i.context[n])
+                                else:
+                                    self.rt_error(
+                                        f"Some elements in set does not have {n}",
+                                        kid[1],
+                                    )
+                            ret = jac_value(self, value=plucked)
                         ret.unwrap()
                         return ret
                     else:
