@@ -18,6 +18,7 @@ export class Button {
   @Prop() color: string;
   @Prop() active: string;
   @Prop() tooltip: string;
+  @Prop({ attribute: 'fullwidth' }) fullWidth: string;
   @Prop({ attribute: 'tooltipposition' }) tooltipPosition: string;
   @Prop({ attribute: 'tooltippalette' }) tooltipPalette: string;
   @Prop() noRadius: string;
@@ -51,6 +52,7 @@ export class Button {
   );
 
   componentDidLoad() {
+    this.host.style.display = this.fullWidth === 'true' ? 'block' : 'inline-block';
     setUpEvents(this.host, this.events);
     this.operations = getOperations(this.name);
   }

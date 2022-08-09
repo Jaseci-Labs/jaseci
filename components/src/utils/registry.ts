@@ -41,4 +41,5 @@ export const componentMap: Record<Exclude<ComponentNames, 'App'>, ComponentTags>
   Range: 'jsc-range',
   Breadcrumbs: 'jsc-breadcrumbs',
   Rating: 'jsc-rating',
+  AuthForm: 'jsc-auth-form',
 };

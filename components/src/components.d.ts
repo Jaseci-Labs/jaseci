@@ -31,6 +31,18 @@ export namespace Components {
         "setGlobalConfig": (config: Record<string, any> & { css: Record<string, string>; }) => Promise<void>;
         "setMarkup": (value: any) => Promise<void>;
     }
+    interface JscAuthForm {
+        "css": string;
+        "events": string;
+        "hideNameField": string;
+        "mode": 'signup' | 'login';
+        "name": string;
+        "operations": any;
+        "redirectURL": string;
+        "requireActivation": 'true' | 'false';
+        "serverURL": string;
+        "tokenKey": string;
+    }
     interface JscAvatar {
         "css": string;
         "events": string;
@@ -63,6 +75,7 @@ export namespace Components {
         "color": string;
         "css": string;
         "events": string;
+        "fullWidth": string;
         "label": string;
         "name": string;
         "noRadius": string;
@@ -523,6 +536,12 @@ declare global {
         prototype: HTMLJscAppElement;
         new (): HTMLJscAppElement;
     };
+    interface HTMLJscAuthFormElement extends Components.JscAuthForm, HTMLStencilElement {
+    }
+    var HTMLJscAuthFormElement: {
+        prototype: HTMLJscAuthFormElement;
+        new (): HTMLJscAuthFormElement;
+    };
     interface HTMLJscAvatarElement extends Components.JscAvatar, HTMLStencilElement {
     }
     var HTMLJscAvatarElement: {
@@ -791,6 +810,7 @@ declare global {
         "jsc-alert": HTMLJscAlertElement;
         "jsc-anchor": HTMLJscAnchorElement;
         "jsc-app": HTMLJscAppElement;
+        "jsc-auth-form": HTMLJscAuthFormElement;
         "jsc-avatar": HTMLJscAvatarElement;
         "jsc-badge": HTMLJscBadgeElement;
         "jsc-breadcrumbs": HTMLJscBreadcrumbsElement;
@@ -861,6 +881,18 @@ declare namespace LocalJSX {
         "markup"?: JaseciComponent[];
         "onOnRender"?: (event: CustomEvent<string>) => void;
     }
+    interface JscAuthForm {
+        "css"?: string;
+        "events"?: string;
+        "hideNameField"?: string;
+        "mode"?: 'signup' | 'login';
+        "name"?: string;
+        "operations"?: any;
+        "redirectURL"?: string;
+        "requireActivation"?: 'true' | 'false';
+        "serverURL"?: string;
+        "tokenKey"?: string;
+    }
     interface JscAvatar {
         "css"?: string;
         "events"?: string;
@@ -893,6 +925,7 @@ declare namespace LocalJSX {
         "color"?: string;
         "css"?: string;
         "events"?: string;
+        "fullWidth"?: string;
         "label"?: string;
         "name"?: string;
         "noRadius"?: string;
@@ -1335,6 +1368,7 @@ declare namespace LocalJSX {
         "jsc-alert": JscAlert;
         "jsc-anchor": JscAnchor;
         "jsc-app": JscApp;
+        "jsc-auth-form": JscAuthForm;
         "jsc-avatar": JscAvatar;
         "jsc-badge": JscBadge;
         "jsc-breadcrumbs": JscBreadcrumbs;
@@ -1388,6 +1422,7 @@ declare module "@stencil/core" {
             "jsc-alert": LocalJSX.JscAlert & JSXBase.HTMLAttributes<HTMLJscAlertElement>;
             "jsc-anchor": LocalJSX.JscAnchor & JSXBase.HTMLAttributes<HTMLJscAnchorElement>;
             "jsc-app": LocalJSX.JscApp & JSXBase.HTMLAttributes<HTMLJscAppElement>;
+            "jsc-auth-form": LocalJSX.JscAuthForm & JSXBase.HTMLAttributes<HTMLJscAuthFormElement>;
             "jsc-avatar": LocalJSX.JscAvatar & JSXBase.HTMLAttributes<HTMLJscAvatarElement>;
             "jsc-badge": LocalJSX.JscBadge & JSXBase.HTMLAttributes<HTMLJscBadgeElement>;
             "jsc-breadcrumbs": LocalJSX.JscBreadcrumbs & JSXBase.HTMLAttributes<HTMLJscBreadcrumbsElement>;
