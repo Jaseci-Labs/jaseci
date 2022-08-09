@@ -41,6 +41,25 @@ class book:
             ret += i
         return ret.replace("_", "\\_").replace("self, ", "").replace("(self)", "()")
 
+    def std_library(self):
+        import jaseci.actions.standard as stdact
+        import pkgutil
+        from importlib.machinery import SourceFileLoader
+        from jaseci.actions.live_actions import live_actions
+
+        for importer, modname, ispkg in pkgutil.iter_modules(stdact.__path__):
+            i = [
+                [name, val]
+                for name, val in SourceFileLoader(
+                    modname, stdact.__path__[0] + "/" + modname + ".py"
+                )
+                .load_module()
+                .__dict__.items()
+                if callable(val) and modname + "." + name in live_actions
+            ]
+            print(i)
+            print("\n\n\n")
+
     def api_spec(self):
         ret = ""
         build_class_dict(jaseci)
