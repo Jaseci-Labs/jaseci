@@ -150,13 +150,7 @@
 }
 
 \newcommand{\printtabDateStd}{
-    \begin{table}[ht]
-        \footnotesize
-        \centering
-        \begin{tabular}{l l l}
-            \toprule
-            \textbf{Action}                 & \textbf{Args} & \textbf{Description}                     \\
-            \midrule
+    \begin{table}[ht]\footnotesize\centering\begin{tabular}{l l l}\toprule\textbf{Action}&\textbf{Args}&\textbf{Description}\\\midrule
             \lstinline{date.quantize_to_year}    & (date: str)          &                                          \\
             \lstinline{date.quantize_to_month}     & (date: str)          &  \\
             \lstinline{date.quantize_to_week} & (date: str)          &    \\
