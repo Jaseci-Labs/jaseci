@@ -106,6 +106,8 @@ Walkers are entry points to all valid jac programs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Architypes}
 
+\subsection{Context on Nodes and Edges}
+
 %%%%%%%
 \par
 \jaccode{jac_contexts.jac}{Binding member contexts to nodes and edges
@@ -122,6 +124,7 @@ Walkers are entry points to all valid jac programs
 \par
 \shellout{jac_contexts_alt.jac.output}
 
+\subsection{Copy Assignment Operator}
 %%%%%%%
 \par
 \jaccode{jac_copy_assign.jac}{Copy assigning from node to node
@@ -130,6 +133,16 @@ Walkers are entry points to all valid jac programs
 \shellout{jac_copy_assign.jac.output}
 \par
 \jacdotnw{jac_copy_assign}{.5}{Graph in memory for JC~\ref{jac:jac_copy_assign.jac}}
+
+\subsection{Plucking Values from Node and Edge Sets}
+
+Another very handy dandy feature when interacting with collections of nodes and edges is to quickly extract a list of all the values for a given \lstinline{has} variable across the collection of nodes or edges. Lets look at an example.
+\par
+\jaccode{jac_arch_plucking.jac}{Plucking values out of nodes and edges}
+\par
+\shellout{jac_arch_plucking.jac.output}
+\par
+As shown in JC~\ref{jac:jac_arch_plucking.jac} we are referencing the \lstinline{has} variable of the architypes for the collection of \lstinline{simple} nodes and \lstinline{conn} edges on lines 8 and 9 respectively. As can be seen in the output, these references evaluate to a list of the values for the corresponding variables. Keep in mind this can work with a mixture of nodes and edges in a collection given they share a given \lstinline{has} variable name.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Actions and Abilities}

@@ -18,6 +18,12 @@ from jaseci.jac.machine.jac_value import jac_value
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 from copy import copy, deepcopy
 
+import re
+
+r_deref = re.compile(
+    "([a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12})"
+)
+
 
 class interp(machine_state):
     """Shared interpreter class across both sentinels and walkers"""
@@ -777,8 +783,20 @@ class interp(machine_state):
                 elif kid[1].name == "NAME":
                     d = atom_res.value
                     n = kid[1].token_text()
-                    if self.rt_check_type(d, [dict, element], kid[0]):
-                        ret = jac_value(self, ctx=d, name=n)
+                    if self.rt_check_type(d, [dict, element, jac_set], kid[0]):
+                        if not isinstance(d, jac_set):
+                            ret = jac_value(self, ctx=d, name=n)
+                        else:
+                            plucked = []
+                            for i in d:
+                                if n in i.context.keys():
+                                    plucked.append(i.context[n])
+                                else:
+                                    self.rt_error(
+                                        f"Some elements in set does not have {n}",
+                                        kid[1],
+                                    )
+                            ret = jac_value(self, value=plucked)
                         ret.unwrap()
                         return ret
                     else:
@@ -842,12 +860,15 @@ class interp(machine_state):
         """
         kid = self.set_cur_ast(jac_ast)
         result = self.run_atom(kid[1])
-        if is_urn(result.value):
-            result = jac_value(
-                self, value=jeu(result.value.replace("urn", "jac"), self)
-            )
-        else:
-            self.rt_error(f"{result.value} not valid reference", kid[1])
+
+        matcher = r_deref.search(result.value)
+        if matcher and matcher.group(1):
+            nd = jeu(f"jac:uuid:{matcher.group(1)}", self)
+            if not (nd is None):
+                return jac_value(self, value=nd)
+
+        self.rt_error(f"{result.value} not valid reference", kid[1])
+
         return result
 
     def run_built_in(self, jac_ast, atom_res):
@@ -1223,7 +1244,13 @@ class interp(machine_state):
         walker_ref: KW_WALKER DBL_COLON NAME;
         """
         kid = self.set_cur_ast(jac_ast)
-        return self.parent().spawn_walker(kid[2].token_text(), caller=self)
+        name = kid[2].token_text()
+        wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
+        if wlk is None:
+            wlk = self.parent().spawn_walker(name, caller=self)
+        if wlk is None:
+            self.rt_error(f"No walker {name} exists!", kid[2])
+        return wlk
 
     def run_graph_ref(self, jac_ast):
         """
@@ -1525,7 +1552,7 @@ class interp(machine_state):
             tr.unwrap()
             ret.append(tr.value)
             self.inherit_runtime_state(walk)
-            walk.destroy()
+            walk.register_yield_or_destroy(self.yielded_walkers_ids)
         return jac_value(self, value=ret[0] if len(ret) == 1 else ret)
 
     def run_spawn_ctx(self, jac_ast, obj):
@@ -1613,6 +1640,12 @@ class interp(machine_state):
             return jac_value(self, value=type)
         else:
             self.rt_error("Unrecognized type", kid[0])
+
+    def destroy(self):
+        """
+        Destroys self from memory and persistent storage
+        """
+        super().destroy()
 
     # Helper Functions ##################
 

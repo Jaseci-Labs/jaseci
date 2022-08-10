@@ -18,6 +18,7 @@ class test_ll_wall(TestCaseHelper, TestCase):
         self.user = get_user_model().objects.create_user(
             "JSCITfdfdEST_test@jaseci.com", "password"
         )
+        self.master = self.user.get_master()
         self.client = APIClient()
         self.client.force_authenticate(self.user)
         ll_loc = os.path.dirname(__file__) + "/ll_wall.jac"
@@ -28,28 +29,14 @@ class test_ll_wall(TestCaseHelper, TestCase):
             "code": ll_file,
             "encoded": True,
         }
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        payload = {"op": "global_sentinel_set"}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        self.user = get_user_model().objects.create_user(
-            "J2SCITfdfdEST_test@jaseci.com", "password"
-        )
-        self.client = APIClient()
-        self.client.force_authenticate(self.user)
-        self.master = self.user.get_master()
-        payload = {"op": "sentinel_active_global"}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        payload = {"op": "graph_create"}
-        self.snt = self.master._h.get_obj(
-            self.master.jid, uuid.UUID(res.data["sentinel"]["jid"])
-        )
-        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.gph = self.master._h.get_obj(self.master.jid, uuid.UUID(res.data["jid"]))
         lact.load_local_actions("jaseci_serv/jac_api/tests/infer.py")
+        res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+        self.snt = self.master._h.get_obj(
+            self.master.jid, uuid.UUID(res.data[0]["jid"])
+        )
+        self.gph = self.master._h.get_obj(
+            self.master.jid, uuid.UUID(res.data[1]["jid"])
+        )
 
     def tearDown(self):
         super().tearDown()
@@ -78,13 +65,11 @@ class test_ll_wall(TestCaseHelper, TestCase):
 
     def test_ll_wall_get_gen_day(self):
         """Test get_gen_day walker response time after cerify day"""
-        num_workettes = 112
-
+        num_workettes = 3
         # generate random day workettes
         self.run_walker(
             "gen_day_workettes", {"date": "2021-07-12", "num_workettes": num_workettes}
         )
-
         data = self.run_walker("get_latest_day", {"show_report": 1})["report"]
 
         day_id = data[0][1]["jid"]
@@ -129,5 +114,3 @@ class test_ll_wall(TestCaseHelper, TestCase):
 
         # data[0][0][0][2] is the highlight items
         self.assertEqual(len(data[0][0][0][2]), 3)
-
-        data = self.run_walker("get_gen_day", {"date": "2021-07-13"})
