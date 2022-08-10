@@ -211,6 +211,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertIn("j_r_acc_ids", report[0][0].keys())
 
     def test_jasecilib_create_user(self):
+        self.logger_on()
         mast = master(h=mem_hook())
         mast.sentinel_register(name="test", code=jtp.jasecilib_create_user, auto_run="")
         report = mast.general_interface_to_api(

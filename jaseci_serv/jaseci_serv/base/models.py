@@ -22,7 +22,7 @@ class master(core_master):
 
     @interface.private_api()
     def master_create(
-        self, name: str, set_active: bool = True, other_fields: dict = {}
+        self, name: str, auto_global_init: bool = False, other_fields: dict = {}
     ):
         """
         Create a master instance and return root node master object
@@ -58,7 +58,7 @@ class master(core_master):
 class super_master(master, core_super):
     @interface.admin_api()
     def master_createsuper(
-        self, name: str, set_active: bool = True, other_fields: dict = {}
+        self, name: str, auto_global_init: bool = False, other_fields: dict = {}
     ):
         """
         Create a super instance and return root node super object

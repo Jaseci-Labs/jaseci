@@ -16,7 +16,10 @@ class master_api:
 
     @interface.private_api(cli_args=["name"])
     def master_create(
-        self, name: str, set_active: bool = True, other_fields: dict = {}
+        self,
+        name: str,
+        auto_global_init: bool = False,
+        other_fields: dict = {},
     ):
         """
         Create a master instance and return root node master object
