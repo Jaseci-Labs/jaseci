@@ -182,7 +182,7 @@ class sentinel_api:
             self.alias_register("active:sentinel", glob_id)
             sent = self._h.get_obj(self._m_id, uuid.UUID(glob_id))
             if auto_create_graph:
-                self.graph_create(set_active=True)
+                ret["graph_created"] = self.graph_create(set_active=True)
             auto_run_ret = self.attempt_auto_run(
                 sent=sent, walk_name=auto_run, ctx=auto_run_ctx
             )
