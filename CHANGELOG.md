@@ -17,7 +17,7 @@
 ### Notes
 
 - Behavior change for jac programs utilizing chained connection operators. Connection orders are now intuitive (e.g., `n1 --> n2 --> n3` will create an intuitive chain of connections not `n1 --> n3 <-- n2`)
-- API interface update: sentinel auto_run_ctx replaces ctx to be more specific, `auto_gen_graph` is now `auto_create_graph` for same reason as well
+- API interface update: `sentinel_register` auto_run_ctx replaces ctx to be more specific, `auto_gen_graph` is now `auto_create_graph` for same reason as well
 - API interface update: `master_create` API return format updated
 
 ## Version 1.3.3

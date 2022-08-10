@@ -14,6 +14,7 @@ from jaseci.api.config_api import config_api
 from jaseci.api.interface import interface
 from jaseci.api.master_api import master_api
 from jaseci.api.jac_api import jac_api
+from jaseci.api.user_api import user_api
 
 
 class master(
@@ -27,6 +28,7 @@ class master(
     walker_api,
     architype_api,
     jac_api,
+    user_api,
 ):
     """Main class for master functions for user"""
 

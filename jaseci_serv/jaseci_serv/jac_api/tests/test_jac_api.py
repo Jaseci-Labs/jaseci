@@ -961,9 +961,42 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = public_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.log(res.data)
         self.assertEqual(res.data["success"], True)
         self.assertEqual(res.data["global_init"]["auto_run_result"]["success"], True)
+
+    def test_master_create_global_init(self):
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 2)
+        payload = {"op": "global_sentinel_set"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {
+            "op": "master_create",
+            "name": "yo@gmail.com",
+            "global_init": "init",
+            "other_fields": {
+                "password": "yoyoyoyoyoyo",
+                "name": "",
+                "is_activated": True,
+            },
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(res.data["success"], True)
+        self.assertEqual(res.data["global_init"]["auto_run_result"]["success"], True)
+        payload = {"op": "master_active_set", "name": "yo@gmail.com"}
+        self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
+        payload = {"op": "graph_get"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 3)
 
     def test_serverside_sentinel_unregister_global(self):
         """Test master delete operation"""
