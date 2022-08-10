@@ -202,7 +202,7 @@ class sentinel_api:
         if id == "global":
             id = self._h.get_glob("GLOB_SENTINEL")
         if not id:
-            return {"response": "No default sentinel is selected!"}
+            return {"response": "No default sentinel is selected!", "success": False}
         else:
             default = self._h.get_obj(self._m_id, uuid.UUID(id))
             return default.serialize(detailed=detailed)

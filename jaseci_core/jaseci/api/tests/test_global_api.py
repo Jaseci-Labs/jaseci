@@ -70,6 +70,13 @@ class global_api_test(core_test):
         r = self.call(self.smast, api)
         self.assertIsNone(r["value"])
 
+    def test_user_create(self):
+        """Test master create operation"""
+        api = ["user_create", {"name": "yo@gmail.com"}]
+        r = self.call(self.mast, api)
+        self.assertIn("j_type", r["user"])
+        self.assertEqual(r["user"]["j_type"], "master")
+
     def test_master_create(self):
         """Test master create operation"""
         api = ["master_create", {"name": "yo@gmail.com"}]
@@ -94,7 +101,6 @@ class global_api_test(core_test):
         self.assertIn("not a valid", r["response"])
 
     def test_master_create_linked_super_master_create(self):
-        self.logger_on()
         """Test master create operation"""
         api = ["master_createsuper", {"name": "yo3@gmail.com"}]
         r = self.call(self.smast, api)
