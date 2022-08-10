@@ -29,3 +29,4 @@ class user_api_test(core_test):
         self.assertEqual(
             ret["global_init"]["auto_run_result"]["report"], ["hello jason!"]
         )
+        self.assertEqual(ret["user"]["name"], "joe")
