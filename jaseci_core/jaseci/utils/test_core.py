@@ -9,6 +9,8 @@ import os
 class core_test(TestCaseHelper, TestCase):
     """Unit tests for Jac Core APIs"""
 
+    fixture_src = __file__
+
     def setUp(self):
         super().setUp()
         self.smast = super_master(h=mem_hook())
@@ -22,5 +24,5 @@ class core_test(TestCaseHelper, TestCase):
         return ret
 
     def load_jac(self, fn):
-        with open(os.path.dirname(__file__) + "/fixtures/" + fn) as f:
+        with open(os.path.dirname(self.fixture_src) + "/fixtures/" + fn) as f:
             return f.read()
