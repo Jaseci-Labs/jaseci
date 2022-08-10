@@ -55,7 +55,9 @@ class master_api:
         ret = self.user_creator(
             master, name, global_init, global_init_ctx, other_fields
         )
-        self.take_ownership(self._h.get_obj(uuid.UUID(ret["user_obj"])["jid"]))
+        self.take_ownership(
+            self._h.get_obj(self._m_id, uuid.UUID(ret["user"]["jid"]), override=True)
+        )
         return ret
 
     @interface.private_api(cli_args=["name"])
@@ -144,8 +146,7 @@ class master_api:
         (i.e., Dango interface)
         """
         mast = user_class(h=self._h, name=name)
-        self.log_output(mast)
-        ret = {"success": True, "user_obj": mast}
+        ret = {"success": True, "user": mast.serialize()}
         if len(global_init):
             ret["global_init"] = mast.sentinel_active_global(
                 auto_run=global_init,

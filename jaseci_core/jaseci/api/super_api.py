@@ -30,7 +30,7 @@ class super_api:
         ret = self.user_creator(
             super_master, name, global_init, global_init_ctx, other_fields
         )
-        self.take_ownership(self._h.get_obj(uuid.UUID(ret["user_obj"])["jid"]))
+        self.take_ownership(self._h.get_obj(self._m_id, uuid.UUID(ret["user"]["jid"])))
         return ret
 
     @interface.admin_api()

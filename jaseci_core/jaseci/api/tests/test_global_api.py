@@ -72,11 +72,10 @@ class global_api_test(core_test):
 
     def test_master_create(self):
         """Test master create operation"""
-        self.logger_on()
         api = ["master_create", {"name": "yo@gmail.com"}]
         r = self.call(self.mast, api)
-        self.assertIn("j_type", r)
-        self.assertEqual(r["j_type"], "master")
+        self.assertIn("j_type", r["user"])
+        self.assertEqual(r["user"]["j_type"], "master")
 
     def test_master_create_error_out(self):
         """Test master create operation"""
@@ -98,8 +97,8 @@ class global_api_test(core_test):
         """Test master create operation"""
         api = ["master_createsuper", {"name": "yo3@gmail.com"}]
         r = self.call(self.smast, api)
-        self.assertIn("j_type", r)
-        self.assertEqual(r["j_type"], "super_master")
+        self.assertIn("j_type", r["user"])
+        self.assertEqual(r["user"]["j_type"], "super_master")
 
     def test_global_sentinel_set_unset(self):
         api = ["global_sentinel_set", {}]
