@@ -18,6 +18,12 @@ from jaseci.jac.machine.jac_value import jac_value
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 from copy import copy, deepcopy
 
+import re
+
+r_deref = re.compile(
+    "([a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12})"
+)
+
 
 class interp(machine_state):
     """Shared interpreter class across both sentinels and walkers"""
@@ -854,12 +860,15 @@ class interp(machine_state):
         """
         kid = self.set_cur_ast(jac_ast)
         result = self.run_atom(kid[1])
-        if is_urn(result.value):
-            result = jac_value(
-                self, value=jeu(result.value.replace("urn", "jac"), self)
-            )
-        else:
-            self.rt_error(f"{result.value} not valid reference", kid[1])
+
+        matcher = r_deref.search(result.value)
+        if matcher and matcher.group(1):
+            nd = jeu(f"jac:uuid:{matcher.group(1)}", self)
+            if not (nd is None):
+                return jac_value(self, value=nd)
+
+        self.rt_error(f"{result.value} not valid reference", kid[1])
+
         return result
 
     def run_built_in(self, jac_ast, atom_res):
