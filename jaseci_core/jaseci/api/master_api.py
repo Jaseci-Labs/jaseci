@@ -28,11 +28,15 @@ class master_api:
         other_fields used for additional feilds for overloaded interfaces
         (i.e., Dango interface)
         """
-        from jaseci.element.master import master
-
-        return self.user_creator(
-            master, name, global_init, global_init_ctx, other_fields
-        )
+        ret = {}
+        mast = self.user_creator(name, other_fields)
+        ret["user"] = mast.serialize()
+        if len(global_init):
+            ret["global_init"] = self.user_global_init(
+                mast, global_init, global_init_ctx
+            )
+        ret["success"] = True
+        return ret
 
     @interface.private_api(cli_args=["name"])
     def master_create(
@@ -48,16 +52,17 @@ class master_api:
         other_fields used for additional feilds for overloaded interfaces
         (i.e., Dango interface)
         """
-        from jaseci.element.master import master
-
         if self.sub_master_ids.has_obj_by_name(name):
             return {"response": f"{name} already exists", "success": False}
-        ret = self.user_creator(
-            master, name, global_init, global_init_ctx, other_fields
-        )
-        self.take_ownership(
-            self._h.get_obj(self._m_id, uuid.UUID(ret["user"]["jid"]), override=True)
-        )
+        ret = {}
+        mast = self.user_creator(name, other_fields)
+        ret["user"] = mast.serialize()
+        if len(global_init):
+            ret["global_init"] = self.user_global_init(
+                mast, global_init, global_init_ctx
+            )
+        self.take_ownership(mast)
+        ret["success"] = True
         return ret
 
     @interface.private_api(cli_args=["name"])
@@ -127,17 +132,32 @@ class master_api:
         Permanently delete master with given id
         """
         if not self.sub_master_ids.has_obj_by_name(name):
-            return {"response": f"{name} not found"}
+            return {"response": f"{name} not found", "success": False}
         self.sub_master_ids.destroy_obj_by_name(name)
-        return {"response": f"{name} has been destroyed"}
+        self.user_destroyer(name)
+        return {"response": f"{name} has been destroyed", "success": True}
 
-    def user_creator(
+    def user_creator(self, name, other_fields: dict = {}):
+        """
+        Abstraction for user creation for elegant overriding
+        """
+        from jaseci.element.master import master
+
+        return master(h=self._h, name=name)
+
+    def superuser_creator(self, name, other_fields: dict = {}):
+        """
+        Abstraction for super user creation for elegant overriding
+        """
+        from jaseci.element.super_master import super_master
+
+        return super_master(h=self._h, name=name)
+
+    def user_global_init(
         self,
-        user_class,
-        name: str,
+        mast,
         global_init: str = "",
         global_init_ctx: dict = {},
-        other_fields: dict = {},
     ):
         """
         Create a master instance and return root node master object
@@ -145,15 +165,17 @@ class master_api:
         other_fields used for additional feilds for overloaded interfaces
         (i.e., Dango interface)
         """
-        mast = user_class(h=self._h, name=name)
-        ret = {"success": True, "user": mast.serialize()}
-        if len(global_init):
-            ret["global_init"] = mast.sentinel_active_global(
-                auto_run=global_init,
-                auto_run_ctx=global_init_ctx,
-                auto_create_graph=True,
-            )
-        return ret
+        return mast.sentinel_active_global(
+            auto_run=global_init,
+            auto_run_ctx=global_init_ctx,
+            auto_create_graph=True,
+        )
+
+    def user_destroyer(self, name: str):
+        """
+        Permanently delete master with given id
+        """
+        pass
 
     def take_ownership(self, m):
         m.head_master_id = self.jid

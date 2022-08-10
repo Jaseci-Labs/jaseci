@@ -687,8 +687,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertIn("j_type", res.data)
-        self.assertEqual(res.data["j_type"], "master")
+        self.assertIn("j_type", res.data["user"])
+        self.assertEqual(res.data["user"]["j_type"], "master")
 
     def test_master_create_linked_error_out(self):
         """Test master create operation"""
@@ -712,9 +712,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertIn("errors", res.data)
-        self.assertIn("email", res.data["errors"])
-        self.assertIn("password", res.data["errors"])
+        self.assertFalse(res.data["success"])
+        self.assertIn("already exists", res.data["response"])
 
     def test_master_create_linked_cant_override(self):
         """Test master create operation"""
@@ -733,7 +732,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertEqual(res.data["j_type"], "master")
+        self.assertEqual(res.data["user"]["j_type"], "master")
 
     def test_master_create_linked_super_limited(self):
         """Test master create operation"""
@@ -771,8 +770,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertIn("j_type", res.data)
-        self.assertEqual(res.data["j_type"], "super_master")
+        self.assertIn("j_type", res.data["user"])
+        self.assertEqual(res.data["user"]["j_type"], "super_master")
 
     def test_master_create_linked_to_django_users_login(self):
         """Test master create operation"""
@@ -1226,7 +1225,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {
             "op": "sentinel_register",
             "name": "Something",
-            "code": "walker testwalker{ report jaseci.master_create('a@b.com', true,  "
+            "code": "walker testwalker{ report jaseci.master_create('a@b.com', '',  {},"
             "{'password': 'yoyoyoyoyoyo', 'name': '', 'is_activated': true}); }",
         }
         res = self.client.post(
@@ -1237,8 +1236,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(reverse("jac_api:walker_list"), payload)
         self.assertEqual(len(res.data), 1)
         res = self.client.post(reverse("jac_api:wapi", args=["testwalker"]), payload)
-        self.assertIn("jid", res.data["report"][0].keys())
-        self.assertEqual(res.data["report"][0]["name"], "a@b.com")
+        self.assertIn("jid", res.data["report"][0]["user"].keys())
+        self.assertEqual(res.data["report"][0]["user"]["name"], "a@b.com")
 
     def test_global_ref(self):
         """Test global action triggers"""

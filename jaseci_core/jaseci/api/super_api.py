@@ -3,7 +3,6 @@ Super (master) api as a mixin
 """
 from jaseci.api.interface import interface
 from jaseci.element.master import master
-import uuid
 
 
 class super_api:
@@ -23,14 +22,17 @@ class super_api:
         other_fields used for additional feilds for overloaded interfaces
         (i.e., Dango interface)
         """
-        from jaseci.element.super_master import super_master
-
         if self.sub_master_ids.has_obj_by_name(name):
             return {"response": f"{name} already exists", "success": False}
-        ret = self.user_creator(
-            super_master, name, global_init, global_init_ctx, other_fields
-        )
-        self.take_ownership(self._h.get_obj(self._m_id, uuid.UUID(ret["user"]["jid"])))
+        ret = {}
+        mast = self.superuser_creator(name, other_fields)
+        ret["user"] = mast.serialize()
+        if len(global_init):
+            ret["global_init"] = self.user_global_init(
+                mast, global_init, global_init_ctx
+            )
+        self.take_ownership(mast)
+        ret["success"] = True
         return ret
 
     @interface.admin_api()

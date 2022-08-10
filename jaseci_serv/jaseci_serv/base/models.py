@@ -20,8 +20,7 @@ class master(core_master):
         super().__init__(*args, **kwargs)
         self._valid_configs += JASECI_CONFIGS
 
-    @interface.private_api()
-    def master_create(self, name: str, global_init: str = "", other_fields: dict = {}):
+    def user_creator(self, name, other_fields: dict = {}):
         """
         Create a master instance and return root node master object
 
@@ -37,29 +36,14 @@ class master(core_master):
         if serializer.is_valid(raise_exception=False):
             mas = serializer.save().get_master()
             mas._h = self._h
-            return self.make_me_head_master_or_destroy(mas)
-        else:
-            return {"response": "Errors occurred", "errors": serializer.errors}
+            return mas
 
-    @interface.private_api()
-    def master_delete(self, name: str):
+    def superuser_creator(self, name, other_fields: dict = {}):
         """
-        Permanently delete master with given id
-        """
-        if not self.sub_master_ids.has_obj_by_name(name):
-            return {"response": f"{name} not found"}
-        self.sub_master_ids.destroy_obj_by_name(name)
-        get_user_model().objects.get(email=name).delete()
-        return {"response": f"{name} has been destroyed"}
+        Create a master instance and return root node master object
 
-
-class super_master(master, core_super):
-    @interface.admin_api()
-    def master_createsuper(
-        self, name: str, global_init: str = "", other_fields: dict = {}
-    ):
-        """
-        Create a super instance and return root node super object
+        other_fields used for additional fields for overloaded interfaces
+        (i.e., Django interface)
         """
         data = {"email": name}
         for i in other_fields.keys():
@@ -70,10 +54,16 @@ class super_master(master, core_super):
         if serializer.is_valid(raise_exception=False):
             mas = serializer.save().get_master()
             mas._h = self._h
-            return self.make_me_head_master_or_destroy(mas)
-        else:
-            return {"response": "Errors occurred", "errors": serializer.errors}
+            return mas
 
+    def user_destroyer(self, name: str):
+        """
+        Permanently delete master with given id
+        """
+        get_user_model().objects.get(email=name).delete()
+
+
+class super_master(master, core_super):
     @interface.admin_api()
     def master_allusers(self, limit: int = 10, offset: int = 0, asc: bool = False):
         """

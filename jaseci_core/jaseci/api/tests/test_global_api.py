@@ -94,6 +94,7 @@ class global_api_test(core_test):
         self.assertIn("not a valid", r["response"])
 
     def test_master_create_linked_super_master_create(self):
+        self.logger_on()
         """Test master create operation"""
         api = ["master_createsuper", {"name": "yo3@gmail.com"}]
         r = self.call(self.smast, api)
