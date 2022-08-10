@@ -3,6 +3,7 @@ Super (master) api as a mixin
 """
 from jaseci.api.interface import interface
 from jaseci.element.master import master
+import uuid
 
 
 class super_api:
@@ -10,7 +11,11 @@ class super_api:
 
     @interface.admin_api(cli_args=["name"])
     def master_createsuper(
-        self, name: str, set_active: bool = True, other_fields: dict = {}
+        self,
+        name: str,
+        global_init: str = "",
+        global_init_ctx: dict = {},
+        other_fields: dict = {},
     ):
         """
         Create a super instance and return root node super object
@@ -20,8 +25,13 @@ class super_api:
         """
         from jaseci.element.super_master import super_master
 
-        new_m = super_master(h=self._h, name=name)
-        return self.make_me_head_master_or_destroy(new_m)
+        if self.sub_master_ids.has_obj_by_name(name):
+            return {"response": f"{name} already exists", "success": False}
+        ret = self.user_creator(
+            super_master, name, global_init, global_init_ctx, other_fields
+        )
+        self.take_ownership(self._h.get_obj(uuid.UUID(ret["user_obj"])["jid"]))
+        return ret
 
     @interface.admin_api()
     def master_allusers(self, num: int = 0, start_idx: int = 0):

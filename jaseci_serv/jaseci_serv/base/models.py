@@ -21,9 +21,7 @@ class master(core_master):
         self._valid_configs += JASECI_CONFIGS
 
     @interface.private_api()
-    def master_create(
-        self, name: str, auto_global_init: bool = False, other_fields: dict = {}
-    ):
+    def master_create(self, name: str, global_init: str = "", other_fields: dict = {}):
         """
         Create a master instance and return root node master object
 
@@ -58,7 +56,7 @@ class master(core_master):
 class super_master(master, core_super):
     @interface.admin_api()
     def master_createsuper(
-        self, name: str, auto_global_init: bool = False, other_fields: dict = {}
+        self, name: str, global_init: str = "", other_fields: dict = {}
     ):
         """
         Create a super instance and return root node super object

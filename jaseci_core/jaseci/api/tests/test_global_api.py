@@ -72,6 +72,7 @@ class global_api_test(core_test):
 
     def test_master_create(self):
         """Test master create operation"""
+        self.logger_on()
         api = ["master_create", {"name": "yo@gmail.com"}]
         r = self.call(self.mast, api)
         self.assertIn("j_type", r)

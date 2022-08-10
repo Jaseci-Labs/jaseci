@@ -14,11 +14,12 @@ class master_api:
         self.head_master_id = head_master
         self.sub_master_ids = id_list(self)
 
-    @interface.private_api(cli_args=["name"])
-    def master_create(
+    @interface.public_api(cli_args=["name"])
+    def user_create(
         self,
         name: str,
-        auto_global_init: bool = False,
+        global_init: str = "",
+        global_init_ctx: dict = {},
         other_fields: dict = {},
     ):
         """
@@ -29,8 +30,33 @@ class master_api:
         """
         from jaseci.element.master import master
 
-        new_m = master(h=self._h, name=name)
-        return self.make_me_head_master_or_destroy(new_m)
+        return self.user_creator(
+            master, name, global_init, global_init_ctx, other_fields
+        )
+
+    @interface.private_api(cli_args=["name"])
+    def master_create(
+        self,
+        name: str,
+        global_init: str = "",
+        global_init_ctx: dict = {},
+        other_fields: dict = {},
+    ):
+        """
+        Create a master instance and return root node master object
+
+        other_fields used for additional feilds for overloaded interfaces
+        (i.e., Dango interface)
+        """
+        from jaseci.element.master import master
+
+        if self.sub_master_ids.has_obj_by_name(name):
+            return {"response": f"{name} already exists", "success": False}
+        ret = self.user_creator(
+            master, name, global_init, global_init_ctx, other_fields
+        )
+        self.take_ownership(self._h.get_obj(uuid.UUID(ret["user_obj"])["jid"]))
+        return ret
 
     @interface.private_api(cli_args=["name"])
     def master_get(self, name: str, mode: str = "default", detailed: bool = False):
@@ -103,19 +129,36 @@ class master_api:
         self.sub_master_ids.destroy_obj_by_name(name)
         return {"response": f"{name} has been destroyed"}
 
-    def make_me_head_master_or_destroy(self, m):
+    def user_creator(
+        self,
+        user_class,
+        name: str,
+        global_init: str = "",
+        global_init_ctx: dict = {},
+        other_fields: dict = {},
+    ):
         """
-        Utility to bring an object into sub masters
+        Create a master instance and return root node master object
+
+        other_fields used for additional feilds for overloaded interfaces
+        (i.e., Dango interface)
         """
+        mast = user_class(h=self._h, name=name)
+        self.log_output(mast)
+        ret = {"success": True, "user_obj": mast}
+        if len(global_init):
+            ret["global_init"] = mast.sentinel_active_global(
+                auto_run=global_init,
+                auto_run_ctx=global_init_ctx,
+                auto_create_graph=True,
+            )
+        return ret
+
+    def take_ownership(self, m):
         m.head_master_id = self.jid
         m.give_access(self)
-        if self.sub_master_ids.has_obj_by_name(m.name):
-            name = m.name
-            m.destroy()
-            return {"response": f"{name} already exists"}
         m.save()
         self.sub_master_ids.add_obj(m)
-        return m.serialize()
 
     def destroy(self):
         """
