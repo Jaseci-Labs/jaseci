@@ -3,12 +3,13 @@ Admin Global api functions as a mixin
 """
 from jaseci.api.interface import interface
 import jaseci.actions.live_actions as lact
+from docstring_parser import parse
 import json
 
 
 class actions_api:
     """
-    Admin global APIs
+    This set of APIs enable the manual management of Jaseci actions and action libraries/sets.
     """
 
     @interface.admin_api(cli_args=["file"])

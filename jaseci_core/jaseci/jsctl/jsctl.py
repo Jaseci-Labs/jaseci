@@ -300,11 +300,11 @@ def reset():
 def booktool(op, output):
     out = ""
     if op == "cheatsheet":
-        out = f"{book().api_cheatsheet(extract_api_tree())}"
+        out = f"{book().bookgen_api_cheatsheet(extract_api_tree())}"
     elif op == "stdlib":
-        out = book().std_library()
+        out = book().bookgen_std_library()
     elif op == "classes":
-        out = book().api_spec()
+        out = book().bookgen_api_spec()
     click.echo(out)
     if output:
         with open(output, "w") as f:

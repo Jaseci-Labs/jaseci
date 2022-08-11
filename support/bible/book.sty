@@ -53,7 +53,6 @@
 
 %Table colors
 
-
 %----------------------------------- LISTINGS  ------------------------------
 \usepackage{listings}
 
@@ -156,9 +155,9 @@ keywordstyle={\color{black}},%                         and format them in black
 }
 
 \newcommand{\apispec}[3]{
-\begin{tcolorbox}[colback=white!50!white,arc=0pt,outer arc=0pt,colframe=white!5!black,boxrule=0.7pt,
-    colbacktitle=white!50!white,coltitle=black,title=\lstinline{#1}]
-    \texttt{\footnotesize args:} \lstinline{#2}
+\begin{tcolorbox}[colback=white!50!white,arc=0pt,outer arc=0pt,colframe=white!5!black,boxrule=0.7pt,boxsep=8pt,left=2pt,
+    colbacktitle=white!50!white,coltitle=black,title={\texttt{\textbf{#1}}}]
+    \texttt{args:} \lstinline[basicstyle=\normalsize\ttfamily]{#2}
     \tcblower
     #3
   \end{tcolorbox}

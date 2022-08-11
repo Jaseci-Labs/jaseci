@@ -366,3 +366,15 @@ class jsctl_test(TestCaseHelper, TestCase):
         gphs = self.call_cast("graph get -detailed true")
         for i in gphs:
             self.assertEqual(i["j_access"], "public")
+
+    def test_jsctl_bookgen_api_cheatsheet(self):
+        r = self.call("booktool cheatsheet")
+        self.assertGreater(len(r), 2000)
+
+    def test_jsctl_bookgen_std_library(self):
+        r = self.call("booktool stdlib")
+        self.assertGreater(len(r), 2000)
+
+    def test_jsctl_bookgen_api_spec(self):
+        r = self.call("booktool cheatsheet")
+        self.assertGreater(len(r), 2000)

@@ -1,4 +1,5 @@
 from jaseci.utils.utils import obj_class_cache, build_class_dict
+from jaseci.element.super_master import super_master
 
 # from pprint import pformat
 from inspect import getdoc, signature
@@ -19,7 +20,7 @@ class book:
                 ret += " (*req)"
         return ret if len(ret) else "n/a"
 
-    def api_cheatsheet(self, root, out=None, str=""):
+    def bookgen_api_cheatsheet(self, root, out=None, str=""):
         if out is None:
             out = []
         if "leaf" in root.keys():
@@ -35,11 +36,15 @@ class book:
             out.append(line)
             return
         for i in root.keys():
-            self.api_cheatsheet(root[i], out, str + f"{i} ")
+            self.bookgen_api_cheatsheet(root[i], out, str + f"{i} ")
         return "".join(out)
 
     def get_stdlib_pre_table(self):
-        clip = "\\rowcolors{1}{light-cyan}{light-gray}\\begin{longtable}{|p{4cm} | p{6cm}|}\\toprule\\rowcolor{white}\\textbf{Action}&\\textbf{Args}\\\\\\midrule"
+        clip = (
+            "\\rowcolors{1}{light-cyan}{light-gray}\\begin{longtable}"
+            "{|p{4cm} | p{6cm}|}\\toprule\\rowcolor{white}\\textbf"
+            "{Action}&\\textbf{Args}\\\\\\midrule"
+        )
         return clip
 
     def get_stdlib_post_table(self, act="default"):
@@ -74,29 +79,34 @@ class book:
             )
         return all_action_sets
 
-    def std_library(self):
+    def func_to_sexy_box(self, fname, func, doc):
+        line = (
+            "\\apispec{"
+            + fname
+            + "}{"
+            + f"{self.format_params(signature(func))}"
+            + "}\n"
+        )
+        if doc is None:
+            doc = "No documentation"
+        doc = doc.replace("_", " ")
+        line += "{" + doc + "}\n"
+        return line
+
+    def bookgen_std_library(self):
         out = []
         for i in self.get_global_actions():
             lib = i[0]
             if lib == "jaseci":
                 continue
             out += ["\\subsection{" + lib + "}\n"]
-
             i = i[1:]
             for j in i:
-                line = (
-                    "\\apispec{"
-                    + lib
-                    + "."
-                    + j[0]
-                    + "}{"
-                    + f"{self.format_params(signature(j[1]))}"
-                    + "}\n"
+                out.append(
+                    self.func_to_sexy_box(
+                        ".".join([lib, j[0].replace("_", "\\_")]), j[1], getdoc(j[1])
+                    )
                 )
-                out.append(line)
-                doc = "test"  # getdoc(j[1]) if getdoc(j[1]) is not None else ""
-                line = "{" + doc + "}\n"
-                out.append(line)
         return "".join(out)
 
     def std_library_table(self):
@@ -105,7 +115,7 @@ class book:
             lib = i[0]
             if lib == "jaseci":
                 continue
-            out += ["\subsection{" + lib + "}\n", self.get_stdlib_pre_table()]
+            out += ["\\subsection{" + lib + "}\n", self.get_stdlib_pre_table()]
 
             i = i[1:]
             for j in i:
@@ -125,13 +135,13 @@ class book:
             out.append(self.get_stdlib_post_table(lib))
         return "".join(out)
 
-    def api_spec(self):
+    def bookgen_api_spec(self):
         ret = ""
         build_class_dict(jaseci)
         for i in obj_class_cache.keys():
             if not i.endswith("_api"):
                 continue
-            ret += f"\\subsection{{{i[:-4]} APIs}}\n\n"
+            ret += f"\\subsection{{APIs for {i[:-4]}}}\n\n"
             doc = getdoc(obj_class_cache[i]).replace("\n\n", "\n\\par\n")
             doc = doc.replace("_", "\\_")
             ret += f"{doc}\n\n"
@@ -140,17 +150,17 @@ class book:
 
     def api_call_spec(self, cls):
         ret = ""
-        for i in dir(cls):
+        for i, v in cls.__dict__.items():
             # access = 'master'
-            if i.startswith("api_"):
-                api = i[4:].replace("_", " ")
-            elif i.startswith("admin_api_"):
-                # access = 'super'
-                api = i[10:].replace("_", " ")
-            elif i.startswith("public_api_"):
-                # access = 'public'
-                api = i[11:].replace("_", " ")
-            else:
+            found = False
+            for j in super_master.all_apis(None):
+                if i == j["fname"]:
+                    found = True
+                    break
+            if not found:
                 continue
-            ret += f"\\subsubsection{{{api}}}\n\n"
+            name = i.replace("_", " ")
+            api = i.replace("_", "\\_")
+            # ret += f"\\subsubsection{{\\lstinline[basicstyle=\\Large\\ttfamily]${name}$}}\n\n"
+            ret += self.func_to_sexy_box(f"{name} (api: {api})", v, getdoc(v))
         return ret
