@@ -149,162 +149,16 @@
     \end{table}
 }
 
-\newcommand{\printtabDateStd}{
-    \begin{table}[ht]
-        \footnotesize
-        \centering
-        \begin{tabular}{l l l}
-            \toprule
-            \textbf{Action}                 & \textbf{Args} & \textbf{Description}                     \\
-            \midrule
-            \lstinline{date.quantize_to_year}    & (date: str)          &                                          \\
-            \lstinline{date.quantize_to_month}     & (date: str)          &  \\
-            \lstinline{date.quantize_to_week} & (date: str)          &    \\
-            \lstinline{date.quantize_to_day}     & (date: str)          &                                          \\
-            \lstinline{date.date_day_diff}    & (start\_date: str, end\_date: str)          &                                          \\
-            \bottomrule
-        \end{tabular}
-        \caption{Date Actions in Jac}
-        \label{tab:datestd} % Unique label used for referencing the table in-text
-        %\addcontentsline{toc}{table}{Table \ref{tab:jacprecedence}} % Uncomment to add the table to the table of contents
-    \end{table}
-}
-
-\newcommand{\printtabFileStd}{
-    \begin{table}[ht]
-        \footnotesize
-        \centering
-        \begin{tabular}{l l l}
-            \toprule
-            \textbf{Action}                 & \textbf{Args} & \textbf{Description}                     \\
-            \midrule
-            \lstinline{file.load_str}    & (fn: str, max\_chars: int = None)          &                                          \\
-            \lstinline{file.load_json}     & (fn: str)         &  \\
-            \lstinline{file.dump_str} & (fn: str, s: str)          &    \\
-            \lstinline{file.append_str}     & (fn: str, s: str)          &                                          \\
-            \lstinline{file.dump_json}    & (fn: str, obj, indent: int = None)          &                                          \\
-            \lstinline{file.delete}    & (fn: str)         &                                          \\
-            \bottomrule
-        \end{tabular}
-        \caption{Date Actions in Jac}
-        \label{tab:filestd} % Unique label used for referencing the table in-text
-        %\addcontentsline{toc}{table}{Table \ref{tab:jacprecedence}} % Uncomment to add the table to the table of contents
-    \end{table}
-}
-
 \newcommand{\printtabJSAPI}{
-    % \begin{table}[ht]
-
     \rowcolors{1}{light-cyan}{light-gray}
-    \begin{longtable}{l p{10cm}}
+    \begin{longtable}{l | p{10cm}}
         \toprule
-        \rowcolor{white} \textbf{Interface} & \textbf{Parameters}                                                                                                                                                                                            \\
+        \rowcolor{white} \textbf{Interface} & \textbf{Parameters} \\
         \midrule
-        \footnotesize
-        walker callback & (nd: jaseci.graph.node.node, wlk: jaseci.actor.walker.walker, key: str, ctx: dict = {}, \_req\_ctx: dict = {}, global\_sync: bool = True) \\
-        walker summon & (key: str, wlk: jaseci.actor.walker.walker, nd: jaseci.graph.node.node, ctx: dict = {}, \_req\_ctx: dict = {}, global\_sync: bool = True) \\
-        walker register & (snt: jaseci.actor.sentinel.sentinel = None, code: str = '', encoded: bool = False) \\
-        walker get & (wlk: jaseci.actor.walker.walker, mode: str = 'default', detailed: bool = False) \\
-        walker set & (wlk: jaseci.actor.walker.walker, code: str, mode: str = 'default') \\
-        walker list & (snt: jaseci.actor.sentinel.sentinel = None, detailed: bool = False) \\
-        walker delete & (wlk: jaseci.actor.walker.walker, snt: jaseci.actor.sentinel.sentinel = None) \\
-        walker spawn create & (name: str, snt: jaseci.actor.sentinel.sentinel = None) \\
-        walker spawn delete & (name: str) \\
-        walker spawn list & (detailed: bool = False) \\
-        walker prime & (wlk: jaseci.actor.walker.walker, nd: jaseci.graph.node.node = None, ctx: dict = {}, \_req\_ctx: dict = {}) \\
-        walker execute & (wlk: jaseci.actor.walker.walker, prime: jaseci.graph.node.node = None, ctx: dict = {}, \_req\_ctx: dict = {}, profiling: bool = False) \\
-        walker run & (name: str, nd: jaseci.graph.node.node = None, ctx: dict = {}, \_req\_ctx: dict = {}, snt: jaseci.actor.sentinel.sentinel = None, profiling: bool = False) \\
-        alias register & (name: str, value: str) \\
-        alias list & () \\
-        alias delete & (name: str) \\
-        alias clear & () \\
-        global get & (name: str) \\
-        global set & (name: str, value: str) \\
-        global delete & (name: str) \\
-        global sentinel set & (snt: jaseci.actor.sentinel.sentinel = None) \\
-        global sentinel unset & () \\
-        object get & (obj: jaseci.element.element.element, depth: int = 0, detailed: bool = False) \\
-        object perms get & (obj: jaseci.element.element.element) \\
-        object perms set & (obj: jaseci.element.element.element, mode: str) \\
-        object perms default & (mode: str) \\
-        object perms grant & (obj: jaseci.element.element.element, mast: jaseci.element.element.element, read\_only: bool = False) \\
-        object perms revoke & (obj: jaseci.element.element.element, mast: jaseci.element.element.element) \\
-        graph create & (set\_active: bool = True) \\
-        graph get & (gph: jaseci.graph.graph.graph = None, mode: str = 'default', detailed: bool = False) \\
-        graph list & (detailed: bool = False) \\
-        graph active set & (gph: jaseci.graph.graph.graph) \\
-        graph active unset & () \\
-        graph active get & (detailed: bool = False) \\
-        graph delete & (gph: jaseci.graph.graph.graph) \\
-        graph node get & (nd: jaseci.graph.node.node, ctx: list = None) \\
-        graph node set & (nd: jaseci.graph.node.node, ctx: dict, snt: jaseci.actor.sentinel.sentinel = None) \\
-        graph walk & (nd: jaseci.graph.node.node = None) \\
-        sentinel register & (name: str = 'default', code: str = '', code\_dir: str = './', mode: str = 'default', encoded: bool = False, auto\_run: str = 'init', auto\_gen\_graph: bool = True, ctx: dict = {}, set\_active: bool = True) \\
-        sentinel pull & (set\_active: bool = True, on\_demand: bool = True) \\
-        sentinel get & (snt: jaseci.actor.sentinel.sentinel = None, mode: str = 'default', detailed: bool = False) \\
-        sentinel set & (code: str, code\_dir: str = './', encoded: bool = False, snt: jaseci.actor.sentinel.sentinel = None, mode: str = 'default') \\
-        sentinel list & (detailed: bool = False) \\
-        sentinel test & (snt: jaseci.actor.sentinel.sentinel = None, detailed: bool = False) \\
-        sentinel active set & (snt: jaseci.actor.sentinel.sentinel) \\
-        sentinel active unset & () \\
-        sentinel active global & (detailed: bool = False) \\
-        sentinel active get & (detailed: bool = False) \\
-        sentinel delete & (snt: jaseci.actor.sentinel.sentinel) \\
-        wapi & (name: str, nd: jaseci.graph.node.node = None, ctx: dict = {}, \_req\_ctx: dict = {}, snt: jaseci.actor.sentinel.sentinel = None, profiling: bool = False) \\
-        architype register & (code: str, encoded: bool = False, snt: jaseci.actor.sentinel.sentinel = None) \\
-        architype get & (arch: jaseci.actor.architype.architype, mode: str = 'default', detailed: bool = False) \\
-        architype set & (arch: jaseci.actor.architype.architype, code: str, mode: str = 'default') \\
-        architype list & (snt: jaseci.actor.sentinel.sentinel = None, detailed: bool = False) \\
-        architype delete & (arch: jaseci.actor.architype.architype, snt: jaseci.actor.sentinel.sentinel = None) \\
-        master create & (name: str, set\_active: bool = True, other\_fields: dict = {}) \\
-        master get & (name: str, mode: str = 'default', detailed: bool = False) \\
-        master list & (detailed: bool = False) \\
-        master active set & (name: str) \\
-        master active unset & () \\
-        master active get & (detailed: bool = False) \\
-        master self & (detailed: bool = False) \\
-        master delete & (name: str) \\
-        master createsuper & (name: str, set\_active: bool = True, other\_fields: dict = {}) \\
-        master allusers & (num: int = 0, start\_idx: int = 0) \\
-        master become & (mast: jaseci.element.master.master) \\
-        master unbecome & () \\
-        config get & (name: str, do\_check: bool = True) \\
-        config set & (name: str, value: str, do\_check: bool = True) \\
-        config list & () \\
-        config index & () \\
-        config exists & (name: str) \\
-        config delete & (name: str, do\_check: bool = True) \\
-        logger http connect & (host: str, port: int, url: str, log: str = 'all') \\
-        logger http clear & (log: str = 'all') \\
-        logger list & () \\
-        stripe product create & (name: str = 'VIP Plan', description: str = 'Plan description') \\
-        stripe product price set & (productId: str, amount: float = 50, interval: str = 'month') \\
-        stripe product list & (detalied: bool = True) \\
-        stripe customer create & (paymentId: str, name: str = 'cristopher evangelista', email: str = 'imurbatman12@gmail.com', description: str = 'Myca subscriber') \\
-        stripe customer get & (customerId: str) \\
-        stripe customer payment add & (paymentMethodId: str, customerId: str) \\
-        stripe customer payment delete & (paymentMethodId: str) \\
-        stripe customer payment get & (customerId: str) \\
-        stripe customer payment default & (customerId: str, paymentMethodId: str) \\
-        stripe subscription create & (paymentId: str, name: str, email: str, priceId: str, customerId: str) \\
-        stripe subscription delete & (subscriptionId: str) \\
-        stripe subscription get & (customerId: str) \\
-        stripe invoices list & (customerId: str, subscriptionId: str, limit: int = 10, lastItem: str = '') \\
-        actions load local & (file: str) \\
-        actions load remote & (url: str) \\
-        actions load module & (mod: str) \\
-        actions list & (name: str = '') \\
-        jac build & (file: str, out: str = '') \\
-        jac test & (file: str, detailed: bool = False) \\
-        jac run & (file: str, walk: str = 'init', ctx: dict = {}, profiling: bool = False) \\
-        jac dot & (file: str, walk: str = 'init', ctx: dict = {}, detailed: bool = False) \\
-
+        \input{assets/tex/js_generated/api_cheatsheet.tex}
         \bottomrule
         \hiderowcolors
         \caption{Full set of core Jaseci APIs}
         \label{tab:jsAPI}
     \end{longtable}
-
-    %\addcontentsline{toc}{table}{Table \ref{tab:jacprecedence}} % Uncomment to add the table to the table of contents
-    % \end{table}
 }

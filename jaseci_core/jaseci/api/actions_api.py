@@ -8,13 +8,28 @@ import json
 
 class actions_api:
     """
-    Admin global APIs
+    APIs to manage actions
+
+    The set action APIs enable the manual management of Jaseci actions and action
+    libraries/sets. Action libraries can be loaded locally into the running instance of
+    the python program, or as a remote container linked action library. In this mode,
+    action libraries operate as micro-services. Jaseci will be able to dynamically
+    and automatically make this decision for the user based on online monitoring and
+    performance profiling.
     """
 
     @interface.admin_api(cli_args=["file"])
     def actions_load_local(self, file: str):
         """
         Hot load a python module and assimlate any Jaseci Actions
+
+        This API will dynamically load a module based on a python file. This API also
+        makes an attempt to auto detect and hot load any python package dependencies
+        the file may reference via python's relative imports. This file is assumed to
+        have the necessary annotations and decorations required by Jaseci to recognize
+        its actions.
+
+        :param file: The python file to load actions from.
         """
         success = lact.load_local_actions(file)
         if success:
