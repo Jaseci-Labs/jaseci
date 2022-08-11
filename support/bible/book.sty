@@ -155,6 +155,14 @@ keywordstyle={\color{black}},%                         and format them in black
    #1
 }
 
+\newcommand{\apispec}[3]{
+\begin{tcolorbox}[colback=white!50!white,arc=0pt,outer arc=0pt,colframe=white!5!black,boxrule=0.7pt,
+    colbacktitle=white!50!white,title=\lstinline{#1}]
+    \lstinline{#2}
+    \tcblower
+    #3
+  \end{tcolorbox}
+}
 
 %DOT GRAPH BOX
 \newcommand{\jacdot}[3]{\begin{wrapfigure}{r}{#2\linewidth}

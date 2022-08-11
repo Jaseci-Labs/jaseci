@@ -77,6 +77,50 @@ class book:
             lib = i[0]
             if lib == "jaseci":
                 continue
+            out += ["\\subsection{" + lib + "}\n"]
+
+            i = i[1:]
+            for j in i:
+                line = (
+                    "\\apispec{"
+                    + lib
+                    + "."
+                    + j[0]
+                    + "}{"
+                    + f"{self.format_params(signature(j[1]))}"
+                    + "}\n"
+                )
+                out.append(line)
+                doc = "test"  # getdoc(j[1]) if getdoc(j[1]) is not None else ""
+                line = "{" + doc + "}\n"
+                out.append(line)
+        return "".join(out)
+
+    def std_library_table(self):
+        import jaseci.actions.standard as stdact
+        import pkgutil
+        from importlib.machinery import SourceFileLoader
+        from jaseci.actions.live_actions import live_actions
+
+        all_action_sets = []
+        for importer, modname, ispkg in pkgutil.iter_modules(stdact.__path__):
+            all_action_sets.append(
+                [modname]
+                + [
+                    [name, val]
+                    for name, val in SourceFileLoader(
+                        modname, stdact.__path__[0] + "/" + modname + ".py"
+                    )
+                    .load_module()
+                    .__dict__.items()
+                    if callable(val) and modname + "." + name in live_actions
+                ]
+            )
+        out = []
+        for i in all_action_sets:
+            lib = i[0]
+            if lib == "jaseci":
+                continue
             out += ["\subsection{" + lib + "}\n", self.get_stdlib_pre_table()]
 
             i = i[1:]
@@ -91,7 +135,8 @@ class book:
                     + "$ \\\\ \\hline\n"
                 )
                 out.append(line)
-                line = "\\multicolumn{2}{|l|}{coming soon} \\\\ \\hline\n"
+                doc = getdoc(j[1]) if getdoc(j[1]) is not None else ""
+                line = "\\multicolumn{2}{|p|}{Description: " + doc + "} \\\\ \\hline\n"
                 out.append(line)
             out.append(self.get_stdlib_post_table(lib))
         return "".join(out)
