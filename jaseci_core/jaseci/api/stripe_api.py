@@ -53,7 +53,13 @@ class stripe_api:
                 return {"message": str(e)}
 
     @interface.admin_api()
-    def stripe_customer_create(email: str, name: str, metadata: dict = {}, address: dict or None = {}, payment_method_id: str or None = None):
+    def stripe_customer_create(
+        email: str,
+        name: str,
+        metadata: dict = {},
+        address: dict or None = {},
+        payment_method_id: str or None = None,
+    ):
         """create customer"""
         try:
             return stripe.Customer.create(
@@ -62,7 +68,7 @@ class stripe_api:
                 metadata=metadata,
                 address=address,
                 payment_method=payment_method_id,
-                invoice_settings={ "default_payment_method": payment_method_id },
+                invoice_settings={"default_payment_method": payment_method_id},
             )
         except Exception as e:
             return {"message": str(e)}
@@ -74,7 +80,7 @@ class stripe_api:
             return stripe.Customer.retrieve(customer_id)
         except Exception as e:
             return {"message": str(e)}
-    
+
     @interface.admin_api()
     def stripe_create_payment_method(card_type: str, card: dict):
         """create payment method"""
@@ -97,7 +103,9 @@ class stripe_api:
             )
 
             if len(paymentMethods.data) == 0:
-                self.stripe_customer_default_payment_update(self, customer_id, payment_method_id)
+                self.stripe_customer_default_payment_update(
+                    self, customer_id, payment_method_id
+                )
 
             paymentMethod.is_default = len(paymentMethods.data) == 0
 
@@ -124,10 +132,11 @@ class stripe_api:
             )
         except Exception as e:
             return {"message": str(e)}
-    
 
     @interface.admin_api()
-    def stripe_customer_default_payment_update(self, customer_id: str, payment_method_id: str):
+    def stripe_customer_default_payment_update(
+        self, customer_id: str, payment_method_id: str
+    ):
         """update default payment method of customer"""
         try:
             setting = {"default_payment_method": payment_method_id}
@@ -136,19 +145,27 @@ class stripe_api:
             return {"message": str(e)}
 
     @interface.admin_api()
-    def stripe_trial_subscription_create(self, payment_method_id: str, price_id: str, customer_id: str, trial_period_days: int = 30):
+    def stripe_trial_subscription_create(
+        self,
+        payment_method_id: str,
+        price_id: str,
+        customer_id: str,
+        trial_period_days: int = 30,
+    ):
         """create customer trial subscription"""
         try:
             # attach payment method to customer
             self.stripe_customer_payment_add(self, payment_method_id, customer_id)
 
             # set card to default payment method
-            self.stripe_customer_default_payment_update(self, customer_id, payment_method_id)
+            self.stripe_customer_default_payment_update(
+                self, customer_id, payment_method_id
+            )
 
             subscription = stripe.Subscription.create(
                 customer=customer_id,
                 items=[
-                    { "price": price_id },
+                    {"price": price_id},
                 ],
                 trial_period_days=trial_period_days,
             )
@@ -158,19 +175,23 @@ class stripe_api:
             return {"message": str(e)}
 
     @interface.admin_api()
-    def stripe_subscription_create(self, payment_method_id: str, price_id: str, customer_id: str):
+    def stripe_subscription_create(
+        self, payment_method_id: str, price_id: str, customer_id: str
+    ):
         """create customer subscription"""
         try:
             # attach payment method to customer
             self.stripe_customer_payment_add(self, payment_method_id, customer_id)
 
             # set card to default payment method
-            self.stripe_customer_default_payment_update(self, customer_id, payment_method_id)
+            self.stripe_customer_default_payment_update(
+                self, customer_id, payment_method_id
+            )
 
             subscription = stripe.Subscription.create(
                 customer=customer_id,
                 items=[
-                    { "price": price_id },
+                    {"price": price_id},
                 ],
             )
 
