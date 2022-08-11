@@ -11,6 +11,7 @@
 \lstinline$walker prime$ & \lstinline$wlk: walker (*req), nd: node, ctx: dict, _req_ctx: dict$ \\ \hline
 \lstinline$walker execute$ & \lstinline$wlk: walker (*req), prime: node, ctx: dict, _req_ctx: dict, profiling: bool$ \\ \hline
 \lstinline$walker run$ & \lstinline$name: str (*req), nd: node, ctx: dict, _req_ctx: dict, snt: sentinel, profiling: bool$ \\ \hline
+\lstinline$user create$ & \lstinline$name: str (*req), global_init: str, global_init_ctx: dict, other_fields: dict$ \\ \hline
 \lstinline$alias register$ & \lstinline$name: str (*req), value: str (*req)$ \\ \hline
 \lstinline$alias list$ & \lstinline$n/a$ \\ \hline
 \lstinline$alias delete$ & \lstinline$name: str (*req)$ \\ \hline
@@ -36,7 +37,7 @@
 \lstinline$graph node get$ & \lstinline$nd: node (*req), ctx: list$ \\ \hline
 \lstinline$graph node set$ & \lstinline$nd: node (*req), ctx: dict (*req), snt: sentinel$ \\ \hline
 \lstinline$graph walk (cli only)$ & \lstinline$nd: node$ \\ \hline
-\lstinline$sentinel register$ & \lstinline$name: str, code: str, code_dir: str, mode: str, encoded: bool, auto_run: str, auto_gen_graph: bool, ctx: dict, set_active: bool$ \\ \hline
+\lstinline$sentinel register$ & \lstinline$name: str, code: str, code_dir: str, mode: str, encoded: bool, auto_run: str, auto_run_ctx: dict, auto_create_graph: bool, set_active: bool$ \\ \hline
 \lstinline$sentinel pull$ & \lstinline$set_active: bool, on_demand: bool$ \\ \hline
 \lstinline$sentinel get$ & \lstinline$snt: sentinel, mode: str, detailed: bool$ \\ \hline
 \lstinline$sentinel set$ & \lstinline$code: str (*req), code_dir: str, encoded: bool, snt: sentinel, mode: str$ \\ \hline
@@ -44,7 +45,7 @@
 \lstinline$sentinel test$ & \lstinline$snt: sentinel, detailed: bool$ \\ \hline
 \lstinline$sentinel active set$ & \lstinline$snt: sentinel (*req)$ \\ \hline
 \lstinline$sentinel active unset$ & \lstinline$n/a$ \\ \hline
-\lstinline$sentinel active global$ & \lstinline$detailed: bool$ \\ \hline
+\lstinline$sentinel active global$ & \lstinline$auto_run: str, auto_run_ctx: dict, auto_create_graph: bool, detailed: bool$ \\ \hline
 \lstinline$sentinel active get$ & \lstinline$detailed: bool$ \\ \hline
 \lstinline$sentinel delete$ & \lstinline$snt: sentinel (*req)$ \\ \hline
 \lstinline$wapi$ & \lstinline$name: str (*req), nd: node, ctx: dict, _req_ctx: dict, snt: sentinel, profiling: bool$ \\ \hline
@@ -53,7 +54,7 @@
 \lstinline$architype set$ & \lstinline$arch: architype (*req), code: str (*req), mode: str$ \\ \hline
 \lstinline$architype list$ & \lstinline$snt: sentinel, detailed: bool$ \\ \hline
 \lstinline$architype delete$ & \lstinline$arch: architype (*req), snt: sentinel$ \\ \hline
-\lstinline$master create$ & \lstinline$name: str (*req), set_active: bool, other_fields: dict$ \\ \hline
+\lstinline$master create$ & \lstinline$name: str (*req), global_init: str, global_init_ctx: dict, other_fields: dict$ \\ \hline
 \lstinline$master get$ & \lstinline$name: str (*req), mode: str, detailed: bool$ \\ \hline
 \lstinline$master list$ & \lstinline$detailed: bool$ \\ \hline
 \lstinline$master active set$ & \lstinline$name: str (*req)$ \\ \hline
@@ -61,7 +62,7 @@
 \lstinline$master active get$ & \lstinline$detailed: bool$ \\ \hline
 \lstinline$master self$ & \lstinline$detailed: bool$ \\ \hline
 \lstinline$master delete$ & \lstinline$name: str (*req)$ \\ \hline
-\lstinline$master createsuper$ & \lstinline$name: str (*req), set_active: bool, other_fields: dict$ \\ \hline
+\lstinline$master createsuper$ & \lstinline$name: str (*req), global_init: str, global_init_ctx: dict, other_fields: dict$ \\ \hline
 \lstinline$master allusers$ & \lstinline$num: int, start_idx: int$ \\ \hline
 \lstinline$master become$ & \lstinline$mast: master (*req)$ \\ \hline
 \lstinline$master unbecome$ & \lstinline$n/a$ \\ \hline

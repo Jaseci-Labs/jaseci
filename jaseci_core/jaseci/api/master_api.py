@@ -7,7 +7,11 @@ import uuid
 
 
 class master_api:
-    """Master APIs for creating nicknames for UUIDs and other long strings"""
+    """
+    Master APIs for users creating and managing groups of sub users
+
+    These APIs
+    """
 
     def __init__(self, head_master):
         self.caller = None
