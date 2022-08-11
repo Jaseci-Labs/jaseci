@@ -1,5 +1,5 @@
 from jaseci.utils.utils import obj_class_cache, build_class_dict
-from jaseci.element.super_master import super_master
+from jaseci.element.super_master import super_master as sm
 from docstring_parser import parse
 
 # from pprint import pformat
@@ -100,6 +100,7 @@ class book:
             for i in parsed_doc.params:
                 args_doc += f"\n\\texttt{{{i.arg_name}}} -- {i.description}\\par\n"
             args_doc += "}"
+            args_doc = args_doc.replace("_", "\\_")
             doc += args_doc
         line += "{" + doc + "}\n"
         return line
@@ -152,7 +153,7 @@ class book:
         for i in obj_class_cache.keys():
             if not i.endswith("_api"):
                 continue
-            ret += f"\\subsection{{APIs for {i[:-4]}}}\n\n"
+            ret += f"\\subsection{{APIs for \\lstinline[basicstyle=\\Large\\ttfamily]${i[:-4]}$}}\n\n"
             doc = getdoc(obj_class_cache[i]).replace("\n\n", "\n\\par\n")
             doc = parse(doc).long_description
             doc = (
@@ -167,14 +168,27 @@ class book:
         for i, v in cls.__dict__.items():
             # access = 'master'
             found = False
-            for j in super_master.all_apis(None):
+            auth_level = ""
+            for j in sm.all_apis(None, True):
                 if i == j["fname"]:
                     found = True
+                    auth_level = (
+                        "public"
+                        if j in sm._public_api
+                        else "user"
+                        if j in sm._private_api
+                        else "admin"
+                        if j in sm._admin_api
+                        else "cli_only"
+                    )
                     break
             if not found:
                 continue
             name = i.replace("_", " ")
             api = i.replace("_", "\\_")
-            # ret += f"\\subsubsection{{\\lstinline[basicstyle=\\Large\\ttfamily]${name}$}}\n\n"
-            ret += self.func_to_sexy_box(f"{name} (api: {api})", v, getdoc(v))
+            ret += f"\\subsubsection{{\\lstinline[basicstyle=\\Large\\ttfamily]${name}$}}\n\n"
+            authstr = "(cli only)"
+            if auth_level != "cli_only":
+                authstr = f"| api: {api} | auth: {auth_level}"
+            ret += self.func_to_sexy_box(f"cli: {name} {authstr}", v, getdoc(v))
         return ret

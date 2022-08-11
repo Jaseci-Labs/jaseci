@@ -5,7 +5,11 @@ from jaseci.api.interface import interface
 
 
 class user_api:
-    """User APIs for creating users (some functions should be override downstream"""
+    """
+    User APIs for creating users (some functions should be override downstream)
+
+
+    """
 
     @interface.public_api(cli_args=["name"])
     def user_create(

@@ -95,8 +95,11 @@ class interface:
 
         return decorator_func
 
-    def all_apis(self):
-        return interface._public_api + interface._private_api + interface._admin_api
+    def all_apis(self, with_cli_only=False):
+        ret = interface._public_api + interface._private_api + interface._admin_api
+        if with_cli_only:
+            return ret + interface._cli_api
+        return ret
 
     assimilate_api = staticmethod(assimilate_api)
     public_api = staticmethod(public_api)
