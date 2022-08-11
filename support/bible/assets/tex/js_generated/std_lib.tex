@@ -1,97 +1,90 @@
 \subsection{date}
 \apispec{date.quantize\_to\_year}{date: str (*req)}
-{No documentation}
+{No documentation yet.}
 \apispec{date.quantize\_to\_month}{date: str (*req)}
-{No documentation}
+{No documentation yet.}
 \apispec{date.quantize\_to\_week}{date: str (*req)}
-{No documentation}
+{No documentation yet.}
 \apispec{date.quantize\_to\_day}{date: str (*req)}
-{No documentation}
+{No documentation yet.}
 \apispec{date.date\_day\_diff}{start_date: str (*req), end_date: str (*req)}
-{No documentation}
+{No documentation yet.}
 \subsection{file}
 \apispec{file.load\_str}{fn: str (*req), max_chars: int}
-{Standard built in for loading from file to string}
+{No documentation yet.}
 \apispec{file.load\_json}{fn: str (*req)}
-{Standard built in for loading json from file to dictionary}
+{No documentation yet.}
 \apispec{file.dump\_str}{fn: str (*req), s: str (*req)}
-{Standard built in for dumping to file from string}
+{No documentation yet.}
 \apispec{file.append\_str}{fn: str (*req), s: str (*req)}
-{Standard built in for appending to file from string}
+{No documentation yet.}
 \apispec{file.dump\_json}{fn: str (*req), obj: _empty (*req), indent: int}
-{Standard built in for dumping json to file from dictionary}
+{No documentation yet.}
 \apispec{file.delete}{fn: str (*req)}
-{Standard built in for deleting a file}
+{No documentation yet.}
 \subsection{net}
 \apispec{net.max}{item_set: jac_set (*req)}
-{No documentation}
+{No documentation yet.}
 \apispec{net.min}{item_set: jac_set (*req)}
-{No documentation}
+{No documentation yet.}
 \apispec{net.root}{meta: _empty (*req)}
-{No documentation}
+{No documentation yet.}
 \subsection{rand}
 \apispec{rand.seed}{val: int (*req)}
-{Seed random num generator}
+{No documentation yet.}
 \apispec{rand.integer}{start: int (*req), end: int (*req)}
-{Random integeter between range}
+{No documentation yet.}
 \apispec{rand.choice}{lst: list (*req)}
-{Random select and return item in list}
+{No documentation yet.}
 \apispec{rand.sentence}{min_lenth: int, max_length: int, sep: str}
-{Get a random sentence}
+{No documentation yet.}
 \apispec{rand.paragraph}{min_lenth: int, max_length: int, sep: str}
-{Get a random paragraph}
+{No documentation yet.}
 \apispec{rand.text}{min_lenth: int, max_length: int, sep: str}
-{Get a random text}
+{No documentation yet.}
 \apispec{rand.word}{n/a}
-{Get a random sentence}
+{No documentation yet.}
 \apispec{rand.time}{start_date: str (*req), end_date: str (*req)}
-{Provide a random datetime between range}
+{No documentation yet.}
 \subsection{request}
 \apispec{request.get}{url: str (*req), data: dict (*req), header: dict (*req)}
-{Issue request
-Param 1 - url
+{Param 1 - url
 Param 2 - data
 Param 3 - header
 
 Return - response object}
 \apispec{request.post}{url: str (*req), data: dict (*req), header: dict (*req)}
-{Issue request
-Param 1 - url
+{Param 1 - url
 Param 2 - data
 Param 3 - header
 
 Return - response object}
 \apispec{request.put}{url: str (*req), data: dict (*req), header: dict (*req)}
-{Issue request
-Param 1 - url
+{Param 1 - url
 Param 2 - data
 Param 3 - header
 
 Return - response object}
 \apispec{request.delete}{url: str (*req), data: dict (*req), header: dict (*req)}
-{Issue request
-Param 1 - url
+{Param 1 - url
 Param 2 - data
 Param 3 - header
 
 Return - response object}
 \apispec{request.head}{url: str (*req), data: dict (*req), header: dict (*req)}
-{Issue request
-Param 1 - url
+{Param 1 - url
 Param 2 - data
 Param 3 - header
 
 Return - response object}
 \apispec{request.options}{url: str (*req), data: dict (*req), header: dict (*req)}
-{Issue request
-Param 1 - url
+{Param 1 - url
 Param 2 - data
 Param 3 - header
 
 Return - response object}
 \apispec{request.multipart\_base64}{url: str (*req), files: list (*req), header: dict (*req)}
-{Issue request
-Param 1 - url
+{Param 1 - url
 Param 3 - header
 Param 3 - file (Optional) used for single file
 Param 4 - files (Optional) used for multiple files
@@ -99,92 +92,80 @@ Note - file and files can't be None at the same time
 
 Return - response object}
 \apispec{request.file\_download\_base64}{url: str (*req), header: dict (*req), encoding: str}
-{Standard built in for download file from url}
+{No documentation yet.}
 \subsection{std}
 \apispec{std.log}{args: _empty (*req)}
-{Standard built in for printing output to log}
+{No documentation yet.}
 \apispec{std.out}{args: _empty (*req)}
-{Standard built in for printing output}
+{No documentation yet.}
 \apispec{std.js\_input}{prompt: str}
-{Standard built in for printing output}
+{No documentation yet.}
 \apispec{std.err}{args: _empty (*req)}
-{Standard built in for printing to stderr}
+{No documentation yet.}
 \apispec{std.sort\_by\_col}{lst: list (*req), col_num: int (*req), reverse: bool}
-{Sorts in place list of lists by column
-Param 1 - list
+{Param 1 - list
 Param 2 - col number
 Param 3 - boolean as to whether things should be reversed
 
 Return - Sorted list}
 \apispec{std.time\_now}{n/a}
-{Get utc date time for now in iso format}
+{No documentation yet.}
 \apispec{std.set\_global}{name: str (*req), value: _empty (*req), meta: _empty (*req)}
-{Set global variable visible to all walkers/users
-Param 1 - name
+{Param 1 - name
 Param 2 - value (must be json serializable)}
 \apispec{std.get\_global}{name: str (*req), meta: _empty (*req)}
-{Set global variable visible to all walkers/users
-Param 1 - name}
+{Param 1 - name}
 \apispec{std.actload\_local}{filename: str (*req), meta: _empty (*req)}
-{Load local actions to Jaseci}
+{No documentation yet.}
 \apispec{std.actload\_remote}{url: str (*req), meta: _empty (*req)}
-{Load remote actions to Jaseci}
+{No documentation yet.}
 \apispec{std.actload\_module}{module: str (*req), meta: _empty (*req)}
-{Load module actions to Jaseci}
+{No documentation yet.}
 \apispec{std.destroy\_global}{name: str (*req), meta: _empty (*req)}
-{Get utc date time for now in iso format}
+{No documentation yet.}
 \apispec{std.set\_perms}{obj: element (*req), mode: str (*req), meta: _empty (*req)}
-{Sets object access mode for any Jaseci object
-Param 1 - target element
+{Param 1 - target element
 Param 2 - valid permission (public, private, read only)
 
 Return - true/false whether successful}
 \apispec{std.get\_perms}{obj: element (*req)}
-{Returns object access mode for any Jaseci object
-Param 1 - target element
+{Param 1 - target element
 
 Return - Sorted list}
 \apispec{std.grant\_perms}{obj: element (*req), mast: element (*req), read_only: bool (*req), meta: _empty (*req)}
-{Grants another user permissions to access a Jaseci object
-Param 1 - target element
+{Param 1 - target element
 Param 2 - master to be granted permission
 Param 3 - Boolean read only flag
 
 Return - Sorted list}
 \apispec{std.revoke\_perms}{obj: element (*req), mast: element (*req), meta: _empty (*req)}
-{Remove permissions for user to access a Jaseci object
-Param 1 - target element
+{Param 1 - target element
 Param 2 - master to be revoked permission
 
 Return - Sorted list}
 \apispec{std.get\_report}{meta: _empty (*req)}
-{Get current report so far for walker run}
+{No documentation yet.}
 \subsection{vector}
 \apispec{vector.cosine\_sim}{vec_a: list (*req), vec_b: list (*req)}
-{Caculate the cosine similarity score of two given vectors
-Param 1 - First vector
+{Param 1 - First vector
 Param 2 - Second vector
 
 Return - float between 0 and 1}
 \apispec{vector.dot\_product}{vec_a: list (*req), vec_b: list (*req)}
-{Caculate the dot product of two given vectors
-Param 1 - First vector
+{Param 1 - First vector
 Param 2 - Second vector
 
 Return - float between 0 and 1}
 \apispec{vector.get\_centroid}{vec_list: list (*req)}
-{Calculate the centroid of the given list of vectors
-Param 1 - List of vectors
+{Param 1 - List of vectors
 
 Return - (centroid vector, cluster tightness)}
 \apispec{vector.softmax}{vec_list: list (*req)}
-{Calculate the centroid of the given list of vectors
-Param 1 - List of vectors
+{Param 1 - List of vectors
 
 Return - (centroid vector, cluster tightness)}
 \apispec{vector.sort\_by\_key}{data: dict (*req), reverse: _empty, key_pos: _empty}
-{Sort the given list. Optionally by specific key
-Param 1 - List of items
+{Param 1 - List of items
 Param 2 - if Reverse
 Param 3 (Optional) - Index of the key to be used for sorting
 if param 1 is a list of tuples.

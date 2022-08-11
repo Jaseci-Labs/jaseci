@@ -1,5 +1,6 @@
 from jaseci.utils.utils import obj_class_cache, build_class_dict
 from jaseci.element.super_master import super_master
+from docstring_parser import parse
 
 # from pprint import pformat
 from inspect import getdoc, signature
@@ -87,9 +88,19 @@ class book:
             + f"{self.format_params(signature(func))}"
             + "}\n"
         )
+        parsed_doc = parse(doc)
+        doc = parsed_doc.long_description
         if doc is None:
-            doc = "No documentation"
+            doc = "No documentation yet."
         doc = doc.replace("_", " ")
+        if len(parsed_doc.params):
+            # doc += "\\vspace{3mm}\\par\n\\textbf{Parameters}\n\\par"
+            doc += "\\vspace{4mm}\\par\n"
+            args_doc = "\\argspec{"
+            for i in parsed_doc.params:
+                args_doc += f"\n\\texttt{{{i.arg_name}}} -- {i.description}\\par\n"
+            args_doc += "}"
+            doc += args_doc
         line += "{" + doc + "}\n"
         return line
 
@@ -143,7 +154,10 @@ class book:
                 continue
             ret += f"\\subsection{{APIs for {i[:-4]}}}\n\n"
             doc = getdoc(obj_class_cache[i]).replace("\n\n", "\n\\par\n")
-            doc = doc.replace("_", "\\_")
+            doc = parse(doc).long_description
+            doc = (
+                doc.replace("_", "\\_") if doc is not None else "No documentation yet."
+            )
             ret += f"{doc}\n\n"
             ret += self.api_call_spec(obj_class_cache[i])
         return ret

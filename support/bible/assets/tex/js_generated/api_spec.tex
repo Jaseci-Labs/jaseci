@@ -1,18 +1,30 @@
 \subsection{APIs for actions}
 
-Admin global APIs
+\par
+The set action APIs enable the manual management of Jaseci actions and action
+libraries/sets. Action libraries can be loaded locally into the running instance of
+the python program, or as a remote container linked action library. In this mode,
+action libraries operate as micro-services. Jaseci will be able to dynamically
+and automatically make this decision for the user based on online monitoring and
+performance profiling.
 
 \apispec{actions load local (api: actions\_load\_local)}{file: str (*req)}
-{Hot load a python module and assimlate any Jaseci Actions}
+{This API will dynamically load a module based on a python file. This API also
+makes an attempt to auto detect and hot load any python package dependencies
+the file may reference via python's relative imports. This file is assumed to
+have the necessary annotations and decorations required by Jaseci to recognize
+its actions.\vspace{4mm}\par
+\argspec{
+\texttt{file} -- The python file to load actions from.\par
+}}
 \apispec{actions load remote (api: actions\_load\_remote)}{url: str (*req)}
-{Hot load an actions set from live pod at URL}
+{No documentation yet.}
 \apispec{actions load module (api: actions\_load\_module)}{mod: str (*req)}
-{Hot load an actions set from live pod at URL}
+{No documentation yet.}
 \apispec{actions list (api: actions\_list)}{name: str}
-{List all live jaseci actions}
+{No documentation yet.}
 \subsection{APIs for alias}
 
-Alias APIs for creating nicknames for UUIDs and other long strings
 \par
 The alias set of APIs provide a set of `alias' management functions for
 creating and managing aliases for long strings such as UUIDs. If an alias'
@@ -27,60 +39,33 @@ will be replaced internally by its value. If you get in a bind, simply use
 the clear or delete alias APIs.
 
 \apispec{alias register (api: alias\_register)}{name: str (*req), value: str (*req)}
-{Create string to string alias mapping that caller can use.
-
-Either create new alias string to string mappings or replace
+{Either create new alias string to string mappings or replace
 an existing mappings of a given alias name. Once registered the
-alias mapping is instantly active.
+alias mapping is instantly active.\vspace{4mm}\par
+\argspec{
+\texttt{name} -- The name for the alias created by caller.\par
 
-Args:
-    name (str): The name for the alias created by caller.
-    value (str): The value for that name to map to (i.e., UUID)
-
-Returns:
-    json: Fields include
-        'response': Message of mapping that was created}
+\texttt{value} -- The value for that name to map to (i.e., UUID)\par
+}}
 \apispec{alias list (api: alias\_list)}{n/a}
-{List all string to string alias that caller can use.
-
-Returns dictionary object of name to value mappings currently active.
+{Returns dictionary object of name to value mappings currently active.
 This API is quite useful to track not only the aliases the caller
 creates, but also the aliases automatically created as various Jaseci
 objects (walkers, architypes, sentinels, etc.) are created, changed,
-or destroyed.
-
-Returns:
-    dictionary: Dictionary of active mappings
-        'name': 'value'
-        ...}
+or destroyed.}
 \apispec{alias delete (api: alias\_delete)}{name: str (*req)}
-{Delete an active string to string alias mapping.
-
-Removes a specific alias by its name. Only the alias is removed no
+{Removes a specific alias by its name. Only the alias is removed no
 actual objects are affected. Future uses of this name will not be
-mapped.
-
-Args:
-    name (str): The name for the alias to be removed from caller.
-
-Returns:
-    dictionary: Fields include
-        'response': Message of success/failure to remove alias
-        'success': True/False based on delete actually happening}
+mapped.\vspace{4mm}\par
+\argspec{
+\texttt{name} -- The name for the alias to be removed from caller.\par
+}}
 \apispec{alias clear (api: alias\_clear)}{n/a}
-{Remove all string to string alias that client can use.
-
-Removes a all aliases. No actual objects are affected. Aliases will
+{Removes a all aliases. No actual objects are affected. Aliases will
 continue to be automatically generated when creating other Jaseci
-objects.
-
-Returns:
-    dictionary: Fields include
-        'response': Message of number of alias removed
-        'removed': Number of aliases removed}
+objects.}
 \subsection{APIs for architype}
 
-Architype APIs for creating and managing Jaseci architypes
 \par
 The architype set of APIs allow for the addition and removing of
 architypes. Given a Jac implementation of an architype these APIs are
@@ -92,301 +77,257 @@ APIs are also used for inspecting and managing existing arichtypes that
 a Jaseci instance is aware of.
 
 \apispec{architype register (api: architype\_register)}{code: str (*req), encoded: bool, snt: sentinel}
-{Create an architype based on the code passed and return object.
-
-This register API allows for the creation or replacement/update of
+{This register API allows for the creation or replacement/update of
 an architype that can then be used by walkers in their interactions
 of graphs. The code argument takes Jac source code for the single
 architype. To load multiple architypes and walkers at the same time,
-use sentinel register API.
+use sentinel register API.\vspace{4mm}\par
+\argspec{
+\texttt{code} -- The text (or filename) for an architypes Jac code\par
 
-Args:
-    code (str): The text (or filename) for an architypes Jac code
-    encoded (bool): True/False flag as to whether code is encode
-        in base64
-    snt (uuid): The UUID of the sentinel to be the owner of this
-        architype
+\texttt{encoded} -- True/False flag as to whether code is encode
+in base64\par
 
-Returns:
-    json: Fields include
-        'architype': Architype object if created otherwise null
-        'success': True/False whether register was successful
-        'errors': List of errors if register failed
-        'response': Message on outcome of register call}
+\texttt{snt} -- The UUID of the sentinel to be the owner of this
+architype\par
+}}
 \apispec{architype get (api: architype\_get)}{arch: architype (*req), mode: str, detailed: bool}
-{Get an architype rendered with specific mode
+{No documentation yet.\vspace{4mm}\par
+\argspec{
+\texttt{arch} -- The architype being accessed\par
 
-Args:
-    arch (uuid): The architype being accessed
-    mode (str): Valid modes: {default, code, ir, }
-    detailed (bool): Flag to give summary or complete set of fields
+\texttt{mode} -- Valid modes: {default, code, ir, }\par
 
-Returns:
-    json: Fields include (depends on mode)
-        'code': Formal source code for architype
-        'ir': Intermediate representation of architype
-        'architype': Architype object print}
+\texttt{detailed} -- Flag to give summary or complete set of fields\par
+}}
 \apispec{architype set (api: architype\_set)}{arch: architype (*req), code: str (*req), mode: str}
-{Set code/ir for a architype
+{No documentation yet.\vspace{4mm}\par
+\argspec{
+\texttt{arch} -- The architype being set\par
 
-Args:
-    arch (uuid): The architype being set
-    code (str): The text (or filename) for an architypes Jac code/ir
-    mode (str): Valid modes: {default, code, ir, }
+\texttt{code} -- The text (or filename) for an architypes Jac code/ir\par
 
-Returns:
-    json: Fields include (depends on mode)
-        'success': True/False whether set was successful
-        'errors': List of errors if set failed
-        'response': Message on outcome of set call}
+\texttt{mode} -- Valid modes: {default, code, ir, }\par
+}}
 \apispec{architype list (api: architype\_list)}{snt: sentinel, detailed: bool}
-{List architypes known to sentinel
+{No documentation yet.\vspace{4mm}\par
+\argspec{
+\texttt{snt} -- The sentinel for which to list its architypes\par
 
-Args:
-    snt (uuid): The sentinel for which to list its architypes
-    detailed (bool): Flag to give summary or complete set of fields
-
-Returns:
-    json: List of architype objects}
+\texttt{detailed} -- Flag to give summary or complete set of fields\par
+}}
 \apispec{architype delete (api: architype\_delete)}{arch: architype (*req), snt: sentinel}
-{Permanently delete sentinel with given id
+{No documentation yet.\vspace{4mm}\par
+\argspec{
+\texttt{arch} -- The architype being set\par
 
-Args:
-    arch (uuid): The architype being set
-    snt (uuid): The sentinel for which to list its architypes
-
-Returns:
-    json: Fields include (depends on mode)
-        'success': True/False whether command was successful
-        'response': Message on outcome of command}
+\texttt{snt} -- The sentinel for which to list its architypes\par
+}}
 \subsection{APIs for config}
 
-Admin config APIs
 Abstracted since there are no valid configs in core atm, see jaseci\_serv
 to see how used.
 
 \apispec{config get (api: config\_get)}{name: str (*req), do_check: bool}
-{Get a config}
+{No documentation yet.}
 \apispec{config set (api: config\_set)}{name: str (*req), value: str (*req), do_check: bool}
-{Set a config}
+{No documentation yet.}
 \apispec{config list (api: config\_list)}{n/a}
-{Check a config is present}
+{No documentation yet.}
 \apispec{config index (api: config\_index)}{n/a}
-{List all valid configs}
+{No documentation yet.}
 \apispec{config exists (api: config\_exists)}{name: str (*req)}
-{Check a config is present}
+{No documentation yet.}
 \apispec{config delete (api: config\_delete)}{name: str (*req), do_check: bool}
-{Delete a config}
+{No documentation yet.}
 \subsection{APIs for global}
 
-Admin global APIs
+No documentation yet.
 
 \apispec{global set (api: global\_set)}{name: str (*req), value: str (*req)}
-{Set a global}
+{No documentation yet.}
 \apispec{global delete (api: global\_delete)}{name: str (*req)}
-{Delete a global}
+{No documentation yet.}
 \apispec{global sentinel set (api: global\_sentinel\_set)}{snt: sentinel}
-{Set sentinel as globally accessible}
+{No documentation yet.}
 \apispec{global sentinel unset (api: global\_sentinel\_unset)}{n/a}
-{Set sentinel as globally accessible}
+{No documentation yet.}
 \subsection{APIs for graph}
 
-Graph APIs
+No documentation yet.
 
 \apispec{graph create (api: graph\_create)}{set_active: bool}
-{Create a graph instance and return root node graph object}
+{No documentation yet.}
 \apispec{graph get (api: graph\_get)}{gph: graph, mode: str, detailed: bool}
-{Return the content of the graph with mode
-Valid modes: {default, dot, }}
+{Valid modes: {default, dot, }}
 \apispec{graph list (api: graph\_list)}{detailed: bool}
-{Provide complete list of all graph objects (list of root node objects)}
+{No documentation yet.}
 \apispec{graph active set (api: graph\_active\_set)}{gph: graph (*req)}
-{Sets the default graph master should use}
+{No documentation yet.}
 \apispec{graph active unset (api: graph\_active\_unset)}{n/a}
-{Unsets the default sentinel master should use}
+{No documentation yet.}
 \apispec{graph active get (api: graph\_active\_get)}{detailed: bool}
-{Returns the default graph master is using}
+{No documentation yet.}
 \apispec{graph delete (api: graph\_delete)}{gph: graph (*req)}
-{Permanently delete graph with given id}
+{No documentation yet.}
 \apispec{graph node get (api: graph\_node\_get)}{nd: node (*req), ctx: list}
-{Returns value a given node}
+{No documentation yet.}
 \apispec{graph node set (api: graph\_node\_set)}{nd: node (*req), ctx: dict (*req), snt: sentinel}
-{Assigns values to member variables of a given node using ctx object}
+{No documentation yet.}
 \subsection{APIs for jac}
 
-Jac tool APIs
+No documentation yet.
 
 \subsection{APIs for logger}
 
-APIs for Jaseci Logging configuration
+No documentation yet.
 
 \apispec{logger http connect (api: logger\_http\_connect)}{host: str (*req), port: int (*req), url: str (*req), log: str}
-{Connects internal logging to http(s) (log msgs sent via POSTs)
-Valid log params: {sys, app, all }}
+{Valid log params: {sys, app, all }}
 \apispec{logger http clear (api: logger\_http\_clear)}{log: str}
-{Connects internal logging to http(s) (log msgs sent via POSTs)
-Valid log params: {sys, app, all }}
+{Valid log params: {sys, app, all }}
 \apispec{logger list (api: logger\_list)}{n/a}
-{Check active loggers}
+{No documentation yet.}
 \subsection{APIs for master}
 
-Master APIs for creating nicknames for UUIDs and other long strings
+No documentation yet.
 
 \apispec{master create (api: master\_create)}{name: str (*req), set_active: bool, other_fields: dict}
-{Create a master instance and return root node master object
-
-other fields used for additional feilds for overloaded interfaces
+{other fields used for additional feilds for overloaded interfaces
 (i.e., Dango interface)}
 \apispec{master get (api: master\_get)}{name: str (*req), mode: str, detailed: bool}
-{Return the content of the master with mode
-Valid modes: {default, }}
+{Valid modes: {default, }}
 \apispec{master list (api: master\_list)}{detailed: bool}
-{Provide complete list of all master objects (list of root node objects)}
+{No documentation yet.}
 \apispec{master active set (api: master\_active\_set)}{name: str (*req)}
-{Sets the default master master should use
-NOTE: Specail handler included in general interface to api}
+{NOTE: Specail handler included in general interface to api}
 \apispec{master active unset (api: master\_active\_unset)}{n/a}
-{Unsets the default sentinel master should use}
+{No documentation yet.}
 \apispec{master active get (api: master\_active\_get)}{detailed: bool}
-{Returns the default master master is using}
+{No documentation yet.}
 \apispec{master self (api: master\_self)}{detailed: bool}
-{Returns the masters object}
+{No documentation yet.}
 \apispec{master delete (api: master\_delete)}{name: str (*req)}
-{Permanently delete master with given id}
+{No documentation yet.}
 \subsection{APIs for object}
 
-Object APIs for generalized operations on Jaseci objects
 \par
 ...
 
 \apispec{global get (api: global\_get)}{name: str (*req)}
-{Get a global var}
+{No documentation yet.}
 \apispec{object get (api: object\_get)}{obj: element (*req), depth: int, detailed: bool}
-{Returns object details for any Jaseci object.}
+{No documentation yet.}
 \apispec{object perms get (api: object\_perms\_get)}{obj: element (*req)}
-{Returns object access mode for any Jaseci object.}
+{No documentation yet.}
 \apispec{object perms set (api: object\_perms\_set)}{obj: element (*req), mode: str (*req)}
-{Sets object access mode for any Jaseci object.}
+{No documentation yet.}
 \apispec{object perms default (api: object\_perms\_default)}{mode: str (*req)}
-{Sets object access mode for any Jaseci object.}
+{No documentation yet.}
 \apispec{object perms grant (api: object\_perms\_grant)}{obj: element (*req), mast: element (*req), read_only: bool}
-{Grants another user permissions to access a Jaseci object.}
+{No documentation yet.}
 \apispec{object perms revoke (api: object\_perms\_revoke)}{obj: element (*req), mast: element (*req)}
-{Remove permissions for user to access a Jaseci object.}
+{No documentation yet.}
 \subsection{APIs for sentinel}
 
-Sentinel APIs
+No documentation yet.
 
 \apispec{sentinel register (api: sentinel\_register)}{name: str, code: str, code_dir: str, mode: str, encoded: bool, auto_run: str, auto_gen_graph: bool, ctx: dict, set_active: bool}
-{Create blank or code loaded sentinel and return object
-Auto run is the walker to execute on register (assumes active graph
+{Auto run is the walker to execute on register (assumes active graph
 is selected)}
 \apispec{sentinel pull (api: sentinel\_pull)}{set_active: bool, on_demand: bool}
-{Copies global sentinel to local master}
+{No documentation yet.}
 \apispec{sentinel get (api: sentinel\_get)}{snt: sentinel, mode: str, detailed: bool}
-{Get a sentinel rendered with specific mode
-Valid modes: {default, code, ir, }}
+{Valid modes: {default, code, ir, }}
 \apispec{sentinel set (api: sentinel\_set)}{code: str (*req), code_dir: str, encoded: bool, snt: sentinel, mode: str}
-{Set code/ir for a sentinel, only replaces walkers/archs in sentinel
-Valid modes: {code, ir, }}
+{Valid modes: {code, ir, }}
 \apispec{sentinel list (api: sentinel\_list)}{detailed: bool}
-{Provide complete list of all sentinel objects}
+{No documentation yet.}
 \apispec{sentinel test (api: sentinel\_test)}{snt: sentinel, detailed: bool}
-{Run battery of test cases within sentinel and provide result}
+{No documentation yet.}
 \apispec{sentinel active set (api: sentinel\_active\_set)}{snt: sentinel (*req)}
-{Sets the default sentinel master should use}
+{No documentation yet.}
 \apispec{sentinel active unset (api: sentinel\_active\_unset)}{n/a}
-{Unsets the default sentinel master should use}
+{No documentation yet.}
 \apispec{sentinel active global (api: sentinel\_active\_global)}{detailed: bool}
-{Sets the default master sentinel to the global sentinel
-Exclusive OR with pull strategy}
+{Exclusive OR with pull strategy}
 \apispec{sentinel active get (api: sentinel\_active\_get)}{detailed: bool}
-{Returns the default sentinel master is using}
+{No documentation yet.}
 \apispec{sentinel delete (api: sentinel\_delete)}{snt: sentinel (*req)}
-{Permanently delete sentinel with given id}
+{No documentation yet.}
 \subsection{APIs for stripe}
 
-Stripe APIs
 Set of APIs to expose jaseci stripe management
 
 \apispec{stripe product create (api: stripe\_product\_create)}{name: str, description: str}
-{create product}
+{No documentation yet.}
 \apispec{stripe product price set (api: stripe\_product\_price\_set)}{productId: str (*req), amount: float, interval: str}
-{modify product price}
+{No documentation yet.}
 \apispec{stripe product list (api: stripe\_product\_list)}{detalied: bool}
-{retrieve all producs}
+{No documentation yet.}
 \apispec{stripe customer create (api: stripe\_customer\_create)}{paymentId: str (*req), name: str, email: str, description: str}
-{create customer}
+{No documentation yet.}
 \apispec{stripe customer get (api: stripe\_customer\_get)}{customerId: str (*req)}
-{retrieve customer information}
+{No documentation yet.}
 \apispec{stripe customer payment add (api: stripe\_customer\_payment\_add)}{paymentMethodId: str (*req), customerId: str (*req)}
-{add customer payment method}
+{No documentation yet.}
 \apispec{stripe customer payment delete (api: stripe\_customer\_payment\_delete)}{paymentMethodId: str (*req)}
-{remove customer payment method}
+{No documentation yet.}
 \apispec{stripe customer payment get (api: stripe\_customer\_payment\_get)}{customerId: str (*req)}
-{get customer list of payment methods}
+{No documentation yet.}
 \apispec{stripe customer payment default (api: stripe\_customer\_payment\_default)}{customerId: str (*req), paymentMethodId: str (*req)}
-{update default payment method of customer}
+{No documentation yet.}
 \apispec{stripe subscription create (api: stripe\_subscription\_create)}{paymentId: str (*req), name: str (*req), email: str (*req), priceId: str (*req), customerId: str (*req)}
-{create customer subscription
-TODO: name and email parameters not used!}
+{TODO: name and email parameters not used!}
 \apispec{stripe subscription delete (api: stripe\_subscription\_delete)}{subscriptionId: str (*req)}
-{cancel customer subscription}
+{No documentation yet.}
 \apispec{stripe subscription get (api: stripe\_subscription\_get)}{customerId: str (*req)}
-{retrieve customer subcription}
+{No documentation yet.}
 \apispec{stripe invoices list (api: stripe\_invoices\_list)}{customerId: str (*req), subscriptionId: str (*req), limit: int, lastItem: str}
-{retrieve customer list of invoices}
+{No documentation yet.}
 \subsection{APIs for super}
 
-Super APIs for creating nicknames for UUIDs and other long strings
+No documentation yet.
 
 \apispec{master createsuper (api: master\_createsuper)}{name: str (*req), set_active: bool, other_fields: dict}
-{Create a super instance and return root node super object
-
-other fields used for additional feilds for overloaded interfaces
+{other fields used for additional feilds for overloaded interfaces
 (i.e., Dango interface)}
 \apispec{master allusers (api: master\_allusers)}{num: int, start_idx: int}
-{Returns info on a set of users, num specifies the number of users to
-return and start idx specfies where to start
+{return and start idx specfies where to start
 NOTE: Abstract interface to be overridden}
 \apispec{master become (api: master\_become)}{mast: master (*req)}
-{Sets the default master master should use}
+{No documentation yet.}
 \apispec{master unbecome (api: master\_unbecome)}{n/a}
-{Unsets the default master master should use}
+{No documentation yet.}
 \subsection{APIs for walker}
 
-Walker APIs
+No documentation yet.
 
 \apispec{walker callback (api: walker\_callback)}{nd: node (*req), wlk: walker (*req), key: str (*req), ctx: dict, _req_ctx: dict, global_sync: bool}
-{Public api for running walkers, namespace key must be provided
-along with the walker id and node id}
+{along with the walker id and node id}
 \apispec{walker summon (api: walker\_summon)}{key: str (*req), wlk: walker (*req), nd: node (*req), ctx: dict, _req_ctx: dict, global_sync: bool}
-{Public api for running walkers, namespace key must be provided
-along with the walker id and node id}
+{along with the walker id and node id}
 \apispec{walker register (api: walker\_register)}{snt: sentinel, code: str, encoded: bool}
-{Create blank or code loaded walker and return object}
+{No documentation yet.}
 \apispec{walker get (api: walker\_get)}{wlk: walker (*req), mode: str, detailed: bool}
-{Get a walker rendered with specific mode
-Valid modes: {default, code, ir, keys, }}
+{Valid modes: {default, code, ir, keys, }}
 \apispec{walker set (api: walker\_set)}{wlk: walker (*req), code: str (*req), mode: str}
-{Set code/ir for a walker
-Valid modes: {code, ir, }}
+{Valid modes: {code, ir, }}
 \apispec{walker list (api: walker\_list)}{snt: sentinel, detailed: bool}
-{List walkers known to sentinel}
+{No documentation yet.}
 \apispec{walker delete (api: walker\_delete)}{wlk: walker (*req), snt: sentinel}
-{Permanently delete walker with given id}
+{No documentation yet.}
 \apispec{walker spawn create (api: walker\_spawn\_create)}{name: str (*req), snt: sentinel}
-{Creates new instance of walker and returns new walker object}
+{No documentation yet.}
 \apispec{walker spawn delete (api: walker\_spawn\_delete)}{name: str (*req)}
-{Delete instance of walker}
+{No documentation yet.}
 \apispec{walker spawn list (api: walker\_spawn\_list)}{detailed: bool}
-{List walkers spawned by master}
+{No documentation yet.}
 \apispec{walker prime (api: walker\_prime)}{wlk: walker (*req), nd: node, ctx: dict, _req_ctx: dict}
-{Assigns walker to a graph node and primes walker for execution}
+{No documentation yet.}
 \apispec{walker execute (api: walker\_execute)}{wlk: walker (*req), prime: node, ctx: dict, _req_ctx: dict, profiling: bool}
-{Executes walker (assumes walker is primed)}
+{No documentation yet.}
 \apispec{walker run (api: walker\_run)}{name: str (*req), nd: node, ctx: dict, _req_ctx: dict, snt: sentinel, profiling: bool}
-{Creates walker instance, primes walker on node, executes walker,
-reports results, and cleans up walker instance.}
+{reports results, and cleans up walker instance.}
 \apispec{wapi (api: wapi)}{name: str (*req), nd: node, ctx: dict, _req_ctx: dict, snt: sentinel, profiling: bool}
-{Walker individual APIs}
+{No documentation yet.}
