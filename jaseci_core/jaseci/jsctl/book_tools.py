@@ -98,7 +98,10 @@ class book:
             doc += "\\vspace{4mm}\\par\n"
             args_doc = "\\argspec{"
             for i in parsed_doc.params:
-                args_doc += f"\n\\texttt{{{i.arg_name}}} -- {i.description}\\par\n"
+                args_doc += (
+                    f"\n\\texttt{{{i.arg_name}}} -"
+                    f"- {i.description}\\vspace{{1.5mm}}\\par\n"
+                )
             args_doc += "}"
             args_doc = args_doc.replace("_", "\\_")
             doc += args_doc
@@ -153,7 +156,7 @@ class book:
         for i in obj_class_cache.keys():
             if not i.endswith("_api"):
                 continue
-            ret += f"\\subsection{{APIs for \\lstinline[basicstyle=\\Large\\ttfamily]${i[:-4]}$}}\n\n"
+            ret += f"\\subsection{{APIs for {i[:-4]}}}\n\n"
             doc = getdoc(obj_class_cache[i]).replace("\n\n", "\n\\par\n")
             doc = parse(doc).long_description
             doc = (

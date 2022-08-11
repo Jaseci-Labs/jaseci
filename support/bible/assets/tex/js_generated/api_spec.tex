@@ -1,4 +1,4 @@
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$actions$}
+\subsection{APIs for actions}
 
 \par
 This set action APIs enable the manual management of Jaseci actions and action
@@ -19,7 +19,7 @@ have the necessary annotations and decorations required by Jaseci to recognize
 its actions.\vspace{4mm}\par
 \argspec{
 \texttt{file} -- The python file with full to load actions from.
-(i.e., ~/local/myact.py)\par
+(i.e., ~/local/myact.py)\vspace{1.5mm}\par
 }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$actions load remote$}
 
@@ -32,7 +32,7 @@ supported for action libraries. If an  library writer would like to use another
 language, the main hook REST api simply needs to be implemented. Please
 refer to documentation on creating action libraries for more details.\vspace{4mm}\par
 \argspec{
-\texttt{url} -- The url of the API server supporting Jaseci actions.\par
+\texttt{url} -- The url of the API server supporting Jaseci actions.\vspace{1.5mm}\par
 }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$actions load module$}
 
@@ -44,7 +44,7 @@ import. As with load local, the module will be loaded directly into the running
 Jaseci python instance.\vspace{4mm}\par
 \argspec{
 \texttt{mod} -- The import style module to load actions from.
-(i.e., jaseci\_kit.bi\_enc)\par
+(i.e., jaseci\_kit.bi\_enc)\vspace{1.5mm}\par
 }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$actions list$}
 
@@ -54,9 +54,9 @@ include all types of loaded actions whether it be local modules or remote
 containers. A particular set of actions can be viewed using the name parameter.\vspace{4mm}\par
 \argspec{
 \texttt{name} -- The name for a library for which to filter the view of shown
-actions. If left blank all actions from all loaded sets will be shown.\par
+actions. If left blank all actions from all loaded sets will be shown.\vspace{1.5mm}\par
 }}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$alias$}
+\subsection{APIs for alias}
 
 \par
 The alias set of APIs provide a set of `alias' management functions for
@@ -78,9 +78,9 @@ the clear or delete alias APIs.
 an existing mappings of a given alias name. Once registered the
 alias mapping is instantly active.\vspace{4mm}\par
 \argspec{
-\texttt{name} -- The name for the alias created by caller.\par
+\texttt{name} -- The name for the alias created by caller.\vspace{1.5mm}\par
 
-\texttt{value} -- The value for that name to map to (i.e., UUID)\par
+\texttt{value} -- The value for that name to map to (i.e., UUID)\vspace{1.5mm}\par
 }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$alias list$}
 
@@ -97,7 +97,7 @@ or destroyed.}
 actual objects are affected. Future uses of this name will not be
 mapped.\vspace{4mm}\par
 \argspec{
-\texttt{name} -- The name for the alias to be removed from caller.\par
+\texttt{name} -- The name for the alias to be removed from caller.\vspace{1.5mm}\par
 }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$alias clear$}
 
@@ -105,7 +105,7 @@ mapped.\vspace{4mm}\par
 {Removes a all aliases. No actual objects are affected. Aliases will
 continue to be automatically generated when creating other Jaseci
 objects.}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$architype$}
+\subsection{APIs for architype}
 
 \par
 The architype set of APIs allow for the addition and removing of
@@ -126,55 +126,55 @@ of graphs. The code argument takes Jac source code for the single
 architype. To load multiple architypes and walkers at the same time,
 use sentinel register API.\vspace{4mm}\par
 \argspec{
-\texttt{code} -- The text (or filename) for an architypes Jac code\par
+\texttt{code} -- The text (or filename) for an architypes Jac code\vspace{1.5mm}\par
 
 \texttt{encoded} -- True/False flag as to whether code is encode
-in base64\par
+in base64\vspace{1.5mm}\par
 
 \texttt{snt} -- The UUID of the sentinel to be the owner of this
-architype\par
+architype\vspace{1.5mm}\par
 }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$architype get$}
 
 \apispec{cli: architype get | api: architype\_get | auth: user}{arch: architype (*req), mode: str, detailed: bool}
 {No documentation yet.\vspace{4mm}\par
 \argspec{
-\texttt{arch} -- The architype being accessed\par
+\texttt{arch} -- The architype being accessed\vspace{1.5mm}\par
 
-\texttt{mode} -- Valid modes: {default, code, ir, }\par
+\texttt{mode} -- Valid modes: {default, code, ir, }\vspace{1.5mm}\par
 
-\texttt{detailed} -- Flag to give summary or complete set of fields\par
+\texttt{detailed} -- Flag to give summary or complete set of fields\vspace{1.5mm}\par
 }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$architype set$}
 
 \apispec{cli: architype set | api: architype\_set | auth: user}{arch: architype (*req), code: str (*req), mode: str}
 {No documentation yet.\vspace{4mm}\par
 \argspec{
-\texttt{arch} -- The architype being set\par
+\texttt{arch} -- The architype being set\vspace{1.5mm}\par
 
-\texttt{code} -- The text (or filename) for an architypes Jac code/ir\par
+\texttt{code} -- The text (or filename) for an architypes Jac code/ir\vspace{1.5mm}\par
 
-\texttt{mode} -- Valid modes: {default, code, ir, }\par
+\texttt{mode} -- Valid modes: {default, code, ir, }\vspace{1.5mm}\par
 }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$architype list$}
 
 \apispec{cli: architype list | api: architype\_list | auth: user}{snt: sentinel, detailed: bool}
 {No documentation yet.\vspace{4mm}\par
 \argspec{
-\texttt{snt} -- The sentinel for which to list its architypes\par
+\texttt{snt} -- The sentinel for which to list its architypes\vspace{1.5mm}\par
 
-\texttt{detailed} -- Flag to give summary or complete set of fields\par
+\texttt{detailed} -- Flag to give summary or complete set of fields\vspace{1.5mm}\par
 }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$architype delete$}
 
 \apispec{cli: architype delete | api: architype\_delete | auth: user}{arch: architype (*req), snt: sentinel}
 {No documentation yet.\vspace{4mm}\par
 \argspec{
-\texttt{arch} -- The architype being set\par
+\texttt{arch} -- The architype being set\vspace{1.5mm}\par
 
-\texttt{snt} -- The sentinel for which to list its architypes\par
+\texttt{snt} -- The sentinel for which to list its architypes\vspace{1.5mm}\par
 }}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$config$}
+\subsection{APIs for config}
 
 Abstracted since there are no valid configs in core atm, see jaseci\_serv
 to see how used.
@@ -203,7 +203,7 @@ to see how used.
 
 \apispec{cli: config delete | api: config\_delete | auth: admin}{name: str (*req), do_check: bool}
 {No documentation yet.}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$global$}
+\subsection{APIs for global}
 
 No documentation yet.
 
@@ -223,7 +223,7 @@ No documentation yet.
 
 \apispec{cli: global sentinel unset | api: global\_sentinel\_unset | auth: admin}{n/a}
 {No documentation yet.}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$graph$}
+\subsection{APIs for graph}
 
 No documentation yet.
 
@@ -267,7 +267,7 @@ No documentation yet.
 
 \apispec{cli: graph walk (cli only)}{nd: node}
 {No documentation yet.}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$jac$}
+\subsection{APIs for jac}
 
 No documentation yet.
 
@@ -287,7 +287,7 @@ No documentation yet.
 
 \apispec{cli: jac dot (cli only)}{file: str (*req), walk: str, ctx: dict, detailed: bool}
 {files and .jir executables}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$logger$}
+\subsection{APIs for logger}
 
 No documentation yet.
 
@@ -303,9 +303,10 @@ No documentation yet.
 
 \apispec{cli: logger list | api: logger\_list | auth: admin}{n/a}
 {No documentation yet.}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$master$}
+\subsection{APIs for master}
 
-No documentation yet.
+\par
+These APIs
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$master create$}
 
@@ -340,7 +341,7 @@ No documentation yet.
 
 \apispec{cli: master delete | api: master\_delete | auth: user}{name: str (*req)}
 {No documentation yet.}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$object$}
+\subsection{APIs for object}
 
 \par
 ...
@@ -373,7 +374,7 @@ No documentation yet.
 
 \apispec{cli: object perms revoke | api: object\_perms\_revoke | auth: user}{obj: element (*req), mast: element (*req)}
 {No documentation yet.}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$sentinel$}
+\subsection{APIs for sentinel}
 
 No documentation yet.
 
@@ -422,7 +423,7 @@ is selected)}
 
 \apispec{cli: sentinel delete | api: sentinel\_delete | auth: user}{snt: sentinel (*req)}
 {No documentation yet.}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$stripe$}
+\subsection{APIs for stripe}
 
 Set of APIs to expose jaseci stripe management
 
@@ -478,7 +479,7 @@ Set of APIs to expose jaseci stripe management
 
 \apispec{cli: stripe invoices list | api: stripe\_invoices\_list | auth: admin}{customerId: str (*req), subscriptionId: str (*req), limit: int, lastItem: str}
 {No documentation yet.}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$super$}
+\subsection{APIs for super}
 
 No documentation yet.
 
@@ -500,16 +501,52 @@ NOTE: Abstract interface to be overridden}
 
 \apispec{cli: master unbecome | api: master\_unbecome | auth: admin}{n/a}
 {No documentation yet.}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$user$}
+\subsection{APIs for user}
 
-No documentation yet.
+\par
+These User APIs enable the creation and management of users on a Jaseci machine.
+The creation of a user in this context is synonymous to the creation of a master
+Jaseci object. These APIs are particularly useful when running a Jaseci server
+or cluster in contrast to running JSCTL on the command line. Upon executing JSCTL
+a dummy admin user (super\_master) is created and all state is dumped to a session
+file, though any users created during a JSCTL session will indeed be created as
+part of that session's state.
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$user create$}
 
 \apispec{cli: user create | api: user\_create | auth: public}{name: str (*req), global_init: str, global_init_ctx: dict, other_fields: dict}
-{other fields used for additional feilds for overloaded interfaces
-(i.e., Dango interface)}
-\subsection{APIs for \lstinline[basicstyle=\Large\ttfamily]$walker$}
+{This API is used to create users and optionally set them up with a graph and
+related initialization. In the context of
+JSCTL, any name is sufficient and no additional information is required.
+However, for Jaseci serving (whether it be the official Jaseci server, or a
+custom overloaded server) additional fields are required and should be added
+to the other fields parameter as per the specifics of the encapsulating server
+requirements. In the case of the official Jaseci server, the name field must
+be a valid email, and a password field must be passed through other fields.
+A number of other optional parameters can also be passed through other feilds.
+\vspace{3mm}\par
+This single API call can also be used to fully set up and initialize a user
+by leveraging the global init parameter. When set, this parameter attaches the
+user to the global sentinel, creates a new graph for the user, sets it as the
+active graph, then runs an initialization walker on the root node of this new
+graph. The initialization walker is identified by the name assigned to
+global init. The default empty string assigned to global init indicates this
+global setup should not be run.\vspace{4mm}\par
+\argspec{
+\texttt{name} -- The python file with full to load actions from.\vspace{1.5mm}\par
+
+\texttt{global\_init} -- The name of an initialization walker. When set the user is
+linked to the global sentinel and the walker is run on a new active graph
+created for the user.\vspace{1.5mm}\par
+
+\texttt{global\_init\_ctx} -- Context to preload for the initialization walker\vspace{1.5mm}\par
+
+\texttt{other\_fields} -- This parameter is used for additional fields required for
+overloaded interfaces. This parameter is not used in JSCTL, but is used
+by Jaseci server for the additional parameters of password, is\_activated,
+and is\_superuser.\vspace{1.5mm}\par
+}}
+\subsection{APIs for walker}
 
 No documentation yet.
 
