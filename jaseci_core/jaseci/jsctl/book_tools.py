@@ -52,7 +52,7 @@ class book:
         )
         return clip
 
-    def std_library(self):
+    def get_global_actions(self):
         import jaseci.actions.standard as stdact
         import pkgutil
         from importlib.machinery import SourceFileLoader
@@ -72,8 +72,11 @@ class book:
                     if callable(val) and modname + "." + name in live_actions
                 ]
             )
+        return all_action_sets
+
+    def std_library(self):
         out = []
-        for i in all_action_sets:
+        for i in self.get_global_actions():
             lib = i[0]
             if lib == "jaseci":
                 continue
@@ -97,27 +100,8 @@ class book:
         return "".join(out)
 
     def std_library_table(self):
-        import jaseci.actions.standard as stdact
-        import pkgutil
-        from importlib.machinery import SourceFileLoader
-        from jaseci.actions.live_actions import live_actions
-
-        all_action_sets = []
-        for importer, modname, ispkg in pkgutil.iter_modules(stdact.__path__):
-            all_action_sets.append(
-                [modname]
-                + [
-                    [name, val]
-                    for name, val in SourceFileLoader(
-                        modname, stdact.__path__[0] + "/" + modname + ".py"
-                    )
-                    .load_module()
-                    .__dict__.items()
-                    if callable(val) and modname + "." + name in live_actions
-                ]
-            )
         out = []
-        for i in all_action_sets:
+        for i in self.get_global_actions():
             lib = i[0]
             if lib == "jaseci":
                 continue

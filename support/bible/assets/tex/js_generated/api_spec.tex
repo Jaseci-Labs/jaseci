@@ -1,0 +1,82 @@
+\subsection{actions APIs}
+
+Admin global APIs
+
+\subsection{alias APIs}
+
+Alias APIs for creating nicknames for UUIDs and other long strings
+\par
+The alias set of APIs provide a set of `alias' management functions for
+creating and managing aliases for long strings such as UUIDs. If an alias'
+name is used as a parameter value in any API call, that parameter will see
+the alias' value instead. Given that references to all sentinels, walkers,
+nodes, etc. utilize UUIDs, it becomes quite useful to create pneumonic
+names for them. Also, when registering   sentinels, walkers, architype
+handy aliases are automatically generated. These generated aliases can
+then be managed using the alias APIs. Keep in mind that whenever an alias
+is created, all parameter values submitted to any API with the alias name
+will be replaced internally by its value. If you get in a bind, simply use
+the clear or delete alias APIs.
+
+\subsection{architype APIs}
+
+Architype APIs for creating and managing Jaseci architypes
+\par
+The architype set of APIs allow for the addition and removing of
+architypes. Given a Jac implementation of an architype these APIs are
+designed for creating, compiling, and managing architypes that can be
+used by Jaseci. There are two ways to add an architype to Jaseci, either
+through the management of sentinels using the sentinel API, or by
+registering independent architypes with these architype APIs. These
+APIs are also used for inspecting and managing existing arichtypes that
+a Jaseci instance is aware of.
+
+\subsection{config APIs}
+
+Admin config APIs
+Abstracted since there are no valid configs in core atm, see jaseci\_serv
+to see how used.
+
+\subsection{global APIs}
+
+Admin global APIs
+
+\subsection{graph APIs}
+
+Graph APIs
+
+\subsection{jac APIs}
+
+Jac tool APIs
+
+\subsection{logger APIs}
+
+APIs for Jaseci Logging configuration
+
+\subsection{master APIs}
+
+Master APIs for creating nicknames for UUIDs and other long strings
+
+\subsection{object APIs}
+
+Object APIs for generalized operations on Jaseci objects
+\par
+...
+
+\subsection{sentinel APIs}
+
+Sentinel APIs
+
+\subsection{stripe APIs}
+
+Stripe APIs
+Set of APIs to expose jaseci stripe management
+
+\subsection{super APIs}
+
+Super APIs for creating nicknames for UUIDs and other long strings
+
+\subsection{walker APIs}
+
+Walker APIs
+
