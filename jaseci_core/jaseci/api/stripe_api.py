@@ -1,7 +1,7 @@
 from jaseci.api.interface import interface
 import stripe
 
-stripe_test_key = "sk_test_4eC39HqLyjWDarjtT1zdp7dc"
+stripe_test_key = "sk_test_51JWUIeCZO78n7fsZnPvualWhmJg1DcCI332kKnWF3q2sKGwnPADjEmNblfFWi4pWAWPuJwHxpeSoJGc0J5ButHN900Q2xBz1se"
 
 
 class stripe_api:
@@ -53,45 +53,51 @@ class stripe_api:
                 return {"message": str(e)}
 
     @interface.admin_api()
-    def stripe_customer_create(
-        self,
-        paymentId: str,
-        name: str = "cristopher evangelista",
-        email: str = "imurbatman12@gmail.com",
-        description: str = "Myca subscriber",
-    ):
+    def stripe_customer_create(email: str, name: str, metadata: dict = {}, address: dict or None = {}, payment_method_id: str or None = None):
         """create customer"""
         try:
             return stripe.Customer.create(
-                name=name,
                 email=email,
-                description=description,
-                payment_method=paymentId,
-                invoice_settings={"default_payment_method": paymentId},
+                name=name,
+                metadata=metadata,
+                address=address,
+                payment_method=payment_method_id,
+                invoice_settings={ "default_payment_method": payment_method_id },
             )
         except Exception as e:
             return {"message": str(e)}
 
     @interface.admin_api()
-    def stripe_customer_get(self, customerId: str):
+    def stripe_customer_get(customer_id: str):
         """retrieve customer information"""
         try:
-            return stripe.Customer.retrieve(customerId)
+            return stripe.Customer.retrieve(customer_id)
+        except Exception as e:
+            return {"message": str(e)}
+    
+    @interface.admin_api()
+    def stripe_create_payment_method(card_type: str, card: dict):
+        """create payment method"""
+        try:
+            paymentMethod = stripe.PaymentMethod.create(type=card_type, card=card)
+
+            return paymentMethod
+
         except Exception as e:
             return {"message": str(e)}
 
     @interface.admin_api()
-    def stripe_customer_payment_add(self, paymentMethodId: str, customerId: str):
-        """add customer payment method"""
+    def stripe_customer_payment_add(self, payment_method_id: str, customer_id: str):
+        """attach customer payment method"""
         try:
-            paymentMethods = self.stripe_retrieve_customer_payment_methods(customerId)
+            paymentMethods = self.stripe_customer_payment_list_get(self, customer_id)
 
             paymentMethod = stripe.PaymentMethod.attach(
-                paymentMethodId, customer=customerId
+                payment_method_id, customer=customer_id
             )
 
             if len(paymentMethods.data) == 0:
-                self.stripe_update_default_payment_method(customerId, paymentMethodId)
+                self.stripe_customer_default_payment_update(self, customer_id, payment_method_id)
 
             paymentMethod.is_default = len(paymentMethods.data) == 0
 
@@ -101,64 +107,79 @@ class stripe_api:
             return {"message": str(e)}
 
     @interface.admin_api()
-    def stripe_customer_payment_delete(self, paymentMethodId: str):
+    def stripe_customer_payment_delete(self, payment_method_id: str):
         """remove customer payment method"""
         try:
-            return stripe.PaymentMethod.detach(paymentMethodId)
+            return stripe.PaymentMethod.detach(payment_method_id)
         except Exception as e:
             return {"message": str(e)}
 
     @interface.admin_api()
-    def stripe_customer_payment_get(self, customerId: str):
+    def stripe_customer_payment_list_get(self, customer_id: str):
         """get customer list of payment methods"""
         try:
             return stripe.PaymentMethod.list(
-                customer=customerId,
+                customer=customer_id,
                 type="card",
             )
         except Exception as e:
             return {"message": str(e)}
+    
 
     @interface.admin_api()
-    def stripe_customer_payment_default(self, customerId: str, paymentMethodId: str):
+    def stripe_customer_default_payment_update(self, customer_id: str, payment_method_id: str):
         """update default payment method of customer"""
         try:
-            setting = {"default_payment_method": paymentMethodId}
-            return stripe.Customer.modify(customerId, invoice_settings=setting)
+            setting = {"default_payment_method": payment_method_id}
+            return stripe.Customer.modify(customer_id, invoice_settings=setting)
         except Exception as e:
             return {"message": str(e)}
 
     @interface.admin_api()
-    def stripe_subscription_create(
-        self, paymentId: str, name: str, email: str, priceId: str, customerId: str
-    ):
-        """
-        create customer subscription
-        TODO: name and email parameters not used!
-        """
+    def stripe_trial_subscription_create(self, payment_method_id: str, price_id: str, customer_id: str, trial_period_days: int = 30):
+        """create customer trial subscription"""
         try:
             # attach payment method to customer
-            self.stripe_add_customer_payment_methods(paymentId, customerId)
+            self.stripe_customer_payment_add(self, payment_method_id, customer_id)
 
             # set card to default payment method
-            self.stripe_update_default_payment_method(customerId, paymentId)
+            self.stripe_customer_default_payment_update(self, customer_id, payment_method_id)
 
             subscription = stripe.Subscription.create(
-                customer=customerId,
+                customer=customer_id,
                 items=[
-                    {"price": priceId},
+                    { "price": price_id },
                 ],
-                trial_period_days=30,
+                trial_period_days=trial_period_days,
             )
-
-            subscription.payment_method = paymentId
 
             return subscription
         except Exception as e:
             return {"message": str(e)}
 
     @interface.admin_api()
-    def stripe_subscription_delete(self, subscriptionId: str):
+    def stripe_subscription_create(self, payment_method_id: str, price_id: str, customer_id: str):
+        """create customer subscription"""
+        try:
+            # attach payment method to customer
+            self.stripe_customer_payment_add(self, payment_method_id, customer_id)
+
+            # set card to default payment method
+            self.stripe_customer_default_payment_update(self, customer_id, payment_method_id)
+
+            subscription = stripe.Subscription.create(
+                customer=customer_id,
+                items=[
+                    { "price": price_id },
+                ],
+            )
+
+            return subscription
+        except Exception as e:
+            return {"message": str(e)}
+
+    @interface.admin_api()
+    def stripe_subscription_delete(subscriptionId: str):
         """cancel customer subscription"""
         try:
             return stripe.Subscription.delete(subscriptionId)
@@ -166,36 +187,44 @@ class stripe_api:
             return {"message": str(e)}
 
     @interface.admin_api()
-    def stripe_subscription_get(self, customerId: str):
-        """retrieve customer subcription"""
+    def stripe_subscription_list_get(self, customer_id: str):
+        """retrieve customer subcription list"""
         try:
-            subscription = stripe.Subscription.list(customer=customerId)
+            subscription = stripe.Subscription.list(customer=customer_id)
 
             if len(subscription.data) == 0:
                 return {"status": "inactive", "message": "Customer has no subscription"}
 
-            subscription.pop("items", None)
+            return subscription
+        except Exception as e:
+            return {"message": str(e)}
 
-            return subscription.data[0]
+    @interface.admin_api()
+    def stripe_subscription_get(subscription_id: str):
+        """retrieve customer subcription details"""
+        try:
+            subscription = stripe.Subscription.retrieve(subscription_id)
+
+            return subscription
         except Exception as e:
             return {"message": str(e)}
 
     @interface.admin_api()
     def stripe_invoices_list(
-        self, customerId: str, subscriptionId: str, limit: int = 10, lastItem: str = ""
+        self, customer_id: str, subscriptionId: str, limit: int = 10, lastItem: str = ""
     ):
         """retrieve customer list of invoices"""
         try:
             if lastItem != "":
                 invoices = stripe.Invoice.list(
-                    customer=customerId,
+                    customer=customer_id,
                     limit=limit,
                     starting_after=lastItem,
                     subscription=subscriptionId,
                 )
             else:
                 invoices = stripe.Invoice.list(
-                    customer=customerId, limit=limit, subscription=subscriptionId
+                    customer=customer_id, limit=limit, subscription=subscriptionId
                 )
             return invoices
         except Exception as e:
