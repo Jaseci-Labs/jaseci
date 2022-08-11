@@ -16,7 +16,11 @@ class master_api:
 
     @interface.private_api(cli_args=["name"])
     def master_create(
-        self, name: str, set_active: bool = True, other_fields: dict = {}
+        self,
+        name: str,
+        global_init: str = "",
+        global_init_ctx: dict = {},
+        other_fields: dict = {},
     ):
         """
         Create a master instance and return root node master object
@@ -24,10 +28,18 @@ class master_api:
         other_fields used for additional feilds for overloaded interfaces
         (i.e., Dango interface)
         """
-        from jaseci.element.master import master
-
-        new_m = master(h=self._h, name=name)
-        return self.make_me_head_master_or_destroy(new_m)
+        if self.sub_master_ids.has_obj_by_name(name):
+            return {"response": f"{name} already exists", "success": False}
+        ret = {}
+        mast = self.user_creator(name, other_fields)
+        ret["user"] = mast.serialize()
+        if len(global_init):
+            ret["global_init"] = self.user_global_init(
+                mast, global_init, global_init_ctx
+            )
+        self.take_ownership(mast)
+        ret["success"] = True
+        return ret
 
     @interface.private_api(cli_args=["name"])
     def master_get(self, name: str, mode: str = "default", detailed: bool = False):
@@ -96,23 +108,19 @@ class master_api:
         Permanently delete master with given id
         """
         if not self.sub_master_ids.has_obj_by_name(name):
-            return {"response": f"{name} not found"}
+            return {"response": f"{name} not found", "success": False}
         self.sub_master_ids.destroy_obj_by_name(name)
-        return {"response": f"{name} has been destroyed"}
+        self.user_destroyer(name)
+        return {"response": f"{name} has been destroyed", "success": True}
 
-    def make_me_head_master_or_destroy(self, m):
+    def take_ownership(self, m):
         """
-        Utility to bring an object into sub masters
+        Assumes owenership over another master
         """
         m.head_master_id = self.jid
         m.give_access(self)
-        if self.sub_master_ids.has_obj_by_name(m.name):
-            name = m.name
-            m.destroy()
-            return {"response": f"{name} already exists"}
         m.save()
         self.sub_master_ids.add_obj(m)
-        return m.serialize()
 
     def destroy(self):
         """

@@ -4,7 +4,7 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
-from jaseci.utils.utils import is_jsonable, is_urn, parse_str_token
+from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
 from jaseci.element.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
@@ -854,12 +854,19 @@ class interp(machine_state):
         """
         kid = self.set_cur_ast(jac_ast)
         result = self.run_atom(kid[1])
-        if is_urn(result.value):
-            result = jac_value(
-                self, value=jeu(result.value.replace("urn", "jac"), self)
-            )
-        else:
-            self.rt_error(f"{result.value} not valid reference", kid[1])
+
+        if (
+            isinstance(result.value, str)
+            and len(result.value) < 64  # super long string, untrustworthy
+            and not result.value.startswith("jac:uuid:")  # already an object
+        ):
+            matcher = uuid_re.search(result.value)
+            if matcher and matcher.group(1):
+                nd = jeu(f"jac:uuid:{matcher.group(1)}", self)
+                if nd is not None:
+                    return jac_value(self, value=nd)
+
+        self.rt_error(f"{result.value} not valid reference", kid[1])
         return result
 
     def run_built_in(self, jac_ast, atom_res):

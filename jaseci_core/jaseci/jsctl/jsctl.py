@@ -101,10 +101,6 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
         else:
             click.echo(f"Code file {kwargs['code']} not found!")
             return
-    if "ctx" in kwargs:  # can replace these checs with a dict check
-        kwargs["ctx"] = json.loads(kwargs["ctx"])
-    if "other_fields" in kwargs:
-        kwargs["other_fields"] = json.loads(kwargs["other_fields"])
     resolve_none_type(kwargs)
     if (
         not is_cli_only

@@ -8,7 +8,7 @@ from jaseci.utils.utils import logger
 from jaseci.element.element import element
 from jaseci_serv.base.orm_hook import orm_hook
 from jaseci_serv.base.models import JaseciObject, GlobalVars
-from jaseci_serv.base.models import master as core_master
+from jaseci_serv.base.models import master as serv_master
 from time import time
 from base64 import b64encode
 from io import BytesIO
@@ -215,7 +215,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
 
     def set_caller(self, request):
         """Assigns the calling api interface obj"""
-        self.caller = core_master(
+        self.caller = serv_master(
             h=orm_hook(objects=JaseciObject.objects, globs=GlobalVars.objects),
             persist=False,
         )
