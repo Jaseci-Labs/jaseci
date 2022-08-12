@@ -189,7 +189,10 @@ class book:
                 continue
             name = i.replace("_", " ")
             api = i.replace("_", "\\_")
-            ret += f"\\subsubsection{{\\lstinline[basicstyle=\\Large\\ttfamily]${name}$}}\n\n"
+            ret += (
+                f"\\subsubsection{{\\lstinline"
+                f"[basicstyle=\\Large\\ttfamily]${name}$}}\n\n"
+            )
             authstr = "(cli only)"
             if auth_level != "cli_only":
                 authstr = f"| api: {api} | auth: {auth_level}"

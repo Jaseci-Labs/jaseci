@@ -97,16 +97,15 @@ class graph_api:
         return [f"Graph {gph.id} successfully deleted"]
 
     @interface.private_api(cli_args=["nd"])
-    def graph_node_get(self, nd: node, ctx: list = None):
+    def graph_node_get(self, nd: node, keys: list = []):
         """
         Returns value a given node
         """
         ret = {}
         nd_ctx = nd.serialize(detailed=True)["context"]
-        if ctx:
-            for i in nd_ctx.keys():
-                if i in ctx:
-                    ret[i] = nd_ctx[i]
+        for i in nd_ctx.keys():
+            if not len(keys) or i in keys:
+                ret[i] = nd_ctx[i]
         return ret
 
     @interface.private_api(cli_args=["nd"])
