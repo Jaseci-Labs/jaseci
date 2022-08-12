@@ -46,7 +46,8 @@ class user_api:
         global_init. The default empty string assigned to global_init indicates this
         global setup should not be run.
 
-        :param name: The python file with full to load actions from.
+        :param name: The user name to create. For Jaseci server this must be a valid
+            email address.
         :param global_init: The name of an initialization walker. When set the user is
             linked to the global sentinel and the walker is run on a new active graph
             created for the user.
