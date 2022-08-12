@@ -118,7 +118,7 @@ node skip_simple:simple {
     can skip_inst with entry
     {
         if(visitor.visits>4){
-            report "done";
+            report visitor.visits;
             skip;
         }
         report "in_node";

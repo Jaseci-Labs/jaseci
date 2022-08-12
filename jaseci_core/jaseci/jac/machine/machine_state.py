@@ -84,8 +84,6 @@ class machine_state:
         if mach.report_custom:
             self.report_custom = mach.report_custom
         self.runtime_errors += mach.runtime_errors
-        if hasattr(mach, "j_type") and mach.j_type != "walker":
-            self._stopped = mach._stopped
 
     def get_arch_for(self, obj):
         """Returns the architype that matches object"""
