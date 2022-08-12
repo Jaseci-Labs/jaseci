@@ -1663,16 +1663,12 @@ class interp(machine_state):
 
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
-        # try:
-        # if(not hasattr(self, f'run_{jac_ast.name}')):
-        #     self.rt_error(
-        #         f'This scope cannot execute the statement '
-        #         f'"{jac_ast.get_text()}" of type {jac_ast.name}',
-        #         jac_ast)
-        #     return
-
-        return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
-        # except Exception as e:
-        #     self.rt_error(
-        #         f"Cannot execute this type of code here! {e}", jac_ast)
-        #     return None
+        try:
+            return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
+        except AttributeError:
+            self.rt_error(
+                f"This scope cannot execute the statement "
+                f'"{jac_ast.get_text()}" of type {jac_ast.name}',
+                jac_ast,
+            )
+            return

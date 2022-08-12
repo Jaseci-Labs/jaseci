@@ -135,6 +135,33 @@ class walker_api_test(core_test):
             ],
         )
 
+    def test_walker_simple_yield(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
+        )
+        expected = [
+            "entry",
+            {"id": 0},
+            {"id": 1},
+            {"id": 2},
+            {"id": 3},
+            {"id": 4},
+            {"id": 5},
+            {"id": 6},
+            {"id": 7},
+            {"id": 8},
+            {"id": 9},
+            "entry",
+            {"id": 0},
+            {"id": 10},
+            {"id": 1},
+            {"id": 11},
+        ]
+        for i in range(16):
+            ret = self.call(self.mast, ["walker_run", {"name": "simple_yield"}])
+            self.assertEqual(ret["report"][0], expected[i])
+
     def test_walker_deep_yield2(self):
         self.call(
             self.mast,
@@ -166,7 +193,6 @@ class walker_api_test(core_test):
         )
 
     def test_walker_deep_yield_no_leak(self):
-        self.logger_on()
         self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
@@ -177,3 +203,61 @@ class walker_api_test(core_test):
         self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
         after = self.mast._h.get_object_distribution()[walker]
         self.assertEqual(before, after)
+
+    def test_walker_simple_yield_skip_test(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
+        )
+        ret = []
+        for i in range(16):
+            ret += self.call(
+                self.mast, ["walker_run", {"name": "simple_yield_skip_test"}]
+            )["report"]
+        self.assertEqual(
+            ret,
+            [
+                "entry",
+                {},
+                "in_node",
+                {"id": 0},
+                "in_node",
+                {"id": 1},
+                "in_node",
+                {"id": 2},
+                "in_node",
+                {"id": 3},
+                "in_node",
+                {"id": 4},
+                5,
+                {"id": 5},
+                5,
+                {"id": 6},
+                5,
+                {"id": 7},
+                5,
+                {"id": 8},
+                5,
+                {"id": 9},
+                "entry",
+                {},
+                "in_node",
+                {"id": 0},
+                "in_node",
+                {"id": 10},
+                "in_node",
+                {"id": 1},
+                "in_node",
+                {"id": 11},
+            ],
+        )
+
+    def test_error_reporting_walker_only_actions(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
+        )
+        ret = []
+        self.call(self.mast, ["walker_run", {"name": "error_walker_action"}])
+        ret = self.call(self.mast, ["walker_run", {"name": "error_walker_action"}])
+        self.assertIn('cannot execute the statement "disengage ; "', ret["errors"][0])
