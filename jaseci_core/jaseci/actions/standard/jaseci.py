@@ -24,9 +24,9 @@ def construct_params(p_spec, args):
     for i in p_spec.keys():
         if i == "self":
             continue
-        p_default = p_spec[i].default
-        p_type = p_spec[i].annotation
-        p_default = p_type(p_default) if p_default is not p_spec[i].empty else None
+        p_default = (
+            p_spec[i].default if p_spec[i].default is not p_spec[i].empty else None
+        )
         if arg_count < len(args):
             params[i] = args[arg_count]
         else:

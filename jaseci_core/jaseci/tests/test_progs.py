@@ -211,12 +211,13 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertIn("j_r_acc_ids", report[0][0].keys())
 
     def test_jasecilib_create_user(self):
+        self.logger_on()
         mast = master(h=mem_hook())
         mast.sentinel_register(name="test", code=jtp.jasecilib_create_user, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
         )["report"]
-        self.assertEqual(report[0]["name"], "daman@gmail.com")
+        self.assertEqual(report[0]["user"]["name"], "daman@gmail.com")
 
     def test_root_is_node_type(self):
         mast = master(h=mem_hook())

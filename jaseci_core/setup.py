@@ -15,6 +15,7 @@ setup(
         "flake8",
         "stripe",
         "pydantic",
+        "docstring-parser",
     ],
     package_data={
         "": ["*.ini"],

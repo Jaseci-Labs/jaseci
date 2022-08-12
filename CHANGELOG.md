@@ -4,6 +4,8 @@
 
 ### Updates
 
+- Deprecation: Stripe API soft removed.
+- Improvement: Improved the deref operator `*` to be more nimble
 - New Feature: Can now pluck lists of values from collections of nodes and edges.
 - Major Language Feature: Introducing the `yeild` feature. See bible for details
 - Improvement/Bug: Here behavior is now specified for ability calls and inheritance in intuitive way
@@ -16,6 +18,8 @@
 ### Notes
 
 - Behavior change for jac programs utilizing chained connection operators. Connection orders are now intuitive (e.g., `n1 --> n2 --> n3` will create an intuitive chain of connections not `n1 --> n3 <-- n2`)
+- API interface update: `sentinel_register` auto_run_ctx replaces ctx to be more specific, `auto_gen_graph` is now `auto_create_graph` for same reason as well
+- API interface update: `master_create` API return format updated
 
 ## Version 1.3.3
 

@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  box-sizing: border-box;
+}
+
+/* .table-head th {
+  padding: 4px 40px;
+} */
+
+
+
+
+.table-striped tr:nth-child(even) {
+  background-color: var(--color-brand-3);
+}
+
+.table-striped td {
+  padding: 2px 4px;
+}
+
+.icon {
+  display: inline;
+  height: 12px;
+  width: 12px;
+}
+
+.icon-btn {
+  display: inline;
+  height: 16px;
+  width: 16px;
+  cursor: pointer;
+  margin: 0 8px;
+}
+
+.page-indicator {
+  font-size: 14px;
+}
