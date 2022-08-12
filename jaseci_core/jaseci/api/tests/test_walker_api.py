@@ -193,7 +193,6 @@ class walker_api_test(core_test):
         )
 
     def test_walker_deep_yield_no_leak(self):
-        self.logger_on()
         self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
@@ -206,7 +205,6 @@ class walker_api_test(core_test):
         self.assertEqual(before, after)
 
     def test_walker_simple_yield_skip_test(self):
-        self.logger_on()
         self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
@@ -216,10 +214,10 @@ class walker_api_test(core_test):
             ret += self.call(
                 self.mast, ["walker_run", {"name": "simple_yield_skip_test"}]
             )["report"]
-        self.log(ret)
         self.assertEqual(
             ret,
             [
+                "entry",
                 {},
                 "in_node",
                 {"id": 0},
@@ -252,3 +250,13 @@ class walker_api_test(core_test):
                 {"id": 0},
             ],
         )
+
+    def test_error_reporting_walker_only_actions(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
+        )
+        ret = []
+        self.call(self.mast, ["walker_run", {"name": "error_walker_action"}])
+        ret = self.call(self.mast, ["walker_run", {"name": "error_walker_action"}])
+        self.assertIn('cannot execute the statement "disengage ; "', ret["errors"][0])

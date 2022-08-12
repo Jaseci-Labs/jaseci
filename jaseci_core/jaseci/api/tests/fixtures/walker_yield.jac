@@ -139,3 +139,25 @@ walker simple_yield_skip_test {
     report here.context;
     if(-->.length): yield take -->;
 }
+
+
+node error_simple:simple {
+    can skip_inst with entry
+    {
+        disengage;
+    }
+}
+
+walker error_walker_action {
+    has visits=0;
+    with entry {
+        t=here;
+        report "entry";
+        for i=0 to i<10 by i+=1 {
+            t = spawn t --> node::error_simple(id=global.node_count);
+            global.node_count+=1;
+        }
+    }
+    report here.context;
+    if(-->.length): yield take -->;
+}
