@@ -135,6 +135,33 @@ class walker_api_test(core_test):
             ],
         )
 
+    def test_walker_simple_yield(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
+        )
+        expected = [
+            "entry",
+            {"id": 0},
+            {"id": 1},
+            {"id": 2},
+            {"id": 3},
+            {"id": 4},
+            {"id": 5},
+            {"id": 6},
+            {"id": 7},
+            {"id": 8},
+            {"id": 9},
+            "entry",
+            {"id": 0},
+            {"id": 10},
+            {"id": 1},
+            {"id": 11},
+        ]
+        for i in range(16):
+            ret = self.call(self.mast, ["walker_run", {"name": "simple_yield"}])
+            self.assertEqual(ret["report"][0], expected[i])
+
     def test_walker_deep_yield2(self):
         self.call(
             self.mast,
@@ -177,3 +204,51 @@ class walker_api_test(core_test):
         self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
         after = self.mast._h.get_object_distribution()[walker]
         self.assertEqual(before, after)
+
+    def test_walker_simple_yield_skip_test(self):
+        self.logger_on()
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
+        )
+        ret = []
+        for i in range(16):
+            ret += self.call(
+                self.mast, ["walker_run", {"name": "simple_yield_skip_test"}]
+            )["report"]
+        self.log(ret)
+        self.assertEqual(
+            ret,
+            [
+                {},
+                "in_node",
+                {"id": 0},
+                "in_node",
+                {"id": 1},
+                "in_node",
+                {"id": 2},
+                "in_node",
+                {"id": 3},
+                "in_node",
+                {"id": 4},
+                "done",
+                "entry",
+                {},
+                "in_node",
+                {"id": 0},
+                "in_node",
+                {"id": 10},
+                "in_node",
+                {"id": 1},
+                "in_node",
+                {"id": 11},
+                "in_node",
+                {"id": 2},
+                "done",
+                "done",
+                "entry",
+                {},
+                "in_node",
+                {"id": 0},
+            ],
+        )

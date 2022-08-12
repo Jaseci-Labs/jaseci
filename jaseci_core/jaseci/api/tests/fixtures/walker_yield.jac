@@ -113,3 +113,29 @@ walker deep_yield2 {
         spawn here walker::simple_yield;
     }
 }
+
+node skip_simple:simple {
+    can skip_inst with entry
+    {
+        if(visitor.visits>4){
+            report "done";
+            skip;
+        }
+        report "in_node";
+        visitor.visits+=1;
+    }
+}
+
+walker simple_yield_skip_test {
+    has visits=0;
+    with entry {
+        t=here;
+        report "entry";
+        for i=0 to i<10 by i+=1 {
+            t = spawn t --> node::skip_simple(id=global.node_count);
+            global.node_count+=1;
+        }
+    }
+    report here.context;
+    if(-->.length): yield take -->;
+}
