@@ -1,4 +1,6 @@
 \subsection{date}
+\par
+No documentation yet.
 \apispec{date.quantize\_to\_year}{date: str (*req)}
 {No documentation yet.}
 \apispec{date.quantize\_to\_month}{date: str (*req)}
@@ -10,6 +12,8 @@
 \apispec{date.date\_day\_diff}{start_date: str (*req), end_date: str (*req)}
 {No documentation yet.}
 \subsection{file}
+\par
+No documentation yet.
 \apispec{file.load\_str}{fn: str (*req), max_chars: int}
 {No documentation yet.}
 \apispec{file.load\_json}{fn: str (*req)}
@@ -23,13 +27,34 @@
 \apispec{file.delete}{fn: str (*req)}
 {No documentation yet.}
 \subsection{net}
+\par
+This library of actions cover the standard operations that can be
+run on graph elements (nodes and edges). A number of these actions
+accept lists that are exclusively composed of instances of defined
+architype node and/or edges. Keep in mind that a \lstinline{jac_set}
+is simply a list that only contains such elements.
 \apispec{net.max}{item_set: jac_set (*req)}
-{No documentation yet.}
+{This action will return the maximum element in a list of nodes
+and/or edges. This action exclusively utilizes the anchor variable
+of the node/edge arhcitype as the representative field for
+performing the  comparison in ranking. This action does not support
+arhcitypes lacking an anchor.\vspace{4mm}\par
+\argspec{Parameters}{
+\texttt{item\_set} -- A list of node and or edges to identify the
+maximum element based on their respective anchor values\vspace{1.5mm}\par
+}\vspace{4mm}\par
+\argspec{Returns}{A node or edge object}}
 \apispec{net.min}{item_set: jac_set (*req)}
+{No documentation yet.}
+\apispec{net.pack}{item_set: jac_set (*req)}
+{No documentation yet.}
+\apispec{net.unpack}{item_set: jac_set (*req)}
 {No documentation yet.}
 \apispec{net.root}{meta: _empty (*req)}
 {No documentation yet.}
 \subsection{rand}
+\par
+No documentation yet.
 \apispec{rand.seed}{val: int (*req)}
 {No documentation yet.}
 \apispec{rand.integer}{start: int (*req), end: int (*req)}
@@ -47,6 +72,8 @@
 \apispec{rand.time}{start_date: str (*req), end_date: str (*req)}
 {No documentation yet.}
 \subsection{request}
+\par
+No documentation yet.
 \apispec{request.get}{url: str (*req), data: dict (*req), header: dict (*req)}
 {Param 1 - url
 Param 2 - data
@@ -94,6 +121,8 @@ Return - response object}
 \apispec{request.file\_download\_base64}{url: str (*req), header: dict (*req), encoding: str}
 {No documentation yet.}
 \subsection{std}
+\par
+No documentation yet.
 \apispec{std.log}{args: _empty (*req)}
 {No documentation yet.}
 \apispec{std.out}{args: _empty (*req)}
@@ -146,6 +175,8 @@ Return - Sorted list}
 \apispec{std.get\_report}{meta: _empty (*req)}
 {No documentation yet.}
 \subsection{vector}
+\par
+No documentation yet.
 \apispec{vector.cosine\_sim}{vec_a: list (*req), vec_b: list (*req)}
 {Param 1 - First vector
 Param 2 - Second vector
