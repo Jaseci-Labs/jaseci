@@ -16,7 +16,7 @@ class FastText_test(TestCaseHelper, TestCase):
     def tearDown(self) -> None:
         return super().tearDown()
 
-    @unittest.skip("skipping tests with training")
+    @unittest.skip("Issues with github action CI pipeline.")
     def test_fasttext_combined(self):
         # step 1: Training the model
         response = self.client.post("/train/", json=test_train_request)

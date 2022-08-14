@@ -22,7 +22,7 @@ class entity_extraction_type2_test(TestCaseHelper, TestCase):
     def tearDown(self) -> None:
         return super().tearDown()
 
-    @unittest.skip("skipping tests with training")
+    @unittest.skip("Issues with github action CI pipeline.")
     def test_complete_model(self):
         # fmt: off
         # the above line of code is to disbale black linting
@@ -75,7 +75,7 @@ class entity_extraction_type2_test(TestCaseHelper, TestCase):
         response = self.client.post("/set_model_config/", json=test_model_config)
         self.assertEqual(response.status_code, 200)
 
-    @unittest.skip("skipping tests with training")
+    @unittest.skip("Issues with github action CI pipeline.")
     def test_train(self):
         # fmt: off
         response = self.client.post(
