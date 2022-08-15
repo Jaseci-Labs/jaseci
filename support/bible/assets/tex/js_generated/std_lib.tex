@@ -14,7 +14,7 @@ No documentation yet.
 \subsection{file}
 \par
 No documentation yet.
-\apispec{file.load\_str}{fn: str (*req), max_chars: int}
+\apispec{file.load\_str}{fn: str (*req), max_chars: int (None)}
 {No documentation yet.}
 \apispec{file.load\_json}{fn: str (*req)}
 {No documentation yet.}
@@ -22,7 +22,7 @@ No documentation yet.
 {No documentation yet.}
 \apispec{file.append\_str}{fn: str (*req), s: str (*req)}
 {No documentation yet.}
-\apispec{file.dump\_json}{fn: str (*req), obj: _empty (*req), indent: int}
+\apispec{file.dump\_json}{fn: str (*req), obj: _empty (*req), indent: int (None)}
 {No documentation yet.}
 \apispec{file.delete}{fn: str (*req)}
 {No documentation yet.}
@@ -35,10 +35,13 @@ architype node and/or edges. Keep in mind that a \lstinline{jac_set}
 is simply a list that only contains such elements.
 \apispec{net.max}{item_set: jac_set (*req)}
 {This action will return the maximum element in a list of nodes
-and/or edges. This action exclusively utilizes the anchor variable
-of the node/edge arhcitype as the representative field for
-performing the  comparison in ranking. This action does not support
-arhcitypes lacking an anchor.\vspace{4mm}\par
+and/or edges based on an anchor has variable. Since each node or edge can only
+specify a single anchor this action enables a handy short hand for utilizing the
+anchor variable as the representative field for performing the  comparison in
+ranking. For example, if you have a node called \lstinline{movie review} with a
+field \lstinline{has anchor score = .5;} that changes based on sentiment
+analysis, using this action will return the node with the highest score from the
+input list of nodes. This action does not support arhcitypes lacking an anchor.\vspace{4mm}\par
 \argspec{Parameters}{
 \texttt{item\_set} -- A list of node and or edges to identify the
 maximum element based on their respective anchor values\vspace{1.5mm}\par
@@ -48,14 +51,14 @@ maximum element based on their respective anchor values\vspace{1.5mm}\par
 {This action will return the minimum element in a list of nodes
 and/or edges. This action exclusively utilizes the anchor variable
 of the node/edge arhcitype as the representative field for
-performing the  comparison in ranking. This action does not support
-arhcitypes lacking an anchor.\vspace{4mm}\par
+performing the comparison in ranking. This action does not support
+arhcitypes lacking an anchor. (see action max for an example)\vspace{4mm}\par
 \argspec{Parameters}{
 \texttt{item\_set} -- A list of node and or edges to identify the
 minimum element based on their respective anchor values\vspace{1.5mm}\par
 }\vspace{4mm}\par
 \argspec{Returns}{A node or edge object}}
-\apispec{net.pack}{item_set: jac_set (*req), destroy: bool}
+\apispec{net.pack}{item_set: jac_set (*req), destroy: bool (False)}
 {This action takes a subgraph as a collection of nodes in a list and
 creates a generic dictionary representation of the subgraph inclusive of
 all edges between nodes inside the collection. Note that any edges that are
@@ -102,11 +105,11 @@ No documentation yet.
 {No documentation yet.}
 \apispec{rand.choice}{lst: list (*req)}
 {No documentation yet.}
-\apispec{rand.sentence}{min_lenth: int, max_length: int, sep: str}
+\apispec{rand.sentence}{min_lenth: int (4), max_length: int (10), sep: str ( )}
 {No documentation yet.}
-\apispec{rand.paragraph}{min_lenth: int, max_length: int, sep: str}
+\apispec{rand.paragraph}{min_lenth: int (4), max_length: int (8), sep: str ( )}
 {No documentation yet.}
-\apispec{rand.text}{min_lenth: int, max_length: int, sep: str}
+\apispec{rand.text}{min_lenth: int (3), max_length: int (6), sep: str (\\n\\n)}
 {No documentation yet.}
 \apispec{rand.word}{n/a}
 {No documentation yet.}
@@ -159,7 +162,7 @@ Param 4 - files (Optional) used for multiple files
 Note - file and files can't be None at the same time
 
 Return - response object}
-\apispec{request.file\_download\_base64}{url: str (*req), header: dict (*req), encoding: str}
+\apispec{request.file\_download\_base64}{url: str (*req), header: dict (*req), encoding: str (utf-8)}
 {No documentation yet.}
 \subsection{std}
 \par
@@ -168,11 +171,11 @@ No documentation yet.
 {No documentation yet.}
 \apispec{std.out}{args: _empty (*req)}
 {No documentation yet.}
-\apispec{std.js\_input}{prompt: str}
+\apispec{std.js\_input}{prompt: str ()}
 {No documentation yet.}
 \apispec{std.err}{args: _empty (*req)}
 {No documentation yet.}
-\apispec{std.sort\_by\_col}{lst: list (*req), col_num: int (*req), reverse: bool}
+\apispec{std.sort\_by\_col}{lst: list (*req), col_num: int (*req), reverse: bool (False)}
 {Param 1 - list
 Param 2 - col number
 Param 3 - boolean as to whether things should be reversed
@@ -236,7 +239,7 @@ Return - (centroid vector, cluster tightness)}
 {Param 1 - List of vectors
 
 Return - (centroid vector, cluster tightness)}
-\apispec{vector.sort\_by\_key}{data: dict (*req), reverse: _empty, key_pos: _empty}
+\apispec{vector.sort\_by\_key}{data: dict (*req), reverse: _empty (False), key_pos: _empty (None)}
 {Param 1 - List of items
 Param 2 - if Reverse
 Param 3 (Optional) - Index of the key to be used for sorting
