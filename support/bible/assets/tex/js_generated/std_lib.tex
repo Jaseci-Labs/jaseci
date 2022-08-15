@@ -57,13 +57,14 @@ minimum element based on their respective anchor values\vspace{1.5mm}\par
 \argspec{Returns}{A node or edge object}}
 \apispec{net.pack}{item_set: jac_set (*req)}
 {No documentation yet.}
-\apispec{net.unpack}{item_set: jac_set (*req)}
+\apispec{net.unpack}{graph_dict: dict (*req)}
 {No documentation yet.}
 \apispec{net.root}{n/a}
 {This action returns the root node for the graph of a given user (master). A call
 to this action is only valid if the user has an active graph set, otherwise it
 return null. This is a handy way for any walker to get to the root node of a
-graph.}
+graph from anywhere.\vspace{4mm}\par
+\argspec{Returns}{The root node of the active graph for a user. If none set, returns null.}}
 \subsection{rand}
 \par
 No documentation yet.

@@ -4,7 +4,7 @@ Action library for graph network operations
 This library of actions cover the standard operations that can be
 run on graph elements (nodes and edges). A number of these actions
 accept lists that are exclusively composed of instances of defined
-architype node and/or edges. Keep in mind that a \lstinline{jac_set}
+architype node and/or edges. Keep in mind that a \\lstinline{jac_set}
 is simply a list that only contains such elements.
 """
 from jaseci.actions.live_actions import jaseci_action
@@ -113,8 +113,9 @@ def unpack(graph_dict: dict, meta):
                 name=i["name"],
             )
         )
-        node_list[-1].context = i.context
+        node_list[-1].context = i["ctx"]
         item_set.add_obj(node_list[-1])
+        node_list[-1].save()
     for i in graph_dict["edges"]:
         this_edge = edge(
             m_id=mast._m_id,
@@ -122,10 +123,11 @@ def unpack(graph_dict: dict, meta):
             kind="edge",
             name=i["name"],
         )
-        this_edge.connects(
+        this_edge.connect(
             node_list[i["connect"][0]], node_list[i["connect"][1]], i["bi_dir"]
         )
         item_set.add_obj(this_edge)
+        this_edge.save()
     return item_set
 
 
@@ -138,6 +140,8 @@ def root(meta):
     to this action is only valid if the user has an active graph set, otherwise it
     return null. This is a handy way for any walker to get to the root node of a
     graph from anywhere.
+
+    :returns: The root node of the active graph for a user. If none set, returns null.
     """
     mast = master_from_meta(meta)
     if mast.active_gph_id:

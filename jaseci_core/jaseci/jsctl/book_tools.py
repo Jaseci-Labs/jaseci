@@ -1,6 +1,7 @@
 from jaseci.utils.utils import obj_class_cache, build_class_dict
 from jaseci.element.super_master import super_master as sm
 from docstring_parser import parse
+from os.path import exists
 
 # from pprint import pformat
 from inspect import getdoc, signature
@@ -66,6 +67,8 @@ class book:
 
         all_action_sets = []
         for importer, modname, ispkg in pkgutil.iter_modules(stdact.__path__):
+            if not exists(stdact.__path__[0] + "/" + modname + ".py"):
+                continue
             mod = SourceFileLoader(
                 modname, stdact.__path__[0] + "/" + modname + ".py"
             ).load_module()

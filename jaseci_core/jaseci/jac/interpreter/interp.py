@@ -530,6 +530,8 @@ class interp(machine_state):
                 for i in target.obj_list():
                     for j in base.obj_list():
                         use_edge = self.run_edge_ref(kid[1], is_spawn=True)
+                        self.rt_check_type(i, node, kid[-1])
+                        self.rt_check_type(j, node, kid[-1])
                         if direction == "edge_from":
                             j.attach_inbound(i, [use_edge])
                         elif direction == "edge_to":
