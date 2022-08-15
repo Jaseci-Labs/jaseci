@@ -73,7 +73,27 @@ def min(item_set: jac_set):
 
 @jaseci_action()
 def pack(item_set: jac_set, destroy: bool = False):
-    """Built in actions for Jaseci"""
+    """
+    Convert a subgraph to a generalized dictionary format
+
+    This action takes a subgraph as a collection of nodes in a list and
+    creates a generic dictionary representation of the subgraph inclusive of
+    all edges between nodes inside the collection. Note that any edges that are
+    connecting nodes outside of the list of nodes are omitted from the packed
+    subgraph representation. The complete context of all nodes and connecting edges
+    are retained in the packed dictionary format. The unpack action can then be used
+    to instantiate the identical subgraph back into a graph. Packed graphs are
+    highly portable and can be used for many use cases such as exporting graphs and
+    subgraphs to be imported using the unpack action.
+
+    :param item_set: A list of nodes comprising the subgraph to be packed. Edges can be
+    included in this list but is ultimately ignored. All edges from the actual nodes
+    in the context of the source graph will be automatically included in the packed
+    dictionary if it contects two nodes within this input list.
+    :param destroy: A flag indicating whether the original graph nodes covered by pack
+    operation should be destroyed.
+    :returns: A generic and portable dictionary representation of the subgraph
+    """
     graph_dict = {"nodes": [], "edges": []}
     idx_map = {}
     edge_set = jac_set()
@@ -104,7 +124,20 @@ def pack(item_set: jac_set, destroy: bool = False):
 
 @jaseci_action()
 def unpack(graph_dict: dict, meta):
-    """Built in actions for Jaseci"""
+    """
+    Convert a packed dictionary to Jac graph elements
+
+    This action takes a dictionary in the format produced by the packed action
+    to instantiate a set of nodes and edges corresponding to the subgraph represented
+    by the pack action. The original contexts that were pack will also be created.
+    Important Note: When using this unpack action, the unpacked collections of elements
+    returned must be connected to a source graph to avoid memory leaks.
+
+    :param graph_dict: A dictionary in the format produced by the pack action.
+    :returns: A list of the nodes and edges that were created corresponding to the
+    input packed format. Note: Must be then connected to a source graph to avoid memory
+    leak.
+    """
     mast = master_from_meta(meta)
     item_set = jac_set()
     node_list = []
