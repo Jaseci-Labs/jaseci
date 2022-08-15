@@ -4,7 +4,7 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
-from jaseci.utils.utils import is_jsonable, is_urn, parse_str_token
+from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
 from jaseci.element.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
@@ -777,8 +777,20 @@ class interp(machine_state):
                 elif kid[1].name == "NAME":
                     d = atom_res.value
                     n = kid[1].token_text()
-                    if self.rt_check_type(d, [dict, element], kid[0]):
-                        ret = jac_value(self, ctx=d, name=n)
+                    if self.rt_check_type(d, [dict, element, jac_set], kid[0]):
+                        if not isinstance(d, jac_set):
+                            ret = jac_value(self, ctx=d, name=n)
+                        else:
+                            plucked = []
+                            for i in d:
+                                if n in i.context.keys():
+                                    plucked.append(i.context[n])
+                                else:
+                                    self.rt_error(
+                                        f"Some elements in set does not have {n}",
+                                        kid[1],
+                                    )
+                            ret = jac_value(self, value=plucked)
                         ret.unwrap()
                         return ret
                     else:
@@ -842,12 +854,19 @@ class interp(machine_state):
         """
         kid = self.set_cur_ast(jac_ast)
         result = self.run_atom(kid[1])
-        if is_urn(result.value):
-            result = jac_value(
-                self, value=jeu(result.value.replace("urn", "jac"), self)
-            )
-        else:
-            self.rt_error(f"{result.value} not valid reference", kid[1])
+
+        if (
+            isinstance(result.value, str)
+            and len(result.value) < 64  # super long string, untrustworthy
+            and not result.value.startswith("jac:uuid:")  # already an object
+        ):
+            matcher = uuid_re.search(result.value)
+            if matcher and matcher.group(1):
+                nd = jeu(f"jac:uuid:{matcher.group(1)}", self)
+                if nd is not None:
+                    return jac_value(self, value=nd)
+
+        self.rt_error(f"{result.value} not valid reference", kid[1])
         return result
 
     def run_built_in(self, jac_ast, atom_res):
@@ -1644,16 +1663,12 @@ class interp(machine_state):
 
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
-        # try:
-        # if(not hasattr(self, f'run_{jac_ast.name}')):
-        #     self.rt_error(
-        #         f'This scope cannot execute the statement '
-        #         f'"{jac_ast.get_text()}" of type {jac_ast.name}',
-        #         jac_ast)
-        #     return
-
-        return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
-        # except Exception as e:
-        #     self.rt_error(
-        #         f"Cannot execute this type of code here! {e}", jac_ast)
-        #     return None
+        try:
+            return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
+        except AttributeError:
+            self.rt_error(
+                f"This scope cannot execute the statement "
+                f'"{jac_ast.get_text()}" of type {jac_ast.name}',
+                jac_ast,
+            )
+            return

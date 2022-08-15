@@ -53,7 +53,6 @@
 
 %Table colors
 
-
 %----------------------------------- LISTINGS  ------------------------------
 \usepackage{listings}
 
@@ -83,7 +82,7 @@
 }
 
 \lstdefinestyle{gram}{
-basicstyle=\footnotesize\ttfamily\color{olive},%
+basicstyle=\ttfamily\color{olive},%
 breaklines=true,%                                      allow line breaks
 moredelim=[s][\color{green!50!black}\ttfamily]{'}{'},% single quotes in green
 moredelim=*[s][\color{black}\ttfamily]{options}{\}},%  options in black (until trailing })
@@ -111,7 +110,7 @@ keywordstyle={\color{black}},%                         and format them in black
     postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
     backgroundcolor=\color{gray!10},
     captionpos=t,
-    basicstyle=\footnotesize\upshape\ttfamily,      % the size of the fonts that are used for the code
+    basicstyle=\upshape\ttfamily,      % the size of the fonts that are used for the code
      numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
     numbersep=10pt,                   % how far the line-numbers are from the code
     numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
@@ -155,6 +154,30 @@ keywordstyle={\color{black}},%                         and format them in black
    #1
 }
 
+\newcommand{\apispec}[3]{
+\begin{tcolorbox}[colback=white!50!white,arc=0pt,outer arc=0pt,colframe=white!5!black,boxrule=0.7pt,boxsep=8pt,left=2pt,
+    colbacktitle=orange!5!white,coltitle=black,title={\texttt{\textbf{#1}}}]
+    \texttt{args:} \lstinline[basicstyle=\normalsize\ttfamily]{#2}
+    \tcblower
+    #3
+  \end{tcolorbox}
+}
+
+% \newcommand{\argspec}[1]{
+% \begin{tcolorbox}[colback=white!50!white,arc=0pt,outer arc=0pt,colframe=white!5!black,boxrule=0.7pt,boxsep=8pt,left=2pt,
+%     colbacktitle=white!50!white,coltitle=black,title={\texttt{\textbf{parameters}}}]
+%     #1
+%   \end{tcolorbox}
+% }
+
+\newcommand{\argspec}[1]{
+\begin{tcolorbox}[enhanced,attach boxed title to top center={yshift=-3mm,yshifttext=-1mm},
+    colback=blue!2!white,colframe=blue!75!black,coltitle=black,colbacktitle=green!5!white,
+    title=\texttt{Parameters},fonttitle=\bfseries,
+    boxed title style={size=small,colframe=red!50!black},boxrule=0.5pt, ]
+    #1
+  \end{tcolorbox}
+}
 
 %DOT GRAPH BOX
 \newcommand{\jacdot}[3]{\begin{wrapfigure}{r}{#2\linewidth}
@@ -179,7 +202,7 @@ keywordstyle={\color{black}},%                         and format them in black
 \definecolor{Light}{gray}{.90}
 \sethlcolor{Light}
 
-\let\OldTexttt\texttt
-\renewcommand{\texttt}[1]{\OldTexttt{\hl{#1}}}
+% \let\OldTexttt\texttt
+% \renewcommand{\texttt}[1]{\OldTexttt{\hl{#1}}}
 
 \usepackage{python}

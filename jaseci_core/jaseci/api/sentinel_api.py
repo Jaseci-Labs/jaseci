@@ -26,8 +26,8 @@ class sentinel_api:
         mode: str = "default",
         encoded: bool = False,
         auto_run: str = "init",
-        auto_gen_graph: bool = True,
-        ctx: dict = {},
+        auto_run_ctx: dict = {},
+        auto_create_graph: bool = True,
         set_active: bool = True,
     ):
         """
@@ -37,10 +37,11 @@ class sentinel_api:
         """
         snt = self.sentinel_ids.get_obj_by_name(name, silent=True)
         new_gph = None
+
         if not snt:
             snt = sentinel(m_id=self._m_id, h=self._h, name=name)
             self.sentinel_ids.add_obj(snt)
-            if auto_gen_graph:
+            if auto_create_graph:
                 new_gph = self.graph_create(set_active=True)
         if code:
             self.sentinel_set(
@@ -52,9 +53,7 @@ class sentinel_api:
                     "errors": snt.errors + snt.runtime_errors,
                     "success": False,
                 }
-        if snt.walker_ids.has_obj_by_name(auto_run) and self.active_gph_id:
-            nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
-            self.walker_run(name=auto_run, nd=nd, ctx=ctx, snt=snt)
+        self.attempt_auto_run(sent=snt, walk_name=auto_run, ctx=auto_run_ctx)
         if set_active:
             self.sentinel_active_set(snt)
         self.extract_snt_aliases(snt)
@@ -163,7 +162,13 @@ class sentinel_api:
         return ["Default sentinel unset"]
 
     @interface.private_api()
-    def sentinel_active_global(self, detailed: bool = False):
+    def sentinel_active_global(
+        self,
+        auto_run: str = "",
+        auto_run_ctx: dict = {},
+        auto_create_graph: bool = False,
+        detailed: bool = False,
+    ):
         """
         Sets the default master sentinel to the global sentinel
         Exclusive OR with pull strategy
@@ -175,9 +180,15 @@ class sentinel_api:
         else:
             self.active_snt_id = "global"  # Resolved in interface
             self.alias_register("active:sentinel", glob_id)
-            ret["sentinel"] = self._h.get_obj(self._m_id, uuid.UUID(glob_id)).serialize(
-                detailed=detailed
+            sent = self._h.get_obj(self._m_id, uuid.UUID(glob_id))
+            if auto_create_graph:
+                ret["graph_created"] = self.graph_create(set_active=True)
+            auto_run_ret = self.attempt_auto_run(
+                sent=sent, walk_name=auto_run, ctx=auto_run_ctx
             )
+            if auto_run_ret:
+                ret["auto_run_result"] = auto_run_ret
+            ret["sentinel"] = sent.serialize(detailed=detailed)
             ret["success"] = True
             ret["response"] = f"Global sentinel {glob_id} set as default"
         return ret
@@ -191,7 +202,7 @@ class sentinel_api:
         if id == "global":
             id = self._h.get_glob("GLOB_SENTINEL")
         if not id:
-            return {"response": "No default sentinel is selected!"}
+            return {"response": "No default sentinel is selected!", "success": False}
         else:
             default = self._h.get_obj(self._m_id, uuid.UUID(id))
             return default.serialize(detailed=detailed)
@@ -209,6 +220,11 @@ class sentinel_api:
 
     def active_snt(self):
         return self._h.get_obj(self._m_id, uuid.UUID(self.active_snt_id))
+
+    def attempt_auto_run(self, sent: sentinel, walk_name, ctx):
+        if sent.walker_ids.has_obj_by_name(walk_name) and self.active_gph_id:
+            nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
+            return self.walker_run(name=walk_name, nd=nd, ctx=ctx, snt=sent)
 
     def destroy(self):
         """

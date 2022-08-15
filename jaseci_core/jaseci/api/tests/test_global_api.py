@@ -1,4 +1,4 @@
-from .test_api_core import core_test
+from jaseci.utils.test_core import core_test
 import jaseci.tests.jac_test_code as jtc
 from jaseci.element.master import master
 from jaseci.utils.mem_hook import mem_hook
@@ -7,6 +7,8 @@ from jaseci.element.super_master import super_master
 
 class global_api_test(core_test):
     """Unit tests for Jac Global APIs"""
+
+    fixture_src = __file__
 
     def setUp(self):
         super().setUp()
@@ -70,12 +72,19 @@ class global_api_test(core_test):
         r = self.call(self.smast, api)
         self.assertIsNone(r["value"])
 
+    def test_user_create(self):
+        """Test master create operation"""
+        api = ["user_create", {"name": "yo@gmail.com"}]
+        r = self.call(self.mast, api)
+        self.assertIn("j_type", r["user"])
+        self.assertEqual(r["user"]["j_type"], "master")
+
     def test_master_create(self):
         """Test master create operation"""
         api = ["master_create", {"name": "yo@gmail.com"}]
         r = self.call(self.mast, api)
-        self.assertIn("j_type", r)
-        self.assertEqual(r["j_type"], "master")
+        self.assertIn("j_type", r["user"])
+        self.assertEqual(r["user"]["j_type"], "master")
 
     def test_master_create_error_out(self):
         """Test master create operation"""
@@ -97,8 +106,8 @@ class global_api_test(core_test):
         """Test master create operation"""
         api = ["master_createsuper", {"name": "yo3@gmail.com"}]
         r = self.call(self.smast, api)
-        self.assertIn("j_type", r)
-        self.assertEqual(r["j_type"], "super_master")
+        self.assertIn("j_type", r["user"])
+        self.assertEqual(r["user"]["j_type"], "super_master")
 
     def test_global_sentinel_set_unset(self):
         api = ["global_sentinel_set", {}]
@@ -143,3 +152,30 @@ class global_api_test(core_test):
         r = self.call(self.smast, api)
         after = len(self.smast._h.mem)
         self.assertEqual(before, after)
+
+    def test_mem_no_leak_creating_one_node_and_node_set(self):
+        mem_state = self.smast._h.mem
+        before = len(mem_state)
+        self.call(
+            self.smast,
+            ["sentinel_register", {"code": self.load_jac("hello_world.jac")}],
+        )
+        self.assertEqual(len(mem_state) - before, 8)
+        before = len(mem_state)
+        r = self.call(
+            self.smast,
+            ["walker_run", {"name": "one_node"}],
+        )
+        jid = r["report"][0]["jid"]
+        self.assertEqual(len(mem_state) - before, 2)
+        before = len(mem_state)
+        self.call(
+            self.smast,
+            ["graph_node_set", {"nd": jid, "ctx": {"msg": "goodbye world"}}],
+        )
+        self.assertEqual(len(mem_state) - before, 0)
+        r = self.call(
+            self.smast,
+            ["graph_node_get", {"nd": jid}],
+        )
+        self.assertEqual(r["msg"], "goodbye world")
