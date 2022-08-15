@@ -530,6 +530,8 @@ class interp(machine_state):
                 for i in target.obj_list():
                     for j in base.obj_list():
                         use_edge = self.run_edge_ref(kid[1], is_spawn=True)
+                        self.rt_check_type(i, node, kid[-1])
+                        self.rt_check_type(j, node, kid[-1])
                         if direction == "edge_from":
                             j.attach_inbound(i, [use_edge])
                         elif direction == "edge_to":
@@ -1665,10 +1667,13 @@ class interp(machine_state):
         """Helper to run rule if exists in execution context"""
         try:
             return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
-        except AttributeError:
-            self.rt_error(
-                f"This scope cannot execute the statement "
-                f'"{jac_ast.get_text()}" of type {jac_ast.name}',
-                jac_ast,
-            )
+        except AttributeError as e:
+            if not hasattr(self, f"run_{jac_ast.name}"):
+                self.rt_error(
+                    f"This scope cannot execute the statement "
+                    f'"{jac_ast.get_text()}" of type {jac_ast.name}',
+                    jac_ast,
+                )
+            else:
+                self.rt_error(f"{e}", jac_ast)
             return

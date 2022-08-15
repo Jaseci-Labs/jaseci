@@ -1,4 +1,5 @@
 \ProvidesPackage{book}
+\usepackage{minitoc}
 \usepackage[table]{xcolor}
 \definecolor{light-gray}{HTML}{E5E4E2}
 \definecolor{light-cyan}{HTML}{FFFEFD}
@@ -170,12 +171,12 @@ keywordstyle={\color{black}},%                         and format them in black
 %   \end{tcolorbox}
 % }
 
-\newcommand{\argspec}[1]{
+\newcommand{\argspec}[2]{
 \begin{tcolorbox}[enhanced,attach boxed title to top center={yshift=-3mm,yshifttext=-1mm},
     colback=blue!2!white,colframe=blue!75!black,coltitle=black,colbacktitle=green!5!white,
-    title=\texttt{Parameters},fonttitle=\bfseries,
+    title=\texttt{#1},fonttitle=\bfseries,
     boxed title style={size=small,colframe=red!50!black},boxrule=0.5pt, ]
-    #1
+    #2
   \end{tcolorbox}
 }
 
