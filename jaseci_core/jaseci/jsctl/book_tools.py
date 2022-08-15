@@ -20,6 +20,17 @@ class book:
             default = sig.parameters[i].default
             if default == sig.parameters[i].empty:
                 ret += " (*req)"
+            else:
+                # if isinstance(default, str):
+                #     default = default.encode("unicode_escape").lstrip("b")
+                default = (
+                    str(default)
+                    .replace("_", "\\_")
+                    .replace("{", "\\{")
+                    .replace("}", "\\}")
+                    .replace("\n", "\\\\n")
+                )
+                ret += f" ({default})"
         return ret if len(ret) else "n/a"
 
     def bookgen_api_cheatsheet(self, root, out=None, str=""):

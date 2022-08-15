@@ -21,10 +21,13 @@ def max(item_set: jac_set):
     Max based on anchor value
 
     This action will return the maximum element in a list of nodes
-    and/or edges. This action exclusively utilizes the anchor variable
-    of the node/edge arhcitype as the representative field for
-    performing the  comparison in ranking. This action does not support
-    arhcitypes lacking an anchor.
+    and/or edges based on an anchor has variable. Since each node or edge can only
+    specify a single anchor this action enables a handy short hand for utilizing the
+    anchor variable as the representative field for performing the  comparison in
+    ranking. For example, if you have a node called \\lstinline{movie_review} with a
+    field \\lstinline{has anchor score = .5;} that changes based on sentiment
+    analysis, using this action will return the node with the highest score from the
+    input list of nodes. This action does not support arhcitypes lacking an anchor.
 
     :param item_set: A list of node and or edges to identify the
         maximum element based on their respective anchor values
@@ -51,8 +54,8 @@ def min(item_set: jac_set):
     This action will return the minimum element in a list of nodes
     and/or edges. This action exclusively utilizes the anchor variable
     of the node/edge arhcitype as the representative field for
-    performing the  comparison in ranking. This action does not support
-    arhcitypes lacking an anchor.
+    performing the comparison in ranking. This action does not support
+    arhcitypes lacking an anchor. (see action max for an example)
 
     :param item_set: A list of node and or edges to identify the
         minimum element based on their respective anchor values
