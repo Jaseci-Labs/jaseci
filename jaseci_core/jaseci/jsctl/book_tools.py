@@ -8,10 +8,10 @@ import jaseci
 
 
 class book:
-    def format_params(self, sig):
+    def format_params(self, sig, ignore_args=[]):
         ret = ""
         for i in sig.parameters:
-            if i == "self":
+            if i == "self" or i in ignore_args:
                 continue
             if len(ret):
                 ret += ", "
@@ -80,13 +80,13 @@ class book:
             )
         return all_action_sets
 
-    def func_to_sexy_box(self, fname, func):
+    def func_to_sexy_box(self, fname, func, ignore_args=[]):
         doc = getdoc(func)
         line = (
             "\\apispec{"
             + fname
             + "}{"
-            + f"{self.format_params(signature(func))}"
+            + f"{self.format_params(signature(func), ignore_args=ignore_args)}"
             + "}\n"
         )
         parsed_doc = parse(doc)
@@ -129,7 +129,9 @@ class book:
             for j in i:
                 out.append(
                     self.func_to_sexy_box(
-                        ".".join([lib, j[0].replace("_", "\\_")]), j[1]
+                        ".".join([lib, j[0].replace("_", "\\_")]),
+                        j[1],
+                        ignore_args=["meta"],
                     )
                 )
         return "".join(out)

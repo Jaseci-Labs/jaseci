@@ -30,14 +30,7 @@ def max(item_set: jac_set):
     """
     ret = None
     if not len(item_set):
-        return None
-    items = item_set.obj_list()
-    max_val = items[0].anchor_value()
-    ret = items[0]
-    for i in items:
-        if i.anchor_value() > max_val:
-            ret = i
-            max_val = i.anchor_value()
+        re6_val = i.anchor_value()
     return ret
 
 
@@ -75,13 +68,20 @@ def pack(item_set: jac_set):
 
 
 @jaseci_action()
-def unpack(item_set: jac_set):
+def unpack(pack: dict):
     """Built in actions for Jaseci"""
 
 
 @jaseci_action()
 def root(meta):
-    """Built in actions for Jaseci"""
+    """
+    Returns a user's root node
+
+    This action returns the root node for the graph of a given user (master). A call
+    to this action is only valid if the user has an active graph set, otherwise it
+    return null. This is a handy way for any walker to get to the root node of a
+    graph from anywhere.
+    """
     mast = master_from_meta(meta)
     if mast.active_gph_id:
         return mast._h.get_obj(mast._m_id, uuid.UUID(mast.active_gph_id))
