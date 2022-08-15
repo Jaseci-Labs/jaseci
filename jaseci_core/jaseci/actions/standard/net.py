@@ -10,6 +10,8 @@ is simply a list that only contains such elements.
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta
 from jaseci.jac.jac_set import jac_set
+from jaseci.graph.node import node
+from jaseci.graph.edge import edge
 import uuid
 
 
@@ -30,7 +32,14 @@ def max(item_set: jac_set):
     """
     ret = None
     if not len(item_set):
-        re6_val = i.anchor_value()
+        return None
+    items = item_set.obj_list()
+    max_val = items[0].anchor_value()
+    ret = items[0]
+    for i in items:
+        if i.anchor_value() > max_val:
+            ret = i
+            max_val = i.anchor_value()
     return ret
 
 
@@ -65,11 +74,59 @@ def min(item_set: jac_set):
 @jaseci_action()
 def pack(item_set: jac_set):
     """Built in actions for Jaseci"""
+    graph_dict = {"nodes": [], "edges": []}
+    idx_map = {}
+    edge_set = jac_set()
+    for i in item_set.obj_list():
+        if isinstance(i, node):
+            node_pack = {"name": i.name, "ctx": i.context}
+            idx_map[i.jid] = len(graph_dict["nodes"])
+            graph_dict["nodes"].append(node_pack)
+            for j in i.attached_edges():
+                edge_set.add_obj(j)
+    for i in edge_set:
+        fnd = i.from_node()
+        tnd = i.to_node()
+        if fnd.jid in idx_map.keys() and tnd.jid in idx_map.keys():
+            edge_pack = {
+                "name": i.name,
+                "ctx": i.context,
+                "connect": [idx_map[fnd.jid], idx_map[tnd.jid]],
+                "bi_dir": i.is_bidirected(),
+            }
+            graph_dict["edges"].append(edge_pack)
+    return graph_dict
 
 
 @jaseci_action()
-def unpack(pack: dict):
+def unpack(graph_dict: dict, meta):
     """Built in actions for Jaseci"""
+    mast = master_from_meta(meta)
+    item_set = jac_set()
+    node_list = []
+    for i in graph_dict["nodes"]:
+        node_list.append(
+            node(
+                m_id=mast._m_id,
+                h=mast._h,
+                kind="node",
+                name=i["name"],
+            )
+        )
+        node_list[-1].context = i.context
+        item_set.add_obj(node_list[-1])
+    for i in graph_dict["edges"]:
+        this_edge = edge(
+            m_id=mast._m_id,
+            h=mast._h,
+            kind="edge",
+            name=i["name"],
+        )
+        this_edge.connects(
+            node_list[i["connect"][0]], node_list[i["connect"][1]], i["bi_dir"]
+        )
+        item_set.add_obj(this_edge)
+    return item_set
 
 
 @jaseci_action()
