@@ -72,7 +72,7 @@ def min(item_set: jac_set):
 
 
 @jaseci_action()
-def pack(item_set: jac_set):
+def pack(item_set: jac_set, destroy: bool = False):
     """Built in actions for Jaseci"""
     graph_dict = {"nodes": [], "edges": []}
     idx_map = {}
@@ -95,6 +95,10 @@ def pack(item_set: jac_set):
                 "bi_dir": i.is_bidirected(),
             }
             graph_dict["edges"].append(edge_pack)
+    if destroy:
+        for i in item_set.obj_list():
+            if isinstance(i, node) and i.name != "root":
+                i.destroy()
     return graph_dict
 
 

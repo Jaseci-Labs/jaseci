@@ -25,7 +25,6 @@ class net_lib_test(core_test):
         self.assertEqual(len(ret["report"][0]["edges"]), 4)
 
     def test_pack_unpack(self):
-        self.logger_on()
         self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],
@@ -34,10 +33,21 @@ class net_lib_test(core_test):
         self.assertEqual(ret["report"][0], 16)
 
     def test_pack_unpack_terse(self):
-        self.logger_on()
         self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "pack_unpack_terse"}])
         self.assertEqual(ret["report"][0], 16)
+
+    def test_pack_and_destroy(self):
+
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],
+        )
+        before = len(self.smast._h.mem)
+        ret = self.call(self.mast, ["walker_run", {"name": "pack_it_destroy"}])
+        self.assertEqual(len(ret["report"]), 1)
+        after = len(self.smast._h.mem)
+        self.assertEqual(before, after)

@@ -73,3 +73,22 @@ walker pack_unpack_terse {
         report count;
     }
 }
+
+walker pack_it_destroy {
+    has to_pack=[];
+    with entry {
+        t=here;
+        to_pack.l::append(here);
+        for i=0 to i<5 by i+=1 {
+            to_pack.l::append(
+                spawn t --> node::simple(id=global.count)
+            );
+            t=spawn t --> node::simple(id=global.count);
+            to_pack.l::append(t);
+            global.count+=1;
+        }
+        net.pack(to_pack, true);
+    }
+    take -->;
+    report here;
+}

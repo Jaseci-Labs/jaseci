@@ -1667,10 +1667,13 @@ class interp(machine_state):
         """Helper to run rule if exists in execution context"""
         try:
             return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
-        except AttributeError:
-            self.rt_error(
-                f"This scope cannot execute the statement "
-                f'"{jac_ast.get_text()}" of type {jac_ast.name}',
-                jac_ast,
-            )
+        except AttributeError as e:
+            if not hasattr(self, f"run_{jac_ast.name}"):
+                self.rt_error(
+                    f"This scope cannot execute the statement "
+                    f'"{jac_ast.get_text()}" of type {jac_ast.name}',
+                    jac_ast,
+                )
+            else:
+                self.rt_error(f"{e}", jac_ast)
             return
