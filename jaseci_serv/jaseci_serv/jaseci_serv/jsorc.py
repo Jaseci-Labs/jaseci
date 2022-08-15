@@ -138,6 +138,9 @@ def remoteK8sConf(K8sURL: str):
     k8sconf.verify_ssl = False
     return k8sconf
 
+def inclusterK8sConf():
+    return config.load_incluster_config()
+
 if __name__ == "__main__":
     monitorThread = startMonitoring(k8sConf = remoteK8sConf("http://clarity31.eecs.umich.edu:8084"), prometheusURL = "http://clarity31.eecs.umich.edu:8082")
     waitMonitoring(monitorThread)
