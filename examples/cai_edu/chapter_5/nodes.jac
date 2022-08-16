@@ -76,9 +76,10 @@ node collect_info:va_state {
         elif ("address" in visitor.extracted_entities and
                 "name" not in visitor.extracted_entities):
             visitor.response = "What is your name?";
-        else:
+        else {
             visitor.response =
                 "To set you up with a test drive, we will need your name and address.";
+        }
     }
 }
 

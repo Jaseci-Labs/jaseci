@@ -55,7 +55,7 @@ walker ingest_faq {
 graph tesla_sales_rep {
     has anchor state_cai_root;
     spawn {
-        state_cai_root = spawn node::cai_root;
+        state_cai_root = spawn node::cai_va_root;
         state_collect_info  = spawn node::collect_info;
         state_confirmation = spawn node::confirmation;
         state_confirmed = spawn node::confirmed;
