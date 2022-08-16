@@ -1,9 +1,7 @@
 import {*} with "./nodes.jac";
 import {*} with "./edges.jac";
-
-import {*} with "./biencoder.jac";
-
-import {*} with "./flair_ner.jac";
+import {*} with "./bi_enc.jac";
+import {*} with "./ner.jac";
 
 walker talk {
     has question="";
@@ -35,7 +33,6 @@ walker talk {
         take -[entity_transition(entities==extracted_entities.d::keys)]-> node::cai_state else {
             take -[intent_transition(intent==predicted_intent)]-> node::cai_state else {
                 take -[answer_transition(answer==matched_answer)]-> node::cai_state else {
-
                     here::nlg;
                     std.out(response);
                     question = "";

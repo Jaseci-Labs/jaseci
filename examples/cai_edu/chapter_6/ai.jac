@@ -1,32 +1,26 @@
-walker train_and_eval_model {
-    has train_file = "data/clf_train.json";
+node ai_model {
+    can train with train entry {}
+    can test_model with test_model entry {}
+    can eval with eval entry {
+        ::train;
+        ::test_model;
+    }
+    can infer with infer entry {}
 }
 
-node ai {
-    can train_and_eval with train_and_eval_model entry {
-        if(visitor.train_file.length > 1){
-            if(file.load_json(visitor.train_file)){
-                dataset = file.load_json(visitor.train_file);
-            }
-        }
-    }
+walker train {
+    has train_file, num_train_epochs, from_scratch;
+    has batch_size, learning_rate;
 }
 
-node classifier:ai{
+walker test_model {
+    has eval_file;
+}
 
-    can train_and_eval with train_and_eval_model entry {
-        ::ai:train_and_eval;
-        here::infer;
-    }
+walker eval {
+    has train_file, eval_file, num_train_epochs, from_scratch;
+}
 
-    can train {
-        train_data = file.load_json(visitor.train_file);
-
-        ::preprocess_dataset;
-        ::train_model;
-    }
-
-    can preprocess_dataset {}
-
-    can train_model {}
+walker infer {
+    has input;
 }
