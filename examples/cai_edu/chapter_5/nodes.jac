@@ -13,13 +13,25 @@ node cai_state {
 # Top level root node for the conversational AI
 # Classify incoming request to an action-oriented flow
 # or FAQ
-# node cai_root:cai_state {
-#     has name = "cai_root";
-#     can use.text_classify;
-#     can nlu {
-#     }
-# }
-
+node cai_root {
+    has name = "cai_root";
+    can use.text_classify;
+    can categorize {
+        res = use.text_classify(
+            text=visitor.question,
+            classes=[
+                "i want to test drive",
+                "I have a Model 3 reservation, how do I configure my order",
+                "How do I order a tesla",
+                "Can I request a Test Drive"
+            ]
+        );
+        if (res["match_idx"] == 0):
+            visitor.question_type = "va";
+        else:
+            visitor.question_type = "faq";
+    }
+}
 
 node va_state:cai_state {
     has example_entities = {
@@ -45,8 +57,6 @@ node va_state:cai_state {
 
     # Extract words of interests from the question
     can extract_entities {
-        std.log("in extract_entities for va_state");
-        std.log(visitor.question.str::lower);
         # Note: a simple hardcoded entity extraction model
         # To be replaced with an AI model in a later chapter
         if ("name" in visitor.question.str::lower):
@@ -65,7 +75,6 @@ node va_state:cai_state {
 
     # Process incoming request through NLU engines
     can nlu {
-        std.log("in NLU for va_state");
         ::classify_intent;
         ::extract_entities;
     }
@@ -122,8 +131,7 @@ node faq_state:cai_state {
     has answer;
     can use.qa_classify;
     can nlu {
-        answers = [];
-        for a in -[faq_transition]->.edge: answers += [a.answer];
+        answers = -[answer_transition]->.answer;
         if (answers) {
             res = use.qa_classify(
                 text = visitor.question,
