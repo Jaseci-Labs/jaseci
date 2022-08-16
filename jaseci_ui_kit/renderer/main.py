@@ -8,10 +8,11 @@ from pydantic import BaseModel
 import json
 
 templates = Jinja2Templates(directory="templates")
-app = FastAPI(title="Jaseci UIKit Renderer",version="1.0")
+app = FastAPI(title="Jaseci UIKit Renderer", version="1.0")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-loaded_json = {};
+loaded_json = {}
+
 
 class Route(BaseModel):
     route_name: str
@@ -22,14 +23,17 @@ class Route(BaseModel):
 def read_root():
     return {"Hello": "World"}
 
+
 @app.post("/load-json")
 def load_json(request: Request, route: Route):
     global loaded_json
-   
+
     loaded_json[route.route_name] = route.content
     return {}
 
+
 @app.get("/site/{route}")
 async def home(request: Request, route: str):
-    return templates.TemplateResponse("site/index.html", {"request": request, "json": loaded_json[route]})
-
+    return templates.TemplateResponse(
+        "site/index.html", {"request": {}, "json": loaded_json[route]}
+    )
