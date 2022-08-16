@@ -1,6 +1,6 @@
 import { Component, Element, Fragment, h, Prop } from '@stencil/core';
 import clsx from 'clsx';
-import { getComponentByName, setUpEvents } from '../../utils/events';
+import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
 
 @Component({

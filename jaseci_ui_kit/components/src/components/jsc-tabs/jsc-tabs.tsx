@@ -2,7 +2,6 @@ import { Component, Element, Fragment, h, Method, Prop } from '@stencil/core';
 import clsx from 'clsx';
 import { nanoid } from 'nanoid';
 import { getProp } from '../../store/propsStore';
-import { setSelectedTab, tabsStore } from '../../store/tabs';
 import { setUpEvents } from '../../utils/events';
 import { getOperations, renderComponentTree } from '../../utils/utils';
 
