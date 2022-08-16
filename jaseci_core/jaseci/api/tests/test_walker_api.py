@@ -25,6 +25,38 @@ class walker_api_test(core_test):
         ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
         self.assertEqual(ret["report"], ["entering", 7])
 
+    def test_walker_yield_update(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
+        self.assertEqual(ret["report"], ["entering", 7])
+        ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
+        self.assertEqual(ret["report"], [8])
+        ret = self.call(
+            self.mast, ["walker_run", {"name": "test_yield", "ctx": {"a": 2}}]
+        )
+        self.assertEqual(ret["report"], [3])
+        ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
+        self.assertEqual(ret["report"], [4])
+        ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
+        self.assertEqual(ret["report"], [5])
+        ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
+        self.assertEqual(ret["report"], [6])
+        ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
+        self.assertEqual(ret["report"], [7])
+        ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
+        self.assertEqual(ret["report"], [8])
+        ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
+        self.assertEqual(ret["report"], [9])
+        ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
+        self.assertEqual(ret["report"], [10])
+        ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
+        self.assertEqual(ret["report"], ["should start over now", "exiting"])
+        ret = self.call(self.mast, ["walker_run", {"name": "test_yield"}])
+        self.assertEqual(ret["report"], ["entering", 7])
+
     def test_walker_yield_report(self):
         self.call(
             self.mast,
