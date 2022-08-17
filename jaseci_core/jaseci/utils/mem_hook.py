@@ -1,6 +1,6 @@
 from .id_list import id_list
 from .utils import logger
-import jsorc
+from . import jsorc
 
 import json
 
