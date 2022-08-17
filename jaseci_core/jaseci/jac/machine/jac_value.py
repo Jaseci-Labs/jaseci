@@ -6,6 +6,7 @@ Representations for all jac runtime variables
 from jaseci.element.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
+from jaseci.graph.graph import graph
 from jaseci.jac.jac_set import jac_set
 import uuid
 
@@ -41,7 +42,7 @@ def jac_type_wrap(val):
             val = JAC_TYPE.DICT
         elif val == bool:
             val = JAC_TYPE.BOOL
-        elif val == node:
+        elif val in [node, graph]:
             val = JAC_TYPE.NODE
         elif val == edge:
             val = JAC_TYPE.EDGE
@@ -183,19 +184,16 @@ class jac_value:
 
     def self_destruct(self, jac_ast):
         if self.is_element and self.name in self.ctx.keys():
-            self.parent.rt_error(
-                f"Deleting {self.name} in graph element "
-                f"{type(self.is_element)} is not allowed, try setting to null",
-                jac_ast,
-            )
-            return
-        if self.ctx is not None:
+            self.ctx[self.name] = None  # assumes interp has destroyed element
+        elif self.ctx is not None:
             try:
                 del self.ctx[self.name]
             except Exception as e:
                 self.parent.rt_error(f"{e}", jac_ast)
         else:
-            self.parent.rt_error(f"{self.value} is not destroyable", jac_ast)
+            self.parent.rt_error(
+                f"{self.value} is not destroyable, try setting to null", jac_ast
+            )
 
     def wrap(self, serialize_mode=False):
         "Caller for recursive wrap"

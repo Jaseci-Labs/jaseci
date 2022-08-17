@@ -1,795 +1,767 @@
+# Jaseci Kit
+Jaseci Kit is a collection of state-of-the-art machine learning models that are readily available to load into jaseci.
 
-# What is JSKit ?
-JSKit contains the SOTA models that's made readily available for production usage. Let's look at the available models and there usage.
+# Model Directory
 
-## 1. Encoders
-Encoders module can be used for intent classification, it contains the Bi-Encoder and Poly-Encoder(coming soon) models.
+## Encoders
+| Module      | Model Name    | Example                            | Type                    | Status       | Description                                                 | Resources                                 |
+| ----------- | ------------- | ---------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
+| `use_enc`   | USE Encoder   | [Link](#use-encoder-use_enc)       | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
+| `use_qa`    | USE QA        | [Link](#use-qa-use_qa)             | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
+| `fast_enc`  | FastText      | [Link](#fasttext-encoder-fast_enc) | Training req.           | Ready        | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
+| `bi_enc`    | Bi-encoder    | [Link](#bi-encoder-bi_enc)         | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
+| `poly_enc`  | Poly-encoder  |                                    | Training req./Zero-shot | Experimental | Poly Encoder                                                | [Paper](https://arxiv.org/abs/1905.01969) |
+| `cross_enc` | Cross-encoder |                                    | Training req./Zero-shot | Experimental | Cross Encoder                                               | [Paper](https://arxiv.org/abs/1905.01969) |
 
-### 1.1. List of API's  available
- #### **cosine_sim** - to calculate the similarity between two List of embeddings
- Request :
-```
-requests.post(
-        "/cosine_sim/",
-        json={
-                "vec_a":  [-0.1938219964504242,..........],
-                "vec_b": [-0.18731489777565002,,..........],
-                "meta": "default"
-            }
-        )
-```
-Response:
+## Entity
+| Module                | Model Name      | Example                                               | Type           | Status       | Description                                                       | Resources                                                                                               |
+| --------------------- | --------------- | ----------------------------------------------------- | -------------- | ------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `ent_ext`/ `lstm_ner` | Flair NER       | [Link](#entity-extraction-ent_ext)                    | Training req.  | Ready        | Entity extraction using the FLAIR NER framework                   |                                                                                                         |
+| `tfm_ner`             | Transformer NER | [Link](#entity-extraction-using-transformers-tfm_ner) | Training req.  | Ready        | Token classification on Transformer models, can be used for NER   | [Huggingface](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification) |
+| `lstm_ner`            | LSTM NER        |                                                       | Traininig req. | Experimental | Entity extraction/Slot filling via Long-short Term Memory Network |                                                                                                         |
 
-```
-0.90
+## Summarization
+| Module      | Model Name | Example                         | Type             | Status | Description                                  | Resources                                                                                                    |
+| ----------- | ---------- | ------------------------------- | ---------------- | ------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `cl_summer` | Summarizer | [Link](#summarizer-clsummer)    | No Training req. | Ready  | Extractive Summarization using Sumy          | [Doc.](https://miso-belica.github.io/sumy/)                                                                  |
+| `t5_sum`    | Summarizer | [Link](#t5-summarization-t5sum) | No Training req. | Ready  | Abstractive Summarization using the T5 Model | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf) |
+
+
+## Text Processing
+| Module     | Model Name     | Example                          | Type             | Status      | Description                           | Resources                                                           |
+| ---------- | -------------- | -------------------------------- | ---------------- | ----------- | ------------------------------------- | ------------------------------------------------------------------- |
+| `text_seg` | Text Segmenter | [Link](#text-segmenter-text_seg) | No Training req. | Experimetal | Topical Change Detection in Documents | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec) |
+
+
+## Non-AI Tools
+| Module    | Model Name    | Example                        | Status | Description                                | Resources                                        |
+| --------- | ------------- | ------------------------------ | ------ | ------------------------------------------ | ------------------------------------------------ |
+| `pdf_ext` | PDF Extractor | [Link](#pdf-extractor-pdf_ext) | Ready  | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
+
+# Examples
+
+## Encoders
+
+###  USE Encoder (`use_enc`)
+`use_enc` module uses the universal sentence encoder to generate sentence level embeddings.
+The sentence level embeddings can then be used to calculate the similarity between two given text via cosine similarity and/or dot product.
+
+* `encode`: encodes the text and returns a embedding of 512 length
+    * Alternate name: `get_embedding`
+    * Input:
+        * `text` (string or list of strings): text to be encoded
+    * Return: Encoded embeddings
+* `cos_sim_score`:
+    * Input:
+        * `q_emb` (string or list of strings): first text to be embeded
+        * `a_emb` (string or list of strings): second text to be embedded
+    * Return: cosine similarity score
+* `text_simliarity`: calculate the simlarity score between given texts
+    * Input:
+        * `text1` (string): first text
+        * `text2` (string): second text
+    * Return: cosine similarity score
+* `text_classify`: use USE encoder as a classifier
+    * Input:
+        * `text` (string): text to classify
+        * `classes` (list of strings): candidate classification classes
+
+#### Example Jac Usage:
+```jac
+# Use USE encoder for zero-shot intent classification
+walker use_enc_example {
+    can use.encode, use.cos_sim_score;
+    has text = "What is the weather tomorrow?";
+    has candidates = [
+        "weather forecast",
+        "ask for direction",
+        "order food"
+    ];
+    text_emb = use.encode(text)[0];
+    cand_embs = use.encode(candidates); # use.encode handles string/list
+
+    max_score = 0;
+    max_cand = 0;
+    cand_idx = 0;
+    for cand_emb in cand_embs {
+        cos_score = use.cos_sim_score(cand_emb, text_emb);
+        if (cos_score > max_score) {
+            max_score = cos_score;
+            max_cand = cand_idx;
+        }
+        cand_idx += 1;
+    }
+
+    predicted_cand = candidates[max_cand];
+}
 ```
 
- #### **dot_prod** - to calculate the dot-product between two List of embeddings
- Request :
+###  USE QA (`use_qa`)
+`use_qa` module uses the multilingual-qa to generate sentence level embeddings.
+The sentence level embeddings can then be used to calculate best match between question and available answers via cosine similarity and/or dist_score.
 
- ```
-requests.post(
-        "/dot_prod/",
-        json={
-                "vec_a":  [-0.1938219964504242,..........],
-                "vec_b": [-0.18731489777565002,,..........]
-            }
-        )
-```
-Response:
-```
-48.023
-```
- #### **train** - for training the model in production environment
- Request :
-```
-requests.post(
-            "/train/",
-            json={
-                "contexts":[
-                    "add godmusic to my latin dance cardio playlist",
-                    "add godmusic to my latin dance cardio playlist"
-                ],
-                "candidates":[
-                    "addtoplaylist",
-                    "getweather"
-                ],
-                "labels ":[
-                    1,
-                    0
-                ]
-            }
-        )
-```
-Response :
-```
-"Model Training is complete."
-```
- #### **infer** - to get the best matching candidate from the list provided
- Request :
-```
-requests.post(
-            "/infer/",
-            json={
-                "contexts":[
-                    "What is the cheapest restaurant between Balthazar and Lombardi's?"
-                ],
-                "candidates":[
-                    'searchplace',
-                    'getplacedetails',
-                    'bookrestaurant',
-                    'gettrafficinformation',
-                    'compareplaces',
-                    'sharecurrentlocation',
-                    'requestride',
-                    'getdirections',
-                    'shareeta',
-                    'getweather'
-                ]
-            }
-        )
- ```
-Response:
-```
-"bookrestaurant"
-```
- #### **get_context_emb** - to get the embedding for contexts data
- Request :
-```
-requests.post(
-            "/get_context_emb/",
-            json={
-                "contexts": ["i give this current textbook a rating value of 1 and a best rating of 6"]
-                }
-            )
-```
-Response :
-```
-[-0.1938219964504242,..........]
-```
- #### **get_candidate_emb** - for getting the embedding for candidates data
- Request :
-```
-requests.post(
-            "/get_candidate_emb/",
-            json={
-                "candidates": ["RateBook"]
-                }
-            )
-```
-Response :
-```
-[-0.18731489777565002,,..........]
-```
- #### **set_train_config** - for setting the training parameters
-Request :
+* `question_encode`: encodes question and returns a embedding of 512 length
+    * Alternate name: `enc_question`
+    * Input:
+        * `text` (string or list of strings): question to be encoded
+    * Return: Encoded embeddings
+* `answer_encode`: encodes answers and returns a embedding of 512 length
+    * Alternate name: `enc_answer`
+    * Input:
+        * `text` (string or list of strings): question to be encoded
+        * `context` (string or list of strings): usually the text around the answer text, for example it could be 2 sentences before plus 2 sentences after.
+    * Return: Encoded embeddings
+* `cos_sim_score`:
+    * Input:
+        * `q_emb` (string or list of strings): first embeded text
+        * `a_emb` (string or list of strings): second embeded text
+    * Return: cosine similarity score
 
+* `dist_score`:
+    * Input:
+        * `q_emb` (string or list of strings): first embeded text
+        * `a_emb` (string or list of strings): second embeded text
+    * Return: inner product score
+* `question_similarity`: calculate the simlarity score between given questions
+    * Input:
+        * `text1` (string): first text
+        * `text2` (string): second text
+    * Return: cosine similarity score
+* `question_classify`: use USE QA as question classifier
+    * Input:
+        * `text` (string): text to classify
+        * `classes` (list of strings): candidate classification classes
+* `answer_similarity`: calculate the simlarity score between given answer
+    * Input:
+        * `text1` (string): first text
+        * `text2` (string): second text
+    * Return: cosine similarity score
+* `answer_classify`: use USE encoder as answer classifier
+    * Input:
+        * `text` (string): text to classify
+        * `classes` (list of strings): candidate classification classes
+* `qa_similarity`: calculate the simlarity score between question and answer
+    * Input:
+        * `text1` (string): first text
+        * `text2` (string): second text
+    * Return: cosine similarity score
+* `qa_classify`: use USE encoder as a QA classifier
+    * Input:
+        * `text` (string): text to classify
+        * `classes` (list of strings): candidate classification classes
+    * Returns: 
+#### Example Jac Usage:
+```jac
+# Use USE_QA model for zero-shot text classification
+walker use_qa_example {
+    can use.qa_similarity;
+    has questions = "What is your age?";
+    has responses = ["I am 20 years old.", "good morning"];
+    has response_contexts = ["I will be 21 next year.", "great day."];
+
+    max_score = 0;
+    max_cand = 0;
+    cand_idx = 0;
+    for response in responses {
+        cos_score = use.qa_similarity(text1=questions,text2=response);
+        std.out(cos_score);
+        if (cos_score > max_score) {
+            max_score = cos_score;
+            max_cand = cand_idx;
+        }
+        cand_idx += 1;
+    }
+
+    predicted_cand = responses[max_cand];
+}
 ```
-requests.post
-(
-"/set_train_config/",
-    json={
-        training_parameters:{
-            "max_contexts_length": 128,
-            "max_candidate_length": 64,
-            "train_batch_size": 8,
-            "eval_batch_size": 2,
-            "max_history": 4,
-            "learning_rate": 1e-3,
-            "weight_decay": 0.01,
-            "warmup_steps": 100,
-            "adam_epsilon": 1e-6,
-            "max_grad_norm": 1,
-            "num_train_epochs": 20,
-            "gradient_accumulation_steps": 1,
-            "fp16": false,
-            "fp16_opt_level": "O1",
-            "gpu": 0,
-            "basepath": "logoutput",
-            "seed": 12345,
-            "device": "cuda"
+
+###  BI-Encoder (`bi_enc`)
+`bi_enc`  module can be used for intent classification, it takes contexts and candidates, to predict the best suitable candidate for each context. You can train the module on custom data to behave accordingly.
+
+* `dot_prod`:
+    * Input:
+        * `vec_a` (list of float): first embeded text
+        * `vec_b` (list of float): second embeded text
+    * Return: dot product score
+* `cos_sim_score`:
+    * Input:
+        * `vec_a` (list of float): first embeded text
+        * `vec_b` (list of float): second embeded text
+    * Return: cosine similarity score
+* `infer`: predits the most suitable candidate for a provided context, takes text or embedding 
+    * Input:
+        * `contexts` (string or list of strings): context which needs to be classified
+        * `candidates` (string or list of strings): list of candidates for the context 
+        * `context_type` (string): can be text or embedding type
+        * `candidate_type` (string): can be text or embedding type
+    * Return: a dictionary of similarity score for each candidate and context 
+* `train`: used to train the Bi-Encoder for custom input
+    * Input:
+        * `dataset` (Dict): dictionary of candidates and suportting contexts for each candidate
+        * `from_scratch` (bool): if set to true train the model from scratch otherwise trains incrementally 
+        * `training_parameters` (Dict): dictionary of training parameters
+    * Returns: text when model training is completed
+* `get_context_emb`:  
+    * Alternate name: `encode_context`
+    * Input:
+        * `contexts` (string or list of strings): context which needs to be encoded
+    * Returns a list of embedding of 128 length for tiny bert
+* `get_candidate_emb`:  
+    * Alternate name: `encode_candidate`
+    * Input:
+        * `candidates` (string or list of strings): candidates which needs to be encoded
+    * Returns: list of embedding of 128 length for tiny bert
+* `get_train_config`:  
+    * Input: None
+    * Returns: json of all the current training configuration
+     ```
+     {
+        "max_contexts_length": 128,
+        "max_candidate_length": 64,
+        "train_batch_size": 8,
+        "eval_batch_size": 2,
+        "max_history": 4,
+        "learning_rate": 0.001,
+        "weight_decay": 0.01,
+        "warmup_steps": 100,
+        "adam_epsilon": 1e-06,
+        "max_grad_norm": 1,
+        "num_train_epochs": 10,
+        "gradient_accumulation_steps": 1,
+        "fp16": false,
+        "fp16_opt_level": "O1",
+        "gpu": 0,
+        "basepath": "logoutput",
+        "seed": 12345,
+        "device": "cuda"
+    }
+    ```
+* `set_train_config`:  
+    * Input 
+        * `train_parameters` (Dict): dictionary of training parameters. See the json example above under `get_train_config` for the list of available training parameters.
+    * Returns: "Config setup is complete." if train configuration is completed successfully
+* `get_model_config`:  
+    * Input: None
+    * Returns: json of all the current model configuration
+    ```
+    {
+        "shared": false,
+        "model_name": "prajjwal1/bert-tiny",
+        "model_save_path": "modeloutput",
+        "loss_function": "mse",
+        "loss_type": "dot"
+    }
+    ```
+* `set_model_config`:  
+    * Input 
+        * `model_parameters`(Dict): dictionary of model parameters. See the json example above under `get_model_config` for the list of available training parameters.
+    * Returns: "Config setup is complete." if model configuration is completed successfully
+* `save_model`:  
+    * Input 
+        * `model_path` (string): the path to save model
+    * Returns: "[Saved model at] : <model_path>" if model successfully saved
+* `load_model`:  
+    * Input 
+        * `model_path` (string): the path to save model
+    * Returns: "[loaded model from] : <model_path>" if model successfully loaded
+
+
+#### Example Jac Usage:
+```jac
+# Train an bi-encoder model for intent classification
+walker bi_enc_example{
+    has train_file = "train_bi.json";
+    has from_scratch = true;
+    has num_train_epochs = 20;
+    has contexts= ["Share my location with Hillary's sister"];
+    has candidates=[
+        "searchplace",
+        "getplacedetails",
+        "bookrestaurant",
+        "gettrafficinformation",
+        "compareplaces",
+        "sharecurrentlocation",
+        "requestride",
+        "getdirections",
+        "shareeta",
+        "getweather"
+    ];
+
+    can bi_enc.train,bi_enc.infer;
+
+    train_data = file.load_json(train_file);
+    
+    # Train the model 
+    bi_enc.train(
+        dataset=train_data,
+        from_scratch=from_scratch,
+        training_parameters={
+            "num_train_epochs": num_train_epochs
+        }
+    );
+
+    # Use the model to perform inference
+    # returns the list of context with the suitable candidates
+    resp_data = bi_enc.infer(
+        contexts=contexts,
+        candidates=candidates,
+        context_type="text",
+        candidate_type="text"
+    );
+
+    # Iterate through the candidate labels and their predicted scores
+    max_score = 0;
+    max_intent = "";
+    pred=resp_data[0];
+    for j=0 to j<pred["candidate"].length by j+=1 {
+        if (pred["score"][j] > max_score){
+            max_intent = pred["candidate"][j];
+            max_score = pred["score"][j];
         }
     }
-)
-```
-Response :
-
-```
-"Config setup is complete."
-```
-
- #### **get_train_config** - for getting active training parameters
-Request :
-
-```
-requests.post
-(
-"/get_train_config/",
-    json={}
-)
-```
-Response :
-
-```
-{
-    "max_contexts_length": 128,
-    "max_candidate_length": 64,
-    "train_batch_size": 8,
-    "eval_batch_size": 2,
-    "max_history": 4,
-    "learning_rate": 1e-3,
-    "weight_decay": 0.01,
-    "warmup_steps": 100,
-    "adam_epsilon": 1e-6,
-    "max_grad_norm": 1,
-    "num_train_epochs": 20,
-    "gradient_accumulation_steps": 1,
-    "fp16": false,
-    "fp16_opt_level": "O1",
-    "gpu": 0,
-    "basepath": "logoutput",
-    "seed": 12345,
-    "device": "cuda"
+    std.out("predicted intent : ",max_intent ," Conf_Score:", max_score);
 }
 ```
 
+###  FastText Encoder (`fast_enc`)
+`fast_enc` module uses the facebook's fasttext -- efficient learning of word representations and sentence classification.
 
- #### **get_model_config** - for getting active model parameters
-Request :
+* `train`: used to train the Bi-Encoder for custom input
+    * Input:
+        * `traindata` (Dict): dictionary of candidates and suportting contexts for each candidate
+        * `train_with_existing` (bool): if set to true train the model from scratch otherwise trains incrementally 
+* `predict`: predits the most suitable candidate for a provided context, takes text or embedding 
+    * Input:
+        * `sentences` (list of strings): list of sentences the needs to be classified
+    * Return: a dictionary of sentence, predicted intent and probability 
+* `save_model`:  
+    * Input 
+        * `model_path` (string): the path to save model
+    * Returns: "[Saved model at] : <model_path>" if model successfully saved
+* `load_model`:  
+    * Input 
+        * `model_path` (string): the path to save model
+    * Returns: "[loaded model from] : <model_path>" if model successfully loaded
+#### Example Jac Usage:
+```jac
+# Train and inference with a fasttext classifier
+walker fast_enc_example {
+    has train_file = "fast_enc_train.json";
+    has train_with_existing = false;
+    has test_sentence=  ["what's going on ?"];
+    can fast_enc.train,fast_enc.predict;
 
-```
-requests.post
-(
-"/get_model_config/",
-    json={}
-)
-```
-Response :
-
-```
-{
-    "shared": false,
-    "model_name": "prajjwal1/bert-tiny",
-    "model_save_path": "modeloutput",
-    "loss_function": "mse",
-    "loss_type": "dot"
+    # Training the model
+    train_data = file.load_json(train_file);
+    fast_enc.train(traindata=train_data,train_with_existing=false);
+    
+    # Getting inference from the model
+    resp_data=fast_enc.predict(sentences=test_sentence);
+    std.out(resp_data);
 }
 ```
 
+## Entity
+###  Entity Extraction (`ent_ext`)
+`ent_ext` module uses Flair named entity recognition architecture. Can either be used zero-shot or trained.
 
- #### **set_model_config** - for setting the model parameters
-Request :
-
-```
-requests.post
-(
-"/set_train_config/",
-    json= {
-        "model_parameters : {
-            "shared": false,
-            "model_name": "prajjwal1/bert-tiny",
-            "model_save_path": "modeloutput",
-            "loss_function": "mse",
-            "loss_type": "dot"
-        }
-    }
-)
-```
-Response :
-
-```
-"Config setup is complete."
-```
-
- #### **save_model** - for saving the model to a provided path
-Request :
-```
-requests.post
-(
-    "/save_model/",
-    json={
-        "model_path": "mypath"
-        }
-)
-```
-Response :
-
-```
-"[Saved model at] : mypath"
-```
-
- #### **load_model** - for loading the model from the provided path
-Request :
-```
-requests.post
-(
-    "/load_model/",
-        json={
-            "model_path": "mypath"
-            }
-)
-```
-Response:
-
-    "[loaded model from] : mypath"
-
-### 1.2. Addtional Instructions
-
-1. You can use all model that are available on huggingface.co model library which is compatible with AutoModel
-2. Load and save models only accepts alphanumeric and '_' characters
-3. cosine_sim API expects both embedding provided should be of same length
-4.  Resetting the model parameter through set_config api stores the live model in default location and reloads the default pretrainted model from huggingface Library
-
-## 2. Entity Extraction
-Entity Extraction module can be used to detect entities from the given context, it has two models one based on transformers and another on RNN architecture. These models will be used for extracting entities from the context.
-
-
-### 2.1. List of API's  available
-
-#### **entity_detection** - used to detect provided entities in the context
- Request :
- ```
-requests.post(
-        "/entity_detection/",
-        json={
-                "text": "The Humboldt University of Berlin is situated in Berlin, Germany",
-                "ner_labels": ["University", "City", "Country"]
-            }
-        )
-```
-Response:
-```
-{
-    "input_text": "The Humboldt University of Berlin is situated in Berlin, Germany",
-    "entities": [
-        {
-            "entity_text": "Humboldt University of Berlin",
-            "entity_value": "ORG",
-            "conf_score": 0.9708927571773529,
-            "start_pos": 4,
-            "end_pos": 33
-        },
-        {
-            "entity_text": "Berlin",
-            "entity_value": "LOC",
-            "conf_score": 0.9977847933769226,
-            "start_pos": 49,
-            "end_pos": 55
-        },
-        {
-            "entity_text": "Germany",
-            "entity_value": "LOC",
-            "conf_score": 0.9997479319572449,
-            "start_pos": 57,
-            "end_pos": 64
-        }
-    ]
-}
-}
-```
-#### **train** - used to train the model on new entities
- Request :
- ```
-requests.post(
-        "/train/",
-        json= {
-                "text": "The Humboldt University of Berlin is situated in Berlin, Germany",
-                "entity": [
+* `train`: used to train the Flair-based NER model
+    * Input:
+        * `train_data`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context.
+        ```
+        [
+            {
+                "context": "EU rejects German call to boycott British lamb",
+                "entities": [
                     {
-                        "entity_value": "Humboldt University of Berlin",
-                        "entity_name": "University",
-                        "start_index": 4,
-                        "end_index": 33
+                        "entity_value": "EU",
+                        "entity_type": "ORG",
+                        "start_index": 0,
+                        "end_index": 2
                     },
                     {
-                        "entity_value": "Berlin",
-                        "entity_name": "City",
-                        "start_index": 49,
-                        "end_index": 55
+                        "entity_value": "German",
+                        "entity_type": "MISC",
+                        "start_index": 11,
+                        "end_index": 17
                     },
                     {
-                        "entity_value": "Germany",
-                        "entity_name": "Country",
-                        "start_index": 57,
-                        "end_index": 64
+                        "entity_value": "British",
+                        "entity_type": "MISC",
+                        "start_index": 34,
+                        "end_index": 41
                     }
                 ]
             }
-        )
-```
-Response:
-```
-"Model Training is Completed"
-```
- #### **set_config** - Updates the configuration file with new model parameters
-Request :
-```
-requests.post(
-            "/set_config/",
-            json={
-                "ner_model": "ner",
-                "model_type": "LSTM"
-                }
-            )
-```
-Response :
-```
-"Config setup is complete."
-```
- #### **save_model** - for saving the model to the provided path
-Request :
-```
-requests.post(
-            "/save_model/",
-            json={
-                "model_path": "mypath"
-                }
-            )
-```
-Response :
-```
-"[Saved model at] : mypath"
-```
- #### **load_model** - for loading the model from the provided path
-Request :
-```
-requests.post(
-            "/load_model/",
-            json={
-                "model_path": "mypath"
-                }
-            )
-```
-Response:
-```
-"[loaded model from] : mypath"
-```
-
-### 2.2. Addtional Instructions
-Parameter available for config setup
-```
-    ner_model types:
-        1. Pre-trained LSTM / GRU : ["ner", "ner-fast","ner-large"]
-        2. Huggingface model : all available models that can be intialized with AutoModel
-        3. None : for load a RNN model from scratch
-
-    model_type :
-        1. "TRFMODEL" : for huggingface models
-        2. "LSTM" or "GRU" : RNN models
-
-```
-## 3. Text Segmenter
-Text Segmenter module has the ability to split text in multiple pragraph  depending on semantics similarity.
-
-
-### 3.1. List of API's  available
- #### **get_segements** - splits the text into mutiple segements as per the threshold provided, the value of thresold can be [ 0 - 1 ] where `0` would return entire text as it is and `1` would split text in sentences.
-Request :
-```
-requests.post(
-    "/get_segements/",
-    json=
-    {
-        "text": "Labor statistics do reveal trends initially supportive of Bernard's thesis. From 1950 to 1990, the proportion of men in the labor forced decreased 9.4%, couples with a 28.8% increase of women who were in the labor force, suggesting a challenge to the traditional ideal of men working outside the home and women being relegated to domestic duties only. 200 years ago, having a fever or a cut can become life-threatening very quickly. Vaccines or treatments for many diseases did not exist as well. On the industrial front, progress was slow and time-consuming. Transportation was rather primitive and prohibitively expensive, ensuring that only the rich and famous could use it. The bright inexplicable pink of the tender flaky salmon, with golden olive oil-crisped edges. The deep green of the roasted asparagus calling us towards springtime. The pale yellow of the creamy leek drenched potatoes, speckled with bright pops of chives. I want to know how to use the NTXentLoss as in CPC model. I mean, I have a positive sample and N-1 negative samples. Many people dream about traveling the world for a living; and there are people that are actually able to do so that aren’t pilots, flight attendants, or businessmen. These people are known as travel bloggers and they get paid to visit and write about their major passion in life that is travel.",
-
-        "threshold": 0.85
-    }
-)
-```
-Response :
-```
-[
-  "Labor statistics do reveal trends initially supportive of Bernard's thesis. From 1950 to 1990, the proportion of men in the labor forced decreased 9.4%, couples with a 28.8% increase of women who were in the labor force, suggesting a challenge to the traditional ideal of men working outside the home and women being relegated to domestic duties only.",
-  "200 years ago, having a fever or a cut can become life-threatening very quickly. Vaccines or treatments for many diseases did not exist as well. On the industrial front, progress was slow and time-consuming. Transportation was rather primitive and prohibitively expensive, ensuring that only the rich and famous could use it.",
-  "The bright inexplicable pink of the tender flaky salmon, with golden olive oil-crisped edges. The deep green of the roasted asparagus calling us towards springtime. The pale yellow of the creamy leek drenched potatoes, speckled with bright pops of chives.",
-  "I want to know how to use the NTXentLoss as in CPC model. I mean, I have a positive sample and N-1 negative samples.",
-  "Many people dream about traveling the world for a living; and there are people that are actually able to do so that aren’t pilots, flight attendants, or businessmen. These people are known as travel bloggers and they get paid to visit and write about their major passion in life that is travel."
-]
-```
- #### **load_model** - for loading the model from options : [ `wiki`, `legal` ]
-Request :
-
-    requests.post(
-                "/load_model/",
-                json={
-                        "model_name": "wiki"
-                    }
-                )
-Response:
-
-    "[Model Loaded] : wiki"
-
-### 3. 2. Addtional Instructions
-1. Available Parameter for load_model api
-
-        model_name options for Pre-trained LM:
-           1. wiki : trained for 3 epochs on wiki727 dataset
-           2. legal : trained on legal documents (provides better performace for official docs)
-
-
-## 4. Fasttext
-FastText is an implentation of the open-source library that allows users to learn text representations and text classifiers.
-### 4.1. List of API's available
-
-#### **train** - used to train the model for new classifiers
-
-Request :
-```
-requests.post(
-    "/train/",
-    json={
-        "traindata":{
-            "travel_time": [
-                "do i need to fly a long time from london",
-                "Do I need to fly for a long time to arrive in Guyana as a London citizen?"
-                ],
-            "fees_and_taxes": [
-                "I would like to know the taxes due at the departure.",
-                "Does this vacation have any fees?"
-                ]
-
-        },
-        "train_with_existing": false
-    }
-)
-```
-Response :
-```
-"Model training Completed"
-```
-#### **predict** - used to predict the intent of the sentences.
-Request :
-```
-requests.post(
-    "/predict/",
-    json={
-        "sentences": [
-            "how much time it takes to travel from Michigan to Sydney"
         ]
-    }
-)
-```
-Response :
-```
-{
-  "how much time it takes to travel to Michigan from Sydney": [
-    {
-      "sentence": "how much time it takes to travel from Michigan to Sydney",
-      "intent": "travel-time",
-      "probability": 1.0000100135803223
-    }
-  ]
+        ```
+        * `val_data`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context
+        ```
+        [
+            {
+                "context": "CRICKET LEICESTERSHIRE TAKE OVER AT TOP AFTER INNINGS VICTORY",
+                "entities": [
+                    {
+                        "entity_value": "LEICESTERSHIRE",
+                        "entity_type": "ORG",
+                        "start_index": 8,
+                        "end_index": 22
+                    }
+                ]
+            }
+        ]
+        ```
+        * `test_data`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context
+        ```
+        [
+            {
+                "context": "The former Soviet republic was playing in an Asian Cup finals tie for the first time",
+                "entities": [
+                    {
+                        "entity_value": "Soviet",
+                        "entity_type": "MISC",
+                        "start_index": 11,
+                        "end_index": 17
+                    },
+                    {
+                        "entity_value": "Asian",
+                        "entity_type": "MISC",
+                        "start_index": 45,
+                        "end_index": 50
+                    },
+                    {
+                        "entity_value": "Asian",
+                        "entity_type": "MISC",
+                        "start_index": 45,
+                        "end_index": 50
+                    }
+                ]
+            }
+        ]
+        ```
+        * `train_params`: (Dict): dictionary of training parameters to modify the training behaviour
+        ``` 
+        {
+            "num_epoch": 20,
+            "batch_size": 16,
+            "LR": 0.01
+        }
+        ``` 
+* `entity_detection`: detects all availabe entities from the provided context
+    * Input:
+        * `text` (string): context to detect entities.
+        * `ner_labels`(list of strings): List of entities, e.g. ["LOC","PER"]
+    * Return: a list of dictionary entities containing entity_text, entity_value, conf_score and index   
+* `save_model`:  
+    * Input 
+        * `model_path` (string): the path to save model
+    * Returns: "[Saved model at] : <model_path>" if model successfully saved
+* `load_model`:  
+    * Input 
+        * `model_path` (string): the path to save model
+    * Returns: "[loaded model from] : <model_path>" if model successfully loaded
+* `set_config`:  
+    * Input 
+        * `ner_model`: pretrained or basic model to be loaded, provide the exact name of the model, available options are: 
+            * `Pre-trained LSTM / GRU` : ["ner", "ner-fast","ner-large"]
+            * `Huggingface model` : all available models that can be intialized with AutoModel
+            * `None` : for load a RNN model from scratch
+        * `model_type`: type of model to be loaded, available options are :
+            * `TRFMODEL` : for huggingface models
+            * `LSTM` or `GRU` : RNN models
+    * Returns: "Config setup is complete." if model successfully loaded
+#### Example Jac Usage:
+```jac
+# Train and inference with an entity extraction model
+walker ent_ext_example {
+
+    has train_file = "train_data.json";
+    has val_file = "val_data.json";
+    has test_file = "test_data.json";
+    has from_scratch = true;
+    has num_train_epochs = 20;
+    has batch_size = 8;
+    has learning_rate = 0.02;
+    can ent_ext.entity_detection, ent_ext.train;
+    train_data = file.load_json(train_file);
+    val_data = file.load_json(val_file);
+    test_data = file.load_json(test_file);
+
+    # Training the model
+    ent_ext.train(
+        train_data = train_data,
+        val_data = val_data,
+        test_data = test_data,
+        train_params = {
+            "num_epoch": num_train_epochs,
+            "batch_size": batch_size,
+            "LR": learning_rate
+            });
+
+    # Getting inference from the model
+    resp_data = ent_ext.entity_detection(text="book a flight from kolkata to delhi",ner_labels= ["LOC"]);
+    std.out(resp_data);
 }
 ```
- #### **save_model** - for saving the model to the provided path
-Request :
-```
-requests.post(
-            "/save_model/",
-            json={
-                "model_path": "mypath"
-                }
-            )
-```
-Response :
-```
-"Model saved to mypath."
-```
- #### **load_model** - for loading the model from the provided path
-Request :
-```
-requests.post(
-            "/load_model/",
-            json={
-                "model_path": "mypath"
-                }
-            )
-```
-Response:
-```
-"Model Loaded From : mypath"
-```
-### 4. 2. Addtional Instructions
-1. Training parameter :
-```
-train_with_existing :
-    True : appends the data to the active training set
-    False : creates a new training set with the data provided
-```
-### 5. USE_QA
-use_qa module uses the universal sentence encoder and distance metric to evaluate the distance between question and and probable answers
-### 5.1. List of API's available
-#### **question_encode** - encodes the question text and return a embedding of 512 length
-Request :
-```
-requests.post(
-    "/question_encode/",
-    json={
-        "question": "Which city is capital of India?"
-    }
-)
-```
-Response:
-```
-[
-  [
-    0.015976766124367714,
-    0.05355389043688774,
-    -0.02080559730529785,
-    -0.09500843286514282,
-    ....,
-    ....,
-    ....
-  ]
-]
-```
-#### **answer_encode** - encodes the answer, context and return a embedding of 512 length
-Request :
-```
-requests.post(
-    "/answer_encode/",
-    json={
-            "answer": "New Delhi",
-            "context": "New Delhi is the capital of India and a part of the National Capital Territory of Delhi (NCT)."
+
+###  Entity Extraction Using Transformers (`tfm_ner`)
+`tfm_ner` module uses transformers to identify and extract entities. It uses TokenClassification method from Huggingface.
+
+* `train`: used to train transformer NER model
+    * Input:
+        * `train_data`: (List(Dict)): a list dictionary containing contexts and list of entities in each context
+        ```
+        [
+            {
+                "context": "MINNETONKA , Minn .",
+                "entities": [
+                            {
+                                "entity_value": "MINNETONKA",
+                                "entity_type": "LOC",
+                                "start_index": 0,
+                                "end_index": 10
+                            },
+                            {
+                                "entity_value": "Minn",
+                                "entity_type": "LOC",
+                                "start_index": 13,
+                                "end_index": 17
+                            }
+                ]
+            }
+        ]
+        ```
+        * `mode`: (String): mode for training the model, available options are :
+            * `default`: train the model from scratch
+            * `incremental`: providing more training data for current set of entities
+            * `append`: changing the number of entities (model is restarted and trained with all of traindata)
+        * `epochs `: (int): Number of epoch you want model to train.
+* `extract_entity`: detects all availabe entities from the provided context
+    * Input:
+        * `text` (string): context to detect entities.
+    * Return: a list of dictionary entities containing entity_text, entity_value, conf_score and index   
+* `save_model`:  
+    * Input 
+        * `model_path` (string): the path to save model
+    * Returns: "[Saved model at] : <model_path>" if model successfully saved
+* `load_model`:  
+    * Input 
+        * `model_path` (string): the path to save model
+    * Returns: "[loaded model from] : <model_path>" if model successfully loaded
+* `get_train_config`:  
+    * Input: None
+    * Returns: json of all the current training configuration
+     ```
+        {
+            "MAX_LEN": 128,
+            "TRAIN_BATCH_SIZE": 4,
+            "VALID_BATCH_SIZE": 2,
+            "EPOCHS": 50,
+            "LEARNING_RATE": 2e-05,
+            "MAX_GRAD_NORM": 10,
+            "MODE": "default"
         }
-)
+    ```
+* `set_train_config`:  
+    * Input 
+        * `train_parameters` (Dict): dictionary of training parameters. See the json example above for available configuration parameters.
+    * Returns: "Config setup is complete." if train configuration is completed successfully
+* `get_model_config`:  
+    * Input: None
+    * Returns: json of all the current model configuration
+    ```
+        {
+            "model_name": "prajjwal1/bert-tiny", 
+            "model_save_path": "modeloutput"
+        }
+    ```
+* `set_model_config`:  
+    * Input 
+        * `model_parameters`(Dict): dictionary of model parameters. See the json example above for available configuration parameters.
+    * Returns: "Config setup is complete." if model configuration is completed successfully
+#### Example Jac Usage:
+```jac
+# Train and inference with a transformer-based NER model
+walker tfm_ner_example {
+
+    has train_file = "train_ner.json";
+    has num_train_epochs = 10;
+    has mode = "default";
+    can tfm_ner.extract_entity, tfm_ner.train;
+    train_data = file.load_json(train_file);
+    
+    # Training the model
+    tfm_ner.train(
+        mode = mode,
+        epochs = num_train_epochs,
+        train_data=train_data
+    );
+
+    # Infer using the model
+    resp_data = tfm_ner.extract_entity(
+        text="book a flight from kolkata to delhi,Can you explain to me,please,what Homeowners Warranty Program means,what it applies to,what is its purpose? Thank you. The Humboldt University of Berlin is situated in Berlin, Germany"
+    );
+    std.out(resp_data);
+}
 ```
-Response:
-```
-[
-  [
-    -0.02469351328909397,
-    0.018782570958137512,
-    -0.030687350779771805,
-    -0.03719259053468704,
-    ....,
-    ....,
-    ....
-  ]
-]
+## Summarization
+### Summarizer (`cl_summer`)
+`cl_summer` uses the sumy summarizer to create extractive summary.
+
+* `summarize`: to get the extractive summary in provided sentences count.
+    * Input 
+        * `text`(String): text the contain the entire context
+        * `url`(String): the link to the webpage
+        * `sent_count`(int): number of sentence you want in the summary
+        * `summarizer_type`(String): name of the summarizer type, available options are:
+            * `LsaSummarizer`
+            * `LexRankSummarizer`
+            * `LuhnSummarizer`
+    * Returns: List of Sentences that best summarizes the context
+    * **Input text file `summarize.json`**
+        ```
+        {
+            "text": "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and   rude. The King of England was at war with him and had led a great army into Scotland to drive him out of the land. Battle after battle had been fought. Six times Bruce had led his brave little army against his foes and six times his men had been beaten and driven into flight. At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains. One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him. He was tired and unhappy. He was ready to give up all hope. It seemed to him that there was no use for him to try to do anything more. As he lay thinking, he saw a spider over his head making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. 'Poor thing,' said Bruce: 'you, too, know what it is to fail.', But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as, he watched her swing herself out upon the slender line. Would she fail again? No! The thread was carried safely to the beam and fastened there."
+        }
+        ```
+#### Example Jac Usage for given text blob:
+```jac
+# Use the summarizer to summarize a given text blob
+walker cl_summer_example {
+    has text_file = "summarize.json";
+    has sent_count = 5;
+    has summarizer_type = "LsaSummarizer";
+    can cl_summer.summarize;
+
+    # Getting Extractive summary from text
+    train_data = file.load_json(text_file);
+    resp_data = cl_summer.summarize(
+        text=train_data.text,
+        url="none",
+        sent_count=sent_count,
+        summarizer_type=summarizer_type
+    );
+    report resp_data;
+}
 ```
 
-#### **cos_sim_score** - calculates the cosine similarity between encodings
-Request :
+#### Example Jac Usage for given URL
+```jac
+# Use the summarizer to summarize a given URL
+walker cl_summer_example {
+    has sent_count = 5;
+    has summarizer_type = "LsaSummarizer";
+    has url="https://in.mashable.com/";
+    can cl_summer.summarize;
+
+    # Getting Extractive summary from URL
+    resp_data_url = cl_summer.summarize(
+        text="none",
+        url=url,
+        sent_count=sent_count,
+        summarizer_type=summarizer_type
+    );
+    report resp_data_url;
+}
 ```
-requests.post(
-    "/cos_sim_score/",
-    json={
-        "q_emb":[
-            0.015976766124367714,
-            0.05355389043688774,
-            -0.02080559730529785,
-            -0.09500843286514282,
-            ....,
-            ....,
-            ....
-        ],
-        "a_emb": [
-            -0.02469351328909397,
-            0.018782570958137512,
-            -0.030687350779771805,
-            -0.03719259053468704,
-            ....,
-            ....,
-            ....
-        ]
+
+###  T5 Summarization (`t5_sum`)
+`t5_sum` uses the T5 transformer model to perform abstractive summary on a body of text.
+
+* `classify_text`: use the T5 model to summarize a body of text
+    * **Input**:
+        * `text` (string): text to summarize
+        * `min_length` (integer): the least amount of words you want returned from the model
+        * `max_length` (integer): the most amount of words you want returned from the model
+    * **Input datafile**
+    `**data.json**`
+        ```
+        {
+            "text": "The US has passed the peak on new coronavirus cases, President Donald Trump said and predicted that some states would reopen this month. The US has over 637,000 confirmed Covid-19 cases and over 30,826 deaths, the highest for any country in the world. At the daily White House coronavirus briefing on Wednesday, Trump said new guidelines to reopen the country would be announced on Thursday after he speaks to governors. We'll be the comeback kids, all of us, he said. We want to get our country back. The Trump administration has  previously fixed May 1 as a possible date to reopen the world's largest economy, but the president said some states may be able to return to normalcy earlier than that.",
+            "min_length": 30,
+            "max_length": 100
+        }
+        ```
+
+#### Example Jac Usage:
+```jac
+# Use the T5 model to summarize a given piece of text
+walker summarization {
+    can t5_sum.classify_text;
+    has data = "data.json";
+    data = file.load_json(data);
+    summarized_text = t5_sum.classify_text(
+        text = data["text"], 
+        min_length = data["min_length"], 
+        max_length = data["max_length"]
+        );
+    report summarized_text;
+}
+```
+
+## Text Processing
+### Text Segmenter (`text_seg`)
+`text_seg` Text segmentation is a method of splitting a document into smaller parts, which is usually called segments. It is widely used in text processing. Each segment has its relevant meaning. Those segments categorized as word, sentence, topic, phrase etc. module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
+* `get_segements`: gets different topics in the context provided, given a threshold 
+    * Input 
+        * `text`(String): text the contain the entire context
+        * `threshold`(Float): range is between 0-1, make each sentence as segment if, threshold is 1.
+    * Returns: List of Sentences that best summarizes the context
+  
+* `load_model`: to load the available model for text segmentation
+    * Input 
+        * `model_name`(String): name of the transformer model to load, options are:
+            * `wiki`: trained on wikipedia data
+            * `legal`: trained on legal documents
+    * Returns: "[Model Loaded] : <model_name>"
+* **Input data file `text_seg.json`**
+    ```
+    {
+        "text": "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude. The King of England was at war with him and had led a great army into Scotland to drive him out of the land. Battle after battle had been fought. Six times Bruce had led his brave little army against his foes and six times his men had been beaten and driven into flight. At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains. One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him. He was tired and unhappy. He was ready to give up all hope. It seemed to him that there was no use for him to try to do anything more. As he lay thinking, he saw a spider over his head making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. 'Poor thing,' said Bruce: 'you, too, know what it is to fail. But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as he watched her swing herself out upon the slender line. Would she fail again? No! The thread was carried safely to the beam and fastened there."
     }
-)
-```
-Response:
-```
-0.5570200427361625
-```
-#### **qa_score** - calculates the inner product between encodings
-Request :
-```
-requests.post(
-    "/qa_score/",
-    json={
-        "q_emb":[
-            0.015976766124367714,
-            0.05355389043688774,
-            -0.02080559730529785,
-            -0.09500843286514282,
-            ....,
-            ....,
-            ....
-        ],
-        "a_emb": [
-            -0.02469351328909397,
-            0.018782570958137512,
-            -0.030687350779771805,
-            -0.03719259053468704,
-            ....,
-            ....,
-            ....
-        ]
-    }
-)
-```
-Response:
-```
-0.5570200627571644
+    ```
+#### Example Jac Usage:
+```jac
+walker text_seg_example {
+    has data_file = "text_seg.json";
+    has threshold = 0.85;
+    can text_seg.get_segments, text_seg.load_model;
+
+    # loading the desired model
+    resp_data = text_seg.load_model(model_name='wiki');
+    std.out(resp_data);
+
+    # Getting Segments of different topic from text
+    data = file.load_json(data_file);
+    resp_data = text_seg.get_segments(
+        text=data.text,
+        threshold=threshold
+        );
+    std.out(resp_data);
+}
 ```
 
-### 6. USE_ENC
-use_enc module uses the universal sentence encoder and distance metric to evaluate the distance between two text encodings
+## Non-AI Tools
+### PDF Extractor (`pdf_ext`)
+`pdf_ext` module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
+* `extract_pdf`: gets different topics in the context provided, given a threshold 
+    * Input 
+        * `url`(String): gets the pdf from URL
+        * `path`(Float): gets the pdf from local path
+        * `metadata`(Bool): to display available metadata of PDF
+    * Returns: a json with number of pages the pdf had and content
+  
+#### Example Jac Usage:
+```jac
+walker pdf_ext_example {
+    has url = "http://www.africau.edu/images/default/sample.pdf";
+    has metadata = true;
+    can pdf_ext.extract_pdf;
 
-### 6.1. List of API's available
-#### **encode** - encodes the text and returns a embedding of 512 length
-Request :
+    # Getting the dat from PDF
+    resp_data = pdf_ext.extract_pdf(url=url,
+    metadata=metadata);
+    std.out(resp_data);
+}
 ```
-requests.post(
-    "/encode/",
-    json={
-        "text": "Which city is capital of India?"
-    }
-)
-```
-Response:
-```
-[
-  [
-    0.015976766124367714,
-    0.05355389043688774,
-    -0.02080559730529785,
-    -0.09500843286514282,
-    ....,
-    ....,
-    ....
-  ]
-]
-```
-
-#### **cos_sim_score** - calculates the cosine similarity between encodings
-Request :
-```
-requests.post(
-    "/cos_sim_score/",
-    json={
-        "q_emb":[
-            0.015976766124367714,
-            0.05355389043688774,
-            -0.02080559730529785,
-            -0.09500843286514282,
-            ....,
-            ....,
-            ....
-        ],
-        "a_emb": [
-            -0.02469351328909397,
-            0.018782570958137512,
-            -0.030687350779771805,
-            -0.03719259053468704,
-            ....,
-            ....,
-            ....
-        ]
-    }
-)
-```
-Response:
-```
-0.5570200427361625
-```
-
-### 7. Summarization
-Summarization module can be used to produce extractive summary from text provided. it also accepts a URL from where it can scrape the summarize.
-### 7.1. List of API's available
-#### **summarize** - summarizes the text and returns a the extractive summary of `sent_count` length
-Request :
-```
-requests.post(
-    "/summarize/",
-    json={
-        "text": "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude. The King of England was at war with him and had led a great army into Scotland to drive him out of the land. Battle after battle had been fought. Six times Bruce had led his brave little army against his foes and six times his men had been beaten and driven into flight. At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains. One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him. He was tired and unhappy. He was ready to give up all hope. It seemed to him that there was no use for him to try to do anything more. As he lay thinking, he saw a spider over his head making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. “Poor thing,” said Bruce: “you, too, know what it is to fail.” But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as he watched her swing herself out upon the slender line. Would she fail again? No! The thread was carried safely to the beam and fastened there.",
-        "url": "none",
-        "sent_count": 4,
-        "summarizer_type": "LsaSummarizer"
-    }
-)
-```
-Response:
-```
-[
-  "The King of England was at war with him and had led a great army into Scotland to drive him out of the land.",
-  "At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains.",
-  "One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him.",
-  "As he lay thinking, he saw a spider over his head making ready to weave her web."
-]
-```
-
-Request :
-```
-requests.post(
-    "/summarize/",
-    json={
-        "text": "none",
-        "url": ""https://www.indianweb2.com/2022/04/addverb-to-open-worlds-largest-robot.html"",
-        "sent_count": 4,
-        "summarizer_type": "LsaSummarizer"
-    }
-)
-```
-Response:
-```
-[
-  "Last year in March, Addverb inaugurated robot manufacturing facility called “Bot-Valley” in Noida, which is spread over 2.5 acres of land.",
-  "and create highly skilled job opportunities leading to direct and indirect employment for over 3,000 people.",
-  "Sangeet Kumar , CEO of Addverb Technologies , said that “This brand-new facility will make Addverb a giant robot manufacturer on global fronts, by delivering cutting edge software and robust hardware systems, along with a mix of innovative fixed and flexible automation solutions.”",
-  "In September 2020, Addverb established its first offshore entity in Singapore to expand of its footprints in South East Asia."
-]
-```
-### 7. 2. Addtional Instructions
-1. Summarizer Options :
-```
-summarizer_type :
-    LexRankSummarizer : algorithm predicts if sentence which is similar to many other sentences of the text has a high probability of being important.
-    LsaSummarizer : algorithm based on term-document frequency techniques with singular value decomposition to summarize texts.
-    LuhnSummarizer : algorithm's approach is based on TF-IDF (Term Frequency-Inverse Document Frequency).
-```
-### Unfinished TODOs
-
-1. convert poly encoders to new interface
-2. convert flair intent extraction to new interface
-3. Get Myca to stop using infer.py (and use date standard actions) then delete

@@ -1,0 +1,31 @@
+haxor@linux:~$ jsctl --help
+Usage: jsctl [OPTIONS] COMMAND [ARGS]...
+
+  The Jaseci Command Line Interface
+
+Options:
+  -f, --filename TEXT  Specify filename for session state.
+  -m, --mem-only       Set true to not save file for session.
+  --help               Show this message and exit.
+
+Commands:
+  actions    Group of `actions` commands
+  alias      Group of `alias` commands
+  architype  Group of `architype` commands
+  clear      Clear terminal
+  config     Group of `config` commands
+  edit       Edit a file
+  global     Group of `global` commands
+  graph      Group of `graph` commands
+  jac        Group of `jac` commands
+  logger     Group of `logger` commands
+  login      Command to log into live Jaseci server
+  ls         List relevant files
+  master     Group of `master` commands
+  object     Group of `object` commands
+  reset      Reset jsctl (clears state)
+  sentinel   Group of `sentinel` commands
+  stripe     Group of `stripe` commands
+  tool       Internal book generation tools
+  walker     Group of `walker` commands
+haxor@linux:~$

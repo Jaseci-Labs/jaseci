@@ -16,7 +16,9 @@ live_actions = {}
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
     """Decorator for Jaseci Action interface"""
-    caller_globals = dict(inspect.getmembers(inspect.stack()[1][0]))["f_globals"]
+    caller_globals = dict(inspect.getmembers(inspect.currentframe().f_back))[
+        "f_globals"
+    ]
     if allow_remote and "serv_actions" not in caller_globals:
         caller_globals["serv_actions"] = serv_actions
 
@@ -62,19 +64,6 @@ def load_module_actions(mod):
     return False
 
 
-def load_standard():
-    import jaseci.actions.standard.net  # noqa
-    import jaseci.actions.standard.rand  # noqa
-    import jaseci.actions.standard.request  # noqa
-    import jaseci.actions.standard.std  # noqa
-    import jaseci.actions.standard.file  # noqa
-    import jaseci.actions.standard.vector  # noqa
-    import jaseci.actions.standard.date  # noqa
-
-
-load_standard()
-
-
 def load_preconfig_actions(hook):
     import json
 
@@ -106,6 +95,8 @@ def get_global_actions(hook):
             or i.startswith("rand.")
             or i.startswith("vector.")
             or i.startswith("request.")
+            or i.startswith("date.")
+            or i.startswith("jaseci.")
         ):
             global_action_list.append(
                 action(

@@ -135,13 +135,28 @@ destroy_action: KW_DESTROY expression SEMI;
 
 report_action:
 	KW_REPORT expression SEMI
-	| KW_REPORT DOT NAME EQ INT SEMI;
+	| KW_REPORT COLON NAME EQ expression SEMI;
 
-walker_action: ignore_action | take_action | KW_DISENGAGE SEMI;
+walker_action:
+	ignore_action
+	| take_action
+	| disengage_action
+	| yield_action;
 
 ignore_action: KW_IGNORE expression SEMI;
 
-take_action: KW_TAKE expression (SEMI | else_stmt);
+take_action:
+	KW_TAKE (COLON NAME)? expression (SEMI | else_stmt);
+
+disengage_action: KW_DISENGAGE (report_action | SEMI);
+
+yield_action:
+	KW_YIELD (
+		report_action
+		| disengage_action
+		| take_action
+		| SEMI
+	);
 
 expression: connect (assignment | copy_assign | inc_assign)?;
 
@@ -169,6 +184,8 @@ factor: (PLUS | MINUS) factor | power;
 
 power: atom (POW factor)*;
 
+global_ref: KW_GLOBAL DOT (obj_built_in | NAME);
+
 atom:
 	INT
 	| FLOAT
@@ -176,7 +193,7 @@ atom:
 	| BOOL
 	| NULL
 	| NAME
-	| KW_GLOBAL DOT NAME
+	| global_ref
 	| node_edge_ref
 	| list_val
 	| dict_val
@@ -395,6 +412,7 @@ KW_WHILE: 'while';
 KW_CONTINUE: 'continue';
 KW_BREAK: 'break';
 KW_DISENGAGE: 'disengage';
+KW_YIELD: 'yield';
 KW_SKIP: 'skip';
 KW_REPORT: 'report';
 KW_DESTROY: 'destroy';

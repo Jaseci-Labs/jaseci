@@ -6,6 +6,7 @@ from inspect import signature, getdoc
 from jaseci.utils.utils import logger
 from jaseci.utils.utils import is_jsonable
 from jaseci.element.element import element
+import json
 
 
 class interface:
@@ -25,7 +26,14 @@ class interface:
         """
         self._pub_committer = None
 
-    def assimilate_api(api_list, func, cmd_group=None, cli_args=None, url_args=None):
+    def assimilate_api(
+        api_list,
+        func,
+        cmd_group=None,
+        cli_args=None,
+        url_args=None,
+        allowed_methods=None,
+    ):
         cmd_group = func.__name__.split("_") if cmd_group is None else cmd_group
         api_list.append(
             {
@@ -35,30 +43,46 @@ class interface:
                 "groups": cmd_group,
                 "cli_args": cli_args if cli_args is not None else [],
                 "url_args": url_args if url_args is not None else [],
+                "allowed_methods": allowed_methods,
             }
         )
         return func
 
-    def public_api(cmd_group=None, cli_args=None, url_args=None):
+    def public_api(cmd_group=None, cli_args=None, url_args=None, allowed_methods=None):
         def decorator_func(func):
             return interface.assimilate_api(
-                interface._public_api, func, cmd_group, cli_args, url_args
+                interface._public_api,
+                func,
+                cmd_group,
+                cli_args,
+                url_args,
+                allowed_methods,
             )
 
         return decorator_func
 
-    def private_api(cmd_group=None, cli_args=None, url_args=None):
+    def private_api(cmd_group=None, cli_args=None, url_args=None, allowed_methods=None):
         def decorator_func(func):
             return interface.assimilate_api(
-                interface._private_api, func, cmd_group, cli_args, url_args
+                interface._private_api,
+                func,
+                cmd_group,
+                cli_args,
+                url_args,
+                allowed_methods,
             )
 
         return decorator_func
 
-    def admin_api(cmd_group=None, cli_args=None, url_args=None):
+    def admin_api(cmd_group=None, cli_args=None, url_args=None, allowed_methods=None):
         def decorator_func(func):
             return interface.assimilate_api(
-                interface._admin_api, func, cmd_group, cli_args, url_args
+                interface._admin_api,
+                func,
+                cmd_group,
+                cli_args,
+                url_args,
+                allowed_methods,
             )
 
         return decorator_func
@@ -71,8 +95,11 @@ class interface:
 
         return decorator_func
 
-    def all_apis(self):
-        return interface._public_api + interface._private_api + interface._admin_api
+    def all_apis(self, with_cli_only=False):
+        ret = interface._public_api + interface._private_api + interface._admin_api
+        if with_cli_only:
+            return ret + interface._cli_api
+        return ret
 
     assimilate_api = staticmethod(assimilate_api)
     public_api = staticmethod(public_api)
@@ -142,6 +169,11 @@ class interface:
                 val = _caller.provide_internal_default(p_name)
                 if val is not None and "errors" in val:
                     return val
+            if p_type == dict and isinstance(val, str):
+                if not len(val):
+                    val = {}
+                else:
+                    val = json.loads(val)
             if str(val) in _caller.alias_map.keys():
                 val = _caller.alias_map[val]
             if issubclass(p_type, element):
@@ -179,7 +211,6 @@ class interface:
         param_map = {}
         if not hasattr(self, api_name):
             return self.interface_error(f"{api_name} not a valid API")
-            return False
         func_sig = signature(getattr(self, api_name))
         for i in func_sig.parameters.keys():
             if i == "self":
@@ -190,6 +221,11 @@ class interface:
             val = p_default if p_default is not func_sig.parameters[i].empty else None
             if p_name in params.keys():
                 val = params[p_name]
+            if p_type == dict and isinstance(val, str):
+                if not len(val):
+                    val = {}
+                else:
+                    val = json.loads(val)
             if issubclass(p_type, element):
                 if val is None:
                     return self.interface_error(
@@ -201,7 +237,6 @@ class interface:
                     param_map[i] = val
                 else:
                     return self.interface_error(f"{type(val)} is not {p_type}")
-                    param_map[i] = None
             else:  # TODO: Can do type checks here too
                 param_map[i] = val
 

@@ -20,10 +20,7 @@ class master(core_master):
         super().__init__(*args, **kwargs)
         self._valid_configs += JASECI_CONFIGS
 
-    @interface.private_api()
-    def master_create(
-        self, name: str, set_active: bool = True, other_fields: dict = {}
-    ):
+    def user_creator(self, name, other_fields: dict = {}):
         """
         Create a master instance and return root node master object
 
@@ -39,29 +36,14 @@ class master(core_master):
         if serializer.is_valid(raise_exception=False):
             mas = serializer.save().get_master()
             mas._h = self._h
-            return self.make_me_head_master_or_destroy(mas)
-        else:
-            return {"response": "Errors occurred", "errors": serializer.errors}
+            return mas
 
-    @interface.private_api()
-    def master_delete(self, name: str):
+    def superuser_creator(self, name, other_fields: dict = {}):
         """
-        Permanently delete master with given id
-        """
-        if not self.sub_master_ids.has_obj_by_name(name):
-            return {"response": f"{name} not found"}
-        self.sub_master_ids.destroy_obj_by_name(name)
-        get_user_model().objects.get(email=name).delete()
-        return {"response": f"{name} has been destroyed"}
+        Create a master instance and return root node master object
 
-
-class super_master(master, core_super):
-    @interface.admin_api()
-    def master_createsuper(
-        self, name: str, set_active: bool = True, other_fields: dict = {}
-    ):
-        """
-        Create a super instance and return root node super object
+        other_fields used for additional fields for overloaded interfaces
+        (i.e., Django interface)
         """
         data = {"email": name}
         for i in other_fields.keys():
@@ -72,22 +54,44 @@ class super_master(master, core_super):
         if serializer.is_valid(raise_exception=False):
             mas = serializer.save().get_master()
             mas._h = self._h
-            return self.make_me_head_master_or_destroy(mas)
-        else:
-            return {"response": "Errors occurred", "errors": serializer.errors}
+            return mas
 
+    def user_destroyer(self, name: str):
+        """
+        Permanently delete master with given id
+        """
+        get_user_model().objects.get(email=name).delete()
+
+
+class super_master(master, core_super):
     @interface.admin_api()
-    def master_allusers(self, num: int = 0, start_idx: int = 0):
+    def master_allusers(self, limit: int = 10, offset: int = 0, asc: bool = False):
         """
         Returns info on a set of users, num specifies the number of users to
         return and start idx specfies where to start
         """
+
+        if (limit < 0) or (offset < 0):
+            return {"response": "Error occured! Parameters must be `positive numbers`!"}
         users = get_user_model().objects.all()
-        start = start_idx if start_idx else 0
-        end = start_idx + num if num else len(users)
-        ret = []
-        for i in users[start:end]:
-            ret.append({"user": i.email, "jid": i.master.urn})
+
+        if not asc:
+            users = users.order_by("-time_created")
+        total = users.count()
+        end = offset + limit if limit else total
+        filtered_users = []
+
+        for i in users[offset:end]:
+            filtered_users.append(
+                {
+                    "user": i.email,
+                    "jid": i.master.urn,
+                    "name": i.name,
+                    "created_date": i.time_created.isoformat(),
+                }
+            )
+        ret = {"total": total, "data": filtered_users}
+
         return ret
 
 
@@ -111,10 +115,6 @@ class UserManager(BaseUserManager):
 
         # Create user's root node
         user.master = master(h=user._h, name=email).id
-        if "set_sent_global" in extra_fields and extra_fields["set_sent_global"]:
-            user.master.sentinel_active_global()
-        if "create_graph" in extra_fields and extra_fields["create_graph"]:
-            user.master.graph_create()
         user._h.commit()
 
         user.save(using=self._db)

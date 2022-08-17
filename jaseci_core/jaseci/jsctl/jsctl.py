@@ -101,10 +101,6 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
         else:
             click.echo(f"Code file {kwargs['code']} not found!")
             return
-    if "ctx" in kwargs:  # can replace these checs with a dict check
-        kwargs["ctx"] = json.loads(kwargs["ctx"])
-    if "other_fields" in kwargs:
-        kwargs["other_fields"] = json.loads(kwargs["other_fields"])
     resolve_none_type(kwargs)
     if (
         not is_cli_only
@@ -116,6 +112,8 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
         out = session["master"].public_interface_to_api(kwargs, api_name)
     else:
         out = session["master"].general_interface_to_api(kwargs, api_name)
+    if isinstance(out, dict) and "report_custom" in out.keys():
+        out = out["report_custom"]
     if isinstance(out, dict) or isinstance(out, list):
         out = json.dumps(out, indent=2)
     click.echo(out)
@@ -237,6 +235,9 @@ def login(url, username, password):
         click.echo(f"Token: {r['token']}\nLogin successful!")
     else:
         click.echo("Login failed!\n")
+    if not session["mem-only"]:
+        with open(session["filename"], "wb") as f:
+            pickle.dump(session, f)
 
 
 @click.command(help="Command to log out of live Jaseci server")
@@ -292,12 +293,14 @@ def reset():
     type=str,
     help="Filename to dump output of this command call.",
 )
-def tool(op, output):
+def booktool(op, output):
     out = ""
     if op == "cheatsheet":
-        out = f"{book().api_cheatsheet(extract_api_tree())}"
+        out = f"{book().bookgen_api_cheatsheet(extract_api_tree())}"
+    elif op == "stdlib":
+        out = book().bookgen_std_library()
     elif op == "classes":
-        out = book().api_spec()
+        out = book().bookgen_api_spec()
     click.echo(out)
     if output:
         with open(output, "w") as f:
@@ -311,7 +314,7 @@ jsctl.add_command(edit)
 jsctl.add_command(ls)
 jsctl.add_command(clear)
 jsctl.add_command(reset)
-jsctl.add_command(tool)
+jsctl.add_command(booktool)
 cmd_tree_builder(extract_api_tree())
 
 

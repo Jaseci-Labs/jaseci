@@ -1,0 +1,26 @@
+:host {
+  display: block;
+}
+
+.hidden {
+  display: none;
+  /* Hidden by default */
+}
+
+.close-button {
+  all: unset;
+  background: #E1F0FF;
+  padding: 2px 2px;
+  cursor: pointer;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center
+}
+
+.close-button:hover {
+  background: #CEE7FE;
+}
+
+.close-button:active {
+  background: #B7D9F8;
+}

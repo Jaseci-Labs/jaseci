@@ -354,10 +354,14 @@ class node(element, anchored):
             i.destroy()
         super().destroy()
 
-    def dot_str(self, node_map=None):
+    def dot_str(self, node_map=None, detailed=False):
         """
         DOT representation
         """
+
+        def handle_str(str):
+            return str[:32].replace('"', '\\"')
+
         if node_map is None:
             nid = f"{uuid.UUID(self.jid).hex}"
         else:
@@ -367,12 +371,15 @@ class node(element, anchored):
         dstr += f'label="n{nid}:{self.name}" '
 
         node_dict = self.context
+        if "_private" in node_dict:
+            for i in node_dict["_private"]:
+                node_dict.pop(i)
 
-        if node_dict:
+        if node_dict and detailed:
             for k, v in node_dict.items():
                 if not isinstance(v, str) or v == "":
                     continue
-                dstr += f', {k}="{v[:32]}"'
+                dstr += f', {k}="{handle_str(v)}"'
 
         dstr += " ]"
 

@@ -40,6 +40,22 @@ def rest_api_auto_doc(endpoint: str, fsig: signature):
     return doc
 
 
+def rest_api_build_methods(api, view_cls, fname, apidocstr, func_sig):
+    gen_cls = type(fname, (view_cls,), {})
+    allowed_methods = (
+        getattr(gen_cls, "http_method_names")
+        if api["allowed_methods"] is None
+        else api["allowed_methods"]
+    )
+    setattr(gen_cls, "http_method_names", allowed_methods)
+    for method in allowed_methods:
+        setattr(gen_cls, method, copy_func(getattr(gen_cls, method)))
+        getattr(gen_cls, method).__doc__ = (
+            api["doc"] + "\n\n" + rest_api_auto_doc(apidocstr, func_sig)
+        )
+    return gen_cls
+
+
 generated_urls = []
 
 
@@ -51,13 +67,10 @@ def generate_apis(api_list, view_cls, dir_head):
         fname = "_".join(i["groups"])
         apidocstr = f"{dir_head}/{fname}"
 
-        func_sig = i["sig"]
-        gen_cls = type(fname, (view_cls,), {})
-        gen_cls.post = copy_func(gen_cls.post)
-        gen_cls.post.__doc__ = (
-            i["doc"] + "\n\n" + rest_api_auto_doc(apidocstr, func_sig)
+        globals()[fname] = rest_api_build_methods(
+            i, view_cls, fname, apidocstr, i["sig"]
         )
-        globals()[fname] = gen_cls
+
         global generated_urls
         url_args = ""
         for j in i["url_args"]:
