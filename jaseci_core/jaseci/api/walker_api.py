@@ -82,9 +82,13 @@ class walker_api:
         Permanently delete walker with given id
         """
         self.remove_wlk_aliases(snt, wlk)
-        wlkid = wlk.id
-        snt.walker_ids.destroy_obj(wlk)
-        return [f"Walker {wlkid} successfully deleted"]
+        wlkid = wlk.jid
+        ret = {"success": True, "response": f"Walker {wlkid} successfully deleted"}
+        if wlk.jid in snt.walker_ids:
+            snt.walker_ids.destroy_obj(wlk)
+        else:
+            ret = {"success": False, "response": f"Walker {wlkid} not found!"}
+        return ret
 
     @interface.private_api(cli_args=["name"])
     def walker_spawn_create(self, name: str, snt: sentinel = None):
