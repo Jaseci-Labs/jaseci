@@ -1,15 +1,3 @@
-# Parent class for conversational AI state
-node cai_state {
-    has name;
-    can nlu {
-        std.err("Node ability invoked for cai_state node: nlu");
-        disengage;
-    }
-    can nlg {
-        std.err("Node ability invoked for cai_state node: nlg");
-        disengage;
-    }
-}
 # Top level root node for the conversational AI
 # Classify incoming request to an action-oriented flow
 # or FAQ
@@ -30,6 +18,19 @@ node cai_root {
             visitor.question_type = "va";
         else:
             visitor.question_type = "faq";
+    }
+}
+
+# Parent class for conversational AI state
+node cai_state {
+    has name;
+    can nlu {
+        std.err("Node ability invoked for cai_state node: nlu");
+        disengage;
+    }
+    can nlg {
+        std.err("Node ability invoked for cai_state node: nlg");
+        disengage;
     }
 }
 

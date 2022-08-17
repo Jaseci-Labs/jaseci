@@ -40,7 +40,7 @@ walker talk {
 
         take -[entity_transition(entities==extracted_entities.d::keys)]-> node::cai_state else {
             take -[intent_transition(intent==predicted_intent)]-> node::cai_state else {
-                take -[answer_transition(answer==matched_answer)]-> node::cai_state else {
+                take -[answer_transition]-> node::cai_state(answer==matched_answer) else {
                     here::nlg;
                     question = "";
                     if_nlu = false;
