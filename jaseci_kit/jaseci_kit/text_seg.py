@@ -1,1 +1,1 @@
-from .modules.text_segmenter.text_segmenter import *  # noqa
+from .modules.text_seg.text_seg import *  # noqa

@@ -157,6 +157,60 @@ node_inheritance = """
     }
     """
 
+inherited_ref = """
+    node plain {
+        has a=5, b=7, c=7, d=8;
+        can x with entry {
+            report "plain.x";
+        }
+        can y {
+            report "plain.y";
+        }
+        can z with entry {
+            report "Z triggered";
+        }
+    }
+
+    node plain2:plain {
+        has c=70, d=80;
+        can x with entry {
+            report "plain2.x";
+        }
+        can y {
+            report "plain2.y";
+        }
+        can z with entry {
+            report "New Z triggered";
+        }
+    }
+
+    node super:plain2 {
+        has a=55, c=7;
+        can x with entry {
+            ::plain:x;
+            report here.context;
+            report "super.x";
+            ::z;
+        }
+        can y {
+            ::plain2:y;
+            report "super.y";
+        }
+    }
+
+    walker init {
+        root {
+            spawn here --> node::super;
+            spawn here --> node::plain;
+            spawn here --> node::plain2;
+        }
+        take --> node::plain;
+        plain {
+            report here;
+        }
+    }
+    """
+
 node_inheritance_chain_check = """
     node plain {
         has a=5, b=7, c=7, d=8;
@@ -309,3 +363,152 @@ jasecilib_create_user = """
         report jaseci.master_create("daman@gmail.com");
     }
     """
+
+root_is_node_type = """
+    walker init {
+        report here.type;
+    }
+    """
+
+walker_with_exit_after_node = """
+    node echeck {
+        has a=3;
+        can dostuff with exit {
+            report a;
+        }
+    }
+
+    walker init {
+        has a=0;
+        with entry {
+            a+=1;
+        }
+        root {
+            spawn here --> node::echeck;
+            spawn here --> node::echeck;
+            spawn here --> node::echeck;
+            spawn here --> node::echeck;
+        }
+        take -->;
+        report a;
+        with exit {
+            report 43;
+        }
+    }
+    """
+
+
+depth_first_take = """
+    node a {
+        has num;
+    }
+
+    walker init {
+        root {
+            n1=spawn node::a(num=1);
+            n2=spawn node::a(num=2);
+            n3=spawn node::a(num=3);
+            n4=spawn node::a(num=4);
+            n5=spawn node::a(num=5);
+            n6=spawn node::a(num=6);
+            n7=spawn node::a(num=7);
+
+            here --> n1 --> n2 --> n3;
+                            n2 --> n4;
+                     n1 --> n5 --> n6;
+                            n5 --> n7;
+        }
+
+        a: report here.num;
+        take:dfs -->;
+    }
+    """
+
+breadth_first_take = """
+    node a {
+        has num;
+    }
+
+    walker init {
+        root {
+            n1=spawn node::a(num=1);
+            n2=spawn node::a(num=2);
+            n3=spawn node::a(num=3);
+            n4=spawn node::a(num=4);
+            n5=spawn node::a(num=5);
+            n6=spawn node::a(num=6);
+            n7=spawn node::a(num=7);
+
+            here --> n1 --> n2 --> n3;
+                            n2 --> n4;
+                     n1 --> n5 --> n6;
+                            n5 --> n7;
+        }
+
+        a: report here.num;
+        take:bfs -->;
+    }
+    """
+
+
+inheritance_override_here_check = """
+    node a {
+        has x=5, y=3, z=1;
+        can sum {
+            z = x+y+z;
+            report z;
+        }
+    }
+
+    node b:a {
+        can sum {
+            z = x-y-z;
+            report x-y;
+        }
+    }
+
+    node c:a {
+        can sum {
+            ::a:sum;
+            z=z+1;
+            report here.z;
+        }
+    }
+
+    walker init {
+        n1 = spawn here --> node::a;
+        n2 = spawn here --> node::c;
+        -->[0]::sum;
+        -->[1]::sum;
+    }
+    """
+
+dot_private_hidden = """
+    node a {
+        has x="56";
+        has private j="5566669";
+    }
+
+    walker init {
+        n1 = spawn here --> node::a;
+        n2 = spawn here --> node::a;
+    }
+    """
+
+check_destroy_node_has_var = """
+    node a {
+        has x;
+    }
+
+    walker create {
+        n = spawn here --> node::a;
+        n.x = spawn node::a;
+        report n.x.type;
+    }
+
+    walker remove {
+        n=-->[0];
+        destroy n.x;
+        report n.x.type;
+    }
+"""

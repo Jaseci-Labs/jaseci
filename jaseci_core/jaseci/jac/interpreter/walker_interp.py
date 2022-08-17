@@ -9,6 +9,7 @@ from jaseci.jac.interpreter.interp import interp
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.machine.jac_scope import jac_scope
 from jaseci.jac.ir.jac_code import jac_ir_to_ast
+from jaseci.utils.id_list import id_list
 
 
 class walker_interp(interp):
@@ -40,10 +41,11 @@ class walker_interp(interp):
                 if i.name == "attr_stmt":
                     self.run_attr_stmt(jac_ast=i, obj=self)
 
-        arch = self.get_arch_for(self.current_node)
-        self.auto_trigger_node_actions(
-            nd=self.current_node, act_list=arch.entry_action_ids
-        )
+        archs = self.get_arch_for(self.current_node).arch_with_supers()
+        act_list = id_list(self)
+        for i in archs:
+            act_list += i.entry_action_ids
+        self.auto_trigger_node_actions(nd=self.current_node, act_list=act_list)
 
         for i in kid:
             if i.name == "walk_entry_block":
@@ -52,14 +54,16 @@ class walker_interp(interp):
                 self.run_statement(i)
             if i.name == "walk_activity_block":
                 self.run_walk_activity_block(i)
-            if i.name == "walk_exit_block":
-                self.run_walk_exit_block(i)
 
         # self.trigger_activity_actions()
-        arch = self.get_arch_for(self.current_node)
-        self.auto_trigger_node_actions(
-            nd=self.current_node, act_list=arch.exit_action_ids
-        )
+        archs = self.get_arch_for(self.current_node).arch_with_supers()
+        act_list = id_list(self)
+        for i in archs:
+            act_list += i.exit_action_ids
+        self.auto_trigger_node_actions(nd=self.current_node, act_list=act_list)
+
+        if not self.yielded and kid[-2].name == "walk_exit_block":
+            self.run_walk_exit_block(kid[-2])
 
     def run_node_ctx_block(self, jac_ast):
         """
@@ -67,7 +71,7 @@ class walker_interp(interp):
         """
         kid = self.set_cur_ast(jac_ast)
         for i in self.run_name_list(kid[0]):
-            if self.current_node.name == i:
+            if self.get_arch_for(self.current_node).is_instance(i):
                 self.run_code_block(kid[1])
                 return
 
@@ -104,17 +108,12 @@ class walker_interp(interp):
         walker_action:
             ignore_action
             | take_action
-            | KW_DISENGAGE (report_action | SEMI);
+            | disengage_action
+            | yield_action;
         """
         kid = self.set_cur_ast(jac_ast)
-        if kid[0].name == "KW_DISENGAGE":
-            if kid[1].name == "report_action":
-                self.run_report_action(kid[1])
-            self._stopped = "stop"
-            self.next_node_ids.remove_all()
-        else:
-            expr_func = getattr(self, f"run_{kid[0].name}")
-            expr_func(kid[0])
+        expr_func = getattr(self, f"run_{kid[0].name}")
+        expr_func(kid[0])
 
     def run_ignore_action(self, jac_ast):
         """
@@ -132,21 +131,63 @@ class walker_interp(interp):
     def run_take_action(self, jac_ast):
         """
         take_action:
-            KW_TAKE expression (SEMI | else_stmt);
+            KW_TAKE (COLON NAME)? expression (SEMI | else_stmt);
         """
         kid = self.set_cur_ast(jac_ast)
+        style = "b"
+        if kid[1].name == "COLON":
+            style = kid[2].token_text()
+            kid = kid[2:]
         result = self.run_expression(kid[1]).value
         before = len(self.next_node_ids)
         if isinstance(result, node):
-            self.next_node_ids.add_obj(result, allow_dups=True)
+            if style in ["b", "bfs"]:
+                self.next_node_ids.add_obj(result, allow_dups=True)
+            elif style in ["d", "dfs"]:
+                self.next_node_ids.add_obj(result, push_front=True, allow_dups=True)
+            else:
+                self.rt_error(f"{style} is invalid take operation", kid[0])
         elif isinstance(result, jac_set):
-            self.next_node_ids.add_obj_list(result, allow_dups=True)
+            if style in ["b", "bfs"]:
+                self.next_node_ids.add_obj_list(result, allow_dups=True)
+            elif style in ["d", "dfs"]:
+                self.next_node_ids.add_obj_list(
+                    result, push_front=True, allow_dups=True
+                )
+            else:
+                self.rt_error(f"{style} is invalid take operation", kid[0])
         elif result:
             self.rt_error(f"{result} is not destination type (i.e., nodes)", kid[1])
         after = len(self.next_node_ids)
         if before >= after and kid[2].name == "else_stmt":
             self.run_else_stmt(kid[2])
         after = len(self.next_node_ids)
+
+    def run_disengage_action(self, jac_ast):
+        """
+        disengage_action: KW_DISENGAGE (report_action | SEMI);
+        """
+        kid = self.set_cur_ast(jac_ast)
+        if kid[1].name == "report_action":
+            self.run_report_action(kid[1])
+        self._stopped = "stop"
+        self.next_node_ids.remove_all()
+
+    def run_yield_action(self, jac_ast):
+        """
+        yield_action:
+            KW_YIELD (
+                report_action
+                | disengage_action
+                | take_action
+                | SEMI
+            );
+        """
+        kid = self.set_cur_ast(jac_ast)
+        if kid[1].name != "SEMI":
+            expr_func = getattr(self, f"run_{kid[1].name}")
+            expr_func(kid[1])
+        self.yield_walk()
 
     def run_preset_in_out(self, jac_ast, obj, act):
         """
@@ -179,13 +220,20 @@ class walker_interp(interp):
 
     # Helper Functions ##################
     def auto_trigger_node_actions(self, nd, act_list):
+        already_executed = []  # handles inhereted duplicates, (overriding)
         for i in act_list.obj_list():
-            if i.access_list and self.name not in i.access_list:
+            if (
+                i.access_list
+                and self.name not in i.access_list
+                or i.name in already_executed
+            ):
                 continue
             if i.preset_in_out:
                 self.run_preset_in_out(jac_ir_to_ast(i.preset_in_out), nd, i)
             else:
                 self.call_ability(nd=nd, name=i.name, act_list=act_list)
+            if not i.preset_in_out:  # All preset in and outs get executed
+                already_executed.append(i.name)
 
     def viable_nodes(self):
         """Returns all nodes that shouldnt be ignored"""

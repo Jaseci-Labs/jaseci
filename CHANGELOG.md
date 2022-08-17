@@ -1,9 +1,34 @@
 # Jaseci Change / Release Notes
 
+## Version 1.3.4
+
+### Updates
+
+- Deprecation: Stripe API soft removed.
+- Improvement: Improved the deref operator `*` to be more nimble
+- New Feature: Can now pluck lists of values from collections of nodes and edges.
+- Major Language Feature: Introducing the `yeild` feature. See bible for details
+- Improvement/Bug: Here behavior is now specified for ability calls and inheritance in intuitive way
+- Major Feature: Can now specify various forms of breadth first and depth first search on `take` commands (e.g., `take:bfs`, `take:dfs`, and `take:b` and `take:d` for short)
+- Improvement: Added deep copy for lists and dictionaries
+- Improvement: The connect operator between 2 nodes now returns the left-hand side. (e.g., `n1 --> n2 --> n3` will create an intuitive chain of connections not `n1 --> n3 <-- n2`)
+- Bug Fix: Root nodes now return valid `.type`
+- Bug Fix: With exit within walker now executes after exit events in nodes
+
+### Notes
+
+- Behavior change for jac programs utilizing chained connection operators. Connection orders are now intuitive (e.g., `n1 --> n2 --> n3` will create an intuitive chain of connections not `n1 --> n3 <-- n2`)
+- API interface update: `sentinel_register` auto_run_ctx replaces ctx to be more specific, `auto_gen_graph` is now `auto_create_graph` for same reason as well
+- API interface update: `master_create` API return format updated
+
 ## Version 1.3.3
 
 ### Updates
 
+- Improvement: Added `reversed` to set of list builtin functions
+- Bug Fix: Mem leak on graph node setting fixed
+- Major Feature: Jsctl graph walking tooling
+- Improvement: Optimized the self generation of jaseci internal APIs
 - New Feature: Added `jaseci` standard library as patch through to all jaseci core APIs
 - New Features: Report payloads can be customized with `report:custom`
 - Improvement: Disengage can now do disengage with report action

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="jaseci",
-    version="1.3.3.18",
+    version="1.3.4.4",
     packages=find_packages(include=["jaseci", "jaseci.*"]),
     install_requires=[
         "click>=8.1.0,<8.2.0",
@@ -18,6 +18,7 @@ setup(
         "prometheus-api-client==0.5.1", 
         "prometheus-client==0.14.1",
         "kubernetes==23.6.0"
+        "docstring-parser",
     ],
     package_data={
         "": ["*.ini"],

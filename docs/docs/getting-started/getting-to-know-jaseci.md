@@ -6,7 +6,7 @@ sidebar_position: 1
 
 ## What is Jaseci
 
-**Jaseci** is a computational model and a language in one unit. Read on.
+**Jaseci** is an end-to-end open-source and Open Computational Model, Technology Stack, and Methodology for bleeding edge AI. It enables developers to rapidly build robust products with sophisticated AI capabilities at scale.
 
 ## Why Jaseci?
 

@@ -8,6 +8,7 @@ import pkgutil
 import logging
 import types
 import base64
+import re
 import json
 import functools
 import traceback
@@ -60,6 +61,11 @@ def dummy_bp(inspect):
 def print_stack_to_log():
     tb = traceback.extract_stack()
     log_var_out(tb)
+
+
+uuid_re = re.compile(
+    "([a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89aAbB][a-f0-9]{3}-?[a-f0-9]{12})"
+)
 
 
 def is_urn(s: str):

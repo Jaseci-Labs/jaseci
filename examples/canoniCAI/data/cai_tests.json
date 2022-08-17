@@ -1,0 +1,19 @@
+[
+    {
+        "test_name": "example test flow",
+        "flow": [
+            {
+                "query": "hey man how is it going?",
+                "state": "hello"
+            },
+            {
+                "query": "what's the weather like this weekend?",
+                "state": "weather"
+            },
+            {
+                "query": "thank you. talk to you later.",
+                "state": "goodbye"
+            }
+        ]
+    }
+]

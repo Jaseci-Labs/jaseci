@@ -152,7 +152,7 @@ Post request to the walker will be in this format :
 ```
 {
     "name" :"talker", # name of walker to be called
-    "nd": "urn:uuid:f7153e9d-739d-4427-b93e-570f84ce560f", # node walker will be set to, if not included will go to the main node.
+    "nd": "urn:uuid:f7153e9d-739d-4427-b93e-570f84ce560f", # node walker will be set to, if not included will go to the root node.
     "ctx" : {"utterance":"one pager website "}, # information sent to the walker
     "snt" : "urn:uuid:8da9ffaa-0cec-4f01-a4a0-5084be2c1fee", #sentinel ID  of the program 
     "detailed" : "false" # returns additional information for the walker

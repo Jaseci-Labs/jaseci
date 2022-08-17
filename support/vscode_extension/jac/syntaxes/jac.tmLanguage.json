@@ -33,12 +33,12 @@
                     "name": "support.type.jac"
                 },
                 {
-                    "match": "\\b(edge|graph|node|digraph|subgraph)\\b",
+                    "match": "\\b(edge|graph|node|walker|digraph|subgraph)\\b",
                     "name": "storage.type.entity.jac"
                 },
                 {
                     "name": "keyword.control.jac",
-                    "match": "\\b(if|elif|else|while|for|while|global|in|by|to|report|take|ignore|skip|disengage|break|continue|destroy|spawn|entry|exit|assert)\\b"
+                    "match": "\\b(if|elif|else|while|for|while|global|in|by|to|report|take|ignore|skip|disengage|break|continue|destroy|spawn|entry|exit|assert|yield)\\b"
                 },
                 {
                     "name": "variable.other.property",
@@ -50,28 +50,13 @@
                     "match": "\\s*\\b(?<!\\.)(report|destroy|here|take|in)\\b(?=.*[-\\\\])"
                 },
                 {
-                    "comment": "Highlights 'node' in node::name",
-                    "match": "\\s*\\b(?<!\\.)(node|walker|graph)\\b(.*[:\\\\])(\\w+)\\b",
-                    "captures": {
-                        "1": {
-                            "name": "keyword.control.flow.jac"
-                        },
-                        "2": {
-                            "name": "keyword.operator.jac"
-                        },
-                        "3": {
-                            "name": "support.function.functional_calls.jac"
-                        }
-                    }
-                },
-                {
                     "match": "\\b(null|true|false)\\b",
                     "name": "constant.language.c"
                 }
             ]
         },
         "entity_block_definition": {
-            "begin": "^\\s*(node|walker|graph)\\s+([A-Za-z][\\w]*|(?:\\w+(?:(?:\\,\\s?|\\:)(?:\\w+|\\s\\w))+))(\\s*({)|;)",
+            "begin": "^\\s*(node|edge|walker|graph)\\s+([A-Za-z][\\w]*|(?:\\w+(?:(?:\\,\\s?|\\:)(?:\\w+|\\s\\w))+))(\\s*({)|;)",
             "name": "source.jac.embedded.source",
             "beginCaptures": {
                 "1": {

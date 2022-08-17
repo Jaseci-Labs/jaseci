@@ -1,0 +1,234 @@
+\chapter{Jac Language Overview and Basics}
+\minitoc
+To articulate the sorcerer spells made possible by the wand that is Jaseci, I bestow upon thee, the Jac programming language. (Like the Harry Potter~\cite{harrypotter} simile there? Cool, I know ;-) )
+\par
+The name Jac take was chosen for a few reasons.
+\begin{itemize}
+    \item ``Jac'' is three characters long, so its well suited for the file name extension \texttt{.jac} for Jac programs.
+    \item It pulls its letters from the phrase \textbf{JA}seci \textbf{C}ode.
+    \item And it sounds oh so sweet to say ``Did you \gls{grok} that \gls{sick} Jac code yet!'' Rolls right off the tongue.
+\end{itemize}
+\par
+This chapter provides the full deep dive into the language. By the end, you will be fully empowerd with Jaseci wizardry and get a view into the key insights and novelty in the coding style.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section{Getting the Basics Out of the Way}
+First lets quickly dispense with the mundane. This section covers the standard table stakes fodder present in pretty much all languages. These aspects of Jac must be covered for completeness, however you should be able to speed read this section.  If you are unable to speed read this, perhaps you should give visual basic a try.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The Obligatory Hello World}
+\printfigHelloWorldBaby
+Let's begin with what has become the unofficial official starting point for any introduction to a new language, the ``hello world'' program. Thank you Canada for providing one of the most impactful contributions in computer science with ``hello world'' becoming a meme both technically and socially. We have such love for this contribution we even tag or newborns with the phrase as per Fig.~\ref{fig:hello_baby}. I digress. Lets now \gls{christen} our baby, Jaseci, with its ``Hello World'' expression.
+
+\jaccode{hello_world.jac}{Jaseci says Hello!}
+
+Simple enough right? Well let's walk through it. What we have here is a valid Jac program with a single walker defined. Remember a walker is our little robot friend that walks the nodes and edges of a graph and does stuff. In the curly braces, we articulate what our walker should do. Here we instruct our walker to utilize the standard library to call a print function denoted as \lstinline{std.out} to print a single string, our star and esteemed string, ``Hello World.'' The output to the screen (or wherever the OS is routing it's standard stream output) is simply,
+
+\shellout{hello_world.jac.output}
+
+And there we have the most useless program in the world. Though\dots technically this program is AI. Its not as intelligent as the machine depicted in Figure~\ref{fig:hello_baby}, but one that we can understand much better (unless you speak ``\gls{goo goo gaa gaa}'' of course). Let's move on.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Numbers, Arithmetic, and Logic}
+
+%%%%
+\subsection{Basic Arithmetic Operations}
+Next we should cover the he simplest math operations in Jac. We build upon what we've learned so far with our conversational AI above.
+
+\jaccode{jac_arith.jac}{Basic arithmetic operations}
+
+The output of this groundbreaking program is,
+
+\shellout{jac_arith.jac.output}
+
+Jac Code~\ref{jac:jac_arith.jac} is comprised of basic math operations. The semantics of these expressions are pretty much the same as anything you may have seen before, and pretty much match the semantics we have in the Python language. In this Example, we also observe that Jac is an untyped language and variables can be declared via a direct assignment; also very Python'y. The comma separated list of the defined variables \texttt{a} - \texttt{e} in the call to \lstinline{std.out} illustrate multiple values being printed to screen from a single call.
+\par
+Additionally, Jac supports power and modulo operations.
+
+\jaccode{jac_more_arith.jac}{Additional arithmetic operations}
+
+Jac Code~\ref{jac:jac_more_arith.jac} outputs,
+
+\shellout{jac_more_arith.jac.output}
+
+Here, we can also observe that, unlike Python, whitespace does not mater whatsoever. Languages utilizing whitespace to express static scoping should be criminalized. Yeah, I said it, see Rant~\ref{rant:whitespacesucks}. Anyway, A corollary to this design decision is that every statement must end with a ``\lstinline{;}''. The wonderful \lstinline{;}, A nod of respect goes to \texttt{C/C++/JavaScript} for bringing this beautiful code punctuation to the masses. Of course the \lstinline{;} as code punctuation was first introduced with \texttt{ALGOL 58}, but who the heck knows that language. It sounds like some kind of plant species. \Gls{bleh}. Onwards.
+
+\begin{nerd}
+    Grammar~\ref{gram:jac.g4:125:131} shows  the lines from the formal grammar for Jac that corresponds to the parsing of arithmetic.
+    \gramcoderange{jac.g4}{Jac grammar clip relevant to arithmetic}{125}{131}
+\end{nerd}
+
+%%%%
+\subsection{Comparison, Logical, and Membership Operations}
+Next we review the comparison and logical operations supported in Jac. This is relatively straight forward if you've programmed before. Let's summarize quickly for completeness.
+\jaccode{jac_compare.jac}{Comparision operations}
+\shellout{jac_compare.jac.output}
+In order of appearance, we have tests for equality, non equality, less than, greater than, less than or equal, and greater than or equal. These tools prove indispensible when expressing functionality through conditionals and loops. Additionally,
+
+\jaccode{jac_logical.jac}{Logical operations}
+\shellout{jac_logical.jac.output}
+Jac Code~\ref{jac:jac_logical.jac} presents the logical operations supported by Jac. In oder of appearance we have, boolean complement, logical and, logical or, another way to express and and or (thank you Python) and some combinations. These are also indispensible when using conditionals.
+
+[NEED EXAMPLE FOR MEMBERSHIP OPERATIONS]
+
+\begin{nerd}
+    Grammar~\ref{gram:jac.g4:117:123} shows the lines from the formal grammar for Jac that corresponds to the parsing of comparison, logical, and membership operations.
+    \gramcoderange{jac.g4}{Jac grammar clip relevant to comparison, logic, and membership}{117}{123}
+\end{nerd}
+
+%%%%
+\subsection{Assignment Operations}
+Next, lets take a look at assignment in Jac. In contrast to equality tests of \lstinline{==}, assignment operations copy the value of the right hand side of the assignment to the variable or object on the left hand side.
+\jaccode{jac_assign.jac}{Assignment operations}
+\shellout{jac_assign.jac.output}
+As shown in Jac Code~\ref{jac:jac_assign.jac}, there are a number of ways we can articulate an assignment. Of course we can simply set a variable equal to a particular value, however, we can go beyond that to set that assignment relative to its original value. In particular, we can use the short hand \lstinline{a += 4 + 4;} to represent \lstinline{a = a + 4 + 4;}. We will describe later an additional assignment type we call the copy assign. If you're simply dying of curiosity, I'll throw you a bone. This \lstinline{:=} assignment only applies to nodes and edges and has the semantic of copying the member values of a node or edge as opposed to the particular node or edge a variable is pointing to. In a nutshell this assignment uses pass by value semantics vs pass by reference semantics which is default for nodes and edges.
+
+\begin{nerd}
+    Grammar~\ref{gram:jac.g4:107:113} shows the lines from the formal grammar for Jac that corresponds to the parsing of assignment operations.
+    \gramcoderange{jac.g4}{Jac grammar clip relevant to assignment}{107}{113}
+\end{nerd}
+
+
+
+%%%%
+\subsection{Precedence}
+\printtabPrecedence
+At this point in our discussion its important to note the precedence of operations in Jac. Table~\ref{tab:jacprecedence} summarizes this precedence. There are a number of new and perhaps interesting things that appear in this table that you may not have seen before. [JOKE] For now, don't hurt yourself trying to understand what they are and mean, we'll get there.
+
+%%%%ex
+\subsection{Primitive Types}
+\jaccode{jac_types_prim.jac}{Primitive types}
+\shellout{jac_types_prim.jac.output}
+
+\subsubsection{Integers and Floats}
+\subsubsection{Booleans}
+\subsubsection{Lists and Strings}
+\subsubsection{Dictionaries}
+
+\subsubsection{Nodes and Edges}
+\jaccode{jac_types_node_edge.jac}{Basic arithmetic operations}
+\shellout{jac_types_node_edge.jac.output}
+
+\subsubsection{Specials}
+\jaccode{jac_types_special.jac}{Basic arithmetic operations}
+\shellout{jac_types_special.jac.output}
+\par[Type type]
+\par[Null]
+
+\subsubsection{Typecasting}
+\jaccode{jac_types_casting.jac}{Basic arithmetic operations}
+\shellout{jac_types_casting.jac.output}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Foreshadowing Unique Graph Operations}
+\jacdot{trivial}{.3}{Graph in memory for simple Hello World program (JC~\ref{jac:hello_world.jac})}
+Before we move on to more mundane basics that will continue to neutralize any kind of caffeine or methamphetamine buzz an experienced \gls{coder} might have as they read this, lets enjoy a \gls{Jaseci jolt}!
+\par
+As described before, all data in Jaseci lives in either a graph, or within the scope of a \gls{walker}. A walker, executes when it is \emph{engaged} to the graph, meaning it is located on a particular node of the graph. In the case of the Jac programs we've looked at so far, each program has specified one walker for which I've happened to choose the name \lstinline{init}. By default these init walkers are invoked from the default root node of an empty graph. Figure~\ref{dot:trivial} shows the complete state of memory for all of the Jac programs discussed thus far. The \lstinline{init} walker in these cases does not \emph{walk} anywhere and has only executed a set of operations on this default root node \texttt{n0}.
+\par
+Let's have a quick peek at some slick language syntax for building this graph and traveling to new nodes.
+\par
+\jaccode{jac_preview.jac}{Preview of graph operators}
+\par
+\jacdot{jac_preview}{.3}{Graph in memory for JC~\ref{jac:jac_preview.jac}}
+Jac Code~\ref{jac:jac_preview.jac} presents a sequence of operations that creates nodes and edges and produces a relatively simple complex graph. There is a bunch of new syntactic goodness presented in less than 10 lines of code and I certainly won't describe them all here. The goal is to simply whet your appetite on whats to come. But lets look at the state of our data (memory) shown in Figure~\ref{dot:jac_preview}.
+
+
+Yep, there a good bit going on here. in less than 10 lines of code we've done the following things:
+\begin{enumerate}[itemsep=0mm]
+    \footnotesize
+    \item Specified a new type of node we call a simple node.
+    \item Specified a new type of edge we call a back edge.
+    \item Specified a walker \lstinline{kewl\_graph\_creator} and its behavior
+    \item Instantiated a outward pointing edge from the \lstinline{n0:root} node.
+    \item Instantiated an instance of node type \lstinline{simple}
+    \item Connected edge from from \lstinline{root} to \lstinline{n1}
+    \item Instantiated a \lstinline{back} edge
+    \item Connected \lstinline{back} edge from \lstinline{n1} to \lstinline{n0}
+    \item Instantiated another instance of node type \lstinline{simple}, \lstinline{n2}
+    \item Instantiated an undirected edge from the \lstinline{n0:root} node.
+    \item Connected edge from \lstinline{root} to \lstinline{n2}
+    \item Instantiated an outward pointing edge from \lstinline{n2}
+    \item Connected edge from \lstinline{n2} to \lstinline{n1}
+\end{enumerate}
+
+Don't worry, I'll wait till that sinks in\dots Good? Well, if you liked that, just you wait.
+\par
+This is going to get very interesting indeed, but first,  on to more standard stuff\dots
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{More on Strings, Lists, and Dictionaries}
+\par
+\jaccode{jac_strlib.jac}{Built-in String Library
+}
+\par
+\shellout{jac_strlib.jac.output}
+\subsection{Library of String Operations}
+\printtabStrOps
+\subsection{Library of List Operations}
+\printtabListOps
+\subsection{Library of Dictionary Operations}
+\printtabDictOps
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Control Flow}
+
+%%%%%%%
+\par
+\jaccode{jac_if.jac}{if statement
+}
+\par
+\shellout{jac_if.jac.output}
+
+%%%%%%%
+\par
+\jaccode{jac_else.jac}{else statement
+}
+\par
+\shellout{jac_else.jac.output}
+
+%%%%%%%
+\par
+\jaccode{jac_elif.jac}{elif statement
+}
+\par
+\shellout{jac_elif.jac.output}
+
+%%%%%%%
+\par
+\jaccode{jac_for.jac}{for loop
+}
+\par
+\shellout{jac_for.jac.output}
+
+%%%%%%%
+\par
+\jaccode{jac_for_list.jac}{for loop through list
+}
+\par
+\shellout{jac_for_list.jac.output}
+
+%%%%%%%
+\par
+\jaccode{jac_while.jac}{while loop
+}
+\par
+\shellout{jac_while.jac.output}
+
+%%%%%%%
+\par
+\jaccode{jac_break.jac}{break statement
+}
+\par
+\shellout{jac_break.jac.output}
+
+%%%%%%%
+\par
+\jaccode{jac_continue.jac}{continue statement
+}
+\par
+\shellout{jac_continue.jac.output}

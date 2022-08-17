@@ -13,6 +13,7 @@ from jaseci.element.element import element
 
 from jaseci.jac.jac_set import jac_set
 from jaseci.jac.machine.jac_scope import jac_scope
+from jaseci.utils.id_list import id_list
 
 
 class machine_state:
@@ -24,6 +25,7 @@ class machine_state:
         self.report_custom = None
         self.request_context = None
         self.runtime_errors = []
+        self.yielded_walkers_ids = id_list(self)
         self._parent_override = parent_override
         if not isinstance(self, element) and caller:
             self._m_id = caller._m_id
@@ -64,6 +66,13 @@ class machine_state:
     def set_cur_ast(self, jac_ast):
         self._cur_jac_ast = jac_ast
         return jac_ast.kid
+
+    def destroy(self):
+        """
+        Destroys self from memory and persistent storage
+        """
+        for i in self.yielded_walkers_ids.obj_list():
+            i.destroy()
 
     # Helper Functions ##################
 
@@ -124,6 +133,12 @@ class machine_state:
             self.rt_error(f"Builtin action not found - {func_name}", jac_ast)
         return func_name
 
+    def jac_try_exception(self, e: Exception, jac_ast):
+        if isinstance(e, TryException):
+            raise e
+        else:
+            raise TryException(self.jac_exception(e, jac_ast))
+
     def jac_exception(self, e: Exception, jac_ast):
         return {
             "type": type(e).__name__,
@@ -132,6 +147,8 @@ class machine_state:
             "args": e.args,
             "line": jac_ast.line,
             "col": jac_ast.column,
+            "name": self.name if hasattr(self, "name") else "blank",
+            "rule": jac_ast.name,
         }
 
     def rt_log_str(self, msg, jac_ast=None):
@@ -187,3 +204,9 @@ class machine_state:
             "request_context": self.request_context,
             "runtime_errors": self.runtime_errors,
         }
+
+
+class TryException(Exception):
+    def __init__(self, ref: dict):
+        super().__init__(ref["msg"])
+        self.ref = ref

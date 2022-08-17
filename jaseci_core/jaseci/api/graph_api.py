@@ -38,7 +38,7 @@ class graph_api:
         Valid modes: {default, dot, }
         """
         if mode == "dot":
-            return gph.graph_dot_str()
+            return gph.graph_dot_str(detailed=detailed)
         else:
             items = []
             for i in gph.get_all_nodes():
@@ -97,16 +97,15 @@ class graph_api:
         return [f"Graph {gph.id} successfully deleted"]
 
     @interface.private_api(cli_args=["nd"])
-    def graph_node_get(self, nd: node, ctx: list = None):
+    def graph_node_get(self, nd: node, keys: list = []):
         """
         Returns value a given node
         """
         ret = {}
         nd_ctx = nd.serialize(detailed=True)["context"]
-        if ctx:
-            for i in nd_ctx.keys():
-                if i in ctx:
-                    ret[i] = nd_ctx[i]
+        for i in nd_ctx.keys():
+            if not len(keys) or i in keys:
+                ret[i] = nd_ctx[i]
         return ret
 
     @interface.private_api(cli_args=["nd"])
@@ -114,10 +113,19 @@ class graph_api:
         """
         Assigns values to member variables of a given node using ctx object
         """
-        nd.set_context(
-            ctx=ctx, arch=snt.run_architype(nd.name, kind="node", caller=self)
-        )
+        temp_ref_nd = snt.run_architype(nd.name, kind="node", caller=self)
+        nd.set_context(ctx=ctx, arch=temp_ref_nd)
+        temp_ref_nd.destroy()
         return nd.serialize()
+
+    @interface.cli_api(cli_args=["file"])
+    def graph_walk(self, nd: node = None):
+        cmd = ""
+        while cmd not in ["quit", "q", "exit"]:
+            print(
+                "location - " + ":".join([nd.kind, nd.name, nd.jid.strip("urn:uuid:")])
+            )
+            cmd = input("graph_walk_mode > ")
 
     def active_gph(self):
         return self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))

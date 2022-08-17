@@ -1,6 +1,7 @@
 from jaseci.utils.mem_hook import mem_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
+from jaseci.graph.node import node
 from jaseci.element.super_master import super_master
 from jaseci.element.master import master
 from jaseci.utils.utils import TestCaseHelper
@@ -106,6 +107,7 @@ class jac_tests(TestCaseHelper, TestCase):
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
         )
+        del report["final_node"]
         self.assertEqual(
             report,
             {
@@ -117,8 +119,17 @@ class jac_tests(TestCaseHelper, TestCase):
                     "super.y",
                 ],
                 "success": True,
+                "yielded": False,
             },
         )
+
+    def test_inherited_ref(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.inherited_ref, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(len(report["report"]), 12)
 
     def test_node_inheritance_chain_check(self):
         mast = master(h=mem_hook())
@@ -200,9 +211,79 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertIn("j_r_acc_ids", report[0][0].keys())
 
     def test_jasecilib_create_user(self):
+        self.logger_on()
         mast = master(h=mem_hook())
         mast.sentinel_register(name="test", code=jtp.jasecilib_create_user, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
         )["report"]
-        self.assertEqual(report[0]["name"], "daman@gmail.com")
+        self.assertEqual(report[0]["user"]["name"], "daman@gmail.com")
+
+    def test_root_is_node_type(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.root_is_node_type, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(report["report"][0], "JAC_TYPE.NODE")
+
+    def test_walker_with_exit_after_node(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(
+            name="test", code=jtp.walker_with_exit_after_node, auto_run=""
+        )
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(report["report"], [1, 1, 3, 1, 3, 1, 3, 1, 3, 43])
+
+    def test_depth_first_take(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.depth_first_take, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(report["report"], [1, 2, 3, 4, 5, 6, 7])
+
+    def test_breadth_first_take(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.breadth_first_take, auto_run="")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(report["report"], [1, 2, 5, 3, 4, 6, 7])
+
+    def test_inheritance_override_here_check(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(
+            name="test", code=jtp.inheritance_override_here_check, auto_run=""
+        )
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(report["report"], [9, 9, 10])
+
+    def test_dot_private_hidden(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(name="test", code=jtp.dot_private_hidden, auto_run="")
+        mast.general_interface_to_api(api_name="walker_run", params={"name": "init"})
+        report = mast.general_interface_to_api(
+            api_name="graph_get", params={"mode": "dot", "detailed": True}
+        )
+        self.assertNotIn("j=", report)
+
+    def test_check_destroy_node_has_var(self):
+        mast = master(h=mem_hook())
+        mast.sentinel_register(
+            name="test", code=jtp.check_destroy_node_has_var, auto_run=""
+        )
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "create"}
+        )
+        self.assertEqual(mast._h.get_object_distribution()[node], 2)
+        self.assertEqual(report["report"][0], "JAC_TYPE.NODE")
+        report = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "remove"}
+        )
+        self.assertEqual(mast._h.get_object_distribution()[node], 1)
+        self.assertEqual(report["report"][0], "JAC_TYPE.NULL")
