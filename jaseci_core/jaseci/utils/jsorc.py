@@ -152,13 +152,5 @@ def remoteK8sConf(K8sURL: str):
 def inclusterK8sConf():
     return config.load_incluster_config()
 
-if __name__ == "__main__":
-    monitorThread = startMonitoring(k8sConf = remoteK8sConf("http://clarity31.eecs.umich.edu:8084"), prometheusURL = "http://clarity31.eecs.umich.edu:8082")
-    waitMonitoring(monitorThread)
-    # m = Monitor("http://localhost:8080")
-    # m.check(
-    #     nodeName="minikube",
-    #     deploymentName="jaseci-redis",
-    #     deploymentNameSpace="default",
-    # )
-    # k = KubeController()
+monitorThread = startMonitoring(k8sConf = remoteK8sConf("http://clarity31.eecs.umich.edu:8084"), prometheusURL = "http://clarity31.eecs.umich.edu:8082")
+waitMonitoring(monitorThread)
