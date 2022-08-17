@@ -16,3 +16,35 @@ edge [name of edge] {
 }
 
 ```
+
+## Linking Nodes together with an Edge
+
+```jac 
+
+node state {
+    has context;
+}
+
+edge transition {
+    has intent ;
+}
+
+graph main {
+    has anchor main_root ; 
+
+    # create nodes here with the edges linking them.
+    spawn {
+        main_root = spawn node:: state(context="main node");
+
+        # create node that connects to main_root
+        node_one = spawn main_root -[transition(intent="one")] -> node::state(context="node one");
+
+        
+        # connect node that connects to node_one
+        node_two  = spawn node_one -[transition(intent="two")] -> node::state(context="node two");
+
+    }
+
+}
+
+```

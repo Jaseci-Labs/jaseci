@@ -20,9 +20,10 @@ To run commands for Jaseci we need a terminal that accepts bash arguments. We re
  This will return  the flavour of the distribution used for WSL. The version column will show the version of WSL.
 
 2. If no version is specified open windows powershell in  adminstrator mode and install WSL by running :
-    ```
-    wsl --install
-    ````
+
+```bash
+  wsl --install
+````
 
 3. Restart your Computer
 
@@ -35,7 +36,7 @@ To run commands for Jaseci we need a terminal that accepts bash arguments. We re
 python3 --version
 pip3 --version
 ```
-If these packages are installed they will return a version number. Move to step x if a version number is present.
+If these packages are installed they will return a version number. Move to step 7 if a version number is present.
 
 6.Install Python3 and pip3 by running the following:
 ```
