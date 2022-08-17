@@ -68,6 +68,17 @@ class Monitor:
         self.promon = Promon(promonUrl)
         self.controller = KubeController(k8sconfig)
 
+    def strategy_start_redis(self):
+        deployments = self.controller.get_deployment_list()
+        exsits = False
+        for deployment in deployments:
+            if deployment["name"] == "jaseci-redis":
+                exsits = True
+        if not exsits:
+            self.controller.create_deployment(
+                config=yaml.safe_load(open("jaseci.yaml", "r"))
+            )
+
     def strategy_redis_cpu(self, nodeName: str, deploymentNameSpace: str, deploymentName: str):
         cpu = self.promon.cpu_utilization_percentage()
         cpu_usage = cpu[nodeName]
@@ -118,7 +129,7 @@ def daemon(k8sConf, prometheusURL: str):
     m = Monitor(prometheusURL, k8sConf)
     while True:
         # m.strategy_redis_cpu("minikube", "default", "jaseci-redis")
-        m.strategy_service_cpu()
+        m.strategy_start_redis()
         time.sleep(10)
 
 def startMonitoring(k8sConf, prometheusURL: str):
