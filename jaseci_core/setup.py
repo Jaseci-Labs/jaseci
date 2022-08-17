@@ -17,6 +17,7 @@ setup(
         "pydantic",
         "prometheus-api-client==0.5.1", 
         "prometheus-client==0.14.1",
+        "kubernetes==23.6.0"
     ],
     package_data={
         "": ["*.ini"],
