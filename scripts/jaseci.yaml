@@ -154,18 +154,18 @@ spec:
         - name: jaseci-db-volume
           persistentVolumeClaim:
             claimName: jaseci-db-pvc
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: jaseci-redis
-# spec:
-#   selector:
-#     pod: jaseci-redis
-#   ports:
-#     - protocol: TCP
-#       port: 6379
-#       targetPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaseci-redis
+spec:
+  selector:
+    pod: jaseci-redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
 # ---
 # apiVersion: apps/v1
 # kind: Deployment
@@ -207,12 +207,49 @@ spec:
 #             items:
 #               - key: redis-config
 #                 path: redis.conf
-# ---
-# apiVersion: v1
-# kind: ConfigMap
-# metadata:
-#   name: jaseci-redis-config
-# data:
-#   redis-config: |
-#     maxmemory 1000mb
-#     maxmemory-policy allkeys-lru
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaseci-redis-config
+data:
+  redis-config: |
+    maxmemory 1000mb
+    maxmemory-policy allkeys-lru
+
+
+
+
+
+# Jaseci Service Account
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jaseci-account
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  namespace: default
+  name: jsorc
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "deployments", "services"]
+    verbs: ["get", "watch", "list", "update", "patch", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jsorc-rolebinding
+  namespace: dev
+subjects:
+  - kind: ServiceAccount
+    name: jaseci-account
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: jsorc
+  apiGroup: rbac.authorization.k8s.io
+
