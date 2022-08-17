@@ -153,4 +153,5 @@ def inclusterK8sConf():
     return config.load_incluster_config()
 
 monitorThread = startMonitoring(k8sConf = inclusterK8sConf(), prometheusURL = "http://js-prometheus:9090")
+print("Monitoring started")
 waitMonitoring(monitorThread)
