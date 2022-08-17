@@ -1,6 +1,5 @@
 \chapter{Walkers Navigating Graphs}
-
-
+\minitoc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Taking Edges (and Nodes?)}
@@ -20,23 +19,76 @@
 \subsection{Breadth First vs Depth First Walks}
 \par
 \jacdotnw{jac_walk_bfs}{.7}{Graph in memory for JC~\ref{jac:jac_walk_bfs.jac}}
-If you've played with the basic \texttt{take} command a bit you would notice that by default it results in a breadth first traversal of a graph.
-However, the \texttt{take} command is indeed quite flexible.
-You can specify an orientation of the \texttt{take} command to navigate with a breadth first or a depth first traversal.
+If you've played with the basic \lstinline{take} command a bit you would notice that by default it results in a breadth first traversal of a graph.
+However, the \lstinline{take} command is indeed quite flexible.
+You can specify an orientation of the \lstinline{take} command to navigate with a breadth first or a depth first traversal.
 \par
 \jaccode{jac_walk_bfs.jac}{Breadth first navigation with take vs depth first}
 \par
 Take for example the program shown in JC~\ref{jac:jac_walk_bfs.jac}.
-First we observe the definition of a static three level binary tree with the graph \texttt{example} on line 3.
+First we observe the definition of a static three level binary tree with the graph \lstinline{example} on line 3.
 This is a vanilla structure as depicted in Figure~\ref{dot:jac_walk_bfs}.
-Two walkers are present in this example, one walker \texttt{walk\_with\_breadth}, for which we observe a call to \texttt{take:bfs -->;} indicating a breadth first traversal, and another walker \texttt{walk\_with\_breadth}, for which we observe a call to \texttt{take:bfs -->;} indicating a depth first traversal.
+Two walkers are present in this example, one walker \lstinline{walk\_with\_breadth}, for which we observe a call to \lstinline{take:bfs -->;} indicating a breadth first traversal, and another walker \lstinline{walk\_with\_breadth}, for which we observe a call to \lstinline{take:bfs -->;} indicating a depth first traversal.
 \par
 As can be seen in its output,
 \par
 \shellout{jac_walk_bfs.jac.output}
 The print statement on line 34 demonstrate the order of nodes visited correspond to the specified traversal order.
 \par
-Additionally, the short hand of \texttt{take:b -->;}, or \texttt{take:d -->;} could be used to specify breadth first or depth first traversals respectively.
+Additionally, the short hand of \lstinline{take:b -->;}, or \lstinline{take:d -->;} could be used to specify breadth first or depth first traversals respectively.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Skipping and Disengaging}
+With walker traversing graphs with \lstinline{take} commands, Jac introduces a few new handy control statements that are quite handy,
+namely, \lstinline{skip} and \lstinline{disengage}.
+
+\subsection{Skip}
+In the context of a walkers code block, the intuition bethind the abstraction of \lstinline{skip} is that it instructs a walker to stop and forego all remaining computation on the current node and move to the next node (or complete computation if no nodes are queued up). Regardless as to where in the walkers body the \lstinline{skip} occurs, the entire remaining code in the walker is skipped and the walker moves on.
+\par
+The \lstinline{skip} directive can also be used in node/edge abilities. In this context, the \lstinline{skip} simply foregoes the remaining execution of that ability itself.
+\par
+Lets look at an example of a walker using the \lstinline{skip} command.
+
+%%%%%%%
+\par
+\jaccode{jac_nav_skip.jac}{Skipping nodes along a walk}
+\par
+\shellout{jac_nav_skip.jac.output}
+\par
+\jacdotnw{jac_nav_skip}{1}{Graph in memory for JC~\ref{jac:jac_nav_skip.jac} and JC~\ref{jac:jac_nav_disengage.jac}}
+
+JC~\ref{jac:jac_nav_skip.jac} shows an example of the \lstinline{skip} command in practice. The \lstinline{init} walker here traverses a simple chain of nodes as depicted in Figure~\ref{dot:jac_nav_skip}. As can be seen in the output the skip command on line 15 causes only the odd elements to be added to the \lstinline{output} array.
+\par
+The semantics of the \lstinline{skip} command is pretty much identical to the traditional \lstinline{break} commands except it ``breaks'' out of a walker or ability as opposed to a loop. Another way to think of it is as a \lstinline{return} of sorts.
+
+
+\subsection{Disengage}
+Disengage is a statement that can only be used inside a walker's code body and instructs the walker to halt all execution and `disengage' from the graph (i.e. do not visit any more nodes). In practice this is
+essential a skip with a clearing of all future nodes to visit.
+
+\par
+Lets look at an example of a walker using the \lstinline{disengage} command.
+%%%%%%%
+\par
+\jaccode{jac_nav_disengage.jac}{Disengaging walker during walk}
+\par
+\shellout{jac_nav_disengage.jac.output}
+
+
+JC~\ref{jac:jac_nav_disengage.jac} shows an example of the \lstinline{disengage} command. The \lstinline{init} walker here is almost identical to the implementation of JC~\ref{jac:jac_nav_skip.jac} however we've added \lstinline{if(here.id == 7): disengage;} on line 16. This cause our walker to stop its execution and complete its walk resulting in an effective truncation of the \lstinline{output} array.
+\par
+Note that, in addition to a basic \lstinline{disengage;}, Jac also support a disengage-report shorthand of the format \lstinline{disengage report "I'm disengaging";}. This directive results in a final report before the disengage executes.
+
+\subsection{Technical Semantics of Skip and Disengage}
+\par
+There are a number of important semantics of \lstinline{skip} and \lstinline{disengage} to keep in mind:
+\begin{enumerate}
+    \item The \lstinline{skip} statement can be used in the code bodies of walkers and abilities.
+    \item The \lstinline{disengage} statement can only be used in the code body of walkers.
+    \item The \lstinline{with exit} code block is not affected by \lstinline{skip} or \lstinline{disengage} statements. Upon a \lstinline{disengage}, any code in a walker's \lstinline{with exit} block will execute immediately after as the walker is exiting the graph.
+    \item An easy way to think about these semantics is as similar to the behavior of a traditional \lstinline{return} (skip) and a \lstinline{return} and stop walking (disengage).
+\end{enumerate}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Ignoring and Deleting}

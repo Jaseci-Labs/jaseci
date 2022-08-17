@@ -95,6 +95,13 @@ class edge(element, anchored):
         self.save()
         return True
 
+    def connect(self, source, target, bi_dir=False):
+        """
+        Connects both ends of the edge
+        """
+        self.set_bidirected(bi_dir)
+        return self.set_from_node(source) and self.set_to_node(target)
+
     def set_bidirected(self, bidirected: bool):
         """Sets/unsets edge to be bidirected"""
         self.bidirected = bidirected

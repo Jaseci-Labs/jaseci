@@ -1,6 +1,7 @@
 from jaseci.utils.utils import obj_class_cache, build_class_dict
 from jaseci.element.super_master import super_master as sm
 from docstring_parser import parse
+from os.path import exists
 
 # from pprint import pformat
 from inspect import getdoc, signature
@@ -8,10 +9,10 @@ import jaseci
 
 
 class book:
-    def format_params(self, sig):
+    def format_params(self, sig, ignore_args=[]):
         ret = ""
         for i in sig.parameters:
-            if i == "self":
+            if i == "self" or i in ignore_args:
                 continue
             if len(ret):
                 ret += ", "
@@ -19,6 +20,17 @@ class book:
             default = sig.parameters[i].default
             if default == sig.parameters[i].empty:
                 ret += " (*req)"
+            else:
+                # if isinstance(default, str):
+                #     default = default.encode("unicode_escape").lstrip("b")
+                default = (
+                    str(default)
+                    .replace("_", "\\_")
+                    .replace("{", "\\{")
+                    .replace("}", "\\}")
+                    .replace("\n", "\\\\n")
+                )
+                ret += f" ({default})"
         return ret if len(ret) else "n/a"
 
     def bookgen_api_cheatsheet(self, root, out=None, str=""):
@@ -66,26 +78,29 @@ class book:
 
         all_action_sets = []
         for importer, modname, ispkg in pkgutil.iter_modules(stdact.__path__):
+            if not exists(stdact.__path__[0] + "/" + modname + ".py"):
+                continue
+            mod = SourceFileLoader(
+                modname, stdact.__path__[0] + "/" + modname + ".py"
+            ).load_module()
             all_action_sets.append(
                 [modname]
+                + [getdoc(mod)]
                 + [
                     [name, val]
-                    for name, val in SourceFileLoader(
-                        modname, stdact.__path__[0] + "/" + modname + ".py"
-                    )
-                    .load_module()
-                    .__dict__.items()
+                    for name, val in mod.__dict__.items()
                     if callable(val) and modname + "." + name in live_actions
                 ]
             )
         return all_action_sets
 
-    def func_to_sexy_box(self, fname, func, doc):
+    def func_to_sexy_box(self, fname, func, ignore_args=[]):
+        doc = getdoc(func)
         line = (
             "\\apispec{"
             + fname
             + "}{"
-            + f"{self.format_params(signature(func))}"
+            + f"{self.format_params(signature(func), ignore_args=ignore_args)}"
             + "}\n"
         )
         parsed_doc = parse(doc)
@@ -96,13 +111,19 @@ class book:
         if len(parsed_doc.params):
             # doc += "\\vspace{3mm}\\par\n\\textbf{Parameters}\n\\par"
             doc += "\\vspace{4mm}\\par\n"
-            args_doc = "\\argspec{"
+            args_doc = "\\argspec{Parameters}{"
             for i in parsed_doc.params:
                 args_doc += (
                     f"\n\\texttt{{{i.arg_name}}} -"
                     f"- {i.description}\\vspace{{1.5mm}}\\par\n"
                 )
             args_doc += "}"
+            args_doc = args_doc.replace("_", "\\_")
+            doc += args_doc
+        if parsed_doc.returns:
+            # doc += "\\vspace{3mm}\\par\n\\textbf{Parameters}\n\\par"
+            doc += "\\vspace{4mm}\\par\n"
+            args_doc = "\\argspec{Returns}{" + parsed_doc.returns.description + "}"
             args_doc = args_doc.replace("_", "\\_")
             doc += args_doc
         line += "{" + doc + "}\n"
@@ -112,14 +133,19 @@ class book:
         out = []
         for i in self.get_global_actions():
             lib = i[0]
+            moddoc = parse(i[1]).long_description
+            if moddoc is None:
+                moddoc = "No documentation yet."
             if lib == "jaseci":
                 continue
-            out += ["\\subsection{" + lib + "}\n"]
-            i = i[1:]
+            out += ["\\subsection{" + lib + "}\n\\par\n" + moddoc + "\n"]
+            i = i[2:]
             for j in i:
                 out.append(
                     self.func_to_sexy_box(
-                        ".".join([lib, j[0].replace("_", "\\_")]), j[1], getdoc(j[1])
+                        ".".join([lib, j[0].replace("_", "\\_")]),
+                        j[1],
+                        ignore_args=["meta"],
                     )
                 )
         return "".join(out)
@@ -189,9 +215,12 @@ class book:
                 continue
             name = i.replace("_", " ")
             api = i.replace("_", "\\_")
-            ret += f"\\subsubsection{{\\lstinline[basicstyle=\\Large\\ttfamily]${name}$}}\n\n"
+            ret += (
+                f"\\subsubsection{{\\lstinline"
+                f"[basicstyle=\\Large\\ttfamily]${name}$}}\n\n"
+            )
             authstr = "(cli only)"
             if auth_level != "cli_only":
                 authstr = f"| api: {api} | auth: {auth_level}"
-            ret += self.func_to_sexy_box(f"cli: {name} {authstr}", v, getdoc(v))
+            ret += self.func_to_sexy_box(f"cli: {name} {authstr}", v)
         return ret
