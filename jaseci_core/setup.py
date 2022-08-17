@@ -15,6 +15,8 @@ setup(
         "flake8",
         "stripe",
         "pydantic",
+        "prometheus-api-client==0.5.1", 
+        "prometheus-client==0.14.1",
     ],
     package_data={
         "": ["*.ini"],
