@@ -13,8 +13,8 @@ class walker_api:
     """
     Walker APIs
 
-    The walker set of APIs are used for execution and management of walkers. The primary API used
-    to run walkers is \\lstinline{walker_run}.
+    The walker set of APIs are used for execution and management of walkers. The
+    primary API used to run walkers is \\textbf{walker_run}.
 
     """
 
