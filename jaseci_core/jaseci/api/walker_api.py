@@ -12,6 +12,10 @@ from jaseci.utils.id_list import id_list
 class walker_api:
     """
     Walker APIs
+
+    The walker set of APIs are used for execution and management of walkers. The primary API used
+    to run walkers is \\lstinline{walker_run}.
+
     """
 
     def __init__(self):
