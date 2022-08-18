@@ -48,3 +48,19 @@ graph main {
 }
 
 ```
+
+## Inheritance on Edges
+
+Edges can inherit abilities and attributes of other edges.
+
+
+```jac
+# parent edge 
+edge transition {
+    has transition_next ;
+}
+# child edge
+edge transition_back: transition {
+    has prev_step ;
+}
+```

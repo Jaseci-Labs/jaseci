@@ -9,12 +9,78 @@ A node is a representation of an entity.
 * Nodes accumulate context via a push function, context can be read ass well
 * Nodes can execute a set of actions upon entry and exit.
 
+## Defining Node Attributes
+Attributes are variables within the node.
 
 ```jac 
 node [name of node]{
-    # to declare a variable
+    # to declare an attribute we uses the [has] keyword followed by the attribute name.
     has variable;
     # to use a module from jaseci kit
     can use_qa;
+}
+```
+
+## Adding abilities
+
+
+Functions in JAC are avalibale to Nodes only. They are called Abilities instead of Functions.These abilities can be activated when a walker travers over a node . Abilities can be triggered when a Walker first traverse over a node , leaves a node , triggered by the walker or when a specific walker enter or leaves a node.
+
+Abilities in nodes can be declared as followed:
+
+```jac 
+node state {
+  # any walker can use ability
+  can ability6 {
+    # execute some code
+  }
+  # Walker enters a node 
+    can ability  entry {
+        #execute some code.
+    }
+    # Walker exits a node 
+    can ability2  exit {
+        # execute some code 
+    }
+    
+    # specific walker enters
+    can ability3 with walker1 entry {
+        # execute some code
+    }
+
+    # specific walker exits
+    can ability4 walker1 exits {
+
+    }
+
+    # only specifc walker can use ability 
+    can ability5 walker2 {
+        # code to execute
+    }
+}
+
+```
+
+## Inheritance on Nodes 
+
+Nodes can inherit abilities and attributes of other nodes. 
+
+```jac
+# parent node 
+
+node state {
+    has title;
+    has message;
+    has prompts;
+}
+
+# inherits attributes from state node.
+node input_state:state {
+    has input;
+}
+
+# inherits attributes from input_state.
+node output_state :input:state{
+    has output;
 }
 ```

@@ -23,7 +23,7 @@
 - Keywords
 - [Operators](support/guide/jac_language_guide/operators.md)
 - [Control Flow](support/guide/jac_language_guide/control_flow.md)
-- Collections
+- [Collections](support/guide/jac_language_guide/collections.md)
 - [Nodes](support/guide/jac_language_guide/nodes.md)
     - Defining node attributes
     - Adding abilities
@@ -31,7 +31,7 @@
 - [Edges](support/guide/jac_language_guide/edges.md)
     - Defining edge attributes
     - Adding abilities
-    - Using Ineritance on Nodes
+    - Using Ineritance on Edges
 - [Graphs](support/guide/jac_language_guide/graphs.md)
     - Defining a Graph
     - Adding Nodes and Edges
