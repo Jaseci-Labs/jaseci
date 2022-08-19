@@ -13,9 +13,11 @@ class walker_api:
     """
     Walker APIs
 
-    The walker set of APIs are used for execution and management of walkers. The
-    primary API used to run walkers is \\textbf{walker_run}.
-
+    The walker set of APIs are used for execution and management of walkers. Walkers
+    are the primary entry points for running Jac programs. The
+    primary API used to run walkers is \\textbf{walker_run}. There are a number of
+    variations on this API that enable the invocation of walkers with various
+    semantics.
     """
 
     def __init__(self):
@@ -27,7 +29,11 @@ class walker_api:
         self, snt: sentinel = None, code: str = "", encoded: bool = False
     ):
         """
-        Create blank or code loaded walker and return object
+        Allows for the specific parsing and registering of individual walkers.
+
+        Though the common case is to register entire sentinels, a user can also
+        register individual walkers one at a time. This API accepts code for a single
+        walker (i.e., \\lstinline{walker \{...\}).
         """
         if encoded:
             code = b64decode_str(code)
