@@ -60,6 +60,7 @@ class user_api:
         ret = {}
         mast = self.user_creator(name, other_fields)
         ret["user"] = mast.serialize()
+        self.seek_committer(mast)
         if len(global_init):
             ret["global_init"] = self.user_global_init(
                 mast, global_init, global_init_ctx
@@ -92,7 +93,7 @@ class user_api:
         """
         Create a master instance and return root node master object
 
-        other_fields used for additional feilds for overloaded interfaces
+        other_fields used for additional fields for overloaded interfaces
         (i.e., Dango interface)
         """
         return mast.sentinel_active_global(
