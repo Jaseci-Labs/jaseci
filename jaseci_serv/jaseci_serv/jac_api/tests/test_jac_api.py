@@ -964,6 +964,34 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(res.data["success"], True)
         self.assertEqual(res.data["global_init"]["auto_run_result"]["success"], True)
 
+    def test_public_user_create_save_through(self):
+        public_client = APIClient()
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 2)
+        payload = {"op": "global_sentinel_set"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {
+            "op": "user_create",
+            "name": "yo2@gmail.com",
+            "global_init": "init",
+            "other_fields": {
+                "password": "yoyoyoyoyoyo",
+                "name": "",
+                "is_activated": True,
+            },
+        }
+        res = public_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        usr = get_user_model().objects.get(email="yo2@gmail.com")
+        self.assertIsNotNone(usr.get_master().active_gph_id)
+
     def test_master_create_global_init(self):
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
         payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
@@ -1585,28 +1613,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             "zsb:walker_exception_with_try_else_multiple_line - line 32, col 23 - rule atom_trailer - ",
             res["errors"][0],
         )
-
-    def test_check_json_global_dict(self):
-        """Test set get global objects (as json)"""
-        from jaseci.tests.jac_test_code import set_get_global_dict
-
-        payload = {
-            "op": "sentinel_register",
-            "name": "zsb",
-            "code": set_get_global_dict,
-        }
-        res = self.sclient.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        payload = {"op": "walker_run", "name": "setter"}
-        res = self.sclient.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        payload = {"op": "walker_run", "name": "getter"}
-        res = self.sclient.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        self.assertEqual(res.data["report"][0]["max_bot_count"], 10)
 
     def quick_call(self, bywho, ops):
         return bywho.post(reverse(f'jac_api:{ops["op"]}'), ops, format="json")
