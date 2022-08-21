@@ -2,7 +2,7 @@ import { Component, Element, Fragment, h, Prop } from '@stencil/core';
 import clsx from 'clsx';
 import { getProp } from '../../store/propsStore';
 import { setUpEvents } from '../../utils/events';
-import { getOperations, renderComponentTree } from '../../utils/utils';
+import { getOperations } from '../../utils/utils';
 
 @Component({
   tag: 'jsc-button-group',

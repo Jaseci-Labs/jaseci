@@ -1,4 +1,4 @@
-import { Component, Element, Event, EventEmitter, Fragment, h, Prop, Watch } from '@stencil/core';
+import { Component, Element, h, Prop, Watch } from '@stencil/core';
 import clsx from 'clsx';
 import { getProp } from '../../store/propsStore';
 import { setUpEvents } from '../../utils/events';
@@ -22,12 +22,6 @@ export class RadioGroup {
   @Prop() operations: string;
   @Prop() options: string;
   @Element() host: HTMLElement;
-
-  @Event() valueChanged: EventEmitter<string>;
-  private onInputChangeValue(event: Event) {
-    this.value = (event.target as HTMLInputElement).value;
-    this.valueChanged.emit(this.value);
-  }
 
   componentDidLoad() {
     setUpEvents(this.host, this.events);
