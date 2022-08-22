@@ -17,7 +17,7 @@ setup(
         "sphinx>=2.4.3,<2.5.0",
         "django-cors-headers",
         "tblib",
-        "prometheus_api_client==0.5.1", 
+        "prometheus_api_client==0.5.1",
         "prometheus-client==0.14.1",
         "kubernetes==23.6.0",
     ],
