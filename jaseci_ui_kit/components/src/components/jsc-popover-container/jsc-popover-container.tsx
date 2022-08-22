@@ -18,7 +18,7 @@ export class PopoverContainer {
   closePopover: () => void;
 
   @Method()
-  playPresenceAnimation() {
+  async playPresenceAnimation() {
     animate(
       this.container,
       {

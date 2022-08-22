@@ -577,16 +577,10 @@ and is\_superuser.\vspace{1.5mm}\par
 }}
 \subsection{APIs for walker}
 
-No documentation yet.
+\par
+The walker set of APIs are used for execution and management of walkers. The
+primary API used to run walkers is \textbf{walker\_run}.
 
-\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker callback$}
-
-\apispec{cli: walker callback | api: walker\_callback | auth: public}{nd: node (*req), wlk: walker (*req), key: str (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)}
-{along with the walker id and node id}
-\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker summon$}
-
-\apispec{cli: walker summon | api: walker\_summon | auth: public}{key: str (*req), wlk: walker (*req), nd: node (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)}
-{along with the walker id and node id}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker register$}
 
 \apispec{cli: walker register | api: walker\_register | auth: user}{snt: sentinel (None), code: str (), encoded: bool (False)}
@@ -611,13 +605,29 @@ No documentation yet.
 
 \apispec{cli: walker spawn create | api: walker\_spawn\_create | auth: user}{name: str (*req), snt: sentinel (None)}
 {No documentation yet.}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker spawn list$}
+
+\apispec{cli: walker spawn list | api: walker\_spawn\_list | auth: user}{detailed: bool (False)}
+{No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker spawn delete$}
 
 \apispec{cli: walker spawn delete | api: walker\_spawn\_delete | auth: user}{name: str (*req)}
 {No documentation yet.}
-\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker spawn list$}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker spawn clear$}
 
-\apispec{cli: walker spawn list | api: walker\_spawn\_list | auth: user}{detailed: bool (False)}
+\apispec{cli: walker spawn clear | api: walker\_spawn\_clear | auth: user}{n/a}
+{No documentation yet.}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker yield list$}
+
+\apispec{cli: walker yield list | api: walker\_yield\_list | auth: user}{detailed: bool (False)}
+{No documentation yet.}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker yield delete$}
+
+\apispec{cli: walker yield delete | api: walker\_yield\_delete | auth: user}{name: str (*req)}
+{No documentation yet.}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker yield clear$}
+
+\apispec{cli: walker yield clear | api: walker\_yield\_clear | auth: user}{n/a}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker prime$}
 
@@ -635,3 +645,11 @@ No documentation yet.
 
 \apispec{cli: wapi | api: wapi | auth: user}{name: str (*req), nd: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), snt: sentinel (None), profiling: bool (False)}
 {No documentation yet.}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker summon$}
+
+\apispec{cli: walker summon | api: walker\_summon | auth: public}{key: str (*req), wlk: walker (*req), nd: node (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)}
+{along with the walker id and node id}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker callback$}
+
+\apispec{cli: walker callback | api: walker\_callback | auth: public}{nd: node (*req), wlk: walker (*req), key: str (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)}
+{along with the walker id and node id}
