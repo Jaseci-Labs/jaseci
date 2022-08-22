@@ -17,7 +17,8 @@ setup(
         "pydantic",
         "prometheus_api_client==0.5.1",
         "prometheus-client==0.14.1",
-        "kubernetes==23.6.0" "docstring-parser",
+        "kubernetes==23.6.0",
+        "docstring-parser",
     ],
     package_data={
         "": ["*.ini"],
