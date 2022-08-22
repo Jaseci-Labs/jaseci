@@ -5,7 +5,8 @@ from jaseci.api.interface import interface
 
 
 class alias_api:
-    """Alias APIs for creating nicknames for UUIDs and other long strings
+    """
+    Alias APIs for creating nicknames for UUIDs and other long strings
 
     The alias set of APIs provide a set of `alias' management functions for
     creating and managing aliases for long strings such as UUIDs. If an alias'

@@ -7,12 +7,16 @@
 
 ## Properties
 
-| Property     | Attribute    | Description | Type     | Default                                       |
-| ------------ | ------------ | ----------- | -------- | --------------------------------------------- |
-| `css`        | `css`        |             | `string` | `JSON.stringify({})`                          |
-| `events`     | `events`     |             | `string` | `undefined`                                   |
-| `name`       | `name`       |             | `string` | `undefined`                                   |
-| `operations` | `operations` |             | `any`    | `JSON.parse(localStorage.getItem(`op-msgs`))` |
+| Property      | Attribute     | Description | Type     | Default                |
+| ------------- | ------------- | ----------- | -------- | ---------------------- |
+| `color`       | `color`       |             | `string` | `'rgb(206, 212, 218)'` |
+| `css`         | `css`         |             | `string` | `JSON.stringify({})`   |
+| `events`      | `events`      |             | `string` | `undefined`            |
+| `label`       | `label`       |             | `string` | `undefined`            |
+| `name`        | `name`        |             | `string` | `undefined`            |
+| `operations`  | `operations`  |             | `any`    | `undefined`            |
+| `orientation` | `orientation` |             | `string` | `undefined`            |
+| `size`        | `size`        |             | `string` | `'1px'`                |
 
 
 ----------------------------------------------

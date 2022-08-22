@@ -54,7 +54,7 @@ export class Popover {
   }
 
   @Method()
-  openPopover() {
+  async openPopover() {
     this.popoverContainer.classList.remove('hidden');
     const contentsHeight = this.contents.getBoundingClientRect().height;
     if (this.popoverContainer) {
