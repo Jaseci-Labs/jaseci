@@ -1,4 +1,4 @@
-from promon import Promon
+from .promon import Promon
 import time
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
