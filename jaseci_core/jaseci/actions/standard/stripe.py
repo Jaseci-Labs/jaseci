@@ -221,7 +221,11 @@ def get_payment_intents(
 
 @jaseci_action()
 def create_payment_intents(
-    customer_id: str, amount: int, currency: str, payment_method_types: str, meta
+    customer_id: str,
+    amount: int,
+    currency: str,
+    payment_method_types: str = "card",
+    meta=dict,
 ):
     """Create customer payment"""
     set_api_key(meta)
@@ -231,7 +235,7 @@ def create_payment_intents(
             customer=customer_id,
             amount=amount,
             currency=currency,
-            payment_method_types=payment_method_types,
+            payment_method_types=[payment_method_types],
         )
     except Exception as e:
         return {"message": str(e)}
