@@ -7,6 +7,7 @@ import multiprocessing
 
 
 class KubeController:
+    # A set of all functions that are helpful for kubernetes operations
     # Configs can be set in Configuration class directly or using helper utility
 
     def __init__(self, configuration):
