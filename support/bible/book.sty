@@ -1,4 +1,5 @@
 \ProvidesPackage{book}
+\usepackage{minitoc}
 \usepackage[table]{xcolor}
 \definecolor{light-gray}{HTML}{E5E4E2}
 \definecolor{light-cyan}{HTML}{FFFEFD}
@@ -82,7 +83,7 @@
 }
 
 \lstdefinestyle{gram}{
-basicstyle=\footnotesize\ttfamily\color{olive},%
+basicstyle=\ttfamily\color{olive},%
 breaklines=true,%                                      allow line breaks
 moredelim=[s][\color{green!50!black}\ttfamily]{'}{'},% single quotes in green
 moredelim=*[s][\color{black}\ttfamily]{options}{\}},%  options in black (until trailing })
@@ -110,7 +111,7 @@ keywordstyle={\color{black}},%                         and format them in black
     postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
     backgroundcolor=\color{gray!10},
     captionpos=t,
-    basicstyle=\footnotesize\upshape\ttfamily,      % the size of the fonts that are used for the code
+    basicstyle=\upshape\ttfamily,      % the size of the fonts that are used for the code
      numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
     numbersep=10pt,                   % how far the line-numbers are from the code
     numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
@@ -170,12 +171,12 @@ keywordstyle={\color{black}},%                         and format them in black
 %   \end{tcolorbox}
 % }
 
-\newcommand{\argspec}[1]{
+\newcommand{\argspec}[2]{
 \begin{tcolorbox}[enhanced,attach boxed title to top center={yshift=-3mm,yshifttext=-1mm},
     colback=blue!2!white,colframe=blue!75!black,coltitle=black,colbacktitle=green!5!white,
-    title=\texttt{Parameters},fonttitle=\bfseries,
+    title=\texttt{#1},fonttitle=\bfseries,
     boxed title style={size=small,colframe=red!50!black},boxrule=0.5pt, ]
-    #1
+    #2
   \end{tcolorbox}
 }
 

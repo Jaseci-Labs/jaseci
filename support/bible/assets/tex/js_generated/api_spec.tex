@@ -17,7 +17,7 @@ makes an attempt to auto detect and hot load any python package dependencies
 the file may reference via python's relative imports. This file is assumed to
 have the necessary annotations and decorations required by Jaseci to recognize
 its actions.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{file} -- The python file with full to load actions from.
 (i.e., ~/local/myact.py)\vspace{1.5mm}\par
 }}
@@ -31,7 +31,7 @@ action libraries. Remote actions allow for higher flexibility in the languages
 supported for action libraries. If an  library writer would like to use another
 language, the main hook REST api simply needs to be implemented. Please
 refer to documentation on creating action libraries for more details.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{url} -- The url of the API server supporting Jaseci actions.\vspace{1.5mm}\par
 }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$actions load module$}
@@ -42,17 +42,17 @@ This is particularly useful for pip installed action libraries as the developer
 can directly reference the module using the same format as a regular python
 import. As with load local, the module will be loaded directly into the running
 Jaseci python instance.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{mod} -- The import style module to load actions from.
 (i.e., jaseci\_kit.bi\_enc)\vspace{1.5mm}\par
 }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$actions list$}
 
-\apispec{cli: actions list | api: actions\_list | auth: admin}{name: str}
+\apispec{cli: actions list | api: actions\_list | auth: admin}{name: str ()}
 {This API is used to list the loaded actions active in Jaseci. These actions
 include all types of loaded actions whether it be local modules or remote
 containers. A particular set of actions can be viewed using the name parameter.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{name} -- The name for a library for which to filter the view of shown
 actions. If left blank all actions from all loaded sets will be shown.\vspace{1.5mm}\par
 }}
@@ -77,11 +77,13 @@ the clear or delete alias APIs.
 {Either create new alias string to string mappings or replace
 an existing mappings of a given alias name. Once registered the
 alias mapping is instantly active.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{name} -- The name for the alias created by caller.\vspace{1.5mm}\par
 
 \texttt{value} -- The value for that name to map to (i.e., UUID)\vspace{1.5mm}\par
-}}
+}\vspace{4mm}\par
+\argspec{Returns}{Fields include
+'response': Message of mapping that was created}}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$alias list$}
 
 \apispec{cli: alias list | api: alias\_list | auth: user}{n/a}
@@ -89,22 +91,31 @@ alias mapping is instantly active.\vspace{4mm}\par
 This API is quite useful to track not only the aliases the caller
 creates, but also the aliases automatically created as various Jaseci
 objects (walkers, architypes, sentinels, etc.) are created, changed,
-or destroyed.}
+or destroyed.\vspace{4mm}\par
+\argspec{Returns}{Dictionary of active mappings
+'name': 'value'
+...}}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$alias delete$}
 
 \apispec{cli: alias delete | api: alias\_delete | auth: user}{name: str (*req)}
 {Removes a specific alias by its name. Only the alias is removed no
 actual objects are affected. Future uses of this name will not be
 mapped.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{name} -- The name for the alias to be removed from caller.\vspace{1.5mm}\par
-}}
+}\vspace{4mm}\par
+\argspec{Returns}{Fields include
+'response': Message of success/failure to remove alias
+'success': True/False based on delete actually happening}}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$alias clear$}
 
 \apispec{cli: alias clear | api: alias\_clear | auth: user}{n/a}
 {Removes a all aliases. No actual objects are affected. Aliases will
 continue to be automatically generated when creating other Jaseci
-objects.}
+objects.\vspace{4mm}\par
+\argspec{Returns}{Fields include
+'response': Message of number of alias removed
+'removed': Number of aliases removed}}
 \subsection{APIs for architype}
 
 \par
@@ -119,13 +130,13 @@ a Jaseci instance is aware of.
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$architype register$}
 
-\apispec{cli: architype register | api: architype\_register | auth: user}{code: str (*req), encoded: bool, snt: sentinel}
+\apispec{cli: architype register | api: architype\_register | auth: user}{code: str (*req), encoded: bool (False), snt: sentinel (None)}
 {This register API allows for the creation or replacement/update of
 an architype that can then be used by walkers in their interactions
 of graphs. The code argument takes Jac source code for the single
 architype. To load multiple architypes and walkers at the same time,
 use sentinel register API.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{code} -- The text (or filename) for an architypes Jac code\vspace{1.5mm}\par
 
 \texttt{encoded} -- True/False flag as to whether code is encode
@@ -133,47 +144,64 @@ in base64\vspace{1.5mm}\par
 
 \texttt{snt} -- The UUID of the sentinel to be the owner of this
 architype\vspace{1.5mm}\par
-}}
+}\vspace{4mm}\par
+\argspec{Returns}{Fields include
+'architype': Architype object if created otherwise null
+'success': True/False whether register was successful
+'errors': List of errors if register failed
+'response': Message on outcome of register call}}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$architype get$}
 
-\apispec{cli: architype get | api: architype\_get | auth: user}{arch: architype (*req), mode: str, detailed: bool}
+\apispec{cli: architype get | api: architype\_get | auth: user}{arch: architype (*req), mode: str (default), detailed: bool (False)}
 {No documentation yet.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{arch} -- The architype being accessed\vspace{1.5mm}\par
 
 \texttt{mode} -- Valid modes: {default, code, ir, }\vspace{1.5mm}\par
 
 \texttt{detailed} -- Flag to give summary or complete set of fields\vspace{1.5mm}\par
-}}
+}\vspace{4mm}\par
+\argspec{Returns}{Fields include (depends on mode)
+'code': Formal source code for architype
+'ir': Intermediate representation of architype
+'architype': Architype object print}}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$architype set$}
 
-\apispec{cli: architype set | api: architype\_set | auth: user}{arch: architype (*req), code: str (*req), mode: str}
+\apispec{cli: architype set | api: architype\_set | auth: user}{arch: architype (*req), code: str (*req), mode: str (default)}
 {No documentation yet.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{arch} -- The architype being set\vspace{1.5mm}\par
 
 \texttt{code} -- The text (or filename) for an architypes Jac code/ir\vspace{1.5mm}\par
 
 \texttt{mode} -- Valid modes: {default, code, ir, }\vspace{1.5mm}\par
-}}
+}\vspace{4mm}\par
+\argspec{Returns}{Fields include (depends on mode)
+'success': True/False whether set was successful
+'errors': List of errors if set failed
+'response': Message on outcome of set call}}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$architype list$}
 
-\apispec{cli: architype list | api: architype\_list | auth: user}{snt: sentinel, detailed: bool}
+\apispec{cli: architype list | api: architype\_list | auth: user}{snt: sentinel (None), detailed: bool (False)}
 {No documentation yet.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{snt} -- The sentinel for which to list its architypes\vspace{1.5mm}\par
 
 \texttt{detailed} -- Flag to give summary or complete set of fields\vspace{1.5mm}\par
-}}
+}\vspace{4mm}\par
+\argspec{Returns}{List of architype objects}}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$architype delete$}
 
-\apispec{cli: architype delete | api: architype\_delete | auth: user}{arch: architype (*req), snt: sentinel}
+\apispec{cli: architype delete | api: architype\_delete | auth: user}{arch: architype (*req), snt: sentinel (None)}
 {No documentation yet.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{arch} -- The architype being set\vspace{1.5mm}\par
 
 \texttt{snt} -- The sentinel for which to list its architypes\vspace{1.5mm}\par
-}}
+}\vspace{4mm}\par
+\argspec{Returns}{Fields include (depends on mode)
+'success': True/False whether command was successful
+'response': Message on outcome of command}}
 \subsection{APIs for config}
 
 Abstracted since there are no valid configs in core atm, see jaseci\_serv
@@ -181,11 +209,11 @@ to see how used.
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$config get$}
 
-\apispec{cli: config get | api: config\_get | auth: admin}{name: str (*req), do_check: bool}
+\apispec{cli: config get | api: config\_get | auth: admin}{name: str (*req), do_check: bool (True)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$config set$}
 
-\apispec{cli: config set | api: config\_set | auth: admin}{name: str (*req), value: str (*req), do_check: bool}
+\apispec{cli: config set | api: config\_set | auth: admin}{name: str (*req), value: str (*req), do_check: bool (True)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$config list$}
 
@@ -201,7 +229,7 @@ to see how used.
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$config delete$}
 
-\apispec{cli: config delete | api: config\_delete | auth: admin}{name: str (*req), do_check: bool}
+\apispec{cli: config delete | api: config\_delete | auth: admin}{name: str (*req), do_check: bool (True)}
 {No documentation yet.}
 \subsection{APIs for global}
 
@@ -217,7 +245,7 @@ No documentation yet.
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$global sentinel set$}
 
-\apispec{cli: global sentinel set | api: global\_sentinel\_set | auth: admin}{snt: sentinel}
+\apispec{cli: global sentinel set | api: global\_sentinel\_set | auth: admin}{snt: sentinel (None)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$global sentinel unset$}
 
@@ -229,15 +257,15 @@ No documentation yet.
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$graph create$}
 
-\apispec{cli: graph create | api: graph\_create | auth: user}{set_active: bool}
+\apispec{cli: graph create | api: graph\_create | auth: user}{set_active: bool (True)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$graph get$}
 
-\apispec{cli: graph get | api: graph\_get | auth: user}{gph: graph, mode: str, detailed: bool}
+\apispec{cli: graph get | api: graph\_get | auth: user}{gph: graph (None), mode: str (default), detailed: bool (False)}
 {Valid modes: {default, dot, }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$graph list$}
 
-\apispec{cli: graph list | api: graph\_list | auth: user}{detailed: bool}
+\apispec{cli: graph list | api: graph\_list | auth: user}{detailed: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$graph active set$}
 
@@ -249,7 +277,7 @@ No documentation yet.
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$graph active get$}
 
-\apispec{cli: graph active get | api: graph\_active\_get | auth: user}{detailed: bool}
+\apispec{cli: graph active get | api: graph\_active\_get | auth: user}{detailed: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$graph delete$}
 
@@ -257,15 +285,15 @@ No documentation yet.
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$graph node get$}
 
-\apispec{cli: graph node get | api: graph\_node\_get | auth: user}{nd: node (*req), ctx: list}
+\apispec{cli: graph node get | api: graph\_node\_get | auth: user}{nd: node (*req), keys: list ([])}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$graph node set$}
 
-\apispec{cli: graph node set | api: graph\_node\_set | auth: user}{nd: node (*req), ctx: dict (*req), snt: sentinel}
+\apispec{cli: graph node set | api: graph\_node\_set | auth: user}{nd: node (*req), ctx: dict (*req), snt: sentinel (None)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$graph walk$}
 
-\apispec{cli: graph walk (cli only)}{nd: node}
+\apispec{cli: graph walk (cli only)}{nd: node (None)}
 {No documentation yet.}
 \subsection{APIs for jac}
 
@@ -273,19 +301,19 @@ No documentation yet.
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$jac build$}
 
-\apispec{cli: jac build (cli only)}{file: str (*req), out: str}
+\apispec{cli: jac build (cli only)}{file: str (*req), out: str ()}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$jac test$}
 
-\apispec{cli: jac test (cli only)}{file: str (*req), detailed: bool}
+\apispec{cli: jac test (cli only)}{file: str (*req), detailed: bool (False)}
 {and .jir executables}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$jac run$}
 
-\apispec{cli: jac run (cli only)}{file: str (*req), walk: str, ctx: dict, profiling: bool}
+\apispec{cli: jac run (cli only)}{file: str (*req), walk: str (init), ctx: dict (\{\}), profiling: bool (False)}
 {and .jir executables}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$jac dot$}
 
-\apispec{cli: jac dot (cli only)}{file: str (*req), walk: str, ctx: dict, detailed: bool}
+\apispec{cli: jac dot (cli only)}{file: str (*req), walk: str (init), ctx: dict (\{\}), detailed: bool (False)}
 {files and .jir executables}
 \subsection{APIs for logger}
 
@@ -293,11 +321,11 @@ No documentation yet.
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$logger http connect$}
 
-\apispec{cli: logger http connect | api: logger\_http\_connect | auth: admin}{host: str (*req), port: int (*req), url: str (*req), log: str}
+\apispec{cli: logger http connect | api: logger\_http\_connect | auth: admin}{host: str (*req), port: int (*req), url: str (*req), log: str (all)}
 {Valid log params: {sys, app, all }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$logger http clear$}
 
-\apispec{cli: logger http clear | api: logger\_http\_clear | auth: admin}{log: str}
+\apispec{cli: logger http clear | api: logger\_http\_clear | auth: admin}{log: str (all)}
 {Valid log params: {sys, app, all }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$logger list$}
 
@@ -310,16 +338,16 @@ These APIs
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$master create$}
 
-\apispec{cli: master create | api: master\_create | auth: user}{name: str (*req), global_init: str, global_init_ctx: dict, other_fields: dict}
+\apispec{cli: master create | api: master\_create | auth: user}{name: str (*req), global_init: str (), global_init_ctx: dict (\{\}), other_fields: dict (\{\})}
 {other fields used for additional feilds for overloaded interfaces
 (i.e., Dango interface)}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$master get$}
 
-\apispec{cli: master get | api: master\_get | auth: user}{name: str (*req), mode: str, detailed: bool}
+\apispec{cli: master get | api: master\_get | auth: user}{name: str (*req), mode: str (default), detailed: bool (False)}
 {Valid modes: {default, }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$master list$}
 
-\apispec{cli: master list | api: master\_list | auth: user}{detailed: bool}
+\apispec{cli: master list | api: master\_list | auth: user}{detailed: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$master active set$}
 
@@ -331,11 +359,11 @@ These APIs
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$master active get$}
 
-\apispec{cli: master active get | api: master\_active\_get | auth: user}{detailed: bool}
+\apispec{cli: master active get | api: master\_active\_get | auth: user}{detailed: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$master self$}
 
-\apispec{cli: master self | api: master\_self | auth: user}{detailed: bool}
+\apispec{cli: master self | api: master\_self | auth: user}{detailed: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$master delete$}
 
@@ -352,7 +380,7 @@ These APIs
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$object get$}
 
-\apispec{cli: object get | api: object\_get | auth: user}{obj: element (*req), depth: int, detailed: bool}
+\apispec{cli: object get | api: object\_get | auth: user}{obj: element (*req), depth: int (0), detailed: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$object perms get$}
 
@@ -368,7 +396,7 @@ These APIs
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$object perms grant$}
 
-\apispec{cli: object perms grant | api: object\_perms\_grant | auth: user}{obj: element (*req), mast: element (*req), read_only: bool}
+\apispec{cli: object perms grant | api: object\_perms\_grant | auth: user}{obj: element (*req), mast: element (*req), read_only: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$object perms revoke$}
 
@@ -380,28 +408,28 @@ No documentation yet.
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$sentinel register$}
 
-\apispec{cli: sentinel register | api: sentinel\_register | auth: user}{name: str, code: str, code_dir: str, mode: str, encoded: bool, auto_run: str, auto_run_ctx: dict, auto_create_graph: bool, set_active: bool}
+\apispec{cli: sentinel register | api: sentinel\_register | auth: user}{name: str (default), code: str (), code_dir: str (./), mode: str (default), encoded: bool (False), auto_run: str (init), auto_run_ctx: dict (\{\}), auto_create_graph: bool (True), set_active: bool (True)}
 {Auto run is the walker to execute on register (assumes active graph
 is selected)}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$sentinel pull$}
 
-\apispec{cli: sentinel pull | api: sentinel\_pull | auth: user}{set_active: bool, on_demand: bool}
+\apispec{cli: sentinel pull | api: sentinel\_pull | auth: user}{set_active: bool (True), on_demand: bool (True)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$sentinel get$}
 
-\apispec{cli: sentinel get | api: sentinel\_get | auth: user}{snt: sentinel, mode: str, detailed: bool}
+\apispec{cli: sentinel get | api: sentinel\_get | auth: user}{snt: sentinel (None), mode: str (default), detailed: bool (False)}
 {Valid modes: {default, code, ir, }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$sentinel set$}
 
-\apispec{cli: sentinel set | api: sentinel\_set | auth: user}{code: str (*req), code_dir: str, encoded: bool, snt: sentinel, mode: str}
+\apispec{cli: sentinel set | api: sentinel\_set | auth: user}{code: str (*req), code_dir: str (./), encoded: bool (False), snt: sentinel (None), mode: str (default)}
 {Valid modes: {code, ir, }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$sentinel list$}
 
-\apispec{cli: sentinel list | api: sentinel\_list | auth: user}{detailed: bool}
+\apispec{cli: sentinel list | api: sentinel\_list | auth: user}{detailed: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$sentinel test$}
 
-\apispec{cli: sentinel test | api: sentinel\_test | auth: user}{snt: sentinel, detailed: bool}
+\apispec{cli: sentinel test | api: sentinel\_test | auth: user}{snt: sentinel (None), detailed: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$sentinel active set$}
 
@@ -413,11 +441,11 @@ is selected)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$sentinel active global$}
 
-\apispec{cli: sentinel active global | api: sentinel\_active\_global | auth: user}{auto_run: str, auto_run_ctx: dict, auto_create_graph: bool, detailed: bool}
+\apispec{cli: sentinel active global | api: sentinel\_active\_global | auth: user}{auto_run: str (), auto_run_ctx: dict (\{\}), auto_create_graph: bool (False), detailed: bool (False)}
 {Exclusive OR with pull strategy}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$sentinel active get$}
 
-\apispec{cli: sentinel active get | api: sentinel\_active\_get | auth: user}{detailed: bool}
+\apispec{cli: sentinel active get | api: sentinel\_active\_get | auth: user}{detailed: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$sentinel delete$}
 
@@ -429,19 +457,19 @@ Set of APIs to expose jaseci stripe management
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$stripe product create$}
 
-\apispec{cli: stripe product create | api: stripe\_product\_create | auth: admin}{name: str, description: str}
+\apispec{cli: stripe product create | api: stripe\_product\_create | auth: admin}{name: str (VIP Plan), description: str (Plan description)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$stripe product price set$}
 
-\apispec{cli: stripe product price set | api: stripe\_product\_price\_set | auth: admin}{productId: str (*req), amount: float, interval: str}
+\apispec{cli: stripe product price set | api: stripe\_product\_price\_set | auth: admin}{productId: str (*req), amount: float (50), interval: str (month)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$stripe product list$}
 
-\apispec{cli: stripe product list | api: stripe\_product\_list | auth: admin}{detalied: bool}
+\apispec{cli: stripe product list | api: stripe\_product\_list | auth: admin}{detalied: bool (True)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$stripe customer create$}
 
-\apispec{cli: stripe customer create | api: stripe\_customer\_create | auth: admin}{paymentId: str (*req), name: str, email: str, description: str}
+\apispec{cli: stripe customer create | api: stripe\_customer\_create | auth: admin}{paymentId: str (*req), name: str (cristopher evangelista), email: str (imurbatman12@gmail.com), description: str (Myca subscriber)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$stripe customer get$}
 
@@ -477,7 +505,7 @@ Set of APIs to expose jaseci stripe management
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$stripe invoices list$}
 
-\apispec{cli: stripe invoices list | api: stripe\_invoices\_list | auth: admin}{customerId: str (*req), subscriptionId: str (*req), limit: int, lastItem: str}
+\apispec{cli: stripe invoices list | api: stripe\_invoices\_list | auth: admin}{customerId: str (*req), subscriptionId: str (*req), limit: int (10), lastItem: str ()}
 {No documentation yet.}
 \subsection{APIs for super}
 
@@ -485,12 +513,12 @@ No documentation yet.
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$master createsuper$}
 
-\apispec{cli: master createsuper | api: master\_createsuper | auth: admin}{name: str (*req), global_init: str, global_init_ctx: dict, other_fields: dict}
+\apispec{cli: master createsuper | api: master\_createsuper | auth: admin}{name: str (*req), global_init: str (), global_init_ctx: dict (\{\}), other_fields: dict (\{\})}
 {other fields used for additional feilds for overloaded interfaces
 (i.e., Dango interface)}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$master allusers$}
 
-\apispec{cli: master allusers | api: master\_allusers | auth: admin}{num: int, start_idx: int}
+\apispec{cli: master allusers | api: master\_allusers | auth: admin}{num: int (0), start_idx: int (0)}
 {return and start idx specfies where to start
 NOTE: Abstract interface to be overridden}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$master become$}
@@ -514,7 +542,7 @@ part of that session's state.
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$user create$}
 
-\apispec{cli: user create | api: user\_create | auth: public}{name: str (*req), global_init: str, global_init_ctx: dict, other_fields: dict}
+\apispec{cli: user create | api: user\_create | auth: public}{name: str (*req), global_init: str (), global_init_ctx: dict (\{\}), other_fields: dict (\{\})}
 {This API is used to create users and optionally set them up with a graph and
 related initialization. In the context of
 JSCTL, any name is sufficient and no additional information is required.
@@ -532,7 +560,7 @@ active graph, then runs an initialization walker on the root node of this new
 graph. The initialization walker is identified by the name assigned to
 global init. The default empty string assigned to global init indicates this
 global setup should not be run.\vspace{4mm}\par
-\argspec{
+\argspec{Parameters}{
 \texttt{name} -- The user name to create. For Jaseci server this must be a valid
 email address.\vspace{1.5mm}\par
 
@@ -549,61 +577,79 @@ and is\_superuser.\vspace{1.5mm}\par
 }}
 \subsection{APIs for walker}
 
-No documentation yet.
+\par
+The walker set of APIs are used for execution and management of walkers. The
+primary API used to run walkers is \textbf{walker\_run}.
 
-\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker callback$}
-
-\apispec{cli: walker callback | api: walker\_callback | auth: public}{nd: node (*req), wlk: walker (*req), key: str (*req), ctx: dict, _req_ctx: dict, global_sync: bool}
-{along with the walker id and node id}
-\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker summon$}
-
-\apispec{cli: walker summon | api: walker\_summon | auth: public}{key: str (*req), wlk: walker (*req), nd: node (*req), ctx: dict, _req_ctx: dict, global_sync: bool}
-{along with the walker id and node id}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker register$}
 
-\apispec{cli: walker register | api: walker\_register | auth: user}{snt: sentinel, code: str, encoded: bool}
+\apispec{cli: walker register | api: walker\_register | auth: user}{snt: sentinel (None), code: str (), encoded: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker get$}
 
-\apispec{cli: walker get | api: walker\_get | auth: user}{wlk: walker (*req), mode: str, detailed: bool}
+\apispec{cli: walker get | api: walker\_get | auth: user}{wlk: walker (*req), mode: str (default), detailed: bool (False)}
 {Valid modes: {default, code, ir, keys, }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker set$}
 
-\apispec{cli: walker set | api: walker\_set | auth: user}{wlk: walker (*req), code: str (*req), mode: str}
+\apispec{cli: walker set | api: walker\_set | auth: user}{wlk: walker (*req), code: str (*req), mode: str (default)}
 {Valid modes: {code, ir, }}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker list$}
 
-\apispec{cli: walker list | api: walker\_list | auth: user}{snt: sentinel, detailed: bool}
+\apispec{cli: walker list | api: walker\_list | auth: user}{snt: sentinel (None), detailed: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker delete$}
 
-\apispec{cli: walker delete | api: walker\_delete | auth: user}{wlk: walker (*req), snt: sentinel}
+\apispec{cli: walker delete | api: walker\_delete | auth: user}{wlk: walker (*req), snt: sentinel (None)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker spawn create$}
 
-\apispec{cli: walker spawn create | api: walker\_spawn\_create | auth: user}{name: str (*req), snt: sentinel}
+\apispec{cli: walker spawn create | api: walker\_spawn\_create | auth: user}{name: str (*req), snt: sentinel (None)}
+{No documentation yet.}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker spawn list$}
+
+\apispec{cli: walker spawn list | api: walker\_spawn\_list | auth: user}{detailed: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker spawn delete$}
 
 \apispec{cli: walker spawn delete | api: walker\_spawn\_delete | auth: user}{name: str (*req)}
 {No documentation yet.}
-\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker spawn list$}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker spawn clear$}
 
-\apispec{cli: walker spawn list | api: walker\_spawn\_list | auth: user}{detailed: bool}
+\apispec{cli: walker spawn clear | api: walker\_spawn\_clear | auth: user}{n/a}
+{No documentation yet.}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker yield list$}
+
+\apispec{cli: walker yield list | api: walker\_yield\_list | auth: user}{detailed: bool (False)}
+{No documentation yet.}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker yield delete$}
+
+\apispec{cli: walker yield delete | api: walker\_yield\_delete | auth: user}{name: str (*req)}
+{No documentation yet.}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker yield clear$}
+
+\apispec{cli: walker yield clear | api: walker\_yield\_clear | auth: user}{n/a}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker prime$}
 
-\apispec{cli: walker prime | api: walker\_prime | auth: user}{wlk: walker (*req), nd: node, ctx: dict, _req_ctx: dict}
+\apispec{cli: walker prime | api: walker\_prime | auth: user}{wlk: walker (*req), nd: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\})}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker execute$}
 
-\apispec{cli: walker execute | api: walker\_execute | auth: user}{wlk: walker (*req), prime: node, ctx: dict, _req_ctx: dict, profiling: bool}
+\apispec{cli: walker execute | api: walker\_execute | auth: user}{wlk: walker (*req), prime: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), profiling: bool (False)}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker run$}
 
-\apispec{cli: walker run | api: walker\_run | auth: user}{name: str (*req), nd: node, ctx: dict, _req_ctx: dict, snt: sentinel, profiling: bool}
+\apispec{cli: walker run | api: walker\_run | auth: user}{name: str (*req), nd: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), snt: sentinel (None), profiling: bool (False)}
 {reports results, and cleans up walker instance.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$wapi$}
 
-\apispec{cli: wapi | api: wapi | auth: user}{name: str (*req), nd: node, ctx: dict, _req_ctx: dict, snt: sentinel, profiling: bool}
+\apispec{cli: wapi | api: wapi | auth: user}{name: str (*req), nd: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), snt: sentinel (None), profiling: bool (False)}
 {No documentation yet.}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker summon$}
+
+\apispec{cli: walker summon | api: walker\_summon | auth: public}{key: str (*req), wlk: walker (*req), nd: node (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)}
+{along with the walker id and node id}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker callback$}
+
+\apispec{cli: walker callback | api: walker\_callback | auth: public}{nd: node (*req), wlk: walker (*req), key: str (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)}
+{along with the walker id and node id}

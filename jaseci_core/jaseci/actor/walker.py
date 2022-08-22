@@ -133,6 +133,9 @@ class walker(element, jac_code, walker_interp, anchored):
 
         if start_node and (not self.yielded or not len(self.next_node_ids)):
             self.prime(start_node, prime_ctx, request_ctx)
+        elif prime_ctx:
+            for i in prime_ctx.keys():
+                self.context[str(i)] = prime_ctx[i]
 
         report_ret = {"success": True}
         walker_interp.reset(self)

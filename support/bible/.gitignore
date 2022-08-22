@@ -12,6 +12,7 @@
 *.cb2
 .*.lb
 
+
 ## Intermediate documents:
 *.dvi
 *.xdv
@@ -157,6 +158,7 @@ acs-*.bib
 *.maf
 *.mlf
 *.mlt
+*.mtc
 *.mtc[0-9]*
 *.slf[0-9]*
 *.slt[0-9]*
