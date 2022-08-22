@@ -75,7 +75,7 @@ class Monitor:
                 exsits = True
         if not exsits:
             self.controller.create_deployment(
-                config=yaml.safe_load(open("jaseci.yaml", "r"))
+                config=yaml.safe_load(open("jaseci-redis.yaml", "r"))
             )
 
     def strategy_redis_cpu(
@@ -157,11 +157,16 @@ def remoteK8sConf(K8sURL: str):
 
 
 def inclusterK8sConf():
-    return config.load_incluster_config()
+    try:
+        return config.load_incluster_config()
+    except config.config_exception.ConfigException:
+        return None
 
 
-monitorThread = startMonitoring(
-    k8sConf=inclusterK8sConf(), prometheusURL="http://js-prometheus:9090"
-)
-print("Monitoring started")
-waitMonitoring(monitorThread)
+k8sConfig = inclusterK8sConf()
+if not (k8sConfig is None):
+    monitorThread = startMonitoring(
+        k8sConf=inclusterK8sConf(), prometheusURL="http://js-prometheus:9090"
+    )
+    print("Monitoring started")
+    waitMonitoring(monitorThread)
