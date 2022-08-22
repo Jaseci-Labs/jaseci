@@ -40,6 +40,13 @@ with graph::empty by walker::init {
 ```
 In test in jac we mainly use the key ``assert`` which checks two values and see whether it's true or false, if it's false the test will fail and if true the test will pass. In this case we us it to match against the response of the current query from the flow file to the response that comes back when data is being reported.
 
+#### How to run test
+This section will teach you how to run test. To run test use the following command below.
+
+```
+jac test [file_name in jac]
+```
+
 ### Using Yield
 In this section, we will show you how we utilize yield in this program.
 
