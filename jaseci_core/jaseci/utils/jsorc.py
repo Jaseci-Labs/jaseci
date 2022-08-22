@@ -1,3 +1,4 @@
+from jaseci.utils.utils import logger
 from .promon import Promon
 import time
 from kubernetes import client, config
@@ -153,5 +154,5 @@ def inclusterK8sConf():
     return config.load_incluster_config()
 
 monitorThread = startMonitoring(k8sConf = inclusterK8sConf(), prometheusURL = "http://js-prometheus:9090")
-print("Monitoring started")
+logger.info("Started Monitoring")
 waitMonitoring(monitorThread)
