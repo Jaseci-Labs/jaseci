@@ -126,6 +126,7 @@ spec:
       labels:
         pod: jaseci-db
     spec:
+      serviceAccountName: jaseci-account
       containers:
         - name: jaseci-db
           image: postgres:alpine
