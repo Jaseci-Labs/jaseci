@@ -11,15 +11,15 @@ metadata:
   namespace: default
   name: jsorc
 rules:
-  - apiGroups: [""]
-    resources: ["pods", "deployments", "services"]
+  - apiGroups: ["v1", "apps"]
+    resources: ["pods", "deployments", "services", "deployments.apps"]
     verbs: ["get", "watch", "list", "update", "patch", "create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: jsorc-rolebinding
-  namespace: dev
+  namespace: default
 subjects:
   - kind: ServiceAccount
     name: jaseci-account
@@ -73,6 +73,7 @@ spec:
         pod: jaseci
       name: jaseci
     spec:
+      serviceAccountName: jaseci-account
       containers:
         - name: jaseci
           image: python:3-slim
@@ -157,7 +158,6 @@ spec:
       labels:
         pod: jaseci-db
     spec:
-      serviceAccountName: jaseci-account
       containers:
         - name: jaseci-db
           image: postgres:alpine
