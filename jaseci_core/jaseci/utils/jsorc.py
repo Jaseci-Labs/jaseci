@@ -15,7 +15,6 @@ class KubeController:
         self.app_client = client.ApiClient(self.config)
         self.app_api = client.AppsV1Api(self.app_client)
 
-
     def get_pod_list(self):
         ret = self.api_instance.list_pod_for_all_namespaces(watch=False)
         res = []
@@ -79,7 +78,9 @@ class Monitor:
                 config=yaml.safe_load(open("jaseci.yaml", "r"))
             )
 
-    def strategy_redis_cpu(self, nodeName: str, deploymentNameSpace: str, deploymentName: str):
+    def strategy_redis_cpu(
+        self, nodeName: str, deploymentNameSpace: str, deploymentName: str
+    ):
         cpu = self.promon.cpu_utilization_percentage()
         cpu_usage = cpu[nodeName]
         print(f"Detect CPU Usage: {cpu_usage}")
@@ -125,6 +126,7 @@ class Monitor:
             print(f"Num of Replicas: {replicas}")
             self.controller.deployment_set_scale("jaseci-redis", "default", replicas)
 
+
 def daemon(k8sConf, prometheusURL: str):
     m = Monitor(prometheusURL, k8sConf)
     while True:
@@ -132,16 +134,20 @@ def daemon(k8sConf, prometheusURL: str):
         m.strategy_start_redis()
         time.sleep(10)
 
+
 def startMonitoring(k8sConf, prometheusURL: str):
-    monitor = multiprocessing.Process(target = daemon, args = (k8sConf, prometheusURL))
+    monitor = multiprocessing.Process(target=daemon, args=(k8sConf, prometheusURL))
     monitor.start()
     return monitor
+
 
 def waitMonitoring(monitorThread):
     monitorThread.join()
 
+
 def stopMonitoring(monitorThread):
     monitorThread.terminate()
+
 
 def remoteK8sConf(K8sURL: str):
     k8sconf = client.Configuration()
@@ -149,9 +155,13 @@ def remoteK8sConf(K8sURL: str):
     k8sconf.verify_ssl = False
     return k8sconf
 
+
 def inclusterK8sConf():
     return config.load_incluster_config()
 
-monitorThread = startMonitoring(k8sConf = inclusterK8sConf(), prometheusURL = "http://js-prometheus:9090")
+
+monitorThread = startMonitoring(
+    k8sConf=inclusterK8sConf(), prometheusURL="http://js-prometheus:9090"
+)
 print("Monitoring started")
 waitMonitoring(monitorThread)
