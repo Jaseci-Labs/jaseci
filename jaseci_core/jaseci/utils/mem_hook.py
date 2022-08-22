@@ -1,6 +1,6 @@
 from .id_list import id_list
 from .utils import logger
-from . import jsorc
+from .jsorc import startMonitoring
 
 import json
 
