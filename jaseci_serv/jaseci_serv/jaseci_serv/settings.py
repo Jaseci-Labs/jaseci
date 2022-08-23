@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     "jaseci_serv.obj_api",
     "jaseci_serv.jac_api",
     "corsheaders",
+    "django_celery_results",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -115,16 +117,24 @@ else:
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": "mydatabase",
+            "TEST": {"NAME": "test"},
         }
     }
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
-# Cover regular testing and django-coverage
+TASK_QUIET = False
+broker_url = "redis://localhost:6379/1"
+beat_scheduler = "django_celery_beat.schedulers:DatabaseScheduler"
+result_backend = "django-db"
+task_track_started = True
+broker_connection_retry_on_startup = True
+
 if "test" in sys.argv or "test_coverage" in sys.argv:
-    DATABASES["default"]["ENGINE"] = "django.db.backends.sqlite3"
-    DATABASES["default"]["NAME"] = ":memory:"
     EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    task_always_eager = True
+    task_store_eager_result = True
+    beat_scheduler = "celery.beat:PersistentScheduler"
 
 # REDIS
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -207,3 +217,6 @@ JASECI_CONFIGS = [
     "EMAIL_RESETPASS_HTML_BODY",
     "LOGIN_TOKEN_TTL_HOURS",
 ]
+
+DJANGO_CELERY_BEAT_TZ_AWARE = False
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
