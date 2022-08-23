@@ -16,10 +16,12 @@ class redis_hook(mem_hook):
     app: Redis = None
     no_error = True
 
-    def __init__(self):
+    def __init__(self, redis_host="localhost", redis_port=6379, redis_db=0):
         try:
             if rh.no_error and rh.app is None:
-                rh.app = Redis(decode_responses=True)
+                rh.app = Redis(
+                    host=redis_host, port=redis_port, db=redis_db, decode_responses=True
+                )
                 rh.app.ping()
 
         except RedisError as e:
@@ -66,7 +68,7 @@ class redis_hook(mem_hook):
                 jdict = json.loads(loaded_obj, cls=JaseciJsonDecoder)
                 j_type = jdict["j_type"]
                 j_master = jdict["j_master"]
-                class_for_type = find_class_and_import(j_type, core_mod)
+                class_for_type = self.find_class_and_import(j_type, core_mod)
                 ret_obj = class_for_type(h=self, m_id=j_master, auto_save=False)
                 ret_obj.json_load(loaded_obj)
 
@@ -92,10 +94,10 @@ class redis_hook(mem_hook):
         glob = super().get_glob_from_store(name)
 
         if glob is None and rh.is_running():
-            value = rh.app.get(name)
+            glob = rh.app.get(name)
 
-            super().commit_glob_to_cache(name, value)
-            return value
+            if glob:
+                super().commit_glob_to_cache(name, glob)
 
         return glob
 
@@ -148,6 +150,13 @@ class redis_hook(mem_hook):
 
         if rh.is_running():
             rh.app.delete(item.id.urn)
+
+    ###################################################
+    #                  CLASS CONTROL                  #
+    ###################################################
+
+    def find_class_and_import(self, j_type, mod):
+        return find_class_and_import(j_type, mod)
 
 
 rh = redis_hook

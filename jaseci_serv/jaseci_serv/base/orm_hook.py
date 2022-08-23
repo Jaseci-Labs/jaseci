@@ -4,7 +4,6 @@ core engine.
 
 FIX: Serious permissions work needed
 """
-import pdb
 from django.core.exceptions import ObjectDoesNotExist
 
 from jaseci.utils import utils
@@ -13,24 +12,17 @@ from jaseci.utils.redis_hook import redis_hook
 from jaseci.utils.utils import logger
 from jaseci.utils.json_handler import json_str_to_jsci_dict
 import jaseci as core_mod
-from jaseci_serv.jaseci_serv.settings import TASK_QUIET
+from jaseci_serv.jaseci_serv.settings import (
+    TASK_QUIET,
+    TASK_ENABLED,
+    REDIS_HOST,
+    REDIS_PORT,
+    REDIS_DB,
+)
 import uuid
 import json
 
 from django_celery_results.models import TaskResult
-
-
-def find_class_and_import(j_type, core_mod):
-    if j_type == "master":
-        from jaseci_serv.base.models import master
-
-        return master
-    elif j_type == "super_master":
-        from jaseci_serv.base.models import super_master
-
-        return super_master
-    else:
-        return utils.find_class_and_import(j_type, core_mod)
 
 
 class orm_hook(redis_hook):
@@ -42,7 +34,9 @@ class orm_hook(redis_hook):
         self.objects = objects
         self.globs = globs
         self.skip_redis_update = False
-        super().__init__()
+        super().__init__(
+            redis_host=REDIS_HOST, redis_port=REDIS_PORT, redis_db=REDIS_DB
+        )
 
     ####################################################
     #                DATASOURCE METHOD                 #
@@ -62,7 +56,7 @@ class orm_hook(redis_hook):
                 )
                 return None
 
-            class_for_type = find_class_and_import(loaded_obj.j_type, core_mod)
+            class_for_type = self.find_class_and_import(loaded_obj.j_type, core_mod)
             ret_obj = class_for_type(
                 h=self, m_id=loaded_obj.j_master.urn, auto_save=False
             )
@@ -180,8 +174,11 @@ class orm_hook(redis_hook):
     ###################################################
 
     def task_config(self):
-        self.task_app().config_from_object("jaseci_serv.jaseci_serv.settings")
-        self.task_quiet(TASK_QUIET)
+        if TASK_ENABLED:
+            self.task_app().config_from_object("jaseci_serv.jaseci_serv.settings")
+            self.task_quiet(TASK_QUIET)
+        else:
+            self.disable_task()
 
     def get_by_task_id(self, task_id):
         task = self.task_app().AsyncResult(task_id)
@@ -196,3 +193,19 @@ class orm_hook(redis_hook):
                 ret["result"] = task_result
 
         return ret
+
+    ###################################################
+    #                  CLASS CONTROL                  #
+    ###################################################
+
+    def find_class_and_import(self, j_type, core_mod):
+        if j_type == "master":
+            from jaseci_serv.base.models import master
+
+            return master
+        elif j_type == "super_master":
+            from jaseci_serv.base.models import super_master
+
+            return super_master
+        else:
+            return utils.find_class_and_import(j_type, core_mod)

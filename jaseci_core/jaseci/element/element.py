@@ -15,9 +15,8 @@ import json
 from jaseci.utils.id_list import id_list
 from jaseci.utils.redis_hook import redis_hook
 from jaseci.utils.utils import logger, log_var_out
-from jaseci.utils.json_handler import json_str_to_jsci_dict
+from jaseci.utils.json_handler import JaseciJsonEncoder, json_str_to_jsci_dict
 from jaseci.element.obj_mixins import hookable
-from jaseci.utils.json_handler import JaseciJsonEncoder
 
 __version__ = "1.0.0"
 
@@ -187,7 +186,6 @@ class element(hookable):
                                 self._m_id, uuid.UUID(jdict[i][j])
                             ).serialize(deep - 1)
                         )
-
         return jdict
 
     def json(self, deep=0, detailed=False):

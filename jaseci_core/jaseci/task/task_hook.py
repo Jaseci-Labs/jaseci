@@ -31,7 +31,7 @@ CELERY_DEFAULT_CONFIGS = {
 
 class task_hook:
 
-    app = None
+    app: Celery = None
     inspect = None
     worker = None
     scheduler = None
@@ -45,7 +45,7 @@ class task_hook:
 
     # ----------------- DATA SOURCE ----------------- #
     main_hook = None
-    shared_mem = None
+    shared_mem = Manager().dict()
 
     def __init__(self):
 
@@ -57,7 +57,7 @@ class task_hook:
             try:
                 self.__celery()
 
-                if th.inspect.ping() is None:
+                if self.__inspect_ping():
                     self.__tasks()
                     self.__worker()
                     self.__scheduler()
@@ -79,8 +79,8 @@ class task_hook:
     def __celery(self):
         th.app = Celery("celery")
         self.task_config()
-        th.inspect = th.app.control.inspect()
-        th.shared_mem = Manager().dict()
+        if not (th.app is None):
+            th.inspect = th.app.control.inspect()
 
     def __worker(self):
         th.worker = Process(target=th.app.Worker(quiet=th.quiet).start)
@@ -108,6 +108,9 @@ class task_hook:
 
     def task_quiet(self, quiet=QUIET):
         th.quiet = quiet
+
+    def __inspect_ping(self):
+        return not (th.inspect is None) and th.inspect.ping() is None
 
     # ---------------- QUEUE RELATED ---------------- #
 
@@ -180,6 +183,9 @@ class task_hook:
         th.app.conf.update(**CELERY_DEFAULT_CONFIGS)
         self.__scheduler = lambda: None
         th.quiet = QUIET
+
+    def disable_task(self):
+        th.app = None
 
 
 # ----------------------------------------------- #

@@ -134,7 +134,7 @@ class schedule_queue(Task):
     def run(self, *args, **kwargs):
         requests = kwargs.get("requests")
         persistence = kwargs.get("persistence", {})
-        container = kwargs.get("container", {})
+        container = kwargs.get("container", {"current": persistence})
         index = container.get("index", "0")
 
         if "parent_current" in container:
@@ -142,16 +142,15 @@ class schedule_queue(Task):
 
         for req in requests:
             try:
-                if "current" in container:
-                    self.deep_replace_dict(
-                        (
-                            persistence,
-                            container["current"],
-                            container.get("parent_current", {}),
-                            index,
-                        ),
-                        req,
-                    )
+                self.deep_replace_dict(
+                    (
+                        persistence,
+                        container["current"],
+                        container.get("parent_current", {}),
+                        index,
+                    ),
+                    req,
+                )
                 self.save((persistence, req), req, "save_req_to")
 
                 method = req["method"].upper()
@@ -210,5 +209,10 @@ class schedule_queue(Task):
                     if "parent_current" in container:
                         raise err
                     break
+
+            if "break" in req and self.and_condition(
+                (persistence, container["current"]), req["break"]
+            ):
+                break
 
         return persistence
