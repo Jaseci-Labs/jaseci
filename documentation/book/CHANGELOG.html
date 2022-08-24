@@ -1,0 +1,369 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>About this Release - Jaseci Documentation</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><li class="part-title">Jaseci Offical Documentation</li><li class="chapter-item expanded "><a href="LICENSE.html"><strong aria-hidden="true">1.</strong> License</a></li><li class="chapter-item expanded "><a href="CHANGELOG.html" class="active"><strong aria-hidden="true">2.</strong> About this Release</a></li><li class="chapter-item expanded "><a href="support/guide/how_to_contribute.html"><strong aria-hidden="true">3.</strong> How to contribute</a></li><li class="chapter-item expanded "><a href="CONTRIBUTORS.html"><strong aria-hidden="true">4.</strong> Contributors</a></li><li class="chapter-item expanded affix "><li class="part-title">Getting Started</li><li class="chapter-item expanded "><a href="support/guide/getting_started/introduction.html"><strong aria-hidden="true">5.</strong>  Jaseci Overview</a></li><li class="chapter-item expanded "><a href="support/guide/getting_started/installation.html"><strong aria-hidden="true">6.</strong>  Installing Jaseci</a></li><li class="chapter-item expanded "><a href="support/guide/getting_started/setting_up_your_editor.html"><strong aria-hidden="true">7.</strong>  Setting up your Code Editor</a></li><li class="chapter-item expanded "><a href="support/guide/getting_started/writing_your_first_app.html"><strong aria-hidden="true">8.</strong>  Writing your first app</a></li><li class="chapter-item expanded "><a href="support/guide/getting_started/understanding_jac_programs.html"><strong aria-hidden="true">9.</strong>  Understanding JAC Programs</a></li><li class="chapter-item expanded affix "><li class="part-title">The JAC Programming Language Guide</li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/jac_language_overview.html"><strong aria-hidden="true">10.</strong> An Overview of the JAC Language</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/jac_grammar.html"><strong aria-hidden="true">11.</strong>  JAC Grammar</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/keywords.html"><strong aria-hidden="true">12.</strong>  keywords</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/operators.html"><strong aria-hidden="true">13.</strong>  Operators</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/control_flow.html"><strong aria-hidden="true">14.</strong>  Control Flow</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/collections.html"><strong aria-hidden="true">15.</strong>  Collections</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/nodes.html"><strong aria-hidden="true">16.</strong>  Nodes</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/edges.html"><strong aria-hidden="true">17.</strong>  Edges</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/graphs.html"><strong aria-hidden="true">18.</strong>  Graphs</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/walkers.html"><strong aria-hidden="true">19.</strong>  Walkers</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/traversing_a_graph.html"><strong aria-hidden="true">19.1.</strong>  Traversing a Graph</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/referencing_node_context.html"><strong aria-hidden="true">19.2.</strong>  Referencing a Node in Context</a></li></ol></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/passing_arguments.html"><strong aria-hidden="true">20.</strong>  Passing Arguments</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/specifying_operating_context.html"><strong aria-hidden="true">21.</strong>  Specifying Operating Context</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/actions.html"><strong aria-hidden="true">22.</strong>  Actions in Jaseci</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/date_actions.html"><strong aria-hidden="true">22.1.</strong>  Date Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/file_actions.html"><strong aria-hidden="true">22.2.</strong>  File Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/net_actions.html"><strong aria-hidden="true">22.3.</strong>  Net Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/rand_actions.html"><strong aria-hidden="true">22.4.</strong>  Rand Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/request_actions.html"><strong aria-hidden="true">22.5.</strong>  Request Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/standard_actions.html"><strong aria-hidden="true">22.6.</strong>  Standard Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/vector_actions.html"><strong aria-hidden="true">22.7.</strong>  Vector Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/jaseci_actions.html"><strong aria-hidden="true">22.8.</strong>  Jaseci Actions</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Samples and Tutorials</li><li class="chapter-item expanded "><a href="examples/api_development/index.html"><strong aria-hidden="true">23.</strong> API Development</a></li><li class="chapter-item expanded "><a href="examples/canoniCAI/index.html"><strong aria-hidden="true">24.</strong> CanoniCAI</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="examples/canoniCAI/documentation/add_competency.html"><strong aria-hidden="true">24.1.</strong> Adding a competency</a></li><li class="chapter-item expanded "><a href="examples/canoniCAI/documentation/add_followup_state.html"><strong aria-hidden="true">24.2.</strong> Adding a following up state</a></li><li class="chapter-item expanded "><a href="examples/canoniCAI/documentation/add_followup_state.html"><strong aria-hidden="true">24.3.</strong> Building FAQ States</a></li><li class="chapter-item expanded "><a href="examples/canoniCAI/documentation/fixing_utterances.html"><strong aria-hidden="true">24.4.</strong> Fixing Utterance</a></li><li class="chapter-item expanded "><a href="examples/canoniCAI/documentation/jaseci_actions_load_local.html"><strong aria-hidden="true">24.5.</strong> Setting up a Custom Module</a></li></ol></li><li class="chapter-item expanded "><a href="examples/ner_examples/index.html"><strong aria-hidden="true">25.</strong> NER Examples</a></li><li class="chapter-item expanded affix "><li class="part-title">Jaseci Library Reference</li><li class="chapter-item expanded "><a href="jaseci_kit/index.html"><strong aria-hidden="true">26.</strong> Jaseci Kit</a></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/encoders/index.html"><strong aria-hidden="true">27.</strong> Encoders</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="jaseci_kit/modules/encoders/use_enc/index.html"><strong aria-hidden="true">27.1.</strong> USE Encoder</a></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/encoders/use_qa/index.html"><strong aria-hidden="true">27.2.</strong> USE QA</a></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/encoders/fast_enc/index.html"><strong aria-hidden="true">27.3.</strong> FastText</a></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/encoders/bi_enc/index.html"><strong aria-hidden="true">27.4.</strong> Bi-Encoder</a></li></ol></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/entity_utils/index.html"><strong aria-hidden="true">28.</strong> Entity Recongition</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="jaseci_kit/modules/entity_utils/flair_ner/index.html"><strong aria-hidden="true">28.1.</strong> Flair NER</a></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/entity_utils/tfm_ner/index.html"><strong aria-hidden="true">28.2.</strong> Transformer NER</a></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/entity_utils/lstm_ner/index.html"><strong aria-hidden="true">28.3.</strong> LSTM NER</a></li></ol></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/summarization/index.html"><strong aria-hidden="true">29.</strong> Text Summarization</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="jaseci_kit/modules/summarization/cl_summer/index.html"><strong aria-hidden="true">29.1.</strong> CL Summarization</a></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/summarization/t5_sum/index.html"><strong aria-hidden="true">29.2.</strong> T5 Summarization</a></li></ol></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/text_processing/index.html"><strong aria-hidden="true">30.</strong> Text Processing </a></li><li><ol class="section"><li class="chapter-item expanded "><a href="jaseci_kit/modules/text_processing/text_seg/index.html"><strong aria-hidden="true">30.1.</strong> Text Segmenter</a></li></ol></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/object_detection/index.html"><strong aria-hidden="true">31.</strong> Object Detection</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="jaseci_kit/modules/object_detection/yolo_v5/index.html"><strong aria-hidden="true">31.1.</strong> YOLO V5</a></li></ol></li><li class="chapter-item expanded "><a href="jaseci_kit/modules/non_ai/index.html"><strong aria-hidden="true">32.</strong> Non-AI Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="jaseci_kit/modules/non_ai/pdf_ext/index.html"><strong aria-hidden="true">32.1.</strong> PDF Extractor</a></li></ol></li><li class="chapter-item expanded "><a href="jaseci_core/index.html"><strong aria-hidden="true">33.</strong> Jaseci Core</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Jaseci Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="jaseci-change--release-notes"><a class="header" href="#jaseci-change--release-notes">Jaseci Change / Release Notes</a></h1>
+<h2 id="version-134"><a class="header" href="#version-134">Version 1.3.4</a></h2>
+<h3 id="updates"><a class="header" href="#updates">Updates</a></h3>
+<ul>
+<li>Deprecation: Stripe API soft removed.</li>
+<li>Improvement: Improved the deref operator <code>*</code> to be more nimble</li>
+<li>New Feature: Can now pluck lists of values from collections of nodes and edges.</li>
+<li>Major Language Feature: Introducing the <code>yeild</code> feature. See bible for details</li>
+<li>Improvement/Bug: Here behavior is now specified for ability calls and inheritance in intuitive way</li>
+<li>Major Feature: Can now specify various forms of breadth first and depth first search on <code>take</code> commands (e.g., <code>take:bfs</code>, <code>take:dfs</code>, and <code>take:b</code> and <code>take:d</code> for short)</li>
+<li>Improvement: Added deep copy for lists and dictionaries</li>
+<li>Improvement: The connect operator between 2 nodes now returns the left-hand side. (e.g., <code>n1 --&gt; n2 --&gt; n3</code> will create an intuitive chain of connections not <code>n1 --&gt; n3 &lt;-- n2</code>)</li>
+<li>Bug Fix: Root nodes now return valid <code>.type</code></li>
+<li>Bug Fix: With exit within walker now executes after exit events in nodes</li>
+</ul>
+<h3 id="notes"><a class="header" href="#notes">Notes</a></h3>
+<ul>
+<li>Behavior change for jac programs utilizing chained connection operators. Connection orders are now intuitive (e.g., <code>n1 --&gt; n2 --&gt; n3</code> will create an intuitive chain of connections not <code>n1 --&gt; n3 &lt;-- n2</code>)</li>
+<li>API interface update: <code>sentinel_register</code> auto_run_ctx replaces ctx to be more specific, <code>auto_gen_graph</code> is now <code>auto_create_graph</code> for same reason as well</li>
+<li>API interface update: <code>master_create</code> API return format updated</li>
+</ul>
+<h2 id="version-133"><a class="header" href="#version-133">Version 1.3.3</a></h2>
+<h3 id="updates-1"><a class="header" href="#updates-1">Updates</a></h3>
+<ul>
+<li>Improvement: Added <code>reversed</code> to set of list builtin functions</li>
+<li>Bug Fix: Mem leak on graph node setting fixed</li>
+<li>Major Feature: Jsctl graph walking tooling</li>
+<li>Improvement: Optimized the self generation of jaseci internal APIs</li>
+<li>New Feature: Added <code>jaseci</code> standard library as patch through to all jaseci core APIs</li>
+<li>New Features: Report payloads can be customized with <code>report:custom</code></li>
+<li>Improvement: Disengage can now do disengage with report action</li>
+<li>Improvement: import now works recursively through chain of files</li>
+<li>Improvement: JSCTL shows token on login</li>
+<li>Major Feature: JSCTL has persistent log in sessions, and can logout</li>
+<li>Improvement: <code>*</code> and <code>&amp;</code> precedence hierarch locations improved.</li>
+<li>Bug Fix: Indirect node field updates tag elements to be written to db</li>
+<li>Major Feature: Multiple inheritance support on nodes and edges!</li>
+<li>Improvement: Fixed and much improved <code>actions load local</code> functionality</li>
+<li>Bug Fix: Globals imports of imports working</li>
+<li>Improvement: Sentinel registering improved to include ir mode</li>
+<li>Improvement: <code>edge</code> semantics improved</li>
+<li>Major bug fix: Re registering new code was breaking architype abilities</li>
+<li>Improvement: Tests now only show stdout and stderr on a test by test basis in detailed mode (Much cleaner)</li>
+<li>Improvement: JSKit package architecture established, normalized, and standardized</li>
+<li>New Lang Feature: Added list built in call of <code>.l::max</code>, <code>.l::min</code>, <code>.l::idx_of_max</code>, and <code>.l::idx_of_min</code></li>
+<li>Improvement: Api so super masters can <code>become</code> any master id, also jsctl can issue <code>master allusers</code></li>
+<li>New Lang Feature: Can now have <code>can</code> statements in spawn graphs after <code>has anchor rootname</code></li>
+<li>Improvement: <code>actions load module</code> added as capability where module strings are accepted</li>
+<li>New Feature: Added global root finder <code>net.root</code> to std lib and <code>net.min</code> to go with existing <code>net.max</code></li>
+<li>New Feature: New global element type and <code>global</code> keyword</li>
+</ul>
+<h3 id="notes-1"><a class="header" href="#notes-1">Notes</a></h3>
+<ul>
+<li>Special report actions now use <code>:</code> instead of <code>.</code> eg <code>report.status = 200</code> is now <code>report:status = 200</code></li>
+</ul>
+<h2 id="version-132"><a class="header" href="#version-132">Version 1.3.2</a></h2>
+<h3 id="updates-2"><a class="header" href="#updates-2">Updates</a></h3>
+<ul>
+<li>New Feature: Introduction of new standard library option for loading actions in Jac with <code>std.actload_local</code> and <code>std.actload_remote</code></li>
+<li>Improvement: Disallowing spawning of unlinked edges, i.e., <code>spawn --&gt; node::generic</code> not allowed without <code>here</code></li>
+<li>New Feature: Random library adds random text generation lorem style with <code>rand.word()</code>, <code>rand.sentence()</code>, <code>rand.paragraph()</code>, and <code>rand.text()</code>.</li>
+<li>New Feature: Standard input <code>std.input(prompt)</code> :-p</li>
+<li>Improvement: Status codes auto plucked from return payload in jsserv</li>
+<li>New Feature: Can now control status codes with <code>report.status = 201</code> style statements</li>
+<li>Improvement: No longer saves action data into graph and keeps it in architypes</li>
+<li>New Feature: Walkers can be called directly using <code>wapi/{walkername}</code> api</li>
+<li>New Feature: New <code>master_allusers</code> API available for super master users</li>
+<li>Improvement: Superusers now have access to all data</li>
+<li>Improvement: Jaseci's admin api route changed to <code>/js_admin/...</code> vs <code>/admin/</code> to not conflict with Django's internals</li>
+<li>Update: Django 3 upgraded to latest as well as all other dependencies.</li>
+<li>Fix: Believe it or not, I never fully implemented <code>continue</code>. LIKE REALLY??? Anyway, fixed now. FTLOG!</li>
+<li>New Feature: Added <code>jac dot</code> cli command much like <code>jac run</code> but prints dot graph</li>
+<li>New Feature: Created shorthand for string, list, and dict functions i.e., <code>.s::</code>, <code>.d::</code>, and <code>.l::</code> respectively</li>
+<li>New Feature: Added suite of dict manipulation functions</li>
+<li>New Feature: Added suite of list manipulation functions</li>
+</ul>
+<h3 id="notes-2"><a class="header" href="#notes-2">Notes</a></h3>
+<ul>
+<li>All api calls to Jaseci admin apis using the <code>/admin/</code> route must be updated to <code>/js_admin/</code></li>
+</ul>
+<h2 id="version-131"><a class="header" href="#version-131">Version 1.3.1</a></h2>
+<h3 id="updates-3"><a class="header" href="#updates-3">Updates</a></h3>
+<ul>
+<li>New Feature: File I/O Library in with json support</li>
+<li>New Lang Feature: <code>.str::load_json</code> added to string library</li>
+<li>Fix: Error output when key not in object or dict</li>
+<li>New Lang Feature: Can now spawn root nodes in addition to generic nodes</li>
+<li>Improvement: Line numbers provided for all &quot;Internal Errors&quot;</li>
+<li>Fix: Dot strings now handled as expected (stripping quotes etc)</li>
+<li>Improvement: General improvements to error reporting</li>
+<li>Improvement: Changed meta requirement for actions to be option at hook points</li>
+<li>Improvement: Now you can arbitrarily chain array indexs into function calls as per <code>std.get_report()[0]</code>.</li>
+<li>New Feature: <code>std.get_report</code> gives the what is to be reported so far</li>
+<li>Improvement: General polish items of JSCTL UI</li>
+<li>Improvement: Raised the default core logging reporting level to warning</li>
+</ul>
+<h2 id="version-13"><a class="header" href="#version-13">Version 1.3</a></h2>
+<h3 id="updates-4"><a class="header" href="#updates-4">Updates</a></h3>
+<ul>
+<li>Improvement: JSCTL now takes args without flags in sensible places for quality of life.</li>
+<li>Improvement: Better Error reporting all around</li>
+<li>New Feature: APIs for manipulating actions</li>
+<li>New Feature: Hotloading jaseci action modules</li>
+<li>Update: New action creation methodology and architecture</li>
+<li>New Feature: Decorator interface for creating jaseci action modules</li>
+<li>New Feature: New profiling flag added to run walker api for performance profiling</li>
+<li>New Feature: Direct jac file building, test, and run from in JSCTL</li>
+<li>New Language Feature: Tests and testing features as first order language semantics</li>
+<li>New Lang Feature: Asserts!</li>
+<li>Fix: Simplified and optimized global abilities</li>
+<li>New Support Feature: Started vs code for JAC extension first beta</li>
+<li>New Lang Feature: Multifile codebase support and import keyword and semantic added</li>
+<li>New Lang Feature: Try-else blocks introduced for exception handling</li>
+<li>New Lang Feature: Added new <code>&amp;</code> reference and <code>*</code> dereference semantic for getting psuedo-pointers to node, edges, etc</li>
+<li>New Lang Feature: Massively expanded functionality with destroy and list slice management</li>
+<li>New Lang Feature: can now explicitly reference and dereference graph elements (nodes, edges, etc)</li>
+<li>New Lang Feature: Field filtering for dictionaries, particularly useful for context, info, details</li>
+<li>New Lang Feature: Type checking primitives, and type casting primitives</li>
+<li>New Lang Feature: String library finally present</li>
+</ul>
+<h3 id="notes-3"><a class="header" href="#notes-3">Notes</a></h3>
+<ul>
+<li>Various flags are now args for <code>jsctl</code> i.e., <code>walker run -name init</code> is now <code>walker run init</code> as name is now the standard arg. If you wanted to specify a node the flag would be used as per <code>walker run init -nd {uuid}</code></li>
+<li>Reports back from walker is now dictionary of form <code>{'report': list(report)}</code> instead of currnet <code>list(report)</code></li>
+<li><code>std.sort_by_col</code> tweaked to make last paramter a boolean for reverse (instead of string)</li>
+<li>Format of <code>walker get -mode key</code> api changed from {key:namespace} to {namespace:key}</li>
+<li><code>test</code> is now a keyword with added test capabilities in jaseci</li>
+<li>Type, int, float, str, list, dict, bool, are now keywords, if you used these as variable names in legacy code, must make updates.</li>
+<li>The destroy built-in is totally revised <code>lst.destroy(idx)</code> on lists should be changed to <code>destroy lst[idx]</code>.</li>
+<li>Get_uuid standard library function is deprecated since we have string manipulation</li>
+<li>Internal representation of element now <code>jac:uuid:</code> format, should not be visible to coder, <code>&amp;</code> references still produce <code>urn:uuid:</code> as strings. To dereference use new <code>*</code> dereference operators.</li>
+<li>Standard, output and logging now will print proper values (e.g. json values for null, true, and false)</li>
+</ul>
+<h2 id="version-122"><a class="header" href="#version-122">Version 1.2.2</a></h2>
+<h3 id="updates-5"><a class="header" href="#updates-5">Updates</a></h3>
+<ul>
+<li>New Language Feature: can now perform assignments arbitrarily (not just to named variables)</li>
+<li>New Language Feature: can spawn assign on creation of nodes and edges</li>
+<li>New Language Feature: can filter references to nodes and edges</li>
+<li>Added new built-ins for nodes and edges (context, info, and details)</li>
+<li>Fixed dot output</li>
+<li>Added reset command to jsctl to clear complete state</li>
+<li>Various language grammar tweaks</li>
+</ul>
+<h2 id="version-121"><a class="header" href="#version-121">Version 1.2.1</a></h2>
+<h3 id="updates-6"><a class="header" href="#updates-6">Updates</a></h3>
+<ul>
+<li>Both jaseci and jaseci_serv are architected to be standalone packages</li>
+<li>Stripe API integrated</li>
+<li>EMails can be templated with HTML content</li>
+<li>Token expiry time can be set as config through live api</li>
+<li>Added auto sync to global sentinel for spawned walkers</li>
+<li>FIX: Global sentinels cascade to all users on change</li>
+<li>FIX: Multi pod concurrency issue corrected</li>
+</ul>
+<h2 id="version-120"><a class="header" href="#version-120">Version 1.2.0</a></h2>
+<h3 id="updates-7"><a class="header" href="#updates-7">Updates</a></h3>
+<ul>
+<li>New Hierarchal user creation and management through core Jaseci</li>
+<li>New version labels for Jac programs</li>
+<li>New custom action for nodes and edges</li>
+<li>New Jaseci server support for new API and Jaseci architecture</li>
+<li>New namespaces for public walker permissions management with key access</li>
+<li>New object sharing across users and access control APIs</li>
+<li>New Jaseci object permissions architecture</li>
+<li>New Jac library for outbound requests</li>
+<li>New Globals Jac standard library and API interfaces</li>
+<li>New support for server-side Jac deployments and relevant APIs</li>
+<li>New Jac language updates</li>
+<li>New access language features for edge manipulation and traversal</li>
+<li>New code IR format and handling across Architypes and Walkers</li>
+<li>New dot integration redesign</li>
+<li>New added editor to JSCTL</li>
+<li>New complete API redesign and deprecation of legacy APIs</li>
+<li>New introduced new standard Jaseci Bible (unfinished)</li>
+<li>New redesigned graphs nodes and edges to support multi-graph semantic.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="LICENSE.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="support/guide/how_to_contribute.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="LICENSE.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="support/guide/how_to_contribute.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>
