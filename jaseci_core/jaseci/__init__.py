@@ -12,7 +12,6 @@ def load_standard():
 from .utils.jsorc import jsorc_start
 from .utils.utils import logger
 
-logger.info("init.py running")
 jsorc_start()
 
 load_standard()

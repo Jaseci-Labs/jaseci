@@ -77,6 +77,7 @@ class Monitor:
             if deployment["name"] == "jaseci-redis":
                 exsits = True
         if not exsits:
+            logger.info("Creating new jaseci redis")
             dirpath = os.path.dirname(os.path.realpath(__file__))
             filepath = os.path.join(dirpath, "jaseci-redis.yaml")
             self.controller.create_deployment(
