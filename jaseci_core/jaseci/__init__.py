@@ -9,10 +9,10 @@ def load_standard():
     import jaseci.actions.standard.jaseci  # noqa
 
 
-from .utils.jsorc import jsorc
+from .utils.jsorc import jsorc_start
 from .utils.utils import logger
 
 logger.info("init.py running")
-jsorc()
+jsorc_start()
 
 load_standard()
