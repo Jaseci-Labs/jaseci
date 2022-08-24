@@ -41,7 +41,7 @@ node va_state:cai_state {
     can ent_ext.entity_detection;
 
     # Classify the intent of the question
-    can classify_intent with talk activity{
+    can classify_intent{
         train_data = file.load_json("data/clf_train.json");
         candidates = train_data.d::keys;
 
@@ -70,7 +70,7 @@ node va_state:cai_state {
     }
 
     # Extract words of interests from the question
-    can extract_entities with talk activity{
+    can extract_entities{
        labels = [];
 
         train_data = file.load_json("data/flair_ner.json");
