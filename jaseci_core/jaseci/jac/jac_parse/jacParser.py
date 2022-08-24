@@ -520,7 +520,7 @@ def serializedATN():
         buf.write("\3\2\2\2\u0411\u0412\3\2\2\2\u0412\u0415\3\2\2\2\u0413")
         buf.write("\u0411\3\2\2\2\u0414\u040c\3\2\2\2\u0414\u0415\3\2\2\2")
         buf.write("\u0415\u0416\3\2\2\2\u0416\u0417\7+\2\2\u0417\u00ab\3")
-        buf.write("\2\2\2\u0418\u0419\7b\2\2\u0419\u041a\7$\2\2\u041a\u041b")
+        buf.write("\2\2\2\u0418\u0419\5d\63\2\u0419\u041a\7$\2\2\u041a\u041b")
         buf.write("\5d\63\2\u041b\u00ad\3\2\2\2\u041c\u041d\7\31\2\2\u041d")
         buf.write("\u041e\5\u00b0Y\2\u041e\u00af\3\2\2\2\u041f\u0423\5\u00b4")
         buf.write("[\2\u0420\u0423\5\u00b8]\2\u0421\u0423\5\u00b6\\\2\u0422")
@@ -7813,7 +7813,53 @@ class jacParser(Parser):
             self.state = 1042
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la == jacParser.STRING:
+            if (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << jacParser.T__1)
+                        | (1 << jacParser.T__2)
+                        | (1 << jacParser.T__4)
+                        | (1 << jacParser.T__5)
+                        | (1 << jacParser.T__6)
+                        | (1 << jacParser.TYP_STRING)
+                        | (1 << jacParser.TYP_INT)
+                        | (1 << jacParser.TYP_FLOAT)
+                        | (1 << jacParser.TYP_LIST)
+                        | (1 << jacParser.TYP_DICT)
+                        | (1 << jacParser.TYP_BOOL)
+                        | (1 << jacParser.KW_TYPE)
+                        | (1 << jacParser.KW_NODE)
+                        | (1 << jacParser.KW_SPAWN)
+                        | (1 << jacParser.DBL_COLON)
+                        | (1 << jacParser.LBRACE)
+                        | (1 << jacParser.KW_EDGE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 71)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 71))
+                    & (
+                        (1 << (jacParser.NOT - 71))
+                        | (1 << (jacParser.KW_GLOBAL - 71))
+                        | (1 << (jacParser.PLUS - 71))
+                        | (1 << (jacParser.MINUS - 71))
+                        | (1 << (jacParser.STAR_MUL - 71))
+                        | (1 << (jacParser.LPAREN - 71))
+                        | (1 << (jacParser.LSQUARE - 71))
+                        | (1 << (jacParser.FLOAT - 71))
+                        | (1 << (jacParser.STRING - 71))
+                        | (1 << (jacParser.BOOL - 71))
+                        | (1 << (jacParser.INT - 71))
+                        | (1 << (jacParser.NULL - 71))
+                        | (1 << (jacParser.NAME - 71))
+                    )
+                )
+                != 0
+            ):
                 self.state = 1034
                 self.kv_pair()
                 self.state = 1039
@@ -7847,14 +7893,14 @@ class jacParser(Parser):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def STRING(self):
-            return self.getToken(jacParser.STRING, 0)
+        def expression(self, i: int = None):
+            if i is None:
+                return self.getTypedRuleContexts(jacParser.ExpressionContext)
+            else:
+                return self.getTypedRuleContext(jacParser.ExpressionContext, i)
 
         def COLON(self):
             return self.getToken(jacParser.COLON, 0)
-
-        def expression(self):
-            return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
         def getRuleIndex(self):
             return jacParser.RULE_kv_pair
@@ -7874,7 +7920,7 @@ class jacParser(Parser):
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1046
-            self.match(jacParser.STRING)
+            self.expression()
             self.state = 1047
             self.match(jacParser.COLON)
             self.state = 1048

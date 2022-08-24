@@ -264,32 +264,3 @@ walker simple_custom_payload_with_file {
         report global.info['request_context']["body"]["fileTypeField"];
     }
 }
-
-walker for_loop_dict {
-
-    with entry {
-        testing = {
-            "test1": 1,
-            "test2": 2,
-            "test3": 3
-        };
-
-        for key in testing {
-            report key.str + " : " + testing[key].str;
-        }
-
-        for key, val in testing {
-            report key.str + " : " + val.str;
-        }
-
-        testing = [5,6,7];
-
-        for key in testing {
-            report key;
-        }
-
-        for key, val in testing {
-            report key.str + " : " + val.str;
-        }
-    }
-}

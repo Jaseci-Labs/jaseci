@@ -301,7 +301,7 @@ class interp(machine_state):
         """
         for_stmt:
             KW_FOR expression KW_TO expression KW_BY expression code_block
-            | KW_FOR NAME KW_IN expression code_block;
+            | KW_FOR NAME (COMMA NAME)? KW_IN expression code_block;
         """
         kid = self.set_cur_ast(jac_ast)
         loops = 0
@@ -1447,7 +1447,11 @@ class interp(machine_state):
         kv_pair: STRING COLON expression;
         """
         kid = self.set_cur_ast(jac_ast)
-        obj[parse_str_token(kid[0].token_text())] = self.run_expression(kid[2]).value
+        key = self.run_expression(kid[0]).value
+        if isinstance(key, str):
+            obj[key] = self.run_expression(kid[2]).value
+        else:
+            self.rt_error(f"Key is not str type : {type(key)}!", kid[0])
 
     def run_spawn(self, jac_ast):
         """

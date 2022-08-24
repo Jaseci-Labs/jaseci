@@ -279,7 +279,7 @@ index_slice:
 
 dict_val: LBRACE (kv_pair (COMMA kv_pair)*)? RBRACE;
 
-kv_pair: STRING COLON expression;
+kv_pair: expression COLON expression;
 
 spawn: KW_SPAWN spawn_object;
 

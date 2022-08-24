@@ -512,3 +512,47 @@ check_destroy_node_has_var = """
         report n.x.type;
     }
 """
+
+check_dict_for_in_loop = """
+    walker for_loop_dict {
+        with entry {
+            testing = {
+                "test1": 1,
+                "test2": 2,
+                "test3": 3
+            };
+
+            for key in testing {
+                report key.str + " : " + testing[key].str;
+            }
+
+            for key, val in testing {
+                report key.str + " : " + val.str;
+            }
+
+            testing = [5,6,7];
+
+            for key in testing {
+                report key;
+            }
+
+            for key, val in testing {
+                report key.str + " : " + val.str;
+            }
+        }
+    }
+
+    walker var_as_key_for_dict {
+        with entry {
+            key = "key1";
+            not_str_key = 1;
+            testing = {
+                key: key,
+                "key2": 2,
+                not_str_key: not_str_key
+            };
+
+            report testing;
+        }
+    }
+"""

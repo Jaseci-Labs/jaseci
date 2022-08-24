@@ -1617,37 +1617,3 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             self.client, {"op": "walker_run", "name": "smart_yield_no_future"}
         )
         self.assertEqual(ret.data["report"], [{}])
-
-    def test_for_loop_dict(self):
-        """Test multipart custom payload (non ctx format) with additional file"""
-        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
-        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        ).data
-
-        payload = {
-            "op": "walker_run",
-            "name": "for_loop_dict",
-        }
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        ).data
-
-        self.assertEqual(
-            res["report"],
-            [
-                "test1 : 1",
-                "test2 : 2",
-                "test3 : 3",
-                "test1 : 1",
-                "test2 : 2",
-                "test3 : 3",
-                5,
-                6,
-                7,
-                "0 : 5",
-                "1 : 6",
-                "2 : 7",
-            ],
-        )
