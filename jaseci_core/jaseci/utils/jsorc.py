@@ -158,19 +158,20 @@ def remoteK8sConf(K8sURL: str):
     return k8sconf
 
 
-def inclusterK8sConf():
+def incluster():
     try:
-        return config.load_incluster_config()
+        config.load_incluster_config()
     except config.config_exception.ConfigException:
-        return None
+        return False
+    return True
 
 
 def jsorc():
-    k8sConfig = inclusterK8sConf()
     logger.info("JSORC Running")
-    if not (k8sConfig is None):
+    if incluster():
+        k8sConfig = None
         monitorThread = startMonitoring(
-            k8sConf=inclusterK8sConf(), prometheusURL="http://js-prometheus:9090"
+            k8sConf=k8sConfig, prometheusURL="http://js-prometheus:9090"
         )
         logger.info("Monitoring started")
         waitMonitoring(monitorThread)
