@@ -123,7 +123,7 @@ else_stmt: KW_ELSE code_block;
 
 for_stmt:
 	KW_FOR expression KW_TO expression KW_BY expression code_block
-	| KW_FOR NAME KW_IN expression code_block;
+	| KW_FOR NAME (COMMA NAME)? KW_IN expression code_block;
 
 while_stmt: KW_WHILE expression code_block;
 
