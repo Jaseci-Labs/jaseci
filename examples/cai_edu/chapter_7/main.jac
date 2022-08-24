@@ -1,5 +1,8 @@
 import {*} with "./nodes.jac";
 import {*} with "./edges.jac";
+import {*} with "./bi_enc.jac";
+import {*} with "./ner.jac";
+import {*} with "./ai.jac";
 
 walker talk {
     has question="", interactive=false;
@@ -121,6 +124,12 @@ walker init {
         take -->;
     }
     cai_root {
+        spawn here --> node::bi_enc;
+        take --> node::bi_enc;
+
+        spawn here --> node::ent_ext;
+        take --> node::ent_ext;
+
         take --> node::faq_state;
     }
     faq_state {

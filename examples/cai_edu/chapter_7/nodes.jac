@@ -81,26 +81,28 @@ node va_state:cai_state {
                 if (ent_label not in labels): labels.l::append(ent_label);
             }
         }
-
         entity_result = ent_ext.entity_detection(
             text=visitor.question.str,
             ner_labels=labels.list
         );
 
-        for ent in entity_result['entities'] {
-            if (ent["conf_score"] > 0.4){
-                entity_label = ent["entity_value"];
-                entity_text = ent["entity_text"];
-                if (entity_text not in visitor.extracted_entities ) {
-                    visitor.extracted_entities[entity_label] = [];
+        if(entity_result['entities']){
+            for ent in entity_result['entities'] {
+                if (ent["conf_score"] > 0.4){
+                    entity_label = ent["entity_value"];
+                    entity_text = ent["entity_text"];
+                    if (entity_text not in visitor.extracted_entities ) {
+                        visitor.extracted_entities[entity_label] = [];
+                    }
+                        visitor.extracted_entities[entity_label] += [entity_text];
+
                 }
-                    visitor.extracted_entities[entity_label] += [entity_text];
 
+                std.out(visitor.extracted_entities);
             }
-
-            std.out(visitor.extracted_entities);
-
         }
+
+        
     }
 
     # Generate response

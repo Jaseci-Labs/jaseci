@@ -3,17 +3,11 @@ import {*} with "./edges.jac";
 import {*} with "./main.jac";
 import {*} with "./globals.jac";
 
-graph empty {
-    has anchor root;
-    spawn {
-        root = spawn node::cai_root;
-    }
-}
+walker empty {}
 
 test "testing faq and va flows"
-with graph::empty by walker::init {
+with graph::tesla_sales_rep by walker::empty {
     flows = file.load_json("data/tests.json");
-    // cai_root = *(global.cai_root);
     
     for flow in flows {
 
@@ -28,4 +22,10 @@ with graph::empty by walker::init {
             assert(res[-1] == step["response"]);
         }
     }
+}
+
+test "testing a single query"
+with graph::tesla_sales_rep by walker::talk(question="Hey I would like to go on a test drive"){
+    res = std.get_report();
+    assert(res[-1] == "To set you up with a test drive, we will need your name and address.");
 }
