@@ -2,6 +2,7 @@ from .promon import Promon
 import time
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
+import os
 import yaml
 import multiprocessing
 from .utils import logger
@@ -76,8 +77,10 @@ class Monitor:
             if deployment["name"] == "jaseci-redis":
                 exsits = True
         if not exsits:
+            dirpath = os.path.dirname(os.path.realpath(__file__))
+            filepath = os.path.join(dirpath, "jaseci-redis.yaml")
             self.controller.create_deployment(
-                config=yaml.safe_load(open("jaseci-redis.yaml", "r"))
+                config=yaml.safe_load(open(filepath, "r"))
             )
 
     def strategy_redis_cpu(
