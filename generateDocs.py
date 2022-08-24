@@ -9,6 +9,9 @@ def generatedocs(title,fileList):
         newpath = 'documentation/src/' + file['path']
         markdownFileLines = markdownFile.readlines()
         AppendtoSummaryFile(fileName= file['name'],path = file['path'],heading=file['heading'])
+        newMarkdown = open(newpath,"w")
+        newMarkdown.write("")
+        newMarkdown.close()
         newMarkdown = open(newpath,"a")
         for lines in markdownFileLines:
             newMarkdown.write(lines)
