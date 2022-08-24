@@ -27,6 +27,9 @@ locals {
   accountid   = lookup(local.accountids, local.env)
   stdprefix   = "${local.productprefix}-${local.envprefix}"
 
+  instance_type = t3.xlarge
+  clusterversion = "1.22"
+
   #Boolean Variables
   isProd = local.env == "production" ? 1 : 0
   isDev  = local.env == "default" ? 1 : 0
