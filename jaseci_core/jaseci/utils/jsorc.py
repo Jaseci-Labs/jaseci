@@ -167,6 +167,7 @@ def inclusterK8sConf():
 
 def jsorc():
     k8sConfig = inclusterK8sConf()
+    logger.info("JSORC Running")
     if not (k8sConfig is None):
         monitorThread = startMonitoring(
             k8sConf=inclusterK8sConf(), prometheusURL="http://js-prometheus:9090"
