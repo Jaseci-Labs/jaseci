@@ -169,7 +169,7 @@ def incluster():
     return True
 
 
-def jsorc():
+def jsorc_start():
     logger.info("JSORC Running")
     if incluster():
         k8sConfig = None
@@ -177,4 +177,3 @@ def jsorc():
             k8sConf=k8sConfig, prometheusURL="http://js-prometheus:9090"
         )
         logger.info("Monitoring started")
-        waitMonitoring(monitorThread)
