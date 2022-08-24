@@ -1,10 +1,6 @@
 from .id_list import id_list
 from .utils import logger
-from .jsorc import jsorc
-
 import json
-
-jsorc()
 
 
 def json_str_to_jsci_dict(input_str, parent_obj=None):

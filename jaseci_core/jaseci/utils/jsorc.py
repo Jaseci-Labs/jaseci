@@ -4,6 +4,7 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 import yaml
 import multiprocessing
+from .utils import logger
 
 
 class KubeController:
@@ -170,5 +171,5 @@ def jsorc():
         monitorThread = startMonitoring(
             k8sConf=inclusterK8sConf(), prometheusURL="http://js-prometheus:9090"
         )
-        print("Monitoring started")
+        logger.info("Monitoring started")
         waitMonitoring(monitorThread)

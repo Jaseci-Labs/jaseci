@@ -9,4 +9,8 @@ def load_standard():
     import jaseci.actions.standard.jaseci  # noqa
 
 
+from utils.jsorc import jsorc
+
+jsorc()
+
 load_standard()
