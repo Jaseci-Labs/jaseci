@@ -1,4 +1,4 @@
-# # LARES Main VPC 
+
 
 # resource "aws_vpc" "zsb-vpc" {
 #   cidr_block                       = "172.20.0.0/16"
@@ -34,7 +34,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "2.66.0"
 
-  name                 = format("%s-%s", "zsb-vpc", local.envsuffix)
+  name                 = format("%s-%s", "jaseci-vpc", local.envsuffix)
   cidr                 = "10.0.0.0/16"
   azs                  = data.aws_availability_zones.available.names
   private_subnets      = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]

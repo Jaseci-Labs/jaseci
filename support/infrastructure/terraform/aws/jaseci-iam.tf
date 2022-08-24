@@ -111,7 +111,7 @@ resource "aws_iam_policy" "cluster_elb_sl_role_creation" {
 
     description = "Permissions for EKS to create AWSServiceRoleForElasticLoadBalancing service-linked role"
     
-    name        = "zsb-eks-dev-elb-sl-role-creation20210426211834225900000001"
+    name        = "jaseci-eks-dev-elb-sl-role-creation20210426211834225900000001"
     path        = "/"
     policy      = jsonencode(
         {
@@ -132,9 +132,9 @@ resource "aws_iam_policy" "cluster_elb_sl_role_creation" {
     )
   
         tags    = {
-          "Name" = "zsb-eks-dev"
+          "Name" = "jaseci-eks-dev"
         }
        tags_all    = {
-           "Name" = "zsb-eks-dev"
+           "Name" = "jaseci-eks-dev"
         }
 }

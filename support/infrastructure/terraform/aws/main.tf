@@ -7,11 +7,11 @@ provider "aws" {
   }
 }
 terraform {
-  backend "s3" {
-    bucket = "zsb-devops"
-    key    = "dev/"
-    region = "us-west-2"
-  }
+  # backend "s3" {
+  #   bucket = "jaseci-devops"
+  #   key    = "dev/"
+  #   region = "us-west-2"
+  # }
 
   required_providers {
     random = {
