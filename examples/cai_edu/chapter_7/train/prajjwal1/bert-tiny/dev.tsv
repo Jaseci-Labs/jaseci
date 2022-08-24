@@ -1,9 +1,9 @@
 my O O
 name O O
 is O O
-Shawn B-name B-name
+Shawn B-name B-address
 
-Jemmott B-name B-name
+Jemmott B-name B-address
 is O O
 my O O
 name O O
@@ -17,13 +17,13 @@ me O O
 by O O
 the O O
 name O O
-Katryn B-name B-name
+Katryn B-name O
 
 You O O
 can O O
 call O O
 me O O
-Spence B-name B-name
+Spence B-name B-address
 
 My O O
 mother O O
@@ -31,7 +31,7 @@ give O O
 me O O
 the O O
 name O O
-marks B-name B-name
+marks B-name B-address
 
 I O O
 live O O
@@ -55,12 +55,12 @@ Guyana B-address B-address
 My O O
 name O O
 is O O
-Yiping B-name B-name
+Yiping B-name B-address
 
 They O O
 call O O
 me O O
-Kang B-name B-name
+Kang B-name B-address
 
 lot B-address B-address
 1 I-address I-address
@@ -120,7 +120,7 @@ Palms B-address B-address
 my O O
 name O O
 is O O
-jason B-name B-name
+jason B-name B-address
 and O O
 i O O
 live O O
@@ -135,10 +135,10 @@ and O O
 they O O
 call O O
 me O O
-jack B-name B-name
+jack B-name B-address
 
 I'm O O
-eldon B-name B-name
+eldon B-name B-address
 and O O
 i O O
 reside O O
@@ -155,11 +155,11 @@ in O O
 Georgetown, O O
 btw O O
 I'm O O
-Ashish B-name B-name
+Ashish B-name B-address
 Georgetown B-address B-address
 
 I'm O O
-Satesh B-name B-name
+Satesh B-name B-address
 and O O
 I O O
 reside O O
@@ -170,8 +170,8 @@ Street I-address I-address
 My O O
 name O O
 is O O
-Katryn B-name B-name
-Persaud I-name I-name
+Katryn B-name B-address
+Persaud I-name B-name
 and O O
 I O O
 live O O
