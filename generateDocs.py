@@ -374,7 +374,7 @@ libraryReference = [
         'heading' : False
     },
 
-     {
+    {
         'name' :'Jaseci Core',
         'path' : 'jaseci_core/README.md',
         'heading' : True
@@ -383,15 +383,31 @@ libraryReference = [
 
 ]
 
-def main(basicList,gettingStartedList,LanguageGuide,samples_and_tutorials,libraryReference):
+jaseci_webkit = [
+
+    {
+        'name' :'Webkit Components',
+        'path' : 'jaseci_ui_kit/docs/components.md',
+        'heading' : True
+    },
+      {
+        'name' :'Types of Components',
+        'path' : 'jaseci_ui_kit/docs/typesOfComponents.md',
+        'heading' : True
+    }
+
+]
+
+def main(basicList,gettingStartedList,LanguageGuide,samples_and_tutorials,libraryReference,jaseci_webkit):
     WipeSummaryFile()
     generatedocs('# Jaseci Offical Documentation \n',basicList)
     generatedocs('# Getting Started \n',gettingStartedList)
     generatedocs('# The JAC Programming Language Guide \n',LanguageGuide)
     generatedocs('# Samples and Tutorials \n',samples_and_tutorials)
     generatedocs('# Jaseci Library Reference \n',libraryReference)
+    generatedocs('# Jaseci webkit \n',jaseci_webkit)
 
 
 
 
-main(basicList,gettingStartedList,LanguageGuide,samples_and_tutorials,libraryReference)
+main(basicList,gettingStartedList,LanguageGuide,samples_and_tutorials,libraryReference,jaseci_webkit)
