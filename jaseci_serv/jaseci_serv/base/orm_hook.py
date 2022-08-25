@@ -15,6 +15,7 @@ import jaseci as core_mod
 from jaseci_serv.jaseci_serv.settings import (
     TASK_QUIET,
     TASK_ENABLED,
+    REDIS_ENABLED,
     REDIS_HOST,
     REDIS_PORT,
     REDIS_DB,
@@ -35,7 +36,10 @@ class orm_hook(redis_hook):
         self.globs = globs
         self.skip_redis_update = False
         super().__init__(
-            redis_host=REDIS_HOST, redis_port=REDIS_PORT, redis_db=REDIS_DB
+            redis_enabled=REDIS_ENABLED,
+            redis_host=REDIS_HOST,
+            redis_port=REDIS_PORT,
+            redis_db=REDIS_DB,
         )
 
     ####################################################

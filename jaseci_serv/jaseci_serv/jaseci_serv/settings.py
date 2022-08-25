@@ -139,6 +139,7 @@ if "test" in sys.argv or "test_coverage" in sys.argv:
     beat_scheduler = "celery.beat:PersistentScheduler"
 
 # REDIS
+REDIS_ENABLED = True and ("test" in sys.argv or "runserver" in sys.argv)
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = os.getenv("REDIS_PORT", "6379")
 REDIS_DB = os.getenv("REDIS_DB", "1")

@@ -16,9 +16,11 @@ class redis_hook(mem_hook):
     app: Redis = None
     no_error = True
 
-    def __init__(self, redis_host="localhost", redis_port=6379, redis_db=0):
+    def __init__(
+        self, redis_enabled=True, redis_host="localhost", redis_port=6379, redis_db=0
+    ):
         try:
-            if rh.no_error and rh.app is None:
+            if redis_enabled and rh.no_error and rh.app is None:
                 rh.app = Redis(
                     host=redis_host, port=redis_port, db=redis_db, decode_responses=True
                 )
