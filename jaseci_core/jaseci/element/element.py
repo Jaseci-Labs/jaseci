@@ -153,7 +153,7 @@ class element(hookable):
         obj_dict = {}
         for i in obj_fields:
             obj_dict[i] = getattr(self, i)
-        return json.dumps(obj_dict)
+        return json.dumps(obj_dict, cls=JaseciJsonEncoder)
 
     def serialize(self, deep=0, detailed=False):
         """
