@@ -64,3 +64,6 @@
 - [Non-AI Tools](jaseci_kit/modules/non_ai/README.md)
      - [PDF Extractor](jaseci_kit/modules/non_ai/pdf_ext/README.md)
 - [Jaseci Core](jaseci_core/README.md)
+# Jaseci webkit 
+- [Webkit Components](jaseci_ui_kit/docs/components.md)
+- [Types of Components](jaseci_ui_kit/docs/typesOfComponents.md)
