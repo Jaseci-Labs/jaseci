@@ -1,4 +1,4 @@
-import { Component, Element, Event, EventEmitter, Fragment, h, Prop, Watch } from '@stencil/core';
+import { Component, Element, Event, EventEmitter, h, Prop, Watch } from '@stencil/core';
 import clsx from 'clsx';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';

@@ -1,3 +1,26 @@
+# Top level root node for the conversational AI
+# Classify incoming request to an action-oriented flow
+# or FAQ
+node cai_root {
+    has name = "cai_root";
+    can use.text_classify;
+    can categorize {
+        res = use.text_classify(
+            text=visitor.question,
+            classes=[
+                "i want to test drive",
+                "I have a Model 3 reservation, how do I configure my order",
+                "How do I order a tesla",
+                "Can I request a Test Drive"
+            ]
+        );
+        if (res["match_idx"] == 0):
+            visitor.question_type = "va";
+        else:
+            visitor.question_type = "faq";
+    }
+}
+
 # Parent class for conversational AI state
 node cai_state {
     has name;
@@ -76,9 +99,10 @@ node collect_info:va_state {
         elif ("address" in visitor.extracted_entities and
                 "name" not in visitor.extracted_entities):
             visitor.response = "What is your name?";
-        else:
+        else {
             visitor.response =
                 "To set you up with a test drive, we will need your name and address.";
+        }
     }
 }
 
@@ -108,8 +132,7 @@ node faq_state:cai_state {
     has answer;
     can use.qa_classify;
     can nlu {
-        answers = [];
-        for a in -[faq_transition]->.edge: answers += [a.answer];
+        answers = -[answer_transition]->.answer;
         if (answers) {
             res = use.qa_classify(
                 text = visitor.question,

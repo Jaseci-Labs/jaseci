@@ -1,0 +1,50 @@
+{
+    "test drive": [
+        "I would love to test drive your cars",
+        "can I test drive your vehicle",
+        "can i go on a test drive",
+        "I would like to test out the vehicles",
+        "is it possible that i can test out the car",
+        "I want to take your automobile for a test drive.",
+        "I'd want to try out your automobile.",
+        "Can i take your car for a spin",
+        "I need to take a test drive will you allow me to",
+        "by chance can i take your vehicle for a spin for testing"
+    ],
+    "yes": [
+        "yes let's do it",
+        "that's for sure",
+        "for sure",
+        "absolutely",
+        "i suppose so",
+        "i guess so",
+        "yes",
+        "let's give it a try",
+        "please do",
+        "yeah"
+    ],
+    "no": [
+        "i don't think so",
+        "no",
+        "nope",
+        "nah",
+        "no way",
+        "let's hold off on that for now",
+        "we can come back to this later",
+        "let's revisit this later",
+        "bad idea",
+        "bad call"
+    ],
+    "cancel": [
+        "cancel",
+        "call off",
+        "postpone",
+        "scrap that",
+        "let's drop the process",
+        "scrub that",
+        "abandon the process",
+        "revoke everything",
+        "write that off",
+        "repeal"
+    ]
+}

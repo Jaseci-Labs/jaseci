@@ -15,28 +15,24 @@
 | `label`       | `label`       |             | `string` | `undefined`          |
 | `name`        | `name`        |             | `string` | `undefined`          |
 | `operations`  | `operations`  |             | `string` | `undefined`          |
+| `options`     | `options`     |             | `string` | `undefined`          |
+| `palette`     | `palette`     |             | `string` | `undefined`          |
 | `placeholder` | `placeholder` |             | `string` | `undefined`          |
+| `type`        | `type`        |             | `string` | `'text'`             |
 | `value`       | `value`       |             | `string` | `undefined`          |
-
-
-## Events
-
-| Event          | Description | Type                  |
-| -------------- | ----------- | --------------------- |
-| `valueChanged` |             | `CustomEvent<string>` |
 
 
 ## Dependencies
 
 ### Depends on
 
-- [jsc-label](../jsc-label)
+- [jsc-radio](../jsc-radio)
 
 ### Graph
 ```mermaid
 graph TD;
-  jsc-inputbox --> jsc-label
-  style jsc-inputbox fill:#f9f,stroke:#333,stroke-width:4px
+  jsc-radio-group --> jsc-radio
+  style jsc-radio-group fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------
