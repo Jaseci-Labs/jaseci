@@ -1,0 +1,1 @@
+global cai_root = "";
