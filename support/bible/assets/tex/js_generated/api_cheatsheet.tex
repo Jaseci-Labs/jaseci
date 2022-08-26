@@ -1,13 +1,17 @@
-\lstinline$walker callback$ & \lstinline$nd: node (*req), wlk: walker (*req), key: str (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)$ \\ \hline
 \lstinline$walker summon$ & \lstinline$key: str (*req), wlk: walker (*req), nd: node (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)$ \\ \hline
+\lstinline$walker callback$ & \lstinline$nd: node (*req), wlk: walker (*req), key: str (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)$ \\ \hline
 \lstinline$walker register$ & \lstinline$snt: sentinel (None), code: str (), encoded: bool (False)$ \\ \hline
 \lstinline$walker get$ & \lstinline$wlk: walker (*req), mode: str (default), detailed: bool (False)$ \\ \hline
 \lstinline$walker set$ & \lstinline$wlk: walker (*req), code: str (*req), mode: str (default)$ \\ \hline
 \lstinline$walker list$ & \lstinline$snt: sentinel (None), detailed: bool (False)$ \\ \hline
 \lstinline$walker delete$ & \lstinline$wlk: walker (*req), snt: sentinel (None)$ \\ \hline
 \lstinline$walker spawn create$ & \lstinline$name: str (*req), snt: sentinel (None)$ \\ \hline
-\lstinline$walker spawn delete$ & \lstinline$name: str (*req)$ \\ \hline
 \lstinline$walker spawn list$ & \lstinline$detailed: bool (False)$ \\ \hline
+\lstinline$walker spawn delete$ & \lstinline$name: str (*req)$ \\ \hline
+\lstinline$walker spawn clear$ & \lstinline$n/a$ \\ \hline
+\lstinline$walker yield list$ & \lstinline$detailed: bool (False)$ \\ \hline
+\lstinline$walker yield delete$ & \lstinline$name: str (*req)$ \\ \hline
+\lstinline$walker yield clear$ & \lstinline$n/a$ \\ \hline
 \lstinline$walker prime$ & \lstinline$wlk: walker (*req), nd: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\})$ \\ \hline
 \lstinline$walker execute$ & \lstinline$wlk: walker (*req), prime: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), profiling: bool (False)$ \\ \hline
 \lstinline$walker run$ & \lstinline$name: str (*req), nd: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), snt: sentinel (None), profiling: bool (False)$ \\ \hline

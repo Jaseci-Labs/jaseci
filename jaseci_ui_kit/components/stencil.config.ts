@@ -12,6 +12,11 @@ export const config: Config = {
       esmLoaderPath: '../loader',
     },
     {
+      type: 'dist',
+      esmLoaderPath: '../loader',
+      buildDir: '../../renderer/static/build',
+    },
+    {
       type: 'dist-custom-elements',
     },
     {

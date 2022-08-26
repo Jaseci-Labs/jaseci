@@ -2,19 +2,30 @@ import {*} with "./nodes.jac";
 import {*} with "./edges.jac";
 
 walker talk {
-    has question="";
+    has question="", interactive=false;
     has if_nlu=false;
+    has question_type;
     has predicted_intent = null, extracted_entities = {}, matched_answer = null;
     has response;
 
     root {
-        take --> node::cai_state;
+        take --> node::cai_root;
+    }
+
+    cai_root {
+        if (question == "" and interactive) {
+            question = std.input("> ");
+        }
+        here::categorize;
+        if (question_type == "va"):
+            take --> node::va_state;
+        elif (question_type == "faq"):
+            take --> node::faq_state;
     }
 
     cai_state {
-        if (question == "") {
+        if (question == "" and interactive) {
             question = std.input("> ");
-            if_nlu = false;
         }
 
         if (!if_nlu) {
@@ -29,11 +40,16 @@ walker talk {
 
         take -[entity_transition(entities==extracted_entities.d::keys)]-> node::cai_state else {
             take -[intent_transition(intent==predicted_intent)]-> node::cai_state else {
-                take -[answer_transition(answer==matched_answer)]-> node::cai_state else {
+                take -[answer_transition]-> node::cai_state(answer==matched_answer) else {
                     here::nlg;
-                    std.out(response);
                     question = "";
-                    take --> node::cai_root else: take here;
+                    if_nlu = false;
+                    if ((-->).length == 0):
+                        take net.root();
+                    else:
+                        take here;
+                    if (interactive): std.out(response);
+                    else: yield report response;
                 }
             }
         }
@@ -53,15 +69,19 @@ walker ingest_faq {
 }
 
 graph tesla_sales_rep {
-    has anchor state_cai_root;
+    has anchor cai_root;
     spawn {
-        state_cai_root = spawn node::cai_root;
+        # Top level root
+        cai_root = spawn node::cai_root;
+
+        # Action-oriented VA
+        state_cai_va_root = spawn node::cai_va_root;
         state_collect_info  = spawn node::collect_info;
         state_confirmation = spawn node::confirmation;
         state_confirmed = spawn node::confirmed;
         state_canceled = spawn node::canceled;
 
-        state_cai_root -[intent_transition(
+        state_cai_va_root -[intent_transition(
             intent = "test drive"
         )]-> state_collect_info;
 
@@ -85,14 +105,25 @@ graph tesla_sales_rep {
             intent = "cancel"
         )]-> state_canceled;
 
-        state_confirmed --> state_cai_root;
-        state_canceled --> state_cai_root;
+        # FAQ
+        faq_root = spawn node::faq_state;
+
+        # Connect to root
+        cai_root --> state_cai_va_root;
+        cai_root --> faq_root;
     }
 }
 
 walker init {
     root {
         spawn here --> graph::tesla_sales_rep;
+        take -->;
+    }
+    cai_root {
+        take --> node::faq_state;
+    }
+    faq_state {
+        spawn here walker::ingest_faq(kb_file="tesla_faq.json");
     }
 }
 

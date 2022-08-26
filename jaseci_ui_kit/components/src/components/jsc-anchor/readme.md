@@ -7,14 +7,17 @@
 
 ## Properties
 
-| Property     | Attribute    | Description | Type     | Default              |
-| ------------ | ------------ | ----------- | -------- | -------------------- |
-| `css`        | `css`        |             | `string` | `JSON.stringify({})` |
-| `events`     | `events`     |             | `string` | `undefined`          |
-| `href`       | `href`       |             | `string` | `undefined`          |
-| `label`      | `label`      |             | `string` | `undefined`          |
-| `operations` | `operations` |             | `string` | `undefined`          |
-| `target`     | `target`     |             | `string` | `undefined`          |
+| Property     | Attribute    | Description | Type                                                | Default              |
+| ------------ | ------------ | ----------- | --------------------------------------------------- | -------------------- |
+| `css`        | `css`        |             | `string`                                            | `JSON.stringify({})` |
+| `events`     | `events`     |             | `string`                                            | `undefined`          |
+| `hover`      | `hover`      |             | `"false" \| "true"`                                 | `'false'`            |
+| `href`       | `href`       |             | `string`                                            | `undefined`          |
+| `label`      | `label`      |             | `string`                                            | `undefined`          |
+| `name`       | `name`       |             | `string`                                            | `undefined`          |
+| `operations` | `operations` |             | `string`                                            | `undefined`          |
+| `palette`    | `palette`    |             | `"accent" \| "neutral" \| "primary" \| "secondary"` | `undefined`          |
+| `target`     | `target`     |             | `string`                                            | `undefined`          |
 
 
 ----------------------------------------------

@@ -7,13 +7,22 @@
 
 ## Properties
 
-| Property     | Attribute    | Description | Type                                                                | Default              |
-| ------------ | ------------ | ----------- | ------------------------------------------------------------------- | -------------------- |
-| `css`        | `css`        |             | `string`                                                            | `JSON.stringify({})` |
-| `events`     | `events`     |             | `string`                                                            | `undefined`          |
-| `items`      | `items`      |             | `"center" \| "end" \| "start"`                                      | `'start'`            |
-| `justify`    | `justify`    |             | `"around" \| "between" \| "center" \| "end" \| "evenly" \| "start"` | `'start'`            |
-| `operations` | `operations` |             | `string`                                                            | `undefined`          |
+| Property      | Attribute     | Description | Type                          | Default              |
+| ------------- | ------------- | ----------- | ----------------------------- | -------------------- |
+| `body`        | `body`        |             | `string`                      | `undefined`          |
+| `css`         | `css`         |             | `string`                      | `JSON.stringify({})` |
+| `data`        | --            |             | `[]`                          | `undefined`          |
+| `events`      | `events`      |             | `string`                      | `undefined`          |
+| `getters`     | `getters`     |             | `string`                      | `undefined`          |
+| `layout`      | `layout`      |             | `"Column" \| "None" \| "Row"` | `'None'`             |
+| `layoutProps` | `layoutprops` |             | `string`                      | `undefined`          |
+| `name`        | `name`        |             | `string`                      | `undefined`          |
+| `operations`  | `operations`  |             | `string`                      | `undefined`          |
+| `server`      | `server`      |             | `string`                      | `undefined`          |
+| `snt`         | `snt`         |             | `string`                      | `undefined`          |
+| `template`    | `template`    |             | `string`                      | `undefined`          |
+| `token`       | `token`       |             | `string`                      | `undefined`          |
+| `walker`      | `walker`      |             | `string`                      | `undefined`          |
 
 
 ----------------------------------------------

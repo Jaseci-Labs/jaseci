@@ -13,6 +13,7 @@
 | `events`     | `events`     |             | `string` | `undefined`          |
 | `href`       | `href`       |             | `string` | `undefined`          |
 | `label`      | `label`      |             | `string` | `undefined`          |
+| `name`       | `name`       |             | `string` | `undefined`          |
 | `operations` | `operations` |             | `string` | `undefined`          |
 | `target`     | `target`     |             | `string` | `undefined`          |
 
