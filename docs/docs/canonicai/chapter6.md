@@ -102,6 +102,43 @@ RESPONSE: {
 }
 ```
 We will send a POST request to /user/token and get a token response now you can now make API calls to your JAC program once you copy token returned. Add it to the authorization header with the word "token" before sending any request. 
+```
+REQUEST [POST]: http://localhost:8000/js/sentinel_register
+
+PAYLOAD: {
+    "name": "some string",
+    "code": "some string",
+    "code_dir": "some string",
+    "mode": "some string",
+    "encoded": false,
+    "auto_run": "some string",
+    "auto_run_ctx": {},
+    "auto_create_graph": false,
+    "set_active": false
+}
+```
+This will allow you to register the sentinel for the application.
+
+```
+REQUEST [POST]: http://localhost:8000/js/graph_create
+
+PAYLOAD: {
+    "set_active": false
+}
+```
+This will allow you to create a graph instance and return root node graph object
+
+```
+REQUEST [POST]: http://localhost:8000/js/walker_run
+
+PAYLOAD: {
+    "name": "init",
+    "ctx": {},
+    "snt": "urn:uuid:d32de620-27cd-4920-a31e-2e2f41bc2a9d",
+    "detailed": false
+}
+```
+This request will run the init walker which will spawn the graph and the AI models in the application.
 
 ```
 REQUEST [POST]: http://localhost:8000/js/walker_run
