@@ -1,5 +1,4 @@
 import { Component, Element, h, Listen, Method, Prop, Watch } from '@stencil/core';
-import clsx from 'clsx';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
 

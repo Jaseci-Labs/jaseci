@@ -7,16 +7,19 @@
 
 ## Properties
 
-| Property      | Attribute     | Description | Type     | Default              |
-| ------------- | ------------- | ----------- | -------- | -------------------- |
-| `css`         | `css`         |             | `string` | `JSON.stringify({})` |
-| `events`      | `events`      |             | `string` | `undefined`          |
-| `fullwidth`   | `fullwidth`   |             | `string` | `undefined`          |
-| `label`       | `label`       |             | `string` | `undefined`          |
-| `name`        | `name`        |             | `string` | `undefined`          |
-| `operations`  | `operations`  |             | `string` | `undefined`          |
-| `placeholder` | `placeholder` |             | `string` | `undefined`          |
-| `value`       | `value`       |             | `string` | `undefined`          |
+| Property      | Attribute     | Description | Type                                   | Default              |
+| ------------- | ------------- | ----------- | -------------------------------------- | -------------------- |
+| `css`         | `css`         |             | `string`                               | `JSON.stringify({})` |
+| `events`      | `events`      |             | `string`                               | `undefined`          |
+| `fullwidth`   | `fullwidth`   |             | `string`                               | `undefined`          |
+| `label`       | `label`       |             | `string`                               | `undefined`          |
+| `name`        | `name`        |             | `string`                               | `undefined`          |
+| `operations`  | `operations`  |             | `string`                               | `undefined`          |
+| `palette`     | `palette`     |             | `"accent" \| "primary" \| "secondary"` | `undefined`          |
+| `placeholder` | `placeholder` |             | `string`                               | `undefined`          |
+| `size`        | `size`        |             | `"lg" \| "md" \| "sm" \| "xs"`         | `undefined`          |
+| `type`        | `type`        |             | `string`                               | `'text'`             |
+| `value`       | `value`       |             | `string`                               | `undefined`          |
 
 
 ## Events
@@ -25,19 +28,6 @@
 | -------------- | ----------- | --------------------- |
 | `valueChanged` |             | `CustomEvent<string>` |
 
-
-## Dependencies
-
-### Depends on
-
-- [jsc-label](../jsc-label)
-
-### Graph
-```mermaid
-graph TD;
-  jsc-inputbox --> jsc-label
-  style jsc-inputbox fill:#f9f,stroke:#333,stroke-width:4px
-```
 
 ----------------------------------------------
 

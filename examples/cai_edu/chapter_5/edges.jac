@@ -4,6 +4,4 @@ edge intent_transition {
 edge entity_transition {
     has entities;
 }
-edge answer_transition {
-    has answer;
-}
+edge answer_transition;

@@ -1,6 +1,5 @@
-import { Component, Element, Fragment, h, Host, Prop } from '@stencil/core';
+import { Component, Element, h, Prop } from '@stencil/core';
 import { getProp } from '../../store/propsStore';
-import { ItemsPropValue, JustifyPropValue } from '../../types/propTypes';
 import { formatRowContent, getRowValue } from '../../utils/datagrid';
 import { setUpEvents } from '../../utils/events';
 import { getOperations, renderComponentTree } from '../../utils/utils';
