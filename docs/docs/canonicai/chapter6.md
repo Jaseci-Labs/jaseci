@@ -60,6 +60,63 @@ Let us walk you through on how to update jac code on the remote instance. After 
 sentinel set -snt active:sentinel -mode ir [main jir file of the application]
 ```
 
+### Interact with your jac application through restful API endpoints
+In this section, we will be walking you through on how to interact with your jac application through restful API endpoints, if you notice we have been running all the walker commands on the terminal, let's run it through the API. The steps to interact through the API is as follows:
+
+```
+pip install jaseci-serv
+```
+We will be using jaseci serve to run the application on the webserver
+
+```
+jsserv makemigrations base
+```
+Here we will be making the migrations for the default base module in our jaseci program. This will create a database that will be used to run a jaseci instance of our application. It creates a mydatabase file in your working directory.
+
+```
+jsserv migrate
+```
+This will install the schema and database.
+
+```
+jsserv createsuperuser
+```
+This will allow you to create the account for the server and you will be prompted to enter an email and password.
+
+```
+jsserv runserver 0.0.0.0:8000
+```
+This will start your Jaseci Server to run your application. Visit localhost:8000/docs to check if the webserver is up and running.
+
+```
+REQUEST [POST]: http://localhost:8000/user/token/
+
+PAYLOAD: {
+"email" : "email@gmail",
+"password" : "passsword"
+}
+
+RESPONSE: {
+"expiry": null, 
+"token": "2b4824cd3136616aa5380580578b2f5d1fccd3cad669f78029911e239300d3c0"
+}
+```
+We will send a POST request to /user/token and get a token response now you can now make API calls to your JAC program once you copy token returned. Add it to the authorization header with the word "token" before sending any request. 
+
+```
+REQUEST [POST]: http://localhost:8000/js/walker_run
+
+PAYLOAD: {
+    "name": "talk",
+    "ctx": {
+        "question": "i would like to test drive."
+    },
+    "snt": "urn:uuid:d32de620-27cd-4920-a31e-2e2f41bc2a9d",
+    "detailed": false
+}
+```
+For the payload sent to the /js/walker_run, the name (name of walker to be called), ctx (information sent to the walker), snt (sentinel ID  of the program ), detailed (returns additional information for the walker), nd (node walker will be set to, if not included will go to the root node). This is how we interact with jac application through restful API endpoints. In this example we ran the talk walker.
+
 ## Bringing in the AI models for the dialogue 
 In this section, we will explain how we added the AI model into this application. We have added two AI models the bi-encoder and tfm ner model. Before we explain the code implementation for both models, we will explain the top inheritance AI model they inherit.
 
