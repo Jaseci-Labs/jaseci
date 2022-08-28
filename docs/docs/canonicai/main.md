@@ -1,9 +1,6 @@
 # Build a conversational AI system in Jaseci
 
-# Chapter 1
-
-## What are we building?
-We are building a Conversational AI.
+# Chapter 1: Introduction
 
 ### What is a Conversational AI agent?
 Conversational AI is a type of artificial intelligence that enables consumers to interact with computer applications the way they would with other humans.
@@ -88,11 +85,6 @@ Let's explain the flow, So in this model it requires two input. Each input is pa
 From this example, we are using the sentence encoder to look at the user input "Good morning"
 and see how similar it is to a class "greeting" so when we pass the both to seperate sentence encoder which it will then vectorize it and pass it to the cosine similarity function which is will look deeper into to the vectors and find a score from 0-1, to see how similar it is in meaning, 0 from lowest and 1 as the highest. So why would we use this, let's say we are building a classifier what if we had like greeting, bye, fruits, and we want to know what "Good morning" is closest to in meaning. We can use this sentence encoder to find the similarity in each of the words greetings bye and fruits and the one that have the highest score, is similar in meaning. Let's say the results in greeting is 0.9, fruits is 0.0023, and bye is 0.02. Therefore greetings is similar to the user input "Good morning" because it ranks high from the scale 0-1 and the bye class would rank second. We can use the sentence encoder in many other application but in this example we used the sentence encoder to build a intent classification model, we can build a whole lot of other applications using sentence encoder. With that said, enjoying showing off your knowledge to others who don't know about sentence encoder.
 
-#### Real example
-![Real Example For Sentence Encoder](./images/real_example_se.png "Title")
-
-This is a real life example where it applies from a day to day basis in our lives. Sentence encoder is widely used in many modern AI applications across the world.
-
 ### The AI models we will use in this tutorial
 
 | Name                  | AI Model                                        | Links                                                                                            |
@@ -101,7 +93,7 @@ This is a real life example where it applies from a day to day basis in our live
 | Entity extraction     | Transformer-based token classification          | [link](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification) |
 | Sentence encoding     | Universal Sentence Encoder (USE_ENC and USE_QA) | [link](https://arxiv.org/abs/1803.11175)                                                         |
 
-# Chapter 2
+# Chapter 2: Architecture Overview
 
 ## i. Architecture overview
 ![Architecture](./images/architecture.png?raw=true "Title")
@@ -171,9 +163,11 @@ In this section, we will guide you how the entire architecture work with a real 
 
 * **FAQ Component**: Imagine you are asking a question "when do you guys open". In the Top Level Classification state, where it uses the sentence encoder to decide whether to navigate to the conversation AI state or the FAQ state. In this case the AI when processing this utterance it will navigate it to the FAQ state. Where it use a difference sentence encoder (use_qa) which is specialist for FAQ models. The edge will get triggered to the best appropriate faq answer state that is related to the query the user asked and display it to the user.
 
-# Chapter 3
+# Chapter 3: Dialogue System
 
-### **cai_state node**
+### <span style="color:red">TODO</span>:
+- [ ] Introduce conversational state here
+
 ### Two main stages in handling a conversational AI request
 ![Two Stages](./images/nlu_nlg.png?raw=true "Title")
 
@@ -183,58 +177,22 @@ There are two stages which handles the conversational aspect of the AI and they 
 
 * **NLG (Natural Language Generation)**: Natural language generation (NLG) is the use of artificial intelligence (AI) programming to produce written or spoken narratives from a data set. **What does NLG do?** If you look above at the diagram, you would see after the AI understand what the user is trying to say using NLU it will then take those results and auto generate a suitable response to forward to the user and that is the purpose of the NLG.
 
+### <span style="color:red">TODO</span>:
+- [ ] Create first cai_state node with just NLU and NLG node abilities
+- [ ] Create graph spawn block that just spawn a single cai_state node
+- [ ] Teach how to run the graph spawn in jsctl and get the graph in dot format and use dot visualizer to check your graph
+
 ### **What do each node abilities do?**
 
+* **nlu**: Process incoming request through NLU engines using intent classification or entity extraction AI models.
+* **nlg**: Construct natural language response
 * **classifiy_intent**: Figures out the user intention in any given question.
 * **extract_entities**: Extract words of interests from the question
 * **gen_response**: Generate a suitable response for the user.
-* **nlu**: Process incoming request through NLU engines using intent classification or entity extraction AI models.
-* **nlg**: Construct natural language response
 
+### <span style="color:red">TODO</span>:
+- [ ] Expand the cai_state node with additional node abilities beyond just nlu and nlg. Text to explain the below code snippet.
 
-### **Inheritance**
-**What is inheritance?**
- It is a mechanism where you can to derive a class from another class for a hierarchy of classes that share a set of attributes and methods.
-
- **Node Inheritance**
-```
-node vehicle {
-    has plate_number;
-
-    can drive {
-        report 'yes';
-    }
-}
-
-node car:vehicle {
-    has plate_number = "RAC001";
-}
-
-node bus:vehicle {
-    has plate_number = "SUB002";
-}
-```
-In the above code snippet. This is a very basic example of inheritance. We created a node named car and bus but since they are related and simply share the same property and node ability we created a node named vehicle and inherit its attributes. Imagine life without inheritance, the code will look like this.
-```
-node car {
-    has plate_number = "RAC001";
-
-    can drive {
-        report 'yes';
-    }
-}
-
-node bus {
-    has plate_number = "SUB002";
-
-    can drive {
-        report 'yes';
-    }
-}
-```
-In this case it will seem that writing it this way will be more effient, however what if each vehicles have more functions like blow_horn, accelerate, breaks, park and etc or they are more vehicles like truck, scooter, and etc you can imagine how big this code base will be and that's why it's important to have inheritance in our code base and in this program we use inheritance to increase the efficiency of the entire application.
-
-So, lets use what's in the code base and see how we implemented it. ```Do not worry about what each nodes and state works, that will be explained in detailed in the next section, just look at how it is implemented.```
 ```
 node cai_state {
     has name;
@@ -276,8 +234,51 @@ node cai_state {
     }
 }
 ```
-Above, this is a conversational state node. We use inheritance here, because we will have multiple conversational state nodes like a confirm state, cancel state, collect information state and etc, that have the same functionality but does have different node abilities.
 
+### **Inheritance**
+**What is inheritance?**
+ It is a mechanism where you can to derive a class from another class for a hierarchy of classes that share a set of attributes and methods.
+
+ **Node Inheritance**
+```
+node vehicle {
+    has plate_number;
+
+    can drive {
+        report 'yes';
+    }
+}
+
+node car:vehicle {
+    has plate_number = "RAC001";
+}
+
+node bus:vehicle {
+    has plate_number = "SUB002";
+}
+```
+In the above code snippet. This is a very basic example of inheritance. We created a node named car and bus but since they are related and simply share the same property and node ability we created a node named vehicle and inherit its attributes. Without inheritance, the code will look like this.
+```
+node car {
+    has plate_number = "RAC001";
+
+    can drive {
+        report 'yes';
+    }
+}
+
+node bus {
+    has plate_number = "SUB002";
+
+    can drive {
+        report 'yes';
+    }
+}
+```
+In this case it will seem that writing it this way will be more effient, however what if each vehicles have more functions like blow_horn, accelerate, breaks, park and etc or they are more vehicles like truck, scooter, and etc you can imagine how big this code base will be and that's why it's important to have inheritance in our code base and in this program we use inheritance to increase the efficiency of the entire application.
+
+So, lets use what's in the code base and see how we implemented it. ```Do not worry about what each nodes and state works, that will be explained in detailed in the next section, just look at how it is implemented.```
+We use inheritance here, because we will have multiple conversational state nodes like a confirm state, cancel state, collect information state and etc, that have the same functionality but does have different node abilities.
 ```
 node collect_info:cai_state {
     has name = "collect_info";
@@ -319,6 +320,7 @@ node canceled:cai_state {
 As you can see here, all of the conversational state node have something in common, that's why it is very important to use inheritance, because this code instead of being 200 lines of code it can be over 1000+ lines of code and it could be very hard to manage and read.
 
 You can go to [jaseci docs](https://docs.jaseci.org/docs/Developing_with_JAC/Language_Features/OOP) for more information on inheritance. If you are still confused about inheritance and how it works.
+
 
 ### **Nodes (States)**
 ### collect_info state
@@ -437,6 +439,14 @@ graph tesla_sales_rep {
 }
 ```
 
+### <span style="color:red">TODO</span>:
+- [ ] Run the updated graph spawn block to get an updated graph. Visualize in DOT
+
+### <span style="color:red">TODO</span>:
+- [ ] Introduce the concept of walker
+- [ ] Start with init walker, the init walker just spawn the graph
+- [ ] Teach how to run the init walker and check the spawned graph.
+
 ### **Describe the talk walker**
 ### The parameters it takes
 * **question**: This intakes the user utterance.
@@ -446,6 +456,9 @@ graph tesla_sales_rep {
 * **extracted_entities**: This is the variable that holds the extracted entities that produced from the entity extraction model from the NLU.
 * **traveled**: This variable tells you whether or not we moved on to the next state.
 * **response**: This holds the response generated from the NLG.
+
+### <span style="color:red">TODO</span>:
+- [ ] Some of the code and description below needs to be updated to the latest code, e.g. the `traveled` flag is no longer needed.
 
 ### The "traveled" boolean flag
 This boolean flag variable tells you whether or not we moved on to the next state. If its flagged as "false" it will execute all the logic from the NLU until it have the information to move on to the next state if not it will execute the NLG which will generate a reponse and go to the next state.
@@ -497,10 +510,11 @@ walker init {
 ```
 The above code snippet shows how we utilize generating the graph using the init walker using jac. Note: the graph spawn statement returns the anchor node defined in the graph block. Therefore, the anchor node is a return statement. The init walker is also the first block of code that will be runned in the entire application and that will look for the graph we created for the tesla sales rep and generate all the nodes and edges of the application.
 
-# Chapter 4
+### <span style="color:red">TODO</span>:
+- [ ] Run the talk walker, with the input question passed in as the context.
+- [ ] Explain the response format of the walker, e.g. success, report.
 
-## What are we building?
-We are building a Conversational AI.
+# Chapter 4
 
 ### Explaining std.input and std.out
 
@@ -515,6 +529,10 @@ Let's now talk about std.out. std in jac means "standard" and out meaning "outpu
 ```
 std.out('Display TEXT here');
 ```
+
+### <span style="color:red">TODO</span>:
+- [ ] This jsctl introduction and installation step need to be brought up earlier, at the end of Chapter 2/begining of chapter 3.
+- [ ] And this part will just become running the walker interactively with std.input/std.output to show the dialogue system working
 
 ### How to run the program interactively via jsctl
 
@@ -578,10 +596,9 @@ You are all set for a Tesla test drive!
 
 **Yes that looks correct**: When transitioned to confirmation state, it will be prompted by the bot for confirmation and when the user responds with the current query, it will go through the intent classification model to know whether or not they confirmed or not, based on the current query the user agreed and it will do an intent transition to move to confirmed state (node) which the bot will prompt the user with the information required based on the user data.
 
-# Chapter 5
+# Chapter 5: FAQ
 
-## What are we building?
-We are building a Conversational AI.
+In this chapter, we are introducing the capability of handling FAQ to our chatbot.
 
 ### The Updated Inheritance Structure
 
@@ -774,13 +791,18 @@ can nlg {
     }
 ```
 
+### <span style="color:red">TODO</span>:
+- [ ] Create graph spawn block and init walker for the FAQ
+- [ ] Run the init walker for the FAQ and visualizes the graph in DOT
+
 If you were to interact with the faq state it would use the zero-shot technique to find the appropriate response and if you were to test it based on the information provided in the application it would have respond as follows:
 ```
 > How do I order a Tesla?
 Visit our Design Studio to explore our latest options and place your order. The purchase price and estimated delivery date will change based on your configuration.
 ```
 
-
+### <span style="color:red">TODO</span>:
+- [ ] Introduce the concept of jaseci action, for leveraing AI models.
 
 ### How to load actions
 
@@ -819,6 +841,9 @@ It is used for text classification. It requires no training data. However it req
 Above, we showed you how to load actions and now in this section we will show you how to implememt it by loading the use_qa actions. Once you run the command sucessfully you should be able to use all of it's functionality. The command for loading the actions is as follows:
 * ```jsctl```
 * ```actions load module jaseci_kit.use_qa```
+
+### <span style="color:red">TODO</span>:
+- [ ] Small example walker that uses the use_qa action to check it is correctly loaded and working.
 
 **What does the qa_classify action do?**
 qa_classify is a built in function or api used in use_qa module in jaseci kit. It takes in two parameters: text (user input) and classes (list of string) and in returns it gives you the best matching class from the list of classes and this is what we are using for intent classification.
@@ -957,6 +982,10 @@ walker ingest_faq {
 
 So, let's explain what this walker does. Essentially, it takes a kb_file (knowledge base file) in the form of json that have a key of question and a key of answer. Then loop is created in the faq state to spawn answers nodes with answer transition edge from the answers from the knowledge based. This walker just intakes a file and generate faq answer nodes with edges.
 
+### <span style="color:red">TODO</span>:
+- [ ] Run the ingest_faq walker to read in a FAQ file
+- [ ] Observe the graph is now updated with more answer nodes, according to the FAQ file.
+
 ### Interacting with the FAQ side using the interactive_faq walker
 In this section, we will walk you through a session interacting with the faq side. So let's get started.
 
@@ -975,7 +1004,362 @@ Let's run a query and see if we get a response.
 To configure your order, log into your Tesla Account and select manage on your existing reservation to configure your Tesla. Your original USD deposit has now been converted to SGD.
 ```
 
-# Chapter 6
+# Chapter 6: Training the AI models
+
+## Bringing in the AI models for the dialogue system
+In this section, we will explain how we added the AI model into this application. We have added two AI models the bi-encoder and tfm ner model. Before we explain the code implementation for both models, we will explain the top inheritance AI model they inherit.
+
+### <span style="color:red">TODO</span>:
+- [ ] Introduce biencoder and ner model used here
+
+**Explanation of the ai_model node**
+```
+    can train with train entry {}
+```
+This allows you to train the ai model and it also inherits the train walker which accepts certain parameters.
+
+```
+    can test_model with test_model entry {}
+```
+This allow you to test the ai model, it inherits the test_model walker.
+```
+    can eval with eval entry {
+        ::train;
+        ::test_model;
+    }
+```
+this node ability enables you to evaluate the ai model by training it and testing it when the eval walker is called.
+
+```
+    can infer with infer entry {}
+```
+This node ability allows you to pass query and get a response.
+
+```
+walker train {
+    has train_file, num_train_epochs, from_scratch;
+    has batch_size, learning_rate;
+}
+```
+This walker takes in a few parameters: **train_file** (where the training file is located in the repository). **num_train_epochs** (amount of time you want the ai model to learn from the dataset), **from_scratch** (if you want to train the model from scratch or not), **batch_size** (the number of training examples utilized in one iteration) and **learning_rate** (The amount that the weights are updated during training).
+
+```
+walker test_model {
+    has eval_file;
+}
+```
+This walker allows you to test the model using the file location you provided in it's parameter.
+
+```
+walker eval {
+    has train_file, eval_file, num_train_epochs, from_scratch;
+}
+```
+Allows you to evaluate the model.
+
+```
+walker infer {
+    has input;
+}
+```
+This walker allows you to pass an input (user query) to the parameter and receive the necessary information for that ai model based on the input.
+
+**Explanation of the bi_enc node**
+In the last section we explained the ai_model node and in this section we integrated the ai_model node into the bi-encoder ai model which is called bi_enc. The explanation of each code input is as follows:
+
+```
+can bi_enc.train, bi_enc.infer, bi_enc.save_model;
+```
+This logic enables you to import functions from the jaseci kit modules imported from actions.
+
+```
+can train {
+        train_data = file.load_json(visitor.train_file);
+        bi_enc.train(
+            dataset=train_data,
+            from_scratch=visitor.train_from_scratch,
+            training_parameters={
+                "num_train_epochs": visitor.num_train_epochs
+            }
+        );
+        if (visitor.model_name):
+            bi_enc.save_model(model_path=visitor.model_name);
+    }
+```
+This node ability allows you to train the bi_encoder (bi_enc) model, as you can see it overrides the train function from ai_mode node and it also requires some parameter and these parameter are presented from the walker.
+
+```
+can infer {
+        res = bi_enc.infer(
+            contexts=[visitor.query],
+            candidates=here.candidates,
+            context_type="text",
+            candidate_type="text"
+        )[0];
+
+        max_score = 0;
+        max_intent = "";
+        for i=0 to i<res["candidate"].length by i+=1 {
+            if (res["score"][i] > max_score){
+                max_intent = res["candidate"][i];
+                max_score = res["score"][i];
+            }
+        }
+        report [max_intent, max_score];
+    }
+```
+The infer function in the bi_enc module allows you to query the model and receive the intent of the user utterance.
+
+```
+can test_model {
+        eval_set = file.load_json(visitor.eval_file);
+        candidates = eval_set.dict::keys;
+
+        correct = [];
+        failure = [];
+        for intent in candidates {
+            preds = bi_enc.infer(
+                contexts=eval_set[intent],
+                candidates=candidates,
+                context_type="text",
+                candidate_type="text"
+            );
+            for i=0 to i<preds.length by i+=1 {
+                pred = preds[i];
+                max_score = 0;
+                max_intent = "";
+                for j=0 to j<pred["candidate"].length by j+=1 {
+                    if (pred["score"][j] > max_score){
+                        max_intent = pred["candidate"][j];
+                        max_score = pred["score"][j];
+                    }
+                }
+                if (intent == max_intent): correct.l::append(eval_set[intent][i]);
+                else {
+                    failure.l::append({
+                        "sent": eval_set[intent][i],
+                        "ground truth": intent,
+                        "prediction": max_intent
+                    });
+                }
+            }
+        }
+        report {
+            "accuracy": correct.length/(correct.length+failure.length),
+            "correct": correct.length,
+            "failure": failure.length,
+            "failed_sents": failure
+        };
+    }
+```
+This node ability allows you to test the model for the bi-encoder.
+
+### <span style="color:red">TODO</span>:
+- [ ] Update the graph spawn block to include the biencoder node
+- [ ] Run the train/eval/infer walker to train a biencoder model
+
+**Explanation of the ent_ext node**
+In this section we will explain each functions for the entity extraction model for ent_ext node. The explanation goes as follows:
+
+```
+can ent_ext.entity_detection, ent_ext.train, ent_ext.save_model, ent_ext.load_model;
+```
+This is how we import all the functionalities for the jaseci kit module called ent_ext.
+
+
+```
+can train {
+        train_data = file.load_json(visitor.train_file);
+
+        if(visitor.from_scratch) {
+            ent_ext.load_model({"default": true});
+            here.labels = [];
+        }
+        for item in train_data {
+            for ent in item["entities"] {
+                ent_label = ent["entity_type"];
+                if (ent_label not in here.labels): here.labels.l::append(ent_label);
+            }
+        }
+        ent_ext.train(
+            train_data=train_data,
+            val_data=val_data,
+            test_data=test_data,
+            train_params={
+                "num_epoch": (visitor.num_train_epochs).int,
+                "batch_size": (visitor.batch_size).int,
+                "LR": (visitor.learning_rate).float
+            }
+        );
+        if (visitor.model_name):
+            ent_ext.save_model(model_path=visitor.model_name);
+    }
+```
+This is how we train the model, it requires training data, test data, val data, the number of train epochs, batch size and learning rate which was briefly explained in a earlier section.
+
+```
+can infer {
+        report ent_ext.entity_detection(
+            text=input["text"],
+            ner_labels=input["labels"]
+        );
+    }
+```
+This is the node ability which allows you to query (user input) and get back the entity extracted from the user.
+
+### <span style="color:red">TODO</span>:
+- [ ] Update the graph spawn block to include the entity node
+- [ ] Run the train/eval/infer walker to train an entity extraction model
+
+
+**Integrate AI models into node abilities**
+In this section we will explain the changes made to the va state to utilize the trained models.
+
+```
+can classify_intent {
+
+        train_data = file.load_json("data/clf_train.json");
+        candidates = train_data.d::keys;
+
+        res = bi_enc.infer(
+            contexts=[visitor.question],
+            candidates= candidates,
+            context_type="text",
+            candidate_type="text"
+        );
+
+        for pred in res.list{
+            # Sort result
+            max_score = 0;
+            max_intent = "";
+
+            for i=0 to i < pred["candidate"].length by i+=1 {
+                if (pred["score"][i] > max_score){
+                    max_intent = pred["candidate"][i];
+                    max_score = pred["score"][i];
+                }
+            }
+        }
+
+        visitor.predicted_intent = max_intent;
+    }
+```
+At first we had hardcoded data here but it was changed after we brought in the ai models. For the classify intent node we use the bi encoder to do our intent classification. Based on the training data it will generate candidates (intent in this case) and the user query will be passed to the bi encoder model which will return the predicted intent.
+
+```
+can extract_entities {
+        labels = [];
+
+        train_data = file.load_json("data/flair_ner.json");
+
+        for item in train_data {
+            for ent in item["entities"] {
+                ent_label = ent["entity_type"];
+                if (ent_label not in labels): labels.l::append(ent_label);
+            }
+        }
+
+        entity_result = ent_ext.entity_detection(
+            text=visitor.question.str,
+            ner_labels=labels.list
+        );
+
+        for ent in entity_result['entities'] {
+            if (ent["conf_score"] > 0.4){
+                entity_label = ent["entity_value"];
+                entity_text = ent["entity_text"];
+                if (entity_text not in visitor.extracted_entities ) {
+                    visitor.extracted_entities[entity_label] = [];
+                }
+                    visitor.extracted_entities[entity_label] += [entity_text];
+            }
+            std.out(visitor.extracted_entities);
+        }
+    }
+```
+This also had hardcoded data however we drafted the ent_ext model into the extract_entities node ability. Which will extract all the required slot data based on the training data provided. When users query it will extract all the features and will be presented for the rest of application to work on.
+
+### <span style="color:red">TODO</span>:
+- [ ] Run the walker with the AI actions integrated
+
+## Global root_node
+In this section, we will explain the architecture of the global root node and how it works in this application. The global root node in this case is the cai_root, it utilizes the use_enc (Universal Sentence Encoder) AI module.
+
+#### How does it work?
+```
+node cai_root {
+    has name = "cai_root";
+    can use.text_classify;
+    can categorize {
+        res = use.text_classify(
+            text=visitor.question,
+            classes=[
+                "i want to test drive",
+                "I have a Model 3 reservation, how do I configure my order",
+                "How do I order a tesla",
+                "Can I request a Test Drive"
+            ]
+        );
+        if (res["match_idx"] == 0):
+            visitor.question_type = "va";
+
+        else:
+            visitor.question_type = "faq";
+    }
+}
+```
+As you can see here it uses the sentence encoding model (use.text_classify) function which intakes a query from the user and classes (in this case the questions from the FAQ), this enables it to check match ID and if match ID is equal to zero it will then set the question type to va (virtual assistance) and if it's not equal to zero it will set the question type to faq (frequent asked question) and this will be used for further used for processing, which will be explained next. Simple right, this is how it the categorizing of user query is done.
+
+```
+cai_root {
+    if (question_type == "va"):
+        take --> node::va_state;
+    elif (question_type == "faq"):
+        take --> node::faq_state;
+}
+```
+In the ``main.jac`` file. It will utilize the question type variable to transition to the next node. As you can see if the question type is ``va`` it will transition to the va_state and if the question type is ``faq`` it will transition the to the faq state.
+
+### <span style="color:red">TODO</span>:
+- [ ] Update the graph spawn block with the new global root
+- [ ] Spawn the graph and visualizes it in dot
+
+## Using Yield
+In this section, we will show you how we utilize yield in this program.
+
+#### What is Yield?
+Yield is a way to temporarily suspend the walker and return/report to the user. When the same user calls the same walker, the walker context from previous call is retained and the walker will resume on the node it was going to go to next.
+
+#### How is it being utilized in this application
+```
+if (interactive): std.out(response);
+else: yield report response;
+```
+In the ``main.jac`` file you see that yield is being implemented. Let's explain this bit of code. If interactive is true everytime you send a query it will print the response to terminal and if it's false it would temporarily suspend the walker and report to the user the response for the query. Below you will see an example.
+
+```
+> I would like to test drive?
+To set you up with a test drive, we will need your name and address.
+```
+When interactive is true (this is in the terminal). If you exited out and return to the program it will lose context and will restart from the beginning.
+
+```
+I would like to test drive?
+
+{
+  "success": true,
+  "report": [
+    "To set you up with a test drive, we will need your name and address."
+  ],
+  "final_node": "urn:uuid:50baeba7-b14a-4033-8c08-c0389f27bd53",
+  "yielded": true
+}
+```
+When interactive is false, yield comes into place. So if we had to pass another query it will remember the last state it was at and will act accordingly.
+
+### <span style="color:red">TODO</span>:
+- [ ] Run the walker with yield/non-interactive
+
 
 ## Bringing your application to production
 
@@ -1129,268 +1513,6 @@ PAYLOAD: {
 ```
 For the payload sent to the /js/walker_run, the name (name of walker to be called), ctx (information sent to the walker), snt (sentinel ID  of the program ), detailed (returns additional information for the walker), nd (node walker will be set to, if not included will go to the root node). This is how we interact with jac application through restful API endpoints. In this example we ran the talk walker.
 
-## Bringing in the AI models for the dialogue
-In this section, we will explain how we added the AI model into this application. We have added two AI models the bi-encoder and tfm ner model. Before we explain the code implementation for both models, we will explain the top inheritance AI model they inherit.
-
-**Explanation of the ai_model node**
-```
-    can train with train entry {}
-```
-This allows you to train the ai model and it also inherits the train walker which accepts certain parameters.
-
-```
-    can test_model with test_model entry {}
-```
-This allow you to test the ai model, it inherits the test_model walker.
-```
-    can eval with eval entry {
-        ::train;
-        ::test_model;
-    }
-```
-this node ability enables you to evaluate the ai model by training it and testing it when the eval walker is called.
-
-```
-    can infer with infer entry {}
-```
-This node ability allows you to pass query and get a response.
-
-```
-walker train {
-    has train_file, num_train_epochs, from_scratch;
-    has batch_size, learning_rate;
-}
-```
-This walker takes in a few parameters: **train_file** (where the training file is located in the repository). **num_train_epochs** (amount of time you want the ai model to learn from the dataset), **from_scratch** (if you want to train the model from scratch or not), **batch_size** (the number of training examples utilized in one iteration) and **learning_rate** (The amount that the weights are updated during training).
-
-```
-walker test_model {
-    has eval_file;
-}
-```
-This walker allows you to test the model using the file location you provided in it's parameter.
-
-```
-walker eval {
-    has train_file, eval_file, num_train_epochs, from_scratch;
-}
-```
-Allows you to evaluate the model.
-
-```
-walker infer {
-    has input;
-}
-```
-This walker allows you to pass an input (user query) to the parameter and receive the necessary information for that ai model based on the input.
-
-**Explanation of the bi_enc node**
-In the last section we explained the ai_model node and in this section we integrated the ai_model node into the bi-encoder ai model which is called bi_enc. The explanation of each code input is as follows:
-
-```
-can bi_enc.train, bi_enc.infer, bi_enc.save_model;
-```
-This logic enables you to import functions from the jaseci kit modules imported from actions.
-
-```
-can train {
-        train_data = file.load_json(visitor.train_file);
-        bi_enc.train(
-            dataset=train_data,
-            from_scratch=visitor.train_from_scratch,
-            training_parameters={
-                "num_train_epochs": visitor.num_train_epochs
-            }
-        );
-        if (visitor.model_name):
-            bi_enc.save_model(model_path=visitor.model_name);
-    }
-```
-This node ability allows you to train the bi_encoder (bi_enc) model, as you can see it overrides the train function from ai_mode node and it also requires some parameter and these parameter are presented from the walker.
-
-```
-can infer {
-        res = bi_enc.infer(
-            contexts=[visitor.query],
-            candidates=here.candidates,
-            context_type="text",
-            candidate_type="text"
-        )[0];
-
-        max_score = 0;
-        max_intent = "";
-        for i=0 to i<res["candidate"].length by i+=1 {
-            if (res["score"][i] > max_score){
-                max_intent = res["candidate"][i];
-                max_score = res["score"][i];
-            }
-        }
-        report [max_intent, max_score];
-    }
-```
-The infer function in the bi_enc module allows you to query the model and receive the intent of the user utterance.
-
-```
-can test_model {
-        eval_set = file.load_json(visitor.eval_file);
-        candidates = eval_set.dict::keys;
-
-        correct = [];
-        failure = [];
-        for intent in candidates {
-            preds = bi_enc.infer(
-                contexts=eval_set[intent],
-                candidates=candidates,
-                context_type="text",
-                candidate_type="text"
-            );
-            for i=0 to i<preds.length by i+=1 {
-                pred = preds[i];
-                max_score = 0;
-                max_intent = "";
-                for j=0 to j<pred["candidate"].length by j+=1 {
-                    if (pred["score"][j] > max_score){
-                        max_intent = pred["candidate"][j];
-                        max_score = pred["score"][j];
-                    }
-                }
-                if (intent == max_intent): correct.l::append(eval_set[intent][i]);
-                else {
-                    failure.l::append({
-                        "sent": eval_set[intent][i],
-                        "ground truth": intent,
-                        "prediction": max_intent
-                    });
-                }
-            }
-        }
-        report {
-            "accuracy": correct.length/(correct.length+failure.length),
-            "correct": correct.length,
-            "failure": failure.length,
-            "failed_sents": failure
-        };
-    }
-```
-This node ability allows you to test the model for the bi-encoder.
-
-**Explanation of the ent_ext node**
-In this section we will explain each functions for the entity extraction model for ent_ext node. The explanation goes as follows:
-
-```
-can ent_ext.entity_detection, ent_ext.train, ent_ext.save_model, ent_ext.load_model;
-```
-This is how we import all the functionalities for the jaseci kit module called ent_ext.
-
-
-```
-can train {
-        train_data = file.load_json(visitor.train_file);
-
-        if(visitor.from_scratch) {
-            ent_ext.load_model({"default": true});
-            here.labels = [];
-        }
-        for item in train_data {
-            for ent in item["entities"] {
-                ent_label = ent["entity_type"];
-                if (ent_label not in here.labels): here.labels.l::append(ent_label);
-            }
-        }
-        ent_ext.train(
-            train_data=train_data,
-            val_data=val_data,
-            test_data=test_data,
-            train_params={
-                "num_epoch": (visitor.num_train_epochs).int,
-                "batch_size": (visitor.batch_size).int,
-                "LR": (visitor.learning_rate).float
-            }
-        );
-        if (visitor.model_name):
-            ent_ext.save_model(model_path=visitor.model_name);
-    }
-```
-This is how we train the model, it requires training data, test data, val data, the number of train epochs, batch size and learning rate which was briefly explained in a earlier section.
-
-```
-can infer {
-        report ent_ext.entity_detection(
-            text=input["text"],
-            ner_labels=input["labels"]
-        );
-    }
-```
-This is the node ability which allows you to query (user input) and get back the entity extracted from the user.
-
-
-**Updates to the va_state node**
-In this section we will explain the changes made to the va state.
-
-```
-can classify_intent {
-
-        train_data = file.load_json("data/clf_train.json");
-        candidates = train_data.d::keys;
-
-        res = bi_enc.infer(
-            contexts=[visitor.question],
-            candidates= candidates,
-            context_type="text",
-            candidate_type="text"
-        );
-
-        for pred in res.list{
-            # Sort result
-            max_score = 0;
-            max_intent = "";
-
-            for i=0 to i < pred["candidate"].length by i+=1 {
-                if (pred["score"][i] > max_score){
-                    max_intent = pred["candidate"][i];
-                    max_score = pred["score"][i];
-                }
-            }
-        }
-
-        visitor.predicted_intent = max_intent;
-    }
-```
-At first we had hardcoded data here but it was changed after we brought in the ai models. For the classify intent node we use the bi encoder to do our intent classification. Based on the training data it will generate candidates (intent in this case) and the user query will be passed to the bi encoder model which will return the predicted intent.
-
-```
-can extract_entities {
-        labels = [];
-
-        train_data = file.load_json("data/flair_ner.json");
-
-        for item in train_data {
-            for ent in item["entities"] {
-                ent_label = ent["entity_type"];
-                if (ent_label not in labels): labels.l::append(ent_label);
-            }
-        }
-
-        entity_result = ent_ext.entity_detection(
-            text=visitor.question.str,
-            ner_labels=labels.list
-        );
-
-        for ent in entity_result['entities'] {
-            if (ent["conf_score"] > 0.4){
-                entity_label = ent["entity_value"];
-                entity_text = ent["entity_text"];
-                if (entity_text not in visitor.extracted_entities ) {
-                    visitor.extracted_entities[entity_label] = [];
-                }
-                    visitor.extracted_entities[entity_label] += [entity_text];
-            }
-            std.out(visitor.extracted_entities);
-        }
-    }
-```
-This also had hardcoded data however we drafted the ent_ext model into the extract_entities node ability. Which will extract all the required slot data based on the training data provided. When users query it will extract all the features and will be presented for the rest of application to work on.
-
 # Chapter 7
 
 ### Creating Test Cases
@@ -1465,74 +1587,3 @@ This section will teach you how to run test. To run test use the following comma
 ```
 jac test test.jac
 ```
-
-### Using Yield
-In this section, we will show you how we utilize yield in this program.
-
-#### What is Yield?
-Yield is a way to temporarily suspend the walker and return/report to the user. When the same user calls the same walker, the walker context from previous call is retained and the walker will resume on the node it was going to go to next.
-
-#### How is it being utilized in this application
-```
-if (interactive): std.out(response);
-else: yield report response;
-```
-In the ``main.jac`` file you see that yield is being implemented. Let's explain this bit of code. If interactive is true everytime you send a query it will print the response to terminal and if it's false it would temporarily suspend the walker and report to the user the response for the query. Below you will see an example.
-
-```
-> I would like to test drive?
-To set you up with a test drive, we will need your name and address.
-```
-When interactive is true (this is in the terminal). If you exited out and return to the program it will lose context and will restart from the beginning.
-
-```
-I would like to test drive?
-
-{
-  "success": true,
-  "report": [
-    "To set you up with a test drive, we will need your name and address."
-  ],
-  "final_node": "urn:uuid:50baeba7-b14a-4033-8c08-c0389f27bd53",
-  "yielded": true
-}
-```
-When interactive is false, yield comes into place. So if we had to pass another query it will remember the last state it was at and will act accordingly.
-
-### Global root_node
-In this section, we will explain the architecture of the global root node and how it works in this application. The global root node in this case is the cai_root, it utilizes the use_enc (Universal Sentence Encoder) AI module.
-
-#### How does it work?
-```
-node cai_root {
-    has name = "cai_root";
-    can use.text_classify;
-    can categorize {
-        res = use.text_classify(
-            text=visitor.question,
-            classes=[
-                "i want to test drive",
-                "I have a Model 3 reservation, how do I configure my order",
-                "How do I order a tesla",
-                "Can I request a Test Drive"
-            ]
-        );
-        if (res["match_idx"] == 0):
-            visitor.question_type = "va";
-
-        else:
-            visitor.question_type = "faq";
-    }
-}
-```
-As you can see here it uses the sentence encoding model (use.text_classify) function which intakes a query from the user and classes (in this case the questions from the FAQ), this enables it to check match ID and if match ID is equal to zero it will then set the question type to va (virtual assistance) and if it's not equal to zero it will set the question type to faq (frequent asked question) and this will be used for further used for processing, which will be explained next. Simple right, this is how it the categorizing of user query is done.
-
-```
-cai_root {
-    if (question_type == "va"):
-        take --> node::va_state;
-    elif (question_type == "faq"):
-        take --> node::faq_state;
-}
-```
-In the ``main.jac`` file. It will utilize the question type variable to transition to the next node. As you can see if the question type is ``va`` it will transition to the va_state and if the question type is ``faq`` it will transition the to the faq state.
