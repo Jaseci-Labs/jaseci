@@ -24,10 +24,12 @@ def max(item_set: jac_set):
     and/or edges based on an anchor has variable. Since each node or edge can only
     specify a single anchor this action enables a handy short hand for utilizing the
     anchor variable as the representative field for performing the  comparison in
-    ranking. For example, if you have a node called \\lstinline{movie_review} with a
+    ranking. This action does not support arhcitypes lacking an anchor.
+    \\par
+    For example, if you have a node called \\lstinline{movie_review} with a
     field \\lstinline{has anchor score = .5;} that changes based on sentiment
     analysis, using this action will return the node with the highest score from the
-    input list of nodes. This action does not support arhcitypes lacking an anchor.
+    input list of nodes.
 
     :param item_set: A list of node and or edges to identify the
         maximum element based on their respective anchor values
