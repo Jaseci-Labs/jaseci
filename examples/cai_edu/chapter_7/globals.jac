@@ -1,1 +1,0 @@
-global cai_root = "";
