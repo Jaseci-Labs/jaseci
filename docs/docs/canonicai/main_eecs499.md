@@ -1,20 +1,43 @@
+# Build a Conversational AI System with Jaseci
+In this tutorial, you are going to learn how to build a state-of-the-art conversational AI system with Jaseci.
+You will learn the basics of Jaseci, training state-of-the-art AI models, and everything between, in order to create an end-to-end fully-functional conversational AI system.
+
+Excited? Hell yeah! Let's jump in.
+
 ## Preparation
-* Install jaseci
-* Run jsctl
+To install jaseci, run in your development environment
+```
+pip install jaseci
+```
 
-## Graph, nodes, edges
-A quick primer on graph, nodes and edges.
+To test the installation is successful, run
+```
+jsctl -- help
+```
+`jsctl` stands for the Jaseci Command Line Interface.
+If the command above displays the help menu for `jsctl`, then you have succssfully installed jaseci.
+> **Note**
+> Take a quick look through these commands while you are at it. `jsctl` will be frequently used throughout this journey.
 
-## Walker
+## Background
+A few essential concepts to get familiar with.
 
-A quick primer on walker
+### Graph, nodes, edges
+Link to bible sections.
 
-## Building an automated FAQ answering chatbot
+### Walker
+Link to bible sections.
 
-We are going to build a bot that can answer FAQ questions without any training.
+# Automated FAQ answering chatbot
+Our conversational AI system will consists of multiple components.
+To start, we are going to build a chatbot that can answer FAQ questions without any custom training, using zeroshot NLP models.
+At the end of this section, you will have a chatbot that, when given a question, searches in its knowledge base the most relevant answer and return that answer.
 
-We will start with an example with just 3 FAQ question and expand with more.
+The use case here is a Tesla FAQ chatbot.
+We will be using the list of FAQs from https://www.tesla.com/en_SG/support/faq.
 
+## Graph architecture
+Our target
 The graph structure is as follows:
 
 ![faq_1](./new_images/faq_1.png)
