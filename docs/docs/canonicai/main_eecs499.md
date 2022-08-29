@@ -42,7 +42,7 @@ The `spawn` keyword can span a Jaseci object. In the above example, we just spaw
 
 The `spawn` keyword can also be used inside a `graph` block to define a static graph:
 ```js
-# This is a comment
+// This is a comment
 graph faq {
     has anchor faq_root;
     spawn {
