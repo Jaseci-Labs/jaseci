@@ -42,6 +42,7 @@ The `spawn` keyword can span a Jaseci object. In the above example, we just spaw
 
 The `spawn` keyword can also be used inside a `graph` block to define a static graph:
 ```js
+# This is a comment
 graph faq {
     has anchor faq_root;
     spawn {
@@ -91,7 +92,7 @@ jaseci > walker run init
 `sentinel register` activate and register your code.
 `walker run` executes a walker.
 
-Note for Jason: I want to avoid sentinel register at this point, but I want to be able to get the graph in dot to visualize. Is there a way? It would be much simpler if they just need to `jac run`
+TODO: jac dot FILE
 
 Now let's check what the graph looks like
 ```bash
@@ -160,6 +161,7 @@ Now let's run this walker
 ```bash
 jaseci > walker run ask -ctx "{\"question\": \"How do I configure my order?\"}"
 ```
+Replace this with `jac run`.
 
 Introduce USE_QA to replace the simple string matching.
 
@@ -169,6 +171,7 @@ Load actions
 
 Update the walker code to use use_qa instead of string matching
 
+introduce std.input and std.output here.
 ```js
 walker ask {
     has question;
