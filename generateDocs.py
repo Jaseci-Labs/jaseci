@@ -20,7 +20,8 @@ def main():
             continue 
         
 
-        if line.find("##"):
+        if line.find("##") != -1:
+            line  = line.replace("#","",1)
             summaryfile.write(line + "\n")
 
         else :
