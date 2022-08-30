@@ -73,7 +73,7 @@ class jac_code:
         self.code_sig = hashlib.md5(self.code_ir.encode()).hexdigest()
         jac_code.refresh(self)  # should disregard overloaded versions
 
-    def parse_jac(self, code, dir, start_rule="start"):
+    def parse_jac(self, code, dir: str = "./", start_rule="start"):
         """Generate AST tree from Jac code text"""
         tree = ast(
             jac_text=code, start_rule=start_rule, mod_name=self.name, mod_dir=dir
@@ -86,7 +86,7 @@ class jac_code:
             return None
         return tree
 
-    def register(self, code, dir):
+    def register(self, code, dir: str = "./"):
         """
         Parses Jac code and saves IR
         """

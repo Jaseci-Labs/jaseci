@@ -208,6 +208,13 @@ class GlobalVars(models.Model):
     value = models.TextField(blank=True)
 
 
+class StripeVars(models.Model):
+    """Stripe configuration item"""
+
+    name = models.CharField(max_length=31, unique=True)
+    value = models.TextField(blank=True)
+
+
 def lookup_global_config(name, default=None):
     """Helper for looking up GlobalVars, returns default if not found"""
     try:

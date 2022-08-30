@@ -117,54 +117,14 @@ walker create_payment_intents {
   report stripe.create_payment_intents(customer_id, amount, currency, payment_method_types);
 }
 
-walker stripe_webhook: anyone {
-  can request.post;
+walker payment_create {
+  has test_data;
 
-  root {
-    req_ctx = global.info['request_context'];
-    req_data = req_ctx['body']['data'];
-    method = req_ctx.method;
-    msg_conf = std.get_global('messenger_config');
+  report test_data;
+}
 
-    event_type = req_ctx['body']['type'];
+walker payment_create2 {
+  has test_data;
 
-    response_data = 'sample response';
-
-    if( event_type == 'payment_intent.create') {
-      response_data = req_data;
-    } elif ( event_type == 'payment_intent.succeeded') {
-      response_data = req_data;
-    } elif ( event_type == 'payment_intent.canceled') {
-      response_data = req_data;
-    } elif ( event_type == 'payment_intent.payment_failed') {
-      response_data = req_data;
-    } elif ( event_type == 'payment_intent.requires_action') {
-      response_data = req_data;
-    } elif ( event_type == 'subscription_schedule.canceled') {
-      response_data = req_data;
-    } elif ( event_type == 'subscription_schedule.expiring') {
-      response_data = req_data;
-    } elif ( event_type == 'subscription_schedule.updated') {
-      response_data = req_data;
-    } elif ( event_type == 'invoice.created') {
-      response_data = req_data;
-    } elif ( event_type == 'invoice.finalized') {
-      response_data = req_data;
-    } elif ( event_type == 'invoice.paid') {
-      response_data = req_data;
-    } elif ( event_type == 'invoice.payment_succeeded') {
-      response_data = req_data;
-    } elif ( event_type == 'customer.subscription.created') {
-      response_data = req_data;
-    } elif ( event_type == 'customer.subscription.deleted') {
-      response_data = req_data;
-    } else {
-      report:status = 403;
-      report:custom = {'error': 'Forbidden Request!', 'event': event_type};
-      disengage;
-    }
-
-    report:status = 200;
-    report:custom = {'data': event_type.str::replace('.', ' '), 'event': event_type};
-  }
+  report test_data;
 }

@@ -15,6 +15,7 @@ from jaseci.api.interface import interface
 from jaseci.api.master_api import master_api
 from jaseci.api.jac_api import jac_api
 from jaseci.api.user_api import user_api
+from jaseci.api.stripe_api import stripe_api
 
 
 class master(
@@ -29,6 +30,7 @@ class master(
     architype_api,
     jac_api,
     user_api,
+    stripe_api,
 ):
     """Main class for master functions for user"""
 
