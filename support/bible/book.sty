@@ -125,10 +125,22 @@ keywordstyle={\color{black}},%                         and format them in black
     xrightmargin=5.8pt,
 }
 
+\lstdefinestyle{yaml}{
+     basicstyle=\color{blue}\footnotesize,
+     rulecolor=\color{black},
+     string=[s]{'}{'},
+     stringstyle=\color{blue},
+     comment=[l]{:},
+     commentstyle=\color{black},
+     morecomment=[l]{-}
+ }
+
 % This version forces listing on single page
 % \newcommand{\pycode}[2]{\renewcommand{\lstlistingname}{Python Code}\par\begin{minipage}{\linewidth}\lstinputlisting[label=py:#1, language=Python, caption={#2}]{assets/code/#1}\end{minipage}\par}
 
 % \newcommand{\jaccode}[2]{\renewcommand{\lstlistingname}{Jac Code}\par\begin{minipage}{\linewidth}\lstinputlisting[label=jac:#1, language=jac, caption={#2}]{assets/code/#1}\end{minipage}\par}
+
+\newcommand{\yaml}[2]{\renewcommand{\lstlistingname}{YAML}\par\lstinputlisting[label=YAML:#1, style=yaml, caption={#2}]{assets/code/#1}\par}
 
 \newcommand{\pycode}[2]{\renewcommand{\lstlistingname}{Python Code}\par\lstinputlisting[label=py:#1, language=Python, caption={#2}]{assets/code/#1}\par}
 
