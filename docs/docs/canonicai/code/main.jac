@@ -1,3 +1,4 @@
+node faq_root;
 node faq_state {
     has question;
     has answer;
@@ -6,7 +7,7 @@ node faq_state {
 graph faq {
     has anchor faq_root;
     spawn {
-        faq_root = spawn node::faq_state;
+        faq_root = spawn node::faq_root;
         faq_answer_1 = spawn node::faq_state(
             question="How do I configure my order?",
             answer="To configure your order, log into your Tesla account."
