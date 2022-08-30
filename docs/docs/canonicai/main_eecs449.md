@@ -316,7 +316,7 @@ walker ask {
     has question;
     root {
         question = std.input(">");
-        take --> node::faq_state;
+        take --> node::faq_root;
     }
     faq_root {
         answers = -->.answer;
@@ -324,7 +324,7 @@ walker ask {
             text = question,
             classes = answers
         );
-        take --> node::faq_state(answer==best_answer["matched"]);
+        take --> node::faq_state(answer==best_answer["match"]);
     }
     faq_state {
         std.out(here.answer);
@@ -359,6 +359,52 @@ walker ingest_faq {
 }
 ```
 
+An example knowledge base file look like this
+```json
+[
+    {
+        "question": "I have a Model 3 reservation, how do I configure my order?",
+        "answer": "To configure your order, log into your Tesla Account and select manage on your existing reservation to configure your Tesla. Your original USD deposit has now been converted to SGD."
+    },
+    {
+        "question": "How do I order a Tesla?",
+        "answer": "Visit our Design Studio to explore our latest options and place your order. The purchase price and estimated delivery date will change based on your configuration."
+    },
+    {
+        "question": "Can I request a Test Drive?",
+        "answer": "Yes, you can request for a test drive. Please note that drivers must be a minimum of 25 years of age and not exceeding 65 years of age, hold a full driving license with over 2 years of driving experience. Insurance conditions relating to your specific status must be reviewed and accepted prior to the test drive."
+    }
+]
+```
+
+Save the above json in a file named `tesla_faq.json` and make it is in the same location as `main.jac`.
+Let's now update the `init` walker.
+Because we are going to use the `ingest_faq` walker to generate the graph, we won't need the static graph definition.
+
+```js
+walker init {
+    root {
+        spawn here --> node::faq_root;
+        spawn here walker::ingest_faq(kb_file="tesla_faq.json");
+        spawn here walker::ask;
+    }
+}
+```
+What we are doing here is
+* Spawn a `faq_root` node
+* Run the `ingest_faq` walker to create the neccessary `faq_state` nodes based on the question-answer entires in the `tesla_faq.json` file.
+* Launch the `ask` walker
+
+Let's run the program one more time and test it out!
+```bash
+jaseci > jac run main.jac
+```
+
 > **Note**
 >
-> If are curious (and adventurous), try visualizes this new graph via DOT!
+> Try more varied questions. Now we have a longer answer with more rich information, it has a higher coverage of information that will be able to answer more questions.
+
+> **Note**
+>
+> If you are feeling adventurous, try downloading the complete list of entires on the Tesla FAQ page and use it to create a production-level FAQ bot. See if you can push the model to its limit!
+
