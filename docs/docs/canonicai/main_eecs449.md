@@ -347,3 +347,392 @@ walker ingest_faq {
 > **Note**
 >
 > If are curious (and adventurous), try visualizes this new graph via DOT!
+
+
+# A Multi-turn Action-oriented Dialogue System
+* In the previous section, we have built a FAQ system.
+* In this section, we are going to build a different type of conversational AI, a multi-turn action-oriented dialogue system.
+* Explain differences of this vs FAQ.
+* Mention we will start a new jac file. but it will come together with the FAQ at the end.
+
+## State Graph Architecture
+* Explain what is a state graph.
+* Each node represent a conversationial state.
+* The transition/edge represents possible transition between conversational state based on users input and NLU.
+* Add a diagram
+
+## Define the Node
+We will start with just intent classification.
+
+```js
+node dialogue_root;
+
+node dialogue_state {
+    has name;
+    has response;
+}
+```
+* Start with only intent classification.
+* One root connected with two intents (schedule a test drive, help)
+* Use string matching for the intent classification
+
+```js
+edge intent_transition {
+    has intent;
+}
+```
+* Introduce custom edge.
+* Edge can have has variables and it can be used for filtering
+
+## Build the graph
+
+```js
+graph dialogue_system {
+    has anchor dialogue_root;
+    spawn {
+        dialogue_root = spawn node::dialogue_root;
+        test_drive_state = spawn node::dialogue_state(
+            name = "test_drive",
+            response = "Your test drive is scheduled for Jan 1st, 2023."
+        );
+        help_state = spawn node::dialogue_state {
+            name = "help",
+            response = "I can help you schedule a test drive"
+        };
+
+        dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;
+        dialogue_root -[intent_transition(intent="help")]-> help_state;
+    }
+}
+```
+* `-[intent_transition(intent="")]->` connects two nodes with a custom edge type and initializes the edge variables.
+
+## Initialize the graph
+```js
+walker init {
+    root {
+        spawn here --> graph::dialogue_system;
+    }
+}
+```
+* Same as the last section.
+* Show the DOT and the graph
+
+## Build the Walker Logic
+```js
+walker talk {
+    // Simple string matching for intent classification
+    // use std.in and std.out
+}
+```
+* This will be a simple walker.
+* Run this
+
+## Intent classificaiton with Bi-encoder
+* A quick primer on intent classification
+
+We first need to load the biencoder action library
+```bash
+jaseci > actions load module jaseci_kit.bi_enc
+```
+
+Let's setup a biencoder training jac program.
+* Just give them the jac file and show how to run it to train the model.
+* Treat it as a blackbox model.
+
+```js
+node ai_model {
+
+}
+node biencoder {
+
+}
+walker train {
+
+}
+walker infer {
+
+}
+```
+* Link to example training data file to a github link or shared google drive.
+```js
+> jaseci jac run biencoder.jac -wlk train -ctx {}
+```
+* Explain `-wlk` and `-ctx`
+
+
+```bash
+EXPECTED TRAINING OUTPUT
+```
+* Mention that the model needs to be saved with `save_model`
+
+Use infer to test the model after training
+```js
+> jaseci jac run biencoder.jac -wlk infer -ctx {}
+```
+```bash
+Expected output
+```
+
+## Integrating the intent classification model in the walker logic
+```js
+walker ask {
+    // update the code to use biencoder for inference
+}
+```
+
+Run the new walker
+
+## Introduce multi-turn dialogue
+* Some actions will require multiple turns to finish. Just like if you are talking to a person
+* We will expand the test_drive capability to a multi-turn dialogue
+* Explain slots/entities and how they are used in dialogue system
+* Give examples of messy language and give information in different order.
+* We need to update our graph architecture
+
+* Show new graph diagram, with new states (update, confirmation, confirmed, cancelled) and entity transition
+* Explain the graph
+
+## Build the multi-turn dialogue graph
+
+```js
+edge entity_transition {
+    has entities;
+}
+```
+NOTE: is there a better way to match entities here? Need both lists to be sorted.
+
+Expand the graph with new states and transitions
+```js
+graph dialogue_system {
+    has anchor dialogue_root;
+    spawn {
+
+    }
+}
+```
+* show DOT visualization
+
+## Update the walker to navigate the multi-turn dialogue graph
+```js
+walker ask {
+    take -[entity_transition]-> else {
+        take -[intent_transition]-> else {
+
+        }
+    }
+}
+```
+* With simple string matching as the entity extraction algorithm.
+
+## Introduce entity extraction AI model
+* Similar to biencoder, give them the jac file and teach them how to train the model as a black box
+
+Load action
+```bash
+jaseci > actions load module jaseci_kit.ent_ext
+```
+
+NER training jac program
+```js
+node ner {
+
+}
+walker train {
+
+}
+
+walker infer {
+
+}
+```
+* Provide example training data file
+
+Train the model
+```bash
+jaseci > walker run ner.jac -wlk train -ctx {}
+```
+
+Test the model
+```js
+jaseci > walker run ner.jac -wlk infer -ctx {}
+```
+
+## Integrate the NER model with walker logic
+
+Update the walker code to use the NER action
+```js
+walker ask {
+
+}
+```
+
+Run the walker again, now with both AI model in place.
+
+Congratulations! You now have a fully functional multi-turn dialogue system.
+
+# Inheritance in Jaseci
+* A quick section/module explaining how inheritance work in jaseci and jac
+
+# Unifying the two conversational AI systems
+* FAQ and Dialogue system, while relying on different AI models, share many of the same development and processing pattern.
+* NLU to analyze the question and NLG to compose a repsonse.
+* Add diagram to demonstrate the shared pattern.
+* We are going to use inheritance to unify the two system and simplify our logic
+
+* Explain the inheritance relationship
+* cai_state --> va_state --> individual dialogue states
+* cai_state --> faq_state --> individual FAQ answer states
+
+Introduce the cai_state parent node
+```js
+node cai_state {
+
+}
+```
+* Introduce node abilities
+* data spatial programming concept and principles
+
+## Update dialogue system program with inheritance
+```js
+node dialogue_state:cai_state {
+    can nlu {
+    }
+    can nlg {
+
+    }
+    can classify_intent {
+
+    }
+    can extract_entities {
+
+    }
+}
+```
+* Overwrites abilities from cai_state
+* Move logic from walker into node abilities
+
+Then each dialogue state will inherit from `dialogue_state` and specify custom logic for that state
+```js
+node collect_info:dialogue_state {
+
+}
+node confirmation:dialogue_state {
+
+}
+node
+node
+node
+```
+
+Let's update the graph for dialogue system
+```js
+graph dialogue_system {
+    // updated graph with new inheritance structure
+}
+```
+
+Now that we have updated our node following the principle of data spacial programming, let's see what our walker logic now looks like
+```js
+walker ask {
+    // Updated and simplified with most of the code moved to node abilities
+}
+```
+
+Let's run the new walker with the new graph. It should work just like before.
+
+## Update the FAQ program with the new inheritance structure
+```js
+node faq_state:cai_state {
+
+}
+```
+
+Update the graph
+```
+graph faq {
+    // updated graph with new inheritance structure
+}
+```
+
+Update the faq walker
+```js
+walker ask_faq {
+
+}
+```
+Let's run the new walker with the new grpah.
+
+# Combining FAQ and Dialogue into one system
+Now that we have unified the data structure, let's see how we can combine these two into one unified conversational AI system.
+The unified code architecture makes this much easier than before.
+
+* We will introduce a node at the root level that categorize request into FAQ or Dialogue System request
+* Add diagram here
+
+Here is the node
+```js
+node cai_root:cai_state {
+
+}
+```
+* Use USE encoder to categorize the request
+
+Update the graph with both sides combined
+```js
+graph conv_ai {
+    has anchor cai_root;
+    graph {
+        // Connect dialogue system to cai_root
+        // Connect FAQ to cai_root
+    }
+}
+```
+
+We are also going to unify the two walkers.
+
+```js
+walker talk {
+    // Final form of the talk walker
+}
+```
+* Explain the state tracking logic of the walker.
+* It generalizes to both cai_root, faq_state and dialogue_state.
+
+We also need to update the `init` walker;
+```js
+walker init {
+
+}
+```
+
+## Multi-file Jac Program
+We have a new challenge, our jac program consists of multiple jac files now.
+We will compile them into one program in the format of `jir`.
+
+Let's create a `main.jac`
+<h5 a><strong><code>main.jac</code></strong></h5>
+
+```js
+import {*} with "./faq.jac";
+import {*} with "./dialogue.jac";
+...
+```
+
+To compile a multi-file jac program,
+```bash
+jaseci > jac build main.jac
+```
+
+A `main.jir` should be generated.
+To run a walker from a jir file,
+```bash
+jaseci > jac run main.jir -wlk WALKER_NAME -ctx {}
+```
+
+> **Note**
+>
+> The jir format is what you will use to deploy your jac program to a production jaseci instance.
+
+## Initialize the Latest Graph
+Use jac dot
