@@ -136,44 +136,25 @@
                     <main>
                         <h1 id="traversing-a-graph"><a class="header" href="#traversing-a-graph">Traversing a Graph</a></h1>
 <ul>
-<li>
-<p>Take is used for nodes/Edge trversal in a walker </p>
-</li>
-<li>
-<p>Only until all other walker logic is executed, then all queued up take operations are executed.</p>
-</li>
-<li>
-<p>An operation would tell the walker to move/traverse on to the next node with the given filter provided when using take.</p>
-</li>
-<li>
-<p>When using the take command, you have the ability to filter by edges or edges that have a specific node attached.</p>
-</li>
+<li>Take is used for nodes/Edge trversal in a walker </li>
+<li>Only until all other walker logic is executed, then all queued up take operations are executed.</li>
+<li>An operation would tell the walker to move/traverse on to the next node with the given filter provided when using take.</li>
+<li>When using the take command, you have the ability to filter by edges or edges that have a specific node attached.</li>
 </ul>
 <p>Consider the following diagram</p>
 <p><img src="../assets/take.png" alt="Diagram of a road map" /></p>
 <p>The take command performs a breath first search to add take operations to the queue. Let's define a walker that traverses the various nodes and prints the node data. We'll assume this walker spawns and starts from the root <code>node 0</code>.</p>
 <p><strong>Traversing to a generic node from a walker</strong></p>
-<pre><code class="language-jac">
-// generic definition of the nodes. Nodes of type 'myNode' will have a 'data' property
-
-
+<pre><code class="language-jac">// generic definition of the nodes. Nodes of type 'myNode' will have a 'data' property
 
 node myNode: has anchor data;
 
-
-
 walker myWalker{
-
     myNode{
-
         take --&gt;;
-
         std.out(here.data);
-
     }
-
 }
-
 </code></pre>
 <p>With the assumption that this walker starts from <code>node 0</code>, this is how the take operations are queued and executed.</p>
 <p><img src="../assets/take-2.png" alt="Diagram of a road map" /></p>
@@ -184,98 +165,53 @@ walker myWalker{
 <p><img src="../assets/take-4.png" alt="Diagram of a road map" /></p>
 <p>This process continues until the queue is empty or the walker is killed.</p>
 <p><strong>Basic traversal using take</strong></p>
-<pre><code class="language-jac">
-walker testWalker{
-
+<pre><code class="language-jac">walker testWalker{
     node_type{
-
         take --&gt;;
-
     }
-
 }
-
-
 
  walker testWalker2{
-
     node_type{
-
         take &lt;--;
-
     }
-
 }
-
 </code></pre>
 <p><strong>Traversing to a specific type of node from a walker</strong></p>
-<pre><code class="language-jac">
-walker testWalker{
-
+<pre><code class="language-jac">walker testWalker{
     node_type{
-
         take --&gt; node::node_type;
-
     }
-
 }
-
-
 
 //node of type person as the filter
 
-
-
 walker testWalker2{
-
     school{
-
         take --&gt; node::person;
-
     }
-
 }
-
 </code></pre>
 <p>Take also allows the use of an else statement, should there be no edges with the filter specified in the take command.</p>
 <p><strong>Executing alternative logic should there be no edges with the take filter</strong></p>
-<pre><code class="language-jac">
-walker testWalker{
-
+<pre><code class="language-jac">walker testWalker{
     node_type{
-
         take [some filter] else {
 
-
-
             // some additional logic if edge of filter not found
-
         }
-
     }
-
 }
-
-
 
 //traverse to friend edge, else print 'no friends found'
 
-
-
 walker testWalker2{
-
     person{
-
         take -[friend]-&gt; else{;
-
             std.out('no friends found');
-
         }
-
     }
-
 }
-
 </code></pre>
 
                     </main>

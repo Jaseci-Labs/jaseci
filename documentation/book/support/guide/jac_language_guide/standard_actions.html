@@ -137,205 +137,112 @@
                         <h1 id="standard-actions"><a class="header" href="#standard-actions">Standard Actions</a></h1>
 <h3 id="logging-output"><a class="header" href="#logging-output">Logging output</a></h3>
 <pre><code class="language-jac">
-
-
 # printing output to log
-
 data = {
-
     &quot;type&quot; : &quot;String&quot;,
-
     &quot;name&quot; &quot; &quot;Jaseci&quot;
-
 }
-
 result  = std.log(data)
-
-
 
 </code></pre>
 <h3 id="output"><a class="header" href="#output">Output</a></h3>
-<pre><code class="language-jac">
-data = {
-
+<pre><code class="language-jac">data = {
     &quot;type&quot; : &quot;String&quot;,
-
     &quot;name&quot; &quot; &quot;Jaseci&quot;
-
 }
 
-
-
 # print on to the termnial
-
 std.out(data)
-
-
 
 </code></pre>
 <h3 id="input"><a class="header" href="#input">Input</a></h3>
-<pre><code class="language-jac">
-# takes input from the terminal 
-
+<pre><code class="language-jac"># takes input from the terminal 
 # any string passed will be printed on to the screen
-
 std.input(&quot;&gt; &quot;)
-
 </code></pre>
 <h3 id="standar-error"><a class="header" href="#standar-error">Standar Error</a></h3>
-<pre><code class="language-jac">
-# printing to standard error
-
-
+<pre><code class="language-jac"># printing to standard error
 
 std.eer()
 
-
-
 </code></pre>
 <h3 id="sort-columns"><a class="header" href="#sort-columns">Sort Columns</a></h3>
-<pre><code class="language-jac">
-# Sorts in place list of lists by column
-
+<pre><code class="language-jac"># Sorts in place list of lists by column
 # Param 1 - list
-
 # Param 2 - col number (optional)
-
 # Param 3 - boolean as to whether things should be reversed (optional)
-
 #Return - Sorted list
-
 sorted_list = std.sort_by_col(param1,param2)
-
-
 
 </code></pre>
 <h3 id="utc-time"><a class="header" href="#utc-time">UTC time</a></h3>
-<pre><code class="language-jac">
-# Get utc date time for now in iso format
-
+<pre><code class="language-jac"># Get utc date time for now in iso format
 time  = std.time_now()
-
-
 
 </code></pre>
 <h3 id="set-global-variable"><a class="header" href="#set-global-variable">Set Global Variable</a></h3>
 <pre><code class="language-jac">
-
-
 # set global varibale visible to all walker
-
 # name : string
-
 # value : value (must be json seriaziable)
-
-
 
 global_variable = std.set_global(name,value);
 
-
-
 </code></pre>
 <h3 id="get-global-variable"><a class="header" href="#get-global-variable">Get Global Variable</a></h3>
-<pre><code class="language-jac">
-# get global variable
-
+<pre><code class="language-jac"># get global variable
 # name : name of variable
-
 global_variable = std.get_global(name);
-
-
 
 </code></pre>
 <h3 id="load-local-actions-to-jaseci"><a class="header" href="#load-local-actions-to-jaseci">Load local actions to Jaseci</a></h3>
-<pre><code class="language-jac">
-# load local actions date to jaseci
-
+<pre><code class="language-jac"># load local actions date to jaseci
 action = std.actload_local(&quot;date.py&quot;);
-
-
 
 </code></pre>
 <h3 id="load-remote-actions-to-jaseci"><a class="header" href="#load-remote-actions-to-jaseci">Load remote actions to Jaseci</a></h3>
-<pre><code class="language-jac">
-action = std.actload_remote(url)
-
-
+<pre><code class="language-jac">action = std.actload_remote(url)
 
 </code></pre>
 <h3 id="load-module-actions-to-jaseci"><a class="header" href="#load-module-actions-to-jaseci">Load module actions to Jaseci</a></h3>
-<pre><code class="language-jac">
-#load use_qa model
-
+<pre><code class="language-jac">#load use_qa model
 action = std.actload_module('use_qa');
-
 </code></pre>
 <h3 id="destroy-global"><a class="header" href="#destroy-global">Destroy Global</a></h3>
-<pre><code class="language-jac">
-global = std.destroy_global(name)
-
+<pre><code class="language-jac">global = std.destroy_global(name)
 </code></pre>
 <h3 id="set-object-permission"><a class="header" href="#set-object-permission">Set object Permission</a></h3>
-<pre><code class="language-jac">
-element - target element
-
+<pre><code class="language-jac">element - target element
 mode - valid permission (public, private, read_only)
-
 object = std.set_perms(element,mode)
-
 </code></pre>
 <h3 id="get-object-permission"><a class="header" href="#get-object-permission">Get object Permission</a></h3>
-<pre><code class="language-jac">
-#Returns object access mode for any Jaseci object
-
+<pre><code class="language-jac">#Returns object access mode for any Jaseci object
 # object - target element
-
 # Return - Sorted list
 
-
-
 obj = std.get_perms(object);
-
 </code></pre>
 <h3 id="grant-object-permission"><a class="header" href="#grant-object-permission">Grant object Permission</a></h3>
-<pre><code class="language-jac">
-# grants another user permission to access a jaseci object
-
+<pre><code class="language-jac"># grants another user permission to access a jaseci object
 # obj :target element
-
 # element : master to be granted permission
-
 # readonly : Boolean read-only flag
-
 # Returns sorted list
 
-
-
 object  = std.grant_perms(obj,element,readonly)
-
 </code></pre>
 <h3 id="revoke-permission"><a class="header" href="#revoke-permission">Revoke Permission</a></h3>
-<pre><code class="language-jac">
-# Remove permission for user to access a jaseci object
-
+<pre><code class="language-jac"># Remove permission for user to access a jaseci object
 # obj : target element
-
 # element : master to be revoke permission
-
 # return sorted list
-
 objects = std.revoke_perms(obj,element);
-
 </code></pre>
 <h3 id="get-report"><a class="header" href="#get-report">Get Report</a></h3>
-<pre><code class="language-jac">
-# Get current report so far from walker run
-
-
+<pre><code class="language-jac"># Get current report so far from walker run
 
 reprt = std.get_report();
-
-
 
 </code></pre>
 

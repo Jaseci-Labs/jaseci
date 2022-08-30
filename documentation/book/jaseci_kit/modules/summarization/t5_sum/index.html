@@ -137,28 +137,18 @@
                         <h1 id="summarizationt5_sum"><a class="header" href="#summarizationt5_sum"><strong>Summarization(<code>t5_sum</code>)</strong></a></h1>
 <p>Module <code>t5_sum</code> uses the hugging face T5 transformer model to provide abstractive summary from text.</p>
 <ol>
-<li>
-<p>Import <a href="#1-import-summarizer-t5_sum-module-in-jac"><code>t5_sum</code></a> module in jac</p>
-</li>
-<li>
-<p><a href="#2-summarization">Summarization</a></p>
-</li>
+<li>Import <a href="#1-import-summarizer-t5_sum-module-in-jac"><code>t5_sum</code></a> module in jac</li>
+<li><a href="#2-summarization">Summarization</a></li>
 </ol>
 <h1 id="walk-through"><a class="header" href="#walk-through"><strong>Walk through</strong></a></h1>
 <h2 id="1-import-summarizer-t5_sum-module-in-jac"><a class="header" href="#1-import-summarizer-t5_sum-module-in-jac"><strong>1. Import Summarizer (<code>t5_sum</code>) module in jac</strong></a></h2>
 <ol>
-<li>
-<p>For executing jaseci Open terminal and run follow command.</p>
-<pre><code>
-jsctl -m
-
+<li>For executing jaseci Open terminal and run follow command.
+<pre><code>jsctl -m
 </code></pre>
 </li>
-<li>
-<p>Load cl_summer module in jac by command</p>
-<pre><code>
-actions load module jaseci_kit.t5_sum
-
+<li>Load cl_summer module in jac by command
+<pre><code>actions load module jaseci_kit.t5_sum
 </code></pre>
 </li>
 </ol>
@@ -173,60 +163,38 @@ actions load module jaseci_kit.t5_sum
 </li>
 <li>
 <p>Create node model_dir and <code>summarizer</code> in <code>summarizer.jac</code> file.</p>
-<pre><code>
-node model_dir;
-
+<pre><code>node model_dir;
 node summarizer{};
-
 </code></pre>
 </li>
 <li>
 <p>import <code>t5_sum.classify_text</code> ability inside node <code>summarizer</code>.</p>
-<pre><code>
-# import ability
-
+<pre><code># import ability
 can t5_sum.classify_text;
-
 </code></pre>
 </li>
 <li>
 <p>Initialize module <code>summarize</code> inside <code>summarizer</code> node.</p>
-<pre><code class="language-python">
-# summarizer
-
+<pre><code class="language-python"># summarizer
 can summarize with summarizer entry{
-
     data = file.load_json(visitor.dataset);
-
     report t5_sum.classify_text(
-
         text = data[&quot;text&quot;],
-
         min_length = data[&quot;min_length&quot;],
-
         max_length = data[&quot;max_length&quot;]
-
         );
-
 }
-
 </code></pre>
 <p><code>classify_text</code>: use the T5 model to summarize a body of text</p>
 <p><strong>Parameter details</strong></p>
 <ul>
 <li>
 <p><strong>Input Data</strong>  <strong><code>dataset.json</code></strong> file</p>
-<pre><code>
-{
-
+<pre><code>{
     &quot;text&quot;: &quot;The US has passed the peak on new coronavirus cases, President Donald Trump said and predicted that some states would reopen this month. The US has over 637,000 confirmed Covid-19 cases and over 30,826 deaths, the highest for any country in the world. At the daily White House coronavirus briefing on Wednesday, Trump said new guidelines to reopen the country would be announced on Thursday after he speaks to governors. We'll be the comeback kids, all of us, he said. We want to get our country back. The Trump administration has  previously fixed May 1 as a possible date to reopen the world's largest economy, but the president said some states may be able to return to normalcy earlier than that.&quot;,
-
     &quot;min_length&quot;: 30,
-
     &quot;max_length&quot;: 100
-
 }
-
 </code></pre>
 <ul>
 <li>
@@ -239,190 +207,107 @@ can summarize with summarizer entry{
 <p><code>max_length (integer):</code> the most amount of words you want returned from the model</p>
 </li>
 <li>
-<p><strong>Output</strong></p>
+<p><strong>Output</strong>
+List of Sentences that best summarizes the context</p>
 </li>
 </ul>
-<p>List of Sentences that best summarizes the context</p>
 </li>
 </ul>
 </li>
 <li>
 <p>Adding edge name of <code>summ_model</code> in <code>summarizer.jac</code> file for connecting nodes inside graph.</p>
-<pre><code>
-# adding edge
-
+<pre><code># adding edge
 edge summ_model {
-
     has model_type;
-
 }
-
 </code></pre>
 </li>
 <li>
 <p>Adding graph name of <code>summ_graph</code> for initializing node.</p>
-<pre><code class="language-python">
-# adding graph
-
+<pre><code class="language-python"># adding graph
 graph summ_graph {
-
     has anchor summ_model_dir;
-
     spawn {
-
         summ_model_dir = spawn node::model_dir;
-
         summarizer_node = spawn node::summarizer;
-
         summ_model_dir -[summ_model(model_type=&quot;summarizer&quot;)]-&gt; summarizer_node;
-
     }
-
 }
-
 </code></pre>
 </li>
 <li>
 <p>Initializing walker init for calling graph.</p>
-<pre><code>
-walker init {
-
+<pre><code>walker init {
     root {
-
     spawn here --&gt; graph::summ_graph; 
-
     }
-
 }
-
 </code></pre>
 </li>
 <li>
 <p>Creating walker name of <code>summarizer</code> for getting parameter from context or default and calling ability <code>summarize</code>.</p>
-<pre><code class="language-python">
-# declaring walker for summerize text
-
+<pre><code class="language-python"># declaring walker for summerize text
 walker summarizer{
-
     has dataset=&quot;dataset.json&quot;;
 
-
-
     root {
-
         take --&gt; node::model_dir;
-
     }
-
     model_dir {
-
         take --&gt;;
-
     }
-
 }
-
 </code></pre>
 <p><strong>Final get_seg.jac program</strong></p>
-<pre><code class="language-python">
-node model_dir;
-
+<pre><code class="language-python">node model_dir;
 node summarizer{
-
     # import ability
-
     can t5_sum.classify_text;
 
-
-
     # summarizer
-
     can summarize with summarizer entry{
-
         data = file.load_json(visitor.dataset);
-
         
-
         report t5_sum.classify_text(
-
             text = data[&quot;text&quot;],
-
             min_length = data[&quot;min_length&quot;],
-
             max_length = data[&quot;max_length&quot;]
-
             );      
-
     }
-
 }
-
-
 
 # adding edge
-
 edge summ_model {
-
     has model_type;
-
 }
-
-
 
 # adding graph
-
 graph summ_graph {
-
     has anchor summ_model_dir;
-
     spawn {
-
         summ_model_dir = spawn node::model_dir;
-
         summarizer_node = spawn node::summarizer;
-
         summ_model_dir -[summ_model(model_type=&quot;summarizer&quot;)]-&gt; summarizer_node;
-
     }
-
 }
-
-
 
 walker init {
-
     root {
-
     spawn here --&gt; graph::summ_graph; 
-
     }
-
 }
-
-
 
 # declaring walker for summerize text
-
 walker summarizer{
-
     has dataset=&quot;data.json&quot;;
 
-
-
     root {
-
         take --&gt; node::model_dir;
-
     }
-
     model_dir {
-
         take --&gt;;
-
     }
-
 }
-
 </code></pre>
 </li>
 </ol>
@@ -432,35 +317,25 @@ walker summarizer{
 <ul>
 <li>
 <p>Execute the follow command for Build <code>summarizer.jac</code></p>
-<pre><code>
-jac build summarizer.jac
-
+<pre><code>jac build summarizer.jac
 </code></pre>
 </li>
 <li>
 <p>Execute the follow command to Activate sentinal</p>
-<pre><code>
-sentinel set -snt active:sentinel -mode ir summarizer.jir
-
+<pre><code>sentinel set -snt active:sentinel -mode ir summarizer.jir
 </code></pre>
 </li>
 <li>
 <p>Execute the walker <code>summarizer</code> with default parameter for <code>summarizer(cl_summer)</code> module by following command</p>
-<pre><code>
-walker run summarizer
-
+<pre><code>walker run summarizer
 </code></pre>
 </li>
 <li>
 <p>After executing walker <code>summarizer</code> result data will show on console.</p>
 <p><strong>Result</strong></p>
-<pre><code>
-  &quot;report&quot;: [
-
+<pre><code>  &quot;report&quot;: [
                 &quot;the president predicts some states will reopen this month. the country has over 637,000 confirmed cases and over 30,826 deaths, the highest for any country in the world. we'll be the comeback kids, all of us.&quot;
-
             ]
-
 </code></pre>
 </li>
 </ul>

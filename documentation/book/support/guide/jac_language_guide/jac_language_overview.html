@@ -139,18 +139,10 @@
 <p>To get acquainted with JAC, you'll first have to understand its various constructs which are governed by the language. Here's an overview of the Jaseci constructs and related terms:</p>
 <h3 id="action"><a class="header" href="#action">Action</a></h3>
 <ul>
-<li>
-<p>Actions are computational processing elements. </p>
-</li>
-<li>
-<p>Actions take in a list of context items as input and outputs one or many context items. </p>
-</li>
-<li>
-<p>All possible actions are provided by Jaseci. </p>
-</li>
-<li>
-<p>Actions attached to nodes, edges, etc will search walker, itself, then higher dimentional nodes for input contexts in that order,</p>
-</li>
+<li>Actions are computational processing elements. </li>
+<li>Actions take in a list of context items as input and outputs one or many context items. </li>
+<li>All possible actions are provided by Jaseci. </li>
+<li>Actions attached to nodes, edges, etc will search walker, itself, then higher dimentional nodes for input contexts in that order,</li>
 </ul>
 <h3 id="context"><a class="header" href="#context">Context</a></h3>
 <ul>
@@ -158,152 +150,73 @@
 </ul>
 <h3 id="nodes-and-hd-graph-domains-and-planes"><a class="header" href="#nodes-and-hd-graph-domains-and-planes">Nodes and HD Graph Domains and Planes</a></h3>
 <ul>
-<li>
-<p>Nodes are composed of context and executable actions. </p>
-</li>
-<li>
-<p>Nodes accumulate context via a push function, context can be read as well. </p>
-</li>
-<li>
-<p>Nodes execute a set of actions upon: </p>
+<li>Nodes are composed of context and executable actions. </li>
+<li>Nodes accumulate context via a push function, context can be read as well. </li>
+<li>Nodes execute a set of actions upon: 
 <ol>
-<li>
-<p>Entry </p>
-</li>
-<li>
-<p>Exit </p>
-</li>
+<li>Entry </li>
+<li>Exit </li>
 </ol>
 </li>
-<li>
-<p>Activity actions in a node denote actions that a walker can call at any time</p>
-</li>
-<li>
-<p>Nodes must be aware of the set of HDGDs of which it is a member. </p>
-</li>
-<li>
-<p>Nodes must trigger processing of HDGDs of which it is a member upon events. </p>
+<li>Activity actions in a node denote actions that a walker can call at any time</li>
+<li>Nodes must be aware of the set of HDGDs of which it is a member. </li>
+<li>Nodes must trigger processing of HDGDs of which it is a member upon events. 
 <ul>
 <li>Seperate actions at the HDGDs above can occur on entry and exit events </li>
 </ul>
 </li>
-<li>
-<p>At the first dimension, these are essentially subsets of nodes for which there are common traits. Traits can include context both static and dynamic (built over time) or actions to be executed upon []</p>
+<li>At the first dimension, these are essentially subsets of nodes for which there are common traits. Traits can include context both static and dynamic (built over time) or actions to be executed upon []
 <ol>
-<li>
-<p>entry from some edge into the domain from another domain at the given dimensionality,</p>
-</li>
-<li>
-<p>edge traversals within a domain, or</p>
-</li>
-<li>
-<p>exits out of the domain to antoher domain at the domains given dimensionality.</p>
-</li>
+<li>entry from some edge into the domain from another domain at the given dimensionality,</li>
+<li>edge traversals within a domain, or</li>
+<li>exits out of the domain to antoher domain at the domains given dimensionality.</li>
 </ol>
 </li>
-<li>
-<p>At higher dimensions, these HDGDs are comprised of HDGDs of the next dimension down and function similarly with the element case but instead of nodes they comprise of HDGDs. (HDGD_2 is a graph comprised of HDGD_1 graphs)</p>
-</li>
-<li>
-<p>Transitions at a given dimension can only occur between domains of that dimension or to non-domain nodes.</p>
-</li>
-<li>
-<p>HDGDs can overlap at a given dimension.</p>
-</li>
-<li>
-<p>Each domain at any dimensionality has a root node.</p>
-</li>
-<li>
-<p>Transitions at the node level trigger computation in parallel at all dimensions of HDGDs for which that node is a member of.</p>
-</li>
-<li>
-<p>Optional:</p>
+<li>At higher dimensions, these HDGDs are comprised of HDGDs of the next dimension down and function similarly with the element case but instead of nodes they comprise of HDGDs. (HDGD_2 is a graph comprised of HDGD_1 graphs)</li>
+<li>Transitions at a given dimension can only occur between domains of that dimension or to non-domain nodes.</li>
+<li>HDGDs can overlap at a given dimension.</li>
+<li>Each domain at any dimensionality has a root node.</li>
+<li>Transitions at the node level trigger computation in parallel at all dimensions of HDGDs for which that node is a member of.</li>
+<li>Optional:
 <ul>
-<li>
-<p>Upon creation of an edge between nodes that is first to span HDGD bounderies at any dimensionality, an edge is created implicity betwen HDGDs at that dimensionality (these edges function exactly like edges between nodes). At this point the edges can carry context and actions.</p>
-</li>
-<li>
-<p>Upon deletion of an edge between nodes that is the last to span HDGD bounderies at any dimensionality, the edge that was created connecting those HDGDs is deleted.</p>
-</li>
-<li>
-<p>Nodes have an anchor context value that is used to represent the 'value' of the node, for example when deciding which outbound node a walker should take based on some evaluation. Each node can select only one element from context to be it's anchor</p>
-</li>
+<li>Upon creation of an edge between nodes that is first to span HDGD bounderies at any dimensionality, an edge is created implicity betwen HDGDs at that dimensionality (these edges function exactly like edges between nodes). At this point the edges can carry context and actions.</li>
+<li>Upon deletion of an edge between nodes that is the last to span HDGD bounderies at any dimensionality, the edge that was created connecting those HDGDs is deleted.</li>
+<li>Nodes have an anchor context value that is used to represent the 'value' of the node, for example when deciding which outbound node a walker should take based on some evaluation. Each node can select only one element from context to be it's anchor</li>
 </ul>
 </li>
 </ul>
 <h3 id="edges"><a class="header" href="#edges">Edges</a></h3>
 <ul>
-<li>
-<p>Edges are composed of context and executable actions </p>
-</li>
-<li>
-<p>Edges accumulate context via a push function, context can be read as well </p>
-</li>
-<li>
-<p>Edges execute a set of actions when traversed. </p>
-</li>
-<li>
-<p>Edges much be aware of the set of HDGDs of which it is a member. </p>
-</li>
-<li>
-<p>Edges crossing HDGD boundaries must trigger higher order HDGD plane edges. </p>
-</li>
+<li>Edges are composed of context and executable actions </li>
+<li>Edges accumulate context via a push function, context can be read as well </li>
+<li>Edges execute a set of actions when traversed. </li>
+<li>Edges much be aware of the set of HDGDs of which it is a member. </li>
+<li>Edges crossing HDGD boundaries must trigger higher order HDGD plane edges. </li>
 </ul>
 <h3 id="walkers"><a class="header" href="#walkers">Walkers</a></h3>
 <ul>
-<li>
-<p>Walkers walk nodes triggering execution at the node level and HDGD levels.</p>
-</li>
-<li>
-<p>Walkers can pick up context as they traverse.</p>
-</li>
-<li>
-<p>Walkers also decide which node to travel through next and records the path of travel (trail) to be recorded within it's own context.</p>
-</li>
-<li>
-<p>Walkers can be spawned at any node.</p>
-</li>
-<li>
-<p>Walkers can spawn other walkers.</p>
-</li>
-<li>
-<p>Computation happens at the Node and HDGD levels. However walkers make decisions on where to walk next and which context to pick up.</p>
-</li>
-<li>
-<p>Walker context must be preloaded by sentinel or applications as a form of input and configuration for the walk</p>
-</li>
-<li>
-<p>Walkers can carry with them their own actions and contexts that is executed whenever specified in the walkers own code</p>
-</li>
+<li>Walkers walk nodes triggering execution at the node level and HDGD levels.</li>
+<li>Walkers can pick up context as they traverse.</li>
+<li>Walkers also decide which node to travel through next and records the path of travel (trail) to be recorded within it's own context.</li>
+<li>Walkers can be spawned at any node.</li>
+<li>Walkers can spawn other walkers.</li>
+<li>Computation happens at the Node and HDGD levels. However walkers make decisions on where to walk next and which context to pick up.</li>
+<li>Walker context must be preloaded by sentinel or applications as a form of input and configuration for the walk</li>
+<li>Walkers can carry with them their own actions and contexts that is executed whenever specified in the walkers own code</li>
 </ul>
 <h3 id="sentinels"><a class="header" href="#sentinels">Sentinels</a></h3>
 <ul>
-<li>
-<p>Sentinels watch walkers, aggregate outcomes of walking, and enact policies.</p>
-</li>
-<li>
-<p>Each walker must have a sentinel and the division of labor is</p>
+<li>Sentinels watch walkers, aggregate outcomes of walking, and enact policies.</li>
+<li>Each walker must have a sentinel and the division of labor is
 <ol>
-<li>
-<p>Walkers are concerned primarily for walking the graph.</p>
-</li>
-<li>
-<p>Sentinels will take the results of one or more walkers to perform some higher order objective (i.e., resolution)</p>
-</li>
+<li>Walkers are concerned primarily for walking the graph.</li>
+<li>Sentinels will take the results of one or more walkers to perform some higher order objective (i.e., resolution)</li>
 </ol>
 </li>
-<li>
-<p>Keeps context that can be used to save derivitave application behavior.</p>
-</li>
-<li>
-<p>Sentials harbor walkers, architype and jac programs that encode walkers and architypes</p>
-</li>
-<li>
-<p>Sentials can 'register' Jac programs which is a sort of compile that will generate architypes and walkers</p>
-</li>
-<li>
-<p>If the program has syntax errors registration fails, once registered walkers fail at runtime</p>
-</li>
+<li>Keeps context that can be used to save derivitave application behavior.</li>
+<li>Sentials harbor walkers, architype and jac programs that encode walkers and architypes</li>
+<li>Sentials can 'register' Jac programs which is a sort of compile that will generate architypes and walkers</li>
+<li>If the program has syntax errors registration fails, once registered walkers fail at runtime</li>
 </ul>
 <h3 id="architypes"><a class="header" href="#architypes">Architypes</a></h3>
 <ul>

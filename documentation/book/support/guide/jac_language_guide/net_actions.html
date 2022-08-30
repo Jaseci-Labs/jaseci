@@ -136,57 +136,32 @@
                     <main>
                         <h1 id="net-actions"><a class="header" href="#net-actions">Net Actions</a></h1>
 <h3 id="max-anchor-value"><a class="header" href="#max-anchor-value">Max Anchor Value</a></h3>
-<pre><code class="language-jac">
-# returns object (node,edge) with the highest  anchor value
-
+<pre><code class="language-jac"># returns object (node,edge) with the highest  anchor value
 node year {
-
     has_anchor year_num;
-
 }
 
-
-
 jacset  = [year1,year2,year3];
-
 value = net.max(jac_set)
-
 </code></pre>
 <h3 id="minimum-anchor-value"><a class="header" href="#minimum-anchor-value">Minimum Anchor Value</a></h3>
-<pre><code class="language-jac">
-# returns object (node,edges) with the lowest anchor value
-
+<pre><code class="language-jac"># returns object (node,edges) with the lowest anchor value
 node year {
-
   
-
     has_anchor year_num;
-
 }
 
-
-
 jacset  = [year1,year2,year3];
-
 value = net.min(jac_set)
-
 </code></pre>
 <h3 id="get-node-root"><a class="header" href="#get-node-root">Get Node Root</a></h3>
-<pre><code class="language-jac">
-# returns root node of a given graph 
-
+<pre><code class="language-jac"># returns root node of a given graph 
 node year {
-
     has_anchor year_num;
-
 }
 
-
-
 jacset  = [year1,year2,year3];
-
 value = net.root(jac_set)
-
 </code></pre>
 
                     </main>

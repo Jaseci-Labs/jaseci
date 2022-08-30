@@ -137,97 +137,63 @@
                         <h1 id="fasttext-encoder-fast_enc"><a class="header" href="#fasttext-encoder-fast_enc">FastText Encoder (<code>fast_enc</code>)</a></h1>
 <p><code>fast_enc</code> module uses the facebook's fasttext -- efficient learning of word representations and sentence classification.</p>
 <ul>
-<li>
-<p><code>train</code>: used to train the Bi-Encoder for custom input</p>
+<li><code>train</code>: used to train the Bi-Encoder for custom input
 <ul>
-<li>
-<p>Input:</p>
+<li>Input:
 <ul>
-<li>
-<p><code>traindata</code> (Dict): dictionary of candidates and suportting contexts for each candidate</p>
-</li>
-<li>
-<p><code>train_with_existing</code> (bool): if set to true train the model from scratch otherwise trains incrementally </p>
-</li>
+<li><code>traindata</code> (Dict): dictionary of candidates and suportting contexts for each candidate</li>
+<li><code>train_with_existing</code> (bool): if set to true train the model from scratch otherwise trains incrementally </li>
 </ul>
 </li>
 </ul>
 </li>
-<li>
-<p><code>predict</code>: predits the most suitable candidate for a provided context, takes text or embedding </p>
+<li><code>predict</code>: predits the most suitable candidate for a provided context, takes text or embedding 
 <ul>
-<li>
-<p>Input:</p>
+<li>Input:
 <ul>
 <li><code>sentences</code> (list of strings): list of sentences the needs to be classified</li>
 </ul>
 </li>
-<li>
-<p>Return: a dictionary of sentence, predicted intent and probability </p>
-</li>
+<li>Return: a dictionary of sentence, predicted intent and probability </li>
 </ul>
 </li>
-<li>
-<p><code>save_model</code>:</p>
+<li><code>save_model</code>:
 <ul>
-<li>
-<p>Input </p>
+<li>Input 
 <ul>
 <li><code>model_path</code> (string): the path to save model</li>
 </ul>
 </li>
-<li>
-<p>Returns: &quot;[Saved model at] : &lt;model_path&gt;&quot; if model successfully saved</p>
-</li>
+<li>Returns: &quot;[Saved model at] : &lt;model_path&gt;&quot; if model successfully saved</li>
 </ul>
 </li>
-<li>
-<p><code>load_model</code>:</p>
+<li><code>load_model</code>:
 <ul>
-<li>
-<p>Input </p>
+<li>Input 
 <ul>
 <li><code>model_path</code> (string): the path to save model</li>
 </ul>
 </li>
-<li>
-<p>Returns: &quot;[loaded model from] : &lt;model_path&gt;&quot; if model successfully loaded</p>
-</li>
+<li>Returns: &quot;[loaded model from] : &lt;model_path&gt;&quot; if model successfully loaded</li>
 </ul>
 </li>
 </ul>
 <h2 id="example-jac-usage"><a class="header" href="#example-jac-usage">Example Jac Usage:</a></h2>
-<pre><code class="language-jac">
-# Train and inference with a fasttext classifier
-
+<pre><code class="language-jac"># Train and inference with a fasttext classifier
 walker fast_enc_example {
-
     has train_file = &quot;fast_enc_train.json&quot;;
-
     has train_with_existing = false;
-
     has test_sentence=  [&quot;what's going on ?&quot;];
-
     can fast_enc.train,fast_enc.predict;
 
-
-
     # Training the model
-
     train_data = file.load_json(train_file);
-
     fast_enc.train(traindata=train_data,train_with_existing=false);
-
     
-
     # Getting inference from the model
-
     resp_data=fast_enc.predict(sentences=test_sentence);
-
     std.out(resp_data);
-
 }
-
 </code></pre>
 
                     </main>

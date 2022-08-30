@@ -137,18 +137,10 @@
                         <h1 id="how-to-set-up-jaseci-for-actions-load-local"><a class="header" href="#how-to-set-up-jaseci-for-actions-load-local">How to set up jaseci for actions load local</a></h1>
 <h5 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h5>
 <ul>
-<li>
-<p><a href="#introduction">Introduction</a></p>
-</li>
-<li>
-<p><a href="#step-1-build-a-custom-jaseci-module">Build A Custom Jaseci Module</a></p>
-</li>
-<li>
-<p><a href="#step-2-load-a-custom-jaseci-module">Load a Custom Jaseci Module</a></p>
-</li>
-<li>
-<p><a href="#step-3-test-a-custom-jaseci-module">Test a Custom Jaseci Module</a></p>
-</li>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#step-1-build-a-custom-jaseci-module">Build A Custom Jaseci Module</a></li>
+<li><a href="#step-2-load-a-custom-jaseci-module">Load a Custom Jaseci Module</a></li>
+<li><a href="#step-3-test-a-custom-jaseci-module">Test a Custom Jaseci Module</a></li>
 </ul>
 <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
 <p>In this tutorial we will guide you through on how to set up jaseci for actions load local. We will create a simple calculation module and load it locally.</p>
@@ -156,97 +148,53 @@
 <p>We will create a folder name calculator and in the folder create a file name calculator.py.</p>
 <p>In the file import jaseci_action module, this will give us power to all jaseci action functionality.</p>
 <p>ADD: <code>from jaseci.actions.live_actions import jaseci_action</code></p>
-<pre><code>
-from jaseci.actions.live_actions import jaseci_action
-
-
+<pre><code>from jaseci.actions.live_actions import jaseci_action
 
 </code></pre>
 <p>Then, we will proceed to add a function called <code>add</code>. Which will add two numbers.</p>
-<pre><code>
-from jaseci.actions.live_actions import jaseci_action
-
-
+<pre><code>from jaseci.actions.live_actions import jaseci_action
 
 @jaseci_action(act_group=[&quot;calc&quot;], allow_remote=True)
-
 def add(
-
     first_number: int, second_number: int
-
 ):
-
 answer = first_number + second_number
-
 return answer
-
 </code></pre>
 <p>Lastly, we will create a port (8000) where we will use to launch the server for jaseci action.</p>
-<pre><code>
-from jaseci.actions.live_actions import jaseci_action
-
-
+<pre><code>from jaseci.actions.live_actions import jaseci_action
 
 @jaseci_action(act_group=[&quot;calc&quot;], allow_remote=True)
-
 def add(
-
     first_number: int, second_number: int
-
 ):
-
 answer = first_number + second_number
-
 return answer
 
-
-
 if __name__ == &quot;__main__&quot;:
-
     from jaseci.actions.remote_actions import launch_server
 
-
-
     launch_server(port=8000)
-
 </code></pre>
 <h1 id="step-2---load-a-custom-jaseci-module"><a class="header" href="#step-2---load-a-custom-jaseci-module">Step 2 - Load a Custom Jaseci Module:</a></h1>
 <p>In this step we will show you how to load this module we created from the jaseci console (jsctl)</p>
 <p>The steps are as follows:</p>
 <ul>
-<li>
-<p>jsctl -m</p>
-</li>
-<li>
-<p>actions load local <code>PATH_TO_PYTHON_FILE</code></p>
-</li>
+<li>jsctl -m</li>
+<li>actions load local <code>PATH_TO_PYTHON_FILE</code></li>
 </ul>
 <p>After running that it should be loaded to the console.</p>
 <h1 id="step-3---test-a-custom-jaseci-module"><a class="header" href="#step-3---test-a-custom-jaseci-module">Step 3 - Test a Custom Jaseci Module:</a></h1>
 <p>In this step we will test via browser to see if the module you created works.</p>
 <p>The steps are as follows:</p>
 <ul>
-<li>
-<p>In the terminal, cd into the directory where the calculator.py file is</p>
-</li>
-<li>
-<p>then run python calculator.py, you should see <code>Application startup complete</code></p>
-</li>
-<li>
-<p>Go to the browser and type localhost:8000/docs and you should be redirected to fast api frontend application</p>
-</li>
-<li>
-<p>click on <code>/add/</code> </p>
-</li>
-<li>
-<p>click <code>try it out</code></p>
-</li>
-<li>
-<p>Enter a value for first_number and second_number</p>
-</li>
-<li>
-<p>click <code>execute</code></p>
-</li>
+<li>In the terminal, cd into the directory where the calculator.py file is</li>
+<li>then run python calculator.py, you should see <code>Application startup complete</code></li>
+<li>Go to the browser and type localhost:8000/docs and you should be redirected to fast api frontend application</li>
+<li>click on <code>/add/</code> </li>
+<li>click <code>try it out</code></li>
+<li>Enter a value for first_number and second_number</li>
+<li>click <code>execute</code></li>
 </ul>
 <p>Now you should see the results. That is the entire process on how to build a custom module, load and test.</p>
 

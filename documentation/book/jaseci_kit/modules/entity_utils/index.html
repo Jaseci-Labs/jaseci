@@ -136,12 +136,12 @@
                     <main>
                         <h1 id="entity-extraction--recognition"><a class="header" href="#entity-extraction--recognition">Entity Extraction / Recognition</a></h1>
 <p>Named entity recognition (NER) is the process of categroizing and identifying informational entities in text. Jaseci provides the following NER engines: </p>
-<p>| Module                | Model Name      | Type           | Status       | Description                                                       | Resources                                                                                               |</p>
-<p>| --------------------- | --------------- | -------------- | ------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |</p>
-<p>| <a href="flair_ner/README.html"><code>ent_ext</code></a> | Flair NER                      | Training req.  | Ready        | Entity extraction using the FLAIR NER framework                   |           <a href="flair_ner/README.html">Documentation</a>                                                                                              |</p>
-<p>| <a href="flair_ner/README.html"><code>tfm_ner</code></a>             | Transformer NER |  Training req.  | Ready        | Token classification on Transformer models, can be used for NER   | <a href="tfm_ner/README.html">Documentation</a> <a href="https://huggingface.co/docs/transformers/tasks/token_classification#token-classification">Huggingface</a> </p>
-<p>| <code>lstm_ner</code>            | LSTM NER        |        Training Required                                                | Experimental | Entity extraction/Slot filling via Long-short Term Memory Network |</p>
-
+<div class="table-wrapper"><table><thead><tr><th>Module</th><th>Model Name</th><th>Type</th><th>Status</th><th>Description</th><th>Resources</th></tr></thead><tbody>
+<tr><td><a href="flair_ner/README.html"><code>ent_ext</code></a></td><td>Flair NER</td><td>Training req.</td><td>Ready</td><td>Entity extraction using the FLAIR NER framework</td><td><a href="flair_ner/README.html">Documentation</a></td></tr>
+<tr><td><a href="flair_ner/README.html"><code>tfm_ner</code></a></td><td>Transformer NER</td><td>Training req.</td><td>Ready</td><td>Token classification on Transformer models, can be used for NER</td><td><a href="tfm_ner/README.html">Documentation</a> <a href="https://huggingface.co/docs/transformers/tasks/token_classification#token-classification">Huggingface</a></td></tr>
+<tr><td><code>lstm_ner</code></td><td>LSTM NER</td><td>Training Required</td><td>Experimental</td><td>Entity extraction/Slot filling via Long-short Term Memory Network</td><td></td></tr>
+</tbody></table>
+</div>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">

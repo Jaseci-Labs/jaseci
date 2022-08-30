@@ -137,51 +137,30 @@
                         <h1 id="pdf-extractor-pdf_ext"><a class="header" href="#pdf-extractor-pdf_ext">PDF Extractor (<code>pdf_ext</code>)</a></h1>
 <p><code>pdf_ext</code> module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.</p>
 <ul>
-<li>
-<p><code>extract_pdf</code>: gets different topics in the context provided, given a threshold </p>
+<li><code>extract_pdf</code>: gets different topics in the context provided, given a threshold 
 <ul>
-<li>
-<p>Input </p>
+<li>Input 
 <ul>
-<li>
-<p><code>url</code>(String): gets the pdf from URL</p>
-</li>
-<li>
-<p><code>path</code>(Float): gets the pdf from local path</p>
-</li>
-<li>
-<p><code>metadata</code>(Bool): to display available metadata of PDF</p>
-</li>
+<li><code>url</code>(String): gets the pdf from URL</li>
+<li><code>path</code>(Float): gets the pdf from local path</li>
+<li><code>metadata</code>(Bool): to display available metadata of PDF</li>
 </ul>
 </li>
-<li>
-<p>Returns: a json with number of pages the pdf had and content</p>
-</li>
+<li>Returns: a json with number of pages the pdf had and content</li>
 </ul>
 </li>
 </ul>
 <h4 id="example-jac-usage"><a class="header" href="#example-jac-usage">Example Jac Usage:</a></h4>
-<pre><code class="language-jac">
-walker pdf_ext_example {
-
+<pre><code class="language-jac">walker pdf_ext_example {
     has url = &quot;http://www.africau.edu/images/default/sample.pdf&quot;;
-
     has metadata = true;
-
     can pdf_ext.extract_pdf;
 
-
-
     # Getting the dat from PDF
-
     resp_data = pdf_ext.extract_pdf(url=url,
-
     metadata=metadata);
-
     std.out(resp_data);
-
 }
-
 </code></pre>
 
                     </main>

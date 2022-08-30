@@ -137,45 +137,23 @@
                         <h1 id="how-to-add-and-remove-data-from-faq-state"><a class="header" href="#how-to-add-and-remove-data-from-faq-state">How to add and remove data from faq state</a></h1>
 <h5 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h5>
 <ul>
-<li>
-<p><a href="#introduction"> Introduction </a></p>
-</li>
-<li>
-<p><a href="#step-1-how-to-add-data-from-faq-state">How to add data from faq state</a></p>
-</li>
-<li>
-<p><a href="#step-2-how-to-remove-data-from-faq-state">How to remove data from faq state</a></p>
-</li>
+<li><a href="#introduction"> Introduction </a></li>
+<li><a href="#step-1-how-to-add-data-from-faq-state">How to add data from faq state</a></li>
+<li><a href="#step-2-how-to-remove-data-from-faq-state">How to remove data from faq state</a></li>
 </ul>
 <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
 <p>In this section we will be teaching you how to add and remove datat from graph from the faq state.</p>
 <h1 id="step-1-how-to-add-data-from-faq-state"><a class="header" href="#step-1-how-to-add-data-from-faq-state">Step 1: How to add data from faq state</a></h1>
 <p>The steps are as follows:</p>
 <ul>
-<li>
-<p>run jaseci console: <code>jsctl -m</code></p>
-</li>
-<li>
-<p>load all the actions required: <code>actions load module [module]</code></p>
-</li>
-<li>
-<p>builing the application using:  <code>jac build main.jac</code></p>
-</li>
-<li>
-<p>registering the sentinel: <code>sentinel register -set_active true -mode ir main.jir</code></p>
-</li>
-<li>
-<p>delete any graph if exists: <code>graph delete active:graph</code></p>
-</li>
-<li>
-<p>create the graph: <code>graph create -set_active true</code></p>
-</li>
-<li>
-<p>run init walker: <code>walker run init</code></p>
-</li>
-<li>
-<p>run read walker which will add the data to the faq state: <code>walker run read -ctx &quot;{\&quot;source_url\&quot;: \&quot;https://www.yum.com/wps/portal/yumbrands/Yumbrands/company/our-brands/kfc\&quot;}&quot;</code></p>
-</li>
+<li>run jaseci console: <code>jsctl -m</code></li>
+<li>load all the actions required: <code>actions load module [module]</code></li>
+<li>builing the application using:  <code>jac build main.jac</code></li>
+<li>registering the sentinel: <code>sentinel register -set_active true -mode ir main.jir</code></li>
+<li>delete any graph if exists: <code>graph delete active:graph</code></li>
+<li>create the graph: <code>graph create -set_active true</code></li>
+<li>run init walker: <code>walker run init</code></li>
+<li>run read walker which will add the data to the faq state: <code>walker run read -ctx &quot;{\&quot;source_url\&quot;: \&quot;https://www.yum.com/wps/portal/yumbrands/Yumbrands/company/our-brands/kfc\&quot;}&quot;</code></li>
 </ul>
 <h1 id="step-2-how-to-remove-data-from-faq-state"><a class="header" href="#step-2-how-to-remove-data-from-faq-state">Step 2: How to remove data from faq state</a></h1>
 <p>To delete data you will have to run the forget walker, run the first 7 steps from step 1 then follow the next step as follows:</p>

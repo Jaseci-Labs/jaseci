@@ -137,40 +137,24 @@
                         <h1 id="how-to-add-follow-up-to-a-state"><a class="header" href="#how-to-add-follow-up-to-a-state">How to add follow up to a state</a></h1>
 <h5 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h5>
 <ul>
-<li>
-<p><a href="#introduction"> Introduction </a></p>
-</li>
-<li>
-<p><a href="#step-1-create-follow-up-states">Create follow up states</a></p>
-</li>
-<li>
-<p><a href="#step-2-connect-follow-up-state-to-a-state">Connect follow up state to a state</a></p>
-</li>
-<li>
-<p><a href="#step-3-add-business-logicc-to-follow-up-state">Add business logic to follow up state</a></p>
-</li>
-<li>
-<p><a href="#step-4-add-response-to-follow-up-state">Add response to follow up state</a></p>
-</li>
+<li><a href="#introduction"> Introduction </a></li>
+<li><a href="#step-1-create-follow-up-states">Create follow up states</a></li>
+<li><a href="#step-2-connect-follow-up-state-to-a-state">Connect follow up state to a state</a></li>
+<li><a href="#step-3-add-business-logicc-to-follow-up-state">Add business logic to follow up state</a></li>
+<li><a href="#step-4-add-response-to-follow-up-state">Add response to follow up state</a></li>
 </ul>
 <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
 <p>In the example KFC bot we have a follow up state. In this tutorial we will explain how we build the follow up. In the order state there is a follow state attached to it, where the customer could either confirm the order or decline the order. So let's dive into it. Let pretend that there was no follow up state, let's build it from scratch.</p>
 <h1 id="step-1-create-follow-up-states"><a class="header" href="#step-1-create-follow-up-states">Step 1: Create follow up states</a></h1>
 <p>Navigate to the <code>fixture.jac</code> file</p>
 <p>We will be adding an order confirmation state and an order denial state which are follow ups attached to the order state.</p>
-<p>ADD: <code>state_order_confirmation = spawn node::state(name=&quot;order_confirmation&quot;);</code></p>
-<p>ADD: <code>state_order_denial = spawn node::state(name=&quot;order_denial&quot;);</code></p>
-<pre><code>
-spawn { 
-
+<p>ADD: <code>state_order_confirmation = spawn node::state(name=&quot;order_confirmation&quot;);</code>
+ADD: <code>state_order_denial = spawn node::state(name=&quot;order_denial&quot;);</code></p>
+<pre><code>spawn { 
     state_order = spawn node::state(name=&quot;order&quot;);
-
     state_order_confirmation = spawn node::state(name=&quot;order_confirmation&quot;);
-
     state_order_denial = spawn node::state(name=&quot;order_denial&quot;);
-
 }
-
 </code></pre>
 <h1 id="step-2-connect-follow-up-state-to-a-state"><a class="header" href="#step-2-connect-follow-up-state-to-a-state">Step 2: Connect follow up state to a state</a></h1>
 <p>Next step we will attach the follow up state to the origin state, in this case it's the order state.</p>
@@ -178,68 +162,41 @@ spawn {
 <p>If yes_label for intent_label is true it will go to the order confirmation state</p>
 <p>ADD: <code>state_order -[transition(intent_label = global.no_label)]-&gt; state_order_denial;</code></p>
 <p>If no_label for intent_label is true it will go to the order denial state</p>
-<pre><code>
-spawn { 
-
+<pre><code>spawn { 
     conv_root -[transition(intent_label = global.order_label)]-&gt; state_order;
-
     state_order -[transition(intent_label = global.yes_label)]-&gt; state_order_confirmation;
-
     state_order -[transition(intent_label = global.no_label)]-&gt; state_order_denial;
-
 }
-
 </code></pre>
 <h1 id="step-3-add-business-logic-to-follow-up-state"><a class="header" href="#step-3-add-business-logic-to-follow-up-state">Step 3: Add business logic to follow up state</a></h1>
 <p>Since there is no business logic required, we will create a slot <code>user</code> and attach their name to it so we could then use this slot for later use.</p>
 <p>Navigate to <code>nodes.jac</code>, then search for <code>state node</code> and look for the node ability called <code> business_logic</code></p>
 <p>ADD: <code>visitor.dialogue_context[&quot;user&quot;] = &quot;Jemmott&quot;;</code></p>
-<pre><code>
-can business_logic {
-
+<pre><code>can business_logic {
     if (!visitor.hoping) { 
-
         if (here.name == &quot;order_confirmation&quot; or here.name == &quot;order_denial&quot;) {
-
             // HERE YOU COULD DO ALL YOUR LOGICS FOR THESE SPECIFIC FOLLOW UP STATES
-
             visitor.dialogue_context[&quot;user&quot;] = &quot;Jemmott&quot;;
-
         }
-
     }
-
 }
-
 </code></pre>
 <h1 id="step-4-add-response-to-follow-up-state"><a class="header" href="#step-4-add-response-to-follow-up-state">Step 4: Add response to follow up state</a></h1>
 <p>Here we will add a response to the follow up state.</p>
 <p>Navigate to <code>nodes.jac</code>, then search for <code>state node</code> and look for the node ability called <code>gen_response</code></p>
 <p>IF <code>here.name == &quot;order_confirmation&quot;</code> then ADD: <code> visitor.answer = &quot;Thank you for ordering with us&quot;;</code></p>
 <p>IF <code>here.name == &quot;order_denial&quot;</code> then ADD: <code> visitor.answer = &quot;TNo problem, If there anything I can help with feel free to ask&quot;;</code></p>
-<pre><code>
-can gen_response {
-
+<pre><code>can gen_response {
         if (!visitor.hoping) {
-
             if (here.name == &quot;soc&quot;) {
-
                 visitor.answer = &quot;Hello there, Welcome to KFC!&quot;;
-
             } elif (here.name == &quot;order_confirmation&quot;) {
-
                 visitor.answer = &quot;Thank you for ordering with us&quot;;
-
             } elif (here.name == &quot;order_denial&quot;) {
-
                 visitor.answer = &quot;No problem, If there anything I can help with feel free to ask&quot;;
-
             }
-
         }
-
 }
-
 </code></pre>
 
                     </main>

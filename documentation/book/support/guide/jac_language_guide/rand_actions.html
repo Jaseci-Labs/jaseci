@@ -136,85 +136,48 @@
                     <main>
                         <h1 id="rand-actions"><a class="header" href="#rand-actions">Rand Actions</a></h1>
 <h3 id="seeds-random-number-generator"><a class="header" href="#seeds-random-number-generator">Seeds random number generator</a></h3>
-<pre><code class="language-jac">
-# seeds random num generator
-
+<pre><code class="language-jac"># seeds random num generator
 rand.seed(4);
-
-
 
 </code></pre>
 <h3 id="generate-random-generator"><a class="header" href="#generate-random-generator">Generate random generator</a></h3>
-<pre><code class="language-jac">
-# Generates random integer between range (0-10)
-
+<pre><code class="language-jac"># Generates random integer between range (0-10)
 num = rand.integer(0, 10);
-
 </code></pre>
 <h3 id="random-selection"><a class="header" href="#random-selection">Random Selection</a></h3>
-<pre><code class="language-jac">
-a_list = ['apple','mango','orange']
-
+<pre><code class="language-jac">a_list = ['apple','mango','orange']
 # Randomly selects and return item from list
-
 num = rand.choice(a_list);
-
 </code></pre>
 <h3 id="generate-random-word"><a class="header" href="#generate-random-word">Generate Random Word</a></h3>
-<pre><code class="language-jac">
-# generate a random word
-
+<pre><code class="language-jac"># generate a random word
  wrd = rand.word();
-
 </code></pre>
 <h3 id="generate-random-sentence"><a class="header" href="#generate-random-sentence">Generate Random Sentence</a></h3>
-<pre><code class="language-jac">
-# generates a random sentence
-
+<pre><code class="language-jac"># generates a random sentence
 # min_lenght - optional , minimum amount of words defaut is 4
-
 # max_lenght - optional ,  maximum amount of words default is 10
-
 # sen - optional
-
 senetence  = rand.sentence();
-
 </code></pre>
 <h3 id="generate-random-paragraph"><a class="header" href="#generate-random-paragraph">Generate Random Paragraph</a></h3>
-<pre><code class="language-jac">
-# generates a random paragraph
-
+<pre><code class="language-jac"># generates a random paragraph
 # min_lenght - optional , minimum amount of setences defaut is 4
-
 # max_lenght - optional ,  maximum amount of sentences default is 8
-
 # sen - optional
-
 paragraph = rand.paragraph();
-
 </code></pre>
 <h3 id="generate-random-text"><a class="header" href="#generate-random-text">Generate Random Text</a></h3>
-<pre><code class="language-jac">
-# generates a random text
-
+<pre><code class="language-jac"># generates a random text
 # min_lenght - optional , minimum amount of paragraph ,defaut is 3
-
 # max_lenght - optional ,  maximum amount of paragraph default is 6
-
 # sen - optional
-
  test  = rand.text();
-
 </code></pre>
 <h3 id="generate-time"><a class="header" href="#generate-time">Generate time</a></h3>
-<pre><code class="language-jac">
-# Generate a random datetime between range.
-
-
+<pre><code class="language-jac"># Generate a random datetime between range.
 
 returned time = rand.time(&quot;2020-10-25&quot;, &quot;2020-11-26);
-
-
 
 </code></pre>
 

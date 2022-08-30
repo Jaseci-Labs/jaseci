@@ -138,67 +138,39 @@
 <h3 id="yolo-v5-yolov5"><a class="header" href="#yolo-v5-yolov5">Yolo V5 (<code>yolov5</code>)</a></h3>
 <p>YOLOv5 <code>yolov5</code>  is a family of object detection architectures and models pretrained on the COCO dataset, and represents Ultralytics open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.</p>
 <ul>
-<li>
-<p><code>load_model</code>: Allows you to load the yolov5 pytorch model.</p>
+<li><code>load_model</code>: Allows you to load the yolov5 pytorch model.
 <ul>
-<li>
-<p>Input: </p>
+<li>Input: 
 <ul>
-<li>
-<p><code>name</code> (string) (required): the name of the trained model. </p>
-</li>
-<li>
-<p><code>confidence_threshold</code> (integer) (optional): is a number between 0 and 1 that represents the likelihood that the output of the Machine Learning model is correct and will satisfy a user's request.</p>
-</li>
+<li><code>name</code> (string) (required): the name of the trained model. </li>
+<li><code>confidence_threshold</code> (integer) (optional): is a number between 0 and 1 that represents the likelihood that the output of the Machine Learning model is correct and will satisfy a user's request.</li>
 </ul>
 </li>
-<li>
-<p>Return : Message whether the model was sucessfully loaded or not.</p>
-</li>
-<li>
-<p>Note: Before loading the model (weights) need to be in a specific location at <code>object_detection/yolov5/runs/train/exp/weights</code>, with a specific file suffix/type (*.pt)</p>
-</li>
+<li>Return : Message whether the model was sucessfully loaded or not.</li>
+<li>Note: Before loading the model (weights) need to be in a specific location at <code>object_detection/yolov5/runs/train/exp/weights</code>, with a specific file suffix/type (*.pt)</li>
 </ul>
 </li>
-<li>
-<p><code>detect</code>: Based on the image(s) provided by the user it will try to predict where an object alongside with it's label is on the each attached image(s).</p>
+<li><code>detect</code>: Based on the image(s) provided by the user it will try to predict where an object alongside with it's label is on the each attached image(s).
 <ul>
-<li>
-<p>Input:</p>
+<li>Input:
 <ul>
-<li>
-<p><code>file_list</code> (files) (required): the image files you want the model to detect objects location.</p>
-</li>
-<li>
-<p><code>image_size</code> (integer) (optional): The inference size of the image(s) attached.</p>
-</li>
-<li>
-<p><code>download_image</code> (boolean) (optional): Whether or not you want the image(s) to be returned to the current API.</p>
-</li>
+<li><code>file_list</code> (files) (required): the image files you want the model to detect objects location.</li>
+<li><code>image_size</code> (integer) (optional): The inference size of the image(s) attached.</li>
+<li><code>download_image</code> (boolean) (optional): Whether or not you want the image(s) to be returned to the current API.</li>
 </ul>
 </li>
-<li>
-<p>Return: The class (labels) it picked up from image, Bounding Box Coordinates (bbox) where the object was detected, confidence ( score ) and image in base64 format.</p>
-</li>
+<li>Return: The class (labels) it picked up from image, Bounding Box Coordinates (bbox) where the object was detected, confidence ( score ) and image in base64 format.</li>
 </ul>
 </li>
 </ul>
 <h3 id="how-to-create-an-image-based-on-the-image_bas64-string"><a class="header" href="#how-to-create-an-image-based-on-the-image_bas64-string">How to create an image based on the image_bas64 string</a></h3>
 <p>In <code>api.py</code> there is a function called <code>base64EncodeImage</code> this is what converts the image to image arrays then into string.</p>
-<pre><code>
-def base64EncodeImage(img):
-
+<pre><code>def base64EncodeImage(img):
     &quot;&quot;&quot;Takes an input image and returns a base64 encoded string representation of that image (jpg format)&quot;&quot;&quot;
-
     _, im_arr = cv2.imencode(&quot;.jpg&quot;, img)
-
     im_b64 = base64.b64encode(im_arr.tobytes()).decode(&quot;utf-8&quot;)
 
-
-
     return im_b64
-
-
 
 </code></pre>
 <h3 id="how-it-supports-multiple-images"><a class="header" href="#how-it-supports-multiple-images">How it supports multiple images</a></h3>

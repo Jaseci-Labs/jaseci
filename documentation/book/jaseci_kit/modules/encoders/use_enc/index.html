@@ -135,135 +135,80 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="use-encoder-use_enc"><a class="header" href="#use-encoder-use_enc">USE Encoder (<code>use_enc</code>)</a></h1>
-<p><code>use_enc</code> module uses the universal sentence encoder to generate sentence level embeddings.</p>
-<p>The sentence level embeddings can then be used to calculate the similarity between two given text via cosine similarity and/or dot product.</p>
+<p><code>use_enc</code> module uses the universal sentence encoder to generate sentence level embeddings.
+The sentence level embeddings can then be used to calculate the similarity between two given text via cosine similarity and/or dot product.</p>
 <ul>
-<li>
-<p><code>encode</code>: encodes the text and returns a embedding of 512 length</p>
+<li><code>encode</code>: encodes the text and returns a embedding of 512 length
 <ul>
-<li>
-<p>Alternate name: <code>get_embedding</code></p>
-</li>
-<li>
-<p>Input:</p>
+<li>Alternate name: <code>get_embedding</code></li>
+<li>Input:
 <ul>
 <li><code>text</code> (string or list of strings): text to be encoded</li>
 </ul>
 </li>
-<li>
-<p>Return: Encoded embeddings</p>
-</li>
+<li>Return: Encoded embeddings</li>
 </ul>
 </li>
-<li>
-<p><code>cos_sim_score</code>:</p>
+<li><code>cos_sim_score</code>:
 <ul>
-<li>
-<p>Input:</p>
+<li>Input:
 <ul>
-<li>
-<p><code>q_emb</code> (string or list of strings): first text to be embeded</p>
-</li>
-<li>
-<p><code>a_emb</code> (string or list of strings): second text to be embedded</p>
-</li>
+<li><code>q_emb</code> (string or list of strings): first text to be embeded</li>
+<li><code>a_emb</code> (string or list of strings): second text to be embedded</li>
 </ul>
 </li>
-<li>
-<p>Return: cosine similarity score</p>
-</li>
+<li>Return: cosine similarity score</li>
 </ul>
 </li>
-<li>
-<p><code>text_simliarity</code>: calculate the simlarity score between given texts</p>
+<li><code>text_simliarity</code>: calculate the simlarity score between given texts
 <ul>
-<li>
-<p>Input:</p>
+<li>Input:
 <ul>
-<li>
-<p><code>text1</code> (string): first text</p>
-</li>
-<li>
-<p><code>text2</code> (string): second text</p>
-</li>
+<li><code>text1</code> (string): first text</li>
+<li><code>text2</code> (string): second text</li>
 </ul>
 </li>
-<li>
-<p>Return: cosine similarity score</p>
-</li>
+<li>Return: cosine similarity score</li>
 </ul>
 </li>
-<li>
-<p><code>text_classify</code>: use USE encoder as a classifier</p>
+<li><code>text_classify</code>: use USE encoder as a classifier
 <ul>
-<li>
-<p>Input:</p>
+<li>Input:
 <ul>
-<li>
-<p><code>text</code> (string): text to classify</p>
-</li>
-<li>
-<p><code>classes</code> (list of strings): candidate classification classes</p>
-</li>
+<li><code>text</code> (string): text to classify</li>
+<li><code>classes</code> (list of strings): candidate classification classes</li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
 <h2 id="example-jac-usage"><a class="header" href="#example-jac-usage">Example Jac Usage:</a></h2>
-<pre><code class="language-jac">
-# Use USE encoder for zero-shot intent classification
-
+<pre><code class="language-jac"># Use USE encoder for zero-shot intent classification
 walker use_enc_example {
-
     can use.encode, use.cos_sim_score;
-
     has text = &quot;What is the weather tomorrow?&quot;;
-
     has candidates = [
-
         &quot;weather forecast&quot;,
-
         &quot;ask for direction&quot;,
-
         &quot;order food&quot;
-
     ];
-
     text_emb = use.encode(text)[0];
-
     cand_embs = use.encode(candidates); # use.encode handles string/list
 
-
-
     max_score = 0;
-
     max_cand = 0;
-
     cand_idx = 0;
-
     for cand_emb in cand_embs {
-
         cos_score = use.cos_sim_score(cand_emb, text_emb);
-
         if (cos_score &gt; max_score) {
-
             max_score = cos_score;
-
             max_cand = cand_idx;
-
         }
-
         cand_idx += 1;
-
     }
 
-
-
     predicted_cand = candidates[max_cand];
-
 }
-
 </code></pre>
 
                     </main>

@@ -137,15 +137,9 @@
                         <h1 id="the-thought-process-of-fixing-utterances"><a class="header" href="#the-thought-process-of-fixing-utterances">The thought process of fixing utterances</a></h1>
 <h5 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h5>
 <ul>
-<li>
-<p><a href="#introduction"> Introduction </a></p>
-</li>
-<li>
-<p><a href="#fixing-misclassifications-from-bi-encoder-model">Fixing misclassifications from bi-encoder model</a></p>
-</li>
-<li>
-<p><a href="#fixing-misclassifications-from-use-qa-model">Fixing misclassifications from use-qa model</a></p>
-</li>
+<li><a href="#introduction"> Introduction </a></li>
+<li><a href="#fixing-misclassifications-from-bi-encoder-model">Fixing misclassifications from bi-encoder model</a></li>
+<li><a href="#fixing-misclassifications-from-use-qa-model">Fixing misclassifications from use-qa model</a></li>
 </ul>
 <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
 <p>Sometimes we will run into cases where we trained the utterances with one of the model for example using the bi-encoder or use-qa and there is misclassification. We will go through how we can solve each of those in this section.</p>
@@ -156,52 +150,31 @@
 </ul>
 <p>If you navigate to the <code>/data/clf_train.json/</code></p>
 <p>Try your best to avoid training data like these add more diverse data to the dataset.</p>
-<pre><code>
-{
-
+<pre><code>{
     &quot;order&quot;: [
-
     &quot;i want a cheeseburger&quot;,
-
     &quot;i need a cheeseburger&quot;,
-
     &quot;want a cheeseburger&quot;,
-
     &quot;I want burger&quot;,
-
   ]
-
 }
-
 </code></pre>
 <ul>
 <li><strong>label is not specific enough</strong>: Most time it's either the label is vague or label does not extend for a wider scope. I'll explain this a bit more through the example below</li>
 </ul>
 <p>If you navigate to the <code>/data/clf_train.json/</code></p>
 <p>The word <code>order</code> in this case is the label. Sometimes all you need is to add an extra word to the label or remove, be more specific and it will increase the chances for being classified to the correct label. In this case if you want it to classify better remove <code>cancel order</code> to <code>cancel</code> and maybe it will work better rather than making most of the utterances classify to <code>order</code>. Simple changes like that could work miracles.</p>
-<pre><code>
-{
-
+<pre><code>{
     &quot;order&quot;: [
-
     &quot;i want a cheeseburger&quot;,
-
     &quot;i need a cheeseburger&quot;,
-
     &quot;want a cheeseburger&quot;,
-
     &quot;I want burger&quot;,
-
   ],
-
   &quot;cancel order&quot;: [
-
   &quot;cancel the order please&quot;
-
   ]
-
 }
-
 </code></pre>
 <ul>
 <li><strong>missing diverse dataset</strong>: In this case you will have to go to the dataset and just add more training data with have more different strutural utterances for the label. Sometimes you need to add longer utterances, shorter utterances and etc. Most times you might have to go to the other dataset and see if there is conflicting utterances and delete and replace. These minor things can drastically change the accuracy.</li>
@@ -210,21 +183,13 @@
 <p>This is relatively easy since there is minimal training data required.</p>
 <p>Navigate to <code>/data/clf_labels.json/</code></p>
 <p>If you look below sometimes the use qa would misclassify utterances that is meant to label <code>no</code> to <code>greetings</code>. Try changing up the label <code>no</code> to <code>agree</code> and <code>yes</code> to <code>disagree</code> . Simple changes like these will increase your chances for utterances to be classified better than orders. Even adding more words can also increase the chance of it classifying a larger dataset accurately for example instead of removing label <code>no</code> to <code>no disagree</code> can largely increase accuracy. Just change around these and test it to a large dataset and you will see better results.</p>
-<pre><code>
-[
-
+<pre><code>[
     &quot;greetings&quot;,
-
     &quot;bye&quot;,
-
     &quot;order&quot;,
-
     &quot;yes&quot;,
-
     &quot;no&quot;
-
 ]
-
 </code></pre>
 
                     </main>

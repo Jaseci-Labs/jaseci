@@ -137,17 +137,19 @@
                         <h2 id="getting-started-canonicai"><a class="header" href="#getting-started-canonicai">Getting Started CanoniCAI</a></h2>
 <h5 id="clone-canoncai-repo-using-httpsgithubcommarsninjajac_convai"><a class="header" href="#clone-canoncai-repo-using-httpsgithubcommarsninjajac_convai">Clone CanonCAI repo using: https://github.com/marsninja/jac_convAI</a></h5>
 <ul>
-<li>Registering the sentinel by using this command: </li>
+<li>
+<p>Registering the sentinel by using this command: 
+<code>sentinel register -set_active true -mode ir main.jir</code></p>
+</li>
+<li>
+<p>Then create the graph by using this command:
+<code>graph create -set_active true</code></p>
+</li>
+<li>
+<p>Then initialize the entire application by using:
+<code>walker run init</code> </p>
+</li>
 </ul>
-<p><code>sentinel register -set_active true -mode ir main.jir</code></p>
-<ul>
-<li>Then create the graph by using this command:</li>
-</ul>
-<p><code>graph create -set_active true</code></p>
-<ul>
-<li>Then initialize the entire application by using:</li>
-</ul>
-<p><code>walker run init</code> </p>
 <h2 id="explanation-of-walkers-in-canonicai"><a class="header" href="#explanation-of-walkers-in-canonicai">Explanation of Walkers in CanoniCAI</a></h2>
 <ul>
 <li>
@@ -184,18 +186,10 @@
 <h2 id="graph-architecture"><a class="header" href="#graph-architecture">Graph Architecture</a></h2>
 <h4 id="there-are-4-architectures-of-the-graph"><a class="header" href="#there-are-4-architectures-of-the-graph">There are 4 architectures of the graph.</a></h4>
 <ul>
-<li>
-<p>User Management</p>
-</li>
-<li>
-<p>Conversational States</p>
-</li>
-<li>
-<p>Faq Architecture</p>
-</li>
-<li>
-<p>AI Model Management</p>
-</li>
+<li>User Management</li>
+<li>Conversational States</li>
+<li>Faq Architecture</li>
+<li>AI Model Management</li>
 </ul>
 <h4 id="the-user-management"><a class="header" href="#the-user-management">The User Management</a></h4>
 <p>This is actually straightforward, this state allows us to create and manage users in the entire application alongside with storing the last conversational state of each user.</p>
@@ -214,39 +208,19 @@
 <h2 id="what-node-actions-each-state-has-and-how-are-they-triggered-by-the-walkers"><a class="header" href="#what-node-actions-each-state-has-and-how-are-they-triggered-by-the-walkers">What node actions each state has and how are they triggered by the walkers?</a></h2>
 <h4 id="state-node"><a class="header" href="#state-node">State Node</a></h4>
 <ul>
-<li>
-<p><strong>Listen</strong>: This node action is responsible for saving results to the walker context. It performs the NLU to analyze the question.</p>
-</li>
-<li>
-<p><strong>Plan</strong>: Based on the NLU result, this decides which state the walker should go next.</p>
-</li>
-<li>
-<p><strong>Take</strong>: Allows the walker to travel to the destination state</p>
-</li>
-<li>
-<p><strong>Think</strong>: The walker is now at the state corresponding to the question asked by the user and this is where State-specific logic is done through ::business_logic</p>
-</li>
-<li>
-<p><strong>Speak</strong>: Construct a response to return to the user</p>
-</li>
-<li>
-<p><strong>Cleanup</strong>: Save any context you wish to retain for the future conversation turns for example it saves the last thing you spoke to the AI and it also is responsible for Post-response wrap-up.</p>
-</li>
+<li><strong>Listen</strong>: This node action is responsible for saving results to the walker context. It performs the NLU to analyze the question.</li>
+<li><strong>Plan</strong>: Based on the NLU result, this decides which state the walker should go next.</li>
+<li><strong>Take</strong>: Allows the walker to travel to the destination state</li>
+<li><strong>Think</strong>: The walker is now at the state corresponding to the question asked by the user and this is where State-specific logic is done through ::business_logic</li>
+<li><strong>Speak</strong>: Construct a response to return to the user</li>
+<li><strong>Cleanup</strong>: Save any context you wish to retain for the future conversation turns for example it saves the last thing you spoke to the AI and it also is responsible for Post-response wrap-up.</li>
 </ul>
 <h4 id="faq-state-node"><a class="header" href="#faq-state-node">FAQ State Node</a></h4>
 <ul>
-<li>
-<p><strong>Seek_answer</strong>: based on all the faq nodes that is saved in the graph it will choose the best one that it closest to the original question</p>
-</li>
-<li>
-<p><strong>Init_answer_states</strong>: Based on a file of faq answers it will create nodes in the graph with the answers and its embeddings.</p>
-</li>
-<li>
-<p><strong>Read_url</strong>: read the website and then returns a summarized version of it in which each important sentence will be created as a node on the faq state.</p>
-</li>
-<li>
-<p><strong>Clean_answer_db</strong>: Delete all faq answer state nodes</p>
-</li>
+<li><strong>Seek_answer</strong>: based on all the faq nodes that is saved in the graph it will choose the best one that it closest to the original question</li>
+<li><strong>Init_answer_states</strong>: Based on a file of faq answers it will create nodes in the graph with the answers and its embeddings.</li>
+<li><strong>Read_url</strong>: read the website and then returns a summarized version of it in which each important sentence will be created as a node on the faq state.</li>
+<li><strong>Clean_answer_db</strong>: Delete all faq answer state nodes</li>
 </ul>
 <h4 id="faq-answer-state"><a class="header" href="#faq-answer-state">Faq Answer State</a></h4>
 <ul>
@@ -254,35 +228,21 @@
 </ul>
 <h4 id="user-state"><a class="header" href="#user-state">User State</a></h4>
 <ul>
-<li>
-<p><strong>Start_conv</strong>: It collects the user context and starts to save the last conversation state</p>
-</li>
-<li>
-<p><strong>Update_with_conv</strong>: Updates the user context everytime maintainer walker gets called.</p>
-</li>
+<li><strong>Start_conv</strong>: It collects the user context and starts to save the last conversation state</li>
+<li><strong>Update_with_conv</strong>: Updates the user context everytime maintainer walker gets called.
+init_user : it collects all the user data from the api</li>
 </ul>
-<p>init_user : it collects all the user data from the api</p>
 <h4 id="user-directory-state"><a class="header" href="#user-directory-state">User Directory State</a></h4>
 <ul>
 <li><strong>Init_users</strong>: maps the correct user based on the user id and if it's a new user it creates that user.</li>
 </ul>
 <h4 id="ai-model-state"><a class="header" href="#ai-model-state">AI Model State</a></h4>
 <ul>
-<li>
-<p><strong>Load_model</strong>: load an ai model that was already trained</p>
-</li>
-<li>
-<p><strong>Train_model</strong>: teaches an ai model</p>
-</li>
-<li>
-<p><strong>Save_model</strong>: save the existing model</p>
-</li>
-<li>
-<p><strong>Set_pretrained_model</strong>: switch between models that was already created and saved</p>
-</li>
-<li>
-<p><strong>Infer</strong>: test out the model</p>
-</li>
+<li><strong>Load_model</strong>: load an ai model that was already trained</li>
+<li><strong>Train_model</strong>: teaches an ai model</li>
+<li><strong>Save_model</strong>: save the existing model</li>
+<li><strong>Set_pretrained_model</strong>: switch between models that was already created and saved</li>
+<li><strong>Infer</strong>: test out the model</li>
 </ul>
 <h2 id="how-to-build-upon-canoncai-for-your-conversational-ai-use-cases"><a class="header" href="#how-to-build-upon-canoncai-for-your-conversational-ai-use-cases">How to build upon canonCAI for your conversational AI use cases</a></h2>
 <p>I have build out a simple KFC application which I will be running you through. After running you through this application you should be able to understand how to build a simple conversation AI using canoniCAI.</p>

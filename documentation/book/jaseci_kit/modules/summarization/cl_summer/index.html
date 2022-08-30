@@ -137,28 +137,18 @@
                         <h1 id="summarizer-cl_summer"><a class="header" href="#summarizer-cl_summer"><strong>Summarizer (<code>cl_summer</code>)</strong></a></h1>
 <p>Module <code>cl_summer</code> uses the <code>sumy summarizer</code> to extract summary from text.</p>
 <ol>
-<li>
-<p>Import <a href="#1-import-summarizer-cl_summer-module-in-jac"><code>cl_summer</code></a> module in jac</p>
-</li>
-<li>
-<p><a href="#2-summarizer">Summarizer</a></p>
-</li>
+<li>Import <a href="#1-import-summarizer-cl_summer-module-in-jac"><code>cl_summer</code></a> module in jac</li>
+<li><a href="#2-summarizer">Summarizer</a></li>
 </ol>
 <h1 id="walk-through"><a class="header" href="#walk-through"><strong>Walk through</strong></a></h1>
 <h2 id="1-import-summarizer-cl_summer-module-in-jac"><a class="header" href="#1-import-summarizer-cl_summer-module-in-jac"><strong>1. Import Summarizer (<code>cl_summer</code>) module in jac</strong></a></h2>
 <ol>
-<li>
-<p>For executing jaseci Open terminal and run follow command.</p>
-<pre><code>
-jsctl -m
-
+<li>For executing jaseci Open terminal and run follow command.
+<pre><code>jsctl -m
 </code></pre>
 </li>
-<li>
-<p>Load cl_summer module in jac by command</p>
-<pre><code>
-actions load module jaseci_kit.cl_summer
-
+<li>Load cl_summer module in jac by command
+<pre><code>actions load module jaseci_kit.cl_summer
 </code></pre>
 </li>
 </ol>
@@ -173,47 +163,29 @@ actions load module jaseci_kit.cl_summer
 </li>
 <li>
 <p>Create node model_dir and <code>summarizer</code> in <code>summarizer.jac</code> file.</p>
-<pre><code>
-node model_dir;
-
+<pre><code>node model_dir;
 node summarizer{};
-
 </code></pre>
 </li>
 <li>
 <p>Initializing node <code>summarizer</code> and import <code>cl_summer.summarize</code> ability inside node <code>summarizer</code>.</p>
-<pre><code>
-# import ability
-
+<pre><code># import ability
 can cl_summer.summarize;
-
 </code></pre>
 </li>
 <li>
 <p>Initialize module <code>summarize</code> inside <code>summarizer</code> node.</p>
-<pre><code class="language-python">
-# summarizer
-
+<pre><code class="language-python"># summarizer
 can summarize with summarizer entry{
-
     data = file.load_json(visitor.data);
-
     
-
     report cl_summer.summarize(
-
         text = data[&quot;text&quot;],
-
         url = data[&quot;url&quot;],
-
         sent_count = data[&quot;sent_count&quot;],
-
         summarizer_type = data[&quot;summarizer_type&quot;]
-
         );      
-
 }
-
 </code></pre>
 <p><code>summarize</code>: to get the extractive summary of the text in the given number of sentence counts .</p>
 <p><strong>Parameter details</strong></p>
@@ -221,233 +193,128 @@ can summarize with summarizer entry{
 <li>
 <p><strong>Input Data</strong></p>
 <p><strong>data.json</strong> file</p>
-<pre><code>
-{
-
+<pre><code>{
     &quot;text&quot;: &quot;There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and   rude. The King of England was at war with him and had led a great army into Scotland to drive him out of the land. Battle after battle had been fought. Six times Bruce had led his brave little army against his foes and six times his men had been beaten and driven into flight. At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains. One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him. He was tired and unhappy. He was ready to give up all hope. It seemed to him that there was no use for him to try to do anything more. As he lay thinking, he saw a spider over his head making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. 'Poor thing,' said Bruce: 'you, too, know what it is to fail.', But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as, he watched her swing herself out upon the slender line. Would she fail again? No! The thread was carried safely to the beam and fastened there.&quot;,
-
     &quot;url&quot;: &quot;none&quot;,
-
     &quot;sent_count&quot;: 5,
-
     &quot;summarizer_type&quot;: &quot;LsaSummarizer&quot;
-
 }
-
 </code></pre>
 <ul>
-<li>
-<p><code>text(String)</code>: text the contain the entire context</p>
-</li>
-<li>
-<p><code>url(String)</code>: the link to the webpage</p>
-</li>
-<li>
-<p><code>sent_count(int)</code>: number of sentence you want in the summary</p>
-</li>
-<li>
-<p><code>summarizer_type(String)</code>: name of the summarizer type, available options are:</p>
+<li><code>text(String)</code>: text the contain the entire context</li>
+<li><code>url(String)</code>: the link to the webpage</li>
+<li><code>sent_count(int)</code>: number of sentence you want in the summary</li>
+<li><code>summarizer_type(String)</code>: name of the summarizer type, available options are:
 <ul>
-<li>
-<p>LsaSummarizer</p>
-</li>
-<li>
-<p>LexRankSummarizer</p>
-</li>
-<li>
-<p>LuhnSummarizer</p>
-</li>
+<li>LsaSummarizer</li>
+<li>LexRankSummarizer</li>
+<li>LuhnSummarizer</li>
 </ul>
 </li>
 </ul>
 </li>
 <li>
-<p><strong>Output</strong></p>
+<p><strong>Output</strong>
+List of Sentences that best summarizes the context</p>
 </li>
 </ul>
-<p>List of Sentences that best summarizes the context</p>
 </li>
 <li>
 <p>Adding edge name of <code>summ_model</code> in <code>summarizer.jac</code> file for connecting nodes inside graph.</p>
-<pre><code>
-# adding edge
-
+<pre><code># adding edge
 edge summ_model {
-
     has model_type;
-
 }
-
 </code></pre>
 </li>
 <li>
 <p>Adding graph name of <code>summ_graph</code> for initializing node.</p>
-<pre><code class="language-python">
-# adding graph
-
+<pre><code class="language-python"># adding graph
 graph summ_graph {
-
     has anchor summ_model_dir;
-
     spawn {
-
         summ_model_dir = spawn node::model_dir;
-
         summarizer_node = spawn node::summarizer;
-
         summ_model_dir -[summ_model(model_type=&quot;summarizer&quot;)]-&gt; summarizer_node;
-
     }
-
 }
-
 </code></pre>
 </li>
 <li>
 <p>Initializing walker init for calling graph.</p>
-<pre><code>
-walker init {
-
+<pre><code>walker init {
     root {
-
     spawn here --&gt; graph::summ_graph; 
-
     }
-
 }
-
 </code></pre>
 </li>
 <li>
 <p>Creating walker name of <code>summarizer</code> for getting parameter from context or default and calling ability <code>summarize</code>.</p>
-<pre><code class="language-python">
-# declaring walker for summerize text
-
+<pre><code class="language-python"># declaring walker for summerize text
 walker summarizer{
-
     has data=&quot;data.json&quot;;
 
-
-
     root {
-
         take --&gt; node::model_dir;
-
     }
-
     model_dir {
-
         take --&gt;;
-
     }
-
 }
-
 </code></pre>
 <p><strong>Final summarizer.jac program</strong></p>
-<pre><code class="language-python">
-node model_dir;
-
+<pre><code class="language-python">node model_dir;
 node summarizer{
-
     # import ability
-
     can cl_summer.summarize;
 
-
-
     # summarizer
-
     can summarize with summarizer entry{
-
         data = file.load_json(visitor.data);
-
         
-
         report cl_summer.summarize(
-
             text = data[&quot;text&quot;],
-
             url = data[&quot;url&quot;],
-
             sent_count = data[&quot;sent_count&quot;],
-
             summarizer_type = data[&quot;summarizer_type&quot;]
-
             );      
-
     }
-
 }
-
-
 
 # adding edge
-
 edge summ_model {
-
     has model_type;
-
 }
-
-
 
 # adding graph
-
 graph summ_graph {
-
     has anchor summ_model_dir;
-
     spawn {
-
         summ_model_dir = spawn node::model_dir;
-
         summarizer_node = spawn node::summarizer;
-
         summ_model_dir -[summ_model(model_type=&quot;summarizer&quot;)]-&gt; summarizer_node;
-
     }
-
 }
-
-
 
 # declaring init walker
-
 walker init {
-
     root {
-
     spawn here --&gt; graph::summ_graph; 
-
     }
-
 }
 
-
-
 # declaring walker for summerize text
-
 walker summarizer{
-
     has data=&quot;data.json&quot;;
 
-
-
     root {
-
         take --&gt; node::model_dir;
-
     }
-
     model_dir {
-
         take --&gt;;
-
     }
-
 }    
-
 </code></pre>
 </li>
 </ol>
@@ -457,47 +324,31 @@ walker summarizer{
 <ul>
 <li>
 <p>Execute the follow command for Build <code>summarizer.jac</code></p>
-<pre><code>
-jac build summarizer.jac
-
+<pre><code>jac build summarizer.jac
 </code></pre>
 </li>
 <li>
 <p>Execute the follow command to Activate sentinal</p>
-<pre><code>
-sentinel set -snt active:sentinel -mode ir summarizer.jir
-
+<pre><code>sentinel set -snt active:sentinel -mode ir summarizer.jir
 </code></pre>
 </li>
 <li>
 <p>Execute the walker <code>summarizer</code> with default parameter for <code>summarizer(cl_summer)</code> module by following command</p>
-<pre><code>
-walker run summarizer
-
+<pre><code>walker run summarizer
 </code></pre>
 </li>
 <li>
 <p>After executing walker <code>summarizer</code> result data will show on console.</p>
 <p><strong>Result</strong></p>
-<pre><code>
- &quot;report&quot;: [
-
+<pre><code> &quot;report&quot;: [
             [
-
             &quot;The King of England was at war with him and had led a great army into Scotland to drive him out of the land.&quot;,
-
             &quot;At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains.&quot;,
-
             &quot;One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him.&quot;,
-
             &quot;As he lay thinking, he saw a spider over his head making ready to weave her web.&quot;,
-
             &quot;Bruce almost forgot his own troubles as, he watched her swing herself out upon the slender line.&quot;
-
             ]
-
         ]
-
 </code></pre>
 </li>
 </ul>

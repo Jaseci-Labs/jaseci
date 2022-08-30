@@ -137,38 +137,43 @@
                         <h1 id="jaseci-kit"><a class="header" href="#jaseci-kit">Jaseci Kit</a></h1>
 <p>Jaseci Kit is a collection of state-of-the-art machine learning models and useful tools that may be used in your application development.</p>
 <h2 id="encoders"><a class="header" href="#encoders">Encoders</a></h2>
-<p>| Module      | Model Name    | Example                            | Type                    | Status       | Description                                                 | Resources                                 |</p>
-<p>| ----------- | ------------- | ---------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |</p>
-<p>| <code>use_enc</code>   | USE Encoder   | <a href="modules/encoders/use_enc/README.html">Link</a>       | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | <a href="https://arxiv.org/abs/1803.11175">Paper</a> |</p>
-<p>| <code>use_qa</code>    | USE QA        | <a href="modules/encoders/use_qa/README.html">Link</a>             | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&amp;A data corpus     | <a href="https://arxiv.org/abs/1803.11175">Paper</a> |</p>
-<p>| <code>fast_enc</code>  | FastText      | <a href="modules/encoders/fast_enc/README.html">Link</a> | Training req.           | Ready        | FastText Text Classifier                                    | <a href="https://arxiv.org/abs/1712.09405">Paper</a> |</p>
-<p>| <code>bi_enc</code>    | Bi-encoder    | <a href="modules/encoders/bi_enc/README.html">Link</a>         | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | <a href="https://arxiv.org/abs/1803.11175">Paper</a> |</p>
-<p>| <code>poly_enc</code>  | Poly-encoder  |                                    | Training req./Zero-shot | Experimental | Poly Encoder                                                | <a href="https://arxiv.org/abs/1905.01969">Paper</a> |</p>
-<p>| <code>cross_enc</code> | Cross-encoder |                                    | Training req./Zero-shot | Experimental | Cross Encoder                                               | <a href="https://arxiv.org/abs/1905.01969">Paper</a> |</p>
+<div class="table-wrapper"><table><thead><tr><th>Module</th><th>Model Name</th><th>Example</th><th>Type</th><th>Status</th><th>Description</th><th>Resources</th></tr></thead><tbody>
+<tr><td><code>use_enc</code></td><td>USE Encoder</td><td><a href="modules/encoders/use_enc/README.html">Link</a></td><td>Zero-shot</td><td>Ready</td><td>Sentence-level embedding pre-trained on general text corpus</td><td><a href="https://arxiv.org/abs/1803.11175">Paper</a></td></tr>
+<tr><td><code>use_qa</code></td><td>USE QA</td><td><a href="modules/encoders/use_qa/README.html">Link</a></td><td>Zero-shot</td><td>Ready</td><td>Sentence-level embedding pre-trained on Q&amp;A data corpus</td><td><a href="https://arxiv.org/abs/1803.11175">Paper</a></td></tr>
+<tr><td><code>fast_enc</code></td><td>FastText</td><td><a href="modules/encoders/fast_enc/README.html">Link</a></td><td>Training req.</td><td>Ready</td><td>FastText Text Classifier</td><td><a href="https://arxiv.org/abs/1712.09405">Paper</a></td></tr>
+<tr><td><code>bi_enc</code></td><td>Bi-encoder</td><td><a href="modules/encoders/bi_enc/README.html">Link</a></td><td>Training req./Zero-shot</td><td>Ready</td><td>Dual sentence-level encoders</td><td><a href="https://arxiv.org/abs/1803.11175">Paper</a></td></tr>
+<tr><td><code>poly_enc</code></td><td>Poly-encoder</td><td></td><td>Training req./Zero-shot</td><td>Experimental</td><td>Poly Encoder</td><td><a href="https://arxiv.org/abs/1905.01969">Paper</a></td></tr>
+<tr><td><code>cross_enc</code></td><td>Cross-encoder</td><td></td><td>Training req./Zero-shot</td><td>Experimental</td><td>Cross Encoder</td><td><a href="https://arxiv.org/abs/1905.01969">Paper</a></td></tr>
+</tbody></table>
+</div>
 <h2 id="entity"><a class="header" href="#entity">Entity</a></h2>
-<p>| Module                | Model Name      | Example                                               | Type           | Status       | Description                                                       | Resources                                                                                               |</p>
-<p>| --------------------- | --------------- | ----------------------------------------------------- | -------------- | ------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |</p>
-<p>| <code>ent_ext</code>/ <code>lstm_ner</code> | Flair NER       | <a href="modules/entity_utils/flair_ner/README.html">Link</a>                    | Training req.  | Ready        | Entity extraction using the FLAIR NER framework                   |                                                                                                         |</p>
-<p>| <code>tfm_ner</code>             | Transformer NER | <a href="modules/entity_utils/tfm_ner/README.html">Link</a> | Training req.  | Ready        | Token classification on Transformer models, can be used for NER   | <a href="https://huggingface.co/docs/transformers/tasks/token_classification#token-classification">Huggingface</a> |</p>
-<p>| <code>lstm_ner</code>            | LSTM NER        |                                                       | Traininig req. | Experimental | Entity extraction/Slot filling via Long-short Term Memory Network |                                                                                                         |</p>
+<div class="table-wrapper"><table><thead><tr><th>Module</th><th>Model Name</th><th>Example</th><th>Type</th><th>Status</th><th>Description</th><th>Resources</th></tr></thead><tbody>
+<tr><td><code>ent_ext</code>/ <code>lstm_ner</code></td><td>Flair NER</td><td><a href="modules/entity_utils/flair_ner/README.html">Link</a></td><td>Training req.</td><td>Ready</td><td>Entity extraction using the FLAIR NER framework</td><td></td></tr>
+<tr><td><code>tfm_ner</code></td><td>Transformer NER</td><td><a href="modules/entity_utils/tfm_ner/README.html">Link</a></td><td>Training req.</td><td>Ready</td><td>Token classification on Transformer models, can be used for NER</td><td><a href="https://huggingface.co/docs/transformers/tasks/token_classification#token-classification">Huggingface</a></td></tr>
+<tr><td><code>lstm_ner</code></td><td>LSTM NER</td><td></td><td>Traininig req.</td><td>Experimental</td><td>Entity extraction/Slot filling via Long-short Term Memory Network</td><td></td></tr>
+</tbody></table>
+</div>
 <h2 id="summarization"><a class="header" href="#summarization">Summarization</a></h2>
-<p>| Module      | Model Name | Example                         | Type             | Status | Description                                  | Resources                                                                                                    |</p>
-<p>| ----------- | ---------- | ------------------------------- | ---------------- | ------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |</p>
-<p>| <code>cl_summer</code> | Summarizer | <a href="modules/summarization/cl_summer/README.html">Link</a>    | No Training req. | Ready  | Extractive Summarization using Sumy          | <a href="https://miso-belica.github.io/sumy/">Doc.</a>                                                                  |</p>
-<p>| <code>t5_sum</code>    | Summarizer | <a href="modules/summarization/t5_sum/README.html">Link</a> | No Training req. | Ready  | Abstractive Summarization using the T5 Model | <a href="https://huggingface.co/docs/transformers/model_doc/t5">Doc.</a>, <a href="https://arxiv.org/pdf/1910.10683.pdf">Paper</a> |</p>
+<div class="table-wrapper"><table><thead><tr><th>Module</th><th>Model Name</th><th>Example</th><th>Type</th><th>Status</th><th>Description</th><th>Resources</th></tr></thead><tbody>
+<tr><td><code>cl_summer</code></td><td>Summarizer</td><td><a href="modules/summarization/cl_summer/README.html">Link</a></td><td>No Training req.</td><td>Ready</td><td>Extractive Summarization using Sumy</td><td><a href="https://miso-belica.github.io/sumy/">Doc.</a></td></tr>
+<tr><td><code>t5_sum</code></td><td>Summarizer</td><td><a href="modules/summarization/t5_sum/README.html">Link</a></td><td>No Training req.</td><td>Ready</td><td>Abstractive Summarization using the T5 Model</td><td><a href="https://huggingface.co/docs/transformers/model_doc/t5">Doc.</a>, <a href="https://arxiv.org/pdf/1910.10683.pdf">Paper</a></td></tr>
+</tbody></table>
+</div>
 <h2 id="text-processing"><a class="header" href="#text-processing">Text Processing</a></h2>
-<p>| Module     | Model Name     | Example                          | Type             | Status      | Description                           | Resources                                                           |</p>
-<p>| ---------- | -------------- | -------------------------------- | ---------------- | ----------- | ------------------------------------- | ------------------------------------------------------------------- |</p>
-<p>| <code>text_seg</code> | Text Segmenter | <a href="modules/text_processing/text_seg/README.html">Link</a> | No Training req. | Experimetal | Topical Change Detection in Documents | <a href="https://huggingface.co/dennlinger/roberta-cls-consec">Huggingface</a> |</p>
+<div class="table-wrapper"><table><thead><tr><th>Module</th><th>Model Name</th><th>Example</th><th>Type</th><th>Status</th><th>Description</th><th>Resources</th></tr></thead><tbody>
+<tr><td><code>text_seg</code></td><td>Text Segmenter</td><td><a href="modules/text_processing/text_seg/README.html">Link</a></td><td>No Training req.</td><td>Experimetal</td><td>Topical Change Detection in Documents</td><td><a href="https://huggingface.co/dennlinger/roberta-cls-consec">Huggingface</a></td></tr>
+</tbody></table>
+</div>
 <h2 id="object-detection"><a class="header" href="#object-detection">Object Detection</a></h2>
-<p>| Module     | Model Name     | Example                          | Type             | Status      | Description                           | Resources                                                           |</p>
-<p>| ---------- | -------------- | -------------------------------- | ---------------- | ----------- | ------------------------------------- | ------------------------------------------------------------------- |</p>
-<p>| <code>yolo_v5</code> | Object Recognition | <a href="modules/object_detection/yolo_v5/README.html">Link</a> | Training req. | Ready | 'You only look once', is an object detection algorithm that divides images into a grid system | <a href="https://docs.ultralytics.com/">Documentation</a> |</p>
+<div class="table-wrapper"><table><thead><tr><th>Module</th><th>Model Name</th><th>Example</th><th>Type</th><th>Status</th><th>Description</th><th>Resources</th></tr></thead><tbody>
+<tr><td><code>yolo_v5</code></td><td>Object Recognition</td><td><a href="modules/object_detection/yolo_v5/README.html">Link</a></td><td>Training req.</td><td>Ready</td><td>'You only look once', is an object detection algorithm that divides images into a grid system</td><td><a href="https://docs.ultralytics.com/">Documentation</a></td></tr>
+</tbody></table>
+</div>
 <h2 id="non-ai-tools"><a class="header" href="#non-ai-tools">Non-AI Tools</a></h2>
-<p>| Module    | Model Name    | Example                        | Status | Description                                | Resources                                        |</p>
-<p>| --------- | ------------- | ------------------------------ | ------ | ------------------------------------------ | ------------------------------------------------ |</p>
-<p>| <code>pdf_ext</code> | PDF Extractor | <a href="modules/non_ai/pdf_ext/README.html">Link</a> | Ready  | Extract content from a PDF file via PyPDF2 | <a href="https://pypdf2.readthedocs.io/en/latest/">Doc.</a> |</p>
-
+<div class="table-wrapper"><table><thead><tr><th>Module</th><th>Model Name</th><th>Example</th><th>Status</th><th>Description</th><th>Resources</th></tr></thead><tbody>
+<tr><td><code>pdf_ext</code></td><td>PDF Extractor</td><td><a href="modules/non_ai/pdf_ext/README.html">Link</a></td><td>Ready</td><td>Extract content from a PDF file via PyPDF2</td><td><a href="https://pypdf2.readthedocs.io/en/latest/">Doc.</a></td></tr>
+</tbody></table>
+</div>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">

@@ -135,137 +135,76 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="nodes"><a class="header" href="#nodes">Nodes</a></h1>
-<p>Nodes are the building blocks of any JAC program. Nodes are the destinations of Walkers. Nodes have abilities which are similar to functions in python. These abilities can be triggered when walkers traverse on to or leave the Node or even triggered by the Walker if needed. </p>
-<p>Nodes can be created to serve different functions. All Nodes are linked together in a graph by edges.</p>
+<p>Nodes are the building blocks of any JAC program. Nodes are the destinations of Walkers. Nodes have abilities which are similar to functions in python. These abilities can be triggered when walkers traverse on to or leave the Node or even triggered by the Walker if needed. 
+Nodes can be created to serve different functions. All Nodes are linked together in a graph by edges.</p>
 <p>A node is a representation of an entity.</p>
 <ul>
-<li>
-<p>Nodes are composed of Context and excetuable actions.</p>
-</li>
-<li>
-<p>Nodes accumulate context via a push function, context can be read ass well</p>
-</li>
-<li>
-<p>Nodes can execute a set of actions upon entry and exit.</p>
-</li>
+<li>Nodes are composed of Context and excetuable actions.</li>
+<li>Nodes accumulate context via a push function, context can be read ass well</li>
+<li>Nodes can execute a set of actions upon entry and exit.</li>
 </ul>
 <h2 id="defining-node-attributes"><a class="header" href="#defining-node-attributes">Defining Node Attributes</a></h2>
 <p>Attributes are variables within the node.</p>
-<pre><code class="language-jac">
-node [name of node]{
-
+<pre><code class="language-jac">node [name of node]{
     # to declare an attribute we uses the [has] keyword followed by the attribute name.
-
     has variable;
-
     # to use a module from jaseci kit
-
     can use_qa;
-
 }
-
 </code></pre>
 <h2 id="adding-abilities"><a class="header" href="#adding-abilities">Adding abilities</a></h2>
 <p>Functions in JAC are avalibale to Nodes only. They are called Abilities instead of Functions.These abilities can be activated when a walker travers over a node . Abilities can be triggered when a Walker first traverse over a node , leaves a node , triggered by the walker or when a specific walker enter or leaves a node.</p>
 <p>Abilities in nodes can be declared as followed:</p>
-<pre><code class="language-jac">
-node state {
-
+<pre><code class="language-jac">node state {
   # any walker can use ability
-
   can ability6 {
-
     # execute some code
-
   }
-
   # Walker enters a node 
-
     can ability  entry {
-
         #execute some code.
-
     }
-
     # Walker exits a node 
-
     can ability2  exit {
-
         # execute some code 
-
     }
-
     
-
     # specific walker enters
-
     can ability3 with walker1 entry {
-
         # execute some code
-
     }
-
-
 
     # specific walker exits
-
     can ability4 walker1 exits {
 
-
-
     }
-
-
 
     # only specifc walker can use ability 
-
     can ability5 walker2 {
-
         # code to execute
-
     }
-
 }
-
-
 
 </code></pre>
 <h2 id="inheritance-on-nodes"><a class="header" href="#inheritance-on-nodes">Inheritance on Nodes</a></h2>
 <p>Nodes can inherit abilities and attributes of other nodes. </p>
 <pre><code class="language-jac">
-# parent node 
-
-
-
 node state {
-
     has title;
-
     has message;
-
     has prompts;
-
 }
-
-
 
 # inherits attributes from state node.
-
 node input_state:state {
-
     has input;
-
 }
-
-
 
 # inherits attributes from input_state.
-
-node output_state :input:state{
-
+node output_state :input_state{
     has output;
-
 }
+
 
 </code></pre>
 

@@ -36,7 +36,7 @@ def main():
                 docfile.close()
                 docfile = open(docfileLink, "a")
                 for line in repofileLines:
-                    docfile.write(line + "\n")
+                    docfile.write(line)
 
                 docfile.close()
 

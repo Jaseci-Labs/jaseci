@@ -137,33 +137,20 @@
                         <h1 id="passing-arguments"><a class="header" href="#passing-arguments">Passing Arguments</a></h1>
 <p>You can pass arguments to walkers , Nodes and Edges, in a similar way as passing arguments to functions in python.</p>
 <h3 id="passing-arguments-to-walkers"><a class="header" href="#passing-arguments-to-walkers">Passing Arguments to Walkers</a></h3>
-<pre><code class="language-jac">
-walker talker {
-
+<pre><code class="language-jac">walker talker {
     has name;
-
     has value;
-
-
 
 }
 
-
-
 spawn::talker(name=&quot;Jaseci&quot; ,value = 10);
-
 </code></pre>
 <h3 id="passing-arguments-to-nodes"><a class="header" href="#passing-arguments-to-nodes">Passing Arguments to Nodes</a></h3>
-<pre><code class="language-jac">
-node::calculator(first_number, second_number);
-
+<pre><code class="language-jac">node::calculator(first_number, second_number);
 </code></pre>
 <h3 id="passing-arguments-to-edges"><a class="header" href="#passing-arguments-to-edges">Passing arguments to Edges</a></h3>
-<pre><code class="language-jac">
-# edge named transittion with argument orperation
-
+<pre><code class="language-jac"># edge named transittion with argument orperation
 [transition(operation)]-&gt; node ;
-
 </code></pre>
 
                     </main>

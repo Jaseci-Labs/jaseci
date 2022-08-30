@@ -136,60 +136,33 @@
                     <main>
                         <h1 id="referencing-a-node-in-context"><a class="header" href="#referencing-a-node-in-context">Referencing a Node in Context</a></h1>
 <p>The <code>here</code> keyword is used reference the node the walker is currently on.</p>
-<pre><code class="language-jac">
-walker talker {
-
+<pre><code class="language-jac">walker talker {
     has utterance;
 
-
-
     state {
-
         #the message and prompts attribute of the current node will be printed
-
         std.out(here.message, here.prompts);
-
-
 
         utterance = std.input(&quot;&gt; &quot;);
 
-
-
         if(utterance == &quot;quit&quot;): disengage;
 
-
-
         take -[transition(intent == utterance)]-&gt; node::state else {
-
             take here;
-
         }
-
     }
-
 }
-
-
 
 </code></pre>
 <p>The <code>visitor</code> keyword is used to reference attributes of the walker from the node it is currently on.</p>
-<pre><code class="language-jac">
-node state{
-
+<pre><code class="language-jac">node state{
     has prev_value;
 
-
-
     can getvalue with talker entry {
-
         here.prev_value = visitor.value;
-
         std.out(here.prev_value);
-
     }
-
 }
-
 </code></pre>
 
                     </main>

@@ -137,111 +137,57 @@
                         <h1 id="edges"><a class="header" href="#edges">Edges</a></h1>
 <p>Edges are the links that connect nodes to each other</p>
 <ul>
-<li>
-<p>Edges associate one node with another by way of a uni-directional or bidirectional path definition.</p>
-</li>
-<li>
-<p>Edges are composed of context and executable actions.</p>
-</li>
-<li>
-<p>Edges accumulate context via a push function, context can be read as well.</p>
-</li>
-<li>
-<p>Edges execute a set of actions when traversed.</p>
-</li>
-<li>
-<p>Edges much be aware of the set of HDGDs of which it is a member.</p>
-</li>
-<li>
-<p>Edges crossing HDGD boundaries must trigger higher order HDGD plane edges.</p>
-</li>
+<li>Edges associate one node with another by way of a uni-directional or bidirectional path definition.</li>
+<li>Edges are composed of context and executable actions.</li>
+<li>Edges accumulate context via a push function, context can be read as well.</li>
+<li>Edges execute a set of actions when traversed.</li>
+<li>Edges much be aware of the set of HDGDs of which it is a member.</li>
+<li>Edges crossing HDGD boundaries must trigger higher order HDGD plane edges.</li>
 </ul>
-<pre><code class="language-jac">
-edge [name of edge] {
-
+<pre><code class="language-jac">edge [name of edge] {
     has variable;
-
 }
-
-
 
 </code></pre>
 <h2 id="linking-nodes-together-with-an-edge"><a class="header" href="#linking-nodes-together-with-an-edge">Linking Nodes together with an Edge</a></h2>
 <pre><code class="language-jac">
-
-
 node state {
-
     has context;
-
 }
-
-
 
 edge transition {
-
     has intent ;
-
 }
 
-
-
 graph main {
-
     has anchor main_root ; 
 
-
-
     # create nodes here with the edges linking them.
-
     spawn {
-
         main_root = spawn node:: state(context=&quot;main node&quot;);
 
-
-
         # create node that connects to main_root
-
         node_one = spawn main_root -[transition(intent=&quot;one&quot;)] -&gt; node::state(context=&quot;node one&quot;);
 
-
-
         
-
         # connect node that connects to node_one
-
         node_two  = spawn node_one -[transition(intent=&quot;two&quot;)] -&gt; node::state(context=&quot;node two&quot;);
-
-
 
     }
 
-
-
 }
-
-
 
 </code></pre>
 <h2 id="inheritance-on-edges"><a class="header" href="#inheritance-on-edges">Inheritance on Edges</a></h2>
 <p>Edges can inherit abilities and attributes of other edges.</p>
-<pre><code class="language-jac">
-# parent edge 
-
+<pre><code class="language-jac"># parent edge 
 edge transition {
-
     has transition_next ;
-
 }
-
 # child edge
-
 edge transition_back: transition {
-
     has prev_step ;
-
 }
-
 </code></pre>
 
                     </main>

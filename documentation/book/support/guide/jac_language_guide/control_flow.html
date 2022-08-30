@@ -136,66 +136,37 @@
                     <main>
                         <h1 id="control-flow"><a class="header" href="#control-flow">Control Flow</a></h1>
 <h2 id="select-statement"><a class="header" href="#select-statement">Select Statement</a></h2>
-<pre><code class="language-jac">
-# simple If statement
-
+<pre><code class="language-jac"># simple If statement
 walker init {
-
     x = 3.56;
-
     y = &quot;X is not equal to 3.45&quot;;
 
-
-
     if (x ==3.45) {
-
         std.out(x);
-
     }
-
     elif (x==3.56){
-
         std.out(&quot;it's a match&quot;);
-
     }
-
      else {
-
         std.out(y);
-
     }
-
 }
-
-
 
 </code></pre>
 <p>Other Conditional statements like &lt; , &gt; ,!= , &quot;and&quot; and &quot;or&quot; are also supported.</p>
 <h2 id="for-and-while-loop"><a class="header" href="#for-and-while-loop">For and While loop</a></h2>
 <p>Loops are written similiar to python it run a specific amount of time as in the case of the &quot;For&quot; loop or until a condition is meet as in the case for the &quot;While&quot; loop.</p>
-<pre><code class="language-jac">
-walker init {
-
+<pre><code class="language-jac">walker init {
     # the for loop
-
     for i=0 to i&lt;10 by i+=1:
-
         std.out(i)
 
-
-
     #the while loop
-
     while(x&lt;10){
-
         std.out(x);
-
         x = x +1;
-
     }
-
 }
-
 </code></pre>
 
                     </main>

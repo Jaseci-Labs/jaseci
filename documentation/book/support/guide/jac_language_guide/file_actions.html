@@ -136,60 +136,35 @@
                     <main>
                         <h1 id="file-actions"><a class="header" href="#file-actions">File Actions</a></h1>
 <h3 id="load-file-to-string"><a class="header" href="#load-file-to-string">Load file to string</a></h3>
-<pre><code class="language-jac">
-# Converts file to string , max_chars is set to none by default
-
+<pre><code class="language-jac"># Converts file to string , max_chars is set to none by default
 Testfile = file.load_str(test.txt, max_chars = 1000)
-
 </code></pre>
 <h3 id="load-json-file-to-dictionary"><a class="header" href="#load-json-file-to-dictionary">Load Json file to dictionary</a></h3>
-<pre><code class="language-jac">
-# Loads json from file to dictionary format
-
+<pre><code class="language-jac"># Loads json from file to dictionary format
 TestJson = file.load_json(test.json)
-
 </code></pre>
 <h3 id="string-to-file"><a class="header" href="#string-to-file">String to file</a></h3>
-<pre><code class="language-jac">
-# dumps string in to file
-
+<pre><code class="language-jac"># dumps string in to file
 test = &quot;This is a test of the dump_str method
-
 Testfile = file.dump_str(&quot;text.txt&quot;,test)
-
 </code></pre>
 <h3 id="append-string-to-a-file"><a class="header" href="#append-string-to-a-file">Append string to a file</a></h3>
-<pre><code class="language-jac">
-# appending a string to a file.
-
+<pre><code class="language-jac"># appending a string to a file.
 test = &quot;This is a another test but with  the append_str method
-
 Testfile = file.append_str(str, max_chars = 1000)
-
 </code></pre>
 <h3 id="create-json-file"><a class="header" href="#create-json-file">Create Json File</a></h3>
-<pre><code class="language-jac">
-# dump dictionary in to json file
-
+<pre><code class="language-jac"># dump dictionary in to json file
 test = {
-
     &quot;name&quot;: &quot;test&quot;,
-
     &quot;method&quot; : &quot;dump_json&quot;,
-
     &quot;use&quot; : &quot;dumps dictionary to json file&quot;
-
 }
-
 Testfile = file.dump_json(&quot;text.json&quot;,test)
-
 </code></pre>
 <h3 id="delete-file"><a class="header" href="#delete-file">Delete file</a></h3>
-<pre><code class="language-jac">
-#delete any file 
-
+<pre><code class="language-jac">#delete any file 
 file.delete(&quot;text.txt&quot;)
-
 </code></pre>
 
                     </main>

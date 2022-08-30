@@ -137,109 +137,60 @@
                         <h1 id="request-actions"><a class="header" href="#request-actions">Request Actions</a></h1>
 <p>Jaseci allows for in-code use of common request methods.</p>
 <h3 id="get-request"><a class="header" href="#get-request">Get Request</a></h3>
-<pre><code class="language-jac">
-# make get request 
-
+<pre><code class="language-jac"># make get request 
 # url : string  - url to where the request will be made 
-
 # data : dictionary - data being sent that will be converetd to json.
-
 # header : dicionary -  header data 
-
 response = request.get(url ,data , headers)
-
 </code></pre>
 <h3 id="post-request"><a class="header" href="#post-request">Post Request</a></h3>
-<pre><code class="language-jac">
-# make post request 
-
+<pre><code class="language-jac"># make post request 
 # url : string  - url to where the request will be made 
-
 # data : dictionary - data being sent that will be converetd to json.
-
 # header : dicionary -  header data 
-
 response = request.post(url ,data , headers)
-
 </code></pre>
 <h3 id="put-request"><a class="header" href="#put-request">Put Request</a></h3>
-<pre><code class="language-jac">
-# make put request 
-
+<pre><code class="language-jac"># make put request 
 # url : string  - url to where the request will be made 
-
 # data : dictionary - data being sent that will be converetd to json.
-
 # header : dicionary -  header data 
-
 response = request.put(url ,data , headers)
-
 </code></pre>
 <h3 id="delete-request"><a class="header" href="#delete-request">Delete Request</a></h3>
-<pre><code class="language-jac">
-# make delete request 
-
+<pre><code class="language-jac"># make delete request 
 # url : string  - url to where the request will be made 
-
 # data : dictionary - data being sent that will be converetd to json.
-
 # header : dicionary -  header data 
-
 response = request.delete(url ,data , headers)
-
 </code></pre>
 <h3 id="head-request"><a class="header" href="#head-request">Head Request</a></h3>
-<pre><code class="language-jac">
-# make head request , returns header of  a get request alone
-
+<pre><code class="language-jac"># make head request , returns header of  a get request alone
 # url : string  - url to where the request will be made 
-
 # data : dictionary - data being sent that will be converetd to json.
-
 # header : dicionary -  header data 
-
 response = request.head(url ,data , headers)
-
 </code></pre>
 <h3 id="option-request"><a class="header" href="#option-request">Option Request</a></h3>
-<pre><code class="language-jac">
-# make options request , requests permitted communications options fror a given url or server.
-
+<pre><code class="language-jac"># make options request , requests permitted communications options fror a given url or server.
 # url : string  - url to where the request will be made 
-
 # data : dictionary - data being sent that will be converetd to json.
-
 # header : dicionary -  header data 
-
 response = request.get(url ,data , headers)
-
 </code></pre>
 <h3 id="file-upload"><a class="header" href="#file-upload">File upload</a></h3>
-<pre><code class="language-jac">
-# used to upload a file or files
-
+<pre><code class="language-jac"># used to upload a file or files
 # url : string  - url to where the request will be made 
-
 # file : single base64 encoded file
-
 # files : list of base64 encode files.
-
 # header : dicionary -  header data 
-
 response = request.multipart_base64(url ,file , headers)
-
 </code></pre>
 <h3 id="download-file"><a class="header" href="#download-file">Download File</a></h3>
-<pre><code class="language-jac">
-# url : string  - url to where the request will be made 
-
+<pre><code class="language-jac"># url : string  - url to where the request will be made 
 # header : dicionary -  header data 
-
 # encoding : strign - file format , default is utf-8
-
 downloaded_file = request.file_download_base64(url,header,encoding)
-
-
 
 </code></pre>
 

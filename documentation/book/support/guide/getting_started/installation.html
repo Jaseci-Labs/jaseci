@@ -136,40 +136,26 @@
                     <main>
                         <h1 id="installing-jaseci"><a class="header" href="#installing-jaseci">Installing Jaseci</a></h1>
 <ul>
-<li>
-<p><a href="#installing-on-windows">Installing on Windows</a></p>
-</li>
-<li>
-<p><a href="#installing-on-mac">Installing on Mac</a></p>
-</li>
+<li><a href="#installing-on-windows">Installing on Windows</a></li>
+<li><a href="#installing-on-mac">Installing on Mac</a></li>
 </ul>
 <h2 id="installing-on-windows"><a class="header" href="#installing-on-windows">Installing on Windows</a></h2>
 <h3 id="software-requirements"><a class="header" href="#software-requirements">Software Requirements</a></h3>
 <ul>
-<li>
-<p>Ubuntu 20+</p>
-</li>
-<li>
-<p>python 2.8 +</p>
-</li>
-<li>
-<p>pip package manager</p>
-</li>
+<li>Ubuntu 20+</li>
+<li>python 2.8 +</li>
+<li>pip package manager</li>
 </ul>
 <p>To run commands for Jaseci we need a terminal that accepts bash arguments. We recommend using the Ubuntu terminal that comes as the default with WSL.</p>
 <ol>
 <li>Check if WSL is installed by running the following the Windows powershell terminal :</li>
 </ol>
-<p> ```python</p>
-<p> wsl -l -v</p>
-<p> ```</p>
-<p> This will return  the flavour of the distribution used for WSL. The version column will show the version of WSL.</p>
+<p> <code>python  wsl -l -v  </code>
+ This will return  the flavour of the distribution used for WSL. The version column will show the version of WSL.</p>
 <ol start="2">
 <li>If no version is specified open windows powershell in  adminstrator mode and install WSL by running :</li>
 </ol>
-<pre><code class="language-bash">
-  wsl --install
-
+<pre><code class="language-bash">  wsl --install
 </code></pre>
 <ol start="3">
 <li>Restart your Computer</li>
@@ -179,35 +165,23 @@
 <ol start="5">
 <li>Check version of Python and Pip by running :</li>
 </ol>
-<pre><code>
-python3 --version
-
+<pre><code>python3 --version
 pip3 --version
-
 </code></pre>
 <p>If these packages are installed they will return a version number. Move to step 7 if a version number is present.</p>
 <p>6.Install Python3 and pip3 by running the following:</p>
-<pre><code>
-sudo apt update
-
+<pre><code>sudo apt update
 sudo apt install python3-dev python3-pip
-
 </code></pre>
 <p>7.Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit</p>
-<pre><code>
-pip install jaseci
-
+<pre><code>pip install jaseci
 </code></pre>
-<pre><code>
-pip install jaseci-kit
-
+<pre><code>pip install jaseci-kit
 </code></pre>
 <ol start="8">
 <li>To ensure our installation is working run :</li>
 </ol>
-<pre><code>
-jsctl
-
+<pre><code>jsctl
 </code></pre>
 <p>Once it shows a list of options and commands, you're installation is complete</p>
 <h2 id="installing-on-mac"><a class="header" href="#installing-on-mac">Installing on Mac</a></h2>
@@ -215,35 +189,23 @@ jsctl
 <ol start="5">
 <li>Check the version of Python and Pip by running :</li>
 </ol>
-<pre><code>
-python3 --version
-
+<pre><code>python3 --version
 pip3 --version
-
 </code></pre>
 <p>If these packages are installed they will return a version number. Move to step x if a version number is present.</p>
 <p>6.Install Python3 and pip3 by running the following:</p>
-<pre><code>
-brew update
-
+<pre><code>brew update
 brew install python
-
 </code></pre>
 <p>7.Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit</p>
-<pre><code>
-pip install jaseci
-
+<pre><code>pip install jaseci
 </code></pre>
-<pre><code>
-pip install jaseci-kit
-
+<pre><code>pip install jaseci-kit
 </code></pre>
 <ol start="8">
 <li>To ensure our installation is working run :</li>
 </ol>
-<pre><code>
-jsctl
-
+<pre><code>jsctl
 </code></pre>
 <p>Once it shows a list of options and commands, you're installation is complete.</p>
 <p>Linux Installation</p>
@@ -251,35 +213,23 @@ jsctl
 <ol start="5">
 <li>Check the version of Python and Pip by running :</li>
 </ol>
-<pre><code>
-python3 --version
-
+<pre><code>python3 --version
 pip3 --version
-
 </code></pre>
 <p>If these packages are installed they will return a version number. Move to step x if a version number is present.</p>
 <p>6.Install Python3 and pip3 by running the following:</p>
-<pre><code>
-sudo apt update
-
+<pre><code>sudo apt update
 sudo apt install python3-dev python3-pip
-
 </code></pre>
 <p>7.Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit</p>
-<pre><code>
-pip install jaseci
-
+<pre><code>pip install jaseci
 </code></pre>
-<pre><code>
-pip install jaseci-kit
-
+<pre><code>pip install jaseci-kit
 </code></pre>
 <ol start="8">
 <li>To ensure our installation is working run :</li>
 </ol>
-<pre><code>
-jsctl
-
+<pre><code>jsctl
 </code></pre>
 <p>Once it shows a list of options and commands, your installation is complete.</p>
 

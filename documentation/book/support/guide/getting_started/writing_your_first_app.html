@@ -139,372 +139,193 @@
 <p>Before we begin ensure you have Jaseci and Jaseci Kit installed. If not, see the Installation <a href="&#x27;/installation&#x27;">here</a></p>
 <p>Create a file called graph.jac. Here we are going to create the conversational flow for the chatbot .</p>
 <pre><code class="language-jac">
-
-
 # state is the name of the node
-
 node state {
-
     has title;
-
     has message;
-
     has prompts;
-
 }
 
-
-
 </code></pre>
-<p>Nodes can be thought of as the representation of an entity.</p>
-<p>Nodes are the fundamental unit of  a gaph. These can be considered to be the steps in which the Walker can take.</p>
+<p>Nodes can be thought of as the representation of an entity.
+Nodes are the fundamental unit of  a gaph. These can be considered to be the steps in which the Walker can take.</p>
 <ul>
-<li>
-<p>Nodes are composed of Context and excutable actions.</p>
-</li>
-<li>
-<p>Nodes execute a set of actions upon entry and exit.</p>
-</li>
+<li>Nodes are composed of Context and excutable actions.</li>
+<li>Nodes execute a set of actions upon entry and exit.
+ Here we are creating a <code>node</code> of name &quot;state&quot;
+The <strong>has</strong> keyword is used to declare a variable of the node.</li>
 </ul>
-<p> Here we are creating a <code>node</code> of name &quot;state&quot;</p>
-<p>The <strong>has</strong> keyword is used to declare a variable of the node.</p>
 <pre><code class="language-jac">
-
-
 # state is the name of this node
-
 node state {
-
     has title;
-
     has message;
-
     has prompts;
-
 }
-
-
 
 # transition is the name of this edge
-
 edge transition {
-
     has intent;
-
 }
-
 </code></pre>
-<p>Edges are the link between nodes. They walker will use these edges to determine the next node to traverse to.</p>
-<p>The <strong>has</strong> key word is used to declare the variable &quot;intent&quot;. This &quot;intent&quot; is what the Walker will use to to determine which node to go to next.</p>
+<p>Edges are the link between nodes. They walker will use these edges to determine the next node to traverse to.
+The <strong>has</strong> key word is used to declare the variable &quot;intent&quot;. This &quot;intent&quot; is what the Walker will use to to determine which node to go to next.</p>
 <pre><code class="language-jac">
-
-
 # state is the name of this node
-
 node state {
-
     has title;
-
     has message;
-
     has prompts;
-
 }
-
 # transition is the name of this edge
-
 edge transition {
-
     has intent;
-
 }
-
-
 
 # main_graph is name of the graph
-
 graph main_graph {
 
-
-
     has anchor main_root
-
-
 
 </code></pre>
-<p>The <code>graph</code> is a collection of initialized nodes. </p>
-<p>The <code>has anchor</code> key word is used to identify the root node. The Root node is the node where the walker's traversal begins.</p>
-<p>The <strong>has anchor</strong> key word is used to state the root node. The Root node is the node where the walker's traversal begins.</p>
-<pre><code class="language-jac">
-# state is the name of this node
-
+<p>The <code>graph</code> is a collection of initialized nodes. 
+The <code>has anchor</code> key word is used to identify the root node. The Root node is the node where the walker's traversal begins.
+The <strong>has anchor</strong> key word is used to state the root node. The Root node is the node where the walker's traversal begins.</p>
+<pre><code class="language-jac"># state is the name of this node
 node state {
-
     has title;
-
     has message;
-
     has prompts;
-
 }
-
-
 
 edge transition {
-
     has intent;
-
 }
-
 graph main_graph {
-
-
 
     has anchor main_root
 
-
-
 spawn {
-
      # this is the first node in the graph.
-
      main_root = spawn node::state(
-
         title = &quot;Welcome&quot;,
-
         message = &quot;Welcome to Jaseci Dojo, how can i help?&quot;,
-
         prompts = [&quot;class&quot;,&quot;times&quot;,&quot;prices&quot;,&quot;quit&quot;]
-
     );
-
-
-
 
 
     # this creates a node that goes from main_root to class.
-
     prices = spawn main_root -[transition(intent=&quot;prices&quot;)] -&gt; node::state(
-
         title = &quot;prices&quot;,
-
         message = &quot;Prices Vary based on age&quot;,
-
         prompts = [&quot;12 and younger&quot;, &quot;18 and younger&quot; ,&quot;Older than 18&quot;, &quot;quit&quot;]
-
     );
-
-
 
     # this creates a node from the prices node to here.
-
      prices_12 = spawn prices -[transition(intent=&quot;12 and younger&quot;)] -&gt; node::state(
-
         title = &quot;prices&lt;12&quot;,
-
         message = &quot;Childer under 12 pay $100 per month&quot;,
-
         prompts = [&quot;more prices&quot;, &quot;quit&quot;]
-
     );
 
-
-
     # this create an edge from prices_12 back to prices.
-
      prices_12 -[transition(intent=&quot;more prices&quot;)] -&gt; prices;
 
 
-
-
-
 }
-
-
 
 </code></pre>
-<p><code>spawn</code> is used to create to create child nodes, which is used to design flow of the conversational experience.</p>
-<p>We are able to create additional edges to connnect nodes which which do not share a parent -child relationship. This is shown in the last line.</p>
-<pre><code class="language-jac">
-node state {
-
+<p><code>spawn</code> is used to create to create child nodes, which is used to design flow of the conversational experience.
+We are able to create additional edges to connnect nodes which which do not share a parent -child relationship. This is shown in the last line.</p>
+<pre><code class="language-jac">node state {
     has title;
-
     has message;
-
     has prompts;
-
 }
-
-
-
 
 
 edge transition {
-
     has intent;
-
 }
 
-
-
 graph main_graph {
-
     has anchor main_root;
-
-
 
     spawn {
 
-
-
         main_root = spawn node::state(
-
         title = &quot;Welcome&quot;,
-
         message = &quot;Welcome to Jaseci Dojo, how can i help?&quot;,
-
         prompts = [&quot;class&quot;,&quot;times&quot;,&quot;prices&quot;,&quot;quit&quot;]
-
     );
-
-
 
     prices = spawn main_root -[transition(intent=&quot;prices&quot;)] -&gt; node::state(
-
         title = &quot;prices&quot;,
-
         message = &quot;Prices Vary based on age&quot;,
-
         prompts = [&quot;12 and younger&quot;, &quot;18 and younger&quot; ,&quot;Older than 18&quot;, &quot;quit&quot;]
-
     );
-
-
 
     prices_12 = spawn prices -[transition(intent=&quot;12 and younger&quot;)] -&gt; node::state(
-
         title = &quot;prices&lt;12&quot;,
-
         message = &quot;Childer under 12 pay $100 per month&quot;,
-
         prompts = [&quot;more prices&quot;, &quot;quit&quot;]
-
     );
-
      prices_12 -[transition(intent=&quot;more prices&quot;)] -&gt; prices;
 
-
-
      prices_18 = spawn prices -[transition(intent=&quot;18 and younger&quot;)] -&gt; node::state(
-
         title = &quot;prices&lt;18&quot;,
-
         message = &quot;Childer under 18 pay $110 per month&quot;,
-
         prompts = [&quot;more prices&quot;, &quot;quit&quot;]
-
     );
-
-
 
     prices_18 -[transition(intent=&quot;more prices&quot;)] -&gt; prices;
 
-
-
      pricesabove18 = spawn prices -[transition(intent=&quot;Older than 18&quot;)] -&gt; node::state(
-
         title = &quot;pricesadults&quot;,
-
         message = &quot;Adults over 18 pay $150 per month&quot;,
-
         prompts = [&quot;more prices&quot;,&quot;quit&quot;]
-
     );
-
      pricesabove18 -[transition(intent=&quot;more prices&quot;)] -&gt; prices;
 
 
-
-
-
     class = spawn main_root -[transition(intent=&quot;class&quot;)]-&gt; node::state(
-
         title = &quot;class&quot;,
-
         message = &quot;There are 3 classes per week and you are required to attend a minimum of 2.&quot;,
-
         prompts = [&quot;time&quot;,&quot;days&quot;,&quot;prices&quot;,&quot;quit&quot;]
 
-
-
     );
-
-
-
-
 
 
 
     time = spawn class -[transition(intent=&quot;time&quot;)]-&gt; node::state(
-
         title = &quot;time&quot;,
-
         message = &quot;Classes are from 3 pm to 4 pm&quot;,
-
         prompts = [&quot;other times&quot;,&quot;days&quot;,&quot;quit&quot;]
-
     );
-
-
 
     main_root -[transition(intent=&quot;times&quot;)] -&gt; time;
 
-
-
     other_time = spawn time -[transition(intent=&quot;other times&quot;)]-&gt; node::state(
-
         title = &quot;Other times&quot;,
-
         message =&quot;The clases are at 4 pm to 5 pm but you need at least 4 other students to start&quot;,
-
         prompts = ['days',&quot;quit&quot;]
-
     );
-
-
-
-
-
 
 
 
 
      days = spawn time -[transition(intent=&quot;days&quot;)]-&gt; node::state(
-
         title = &quot;days&quot;,
-
         message =&quot;The classes are on Monday ,Wednesday , Friday&quot;,
-
         prompts = ['time',&quot;quit&quot;]
-
     );
 
 
-
-
-
      other_time - [transition(intent=&quot;days&quot;)] -&gt; days ;
-
      days - [transition(intent=&quot;time&quot;)] -&gt; time ;
 
-
-
     }
-
 }
-
-
 
 </code></pre>
 <p>This last code block we created several nodes and connected them together. To move from node to node we use the intent to sepcify which route to take.</p>
@@ -512,99 +333,55 @@ graph main_graph {
 <ul>
 <li>Walkers traverse the nodes of the graph triggering execution at the node level.</li>
 </ul>
-<p>Now lets create a file called walker.jac</p>
-<p>Here is where we will create  the method for traveral of the graph.</p>
+<p>Now lets create a file called walker.jac
+Here is where we will create  the method for traveral of the graph.</p>
 <pre><code class="language-jac">
-
-
 #here we initialize the walker which we named talker.
-
 walker talker {
-
-
 
     has utterance;
 
-
-
     state {
-
         #prints out the message and prompts variables for the node the walker is currently on
-
         std.out(here.message,here.prompts);
 
-
-
         #here we take the input from the terminal.
-
         utterance =  std.input(&quot;&gt; &quot;);
 
-
-
         #if the user enters &quot;quit&quot; the programs ends.
-
         if(utterance==&quot;quit&quot;): disengage;
 
-
-
         #checks the utterance and determine which node to traverse too.
-
         take -[transition(intent==utterance )] -&gt; node::state else{
-
             take here ;
-
         }
-
     }
 
-
-
 }
-
-
 
 </code></pre>
-<p>The Walker will start from the main root and from the utterance intered it will determine which node to go to next.</p>
-<p>It should be noted the utterance must match the prompts chosen or the walker will not move from the graph.</p>
-<p>Jaseci-kit has features that makes it possible for users to not enter the exact intent but still traverse to the right node.</p>
+<p>The Walker will start from the main root and from the utterance intered it will determine which node to go to next.
+It should be noted the utterance must match the prompts chosen or the walker will not move from the graph.
+Jaseci-kit has features that makes it possible for users to not enter the exact intent but still traverse to the right node.</p>
 <p>Main</p>
 <p>Create a file named main.jac .</p>
-<pre><code class="language-jac">
-# import the graph and walker made earlier.
-
+<pre><code class="language-jac"># import the graph and walker made earlier.
 import {*} with &quot;./graph.jac&quot;;
-
 import {*} with &quot;./walker.jac&quot;;
 
-
-
 # this walker is reponsible for starting the program.
-
 walker init {
 
-
-
     root {
-
         #creates an instant of the graph
-
         spawn here --&gt; graph::main_graph;
 
-
-
         #creates an instance of the walker, talker
-
         spawn  --&gt; walker::talker;
-
     }
 
 
-
-
-
 }
-
-
 
 </code></pre>
 <p>Once we run main.jac we can use the Chatbot. Play around with graph and add your own nodes and link other nodes together to create an even better chatbot.</p>

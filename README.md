@@ -1,10 +1,10 @@
 # Jaseci Official Documentation
 
-[License](LICENSE.md)
-[About this Release](CHANGELOG.md)
-[How to Contribute](support/guide/how_to_contribute.md)
-[Contributors](CONTRIBUTORS.md)
-[Join our Community](https://forum.jaseci.org/)
+- [License](LICENSE.md)
+- [About this Release](CHANGELOG.md)
+- [How to Contribute](support/guide/how_to_contribute.md)
+- [Contributors](CONTRIBUTORS.md)
+- [Join our Community](https://forum.jaseci.org/)
 
 ## Getting Started
 
@@ -20,25 +20,17 @@
 
 - [Language Overview](support/guide/jac_language_guide/jac_language_overview.md)
 - [Grammar](support/guide/jac_language_guide/jac_grammar.md)
-- Keywords
+
 - [Operators](support/guide/jac_language_guide/operators.md)
 - [Control Flow](support/guide/jac_language_guide/control_flow.md)
 - [Collections](support/guide/jac_language_guide/collections.md)
 - [Nodes](support/guide/jac_language_guide/nodes.md)
-    - Defining node attributes
-    - Adding abilities
-    - Using Ineritance on Nodes
+    
 - [Edges](support/guide/jac_language_guide/edges.md)
-    - Defining edge attributes
-    - Adding abilities
-    - Using Ineritance on Edges
+
 - [Graphs](support/guide/jac_language_guide/graphs.md)
-    - Defining a Graph
-    - Adding Nodes and Edges
+   
 - [Walkers](support/guide/jac_language_guide/walkers.md)
-    - Defining walker attributes
-    - Adding abilities
-    - Using Ineritance on Walkers
     - [Traversing a Graph](support/guide/jac_language_guide/traversing_a_graph.md)
     - [Referencing a Node in Context](support/guide/jac_language_guide/referencing_node_context.md)
 - [Passing Arguments](support/guide/jac_language_guide/passing_arguments.md)
@@ -52,21 +44,19 @@
     - [Standard Actions](support/guide/jac_language_guide/standard_actions.md)
     - [Vector Actions](support/guide/jac_language_guide/vector_actions.md)
     - [Jaseci Actions](support/guide/jac_language_guide/jaseci_actions.md) 
-- Error Handling 
-- Writing Unit Tests 
+
 
 ## Samples and Tutorials
 
 - [API Development](examples/api_development/README.md)
-- [CanoniCAI](examples/canoniCAI/README.md)
-    - [Installation and Overview](examples/canoniCAI/README.md)
+- [CanoniCAI](examples/canoniCAI/readme.md)
+    - [Installation and Overview](examples/canoniCAI/readme.md)
     - [Adding a Competency](examples/canoniCAI/documentation/add_competency.md)
     - [Adding a Follow up State](examples/canoniCAI/documentation/add_followup_state.md)
     - [Building FAQ States](examples/canoniCAI/documentation/add_remove_data_from_faq_state.md)
     - [Fixing Utterances](examples/canoniCAI/documentation/fixing_utterances.md)
     - [Setting Up a Custom Module](examples/canoniCAI/documentation/jaseci_actions_load_local.md)
 - [NER Examples](examples/ner_examples/README.md)
-- JPrime 
 
 
 ## Jaseci Library Reference
@@ -92,14 +82,7 @@
         - [PDF Extractor](jaseci_kit/modules/non_ai/pdf_ext/README.md)
 
 - [Jaseci Core](jaseci_core/README.md)
-    - Actor
-    - API
-    - Attr
-    - Element
-    - Graph
-    - JSCTL
-    - Utils
-        
+  
 
 ## Other Resources
 

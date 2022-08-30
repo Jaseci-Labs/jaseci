@@ -137,273 +137,155 @@
                         <h1 id="canonicai"><a class="header" href="#canonicai">CanoniCAI</a></h1>
 <h5 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h5>
 <ul>
-<li>
-<p><a href="#what-is-a-competency">What is a competency</a></p>
-</li>
-<li>
-<p><a href="#what-are-the-components-to-make-up-a-competency">What are the components to make up a competency</a></p>
-</li>
-<li>
-<p><a href="#step-1-build-the-skeleton-for-your-new-competency">Build the skeleton for your new competency</a></p>
-</li>
-<li>
-<p><a href="#step-2-how-to-write-custom-business-logics-for-canoniCAI">How to write custom business logics for canonicai</a></p>
-</li>
-<li>
-<p><a href="#step-3-how-to-edit-or-create-responses-from-each-state">How to edit or create responses from each state</a></p>
-</li>
-<li>
-<p><a href="#step-4-how-to-test-competency">How to test competency</a></p>
-</li>
+<li><a href="#what-is-a-competency">What is a competency</a></li>
+<li><a href="#what-are-the-components-to-make-up-a-competency">What are the components to make up a competency</a></li>
+<li><a href="#step-1-build-the-skeleton-for-your-new-competency">Build the skeleton for your new competency</a></li>
+<li><a href="#step-2-how-to-write-custom-business-logics-for-canoniCAI">How to write custom business logics for canonicai</a></li>
+<li><a href="#step-3-how-to-edit-or-create-responses-from-each-state">How to edit or create responses from each state</a></li>
+<li><a href="#step-4-how-to-test-competency">How to test competency</a></li>
 </ul>
 <h1 id="what-is-a-competency"><a class="header" href="#what-is-a-competency">What is a competency</a></h1>
 <p>A competency is a specialized piece of an AI model program that comes together to solve a problem.</p>
 <h1 id="what-are-the-components-to-make-up-a-competency"><a class="header" href="#what-are-the-components-to-make-up-a-competency">What are the components to make up a competency</a></h1>
 <p>They are several components that makes up the competency and they are as follows:</p>
 <ul>
-<li>
-<p>ai model</p>
-</li>
-<li>
-<p>states</p>
-</li>
-<li>
-<p>business logic</p>
-</li>
-<li>
-<p>response</p>
-</li>
+<li>ai model</li>
+<li>states</li>
+<li>business logic</li>
+<li>response</li>
 </ul>
 <h1 id="step-1-build-the-skeleton-for-your-new-competency"><a class="header" href="#step-1-build-the-skeleton-for-your-new-competency">Step 1: Build the skeleton for your new competency</a></h1>
 <p>This step involves the following jac files:</p>
 <ul>
-<li>
-<p>fixtures.jac</p>
-</li>
-<li>
-<p>nodes.jac</p>
-</li>
-<li>
-<p>globals.jac</p>
-</li>
+<li>fixtures.jac</li>
+<li>nodes.jac</li>
+<li>globals.jac</li>
 </ul>
-<p>Navigate to <code>fixtures.jac</code> file, we will be adding states to the graph.</p>
-<p></p>
-<p>We will be creating a state called <strong>check_order</strong> for demo purposes, this will be an extension to the KFC bot. The code we will be adding is </p>
-<p><code>state_check_order = spawn node::state(name=&quot;check_order&quot;);</code> into the file. What this does it spawns a node to the graph.</p>
-<pre><code>
-graph conv_graph {
-
+<p>Navigate to <code>fixtures.jac</code> file, we will be adding states to the graph.
+<br />
+We will be creating a state called <strong>check_order</strong> for demo purposes, this will be an extension to the KFC bot. The code we will be adding is 
+<code>state_check_order = spawn node::state(name=&quot;check_order&quot;);</code> into the file. What this does it spawns a node to the graph.</p>
+<pre><code>graph conv_graph {
     has anchor conv_root;
-
        spawn {
-
         state_check_order = spawn node::state(name=&quot;check_order&quot;);    
-
        }
-
 </code></pre>
-<p></p>
-<p>Next, we will be adding this state to the global state. What this does is allow us to connect other states to this in the future, incase if we want the conversation to go back to this state anytime in the future. You will have to go to the <code>globals.jac</code> file to make the state global.</p>
-<p></p>
-<p>Navigate to the <code>globals.jac</code> file and add this to the file </p>
+<p><br />
+Next, we will be adding this state to the global state. What this does is allow us to connect other states to this in the future, incase if we want the conversation to go back to this state anytime in the future. You will have to go to the <code>globals.jac</code> file to make the state global.
+<br />
+Navigate to the <code>globals.jac</code> file and add this to the file </p>
 <p>ADD: <code>global check_order_label = &quot;check order&quot;;</code></p>
-<pre><code>
-global soc_label = &quot;greetings&quot;;
-
+<pre><code>global soc_label = &quot;greetings&quot;;
 global check_order_label = &quot;check order&quot;; 
-
 global eoc_label = &quot;bye&quot;;
-
 global order_label = &quot;order&quot;;
-
 global yes_label = &quot;confirmation&quot;;
-
 global no_label = &quot;denial&quot;;
-
 </code></pre>
-<p>Now we can proceed to the next step. Navigate back to the <code>fixture.jac</code> file</p>
-<p></p>
-<p>Add: <code>[state_check_order, global.check_order_label]</code></p>
-<pre><code>
-spawn {
-
+<p>Now we can proceed to the next step. Navigate back to the <code>fixture.jac</code> file
+<br />
+Add: <code>[state_check_order, global.check_order_label]</code></p>
+<pre><code>spawn {
     global_states = [
-
             [state_check_order, global.check_order_label],
-
             [state_eoc, global.eoc_label],
-
             [state_order, global.order_label]
-
         ];
-
 }
-
 </code></pre>
-<p></p>
-<p>We will go forward and connect this state to the conversation state, which is the root/main state of the entire application. Because previously we just only created a state but we did not connect it to the root.</p>
+<p><br />
+We will go forward and connect this state to the conversation state, which is the root/main state of the entire application. Because previously we just only created a state but we did not connect it to the root.</p>
 <p>ADD: <code>conv_root -[transition(intent_label = global.check_order_label)]-&gt; state_check_order;</code></p>
-<pre><code>
- spawn { 
-
+<pre><code> spawn { 
      conv_root -[transition(intent_label = global.check_order_label)]-&gt; state_check_order;
-
  }
-
 </code></pre>
 <h1 id="step-2-how-to-write-custom-business-logics-for-canonicai"><a class="header" href="#step-2-how-to-write-custom-business-logics-for-canonicai">Step 2: How to write custom business logics for canoniCAI</a></h1>
-<p></p>
-<p>In the <code>nodes.jac</code> file, this is where the business logic and the responses for each states resides.</p>
-<p></p>
-<p>Navigate to <code>nodes.jac</code> file, we will be editing or adding to existing node abilities from the states</p>
+<p><br />
+In the <code>nodes.jac</code> file, this is where the business logic and the responses for each states resides.
+<br />
+Navigate to <code>nodes.jac</code> file, we will be editing or adding to existing node abilities from the states</p>
 <p>In this section, we will be editing the state node only. </p>
 <p>For this example we will be using the <strong>[item]</strong> slot for the business logic and we will use this slot to put into our response for the <strong>check order</strong> state. We will also just add a default item just for this small application, So lets start off adding these:</p>
 <p>ADD: <code> visitor.dialogue_context[&quot;item&quot;] =  '3pc chicken combo';</code></p>
-<pre><code>
-node state {
-
+<pre><code>node state {
     can business_logic { 
-
          if (!visitor.hoping) {
-
             // here.name is the title of the state so when we hit that state it runs the code
-
              if (here.name == &quot;check_order&quot;) { 
-
                  visitor.dialogue_context[&quot;item&quot;] = '3pc chicken combo';
-
              }
-
          }
-
     }
-
 }
-
 </code></pre>
 <h1 id="step-3-how-to-edit-or-create-responses-from-each-state"><a class="header" href="#step-3-how-to-edit-or-create-responses-from-each-state">Step 3: How to edit or create responses from each state</a></h1>
-<p></p>
-<p>In the next section we will focus on creating a response for this competency called <strong>check order</strong>.</p>
-<p></p>
-<p>Navigate to the node ability <strong>gen_response</strong>, this is where it hosts all the responses for each state and using the existing slot from the application, we will add it to the response. So when we query to the application it will give us this exact response, once it classifies correctly.</p>
+<p><br />
+In the next section we will focus on creating a response for this competency called <strong>check order</strong>.
+<br />
+Navigate to the node ability <strong>gen_response</strong>, this is where it hosts all the responses for each state and using the existing slot from the application, we will add it to the response. So when we query to the application it will give us this exact response, once it classifies correctly.</p>
 <p>ADD: <code>visitor.answer = &quot;In your cart you have ordered &quot; + visitor.dialogue_context[&quot;item&quot;];</code></p>
-<pre><code>
-    can gen_response {
-
+<pre><code>    can gen_response {
         if (!visitor.hoping) {
-
             if (here.name == &quot;check_order&quot;) {
-
                 visitor.answer = visitor.answer = &quot;In your cart you have ordered &quot; + visitor.dialogue_context[&quot;item&quot;];
-
             }
-
         }
-
     }
-
 </code></pre>
 <p>This is how you build a simple competency called check order to canonicai. Hope you guys enjoy this section.</p>
 <h1 id="step-4-how-to-test-competency"><a class="header" href="#step-4-how-to-test-competency">Step 4: How to test competency</a></h1>
 <p>In this section we will be testing the competency to see whether it work or not.</p>
 <p>They are genuinely two ways to test this application</p>
 <ul>
-<li>
-<p>writing test in a <code>test.jac</code> file</p>
-</li>
-<li>
-<p>manually test the application through console or frontend</p>
-</li>
+<li>writing test in a <code>test.jac</code> file</li>
+<li>manually test the application through console or frontend</li>
 </ul>
-<p>Let's start with testing manually using the console.</p>
-<p>The steps are as follows:</p>
+<p>Let's start with testing manually using the console.
+The steps are as follows:</p>
 <ul>
-<li>
-<p>run jaseci console: <code>jsctl -m</code></p>
-</li>
-<li>
-<p>load all the actions required: <code>actions load module [module]</code></p>
-</li>
-<li>
-<p>builing the application using:  <code>jac build main.jac</code></p>
-</li>
-<li>
-<p>registering the sentinel: <code>sentinel register -set_active true -mode ir main.jir</code></p>
-</li>
-<li>
-<p>delete any graph if exists: <code>graph delete active:graph</code></p>
-</li>
-<li>
-<p>create the graph: <code>graph create -set_active true</code></p>
-</li>
-<li>
-<p>run init walker: <code>walker run init</code></p>
-</li>
-<li>
-<p>testing the application by running talker: <code>walker run talker -ctx &quot;{\&quot;question\&quot;: \&quot;can you check what I have ordered so far.\&quot;}&quot;</code></p>
-</li>
+<li>run jaseci console: <code>jsctl -m</code></li>
+<li>load all the actions required: <code>actions load module [module]</code></li>
+<li>builing the application using:  <code>jac build main.jac</code></li>
+<li>registering the sentinel: <code>sentinel register -set_active true -mode ir main.jir</code></li>
+<li>delete any graph if exists: <code>graph delete active:graph</code></li>
+<li>create the graph: <code>graph create -set_active true</code></li>
+<li>run init walker: <code>walker run init</code></li>
+<li>testing the application by running talker: <code>walker run talker -ctx &quot;{\&quot;question\&quot;: \&quot;can you check what I have ordered so far.\&quot;}&quot;</code></li>
 </ul>
 <p>Let's continue with the other method of testing which involves writing a test.</p>
-<p>First we will have to navigate to the <code>test.jac file</code>.</p>
-<p></p>
-<p>In this example we will create a simple test that tests the greeting competency and check if it returns a response with the correct user.</p>
-<pre><code>
-test &quot;test response in greetings&quot;
-
+<p>First we will have to navigate to the <code>test.jac file</code>.
+<br />
+In this example we will create a simple test that tests the greeting competency and check if it returns a response with the correct user.</p>
+<pre><code>test &quot;test response in greetings&quot;
 with graph::empty by walker::init {
-
     cai_root = *(global.cai_root);
-
         # Reset user
-
         spawn cai_root walker::update_user;
-
         new_dialogue = true;
-
         
-
         spawn cai_root walker::talker(
-
             question=&quot;can you check what I have ordered so far.&quot;,
-
             start_new_dialogue=new_dialogue
-
         );
-
         
-
         res = std.get_report();
-
         assert (res[-1][&quot;response&quot;] == &quot;In your cart you have ordered 3pc chicken combo&quot;);
-
 }
-
 </code></pre>
 <h1 id="how-to-load-model"><a class="header" href="#how-to-load-model">How to load model</a></h1>
 <p>We will load model in canonicai using fast api</p>
 <p>First we will explore how to load model through jaseci console in canonicai, We will try to load the bi-encoder model because that is vastly used in the modern AI world.</p>
 <p>We have to go to the console and follow the steps below: </p>
 <ul>
-<li>
-<p>run jaseci console: <code>jsctl -m</code></p>
-</li>
-<li>
-<p>load bi-encoder actions: <code>actions load module jaseci_kit.bi_enc</code></p>
-</li>
+<li>run jaseci console: <code>jsctl -m</code></li>
+<li>load bi-encoder actions: <code>actions load module jaseci_kit.bi_enc</code></li>
 <li></li>
-<li>
-<p>go to the docs website</p>
-</li>
-<li>
-<p>click <code>/load_model/</code></p>
-</li>
-<li>
-<p>click try it out</p>
-</li>
-<li>
-<p>replace string with the name of model for key model path and click execute</p>
-</li>
+<li>go to the docs website</li>
+<li>click <code>/load_model/</code></li>
+<li>click try it out</li>
+<li>replace string with the name of model for key model path and click execute</li>
 </ul>
 <p>That's how you load a model</p>
 <h1 id="how-to-save-model"><a class="header" href="#how-to-save-model">How to save model</a></h1>
@@ -411,207 +293,109 @@ with graph::empty by walker::init {
 <p>First we will explore how to save model through jaseci console in canonicai, We will try to load the bi-encoder model because that is vastly used in the modern AI world.</p>
 <p>We have to go to the console and follow the steps below: </p>
 <ul>
-<li>
-<p>run jaseci console: <code>jsctl -m</code></p>
-</li>
-<li>
-<p>load bi-encoder actions: <code>actions load module jaseci_kit.bi_enc</code></p>
-</li>
+<li>run jaseci console: <code>jsctl -m</code></li>
+<li>load bi-encoder actions: <code>actions load module jaseci_kit.bi_enc</code></li>
 <li></li>
-<li>
-<p>go to the docs website</p>
-</li>
-<li>
-<p>click <code>/save_model/</code></p>
-</li>
-<li>
-<p>click try it out</p>
-</li>
-<li>
-<p>replace string with the name of model for key model path and click execute</p>
-</li>
+<li>go to the docs website</li>
+<li>click <code>/save_model/</code></li>
+<li>click try it out</li>
+<li>replace string with the name of model for key model path and click execute</li>
 </ul>
 <h1 id="how-to-add-or-update-training-data-to-canonicai"><a class="header" href="#how-to-add-or-update-training-data-to-canonicai">How to add or update training data to CanoniCAI</a></h1>
 <p>We will be adding training data to bi-encoder model in CanoniCAI</p>
 <p>First we have to navigate to <code>/data/clf_train.json</code> if the file does not exist create one.</p>
 <p>ADD: <code>&quot;check order&quot;: [&quot;can you check my order&quot;,&quot;can i have a look at my order&quot;]</code></p>
 <p><code>NOTE: the key must be the same as in the global label in the globals.jac file. This is what helps the classifier to train.</code></p>
-<pre><code>
-{
-
+<pre><code>{
   &quot;check order&quot;: [&quot;can you check my order&quot;,&quot;can i have a look at my order&quot;],
-
   &quot;hello&quot;: [
-
     &quot;hi how's your day so far&quot;,
-
     &quot;how's it going&quot;,
-
     &quot;how are you&quot;,
-
     &quot;whats up&quot;,
-
     &quot;what's going on&quot;,
-
     &quot;what's good&quot;,
-
     &quot;how goes it&quot;,
-
     &quot;i have had a crazy day, how's yours&quot;,
-
     &quot;what is the latest&quot;,
-
     &quot;what's up with you&quot;,
-
     &quot;what is going on with you kev&quot;,
-
     &quot;how are you doing today man&quot;,
-
     &quot;good morning&quot;,
-
     &quot;good day to you!&quot;,
-
     &quot;what's cracking&quot;,
-
     &quot;what's popping yall&quot;
-
   ],
-
   &quot;goodbye&quot;: [
-
     &quot;bye bye&quot;,
-
     &quot;see you later&quot;,
-
     &quot;see you soon&quot;,
-
     &quot;talk to you later&quot;,
-
     &quot;gotta go&quot;,
-
     &quot;i am off&quot;,
-
     &quot;take care&quot;,
-
     &quot;peace out&quot;
-
   ],
-
   &quot;order&quot;: [
-
     &quot;i want a cheeseburder&quot;,
-
     &quot;I would like to order a burger&quot;,
-
     &quot;can i have a milkshake&quot;,
-
     &quot;i need a 3 piece chicken combo&quot;,
-
     &quot;can i have a family meal&quot;
-
   ]
-
 }
-
 </code></pre>
 <h1 id="how-to-train-models-in-canonicai"><a class="header" href="#how-to-train-models-in-canonicai">How to train models in CanoniCAI</a></h1>
 <p>There are two ways to train the bi-encoder model:</p>
 <ul>
-<li>
-<p>walkers</p>
-</li>
-<li>
-<p>fastapi</p>
-</li>
+<li>walkers</li>
+<li>fastapi</li>
 </ul>
 <p>Next step we have to train the model. Here are the steps as follows:</p>
 <ul>
-<li>
-<p>run jaseci console: <code>jsctl -m</code></p>
-</li>
-<li>
-<p>load bi-encoder actions: <code>actions load module jaseci_kit.bi_enc</code></p>
-</li>
+<li>run jaseci console: <code>jsctl -m</code></li>
+<li>load bi-encoder actions: <code>actions load module jaseci_kit.bi_enc</code></li>
 <li></li>
-<li>
-<p>go to the docs website</p>
-</li>
-<li>
-<p>click <code>/train/</code></p>
-</li>
-<li>
-<p>click try it out</p>
-</li>
-<li>
-<p>copy everything in <code>/data/clf_train.json</code></p>
-</li>
-<li>
-<p>paste all the data you copied to the dataset key as shown below</p>
-</li>
+<li>go to the docs website</li>
+<li>click <code>/train/</code></li>
+<li>click try it out</li>
+<li>copy everything in <code>/data/clf_train.json</code></li>
+<li>paste all the data you copied to the dataset key as shown below</li>
 </ul>
-<pre><code>
-{
-
+<pre><code>{
   &quot;dataset&quot;: {
-
   &quot;goodbye&quot;: [
-
     &quot;bye bye&quot;,
-
     &quot;see you later&quot;,
-
     &quot;see you soon&quot;,
-
     &quot;talk to you later&quot;,
-
     &quot;gotta go&quot;,
-
     &quot;i am off&quot;,
-
     &quot;take care&quot;,
-
     &quot;peace out&quot;
-
   ]
-
   },
-
   &quot;from_scratch&quot;: false,
-
   &quot;training_parameters&quot;: {}
-
 }
-
 </code></pre>
 <ul>
 <li>change key value of <code>from_scratch</code> to true</li>
 </ul>
-<pre><code>
-{
-
+<pre><code>{
   &quot;dataset&quot;: {},
-
   &quot;from_scratch&quot;: true,
-
   &quot;training_parameters&quot;: {}
-
 }
-
 </code></pre>
 <ul>
 <li>change key value of <code>training_parameters </code> to suit your needs, example shown below</li>
 </ul>
-<pre><code>
-{
-
+<pre><code>{
   &quot;dataset&quot;: {},
-
   &quot;from_scratch&quot;: false,
-
   &quot;training_parameters&quot;: { &quot;num_train_epochs&quot;: 50 }
-
 }
-
 </code></pre>
 <ul>
 <li>click execute</li>
@@ -619,30 +403,14 @@ with graph::empty by walker::init {
 <p>Thats how you add and train the model using fastapi. How let's move on to how to train the model using walkers from CanoniCAI</p>
 <p>The steps to doing this is a follows:</p>
 <ul>
-<li>
-<p>run jaseci console: <code>jsctl -m</code></p>
-</li>
-<li>
-<p>load bi-encoder actions: <code>actions load module jaseci_kit.bi_enc</code></p>
-</li>
-<li>
-<p>builing the application using:  <code>jac build main.jac</code></p>
-</li>
-<li>
-<p>registering the sentinel: <code>sentinel register -set_active true -mode ir main.jir</code></p>
-</li>
-<li>
-<p>delete any graph if exists: <code>graph delete active:graph</code></p>
-</li>
-<li>
-<p>create the graph: <code>graph create -set_active true</code></p>
-</li>
-<li>
-<p>run init walker: <code>walker run init</code></p>
-</li>
-<li>
-<p>run train_biencoder walker: <code>walker run train_biencoder</code></p>
-</li>
+<li>run jaseci console: <code>jsctl -m</code></li>
+<li>load bi-encoder actions: <code>actions load module jaseci_kit.bi_enc</code></li>
+<li>builing the application using:  <code>jac build main.jac</code></li>
+<li>registering the sentinel: <code>sentinel register -set_active true -mode ir main.jir</code></li>
+<li>delete any graph if exists: <code>graph delete active:graph</code></li>
+<li>create the graph: <code>graph create -set_active true</code></li>
+<li>run init walker: <code>walker run init</code></li>
+<li>run train_biencoder walker: <code>walker run train_biencoder</code></li>
 </ul>
 
                     </main>
