@@ -12,7 +12,6 @@
 *.cb2
 .*.lb
 
-
 ## Intermediate documents:
 *.dvi
 *.xdv
@@ -149,11 +148,6 @@ acs-*.bib
 # luatexja-ruby
 *.ltjruby
 
-# luatex and auto gen with _
-*.lua
-*.err
-_*
-
 # makeidx
 *.idx
 *.ilg
@@ -163,7 +157,6 @@ _*
 *.maf
 *.mlf
 *.mlt
-*.mtc
 *.mtc[0-9]*
 *.slf[0-9]*
 *.slt[0-9]*
@@ -301,6 +294,7 @@ TSWLatexianTemp*
 *.tld
 *.tdn
 *.ist
+main.pdf
 book.pdf
 book.py
 book.py.err
