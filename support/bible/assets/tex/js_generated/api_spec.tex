@@ -578,13 +578,18 @@ and is\_superuser.\vspace{1.5mm}\par
 \subsection{APIs for walker}
 
 \par
-The walker set of APIs are used for execution and management of walkers. The
-primary API used to run walkers is \textbf{walker\_run}.
+The walker set of APIs are used for execution and management of walkers. Walkers
+are the primary entry points for running Jac programs. The
+primary API used to run walkers is \textbf{walker\_run}. There are a number of
+variations on this API that enable the invocation of walkers with various
+semantics.
 
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker register$}
 
 \apispec{cli: walker register | api: walker\_register | auth: user}{snt: sentinel (None), code: str (), encoded: bool (False)}
-{No documentation yet.}
+{Though the common case is to register entire sentinels, a user can also
+register individual walkers one at a time. This API accepts code for a single
+walker (i.e., \lstinline\{walker \{...\}\}).}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker get$}
 
 \apispec{cli: walker get | api: walker\_get | auth: user}{wlk: walker (*req), mode: str (default), detailed: bool (False)}

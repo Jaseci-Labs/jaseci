@@ -1,19 +1,24 @@
 # Build a Conversational AI System with Jaseci
+
 In this tutorial, you are going to learn how to build a state-of-the-art conversational AI system with Jaseci.
 You will learn the basics of Jaseci, training state-of-the-art AI models, and everything between, in order to create an end-to-end fully-functional conversational AI system.
 
 Excited? Hell yeah! Let's jump in.
 
 ## Preparation
+
 To install jaseci, run in your development environment
+
 ```
 pip install jaseci
 ```
 
 To test the installation is successful, run
+
 ```
 jsctl -- help
 ```
+
 `jsctl` stands for the Jaseci Command Line Interface.
 If the command above displays the help menu for `jsctl`, then you have succssfully installed jaseci.
 
@@ -22,15 +27,19 @@ If the command above displays the help menu for `jsctl`, then you have succssful
 > Take a look and get familiarized with these commands while you are at it. `jsctl` will be frequently used throughout this journey.
 
 ## Background
+
 A few essential concepts to get familiar with.
 
 ### Graph, nodes, edges
+
 Link to bible sections.
 
 ### Walker
+
 Link to bible sections.
 
 # Automated FAQ answering chatbot
+
 Our conversational AI system will consists of multiple components.
 To start, we are going to build a chatbot that can answer FAQ questions without any custom training, using zeroshot NLP models.
 At the end of this section, you will have a chatbot that, when given a question, searches in its knowledge base the most relevant answer and return that answer.
@@ -45,12 +54,13 @@ We will be using the list of FAQs from https://www.tesla.com/en_SG/support/faq.
 ## Define the Nodes
 
 We have 3 different type of nodes:
-* `root`: This is the root node of the graph. It is a built-in node type and each graph has one root node only.
-* `faq_root`: This is the entry point of the FAQ handler. We will make the decision on the most relevant answer at this node.
-* `faq_state`: This node represents a FAQ entry. It contains a candidate answer from the knowledge base.
 
+- `root`: This is the root node of the graph. It is a built-in node type and each graph has one root node only.
+- `faq_root`: This is the entry point of the FAQ handler. We will make the decision on the most relevant answer at this node.
+- `faq_state`: This node represents a FAQ entry. It contains a candidate answer from the knowledge base.
 
 Now let's define the custom node types.
+
 ```js
 node faq_root;
 node faq_state {
@@ -58,6 +68,7 @@ node faq_state {
     has answer;
 }
 ```
+
 The `has` keyword defines nodes variables. In this case, each `faq_state` has a `question` and `answer`.
 
 > **Warning**
@@ -65,27 +76,30 @@ The `has` keyword defines nodes variables. In this case, each `faq_state` has a 
 > The `root` node does not need explicit definition. It is a built-in node type. Avoid using `root` as a custom node type.
 
 To spawn a node of a specific type, use the `spawn` keyword:
+
 ```js
 faq_answer_1 = spawn node::faq_state(
     question="How do I configure my order?",
     answer="To configure your order, log into your Tesla account.",
 );
 ```
+
 In the above example, we just spawned a `faq_state` node called `faq_answer_1` and initialized its `question` and `answer` variables.
+
 > **Note**
 >
 > The `spawn` keyword can be used to spawn many different jaseci objects, such as nodes, graphs and walkers.
 
 ## Build the Graph
+
 For this FAQ chatbot, we will build a graph like illustrated here:
 
-<p align="center">
-  <img width="600" src="new_images/faq_1.png">
-</p>
+![Architecture of FAQ Bot](new_images/faq_1.png)
 
 The idea here is that we will decide which FAQ entry is the most relevant to the incoming question at the `faq_root` node and then we will traverse to that node to fetch the corresponding answer.
 
 To define this graph architecture:
+
 ```js
 // Static graph definition
 graph faq {
@@ -113,17 +127,21 @@ graph faq {
     }
 }
 ```
+
 Let's break down this piece of code.
-* We spawn 4 nodes, one of the type `faq_root` and three are of the type `faq_state`.
-* We connect each of the faq answer state to the faq root with `faq_root --> faq_answer_*`.
-* We set the `faq_root` as the anchor node of the graph. Spawning a graph will return its anchor node.
+
+- We spawn 4 nodes, one of the type `faq_root` and three are of the type `faq_state`.
+- We connect each of the faq answer state to the faq root with `faq_root --> faq_answer_*`.
+- We set the `faq_root` as the anchor node of the graph. Spawning a graph will return its anchor node.
 
 > **Warning**
 >
 > An anchor node is required for a graph block. It must be spawned inside the spawn block of the graph definition.
 
 ## Initialize the Graph
+
 Similar to nodes, in order to create the graph, we will use the `spawn` keyword.
+
 ```js
 walker init {
     root {
@@ -131,10 +149,12 @@ walker init {
     }
 }
 ```
+
 This is the first walker we have introduced so let's break it down.
-* The walker is called `init`.
-* It contains logic specifically for the `root` node, meaning that the code inside the `root {}` block will run **only** on the `root` node. This syntax applies for any node types, as you will see very soon.
-* `spawn here --> graph::faq` creates an instance of the `faq` graph and connect its anchor node to `here` which is the node the walker is currently on.
+
+- The walker is called `init`.
+- It contains logic specifically for the `root` node, meaning that the code inside the `root {}` block will run **only** on the `root` node. This syntax applies for any node types, as you will see very soon.
+- `spawn here --> graph::faq` creates an instance of the `faq` graph and connect its anchor node to `here` which is the node the walker is currently on.
 
 > **Note**
 >
@@ -143,20 +163,26 @@ This is the first walker we have introduced so let's break it down.
 > `here` is a very powerful keyword. It always evaluates to the specific node the walker is currently on. You will be using `here` a lot throughout this tutorial.
 
 ## Run the `init` Walker
+
 Now, let's run the init walker to initialize the graph.
 First put all the above code snippet in a single jac file and name it `main.jac`, including
-* nodes defintion
-* graph definition
-* init walker
+
+- nodes defintion
+- graph definition
+- init walker
 
 Run `jsctl` to get into the jaseci shell environment:
+
 ```bash
 jsctl
 ```
+
 Inside the `jsctl` shell,
+
 ```bash
 jaseci > jac dot main.jac
 ```
+
 This command runs the `init` walker of the `main.jac` program and return the state of its graph in DOT format after the walker has finished.
 [The DOT language](https://graphviz.org/doc/info/lang.html) is a popular graph description language widely used for representing complex graphs.
 
@@ -209,15 +235,18 @@ walker ask {
     }
 }
 ```
+
 This walker is more complex than the `init` one and introduces a few new concepts so let's break it down!
-* Similar to nodes, walker can also contain `has` variables. They define variables of the walker. They can also be passed as parameters when calling the walker.
-* `std.input` and `std.out` read and write to the command line.
-* This walker has logic for three types of node: `root`, `faq_root` and `faq_state`.
-    * `root`: It simply traverse to the `faq_root` node.
-    * `faq_root`: This is where the answer selection algorim is. We will find the most relevant `faq_state` and then traverse to that node via a `take` statement. In this code snippet, we are using a very simple (and limited) string matching approach to try to match the predefined FAQ question with the user question.
-    * `faq_state`: Print the answer to the terminal
+
+- Similar to nodes, walker can also contain `has` variables. They define variables of the walker. They can also be passed as parameters when calling the walker.
+- `std.input` and `std.out` read and write to the command line.
+- This walker has logic for three types of node: `root`, `faq_root` and `faq_state`.
+  - `root`: It simply traverse to the `faq_root` node.
+  - `faq_root`: This is where the answer selection algorim is. We will find the most relevant `faq_state` and then traverse to that node via a `take` statement. In this code snippet, we are using a very simple (and limited) string matching approach to try to match the predefined FAQ question with the user question.
+  - `faq_state`: Print the answer to the terminal
 
 Before we run this walker, we are going to update the `init` walker to speed up our development process
+
 ```js
 walker init {
     root {
@@ -226,19 +255,24 @@ walker init {
     }
 }
 ```
+
 This serves as a shorthand so that we can initialize the graph and ask question in one command.
+
 > **Note**
 >
 > This demonstrates how one walker can spawn another walker using the `spawn` keyword.
 
 Time to run the walker!
+
 ```bash
 jaseci > jac run main.jac
 ```
+
 `jac run` functions very similarly to `jac dot`, with the only difference being that it doesn't return the graph in DOT format.
 Try giving it one of the three questions we have predefined and it should respond with the corresponding answer.
 
 ## Introducing Universal Sentence Encoder
+
 Now, obvisouly, what we have now is not very "AI" and we need to fix that.
 We are using the Universal Sentence Encoder QA model as the answer selection algorithm.
 Universal Sentence Encoder is a language encoder model that is pre-trained on large corpus of natural language data and have been shown to be effective in many NLP tasks.
@@ -249,16 +283,19 @@ These actions cover a wide-range of state-of-the-art AI models across many diffe
 These actions are packaged in a python module called `jaseci_kit`.
 
 To install `jaseci_kit`:
+
 ```bash
 pip install jaseci_kit
 ```
 
 Now we load the action we need into our jaseci environment
+
 ```bash
 jaseci > actions load module jaseci_kit.use_qa
 ```
 
 Let's update our walker logic to use the USE QA model:
+
 ```js
 walker ask {
     has question;
@@ -279,16 +316,20 @@ walker ask {
     }
 }
 ```
+
 Even though there are only 5 lines of new code, there are many interesting aspects so let's break it down!
-* `-->.answer` collects the `answer` variable of all of the nodes that are connected to `here`/`faq_root` with a `-->` connection.
-* `use.qa_classify` is one of the action supported by the USE QA action set. It takes in a question and a list of candidate answers and return the most relevant one.
+
+- `-->.answer` collects the `answer` variable of all of the nodes that are connected to `here`/`faq_root` with a `-->` connection.
+- `use.qa_classify` is one of the action supported by the USE QA action set. It takes in a question and a list of candidate answers and return the most relevant one.
 
 Now let's run this new walker and you can now ask questions that are relevant to the answers beyond just the predefined ones.
 
 ## Scale it Out
+
 So far we have created a FAQ bot that is capble of provide answer in three topics.
 To make this useful beyond just a prototype, we are now going to expand its database of answers.
 Instead of manually spawning and connecting a node for each FAQ entry, we are going to write a walker that automatically expand our graph:
+
 ```js
 walker ingest_faq {
     has kb_file;
@@ -302,6 +343,7 @@ walker ingest_faq {
     }
 }
 ```
+
 > **Note**
 >
 > If are curious (and adventurous), try visualizes this new graph via DOT!
