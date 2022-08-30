@@ -1,69 +1,86 @@
 module "eks" {
-  source          = "terraform-aws-modules/eks/aws"
-  cluster_name    = local.cluster_name
-  cluster_version = local.clusterversion
-  subnets         = module.vpc.private_subnets
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 18.0"
 
-  tags = {
-    "Name" = format("%s-%s", "jaseci-eks", local.envsuffix)
-  }
-  vpc_id = module.vpc.vpc_id
+  cluster_name    = format("%s-%s-%s", local.productprefix,"eks", local.envsuffix)
+  cluster_version = var.clusterversion
 
-  workers_group_defaults = {
-    root_volume_type = "gp2"
+  cluster_endpoint_private_access = true
+  cluster_endpoint_public_access  = true
+
+  cluster_addons = {
+    coredns = {
+      resolve_conflicts = "OVERWRITE"
+    }
+    kube-proxy = {}
+    vpc-cni = {
+      resolve_conflicts = "OVERWRITE"
+    }
   }
-  # wait_for_cluster_interpreter = ["C:/Program Files/Git/bin/sh.exe", "-c"]
-  # wait_for_cluster_cmd         = "until curl -sk $ENDPOINT >/dev/null; do sleep 4; done"
-  worker_groups = [
-    
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = coalescelist(module.vpc.public_subnets)
+
+  # Self Managed Node Group(s)
+  self_managed_node_group_defaults = {
+    instance_type                          = var.instance_type
+    update_launch_template_default_version = true
+    iam_role_additional_policies = [
+      "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    ]
+  }
+
+
+  # EKS Managed Node Group(s)
+  eks_managed_node_group_defaults = {
+    disk_size      = 50
+    instance_types = var.instance_type_list
+  }
+
+  eks_managed_node_groups = {
+    blue = {}
+    green = {
+      min_size     = 1
+      max_size     = 10
+      desired_size = 1
+
+      instance_types = var.instance_type_list
+      capacity_type  = "SPOT"
+    }
+  }
+
+
+  # aws-auth configmap
+  # Fill if you need to set specif RBAC for the users
+  manage_aws_auth_configmap = false
+
+  aws_auth_roles = [
     {
-      name                          = format("%s-%s", "jaseci-eks-wg", local.envsuffix)
-      instance_type                 = local.instance_type
-      additional_userdata           = ""
-      additional_security_group_ids = [aws_security_group.worker_group_mgmt_one.id]
-      asg_desired_capacity          = 2
+      rolearn  = "arn:aws:iam::66666666666:role/role1"
+      username = "role1"
+      groups   = ["system:masters"]
     },
   ]
+
+  aws_auth_users = [
+    {
+      userarn  = "arn:aws:iam::66666666666:user/user1"
+      username = "user1"
+      groups   = ["system:masters"]
+    },
+    {
+      userarn  = "arn:aws:iam::66666666666:user/user2"
+      username = "user2"
+      groups   = ["system:masters"]
+    },
+  ]
+
+  aws_auth_accounts = [
+    var.allowed_account_ids
+  ]
+
+  tags = {
+    Environment = local.environment
+    createdbyTerraform   = "true"
+  }
 }
-
-data "aws_eks_cluster" "zsb-eks" {
-  name = module.eks.cluster_id
-}
-
-data "aws_eks_cluster_auth" "zsb-eks" {
-  name = module.eks.cluster_id
-}
-
-# resource "aws_eks_node_group" "moolahnodegroup" {
-#     ami_type        = "AL2_x86_64"
-#     #arn             = "arn:aws:eks:us-west-2:020711562587:nodegroup/zsb-eks-dev/biggernodepool/7ebc9ca6-1a50-917f-c053-710cf1bdfcd5"
-#     capacity_type   = "ON_DEMAND"
-#     cluster_name    = format("%s-%s", "jaseci-eks", local.envsuffix)
-#     disk_size       = 20
-#     #id              = "zsb-eks-dev:biggernodepool"
-#     instance_types  = [
-#         "t3.xlarge",
-#     ]
-#     labels          = {}
-#     node_group_name = "biggernodepool"
-#     node_role_arn   = "arn:aws:iam::020711562587:role/zsb-eks-dev2021042621300107760000000c"
-#     release_version = "1.19.6-20210504"
- 
-#     #status          = "ACTIVE"
-#     subnet_ids      = [
-#         "subnet-0843784107775a5fa",
-#         "subnet-0aba3f92438d40476",
-#         "subnet-0d63eb93dd8ad26be",
-#     ]
-#     tags            = {}
-#     tags_all        = {}
-#     version         = "1.19"
-
-#     scaling_config {
-#         desired_size = 3
-#         max_size     = 4
-#         min_size     = 3
-#     }
-
-#     timeouts {}
-# }

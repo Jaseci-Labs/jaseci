@@ -1,11 +1,13 @@
 #For AWS, it is required that the user for prod will have an assume role "terraform-prod-user" for zsb
 provider "aws" {
-  region              = "us-west-2"
+  region              = var.region
   allowed_account_ids = var.allowed_account_ids
   assume_role {
     role_arn = lookup(local.provider_env_roles, local.env)
   }
 }
+
+# Activate the comment out section for remote storage of TF state files
 terraform {
   # backend "s3" {
   #   bucket = "jaseci-devops"
