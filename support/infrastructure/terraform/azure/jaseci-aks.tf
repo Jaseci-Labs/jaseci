@@ -1,29 +1,25 @@
-resource "azurerm_kubernetes_cluster" "zsb_aks" {
-  name                = "zsb_aks"
-  location            = azurerm_resource_group.rg.location
+resource "azurerm_kubernetes_cluster" "aks" {
+  name                = var.cluster_name
+  kubernetes_version  = var.kubernetes_version
+  location            = var.location
   resource_group_name = azurerm_resource_group.rg.name
-  dns_prefix          = "zsbaks"
+  dns_prefix          = var.cluster_name
 
   default_node_pool {
-    name       = "default"
-    node_count = 1
-    vm_size    = "Standard_D2_v2"
-    enable_auto_scaling = true
+    name                = "system"
+    node_count          = var.system_node_count
+    vm_size             = "Standard_DS2_v2"
+    type                = "VirtualMachineScaleSets"
+    availability_zones  = [1, 2, 3]
+    enable_auto_scaling = false
   }
 
-  service_principal {
-    client_id     = "00000000-0000-0000-0000-000000000000"
-    client_secret = "00000000000000000000000000000000"
+  identity {
+    type = "SystemAssigned"
   }
-}
 
-resource "azurerm_kubernetes_cluster_node_pool" "aks_nood_pool" {
-  name                  = "internal"
-  kubernetes_cluster_id = azurerm_kubernetes_cluster.zsb_aks.id
-  vm_size               = "Standard_DS2_v2"
-  node_count            = 1
-
-  tags = {
-    Environment = "Production"
+  network_profile {
+    load_balancer_sku = "Standard"
+    network_plugin    = "kubenet" 
   }
 }
