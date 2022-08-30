@@ -47,12 +47,16 @@ class task_hook:
     main_hook = None
     shared_mem = Manager().dict()
 
+    # ------------------- MASTERS ------------------- #
+    basic_master = None
+
     def __init__(self):
 
         if th.state < 0 and th.app is None:
             th.state = 0
 
             th.main_hook = self
+            th.basic_master = self.generate_basic_master()
 
             try:
                 self.__celery()

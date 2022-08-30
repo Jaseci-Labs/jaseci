@@ -2,8 +2,8 @@
 This module includes code related to hooking Jaseci's Redis to the
 core engine.
 """
-from jaseci.utils.utils import logger, find_class_and_import
 import jaseci as core_mod
+from jaseci.utils.utils import logger
 from jaseci.utils.mem_hook import mem_hook
 from redis import Redis, RedisError
 import json
@@ -152,13 +152,6 @@ class redis_hook(mem_hook):
 
         if rh.is_running():
             rh.app.delete(item.id.urn)
-
-    ###################################################
-    #                  CLASS CONTROL                  #
-    ###################################################
-
-    def find_class_and_import(self, j_type, mod):
-        return find_class_and_import(j_type, mod)
 
 
 rh = redis_hook

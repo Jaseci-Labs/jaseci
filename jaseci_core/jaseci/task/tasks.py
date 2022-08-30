@@ -131,6 +131,23 @@ class schedule_queue(Task):
         if params in req:
             holder[0][self.json_escape.sub("_", req[params])] = holder[1]
 
+    def trigger_interface(self, req: dict):
+        from .task_hook import task_hook
+
+        master = req.get("master")
+
+        if master is None:
+            caller = task_hook.basic_master
+            trigger_type = "public"
+        else:
+            caller = task_hook.get_element(master)
+            trigger_type = "general"
+
+        api = req.get("api")
+        body = req.get("body", {})
+
+        return getattr(caller, f"{trigger_type}_interface_to_api")(body, api)
+
     def run(self, *args, **kwargs):
         requests = kwargs.get("requests")
         persistence = kwargs.get("persistence", {})
@@ -155,21 +172,22 @@ class schedule_queue(Task):
 
                 method = req["method"].upper()
 
-                if method == "POST":
-                    response = post(
-                        req["url"],
-                        json=req.get("body", {}),
-                        headers=req.get("header", {}),
-                    )
-                elif method == "GET":
-                    response = get(req["url"], headers=req.get("header", {}))
-
-                response.raise_for_status()
-
-                if "application/json" in response.headers.get("Content-Type"):
-                    container["current"] = response.json()
+                if method == "JAC":
+                    container["current"] = self.trigger_interface(req)
                 else:
-                    container["current"] = response.text
+                    if method == "POST":
+                        response = post(
+                            req["api"],
+                            json=req.get("body", {}),
+                            headers=req.get("header", {}),
+                        )
+                    elif method == "GET":
+                        response = get(req["api"], headers=req.get("header", {}))
+                    response.raise_for_status()
+                    if "application/json" in response.headers.get("Content-Type"):
+                        container["current"] = response.json()
+                    else:
+                        container["current"] = response.text
 
                 if "__def_loop__" in req:
                     def_loop = req["__def_loop__"]

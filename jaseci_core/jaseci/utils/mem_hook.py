@@ -1,3 +1,4 @@
+from jaseci.utils.utils import find_class_and_import
 from jaseci.task.task_hook import task_hook
 
 
@@ -194,3 +195,15 @@ class mem_hook(task_hook):
             else:
                 dist[t] = 1
         return dist
+
+    ###################################################
+    #                  CLASS CONTROL                  #
+    ###################################################
+
+    def find_class_and_import(self, j_type, mod):
+        return find_class_and_import(j_type, mod)
+
+    def generate_basic_master(self):
+        from jaseci.element.master import master
+
+        return master(h=self, persist=False)

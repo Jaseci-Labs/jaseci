@@ -213,3 +213,8 @@ class orm_hook(redis_hook):
             return super_master
         else:
             return utils.find_class_and_import(j_type, core_mod)
+
+    def generate_basic_master(self):
+        from jaseci_serv.base.models import master
+
+        return master(h=self, persist=False)
