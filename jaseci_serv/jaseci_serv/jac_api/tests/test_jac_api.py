@@ -687,8 +687,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertIn("j_type", res.data)
-        self.assertEqual(res.data["j_type"], "master")
+        self.assertIn("j_type", res.data["user"])
+        self.assertEqual(res.data["user"]["j_type"], "master")
 
     def test_master_create_linked_error_out(self):
         """Test master create operation"""
@@ -712,9 +712,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertIn("errors", res.data)
-        self.assertIn("email", res.data["errors"])
-        self.assertIn("password", res.data["errors"])
+        self.assertFalse(res.data["success"])
+        self.assertIn("already exists", res.data["response"])
 
     def test_master_create_linked_cant_override(self):
         """Test master create operation"""
@@ -733,7 +732,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertEqual(res.data["j_type"], "master")
+        self.assertEqual(res.data["user"]["j_type"], "master")
 
     def test_master_create_linked_super_limited(self):
         """Test master create operation"""
@@ -771,8 +770,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertIn("j_type", res.data)
-        self.assertEqual(res.data["j_type"], "super_master")
+        self.assertIn("j_type", res.data["user"])
+        self.assertEqual(res.data["user"]["j_type"], "super_master")
 
     def test_master_create_linked_to_django_users_login(self):
         """Test master create operation"""
@@ -899,6 +898,128 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
+        payload = {"op": "graph_get"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 3)
+
+    def test_sentinel_active_global_with_auto_run(self):
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 2)
+        payload = {"op": "global_sentinel_set"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "graph_create", "set_active": True}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "sentinel_active_get"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertFalse(res.data["success"])
+        payload = {"op": "sentinel_active_global", "auto_run": "init"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertTrue(res.data["success"])
+        self.assertIn("auto_run_result", res.data)
+        payload = {"op": "graph_get"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 3)
+
+    def test_public_user_create_global_init(self):
+        public_client = APIClient()
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 2)
+        payload = {"op": "global_sentinel_set"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {
+            "op": "user_create",
+            "name": "yo@gmail.com",
+            "global_init": "init",
+            "other_fields": {
+                "password": "yoyoyoyoyoyo",
+                "name": "",
+                "is_activated": True,
+            },
+        }
+        res = public_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(res.data["success"], True)
+        self.assertEqual(res.data["global_init"]["auto_run_result"]["success"], True)
+
+    def test_public_user_create_save_through(self):
+        public_client = APIClient()
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 2)
+        payload = {"op": "global_sentinel_set"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {
+            "op": "user_create",
+            "name": "yo2@gmail.com",
+            "global_init": "init",
+            "other_fields": {
+                "password": "yoyoyoyoyoyo",
+                "name": "",
+                "is_activated": True,
+            },
+        }
+        res = public_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        usr = get_user_model().objects.get(email="yo2@gmail.com")
+        self.assertIsNotNone(usr.get_master().active_gph_id)
+
+    def test_master_create_global_init(self):
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 2)
+        payload = {"op": "global_sentinel_set"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {
+            "op": "master_create",
+            "name": "yo@gmail.com",
+            "global_init": "init",
+            "other_fields": {
+                "password": "yoyoyoyoyoyo",
+                "name": "",
+                "is_activated": True,
+            },
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(res.data["success"], True)
+        self.assertEqual(res.data["global_init"]["auto_run_result"]["success"], True)
+        payload = {"op": "master_active_set", "name": "yo@gmail.com"}
+        self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
         payload = {"op": "graph_get"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -1226,7 +1347,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {
             "op": "sentinel_register",
             "name": "Something",
-            "code": "walker testwalker{ report jaseci.master_create('a@b.com', true,  "
+            "code": "walker testwalker{ report jaseci.master_create('a@b.com', '',  {},"
             "{'password': 'yoyoyoyoyoyo', 'name': '', 'is_activated': true}); }",
         }
         res = self.client.post(
@@ -1237,8 +1358,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(reverse("jac_api:walker_list"), payload)
         self.assertEqual(len(res.data), 1)
         res = self.client.post(reverse("jac_api:wapi", args=["testwalker"]), payload)
-        self.assertIn("jid", res.data["report"][0].keys())
-        self.assertEqual(res.data["report"][0]["name"], "a@b.com")
+        self.assertIn("jid", res.data["report"][0]["user"].keys())
+        self.assertEqual(res.data["report"][0]["user"]["name"], "a@b.com")
 
     def test_global_ref(self):
         """Test global action triggers"""
@@ -1492,28 +1613,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             "zsb:walker_exception_with_try_else_multiple_line - line 32, col 23 - rule atom_trailer - ",
             res["errors"][0],
         )
-
-    def test_check_json_global_dict(self):
-        """Test set get global objects (as json)"""
-        from jaseci.tests.jac_test_code import set_get_global_dict
-
-        payload = {
-            "op": "sentinel_register",
-            "name": "zsb",
-            "code": set_get_global_dict,
-        }
-        res = self.sclient.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        payload = {"op": "walker_run", "name": "setter"}
-        res = self.sclient.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        payload = {"op": "walker_run", "name": "getter"}
-        res = self.sclient.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        self.assertEqual(res.data["report"][0]["max_bot_count"], 10)
 
     def quick_call(self, bywho, ops):
         return bywho.post(reverse(f'jac_api:{ops["op"]}'), ops, format="json")

@@ -1,0 +1,11 @@
+:host {
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+.jsc_anchor {
+  all: unset;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--color-brand-11)
+}

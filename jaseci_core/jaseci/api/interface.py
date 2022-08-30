@@ -6,6 +6,7 @@ from inspect import signature, getdoc
 from jaseci.utils.utils import logger
 from jaseci.utils.utils import is_jsonable
 from jaseci.element.element import element
+import json
 
 
 class interface:
@@ -94,8 +95,11 @@ class interface:
 
         return decorator_func
 
-    def all_apis(self):
-        return interface._public_api + interface._private_api + interface._admin_api
+    def all_apis(self, with_cli_only=False):
+        ret = interface._public_api + interface._private_api + interface._admin_api
+        if with_cli_only:
+            return ret + interface._cli_api
+        return ret
 
     assimilate_api = staticmethod(assimilate_api)
     public_api = staticmethod(public_api)
@@ -165,6 +169,11 @@ class interface:
                 val = _caller.provide_internal_default(p_name)
                 if val is not None and "errors" in val:
                     return val
+            if p_type == dict and isinstance(val, str):
+                if not len(val):
+                    val = {}
+                else:
+                    val = json.loads(val)
             if str(val) in _caller.alias_map.keys():
                 val = _caller.alias_map[val]
             if issubclass(p_type, element):
@@ -212,6 +221,11 @@ class interface:
             val = p_default if p_default is not func_sig.parameters[i].empty else None
             if p_name in params.keys():
                 val = params[p_name]
+            if p_type == dict and isinstance(val, str):
+                if not len(val):
+                    val = {}
+                else:
+                    val = json.loads(val)
             if issubclass(p_type, element):
                 if val is None:
                     return self.interface_error(

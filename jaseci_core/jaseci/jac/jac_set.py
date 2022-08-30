@@ -26,7 +26,7 @@ class jac_set(list):
         elif item not in self:
             list.append(self, item)
 
-    def add_obj(self, item):
+    def add_obj(self, item: element):
         if item not in self:
             self.append(item)
 

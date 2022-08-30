@@ -101,10 +101,6 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
         else:
             click.echo(f"Code file {kwargs['code']} not found!")
             return
-    if "ctx" in kwargs:  # can replace these checs with a dict check
-        kwargs["ctx"] = json.loads(kwargs["ctx"])
-    if "other_fields" in kwargs:
-        kwargs["other_fields"] = json.loads(kwargs["other_fields"])
     resolve_none_type(kwargs)
     if (
         not is_cli_only
@@ -297,17 +293,14 @@ def reset():
     type=str,
     help="Filename to dump output of this command call.",
 )
-def tool(op, output):
+def booktool(op, output):
     out = ""
     if op == "cheatsheet":
-        out = (
-            f"{book().api_cheatsheet(extract_api_tree())}".replace("_", "\\_")
-            .replace("&\n", "\\\\\n")
-            .replace("self, ", "")
-            .replace("(self)", "()")
-        )
+        out = f"{book().bookgen_api_cheatsheet(extract_api_tree())}"
+    elif op == "stdlib":
+        out = book().bookgen_std_library()
     elif op == "classes":
-        out = book().api_spec()
+        out = book().bookgen_api_spec()
     click.echo(out)
     if output:
         with open(output, "w") as f:
@@ -321,7 +314,7 @@ jsctl.add_command(edit)
 jsctl.add_command(ls)
 jsctl.add_command(clear)
 jsctl.add_command(reset)
-jsctl.add_command(tool)
+jsctl.add_command(booktool)
 cmd_tree_builder(extract_api_tree())
 
 
