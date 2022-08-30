@@ -1,7 +1,7 @@
 # Build a Conversational AI System with Jaseci
 
-In this tutorial, you are going to learn how to build a state-of-the-art conversational AI system with Jaseci.
-You will learn the basics of Jaseci, training state-of-the-art AI models, and everything between, in order to create an end-to-end fully-functional conversational AI system.
+In this tutorial, you are going to learn how to build a state-of-the-art conversational AI system with Jaseci and the Jac language.
+You will learn the basics of Jaseci, training state-of-the-art AI models, and everything in between, in order to create an end-to-end fully-functional conversational AI system.
 
 Excited? Hell yeah! Let's jump in.
 
