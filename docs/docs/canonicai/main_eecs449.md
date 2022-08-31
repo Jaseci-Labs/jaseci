@@ -350,19 +350,34 @@ walker ingest_faq {
 
 
 # A Multi-turn Action-oriented Dialogue System
-* In the previous section, we have built a FAQ system.
-* In this section, we are going to build a different type of conversational AI, a multi-turn action-oriented dialogue system.
-* Explain differences of this vs FAQ.
-* Mention we will start a new jac file. but it will come together with the FAQ at the end.
+## Introduction
+In the previous section, we built a FAQ chabot.
+It can search in a knowledge base of answers and find the most relevant one to a user's question.
+While ths covers many diverse topics, certain user request can not be satisfied by a single answer.
+For example, you might be looking to open a new bank account which requires mulitple different pieces of information about you.
+Or, you might be making a reservation at a restaurant which requires information such as date, time and size of your group.
+We refer to these as action-oriented conversational AI requests, as they often lead to a certain action or objective.
 
-## State Graph Architecture
-* Explain what is a state graph.
-* Each node represent a conversationial state.
-* The transition/edge represents possible transition between conversational state based on users input and NLU.
-* Add a diagram
+When interacting with a real human agent to accomplish this type of action-oriented requests, the interaction can get messy and unscripted and it also varies from person to person.
+Again, use the restaurant reservation as an example, one migh prefer to follow the guidance of the agent and provide one piece of information at a time, while others might prefer to provide all the neccessary information in one sentence at the beginning of the interaction.
 
-## Define the Node
-We will start with just intent classification.
+Therefore, in order to build a robust and flexible conversational AI to mimic a real human agent to support these types of messy action-oriented requests, we are going to need an architecture that is different than the single-turn FAQ.
+
+And that is what we are going to build in this section -- a multi-turn action-oriented dialogue system.
+
+> **Warning**
+>
+> Start a new jac file (`dialogue.jac`) before moving fowrard. We will keep this program separate from the FAQ one we built. But, KEEP the FAQ jac file around, we will integrate these two systems into one unified conversational AI system later.
+
+## State Graph
+Let's first go over the graph architecture for the dialogue system.
+We will be building a state graph.
+In a state graph, each node is a conversational state, which represent a possible user state during a dialgoue.
+The state nodes are connected with transition edges, which encode the condition required to hop from one state to another state.
+The conditions are often based on the user's input.
+
+## Define the State Nodes
+We will start by defining the node types.
 
 ```js
 node dialogue_root;
@@ -372,19 +387,24 @@ node dialogue_state {
     has response;
 }
 ```
-* Start with only intent classification.
-* One root connected with two intents (schedule a test drive, help)
-* Use string matching for the intent classification
+Here we have a `dialogue_root` as the entry point to the dialogue system and multiple `dialogue_state` nodes representing the conversational states.
+These nodes will be connected with a new type of edge `intent_transition`.
 
+## Custom Edges
 ```js
 edge intent_transition {
     has intent;
 }
 ```
-* Introduce custom edge.
-* Edge can have has variables and it can be used for filtering
+This is the first custom edge we have introduced.
+In jac, just like nodes, you can define custom edge type and edges can also have `has` variables.
+
+> **Note**
+>
+> Custom edge type and variables enable us to encode information into edges in addition to nodes. This is crucial for building a robust and flexible graph.
 
 ## Build the graph
+Let's build the first graph for the dialogue system.
 
 ```js
 graph dialogue_system {
@@ -395,19 +415,27 @@ graph dialogue_system {
             name = "test_drive",
             response = "Your test drive is scheduled for Jan 1st, 2023."
         );
-        help_state = spawn node::dialogue_state {
-            name = "help",
-            response = "I can help you schedule a test drive"
+        oos_state = spawn node::dialogue_state {
+            name = "out_of_scope",
+            response = "Sorry I can't handle that just yet. Anything else I can help you with?"
         };
 
         dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;
-        dialogue_root -[intent_transition(intent="help")]-> help_state;
+        dialogue_root -[intent_transition(intent="out of scope")]-> oos_state;
     }
 }
 ```
-* `-[intent_transition(intent="")]->` connects two nodes with a custom edge type and initializes the edge variables.
+We have already covered the syntax for graph definition, such as the `anchor` node and the `spawn` block in the previous section.
+Refer to the FAQ graph definition step if you need a refresher.
+
+We have a new language syntax here `dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;`.
+Let's break this down!
+* If you recall, we have used a similar but simpler syntax to connect two nodes with an edge `faq_root --> faq_state;`. This connect `faq_root` to `faq_state` with a **generic** edge pointing to `faq_state`;
+* In `dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;`, we are connecting the two states with a **custom** edge of the type `intent_transition`.
+* In addition, we are initializing the variable `intent` of the edge to be `test drive`.
 
 ## Initialize the graph
+Let's create an `init` walker to for this new jac program.
 ```js
 walker init {
     root {
@@ -415,8 +443,25 @@ walker init {
     }
 }
 ```
-* Same as the last section.
-* Show the DOT and the graph
+Put all the code so far in a new file and name it `dialogue.jac`.
+
+Let's initialize the graph and visualize it.
+```bash
+jaseci > jac dot dialogue.jac
+```
+```dot
+strict digraph root {
+    "n0" [ id="7b4ee7198c5b4dcd8acfcf739d6971fe", label="n0:root"  ]
+    "n1" [ id="7caf939cfbce40d4968d904052368f30", label="n1:dialogue_root"  ]
+    "n2" [ id="2e06be95aed449b59056e07f2077d854", label="n2:dialogue_state"  ]
+    "n3" [ id="4aa3e21e13eb4fb99926a465528ae753", label="n3:dialogue_state"  ]
+    "n1" -> "n3" [ id="6589c6d0dd67425ead843031c013d0fc", label="e0:intent_transition" ]
+    "n1" -> "n2" [ id="f4c9981031a7446b855ec91b89aaa5ee", label="e1:intent_transition" ]
+    "n0" -> "n1" [ id="bec764e7ee4048898799c2a4f01b9edb", label="e2" ]
+}
+```
+![DOT of the dialogue system](new_images/dialogue/dot_1.png)
+
 
 ## Build the Walker Logic
 ```js
