@@ -6,20 +6,30 @@ test_model_config = {"model_parameters": {"model_save_path": "modeloutput1"}}
 
 test_test_data = {"text": "Britain backed Fischler's proposal ."}
 
+test_predict_input = {"text": "london"}
+test_predict_output = [
+    {
+        "entity_text": "london",
+        "entity_value": "LABEL_0",
+        "conf_score": 0.6708430647850037,
+        "start_pos": 0,
+        "end_pos": 6,
+    }
+]
 test_entities = [
     {
-        "text": "britain",
-        "entity": "LOC",
-        "score": 0.5076541304588318,
-        "start": 0,
-        "end": 7,
+        "entity_text": "britain",
+        "entity_value": "LOC",
+        "conf_score": 0.5076541304588318,
+        "start_pos": 0,
+        "end_pos": 7,
     },
     {
-        "text": "fischler",
-        "entity": "ORG",
-        "score": 0.36676135659217837,
-        "start": 15,
-        "end": 23,
+        "entity_text": "fischler",
+        "entity_value": "ORG",
+        "conf_score": 0.36676135659217837,
+        "start_pos": 15,
+        "end_pos": 23,
     },
 ]
 test_training_data = [
