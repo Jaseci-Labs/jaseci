@@ -1,7 +1,7 @@
 # Creating a Component
 
 
-Each component in Jaseci webkit is rendered with `jsc-app`. After setting up your code, and assuming your jsc-app  component is placed somewhere in your html tree, the next step is to create the markup. We won't be using HTML to create the structure of our webpage, however, in this case, we will use our jsc-app  component to generate the markup using JSON.
+Each component in Jaseci webkit is rendered within `jsc-app`. After setting up your code, and assuming your jsc-app  component is placed somewhere in your html tree, the next step is to create the markup. We won't be using HTML to create the structure of our webpage, however, in this case, we will use our jsc-app  component to generate the markup using JSON.
 Creating a component is simple: at the bare minimum we need to create an object  with a _component_, _props_, and _sections_ properties. Here's an example of how we can render a Navbar component.
 
 ```json
