@@ -17,7 +17,7 @@
 \usepackage{footnote}
 \usepackage[toc]{glossaries}
 \newglossary[tlg]{technical}{tld}{tdn}{Techinical Terms}
-\makeglossaries
+%\makeglossaries
 \usepackage{hyperref}
 \hypersetup{
     citecolor=black,
@@ -125,10 +125,22 @@ keywordstyle={\color{black}},%                         and format them in black
     xrightmargin=5.8pt,
 }
 
+\lstdefinestyle{yaml}{
+     basicstyle=\color{blue}\footnotesize,
+     rulecolor=\color{black},
+     string=[s]{'}{'},
+     stringstyle=\color{blue},
+     comment=[l]{:},
+     commentstyle=\color{black},
+     morecomment=[l]{-}
+ }
+
 % This version forces listing on single page
 % \newcommand{\pycode}[2]{\renewcommand{\lstlistingname}{Python Code}\par\begin{minipage}{\linewidth}\lstinputlisting[label=py:#1, language=Python, caption={#2}]{assets/code/#1}\end{minipage}\par}
 
 % \newcommand{\jaccode}[2]{\renewcommand{\lstlistingname}{Jac Code}\par\begin{minipage}{\linewidth}\lstinputlisting[label=jac:#1, language=jac, caption={#2}]{assets/code/#1}\end{minipage}\par}
+
+\newcommand{\yaml}[2]{\renewcommand{\lstlistingname}{YAML}\par\lstinputlisting[label=YAML:#1, style=yaml, caption={#2}]{assets/code/#1}\par}
 
 \newcommand{\pycode}[2]{\renewcommand{\lstlistingname}{Python Code}\par\lstinputlisting[label=py:#1, language=Python, caption={#2}]{assets/code/#1}\par}
 
@@ -237,7 +249,31 @@ keywordstyle={\color{black}},%                         and format them in black
 \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
 }{}
 \PassOptionsToPackage{hyphens}{url} % url is loaded by hyperref
+% for adjustwidth environment
+\usepackage[strict]{changepage}
 
+% for formal definitions
+\usepackage{framed}
+
+% environment derived from framed.sty: see leftbar environment definition
+\definecolor{formalshade}{rgb}{0.95,0.95,1}
+
+\renewenvironment{quote}{%
+  \def\FrameCommand{%
+    \hspace{1pt}%
+    {\color{blue}\vrule width 2pt}%
+    {\color{formalshade}\vrule width 4pt}%
+    \colorbox{formalshade}%
+  }%
+  \MakeFramed{\advance\hsize-\width\FrameRestore}%
+  \noindent\hspace{-4.55pt}% disable indenting first paragraph
+  \begin{adjustwidth}{}{7pt}%
+  \vspace{2pt}\vspace{2pt}%
+}
+{%
+  \vspace{2pt}\end{adjustwidth}\endMakeFramed%
+}
+\newcommand{\passthrough}[1]{#1}
 \usepackage{color}
 \usepackage{fancyvrb}
 \newcommand{\VerbBar}{|}
