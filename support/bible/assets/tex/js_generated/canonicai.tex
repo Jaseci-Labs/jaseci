@@ -1,5 +1,5 @@
 \section{Build a Conversational AI System with
-Jaseci}\label{build-a-conversational-ai-system-with-jaseci}
+  Jaseci}\label{build-a-conversational-ai-system-with-jaseci}
 
 In this tutorial, you are going to learn how to build a state-of-the-art
 conversational AI system with Jaseci and the Jac language. You will
@@ -28,10 +28,10 @@ command above displays the help menu for \lstinline!jsctl!, then you
 have succssfully installed jaseci.
 
 \begin{quote}
-\textbf{Note}
+    \textbf{Note}
 
-Take a look and get familiarized with these commands while you are at
-it. \lstinline!jsctl! will be frequently used throughout this journey.
+    Take a look and get familiarized with these commands while you are at
+    it. \lstinline!jsctl! will be frequently used throughout this journey.
 \end{quote}
 
 \subsection{Background}\label{background}
@@ -47,7 +47,7 @@ Link to bible sections.
 Link to bible sections.
 
 \section{Automated FAQ answering
-chatbot}\label{automated-faq-answering-chatbot}
+  chatbot}\label{automated-faq-answering-chatbot}
 
 Our conversational AI system will consists of multiple components. To
 start, we are going to build a chatbot that can answer FAQ questions
@@ -60,10 +60,10 @@ The use case here is a Tesla FAQ chatbot. We will be using the list of
 FAQs from https://www.tesla.com/en\_SG/support/faq.
 
 \begin{quote}
-\textbf{Note}
+    \textbf{Note}
 
-This architecture works for any FAQ topics and use case. Feel free to
-pick another product/website/company's FAQ if you'd like!
+    This architecture works for any FAQ topics and use case. Feel free to
+    pick another product/website/company's FAQ if you'd like!
 \end{quote}
 
 \subsection{Define the Nodes}\label{define-the-nodes}
@@ -71,16 +71,16 @@ pick another product/website/company's FAQ if you'd like!
 We have 3 different type of nodes:
 
 \begin{itemize}
-\tightlist
-\item
-  \lstinline!root!: This is the root node of the graph. It is a built-in
-  node type and each graph has one root node only.
-\item
-  \lstinline!faq_root!: This is the entry point of the FAQ handler. We
-  will make the decision on the most relevant answer at this node.
-\item
-  \lstinline!faq_state!: This node represents a FAQ entry. It contains a
-  candidate answer from the knowledge base.
+    \tightlist
+    \item
+          \lstinline!root!: This is the root node of the graph. It is a built-in
+          node type and each graph has one root node only.
+    \item
+          \lstinline!faq_root!: This is the entry point of the FAQ handler. We
+          will make the decision on the most relevant answer at this node.
+    \item
+          \lstinline!faq_state!: This node represents a FAQ entry. It contains a
+          candidate answer from the knowledge base.
 \end{itemize}
 
 Now let's define the custom node types.
@@ -97,10 +97,10 @@ The \lstinline!has! keyword defines nodes variables. In this case, each
 \lstinline!faq_state! has a \lstinline!question! and \lstinline!answer!.
 
 \begin{quote}
-\textbf{Warning}
+    \textbf{Warning}
 
-The \lstinline!root! node does not need explicit definition. It is a
-built-in node type. Avoid using \lstinline!root! as a custom node type.
+    The \lstinline!root! node does not need explicit definition. It is a
+    built-in node type. Avoid using \lstinline!root! as a custom node type.
 \end{quote}
 
 \subsection{Build the Graph}\label{build-the-graph}
@@ -108,9 +108,9 @@ built-in node type. Avoid using \lstinline!root! as a custom node type.
 For this FAQ chatbot, we will build a graph like illustrated here:
 
 \begin{figure}
-\centering
-\includegraphics{images/faq_1.png}
-\caption{Architecture of FAQ Bot}
+    \centering
+    \includegraphics{images/faq_1.png}
+    \caption{Architecture of FAQ Bot}
 \end{figure}
 
 The idea here is that we will decide which FAQ entry is the most
@@ -164,10 +164,10 @@ called \lstinline!faq_answer_1! and initialized its \lstinline!question!
 and \lstinline!answer! variables.
 
 \begin{quote}
-\textbf{Note}
+    \textbf{Note}
 
-The \lstinline!spawn! keyword can be used in this style to spawn many
-different jaseci objects, such as nodes, graphs and walkers.
+    The \lstinline!spawn! keyword can be used in this style to spawn many
+    different jaseci objects, such as nodes, graphs and walkers.
 \end{quote}
 
 The second usage of \lstinline!spawn! is with the graph:
@@ -188,23 +188,23 @@ of that spawned graph will be the \lstinline!has anchor faq_root!.
 In this block:
 
 \begin{itemize}
-\tightlist
-\item
-  We spawn 4 nodes, one of the type \lstinline!faq_root! and three are
-  of the type \lstinline!faq_state!.
-\item
-  We connect each of the faq answer state to the faq root with
-  \lstinline!faq_root --> faq_answer_*!.
-\item
-  We set the \lstinline!faq_root! as the anchor node of the graph. As we
-  will later see, spawning a graph will return its anchor node.
+    \tightlist
+    \item
+          We spawn 4 nodes, one of the type \lstinline!faq_root! and three are
+          of the type \lstinline!faq_state!.
+    \item
+          We connect each of the faq answer state to the faq root with
+          \lstinline!faq_root --> faq_answer_*!.
+    \item
+          We set the \lstinline!faq_root! as the anchor node of the graph. As we
+          will later see, spawning a graph will return its anchor node.
 \end{itemize}
 
 \begin{quote}
-\textbf{Warning}
+    \textbf{Warning}
 
-An anchor node is required for every graph block. It must be assigned
-inside the spawn block of the graph definition.
+    An anchor node is required for every graph block. It must be assigned
+    inside the spawn block of the graph definition.
 \end{quote}
 
 \subsection{Initialize the Graph}\label{initialize-the-graph}
@@ -223,49 +223,49 @@ walker init {
 This is the first walker we have introduced so let's break it down.
 
 \begin{itemize}
-\tightlist
-\item
-  The walker is called \lstinline!init!.
-\item
-  It contains logic specifically for the \lstinline!root! node, meaning
-  that the code inside the \lstinline!root {}! block will run
-  \textbf{only} on the \lstinline!root! node. This syntax applies for
-  any node types, as you will see very soon. Every Jac program starts
-  with a single root node, though as you will later learn, a walker can
-  be executed on any node though root is default if none is specified.
-\item
-  \lstinline!spawn here --> graph::faq! creates an instance of the
-  \lstinline!faq! graph and connect its anchor node to \lstinline!here!
-  which is the node the walker is currently on.
+    \tightlist
+    \item
+          The walker is called \lstinline!init!.
+    \item
+          It contains logic specifically for the \lstinline!root! node, meaning
+          that the code inside the \lstinline!root {}! block will run
+          \textbf{only} on the \lstinline!root! node. This syntax applies for
+          any node types, as you will see very soon. Every Jac program starts
+          with a single root node, though as you will later learn, a walker can
+          be executed on any node though root is default if none is specified.
+    \item
+          \lstinline!spawn here --> graph::faq! creates an instance of the
+          \lstinline!faq! graph and connect its anchor node to \lstinline!here!
+          which is the node the walker is currently on.
 \end{itemize}
 
 \begin{quote}
-\textbf{Note}
+    \textbf{Note}
 
-\lstinline!init! can be viewed as similar to \lstinline!main! in python.
-It is the default walker to run when no specific walkers are specified
-for a \lstinline!jac run! command.
+    \lstinline!init! can be viewed as similar to \lstinline!main! in python.
+    It is the default walker to run when no specific walkers are specified
+    for a \lstinline!jac run! command.
 
-\lstinline!here! is a very powerful keyword. It always evaluates to the
-specific node the walker is currently on. You will be using
-\lstinline!here! a lot throughout this tutorial.
+    \lstinline!here! is a very powerful keyword. It always evaluates to the
+    specific node the walker is currently on. You will be using
+    \lstinline!here! a lot throughout this tutorial.
 \end{quote}
 
 \subsection{\texorpdfstring{Run the \texttt{init}
-Walker}{Run the init Walker}}\label{run-the-init-walker}
+        Walker}{Run the init Walker}}\label{run-the-init-walker}
 
 Now, let's run the init walker to initialize the graph. First put all
 the above code snippet in a single jac file and name it
 \lstinline!main.jac!, including
 
 \begin{itemize}
-\tightlist
-\item
-  nodes defintion
-\item
-  graph definition
-\item
-  init walker
+    \tightlist
+    \item
+          nodes defintion
+    \item
+          graph definition
+    \item
+          init walker
 \end{itemize}
 
 Run \lstinline!jsctl! to get into the jaseci shell environment:
@@ -290,9 +290,9 @@ graphs.
 The output should look something like this
 
 \begin{figure}
-\centering
-\includegraphics{images/dot_1.svg}
-\caption{Dot output for Faq graph}
+    \centering
+    \includegraphics{images/dot_1.png}
+    \caption{Dot output for Faq graph}
 \end{figure}
 
 \begin{lstlisting}
@@ -310,19 +310,19 @@ strict digraph root {
 \end{lstlisting}
 
 \begin{quote}
-\textbf{Note}
+    \textbf{Note}
 
-We are not going to cover the DOT syntax. There are many resources
-online if you are interested, e.g.,
-https://graphviz.org/doc/info/lang.html
+    We are not going to cover the DOT syntax. There are many resources
+    online if you are interested, e.g.,
+    https://graphviz.org/doc/info/lang.html
 \end{quote}
 
 \begin{quote}
-\textbf{Note}
+    \textbf{Note}
 
-There are tools available to render a graph in DOT format. For example,
-https://dreampuf.github.io/GraphvizOnline has as WSIWYG editor to render
-dot graph in real time.
+    There are tools available to render a graph in DOT format. For example,
+    https://dreampuf.github.io/GraphvizOnline has as WSIWYG editor to render
+    dot graph in real time.
 \end{quote}
 
 Congratulations! You have just created your first functional jac
@@ -355,27 +355,27 @@ This walker is more complex than the \lstinline!init! one and introduces
 a few new concepts so let's break it down!
 
 \begin{itemize}
-\tightlist
-\item
-  Similar to nodes, walker can also contain \lstinline!has! variables.
-  They define variables of the walker. They can also be passed as
-  parameters when calling the walker.
-\item
-  \lstinline!std.input! and \lstinline!std.out! read and write to the
-  command line.
-\item
-  This walker has logic for three types of node: \lstinline!root!,
-  \lstinline!faq_root! and \lstinline!faq_state!.
-\item
-  \lstinline!root!: It simply traverse to the \lstinline!faq_root! node.
-\item
-  \lstinline!faq_root!: This is where the answer selection algorithm is.
-  We will find the most relevant \lstinline!faq_state! and then traverse
-  to that node via a \lstinline!take! statement. In this code snippet,
-  we are using a very simple (and limited) string matching approach to
-  try to match the predefined FAQ question with the user question.
-\item
-  \lstinline!faq_state!: Print the answer to the terminal
+    \tightlist
+    \item
+          Similar to nodes, walker can also contain \lstinline!has! variables.
+          They define variables of the walker. They can also be passed as
+          parameters when calling the walker.
+    \item
+          \lstinline!std.input! and \lstinline!std.out! read and write to the
+          command line.
+    \item
+          This walker has logic for three types of node: \lstinline!root!,
+          \lstinline!faq_root! and \lstinline!faq_state!.
+    \item
+          \lstinline!root!: It simply traverse to the \lstinline!faq_root! node.
+    \item
+          \lstinline!faq_root!: This is where the answer selection algorithm is.
+          We will find the most relevant \lstinline!faq_state! and then traverse
+          to that node via a \lstinline!take! statement. In this code snippet,
+          we are using a very simple (and limited) string matching approach to
+          try to match the predefined FAQ question with the user question.
+    \item
+          \lstinline!faq_state!: Print the answer to the terminal
 \end{itemize}
 
 Before we run this walker, we are going to update the \lstinline!init!
@@ -394,10 +394,10 @@ This serves as a shorthand so that we can initialize the graph and ask
 question in one command.
 
 \begin{quote}
-\textbf{Note}
+    \textbf{Note}
 
-This demonstrates how one walker can spawn another walker using the
-\lstinline!spawn! keyword.
+    This demonstrates how one walker can spawn another walker using the
+    \lstinline!spawn! keyword.
 \end{quote}
 
 Time to run the walker!
@@ -412,7 +412,7 @@ format. Try giving it one of the three questions we have predefined and
 it should respond with the corresponding answer.
 
 \subsection{Introducing Universal Sentence
-Encoder}\label{introducing-universal-sentence-encoder}
+    Encoder}\label{introducing-universal-sentence-encoder}
 
 Now, obviously, what we have now is not very ``AI'' and we need to fix
 that. We are using the Universal Sentence Encoder QA model as the answer
@@ -466,16 +466,16 @@ Even though there are only 5 lines of new code, there are many
 interesting aspects so let's break it down!
 
 \begin{itemize}
-\tightlist
-\item
-  \lstinline!-->.answer! collects the \lstinline!answer! variable of all
-  of the nodes that are connected to
-  \lstinline!here!/\lstinline!faq_root! with a \lstinline!-->!
-  connection.
-\item
-  \lstinline!use.qa_classify! is one of the action supported by the USE
-  QA action set. It takes in a question and a list of candidate answers
-  and return the most relevant one.
+    \tightlist
+    \item
+          \lstinline!-->.answer! collects the \lstinline!answer! variable of all
+          of the nodes that are connected to
+          \lstinline!here!/\lstinline!faq_root! with a \lstinline!-->!
+          connection.
+    \item
+          \lstinline!use.qa_classify! is one of the action supported by the USE
+          QA action set. It takes in a question and a list of candidate answers
+          and return the most relevant one.
 \end{itemize}
 
 Now let's run this new walker and you can now ask questions that are
@@ -541,15 +541,15 @@ walker init {
 What we are doing here is
 
 \begin{itemize}
-\tightlist
-\item
-  Spawn a \lstinline!faq_root! node
-\item
-  Run the \lstinline!ingest_faq! walker to create the neccessary
-  \lstinline!faq_state! nodes based on the question-answer entires in
-  the \lstinline!tesla_faq.json! file.
-\item
-  Launch the \lstinline!ask! walker
+    \tightlist
+    \item
+          Spawn a \lstinline!faq_root! node
+    \item
+          Run the \lstinline!ingest_faq! walker to create the neccessary
+          \lstinline!faq_state! nodes based on the question-answer entires in
+          the \lstinline!tesla_faq.json! file.
+    \item
+          Launch the \lstinline!ask! walker
 \end{itemize}
 
 Let's run the program one more time and test it out!
@@ -559,27 +559,27 @@ jaseci > jac run main.jac
 \end{lstlisting}
 
 \begin{quote}
-\textbf{Note}
+    \textbf{Note}
 
-Try more varied questions. Now we have a longer answer with more rich
-information, it has a higher coverage of information that will be able
-to answer more questions.
+    Try more varied questions. Now we have a longer answer with more rich
+    information, it has a higher coverage of information that will be able
+    to answer more questions.
 \end{quote}
 
 \begin{quote}
-\textbf{Note}
+    \textbf{Note}
 
-If you are feeling adventurous, try downloading the complete list of
-entires on the Tesla FAQ page and use it to create a production-level
-FAQ bot. See if you can push the model to its limit!
+    If you are feeling adventurous, try downloading the complete list of
+    entires on the Tesla FAQ page and use it to create a production-level
+    FAQ bot. See if you can push the model to its limit!
 \end{quote}
 
 \section{Next up!}\label{next-up}
 
 \begin{figure}
-\centering
-\includegraphics{images/arch.png}
-\caption{Full architecture of Tesla AI}
+    \centering
+    \includegraphics{images/arch.png}
+    \caption{Full architecture of Tesla AI}
 \end{figure}
 
 Here is a preview on what's next to come in this journey!
@@ -588,19 +588,19 @@ On the right is the architecture diagram of the complete system we are
 going to build. Here are the major components:
 
 \begin{itemize}
-\tightlist
-\item
-  Zero-shot FAQ (what we have built so far).
-\item
-  Action-oriented Multi-turn Dialogue System.
-\item
-  Training and inference with an intent classification model.
-\item
-  Training and inference with an entity extraction model.
-\item
-  Testing.
-\item
-  Deploying your Jac application to a production environment.
-\item
-  Training data collection and curation.
+    \tightlist
+    \item
+          Zero-shot FAQ (what we have built so far).
+    \item
+          Action-oriented Multi-turn Dialogue System.
+    \item
+          Training and inference with an intent classification model.
+    \item
+          Training and inference with an entity extraction model.
+    \item
+          Testing.
+    \item
+          Deploying your Jac application to a production environment.
+    \item
+          Training data collection and curation.
 \end{itemize}
