@@ -203,7 +203,7 @@ This command runs the `init` walker of the `main.jac` program and prints the sta
 
 The output should look something like this
 
-![Dot output for Faq graph](images/dot_1.svg)
+![Dot output for Faq graph](images/dot_1.png)
 
 ```dot
 strict digraph root {
