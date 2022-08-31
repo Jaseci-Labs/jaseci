@@ -1,22 +1,21 @@
-product_name      = "Jaseci"
-department        = "IT"
-cost_centre       = "IT"
-product_owner     = ""
-product_manager   = ""
-portfolio_manager = ""
-managed_by        = "admin@jaseci.org"
 
-allowed_account_ids = [""]
+# All Configs variables assigned  here
+
+allowed_account_ids = ["12345678"] # Add you AWS Account ID in comma separated list. You can add multiple account Ids here
 
 
 #Dev Environment settings (default workspace)
-development_azure_account_id = ""
-development_azure_role_arn   = ""
+development_aws_account_id = "12345678" # Add you AWS Account ID
+development_aws_role_arn   = ""
 
-# #Prod Environment setting (production workspace)
-# production_azure_account_id = ""
-# production_azure_role_arn   = ""
+# #Prod Environment setting (production workspace)  #when you craete Prod Environment uncomment this
+# production_aws_account_id = ""
+# production_aws_role_arn   = ""
 
 
+region = "us-west-2"
+instance_type = "m5.xlarge"
+clusterversion = "1.22"
+instance_type_list = ["m5.xlarge"]   # add comma separated list of instanced you want
 
 
