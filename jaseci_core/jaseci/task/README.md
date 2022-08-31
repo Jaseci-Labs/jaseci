@@ -81,7 +81,7 @@ Any walker that can be called with `is_async` field
 
         "requests": [{
             "method": "POST",
-            "url": "http://localhost:8000/user/token/",
+            "api": "http://localhost:8000/user/token/",
             "body": {
                 "email": "alexie.madolid@bcstechnology.com.au",
                 "password": "Bcstech123!"
@@ -95,7 +95,7 @@ Any walker that can be called with `is_async` field
 
         {
             "method": "POST",
-            "url": "http://localhost:8000/js_admin/master_allusers",
+            "api": "http://localhost:8000/js_admin/master_allusers",
             "body": {
                 "limit": 0,
                 "offset": 0
@@ -152,7 +152,7 @@ Any walker that can be called with `is_async` field
                 // same mechanism from requests above
                 "requests": [{
                         "method": "POST",
-                        "url": "http://localhost:8000/js/object_get",
+                        "api": "http://localhost:8000/js/object_get",
                         "body": {
                             // $ on first request on loop is from current response from the looper
                             "obj": "{{$.jid}}",
@@ -173,7 +173,7 @@ Any walker that can be called with `is_async` field
                     },
                     {
                         "method": "POST",
-                        "url": "http://localhost:8000/js/walker_run",
+                        "api": "http://localhost:8000/js/walker_run",
                         "body": {
                             "name": "get_botset",
                             "ctx": {},
@@ -193,9 +193,22 @@ Any walker that can be called with `is_async` field
         },
         {
             "method": "GET",
-            "url": "https://jsonplaceholder.typicode.com/todos/100",
+            "api": "https://jsonplaceholder.typicode.com/todos/100",
             "save_to": "testing_nested",
             "save_req_to": "req_testing_nested"
+        },
+        {
+            // Trigger will use jaseci interface
+            "method": "JAC",
+            "api": "master_allusers",
+            "body": {
+                "limit": 0,
+                "offset": 0
+            },
+            // Optional: if master is present trigger is
+            // considered authenticated or general else public
+            "master": "{{#.master}}", // will use persistence.master
+            "save_to": "master_allusers_by_walker"
         }
     ]
 }
