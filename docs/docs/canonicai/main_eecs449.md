@@ -399,6 +399,8 @@ edge intent_transition {
 This is the first custom edge we have introduced.
 In jac, just like nodes, you can define custom edge type and edges can also have `has` variables.
 
+In this case, we created an edge for intent transition. This is a state transition that will be triggered conditioned on its intent being detected from the user's input question.
+
 > **Note**
 >
 > Custom edge type and variables enable us to encode information into edges in addition to nodes. This is crucial for building a robust and flexible graph.
@@ -462,16 +464,37 @@ strict digraph root {
 ```
 ![DOT of the dialogue system](new_images/dialogue/dot_1.png)
 
-
 ## Build the Walker Logic
+Let's now start building the walker to interact with this dialogue system.
 ```js
 walker talk {
-    // Simple string matching for intent classification
-    // use std.in and std.out
+    has question;
+    root {
+        question = std.input("> ");
+        take --> node::dialogue_root;
+    }
+    dialogue_root {
+        take -[intent_transition(intent==question)]-> node::dialogue_state;
+    }
+    dialogue_state {
+        std.out(here.response);
+    }
 }
 ```
-* This will be a simple walker.
-* Run this
+Similar to the first walker we built for the FAQ system, we are starting with a simple string matching algorithm.
+Let's update the init walker to include this walker.
+
+```js
+walker init {
+    root {
+        spawn here --> graph::dialogue_system;
+        spawn here walker::talk;
+    }
+}
+```
+Try out the following interaction
+
+
 
 ## Intent classificaiton with Bi-encoder
 * A quick primer on intent classification
