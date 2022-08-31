@@ -79,7 +79,7 @@ The `has` keyword defines nodes variables. In this case, each `faq_state` has a 
 
 For this FAQ chatbot, we will build a graph like illustrated here:
 
-![Architecture of FAQ Bot](new_images/faq_1.png)
+![Architecture of FAQ Bot](images/faq_1.png)
 
 The idea here is that we will decide which FAQ entry is the most relevant to the incoming question at the `faq_root` node and then we will traverse to that node to fetch the corresponding answer.
 
@@ -202,7 +202,8 @@ This command runs the `init` walker of the `main.jac` program and prints the sta
 [The DOT language](https://graphviz.org/doc/info/lang.html) is a popular graph description language widely used for representing complex graphs.
 
 The output should look something like this
-<img align="right" width="500" src="new_images/dot_1.svg">
+
+![Dot output for Faq graph](images/dot_1.png)
 
 ```dot
 strict digraph root {
@@ -413,16 +414,17 @@ jaseci > jac run main.jac
 > If you are feeling adventurous, try downloading the complete list of entires on the Tesla FAQ page and use it to create a production-level FAQ bot. See if you can push the model to its limit!
 
 # Next up!
-<img align="right" width="500" src="new_images/arch.png">
+
+![Full architecture of Tesla AI](images/arch.png)
 
 Here is a preview on what's next to come in this journey!
 
 On the right is the architecture diagram of the complete system we are going to build. Here are the major components:
 
-* Zero-shot FAQ (what we have built so far).
-* Action-oriented Multi-turn Dialogue System.
-* Training and inference with an intent classification model.
-* Training and inference with an entity extraction model.
-* Testing.
-* Deploying your Jac application to a production environment.
-* Training data collection and curation.
+- Zero-shot FAQ (what we have built so far).
+- Action-oriented Multi-turn Dialogue System.
+- Training and inference with an intent classification model.
+- Training and inference with an entity extraction model.
+- Testing.
+- Deploying your Jac application to a production environment.
+- Training data collection and curation.
