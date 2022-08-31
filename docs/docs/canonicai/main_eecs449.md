@@ -226,7 +226,7 @@ strict digraph root {
 >
 > There are tools available to render a graph in DOT format. For example, https://dreampuf.github.io/GraphvizOnline has as WSIWYG editor to render dot graph in real time.
 
-Congratulations! 🎉 You have just created your first functional jac program!
+Congratulations! You have just created your first functional jac program!
 
 ## Ask the Question
 
@@ -360,20 +360,21 @@ walker ingest_faq {
 ```
 
 An example knowledge base file look like this
+
 ```json
 [
-    {
-        "question": "I have a Model 3 reservation, how do I configure my order?",
-        "answer": "To configure your order, log into your Tesla Account and select manage on your existing reservation to configure your Tesla. Your original USD deposit has now been converted to SGD."
-    },
-    {
-        "question": "How do I order a Tesla?",
-        "answer": "Visit our Design Studio to explore our latest options and place your order. The purchase price and estimated delivery date will change based on your configuration."
-    },
-    {
-        "question": "Can I request a Test Drive?",
-        "answer": "Yes, you can request for a test drive. Please note that drivers must be a minimum of 25 years of age and not exceeding 65 years of age, hold a full driving license with over 2 years of driving experience. Insurance conditions relating to your specific status must be reviewed and accepted prior to the test drive."
-    }
+  {
+    "question": "I have a Model 3 reservation, how do I configure my order?",
+    "answer": "To configure your order, log into your Tesla Account and select manage on your existing reservation to configure your Tesla. Your original USD deposit has now been converted to SGD."
+  },
+  {
+    "question": "How do I order a Tesla?",
+    "answer": "Visit our Design Studio to explore our latest options and place your order. The purchase price and estimated delivery date will change based on your configuration."
+  },
+  {
+    "question": "Can I request a Test Drive?",
+    "answer": "Yes, you can request for a test drive. Please note that drivers must be a minimum of 25 years of age and not exceeding 65 years of age, hold a full driving license with over 2 years of driving experience. Insurance conditions relating to your specific status must be reviewed and accepted prior to the test drive."
+  }
 ]
 ```
 
@@ -390,12 +391,15 @@ walker init {
     }
 }
 ```
+
 What we are doing here is
-* Spawn a `faq_root` node
-* Run the `ingest_faq` walker to create the neccessary `faq_state` nodes based on the question-answer entires in the `tesla_faq.json` file.
-* Launch the `ask` walker
+
+- Spawn a `faq_root` node
+- Run the `ingest_faq` walker to create the neccessary `faq_state` nodes based on the question-answer entires in the `tesla_faq.json` file.
+- Launch the `ask` walker
 
 Let's run the program one more time and test it out!
+
 ```bash
 jaseci > jac run main.jac
 ```
@@ -407,4 +411,3 @@ jaseci > jac run main.jac
 > **Note**
 >
 > If you are feeling adventurous, try downloading the complete list of entires on the Tesla FAQ page and use it to create a production-level FAQ bot. See if you can push the model to its limit!
-
