@@ -1,4 +1,6 @@
 import re
+import shutil
+from os import walk
 # open read me file 
 def main():
     readme = open("README.md","r")
@@ -40,6 +42,7 @@ def main():
 
                 docfile.close()
 
+    generateAssests("support/guide/assets")
 
 
         
@@ -65,8 +68,19 @@ def processline(line):
         
         return {"heading": heading , "link" : link}
    
-    
+def generateAssests(*paths):
+    for path in paths:
+        f = []
+        for (dirpath, dirnames, filenames) in walk(path):
+            f.extend(filenames)
+            break
 
-#def getLink():
+
+        for file in f:
+            assetRelativePath = path + "/" + file
+            newAssetPath = 'documentation/src/' + assetRelativePath
+
+            shutil.copy(assetRelativePath,newAssetPath)
+
 
 main()
