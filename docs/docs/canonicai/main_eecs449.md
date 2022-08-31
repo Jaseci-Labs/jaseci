@@ -667,18 +667,10 @@ Let's run the new walker with the new grpah.
 Now that we have unified the data structure, let's see how we can combine these two into one unified conversational AI system.
 The unified code architecture makes this much easier than before.
 
-* We will introduce a node at the root level that categorize request into FAQ or Dialogue System request
+* We will add an intent to the dialogue system to direct requests to FAQ
 * Add diagram here
 
-Here is the node
-```js
-node cai_root:cai_state {
-
-}
-```
-* Use USE encoder to categorize the request
-
-Update the graph with both sides combined
+Update the graph with both sides linked
 ```js
 graph conv_ai {
     has anchor cai_root;
@@ -697,7 +689,7 @@ walker talk {
 }
 ```
 * Explain the state tracking logic of the walker.
-* It generalizes to both cai_root, faq_state and dialogue_state.
+* It generalizes to both faq_state and dialogue_state.
 
 We also need to update the `init` walker;
 ```js
@@ -735,4 +727,50 @@ jaseci > jac run main.jir -wlk WALKER_NAME -ctx {}
 > The jir format is what you will use to deploy your jac program to a production jaseci instance.
 
 ## Initialize the Latest Graph
-Use jac dot
+Use jac dot on the jir file to initialize the graph.
+
+## Update the intent classifier model
+Add data for the new I have questions intent
+
+Run the walker and try it out
+
+# From prototype --> production application
+## Introducing yield
+Explain yield
+Update the walker with yield
+```js
+walker talk {
+    // Update this with yield
+}
+```
+
+## Adding test cases
+Introduce jac tests
+```js
+test ""
+```
+
+## Deploying your application to remote jaseci instance
+introduce jsserv
+
+introduce sentinel.
+
+introduce jac APIs
+
+Walkthrough process of deploying application to remote jaseci instance
+
+```bash
+sentinel register
+walker init
+call the walker API
+```
+
+# Improve your AI model
+
+Data collection and curation principles and best practices
+
+Crowdsource
+
+
+
+
