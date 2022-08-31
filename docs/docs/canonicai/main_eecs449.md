@@ -411,3 +411,18 @@ jaseci > jac run main.jac
 > **Note**
 >
 > If you are feeling adventurous, try downloading the complete list of entires on the Tesla FAQ page and use it to create a production-level FAQ bot. See if you can push the model to its limit!
+
+# Next up!
+<img align="right" width="500" src="new_images/arch.png">
+
+Here is a preview on what's next to come in this journey!
+
+On the right is the architecture diagram of the complete system we are going to build. Here are the major components:
+
+* Zero-shot FAQ (what we have built so far).
+* Action-oriented Multi-turn Dialogue System.
+* Training and inference with an intent classification model.
+* Training and inference with an entity extraction model.
+* Testing.
+* Deploying your Jac application to a production environment.
+* Training data collection and curation.
