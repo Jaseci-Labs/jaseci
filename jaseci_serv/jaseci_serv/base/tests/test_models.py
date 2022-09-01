@@ -51,7 +51,7 @@ class model_tests(TestCaseHelper, TestCase):
 
     def test_jaseci_obj_accessl_has_relevant_fields(self):
         """Test that Jaseci ORM models has all element class fields"""
-        element_obj = element.element(m_id="anon", h=element.mem_hook())
+        element_obj = element.element(m_id="anon", h=element.redis_hook())
         orm_obj = models.JaseciObject()
         for a in vars(element_obj).keys():
             if not a.startswith("_") and not callable(getattr(element_obj, a)):
@@ -59,7 +59,7 @@ class model_tests(TestCaseHelper, TestCase):
 
     def test_jaseci_json_has_relevant_fields(self):
         """Test that Jaseci ORM models has all element class fields"""
-        element_obj = element.element(m_id="anon", h=element.mem_hook())
+        element_obj = element.element(m_id="anon", h=element.redis_hook())
         for a in vars(element_obj).keys():
             if not a.startswith("_") and not callable(getattr(element_obj, a)):
                 self.assertIn(a, JaseciObjectSerializer.Meta.fields)

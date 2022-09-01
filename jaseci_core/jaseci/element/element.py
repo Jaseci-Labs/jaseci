@@ -13,11 +13,10 @@ from datetime import datetime
 import copy
 import json
 from jaseci.utils.id_list import id_list
+from jaseci.utils.redis_hook import redis_hook
 from jaseci.utils.utils import logger, log_var_out
-from jaseci.utils.mem_hook import mem_hook
-from jaseci.utils.mem_hook import json_str_to_jsci_dict
+from jaseci.utils.json_handler import JaseciJsonEncoder, json_str_to_jsci_dict
 from jaseci.element.obj_mixins import hookable
-
 
 __version__ = "1.0.0"
 
@@ -147,14 +146,14 @@ class element(hookable):
         saving and loading item.
         """
         obj_fields = []
-        element_fields = dir(element(m_id=self._m_id, h=mem_hook()))
+        element_fields = dir(element(m_id=self._m_id, h=redis_hook()))
         for i in vars(self).keys():
             if not i.startswith("_") and i not in element_fields:
                 obj_fields.append(i)
         obj_dict = {}
         for i in obj_fields:
             obj_dict[i] = getattr(self, i)
-        return json.dumps(obj_dict)
+        return json.dumps(obj_dict, cls=JaseciJsonEncoder)
 
     def serialize(self, deep=0, detailed=False):
         """
@@ -195,7 +194,9 @@ class element(hookable):
 
         deep indicates number of levels to unwind uuids
         """
-        return json.dumps(self.serialize(deep, detailed=detailed), indent=4)
+        return json.dumps(
+            self.serialize(deep, detailed=detailed), indent=4, cls=JaseciJsonEncoder
+        )
 
     def json_load(self, blob):
         """Loads self from json blob"""
@@ -206,6 +207,9 @@ class element(hookable):
         """Loads self from dict"""
         for i in jdict.keys():
             setattr(self, i, jdict[i])
+
+        if "code_ir" in jdict:
+            self.apply_ir(self.code_ir)
 
     def get_deep_obj_list(self, objs=None):
         """Recursively get all contained Jaseci objects and return id_list"""

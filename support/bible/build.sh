@@ -1,5 +1,5 @@
-pdflatex -shell-escape book
-makeglossaries book
+lualatex -shell-escape book
+# makeglossaries book
 bibtex book
-pdflatex book
-pdflatex book
+lualatex book
+lualatex book

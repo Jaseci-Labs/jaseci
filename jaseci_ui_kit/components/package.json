@@ -26,7 +26,6 @@
     "generate": "stencil generate"
   },
   "dependencies": {
-    "@radix-ui/colors": "^0.1.8",
     "@stencil/core": "^2.13.0",
     "@stencil/store": "^1.5.0",
     "artyom.js": "^1.0.6",
