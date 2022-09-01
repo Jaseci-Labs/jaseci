@@ -482,7 +482,7 @@ def save_custom_model(model_path):
 # predicting entities
 def predict_text(sentence):
     pipe = pipeline(
-        "ner", model=model.to("cpu"), tokenizer=tokenizer, aggregation_strategy="simple"
+        "ner", model=model.to("cpu"), tokenizer=tokenizer, aggregation_strategy="first"
     )
     entities = pipe(sentence)
     ents = []
