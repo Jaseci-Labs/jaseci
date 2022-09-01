@@ -417,13 +417,13 @@ graph dialogue_system {
             name = "test_drive",
             response = "Your test drive is scheduled for Jan 1st, 2023."
         );
-        oos_state = spawn node::dialogue_state {
-            name = "out_of_scope",
-            response = "Sorry I can't handle that just yet. Anything else I can help you with?"
-        };
+        how_to_order_state = spawn node::dialogue_state (
+            name = "how_to_order",
+            response = "You can order a Tesla through our design studio."
+        );
 
         dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;
-        dialogue_root -[intent_transition(intent="out of scope")]-> oos_state;
+        dialogue_root -[intent_transition(intent="order a tesla")]-> how_to_order_state;
     }
 }
 ```
@@ -435,6 +435,9 @@ Let's break this down!
 * If you recall, we have used a similar but simpler syntax to connect two nodes with an edge `faq_root --> faq_state;`. This connect `faq_root` to `faq_state` with a **generic** edge pointing to `faq_state`;
 * In `dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;`, we are connecting the two states with a **custom** edge of the type `intent_transition`.
 * In addition, we are initializing the variable `intent` of the edge to be `test drive`.
+
+To summarize, with this graph, a user will start at the dialogue root state when they first start the conversation.
+Then based on the user's question and its intent, we will
 
 ## Initialize the graph
 Let's create an `init` walker to for this new jac program.
@@ -492,9 +495,37 @@ walker init {
     }
 }
 ```
-Try out the following interaction
+Try out the following interactions
 
+```bash
+$ jsctl jac run dialogue.jac
+> test drive
+Your test drive is scheduled for Jan 1st, 2023.
+{
+  "success": true,
+  "report": [],
+  "final_node": "urn:uuid:9b8d9e1e-d7fb-4e6e-ae86-7ef7c7ad28a7",
+  "yielded": false
+}
+```
+and
+```bash
+$ jsctl jac run dialogue.jac
+> order a tesla
+You can order a Tesla through our design studio.
+{
+  "success": true,
+  "report": [],
+  "final_node": "urn:uuid:168590aa-d579-4f22-afe7-da75ab7eefa3",
+  "yielded": false
+}
+```
+What is happening here is based on the user's question, we are traversing the corresponding dialogue state and then return the response of that state.
+For now, we are just matching the incoming question with the intent label as a simple algorithm, which we will now replace with an AI model.
 
+> **Note**
+>
+> Notice we are running `jsctl` commands directly from the terminal without first entering the jaseci shell? Any `jsctl` commands can be launched directly from the terminal by just prepending it with `jsctl`. Try it with the other `jsctl` comamnds we have encountered so far, such as `jac dot`.
 
 ## Intent classificaiton with Bi-encoder
 * A quick primer on intent classification
