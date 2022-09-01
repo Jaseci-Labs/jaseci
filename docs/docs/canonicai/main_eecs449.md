@@ -528,35 +528,34 @@ For now, we are just matching the incoming question with the intent label as a s
 > Notice we are running `jsctl` commands directly from the terminal without first entering the jaseci shell? Any `jsctl` commands can be launched directly from the terminal by just prepending it with `jsctl`. Try it with the other `jsctl` comamnds we have encountered so far, such as `jac dot`.
 
 ## Intent classificaiton with Bi-encoder
-* A quick primer on intent classification
+Let's introduce an intent classification AI model.
+Intent Classification is the task of detecting and assigning one of a list of pre-defined intents to a given piece of text, to summarize what the text is conveying or asking.
+It's one of the fundamental tasks in Natural Language Processing (NLP) with broad applications in many areas.
 
-We first need to load the biencoder action library
+There are many models that have been proposed and applied to intent classification.
+For this tutorial, we are going to use a Bi-Encoder model.
+A Bi-encoder model has two transformer-based encoders that each encodes the input text and candidate intent labels into embedding vectors and then the model compare the similarity between the embedding vectors to find the most relevant/fitting intent label.
+
+> **Note**
+>
+> If you don't fully understand the Bi-encoder model yet, do not worry! We will provide the neccessary code and tooling for you to wield this model as a black box. But, if you are interested, here is a paper for you to read up on it https://arxiv.org/pdf/1908.10084.pdf!
+
+Now let's train the model.
+We have created a jac program and sample training data for this.
+They are in the `code` directory next to this tutorial.
+Copy `bi_enc.jac` and `clf_train_1.json` to your working directory.
+
+Let's first load the Bi-encoder action library into Jaseci.
 ```bash
+$ jsctl
 jaseci > actions load module jaseci_kit.bi_enc
-```
-
-Let's setup a biencoder training jac program.
-* Just give them the jac file and show how to run it to train the model.
-* Treat it as a blackbox model.
-
-```js
-node ai_model {
-
-}
-node biencoder {
-
-}
-walker train {
-
-}
-walker infer {
-
-}
 ```
 * Link to example training data file to a github link or shared google drive.
 ```js
-> jaseci jac run biencoder.jac -wlk train -ctx {}
+jaseci > jac run bi_enc.jac -walk train -ctx \"{\"train_file\": \"clf_train_1.json\"}"
 ```
+This new jac run
+
 * Explain `-wlk` and `-ctx`
 
 
