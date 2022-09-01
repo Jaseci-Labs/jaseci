@@ -9,7 +9,7 @@ from flair.embeddings import WordEmbeddings, StackedEmbeddings, FlairEmbeddings
 from flair.data import Sentence
 from flair.trainers import ModelTrainer
 import pandas as pd
-from .entity_utils import create_data, create_data_new
+from entity_utils import create_data, create_data_new
 import configparser
 from jaseci.actions.live_actions import jaseci_action
 import torch
@@ -154,18 +154,52 @@ def train_and_val_entity(train_params: dict):
     funtion for training the model
     """
     global tagger, NER_MODEL_NAME, MODEL_TYPE
+    train_with_test = False
+    train_with_dev = False
     # define columns
     columns = {0: "text", 1: "ner"}
     # directory where the data resides
     data_folder = "train"
     # initializing the corpus
-    corpus: Corpus = ColumnCorpus(
-        data_folder,
-        columns,
-        train_file="train.txt",
-        dev_file="val.txt",
-        test_file="test.txt",
-    )
+    if (
+        os.path.isfile("train/val.txt")
+        and os.path.isfile("train/test.txt")
+        and os.path.isfile("train/train.txt")
+    ):
+        corpus: Corpus = ColumnCorpus(
+            data_folder,
+            columns,
+            train_file="train.txt",
+            dev_file="val.txt",
+            test_file="test.txt",
+        )
+        train_with_test = False
+        train_with_dev = False
+    elif os.path.isfile("train/test.txt") and os.path.isfile("train/train.txt"):
+        corpus: Corpus = ColumnCorpus(
+            data_folder,
+            columns,
+            train_file="train.txt",
+            test_file="test.txt",
+        )
+        train_with_test = False
+        train_with_dev = True
+    elif os.path.isfile("train/val.txt") and os.path.isfile("train/train.txt"):
+        corpus: Corpus = ColumnCorpus(
+            data_folder,
+            columns,
+            train_file="train.txt",
+            dev_file="val.txt",
+        )
+        train_with_test = True
+        train_with_dev = False
+    elif os.path.isfile("train/train.txt"):
+        corpus: Corpus = ColumnCorpus(data_folder, columns, train_file="train.txt")
+        train_with_test = True
+        train_with_dev = True
+    else:
+        print("cannot find the training file ")
+        return
     cp_path = Path("train/tars-ner/checkpoint.pt")
     if (cp_path).exists():
         print("in exists : ", cp_path)
@@ -191,8 +225,8 @@ def train_and_val_entity(train_params: dict):
             learning_rate=train_params["LR"],
             mini_batch_size=train_params["batch_size"],
             max_epochs=train_params["num_epoch"],
-            train_with_test=False,
-            train_with_dev=False,
+            train_with_test=train_with_test,
+            train_with_dev=train_with_dev,
             embeddings_storage_mode="cuda",
             checkpoint=True,
         )
@@ -218,8 +252,8 @@ def train_and_val_entity(train_params: dict):
             learning_rate=train_params["LR"],
             mini_batch_size=train_params["batch_size"],
             max_epochs=train_params["num_epoch"],
-            train_with_test=False,
-            train_with_dev=False,
+            train_with_test=train_with_dev,
+            train_with_dev=train_with_dev,
             checkpoint=True,
         )
     #  Load trained Sequence Tagger model
@@ -287,7 +321,7 @@ def train(
     API for training the model
     """
     time1 = datetime.now()
-
+    print("I'm in train")
     if len(val_data) != 0:
         create_train_data(val_data, "val")
 
