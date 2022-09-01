@@ -321,7 +321,6 @@ def train(
     API for training the model
     """
     time1 = datetime.now()
-    print("I'm in train")
     if len(val_data) != 0:
         create_train_data(val_data, "val")
 
