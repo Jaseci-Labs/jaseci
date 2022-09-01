@@ -33,7 +33,7 @@ class walker_api:
 
         Though the common case is to register entire sentinels, a user can also
         register individual walkers one at a time. This API accepts code for a single
-        walker (i.e., \\lstinline{walker \{...\}).
+        walker (i.e., \\lstinline\\{walker \\{...\\}\\}).
         """
         if encoded:
             code = b64decode_str(code)
