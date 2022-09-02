@@ -337,7 +337,6 @@ class interp(machine_state):
                         self._loop_ctrl = "break"
             else:
                 self.rt_error("Not a list/dict for iteration!", kid[3])
-
         else:
             key = self._jac_scope.get_live_var(kid[1].token_text(), create_mode=True)
             val = self._jac_scope.get_live_var(kid[3].token_text(), create_mode=True)
@@ -366,6 +365,8 @@ class interp(machine_state):
                         self._loop_ctrl = "break"
             else:
                 self.rt_error("Not a list/dict for iteration!", kid[5])
+        if self._loop_ctrl and self._loop_ctrl == "continue":
+            self._loop_ctrl = None
 
     def run_while_stmt(self, jac_ast):
         """
@@ -383,6 +384,8 @@ class interp(machine_state):
             if loops > self._loop_limit:
                 self.rt_error("Hit loop limit, breaking...", kid[0])
                 self._loop_ctrl = "break"
+        if self._loop_ctrl and self._loop_ctrl == "continue":
+            self._loop_ctrl = None
 
     def run_ctrl_stmt(self, jac_ast):
         """

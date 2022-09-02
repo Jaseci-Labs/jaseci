@@ -556,3 +556,17 @@ check_dict_for_in_loop = """
         }
     }
 """
+
+continue_issue = """
+    walker init {
+        root {
+            for i=0 to i<10 by i+=1 {
+                if(i==9):
+                    continue;
+                if(i):
+                    report i;
+            }
+            report "apple";
+        }
+    }
+"""
