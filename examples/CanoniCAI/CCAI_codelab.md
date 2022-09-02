@@ -742,6 +742,11 @@ You can order a Tesla through our design studio.
 ```
 
 ## Making Our Dialogue System Multi-turn
+When you interact with a real person, you are often having a dialogue with many back and forth.
+In this section, we are going to take the dialogue system to the next level and create a multi-turn dialogue experience.
+
+Let's first take a look at our updated graph
+
 * Some actions will require multiple turns to finish. Just like if you are talking to a person
 * We will expand the test_drive capability to a multi-turn dialogue
 * Explain slots/entities and how they are used in dialogue system
