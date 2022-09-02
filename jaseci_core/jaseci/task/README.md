@@ -56,7 +56,41 @@ Any walker that can be called with `is_async` field
 
 # **HOW TO SETUP SCHEDULE**
 
+## **SCHEDULED_WALKER**
+
  - Add periodic task
+ - Select jaseci.task.tasks.scheduled_walker
+ - set your schedule (interval, crontab, solar, clocked, start/end data are supported)
+ - set argument with below kind of structure
+
+### **ARGUMENT STRUCTURE**
+
+```json
+{
+    // Required
+	"name": "run",
+
+    // Required
+	"ctx": {},
+
+    // Optional but may not have default
+    // accepted value: urn | alias
+    "nd": "active:graph",
+
+    // Optional but may not have default
+    // accepted value: urn | alias | global
+	"snt": "active:sentinel",
+
+    // Required
+    // used also for getting aliases
+    "mst": "d6851f2a-e4a1-4fca-b582-9db5e146af59"
+}
+```
+
+## **SCHEDULED_SEQUENCE**
+
+ - Add periodic task
+ - Select jaseci.task.tasks.scheduled_sequence
  - set your schedule (interval, crontab, solar, clocked, start/end data are supported)
  - set argument with below kind of structure
 

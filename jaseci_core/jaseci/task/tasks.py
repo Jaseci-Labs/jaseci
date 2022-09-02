@@ -6,6 +6,8 @@ from requests import post, get
 from requests.exceptions import HTTPError
 from celery import Task
 
+DEFAULT_MSG = "Skipping scheduled walker!"
+
 
 class queue(Task):
     def run(self, queue_id):
@@ -16,11 +18,54 @@ class queue(Task):
         return ret
 
 
-class schedule_queue(Task):
-    json_escape = re.compile("[^a-zA-Z0-9_]")
-    internal = re.compile("\(([a-zA-Z0-9_\.\[\]\$\#\@\!]*?)\)")  # noqa
-    full = re.compile("^\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}$")  # noqa
-    partial = re.compile("\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}")  # noqa
+class scheduled_walker(Task):
+    def run(self, name, ctx, nd=None, snt=None, mst=None):
+        from .task_hook import task_hook
+
+        if mst:
+            mst = task_hook.get_element(mst)
+        else:
+            return f"{DEFAULT_MSG} mst (Master) is required!"
+
+        if mst is None:
+            return f"{DEFAULT_MSG} Invalid Master!"
+
+        try:
+            if not snt:
+                if mst.active_snt_id == "global":
+                    global_snt_id = task_hook.main_hook.get_glob("GLOB_SENTINEL")
+                    snt = task_hook.get_element(global_snt_id)
+                elif mst.active_snt_id:
+                    snt = task_hook.get_element(mst.active_snt_id)
+            elif snt in mst.alias_map:
+                snt = task_hook.get_element(mst.alias_map[snt])
+            else:
+                snt = task_hook.get_element(snt)
+
+            if not snt:
+                return f"{DEFAULT_MSG} Invalid Sentinel!"
+
+            if not nd:
+                if mst.active_gph_id:
+                    nd = task_hook.get_element(mst.active_gph_id)
+            elif nd in mst.alias_map:
+                nd = task_hook.get_element(mst.alias_map[nd])
+            else:
+                nd = task_hook.get_element(nd)
+
+            if not nd:
+                return f"{DEFAULT_MSG} Invalid Node!"
+
+            return mst.walker_run(name, nd, ctx, ctx, snt, False, False)
+        except Exception as e:
+            return f"{DEFAULT_MSG} Error occured: {e}"
+
+
+class scheduled_sequence(Task):
+    json_escape = re.compile(r"[^a-zA-Z0-9_]")
+    internal = re.compile(r"\(([a-zA-Z0-9_\.\[\]\$\#\@\!]*?)\)")
+    full = re.compile(r"^\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}$")
+    partial = re.compile(r"\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}")
 
     def get_deep_value(self, data, keys, default):
         if len(keys) == 0:

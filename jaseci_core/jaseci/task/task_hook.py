@@ -4,7 +4,7 @@ from multiprocessing import Manager, Process
 from uuid import UUID, uuid4
 
 from ..utils.utils import logger
-from .tasks import queue, schedule_queue
+from .tasks import queue, scheduled_walker, scheduled_sequence
 from celery import Celery
 
 ################################################
@@ -41,7 +41,8 @@ class task_hook:
 
     # --------------- REGISTERED TASK --------------- #
     queue = None
-    schedule_queue = None
+    scheduled_walker = None
+    scheduled_sequence = None
 
     # ----------------- DATA SOURCE ----------------- #
     main_hook = None
@@ -98,7 +99,8 @@ class task_hook:
 
     def __tasks(self):
         th.queue = th.app.register_task(queue())
-        th.schedule_queue = th.app.register_task(schedule_queue())
+        th.scheduled_walker = th.app.register_task(scheduled_walker())
+        th.scheduled_sequence = th.app.register_task(scheduled_sequence())
 
     ###################################################
     #              COMMON GETTER/SETTER               #
