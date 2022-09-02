@@ -301,7 +301,7 @@ class interp(machine_state):
         """
         for_stmt:
             KW_FOR expression KW_TO expression KW_BY expression code_block
-            | KW_FOR NAME KW_IN expression code_block;
+            | KW_FOR NAME (COMMA NAME)? KW_IN expression code_block;
         """
         kid = self.set_cur_ast(jac_ast)
         loops = 0
@@ -318,24 +318,54 @@ class interp(machine_state):
                 if loops > self._loop_limit:
                     self.rt_error("Hit loop limit, breaking...", kid[0])
                     self._loop_ctrl = "break"
-        else:
+        elif kid[3].name == "expression":
             var = self._jac_scope.get_live_var(kid[1].token_text(), create_mode=True)
             lst = self.run_expression(kid[3]).value
-            # should check that lst is list here
-            if not isinstance(lst, list):
-                self.rt_error("Not a list for iteration!", kid[3])
-            for i in lst:
-                self._loop_ctrl = None
-                var.value = i
-                var.write(kid[1])
-                self.run_code_block(kid[4])
-                loops += 1
-                if self._loop_ctrl and self._loop_ctrl == "break":
+
+            if isinstance(lst, (list, dict)):
+                for i in lst:
                     self._loop_ctrl = None
-                    break
-                if loops > self._loop_limit:
-                    self.rt_error("Hit loop limit, breaking...", kid[0])
-                    self._loop_ctrl = "break"
+                    var.value = i
+                    var.write(kid[1])
+                    self.run_code_block(kid[4])
+                    loops += 1
+                    if self._loop_ctrl and self._loop_ctrl == "break":
+                        self._loop_ctrl = None
+                        break
+                    if loops > self._loop_limit:
+                        self.rt_error("Hit loop limit, breaking...", kid[0])
+                        self._loop_ctrl = "break"
+            else:
+                self.rt_error("Not a list/dict for iteration!", kid[3])
+
+        else:
+            key = self._jac_scope.get_live_var(kid[1].token_text(), create_mode=True)
+            val = self._jac_scope.get_live_var(kid[3].token_text(), create_mode=True)
+            source = self.run_expression(kid[5]).value
+
+            lst = None
+            if isinstance(source, dict):
+                lst = source.items()
+            elif isinstance(source, list):
+                lst = enumerate(source)
+
+            if not (lst is None):
+                for k, v in lst:
+                    self._loop_ctrl = None
+                    key.value = k
+                    key.write(kid[1])
+                    val.value = v
+                    val.write(kid[3])
+                    self.run_code_block(kid[6])
+                    loops += 1
+                    if self._loop_ctrl and self._loop_ctrl == "break":
+                        self._loop_ctrl = None
+                        break
+                    if loops > self._loop_limit:
+                        self.rt_error("Hit loop limit, breaking...", kid[0])
+                        self._loop_ctrl = "break"
+            else:
+                self.rt_error("Not a list/dict for iteration!", kid[5])
 
     def run_while_stmt(self, jac_ast):
         """
@@ -1417,7 +1447,11 @@ class interp(machine_state):
         kv_pair: STRING COLON expression;
         """
         kid = self.set_cur_ast(jac_ast)
-        obj[parse_str_token(kid[0].token_text())] = self.run_expression(kid[2]).value
+        key = self.run_expression(kid[0]).value
+        if isinstance(key, str):
+            obj[key] = self.run_expression(kid[2]).value
+        else:
+            self.rt_error(f"Key is not str type : {type(key)}!", kid[0])
 
     def run_spawn(self, jac_ast):
         """

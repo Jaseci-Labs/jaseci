@@ -601,7 +601,7 @@ semantics.
 \apispec{cli: walker register | api: walker\_register | auth: user}{snt: sentinel (None), code: str (), encoded: bool (False)}
 {Though the common case is to register entire sentinels, a user can also
 register individual walkers one at a time. This API accepts code for a single
-walker (i.e., \lstinline{walker {...}}).}
+walker (i.e., \lstinline\{walker \{...\}\}).}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker get$}
 
 \apispec{cli: walker get | api: walker\_get | auth: user}{wlk: walker (*req), mode: str (default), detailed: bool (False)}
@@ -656,7 +656,7 @@ walker (i.e., \lstinline{walker {...}}).}
 {No documentation yet.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker run$}
 
-\apispec{cli: walker run | api: walker\_run | auth: user}{name: str (*req), nd: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), snt: sentinel (None), profiling: bool (False)}
+\apispec{cli: walker run | api: walker\_run | auth: user}{name: str (*req), nd: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), snt: sentinel (None), profiling: bool (False), is_async: bool (False)}
 {reports results, and cleans up walker instance.}
 \subsubsection{\lstinline[basicstyle=\Large\ttfamily]$wapi$}
 
@@ -670,3 +670,7 @@ walker (i.e., \lstinline{walker {...}}).}
 
 \apispec{cli: walker callback | api: walker\_callback | auth: public}{nd: node (*req), wlk: walker (*req), key: str (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)}
 {along with the walker id and node id}
+\subsubsection{\lstinline[basicstyle=\Large\ttfamily]$walker queue$}
+
+\apispec{cli: walker queue | api: walker\_queue | auth: user}{task_id: str ()}
+{No documentation yet.}

@@ -57,6 +57,7 @@ class id_list(list):
 
     def get_obj_by_name(self, name, kind=None, silent=False):
         """Returns a Jaseci obj obj by it's name"""
+
         healing = []
         ret = None
         for i in self:

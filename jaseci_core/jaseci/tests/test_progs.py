@@ -1,4 +1,4 @@
-from jaseci.utils.mem_hook import mem_hook
+from jaseci.utils.redis_hook import redis_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
 from jaseci.graph.node import node
@@ -19,7 +19,7 @@ class jac_tests(TestCaseHelper, TestCase):
         super().tearDown()
 
     def test_bug_check1(self):
-        gph = graph(m_id="anon", h=mem_hook())
+        gph = graph(m_id="anon", h=redis_hook())
         sent = sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtp.bug_check1)
         test_walker = sent.walker_ids.get_obj_by_name("init")
@@ -29,7 +29,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report[0][0], "THIS IS AN INTENT_LABEL")
 
     def test_action_load_std_lib(self):
-        mast = super_master(h=mem_hook())
+        mast = super_master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.action_load_std_lib)
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "aload"}
@@ -37,7 +37,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report[0], True)
 
     def test_action_load_std_lib_only_super(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.action_load_std_lib)
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "aload"}
@@ -46,7 +46,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report[0], False)
 
     def test_globals(self):
-        gph = graph(m_id="anon", h=mem_hook())
+        gph = graph(m_id="anon", h=redis_hook())
         sent = sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtp.globals)
         test_walker = sent.walker_ids.get_obj_by_name("init")
@@ -56,7 +56,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report, ["testing", 56])
 
     def test_net_root_std_lib(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.net_root_std_lib)
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -66,7 +66,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertNotEqual(report[1][0], report[1][1])
 
     def test_or_stmt(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.or_stmt)
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -74,7 +74,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report, [[3.4, "Hello"]])
 
     def test_nd_equals(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.nd_equals_error_correct_line)
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -82,7 +82,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertIn("line 3", report["errors"][0])
 
     def test_strange_ability_bug(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.strange_ability_bug)
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "travel"}
@@ -102,7 +102,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report, ["Showing", "Showing", "Showing", "Showing"])
 
     def test_node_inheritance(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.node_inheritance, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -124,7 +124,7 @@ class jac_tests(TestCaseHelper, TestCase):
         )
 
     def test_inherited_ref(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.inherited_ref, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -132,7 +132,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(len(report["report"]), 12)
 
     def test_node_inheritance_chain_check(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(
             name="test", code=jtp.node_inheritance_chain_check, auto_run=""
         )
@@ -142,7 +142,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report["success"], False)
 
     def test_global_reregistering(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.global_reregistering)
         self.assertTrue(mast.active_snt().is_active)
         mast.sentinel_set(snt=mast.active_snt(), code=jtp.global_reregistering)
@@ -151,7 +151,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertTrue(mast.active_snt().is_active)
 
     def test_vector_cos_sim_check(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.vector_cos_sim_check, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -160,7 +160,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(type(report[0]), float)
 
     def test_multi_breaks(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.multi_breaks, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -169,7 +169,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report[14], 180)
 
     def test_reffy_deref_check(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.reffy_deref_check, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -178,7 +178,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertTrue(report[1])
 
     def test_vanishing_can_check(self):
-        mast = super_master(h=mem_hook())
+        mast = super_master(h=redis_hook())
         mast.actions_load_local("jaseci/tests/infer.py")
         mast.sentinel_register(name="test", code=jtp.vanishing_can_check, auto_run="")
         mast.general_interface_to_api(api_name="walker_run", params={"name": "init"})
@@ -195,7 +195,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report, ["2022-01-01T00:00:00"])
 
     def test_jasecilib_alias_list(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.jasecilib_alias_list, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -203,7 +203,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertGreater(len(report[0].keys()), 3)
 
     def test_jasecilib_params(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.jasecilib_params, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -212,7 +212,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_jasecilib_create_user(self):
         self.logger_on()
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.jasecilib_create_user, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -220,7 +220,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report[0]["user"]["name"], "daman@gmail.com")
 
     def test_root_is_node_type(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.root_is_node_type, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -228,7 +228,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report["report"][0], "JAC_TYPE.NODE")
 
     def test_walker_with_exit_after_node(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(
             name="test", code=jtp.walker_with_exit_after_node, auto_run=""
         )
@@ -238,7 +238,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report["report"], [1, 1, 3, 1, 3, 1, 3, 1, 3, 43])
 
     def test_depth_first_take(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.depth_first_take, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -246,7 +246,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report["report"], [1, 2, 3, 4, 5, 6, 7])
 
     def test_breadth_first_take(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.breadth_first_take, auto_run="")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
@@ -254,7 +254,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report["report"], [1, 2, 5, 3, 4, 6, 7])
 
     def test_inheritance_override_here_check(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(
             name="test", code=jtp.inheritance_override_here_check, auto_run=""
         )
@@ -264,7 +264,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report["report"], [9, 9, 10])
 
     def test_dot_private_hidden(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.dot_private_hidden, auto_run="")
         mast.general_interface_to_api(api_name="walker_run", params={"name": "init"})
         report = mast.general_interface_to_api(
@@ -273,7 +273,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertNotIn("j=", report)
 
     def test_check_destroy_node_has_var(self):
-        mast = master(h=mem_hook())
+        mast = master(h=redis_hook())
         mast.sentinel_register(
             name="test", code=jtp.check_destroy_node_has_var, auto_run=""
         )
@@ -287,3 +287,42 @@ class jac_tests(TestCaseHelper, TestCase):
         )
         self.assertEqual(mast._h.get_object_distribution()[node], 1)
         self.assertEqual(report["report"][0], "JAC_TYPE.NULL")
+
+    def test_for_loop_dict(self):
+        mast = master(h=redis_hook())
+        mast.sentinel_register(
+            name="test", code=jtp.check_dict_for_in_loop, auto_run=""
+        )
+        res = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "for_loop_dict"}
+        )
+
+        self.assertEqual(
+            res["report"],
+            [
+                "test1 : 1",
+                "test2 : 2",
+                "test3 : 3",
+                "test1 : 1",
+                "test2 : 2",
+                "test3 : 3",
+                5,
+                6,
+                7,
+                "0 : 5",
+                "1 : 6",
+                "2 : 7",
+            ],
+        )
+
+    def test_var_as_key_for_dict(self):
+        mast = master(h=redis_hook())
+        mast.sentinel_register(
+            name="test", code=jtp.check_dict_for_in_loop, auto_run=""
+        )
+        res = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "var_as_key_for_dict"}
+        )
+
+        self.assertEqual(res["report"], [{"key1": "key1", "key2": 2}])
+        self.assertIn("Key is not str type : <class 'int'>!", res["errors"][0])

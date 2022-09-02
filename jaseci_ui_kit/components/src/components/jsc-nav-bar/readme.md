@@ -12,6 +12,7 @@
 | `css`        | `css`        |                           | `string` | `JSON.stringify({})` |
 | `events`     | `events`     |                           | `string` | `undefined`          |
 | `label`      | `label`      | The title of the app bar. | `string` | `undefined`          |
+| `links`      | `links`      |                           | `string` | `undefined`          |
 | `name`       | `name`       |                           | `string` | `undefined`          |
 | `operations` | `operations` |                           | `string` | `undefined`          |
 

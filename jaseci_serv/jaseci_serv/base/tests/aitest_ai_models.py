@@ -1,4 +1,4 @@
-from jaseci.utils.mem_hook import mem_hook
+from jaseci.utils.redis_hook import redis_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
 
@@ -21,7 +21,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = graph(m_id="anon", h=mem_hook())
+        gph = graph(m_id="anon", h=redis_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
@@ -37,7 +37,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = graph(m_id="anon", h=mem_hook())
+        gph = graph(m_id="anon", h=redis_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
@@ -53,7 +53,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = graph(m_id="anon", h=mem_hook())
+        gph = graph(m_id="anon", h=redis_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
@@ -69,7 +69,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = graph(m_id="anon", h=mem_hook())
+        gph = graph(m_id="anon", h=redis_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
