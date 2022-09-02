@@ -14,6 +14,6 @@ development_azure_role_arn   = ""
 
 
 
-resource_group_name = "${local.productprefix}-infra"
+resource_group_name = "jaseci-infra"
 location = "eastus"
-cluster_name        = "${local.productprefix}-aks"
+cluster_name        = "jaseci-aks"
