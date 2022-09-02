@@ -742,10 +742,55 @@ You can order a Tesla through our design studio.
 ```
 
 ## Making Our Dialogue System Multi-turn
-When you interact with a real person, you are often having a dialogue with many back and forth.
+Dialogues in real life have many turn of interaction.
+Our dialogue system should also support that to provide a human-like conversational experinece.
 In this section, we are going to take the dialogue system to the next level and create a multi-turn dialogue experience.
 
-Let's first take a look at our updated graph
+Before we do that we need to introduce two new concepts in Jac: node abilities and inheritance.
+
+### Node Abilities
+Node abilities are code that encoded as part of each node type.
+They often contain logic that read, write and generally manipulate the variables and states of the nodes.
+Node abilities are defined with the `can` keyword inside the definition of nodes, for example, in the code below, `get_plate_number` is an ability of the `vehicle` node.
+```js
+node vehicle {
+    has plate_numer;
+    can get_plate_numer {
+        report here.plate_number;
+    }
+}
+```
+To learn more about node abilities, refer to the relevant sections of the Jaseci Bible.
+> **Note**
+>
+> Node abilities look and function similarly to member functions in object-oriented programming (OOP). However, there is a key difference in the concepts. Node abilities are the key concept in data-spatial programming, where the logic should stay close to its working set data in terms of the programming syntax.
+
+### Inheritance
+Jac supports inheritance for nodes and edges.
+Node variables (defined with `has`) and node abilities (defined with `can`) are inherited and can be overwritten by children nodes.
+
+Here is an example:
+```js
+node vehicle {
+    has plate_number;
+    can get_plate_number {
+        report here.plate_number;
+    }
+}
+
+node car:vehicle {
+    has plate_number = "RAC001";
+}
+
+node bus:vehicle {
+    has plate_number = "SUB002";
+}
+```
+To learn more about inheritance in Jac, refer to the relevant sections of the Jaseci Bible.
+
+
+## Build the Multi-turn Dialogue Graph
+Now let's build
 
 * Some actions will require multiple turns to finish. Just like if you are talking to a person
 * We will expand the test_drive capability to a multi-turn dialogue
@@ -756,7 +801,6 @@ Let's first take a look at our updated graph
 * Show new graph diagram, with new states (update, confirmation, confirmed, cancelled) and entity transition
 * Explain the graph
 
-## Build the multi-turn dialogue graph
 
 ```js
 edge entity_transition {
