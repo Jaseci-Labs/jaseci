@@ -11,6 +11,19 @@ import uuid
 class sentinel_api:
     """
     Sentinel APIs
+
+    A sentinel is a unit in Jaseci that represents the organization and management of
+    a collection of architypes and walkers. In a sense, you can think of a sentinel
+    as a complete Jac implementation of a program or API application. Though its the
+    case that many sentinels can be interchangeably across any set of graphs, most
+    use cases will typically be a single sentinel shared by all users and managed by an
+    admin(s), or each users maintaining a single sentinel customized for their
+    individual needs. Many novel usage models are possible, but I'd point the beginner
+    to the model most analogous to typical server side software development to start
+    with. This model would be to have a single admin account responsible for updating
+    a single sentinel that all users would share for their individual graphs. This
+    model is achieved through using \\texttt{sentinel_register},
+    \\texttt{sentinel_active_global}, and \\texttt{global_sentinel_set}.
     """
 
     def __init__(self):
@@ -42,7 +55,7 @@ class sentinel_api:
             snt = sentinel(m_id=self._m_id, h=self._h, name=name)
             self.sentinel_ids.add_obj(snt)
             if auto_create_graph:
-                new_gph = self.graph_create(set_active=True)
+                new_gph = self.graph_create(set_active=set_active)
         if code:
             self.sentinel_set(
                 code=code, code_dir=code_dir, encoded=encoded, snt=snt, mode=mode

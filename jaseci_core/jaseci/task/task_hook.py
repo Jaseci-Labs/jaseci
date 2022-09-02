@@ -61,7 +61,8 @@ class task_hook:
             try:
                 self.__celery()
 
-                if self.__inspect_ping():
+                # if self.__inspect_ping():
+                if self.app is not None and self.__inspect_ping():
                     self.__tasks()
                     self.__worker()
                     self.__scheduler()

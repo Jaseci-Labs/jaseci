@@ -27,7 +27,7 @@ class redis_hook(mem_hook):
                 rh.app.ping()
 
         except RedisError as e:
-            logger.error(
+            logger.debug(
                 f"Skipping Redis due to initialization failure! Error: '{str(e)}'"
             )
 

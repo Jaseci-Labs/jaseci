@@ -18,9 +18,9 @@ class queue(Task):
 
 class schedule_queue(Task):
     json_escape = re.compile("[^a-zA-Z0-9_]")
-    internal = re.compile("\(([a-zA-Z0-9_\.\[\]\$\#\@\!]*?)\)")
-    full = re.compile("^\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}$")
-    partial = re.compile("\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}")
+    internal = re.compile("\(([a-zA-Z0-9_\.\[\]\$\#\@\!]*?)\)")  # noqa
+    full = re.compile("^\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}$")  # noqa
+    partial = re.compile("\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}")  # noqa
 
     def get_deep_value(self, data, keys, default):
         if len(keys) == 0:
