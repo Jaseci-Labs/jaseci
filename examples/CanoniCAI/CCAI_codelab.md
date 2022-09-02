@@ -631,38 +631,117 @@ Let's first load the Bi-encoder action library into Jaseci.
 $ jsctl
 jaseci > actions load module jaseci_kit.bi_enc
 ```
-* Link to example training data file to a github link or shared google drive.
+We have provided an example training file that contains some starting point training data for the two intents, `test drive` and `order a tesla`.
+
 ```js
-jaseci > jac run bi_enc.jac -walk train -ctx \"{\"train_file\": \"clf_train_1.json\"}"
+jaseci > jac run bi_enc.jac -walk train -ctx "{\"train_file\": \"clf_train_1.json\"}"
 ```
-This new jac run
+We are still using `jac run` but as you have noticied, this time we are using some new arguments. So let's break it down.
+* `-walk` specifies the name of the walker to run. By default, it runs the `init` walker.
+* `-ctx` stands for `context`. This lets us provide input parameters to the walker. The input parameters are defined as `has` variables in the walker.
 
-* Explain `-wlk` and `-ctx`
+> **Warning**
+>
+> `-ctx` expects a json string that contains a dictionary of parameters and their value. Since we are running this on the command line, you will need to escape the quotation marks `"` properly for it to be a valid json string. Pay close attention to the example here `-ctx "{\"train_file\": \"clf_train_1.json\"}"` and uses this as a reference.
 
+You should see an output block that looks like the following repeating many times on your screen:
+```bash
+...
+Epoch : 5
+loss : 0.10562849541505177
+LR : 0.0009854014598540146
+...
+```
+Each training epoch, the above output will print with the training loss and learning rate at that epoch.
+By default, the model is trained for 50 epochs.
+
+If the training successfully finishes, you should see `"success": true` at the end.
+
+Now that the model has finished training, let's try it out!
+You can use the `infer` walker to play with the model and test it out! `infer` is short for inference, which means using a trained model to run prediction on a given input.
 
 ```bash
-EXPECTED TRAINING OUTPUT
+jaseci > jac run bi_enc.jac -walk infer -ctx "{\"labels\": [\"test drive\", \"order a tesla\"]}"
 ```
-* Mention that the model needs to be saved with `save_model`
 
-Use infer to test the model after training
-```js
-> jaseci jac run biencoder.jac -wlk infer -ctx {}
-```
+Similar to training, we are using `jac run` to specifically invoke the `infer` walker and providing it with custom parameters.
+The custom paremeter is the list of candidate intent labels, which are `test drive` and `order a tesla` in this case, as these were the intents the model was trained on.
+
 ```bash
-Expected output
+jaseci > jac run bi_enc.jac -walk infer -ctx "{\"labels\": [\"test drive\", \"order a tesla\"]}"
+Enter input text (Ctrl-C to exit)> i want to order a tesla
+{"label": "order a tesla", "score": 9.812651595405981}
+Enter input text (Ctrl-C to exit)> i want to test drive
+{"label": "test drive", "score": 6.931458692617463}
+Enter input text (Ctrl-C to exit)>
+```
+In the output here, `label` is the predicted intent label and `score` is the score assigned by the model to that intent.
+
+> **Note**
+>
+> One of the advantage of the bi-encoder model is that candidate intent labels can be dynamically defined at inference time, post training. This enables us to create custom contextual classifiers situationally from a single trained model. We will leverage this later as our dialogue system becomes more complex.
+
+Congratulations! You just trained your first intent classifier, easy as that.
+
+The trained model is kept in memory and active until they are explicitly saved with `save_model`. To save the trained model to a location of your choosing, run
+
+```bash
+jaseci > jac run bi_enc.jac -walk save_model -ctx "{\"model_path\": \"dialogue_intent_model\"}"
+```
+Similarly, you can load a saved model with `load_model`
+
+```bash
+jaseci > jac run bi_enc.jac -walk load_model -ctx "{\"model_path\": \"dialogue_intent_model\"}"
 ```
 
-## Integrating the intent classification model in the walker logic
+Always remember to save your trained models!
+
+> **Warning**
+>
+> `save_model` works with both relative and absolute model path. When a relative model path is specified, it will save the model at the location relative to **the installation of jaseci_kit**, which will likely be in your installed python package directories and vary depending on your OS and configuration. When an absolute model path is provided, it will save the model at the absolute path. Use this flexibility for your convenience. For example, you can save model with a simple model name during development just to quickly checkpoint but if you happen to reinstall or upgrade `jaseci_kit`, your models will be **lost**. So once the model is finalized, save it to an absolute path to somewhere else on your system so that it is easy to find and manage.
+
+## Integrate the Intent Classifier
+Now let's update our walker to use the trained intent classifier.
 ```js
-walker ask {
-    // update the code to use biencoder for inference
+walker talk {
+    has question;
+    can bi_enc.infer;
+    root {
+        question = std.input("> ");
+        take --> node::dialogue_root;
+    }
+    dialogue_root {
+        intent_labels = -[intent_transition]->.edge.intent;
+        predicted_intent = bi_enc.infer(
+            contexts = [question],
+            candidates = intent_labels,
+            context_type = "text",
+            candidate_type = "text"
+        )[0]["predicted"]["label"];
+        take -[intent_transition(intent==predicted_intent)]-> node::dialogue_state;
+    }
+    dialogue_state {
+        std.out(here.response);
+    }
+}
+```
+`intent_labels = -[intent_transition]->.edge.intent` collects the `intent` variables of all the outgoing `intent_transition` edges. This represents the list of candidate intent labels for this state.
+
+Try playing with different questions, such as
+```bash
+$ jsctl
+jaseci > jac run dialogue.jac
+> hey yo, I heard tesla cars are great, how do i get one?
+You can order a Tesla through our design studio.
+{
+  "success": true,
+  "report": [],
+  "final_node": "urn:uuid:af667fdf-c2b0-4443-9ccd-7312bc4c66c4",
+  "yielded": false
 }
 ```
 
-Run the new walker
-
-## Introduce multi-turn dialogue
+## Making Our Dialogue System Multi-turn
 * Some actions will require multiple turns to finish. Just like if you are talking to a person
 * We will expand the test_drive capability to a multi-turn dialogue
 * Explain slots/entities and how they are used in dialogue system
