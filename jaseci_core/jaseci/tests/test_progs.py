@@ -328,12 +328,9 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertIn("Key is not str type : <class 'int'>!", res["errors"][0])
 
     def test_continue_issue(self):
-        self.logger_on()
         mast = master(h=redis_hook())
         mast.sentinel_register(name="test", code=jtp.continue_issue, auto_run="")
         res = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "init"}
         )
-        self.log(res["report"])
-
         self.assertEqual(res["report"], [1, 2, 3, 4, 5, 6, 7, 8, "apple"])
