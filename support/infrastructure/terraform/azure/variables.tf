@@ -1,33 +1,8 @@
 
-#Common Tags - environment.auto.tfvars
-
-variable "department" {}
-variable "cost_centre" {}
-variable "product_owner" {}
-variable "product_manager" {}
-variable "portfolio_manager" {}
-variable "product_name" {}
-variable "managed_by" {}
-
-
 variable "development_azure_account_id" {} 
 variable "development_azure_role_arn" {}     
 # variable "production_azure_account_id" {}
 # variable "production_azure_role_arn" {}
-
- variable "clusterversion" {}
- variable "instance_type" {}
- variable "instance_type_list" {}
- variable "region" {}
-
-
-#List only Azure accounts that the script will apply  - environment.auto.tfvars
-variable "allowed_account_ids" {
-  description = "List of allowed Azure account ids where resources can be created"
-  //type        = tolist([any])
-  default     = []
-}
-
 
 variable "resource_group_name" {
   type        = string
@@ -41,15 +16,10 @@ variable "cluster_name" {
   type        = string
   description = "AKS name in Azure"
 }
-variable "kubernetes_version" {
-  type        = string
-  description = "Kubernetes version"
-}
-variable "system_node_count" {
-  type        = number
-  description = "Number of AKS worker nodes"
-}
-variable "acr_name" {
-  type        = string
-  description = "ACR name"
+
+#List only Azure accounts that the script will apply  - environment.auto.tfvars
+variable "allowed_account_ids" {
+  description = "List of allowed Azure account ids where resources can be created"
+  //type        = tolist([any])
+  default     = []
 }

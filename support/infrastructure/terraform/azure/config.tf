@@ -16,7 +16,7 @@ locals {
 
   accountids = {
     "default"    = var.development_azure_account_id
-   # "production" = var.production_aws_account_id
+   # "production" = var.production_azure_account_id
   }
   #END: Workspace Environments
 
@@ -37,6 +37,6 @@ locals {
 
   provider_env_roles = {
     "default"    = var.development_azure_role_arn
-    # "production" = var.production_aws_role_arn
+    # "production" = var.production_azure_role_arn
   }
 }
