@@ -790,35 +790,124 @@ To learn more about inheritance in Jac, refer to the relevant sections of the Ja
 
 
 ## Build the Multi-turn Dialogue Graph
-Now let's build
+Now that we have learnt about node abilities and node inheritance, let's put these new concepts to use to build a new graph for the multi-turn dialogue system
 
-* Some actions will require multiple turns to finish. Just like if you are talking to a person
-* We will expand the test_drive capability to a multi-turn dialogue
-* Explain slots/entities and how they are used in dialogue system
-* Give examples of messy language and give information in different order.
-* We need to update our graph architecture
+There are multiple parts to this so let's break it down one by one
 
-* Show new graph diagram, with new states (update, confirmation, confirmed, cancelled) and entity transition
-* Explain the graph
+### Dialogue State Specific Logic
+With the node abilities and node inheritance, we will now introduce state specific logic.
+Take a look at the updated nodes definition below.
 
+```js
+node dialogue_state {
+    has name;
+    can gen_response {}
+}
 
+node how_to_order_state:dialogue_state {
+    has name = "how_to_order";
+    can gen_response {
+        visitor.response = "You can order a Telsa through our design studio";
+    }
+}
+
+node test_drive_state:dialogue_state {
+    has name = "test_drive";
+    can gen_response {
+        if ("name" in visitor.extracted_entities and "address" not in visitor.extracted_entities):
+            visitor.response = "What is your address?";
+        elif ("address" in visitor.extracted_entities and "name" not in visitor.extracted_entities):
+            visitor.response = "What is your name?";
+        else:
+            visitor.response = "To set you up with a test drive, we will need your name and address.";
+    }
+}
+
+node td_confirmation:dialogue_state {
+    has name = "test_drive_confirmation";
+    can gen_response {
+        visitor.response =
+            "Can you confirm your name to be " + visitor.extracted_entities["name"] + " and your address as " + visitor.extracted_entities["address"] + " ?";
+    }
+}
+
+node td_confirmed:dialogue_state {
+    has name = "test_drive_confirmed";
+    can gen_response {
+        visitor.response = "You are all set for a Tesla test drive!";
+    }
+}
+
+node td_canceled:dialogue_state {
+    has name = "test_drive_canceled";
+    can gen_response {
+        visitor.response = "No worries. We look forward to hearing from you in the future!";
+    }
+}
+```
+There are many interesting things going on in these 40 lines of code so let's break it down!
+* The `dialogue_state` node is the parent node and it is similar to a virtual class in OOP. It defines the variables and abilities of the nodes but the details of the abilities will be specified in the inheriting children nodes.
+* Each dialogue state now has its own node type, all inheriting from the same generic `dialogue_state` node type.
+* We have 4 dialogue states here for the test drive capability:
+    * `test_drive`: This is the main state of the test drive intent. It is responsible for collecting the neccessary information from the user.
+    * `test_drive_confirmation`: Ths is the state for user to confirm the information they have provided are correct and is ready to actually schedule the test drive.
+    * `test_drive_confirmed`: This is the state after the user has confirmed.
+    * `test_drive_canceled`: User has decided, in the middle of the dialogue, to cancel their request to schedule a test drive.
+* Each state/node specificies its own `name` field and `gen_repsonse` logic.
+* **New Syntax**: `visitor` is the walker that is "visiting" the node. And through `visitor.*`, the node abilities can access and update the context of the walker. In this case, the node abilities are updating the `response` variable in the walker's context so that the walker can return the response to its caller.
+
+> **Note**
+>
+> Pay attention to the 4 dialogue states here. This pattern of `main` -> `confirmation` -> `confirmed` -> `canceled` is a very common conversational state graph design pattern and can apply to many topics, e.g., make a restaurant reservation and opening a new bank account. Essentially, almost any action-oriented requests can leverage this conversational pattern. Keep this in mind!
+
+### Entity Extraction
+Previously, we have introduced intent classification and how it helps to build a dialogue system.
+We now introduce the second key AI models, that is specifically important for a multi-turn dialogue system, that is entity/slot extraction.
+
+Entity extraction is a NLP task that focuses on extracting words or phrases of interests, or entities, from a given piece of text.
+Entity extraction, sometimes also referred to as Named Entity Recognition (NER), is useful in many domains, including information retrieval and conversational AI.
+We are going to use a transformer-based entity extraction model for this exercise.
+
+Let's first take a look at how we are going to use an entity model in our program.
+Then we will work on training an entity model.
+
+First, we introduce a new type of transition:
 ```js
 edge entity_transition {
     has entities;
 }
 ```
-NOTE: is there a better way to match entities here? Need both lists to be sorted.
+Recall the `intent_transition` that will trigger if the intent is the one that is being predicted.
+Similarly, the idea behind an `entity_transition` is that we will traverse this transition if all the specified entities have been fulfilled, i.e., they have been extracted from user's inputs.
 
-Expand the graph with new states and transitions
+With the `entity_transition`, let's update our graph
 ```js
 graph dialogue_system {
     has anchor dialogue_root;
     spawn {
+        dialogue_root = spawn node::dialogue_state;
+        test_drive_state = spawn node::test_drive_state;
+        td_confirmation = spawn node::td_confirmation;
+        td_confirmed = spawn node::td_confirmed;
+        td_canceled = spawn node::td_canceled;
 
+        how_to_order_state = spawn node::how_to_order_state;
+
+        dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;
+        test_drive_state -[intent_transition(intent="cancel")]-> td_canceled;
+        test_drive_state -[entity_transition(entities=["name", "address"])]-> td_confirmation;
+        td_confirmation - [intent_transition(intent="yes")]-> td_confirmed;
+        td_confirmation - [intent_transition(intent="no")]-> test_drive_state;
+        td_confirmation - [intent_transition(intent="cancel")]-> td_canceled;
+
+        dialogue_root -[intent_transition(intent="order a tesla")]-> how_to_order_state;
     }
 }
 ```
-* show DOT visualization
+Your graph should look something like this!
+
+![Multi-turn Dialogue Graph](images/dialogue/multi-turn.png)
+
 
 ## Update the walker to navigate the multi-turn dialogue graph
 ```js
