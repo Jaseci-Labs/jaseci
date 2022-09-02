@@ -5,7 +5,6 @@ from datetime import datetime
 from jaseci.actions.live_actions import jaseci_action
 
 stripe_test_key = '"sk_test_51JWUIeCZO78n7fsZnPvualWhmJg1DcCI332kKnWF3q2sKGwnPADjEmNblfFWi4pWAWPuJwHxpeSoJGc0J5ButHN900Q2xBz1se"'
-# stripe.api_key = mem_hook().resolve_glob("STRIPE_KEY", stripe_test_key)
 
 
 def set_api_key(meta):
@@ -242,7 +241,7 @@ def create_payment_intents(
 
 
 @jaseci_action()
-def get_subscription(customer_id: str, meta):
+def get_customer_subscription(customer_id: str, meta):
     """retrieve customer subcription list"""
     set_api_key(meta)
 

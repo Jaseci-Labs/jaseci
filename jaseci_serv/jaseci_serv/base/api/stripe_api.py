@@ -1,15 +1,8 @@
-from base64 import encode
-import json
-from re import A
 from jaseci.actor.walker import walker
 from jaseci.api.graph_api import graph_api
-from jaseci.jac.ir.jac_code import jac_code
-from jaseci.jac.ir.ast import ast
-from jaseci.utils.stripe_hook import stripe_hook
+from jaseci_serv.base.stripe_hook import stripe_hook
 import stripe
-import requests
 import uuid
-from jaseci.actor.sentinel import sentinel
 from jaseci.api.interface import interface
 from jaseci.api.sentinel_api import sentinel_api
 from jaseci.api.walker_api import walker_api
@@ -115,34 +108,18 @@ class stripe_api:
             resolve_semicolon(stripe_hook.get_obj("PAYMENT_INTENT_SUCCEEDED")),
         )
 
-        # return stripe_walker
-
         active_snt_id = sentinel_api.sentinel_active_get(self)["jid"]
         active_snt = self._h.get_obj(self._m_id, uuid.UUID(active_snt_id))
 
         wlk = active_snt.walker_ids.get_obj_by_name("stripe_webhook")
         keys = None
 
-        # return wlk
-
         if wlk:
-            # TODO - REFACTOR -> just update the code of the WALKER, but dont create new instance of walker
-            # tree = active_snt.parse_jac(stripe_walker, "./", start_rule="walker")
-            # # wlk.apply_ir(stripe_walker)
-            # # active_snt.parse_jac(stripe_walker, start_rule="walker")
-            # # wlk.apply_ir(stripe_walker)
-            # wlk.save()
-            # # wlk = walker_api.walker_get(self, wlk=wlk)
-
-            walker_api.walker_set(self, wlk=wlk, code=stripe_walker)
-            # wlk = wlk.serialize()
-            wlk = self._h.get_obj(self._m_id, uuid.UUID(wlk.jid))
+            wlk.register(stripe_walker)
+            wlk.save()
         else:
             wlk = walker_api.walker_register(self, active_snt, stripe_walker)
             wlk = self._h.get_obj(self._m_id, uuid.UUID(wlk["jid"]))
-
-        # wlk = walker_api.walker_register(self, active_snt, stripe_walker)
-        # return wlk
 
         keys = walker_api.walker_get(self, wlk=wlk, mode="keys")["anyone"]
 

@@ -15,7 +15,6 @@ class stripe_hook:
         """set stripe config"""
         try:
             obj = models.StripeVars.objects.create(name=name, value=value)
-            # obj = self.get_obj(name)
 
             return True
         except IntegrityError as e:
