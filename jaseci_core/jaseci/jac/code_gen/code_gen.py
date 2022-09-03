@@ -106,7 +106,7 @@ class code_gen:
     #             break
     #         else:
     #             func_link = \
-    #                 self.get_builtin_action(action_name, jac_ast)
+    #                 self.check_builtin_action(action_name, jac_ast)
     #             if(func_link):
     #                 getattr(obj, f"{action_type}_action_ids").add_obj(
     #                     action(

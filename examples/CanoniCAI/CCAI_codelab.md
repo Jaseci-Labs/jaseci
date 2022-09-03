@@ -32,11 +32,11 @@ A few essential concepts to get familiar with.
 
 ### Graph, nodes, edges
 
-Link to bible sections.
+Refer to relevant sections of the Jaseci Bible.
 
 ### Walker
 
-Link to bible sections.
+Refer to relevant sections of the Jaseci Bible.
 
 # Automated FAQ answering chatbot
 
@@ -314,6 +314,7 @@ Let's update our walker logic to use the USE QA model:
 
 ```js
 walker ask {
+    can use.qa_classify;
     has question;
     root {
         question = std.input(">");
