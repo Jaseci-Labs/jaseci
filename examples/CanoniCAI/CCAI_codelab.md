@@ -314,6 +314,7 @@ Let's update our walker logic to use the USE QA model:
 
 ```js
 walker ask {
+    can use.qa_classify;
     has question;
     root {
         question = std.input(">");
