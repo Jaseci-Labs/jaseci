@@ -16,11 +16,11 @@ pip install jaseci
 To test the installation is successful, run
 
 ```
-jsctl -- help
+jsctl --help
 ```
 
 `jsctl` stands for the Jaseci Command Line Interface.
-If the command above displays the help menu for `jsctl`, then you have succssfully installed jaseci.
+If the command above displays the help menu for `jsctl`, then you have successfully installed jaseci.
 
 > **Note**
 >
@@ -40,16 +40,16 @@ Refer to relevant sections of the Jaseci Bible.
 
 # Automated FAQ answering chatbot
 
-Our conversational AI system will consists of multiple components.
+Our conversational AI system will consist of multiple components.
 To start, we are going to build a chatbot that can answer FAQ questions without any custom training, using zeroshot NLP models.
-At the end of this section, you will have a chatbot that, when given a question, searches in its knowledge base the most relevant answer and return that answer.
+At the end of this section, you will have a chatbot that, when given a question, searches in its knowledge base the most relevant answer and returns that answer.
 
 The use case here is a Tesla FAQ chatbot.
 We will be using the list of FAQs from https://www.tesla.com/en_SG/support/faq.
 
 > **Note**
 >
-> This architecture works for any FAQ topics and use case. Feel free to pick another product/website/company's FAQ if you'd like!
+> This architecture works for any FAQ topics and use cases. Feel free to pick another product/website/company's FAQ if you'd like!
 
 ## Define the Nodes
 
@@ -77,7 +77,7 @@ The `has` keyword defines nodes variables. In this case, each `faq_state` has a 
 
 ## Build the Graph
 
-For this FAQ chatbot, we will build a graph like illustrated here:
+For this FAQ chatbot, we will build a graph as illustrated here:
 
 ![Architecture of FAQ Bot](images/faq_1.png)
 
@@ -145,8 +145,8 @@ In this context, the `spawn` designates a code block with programmatic functiona
 
 In this block:
 
-- We spawn 4 nodes, one of the type `faq_root` and three are of the type `faq_state`.
-- We connect each of the faq answer state to the faq root with `faq_root --> faq_answer_*`.
+- We spawn 4 nodes, one of the type `faq_root` and three of the type `faq_state`.
+- We connect each of the faq answer states to the faq root with `faq_root --> faq_answer_*`.
 - We set the `faq_root` as the anchor node of the graph. As we will later see, spawning a graph will return its anchor node.
 
 > **Warning**
@@ -165,15 +165,15 @@ walker init {
 }
 ```
 
-This is the first walker we have introduced so let's break it down.
+This is the first walker we have introduced, so let's break it down.
 
 - The walker is called `init`.
-- It contains logic specifically for the `root` node, meaning that the code inside the `root {}` block will run **only** on the `root` node. This syntax applies for any node types, as you will see very soon. Every Jac program starts with a single root node, though as you will later learn, a walker can be executed on any node though root is default if none is specified.
-- `spawn here --> graph::faq` creates an instance of the `faq` graph and connect its anchor node to `here` which is the node the walker is currently on.
+- It contains logic specifically for the `root` node, meaning that the code inside the `root {}` block will run **only** on the `root` node. This syntax applies for any node types, as you will see very soon. Every Jac program starts with a single root node, but as you will later learn, a walker can be executed on any node, though the root is used by default if none is specified.
+- `spawn here --> graph::faq` creates an instance of the `faq` graph and connects its anchor node to `here`, which is the node the walker is currently on.
 
 > **Note**
 >
-> `init` can be viewed as similar to `main` in python. It is the default walker to run when no specific walkers are specified for a `jac run` command.
+> `init` can be viewed as similar to `main` in Python. It is the default walker to run when no specific walkers are specified for a `jac run` command.
 >
 > `here` is a very powerful keyword. It always evaluates to the specific node the walker is currently on. You will be using `here` a lot throughout this tutorial.
 
@@ -257,9 +257,9 @@ This walker is more complex than the `init` one and introduces a few new concept
 - Similar to nodes, walker can also contain `has` variables. They define variables of the walker. They can also be passed as parameters when calling the walker.
 - `std.input` and `std.out` read and write to the command line.
 - This walker has logic for three types of node: `root`, `faq_root` and `faq_state`.
-  - `root`: It simply traverse to the `faq_root` node.
+  - `root`: It simply traverses to the `faq_root` node.
   - `faq_root`: This is where the answer selection algorithm is. We will find the most relevant `faq_state` and then traverse to that node via a `take` statement. In this code snippet, we are using a very simple (and limited) string matching approach to try to match the predefined FAQ question with the user question.
-  - `faq_state`: Print the answer to the terminal
+  - `faq_state`: Print the answer to the terminal.
 
 Before we run this walker, we are going to update the `init` walker to speed up our development process
 
@@ -272,7 +272,7 @@ walker init {
 }
 ```
 
-This serves as a shorthand so that we can initialize the graph and ask question in one command.
+This serves as a shorthand so that we can initialize the graph and ask a question in one command.
 
 > **Note**
 >
@@ -290,13 +290,13 @@ Try giving it one of the three questions we have predefined and it should respon
 ## Introducing Universal Sentence Encoder
 
 Now, obviously, what we have now is not very "AI" and we need to fix that.
-We are using the Universal Sentence Encoder QA model as the answer selection algorithm.
+We are going to use the Universal Sentence Encoder QA model as the answer selection algorithm.
 Universal Sentence Encoder is a language encoder model that is pre-trained on large corpus of natural language data and have been shown to be effective in many NLP tasks.
 In our application, we are using it for zero-shot question-answering, i.e. no custom training required.
 
 Jaseci has a set of built-in libraries or packages that are called Jaseci actions.
 These actions cover a wide-range of state-of-the-art AI models across many different NLP tasks.
-These actions are packaged in a python module called `jaseci_kit`.
+These actions are packaged in a Python module called `jaseci_kit`.
 
 To install `jaseci_kit`:
 
@@ -334,7 +334,7 @@ walker ask {
 }
 ```
 
-Even though there are only 5 lines of new code, there are many interesting aspects so let's break it down!
+Even though there are only 5 lines of new code, there are many interesting aspects, so let's break it down!
 
 - `-->.answer` collects the `answer` variable of all of the nodes that are connected to `here`/`faq_root` with a `-->` connection.
 - `use.qa_classify` is one of the action supported by the USE QA action set. It takes in a question and a list of candidate answers and return the most relevant one.
@@ -343,9 +343,9 @@ Now let's run this new walker and you can now ask questions that are relevant to
 
 ## Scale it Out
 
-So far we have created a FAQ bot that is capble of provide answer in three topics.
+So far we have created a FAQ bot that is capable of providing answer in three topics.
 To make this useful beyond just a prototype, we are now going to expand its database of answers.
-Instead of manually spawning and connecting a node for each FAQ entry, we are going to write a walker that automatically expand our graph:
+Instead of manually spawning and connecting a node for each FAQ entry, we are going to write a walker that automatically expands our graph:
 
 ```js
 walker ingest_faq {
@@ -396,9 +396,9 @@ walker init {
 
 What we are doing here is
 
-- Spawn a `faq_root` node
-- Run the `ingest_faq` walker to create the neccessary `faq_state` nodes based on the question-answer entires in the `tesla_faq.json` file.
-- Launch the `ask` walker
+- Spawning a `faq_root` node
+- Running the `ingest_faq` walker to create the neccessary `faq_state` nodes based on the question-answer entries in the `tesla_faq.json` file.
+- Launching the `ask` walker
 
 Let's run the program one more time and test it out!
 
