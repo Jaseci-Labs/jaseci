@@ -130,18 +130,17 @@ class interp(machine_state):
                 self._jac_scope.add_action(act)
                 break
             else:
-                func_link = self.get_builtin_action(action_name, jac_ast)
-                if func_link:
-                    act = action(
-                        m_id=self._m_id,
-                        h=self._h,
-                        name=action_name,
-                        value=func_link,
-                        preset_in_out=preset_in_out,
-                        access_list=access_list,
-                    )
-                    getattr(obj, f"{action_type}_action_ids").add_obj(act)
-                    self._jac_scope.add_action(act)
+                self.check_builtin_action(action_name, jac_ast)
+                act = action(
+                    m_id=self._m_id,
+                    h=self._h,
+                    name=action_name,
+                    value=action_name,
+                    preset_in_out=preset_in_out,
+                    access_list=access_list,
+                )
+                getattr(obj, f"{action_type}_action_ids").add_obj(act)
+                self._jac_scope.add_action(act)
             if not len(kid) or kid[0].name != "COMMA":
                 break
             else:

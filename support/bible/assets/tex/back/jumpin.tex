@@ -1,15 +1,15 @@
 \chapter{Installation and Coding Environment}
 \minitoc
-If you're the kind of haxor that doesn't want to read a huge book and just wants to get hacking ASAP, this chapter is for you!! This chapter will make a few assumptions. Firstly, it is assumed that you are in a linux environment and will have command of the line that takes commands. Coincidental, this is commonly referred to as the \emph{command line}. Secondly, this command line will be one that accepts linux style commands in a \texttt{bash} format. If you've never heard of bash, Google it. Thirdly and lastly, you will be using the only IDE true ninjas use, namely \texttt{VSCode}. If these conditions apply to your environment, you're good. If they don't but you use Linux, you're still good (as you're almost certainly competent enough at this stuff to be able to easily be able to make the necessary adjustments to get things working in your environment.)
+If you're the kind of haxor that doesn't want to read a huge book and just wants to get hacking ASAP, this part of the book is for you!! This chapter will make a few assumptions. Firstly, it is assumed that you are in a linux environment and will have command of the line that takes commands. Coincidental, this is commonly referred to as the \emph{command line}. Secondly, this command line will be one that accepts linux style commands in a \texttt{bash} format. If you've never heard of bash, Google it. Thirdly and lastly, you will be using the only IDE true ninjas use, namely \texttt{VSCode}. If these conditions apply to your environment, you're good. If they don't but you use Linux, you're still good (as you're almost certainly competent enough at this stuff to be able to easily be able to make the necessary adjustments to get things working in your environment.)
 
 We start this journey from the perspective of having a fresh vanilla install of the minimal version of Ubuntu 20+. Ubuntu is a distribution or (flavor) of linux that is likely the most popular and accessible in the market. I say likely because I don't know for sure, but if it isn't I'd be shocked!
 
 \begin{nerd}
-    The test environment I use to test these types of things is a vanilla Ubuntu environment I spool up in Kubernetes cluster. I'll throw it here below if helpful for anyone. You can also just use the \texttt{ubuntu} a docker container to validate these steps as well.
+    The test environment I use to test these types of things is a vanilla Ubuntu environment I spool up in Kubernetes cluster. I'll throw it here below if helpful for anyone. You can also just use the \texttt{ubuntu} docker container to validate these steps as well.
     \par
     In my case, I log into the box using \texttt{kubectl exec -it <podname> -- bash}, then after updating/upgrading packages I immediately run, \texttt{apt install sudo}, \texttt{adduser haxor}, \texttt{usermod -aG sudo haxor}, \texttt{su haxor}.
     At this point I'm ``logged in as haxor'' and I can pretend that I'm you :-).
-    \yaml{vanillabox.yaml}{K8s Manifest for a minimal vanilla Ubuntu test environment.}{yaml}
+    \yaml{vanillabox.yaml}{K8s Manifest for a minimal vanilla Ubuntu test environment.}
 \end{nerd}
 
 \section{Installation}
@@ -76,6 +76,6 @@ This is technically optional but... I strongly recommend you install and use VSC
 In VSCode, you can search for and install the Jac language extensions as per Figure~\ref{fig:vscode_jac}. As you can see, at the time I clipped this image, its quite new and doesn't really have a readme. You won't need one, it just provides syntax highlighting for \texttt{.jac} files at the moment. But it makes Jac code look beautiful, so it's a must have.
 
 \begin{nerd}
-    ...Personally, find an Ubuntu flavored \gls{WSL} VSCode environment to be the way to go these days. I used to be a 100\% Mac person for most of my life for it's Unix based foundation, but when WSL got so good, I had to switch! (plus there is insufficient gaming goodness in Mac-land). Anyway, I digress...
+    ...Personally, find an Ubuntu flavored \gls{WSL} VSCode environment to be the way to go these days. In a past life I was a 100\% Mac person for it's Unix based foundation. But WSL got soooooo good, and I had to switch! (plus there is insufficient gaming goodness in Mac-land). Anyway, I digress...
 \end{nerd}
 
