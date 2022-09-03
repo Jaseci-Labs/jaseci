@@ -9,6 +9,8 @@ from .test_data import (
     test_test_data,
     test_entities,
     test_model_config,
+    test_predict_input,
+    test_predict_output,
 )
 
 
@@ -53,9 +55,18 @@ class entity_extraction_type2_test(TestCaseHelper, TestCase):
         response = self.client.post("/extract_entity/", json=test_test_data)
         self.assertEqual(response.status_code, 200)
         for idx, ent in enumerate(test_entities):
-            ent.pop("score")
+            ent.pop("conf_score")
             res_ent = response.json()[idx]
-            res_ent.pop("score")
+            res_ent.pop("conf_score")
+            self.assertEqual(res_ent, ent)
+
+    def test_extract_entity(self):
+        response = self.client.post("/extract_entity/", json=test_predict_input)
+        self.assertEqual(response.status_code, 200)
+        for idx, ent in enumerate(test_predict_output):
+            ent.pop("conf_score")
+            res_ent = response.json()[idx]
+            res_ent.pop("conf_score")
             self.assertEqual(res_ent, ent)
 
     def test_get_train_config(self):

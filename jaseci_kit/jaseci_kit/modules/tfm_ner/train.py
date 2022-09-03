@@ -481,17 +481,19 @@ def save_custom_model(model_path):
 
 # predicting entities
 def predict_text(sentence):
-    pipe = pipeline("ner", model=model.to("cpu"), tokenizer=tokenizer)
+    pipe = pipeline(
+        "ner", model=model.to("cpu"), tokenizer=tokenizer, aggregation_strategy="first"
+    )
     entities = pipe(sentence)
     ents = []
     for itm in entities:
         ents.append(
             {
-                "entity_value": itm["word"],
-                "entity_type": itm["entity"],
-                "score": float(itm["score"]),
-                "start_index": itm["start"],
-                "end_index": itm["end"],
+                "entity_text": itm["word"],
+                "entity_value": itm["entity_group"],
+                "conf_score": float(itm["score"]),
+                "start_pos": itm["start"],
+                "end_pos": itm["end"],
             }
         )
     return ents
