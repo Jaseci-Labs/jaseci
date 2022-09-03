@@ -807,7 +807,7 @@ node dialogue_state {
     can classify_intent {
         intent_labels = -[intent_transition]->.edge.intent;
         visitor.predicted_intent = bi_enc.infer(
-            contexts = [question],
+            contexts = [visitor.question],
             candidates = intent_labels,
             context_type = "text",
             candidate_type = "text"
@@ -935,7 +935,7 @@ With the `entity_transition`, let's update our graph
 graph dialogue_system {
     has anchor dialogue_root;
     spawn {
-        dialogue_root = spawn node::dialogue_state;
+        dialogue_root = spawn node::dialogue_root;
         test_drive_state = spawn node::test_drive_state;
         td_confirmation = spawn node::td_confirmation;
         td_confirmed = spawn node::td_confirmed;
@@ -946,6 +946,7 @@ graph dialogue_system {
         dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;
         test_drive_state -[intent_transition(intent="cancel")]-> td_canceled;
         test_drive_state -[entity_transition(entities=["name", "address"])]-> td_confirmation;
+        test_drive_state -[intent_transition(intent="provide name or address")]-> test_drive_state;
         td_confirmation - [intent_transition(intent="yes")]-> td_confirmed;
         td_confirmation - [intent_transition(intent="no")]-> test_drive_state;
         td_confirmation - [intent_transition(intent="cancel")]-> td_canceled;
@@ -964,20 +965,26 @@ Let's now turn our focus to the walker logic
 ```js
 walker talk {
     has question;
-    has predicted_intent, extract_entities;
+    has predicted_intent = null, extracted_entities = {};
+    has prev_state;
     has response;
     root {
         take --> node::dialogue_root;
     }
     dialogue_state {
-        if (!question): std.input("Question (Ctrl-C to exit)> ");
+        if (!question): question = std.input("Question (Ctrl-C to exit)> ");
         here::nlu;
-        take -[entity_transition(entities.l:sorted==extracted_entities.d::keys.l:sorted)]-> node::dialogue_state else {
-            take -[intent_transition(intent==predicted_intent)]-> node::dialogue_state else {
+        prev_state = here;
+        take -[entity_transition(entities==extracted_entities.d::keys)]-> node::dialogue_state(name!=prev_state.name) else {
+            take -[intent_transition(intent==predicted_intent)]-> node::dialogue_state(name!=prev_state.name) else {
                 here::nlg;
                 std.out(response);
                 question = null;
-                if ((-->).length == 0): take net.root();
+                predicted_intent = null;
+                if ((-->).length == 0) {
+                    take net.root();
+                    extracted_entities = {};
+                }
                 else: take here;
             }
         }
@@ -1031,51 +1038,85 @@ At turn #2,
 >
 > Turn #3 works similiarly as turn #1. See if you can figure out how the walker reacts at turn #3 yourself!
 
-## Introduce entity extraction AI model
-* Similar to biencoder, give them the jac file and teach them how to train the model as a black box
+## Train an Entity Extraction Model
+Let's now train an entity extraction model!
+We are using a transformer-based token classification model.
 
-Load action
+First, we need to load the actions. The action set is called `tfm_ner` (`tfm` stands for transformer).
 ```bash
-jaseci > actions load module jaseci_kit.ent_ext
+jaseci > actions load module jaseci_kit.tfm_ner
 ```
+> **Note**
+>
+> Rememer to install `jaseci_kit` via `pip install jaseci_kit` if you haven't.
 
-NER training jac program
-```js
-node ner {
+Similar to Bi-encoder, we have provided a jac program to train and inference with this model, as well as an example training dataset.
+Go into the `code/` directory and copy `ner.jac` and `ner_train.json` to your working directory.
+We are training the model to detect two entities, `name` and `address`, for the test drive use case.
 
-}
-walker train {
-
-}
-
-walker infer {
-
-}
-```
-* Provide example training data file
-
-Train the model
+To train the model, run
 ```bash
-jaseci > walker run ner.jac -wlk train -ctx {}
+jaseci > walker run ner.jac -wlk train -ctx {\"train_file\": \"ner_train.json\"}
 ```
-
-Test the model
+After the model is finished training, you can play with the model using the `infer` walker
 ```js
-jaseci > walker run ner.jac -wlk infer -ctx {}
+jaseci > walker run ner.jac -wlk infer
 ```
+For example,
+```bash
+jaseci > jac run tfm_ner.jac -walk infer
+Enter input text (Ctrl-C to exit)> my name is jason
+[{"entity_text": "jason", "entity_value": "name", "conf_score": 0.5514775514602661, "start_pos": 11, "end_pos": 16}]
+```
+The output of this model is a list of dictionaries, each of which is one detected entitiy.
+For each detected entity, `entity_value` is the type of entity, so in this case either `name` or `address`;
+and `entity_text` is the detected text from the input for this entity, so in this case the user's name or their address.
 
-## Integrate the NER model with walker logic
-
-Update the walker code to use the NER action
+Let's now update the node ability to use the entity model.
 ```js
-walker ask {
+node dialogue_state {
+    can bi_enc.infer;
+    can tfm_ner.extract_entity;
 
+    has name;
+
+    can classify_intent {
+        intent_labels = -[intent_transition]->.edge.intent;
+        std.out(intent_labels);
+        std.out(visitor.question);
+        visitor.predicted_intent = bi_enc.infer(
+            contexts = [visitor.question],
+            candidates = intent_labels,
+            context_type = "text",
+            candidate_type = "text"
+        )[0]["predicted"]["label"];
+    }
+
+    can extract_entities {
+        res = tfm_ner.extract_entity(visitor.question);
+        for ent in res {
+            ent_type = ent["entity_value"];
+            ent_text = ent["entity_text"];
+            if (!(ent_type in visitor.extracted_entities)){
+                visitor.extracted_entities[ent_type] = [];
+            }
+            visitor.extracted_entities[ent_type].l::append(ent_text);
+        }
+    }
+
+    can nlu {}
+    can nlg {}
 }
 ```
 
-Run the walker again, now with both AI model in place.
+There is one last update we need to do before this is fully functional.
+Because we have more dialogue states and a more complex graph, we need to update our classifier to include the new intents.
+We have provided an example training dataset at `code/clf_train_2.json`.
+Re-train the bi-encoder model with this dataset.
 
-Congratulations! You now have a fully functional multi-turn dialogue system.
+Now try running the walker again with `jac run dialogue.jac`!
+
+Congratulations! You now have a fully functional multi-turn dialogue system that can handle test drive requests!
 
 # Unifying the two conversational AI systems
 * FAQ and Dialogue system, while relying on different AI models, share many of the same development and processing pattern.
