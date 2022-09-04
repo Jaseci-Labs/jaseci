@@ -123,10 +123,19 @@ else:
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
+# REDIS
+REDIS_ENABLED = True and ("test" in sys.argv or "runserver" in sys.argv)
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+REDIS_DB = os.getenv("REDIS_DB", "1")
+REDIS_URL = "redis://{host}:{port}/{db}".format(
+    host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB
+)
+
 # TASK_HOOK
 TASK_ENABLED = True and ("test" in sys.argv or "runserver" in sys.argv)
 TASK_QUIET = False
-broker_url = "redis://localhost:6379/1"
+broker_url = REDIS_URL
 beat_scheduler = "django_celery_beat.schedulers:DatabaseScheduler"
 result_backend = "django-db"
 task_track_started = True
@@ -137,15 +146,6 @@ if "test" in sys.argv or "test_coverage" in sys.argv:
     task_always_eager = True
     task_store_eager_result = True
     beat_scheduler = "celery.beat:PersistentScheduler"
-
-# REDIS
-REDIS_ENABLED = True and ("test" in sys.argv or "runserver" in sys.argv)
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = os.getenv("REDIS_PORT", "6379")
-REDIS_DB = os.getenv("REDIS_DB", "1")
-REDIS_URL = "redis://{host}:{port}/{db}".format(
-    host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB
-)
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
