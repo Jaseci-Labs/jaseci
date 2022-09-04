@@ -1,4 +1,4 @@
 {
-    "model_name": "prajjwal1/bert-tiny",
-    "model_save_path": "train"
+    "model_name": "distilbert-base-uncased",
+    "model_save_path": "modeloutput1"
 }

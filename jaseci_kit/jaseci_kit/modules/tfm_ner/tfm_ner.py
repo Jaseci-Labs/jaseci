@@ -3,18 +3,16 @@ from fastapi import HTTPException
 from jaseci.actions.live_actions import jaseci_action
 from typing import Dict, List, Optional
 import os
-import pandas as pd
 import json
 import warnings
 from .train import (
     predict_text,
-    train_model,
     load_custom_model,
     save_custom_model,
-    data_set,
-    check_labels_ok,
+    NERDataMaker,
+    train_model,
 )
-from .entity_utils import create_data, create_data_new
+import shutil
 
 warnings.filterwarnings("ignore")
 
@@ -36,43 +34,19 @@ def config_setup():
         model_config = json.load(jsonfile)
 
     curr_model_path = model_config["model_name"]
-    load_custom_model(curr_model_path)
+    train_data = []
+    if os.path.exists("train/train.txt"):
+        with open("train/train.txt", "r") as filehandle:
+            for line in filehandle:
+                currentline = line[:-1]
+                train_data.append(currentline)
+        train_dm = NERDataMaker(train_data)
+    load_custom_model(curr_model_path, train_dm)
 
 
 config_setup()
 
 enum = {"default": 1, "append": 2, "incremental": 3}
-
-
-# creating train eval and test dataset
-def create_train_data(dataset, fname):
-    data = pd.DataFrame(columns=["text", "annotation"])
-    for t_data in dataset:
-        tag = []
-        for ent in t_data["entities"]:
-            if ent["entity_value"] and ent["entity_type"]:
-                tag.append(
-                    (
-                        ent["entity_value"],
-                        ent["entity_type"],
-                        ent["start_index"],
-                        ent["end_index"],
-                    )
-                )
-            else:
-                raise HTTPException(
-                    status_code=404, detail=str("Entity Data missing in request")
-                )
-        data = data.append(
-            {"text": t_data["context"], "annotation": tag}, ignore_index=True
-        )
-    # creating training data
-    try:
-        completed = create_data(data, fname)
-    except Exception as e:
-        completed = create_data_new(data, fname)
-        print(f"Exception  : {e}")
-    return completed
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
@@ -89,42 +63,34 @@ def extract_entity(text: str = None):
 def train(
     mode: str = train_config["MODE"],
     epochs: int = train_config["EPOCHS"],
-    train_data: List[dict] = [],
-    val_data: Optional[List[dict]] = [],
-    test_data: Optional[List[dict]] = [],
+    train_data: List = [],
+    val_data: Optional[List] = [],
 ):
     """
     API for training the model
     """
     if not os.path.exists("train/logs"):
         os.makedirs("train/logs")
-    if epochs:
+    if mode == "default":
         train_config["EPOCHS"] = epochs
-
-    if mode == "default" or mode == "incremental":
-        if os.path.exists("train/train_backup_file.txt"):
-            os.remove("train/train_backup_file.txt")
-        if os.path.exists("train/val_backup_file.txt"):
-            os.remove("train/val_backup_file.txt")
-        if os.path.exists("train/test_backup_file.txt"):
-            os.remove("train/test_backup_file.txt")
-
-        if os.path.exists("train/train.txt"):
-            os.remove("train/train.txt")
-        if os.path.exists("train/val.txt"):
-            os.remove("train/val.txt")
-        if os.path.exists("train/test.txt"):
-            os.remove("train/test.txt")
-
-        train_file = "train/train.txt"
-        val_file = "train/val.txt"
-        test_file = "train/test.txt"
-
+        with open("train/train_data.txt", "w") as fp:
+            for listitem in train_data:
+                fp.write("%s\n" % listitem)
+    elif mode == "incremental":
+        train_config["EPOCHS"] = train_config["EPOCHS"] + epochs
+        with open("train/train.txt", "w") as fp:
+            for listitem in train_data:
+                fp.write("%s\n" % listitem)
     elif mode == "append":
-        train_file = "train/train_backup_file.txt"
-        val_file = "train/val_backup_file.txt"
-        test_file = "train/test_backup_file.txt"
-
+        train_config["EPOCHS"] = epochs
+        if os.path.exists("train/train.txt"):
+            with open("train/train.txt", "r") as filehandle:
+                for line in filehandle:
+                    currentline = line[:-1]
+                    train_data.append(currentline)
+        with open("train/train_data.txt", "w") as fp:
+            for listitem in train_data:
+                fp.write("%s\n" % listitem)
     else:
         st = {
             "Status": "training failed",
@@ -133,47 +99,23 @@ def train(
         }
         raise HTTPException(status_code=400, detail=st)
 
-    if len(val_data) != 0:
-        create_train_data(val_data, "val")
-
-    if len(test_data) != 0:
-        create_train_data(test_data, "test")
-
-    if len(train_data) != 0:
-        completed = create_train_data(train_data, "train")
-        if completed is True:
-
-            # loading training dataset
-            data_set(
-                train_file,
-                val_file,
-                test_file,
-                train_config["MAX_LEN"],
-                train_config["TRAIN_BATCH_SIZE"],
-            )
-
-            # checking data and model labels
-            data_lab = check_labels_ok()
-            print("model training started")
-            status = train_model(
-                curr_model_path,
-                train_config["EPOCHS"],
-                enum[mode],
-                data_lab,
-                train_config["LEARNING_RATE"],
-                train_config["MAX_GRAD_NORM"],
-                model_config["model_save_path"],
-            )
-            print("model training Completed")
-            return status
-        else:
-            raise HTTPException(
-                status_code=500,
-                detail=str("Issue encountered during train data creation"),
-            )
-    else:
+    try:
+        if os.path.exists("train/train.txt"):
+            with open("train/train.txt", "r") as filehandle:
+                for line in filehandle:
+                    currentline = line[:-1]
+                    train_data.append(currentline)
+        train_dm = NERDataMaker(train_data)
+        load_custom_model(curr_model_path, train_dm)
+        train_model(train_data=train_data, val_data=val_data, train_config=train_config)
+        print("model training Completed")
+        return 200
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
         raise HTTPException(
-            status_code=404, detail=str("Need Data for Text and Entity")
+            status_code=500,
+            detail=str("Issue encountered during train data creation"),
         )
 
 
@@ -181,13 +123,23 @@ def train(
 def load_model(model_path: str = "default", local_file: bool = False):
     global curr_model_path
     curr_model_path = model_path
+    train_file_path = curr_model_path + "\\train.txt"
     if local_file is True and not os.path.exists(model_path):
         return "Model path is not available"
     try:
         print("loading latest trained model to memory...")
-        load_custom_model(model_path)
-        print("model successfully load to memory!")
-        return {"status": "model Loaded Successfull!"}
+        if os.path.exists(train_file_path):
+            train_data = []
+            with open(train_file_path, "r") as filehandle:
+                for line in filehandle:
+                    currentline = line[:-1]
+                    train_data.append(currentline)
+            train_dm = NERDataMaker(train_data)
+            load_custom_model(curr_model_path, train_dm)
+            print("model successfully load to memory!")
+            return {"status": "model Loaded Successfull!"}
+        else:
+            raise HTTPException(status_code=400, detail=str("cannot load model"))
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=400, detail=str(e))
@@ -198,6 +150,7 @@ def save_model(model_path: str = "mymodel"):
     try:
         save_custom_model(model_path)
         print(f"current model {model_path} saved to disk.")
+        shutil.copy("train/train.txt", model_path)
         return {"status": f"model {model_path} saved Successfull!"}
     except Exception as e:
         print(traceback.format_exc())
