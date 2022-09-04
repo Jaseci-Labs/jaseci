@@ -30,10 +30,10 @@
         "absolutely",
         "i suppose so",
         "i guess so",
-        "yes",
+        "yes that is correct",
         "let's give it a try",
         "please do",
-        "yeah"
+        "yeah correct"
     ],
     "no": [
         "i don't think so",
@@ -45,7 +45,12 @@
         "we can come back to this later",
         "let's revisit this later",
         "bad idea",
-        "bad call"
+        "bad call",
+        "no not correct",
+        "that's wrong",
+        "no my name is jason actually",
+        "incorrect my address is on plymouth road",
+        "no you got my name and address wrong"
     ],
     "cancel": [
         "cancel",
@@ -57,7 +62,8 @@
         "abandon the process",
         "revoke everything",
         "write that off",
-        "repeal"
+        "repeal",
+        "forget about it"
     ],
     "provide name or address": [
         "my name is Jason",

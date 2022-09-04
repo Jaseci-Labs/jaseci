@@ -806,7 +806,7 @@ node dialogue_state {
 
     can classify_intent {
         intent_labels = -[intent_transition]->.edge.intent;
-        visitor.predicted_intent = bi_enc.infer(
+        visitor.wlk_ctx["intent"] = bi_enc.infer(
             contexts = [visitor.question],
             candidates = intent_labels,
             context_type = "text",
@@ -818,7 +818,22 @@ node dialogue_state {
         // Entity extraction logic will be added a bit later on.
     }
 
+    can init_wlk_ctx {
+        new_wlk_ctx = {
+            "intent": null,
+            "entities": {},
+            "prev_state": null,
+            "next_state": null,
+            "respond": false
+        };
+        if ("entities" in visitor.wlk_ctx) {
+            // Carry over extracted entities from previous interaction
+            new_wlk_ctx["entities"] = visitor.wlk_ctx["entities"];
+        }
+        visitor.wlk_ctx = new_wlk_ctx;
+    }
     can nlu {}
+    can process {}
     can nlg {}
 }
 
@@ -826,6 +841,9 @@ node dialogue_root:dialogue_state {
     has name = "dialogue_root";
     can nlu {
         ::classify_intent;
+    }
+    can process {
+        visitor.wlk_ctx["next_state"] = (-[intent_transition(intent==visitor.wlk_ctx["intent"])]->)[0];
     }
     can nlg {
         visitor.response = "Sorry I can't handle that just yet. Anything else I can help you with?";
@@ -836,6 +854,7 @@ There are many interesting things going on in these ~30 lines of code so let's b
 * The `dialogue_state` node is the parent node and it is similar to a virtual class in OOP. It defines the variables and abilities of the nodes but the details of the abilities will be specified in the inheriting children nodes.
 * In this case, `dialogue_state` has 4 node abilities:
     * `can nlu`: NLU stands for Natural Language Understanding. This ability will analyze user's incoming requset and apply AI models.
+    * `can process`: This ability uses the NLU results and figure out the next dialogue state the walker should go to.
     * `can nlg`: NLG stands for Natural Language Generation. This abilitiy will compose repsonse to the user, often based on the results from `nlu`.
     * `can classify_intent`: an ability to handle intent classification. This is the same intent classification logic that has been copied over from the walker.
     * `can extract_entities`: a new ability with a new AI model -- entity extraction. We will cover that just in a little bit (read on!).
@@ -843,9 +862,10 @@ There are many interesting things going on in these ~30 lines of code so let's b
 * For example, `dialogue_root` inherit from `dialogue_state` and overwrites `nlu` and `nlg`:
     * for `nlu`, it invokes intent classification because it needs to decide what's the intent of the user (test drive vs order a tesla).
     * for `nlg`, it just has a general fall-back response in case the system can't handle user's ask.
-* **New Syntax**: `visitor` is the walker that is "visiting" the node. And through `visitor.*`, the node abilities can access and update the context of the walker. In this case, the node abilities are updating the `response` variable in the walker's context so that the walker can return the response to its caller, as well as the `predicted_intent` variable that will be used for graph traversal.
+* **New Syntax**: `visitor` is the walker that is "visiting" the node. And through `visitor.*`, the node abilities can access and update the context of the walker. In this case, the node abilities are updating the `response` variable in the walker's context so that the walker can return the response to its caller, as well as the `wlk_ctx` variable that will contain various walker context as the walker traverse the graph.
+    * the `init_wlk_ctx` ability initializes the `wlk_ctx` variable for each new question.
 
-In this new node architecture, each dialogue state will have its own node type, specifying their state-specific logic in `nlu` and `nlg`.
+In this new node architecture, each dialogue state will have its own node type, specifying their state-specific logic in `nlu`, `nlg` and `process`.
 Let's take a look!
 
 ```js
@@ -871,15 +891,48 @@ node test_drive_state:dialogue_state {
             visitor.response = "To set you up with a test drive, we will need your name and address.";
     }
 }
+node test_drive_state:dialogue_state {
+    has name = "test_drive";
+    can nlu {
+        if (!visitor.wlk_ctx["intent"]): ::classify_intent;
+        ::extract_entities;
+    }
+    can process {
+        if (visitor.wlk_ctx["entities"].d::keys == -[entity_transition]->.edge[0].context["entities"]) {
+            visitor.wlk_ctx["next_state"] = -[entity_transition]->[0];
+            visitor.wlk_ctx["prev_state"] = here;
+        } elif (visitor.wlk_ctx["prev_state"] and !visitor.wlk_ctx["prev_state"].context["name"] in ["test_drive", "td_confirmation"]){
+            visitor.wlk_ctx["next_state"] = -[intent_transition(intent==visitor.wlk_ctx["intent"])]->[0];
+            visitor.wlk_ctx["prev_state"] = here;
+        } else {
+            visitor.wlk_ctx["respond"] = true;
+        }
+    }
+    can nlg {
+        if ("name" in visitor.wlk_ctx["entities"] and "address" not in visitor.wlk_ctx["entities"]):
+            visitor.response = "What is your address?";
+        elif ("address" in visitor.wlk_ctx["entities"] and "name" not in visitor.wlk_ctx["entities"]):
+            visitor.response = "What is your name?";
+        else:
+            visitor.response = "To set you up with a test drive, we will need your name and address.";
+    }
+}
 
 node td_confirmation:dialogue_state {
     has name = "test_drive_confirmation";
     can nlu {
-        ::classify_intent;
+        if (!visitor.wlk_ctx["intent"]): ::classify_intent;
+    }
+    can process {
+        if (visitor.wlk_ctx["prev_state"]): visitor.wlk_ctx["respond"] = true;
+        else {
+            visitor.wlk_ctx["next_state"] = -[intent_transition(intent==visitor.wlk_ctx["intent"])]->[0];
+            visitor.wlk_ctx["prev_state"] = here;
+        }
     }
     can nlg {
         visitor.response =
-            "Can you confirm your name to be " + visitor.extracted_entities["name"] + " and your address as " + visitor.extracted_entities["address"] + " ?";
+            "Can you confirm your name to be " + visitor.wlk_ctx["entities"]["name"][0] + " and your address as " + visitor.wlk_ctx["entities"]["address"][0] + "?";
     }
 }
 
@@ -896,7 +949,6 @@ node td_canceled:dialogue_state {
         visitor.response = "No worries. We look forward to hearing from you in the future!";
     }
 }
-
 ```
 
 * Each dialogue state now has its own node type, all inheriting from the same generic `dialogue_state` node type.
@@ -905,6 +957,30 @@ node td_canceled:dialogue_state {
     * `test_drive_confirmation`: Ths is the state for user to confirm the information they have provided are correct and is ready to actually schedule the test drive.
     * `test_drive_confirmed`: This is the state after the user has confirmed.
     * `test_drive_canceled`: User has decided, in the middle of the dialogue, to cancel their request to schedule a test drive.
+* The `process` ability contains the logic that defines the conversational flow of the dialogue system. It uses the data in `wlk_ctx` and assign a `next_state` which will be used by the walker in a `take` statement, as you will see in a just a little bit.
+* **New Syntax**: The code in `test_drive_state`'s ability demonstrates jac support for list and dictionary. To access the list and dictionary-specific functions, first cast the variable with `.l`/`.list` for list and `.d`/`.dict` for dictionaries, then proceed with `:` to access the built-in functions for list and dictioinaries. For more on jac's built-in types, refer to the relevant sections of the Jaseci Bible.
+    * Specifically in this case, we are comparing the list of entities of the `entity_transition` edge with the list of entities that have been extracted by the walker and the AI model (stored in `wlk_ctx["entities]`). Since there can be multiple entities required and they can be extracted in arbitrary order, we are sorting and then comparing here.
+
+* **New Syntax**: `-[entity_transition]->.edge` shows how to access the edge variable. Consider `-[entity_transition]->` as a filter. It returns all valid nodes that are connected to the implicit `here` via an `entity_transition`. On its own, it will return all the qualified nodes. When followed by `.edge`, it will return the set of edges that are connected to the qualified nodes.
+
+You might notice that some states do not have a `process` ability.
+These are states that do not have any outgoing transitions, which we refer to as leaf nodes.
+If these nodes are reached, they indicate that a dialogue has been completed end to end.
+The next state for these node will be returning to the root node so that the next dialogue can start fresh.
+To facilitate this, we will add the following logic to the `process` ability of the **parent `dialogue_state` node** so that by default, any nodes inheriting it will follow this rule.
+```js
+node dialogue_state {
+...
+    can process {
+        if (visitor.wlk_ctx["prev_state"]): visitor.wlk_ctx["respond"] = true;
+        else {
+            visitor.wlk_ctx["next_state"] = net.root();
+            visitor.wlk_ctx["prev_state"] = here;
+        }
+    }
+...
+}
+```
 
 > **Note**
 >
@@ -965,40 +1041,33 @@ Let's now turn our focus to the walker logic
 ```js
 walker talk {
     has question;
-    has predicted_intent = null, extracted_entities = {};
-    has prev_state;
+    has wlk_ctx = {};
     has response;
     root {
         take --> node::dialogue_root;
     }
     dialogue_state {
-        if (!question): question = std.input("Question (Ctrl-C to exit)> ");
+        if (!question) {
+            question = std.input("Question (Ctrl-C to exit)> ");
+            here::init_wlk_ctx;
+        }
         here::nlu;
-        prev_state = here;
-        take -[entity_transition(entities==extracted_entities.d::keys)]-> node::dialogue_state(name!=prev_state.name) else {
-            take -[intent_transition(intent==predicted_intent)]-> node::dialogue_state(name!=prev_state.name) else {
-                here::nlg;
-                std.out(response);
-                question = null;
-                predicted_intent = null;
-                if ((-->).length == 0) {
-                    take net.root();
-                    extracted_entities = {};
-                }
-                else: take here;
-            }
+        here::process;
+        if (visitor.wlk_ctx["respond"]) {
+            here::nlg;
+            std.out(response);
+            question = null;
+            take here;
+        } else {
+            take visitor.wlk_ctx["next_state"] else: take here;
         }
     }
 }
 ```
+
 The walker logic looks very different now. Let's break it down!
 * First off, because the intent classification logic is now a node ability, the walker logic has become simpler and, more importantly, more focused on graph traversal logic without the detailed (and occasionally convoluted) logic required to process to interact with an AI model.
 * **New Syntax**: `here::nlu` and `here::nlg` invokes the node abilities. `here` can be subtitied with any node variables, not just the one the walker is currently on.
-* We have two of the the most complex `take` statement so far so let's break it down!
-    * Let's start with `take -[intent_transition(intent==predicted_intent)]-> node::dialogue_state else {`. This is mostly the same as the `take` statement in the previous version of the walker, with the addition of the `else` block. An `else` block following a `take` statement executes when there is no possible `take` can happen based on the filter and requirements, much like `if-else`.
-    * As for `take -[entity_transition(entities.l:sorted==extracted_entities.d::keys.l:sorted)]-> node::dialogue_state else {`, you can see its syntax are largely the same as the intent take statement, but with a more complex filtering logic.
-    * This demonstrates jac support for list and dictionary. To access the list and dictionary-specific functions, first cast the variable with `.l`/`.list` for list and `.d`/`.dict` for dictionaries, then proceed with `:` to access the built-in functions for list and dictioinaries. For more on jac's built-in types, refer to the relevant sections of the Jaseci Bible.
-    * Specifically in this case, we are comparing the list of entities of the `entity_transition` edge with the list of entities that have been extracted by the walker and the AI model (stored in `extracted_entities`). Since there can be multiple entities required and they can be extracted in arbitrary order, we are sorting and then comparing here.
 
 Now that we have explained some of the new language syntax here, let's go over the overall logic of this walker.
 For a new question from the user, the walker will
@@ -1075,37 +1144,18 @@ and `entity_text` is the detected text from the input for this entity, so in thi
 Let's now update the node ability to use the entity model.
 ```js
 node dialogue_state {
-    can bi_enc.infer;
-    can tfm_ner.extract_entity;
-
-    has name;
-
-    can classify_intent {
-        intent_labels = -[intent_transition]->.edge.intent;
-        std.out(intent_labels);
-        std.out(visitor.question);
-        visitor.predicted_intent = bi_enc.infer(
-            contexts = [visitor.question],
-            candidates = intent_labels,
-            context_type = "text",
-            candidate_type = "text"
-        )[0]["predicted"]["label"];
-    }
-
+    ...
     can extract_entities {
         res = tfm_ner.extract_entity(visitor.question);
         for ent in res {
             ent_type = ent["entity_value"];
             ent_text = ent["entity_text"];
-            if (!(ent_type in visitor.extracted_entities)){
-                visitor.extracted_entities[ent_type] = [];
+            if (!(ent_type in visitor.wlk_ctx["entities"])){
+                visitor.wlk_ctx["entities"][ent_type] = [];
             }
-            visitor.extracted_entities[ent_type].l::append(ent_text);
+            visitor.wlk_ctx["entities"][ent_type].l::append(ent_text);
         }
-    }
-
-    can nlu {}
-    can nlg {}
+    ...
 }
 ```
 
@@ -1114,70 +1164,66 @@ Because we have more dialogue states and a more complex graph, we need to update
 We have provided an example training dataset at `code/clf_train_2.json`.
 Re-train the bi-encoder model with this dataset.
 
+> **Note**
+>
+> Refer to previous code snippets if you need a reminder on how to train the bi-encoder classifier model.
+
 Now try running the walker again with `jac run dialogue.jac`!
 
 Congratulations! You now have a fully functional multi-turn dialogue system that can handle test drive requests!
 
-# Unifying the two conversational AI systems
-* FAQ and Dialogue system, while relying on different AI models, share many of the same development and processing pattern.
-* NLU to analyze the question and NLG to compose a repsonse.
-* Add diagram to demonstrate the shared pattern.
-* We are going to use inheritance to unify the two system and simplify our logic
+# Unify the Dialogue and FAQ Systems
+So far, we have built two separate conversational AI systems, a FAQ system that automatically scales with the available question-answer pairs and a multi-turn action-oriented dialogue system that can handle complex requests.
+These two systems serve different use cases and can be combined to a single system to provide a flexible and robust conversational AI experience.
+In this section, we are going to unify these two systems into one coherent conversational AI system.
 
-* Explain the inheritance relationship
-* cai_state --> va_state --> individual dialogue states
-* cai_state --> faq_state --> individual FAQ answer states
+While these two systems rely on different AI models, they share many of the same logic flow.
+They both follow the general steps of first analyizing user's question with NLU AI models, make decision on the next conversational state to be and then construct and return a response to the user.
+Leveraging this shared pattern, we will first unify the node architecture of the two systems with a single parent node type, `cai_state` (`cai` is short of conversational AI).
 
-Introduce the cai_state parent node
 ```js
 node cai_state {
-
+    has name;
+    can nlu {}
+    can nlg {}
 }
 ```
-* Introduce node abilities
-* data spatial programming concept and principles
 
-## Update the FAQ program with the new inheritance structure
+We then update the defintion of `dialogue_state` in `dialogue.jac`.
+```js
+node dialogue_state:cai_state{
+    // Rest of dialogue_state code remain the same
+}
+```
+
+For `faq_state`, we need to now define the `nlu` and `nlg` node abilities for FAQ.
 ```js
 node faq_state:cai_state {
-
-}
-```
-
-Update the graph
-```
-graph faq {
-    // updated graph with new inheritance structure
-}
-```
-
-Update the faq walker
-```js
-walker ask_faq {
-
-}
-```
-Let's run the new walker with the new grpah.
-
-## Combining FAQ and Dialogue into one system
-Now that we have unified the data structure, let's see how we can combine these two into one unified conversational AI system.
-The unified code architecture makes this much easier than before.
-
-* We will add an intent to the dialogue system to direct requests to FAQ
-* Add diagram here
-
-Update the graph with both sides linked
-```js
-graph conv_ai {
-    has anchor cai_root;
-    graph {
-        // Connect dialogue system to cai_root
-        // Connect FAQ to cai_root
+    can use.qa_classify;
+    can nlu {
+        answers = -->.answer;
+        if (answers.length != 0){
+            best_answer = use.qa_classify(
+                text = visitor.question,
+                classes = answers
+            );
+        }
+    }
+    can nlg {
+        visitor.response = here.answer;
     }
 }
 ```
+With the updated nodes structure, let's create the graph for the unified system.
+```js
+graph conv_ai {
+}
+```
 
-We are also going to unify the two walkers.
+An intent to go to FAQ.
+Add dot diagram here.
+
+Let's see what updates we need to make to the walker.
 
 ```js
 walker talk {
@@ -1198,8 +1244,6 @@ We have a new challenge, our jac program consists of multiple jac files now.
 We will compile them into one program in the format of `jir`.
 
 Let's create a `main.jac`
-<h5 a><strong><code>main.jac</code></strong></h5>
-
 ```js
 import {*} with "./faq.jac";
 import {*} with "./dialogue.jac";

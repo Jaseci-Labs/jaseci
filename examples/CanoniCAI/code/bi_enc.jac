@@ -21,6 +21,7 @@ node bi_enc {
             context_type="text",
             candidate_type="text"
         )[0];
+        std.out(res);
         visitor.prediction = res["predicted"];
     }
 }
