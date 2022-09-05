@@ -54,11 +54,11 @@ walker infer {
 walker save_model {
     has model_path;
     can tfm_ner.save_model;
-    tfm_ner.save_model(model_path);
+    tfm_ner.save_model(model_path=model_path);
 }
 
 walker load_model {
     has model_path;
     can tfm_ner.load_model;
-    tfm_ner.load_model(model_path);
+    tfm_ner.load_model(model_path=model_path);
 }
