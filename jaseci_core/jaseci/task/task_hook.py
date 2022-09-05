@@ -56,7 +56,6 @@ class task_hook:
             th.state = 0
 
             th.main_hook = self
-            th.basic_master = self.generate_basic_master()
 
             try:
                 self.__celery()
@@ -191,6 +190,17 @@ class task_hook:
 
     def disable_task(self):
         th.app = None
+
+    ###################################################
+    #                  CLASS CONTROL                  #
+    ###################################################
+
+    def generate_basic_master():
+
+        if th.basic_master is None:
+            th.basic_master = task_hook.main_hook.generate_basic_master()
+
+        return th.basic_master
 
 
 # ----------------------------------------------- #

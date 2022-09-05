@@ -137,7 +137,7 @@ class schedule_queue(Task):
         master = req.get("master")
 
         if master is None:
-            caller = task_hook.basic_master
+            caller = task_hook.generate_basic_master()
             trigger_type = "public"
         else:
             caller = task_hook.get_element(master)
