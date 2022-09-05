@@ -1371,39 +1371,130 @@ The model is trained? Great! Now run the jir and try questions like "I have some
 
 Congratulations! You have created a single conversational AI system that is capable of answering FAQs and perform complex multi-step actions.
 
-# From prototype --> production application
-## Introducing yield
-Explain yield
-Update the walker with yield
+# Bring Your Application to Production
+Typing in questions and getting responses via `jsctl` in terminal is a quick and easy way of interactively test and use your program.
+But the ultimate goal of building any products is to eventually deploying it to production and having it serve real users via standard interface such as RESTful API endpoints.
+In this section, we will cover a number of items related to bringing your jac program to production.
+
+## Introducing `yield`
+`yield` is a jac keyword that suspend the walker and return a response, which then can be resumed at a later time with the walker context retained.
+Walker context includes its `has` variables and its node traversal plan (i.e., any nodes that have been queued by previously executed `take` statements).
+This context retention is done on a per-user basis.
+`yield` is a great way to maintaining user-specific context and history in between walker calls.
+To learn more about `yield,` refer to the relevant sections of the Jaseci Bible.
+
+In the case of our conversational AI system, it is essential for our walker to remember the context information gained from previous interactions with the same user.
+So let's update our walker with `yield.`
+
 ```js
 walker talk {
-    // Update this with yield
+    has question, interactive = false;
+    has wlk_ctx = {};
+    has response;
+    root {
+        take --> node::dialogue_root;
+    }
+    cai_state {
+        if (!question and interactive) {
+            question = std.input("Question (Ctrl-C to exit)> ");
+        }
+        here::nlu;
+        here::process;
+        if (visitor.wlk_ctx["respond"]) {
+            here::nlg;
+            if (interactive): std.out(response);
+            else: yield report response;
+            question = null;
+            here::init_wlk_ctx;
+            take here;
+        } else {
+            take visitor.wlk_ctx["next_state"] else: take here;
+        }
+    }
 }
 ```
+Two new syntax here:
+* `report` returns variable from walker to its caller. When calling a walker via its REST API, the content of the API repsonse payload will be what is reported.
+* `yield report` is a shorthand for yielding and reporting at the same time. This is equivalane to `yield; report response;`.
 
-## Adding test cases
-Introduce jac tests
-```js
-test ""
+## Introduce `sentinel`
+`sentinel` is the overseer of walkers, nodes and edges.
+It is the abstraction Jaseci uses to encapsulate compiled walkers and architype nodes and edges.
+The key operation with respesct to `sentinel` is "register" a sentinel.
+You can think of registering a `sentinel` as a compiling your jac program.
+The walkers of a given sentinel can then be invoked and run on arbitrary nodes of any graph.
+
+Let's register our jac program
+```bash
+jaseci > sentinel register tesla_ai.jir -set_active true -mode ir
 ```
 
-## Deploying your application to remote jaseci instance
-introduce jsserv
+Three things are happening here:
+* First, we registered the `jir` we compiled earlier to new sentinel. This means this new sentinel now has access to all of our walkers, nodes and edges. `-mode ir` option speciifes a `jir` program is registered instead of a `jac` program.
+* Second, with `-set_active true` we set this new sentinel to be the active sentinel. In other words, this sentinel is the default one to be used when requests hit the Jac APIs, if no specific sentinels are specified.
+* Third, `sentinel register` has automatically creates a new `graph` (if no currently active graph) and run the `init` walker on that graph. This behavior can be customized with the options `-auto_run` and `-auto_create_graph`.
 
-introduce sentinel.
+To check your graph
+```bash
+jaseci > graph get -mode dot
+```
+This will return the current active graph in DOT format.
+This is the same output we get from running `jac dot` earlier.
+Use this to check if your graph is successfully created.
 
-introduce jac APIs
+Once a sentinel is registered, you can update its jac program with
+```bash
+jaseci > sentinel update -snt SENTINEL_ID -mode ir tesla_ai.jir
+```
 
-Walkthrough process of deploying application to remote jaseci instance
+With a sentinel and graph, we can now run walker with
+```bash
+jaseci > walker run talk -ctx {\"question\": \"I want to schedule a test drive\"}
+```
+And with `yield`, the next walker run will pick up where it leaves off and retain its variable states and nodes traversal plan.
+
+## Tests
+Just like any program, a set of automatic tests cases with robust coverage is essential to the success of the program through development to production.
+Jac has built-in tests support and here is how you create a test case in jac.
+
+```js
+test "testing the Tesla conv AI system"
+with graph::tesla_ai by walker::talk(question="Hey I would like to go on a test drive"){
+    res = std.get_report();
+    assert(res[-1] == "To set you up with a test drive, we will need your name and address.");
+}
+```
+Let's break this down.
+* `test "testing the tesla conv AI system"` names the test.
+* `with graph::tesla_ai` specify the graph to be used as the text fixture.
+* `by walker::talk` specify the walker to test. It will be spawned on the anchor node of the graph.
+* `std.get_report()` let you access the report content of the walker so that you can set up any assertion neccessary with `assert`.
+
+To run jac tests, save the test case(s) in a file (say `tests.jac`) and import the neccessary walkers and graphs. Then run
+```bash
+jaseci > jac test tests.jac
+```
+This will execute all the test cases in `tests.jac` squentially and report success or any assertion failures.
+
+## Running Jaseci as a Service
+So far, we have been interacting jaseci through `jsctl`.
+jaseci can also be run as a service serving a set of RESTful API endpoints.
+This is useful in production settings.
+To run jaseci as a service, first we need to install the `jaseci_serv` package.
 
 ```bash
-sentinel register
-walker init
-call the walker API
+pip install jaseci_serv
 ```
 
-# Improve your AI model
+Then launching a jaseci server is as simple as
+```bash
+jsserv
+```
+This will launch a Django RESTful API server.
+The Jaseci server supports a wide range of API endpoints.
+All the `jsctl` commands we have used throughput this tutorial have an equivalent API endpoint, such as `walker_run` and `sentinel_register`.
+As a matter of fact, the entire development journey in this tutorial can be done completely with a remote jaseci server instance.
+You can go to `URL/docs` to check out all the available APIs.
 
-Data collection and curation principles and best practices
-
-Crowdsource
+# Improve Your AI Models with Crowdsource
+TBC
