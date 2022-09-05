@@ -170,16 +170,19 @@ class edge(element, anchored):
             if node_map is None
             else node_map.index(self.to_node().jid)
         )
-        dstr = f'"n{from_name}" -> "n{to_name}" '
+        dstr = f'"n{from_name}" -> "n{to_name}" [ '
 
-        dstr += f'[ id="{uuid.UUID(self.jid).hex}"'
+        if detailed:
+            dstr += f'id="{uuid.UUID(self.jid).hex}", '
+
         label = ""
         if edge_map:
             label = f"e{edge_map.index(self.jid)}"
         if self.name != "generic":
             label += f":{self.name}"
-        if label:
-            dstr += f', label="{label}"'
+
+        dstr += f'label="{label}"'
+
         if self.bidirected:
             dstr += ', dir="both"'
 

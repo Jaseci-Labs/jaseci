@@ -129,11 +129,17 @@ def infer(
             raise HTTPException(status_code=404, detail=str("input type not supported"))
         for data, cont in zip(con_embed, contexts):
             score_dat = []
-            out_data = {"context": str, "candidate": [], "score": []}
+            out_data = {"context": str, "candidate": [], "score": [], "predicted": {}}
             if candidate_type == "embedding":
                 for lbl in cand_embed:
                     if model_config["loss_type"] == "cos":
                         score_dat.append(cosine_sim(vec_a=data, vec_b=lbl))
+                out_data["predicted"] = {
+                    "label": candidates[
+                        out_data["score"].index(max(out_data["score"]))
+                    ],
+                    "score": max(out_data["score"]),
+                }
                 predicted_candidates.append(int(np.argmax(score_dat)))
             else:
                 for lbl, cand in zip(cand_embed, candidates):
@@ -145,6 +151,12 @@ def infer(
                         out_data["context"] = cont
                         out_data["candidate"].append(cand)
                         out_data["score"].append(float(dot_prod(vec_a=data, vec_b=lbl)))
+                out_data["predicted"] = {
+                    "label": candidates[
+                        out_data["score"].index(max(out_data["score"]))
+                    ],
+                    "score": max(out_data["score"]),
+                }
                 predicted_candidates.append(out_data)
         return predicted_candidates
     except Exception as e:
