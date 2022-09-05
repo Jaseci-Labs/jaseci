@@ -1134,9 +1134,8 @@ We are training the model to detect two entities, `name` and `address`, for the 
 Let's quickly go over the training data format.
 ```json
 [
-    ...
     "sure my name is [tony stark](name) and i live at [10880 malibu point california](address)",
-    ...
+    "my name is [jason](name)"
 ]
 ```
 The training data is a json list of strings, each of which is a training example.
