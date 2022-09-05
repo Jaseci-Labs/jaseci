@@ -833,7 +833,13 @@ node dialogue_state {
         visitor.wlk_ctx = new_wlk_ctx;
     }
     can nlu {}
-    can process {}
+    can process {
+        if (visitor.wlk_ctx["prev_state"]): visitor.wlk_ctx["respond"] = true;
+        else {
+            visitor.wlk_ctx["next_state"] = net.root();
+            visitor.wlk_ctx["prev_state"] = here;
+        }
+    }
     can nlg {}
 }
 
@@ -1230,6 +1236,7 @@ node cai_state {
 }
 ```
 Note that the logic for `init_wlk_ctx` and the default `process` logic have been hoisted up into `cai_state` as they are shared by the dialogue system and FAQ system.
+You can remove these two abilities from `dialogue_state` node, as it will be inheriting them from `cai_state` now.
 
 We then update the defintion of `dialogue_state` in `dialogue.jac` to inherit from `cai_state`:
 ```js
