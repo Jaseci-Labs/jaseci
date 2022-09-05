@@ -255,7 +255,7 @@ walker ask {
 This walker is more complex than the `init` one and introduces a few new concepts so let's break it down!
 
 - Similar to nodes, walkers can also contain `has` variables. They define variables of the walker. They can also be passed as parameters when calling the walker.
-- `std.input` and `std.out` read and write to the command line.
+- `std.input` and `std.out` read and write to the command line respectively.
 - This walker has logic for three types of node: `root`, `faq_root` and `faq_state`.
   - `root`: It simply traverses to the `faq_root` node.
   - `faq_root`: This is where the answer selection algorithm is. We will find the most relevant `faq_state` and then traverse to that node via a `take` statement. In this code snippet, we are using a very simple (and limited) string matching approach to try to match the predefined FAQ question with the user question.
@@ -339,7 +339,7 @@ Even though there are only 5 lines of new code, there are many interesting aspec
 - `-->.answer` collects the `answer` variable of all of the nodes that are connected to `here`/`faq_root` with a `-->` connection.
 - `use.qa_classify` is one of the action supported by the USE QA action set. It takes in a question and a list of candidate answers and return the most relevant one.
 
-Now let's run this new walker and you can now ask questions that are relevant to the answers beyond just the predefined ones.
+Now let's run this new updated walker and you can now ask questions that are relevant to the answers beyond just the predefined ones.
 
 ## Scale it Out
 
@@ -885,22 +885,6 @@ node how_to_order_state:dialogue_state {
 node test_drive_state:dialogue_state {
     has name = "test_drive";
     can nlu {
-        ::extract_entities;
-        ::classify_intent;
-    }
-    can nlg {
-        if ("name" in visitor.extracted_entities and "address" not in visitor.extracted_entities):
-            visitor.response = "What is your address?";
-        elif ("address" in visitor.extracted_entities and "name" not in visitor.extracted_entities):
-            visitor.response = "What is your name?";
-        else:
-            visitor.response = "To set you up with a test drive, we will need your name and address.";
-    }
-}
-
-node test_drive_state:dialogue_state {
-    has name = "test_drive";
-    can nlu {
         if (!visitor.wlk_ctx["intent"]): ::classify_intent;
         ::extract_entities;
     }
@@ -1134,7 +1118,7 @@ jaseci > actions load module jaseci_kit.tfm_ner
 > If you installed `jaseci_kit` prior to September 5th, 2022, please upgrade via `pip install --upgrade jaseci_kit`. There has been an update to the module that you will need for remainder of this exercise. You can check your installed version via `pip show jaseci_kit`. You need to be on version 1.3.4.6 or higher.
 
 Similar to Bi-encoder, we have provided a jac program to train and inference with this model, as well as an example training dataset.
-Go into the `code/` directory and copy `ner.jac` and `ner_train.json` to your working directory.
+Go into the `code/` directory and copy `tfm_ner.jac` and `ner_train.json` to your working directory.
 We are training the model to detect two entities, `name` and `address`, for the test drive use case.
 
 Let's quickly go over the training data format.
@@ -1151,11 +1135,11 @@ So in the example above, we have two entities, `name:tony stark` and `address: 1
 
 To train the model, run
 ```bash
-jaseci > walker run ner.jac -wlk train -ctx {\"train_file\": \"ner_train.json\"}
+jaseci > jac run tfm_ner.jac -walk train -ctx "{\"train_file\": \"ner_train.json\"}"
 ```
 After the model is finished training, you can play with the model using the `infer` walker
 ```js
-jaseci > walker run ner.jac -wlk infer
+jaseci > jac run ner.jac -walk infer
 ```
 For example,
 ```bash
