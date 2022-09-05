@@ -112,7 +112,7 @@ def train(
 def load_model(model_path: str = "default", local_file: bool = True):
     global curr_model_path
     curr_model_path = model_path
-    train_file_path = curr_model_path + "\\train.json"
+    train_file_path = os.path.join(model_path, "train.json")
     if local_file is True and not os.path.exists(model_path):
         return "Model path is not available"
     try:
