@@ -7,13 +7,13 @@ Excited? Hell yeah! Let's jump in.
 
 ## Preparation
 
-To install jaseci, run in your development environment
+To install jaseci, run this in your development environment:
 
 ```
 pip install jaseci
 ```
 
-To test the installation is successful, run
+To test the installation is successful, run:
 
 ```
 jsctl --help
@@ -42,7 +42,7 @@ Refer to relevant sections of the Jaseci Bible.
 
 Our conversational AI system will consist of multiple components.
 To start, we are going to build a chatbot that can answer FAQ questions without any custom training, using zeroshot NLP models.
-At the end of this section, you will have a chatbot that, when given a question, searches in its knowledge base the most relevant answer and returns that answer.
+At the end of this section, you will have a chatbot that, when given a question, searches in its knowledge base for the most relevant answer and returns that answer.
 
 The use case here is a Tesla FAQ chatbot.
 We will be using the list of FAQs from https://www.tesla.com/en_SG/support/faq.
@@ -53,7 +53,7 @@ We will be using the list of FAQs from https://www.tesla.com/en_SG/support/faq.
 
 ## Define the Nodes
 
-We have 3 different type of nodes:
+We have 3 different types of nodes:
 
 - `root`: This is the root node of the graph. It is a built-in node type and each graph has one root node only.
 - `faq_root`: This is the entry point of the FAQ handler. We will make the decision on the most relevant answer at this node.
@@ -69,7 +69,7 @@ node faq_state {
 }
 ```
 
-The `has` keyword defines nodes variables. In this case, each `faq_state` has a `question` and `answer`.
+The `has` keyword defines a node's variables. In this case, each `faq_state` has a `question` and `answer`.
 
 > **Warning**
 >
@@ -180,9 +180,9 @@ This is the first walker we have introduced, so let's break it down.
 ## Run the `init` Walker
 
 Now, let's run the init walker to initialize the graph.
-First put all the above code snippet in a single jac file and name it `main.jac`, including
+First put all of the above code snippet into a single jac file and name it `main.jac`, including
 
-- nodes defintion
+- nodes definition
 - graph definition
 - init walker
 
@@ -225,7 +225,7 @@ strict digraph root {
 
 > **Note**
 >
-> There are tools available to render a graph in DOT format. For example, https://dreampuf.github.io/GraphvizOnline has as WSIWYG editor to render dot graph in real time.
+> There are tools available to render a graph in DOT format. For example, https://dreampuf.github.io/GraphvizOnline has a WSIWYG editor to render dot graph in real time.
 
 Congratulations! You have just created your first functional jac program!
 
@@ -254,7 +254,7 @@ walker ask {
 
 This walker is more complex than the `init` one and introduces a few new concepts so let's break it down!
 
-- Similar to nodes, walker can also contain `has` variables. They define variables of the walker. They can also be passed as parameters when calling the walker.
+- Similar to nodes, walkers can also contain `has` variables. They define variables of the walker. They can also be passed as parameters when calling the walker.
 - `std.input` and `std.out` read and write to the command line.
 - This walker has logic for three types of node: `root`, `faq_root` and `faq_state`.
   - `root`: It simply traverses to the `faq_root` node.
@@ -291,7 +291,7 @@ Try giving it one of the three questions we have predefined and it should respon
 
 Now, obviously, what we have now is not very "AI" and we need to fix that.
 We are going to use the Universal Sentence Encoder QA model as the answer selection algorithm.
-Universal Sentence Encoder is a language encoder model that is pre-trained on large corpus of natural language data and have been shown to be effective in many NLP tasks.
+Universal Sentence Encoder is a language encoder model that is pre-trained on a large corpus of natural language data and has been shown to be effective in many NLP tasks.
 In our application, we are using it for zero-shot question-answering, i.e. no custom training required.
 
 Jaseci has a set of built-in libraries or packages that are called Jaseci actions.
@@ -380,7 +380,7 @@ An example knowledge base file look like this
 ]
 ```
 
-Save the above json in a file named `tesla_faq.json` and make it is in the same location as `main.jac`.
+Save the above json in a file named `tesla_faq.json` and make sure it is in the same location as `main.jac`.
 Let's now update the `init` walker.
 Because we are going to use the `ingest_faq` walker to generate the graph, we won't need the static graph definition.
 
