@@ -66,6 +66,7 @@ node state {
 Nodes can inherit abilities and attributes of other nodes. 
 
 ```jac
+# parent node 
 
 node state {
     has title;
@@ -79,9 +80,7 @@ node input_state:state {
 }
 
 # inherits attributes from input_state.
-node output_state :input_state{
+node output_state :input:state{
     has output;
 }
-
-
 ```

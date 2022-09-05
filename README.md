@@ -82,13 +82,13 @@
         - [PDF Extractor](jaseci_kit/modules/non_ai/pdf_ext/README.md)
 
 - [Jaseci Core](jaseci_core/README.md)
-  
-## Jaseci Webkit
 
--[Components](jaseci_ui_kit/docs/components.md)
--[Types of Components](jaseci_ui_kit/docs/typesOfComponents.md)
--[Update Component](jaseci_ui_kit/docs/updateComponent.md)
--[Creating API Endpoints](jaseci_ui_kit/docs/creatingEndpoints.md)
+## Jaseci Webkit
+- [Getting Started](jaseci_ui_kit/docs/gettingStarted.md)
+- [Components](jaseci_ui_kit/docs/components.md)
+- [Types of Components](jaseci_ui_kit/docs/typesOfComponents.md)
+- [Update Component](jaseci_ui_kit/docs/updateComponent.md)
+- [Creating API Endpoints](jaseci_ui_kit/docs/creatingEndpoints.md)  
 
 ## Other Resources
 
