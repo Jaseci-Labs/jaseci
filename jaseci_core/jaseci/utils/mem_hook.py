@@ -1,3 +1,4 @@
+from json import dumps, loads
 from jaseci.utils.utils import find_class_and_import
 from jaseci.task.task_hook import task_hook
 
@@ -94,6 +95,14 @@ class mem_hook(task_hook):
 
         if persist:
             self.destroy_glob_from_store(name)
+
+    # ----------------- GLOB CONFIG ------------------ #
+
+    def build_config(self, name, config):
+        if not self.has_glob(name):
+            self.save_glob(name, dumps(config))
+            self.commit()
+        return loads(self.get_glob(name))
 
     ####################################################
     #        DATASOURCE METHOD (TO BE OVERRIDE)        #

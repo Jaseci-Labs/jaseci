@@ -12,14 +12,7 @@ from jaseci.utils.redis_hook import redis_hook
 from jaseci.utils.utils import logger
 from jaseci.utils.json_handler import json_str_to_jsci_dict
 import jaseci as core_mod
-from jaseci_serv.jaseci_serv.settings import (
-    TASK_QUIET,
-    TASK_ENABLED,
-    REDIS_ENABLED,
-    REDIS_HOST,
-    REDIS_PORT,
-    REDIS_DB,
-)
+from jaseci_serv.jaseci_serv.settings import TASK_CONFIG, REDIS_CONFIG
 import uuid
 import json
 
@@ -35,12 +28,7 @@ class orm_hook(redis_hook):
         self.objects = objects
         self.globs = globs
         self.skip_redis_update = False
-        super().__init__(
-            redis_enabled=REDIS_ENABLED,
-            redis_host=REDIS_HOST,
-            redis_port=REDIS_PORT,
-            redis_db=REDIS_DB,
-        )
+        super().__init__()
 
     ####################################################
     #                DATASOURCE METHOD                 #
@@ -136,8 +124,24 @@ class orm_hook(redis_hook):
         except ObjectDoesNotExist:
             pass
 
+    # -------------------- TASK --------------------- #
+
+    def get_by_task_id(self, task_id):
+        task = self.task_app().AsyncResult(task_id)
+
+        ret = {"status": task.state}
+
+        if task.ready():
+            task_result = TaskResult.objects.get(task_id=task_id).result
+            try:
+                ret["result"] = json.loads(task_result)
+            except ValueError as e:
+                ret["result"] = task_result
+
+        return ret
+
     ####################################################
-    # ------------------ COMMITTER ------------------- #
+    #                    COMMITTER                     #
     ####################################################
 
     def commit_obj(self, item):
@@ -174,29 +178,18 @@ class orm_hook(redis_hook):
         self.save_glob_dict = {}
 
     ###################################################
-    #                TASK HOOK CONFIGS                #
+    #                     CONFIGS                     #
     ###################################################
 
-    def task_config(self):
-        if TASK_ENABLED:
-            self.task_app().config_from_object("jaseci_serv.jaseci_serv.settings")
-            self.task_quiet(TASK_QUIET)
-        else:
-            self.disable_task()
+    # ------------------ TASK HOOK ------------------ #
 
-    def get_by_task_id(self, task_id):
-        task = self.task_app().AsyncResult(task_id)
+    def get_task_config(self):
+        return self.build_config("TASK_CONFIG", TASK_CONFIG)
 
-        ret = {"status": task.state}
+    # ----------------- REDIS HOOK ------------------ #
 
-        if task.ready():
-            task_result = TaskResult.objects.get(task_id=task_id).result
-            try:
-                ret["result"] = json.loads(task_result)
-            except ValueError as e:
-                ret["result"] = task_result
-
-        return ret
+    def get_redis_config(self):
+        return self.build_config("REDIS_CONFIG", REDIS_CONFIG)
 
     ###################################################
     #                  CLASS CONTROL                  #

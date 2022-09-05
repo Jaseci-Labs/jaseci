@@ -9,6 +9,7 @@ from jaseci.graph import node
 from jaseci.graph.graph import graph
 from jaseci.actor.sentinel import sentinel
 import jaseci.tests.jac_test_code as jtc
+from jaseci_serv.utils.test_utils import skip_without_redis
 
 
 # Alias for create user
@@ -50,7 +51,8 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
 
         user._h.commit()
         del user._h.mem[temp_id.urn]
-        rh.app.delete(temp_id.urn)
+        if rh.redis_running():
+            rh.app.delete(temp_id.urn)
 
         load_test = JaseciObject.objects.filter(jid=temp_id).first()
 
@@ -73,7 +75,8 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
 
         user._h.commit()
         del user._h.mem[temp_id.urn]
-        rh.app.delete(temp_id.urn)
+        if rh.redis_running():
+            rh.app.delete(temp_id.urn)
 
         load_test = JaseciObject.objects.filter(jid=temp_id).first()
 
@@ -127,10 +130,11 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         self.assertEqual(node2.id, new_node.jid)
         self.assertEqual(node1.id, new_jsci_node.parent_id)
 
+    @skip_without_redis
     def test_redis_connection(self):
         """Test redis connection"""
 
-        self.assertTrue(rh.is_running())
+        self.assertTrue(rh.redis_running())
 
         rh.app.set("test", "this is a test")
         self.assertEqual(rh.app.get("test"), "this is a test")

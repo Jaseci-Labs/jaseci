@@ -24,7 +24,7 @@ TEMPLATE_DIR = os.path.join(BASE_DIR, "ui/templates")
 SECRET_KEY = "@%ad_kyis62uf7qf^w9kv(8$db4)%c$nnnjk^us=s@-gj*)aal"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -121,31 +121,32 @@ else:
         }
     }
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-
 # REDIS
-REDIS_ENABLED = True and ("test" in sys.argv or "runserver" in sys.argv)
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = os.getenv("REDIS_PORT", "6379")
-REDIS_DB = os.getenv("REDIS_DB", "1")
-REDIS_URL = "redis://{host}:{port}/{db}".format(
-    host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB
-)
+REDIS_CONFIG = {
+    "enabled": os.getenv("REDIS_ENABLED", "True") == "True"
+    and ("test" in sys.argv or "runserver" in sys.argv),
+    "host": os.getenv("REDIS_HOST", "localhost"),
+    "port": os.getenv("REDIS_PORT", "6379"),
+    "db": os.getenv("REDIS_DB", "1"),
+}
 
 # TASK_HOOK
-TASK_ENABLED = True and ("test" in sys.argv or "runserver" in sys.argv)
-TASK_QUIET = False
-broker_url = REDIS_URL
-beat_scheduler = "django_celery_beat.schedulers:DatabaseScheduler"
-result_backend = "django-db"
-task_track_started = True
-broker_connection_retry_on_startup = True
+TASK_CONFIG = {
+    "enabled": True and ("test" in sys.argv or "runserver" in sys.argv),
+    "quiet": False,
+    "broker_url": f"redis://{REDIS_CONFIG.get('host')}:{REDIS_CONFIG['port']}/{REDIS_CONFIG['db']}",
+    "beat_scheduler": "django_celery_beat.schedulers:DatabaseScheduler",
+    "result_backend": "django-db",
+    "task_track_started": True,
+    "broker_connection_retry_on_startup": True,
+}
 
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 if "test" in sys.argv or "test_coverage" in sys.argv:
     EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-    task_always_eager = True
-    task_store_eager_result = True
-    beat_scheduler = "celery.beat:PersistentScheduler"
+    TASK_CONFIG["task_always_eager"] = True
+    TASK_CONFIG["task_store_eager_result"] = True
+    TASK_CONFIG["beat_scheduler"] = "celery.beat:PersistentScheduler"
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators

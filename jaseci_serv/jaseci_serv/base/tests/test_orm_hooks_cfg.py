@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from jaseci.utils.utils import TestCaseHelper
 from jaseci.utils.redis_hook import redis_hook as rh
@@ -45,7 +46,8 @@ class jaseci_engine_orm_config_tests_private(TestCaseHelper, TestCase):
         h.commit()
 
         del user._h.mem["global"]["GOOBY1"]
-        rh.app.delete("GOOBY1")
+        if rh.redis_running():
+            rh.app.delete("GOOBY1")
         self.assertNotIn("GOOBY1", user._h.mem["global"].keys())
 
         load_test = GlobalVars.objects.filter(name="GOOBY1").first()
@@ -65,9 +67,15 @@ class jaseci_engine_orm_config_tests_private(TestCaseHelper, TestCase):
         h.commit()
 
         user._h.clear_mem_cache()
-        rh.app.delete("GOOBY1")
+        if rh.redis_running():
+            rh.app.delete("GOOBY1")
         self.assertEqual(len(user._h.mem["global"].keys()), 0)
         self.assertNotIn("GOOBY1", user._h.mem["global"].keys())
+
+        # Removing default configs
+        GlobalVars.objects.filter(
+            Q(name="REDIS_CONFIG") | Q(name="TASK_CONFIG")
+        ).delete()
 
         li = user._h.list_glob()
         self.assertEqual(len(li), 3)

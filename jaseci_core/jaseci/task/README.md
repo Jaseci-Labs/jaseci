@@ -37,7 +37,7 @@ Any walker that can be called with `is_async` field
 ```
 
 ### **SPECIFIC TASK**
-`/js/walker_queue?task_id={{`**`task_id`**`}}`
+`/js/queue?task_id={{`**`task_id`**`}}`
 
 ### **RESPONSE**
 ```json

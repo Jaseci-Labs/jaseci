@@ -2,6 +2,7 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from jaseci_serv.utils.test_utils import skip_without_redis
 
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -177,6 +178,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(res.data["updated"], True)
         self.assertEqual(res.status_code, 201)
 
+    @skip_without_redis
     def test_serverside_sentinel_global_public_access_callback_async(self):
         """Test public API for walker callback"""
         zsb_file = open(os.path.dirname(__file__) + "/public.jac").read()
@@ -233,9 +235,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
 
         task_id = res.data["task_id"]
 
-        res = self.auth_client.get(
-            reverse(f"jac_api:walker_queue") + f"?task_id={task_id}"
-        )
+        res = self.auth_client.get(reverse(f"jac_api:queue") + f"?task_id={task_id}")
 
         self.assertEqual("SUCCESS", res.data["status"])
 
@@ -1456,6 +1456,31 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
         self.assertTrue(res["success"])
         self.assertEquals({"sample": "sample"}, res["report"][0]["ctx"])
+
+    @skip_without_redis
+    def test_multipart_json_file_async(self):
+        """Test multipart using json file as ctx parameter"""
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
+        with open(os.path.dirname(__file__) + "/test.json", "rb") as ctx:
+            form = {
+                "name": "simple",
+                "ctx": ctx,
+                "nd": "active:graph",
+                "snt": "active:sentinel",
+            }
+            res = self.client.post(
+                reverse(f'jac_api:{"walker_run"}') + "?is_async=true", data=form
+            ).data
+
+        self.assertTrue("task_id" in res)
+        task_id = res["task_id"]
+
+        res = self.client.get(reverse(f"jac_api:queue") + f"?task_id={task_id}").data
+
+        self.assertEqual("SUCCESS", res["status"])
+        self.assertEquals({"sample": "sample"}, res["result"]["report"][0]["ctx"])
 
     def test_multipart_json_string(self):
         """Test multipart using json string as ctx parameter"""

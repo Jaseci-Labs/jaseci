@@ -316,16 +316,3 @@ class walker_api:
 
     def bad_walk_response(self, errors=list()):
         return {"report": [], "success": False, "errors": errors}
-
-    @interface.private_api(allowed_methods=["get"])
-    def walker_queue(self, task_id: str = ""):
-        """
-        Create blank or code loaded walker and return object
-        """
-        if not self._h.task_hook_ready():
-            return "Task hook is not yet initialized!"
-
-        if not task_id:
-            return self._h.inspect_tasks()
-        else:
-            return self._h.get_by_task_id(task_id)
