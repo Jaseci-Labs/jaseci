@@ -699,7 +699,7 @@ Always remember to save your trained models!
 
 > **Warning**
 >
-> `save_model` works with both relative and absolute model path. When a relative model path is specified, it will save the model at the location relative to **the installation of jaseci_kit**, which will likely be in your installed python package directories and vary depending on your OS and configuration. When an absolute model path is provided, it will save the model at the absolute path. Use this flexibility for your convenience. For example, you can save model with a simple model name during development just to quickly checkpoint but if you happen to reinstall or upgrade `jaseci_kit`, your models will be **lost**. So once the model is finalized, save it to an absolute path to somewhere else on your system so that it is easy to find and manage.
+> `save_model` works with relative path. When a relative model path is specified, it will save the model at the location relative to **location of where you run jsctl**. Note that until the model is saved, the trained weights will stay in memory, which means that it will not persisit between `jsctl` session. So once you have a trained model you like, make sure to save them so you can load them back in the next jsctl session.
 
 ## Integrate the Intent Classifier
 Now let's update our walker to use the trained intent classifier.
@@ -891,6 +891,7 @@ node test_drive_state:dialogue_state {
             visitor.response = "To set you up with a test drive, we will need your name and address.";
     }
 }
+
 node test_drive_state:dialogue_state {
     has name = "test_drive";
     can nlu {
@@ -898,12 +899,19 @@ node test_drive_state:dialogue_state {
         ::extract_entities;
     }
     can process {
-        if (visitor.wlk_ctx["entities"].d::keys == -[entity_transition]->.edge[0].context["entities"]) {
+        // Check entity transition
+        required_entities = -[entity_transition]->.edge[0].context["entities"];
+        if (vector.sort_by_key(visitor.wlk_ctx["entities"].d::keys) == vector.sort_by_key(required_entities)) {
             visitor.wlk_ctx["next_state"] = -[entity_transition]->[0];
             visitor.wlk_ctx["prev_state"] = here;
         } elif (visitor.wlk_ctx["prev_state"] and !visitor.wlk_ctx["prev_state"].context["name"] in ["test_drive", "td_confirmation"]){
-            visitor.wlk_ctx["next_state"] = -[intent_transition(intent==visitor.wlk_ctx["intent"])]->[0];
-            visitor.wlk_ctx["prev_state"] = here;
+            next_state = -[intent_transition(intent==visitor.wlk_ctx["intent"])]->;
+            if (next_state.length > 0 and visitor.wlk_ctx["intent"] != "no") {
+                visitor.wlk_ctx["next_state"] = next_state[0];
+                visitor.wlk_ctx["prev_state"] = here;
+            } else {
+                visitor.wlk_ctx["respond"] = true;
+            }
         } else {
             visitor.wlk_ctx["respond"] = true;
         }
@@ -1264,7 +1272,12 @@ node faq_root:cai_state {
     can process {
         if (visitor.wlk_ctx["prev_state"]): visitor.wlk_ctx["respond"] = true;
         else {
-            visitor.wlk_ctx["next_state"] = --> node::faq_state(answer==visitor.wlk_ctx["intent"]);
+            for n in --> {
+                if (n.context["answer"] == visitor.wlk_ctx["intent"]){
+                    visitor.wlk_ctx["next_state"] = n;
+                    break;
+                }
+            }
             visitor.wlk_ctx["prev_state"] = here;
         }
     }
@@ -1277,6 +1290,7 @@ At this point, if you have been following this journey along, this code should b
 Let's quickly break it down.
 * For FAQ, the `nlu` logic uses the USE QA model to find the most relevant answer. Here we are re-using the `intent` field in the walker context to save the matched answer. You can also opt to create another field dedicated to FAQ NLU result.
 * For the traversal logic, this is very similar to the previous FAQ logic, i.e. find the `faq_state` node connected to here that contains the most relevant answer.
+* `for n in -->` iterates through all the nodes connected with an outgoing edge from the current node. You can use `.context` on any node variables to access its variables.
 
 And the logic for the `faq_state` that contains the answer is relatively simple;
 ```js
@@ -1389,7 +1403,13 @@ So let's update our walker with `yield.`
 ```js
 walker talk {
     has question, interactive = false;
-    has wlk_ctx = {};
+    has wlk_ctx = {
+        "intent": null,
+        "entities": {},
+        "prev_state": null,
+        "next_state": null,
+        "respond": false
+    };
     has response;
     root {
         take --> node::dialogue_root;
@@ -1397,15 +1417,21 @@ walker talk {
     cai_state {
         if (!question and interactive) {
             question = std.input("Question (Ctrl-C to exit)> ");
+            here::init_wlk_ctx;
+        } elif (!question and !interactive){
+            std.err("ERROR: question is required for non-interactive mode");
+            disengage;
         }
         here::nlu;
         here::process;
         if (visitor.wlk_ctx["respond"]) {
             here::nlg;
             if (interactive): std.out(response);
-            else: yield report response;
+            else {
+                yield report response;
+                here::init_wlk_ctx;
+            }
             question = null;
-            here::init_wlk_ctx;
             take here;
         } else {
             take visitor.wlk_ctx["next_state"] else: take here;
@@ -1488,13 +1514,15 @@ pip install jaseci_serv
 
 Then launching a jaseci server is as simple as
 ```bash
-jsserv
+jsserve makemigrations
+jsserve migrate
+jsserv runserver 0.0.0.0:3000
 ```
-This will launch a Django RESTful API server.
+This will launch a Django RESTful API server at localhost and port 3000.
 The Jaseci server supports a wide range of API endpoints.
 All the `jsctl` commands we have used throughput this tutorial have an equivalent API endpoint, such as `walker_run` and `sentinel_register`.
 As a matter of fact, the entire development journey in this tutorial can be done completely with a remote jaseci server instance.
-You can go to `URL/docs` to check out all the available APIs.
+You can go to `localhost:3000/docs` to check out all the available APIs.
 
 # Improve Your AI Models with Crowdsource
 TBC
