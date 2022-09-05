@@ -28,7 +28,7 @@ def logs(*args):
 
 
 metric = evaluate.load("seqeval")
-val_dm = None
+model = None
 
 
 def compute_metrics(eval_preds):
@@ -190,17 +190,14 @@ class NERDataMaker:
 def load_custom_model(model_path, train_dm=None):
     global model, tokenizer, data_collator
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    if train_dm is not None:
-        model = AutoModelForTokenClassification.from_pretrained(
-            model_path,
-            num_labels=len(train_dm.unique_entities),
-            id2label=train_dm.id2label,
-            label2id=train_dm.label2id,
-        )
-    else:
-        model = AutoModelForTokenClassification.from_pretrained(model_path)
-    data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
+    model = AutoModelForTokenClassification.from_pretrained(
+        model_path,
+        num_labels=len(train_dm.unique_entities),
+        id2label=train_dm.id2label,
+        label2id=train_dm.label2id,
+    )
     model.to(device)
+    data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
 
 def train_model(train_data, val_data, train_config):
@@ -248,7 +245,7 @@ def save_custom_model(model_path):
 
 # predicting entities
 def predict_text(sentence):
-    if val_dm is not None:
+    if model is not None:
         pipe = pipeline(
             "ner",
             model=model.to("cpu"),

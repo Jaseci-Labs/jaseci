@@ -34,7 +34,6 @@ def config_setup():
         model_config = json.load(jsonfile)
 
     curr_model_path = model_config["model_name"]
-    load_custom_model(curr_model_path)
 
 
 config_setup()
