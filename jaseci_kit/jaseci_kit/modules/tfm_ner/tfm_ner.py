@@ -109,7 +109,7 @@ def train(
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
-def load_model(model_path: str = "default", local_file: bool = False):
+def load_model(model_path: str = "default", local_file: bool = True):
     global curr_model_path
     curr_model_path = model_path
     train_file_path = curr_model_path + "\\train.json"
@@ -118,7 +118,7 @@ def load_model(model_path: str = "default", local_file: bool = False):
     try:
         print("loading latest trained model to memory...")
         if os.path.exists(train_file_path):
-            with open("train/train.json", "r") as fp:
+            with open(train_file_path, "r") as fp:
                 train_data = json.load(fp)
             train_dm = NERDataMaker(train_data)
             load_custom_model(curr_model_path, train_dm)
