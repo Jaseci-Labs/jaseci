@@ -1123,13 +1123,26 @@ First, we need to load the actions. The action set is called `tfm_ner` (`tfm` st
 ```bash
 jaseci > actions load module jaseci_kit.tfm_ner
 ```
-> **Note**
+> **Warning**
 >
-> Rememer to install `jaseci_kit` via `pip install jaseci_kit` if you haven't.
+> If you installed `jaseci_kit` prior to September 5th, 2022, please upgrade via `pip install --upgrade jaseci_kit`. There has been an update to the module that you will need for remainder of this exercise. You can check your installed version via `pip show jaseci_kit`. You need to be on version 1.3.4.6 or higher.
 
 Similar to Bi-encoder, we have provided a jac program to train and inference with this model, as well as an example training dataset.
 Go into the `code/` directory and copy `ner.jac` and `ner_train.json` to your working directory.
 We are training the model to detect two entities, `name` and `address`, for the test drive use case.
+
+Let's quickly go over the training data format.
+```json
+[
+    ...
+    "sure my name is [tony stark](name) and i live at [10880 malibu point california](address)",
+    ...
+]
+```
+The training data is a json list of strings, each of which is a training example.
+`[]` indicate the entitiy text while the `()` following it defines the entity type.
+So in the example above, we have two entities, `name:tony stark` and `address: 10880 malibu point california`.
+
 
 To train the model, run
 ```bash
