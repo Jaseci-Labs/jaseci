@@ -1527,8 +1527,8 @@ pip install jaseci_serv
 
 Then launching a jaseci server is as simple as
 ```bash
-jsserve makemigrations
-jsserve migrate
+jsserv makemigrations
+jsserv migrate
 jsserv runserver 0.0.0.0:3000
 ```
 This will launch a Django RESTful API server at localhost and port 3000.
