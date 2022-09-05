@@ -48,7 +48,7 @@ def extract_entity(text: str = None):
         if isinstance(data, list):
             return data
         else:
-            return "Please train the model, before evaluating"
+            return "No active model found. Please train or load model first before inference."
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
