@@ -18,6 +18,8 @@ setup(
         "spacy == 3.3.0",
         "sumy >= 0.9.0, < 0.10.0",
         "PyPDF2 >= 1.27.12, < 1.28",
+        "evaluate >=0.2.2, < 0.3",
+        "seqeval >= 1.2.2, < 1.3",
     ],
     package_data={
         "": ["*.json", "*.cfg"],
