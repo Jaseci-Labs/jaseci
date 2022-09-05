@@ -34,14 +34,7 @@ def config_setup():
         model_config = json.load(jsonfile)
 
     curr_model_path = model_config["model_name"]
-    train_data = []
-    if os.path.exists("train/train.txt"):
-        with open("train/train.txt", "r") as filehandle:
-            for line in filehandle:
-                currentline = line[:-1]
-                train_data.append(currentline)
-        train_dm = NERDataMaker(train_data)
-    load_custom_model(curr_model_path, train_dm)
+    load_custom_model(curr_model_path)
 
 
 config_setup()
@@ -53,10 +46,13 @@ enum = {"default": 1, "append": 2, "incremental": 3}
 def extract_entity(text: str = None):
     try:
         data = predict_text(text)
-        return data
+        if isinstance(data, list):
+            return data
+        else:
+            return "Please train the model, before evaluating"
     except Exception as e:
         print(traceback.format_exc())
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
@@ -73,24 +69,22 @@ def train(
         os.makedirs("train/logs")
     if mode == "default":
         train_config["EPOCHS"] = epochs
-        with open("train/train_data.txt", "w") as fp:
-            for listitem in train_data:
-                fp.write("%s\n" % listitem)
+        with open("train/train.json", "w") as fp:
+            json.dump(train_data, fp)
     elif mode == "incremental":
         train_config["EPOCHS"] = train_config["EPOCHS"] + epochs
-        with open("train/train.txt", "w") as fp:
-            for listitem in train_data:
-                fp.write("%s\n" % listitem)
+        with open("train/train.json", "w") as fp:
+            json.dump(train_data, fp)
     elif mode == "append":
         train_config["EPOCHS"] = epochs
-        if os.path.exists("train/train.txt"):
-            with open("train/train.txt", "r") as filehandle:
-                for line in filehandle:
-                    currentline = line[:-1]
-                    train_data.append(currentline)
-        with open("train/train_data.txt", "w") as fp:
-            for listitem in train_data:
-                fp.write("%s\n" % listitem)
+        if os.path.exists("train/train.json"):
+            with open("train/train.json", "r") as fp:
+                old_train_data = json.load(fp)
+            for data in old_train_data:
+                train_data.append(data)
+            with open("train/train.json", "w") as fp:
+                json.dump(train_data, fp)
+
     else:
         st = {
             "Status": "training failed",
@@ -100,22 +94,17 @@ def train(
         raise HTTPException(status_code=400, detail=st)
 
     try:
-        if os.path.exists("train/train.txt"):
-            with open("train/train.txt", "r") as filehandle:
-                for line in filehandle:
-                    currentline = line[:-1]
-                    train_data.append(currentline)
         train_dm = NERDataMaker(train_data)
         load_custom_model(curr_model_path, train_dm)
         train_model(train_data=train_data, val_data=val_data, train_config=train_config)
         print("model training Completed")
-        return 200
+        return {"status": "model Training Successful!"}
     except Exception as e:
         print(e)
         traceback.print_exc()
         raise HTTPException(
             status_code=500,
-            detail=str("Issue encountered during train data creation"),
+            detail=str("Issue encountered during train "),
         )
 
 
@@ -123,17 +112,14 @@ def train(
 def load_model(model_path: str = "default", local_file: bool = False):
     global curr_model_path
     curr_model_path = model_path
-    train_file_path = curr_model_path + "\\train.txt"
+    train_file_path = curr_model_path + "\\train.json"
     if local_file is True and not os.path.exists(model_path):
         return "Model path is not available"
     try:
         print("loading latest trained model to memory...")
         if os.path.exists(train_file_path):
-            train_data = []
-            with open(train_file_path, "r") as filehandle:
-                for line in filehandle:
-                    currentline = line[:-1]
-                    train_data.append(currentline)
+            with open("train/train.json", "r") as fp:
+                train_data = json.load(fp)
             train_dm = NERDataMaker(train_data)
             load_custom_model(curr_model_path, train_dm)
             print("model successfully load to memory!")
@@ -150,7 +136,7 @@ def save_model(model_path: str = "mymodel"):
     try:
         save_custom_model(model_path)
         print(f"current model {model_path} saved to disk.")
-        shutil.copy("train/train.txt", model_path)
+        shutil.copy("train/train.json", model_path)
         return {"status": f"model {model_path} saved Successfull!"}
     except Exception as e:
         print(traceback.format_exc())

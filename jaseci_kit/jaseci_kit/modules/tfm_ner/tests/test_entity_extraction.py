@@ -12,7 +12,7 @@ from .test_data import (
 )
 
 
-class TFM_NER_Test(TestCaseHelper, TestCase):
+class tfm_ner_test(TestCaseHelper, TestCase):
     """Unit test for EntityExtraction FastAPI server"""
 
     def setUp(self):

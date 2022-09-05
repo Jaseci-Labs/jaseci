@@ -28,6 +28,7 @@ def logs(*args):
 
 
 metric = evaluate.load("seqeval")
+val_dm = None
 
 
 def compute_metrics(eval_preds):
@@ -186,17 +187,18 @@ class NERDataMaker:
         return tokenized_ds
 
 
-def load_custom_model(model_path, train_dm):
+def load_custom_model(model_path, train_dm=None):
     global model, tokenizer, data_collator
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForTokenClassification.from_pretrained(model_path)
-    model = AutoModelForTokenClassification.from_pretrained(
-        model_path,
-        num_labels=len(train_dm.unique_entities),
-        id2label=train_dm.id2label,
-        label2id=train_dm.label2id,
-    )
-
+    if train_dm is not None:
+        model = AutoModelForTokenClassification.from_pretrained(
+            model_path,
+            num_labels=len(train_dm.unique_entities),
+            id2label=train_dm.id2label,
+            label2id=train_dm.label2id,
+        )
+    else:
+        model = AutoModelForTokenClassification.from_pretrained(model_path)
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
     model.to(device)
 
@@ -246,19 +248,24 @@ def save_custom_model(model_path):
 
 # predicting entities
 def predict_text(sentence):
-    pipe = pipeline(
-        "ner", model=model.to("cpu"), tokenizer=tokenizer, aggregation_strategy="first"
-    )
-    entities = pipe(sentence)
-    ents = []
-    for itm in entities:
-        ents.append(
-            {
-                "entity_text": itm["word"],
-                "entity_value": itm["entity_group"],
-                "conf_score": float(itm["score"]),
-                "start_pos": itm["start"],
-                "end_pos": itm["end"],
-            }
+    if val_dm is not None:
+        pipe = pipeline(
+            "ner",
+            model=model.to("cpu"),
+            tokenizer=tokenizer,
+            aggregation_strategy="first",
         )
-    return ents
+        entities = pipe(sentence)
+        ents = []
+        for itm in entities:
+            ents.append(
+                {
+                    "entity_text": itm["word"],
+                    "entity_value": itm["entity_group"],
+                    "conf_score": float(itm["score"]),
+                    "start_pos": itm["start"],
+                    "end_pos": itm["end"],
+                }
+            )
+        return ents
+    return "Model not trained"
