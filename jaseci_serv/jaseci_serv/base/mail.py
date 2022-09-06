@@ -116,3 +116,16 @@ class email_config:
             )
             msg.attach_alternative(html, "text/html")
             msg.send(fail_silently=False)
+
+    def send_custom_email(
+        self, subject: str, body: str, recipients: list = [], sender: str = None
+    ):
+        with self.connection as connection:
+            msg = mail.EmailMultiAlternatives(
+                subject=subject,
+                body=body,
+                from_email=self.sender,
+                to=recipients,
+                connection=connection,
+            )
+            msg.send(fail_silently=False)
