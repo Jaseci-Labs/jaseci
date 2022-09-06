@@ -108,7 +108,7 @@ class redis_hook(mem_hook):
         glob = super().get_glob_from_store(name)
 
         if glob is None and rh.redis_running():
-            glob = rh.app.get(name)
+            glob = rh.app.hget("global", name)
 
             if glob:
                 super().commit_glob_to_cache(name, glob)
@@ -120,7 +120,7 @@ class redis_hook(mem_hook):
         Checks for global config existance in store
         """
         return super().has_glob_in_store(name) or (
-            rh.redis_running() and rh.app.exists(name)
+            rh.redis_running() and rh.app.hexists("global", name)
         )
 
     def list_glob_from_store(self):
@@ -128,8 +128,7 @@ class redis_hook(mem_hook):
         globs = super().list_glob_from_store()
 
         if not globs and rh.redis_running():
-            logger.warning("Globals can not (yet) be listed from Redis!")
-            return []
+            globs = rh.app.hkeys("global")
 
         return globs
 
@@ -141,15 +140,14 @@ class redis_hook(mem_hook):
 
     def commit_glob_to_cache(self, name, value):
         super().commit_glob_to_cache(name, value)
-
         if rh.redis_running():
-            rh.app.set(name, value)
+            rh.app.hset("global", name, value)
 
     def decommit_glob_from_cache(self, name):
         super().decommit_glob_from_cache(name)
 
         if rh.redis_running():
-            rh.app.delete(name)
+            rh.app.hdel("global", name)
 
     # --------------------- OBJ --------------------- #
 
