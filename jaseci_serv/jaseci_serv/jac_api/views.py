@@ -17,15 +17,7 @@ from io import BytesIO
 class JResponse(Response):
     def __init__(self, master, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.master = master
-        for i in self.master._h.save_obj_list:
-            self.master._h.commit_obj_to_cache(i)
-        self.master._h.skip_redis_update = True
-
-    def close(self):
-        super(JResponse, self).close()
-        # Commit db changes after response to user
-        self.master._h.commit()
+        master._h.commit()
 
 
 class AbstractJacAPIView(APIView):

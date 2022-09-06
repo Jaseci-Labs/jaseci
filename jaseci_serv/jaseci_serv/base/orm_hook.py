@@ -27,7 +27,6 @@ class orm_hook(redis_hook):
     def __init__(self, objects, globs):
         self.objects = objects
         self.globs = globs
-        self.skip_redis_update = False
         super().__init__()
 
     ####################################################
@@ -145,6 +144,7 @@ class orm_hook(redis_hook):
     ####################################################
 
     def commit_obj(self, item):
+        self.commit_obj_to_cache(item)
         item_from_db, created = self.objects.get_or_create(jid=item.id)
         utils.map_assignment_of_matching_fields(item_from_db, item)
         item_from_db.jsci_obj = item.jsci_payload()
@@ -166,15 +166,11 @@ class orm_hook(redis_hook):
         #         dist[type(i).__name__] = 1
         # print(dist)
         for i in self.save_obj_list:
-            if not self.skip_redis_update:
-                self.commit_obj_to_cache(i)
-            else:
-                self.skip_redis_update = False
             self.commit_obj(i)
         self.save_obj_list = set()
 
-        for i in self.save_glob_dict.keys():
-            self.commit_glob(name=i, value=self.save_glob_dict[i])
+        for k, v in self.save_glob_dict.items():
+            self.commit_glob(k, v)
         self.save_glob_dict = {}
 
     ###################################################
