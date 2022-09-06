@@ -84,13 +84,13 @@
 - [Jaseci Core](jaseci_core/README.md)
 
 ## Jaseci Webkit
-- [Getting Started](jaseci_ui_kit/docs/gettingStarted.md)
-- [Components](jaseci_ui_kit/docs/components.md)
-- [Types of Components](jaseci_ui_kit/docs/typesOfComponents.md)
-- [Update Component](jaseci_ui_kit/docs/updateComponent.md)
-- [Creating API Endpoints](jaseci_ui_kit/docs/creatingEndpoints.md)  
+- [Getting Started](support/guide/jaseci_ui_kit/gettingStarted.md)
+- [Components](support/guide/jaseci_ui_kit/components.md)
+- [Types of Components](support/guide/jaseci_ui_kit/typesOfComponents.md)
+- [Update Component](support/guide/jaseci_ui_kit/updateComponent.md)
+- [Creating API Endpoints](support/guide/jaseci_ui_kit/creatingEndpoints.md)  
 
-## Other Resources
+## Other Resources  
 
 - [Online Documentation](https://docs.jaseci.org/)
 - [The Jaseci Bible](https://github.com/Jaseci-Labs/jaseci_bible/blob/main/pdf/jaseci_bible.pdf)
