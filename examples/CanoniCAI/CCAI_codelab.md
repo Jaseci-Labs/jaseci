@@ -1476,14 +1476,27 @@ Once a sentinel is registered, you can update its jac program with
 jaseci > sentinel set -snt SENTINEL_ID -mode ir tesla_ai.jir
 ```
 
-To get the sentinel ID, we should run one of any two command
-```bash
-jaseci > sentinel list
-```
-or
+To get the sentinel ID, you can run one of the two following commands
 ```bash
 jaseci > sentinel get
 ```
+or
+```bash
+jaseci > sentinel list
+```
+`sentinel get` returns the information about the current active sentinel, while `sentinel list` returns all available sentinels for the user.
+The output will look something like this
+```json
+{
+  "version": null,
+  "name": "main.jir",
+  "kind": "generic",
+  "jid": "urn:uuid:817b4ff4-e6b7-4296-b383-55515e1e8b4a",
+  "j_timestamp": "2022-08-04T20:23:16.952641",
+  "j_type": "sentinel"
+}
+```
+The `jid` field is the ID for the sentinel. (`jid` stands for jaseci ID).
 
 With a sentinel and graph, we can now run walker with
 ```bash
