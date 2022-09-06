@@ -861,7 +861,7 @@ There are many interesting things going on in these ~30 lines of code so let's b
 * In this case, `dialogue_state` has 4 node abilities:
     * `can nlu`: NLU stands for Natural Language Understanding. This ability will analyze user's incoming requset and apply AI models.
     * `can process`: This ability uses the NLU results and figure out the next dialogue state the walker should go to.
-    * `can nlg`: NLG stands for Natural Language Generation. This abilitiy will compose repsonse to the user, often based on the results from `nlu`.
+    * `can nlg`: NLG stands for Natural Language Generation. This abilitiy will compose response to the user, often based on the results from `nlu`.
     * `can classify_intent`: an ability to handle intent classification. This is the same intent classification logic that has been copied over from the walker.
     * `can extract_entities`: a new ability with a new AI model -- entity extraction. We will cover that just in a little bit (read on!).
 * Between these four node abilities, `classify_intent` and `extract_entities` have concrete logic defined while `nlu` and `nlg` are "virtual node abilities", which will be specified in each of the inheriting children.
@@ -1301,13 +1301,13 @@ node faq_state:cai_state {
     has question;
     has answer;
     can nlg {
-        visitor.repsonse = here.answer;
+        visitor.response = here.answer;
     }
 }
 ```
 
 With these new nodes created, let's update our graph definition.
-We have renamed our graph to be `tesla_ai` and the `dialogue.jac` file to `telsa_ai.jac`.
+We have renamed our graph to be `tesla_ai` and the `dialogue.jac` file to `tesla_ai.jac`.
 
 ```js
 graph tesla_ai {
@@ -1443,7 +1443,7 @@ walker talk {
 }
 ```
 Two new syntax here:
-* `report` returns variable from walker to its caller. When calling a walker via its REST API, the content of the API repsonse payload will be what is reported.
+* `report` returns variable from walker to its caller. When calling a walker via its REST API, the content of the API response payload will be what is reported.
 * `yield report` is a shorthand for yielding and reporting at the same time. This is equivalane to `yield; report response;`.
 
 ## Introduce `sentinel`
@@ -1473,7 +1473,16 @@ Use this to check if your graph is successfully created.
 
 Once a sentinel is registered, you can update its jac program with
 ```bash
-jaseci > sentinel update -snt SENTINEL_ID -mode ir tesla_ai.jir
+jaseci > sentinel set -snt SENTINEL_ID -mode ir tesla_ai.jir
+```
+
+To get the sentinel ID, we should run one of any two command
+```bash
+jaseci > sentinel list
+```
+or
+```bash
+jaseci > sentinel get
 ```
 
 With a sentinel and graph, we can now run walker with
@@ -1487,6 +1496,8 @@ Just like any program, a set of automatic tests cases with robust coverage is es
 Jac has built-in tests support and here is how you create a test case in jac.
 
 ```js
+import {*} with "tesla_ai.jac";
+
 test "testing the Tesla conv AI system"
 with graph::tesla_ai by walker::talk(question="Hey I would like to go on a test drive"){
     res = std.get_report();
