@@ -3,3 +3,5 @@ pytorch
 fastapi
 uvicorn
 datasets
+evaluate
+huggingface-hub

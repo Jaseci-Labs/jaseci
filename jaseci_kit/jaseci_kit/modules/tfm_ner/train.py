@@ -1,13 +1,16 @@
-from sklearn.metrics import accuracy_score, f1_score, classification_report
-import torch
-from torch.utils.data import Dataset, DataLoader
-from transformers import AutoTokenizer, AutoModelForTokenClassification
+from transformers import (
+    AutoTokenizer,
+    DataCollatorForTokenClassification,
+    AutoModelForTokenClassification,
+    TrainingArguments,
+    Trainer,
+)
 from transformers import pipeline
-from .utils.data_tokens import load_data
 from torch import cuda
-import os
 from datetime import datetime
-
+import numpy as np
+import evaluate
+import re
 
 device = "cuda" if cuda.is_available() else "cpu"
 print("Using device for training -> ", device)
@@ -24,452 +27,213 @@ def logs(*args):
         f.write("\n")
 
 
-# # preparing dataset for training
-# ### TOKENIZE DATASET
-def tokenize_and_preserve_labels(sentence, text_labels, tokenizer):
-    """
-    Word piece tokenization makes it difficult to match word labels
-    back up with individual word pieces. This function tokenizes each
-    word one at a time so that it is easier to preserve the correct
-    label for each subword. It is, of course, a bit slower in processing
-    time, but it will help our model achieve higher accuracy.
-    """
-
-    tokenized_sentence = []
-    labels = []
-    sentence = sentence.strip()
-    for word, label in zip(sentence.split(), text_labels.split(",")):
-
-        # Tokenize the word and count # of subwords the word is broken into
-        tokenized_word = tokenizer.tokenize(word)
-        n_subwords = len(tokenized_word)
-
-        # Add the tokenized word to the final tokenized word list
-        tokenized_sentence.extend(tokenized_word)
-
-        # Add the same label to the new list of labels `n_subwords` times
-        labels.extend([label] * n_subwords)
-
-    return tokenized_sentence, labels
+metric = evaluate.load("seqeval")
+model = None
 
 
-# ## CREATE DATASET
-class dataset(Dataset):
-    def __init__(self, dataframe, tokenizer, max_len):
-        self.len = len(dataframe)
-        self.data = dataframe
-        self.tokenizer = tokenizer
-        self.max_len = max_len
+def compute_metrics(eval_preds):
+    logits, labels = eval_preds
+    predictions = np.argmax(logits, axis=-1)
 
-    def __getitem__(self, index):
-        # step 1: tokenize (and adapt corresponding labels)
-        sentence = self.data.sentence[index]
-        word_labels = self.data.word_labels[index]
-        tokenized_sentence, labels = tokenize_and_preserve_labels(
-            sentence, word_labels, self.tokenizer
-        )
-
-        # step 2: add special tokens (and corresponding labels)
-        tokenized_sentence = ["[CLS]"] + tokenized_sentence + ["[SEP]"]
-        # add special tokens
-        labels.insert(0, "O")
-        # add outside label for [CLS] token
-        labels.insert(-1, "O")
-        # add outside label for [SEP] token
-
-        # step 3: truncating/padding
-        maxlen = self.max_len
-
-        if len(tokenized_sentence) > maxlen:
-            # truncate
-            tokenized_sentence = tokenized_sentence[:maxlen]
-            labels = labels[:maxlen]
-        else:
-            # pad
-            tokenized_sentence = tokenized_sentence + [
-                "[PAD]" for _ in range(maxlen - len(tokenized_sentence))
-            ]
-            labels = labels + ["O" for _ in range(maxlen - len(labels))]
-
-        # step 4: obtain the attention mask
-        attn_mask = [1 if tok != "[PAD]" else 0 for tok in tokenized_sentence]
-
-        # step 5: convert tokens to input ids
-        ids = self.tokenizer.convert_tokens_to_ids(tokenized_sentence)
-
-        label_ids = [label2id[label] for label in labels]
-        return {
-            "ids": torch.tensor(ids, dtype=torch.long),
-            "mask": torch.tensor(attn_mask, dtype=torch.long),
-            "targets": torch.tensor(label_ids, dtype=torch.long),
-        }
-
-    def __len__(self):
-        return self.len
+    # Remove ignored index (special tokens) and convert to labels
+    true_labels = [
+        [val_dm.unique_entities[lbl] for lbl in label if lbl != -100]
+        for label in labels
+    ]
+    true_predictions = [
+        [
+            val_dm.unique_entities[p]
+            for (p, lbl) in zip(prediction, label)
+            if lbl != -100
+        ]
+        for prediction, label in zip(predictions, labels)
+    ]
+    all_metrics = metric.compute(predictions=true_predictions, references=true_labels)
+    return {
+        "precision": all_metrics["overall_precision"],
+        "recall": all_metrics["overall_recall"],
+        "f1": all_metrics["overall_f1"],
+        "accuracy": all_metrics["overall_accuracy"],
+    }
 
 
-# LOADING TRAINING DATASET
-def data_set(t_file, v_file, ts_file, max_len, train_batch_size):
-    global id2label, label2id, training_loader, val_loader, target_labels, test_loader
-    ds = load_data(t_file)
-    train_dataset = ds[0]
-    data_labels = ds[1]
-    label2id = {k: v for v, k in enumerate(data_labels)}
-    id2label = {v: k for v, k in enumerate(data_labels)}
+def get_tokens_with_entities(raw_text: str):
+    # split the text by spaces only if the space does not occur between square brackets
+    # we do not want to split "multi-word" entity value yet
+    raw_tokens = re.split(r"\s(?![^\[]*\])", raw_text)
 
-    training_set = dataset(train_dataset, tokenizer, max_len)
-    train_params = {"batch_size": train_batch_size, "shuffle": True, "num_workers": 0}
-    training_loader = DataLoader(training_set, **train_params)
+    # a regex for matching the annotation  [entity_value](entity_name)
+    entity_value_pattern = r"\[(?P<value>.+?)\]\((?P<entity>.+?)\)"
+    entity_value_pattern_compiled = re.compile(entity_value_pattern, flags=re.I | re.M)
 
-    # val dataset
-    if os.path.exists(v_file):
-        ds1 = load_data(v_file)
-        val_dataset = ds1[0]
-        data_labels1 = data_labels + [lab for lab in ds1[1] if lab not in data_labels]
-        label2id = {k: v for v, k in enumerate(data_labels1)}
-        id2label = {v: k for v, k in enumerate(data_labels1)}
-        target_labels = ds1[0]
+    tokens_with_entities = []
 
-        val_set = dataset(val_dataset, tokenizer, max_len)
-        val_params = {
-            "batch_size": train_batch_size,
-            "shuffle": True,
-            "num_workers": 0,
-        }
-        val_loader = DataLoader(val_set, **val_params)
-    else:
-        val_loader = None
-        data_labels1 = data_labels
-
-    # test dataset
-    if os.path.exists(ts_file):
-        ds2 = load_data(ts_file)
-        test_dataset = ds2[0]
-        data_labels2 = data_labels1 + [lab for lab in ds2[1] if lab not in data_labels1]
-        label2id = {k: v for v, k in enumerate(data_labels2)}
-        id2label = {v: k for v, k in enumerate(data_labels2)}
-        target_labels = ds2[1]
-
-        test_set = dataset(test_dataset, tokenizer, max_len)
-        test_params = {
-            "batch_size": train_batch_size,
-            "shuffle": True,
-            "num_workers": 0,
-        }
-        test_loader = DataLoader(test_set, **test_params)
-    else:
-        test_loader = None
-
-    return True
-
-
-def check_labels_ok():
-    lst_data_labels = list(id2label.values())
-    lst_model_labels = list(model.config.id2label.values())
-    for label in lst_data_labels:
-        if label not in lst_model_labels:
-            return False
-    return True
-
-
-def train_score(optimizer, training_loader, max_grad_norm):
-    tr_loss, tr_accuracy = 0, 0
-    nb_tr_examples, nb_tr_steps = 0, 0
-    tr_preds, tr_labels = [], []
-    for idx, batch in enumerate(training_loader):
-        ids = batch["ids"].to(device, dtype=torch.long)
-        mask = batch["mask"].to(device, dtype=torch.long)
-        targets = batch["targets"].to(device, dtype=torch.long)
-
-        outputs = model(input_ids=ids, attention_mask=mask, labels=targets)
-        loss, tr_logits = outputs.loss, outputs.logits
-        tr_loss += loss.item()
-
-        nb_tr_steps += 1
-        nb_tr_examples += targets.size(0)
-
-        if idx % 100 == 0:
-            loss_step = tr_loss / nb_tr_steps
-            logs(
-                str(datetime.now()) + "    ",
-                f"Training loss per 100 training steps: {loss_step}",
-                logs_file_name,
+    for raw_token in raw_tokens:
+        match = entity_value_pattern_compiled.match(raw_token)
+        if match:
+            raw_entity_name, raw_entity_value = match.group("entity"), match.group(
+                "value"
             )
 
-        # compute training accuracy
-        flattened_targets = targets.view(-1)
-        active_logits = tr_logits.view(-1, model.num_labels)
-        flattened_predictions = torch.argmax(active_logits, axis=1)
-        active_accuracy = mask.view(-1) == 1
-        targets = torch.masked_select(flattened_targets, active_accuracy)
-        predictions = torch.masked_select(flattened_predictions, active_accuracy)
+            for i, raw_entity_token in enumerate(re.split("\s", raw_entity_value)):
+                entity_prefix = "B" if i == 0 else "I"
+                entity_name = f"{entity_prefix}-{raw_entity_name}"
+                tokens_with_entities.append((raw_entity_token, entity_name))
+        else:
+            tokens_with_entities.append((raw_token, "O"))
 
-        tr_preds.extend(predictions)
-        tr_labels.extend(targets)
+    return tokens_with_entities
 
-        tmp_tr_accuracy = accuracy_score(
-            targets.cpu().numpy(), predictions.cpu().numpy()
+
+class NERDataMaker:
+    def __init__(self, texts):
+        self.unique_entities = []
+        self.processed_texts = []
+
+        temp_processed_texts = []
+        for text in texts:
+            tokens_with_entities = get_tokens_with_entities(text)
+            for _, ent in tokens_with_entities:
+                if ent not in self.unique_entities:
+                    self.unique_entities.append(ent)
+            temp_processed_texts.append(tokens_with_entities)
+
+        self.unique_entities.sort(key=lambda ent: ent if ent != "O" else "")
+
+        for tokens_with_entities in temp_processed_texts:
+            self.processed_texts.append(
+                [
+                    (t, self.unique_entities.index(ent))
+                    for t, ent in tokens_with_entities
+                ]
+            )
+
+    @property
+    def id2label(self):
+        return dict(enumerate(self.unique_entities))
+
+    @property
+    def label2id(self):
+        return {v: k for k, v in self.id2label.items()}
+
+    def __len__(self):
+        return len(self.processed_texts)
+
+    def __getitem__(self, idx):
+        def _process_tokens_for_one_text(id, tokens_with_encoded_entities):
+            ner_tags = []
+            tokens = []
+            for t, ent in tokens_with_encoded_entities:
+                ner_tags.append(ent)
+                tokens.append(t)
+
+            return {"id": id, "ner_tags": ner_tags, "tokens": tokens}
+
+        tokens_with_encoded_entities = self.processed_texts[idx]
+        if isinstance(idx, int):
+            return _process_tokens_for_one_text(idx, tokens_with_encoded_entities)
+        else:
+            return [
+                _process_tokens_for_one_text(i + idx.start, tee)
+                for i, tee in enumerate(tokens_with_encoded_entities)
+            ]
+
+    def as_hf_dataset(self, tokenizer):
+        from datasets import Dataset, Features, Value, ClassLabel, Sequence
+
+        def tokenize_and_align_labels(examples):
+            tokenized_inputs = tokenizer(
+                examples["tokens"], truncation=True, is_split_into_words=True
+            )
+
+            labels = []
+            for i, label in enumerate(examples["ner_tags"]):
+                word_ids = tokenized_inputs.word_ids(
+                    batch_index=i
+                )  # Map tokens to their respective word.
+                previous_word_idx = None
+                label_ids = []
+                for word_idx in word_ids:  # Set the special tokens to -100.
+                    if word_idx is None:
+                        label_ids.append(-100)
+                    elif (
+                        word_idx != previous_word_idx
+                    ):  # Only label the first token of a given word.
+                        label_ids.append(label[word_idx])
+                    else:
+                        label_ids.append(-100)
+                    previous_word_idx = word_idx
+                labels.append(label_ids)
+
+            tokenized_inputs["labels"] = labels
+            return tokenized_inputs
+
+        ids, ner_tags, tokens = [], [], []
+        for i, pt in enumerate(self.processed_texts):
+            ids.append(i)
+            pt_tokens, pt_tags = list(zip(*pt))
+            ner_tags.append(pt_tags)
+            tokens.append(pt_tokens)
+        data = {"id": ids, "ner_tags": ner_tags, "tokens": tokens}
+        features = Features(
+            {
+                "tokens": Sequence(Value("string")),
+                "ner_tags": Sequence(ClassLabel(names=self.unique_entities)),
+                "id": Value("int32"),
+            }
         )
-        tr_accuracy += tmp_tr_accuracy
-
-        # gradient clipping
-        torch.nn.utils.clip_grad_norm_(
-            parameters=model.parameters(), max_norm=max_grad_norm
-        )
-
-        # backward pass
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-    epoch_loss = tr_loss / nb_tr_steps
-    tr_accuracy = tr_accuracy / nb_tr_steps
-
-    y_true = []
-    y_pred = []
-    for i in range(len(tr_labels)):
-        if tr_labels[i].cpu().item() != 0:
-            y_true.append(tr_labels[i].cpu().item())
-            y_pred.append(tr_preds[i].cpu().item())
-    tr_acc = accuracy_score(y_true, y_pred)
-    logs(
-        str(datetime.now()) + "    ",
-        f"Training loss epoch: {epoch_loss}",
-        logs_file_name,
-    )
-    logs(
-        str(datetime.now()) + "    ",
-        f"Training accuracy epoch: {tr_acc}",
-        logs_file_name,
-    )
+        ds = Dataset.from_dict(data, features)
+        tokenized_ds = ds.map(tokenize_and_align_labels, batched=True)
+        return tokenized_ds
 
 
-# Tracking variables
-def val_score(val_loader, model):
-    ev_loss, ev_accuracy = 0, 0
-    nb_ev_steps, nb_ev_examples = 0, 0
-    ev_preds, ev_labels = [], []
-    model.eval()
-    for idx, batch in enumerate(val_loader):
-        ids = batch["ids"].to(device, dtype=torch.long)
-        mask = batch["mask"].to(device, dtype=torch.long)
-        targets = batch["targets"].to(device, dtype=torch.long)
-
-        outputs = model(input_ids=ids, attention_mask=mask, labels=targets)
-        loss, ev_logits = outputs.loss, outputs.logits
-        ev_loss += loss.item()
-
-        nb_ev_steps += 1
-        nb_ev_examples += targets.size(0)
-
-        # compute valuation accuracy
-        flattened_targets = targets.view(-1)
-        active_logits = ev_logits.view(-1, model.num_labels)
-        flattened_predictions = torch.argmax(active_logits, axis=1)
-        active_accuracy = mask.view(-1) == 1
-        targets = torch.masked_select(flattened_targets, active_accuracy)
-        predictions = torch.masked_select(flattened_predictions, active_accuracy)
-        ev_preds.extend(predictions)
-        ev_labels.extend(targets)
-        tmp_ev_accuracy = accuracy_score(
-            targets.cpu().numpy(), predictions.cpu().numpy()
-        )
-        ev_accuracy += tmp_ev_accuracy
-    ev_epoch_loss = ev_loss / nb_ev_steps
-    ev_accuracy = ev_accuracy / nb_ev_steps
-
-    y_true = []
-    y_pred = []
-    for i in range(len(ev_labels)):
-        if ev_labels[i].cpu().item() != 0:
-            y_true.append(ev_labels[i].cpu().item())
-            y_pred.append(ev_preds[i].cpu().item())
-    ev_acc = accuracy_score(y_true, y_pred)
-    logs(
-        str(datetime.now()) + "    ",
-        f"Validation loss epoch: {ev_epoch_loss}",
-        logs_file_name,
-    )
-    logs(
-        str(datetime.now()) + "    ",
-        f"Validation accuracy epoch: {ev_acc}",
-        logs_file_name,
-    )
-
-
-# Tracking variables
-def test_score(test_loader, model):
-    tst_accuracy = 0
-    nb_tst_steps, nb_tst_examples = 0, 0
-    tst_preds, tst_labels = [], []
-    model.eval()
-    for idx, batch in enumerate(test_loader):
-        ids = batch["ids"].to(device, dtype=torch.long)
-        mask = batch["mask"].to(device, dtype=torch.long)
-        targets = batch["targets"].to(device, dtype=torch.long)
-        outputs = model(input_ids=ids, attention_mask=mask)
-        tst_logits = outputs.logits
-
-        nb_tst_steps += 1
-        nb_tst_examples += targets.size(0)
-
-        flattened_targets = targets.view(-1)
-        active_logits = tst_logits.view(-1, model.num_labels)
-        flattened_predictions = torch.argmax(active_logits, axis=1)
-        active_accuracy = mask.view(-1) == 1
-        targets = torch.masked_select(flattened_targets, active_accuracy)
-        predictions = torch.masked_select(flattened_predictions, active_accuracy)
-        tst_preds.extend(predictions)
-        tst_labels.extend(targets)
-        tmp_tst_accuracy = accuracy_score(
-            targets.cpu().numpy(), predictions.cpu().numpy()
-        )
-        tst_accuracy += tmp_tst_accuracy
-
-    tst_accuracy = tst_accuracy / nb_tst_steps
-    y_true = []
-    y_pred = []
-    for i in range(len(tst_labels)):
-        if tst_labels[i].cpu().item() != 0:
-            y_true.append(tst_labels[i].cpu().item())
-            y_pred.append(tst_preds[i].cpu().item())
-    labs = model.config.id2label
-    y_true = [labs[int(e)] for e in y_true]
-    y_pred = [labs[int(e)] for e in y_pred]
-    tst_acc = accuracy_score(y_true, y_pred)
-    cr = classification_report(y_true, y_pred, zero_division=0)
-
-    f_macro = f1_score(y_true, y_pred, average="macro")
-    logs(str(datetime.now()) + "    ", f"f1_score(macro) : {f_macro} ", logs_file_name)
-    logs(str(datetime.now()) + "    ", f"Accuracy : {tst_acc} ", logs_file_name)
-    logs(str(datetime.now()) + "    ", "Classification Report", logs_file_name)
-    logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-    logs(cr, logs_file_name)
-    return "testing done!"
-
-
-def train(epoch, optimizer, training_loader, max_grad_norm):
-    model.train()
-    train_score(optimizer, training_loader, max_grad_norm)
-    if val_loader is not None:
-        val_score(val_loader, model)
-
-
-# DEFINING MODEL training
-def train_model(
-    model_name, epochs, mode, lab_check, learning_rate, max_grad_norm, model_save_path
-):
-    global model, tokenizer, logs_file_name
-    # log file
-    logs_file_name = (
-        datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + "_tfm_ner_training_logs.txt"
-    )
-
-    def create_model():
-        # ## saving current model
-        save_custom_model(f"{model_save_path}/{model_name}")
-        model = AutoModelForTokenClassification.from_pretrained(
-            model_name,
-            ignore_mismatched_sizes=True,
-            num_labels=len(label2id),
-            id2label=id2label,
-            label2id=label2id,
-        )
-        return model
-
-    # training start time
-    start_time = datetime.now()
-
-    if mode == 1:
-        logs(
-            str(datetime.now()) + "    ",
-            "Model is loading from scratch in default mode",
-            logs_file_name,
-        )
-        model = create_model()
-        logs(str(datetime.now()) + "    ", model, logs_file_name)
-
-    elif mode == 2:
-        logs(
-            str(datetime.now()) + "    ",
-            "Model is loading from scratch in append mode",
-            logs_file_name,
-        )
-        model = create_model()
-        logs(str(datetime.now()) + "    ", model, logs_file_name)
-
-    elif mode == 3 and lab_check is False:
-        resp1 = "data label and model labels is not matching"
-        resp2 = " please use default mode for training from scretch"
-        return resp1 + resp2
-
-    else:
-        logs(
-            str(datetime.now()) + "    ",
-            "same model is retraining in incremental mode",
-            logs_file_name,
-        )
-    model.to(device)
-    optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate)
-
-    # Defining the training function on the 80% of the dataset
-    # for tuning the bert model
-    for epoch in range(epochs):
-        t0 = datetime.now()
-        logs(
-            str(datetime.now()) + "    ",
-            f"Training epoch: {epoch + 1}/{epochs}",
-            logs_file_name,
-        )
-        # calling function epochs train
-        train(epoch, optimizer, training_loader, max_grad_norm)
-        # saving model on epochs
-        save_custom_model(f"{model_save_path}/curr_checkpoint/{model_name}")
-        logs(
-            str(datetime.now()) + "    ",
-            f"Epoch {epoch + 1} total time taken : {datetime.now() - t0}",
-            logs_file_name,
-        )
-        logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-
-    # writing checkpoint
-    total_time = datetime.now() - start_time
-    logs(str(datetime.now()) + "    ", "Model Training is Completed", logs_file_name)
-    logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-    logs(
-        str(datetime.now()) + "    ",
-        "Total time taken to completed training : ",
-        str(total_time),
-        logs_file_name,
-    )
-    logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-
-    # ###################### testing started ##########################
-    if test_loader is not None:
-        logs(str(datetime.now()) + "    ", "Model testing is started", logs_file_name)
-        logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-        time1 = datetime.now()
-        test_score(test_loader, model)
-        logs(str(datetime.now()) + "    ", "--" * 30, logs_file_name)
-        totaltime = datetime.now() - time1
-        logs(
-            str(datetime.now()) + "    ",
-            "Total time taken to completed testing : ",
-            str(totaltime),
-            logs_file_name,
-        )
-        logs(str(datetime.now()) + "    ", "--" * 30, "", logs_file_name)
-
-    # Clearing cuda memory
-    torch.cuda.empty_cache()
-    return f"model training is completed. total time taken {total_time}"
-
-
-def load_custom_model(model_path):
-    global model, tokenizer
+def load_custom_model(model_path, train_dm=None):
+    global model, tokenizer, data_collator
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForTokenClassification.from_pretrained(model_path)
+    model = AutoModelForTokenClassification.from_pretrained(
+        model_path,
+        num_labels=len(train_dm.unique_entities),
+        id2label=train_dm.id2label,
+        label2id=train_dm.label2id,
+    )
     model.to(device)
+    data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
+
+
+def train_model(train_data, val_data, train_config):
+    global val_dm
+    if len(train_data) != 0:
+        train_dm = NERDataMaker(train_data)
+        train_ds = train_dm.as_hf_dataset(tokenizer=tokenizer)
+        print(f"total Train examples = {len(train_data)}")
+    if len(val_data) != 0:
+        val_dm = NERDataMaker(val_data)
+        val_ds = val_dm.as_hf_dataset(tokenizer=tokenizer)
+        print(f"total validation examples = {len(val_dm)}")
+    else:
+        val_dm = train_dm
+        val_ds = train_ds
+    training_args = TrainingArguments(
+        output_dir="./results",
+        evaluation_strategy="epoch",
+        learning_rate=train_config["LEARNING_RATE"],
+        per_device_train_batch_size=train_config["TRAIN_BATCH_SIZE"],
+        per_device_eval_batch_size=train_config["VALID_BATCH_SIZE"],
+        num_train_epochs=train_config["EPOCHS"],
+        weight_decay=0.01,
+    )
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_ds,
+        eval_dataset=val_ds,
+        tokenizer=tokenizer,
+        data_collator=data_collator,
+        compute_metrics=compute_metrics,
+        callbacks=None,
+    )
+
+    trainer.train()
 
 
 def save_custom_model(model_path):
@@ -481,17 +245,24 @@ def save_custom_model(model_path):
 
 # predicting entities
 def predict_text(sentence):
-    pipe = pipeline("ner", model=model.to("cpu"), tokenizer=tokenizer)
-    entities = pipe(sentence)
-    ents = []
-    for itm in entities:
-        ents.append(
-            {
-                "entity_value": itm["word"],
-                "entity_type": itm["entity"],
-                "score": float(itm["score"]),
-                "start_index": itm["start"],
-                "end_index": itm["end"],
-            }
+    if model is not None:
+        pipe = pipeline(
+            "ner",
+            model=model.to("cpu"),
+            tokenizer=tokenizer,
+            aggregation_strategy="first",
         )
-    return ents
+        entities = pipe(sentence)
+        ents = []
+        for itm in entities:
+            ents.append(
+                {
+                    "entity_text": itm["word"],
+                    "entity_value": itm["entity_group"],
+                    "conf_score": float(itm["score"]),
+                    "start_pos": itm["start"],
+                    "end_pos": itm["end"],
+                }
+            )
+        return ents
+    return "Model not trained"

@@ -53,6 +53,7 @@ def sort_by_col(lst: list, col_num: int, reverse: bool = False):
     return sorted(lst, key=itemgetter(col_num), reverse=reverse)
 
 
+# moved to date
 @jaseci_action()
 def time_now():
     """Get utc date time for now in iso format"""
