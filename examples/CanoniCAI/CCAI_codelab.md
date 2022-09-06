@@ -1476,7 +1476,7 @@ Once a sentinel is registered, you can update its jac program with
 jaseci > sentinel set -snt SENTINEL_ID -mode ir tesla_ai.jir
 ```
 
-To get the sentinel ID,, we should run one of two command
+To get the sentinel ID,, we should run one of any two command
 ```bash
 jaseci > sentinel list
 ```
