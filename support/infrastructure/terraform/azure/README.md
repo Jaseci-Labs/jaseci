@@ -3,10 +3,9 @@
 
 ## Preparation #
 
-1) Make sure you have a valid Azure Account
-2) Create Access Key and Secret with AKS, VM, VNet , IAm permissions
-3) Connect your local computer to azure using Azure CLI (using Azure Configure)
-4) Install terraform CLI from https://www.terraform.io/downloads
+1) Make sure you have a valid Azure Account with RBAC permissions
+2) Connect your local computer to azure using Azure CLI (using "az loging" cmd)
+3) Install terraform CLI from https://www.terraform.io/downloads
 4) Update the config.tf file with respective key values as described
 5) Update environment.auto.tfvars file with your Azure Account Id and related configuiration of cluster as needed.
 
