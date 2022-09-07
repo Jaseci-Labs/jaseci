@@ -1,16 +1,17 @@
-from jaseci.actor.walker import walker
-from jaseci.api.graph_api import graph_api
-from jaseci_serv.base.stripe_hook import stripe_hook
 import stripe
 import uuid
+
+from jaseci.api.graph_api import graph_api
 from jaseci.api.interface import interface
+from jaseci_serv.base.stripe_hook import stripe_hook
 from jaseci.api.sentinel_api import sentinel_api
 from jaseci.api.walker_api import walker_api
+from jaseci.api.stripe_api import stripe_api as stripe_api_core
 
 stripe_test_key = "sk_test_51JWUIeCZO78n7fsZnPvualWhmJg1DcCI332kKnWF3q2sKGwnPADjEmNblfFWi4pWAWPuJwHxpeSoJGc0J5ButHN900Q2xBz1se"
 
 
-class stripe_api:
+class stripe_api(stripe_api_core):
     """
     Stripe APIs
     Set of APIs to expose jaseci stripe management
@@ -18,6 +19,7 @@ class stripe_api:
 
     def __init__(self):
         stripe.api_key = self._h.resolve_glob("STRIPE_KEY", stripe_test_key)
+        super.__init__(self)
 
     @interface.admin_api()
     def get_config(self, name: str):
@@ -108,17 +110,27 @@ class stripe_api:
             resolve_semicolon(stripe_hook.get_obj("PAYMENT_INTENT_SUCCEEDED")),
         )
 
-        active_snt_id = sentinel_api.sentinel_active_get(self)["jid"]
-        active_snt = self._h.get_obj(self._m_id, uuid.UUID(active_snt_id))
+        admin_sentinel = self.sentinel_ids.get_obj_by_name(
+            "admin_sentinel", silent=True
+        )
 
-        wlk = active_snt.walker_ids.get_obj_by_name("stripe_webhook")
+        if not admin_sentinel:
+            admin_sentinel = sentinel_api.sentinel_register(
+                self, name="admin_sentinel", code=stripe_walker
+            )
+
+            admin_sentinel = self._h.get_obj(
+                self._m_id, uuid.UUID(admin_sentinel[0]["jid"])
+            )
+
+        wlk = admin_sentinel.walker_ids.get_obj_by_name("stripe_webhook")
         keys = None
 
         if wlk:
             wlk.register(stripe_walker)
             wlk.save()
         else:
-            wlk = walker_api.walker_register(self, active_snt, stripe_walker)
+            wlk = walker_api.walker_register(self, admin_sentinel, stripe_walker)
             wlk = self._h.get_obj(self._m_id, uuid.UUID(wlk["jid"]))
 
         keys = walker_api.walker_get(self, wlk=wlk, mode="keys")["anyone"]

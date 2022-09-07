@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from jaseci_serv.base.orm_hook import orm_hook
 from jaseci.element.master import master as core_master
 from jaseci.element.super_master import super_master as core_super
+from jaseci_serv.base.api.stripe_api import stripe_api as core_stripe_api
 from jaseci.api.interface import interface
 
 
@@ -63,7 +64,7 @@ class master(core_master):
         get_user_model().objects.get(email=name).delete()
 
 
-class super_master(master, core_super):
+class super_master(master, core_super, core_stripe_api):
     @interface.admin_api()
     def master_allusers(self, limit: int = 10, offset: int = 0, asc: bool = False):
         """
