@@ -13,7 +13,7 @@ setup(
         "django-rest-passwordreset>=1.2.1,<1.3.0",
         "drf-yasg>=1.20.0,<1.21.0",
         "markdown>=3.3.6,<3.4.0",
-        "psycopg2-binary>=2,<3",
+        "psycopg2",
         "sphinx>=2.4.3,<2.5.0",
         "django-cors-headers",
         "tblib",
