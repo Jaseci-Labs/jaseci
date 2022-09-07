@@ -137,22 +137,15 @@
                     <main>
                         <h1 id="code-testing"><a class="header" href="#code-testing">code testing</a></h1>
 <pre><code class="language-python">
-def generatedocs(title,fileList):
-    AppendtoSummaryFile(title=title)
-    for file in fileList:
-        markdownFile = open(file['path'],&quot;r&quot;)
-        newpath = 'documentation/src/' + file['path']
-        markdownFileLines = markdownFile.readlines()
-        AppendtoSummaryFile(fileName= file['name'],path = file['path'],heading=file['heading'])
-        newMarkdown = open(newpath,&quot;w&quot;)
-        newMarkdown.write(&quot;&quot;)
-        newMarkdown.close()
-        newMarkdown = open(newpath,&quot;a&quot;)
-        for lines in markdownFileLines:
-            newMarkdown.write(lines)
-        newMarkdown.close()
+class Person:
+  def __init__(self, name, age):
+    self.name = name
+    self.age = age
 
-    print(title + &quot;  section is completed&quot;)
+p1 = Person(&quot;John&quot;, 36)
+
+print(p1.name)
+print(p1.age)
 </code></pre>
 <pre><code class="language-javascript">&lt;!DOCTYPE html&gt;
 &lt;html&gt;
@@ -181,12 +174,75 @@ person.firstName + &quot; &quot; + person.lastName;
 
 &lt;/body&gt;
 &lt;/html&gt;
+</code></pre>
+<pre><code class="language-go">
 
+package main
 
+import &quot;fmt&quot;
 
+func main() {
+    ch := make(chan float64)
+    ch &lt;- 1.0e10    // magic number
+    x, ok := &lt;- ch
+    defer fmt.Println(`exitting now\`)
+    go println(len(&quot;hello world!&quot;))
+    return
+}
 
+</code></pre>
+<pre><code class="language-javascript">function $initHighlight(block, cls) {
+  try {
+    if (cls.search(/\bno\-highlight\b/) != -1)
+      return process(block, true, 0x0F) +
+             ` class=&quot;${cls}&quot;`;
+  } catch (e) {
+    /* handle exception */
+  }
+  for (var i = 0 / 2; i &lt; classes.length; i++) {
+    if (checkCondition(classes[i]) === undefined)
+      console.log('undefined');
+  }
 
+  return (
+    &lt;div&gt;
+      &lt;web-component&gt;{block}&lt;/web-component&gt;
+    &lt;/div&gt;
+  )
+}
 
+export  $initHighlight;
+</code></pre>
+<pre><code class="language-kotlin">
+import kotlinx.serialization.Serializable
+import kotlin.random.Random
+
+interface Building
+
+@Serializable
+class House(
+    private val rooms: Int? = 3,
+    val name: String = &quot;Palace&quot;
+) : Building {
+    var residents: Int = 4
+        get() {
+            println(&quot;Current residents: $field&quot;)
+            return field
+        }
+
+    fun burn(evacuation: (people: Int) -&gt; Boolean) {
+        rooms ?: return
+        if (evacuation((0..residents).random()))
+            residents = 0
+    }
+}
+
+fun main() {
+    val house = House(name = &quot;Skyscraper 1&quot;)
+    house.burn {
+        Random.nextBoolean()
+    }
+}
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="mit-license"><a class="header" href="#mit-license">MIT License</a></h1>
 <p><em>Copyright (c) 2021 Jaseci Labs LLC</em></p>
@@ -1782,6 +1838,7 @@ data = {
     &quot;type&quot; : &quot;String&quot;,
     &quot;name&quot; &quot; &quot;Jaseci&quot;
 }
+
 result  = std.log(data)
 
 </code></pre>
@@ -2039,7 +2096,7 @@ node_details = jaseci.graph_node_set(nd,ctx);
 #ctx: dict = {},
 #set_active: bool = True,
 
-sentel = jaseci.sentinel_regsiter(name,encoded,auto_run,ctx,set_active);
+sentel = jaseci.sentinel_register(name,encoded,auto_run,ctx,set_active);
 
 </code></pre>
 <h3 id="global-sentinel"><a class="header" href="#global-sentinel">Global Sentinel</a></h3>
