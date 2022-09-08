@@ -10,7 +10,7 @@ import functools
 import json
 import requests
 
-from jaseci.utils.mem_hook import mem_hook
+from jaseci.utils.redis_hook import redis_hook
 from jaseci.utils.utils import copy_func
 from jaseci.element.super_master import super_master
 from .book_tools import book
@@ -22,7 +22,7 @@ def reset_state():
     global session
     session = {
         "filename": "js.session",
-        "user": [super_master(h=mem_hook(), name="admin")],
+        "user": [super_master(h=redis_hook(), name="admin")],
         "mem-only": session["mem-only"] if session is not None else False,
         "connection": {"url": None, "token": None, "headers": None},
     }

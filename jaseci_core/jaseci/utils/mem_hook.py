@@ -1,27 +1,8 @@
-from .id_list import id_list
-from .utils import logger
-import json
+from jaseci.utils.utils import find_class_and_import
+from jaseci.task.task_hook import task_hook
 
 
-def json_str_to_jsci_dict(input_str, parent_obj=None):
-    """
-    Helper function to convert JSON strings to dictionarys with _ids list
-    conversions from hex to UUID
-
-    ret_obj is the owning object for id_list objects
-    """
-    try:
-        obj_fields = json.loads(input_str)
-    except ValueError:
-        logger.error(str(f"Invalid jsci_obj string {input_str} on {parent_obj.id.urn}"))
-        obj_fields = {}
-    for i in obj_fields.keys():
-        if str(i).endswith("_ids") and isinstance(obj_fields[i], list):
-            obj_fields[i] = id_list(parent_obj=parent_obj, in_list=obj_fields[i])
-    return obj_fields
-
-
-class mem_hook:
+class mem_hook(task_hook):
     """
     Set of virtual functions to be used as hooks to allow access to
     the complete set of items across jaseci object types. This class contains
@@ -33,68 +14,59 @@ class mem_hook:
         from jaseci.actions.live_actions import get_global_actions
 
         self.mem = {"global": {}}
+        self.save_obj_list = set()
+        self.save_glob_dict = {}
         self.global_action_list = get_global_actions(self)
+        task_hook.__init__(self)
+
+    ####################################################
+    #               COMMON GETTER/SETTER               #
+    ####################################################
+
+    # --------------------- OBJ ---------------------- #
 
     def get_obj(self, caller_id, item_id, override=False):
         """
         Get item from session cache by id, then try store
         TODO: May need to make this an object copy so you cant do mem writes
         """
-        if item_id in self.mem.keys():
-            ret = self.mem[item_id]
-            if override or (ret is not None and ret.check_read_access(caller_id)):
-                return ret
-        else:
-            ret = self.get_obj_from_store(item_id)
-            if ret is not None:
-                self.mem[item_id] = ret
-            if override or (ret is not None and ret.check_read_access(caller_id)):
-                return ret
+        ret = self.get_obj_from_store(item_id)
+        if override or (ret is not None and ret.check_read_access(caller_id)):
+            return ret
 
     def has_obj(self, item_id):
         """
         Checks for object existance
         """
-        if item_id in self.mem.keys():
-            return True
-        else:
-            return self.has_obj_in_store(item_id)
+        return self.has_obj_in_store(item_id)
 
     def save_obj(self, caller_id, item, persist=False):
         """Save item to session cache, then to store"""
         if item.check_write_access(caller_id):
-            self.mem[item.id] = item
+            self.commit_obj_to_cache(item)
             if persist:
-                self.save_obj_to_store(item)
+                self.save_obj_list.add(item)
 
     def destroy_obj(self, caller_id, item, persist=False):
         """Destroy item from session cache then  store"""
         if item.check_write_access(caller_id):
-            self.mem[item.id] = None
-            del self.mem[item.id]
+            self.decommit_obj_from_cache(item)
             if persist:
                 self.destroy_obj_from_store(item)
+
+    # --------------------- GLOB --------------------- #
 
     def get_glob(self, name):
         """
         Get global config from session cache by id, then try store
         """
-        if name in self.mem["global"].keys():
-            return self.mem["global"][name]
-        else:
-            ret = self.get_glob_from_store(name)
-            if name is not None:
-                self.mem["global"][name] = ret
-            return ret
+        return self.get_glob_from_store(name)
 
     def has_glob(self, name):
         """
         Checks for global config existance
         """
-        if name in self.mem["global"].keys():
-            return True
-        else:
-            return self.has_glob_in_store(name)
+        return self.has_glob_in_store(name)
 
     def resolve_glob(self, name, default=None):
         """
@@ -107,73 +79,113 @@ class mem_hook:
 
     def save_glob(self, name, value, persist=True):
         """Save global config to session cache, then to store"""
-        self.mem["global"][name] = value
+        self.commit_glob_to_cache(name, value)
+
         if persist:
-            self.save_glob_to_store(name, value)
+            self.save_glob_dict[name] = value
 
     def list_glob(self):
         """Lists all configs present"""
-        glob_list = self.list_glob_from_store()
-        if glob_list:
-            return glob_list
-        else:
-            return list(self.mem["global"].keys())
+        return self.list_glob_from_store()
 
     def destroy_glob(self, name, persist=True):
         """Destroy global config from session cache then store"""
-        self.mem["global"][name] = None
-        del self.mem["global"][name]
+        self.decommit_glob_from_cache(name)
+
         if persist:
             self.destroy_glob_from_store(name)
 
-    def clear_mem_cache(self):
-        """
-        Clears memory, should only be used if underlying store is modified
-        through other means than methods of this class
-        """
-        mem_hook.__init__(self)
+    ####################################################
+    #        DATASOURCE METHOD (TO BE OVERRIDE)        #
+    ####################################################
+
+    # --------------------- OBJ ---------------------- #
 
     def get_obj_from_store(self, item_id):
         """
         Get item from externally hooked general store by id
         """
+        if item_id.urn in self.mem:
+            return self.mem[item_id.urn]
+
+        return None
 
     def has_obj_in_store(self, item_id):
         """
         Checks for object existance in store
         """
-        return False
-
-    def save_obj_to_store(self, item):
-        """Save item to externally hooked general store"""
+        return item_id.urn in self.mem
 
     def destroy_obj_from_store(self, item):
         """Destroy item to externally hooked general store"""
+        if item in self.save_obj_list:
+            self.save_obj_list.remove(item)
+
+    # --------------------- GLOB --------------------- #
 
     def get_glob_from_store(self, name):
         """
         Get global config from externally hooked general store by name
         """
+        if name in self.mem["global"]:
+            return self.mem["global"][name]
+
+        return None
 
     def has_glob_in_store(self, name):
         """
         Checks for global config existance in store
         """
-        return False
-
-    def save_glob_to_store(self, name, value):
-        """Save global config to externally hooked general store"""
-
-    def list_glob_from_store(self):
-        """Get list of global config to externally hooked general store"""
+        return name in self.mem["global"]
 
     def destroy_glob_from_store(self, name):
         """Destroy global config to externally hooked general store"""
+        if name in self.save_glob_dict:
+            self.save_glob_dict.pop(name)
+
+    def list_glob_from_store(self):
+        """Get list of global config to externally hooked general store"""
+        return list(self.mem["global"].keys())
+
+    ####################################################
+    # ------------------ COMMITTER ------------------- #
+    ####################################################
 
     def commit(self):
-        """Write through all saves to store"""
+        for i in self.save_obj_list:
+            self.commit_obj_to_cache(i)
 
-    # Utilities
+        self.save_obj_list = set()
+
+        for i in self.save_glob_dict.keys():
+            self.commit_glob_to_cache(name=i, value=self.save_glob_dict[i])
+
+        self.save_glob_dict = {}
+
+    ###################################################
+    #   CACHE CONTROL (SHOULD NOT OVERRIDEN ON ORM)   #
+    ###################################################
+
+    # -------------------- GLOBS -------------------- #
+
+    def commit_glob_to_cache(self, name, value):
+        self.mem["global"][name] = value
+
+    def decommit_glob_from_cache(self, name):
+        self.mem["global"].pop(name)
+
+    # --------------------- OBJ --------------------- #
+
+    def commit_obj_to_cache(self, item):
+        self.mem[item.id.urn] = item
+
+    def decommit_obj_from_cache(self, item):
+        self.mem.pop(item.id.urn)
+
+    ####################################################
+    # ------------------ UTILITIES ------------------- #
+    ####################################################
+
     def get_object_distribution(self):
         dist = {}
         for i in self.mem.keys():
@@ -183,3 +195,15 @@ class mem_hook:
             else:
                 dist[t] = 1
         return dist
+
+    ###################################################
+    #                  CLASS CONTROL                  #
+    ###################################################
+
+    def find_class_and_import(self, j_type, mod):
+        return find_class_and_import(j_type, mod)
+
+    def generate_basic_master(self):
+        from jaseci.element.master import master
+
+        return master(h=self, persist=False)

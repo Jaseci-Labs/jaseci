@@ -1,7 +1,7 @@
 from jaseci.utils.test_core import core_test
 import jaseci.tests.jac_test_code as jtc
 from jaseci.element.master import master
-from jaseci.utils.mem_hook import mem_hook
+from jaseci.utils.redis_hook import redis_hook
 from jaseci.element.super_master import super_master
 
 
@@ -15,7 +15,7 @@ class global_api_test(core_test):
         self.smast2 = super_master(h=self.smast._h)
         self.smast.sentinel_register(name="test", code=jtc.basic)
 
-        self.mast = master(h=mem_hook())
+        self.mast = master(h=redis_hook())
         self.mast2 = super_master(h=self.mast._h)
         self.mast.sentinel_register(name="test", code=jtc.basic)
 

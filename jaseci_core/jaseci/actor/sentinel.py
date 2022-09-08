@@ -98,7 +98,7 @@ class sentinel(element, jac_code, sentinel_interp):
             return None
         return self.load_architype(tree)
 
-    def spawn_walker(self, name, caller=None):
+    def spawn_walker(self, name, caller=None, is_async=False):
         """
         Spawns a new walker from registered walkers and adds to
         live walkers
@@ -107,6 +107,7 @@ class sentinel(element, jac_code, sentinel_interp):
         if not src_walk:
             logger.error(str(f"{self.name}: Unable to spawn walker {name}!"))
             return None
+        src_walk._async = is_async
         new_walk = src_walk.duplicate()
         if caller:
             new_walk.set_master(caller._m_id)

@@ -149,6 +149,11 @@ acs-*.bib
 # luatexja-ruby
 *.ltjruby
 
+# luatex and auto gen with _
+*.lua
+*.err
+_*
+
 # makeidx
 *.idx
 *.ilg
