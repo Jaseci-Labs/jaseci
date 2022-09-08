@@ -12,6 +12,6 @@ def load_standard():
 from .utils.jsorc import jsorc_start
 from .utils.utils import logger
 
-# jsorc_start()
+jsorc_start()
 
 load_standard()
