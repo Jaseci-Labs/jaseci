@@ -3,54 +3,25 @@ This module includes code related to hooking Jaseci's Redis to the
 core engine.
 """
 import jaseci as core_mod
-from jaseci.utils.utils import logger
+from jaseci.app.common_app import proxy_app
 from jaseci.utils.mem_hook import mem_hook
-from redis import Redis, RedisError
 import json
 
 from .json_handler import JaseciJsonDecoder
 
 
+#################################################
+#                  REDIS HOOK                   #
+#################################################
+
+
 class redis_hook(mem_hook):
+    def __init__(self, allow_apps=True):
 
-    app: Redis = None
-    no_error = True
+        # proxy redis, to be overriden by build_apps
+        self.redis = proxy_app()
 
-    def __init__(
-        self, redis_enabled=True, redis_host="localhost", redis_port=6379, redis_db=0
-    ):
-        try:
-            if redis_enabled and rh.no_error and rh.app is None:
-                rh.app = Redis(
-                    host=redis_host, port=redis_port, db=redis_db, decode_responses=True
-                )
-                rh.app.ping()
-
-        except RedisError as e:
-            logger.debug(
-                f"Skipping Redis due to initialization failure! Error: '{str(e)}'"
-            )
-
-            rh.app = None
-            rh.no_error = False
-
-        super().__init__()
-
-    ###################################################
-    #                     COMMONS                     #
-    ###################################################
-
-    def is_running():
-        return not (rh.app is None)
-
-    def clear_mem_cache(self):
-        """
-        Clears memory, should only be used if underlying store is modified
-        through other means than methods of this class
-        """
-        if rh.is_running():
-            rh.app.flushdb()
-        redis_hook.__init__(self)
+        super().__init__(allow_apps)
 
     ####################################################
     #        DATASOURCE METHOD (TO BE OVERRIDE)        #
@@ -64,8 +35,8 @@ class redis_hook(mem_hook):
         """
         obj = super().get_obj_from_store(item_id)
 
-        if obj is None and rh.is_running():
-            loaded_obj = rh.app.get(item_id.urn)
+        if obj is None and self.redis.is_running():
+            loaded_obj = self.redis.get(item_id.urn)
             if loaded_obj:
                 jdict = json.loads(loaded_obj, cls=JaseciJsonDecoder)
                 j_type = jdict["j_type"]
@@ -84,7 +55,7 @@ class redis_hook(mem_hook):
         Checks for object existance in store
         """
         return super().has_obj_in_store(item_id) or (
-            rh.is_running() and rh.app.exists(item_id.urn)
+            self.redis.is_running() and self.redis.exists(item_id.urn)
         )
 
     # --------------------- GLOB --------------------- #
@@ -95,8 +66,8 @@ class redis_hook(mem_hook):
         """
         glob = super().get_glob_from_store(name)
 
-        if glob is None and rh.is_running():
-            glob = rh.app.get(name)
+        if glob is None and self.redis.is_running():
+            glob = self.redis.hget("global", name)
 
             if glob:
                 super().commit_glob_to_cache(name, glob)
@@ -108,16 +79,15 @@ class redis_hook(mem_hook):
         Checks for global config existance in store
         """
         return super().has_glob_in_store(name) or (
-            rh.is_running() and rh.app.exists(name)
+            self.redis.is_running() and self.redis.hexists("global", name)
         )
 
     def list_glob_from_store(self):
         """Get list of global config to externally hooked general store"""
         globs = super().list_glob_from_store()
 
-        if not globs and rh.is_running():
-            logger.warning("Globals can not (yet) be listed from Redis!")
-            return []
+        if not globs and self.redis.is_running():
+            globs = self.redis.hkeys("global")
 
         return globs
 
@@ -129,29 +99,39 @@ class redis_hook(mem_hook):
 
     def commit_glob_to_cache(self, name, value):
         super().commit_glob_to_cache(name, value)
-
-        if rh.is_running():
-            rh.app.set(name, value)
+        if self.redis.is_running():
+            self.redis.hset("global", name, value)
 
     def decommit_glob_from_cache(self, name):
         super().decommit_glob_from_cache(name)
 
-        if rh.is_running():
-            rh.app.delete(name)
+        if self.redis.is_running():
+            self.redis.hdel("global", name)
 
     # --------------------- OBJ --------------------- #
 
     def commit_obj_to_cache(self, item):
         super().commit_obj_to_cache(item)
 
-        if rh.is_running():
-            rh.app.set(item.id.urn, item.json(detailed=True))
+        if self.redis.is_running():
+            self.redis.set(item.id.urn, item.json(detailed=True))
 
     def decommit_obj_from_cache(self, item):
         super().decommit_obj_from_cache(item)
 
-        if rh.is_running():
-            rh.app.delete(item.id.urn)
+        if self.redis.is_running():
+            self.redis.delete(item.id.urn)
+
+    ###################################################
+    #                     CLEANER                     #
+    ###################################################
+
+    def clear_cache(self):
+
+        if self.redis.is_running():
+            self.redis.app.flushdb()
+
+        mem_hook.__init__(self)
 
 
-rh = redis_hook
+# ----------------------------------------------- #

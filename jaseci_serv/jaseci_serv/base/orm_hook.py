@@ -5,6 +5,7 @@ core engine.
 FIX: Serious permissions work needed
 """
 from django.core.exceptions import ObjectDoesNotExist
+from jaseci.app.redis.redis_app import redis_app
 
 from jaseci.utils import utils
 
@@ -12,18 +13,12 @@ from jaseci.utils.redis_hook import redis_hook
 from jaseci.utils.utils import logger
 from jaseci.utils.json_handler import json_str_to_jsci_dict
 import jaseci as core_mod
-from jaseci_serv.jaseci_serv.settings import (
-    TASK_QUIET,
-    TASK_ENABLED,
-    REDIS_ENABLED,
-    REDIS_HOST,
-    REDIS_PORT,
-    REDIS_DB,
-)
+from jaseci_serv.app.common_app import hook_app
+from jaseci_serv.app.mail.mail_app import mail_app
+from jaseci_serv.app.task.task_app import task_app
 import uuid
-import json
 
-from django_celery_results.models import TaskResult
+from jaseci_serv.jaseci_serv.settings import ALLOW_APPS
 
 
 class orm_hook(redis_hook):
@@ -34,13 +29,17 @@ class orm_hook(redis_hook):
     def __init__(self, objects, globs):
         self.objects = objects
         self.globs = globs
-        self.skip_redis_update = False
-        super().__init__(
-            redis_enabled=REDIS_ENABLED,
-            redis_host=REDIS_HOST,
-            redis_port=REDIS_PORT,
-            redis_db=REDIS_DB,
-        )
+        super().__init__(ALLOW_APPS)
+
+    ####################################################
+    #                       APPS                       #
+    ####################################################
+
+    def build_apps(self):
+        hook_app()
+        self.redis = redis_app(self)
+        self.task = task_app(self)
+        self.mail = mail_app(self)
 
     ####################################################
     #                DATASOURCE METHOD                 #
@@ -137,10 +136,11 @@ class orm_hook(redis_hook):
             pass
 
     ####################################################
-    # ------------------ COMMITTER ------------------- #
+    #                    COMMITTER                     #
     ####################################################
 
     def commit_obj(self, item):
+        self.commit_obj_to_cache(item)
         item_from_db, created = self.objects.get_or_create(jid=item.id)
         utils.map_assignment_of_matching_fields(item_from_db, item)
         item_from_db.jsci_obj = item.jsci_payload()
@@ -154,49 +154,13 @@ class orm_hook(redis_hook):
 
     def commit(self):
         """Write through all saves to store"""
-        # dist = {}
-        # for i in self.save_obj_list:
-        #     if (type(i).__name__ in dist.keys()):
-        #         dist[type(i).__name__] += 1
-        #     else:
-        #         dist[type(i).__name__] = 1
-        # print(dist)
         for i in self.save_obj_list:
-            if not self.skip_redis_update:
-                self.commit_obj_to_cache(i)
-            else:
-                self.skip_redis_update = False
             self.commit_obj(i)
         self.save_obj_list = set()
 
-        for i in self.save_glob_dict.keys():
-            self.commit_glob(name=i, value=self.save_glob_dict[i])
+        for k, v in self.save_glob_dict.items():
+            self.commit_glob(k, v)
         self.save_glob_dict = {}
-
-    ###################################################
-    #                TASK HOOK CONFIGS                #
-    ###################################################
-
-    def task_config(self):
-        if TASK_ENABLED:
-            self.task_app().config_from_object("jaseci_serv.jaseci_serv.settings")
-            self.task_quiet(TASK_QUIET)
-        else:
-            self.disable_task()
-
-    def get_by_task_id(self, task_id):
-        task = self.task_app().AsyncResult(task_id)
-
-        ret = {"status": task.state}
-
-        if task.ready():
-            task_result = TaskResult.objects.get(task_id=task_id).result
-            try:
-                ret["result"] = json.loads(task_result)
-            except ValueError as e:
-                ret["result"] = task_result
-
-        return ret
 
     ###################################################
     #                  CLASS CONTROL                  #
@@ -213,8 +177,3 @@ class orm_hook(redis_hook):
             return super_master
         else:
             return utils.find_class_and_import(j_type, core_mod)
-
-    def generate_basic_master(self):
-        from jaseci_serv.base.models import master
-
-        return master(h=self, persist=False)

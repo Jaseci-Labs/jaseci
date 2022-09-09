@@ -1,13 +1,44 @@
-"""
-This module includes code related to configuring Jaseci's mail serving
-"""
 from django.core import mail
-from jaseci.utils.email_hook import email_hook as eh, email_config as ec
+from jaseci.app.mail.mail_app import mail_app as ma, emailer as em
+from jaseci_serv.jaseci_serv.settings import EMAIL_CONFIG
+
+#################################################
+#                 EMAIL APP ORM                 #
+#################################################
 
 
-class email_config(ec):
-    def __init__(self, server, templates):
-        super().__init__(server)
+class mail_app(ma):
+    def connect(self, configs):
+        user = configs.get("user")
+        backend = configs.get("backend", "smtp")
+        sender = configs.get("sender", user)
+
+        server = mail.get_connection(
+            backend=f"django.core.mail.backends.{backend}.EmailBackend",
+            host=configs.get("host"),
+            port=configs.get("port"),
+            username=user,
+            password=configs.get("pass"),
+            use_tls=configs.get("tls"),
+        )
+
+        return emailer(server, sender, configs["templates"])
+
+    def get_config(self, hook) -> dict:
+        return hook.build_config("EMAIL_CONFIG", EMAIL_CONFIG)
+
+
+# ----------------------------------------------- #
+
+
+####################################################
+#                   EMAIL CONFIG                   #
+####################################################
+
+
+class emailer(em):
+    def __init__(self, server, sender, templates):
+        super().__init__(server, sender)
 
         self.activ_subj = templates["activation_subj"]
         self.activ_body = templates["activation_body"]
@@ -35,7 +66,7 @@ class email_config(ec):
         msg = mail.EmailMultiAlternatives(
             subject=self.activ_subj,
             body=body,
-            from_email=eh.sender,
+            from_email=self.sender,
             to=[email],
             connection=self.server,
         )
@@ -51,7 +82,7 @@ class email_config(ec):
         msg = mail.EmailMultiAlternatives(
             subject=self.reset_subj,
             body=body,
-            from_email=eh.sender,
+            from_email=self.sender,
             to=[email],
             connection=self.server,
         )
@@ -68,7 +99,7 @@ class email_config(ec):
         msg = mail.EmailMultiAlternatives(
             subject=subject,
             body=body[0],
-            from_email=eh.sender if sender is None else sender,
+            from_email=self.sender if sender is None else sender,
             to=recipients,
             connection=self.server,
         )

@@ -29,7 +29,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         return ret.split("\n")
 
     def tearDown(self):
-        jsctl.session["master"]._h.clear_mem_cache()
+        jsctl.session["master"]._h.clear_cache()
         super().tearDown()
 
     def test_jsctl_extract_tree(self):

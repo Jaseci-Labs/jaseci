@@ -1,6 +1,7 @@
 """
 Super (master) api as a mixin
 """
+from json import dumps
 from jaseci.api.interface import interface
 from jaseci.element.master import master
 
@@ -58,3 +59,22 @@ class super_api:
         """
         self.caller = None
         return {"response": f"You are now {self.name}"}
+
+    @interface.admin_api()
+    def update_config(self, name: str, config: dict = {}, refresh: bool = True):
+        """
+        update global configs
+        """
+
+        hook = self._h
+
+        if config:
+            hook.save_glob(name, dumps(config))
+
+        if refresh:
+            if name == "TASK_CONFIG":
+                hook.task.reset(hook)
+            elif name == "REDIS_CONFIG":
+                hook.redis.reset(hook)
+            elif name == "EMAIL_CONFIG":
+                hook.mail.reset(hook)

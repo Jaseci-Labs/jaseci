@@ -146,7 +146,7 @@ class element(hookable):
         saving and loading item.
         """
         obj_fields = []
-        element_fields = dir(element(m_id=self._m_id, h=redis_hook()))
+        element_fields = dir(element(m_id=self._m_id, h=redis_hook(False)))
         for i in vars(self).keys():
             if not i.startswith("_") and i not in element_fields:
                 obj_fields.append(i)
