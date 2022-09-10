@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 
 from jaseci.utils.utils import TestCaseHelper
-from jaseci.utils.redis_hook import redis_hook as rh
 from django.test import TestCase
 
 from jaseci_serv.base.models import JaseciObject
@@ -9,6 +8,7 @@ from jaseci.graph import node
 from jaseci.graph.graph import graph
 from jaseci.actor.sentinel import sentinel
 import jaseci.tests.jac_test_code as jtc
+from jaseci_serv.utils.test_utils import skip_without_redis
 
 
 # Alias for create user
@@ -47,10 +47,11 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         user = self.user
         self.assertIsNotNone(user._h)
         temp_id = node.node(m_id=user.master.urn, h=user._h).id
-
-        user._h.commit()
-        del user._h.mem[temp_id.urn]
-        rh.app.delete(temp_id.urn)
+        h = user._h
+        h.commit()
+        del h.mem[temp_id.urn]
+        if h.redis.is_running():
+            h.redis.delete(temp_id.urn)
 
         load_test = JaseciObject.objects.filter(jid=temp_id).first()
 
@@ -71,9 +72,11 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         self.assertIsNotNone(user._h)
         temp_id = node.node(m_id="anon", h=user._h).id
 
-        user._h.commit()
-        del user._h.mem[temp_id.urn]
-        rh.app.delete(temp_id.urn)
+        h = user._h
+        h.commit()
+        del h.mem[temp_id.urn]
+        if h.redis.is_running():
+            h.redis.delete(temp_id.urn)
 
         load_test = JaseciObject.objects.filter(jid=temp_id).first()
 
@@ -127,13 +130,16 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         self.assertEqual(node2.id, new_node.jid)
         self.assertEqual(node1.id, new_jsci_node.parent_id)
 
+    @skip_without_redis
     def test_redis_connection(self):
         """Test redis connection"""
 
-        self.assertTrue(rh.is_running())
+        redis = self.user._h.redis
 
-        rh.app.set("test", "this is a test")
-        self.assertEqual(rh.app.get("test"), "this is a test")
+        self.assertTrue(redis.is_running())
+
+        redis.set("test", "this is a test")
+        self.assertEqual(redis.get("test"), "this is a test")
 
     def test_redis_saving(self):
         """Test that redis hooks are set up correctly for saving"""

@@ -5,6 +5,8 @@ from jaseci.api.interface import interface
 import os
 import json
 
+from jaseci.svcs.meta_svc import meta_svc
+
 
 class jac_api:
     """
@@ -136,9 +138,8 @@ class jac_api:
 
     def faux_master(self):
         from jaseci.element.super_master import super_master
-        from jaseci.utils.redis_hook import redis_hook
         from copy import deepcopy
 
-        faux = super_master(h=redis_hook())
+        faux = super_master(h=meta_svc().hook())
         faux._h.mem["global"] = deepcopy(self._h.mem["global"])
         return faux

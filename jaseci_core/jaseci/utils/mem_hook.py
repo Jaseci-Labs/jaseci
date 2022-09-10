@@ -1,8 +1,8 @@
+from json import dumps, loads
 from jaseci.utils.utils import find_class_and_import
-from jaseci.task.task_hook import task_hook
 
 
-class mem_hook(task_hook):
+class mem_hook:
     """
     Set of virtual functions to be used as hooks to allow access to
     the complete set of items across jaseci object types. This class contains
@@ -17,7 +17,6 @@ class mem_hook(task_hook):
         self.save_obj_list = set()
         self.save_glob_dict = {}
         self.global_action_list = get_global_actions(self)
-        task_hook.__init__(self)
 
     ####################################################
     #               COMMON GETTER/SETTER               #
@@ -94,6 +93,14 @@ class mem_hook(task_hook):
 
         if persist:
             self.destroy_glob_from_store(name)
+
+    # ----------------- GLOB CONFIG ------------------ #
+
+    def build_config(self, name, config):
+        if not self.has_glob(name):
+            self.save_glob(name, dumps(config))
+            self.commit()
+        return loads(self.get_glob(name))
 
     ####################################################
     #        DATASOURCE METHOD (TO BE OVERRIDE)        #
@@ -202,8 +209,3 @@ class mem_hook(task_hook):
 
     def find_class_and_import(self, j_type, mod):
         return find_class_and_import(j_type, mod)
-
-    def generate_basic_master(self):
-        from jaseci.element.master import master
-
-        return master(h=self, persist=False)
