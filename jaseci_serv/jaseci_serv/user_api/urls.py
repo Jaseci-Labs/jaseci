@@ -9,6 +9,7 @@ urlpatterns = [
     path("create_super/", views.CreateSuperUserView.as_view(), name="create_super"),
     path("token/", views.CreateTokenView.as_view(), name="token"),
     path("manage/", views.ManageUserView.as_view(), name="manage"),
+    path("manage/<int:id>", views.UpdateUserView.as_view(), name="update"),
     path(
         "logout_everyone/", views.LogoutAllUsersView.as_view(), name="logout_everyone"
     ),

@@ -84,10 +84,13 @@ class super_master(master, core_super):
         for i in users[offset:end]:
             filtered_users.append(
                 {
+                    "id": i.id,
                     "user": i.email,
                     "jid": i.master.urn,
                     "name": i.name,
                     "created_date": i.time_created.isoformat(),
+                    "is_activated": i.is_activated,
+                    "is_superuser": i.is_superuser,
                 }
             )
         ret = {"total": total, "data": filtered_users}
