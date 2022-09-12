@@ -90,7 +90,7 @@ class actions_api:
         Jaseci python instance.
 
         :param mod: The import style module to load actions from.
-            (i.e., jaseci_kit.bi_enc)
+            (i.e., jaseci_ai_kit.bi_enc)
         """
         success = lact.load_module_actions(mod)
         if success:
