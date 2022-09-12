@@ -19,7 +19,7 @@ Any walker that can be called with `is_async` field
 
 ## **GET TASK STATE**
 ### **UNCONSUMED/RUNNING TASK**
-`/js/walker_queue`
+`/js/walker_queue_check`
 
 ### **RESPONSE**
 ```json
@@ -37,7 +37,7 @@ Any walker that can be called with `is_async` field
 ```
 
 ### **SPECIFIC TASK**
-`/js/queue?task_id={{`**`task_id`**`}}`
+`/js/walker_queue_check?task_id={{`**`task_id`**`}}`
 
 ### **RESPONSE**
 ```json
@@ -59,7 +59,7 @@ Any walker that can be called with `is_async` field
 ## **SCHEDULED_WALKER**
 
  - Add periodic task
- - Select jaseci.task.tasks.scheduled_walker
+ - Select jaseci.svcs.task.task_common.scheduled_walker
  - set your schedule (interval, crontab, solar, clocked, start/end data are supported)
  - set argument with below kind of structure
 
@@ -90,7 +90,7 @@ Any walker that can be called with `is_async` field
 ## **SCHEDULED_SEQUENCE**
 
  - Add periodic task
- - Select jaseci.task.tasks.scheduled_sequence
+ - Select jaseci.svcs.task.task_common.scheduled_sequence
  - set your schedule (interval, crontab, solar, clocked, start/end data are supported)
  - set argument with below kind of structure
 
