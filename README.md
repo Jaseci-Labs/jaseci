@@ -20,16 +20,12 @@
 
 - [Language Overview](support/guide/jac_language_guide/jac_language_overview.md)
 - [Grammar](support/guide/jac_language_guide/jac_grammar.md)
-
 - [Operators](support/guide/jac_language_guide/operators.md)
 - [Control Flow](support/guide/jac_language_guide/control_flow.md)
 - [Collections](support/guide/jac_language_guide/collections.md)
 - [Nodes](support/guide/jac_language_guide/nodes.md)
-    
 - [Edges](support/guide/jac_language_guide/edges.md)
-
 - [Graphs](support/guide/jac_language_guide/graphs.md)
-   
 - [Walkers](support/guide/jac_language_guide/walkers.md)
     - [Traversing a Graph](support/guide/jac_language_guide/traversing_a_graph.md)
     - [Referencing a Node in Context](support/guide/jac_language_guide/referencing_node_context.md)
@@ -75,7 +71,6 @@
     - [Non-AI Tools](support/guide/jaseci_kit/modules/non_ai/README.md)
         - [PDF Extractor](support/guide/jaseci_kit/modules/non_ai/pdf_ext/README.md)
 
-- [Jaseci Core](jaseci_core/README.md)
 
 - [Jaseci Studio](jaseci_ui_kit/README.md)
     - [Introduction](jaseci_ui_kit/components/docs/gettingStarted.md)
