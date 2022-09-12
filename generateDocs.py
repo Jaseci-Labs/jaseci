@@ -80,16 +80,20 @@ def processline(line):
 def generateAssests(*paths):
     for path in paths:
         f = []
+        d = []
         for (dirpath, dirnames, filenames) in walk(path):
             f.extend(filenames)
+            d.extend(dirnames)
             break
 
 
         for file in f:
             assetRelativePath = path + "/" + file
-            newAssetPath = 'documentation/src/' + assetRelativePath
-
+          
             shutil.copy(assetRelativePath,newAssetPath)
+        
 
+
+        
 
 main()
