@@ -13,6 +13,7 @@ from jaseci.utils.utils import logger
 
 EMAIL_CONFIG = {
     "enabled": True,
+    "quiet": True,
     "version": 2,
     "tls": True,
     "host": "smtp.gmail.com",
@@ -55,17 +56,20 @@ class mail_svc(common_svc):
                 self.state = AS.STARTED
                 self.__mail(hook)
         except Exception as e:
-            logger.error(
-                "Skipping Mail setup due to initialization failure!\n"
-                f"{e.__class__.__name__}: {e}"
-            )
+            if not (self.quiet):
+                logger.error(
+                    "Skipping Mail setup due to initialization failure!\n"
+                    f"{e.__class__.__name__}: {e}"
+                )
             self.app = None
             self.state = AS.FAILED
 
     def __mail(self, hook):
         configs = self.get_config(hook)
         enabled = configs.get("enabled", True)
+
         if enabled:
+            self.quiet = configs.pop("quiet", False)
             self.__convert_config(hook, configs)
             self.app = self.connect(configs)
             self.state = AS.RUNNING

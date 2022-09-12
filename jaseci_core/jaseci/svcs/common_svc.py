@@ -7,7 +7,7 @@ class common_svc:
         if not hasattr(self.cls, "_app"):
             setattr(self.cls, "_app", None)
             setattr(self.cls, "_state", AS.NOT_STARTED)
-            setattr(self.cls, "_quiet", False)
+            setattr(self.cls, "_quiet", True)
 
     @property
     def app(self):
@@ -42,6 +42,9 @@ class common_svc:
 
     def is_running(self):
         return self.state.is_running() and not (self.app is None)
+
+    def has_failed(self):
+        return self.state.has_failed()
 
     ###################################################
     #                     CLEANER                     #

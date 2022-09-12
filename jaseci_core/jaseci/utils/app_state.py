@@ -13,3 +13,6 @@ class AppState(Enum):
 
     def is_running(self):
         return self == AppState.RUNNING
+
+    def has_failed(self):
+        return self == AppState.FAILED

@@ -11,7 +11,13 @@ from redis import Redis
 #                   DEFAULTS                   #
 ################################################
 
-REDIS_CONFIG = {"enabled": True, "host": "localhost", "port": "6379", "db": "1"}
+REDIS_CONFIG = {
+    "enabled": True,
+    "quiet": True,
+    "host": "localhost",
+    "port": "6379",
+    "db": "1",
+}
 
 #################################################
 #                  REDIS HOOK                   #
@@ -32,10 +38,11 @@ class redis_svc(common_svc):
                 self.state = AS.STARTED
                 self.__redis(hook)
         except Exception as e:
-            logger.error(
-                "Skipping Redis due to initialization failure!\n"
-                f"{e.__class__.__name__}: {e}"
-            )
+            if not (self.quiet):
+                logger.error(
+                    "Skipping Redis due to initialization failure!\n"
+                    f"{e.__class__.__name__}: {e}"
+                )
             self.app = None
             self.state = AS.FAILED
 
@@ -44,6 +51,7 @@ class redis_svc(common_svc):
         enabled = configs.pop("enabled", True)
 
         if enabled:
+            self.quiet = configs.pop("quiet", False)
             self.app = Redis(**configs, decode_responses=True)
             self.app.ping()
             self.state = AS.RUNNING

@@ -126,6 +126,7 @@ RUN_SVCS = "test" in sys.argv or "runserver" in sys.argv
 # REDIS
 REDIS_CONFIG = {
     "enabled": True,
+    "quiet": False,
     "host": os.getenv("REDIS_HOST", "localhost"),
     "port": os.getenv("REDIS_PORT", "6379"),
     "db": os.getenv("REDIS_DB", "1"),
@@ -145,6 +146,7 @@ TASK_CONFIG = {
 # EMAIL_HOOK
 EMAIL_CONFIG = {
     "enabled": True,
+    "quiet": False,
     "version": 1,
     "tls": True,
     "host": "smtp.gmail.com",

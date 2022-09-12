@@ -19,7 +19,7 @@ from celery import Celery
 TASK_PREFIX = "celery-task-meta-"
 TASK_CONFIG = {
     "enabled": True,
-    "quiet": False,
+    "quiet": True,
     "broker_url": "redis://localhost:6379/1",
     "result_backend": "redis://localhost:6379/1",
     "broker_connection_retry_on_startup": True,
@@ -43,7 +43,7 @@ class task_svc(common_svc, task_properties):
         task_properties.__init__(self, self.cls)
 
         try:
-            if self.is_ready():
+            if self.is_ready() and self.__has_redis(hook):
                 self.state = AS.STARTED
                 self.__task(hook)
         except Exception as e:
@@ -63,8 +63,8 @@ class task_svc(common_svc, task_properties):
         enabled = configs.pop("enabled", True)
 
         if enabled:
-            self.app = Celery("celery")
             self.quiet = configs.pop("quiet", False)
+            self.app = Celery("celery")
             self.app.conf.update(**configs)
             self.inspect = self.app.control.inspect()
 
@@ -90,6 +90,16 @@ class task_svc(common_svc, task_properties):
         self.queue = self.app.register_task(queue())
         self.scheduled_walker = self.app.register_task(scheduled_walker())
         self.scheduled_sequence = self.app.register_task(scheduled_sequence())
+
+    def __has_redis(self, hook=None):
+        if not (hook is None) and hook.redis.has_failed():
+            if not (self.quiet):
+                logger.error(
+                    "Redis is not yet running reason for skipping Celery initialization!"
+                )
+            self.state = AS.FAILED
+            return False
+        return True
 
     ###################################################
     #              COMMON GETTER/SETTER               #
