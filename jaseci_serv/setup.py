@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="jaseci_serv",
-    version="1.3.4.5",
+    version="1.3.4.7",
     packages=find_packages(include=["jaseci_serv", "jaseci_serv.*"]),
     install_requires=[
         "jaseci",

@@ -95,7 +95,8 @@ class task_svc(common_svc, task_properties):
         if not (hook is None) and hook.redis.has_failed():
             if not (self.quiet):
                 logger.error(
-                    "Redis is not yet running reason for skipping Celery initialization!"
+                    "Redis is not yet running reason "
+                    "for skipping Celery initialization!"
                 )
             self.state = AS.FAILED
             return False
