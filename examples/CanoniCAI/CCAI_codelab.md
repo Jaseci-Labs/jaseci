@@ -1139,7 +1139,7 @@ jaseci > jac run tfm_ner.jac -walk train -ctx "{\"train_file\": \"ner_train.json
 ```
 After the model is finished training, you can play with the model using the `infer` walker
 ```js
-jaseci > jac run ner.jac -walk infer
+jaseci > jac run tfm_ner.jac -walk infer
 ```
 For example,
 ```bash
