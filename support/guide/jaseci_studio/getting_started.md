@@ -4,14 +4,14 @@
 ## Create Account
 Register on Jaseci Studio [here](/) . Once you register you can then log in and be taken to the Home page
 
-![HomePage](../../support/guide/assets/Studio-Home.png)
+![HomePage](../assets/Studio-Home.png)
 
 ## Create Project
 Create you first project by selecting the create Project button on the top right.
-![Create Project](../../support/guide/assets/Studio-NewProject.png)
+![Create Project](../assets/Studio-NewProject.png)
 
 Name your Project then click create.
-[pic of creation button](../../support/guide/assets/Studio-NewProject.png)
+[pic of creation button](../assets/Studio-NewProject.png)
 
 ## which tool to use
 You will have two choices to create your frontend : 
@@ -23,12 +23,12 @@ You will have two choices to create your frontend :
 
 Create you page by selecting the `+ New` button on the Editor Page. 
 
-![Editor](../../support/guide/assets/Studio-Editor.png)
+![Editor](../assets/Studio-Editor.png)
 
 ## View Or JAC
 to be added
 
-![View or JAC](../../support/guide/assets/studio-View_JAC.png)
+![View or JAC](../assets/studio-View_JAC.png)
 
 
 ### View
@@ -40,9 +40,9 @@ The Top menu has a few butttons . In order you have the `Run` button , this runs
 ### Menu 
 The Drop menu when selected gives 3 Options .They are :
 - Components , You can various components to your editor to assist in your Frontend Developemnt.
-![Add Components](../../support/guide/assets/Studio-add_components.png)
+![Add Components](../assets/Studio-add_components.png)
 - examples , Add finished Frontend which you can then customise. 
-![Examples](../../support/guide/assets/Studio-Examples.png)
+![Examples](../assets/Studio-Examples.png)
 
 
 - Import/Export , Import or Export your JSON or JAC code.

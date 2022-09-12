@@ -2,7 +2,7 @@
 
 - [License](LICENSE.md)
 - [About this Release](CHANGELOG.md)
-- [How to Contribute](support/guide/how_to_contribute.md)
+- [How to Contribute](CONTRIBUTING.md)
 - [Contributors](CONTRIBUTORS.md)
 - [Join our Community](https://forum.jaseci.org/)
 
@@ -20,16 +20,12 @@
 
 - [Language Overview](support/guide/jac_language_guide/jac_language_overview.md)
 - [Grammar](support/guide/jac_language_guide/jac_grammar.md)
-
 - [Operators](support/guide/jac_language_guide/operators.md)
 - [Control Flow](support/guide/jac_language_guide/control_flow.md)
 - [Collections](support/guide/jac_language_guide/collections.md)
 - [Nodes](support/guide/jac_language_guide/nodes.md)
-    
 - [Edges](support/guide/jac_language_guide/edges.md)
-
 - [Graphs](support/guide/jac_language_guide/graphs.md)
-   
 - [Walkers](support/guide/jac_language_guide/walkers.md)
     - [Traversing a Graph](support/guide/jac_language_guide/traversing_a_graph.md)
     - [Referencing a Node in Context](support/guide/jac_language_guide/referencing_node_context.md)
@@ -81,14 +77,14 @@
     - [Non-AI Tools](jaseci_kit/modules/non_ai/README.md)
         - [PDF Extractor](jaseci_kit/modules/non_ai/pdf_ext/README.md)
 
-- [Jaseci Core](jaseci_core/README.md)
 
-## Jaseci Webkit
-- [Getting Started](support/guide/jaseci_ui_kit/gettingStarted.md)
-- [Components](support/guide/jaseci_ui_kit/components.md)
-- [Types of Components](support/guide/jaseci_ui_kit/typesOfComponents.md)
-- [Update Component](support/guide/jaseci_ui_kit/updateComponent.md)
-- [Creating API Endpoints](support/guide/jaseci_ui_kit/creatingEndpoints.md)  
+## Jaseci Studio
+
+- [Getting Started](support/guide/jaseci_studio/getting_started.md)
+- [Components](support/guide/jaseci_studio/components.md)
+- [Types of Components](support/guide/jaseci_studio/types_of_components.md)
+- [Update Component](support/guide/jaseci_studio/update_component.md)
+- [Creating API Endpoints](support/guide/jaseci_studio/creating_endpoints.md)  
 
 ## Other Resources  
 
