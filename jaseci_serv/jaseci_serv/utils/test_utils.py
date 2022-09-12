@@ -1,5 +1,5 @@
 import unittest
-from jaseci_serv.svcs.redis.redis_svc import redis_svc
+from jaseci_serv.svcs import redis_svc
 
 
 def skip_without_redis(test):

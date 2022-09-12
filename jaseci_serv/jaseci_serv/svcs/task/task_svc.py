@@ -1,7 +1,7 @@
 import json
 from django_celery_results.models import TaskResult
 from jaseci_serv.jaseci_serv.settings import TASK_CONFIG
-from jaseci.svcs.task.task_svc import task_svc as ts
+from jaseci.svcs import task_svc as ts
 
 
 #################################################

@@ -1,10 +1,10 @@
 import signal
 import sys
 from multiprocessing import Process
-from jaseci.svcs.common_svc import common_svc
+from jaseci.svcs import common_svc
 from jaseci.utils.app_state import AppState as AS
 from jaseci.utils.utils import logger
-from jaseci.svcs.task.task_common import (
+from jaseci.svcs.task import (
     task_properties,
     queue,
     scheduled_walker,

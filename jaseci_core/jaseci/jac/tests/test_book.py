@@ -1,4 +1,4 @@
-from jaseci.svcs.meta_svc import meta_svc
+from jaseci.svcs import meta_svc
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
 
