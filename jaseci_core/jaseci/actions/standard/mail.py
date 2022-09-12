@@ -1,8 +1,7 @@
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.svcs.mail.mail_svc import mail_svc
+from jaseci.svcs.common_svc import MAIL_ERR_MSG
 from jaseci.utils.utils import logger
-
-MAIL_ERR_MSG = "Mail service is disabled or not yet configured!"
 
 
 @jaseci_action()
