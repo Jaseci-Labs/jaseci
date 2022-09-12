@@ -62,7 +62,7 @@ jobs:
           python3 -m build
           python3 -m twine upload --skip-existing dist/*
 
-  push_jaseci_kit_to_pypi:
+  push_jaseci_ai_kit_to_pypi:
     runs-on: ubuntu-latest
 
     steps:

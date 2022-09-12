@@ -826,7 +826,7 @@ jsctl load remote https://bi-enc.org
 This is the command use to run builtin jaseci kit modules that can be accessed anytime as long as you have jaseci installed on your system.
 
 ```
-jsctl load module JASECI_KIT_MODULE
+jsctl load module JASECI_AI_KIT_MODULE
 ```
 
 ### Tutorial on USE_QA
