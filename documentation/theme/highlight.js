@@ -4729,7 +4729,9 @@ hljs.registerLanguage("jac", function() {
       })]
   };
 var o = {
-    className: ""
+    className: "attribute",
+    begin : "/[node|edge]::[a-zA-Z]/",
+    end: "$"
 }
   
     var n = {
@@ -4742,7 +4744,7 @@ var o = {
           aliases: ["JAC"],
           keywords: n,
           illegal: "</",
-          contains: [x,{
+          contains: [x,o,{
               className: "string",
               variants: [e.QUOTE_STRING_MODE, e.APOS_STRING_MODE, {
                   begin: "`",

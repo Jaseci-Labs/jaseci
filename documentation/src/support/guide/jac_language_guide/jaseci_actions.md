@@ -158,7 +158,7 @@ node_details = jaseci.graph_node_set(nd,ctx);
 #ctx: dict = {},
 #set_active: bool = True,
 
-sentel = jaseci.sentinel_register(name,encoded,auto_run,ctx,set_active);
+sentel = jaseci.sentinel_regsiter(name,encoded,auto_run,ctx,set_active);
 
 ``` 
 

@@ -1,0 +1,326 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>How to Contribute - Jaseci Documentation</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><li class="part-title">Jaseci Official Documentation</li><li class="chapter-item expanded "><a href="LICENSE.html"><strong aria-hidden="true">1.</strong> License</a></li><li class="chapter-item expanded "><a href="CHANGELOG.html"><strong aria-hidden="true">2.</strong> About this Release</a></li><li class="chapter-item expanded "><a href="CONTRIBUTING.html" class="active"><strong aria-hidden="true">3.</strong> How to Contribute</a></li><li class="chapter-item expanded "><a href="CONTRIBUTORS.html"><strong aria-hidden="true">4.</strong> Contributors</a></li><li class="chapter-item expanded affix "><li class="part-title">Getting Started</li><li class="chapter-item expanded "><a href="support/guide/getting_started/introduction.html"><strong aria-hidden="true">5.</strong> Introducing Jaseci</a></li><li class="chapter-item expanded "><a href="support/guide/getting_started/installation.html"><strong aria-hidden="true">6.</strong> Installing Jaseci</a></li><li class="chapter-item expanded "><a href="support/guide/getting_started/setting_up_your_editor.html"><strong aria-hidden="true">7.</strong> Setting Up Your Editor</a></li><li class="chapter-item expanded "><a href="support/guide/getting_started/writing_your_first_app.html"><strong aria-hidden="true">8.</strong> Writing Your First App</a></li><li class="chapter-item expanded "><a href="support/guide/getting_started/understanding_jac_programs.html"><strong aria-hidden="true">9.</strong> Understanding JAC Programs</a></li><li class="chapter-item expanded affix "><li class="part-title">The JAC Programming Language Guide</li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/jac_language_overview.html"><strong aria-hidden="true">10.</strong> Language Overview</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/jac_grammar.html"><strong aria-hidden="true">11.</strong> Grammar</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/operators.html"><strong aria-hidden="true">12.</strong> Operators</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/control_flow.html"><strong aria-hidden="true">13.</strong> Control Flow</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/collections.html"><strong aria-hidden="true">14.</strong> Collections</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/nodes.html"><strong aria-hidden="true">15.</strong> Nodes</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/edges.html"><strong aria-hidden="true">16.</strong> Edges</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/graphs.html"><strong aria-hidden="true">17.</strong> Graphs</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/walkers.html"><strong aria-hidden="true">18.</strong> Walkers</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/traversing_a_graph.html"><strong aria-hidden="true">18.1.</strong> Traversing a Graph</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/referencing_node_context.html"><strong aria-hidden="true">18.2.</strong> Referencing a Node in Context</a></li></ol></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/passing_arguments.html"><strong aria-hidden="true">19.</strong> Passing Arguments</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/specifying_operating_context.html"><strong aria-hidden="true">20.</strong> Specifying Operating Context</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/actions.html"><strong aria-hidden="true">21.</strong> Actions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/date_actions.html"><strong aria-hidden="true">21.1.</strong> Date Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/file_actions.html"><strong aria-hidden="true">21.2.</strong> File Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/net_actions.html"><strong aria-hidden="true">21.3.</strong> Net Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/rand_actions.html"><strong aria-hidden="true">21.4.</strong> Rand Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/request_actions.html"><strong aria-hidden="true">21.5.</strong> Request Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/standard_actions.html"><strong aria-hidden="true">21.6.</strong> Standard Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/vector_actions.html"><strong aria-hidden="true">21.7.</strong> Vector Actions</a></li><li class="chapter-item expanded "><a href="support/guide/jac_language_guide/jaseci_actions.html"><strong aria-hidden="true">21.8.</strong> Jaseci Actions</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Samples and Tutorials</li><li class="chapter-item expanded "><a href="examples/api_development/index.html"><strong aria-hidden="true">22.</strong> API Development</a></li><li class="chapter-item expanded "><a href="examples/CanoniCAI/CCAI_codelab.html"><strong aria-hidden="true">23.</strong> CanoniCAI</a></li><li class="chapter-item expanded "><a href="examples/ner_examples/index.html"><strong aria-hidden="true">24.</strong> NER Examples</a></li><li class="chapter-item expanded affix "><li class="part-title">Jaseci Library Reference</li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/index.html"><strong aria-hidden="true">25.</strong> Jaseci Kit</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/encoders/index.html"><strong aria-hidden="true">25.1.</strong> Encoders</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/encoders/use_enc/index.html"><strong aria-hidden="true">25.1.1.</strong> USE Encoder</a></li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/encoders/use_qa/index.html"><strong aria-hidden="true">25.1.2.</strong> USE QA</a></li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/encoders/fast_enc/index.html"><strong aria-hidden="true">25.1.3.</strong> FastText</a></li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/encoders/bi_enc/index.html"><strong aria-hidden="true">25.1.4.</strong> Bi-Encoder</a></li></ol></li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/entity_utils/index.html"><strong aria-hidden="true">25.2.</strong> Entity Recognition</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/entity_utils/flair_ner/index.html"><strong aria-hidden="true">25.2.1.</strong> FLair NER</a></li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/entity_utils/tfm_ner/index.html"><strong aria-hidden="true">25.2.2.</strong> Transformer NER</a></li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/entity_utils/lstm_ner/index.html"><strong aria-hidden="true">25.2.3.</strong> LSTM NER</a></li></ol></li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/summarization/index.html"><strong aria-hidden="true">25.3.</strong> Text Summarization</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/summarization/cl_summer/index.html"><strong aria-hidden="true">25.3.1.</strong> CL Summarization</a></li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/summarization/t5_sum/index.html"><strong aria-hidden="true">25.3.2.</strong> T5 Summarization</a></li></ol></li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/text_processing/index.html"><strong aria-hidden="true">25.4.</strong> Text Processing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/text_processing/text_seg/index.html"><strong aria-hidden="true">25.4.1.</strong> Text Segmenter</a></li></ol></li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/object_detection/index.html"><strong aria-hidden="true">25.5.</strong> Object Detection</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/object_detection/yolo_v5/index.html"><strong aria-hidden="true">25.5.1.</strong> YOLO V5</a></li></ol></li><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/non_ai/index.html"><strong aria-hidden="true">25.6.</strong> Non-AI Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="support/guide/jaseci_kit/modules/non_ai/pdf_ext/index.html"><strong aria-hidden="true">25.6.1.</strong> PDF Extractor</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="jaseci_core/index.html"><strong aria-hidden="true">26.</strong> Jaseci Core</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/index.html"><strong aria-hidden="true">27.</strong> Jaseci Studio</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/gettingStarted.html"><strong aria-hidden="true">27.1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/basic-concepts.html"><strong aria-hidden="true">27.2.</strong> Basic Concepts</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/built-in-actions.html"><strong aria-hidden="true">27.3.</strong> Built-in Actions</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/connecting-an-api.html"><strong aria-hidden="true">27.4.</strong> Connecting an API</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/list_of_componets.html"><strong aria-hidden="true">27.5.</strong> List of Components</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/AuthForm.html"><strong aria-hidden="true">27.6.</strong> AuthForm</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/Badge.html"><strong aria-hidden="true">27.7.</strong> Badge</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/Breadcrumbs.html"><strong aria-hidden="true">27.8.</strong> Breadcrumbs</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/Button.html"><strong aria-hidden="true">27.9.</strong> Button</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/ButtonGroup.html"><strong aria-hidden="true">27.10.</strong> ButtonGroup</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/Card.html"><strong aria-hidden="true">27.11.</strong> Card</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/Carousel.html"><strong aria-hidden="true">27.12.</strong> Carousel</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/Checkbox.html"><strong aria-hidden="true">27.13.</strong> Checkbox</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/Collapse.html"><strong aria-hidden="true">27.14.</strong> Collapse</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/Checkbox.html"><strong aria-hidden="true">27.15.</strong> Checkbox</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/Collapse.html"><strong aria-hidden="true">27.16.</strong> Collapse</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/Column.html"><strong aria-hidden="true">27.17.</strong> Column</a></li><li class="chapter-item expanded "><a href="jaseci_ui_kit/components/docs/components/Container.html"><strong aria-hidden="true">27.18.</strong> Container</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Jaseci Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="contributing-to-the-jaseci-open-source-project"><a class="header" href="#contributing-to-the-jaseci-open-source-project">Contributing to the Jaseci Open Source Project</a></h1>
+<ul>
+<li><a href="#how-to-start-contributing">How to start contributing</a>
+<ul>
+<li><a href="#working-on-a-new-feature-or-fixing-a-bug-you-found">Working on a new feature or fixing a bug you found</a></li>
+<li><a href="#work-on-an-existing-issue">Work on an existing issue</a></li>
+</ul>
+</li>
+<li><a href="#how-to-contribute-code">How to contribute code</a>
+<ul>
+<li><a href="#what-is-a-pull-request--pr--">What is a Pull Request (PR)?</a></li>
+<li><a href="#how-to-open-a-pr-and-contribute-code-to-jaseci-open-source">How to open a PR and contribute code to Jaseci Open Source</a>
+<ul>
+<li><a href="#1-forking-the-jaseci-repository">1. Forking the Jaseci Repository</a></li>
+<li><a href="#2-cloning-the-forked-repository-locally">2. Cloning the Forked Repository Locally</a></li>
+<li><a href="#3-update-your-forked-repository">3. Update your Forked Repository</a></li>
+<li><a href="#4-implement-your-code-contribution-on-a-feature-branch">4. Implement your code contribution on a feature branch</a></li>
+<li><a href="#5-push-changes-to-your-forked-repository-on-github">5. Push changes to your forked repository on GitHub</a></li>
+<li><a href="#6-opening-the-pull-request-on-jaseci-open-source">6. Opening the Pull Request on Jaseci Open Source</a></li>
+<li><a href="#8-merging-your-pr-and-the-final-steps-of-your-contribution">8. Merging your PR and the final steps of your contribution</a></li>
+</ul>
+</li>
+<li><a href="#things-to-know-about-creating-a-pr">Things to know about creating a PR</a>
+<ul>
+<li><a href="#opening-issues-before-prs">Opening issues before PRs</a></li>
+<li><a href="#draft-work-in-progress-wip--prs">Draft/Work-in-progress(WIP) PRs</a></li>
+<li><a href="#code-style---linting">Code style &amp; Linting</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#how-to-update-the-official-documentation">How to Update the Official Documentation</a></li>
+</ul>
+<hr />
+<h2 id="how-to-start-contributing"><a class="header" href="#how-to-start-contributing">How to start contributing</a></h2>
+<p>Welcome to Jaseci! To start contributing, we would like you to start with issues.</p>
+<h3 id="working-on-a-new-feature-or-fixing-a-bug-you-found"><a class="header" href="#working-on-a-new-feature-or-fixing-a-bug-you-found">Working on a new feature or fixing a bug you found</a></h3>
+<p>If you would like to add a new feature or fix a bug you have found, we prefer that you open a new issue in the Github repo before creating a pull request.</p>
+<p>It’s important to note that when opening an issue, you should first do a quick search of existing issues to make sure your suggestion hasn’t already been added as an issue.
+If your issue doesn’t already exist, and you’re ready to create a new one, make sure to state what you would like to implement, improve or bugfix.</p>
+<h3 id="work-on-an-existing-issue"><a class="header" href="#work-on-an-existing-issue">Work on an existing issue</a></h3>
+<p>If you want to contribute code, but don't know what to work on, check out the existing list of issues</p>
+<p>Certain issues are marked with the &quot;good first issue&quot; label. These are issues that we think are great for first time contributor to work on while they are still getting familarized with the Jaseci codebase.</p>
+<p>To work on an existing issue, go to the issue in Github, add a comment stating you would like to work on it and include any solutions you may already have in mind. Assign the issue to yourself.</p>
+<p>The Jaseci team will then work with you on the issue and the downstream pull request to guide you through merging your code into the Jaseci codebase.</p>
+<hr />
+<h2 id="how-to-contribute-code"><a class="header" href="#how-to-contribute-code">How to contribute code</a></h2>
+<p>Code contribution will be in the form of Pull Request (PR) on Github.</p>
+<h3 id="what-is-a-pull-request-pr"><a class="header" href="#what-is-a-pull-request-pr">What is a Pull Request (PR)?</a></h3>
+<p>This is how the GitHub team defines a PR:</p>
+<blockquote>
+<p>“Pull requests let you tell others about changes you’ve pushed to a branch in a repository on GitHub. Once a pull request is opened, you can discuss and review the potential changes with collaborators and add follow-up commits before your changes are merged into the base branch.”</p>
+</blockquote>
+<p>This process is used by both Jaseci team members and Jaseci contributors to make changes and improvements.</p>
+<h3 id="how-to-open-a-pr-and-contribute-code-to-jaseci-open-source"><a class="header" href="#how-to-open-a-pr-and-contribute-code-to-jaseci-open-source">How to open a PR and contribute code to Jaseci Open Source</a></h3>
+<h4 id="1-forking-the-jaseci-repository"><a class="header" href="#1-forking-the-jaseci-repository">1. Forking the Jaseci Repository</a></h4>
+<p>Head to Jaseci repository and click ‘Fork’. Forking a repository creates you a copy of the project which you can edit and use to propose changes to the original project.</p>
+<p>Once you fork it, a copy of the Jaseci repository will appear inside your GitHub repository list, under your username.</p>
+<h4 id="2-cloning-the-forked-repository-locally"><a class="header" href="#2-cloning-the-forked-repository-locally">2. Cloning the Forked Repository Locally</a></h4>
+<p>To make changes to your copy of the Jaseci repository, clone the repository on your local machine. To do that, run the following command in your terminal:</p>
+<pre><code>git clone https://github.com/your_github_username/jaseci.git
+</code></pre>
+<p>Note: this assumes you have git installed on your local machine. If not, check out the <a href="https://git-scm.com/book/en/v2/Getting-Started-Installing-Git">following guide</a> to learn how to install it.</p>
+<h4 id="3-update-your-forked-repository"><a class="header" href="#3-update-your-forked-repository">3. Update your Forked Repository</a></h4>
+<p>Before you make any changes to your cloned repository, make sure you have the latest version of the original Jaseci repository. To do that, run the following commands in your terminal:</p>
+<pre><code>cd jaseci
+git remote add upstream https://github.com/Jaseci-Labs/jaseci.git
+git pull upstream main
+</code></pre>
+<p>This will update the local copy of the Jaseci repository to the latest version.</p>
+<h4 id="4-implement-your-code-contribution-on-a-feature-branch"><a class="header" href="#4-implement-your-code-contribution-on-a-feature-branch">4. Implement your code contribution on a feature branch</a></h4>
+<p>We recommend you to add your code contribution to a new branch (different from main). Then you can continuously run the previous step to always keep the <code>main</code> branch in your forked repo up-to-date with the original repo. This way you have the flexibility to easily inspect your changes and resolve any potential merge conflicts all within the forked repo.</p>
+<pre><code>git checkout -b name-of-your-new-branch
+</code></pre>
+<h4 id="5-push-changes-to-your-forked-repository-on-github"><a class="header" href="#5-push-changes-to-your-forked-repository-on-github">5. Push changes to your forked repository on GitHub</a></h4>
+<p>Once you are happy with the changes you made in the local files, push them to the forked repository on GitHub. To do that, run the following commands:</p>
+<pre><code>git add .
+git commit -m ‘fixed a bug’
+git push origin name-of-your-new-branch
+</code></pre>
+<p>This will create a new branch on your forked Jaseci repository, and now you’re ready to create a Pull Request with your proposed changes!</p>
+<h4 id="6-opening-the-pull-request-on-jaseci-open-source"><a class="header" href="#6-opening-the-pull-request-on-jaseci-open-source">6. Opening the Pull Request on Jaseci Open Source</a></h4>
+<p>Head to the forked repository and click on a <em>Compare &amp; pull</em> request button.</p>
+<p>This will open a window where you can choose the repository and branch you would like to propose your changes to, as well as specific details of your contribution. In the top panel menu choose the following details:</p>
+<ul>
+<li>Base repository: <code>Jaseci-Labs/jaseci</code></li>
+<li>Base branch: <code>main</code></li>
+<li>Head repository: <code>your-github-username/jaseci</code></li>
+<li>Head branch: <code>name-of-your-new-branch</code></li>
+</ul>
+<p>Next, make sure to update the pull request card with as many details about your contribution as possible. <em>Proposed changes</em> section should contain the details of what has been fixed/implemented, and Status should reflect the status of your contributions. Any reasonable change (not like a typo) should include a changelog entry, a bug fix should have a test, a new feature should have documentation, etc.</p>
+<p>Once you are happy with everything, click the <em>Create pull request</em> button. This will create a Pull Request with your proposed changes.</p>
+<p>If you are ready to get feedback on your contribution from the Jaseci team, leave a comment on the PR.</p>
+<h4 id="8-merging-your-pr-and-the-final-steps-of-your-contribution"><a class="header" href="#8-merging-your-pr-and-the-final-steps-of-your-contribution">8. Merging your PR and the final steps of your contribution</a></h4>
+<p>A member from the Jaseci team will review your PR and might ask you to make additional changes and update. To update your PR, head back to the local copy of your repo, implement the changes requested and repeat the same steps above. Your PR will <em>automatically</em> be updated with your latest changes. Once you've implemented all of the suggested changes, tag the person who first reviewed your PR in a comment of the PR to ask them to review again.</p>
+<p>Finally, if your contribution is accepted, one of the Jaseci team member will merge it to the codebase!</p>
+<h3 id="things-to-know-about-creating-a-pr"><a class="header" href="#things-to-know-about-creating-a-pr">Things to know about creating a PR</a></h3>
+<h4 id="opening-issues-before-prs"><a class="header" href="#opening-issues-before-prs">Opening issues before PRs</a></h4>
+<p>Like, mentioned above, We recommend opening an issue before a pull request if there isn’t already an issue for the problem you’d like to solve. This helps facilitate discussions and tracking progress.</p>
+<h4 id="draftwork-in-progresswip-prs"><a class="header" href="#draftwork-in-progresswip-prs">Draft/Work-in-progress(WIP) PRs</a></h4>
+<p>If you're ready to get some quick initial feedback from the Jaseci team, you can create a draft pull request. You can prefix the PR title with [WIP] to indicate this is still work in progres.</p>
+<h4 id="validate-your-changes-through-test"><a class="header" href="#validate-your-changes-through-test">Validate your changes through test</a></h4>
+<p>Jaseci has a set of automated tests and PRs are required to pass these tests for them to be merge into the main branch. So we recommend you to validate your changes via these tests before creating a PR. Checkout <code>scripts/script_sync_code_kube_test</code> to see how to run the tests.</p>
+<h4 id="code-style--linting"><a class="header" href="#code-style--linting">Code style &amp; Linting</a></h4>
+<p>To standardize coding style, Jaseci code is enforeced by the flake8 linter and a set of linting rules. Please run the linting command to check your code style before creating a PR.</p>
+<pre><code>flake8 --exclude=settings.py,*migrations*,jac_parse --max-line-length=88 --extend-ignore = E203,
+</code></pre>
+<hr />
+<h2 id="how-to-update-the-official-documentation"><a class="header" href="#how-to-update-the-official-documentation">How to Update the Official Documentation</a></h2>
+<p>The source of the Jaseci Official Documentation comes from the collection of <code>README.md</code> files placed in specific folders throughout the codebase. Developers and Maintainers must ensure that their contributions are properly documented according to the following procedures outlined in this section.</p>
+<h3 id="adding-a-new-module-or-library"><a class="header" href="#adding-a-new-module-or-library">Adding a new module or library</a></h3>
+<p>Ensure that you follow the prevailing directory sturcture convention when adding a new module or library to Jaseci. </p>
+<ul>
+<li>All source files belonging to your module or library must be contained within a folder bearing the non-whitespace, lowercase name of your module or library. </li>
+<li>You must author a <code>README.md</code> document to describe the purpose of your module or library, any features, configurations or uses as well as code excerpts on how to implement your module's functionaliy. </li>
+<li>The <code>README.md</code> must be included in the root folder of the module or library.</li>
+<li>Ensure you update the related <code>README.md</code> in the subsection (if applicable) which contains your module, e.g. <code>jaseci_kit/README.md</code> as well as the main <code>README.md</code> in the root directory of the codebase to include references to your new module or library. </li>
+</ul>
+<h3 id="adding-a-new-code-lab-example"><a class="header" href="#adding-a-new-code-lab-example">Adding a new code lab example</a></h3>
+<p>All codelabs are organized within the <code>/examples</code> folder. You may add new codelabs to this folder by following the prescribed guidelines below:</p>
+<ul>
+<li>Ensure that your codelab is organized within its own named folder. Ensure you use all lowercase, non-whitespace names.</li>
+<li>Ensure your new codelab has its own <code>README.md</code> file placed in its root folder. This should be the main page of the documented codelab.</li>
+<li>If any images are used, ensure they are stored in the <code>[your_code_lab]/assets</code> folder and referenced using relative paths.</li>
+<li>Once the codelab is added, ensure that you update the main <code>README.md</code> in the root directory of the codebase to include references to your new codelab under the section &quot;Samples and Tutorials&quot;.</li>
+</ul>
+<h3 id="adding-a-new-guide"><a class="header" href="#adding-a-new-guide">Adding a new guide</a></h3>
+<p>All informational content which do not directly refer to modules / libraries or codelabs are typically stored under the <code>/support/guide</code> folder.</p>
+<ul>
+<li>Ensure that your new guide is contained within its own named folder. Ensure you use all lowercase, non-whitespace names.</li>
+<li>If any images are used, ensure they are stored in the <code>[your_guide]/assets</code> folder and referenced using relative paths.</li>
+<li>The markdown pages of your guide must be named based on the title of the rendered page in lowercase, non-whitepsace characters, e.g. <code>this_is_my_guide.md</code>.</li>
+<li>Once the guide is added, ensure that you update the main <code>README.md</code> in the root directory of the codebase to include references to your new guide under the applicable section.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="CHANGELOG.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="CONTRIBUTORS.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="CHANGELOG.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="CONTRIBUTORS.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>

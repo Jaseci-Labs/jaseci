@@ -2,7 +2,7 @@
 
 - [License](LICENSE.md)
 - [About this Release](CHANGELOG.md)
-- [How to Contribute](support/guide/how_to_contribute.md)
+- [How to Contribute](CONTRIBUTING.md)
 - [Contributors](CONTRIBUTORS.md)
 - [Join our Community](https://forum.jaseci.org/)
 
@@ -49,13 +49,7 @@
 ## Samples and Tutorials
 
 - [API Development](examples/api_development/README.md)
-- [CanoniCAI](examples/canoniCAI/readme.md)
-    - [Installation and Overview](examples/canoniCAI/readme.md)
-    - [Adding a Competency](examples/canoniCAI/documentation/add_competency.md)
-    - [Adding a Follow up State](examples/canoniCAI/documentation/add_followup_state.md)
-    - [Building FAQ States](examples/canoniCAI/documentation/add_remove_data_from_faq_state.md)
-    - [Fixing Utterances](examples/canoniCAI/documentation/fixing_utterances.md)
-    - [Setting Up a Custom Module](examples/canoniCAI/documentation/jaseci_actions_load_local.md)
+- [CanoniCAI](examples/CanoniCAI/CCAI_codelab.md)
 - [NER Examples](examples/ner_examples/README.md)
 
 
@@ -102,29 +96,7 @@
     - [Collapse](jaseci_ui_kit/components/docs/components/Collapse.md)
     - [Column](jaseci_ui_kit/components/docs/components/Column.md)
     - [Container](jaseci_ui_kit/components/docs/components/Container.md)
-    - [Datagrid](jaseci_ui_kit/components/docs/components/Datagrid.md)
-    - [DataList](jaseci_ui_kit/components/docs/components/DataList.md)
-    - [DatePicker](jaseci_ui_kit/components/docs/components/DatePicker.md)
-    - [Dialog](jaseci_ui_kit/components/docs/components/Dialog.md)
-    - [Divider](jaseci_ui_kit/components/docs/components/Divider.md)
-    - [Dropdown](jaseci_ui_kit/components/docs/components/Dropdown.md)
-    - [Hero](jaseci_ui_kit/components/docs/components/Hero.md)
-    - [Inputbox](jaseci_ui_kit/components/docs/components/Inputbox.md)
-    - [Navbar](jaseci_ui_kit/components/docs/components/Navbar.md)
-    - [Popover](jaseci_ui_kit/components/docs/components/Popover.md)
-    - [Progress](jaseci_ui_kit/components/docs/components/Progress.md)
-    - [Radio](jaseci_ui_kit/components/docs/components/Radio.md)
-    - [RadioGroup](jaseci_ui_kit/components/docs/components/RadioGroup.md)
-    - [Range](jaseci_ui_kit/components/docs/components/Range.md)
-    - [Rating](jaseci_ui_kit/components/docs/components/Rating.md)
-    - [Row](jaseci_ui_kit/components/docs/components/Row.md)
-    - [Select](jaseci_ui_kit/components/docs/components/Select.md)
-    - [SpeechInput](jaseci_ui_kit/components/docs/components/SpeechInput.md)
-    - [Stat](jaseci_ui_kit/components/docs/components/Stat.md)
-    - [Tabs](jaseci_ui_kit/components/docs/components/Tabs.md)
-    - [Text](jaseci_ui_kit/components/docs/components/Text.md)
-    - [Textbox](jaseci_ui_kit/components/docs/components/Textbox.md)
-
+  
 
  
 

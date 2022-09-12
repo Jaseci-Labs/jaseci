@@ -1,6 +1,7 @@
 import re
 import shutil
 from os import walk
+import os
 # open read me file 
 def main():
     readme = open("README.md","r")
@@ -33,6 +34,14 @@ def main():
                 repofile = open(fileinfo['link'],"r")
                 repofileLines = repofile.readlines()
                 docfileLink = "documentation/src/" + fileinfo['link']
+                try:
+                    docfile = open(docfileLink,"w")
+                except FileNotFoundError:
+                    editedPth = docfileLink
+                    fileposition = editedPth.rfind("/")
+                    editedPth = editedPth[0:fileposition]
+                    os.makedirs(editedPth)
+                    
                 docfile = open(docfileLink,"w")
                 docfile.write("")
                 docfile.close()

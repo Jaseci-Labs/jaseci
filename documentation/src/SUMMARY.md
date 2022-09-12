@@ -1,9 +1,9 @@
 # summary 
 # Jaseci Official Documentation
-- [testing](./chapter_1.md)
+
 - [License](LICENSE.md)
 - [About this Release](CHANGELOG.md)
-- [How to Contribute](support/guide/how_to_contribute.md)
+- [How to Contribute](CONTRIBUTING.md)
 - [Contributors](CONTRIBUTORS.md)
 
 # Getting Started
@@ -50,46 +50,55 @@
 
 
 - [API Development](examples/api_development/README.md)
-- [CanoniCAI](examples/canoniCAI/readme.md)
-    - [Installation and Overview](examples/canoniCAI/readme.md)
-    - [Adding a Competency](examples/canoniCAI/documentation/add_competency.md)
-    - [Adding a Follow up State](examples/canoniCAI/documentation/add_followup_state.md)
-    - [Building FAQ States](examples/canoniCAI/documentation/add_remove_data_from_faq_state.md)
-    - [Fixing Utterances](examples/canoniCAI/documentation/fixing_utterances.md)
-    - [Setting Up a Custom Module](examples/canoniCAI/documentation/jaseci_actions_load_local.md)
+- [CanoniCAI](examples/CanoniCAI/CCAI_codelab.md)
 - [NER Examples](examples/ner_examples/README.md)
 
 
 # Jaseci Library Reference
 
 
-- [Jaseci Kit](jaseci_kit/README.md)
-    - [Encoders](jaseci_kit/modules/encoders/README.md)
-        - [USE Encoder](jaseci_kit/modules/encoders/use_enc/README.md)
-        - [USE QA](jaseci_kit/modules/encoders/use_qa/README.md)
-        - [FastText](jaseci_kit/modules/encoders/fast_enc/README.md)
-        - [Bi-Encoder](jaseci_kit/modules/encoders/bi_enc/README.md)
-    - [Entity Recognition](jaseci_kit/modules/entity_utils/README.md)
-        - [FLair NER](jaseci_kit/modules/entity_utils/flair_ner/README.md)
-        - [Transformer NER](jaseci_kit/modules/entity_utils/tfm_ner/README.md)
-        - [LSTM NER](jaseci_kit/modules/entity_utils/lstm_ner/README.md)
-    - [Text Summarization](jaseci_kit/modules/summarization/README.md)
-        - [CL Summarization](jaseci_kit/modules/summarization/cl_summer/README.md)
-        - [T5 Summarization](jaseci_kit/modules/summarization/t5_sum/README.md)
-    - [Text Processing](jaseci_kit/modules/text_processing/README.md)
-        - [Text Segmenter](jaseci_kit/modules/text_processing/text_seg/README.md)
-    - [Object Detection](jaseci_kit/modules/object_detection/README.md)
-        - [YOLO V5](jaseci_kit/modules/object_detection/yolo_v5/README.md)
-    - [Non-AI Tools](jaseci_kit/modules/non_ai/README.md)
-        - [PDF Extractor](jaseci_kit/modules/non_ai/pdf_ext/README.md)
+- [Jaseci Kit](support/guide/jaseci_kit/README.md)
+    - [Encoders](support/guide/jaseci_kit/modules/encoders/README.md)
+        - [USE Encoder](support/guide/jaseci_kit/modules/encoders/use_enc/README.md)
+        - [USE QA](support/guide/jaseci_kit/modules/encoders/use_qa/README.md)
+        - [FastText](support/guide/jaseci_kit/modules/encoders/fast_enc/README.md)
+        - [Bi-Encoder](support/guide/jaseci_kit/modules/encoders/bi_enc/README.md)
+    - [Entity Recognition](support/guide/jaseci_kit/modules/entity_utils/README.md)
+        - [FLair NER](support/guide/jaseci_kit/modules/entity_utils/flair_ner/README.md)
+        - [Transformer NER](support/guide/jaseci_kit/modules/entity_utils/tfm_ner/README.md)
+        - [LSTM NER](support/guide/jaseci_kit/modules/entity_utils/lstm_ner/README.md)
+    - [Text Summarization](support/guide/jaseci_kit/modules/summarization/README.md)
+        - [CL Summarization](support/guide/jaseci_kit/modules/summarization/cl_summer/README.md)
+        - [T5 Summarization](support/guide/jaseci_kit/modules/summarization/t5_sum/README.md)
+    - [Text Processing](support/guide/jaseci_kit/modules/text_processing/README.md)
+        - [Text Segmenter](support/guide/jaseci_kit/modules/text_processing/text_seg/README.md)
+    - [Object Detection](support/guide/jaseci_kit/modules/object_detection/README.md)
+        - [YOLO V5](support/guide/jaseci_kit/modules/object_detection/yolo_v5/README.md)
+    - [Non-AI Tools](support/guide/jaseci_kit/modules/non_ai/README.md)
+        - [PDF Extractor](support/guide/jaseci_kit/modules/non_ai/pdf_ext/README.md)
 
 - [Jaseci Core](jaseci_core/README.md)
 
-# Jaseci Webkit
+- [Jaseci Studio](jaseci_ui_kit/README.md)
+    - [Introduction](jaseci_ui_kit/components/docs/gettingStarted.md)
+    - [Basic Concepts](jaseci_ui_kit/components/docs/basic-concepts.md)
+    - [Built-in Actions](jaseci_ui_kit/components/docs/built-in-actions.md)
+    - [Connecting an API](jaseci_ui_kit/components/docs/connecting-an-api.md)
+    - [List of Components](jaseci_ui_kit/components/docs/list_of_componets.md)
+    - [AuthForm](jaseci_ui_kit/components/docs/components/AuthForm.md)
+    - [Badge](jaseci_ui_kit/components/docs/components/Badge.md)
+    - [Breadcrumbs](jaseci_ui_kit/components/docs/components/Breadcrumbs.md)
+    - [Button](jaseci_ui_kit/components/docs/components/Button.md)
+    - [ButtonGroup](jaseci_ui_kit/components/docs/components/ButtonGroup.md)
+    - [Card](jaseci_ui_kit/components/docs/components/Card.md)
+    - [Carousel](jaseci_ui_kit/components/docs/components/Carousel.md)
+    - [Checkbox](jaseci_ui_kit/components/docs/components/Checkbox.md)
+    - [Collapse](jaseci_ui_kit/components/docs/components/Collapse.md)
+    - [Checkbox](jaseci_ui_kit/components/docs/components/Checkbox.md)
+    - [Collapse](jaseci_ui_kit/components/docs/components/Collapse.md)
+    - [Column](jaseci_ui_kit/components/docs/components/Column.md)
+    - [Container](jaseci_ui_kit/components/docs/components/Container.md)
+  
 
-- [Getting Started](jaseci_ui_kit/docs/gettingStarted.md)
-- [Components](jaseci_ui_kit/docs/components.md)
-- [Types of Components](jaseci_ui_kit/docs/typesOfComponents.md)
-- [Update Component](jaseci_ui_kit/docs/updateComponent.md)
-- [Creating API Endpoints](jaseci_ui_kit/docs/creatingEndpoints.md)  
+ 
 

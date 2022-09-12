@@ -19,12 +19,12 @@ To test the installation is successful, run:
 jsctl --help
 ```
 
-`jsctl` stands for the Jaseci Command Line Interface.
-If the command above displays the help menu for `jsctl`, then you have successfully installed jaseci.
+`jacctl` stands for the Jaseci Command Line Interface.
+If the command above displays the help menu for `jacctl`, then you have successfully installed jaseci.
 
 > **Note**
 >
-> Take a look and get familiarized with these commands while you are at it. `jsctl` will be frequently used throughout this journey.
+> Take a look and get familiarized with these commands while you are at it. `jacctl` will be frequently used throughout this journey.
 
 ## Background
 
@@ -61,7 +61,7 @@ We have 3 different types of nodes:
 
 Now let's define the custom node types.
 
-```js
+```jac
 node faq_root;
 node faq_state {
     has question;
@@ -85,7 +85,7 @@ The idea here is that we will decide which FAQ entry is the most relevant to the
 
 To define this graph architecture:
 
-```js
+```jac
 // Static graph definition
 graph faq {
     has anchor faq_root;
@@ -117,7 +117,7 @@ Let's break down this piece of code.
 
 We observe two uses of the `spawn` keyword. To spawn a node of a specific type, use the `spawn` keyword for:
 
-```js
+```jac
 faq_answer_1 = spawn node::faq_state(
     question="How do I configure my order?",
     answer="To configure your order, log into your Tesla account.",
@@ -132,7 +132,7 @@ In the above example, we just spawned a `faq_state` node called `faq_answer_1` a
 
 The second usage of `spawn` is with the graph:
 
-```js
+```jac
 graph faq {
     has anchor faq_root;
     spawn {
@@ -157,7 +157,7 @@ In this block:
 
 Similar to nodes, in order to create the graph, we will use the `spawn` keyword.
 
-```js
+```jac
 walker init {
     root {
         spawn here --> graph::faq;
@@ -186,13 +186,13 @@ First put all of the above code snippet into a single jac file and name it `main
 - graph definition
 - init walker
 
-Run `jsctl` to get into the jaseci shell environment:
+Run `jacctl` to get into the jaseci shell environment:
 
 ```bash
 jsctl
 ```
 
-Inside the `jsctl` shell,
+Inside the `jacctl` shell,
 
 ```bash
 jaseci > jac dot main.jac
@@ -236,7 +236,7 @@ Now it's time to create the code for the question-answering.
 We will start with a simple string matching for the answer selection algorithm.
 For this, we will create a new walker called `ask`.
 
-```js
+```jac
 walker ask {
     has question;
     root {
@@ -263,7 +263,7 @@ This walker is more complex than the `init` one and introduces a few new concept
 
 Before we run this walker, we are going to update the `init` walker to speed up our development process
 
-```js
+```jac
 walker init {
     root {
         spawn here --> graph::faq;
@@ -312,7 +312,7 @@ jaseci > actions load module jaseci_kit.use_qa
 
 Let's update our walker logic to use the USE QA model:
 
-```js
+```jac
 walker ask {
     can use.qa_classify;
     has question;
@@ -347,7 +347,7 @@ So far we have created a FAQ bot that is capable of providing answer in three to
 To make this useful beyond just a prototype, we are now going to expand its database of answers.
 Instead of manually spawning and connecting a node for each FAQ entry, we are going to write a walker that automatically expands our graph:
 
-```js
+```jac
 walker ingest_faq {
     has kb_file;
     root: take --> node::faq_root;
@@ -363,7 +363,7 @@ walker ingest_faq {
 
 An example knowledge base file look like this
 
-```json
+```jacon
 [
   {
     "question": "I have a Model 3 reservation, how do I configure my order?",
@@ -384,7 +384,7 @@ Save the above json in a file named `tesla_faq.json` and make sure it is in the 
 Let's now update the `init` walker.
 Because we are going to use the `ingest_faq` walker to generate the graph, we won't need the static graph definition.
 
-```js
+```jac
 walker init {
     root {
         spawn here --> node::faq_root;
@@ -461,7 +461,7 @@ The conditions are often based on the user's input.
 ## Define the State Nodes
 We will start by defining the node types.
 
-```js
+```jac
 node dialogue_root;
 
 node dialogue_state {
@@ -473,7 +473,7 @@ Here we have a `dialogue_root` as the entry point to the dialogue system and mul
 These nodes will be connected with a new type of edge `intent_transition`.
 
 ## Custom Edges
-```js
+```jac
 edge intent_transition {
     has intent;
 }
@@ -490,7 +490,7 @@ In this case, we created an edge for intent transition. This is a state transiti
 ## Build the graph
 Let's build the first graph for the dialogue system.
 
-```js
+```jac
 graph dialogue_system {
     has anchor dialogue_root;
     spawn {
@@ -523,7 +523,7 @@ Then based on the user's question and its intent, we will
 
 ## Initialize the graph
 Let's create an `init` walker to for this new jac program.
-```js
+```jac
 walker init {
     root {
         spawn here --> graph::dialogue_system;
@@ -551,7 +551,7 @@ strict digraph root {
 
 ## Build the Walker Logic
 Let's now start building the walker to interact with this dialogue system.
-```js
+```jac
 walker talk {
     has question;
     root {
@@ -569,7 +569,7 @@ walker talk {
 Similar to the first walker we built for the FAQ system, we are starting with a simple string matching algorithm.
 Let's update the init walker to include this walker.
 
-```js
+```jac
 walker init {
     root {
         spawn here --> graph::dialogue_system;
@@ -607,7 +607,7 @@ For now, we are just matching the incoming question with the intent label as a s
 
 > **Note**
 >
-> Notice we are running `jsctl` commands directly from the terminal without first entering the jaseci shell? Any `jsctl` commands can be launched directly from the terminal by just prepending it with `jsctl`. Try it with the other `jsctl` comamnds we have encountered so far, such as `jac dot`.
+> Notice we are running `jacctl` commands directly from the terminal without first entering the jaseci shell? Any `jacctl` commands can be launched directly from the terminal by just prepending it with `jacctl`. Try it with the other `jacctl` comamnds we have encountered so far, such as `jac dot`.
 
 ## Intent classificaiton with Bi-encoder
 Let's introduce an intent classification AI model.
@@ -634,7 +634,7 @@ jaseci > actions load module jaseci_kit.bi_enc
 ```
 We have provided an example training file that contains some starting point training data for the two intents, `test drive` and `order a tesla`.
 
-```js
+```jac
 jaseci > jac run bi_enc.jac -walk train -ctx "{\"train_file\": \"clf_train_1.json\"}"
 ```
 We are still using `jac run` but as you have noticied, this time we are using some new arguments. So let's break it down.
@@ -699,11 +699,11 @@ Always remember to save your trained models!
 
 > **Warning**
 >
-> `save_model` works with relative path. When a relative model path is specified, it will save the model at the location relative to **location of where you run jsctl**. Note that until the model is saved, the trained weights will stay in memory, which means that it will not persisit between `jsctl` session. So once you have a trained model you like, make sure to save them so you can load them back in the next jsctl session.
+> `save_model` works with relative path. When a relative model path is specified, it will save the model at the location relative to **location of where you run jsctl**. Note that until the model is saved, the trained weights will stay in memory, which means that it will not persisit between `jacctl` session. So once you have a trained model you like, make sure to save them so you can load them back in the next jsctl session.
 
 ## Integrate the Intent Classifier
 Now let's update our walker to use the trained intent classifier.
-```js
+```jac
 walker talk {
     has question;
     can bi_enc.infer;
@@ -753,7 +753,7 @@ Before we do that we need to introduce two new concepts in Jac: node abilities a
 Node abilities are code that encoded as part of each node type.
 They often contain logic that read, write and generally manipulate the variables and states of the nodes.
 Node abilities are defined with the `can` keyword inside the definition of nodes, for example, in the code below, `get_plate_number` is an ability of the `vehicle` node.
-```js
+```jac
 node vehicle {
     has plate_numer;
     can get_plate_numer {
@@ -771,7 +771,7 @@ Jac supports inheritance for nodes and edges.
 Node variables (defined with `has`) and node abilities (defined with `can`) are inherited and can be overwritten by children nodes.
 
 Here is an example:
-```js
+```jac
 node vehicle {
     has plate_number;
     can get_plate_number {
@@ -799,7 +799,7 @@ There are multiple parts to this so let's break it down one by one
 With the node abilities and node inheritance, we will now introduce state specific logic.
 Take a look at how the `dialogue_root` node definition has changed.
 
-```js
+```jac
 node dialogue_state {
     can bi_enc.infer;
     can tfm_ner.extract_entity;
@@ -874,7 +874,7 @@ There are many interesting things going on in these ~30 lines of code so let's b
 In this new node architecture, each dialogue state will have its own node type, specifying their state-specific logic in `nlu`, `nlg` and `process`.
 Let's take a look!
 
-```js
+```jac
 node how_to_order_state:dialogue_state {
     has name = "how_to_order";
     can nlg {
@@ -966,7 +966,7 @@ These are states that do not have any outgoing transitions, which we refer to as
 If these nodes are reached, they indicate that a dialogue has been completed end to end.
 The next state for these node will be returning to the root node so that the next dialogue can start fresh.
 To facilitate this, we will add the following logic to the `process` ability of the **parent `dialogue_state` node** so that by default, any nodes inheriting it will follow this rule.
-```js
+```jac
 node dialogue_state {
 ...
     can process {
@@ -996,7 +996,7 @@ Let's first take a look at how we are going to use an entity model in our progra
 Then we will work on training an entity model.
 
 First, we introduce a new type of transition:
-```js
+```jac
 edge entity_transition {
     has entities;
 }
@@ -1005,7 +1005,7 @@ Recall the `intent_transition` that will trigger if the intent is the one that i
 Similarly, the idea behind an `entity_transition` is that we will traverse this transition if all the specified entities have been fulfilled, i.e., they have been extracted from user's inputs.
 
 With the `entity_transition`, let's update our graph
-```js
+```jac
 graph dialogue_system {
     has anchor dialogue_root;
     spawn {
@@ -1036,7 +1036,7 @@ Your graph should look something like this!
 ## Update the Walker for Multi-turn Dialogue
 Let's now turn our focus to the walker logic
 
-```js
+```jac
 walker talk {
     has question;
     has wlk_ctx = {};
@@ -1122,7 +1122,7 @@ Go into the `code/` directory and copy `tfm_ner.jac` and `ner_train.json` to you
 We are training the model to detect two entities, `name` and `address`, for the test drive use case.
 
 Let's quickly go over the training data format.
-```json
+```jacon
 [
     "sure my name is [tony stark](name) and i live at [10880 malibu point california](address)",
     "my name is [jason](name)"
@@ -1138,7 +1138,7 @@ To train the model, run
 jaseci > jac run tfm_ner.jac -walk train -ctx "{\"train_file\": \"ner_train.json\"}"
 ```
 After the model is finished training, you can play with the model using the `infer` walker
-```js
+```jac
 jaseci > jac run ner.jac -walk infer
 ```
 For example,
@@ -1152,7 +1152,7 @@ For each detected entity, `entity_value` is the type of entity, so in this case 
 and `entity_text` is the detected text from the input for this entity, so in this case the user's name or their address.
 
 Let's now update the node ability to use the entity model.
-```js
+```jac
 node dialogue_state {
     ...
     can extract_entities {
@@ -1191,7 +1191,7 @@ While these two systems rely on different AI models, they share many of the same
 They both follow the general steps of first analyizing user's question with NLU AI models, make decision on the next conversational state to be and then construct and return a response to the user.
 Leveraging this shared pattern, we will first unify the node architecture of the two systems with a single parent node type, `cai_state` (`cai` is short of conversational AI).
 
-```js
+```jac
 node cai_state {
     has name;
     can init_wlk_ctx {
@@ -1223,7 +1223,7 @@ Note that the logic for `init_wlk_ctx` and the default `process` logic have been
 You can remove these two abilities from `dialogue_state` node, as it will be inheriting them from `cai_state` now.
 
 We then update the defintion of `dialogue_state` in `dialogue.jac` to inherit from `cai_state`:
-```js
+```jac
 node dialogue_state:cai_state{
     // Rest of dialogue_state code remain the same
 }
@@ -1244,7 +1244,7 @@ Chained importing is supported.
 Once you have the main jac file (let's call it `main.jac`), you will need to compile it and its imports into a single `.jir` file.
 `jir` here stands for Jac Intermediate Representation.
 To compile a jac file, use the `jac build` command
-```js
+```jac
 jaseci > jac build main.jac
 ```
 If the compilation is successful, a `.jir` file with the same name will be generated (in this case, `main.jir`).
@@ -1259,7 +1259,7 @@ If the compilation is successful, a `.jir` file with the same name will be gener
 For `faq_state`, we need to now define the `nlu` and `nlg` node abilities for FAQ.
 So let's update the following in `faq.jac`
 First, `faq_root`
-```js
+```jac
 node faq_root:cai_state {
     can use.qa_classify;
     can nlu {
@@ -1296,7 +1296,7 @@ Let's quickly break it down.
 * `for n in -->` iterates through all the nodes connected with an outgoing edge from the current node. You can use `.context` on any node variables to access its variables.
 
 And the logic for the `faq_state` that contains the answer is relatively simple;
-```js
+```jac
 node faq_state:cai_state {
     has question;
     has answer;
@@ -1309,7 +1309,7 @@ node faq_state:cai_state {
 With these new nodes created, let's update our graph definition.
 We have renamed our graph to be `tesla_ai` and the `dialogue.jac` file to `tesla_ai.jac`.
 
-```js
+```jac
 graph tesla_ai {
     has anchor dialogue_root;
     spawn {
@@ -1340,7 +1340,7 @@ Our graph should now looks like this!
 
 Here comes the biggest benefit of our unified node architecture -- the exact same walker logic can be shared to traverse both systems.
 The only change we need to make is to change from `dialogue_state` to `cai_state` to apply the walker logic to a more generalized set of nodes.
-```js
+```jac
 walker talk {
     ...
     root {
@@ -1357,7 +1357,7 @@ walker talk {
 ```
 
 Update the graph name in the `init` walker as well.
-```js
+```jac
 walker init {
     root {
         spawn here --> graph::tesla_ai;
@@ -1367,7 +1367,7 @@ walker init {
 ```
 
 To compile the program,
-```js
+```jac
 jaseci > jac build tesla_ai.jac
 ```
 As mentioned before, if the compiliation succeedd, a `tesla_ai.jir` will be generated.
@@ -1377,7 +1377,7 @@ As mentioned before, if the compiliation succeedd, a `tesla_ai.jir` will be gene
 > Run into issues at this build step? First check if all the imports are set up correctly.
 
 Running a `jir` is just like running a `jac` file
-```js
+```jac
 jaseci > jac run tesla_ai.jir
 ```
 
@@ -1389,7 +1389,7 @@ The model is trained? Great! Now run the jir and try questions like "I have some
 Congratulations! You have created a single conversational AI system that is capable of answering FAQs and perform complex multi-step actions.
 
 # Bring Your Application to Production
-Typing in questions and getting responses via `jsctl` in terminal is a quick and easy way of interactively test and use your program.
+Typing in questions and getting responses via `jacctl` in terminal is a quick and easy way of interactively test and use your program.
 But the ultimate goal of building any products is to eventually deploying it to production and having it serve real users via standard interface such as RESTful API endpoints.
 In this section, we will cover a number of items related to bringing your jac program to production.
 
@@ -1403,7 +1403,7 @@ To learn more about `yield,` refer to the relevant sections of the Jaseci Bible.
 In the case of our conversational AI system, it is essential for our walker to remember the context information gained from previous interactions with the same user.
 So let's update our walker with `yield.`
 
-```js
+```jac
 walker talk {
     has question, interactive = false;
     has wlk_ctx = {
@@ -1486,7 +1486,7 @@ jaseci > sentinel list
 ```
 `sentinel get` returns the information about the current active sentinel, while `sentinel list` returns all available sentinels for the user.
 The output will look something like this
-```json
+```jacon
 {
   "version": null,
   "name": "main.jir",
@@ -1508,7 +1508,7 @@ And with `yield`, the next walker run will pick up where it leaves off and retai
 Just like any program, a set of automatic tests cases with robust coverage is essential to the success of the program through development to production.
 Jac has built-in tests support and here is how you create a test case in jac.
 
-```js
+```jac
 import {*} with "tesla_ai.jac";
 
 test "testing the Tesla conv AI system"
@@ -1530,7 +1530,7 @@ jaseci > jac test tests.jac
 This will execute all the test cases in `tests.jac` squentially and report success or any assertion failures.
 
 ## Running Jaseci as a Service
-So far, we have been interacting jaseci through `jsctl`.
+So far, we have been interacting jaseci through `jacctl`.
 jaseci can also be run as a service serving a set of RESTful API endpoints.
 This is useful in production settings.
 To run jaseci as a service, first we need to install the `jaseci_serv` package.
@@ -1547,7 +1547,7 @@ jsserv runserver 0.0.0.0:3000
 ```
 This will launch a Django RESTful API server at localhost and port 3000.
 The Jaseci server supports a wide range of API endpoints.
-All the `jsctl` commands we have used throughput this tutorial have an equivalent API endpoint, such as `walker_run` and `sentinel_register`.
+All the `jacctl` commands we have used throughput this tutorial have an equivalent API endpoint, such as `walker_run` and `sentinel_register`.
 As a matter of fact, the entire development journey in this tutorial can be done completely with a remote jaseci server instance.
 You can go to `localhost:3000/docs` to check out all the available APIs.
 

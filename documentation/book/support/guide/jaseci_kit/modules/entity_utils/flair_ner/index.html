@@ -1,0 +1,981 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>FLair NER - Jaseci Documentation</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../../../../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../../../../favicon.png">
+        <link rel="stylesheet" href="../../../../../../css/variables.css">
+        <link rel="stylesheet" href="../../../../../../css/general.css">
+        <link rel="stylesheet" href="../../../../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../../../../css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../../../../fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../../../../highlight.css">
+        <link rel="stylesheet" href="../../../../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../../../../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><li class="part-title">Jaseci Official Documentation</li><li class="chapter-item expanded "><a href="../../../../../../LICENSE.html"><strong aria-hidden="true">1.</strong> License</a></li><li class="chapter-item expanded "><a href="../../../../../../CHANGELOG.html"><strong aria-hidden="true">2.</strong> About this Release</a></li><li class="chapter-item expanded "><a href="../../../../../../CONTRIBUTING.html"><strong aria-hidden="true">3.</strong> How to Contribute</a></li><li class="chapter-item expanded "><a href="../../../../../../CONTRIBUTORS.html"><strong aria-hidden="true">4.</strong> Contributors</a></li><li class="chapter-item expanded affix "><li class="part-title">Getting Started</li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/introduction.html"><strong aria-hidden="true">5.</strong> Introducing Jaseci</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/installation.html"><strong aria-hidden="true">6.</strong> Installing Jaseci</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/setting_up_your_editor.html"><strong aria-hidden="true">7.</strong> Setting Up Your Editor</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/writing_your_first_app.html"><strong aria-hidden="true">8.</strong> Writing Your First App</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/understanding_jac_programs.html"><strong aria-hidden="true">9.</strong> Understanding JAC Programs</a></li><li class="chapter-item expanded affix "><li class="part-title">The JAC Programming Language Guide</li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/jac_language_overview.html"><strong aria-hidden="true">10.</strong> Language Overview</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/jac_grammar.html"><strong aria-hidden="true">11.</strong> Grammar</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/operators.html"><strong aria-hidden="true">12.</strong> Operators</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/control_flow.html"><strong aria-hidden="true">13.</strong> Control Flow</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/collections.html"><strong aria-hidden="true">14.</strong> Collections</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/nodes.html"><strong aria-hidden="true">15.</strong> Nodes</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/edges.html"><strong aria-hidden="true">16.</strong> Edges</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/graphs.html"><strong aria-hidden="true">17.</strong> Graphs</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/walkers.html"><strong aria-hidden="true">18.</strong> Walkers</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/traversing_a_graph.html"><strong aria-hidden="true">18.1.</strong> Traversing a Graph</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/referencing_node_context.html"><strong aria-hidden="true">18.2.</strong> Referencing a Node in Context</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/passing_arguments.html"><strong aria-hidden="true">19.</strong> Passing Arguments</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/specifying_operating_context.html"><strong aria-hidden="true">20.</strong> Specifying Operating Context</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/actions.html"><strong aria-hidden="true">21.</strong> Actions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/date_actions.html"><strong aria-hidden="true">21.1.</strong> Date Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/file_actions.html"><strong aria-hidden="true">21.2.</strong> File Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/net_actions.html"><strong aria-hidden="true">21.3.</strong> Net Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/rand_actions.html"><strong aria-hidden="true">21.4.</strong> Rand Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/request_actions.html"><strong aria-hidden="true">21.5.</strong> Request Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/standard_actions.html"><strong aria-hidden="true">21.6.</strong> Standard Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/vector_actions.html"><strong aria-hidden="true">21.7.</strong> Vector Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/jaseci_actions.html"><strong aria-hidden="true">21.8.</strong> Jaseci Actions</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Samples and Tutorials</li><li class="chapter-item expanded "><a href="../../../../../../examples/api_development/index.html"><strong aria-hidden="true">22.</strong> API Development</a></li><li class="chapter-item expanded "><a href="../../../../../../examples/CanoniCAI/CCAI_codelab.html"><strong aria-hidden="true">23.</strong> CanoniCAI</a></li><li class="chapter-item expanded "><a href="../../../../../../examples/ner_examples/index.html"><strong aria-hidden="true">24.</strong> NER Examples</a></li><li class="chapter-item expanded affix "><li class="part-title">Jaseci Library Reference</li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/index.html"><strong aria-hidden="true">25.</strong> Jaseci Kit</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/index.html"><strong aria-hidden="true">25.1.</strong> Encoders</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/use_enc/index.html"><strong aria-hidden="true">25.1.1.</strong> USE Encoder</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/use_qa/index.html"><strong aria-hidden="true">25.1.2.</strong> USE QA</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/fast_enc/index.html"><strong aria-hidden="true">25.1.3.</strong> FastText</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/bi_enc/index.html"><strong aria-hidden="true">25.1.4.</strong> Bi-Encoder</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/index.html"><strong aria-hidden="true">25.2.</strong> Entity Recognition</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/flair_ner/index.html" class="active"><strong aria-hidden="true">25.2.1.</strong> FLair NER</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/tfm_ner/index.html"><strong aria-hidden="true">25.2.2.</strong> Transformer NER</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/lstm_ner/index.html"><strong aria-hidden="true">25.2.3.</strong> LSTM NER</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/summarization/index.html"><strong aria-hidden="true">25.3.</strong> Text Summarization</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/summarization/cl_summer/index.html"><strong aria-hidden="true">25.3.1.</strong> CL Summarization</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/summarization/t5_sum/index.html"><strong aria-hidden="true">25.3.2.</strong> T5 Summarization</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/text_processing/index.html"><strong aria-hidden="true">25.4.</strong> Text Processing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/text_processing/text_seg/index.html"><strong aria-hidden="true">25.4.1.</strong> Text Segmenter</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/object_detection/index.html"><strong aria-hidden="true">25.5.</strong> Object Detection</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/object_detection/yolo_v5/index.html"><strong aria-hidden="true">25.5.1.</strong> YOLO V5</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/non_ai/index.html"><strong aria-hidden="true">25.6.</strong> Non-AI Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/non_ai/pdf_ext/index.html"><strong aria-hidden="true">25.6.1.</strong> PDF Extractor</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_core/index.html"><strong aria-hidden="true">26.</strong> Jaseci Core</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/index.html"><strong aria-hidden="true">27.</strong> Jaseci Studio</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/gettingStarted.html"><strong aria-hidden="true">27.1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/basic-concepts.html"><strong aria-hidden="true">27.2.</strong> Basic Concepts</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/built-in-actions.html"><strong aria-hidden="true">27.3.</strong> Built-in Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/connecting-an-api.html"><strong aria-hidden="true">27.4.</strong> Connecting an API</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/list_of_componets.html"><strong aria-hidden="true">27.5.</strong> List of Components</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/AuthForm.html"><strong aria-hidden="true">27.6.</strong> AuthForm</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Badge.html"><strong aria-hidden="true">27.7.</strong> Badge</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Breadcrumbs.html"><strong aria-hidden="true">27.8.</strong> Breadcrumbs</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Button.html"><strong aria-hidden="true">27.9.</strong> Button</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/ButtonGroup.html"><strong aria-hidden="true">27.10.</strong> ButtonGroup</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Card.html"><strong aria-hidden="true">27.11.</strong> Card</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Carousel.html"><strong aria-hidden="true">27.12.</strong> Carousel</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Checkbox.html"><strong aria-hidden="true">27.13.</strong> Checkbox</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Collapse.html"><strong aria-hidden="true">27.14.</strong> Collapse</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Checkbox.html"><strong aria-hidden="true">27.15.</strong> Checkbox</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Collapse.html"><strong aria-hidden="true">27.16.</strong> Collapse</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Column.html"><strong aria-hidden="true">27.17.</strong> Column</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Container.html"><strong aria-hidden="true">27.18.</strong> Container</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Jaseci Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h3 id="entity-extraction-using-flair-nerent_ext"><a class="header" href="#entity-extraction-using-flair-nerent_ext">Entity Extraction Using <code>FLAIR NER(ent_ext)</code></a></h3>
+<h3 id="flair-nerent_ext-module-uses-flair-named-entity-recognition-architecture-it-can-either-be-used-zero-shot-or-few-shot-entity-recognition"><a class="header" href="#flair-nerent_ext-module-uses-flair-named-entity-recognition-architecture-it-can-either-be-used-zero-shot-or-few-shot-entity-recognition"><strong>FLAIR NER</strong><code>(ent_ext)</code> module uses flair named entity recognition architecture. It can either be used <code>zero-shot</code> or <code>few-shot</code> entity recognition.</a></h3>
+<p>For this tutorial we are going to leaverage the flair ner <code>Zero-shot classification</code> and <code>Few-shot classification</code> Use Case</p>
+<p><strong>USE CASE I : <a href="#use-case-i--zero-shot-entity-detection-classify-entity-without-training-ner-data">Zero-Shot entity detection</a></strong></p>
+<ol>
+<li>Import <a href="#1-import-flair-ner-module-in-jac">flair ner(ent_ext)</a> module</li>
+<li><a href="#2-classify-entity-">Classify Entity</a></li>
+</ol>
+<p><strong>USE CASE II : <a href="#use-case-ii--few-shot-classification">Few-shot classification</a></strong></p>
+<ol>
+<li>Preparing <a href="#1-creating-input-datasets">dataset</a></li>
+<li>Import <a href="#2-import-flair-nerent_ext-module-in-jac">flair ner(ent_ext)</a> module</li>
+<li><a href="#3-few-shot-classification-train-test-and-validate-model">Few-shot classification</a></li>
+</ol>
+<p><strong><a href="#experiment-and-methodology">Eperiment and methodology</a></strong></p>
+<h1 id="walk-through"><a class="header" href="#walk-through"><strong>Walk through</strong></a></h1>
+<h2 id="use-case-i--zero-shot-entity-detection-classify-entity-without-training-ner-data"><a class="header" href="#use-case-i--zero-shot-entity-detection-classify-entity-without-training-ner-data"><strong>USE CASE I</strong> : <code>Zero-Shot entity detection</code> Classify entity without training <code>NER Data</code>:</a></h2>
+<h3 id="1-import-flair-ner-module-in-jac"><a class="header" href="#1-import-flair-ner-module-in-jac"><strong>1. Import Flair Ner Module in jac</strong></a></h3>
+<ol>
+<li>Open terminal an run jaseci by cmd
+<pre><code>jsctl -m
+</code></pre>
+</li>
+<li>Load module <code>ent_ext</code> in jac by cmd
+<pre><code>actions load module jaseci_kit.ent_ext
+</code></pre>
+</li>
+</ol>
+<h3 id="2-classify-entity-"><a class="header" href="#2-classify-entity-"><strong>2. Classify Entity</strong> :</a></h3>
+<p>For this tutorial we are going to classify entity text with <code>flair ner(ent_ext)</code> module on <code>tars-ner</code> pretrained model.</p>
+<ul>
+<li>
+<p>Creating jac program for <strong>zero-shot(ent_ext)</strong></p>
+<ol>
+<li>
+<p>Create a file by name <code>zero_shot_ner.jac</code></p>
+</li>
+<li>
+<p>Create node <code>model_dir</code> and <code>flair_ner</code> in <code>zero_shot_ner.jac</code> file</p>
+<pre><code>node model_dir;
+node flair_ner {};
+</code></pre>
+</li>
+<li>
+<p>Initializing node flair_ner and adding abilty <code>set_config</code> and <code>entity_detection</code></p>
+<pre><code>node flair_ner{
+    # set model configuration and infer entity
+    ent_ext.set_config, can ent_ext.entity_detection;
+    }
+</code></pre>
+</li>
+<li>
+<p>Initializing module for <code>set_config</code> inside node <code>flair_ner</code></p>
+<p><code>set_config</code> will get parameter from context and load model in module. its take two argument <code>model_name(str)</code> an <code>model_type(str)</code>.</p>
+<pre><code>can set_config with infer_zero_shot entry{
+    report ent_ext.set_config(
+        ner_model = visitor.model_name,
+        model_type = visitor.model_type
+    );
+}
+</code></pre>
+</li>
+<li>
+<p>Initializing module <code>infer_zero_shot</code> for <strong>zero_shot tokenclassification</strong> inside <strong>flair_ner node</strong></p>
+<p><code>infer_zero_shot</code> module take two arguments <code>text</code> and <code>labels list</code> for infer entity.</p>
+<pre><code>can infer_zero_shot with infer_zero_shot entry{
+    text = visitor.text;
+    labels = visitor.labels.list;
+    result =  ent_ext.entity_detection(
+        text=text,
+        ner_labels= labels
+        );
+    fn = &quot;result.json&quot;;
+    result = {&quot;text&quot;:text,&quot;entities&quot;:result[&quot;entities&quot;]};
+    file.dump_json(fn, result);
+}
+</code></pre>
+</li>
+<li>
+<p>Adding edge name of <code>ner_model</code> in <code>zero_shot_ner.jac</code> file for connecting nodes inside graph.</p>
+<pre><code># adding edge
+edge ner_model {
+    has model_type;
+}
+</code></pre>
+</li>
+<li>
+<p>Adding graph name of <code>ner_val_graph</code> for initializing node .</p>
+<pre><code>graph ner_eval_graph {
+    has anchor ner_model_dir;
+    spawn {
+        ner_model_dir = spawn node::model_dir;
+        flair_ner_node = spawn node::flair_ner;
+        ner_model_dir -[ner_model(model_type=&quot;flair_ner&quot;)]-&gt; flair_ner_node;
+    }
+}
+</code></pre>
+</li>
+<li>
+<p>Initializing <code>walker init</code> for calling graph</p>
+<pre><code>walker init {
+    root {
+    spawn here --&gt; graph::ner_val_graph; 
+    }
+}
+</code></pre>
+</li>
+<li>
+<p>Creating <code>walker</code> name of <code>infer_zero_shot</code> for getting parameter from context and calling ability <code>set_config</code> and <code>infer_zero_shot</code> entity detection.</p>
+<pre><code># creating walker for entity predictions
+walker infer_zero_shot{
+    has model_name;
+    has model_type;
+    has text;
+    has labels;
+
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+</code></pre>
+<p>It take arguments from context and call ability to set model configuration <code>set_config</code> and <code>infer_zero_shot</code> for detecting entity from text and store <code>result</code> in <code>result.json file</code></p>
+</li>
+</ol>
+<ul>
+<li>
+<p><strong>Final jac program <code>zero_shot_ner.jac</code></strong></p>
+<pre><code>node model_dir;
+node flair_ner {
+    # load the model actions here
+    can ent_ext.entity_detection, ent_ext.set_config;
+
+    can set_config with infer_zero_shot entry{
+        report ent_ext.set_config(
+            ner_model = visitor.model_name,
+            model_type = visitor.model_type
+        );
+    }
+
+    can infer_zero_shot with infer_zero_shot entry{
+        text = visitor.text;
+        labels = visitor.labels.list;
+        result =  ent_ext.entity_detection(
+            text=text,
+            ner_labels= labels
+            );
+        fn = &quot;result.json&quot;;
+        result = {&quot;text&quot;:text,&quot;entities&quot;:result[&quot;entities&quot;]};
+        file.dump_json(fn, result);
+    }
+}
+
+edge ner_model {
+    has model_type;
+}
+
+graph ner_eval_graph {
+    has anchor ner_model_dir;
+    spawn {
+        ner_model_dir = spawn node::model_dir;
+        flair_ner_node = spawn node::flair_ner;
+        ner_model_dir -[ner_model(model_type=&quot;flair_ner&quot;)]-&gt; flair_ner_node;
+    }
+}
+
+
+
+walker init {
+    root {
+    spawn here --&gt; graph::ner_eval_graph; 
+    }
+}
+
+# creating walker for entity predictions
+walker infer_zero_shot{
+    has model_name;
+    has model_type;
+    has text;
+    has labels;
+
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+</code></pre>
+</li>
+</ul>
+</li>
+<li>
+<p>Steps for calling jac program <code>use case 1</code> and <code>infer_zero_shot entity</code> from new text.</p>
+<ol>
+<li>
+<p>Build <code>zero_shot_ner.jac</code> by run cmd</p>
+<pre><code>jac build zero_shot_ner.jac
+</code></pre>
+</li>
+<li>
+<p>Activate <code>sentinal</code> by run cmd:</p>
+<pre><code>sentinel set -snt active:sentinel -mode ir zero_shot_ner.jir
+</code></pre>
+<p><strong>Note</strong>: If getting error <strong><code>ValueError: badly formed hexadecimal UUID string</code></strong> execute only once</p>
+<blockquote>
+<p>sentinel register -set_active true -mode ir zero_shot_ner.jir</p>
+</blockquote>
+</li>
+<li>
+<p>Module <code>entity_detection</code>: detects all availabe entities from the provided context</p>
+<ul>
+<li>
+<h3 id="input-data"><a class="header" href="#input-data">Input Data:</a></h3>
+<ul>
+<li><code>model_name</code>: name of model which we are using for zero-shot entity detection e.g. <code>tars-ner</code></li>
+<li><code>model_type</code> : type of model using in entity detection e.g. <code>tars</code> </li>
+<li><code>text (string)</code>: context to detect entities. e.g. &quot;They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses&quot;</li>
+<li><code>ner_labels(list of strings)</code>: List of entities, e.g. <code>[&quot;LOC&quot;,&quot;PER&quot;]</code></li>
+</ul>
+</li>
+<li>
+<h3 id="output"><a class="header" href="#output">Output</a></h3>
+<ul>
+<li><code>Result</code>: Created a json file that stored <code>input text</code> and <code>predicted entities</code> in result.json file`</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>Run the following command to execute walker for <code>entity_detection</code> and pass <a href="#input-data"><code>Input Data</code></a> in context.</p>
+<pre><code>walker run infer_zero_shot -ctx &quot;{\&quot;model_name\&quot;:\&quot;tars-ner\&quot;,\&quot;model_type\&quot;:\&quot;tars\&quot;,\&quot;text\&quot;:\&quot;They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses\&quot;,\&quot;labels\&quot;:[\&quot;building\&quot;, \&quot;organization\&quot;]}&quot;
+</code></pre>
+</li>
+<li>
+<p>After executing step 6 entity output will be stored in <code>result.json</code> file </p>
+<pre><code>{
+    &quot;text&quot;: &quot;They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses&quot;,
+    &quot;entities&quot;: [
+        {
+            &quot;entity_text&quot;: &quot;Bennett Park&quot;,
+            &quot;entity_value&quot;: &quot;building&quot;,
+            &quot;conf_score&quot;: 0.9999510645866394,
+            &quot;start_pos&quot;: 70,
+            &quot;end_pos&quot;: 82
+        },
+        {
+            &quot;entity_text&quot;: &quot;Tiger Stadium&quot;,
+            &quot;entity_value&quot;: &quot;building&quot;,
+            &quot;conf_score&quot;: 0.9999762773513794,
+            &quot;start_pos&quot;: 108,
+            &quot;end_pos&quot;: 121
+        },
+        {
+            &quot;entity_text&quot;: &quot;Comerica Park&quot;,
+            &quot;entity_value&quot;: &quot;building&quot;,
+            &quot;conf_score&quot;: 0.999976634979248,
+            &quot;start_pos&quot;: 156,
+            &quot;end_pos&quot;: 169
+        }
+    ]
+}
+</code></pre>
+</li>
+</ol>
+</li>
+</ul>
+<h2 id="use-case-ii--few-shot-classification"><a class="header" href="#use-case-ii--few-shot-classification"><strong>Use Case II : Few-shot classification</strong></a></h2>
+<p>In Few shot classification we are going train, test and validate <code>ent_ext</code> module</p>
+<h3 id="1-creating-input-datasets"><a class="header" href="#1-creating-input-datasets">1. Creating Input Datasets</a></h3>
+<p>For <code>train</code> <code>test</code> and <code>validation</code> we are going to prepare dataset from <a href="https://huggingface.co/datasets/conll2003">Conll2003</a> dataset, we are creating list of dict and storing in json file by name <code>train.json, validation.json and test.json</code>, 
+and storing dataset file in directory name <code>dataset</code> and put all required file in this.</p>
+<ul>
+<li><strong>train_file : <code>dataset/train.json</code></strong>
+<pre><code>[
+    {
+        &quot;context&quot;: &quot;EU rejects German call to boycott British lamb&quot;,
+        &quot;entities&quot;: [
+            {
+                &quot;entity_value&quot;: &quot;EU&quot;,
+                &quot;entity_type&quot;: &quot;ORG&quot;,
+                &quot;start_index&quot;: 0,
+                &quot;end_index&quot;: 2
+            },
+            {
+                &quot;entity_value&quot;: &quot;German&quot;,
+                &quot;entity_type&quot;: &quot;MISC&quot;,
+                &quot;start_index&quot;: 11,
+                &quot;end_index&quot;: 17
+            },
+            {
+                &quot;entity_value&quot;: &quot;British&quot;,
+                &quot;entity_type&quot;: &quot;MISC&quot;,
+                &quot;start_index&quot;: 34,
+                &quot;end_index&quot;: 41
+            }
+        ]
+    }
+]
+</code></pre>
+</li>
+<li><strong>val_file : <code>dataset/val.json</code></strong>
+<pre><code>[
+    {
+        &quot;context&quot;: &quot;CRICKET LEICESTERSHIRE TAKE OVER AT TOP AFTER INNINGS VICTORY&quot;,
+        &quot;entities&quot;: [
+            {
+                &quot;entity_value&quot;: &quot;LEICESTERSHIRE&quot;,
+                &quot;entity_type&quot;: &quot;ORG&quot;,
+                &quot;start_index&quot;: 8,
+                &quot;end_index&quot;: 22
+            }
+        ]
+    }
+]
+</code></pre>
+</li>
+<li><strong>test_file : <code>dataset/test.json</code></strong>
+<pre><code>[
+    {
+        &quot;context&quot;: &quot;The former Soviet republic was playing in an Asian Cup finals tie for the first time&quot;,
+        &quot;entities&quot;: [
+            {
+                &quot;entity_value&quot;: &quot;Soviet&quot;,
+                &quot;entity_type&quot;: &quot;MISC&quot;,
+                &quot;start_index&quot;: 11,
+                &quot;end_index&quot;: 17
+            },
+            {
+                &quot;entity_value&quot;: &quot;Asian&quot;,
+                &quot;entity_type&quot;: &quot;MISC&quot;,
+                &quot;start_index&quot;: 45,
+                &quot;end_index&quot;: 50
+            },
+            {
+                &quot;entity_value&quot;: &quot;Asian&quot;,
+                &quot;entity_type&quot;: &quot;MISC&quot;,
+                &quot;start_index&quot;: 45,
+                &quot;end_index&quot;: 50
+            }
+        ]
+    }
+]
+</code></pre>
+</li>
+</ul>
+<h3 id="2-import-flair-nerent_ext-module-in-jac"><a class="header" href="#2-import-flair-nerent_ext-module-in-jac"><strong>2. Import Flair ner(ent_ext) Module in jac</strong></a></h3>
+<ol>
+<li>Open terminal an run jaseci by cmd
+<pre><code>jsctl -m
+</code></pre>
+</li>
+<li>Load module <code>ent_ext</code> in jac by cmd
+<pre><code>actions load module jaseci_kit.ent_ext
+</code></pre>
+</li>
+</ol>
+<h3 id="3-few-shot-classification-train-test-and-validate-model"><a class="header" href="#3-few-shot-classification-train-test-and-validate-model"><strong>3. Few-shot classification <code>(Train, Test and Validate model)</code></strong></a></h3>
+<p>For this tutorial we are going to train the model on train dataset and validate the model on validation dataset and final test model on the test dataset.</p>
+<ul>
+<li>
+<p><strong>Creating Jac Program</strong></p>
+<ol>
+<li>
+<p>Create a file by name <code>flair_ner.jac</code></p>
+</li>
+<li>
+<p>Create node <code>model_dir</code> and <code>flair_ner</code> in <code>flair_ner.jac</code> file</p>
+<pre><code>node model_dir;
+node flair_ner {};
+</code></pre>
+</li>
+<li>
+<p>Initializing node flair_ner and adding abilty <code>set_config</code> and <code>entity_detection</code></p>
+<pre><code>node flair_ner{
+    # set ability model configuration and train model
+    ent_ext.set_config, can ent_ext.train, ent_ext.entity_detection;
+    }
+</code></pre>
+</li>
+<li>
+<p>Initializing module for <code>set_config</code> inside node <code>flair_ner</code></p>
+<pre><code>can set_config with infer_zero_shot entry{
+    report ent_ext.set_config(
+        ner_model = visitor.model_name,
+        model_type = visitor.model_type
+    );
+}
+</code></pre>
+<p><strong>set_config</strong> will take two argument <code>model_name(str)</code> and <code>model_type(str)</code>.
+and load model for training and validation.</p>
+</li>
+<li>
+<p>Initializing module for <code>train</code> and <code>infer</code> inside node <code>flair_ner</code></p>
+<pre><code>can train with train_and_val_flair entry{
+    # train the model with a given dataset
+    train_data = file.load_json(visitor.train_file);
+    val_data = file.load_json(visitor.val_file);
+    test_data = file.load_json(visitor.test_file);
+
+    # training model
+    ent_ext.train(
+        train_data = train_data,
+        val_data = val_data,
+        test_data = test_data,
+        train_params = {
+            &quot;num_epoch&quot;: visitor.num_train_epochs.int,
+            &quot;batch_size&quot;: visitor.batch_size.int,
+            &quot;LR&quot;: visitor.learning_rate.float
+            });
+}
+
+can infer with predict_flair entry{
+    report ent_ext.entity_detection(
+        text = visitor.text,
+        ner_labels = visitor.ner_labels.list
+    );
+}
+</code></pre>
+<p><strong>train</strong> will take 4 parameter describing in upcoming steps <a href="#input-data-for-train-and-validation">parameter_description</a></p>
+</li>
+<li>
+<p>Adding edge name of <code>ner_model</code> in <code>flair_ner.jac</code> file for connecting nodes inside graph.</p>
+<pre><code># adding edge
+edge ner_model {
+    has model_type;
+}
+</code></pre>
+</li>
+<li>
+<p>Adding graph name of <code>ner_val_graph</code> for initializing node .</p>
+<pre><code>graph ner_eval_graph {
+    has anchor ner_model_dir;
+    spawn {
+        ner_model_dir = spawn node::model_dir;
+        flair_ner_node = spawn node::flair_ner;
+        ner_model_dir -[ner_model(model_type=&quot;flair_ner&quot;)]-&gt; flair_ner_node;
+    }
+}
+</code></pre>
+</li>
+<li>
+<p>Initializing <code>walker init</code> for calling graph</p>
+<pre><code>walker init {
+    root {
+    spawn here --&gt; graph::ner_val_graph; 
+    }
+}
+</code></pre>
+</li>
+<li>
+<p>Creating <code>walker</code> name of <code>train_and_val_flair</code> for getting parameter from context and calling ability <code>set_config</code> and <code>train</code> and start training model on new dataset, validate and test</p>
+<pre><code>## creating walker 
+walker train_and_val_flair {
+    # Take in a training and eval dataset
+    has train_file;
+    has val_file;
+    has test_file;
+    has model_name=&quot;prajjwal1/bert-tiny&quot;;
+    has model_type=&quot;trfmodel&quot;;
+    has num_train_epochs=3;
+    has batch_size=8;
+    has learning_rate=0.02;
+
+    # Train all NER models on the train set
+    # and validate them on the val set
+    # report accuracy performance on flair NER models
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+</code></pre>
+<p>Here we are initialize some default argument and also we are providing all argument from context. it take arguments from context and call ability to set model configuration <code>set_config</code> and <code>train</code> is for training, val and test model on new datasets.</p>
+</li>
+<li>
+<p>Creating walker for <code>predicting</code> <code>entities</code> from trained flair model.</p>
+<pre><code># infer
+walker predict_flair{
+    has text;
+    #declare default labels
+    has ner_labels = [&quot;PER&quot;,&quot;ORG&quot;, &quot;LOC&quot;, &quot;MISC&quot;];
+
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+
+}
+</code></pre>
+</li>
+</ol>
+</li>
+<li>
+<p><strong>Final Jac Program</strong></p>
+<ul>
+<li><code>flair_ner.jac</code>
+<pre><code>node model_dir;
+node flair_ner {
+    # load the model actions here
+    can ent_ext.set_config, ent_ext.train, ent_ext.entity_detection;
+
+
+    can set_config with train_and_val_flair entry{
+        ent_ext.set_config(
+            ner_model = visitor.model_name,
+            model_type = visitor.model_type
+        );
+    }
+
+
+    can train with train_and_val_flair entry{
+        # train the model with a given dataset
+        train_data = file.load_json(visitor.train_file);
+        val_data = file.load_json(visitor.val_file);
+        test_data = file.load_json(visitor.test_file);
+
+        # training model
+        ent_ext.train(
+            train_data = train_data,
+            val_data = val_data,
+            test_data = test_data,
+            train_params = {
+                &quot;num_epoch&quot;: visitor.num_train_epochs.int,
+                &quot;batch_size&quot;: visitor.batch_size.int,
+                &quot;LR&quot;: visitor.learning_rate.float
+                });
+    }
+
+    can infer with predict_flair entry{
+        report ent_ext.entity_detection(
+            text = visitor.text,
+            ner_labels = visitor.ner_labels.list
+        );
+    }
+}
+
+
+edge ner_model {
+    has model_type;
+}
+
+graph ner_eval_graph {
+    has anchor ner_model_dir;
+    spawn {
+        ner_model_dir = spawn node::model_dir;
+        flair_ner_node = spawn node::flair_ner;
+        ner_model_dir -[ner_model(model_type=&quot;flair_ner&quot;)]-&gt; flair_ner_node;
+    }
+}
+
+
+walker init {
+    root {
+    spawn here --&gt; graph::ner_eval_graph; 
+    }
+}
+
+## creating walker for:
+# Train all NER models on the train set
+# and validate them on the val set
+# and test on test set
+# report accuracy performance on flair NER models
+
+walker train_and_val_flair {
+    # Take in a training and eval dataset
+    has train_file;
+    has val_file;
+    has test_file;
+    has model_name=&quot;prajjwal1/bert-tiny&quot;;
+    has model_type=&quot;trfmodel&quot;;
+    has num_train_epochs=3;
+    has batch_size=8;
+    has learning_rate=0.02;
+
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+
+# infer
+walker predict_flair{
+    has text;
+    #declare default labels
+    has ner_labels = [&quot;PER&quot;,&quot;ORG&quot;, &quot;LOC&quot;, &quot;MISC&quot;];
+
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+
+}
+</code></pre>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Steps for calling jac program(<code>flair_ner.jac</code>)</strong></p>
+<ol>
+<li>
+<p>Build <code>flair_ner.jac</code> by run cmd :</p>
+<pre><code>jac build flair_ner.jac
+</code></pre>
+</li>
+<li>
+<p>Activate <code>sentinal</code> by run cmd:</p>
+<pre><code>sentinel set -snt active:sentinel -mode ir flair_ner.jir
+</code></pre>
+<p><strong>Note</strong>: If getting error <strong><code>ValueError: badly formed hexadecimal UUID string</code></strong> execute only once</p>
+<blockquote>
+<p>sentinel register -set_active true -mode ir flair_ner.jir</p>
+</blockquote>
+</li>
+<li>
+<p>Create <code>train and validation context</code>: train model on train dataset file and validate and test on validate and test dataset file.</p>
+<ul>
+<li>
+<h3 id="input-data-for-train-and-validation"><a class="header" href="#input-data-for-train-and-validation">Input data for train and validation:</a></h3>
+<ul>
+<li><code>train_file(List(Dict))</code> : training dataset file</li>
+<li><code>val_file(List(Dict))</code>: validation datase file</li>
+<li><code>test_file(List(Dict))</code>: test dataset file</li>
+<li><code>model_name(str)</code> : <code>prajjwal1/bert-tiny</code> or <code>tars-ner</code></li>
+<li><code>model_type(str)</code> : <code>trfmodel</code> or <code>tars</code></li>
+<li><code>num_train_epochs(int)</code> : <code>3</code> (default)</li>
+<li><code>batch_size(int)</code>: <code>8</code></li>
+<li><code>learning_rate(float)</code>:<code>0.02</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>Run the following command to execute walker for <code>model train and validation</code> and pass <a href="#input-data-for-train-and-validation"><code>input data</code></a> in context.</p>
+<pre><code>walker run train_and_val_flair -ctx &quot;{\&quot;train_file\&quot;:\&quot;dataset/train.json\&quot;,\&quot;val_file\&quot;:\&quot;dataset/val.json\&quot;,\&quot;test_file\&quot;:\&quot;dataset/test.json\&quot;,\&quot;model_name\&quot;:\&quot;prajjwal1/bert-tiny\&quot;,\&quot;model_type\&quot;:\&quot;trfmodel\&quot;,\&quot;num_train_epochs\&quot;:\&quot;10\&quot;,\&quot;batch_size\&quot;:\&quot;8\&quot;,\&quot;learning_rate\&quot;:\&quot;0.02\&quot;}&quot;
+
+</code></pre>
+</li>
+<li>
+<p>You'll find the following logs in train folder inside model name.
+<code>Console logs</code></p>
+<pre><code>2022-06-14 10:58:47,583 ----------------------------------------------------------------------------------------------------
+2022-06-14 10:58:47,583 Corpus: &quot;Corpus: 14041 train + 3250 dev + 3453 test sentences&quot;
+2022-06-14 10:58:47,583 ----------------------------------------------------------------------------------------------------
+2022-06-14 10:58:47,583 Parameters:
+2022-06-14 10:58:47,584  - learning_rate: &quot;0.02&quot;
+2022-06-14 10:58:47,584  - mini_batch_size: &quot;128&quot;
+2022-06-14 10:58:47,584  - patience: &quot;3&quot;
+2022-06-14 10:58:47,584  - anneal_factor: &quot;0.5&quot;
+2022-06-14 10:58:47,584  - max_epochs: &quot;10&quot;
+2022-06-14 10:58:47,584  - shuffle: &quot;True&quot;
+2022-06-14 10:58:47,584  - train_with_dev: &quot;False&quot;
+2022-06-14 10:58:47,584  - batch_growth_annealing: &quot;False&quot;
+2022-06-14 10:58:47,584 ----------------------------------------------------------------------------------------------------
+2022-06-14 10:58:47,584 Model training base path: &quot;train/prajjwal1/bert-tiny&quot;
+2022-06-14 10:58:47,584 ----------------------------------------------------------------------------------------------------
+2022-06-14 10:58:47,584 Device: cuda:0
+2022-06-14 10:58:47,584 ----------------------------------------------------------------------------------------------------
+2022-06-14 10:58:47,584 Embeddings storage mode: cpu
+2022-06-14 10:58:47,585 ----------------------------------------------------------------------------------------------------
+2022-06-14 10:59:11,725 epoch 1 - iter 11/110 - loss 0.46690662 - samples/sec: 58.35 - lr: 0.020000
+2022-06-14 10:59:36,854 epoch 1 - iter 22/110 - loss 0.35627199 - samples/sec: 56.04 - lr: 0.020000
+2022-06-14 10:59:56,318 epoch 1 - iter 33/110 - loss 0.32018351 - samples/sec: 72.35 - lr: 0.020000
+2022-06-14 11:00:16,082 epoch 1 - iter 44/110 - loss 0.30274213 - samples/sec: 71.25 - lr: 0.020000
+2022-06-14 11:00:35,760 epoch 1 - iter 55/110 - loss 0.28451030 - samples/sec: 71.56 - lr: 0.020000
+2022-06-14 11:00:58,241 epoch 1 - iter 66/110 - loss 0.26581275 - samples/sec: 62.64 - lr: 0.020000
+2022-06-14 11:01:24,133 epoch 1 - iter 77/110 - loss 0.25145255 - samples/sec: 54.39 - lr: 0.020000
+2022-06-14 11:01:48,914 epoch 1 - iter 88/110 - loss 0.24174765 - samples/sec: 56.82 - lr: 0.020000
+2022-06-14 11:02:15,320 epoch 1 - iter 99/110 - loss 0.23233378 - samples/sec: 53.33 - lr: 0.020000
+2022-06-14 11:02:40,455 epoch 1 - iter 110/110 - loss 0.22324374 - samples/sec: 56.03 - lr: 0.020000
+2022-06-14 11:02:40,455 ----------------------------------------------------------------------------------------------------
+2022-06-14 11:02:40,456 EPOCH 1 done: loss 0.2232 - lr 0.0200000
+2022-06-14 11:04:15,844 DEV : loss 0.08416544854674485 - f1-score (micro avg)  0.1417
+2022-06-14 11:04:15,876 BAD EPOCHS (no improvement): 0
+2022-06-14 11:04:15,922 saving best model
+..............
+..............
+..............
+
+2022-06-14 11:48:43,609 epoch 10 - iter 11/110 - loss 0.05611527 - samples/sec: 61.04 - lr: 0.020000
+2022-06-14 11:49:06,084 epoch 10 - iter 22/110 - loss 0.05563375 - samples/sec: 62.66 - lr: 0.020000
+2022-06-14 11:49:29,709 epoch 10 - iter 33/110 - loss 0.05567900 - samples/sec: 59.61 - lr: 0.020000
+2022-06-14 11:49:52,993 epoch 10 - iter 44/110 - loss 0.05584901 - samples/sec: 60.48 - lr: 0.020000
+2022-06-14 11:50:16,497 epoch 10 - iter 55/110 - loss 0.05558204 - samples/sec: 59.91 - lr: 0.020000
+2022-06-14 11:50:39,222 epoch 10 - iter 66/110 - loss 0.05536536 - samples/sec: 61.97 - lr: 0.020000
+2022-06-14 11:51:03,463 epoch 10 - iter 77/110 - loss 0.05519602 - samples/sec: 58.09 - lr: 0.020000
+2022-06-14 11:51:27,246 epoch 10 - iter 88/110 - loss 0.05550491 - samples/sec: 59.21 - lr: 0.020000
+2022-06-14 11:51:50,920 epoch 10 - iter 99/110 - loss 0.05559963 - samples/sec: 59.48 - lr: 0.020000
+2022-06-14 11:52:13,645 epoch 10 - iter 110/110 - loss 0.05556217 - samples/sec: 61.97 - lr: 0.020000
+2022-06-14 11:52:13,646 ----------------------------------------------------------------------------------------------------
+2022-06-14 11:52:13,646 EPOCH 10 done: loss 0.0556 - lr 0.0200000
+2022-06-14 11:53:51,555 DEV : loss 0.03640907264452083 - f1-score (micro avg)  0.7614
+2022-06-14 11:53:51,587 BAD EPOCHS (no improvement): 0
+2022-06-14 11:53:51,634 saving best model
+2022-06-14 11:53:51,725 ----------------------------------------------------------------------------------------------------
+2022-06-14 11:53:51,726 loading file train/prajjwal1/bert-tiny/best-model.pt
+2022-06-14 11:53:54,423 No model_max_length in Tokenizer's config.json - setting it to 512. Specify desired model_max_length by passing it as attribute to embedding instance.
+2022-06-14 11:55:30,534 0.7138	0.7305	0.7221	0.6166
+2022-06-14 11:55:30,534 
+Results:
+- F-score (micro) 0.7221
+- F-score (macro) 0.5625
+- Accuracy 0.6166
+
+By class:
+            precision    recall  f1-score   support
+
+        PER     0.7186    0.8751    0.7892      1617
+        LOC     0.7645    0.8118    0.7874      1668
+        ORG     0.6902    0.5527    0.6138      1661
+        MISC    0.6192    0.6254    0.6223       702
+     &lt;STOP&gt;     0.0000    0.0000    0.0000         0
+
+  micro avg     0.7138    0.7305    0.7221      5648
+  macro avg     0.5585    0.5730    0.5625      5648
+weighted avg    0.7115    0.7305    0.7164      5648
+samples avg     0.6166    0.6166    0.6166      5648
+
+</code></pre>
+</li>
+<li>
+<p>Run the following command to execute walker <code>predict_flair</code> for predicting entities.</p>
+<pre><code>walker run predict_flair -ctx &quot;{\&quot;text\&quot;:\&quot;Two goals from defensive errors in the last six minutes allowed Japan to come from behind and collect all three points from their opening meeting against Syria\&quot;}&quot;
+</code></pre>
+<p>After executing walker <code>predict_flair</code> will get output e.g.</p>
+<pre><code>[
+    {
+        &quot;entities&quot;: [
+            {
+                &quot;entity_text&quot;: &quot;Japan&quot;,
+                &quot;entity_value&quot;: &quot;LOC&quot;,
+                &quot;conf_score&quot;: 0.9944729208946228,
+                &quot;start_pos&quot;: 64,
+                &quot;end_pos&quot;: 69
+            },
+            {
+                &quot;entity_text&quot;: &quot;Syria&quot;,
+                &quot;entity_value&quot;: &quot;LOC&quot;,
+                &quot;conf_score&quot;: 0.9952408075332642,
+                &quot;start_pos&quot;: 154,
+                &quot;end_pos&quot;: 159
+            }
+        ]
+    }
+]
+</code></pre>
+</li>
+</ol>
+</li>
+</ul>
+<h2 id="experiment-and-methodology"><a class="header" href="#experiment-and-methodology"><strong>Experiment and methodology</strong></a></h2>
+<ul>
+<li>
+<p><strong>Zero-Shot entity detection</strong></p>
+<p>Let us further look our <code>zero-shot entity</code> detection on <a href="https://ningding97.github.io/fewnerd/">Few-Nerd Dataset</a>, Few-NERD is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains <code>8 coarse-grained(Major)</code> types, <code>66 fine-grained(All)</code> labels types. Three benchmark tasks are built, one is supervised (Few-NERD (SUP)) and the other two are few-shot (Few-NERD (INTRA) and Few-NERD (INTER)).</p>
+<h3 id="dataset-details"><a class="header" href="#dataset-details"><strong>Dataset details</strong></a></h3>
+<p>| Dataset Name                   | train dataset             | validation dataset         | test dataset          |
+|--------------------------------|---------------------------|----------------------------|-----------------------|
+| FEW-NERD (SUP)                 | 131767                    | 18824                      | 37648                 |</p>
+<p>For zero-shot entity-detection we are using flair <strong>tars-ner</strong> model.</p>
+<p><strong>Results</strong></p>
+<h2 id="zero-shot-performance-on-few-nerdinter-test-dataset"><a class="header" href="#zero-shot-performance-on-few-nerdinter-test-dataset">Zero-shot performance on FEW-NERD(INTER) test Dataset.</a></h2>
+<p>| Labels          | Accuracy        | F1_Score     |
+|-----------------|-----------------|--------------|
+| All             | 0.32053081      | 0.305329825  |
+| Major           | 0.475163372	    | 0.447818008  |</p>
+<h2 id="zero-shot-performance-on-few-nerdintra-test-dataset"><a class="header" href="#zero-shot-performance-on-few-nerdintra-test-dataset">Zero-shot performance on FEW-NERD(INTRA) test Dataset.</a></h2>
+<p>| Labels          | Accuracy         | F1_Score     |
+|-----------------|------------------|--------------|
+| All             | 0.143001171      | 0.171142318  |
+| Major           | 0.540210805	     | 0.462717092  |</p>
+<h2 id="zero-shot-performance-on-few-nerdsup-test-dataset"><a class="header" href="#zero-shot-performance-on-few-nerdsup-test-dataset">Zero-shot performance on FEW-NERD(SUP) test Dataset.</a></h2>
+<p>| Labels          | Accuracy         | F1_Score     |
+|-----------------|------------------|--------------|
+| All             | 0.105859864      | 0.128166615  |
+| Major           | 0.475106014	     | 0.431429256  |</p>
+<p>From this results we will get following insight, if we have number of labels is less, we will get higher accuracy and f1_score.</p>
+</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/tfm_ner/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/tfm_ner/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="../../../../../../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>

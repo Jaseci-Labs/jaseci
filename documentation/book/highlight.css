@@ -37,7 +37,7 @@
 
 .hljs-built_in,
 .hljs-builtin-name {
-  color: #eef112;
+  color: #DCDCAA;
 }
 
 
@@ -59,16 +59,20 @@
 /* Purple */
 .hljs-keyword,
 .hljs-selector-tag {
-  color: #5691f6;
+  color: 	#569CD6;
 }
 
 .hljs {
   display: block;
   overflow-x: auto;
-  background: #000000;
-  color: rgb(249, 244, 244);
+  background: #f1f2f5;
+  color: rgb(15, 14, 14);
 }
 
+.language-jac {
+  background: #1E1E1E;
+  color: rgb(241, 234, 234);
+}
 .hljs-emphasis {
   font-style: italic;
 }
