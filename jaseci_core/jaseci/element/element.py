@@ -13,7 +13,7 @@ from datetime import datetime
 import copy
 import json
 from jaseci.utils.id_list import id_list
-from jaseci.utils.redis_hook import redis_hook
+from jaseci.utils.mem_hook import mem_hook
 from jaseci.utils.utils import logger, log_var_out
 from jaseci.utils.json_handler import JaseciJsonEncoder, json_str_to_jsci_dict
 from jaseci.element.obj_mixins import hookable
@@ -146,7 +146,7 @@ class element(hookable):
         saving and loading item.
         """
         obj_fields = []
-        element_fields = dir(element(m_id=self._m_id, h=redis_hook()))
+        element_fields = dir(element(m_id=self._m_id, h=mem_hook()))
         for i in vars(self).keys():
             if not i.startswith("_") and i not in element_fields:
                 obj_fields.append(i)

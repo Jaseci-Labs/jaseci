@@ -1,4 +1,4 @@
-from jaseci.utils.redis_hook import redis_hook
+from jaseci.svcs.meta_svc import meta_svc
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
 
@@ -14,7 +14,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.gph = graph(m_id="anon", h=redis_hook())
+        self.gph = graph(m_id="anon", h=meta_svc().hook())
         self.sent = sentinel(m_id=self.gph._m_id, h=self.gph._h)
         self.old_stdout = sys.stdout
         self.new_stdout = io.StringIO()

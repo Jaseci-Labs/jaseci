@@ -1,4 +1,3 @@
-from jaseci.utils.redis_hook import redis_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
 
@@ -6,6 +5,7 @@ from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 import jaseci.tests.jac_test_code as jtc
 import jaseci.actions.live_actions as lact
+from jaseci_serv.svcs.meta_svc import meta_svc
 
 
 class jac_tests(TestCaseHelper, TestCase):
@@ -13,6 +13,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
+        self.meta = meta_svc()
 
     def tearDown(self):
         super().tearDown()
@@ -21,7 +22,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = graph(m_id="anon", h=redis_hook())
+        gph = graph(m_id="anon", h=self.meta.hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
@@ -37,7 +38,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = graph(m_id="anon", h=redis_hook())
+        gph = graph(m_id="anon", h=self.meta.hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
@@ -53,7 +54,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = graph(m_id="anon", h=redis_hook())
+        gph = graph(m_id="anon", h=self.meta.hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
@@ -69,7 +70,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = graph(m_id="anon", h=redis_hook())
+        gph = graph(m_id="anon", h=self.meta.hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()

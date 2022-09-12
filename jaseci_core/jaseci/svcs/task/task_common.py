@@ -1,26 +1,83 @@
+from multiprocessing import Process
 import re
-
 from copy import deepcopy
 from typing import Tuple
+from uuid import UUID
 from requests import post, get
 from requests.exceptions import HTTPError
 from celery import Task
+from celery.app.control import Inspect
+
+DEFAULT_MSG = "Skipping scheduled walker!"
 
 
 class queue(Task):
-    def run(self, queue_id):
-        from .task_hook import task_hook
+    def run(self, wlk, nd, args):
+        from jaseci.svcs.meta_svc import meta_svc
 
-        ret = task_hook.consume_queue(queue_id)
+        hook = meta_svc().hook()
 
-        return ret
+        wlk = hook.get_obj_from_store(UUID(wlk))
+        nd = hook.get_obj_from_store(UUID(nd))
+        resp = wlk.run(nd, *args)
+        wlk.destroy()
+
+        return resp
 
 
-class schedule_queue(Task):
-    json_escape = re.compile("[^a-zA-Z0-9_]")
-    internal = re.compile("\(([a-zA-Z0-9_\.\[\]\$\#\@\!]*?)\)")  # noqa
-    full = re.compile("^\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}$")  # noqa
-    partial = re.compile("\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}")  # noqa
+class scheduled_walker(Task):
+    def get_obj(self, jid):
+        return self.hook.get_obj_from_store(UUID(jid))
+
+    def run(self, name, ctx, nd=None, snt=None, mst=None):
+        from jaseci.svcs.meta_svc import meta_svc
+
+        self.hook = meta_svc().hook()
+
+        if mst:
+            mst = self.get_obj(mst)
+        else:
+            return f"{DEFAULT_MSG} mst (Master) is required!"
+
+        if mst is None:
+            return f"{DEFAULT_MSG} Invalid Master!"
+
+        try:
+            if not snt:
+                if mst.active_snt_id == "global":
+                    global_snt_id = self.hook.get_glob("GLOB_SENTINEL")
+                    snt = self.get_obj(global_snt_id)
+                elif mst.active_snt_id:
+                    snt = self.get_obj(mst.active_snt_id)
+            elif snt in mst.alias_map:
+                snt = self.get_obj(mst.alias_map[snt])
+            else:
+                snt = self.get_obj(snt)
+
+            if not snt:
+                return f"{DEFAULT_MSG} Invalid Sentinel!"
+
+            if not nd:
+                if mst.active_gph_id:
+                    nd = self.get_obj(mst.active_gph_id)
+            elif nd in mst.alias_map:
+                nd = self.get_obj(mst.alias_map[nd])
+            else:
+                nd = self.get_obj(nd)
+
+            if not nd:
+                return f"{DEFAULT_MSG} Invalid Node!"
+
+            return mst.walker_run(name, nd, ctx, ctx, snt, False, False)
+        except Exception as e:
+            return f"{DEFAULT_MSG} Error occured: {e}"
+
+
+class scheduled_sequence(Task):
+    json_escape = re.compile(r"[^a-zA-Z0-9_]")
+    internal = re.compile(r"\(([a-zA-Z0-9_\.\[\]\$\#\@\!]*?)\)")
+    full = re.compile(r"^\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}$")
+    partial = re.compile(r"\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}")
 
     def get_deep_value(self, data, keys, default):
         if len(keys) == 0:
@@ -132,15 +189,15 @@ class schedule_queue(Task):
             holder[0][self.json_escape.sub("_", req[params])] = holder[1]
 
     def trigger_interface(self, req: dict):
-        from .task_hook import task_hook
+        from jaseci.svcs.meta_svc import meta_svc
 
         master = req.get("master")
-
+        app = meta_svc()
         if master is None:
-            caller = task_hook.basic_master
+            caller = app.master()
             trigger_type = "public"
         else:
-            caller = task_hook.get_element(master)
+            caller = app.hook().get_obj_from_store(master)
             trigger_type = "general"
 
         api = req.get("api")
@@ -234,3 +291,69 @@ class schedule_queue(Task):
                 break
 
         return persistence
+
+
+c1 = queue
+c2 = scheduled_walker
+c3 = scheduled_sequence
+
+
+class task_properties:
+    def __init__(self, prop):
+        if not hasattr(prop, "_inspect"):
+            setattr(prop, "_inspect", None)
+            setattr(prop, "_worker", None)
+            setattr(prop, "_scheduler", None)
+
+            # --------------- REGISTERED TASK --------------- #
+            setattr(prop, "_queue", None)
+            setattr(prop, "_scheduled_walker", None)
+            setattr(prop, "_scheduled_sequence", None)
+
+    @property
+    def inspect(self) -> Inspect:
+        return self.cls._inspect
+
+    @inspect.setter
+    def inspect(self, val: Inspect):
+        self.cls._inspect = val
+
+    @property
+    def worker(self) -> Process:
+        return self.cls._worker
+
+    @worker.setter
+    def worker(self, val: Process):
+        self.cls._worker = val
+
+    @property
+    def scheduler(self) -> Process:
+        return self.cls._scheduler
+
+    @scheduler.setter
+    def scheduler(self, val: Process):
+        self.cls._scheduler = val
+
+    @property
+    def queue(self) -> c1:
+        return self.cls._queue
+
+    @queue.setter
+    def queue(self, val: c1):
+        self.cls._queue = val
+
+    @property
+    def scheduled_walker(self) -> c2:
+        return self.cls._scheduled_walker
+
+    @scheduled_walker.setter
+    def scheduled_walker(self, val: c2):
+        self.cls._scheduled_walker = val
+
+    @property
+    def scheduled_sequence(self) -> c3:
+        return self.cls._scheduled_sequence
+
+    @scheduled_sequence.setter
+    def scheduled_sequence(self, val: c3):
+        self.cls._scheduled_sequence = val

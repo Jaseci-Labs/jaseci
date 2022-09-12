@@ -266,7 +266,7 @@ class interface:
 
     def seek_committer(self, obj):
         """Opportunistically assign a committer"""
-        if not self._pub_committer:
+        if not self._pub_committer and not (obj is None):
             self._pub_committer = obj._h.get_obj(obj._m_id, uuid.UUID(obj._m_id))
 
     def clear_committer(self):

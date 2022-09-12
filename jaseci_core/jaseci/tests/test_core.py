@@ -1,13 +1,11 @@
+from jaseci.svcs.meta_svc import meta_svc
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
 
 from jaseci.graph.node import node
-from jaseci.element.master import master
-from jaseci.element.super_master import super_master
 from jaseci.element.element import element
 from jaseci.graph.graph import graph
 from jaseci.actor.sentinel import sentinel
-from jaseci.utils.redis_hook import redis_hook
 from jaseci.utils.utils import get_all_subclasses
 import jaseci.tests.jac_test_code as jtc
 import uuid
@@ -16,13 +14,14 @@ import uuid
 class architype_tests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
+        self.meta = meta_svc()
 
     def tearDown(self):
         super().tearDown()
 
     def test_object_creation_basic_no_side_creation(self):
         """ """
-        mast = master(h=redis_hook())
+        mast = self.meta.master()
         num_objs = len(mast._h.mem.keys())
         node1 = node(m_id=mast._m_id, h=mast._h)
         node2 = node(m_id=mast._m_id, h=mast._h, parent_id=node1.id)
@@ -41,7 +40,7 @@ class architype_tests(TestCaseHelper, TestCase):
 
     def test_edge_removal_updates_nodes_edgelist(self):
         """ """
-        mast = master(h=redis_hook())
+        mast = self.meta.master()
         node1 = node(m_id=mast._m_id, h=mast._h)
         node2 = node(m_id=mast._m_id, h=mast._h)
         edge = node1.attach_outbound(node2)
@@ -56,7 +55,7 @@ class architype_tests(TestCaseHelper, TestCase):
         """
         Test that the destroy of sentinels clears owned objects
         """
-        mast = master(h=redis_hook())
+        mast = self.meta.master()
         num_objs = len(mast._h.mem.keys()) - len(mast._h.global_action_list)
         self.assertEqual(num_objs, 2)
         new_graph = graph(m_id=mast._m_id, h=mast._h)
@@ -78,20 +77,20 @@ class architype_tests(TestCaseHelper, TestCase):
         Test saving object to json and back to python dict
         """
         for i in get_all_subclasses(element):
-            orig = i(m_id="anon", h=redis_hook())
+            orig = i(m_id="anon", h=self.meta.hook())
             blob1 = orig.json(detailed=True)
-            new = i(m_id="anon", h=redis_hook())
+            new = i(m_id="anon", h=self.meta.hook())
             self.assertNotEqual(orig.id, new.id)
             new.json_load(blob1)
             self.assertEqual(orig.id, new.id)
             self.assertTrue(orig.is_equivalent(new))
 
     def test_supermaster_can_touch_all_data(self):
-        mh = redis_hook()
-        mast = master(h=mh)
-        mast2 = master(h=mh)
+        mh = self.meta.hook()
+        mast = self.meta.master(h=mh)
+        mast2 = self.meta.master(h=mh)
         node12 = node(m_id=mast2._m_id, h=mast2._h)
-        supmast = super_master(h=mh)
+        supmast = self.meta.super_master(h=mh)
         bad = mh.get_obj(mast._m_id, uuid.UUID(node12.jid))
         good = mh.get_obj(supmast._m_id, uuid.UUID(node12.jid))
         self.assertEqual(good, node12)

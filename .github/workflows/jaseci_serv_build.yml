@@ -42,3 +42,10 @@ jobs:
         cd jaseci_serv/
         source install_live.sh
         jsserv test
+
+    - name: test jaseci_serv without redis
+      run: |
+        cd jaseci_serv/
+        jsserv test
+      env:
+          REDIS_ENABLED: "False"
