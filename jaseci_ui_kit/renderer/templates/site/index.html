@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jaseci Site</title>
+    <script
+      type="module"
+      src="{{ url_for('static', path='/build/components/components.esm.js') }}"
+    ></script>
+    <script
+      nomodule
+      src="{{ url_for('static', path='/build/components/components.js') }}"
+    ></script>
+    <link
+      href="{{ url_for('static', path='/build/components/components.css') }}"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <jsc-app></jsc-app>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+
+    <script>
+      const markup = "{{json}}";
+      const doc = new DOMParser().parseFromString(markup, "text/html");
+      console.log({ markup: doc.documentElement.textContent });
+      customElements.whenDefined("jsc-app").then(() => {
+        const app = document.querySelector("jsc-app");
+        const config = {
+          siteName: "Hello World",
+          theme: "greenheart",
+          fieldPalette: "primary",
+          css: {
+            background: "#F2F6F9",
+            height: "100%",
+          },
+        };
+
+        app.setGlobalConfig(config);
+        app.setMarkup(doc.documentElement.textContent);
+      });
+    </script>
+  </body>
+</html>

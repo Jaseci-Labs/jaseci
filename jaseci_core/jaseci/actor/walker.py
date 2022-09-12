@@ -22,6 +22,8 @@ import cProfile
 class walker(element, jac_code, walker_interp, anchored):
     """Walker class for Jaseci"""
 
+    valid_async = [True, "true"]
+
     def __init__(self, code_ir=None, *args, **kwargs):
         self.yielded = False
         self.activity_action_ids = id_list(self)
@@ -36,6 +38,7 @@ class walker(element, jac_code, walker_interp, anchored):
         self.current_step = 0
         self.in_entry_exit = False
         self.step_limit = 10000
+        self._async = False
         anchored.__init__(self)
         element.__init__(self, *args, **kwargs)
         jac_code.__init__(self, code_ir=code_ir)
@@ -127,12 +130,21 @@ class walker(element, jac_code, walker_interp, anchored):
 
     def run(self, start_node=None, prime_ctx=None, request_ctx=None, profiling=False):
         """Executes Walker to completion"""
+        if self._h.task_hook_ready() and self._async in walker.valid_async:
+            task_id = self._h.add_queue(
+                self, start_node, prime_ctx, request_ctx, profiling
+            )
+            return {"task_id": task_id}
+
         if profiling:
             pr = cProfile.Profile()
             pr.enable()
 
         if start_node and (not self.yielded or not len(self.next_node_ids)):
             self.prime(start_node, prime_ctx, request_ctx)
+        elif prime_ctx:
+            for i in prime_ctx.keys():
+                self.context[str(i)] = prime_ctx[i]
 
         report_ret = {"success": True}
         walker_interp.reset(self)
@@ -210,10 +222,11 @@ class walker(element, jac_code, walker_interp, anchored):
         """
         Destroys self from memory and persistent storage
         """
-        for i in self.activity_action_ids.obj_list():
-            i.destroy()
-        walker_interp.destroy(self)
-        super().destroy()
+        if not self._h.task_hook_ready() or self._async not in walker.valid_async:
+            for i in self.activity_action_ids.obj_list():
+                i.destroy()
+            walker_interp.destroy(self)
+            super().destroy()
 
     def register_yield_or_destroy(self, yield_ids):
         """Helper for auto destroying walkers"""

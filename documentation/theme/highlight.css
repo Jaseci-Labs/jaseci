@@ -9,7 +9,7 @@
 /* Comment */
 .hljs-comment,
 .hljs-quote {
-  color: #575757;
+  color: #058f23;
 }
 
 /* Red */
@@ -29,21 +29,27 @@
 /* Orange */
 .hljs-number,
 .hljs-meta,
-.hljs-built_in,
-.hljs-builtin-name,
 .hljs-literal,
 .hljs-type,
 .hljs-params {
   color: #b21e00;
 }
 
+.hljs-built_in,
+.hljs-builtin-name {
+  color: #eef112;
+}
+
+
 /* Green */
-.hljs-string,
+
 .hljs-symbol,
 .hljs-bullet {
   color: #008200;
 }
-
+.hljs-string{
+  color : #de9258
+}
 /* Blue */
 .hljs-title,
 .hljs-section {
@@ -53,13 +59,13 @@
 /* Purple */
 .hljs-keyword,
 .hljs-selector-tag {
-  color: #9d00ec;
+  color: #5691f6;
 }
 
 .hljs {
   display: block;
   overflow-x: auto;
-  background: #0f0f0f;
+  background: #000000;
   color: rgb(249, 244, 244);
 }
 

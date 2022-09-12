@@ -31,7 +31,7 @@ export class JscDatagrid {
   @Prop() maxPages: number = 1;
 
   @Method()
-  refetchData() {
+  async refetchData() {
     this.fetchData();
   }
 

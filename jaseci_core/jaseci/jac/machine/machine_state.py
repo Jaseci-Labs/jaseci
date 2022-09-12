@@ -122,7 +122,7 @@ class machine_state:
                     break
         return ret
 
-    def get_builtin_action(self, func_name, jac_ast=None):
+    def check_builtin_action(self, func_name, jac_ast=None):
         """
         Takes reference to action attr, finds the built in function
         and returns new name used as hook by action class
@@ -130,8 +130,9 @@ class machine_state:
         if func_name not in live_actions.keys():
             load_preconfig_actions(self._h)
         if func_name not in live_actions.keys():
-            self.rt_error(f"Builtin action not found - {func_name}", jac_ast)
-        return func_name
+            self.rt_warn(f"Builtin action not loaded - {func_name}", jac_ast)
+            return False
+        return True
 
     def jac_try_exception(self, e: Exception, jac_ast):
         if isinstance(e, TryException):
@@ -169,7 +170,6 @@ class machine_state:
         """Prints runtime error to screen"""
         error = self.rt_log_str(error, jac_ast)
         logger.warning(str(error))
-        self.runtime_errors.append(error)
 
     def rt_error(self, error, jac_ast=None):
         """Prints runtime error to screen"""

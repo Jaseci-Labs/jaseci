@@ -6,6 +6,7 @@ from inspect import signature, getdoc
 from jaseci.utils.utils import logger
 from jaseci.utils.utils import is_jsonable
 from jaseci.element.element import element
+from jaseci.actor.walker import walker
 import json
 
 
@@ -181,7 +182,7 @@ class interface:
                     break
                 val = _caller._h.get_obj(_caller._m_id, uuid.UUID(val))
                 if isinstance(val, p_type):
-                    param_map[i] = val
+                    param_map[i] = self.sync_constraints(val, params)
                 else:
                     return self.interface_error(f"{type(val)} is not {p_type}")
             else:  # TODO: Can do type checks here too
@@ -234,7 +235,7 @@ class interface:
                 val = self._h.get_obj("override", uuid.UUID(val), override=True)
                 self.seek_committer(val)
                 if isinstance(val, p_type):
-                    param_map[i] = val
+                    param_map[i] = self.sync_constraints(val, params)
                 else:
                     return self.interface_error(f"{type(val)} is not {p_type}")
             else:  # TODO: Can do type checks here too
@@ -256,6 +257,13 @@ class interface:
             )
         return ret
 
+    # future constraints other than `async` should be add here
+    def sync_constraints(self, obj, params):
+        if isinstance(obj, walker):
+            obj._async = params.get("is_async", False)
+
+        return obj
+
     def seek_committer(self, obj):
         """Opportunistically assign a committer"""
         if not self._pub_committer:
@@ -270,6 +278,7 @@ class interface:
         glob_id = wlk._h.get_glob("GLOB_SENTINEL")
         if glob_id:
             snt = wlk._h.get_obj(wlk._m_id, uuid.UUID(glob_id))
-            glob_wlk = snt.walker_ids.get_obj_by_name(wlk.name)
-            if glob_wlk and glob_wlk.code_sig != wlk.code_sig:
-                wlk.apply_ir(glob_wlk.code_ir)
+            if snt:
+                glob_wlk = snt.walker_ids.get_obj_by_name(wlk.name)
+                if glob_wlk and glob_wlk.code_sig != wlk.code_sig:
+                    wlk.apply_ir(glob_wlk.code_ir)

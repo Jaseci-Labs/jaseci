@@ -367,7 +367,11 @@ class node(element, anchored):
         else:
             nid = f"{node_map.index(self.jid)}"
 
-        dstr = f'"n{nid}" [ id="{uuid.UUID(self.jid).hex}", '
+        dstr = f'"n{nid}" [ '
+
+        if detailed:
+            dstr += f'id="{uuid.UUID(self.jid).hex}", '
+
         dstr += f'label="n{nid}:{self.name}" '
 
         node_dict = self.context

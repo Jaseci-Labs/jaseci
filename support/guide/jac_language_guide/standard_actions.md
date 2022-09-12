@@ -6,7 +6,7 @@
 # printing output to log
 data = {
     "type" : "String",
-    "name" " "Jaseci"
+    "name" : "Jaseci"
 }
 result  = std.log(data)
 
@@ -15,7 +15,7 @@ result  = std.log(data)
 ```jac 
 data = {
     "type" : "String",
-    "name" " "Jaseci"
+    "name" : "Jaseci"
 }
 
 # print on to the termnial

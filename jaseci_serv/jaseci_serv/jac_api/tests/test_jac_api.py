@@ -177,6 +177,70 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(res.data["updated"], True)
         self.assertEqual(res.status_code, 201)
 
+    def test_serverside_sentinel_global_public_access_callback_async(self):
+        """Test public API for walker callback"""
+        zsb_file = open(os.path.dirname(__file__) + "/public.jac").read()
+        payload = {"op": "sentinel_register", "name": "public", "code": zsb_file}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 2)
+        payload = {"op": "global_sentinel_set"}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "sentinel_active_global"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertTrue(res.data["success"])
+        payload = {"op": "graph_create"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "walker_spawn_create", "name": "callback"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "walker_get", "mode": "keys", "wlk": "spawned:walker:callback"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        key = res.data["anyone"]
+        payload = {"op": "alias_list"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        walk = res.data["spawned:walker:callback"].split(":")[2]
+        nd = res.data["active:graph"].split(":")[2]
+        payload = {
+            "is_async": True,
+            "op": "walker_callback",
+            "key": key,
+            "wlk": walk,
+            "nd": nd,
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}', args=[payload["nd"], payload["wlk"]])
+            + "?keys="
+            + key,
+            payload,
+            format="json",
+        )
+
+        self.assertFalse("updated" in res.data)
+        self.assertTrue("task_id" in res.data)
+
+        task_id = res.data["task_id"]
+
+        res = self.auth_client.get(
+            reverse(f"jac_api:walker_queue") + f"?task_id={task_id}"
+        )
+
+        self.assertEqual("SUCCESS", res.data["status"])
+
+        self.assertTrue(res.data["result"]["success"])
+
 
 class PrivateJacApiTests(TestCaseHelper, TestCase):
     """Test the authorized user node API"""
@@ -248,10 +312,10 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         gph = self.master._h.get_obj(self.master.j_master, uuid.UUID(res.data["jid"]))
         payload = {"op": "sentinel_register", "name": "Something"}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.assertIn(gph.id, gph._h.mem.keys())
+        self.assertIn(gph.id.urn, gph._h.mem.keys())
         payload = {"op": "graph_delete", "gph": gph.id.urn}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.assertNotIn(gph.id, gph._h.mem.keys())
+        self.assertNotIn(gph.id.urn, gph._h.mem.keys())
 
     def test_jac_api_get_graph_dot(self):
         """Test API for getting graph in dot str"""
@@ -272,12 +336,12 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         sent = self.master._h.get_obj(
             self.master.j_master, uuid.UUID(res.data[0]["jid"])
         )
-        self.assertIn(gph.id, gph._h.mem.keys())
-        self.assertIn(sent.id, gph._h.mem.keys())
+        self.assertIn(gph.id.urn, gph._h.mem.keys())
+        self.assertIn(sent.id.urn, gph._h.mem.keys())
         payload = {"op": "sentinel_delete", "snt": sent.id.urn}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.assertIn(gph.id, gph._h.mem.keys())
-        self.assertNotIn(sent.id, gph._h.mem.keys())
+        self.assertIn(gph.id.urn, gph._h.mem.keys())
+        self.assertNotIn(sent.id.urn, gph._h.mem.keys())
 
     def test_jac_api_get_jac_code(self):
         """Test API for deleting a sentinel"""
@@ -964,6 +1028,34 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(res.data["success"], True)
         self.assertEqual(res.data["global_init"]["auto_run_result"]["success"], True)
 
+    def test_public_user_create_save_through(self):
+        public_client = APIClient()
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 2)
+        payload = {"op": "global_sentinel_set"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {
+            "op": "user_create",
+            "name": "yo2@gmail.com",
+            "global_init": "init",
+            "other_fields": {
+                "password": "yoyoyoyoyoyo",
+                "name": "",
+                "is_activated": True,
+            },
+        }
+        res = public_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        usr = get_user_model().objects.get(email="yo2@gmail.com")
+        self.assertIsNotNone(usr.get_master().active_gph_id)
+
     def test_master_create_global_init(self):
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
         payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
@@ -1345,50 +1437,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        # It should return the error too for global.b since it was not yet set
-
-        default_res = {
-            "yielded": False,
-            "success": False,
-            "report": [
-                "test",
-                None,
-                {"a": "test"},
-                {
-                    "report": ["test", None, {"a": "test"}],
-                    "report_status": None,
-                    "report_custom": None,
-                    "request_context": {
-                        "method": "POST",
-                        "headers": {
-                            "Cookie": "",
-                            "Content-Length": "43",
-                            "Content-Type": "application/json",
-                        },
-                        "query": {},
-                        "body": {"op": "walker_run", "name": "global_actions"},
-                    },
-                    "runtime_errors": [
-                        "zsb:global_actions - line 229, col 22 - rule NAME - Global not defined - b"
-                    ],
-                },
-                {
-                    "method": "POST",
-                    "headers": {
-                        "Cookie": "",
-                        "Content-Length": "43",
-                        "Content-Type": "application/json",
-                    },
-                    "query": {},
-                    "body": {"op": "walker_run", "name": "global_actions"},
-                },
-            ],
-            "errors": [
-                "zsb:global_actions - line 229, col 22 - rule NAME - Global not defined - b"
-            ],
-        }
-        del res["final_node"]
-        self.assertEquals(res, default_res)
+        self.assertFalse(res["success"])
+        self.assertEquals(payload, res["report"][4]["body"])
 
     def test_multipart_json_file(self):
         """Test multipart using json file as ctx parameter"""
@@ -1404,20 +1454,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             }
             res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
 
-        default_res = {
-            "success": True,
-            "report": [
-                {
-                    "name": "simple",
-                    "nd": "active:graph",
-                    "snt": "active:sentinel",
-                    "ctx": {"sample": "sample"},
-                }
-            ],
-        }
-        del res["yielded"]
-        del res["final_node"]
-        self.assertEquals(res, default_res)
+        self.assertTrue(res["success"])
+        self.assertEquals({"sample": "sample"}, res["report"][0]["ctx"])
 
     def test_multipart_json_string(self):
         """Test multipart using json string as ctx parameter"""
@@ -1434,20 +1472,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
         res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
 
-        default_res = {
-            "success": True,
-            "report": [
-                {
-                    "name": "simple",
-                    "nd": "active:graph",
-                    "snt": "active:sentinel",
-                    "ctx": {"sample": "sample"},
-                }
-            ],
-        }
-        del res["yielded"]
-        del res["final_node"]
-        self.assertEquals(res, default_res)
+        self.assertTrue(res["success"])
+        self.assertEquals({"sample": "sample"}, res["report"][0]["ctx"])
 
     def test_multipart_with_additional_file(self):
         """Test multipart with additional file"""
@@ -1473,10 +1499,10 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                 "content-type": "application/json",
             }
         ]
-        default_res = {"success": True, "report": [default_file, default_file]}
-        del res["yielded"]
-        del res["final_node"]
-        self.assertEquals(res, default_res)
+
+        self.assertTrue(res["success"])
+        self.assertEquals(default_file, res["report"][0])
+        self.assertEquals(default_file, res["report"][1])
 
     def test_multipart_custom_payload_with_additional_file(self):
         """Test multipart custom payload (non ctx format) with additional file"""
@@ -1501,10 +1527,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             }
         ]
 
-        default_res = {"success": True, "report": [True, True, default_file]}
-        del res["yielded"]
-        del res["final_node"]
-        self.assertEquals(res, default_res)
+        self.assertTrue(res["success"])
+        self.assertEquals(default_file, res["report"][2])
 
     def test_try_catch(self):
         """Test try catch triggers"""
@@ -1532,24 +1556,10 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        # ignore some field on assert
-        # remove python specific message since this may vary on python version
-        del res["report"][0]["msg"]
-        del res["report"][0]["args"]
-
-        expected_report = [
-            {
-                "type": "TypeError",
-                "mod": "zsb",
-                "line": 14,
-                "col": 23,
-                "name": "walker_exception_with_try_else",
-                "rule": "atom_trailer",
-            }
-        ]
-
         self.assertFalse("stack_trace" in res)
-        self.assertEqual(expected_report, res["report"])
+        self.assertEqual("walker_exception_with_try_else", res["report"][0]["name"])
+        self.assertEqual(14, res["report"][0]["line"])
+        self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
             "zsb:walker_exception_with_try_else - line 14, col 23 - rule atom_trailer - ",
             res["errors"][0],
@@ -1559,54 +1569,21 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             "op": "walker_run",
             "name": "walker_exception_with_try_else_multiple_line",
         }
+
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        # ignore some field on assert
-        # remove python specific message since this may vary on python version
-        del res["report"][0]["msg"]
-        del res["report"][0]["args"]
-
-        expected_report = [
-            {
-                "type": "MissingSchema",
-                "mod": "zsb",
-                "line": 32,
-                "col": 23,
-                "name": "walker_exception_with_try_else_multiple_line",
-                "rule": "atom_trailer",
-            }
-        ]
-
         self.assertFalse("stack_trace" in res)
-        self.assertEqual(expected_report, res["report"])
+        self.assertEqual(
+            "walker_exception_with_try_else_multiple_line", res["report"][0]["name"]
+        )
+        self.assertEqual(32, res["report"][0]["line"])
+        self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
             "zsb:walker_exception_with_try_else_multiple_line - line 32, col 23 - rule atom_trailer - ",
             res["errors"][0],
         )
-
-    def test_check_json_global_dict(self):
-        """Test set get global objects (as json)"""
-        from jaseci.tests.jac_test_code import set_get_global_dict
-
-        payload = {
-            "op": "sentinel_register",
-            "name": "zsb",
-            "code": set_get_global_dict,
-        }
-        res = self.sclient.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        payload = {"op": "walker_run", "name": "setter"}
-        res = self.sclient.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        payload = {"op": "walker_run", "name": "getter"}
-        res = self.sclient.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        self.assertEqual(res.data["report"][0]["max_bot_count"], 10)
 
     def quick_call(self, bywho, ops):
         return bywho.post(reverse(f'jac_api:{ops["op"]}'), ops, format="json")

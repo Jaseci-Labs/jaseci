@@ -95,6 +95,13 @@ class edge(element, anchored):
         self.save()
         return True
 
+    def connect(self, source, target, bi_dir=False):
+        """
+        Connects both ends of the edge
+        """
+        self.set_bidirected(bi_dir)
+        return self.set_from_node(source) and self.set_to_node(target)
+
     def set_bidirected(self, bidirected: bool):
         """Sets/unsets edge to be bidirected"""
         self.bidirected = bidirected
@@ -163,16 +170,19 @@ class edge(element, anchored):
             if node_map is None
             else node_map.index(self.to_node().jid)
         )
-        dstr = f'"n{from_name}" -> "n{to_name}" '
+        dstr = f'"n{from_name}" -> "n{to_name}" [ '
 
-        dstr += f'[ id="{uuid.UUID(self.jid).hex}"'
+        if detailed:
+            dstr += f'id="{uuid.UUID(self.jid).hex}", '
+
         label = ""
         if edge_map:
             label = f"e{edge_map.index(self.jid)}"
         if self.name != "generic":
             label += f":{self.name}"
-        if label:
-            dstr += f', label="{label}"'
+
+        dstr += f'label="{label}"'
+
         if self.bidirected:
             dstr += ', dir="both"'
 

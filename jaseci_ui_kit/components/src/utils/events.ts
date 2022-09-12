@@ -1,7 +1,7 @@
 import { emit } from './events/emit';
 import { checkCond } from './conditions';
 import { renderComponentTree } from './utils';
-import { configStore, setTheme } from '../store/configStore';
+import { setTheme } from '../store/configStore';
 import { toastStore } from '../store/toastStore';
 import { textToSpeech } from './events/speech';
 

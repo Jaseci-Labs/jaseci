@@ -19,7 +19,7 @@ class JResponse(Response):
         super().__init__(*args, **kwargs)
         self.master = master
         for i in self.master._h.save_obj_list:
-            self.master._h.commit_obj_to_redis(i)
+            self.master._h.commit_obj_to_cache(i)
         self.master._h.skip_redis_update = True
 
     def close(self):

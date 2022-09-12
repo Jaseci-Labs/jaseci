@@ -12,73 +12,28 @@ from jaseci.utils.id_list import id_list
 class walker_api:
     """
     Walker APIs
+
+    The walker set of APIs are used for execution and management of walkers. Walkers
+    are the primary entry points for running Jac programs. The
+    primary API used to run walkers is \\textbf{walker_run}. There are a number of
+    variations on this API that enable the invocation of walkers with various
+    semantics.
     """
 
     def __init__(self):
         self.spawned_walker_ids = id_list(self)
         self.yielded_walkers_ids = id_list(self)
 
-    @interface.public_api(url_args=["nd", "wlk"], allowed_methods=["post", "get"])
-    def walker_callback(
-        self,
-        nd: node,
-        wlk: walker,
-        key: str,
-        ctx: dict = {},
-        _req_ctx: dict = {},
-        global_sync: bool = True,
-    ):
-        """
-        Public api for running walkers, namespace key must be provided
-        along with the walker id and node id
-        """
-
-        if key not in wlk.namespace_keys().values():
-            return self.bad_walk_response(["Not authorized to execute this walker"])
-        if global_sync:
-            self.sync_walker_from_global_sent(wlk)
-
-        walk = wlk.duplicate()
-        walk.refresh()
-        res = self.walker_execute(
-            wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
-        )
-        walk.destroy()
-        return res
-
-    @interface.public_api(cli_args=["wlk"])
-    def walker_summon(
-        self,
-        key: str,
-        wlk: walker,
-        nd: node,
-        ctx: dict = {},
-        _req_ctx: dict = {},
-        global_sync: bool = True,
-    ):
-        """
-        Public api for running walkers, namespace key must be provided
-        along with the walker id and node id
-        """
-        if key not in wlk.namespace_keys().values():
-            return self.bad_walk_response(["Not authorized to execute this walker"])
-        if global_sync:
-            self.sync_walker_from_global_sent(wlk)
-
-        walk = wlk.duplicate()
-        walk.refresh()
-        res = self.walker_execute(
-            wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
-        )
-        walk.destroy()
-        return res
-
     @interface.private_api(cli_args=["code"])
     def walker_register(
         self, snt: sentinel = None, code: str = "", encoded: bool = False
     ):
         """
-        Create blank or code loaded walker and return object
+        Allows for the specific parsing and registering of individual walkers.
+
+        Though the common case is to register entire sentinels, a user can also
+        register individual walkers one at a time. This API accepts code for a single
+        walker (i.e., \\lstinline\\{walker \\{...\\}\\}).
         """
         if encoded:
             code = b64decode_str(code)
@@ -137,9 +92,13 @@ class walker_api:
         Permanently delete walker with given id
         """
         self.remove_wlk_aliases(snt, wlk)
-        wlkid = wlk.id
-        snt.walker_ids.destroy_obj(wlk)
-        return [f"Walker {wlkid} successfully deleted"]
+        wlkid = wlk.jid
+        ret = {"success": True, "response": f"Walker {wlkid} successfully deleted"}
+        if wlk.jid in snt.walker_ids:
+            snt.walker_ids.destroy_obj(wlk)
+        else:
+            ret = {"success": False, "response": f"Walker {wlkid} not found!"}
+        return ret
 
     @interface.private_api(cli_args=["name"])
     def walker_spawn_create(self, name: str, snt: sentinel = None):
@@ -156,6 +115,16 @@ class walker_api:
         else:
             return ["Walker not found!"]
 
+    @interface.private_api()
+    def walker_spawn_list(self, detailed: bool = False):
+        """
+        List walkers spawned by master
+        """
+        walks = []
+        for i in self.spawned_walker_ids.obj_list():
+            walks.append(i.serialize(detailed=detailed))
+        return walks
+
     @interface.private_api(cli_args=["name"])
     def walker_spawn_delete(self, name: str):
         """
@@ -169,14 +138,52 @@ class walker_api:
             return [f"Walker {name} not found!"]
 
     @interface.private_api()
-    def walker_spawn_list(self, detailed: bool = False):
+    def walker_spawn_clear(self):
+        """
+        Delete instance of walker
+        """
+        ret = {"success": True}
+        count = len(self.spawned_walker_ids)
+        for i in self.spawned_walker_ids.obj_list():
+            self.spawned_walker_ids.destroy_obj(i)
+        ret["response"] = f"All {count} spawned walkers destroyed."
+        return ret
+
+    @interface.private_api()
+    def walker_yield_list(self, detailed: bool = False):
         """
         List walkers spawned by master
         """
         walks = []
-        for i in self.spawned_walker_ids.obj_list():
+        for i in self.yielded_walkers_ids.obj_list():
             walks.append(i.serialize(detailed=detailed))
         return walks
+
+    @interface.private_api(cli_args=["name"])
+    def walker_yield_delete(self, name: str):
+        """
+        Delete instance of walker
+        """
+        ret = {"success": True}
+        if self.yielded_walkers_ids.has_obj_by_name(name):
+            self.yielded_walkers_ids.destroy_obj_by_name(name)
+            ret["response"] = f"Walker {name} deteled!"
+        else:
+            ret["success"] = False
+            ret["response"] = f"Walker {name} not found!"
+        return ret
+
+    @interface.private_api()
+    def walker_yield_clear(self):
+        """
+        Delete instance of walker
+        """
+        ret = {"success": True}
+        count = len(self.yielded_walkers_ids)
+        for i in self.yielded_walkers_ids.obj_list():
+            self.yielded_walkers_ids.destroy_obj(i)
+        ret["response"] = f"All {count} yielded walkers destroyed."
+        return ret
 
     @interface.private_api(cli_args=["wlk"])
     def walker_prime(
@@ -213,6 +220,7 @@ class walker_api:
         _req_ctx: dict = {},
         snt: sentinel = None,
         profiling: bool = False,
+        is_async: bool = False,
     ):
         """
         Creates walker instance, primes walker on node, executes walker,
@@ -220,7 +228,7 @@ class walker_api:
         """
         wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
         if wlk is None:
-            wlk = snt.spawn_walker(name, caller=self)
+            wlk = snt.spawn_walker(name, caller=self, is_async=is_async)
         if wlk is None:
             return self.bad_walk_response([f"Walker {name} not found!"])
         res = self.walker_execute(
@@ -244,6 +252,61 @@ class walker_api:
         """
         return self.walker_run(name, nd, ctx, _req_ctx, snt, profiling)
 
+    @interface.public_api(cli_args=["wlk"])
+    def walker_summon(
+        self,
+        key: str,
+        wlk: walker,
+        nd: node,
+        ctx: dict = {},
+        _req_ctx: dict = {},
+        global_sync: bool = True,
+    ):
+        """
+        Public api for running walkers, namespace key must be provided
+        along with the walker id and node id
+        """
+        if key not in wlk.namespace_keys().values():
+            return self.bad_walk_response(["Not authorized to execute this walker"])
+        if global_sync:
+            self.sync_walker_from_global_sent(wlk)
+
+        walk = wlk.duplicate()
+        walk.refresh()
+        res = self.walker_execute(
+            wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
+        )
+        walk.destroy()
+        return res
+
+    @interface.public_api(url_args=["nd", "wlk"], allowed_methods=["post", "get"])
+    def walker_callback(
+        self,
+        nd: node,
+        wlk: walker,
+        key: str,
+        ctx: dict = {},
+        _req_ctx: dict = {},
+        global_sync: bool = True,
+    ):
+        """
+        Public api for running walkers, namespace key must be provided
+        along with the walker id and node id
+        """
+
+        if key not in wlk.namespace_keys().values():
+            return self.bad_walk_response(["Not authorized to execute this walker"])
+        if global_sync:
+            self.sync_walker_from_global_sent(wlk)
+
+        walk = wlk.duplicate()
+        walk.refresh()
+        res = self.walker_execute(
+            wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
+        )
+        walk.destroy()
+        return res
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage
@@ -253,3 +316,16 @@ class walker_api:
 
     def bad_walk_response(self, errors=list()):
         return {"report": [], "success": False, "errors": errors}
+
+    @interface.private_api(allowed_methods=["get"])
+    def walker_queue(self, task_id: str = ""):
+        """
+        Create blank or code loaded walker and return object
+        """
+        if not self._h.task_hook_ready():
+            return "Task hook is not yet initialized!"
+
+        if not task_id:
+            return self._h.inspect_tasks()
+        else:
+            return self._h.get_by_task_id(task_id)
