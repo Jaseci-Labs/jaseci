@@ -18,7 +18,7 @@ metadata:
   namespace: default
 data:
   prod_up: |-
-    pip install jaseci-kit==$version
+    pip install jaseci-ai-kit==$version
     uvicorn jaseci_ai_kit.use_qa:serv_actions --host 0.0.0.0 --port 80
 ---
 apiVersion: apps/v1
@@ -39,7 +39,7 @@ spec:
       containers:
         - name: js-use-qa
           imagePullPolicy: IfNotPresent
-          image: jaseci/jaseci-kit:latest
+          image: jaseci/jaseci-ai-kit:latest
           resources:
             requests:
               memory: "3Gi"

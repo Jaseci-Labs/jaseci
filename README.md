@@ -23,7 +23,7 @@ We've built a command line tool to help you effectively work with Jaseci from yo
 
 1. Install Jaseci by running: `pip3 install jaseci`
 2. Install Jaseci Server by running: `pip3 install jaseci-serv`
-3. (for AI) Install Jaseci Kit by running: `pip3 install jaseci-kit`
+3. (for AI) Install Jaseci Kit by running: `pip3 install jaseci-ai-kit`
 
 ### Installation (for Contributors of Jaseci)
 

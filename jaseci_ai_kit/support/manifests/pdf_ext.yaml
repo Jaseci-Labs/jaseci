@@ -43,7 +43,7 @@ spec:
     spec:
       containers:
         - name: pdf-ext
-          image: jaseci/jaseci-kit:latest
+          image: jaseci/jaseci-ai-kit:latest
           imagePullPolicy: IfNotPresent
           resources:
             requests:

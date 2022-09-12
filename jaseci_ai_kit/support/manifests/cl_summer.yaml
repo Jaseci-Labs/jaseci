@@ -43,7 +43,7 @@ spec:
       containers:
         - name: cl-summer
           imagePullPolicy: IfNotPresent
-          image: jaseci/jaseci-kit:latest
+          image: jaseci/jaseci-ai-kit:latest
           resources:
             requests:
               memory: "2Gi"

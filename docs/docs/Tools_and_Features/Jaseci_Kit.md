@@ -43,7 +43,7 @@ Run :
 
 
 ```
-pip install jaseci-kit --upgrade
+pip install jaseci-ai-kit --upgrade
 
 ```
 Activate the Jaseci terminal by running:

@@ -42,7 +42,7 @@ spec:
       containers:
         - name: js-use-qa
           imagePullPolicy: IfNotPresent
-          image: jaseci/jaseci-kit:latest
+          image: jaseci/jaseci-ai-kit:latest
           resources:
             requests:
               memory: "3Gi"
