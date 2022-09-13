@@ -1,7 +1,7 @@
 from copy import copy
 from unittest.mock import Mock, MagicMock
-from jaseci.svcs.mail.mail_svc import mail_svc
-from jaseci.svcs.mail.mail_svc import EMAIL_CONFIG
+from jaseci.svc import mail_svc
+from jaseci.svc.mail import EMAIL_CONFIG
 from jaseci.utils.test_core import core_test
 
 

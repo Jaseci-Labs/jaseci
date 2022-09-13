@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model, authenticate
 from django.utils.translation import ugettext_lazy as _
-from jaseci_serv.svcs import mail_svc
-from jaseci.svcs.mail import MAIL_ERR_MSG
+from jaseci_serv.svc import mail_svc
+from jaseci.svc.mail import EMAIL_ERR_MSG
 from rest_framework import serializers
 import base64
 from django.urls import reverse
@@ -20,7 +20,7 @@ def send_activation_email(request, email):
     if ma.is_running():
         ma.app.send_activation_email(email, code, link)
     else:
-        logger.warning(MAIL_ERR_MSG)
+        logger.warning(EMAIL_ERR_MSG)
 
 
 @receiver(reset_password_token_created)
@@ -33,7 +33,7 @@ def password_reset_token_created(
             reset_password_token.user.email, reset_password_token.key
         )
     else:
-        logger.warning(MAIL_ERR_MSG)
+        logger.warning(EMAIL_ERR_MSG)
 
 
 class UserSerializer(serializers.ModelSerializer):

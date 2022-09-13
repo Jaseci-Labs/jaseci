@@ -1,4 +1,4 @@
-from jaseci.svcs import ServiceState as SS
+from jaseci.svc import ServiceState as SS
 
 
 class common_svc:

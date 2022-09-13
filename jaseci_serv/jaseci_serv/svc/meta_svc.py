@@ -1,5 +1,5 @@
-from jaseci.svcs import meta_svc as ms
-from jaseci_serv.svcs import redis_svc, task_svc, mail_svc
+from jaseci.svc import meta_svc as ms
+from jaseci_serv.svc import redis_svc, task_svc, mail_svc
 from jaseci_serv.jaseci_serv.settings import RUN_SVCS
 
 

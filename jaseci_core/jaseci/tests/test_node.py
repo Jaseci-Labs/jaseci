@@ -1,4 +1,4 @@
-from jaseci.svcs import meta_svc
+from jaseci.svc import meta_svc
 from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
 from jaseci.graph.node import node

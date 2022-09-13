@@ -2,7 +2,7 @@
 This module includes code related to hooking Jaseci's Redis to the
 core engine.
 """
-from jaseci.svcs import common_svc, ServiceState as SS
+from jaseci.svc import common_svc, ServiceState as SS
 from jaseci.utils.utils import logger
 from redis import Redis
 
