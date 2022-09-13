@@ -2,7 +2,7 @@ from jaseci.svcs.common_svc import common_svc
 from jaseci.svcs.redis.redis_svc import redis_svc
 from jaseci.svcs.task.task_svc import task_svc
 from jaseci.svcs.mail.mail_svc import mail_svc
-from jaseci.utils.app_state import AppState as AS
+from jaseci.svcs.service_state import ServiceState as SS
 
 
 class meta_svc(common_svc):
@@ -10,7 +10,7 @@ class meta_svc(common_svc):
         super().__init__(meta_svc)
 
         if self.is_ready():
-            self.state = AS.RUNNING
+            self.state = SS.RUNNING
             self.app = {
                 "hook": self.build_hook,
                 "master": self.build_master,

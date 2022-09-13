@@ -4,7 +4,7 @@ from smtplib import SMTP, SMTP_SSL
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from jaseci.svcs.common_svc import common_svc
-from jaseci.utils.app_state import AppState as AS
+from jaseci.svcs.service_state import ServiceState as SS
 from jaseci.utils.utils import logger
 
 ################################################
@@ -53,7 +53,7 @@ class mail_svc(common_svc):
 
         try:
             if self.is_ready():
-                self.state = AS.STARTED
+                self.state = SS.STARTED
                 self.__mail(hook)
         except Exception as e:
             if not (self.quiet):
@@ -62,7 +62,7 @@ class mail_svc(common_svc):
                     f"{e.__class__.__name__}: {e}"
                 )
             self.app = None
-            self.state = AS.FAILED
+            self.state = SS.FAILED
 
     def __mail(self, hook):
         configs = self.get_config(hook)
@@ -72,9 +72,9 @@ class mail_svc(common_svc):
             self.quiet = configs.pop("quiet", False)
             self.__convert_config(hook, configs)
             self.app = self.connect(configs)
-            self.state = AS.RUNNING
+            self.state = SS.RUNNING
         else:
-            self.state = AS.DISABLED
+            self.state = SS.DISABLED
 
     # ----------- BACKWARD COMPATIBILITY ------------ #
     # ---------------- TO BE REMOVED ---------------- #

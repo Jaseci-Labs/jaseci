@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class AppState(Enum):
+class ServiceState(Enum):
     FAILED = -2
     DISABLED = -1
     NOT_STARTED = 0
@@ -9,10 +9,10 @@ class AppState(Enum):
     RUNNING = 2
 
     def is_ready(self):
-        return self == AppState.NOT_STARTED
+        return self == ServiceState.NOT_STARTED
 
     def is_running(self):
-        return self == AppState.RUNNING
+        return self == ServiceState.RUNNING
 
     def has_failed(self):
-        return self == AppState.FAILED
+        return self == ServiceState.FAILED
