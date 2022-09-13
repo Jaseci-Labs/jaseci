@@ -7,6 +7,7 @@ def load_standard():
     import jaseci.actions.standard.vector  # noqa
     import jaseci.actions.standard.date  # noqa
     import jaseci.actions.standard.jaseci  # noqa
+    import jaseci.actions.standard.mail  # noqa
 
 
 load_standard()

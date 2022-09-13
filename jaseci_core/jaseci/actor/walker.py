@@ -130,8 +130,8 @@ class walker(element, jac_code, walker_interp, anchored):
 
     def run(self, start_node=None, prime_ctx=None, request_ctx=None, profiling=False):
         """Executes Walker to completion"""
-        if self._h.task_hook_ready() and self._async in walker.valid_async:
-            task_id = self._h.add_queue(
+        if self._h.task.is_running() and self._async in walker.valid_async:
+            task_id = self._h.task.add_queue(
                 self, start_node, prime_ctx, request_ctx, profiling
             )
             return {"task_id": task_id}
@@ -222,7 +222,7 @@ class walker(element, jac_code, walker_interp, anchored):
         """
         Destroys self from memory and persistent storage
         """
-        if not self._h.task_hook_ready() or self._async not in walker.valid_async:
+        if not self._h.task.is_running() or self._async not in walker.valid_async:
             for i in self.activity_action_ids.obj_list():
                 i.destroy()
             walker_interp.destroy(self)

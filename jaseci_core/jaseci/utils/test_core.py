@@ -1,8 +1,6 @@
 from unittest import TestCase
+from jaseci.svcs.meta_svc import meta_svc
 from jaseci.utils.utils import TestCaseHelper
-from jaseci.element.super_master import super_master
-from jaseci.element.master import master
-from jaseci.utils.redis_hook import redis_hook
 import os
 
 
@@ -13,8 +11,9 @@ class core_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.smast = super_master(h=redis_hook())
-        self.mast = master(h=self.smast._h)
+        self.meta = meta_svc()
+        self.smast = self.meta.super_master()
+        self.mast = self.meta.master(h=self.smast._h)
 
     def tearDown(self):
         super().tearDown()

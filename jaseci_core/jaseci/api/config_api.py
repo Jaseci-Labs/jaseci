@@ -1,6 +1,7 @@
 """
 Admin config api functions as a mixin
 """
+from json import dumps
 from jaseci.api.interface import interface
 
 
@@ -12,7 +13,13 @@ class config_api:
     """
 
     def __init__(self, *args, **kwargs):
-        self._valid_configs = ["CONFIG_EXAMPLE", "ACTION_SETS"]
+        self._valid_configs = [
+            "CONFIG_EXAMPLE",
+            "ACTION_SETS",
+            "REDIS_CONFIG",
+            "TASK_CONFIG",
+            "EMAIL_CONFIG",
+        ]
 
     @interface.admin_api(cli_args=["name"])
     def config_get(self, name: str, do_check: bool = True):
@@ -24,14 +31,32 @@ class config_api:
         return self._h.get_glob(name)
 
     @interface.admin_api(cli_args=["name"])
-    def config_set(self, name: str, value: str, do_check: bool = True):
+    def config_set(self, name: str, value: str or dict, do_check: bool = True):
         """
         Set a config
         """
         if do_check and not self.name_check(name):
             return self.name_error(name)
+
+        if not (value is None) and type(value) is dict:
+            value = dumps(value)
+
         self._h.save_glob(name, value)
         return [f"Config of '{name}' to '{value}' set!"]
+
+    @interface.admin_api()
+    def config_refresh(self, name: str):
+        """
+        update global configs
+        """
+
+        hook = self._h
+        if name == "TASK_CONFIG":
+            hook.task.reset(hook)
+        elif name == "REDIS_CONFIG":
+            hook.redis.reset(hook)
+        elif name == "EMAIL_CONFIG":
+            hook.mail.reset(hook)
 
     @interface.admin_api()
     def config_list(self):
