@@ -20,16 +20,12 @@
 
 - [Language Overview](support/guide/jac_language_guide/jac_language_overview.md)
 - [Grammar](support/guide/jac_language_guide/jac_grammar.md)
-
 - [Operators](support/guide/jac_language_guide/operators.md)
 - [Control Flow](support/guide/jac_language_guide/control_flow.md)
 - [Collections](support/guide/jac_language_guide/collections.md)
 - [Nodes](support/guide/jac_language_guide/nodes.md)
-    
 - [Edges](support/guide/jac_language_guide/edges.md)
-
 - [Graphs](support/guide/jac_language_guide/graphs.md)
-   
 - [Walkers](support/guide/jac_language_guide/walkers.md)
     - [Traversing a Graph](support/guide/jac_language_guide/traversing_a_graph.md)
     - [Referencing a Node in Context](support/guide/jac_language_guide/referencing_node_context.md)
@@ -77,28 +73,28 @@
     - [Non-AI Tools](support/guide/jaseci_kit/modules/non_ai/README.md)
         - [PDF Extractor](support/guide/jaseci_kit/modules/non_ai/pdf_ext/README.md)
 
-- [Jaseci Core](jaseci_core/README.md)
+# Jaseci Studio
 
-- [Jaseci Studio](jaseci_ui_kit/README.md)
+- [Jaseci UI Kit](jaseci_ui_kit/README.md)
     - [Introduction](jaseci_ui_kit/components/docs/gettingStarted.md)
     - [Basic Concepts](jaseci_ui_kit/components/docs/basic-concepts.md)
     - [Built-in Actions](jaseci_ui_kit/components/docs/built-in-actions.md)
     - [Connecting an API](jaseci_ui_kit/components/docs/connecting-an-api.md)
     - [List of Components](jaseci_ui_kit/components/docs/list_of_componets.md)
-    - [AuthForm](jaseci_ui_kit/components/docs/components/AuthForm.md)
-    - [Badge](jaseci_ui_kit/components/docs/components/Badge.md)
-    - [Breadcrumbs](jaseci_ui_kit/components/docs/components/Breadcrumbs.md)
-    - [Button](jaseci_ui_kit/components/docs/components/Button.md)
-    - [ButtonGroup](jaseci_ui_kit/components/docs/components/ButtonGroup.md)
-    - [Card](jaseci_ui_kit/components/docs/components/Card.md)
-    - [Carousel](jaseci_ui_kit/components/docs/components/Carousel.md)
-    - [Checkbox](jaseci_ui_kit/components/docs/components/Checkbox.md)
-    - [Collapse](jaseci_ui_kit/components/docs/components/Collapse.md)
-    - [Checkbox](jaseci_ui_kit/components/docs/components/Checkbox.md)
-    - [Collapse](jaseci_ui_kit/components/docs/components/Collapse.md)
-    - [Column](jaseci_ui_kit/components/docs/components/Column.md)
-    - [Container](jaseci_ui_kit/components/docs/components/Container.md)
-  
+        - [AuthForm](jaseci_ui_kit/components/docs/components/AuthForm.md)
+        - [Badge](jaseci_ui_kit/components/docs/components/Badge.md)
+        - [Breadcrumbs](jaseci_ui_kit/components/docs/components/Breadcrumbs.md)
+        - [Button](jaseci_ui_kit/components/docs/components/Button.md)
+        - [ButtonGroup](jaseci_ui_kit/components/docs/components/ButtonGroup.md)
+        - [Card](jaseci_ui_kit/components/docs/components/Card.md)
+        - [Carousel](jaseci_ui_kit/components/docs/components/Carousel.md)
+        - [Checkbox](jaseci_ui_kit/components/docs/components/Checkbox.md)
+        - [Collapse](jaseci_ui_kit/components/docs/components/Collapse.md)
+        - [Checkbox](jaseci_ui_kit/components/docs/components/Checkbox.md)
+        - [Collapse](jaseci_ui_kit/components/docs/components/Collapse.md)
+        - [Column](jaseci_ui_kit/components/docs/components/Column.md)
+        - [Container](jaseci_ui_kit/components/docs/components/Container.md)
+    
 
  
 

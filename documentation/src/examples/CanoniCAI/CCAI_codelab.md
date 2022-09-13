@@ -19,12 +19,12 @@ To test the installation is successful, run:
 jsctl --help
 ```
 
-`jsctl` stands for the Jaseci Command Line Interface.
-If the command above displays the help menu for `jsctl`, then you have successfully installed jaseci.
+`jacctl` stands for the Jaseci Command Line Interface.
+If the command above displays the help menu for `jacctl`, then you have successfully installed jaseci.
 
 > **Note**
 >
-> Take a look and get familiarized with these commands while you are at it. `jsctl` will be frequently used throughout this journey.
+> Take a look and get familiarized with these commands while you are at it. `jacctl` will be frequently used throughout this journey.
 
 ## Background
 
@@ -186,13 +186,13 @@ First put all of the above code snippet into a single jac file and name it `main
 - graph definition
 - init walker
 
-Run `jsctl` to get into the jaseci shell environment:
+Run `jacctl` to get into the jaseci shell environment:
 
 ```bash
 jsctl
 ```
 
-Inside the `jsctl` shell,
+Inside the `jacctl` shell,
 
 ```bash
 jaseci > jac dot main.jac
@@ -363,7 +363,7 @@ walker ingest_faq {
 
 An example knowledge base file look like this
 
-```json
+```jacon
 [
   {
     "question": "I have a Model 3 reservation, how do I configure my order?",
@@ -607,7 +607,7 @@ For now, we are just matching the incoming question with the intent label as a s
 
 > **Note**
 >
-> Notice we are running `jsctl` commands directly from the terminal without first entering the jaseci shell? Any `jsctl` commands can be launched directly from the terminal by just prepending it with `jsctl`. Try it with the other `jsctl` comamnds we have encountered so far, such as `jac dot`.
+> Notice we are running `jacctl` commands directly from the terminal without first entering the jaseci shell? Any `jacctl` commands can be launched directly from the terminal by just prepending it with `jacctl`. Try it with the other `jacctl` comamnds we have encountered so far, such as `jac dot`.
 
 ## Intent classificaiton with Bi-encoder
 Let's introduce an intent classification AI model.
@@ -699,7 +699,7 @@ Always remember to save your trained models!
 
 > **Warning**
 >
-> `save_model` works with relative path. When a relative model path is specified, it will save the model at the location relative to **location of where you run jsctl**. Note that until the model is saved, the trained weights will stay in memory, which means that it will not persisit between `jsctl` session. So once you have a trained model you like, make sure to save them so you can load them back in the next jsctl session.
+> `save_model` works with relative path. When a relative model path is specified, it will save the model at the location relative to **location of where you run jsctl**. Note that until the model is saved, the trained weights will stay in memory, which means that it will not persisit between `jacctl` session. So once you have a trained model you like, make sure to save them so you can load them back in the next jsctl session.
 
 ## Integrate the Intent Classifier
 Now let's update our walker to use the trained intent classifier.
@@ -1122,7 +1122,7 @@ Go into the `code/` directory and copy `tfm_ner.jac` and `ner_train.json` to you
 We are training the model to detect two entities, `name` and `address`, for the test drive use case.
 
 Let's quickly go over the training data format.
-```json
+```jacon
 [
     "sure my name is [tony stark](name) and i live at [10880 malibu point california](address)",
     "my name is [jason](name)"
@@ -1244,7 +1244,7 @@ Chained importing is supported.
 Once you have the main jac file (let's call it `main.jac`), you will need to compile it and its imports into a single `.jir` file.
 `jir` here stands for Jac Intermediate Representation.
 To compile a jac file, use the `jac build` command
-```bash
+```jac
 jaseci > jac build main.jac
 ```
 If the compilation is successful, a `.jir` file with the same name will be generated (in this case, `main.jir`).
@@ -1296,7 +1296,7 @@ Let's quickly break it down.
 * `for n in -->` iterates through all the nodes connected with an outgoing edge from the current node. You can use `.context` on any node variables to access its variables.
 
 And the logic for the `faq_state` that contains the answer is relatively simple;
-```js
+```jac
 node faq_state:cai_state {
     has question;
     has answer;
@@ -1340,7 +1340,7 @@ Our graph should now looks like this!
 
 Here comes the biggest benefit of our unified node architecture -- the exact same walker logic can be shared to traverse both systems.
 The only change we need to make is to change from `dialogue_state` to `cai_state` to apply the walker logic to a more generalized set of nodes.
-```js
+```jac
 walker talk {
     ...
     root {
@@ -1357,7 +1357,7 @@ walker talk {
 ```
 
 Update the graph name in the `init` walker as well.
-```js
+```jac
 walker init {
     root {
         spawn here --> graph::tesla_ai;
@@ -1367,7 +1367,7 @@ walker init {
 ```
 
 To compile the program,
-```js
+```jac
 jaseci > jac build tesla_ai.jac
 ```
 As mentioned before, if the compiliation succeedd, a `tesla_ai.jir` will be generated.
@@ -1377,7 +1377,7 @@ As mentioned before, if the compiliation succeedd, a `tesla_ai.jir` will be gene
 > Run into issues at this build step? First check if all the imports are set up correctly.
 
 Running a `jir` is just like running a `jac` file
-```bash
+```jac
 jaseci > jac run tesla_ai.jir
 ```
 
@@ -1389,7 +1389,7 @@ The model is trained? Great! Now run the jir and try questions like "I have some
 Congratulations! You have created a single conversational AI system that is capable of answering FAQs and perform complex multi-step actions.
 
 # Bring Your Application to Production
-Typing in questions and getting responses via `jsctl` in terminal is a quick and easy way of interactively test and use your program.
+Typing in questions and getting responses via `jacctl` in terminal is a quick and easy way of interactively test and use your program.
 But the ultimate goal of building any products is to eventually deploying it to production and having it serve real users via standard interface such as RESTful API endpoints.
 In this section, we will cover a number of items related to bringing your jac program to production.
 
@@ -1486,7 +1486,7 @@ jaseci > sentinel list
 ```
 `sentinel get` returns the information about the current active sentinel, while `sentinel list` returns all available sentinels for the user.
 The output will look something like this
-```json
+```jacon
 {
   "version": null,
   "name": "main.jir",
@@ -1530,7 +1530,7 @@ jaseci > jac test tests.jac
 This will execute all the test cases in `tests.jac` squentially and report success or any assertion failures.
 
 ## Running Jaseci as a Service
-So far, we have been interacting jaseci through `jsctl`.
+So far, we have been interacting jaseci through `jacctl`.
 jaseci can also be run as a service serving a set of RESTful API endpoints.
 This is useful in production settings.
 To run jaseci as a service, first we need to install the `jaseci_serv` package.
@@ -1547,7 +1547,7 @@ jsserv runserver 0.0.0.0:3000
 ```
 This will launch a Django RESTful API server at localhost and port 3000.
 The Jaseci server supports a wide range of API endpoints.
-All the `jsctl` commands we have used throughput this tutorial have an equivalent API endpoint, such as `walker_run` and `sentinel_register`.
+All the `jacctl` commands we have used throughput this tutorial have an equivalent API endpoint, such as `walker_run` and `sentinel_register`.
 As a matter of fact, the entire development journey in this tutorial can be done completely with a remote jaseci server instance.
 You can go to `localhost:3000/docs` to check out all the available APIs.
 

@@ -4730,8 +4730,9 @@ hljs.registerLanguage("jac", function() {
   };
 var o = {
     className: "attribute",
-    begin : "/[node|edge]::[a-zA-Z]/",
+    begin : "(node::)[a-zA-Z]",
     end: "$"
+    
 }
   
     var n = {

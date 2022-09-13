@@ -1,4 +1,4 @@
-## Update
+# Update Component 
 
 The update action allows us to update a property of a component.
 

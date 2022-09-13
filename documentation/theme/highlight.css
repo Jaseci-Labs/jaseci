@@ -26,6 +26,10 @@
   color: #d70025;
 }
 
+.hljs-attribute{
+  color: #2c54d8
+}
+
 /* Orange */
 .hljs-number,
 .hljs-meta,
