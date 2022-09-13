@@ -3,7 +3,7 @@ This module includes code related to hooking Jaseci's Redis to the
 core engine.
 """
 from jaseci.svcs.common_svc import common_svc
-from jaseci.utils.app_state import AppState as AS
+from jaseci.svcs.service_state import ServiceState as SS
 from jaseci.utils.utils import logger
 from redis import Redis
 
@@ -35,7 +35,7 @@ class redis_svc(common_svc):
 
         try:
             if self.is_ready():
-                self.state = AS.STARTED
+                self.state = SS.STARTED
                 self.__redis(hook)
         except Exception as e:
             if not (self.quiet):
@@ -44,7 +44,7 @@ class redis_svc(common_svc):
                     f"{e.__class__.__name__}: {e}"
                 )
             self.app = None
-            self.state = AS.FAILED
+            self.state = SS.FAILED
 
     def __redis(self, hook):
         configs = self.get_config(hook)
@@ -54,9 +54,9 @@ class redis_svc(common_svc):
             self.quiet = configs.pop("quiet", False)
             self.app = Redis(**configs, decode_responses=True)
             self.app.ping()
-            self.state = AS.RUNNING
+            self.state = SS.RUNNING
         else:
-            self.state = AS.DISABLED
+            self.state = SS.DISABLED
 
     ###################################################
     #                     COMMONS                     #

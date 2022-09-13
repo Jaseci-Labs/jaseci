@@ -2,7 +2,7 @@ import signal
 import sys
 from multiprocessing import Process
 from jaseci.svcs.common_svc import common_svc
-from jaseci.utils.app_state import AppState as AS
+from jaseci.svcs.service_state import ServiceState as SS
 from jaseci.utils.utils import logger
 from jaseci.svcs.task.task_common import (
     task_properties,
@@ -44,7 +44,7 @@ class task_svc(common_svc, task_properties):
 
         try:
             if self.is_ready() and self.__has_redis(hook):
-                self.state = AS.STARTED
+                self.state = SS.STARTED
                 self.__task(hook)
         except Exception as e:
             if not (self.quiet):
@@ -54,7 +54,7 @@ class task_svc(common_svc, task_properties):
                 )
 
             self.app = None
-            self.state = AS.FAILED
+            self.state = SS.FAILED
             self.terminate_worker()
             self.terminate_scheduler()
 
@@ -72,9 +72,9 @@ class task_svc(common_svc, task_properties):
                 self.__tasks()
                 self.__worker()
                 self.__scheduler()
-                self.state = AS.RUNNING
+                self.state = SS.RUNNING
         else:
-            self.state = AS.DISABLED
+            self.state = SS.DISABLED
 
     def __worker(self):
         self.worker = Process(target=self.app.Worker(quiet=self.quiet).start)
@@ -98,7 +98,7 @@ class task_svc(common_svc, task_properties):
                     "Redis is not yet running reason "
                     "for skipping Celery initialization!"
                 )
-            self.state = AS.FAILED
+            self.state = SS.FAILED
             return False
         return True
 

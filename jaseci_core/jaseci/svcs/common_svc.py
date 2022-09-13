@@ -1,4 +1,4 @@
-from jaseci.utils.app_state import AppState as AS
+from jaseci.svcs.service_state import ServiceState as SS
 
 
 class common_svc:
@@ -6,7 +6,7 @@ class common_svc:
         self.cls = cls
         if not hasattr(self.cls, "_app"):
             setattr(self.cls, "_app", None)
-            setattr(self.cls, "_state", AS.NOT_STARTED)
+            setattr(self.cls, "_state", SS.NOT_STARTED)
             setattr(self.cls, "_quiet", True)
 
     @property
@@ -18,11 +18,11 @@ class common_svc:
         self.cls._app = val
 
     @property
-    def state(self) -> AS:
+    def state(self) -> SS:
         return self.cls._state
 
     @state.setter
-    def state(self, val: AS):
+    def state(self, val: SS):
         self.cls._state = val
 
     @property
@@ -52,7 +52,7 @@ class common_svc:
 
     def build(self, hook):
         self.app = None
-        self.state = AS.NOT_STARTED
+        self.state = SS.NOT_STARTED
         self.__init__(hook)
 
 
