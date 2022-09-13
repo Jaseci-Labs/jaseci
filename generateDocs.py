@@ -51,7 +51,11 @@ def main():
 
                 docfile.close()
 
-    generateAssests("support/guide/assets")
+            
+    files = getImages("examples/CanoniCAI/images")
+    generateAssests(files)      
+    files = getImages("support/guide/assets")
+    generateAssests(files)
 
 
         
@@ -77,23 +81,46 @@ def processline(line):
         
         return {"heading": heading , "link" : link}
    
-def generateAssests(*paths):
-    for path in paths:
+def generateAssests(files):
+
+        for file in files:
+            
+            newAssetPath = 'documentation/src/' + file
+            try:
+                shutil.copy(file,newAssetPath)
+            except FileNotFoundError:
+                editedPth = newAssetPath
+                fileposition = editedPth.rfind("/")
+                editedPth = editedPth[0:fileposition]
+                os.makedirs(editedPth)
+                shutil.copy(file,newAssetPath)
+           
+        
+# get image paths
+def getImages(path=None):
+    if path != None:
         f = []
         d = []
-        for (dirpath, dirnames, filenames) in walk(path):
+        x = 0
+        for(dirpath,dirnames,filenames) in walk(path):
+            while(x<len(filenames)):
+                filenames[x] = path + "/" + filenames[x]
+                x = x + 1
             f.extend(filenames)
             d.extend(dirnames)
             break
+       
 
+        if(len(d)>0):
+            for directory in d:
 
-        for file in f:
-            assetRelativePath = path + "/" + file
-          
-            shutil.copy(assetRelativePath,newAssetPath)
+               ImageDirectory = getImages(path + "/" + directory)
+               f.extend(ImageDirectory)
         
+        return f
 
 
+    
         
 
 main()
