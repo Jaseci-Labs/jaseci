@@ -53,3 +53,16 @@ Args:
 ---- dataset
 '''
 ### Module Compositor End
+
+# action load compositor
+# can compositor.create_composite
+
+# create_compistor([use_enc, personalized_header],["", {
+#     yaml:
+#     ajdnas:
+# }])
+# compositor.predict('user_1', input) --> output;
+# compositor.train(dataset, user_1);
+
+# similar image ---> text ----> image
+# image, imge2
