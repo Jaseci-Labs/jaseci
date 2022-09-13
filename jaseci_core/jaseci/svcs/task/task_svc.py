@@ -67,12 +67,11 @@ class task_svc(common_svc, task_properties):
             self.app = Celery("celery")
             self.app.conf.update(**configs)
             self.inspect = self.app.control.inspect()
-
-            if self.ping():
-                self.__tasks()
-                self.__worker()
-                self.__scheduler()
-                self.state = SS.RUNNING
+            self.inspect.ping()
+            self.__tasks()
+            self.__worker()
+            self.__scheduler()
+            self.state = SS.RUNNING
         else:
             self.state = SS.DISABLED
 
@@ -105,11 +104,6 @@ class task_svc(common_svc, task_properties):
     ###################################################
     #              COMMON GETTER/SETTER               #
     ###################################################
-
-    def ping(self):
-        return not (self.inspect is None) and self.inspect.ping() is None
-
-    # ---------------- QUEUE RELATED ---------------- #
 
     def inspect_tasks(self):
         return {
