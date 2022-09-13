@@ -105,3 +105,46 @@ class LogoutAllUsersView(APIView):
             u.auth_token_set.all().delete()
             user_logged_out.send(sender=u.__class__, request=request, user=u)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+
+class IsSuperUser(permissions.BasePermission):
+    """
+    Allows access only to super users.
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_superuser)
+
+
+class UpdateUserView(APIView):
+    """
+    update specific user's is_activated and is_superuser
+    """
+
+    serializer_class = UserSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated, IsSuperUser)
+
+    def update_field(self, user, data: dict, field_map: dict):
+        has_changes = False
+        for field, _type in field_map.items():
+            if field in data and type(data[field]) is _type:
+                if getattr(user, field, _type()) != data[field]:
+                    setattr(user, field, data[field])
+                    has_changes = True
+
+        return has_changes
+
+    def post(self, request, id):
+        user = get_user_model().objects.get(id=id)
+
+        if user is None or not request.data or type(request.data) is not dict:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        if self.update_field(
+            user, request.data, {"is_activated": bool, "is_superuser": bool}
+        ):
+            user.save()
+            return Response("Update Success!")
+        else:
+            return Response("No changes found!")

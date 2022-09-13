@@ -1,3 +1,4 @@
+from uuid import uuid4
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -304,3 +305,39 @@ class user_api_tests_private(TestCaseHelper, TestCase):
         self.assertEqual(self.user.name, payload["name"])
         self.assertTrue(self.user.check_password(payload["password"]))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_manage_user_by_id(self):
+        """Test manage user by id"""
+        payload = {"email": f"{uuid4()}@jaseci.com", "password": "testpass"}
+        user = create_user(**payload)
+        user.save()
+
+        self.assertEqual(user.is_activated, False)
+        self.assertEqual(user.is_superuser, False)
+
+        payload = {"email": "super@jaseci.com", "password": "testpass"}
+        superuser = create_superuser(**payload)
+        superuser.save()
+
+        res = self.client.post(TOKEN_URL, payload).data
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + res["token"])
+
+        payload = {
+            "is_activated": True,
+            "is_superuser": True,
+        }
+
+        res = self.client.post(f"{MANAGE_URL}{user.id}", payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, "Update Success!")
+
+        res = self.client.post(f"{MANAGE_URL}{user.id}", payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, "No changes found!")
+
+        user = get_user(id=user.id)
+
+        self.assertEqual(user.is_activated, True)
+        self.assertEqual(user.is_superuser, True)
