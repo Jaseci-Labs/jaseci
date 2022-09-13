@@ -19,11 +19,13 @@ class Queue(Task):
         hook = MetaService().build_hook()
 
         wlk = hook.get_obj_from_store(UUID(wlk))
+        wlk._to_await = True
+
         nd = hook.get_obj_from_store(UUID(nd))
         resp = wlk.run(nd, *args)
         wlk.destroy()
 
-        return resp
+        return {"anchor": wlk.anchor_value(), "response": resp}
 
 
 class ScheduledWalker(Task):

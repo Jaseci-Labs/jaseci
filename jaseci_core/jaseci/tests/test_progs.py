@@ -1,4 +1,5 @@
 from unittest import TestCase
+from jaseci.svc import ServiceState
 
 import jaseci.tests.jac_test_progs as jtp
 from jaseci.actor.sentinel import Sentinel
@@ -349,3 +350,75 @@ class JacTests(TestCaseHelper, TestCase):
             api_name="walker_run", params={"name": "init"}
         )
         self.assertEqual(res["report"], [1, 2, 3, 4, 5, 6, 7, 8, "apple"])
+
+    def test_async_syntax_with_celery(self):
+        mast = self.meta.master()
+        mast.sentinel_register(name="test", code=jtp.async_syntax, auto_run="")
+        res = mast.general_interface_to_api(
+            api_name="walker_run",
+            params={"name": "simple_async", "ctx": {"sample": "name"}},
+        )
+
+        self.assertTrue(res["is_queued"])
+
+        res = mast.general_interface_to_api(
+            api_name="walker_queue_wait",
+            params={"task_id": res["result"]},
+        )
+
+        self.assertEqual("test", res["result"]["anchor"])
+
+        res = res["result"]["response"]
+
+        # report from task1 (awaited)
+        self.assertEqual(1, res["report"][0])
+        self.assertEqual(2, res["report"][1])
+
+        # task1 anchor
+        self.assertEqual(1, res["report"][2])
+        report4 = res["report"][4]
+
+        res = res["report"][3]
+
+        # no celery running
+        self.assertTrue(res["is_queued"])
+
+        res = mast.general_interface_to_api(
+            api_name="walker_queue_check",
+            params={"task_id": res["result"]},
+        )
+
+        self.assertEqual(report4, res)
+        self.assertEqual(2, res["result"]["anchor"])
+        self.assertEqual([2, 2], res["result"]["response"]["report"])
+
+    def test_async_syntax_without_celery(self):
+        mast = self.meta.master()
+        mast._h.task.state = ServiceState.DISABLED
+        mast.sentinel_register(name="test", code=jtp.async_syntax, auto_run="")
+        res = mast.general_interface_to_api(
+            api_name="walker_run",
+            params={"name": "simple_async", "ctx": {"sample": "name"}},
+        )
+
+        # no celery running
+        self.assertFalse(res["is_queued"])
+
+        # report from task1 (awaited)
+        self.assertEqual(1, res["result"]["report"][0])
+        self.assertEqual(2, res["result"]["report"][1])
+
+        # report from task2 (async but no celery)
+        self.assertEqual(2, res["result"]["report"][2])
+        self.assertEqual(2, res["result"]["report"][3])
+
+        # task1 anchor
+        self.assertEqual(1, res["result"]["report"][4])
+
+        res = res["result"]["report"][5]
+
+        # no celery running
+        self.assertFalse(res["is_queued"])
+        self.assertEqual(2, res["result"])
+
+        mast._h.task.state = ServiceState.RUNNING

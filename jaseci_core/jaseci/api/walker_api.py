@@ -177,8 +177,9 @@ class WalkerApi:
         """
         wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
         if wlk is None:
-            wlk = snt.run_architype(name=name, kind="walker", caller=self)
-            wlk._async = is_async
+            wlk = snt.run_architype(
+                name=name, kind="walker", caller=self, is_async=is_async
+            )
         if wlk is None:
             return self.bad_walk_response([f"Walker {name} not found!"])
         res = self.walker_execute(

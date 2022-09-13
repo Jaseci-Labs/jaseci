@@ -260,7 +260,12 @@ class Interface:
     # future constraints other than `async` should be add here
     def sync_constraints(self, obj, params):
         if isinstance(obj, Walker):
-            obj._async = params.get("is_async", False)
+            is_async = params.get("is_async", False)
+            obj.is_async = (
+                is_async.lower() == "true"
+                if type(is_async) is str
+                else is_async is True  # is_async might be non bool
+            )
 
         return obj
 

@@ -21,9 +21,7 @@ import cProfile
 class Walker(Element, WalkerInterp, Anchored):
     """Walker class for Jaseci"""
 
-    valid_async = [True, "true"]
-
-    def __init__(self, code_ir=None, **kwargs):
+    def __init__(self, code_ir=None, is_async=False, **kwargs):
         self.yielded = False
         self.activity_action_ids = IdList(self)
         self.namespaces = []
@@ -36,7 +34,8 @@ class Walker(Element, WalkerInterp, Anchored):
         self.current_step = 0
         self.in_entry_exit = False
         self.step_limit = 10000
-        self._async = False
+        self.is_async = is_async
+        self._to_await = False
         Element.__init__(self, **kwargs)
         WalkerInterp.__init__(self)
         Anchored.__init__(self)
@@ -64,6 +63,9 @@ class Walker(Element, WalkerInterp, Anchored):
         for i in self.namespaces:
             ret[i] = hashlib.md5((self._m_id + i).encode()).hexdigest()
         return ret
+
+    def for_queue(self):
+        return self.is_async and not (self._to_await)
 
     def step(self):
         """
@@ -127,11 +129,25 @@ class Walker(Element, WalkerInterp, Anchored):
 
     def run(self, start_node=None, prime_ctx=None, request_ctx=None, profiling=False):
         """Executes Walker to completion"""
-        if self._h.task.is_running() and self._async in Walker.valid_async:
-            task_id = self._h.task.add_queue(
-                self, start_node, prime_ctx, request_ctx, profiling
+        if self.for_queue() and self._h.task.is_running():
+            start_node = (
+                start_node
+                if not (start_node is None)
+                else (
+                    self.next_node_ids.pop_first_obj() if self.next_node_ids else None
+                )
             )
-            return {"task_id": task_id}
+
+            return {
+                "is_queued": True,
+                "result": self._h.task.add_queue(
+                    self,
+                    start_node,
+                    prime_ctx or self.context,
+                    request_ctx or self.request_context,
+                    profiling,
+                ),
+            }
 
         if profiling:
             pr = cProfile.Profile()
@@ -185,6 +201,9 @@ class Walker(Element, WalkerInterp, Anchored):
             self.profile["perf"] = s
             report_ret["profile"] = self.profile
 
+        if self.for_queue():
+            return {"is_queued": False, "result": report_ret}
+
         return report_ret
 
     def yield_walk(self):
@@ -219,7 +238,7 @@ class Walker(Element, WalkerInterp, Anchored):
         """
         Destroys self from memory and persistent storage
         """
-        if not self._h.task.is_running() or self._async not in Walker.valid_async:
+        if not self.for_queue() or not self._h.task.is_running():
             for i in self.activity_action_ids.obj_list():
                 i.destroy()
             WalkerInterp.destroy(self)
