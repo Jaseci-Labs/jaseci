@@ -8,7 +8,7 @@ import os
 import pickle
 import functools
 import json
-from jaseci.svcs.meta_svc import meta_svc
+from jaseci.svcs import meta_svc
 import requests
 
 from jaseci.utils.utils import copy_func

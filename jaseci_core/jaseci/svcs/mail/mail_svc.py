@@ -3,8 +3,7 @@ import ssl
 from smtplib import SMTP, SMTP_SSL
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from jaseci.svcs.common_svc import common_svc
-from jaseci.svcs.service_state import ServiceState as SS
+from jaseci.svcs import common_svc, ServiceState as SS
 from jaseci.utils.utils import logger
 
 ################################################
