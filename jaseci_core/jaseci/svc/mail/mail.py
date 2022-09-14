@@ -1,17 +1,19 @@
-from json import dumps
 import ssl
-from smtplib import SMTP, SMTP_SSL
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from jaseci.svc.common_svc import common_svc
-from jaseci.svc.service_state import ServiceState as SS
+from json import dumps
+from smtplib import SMTP, SMTP_SSL
+
+from jaseci.svc import CommonService, ServiceState
 from jaseci.utils.utils import logger
 
 ################################################
 #                   DEFAULTS                   #
 ################################################
 
-EMAIL_CONFIG = {
+MAIL_ERR_MSG = "Mail service is disabled or not yet configured!"
+
+MAIL_CONFIG = {
     "enabled": True,
     "quiet": True,
     "version": 2,
@@ -37,32 +39,88 @@ EMAIL_CONFIG = {
     },
 }
 
+
+#################################################
+#    BACKWARD COMPATIBILITY (TO BE REMOVED)     #
+#################################################
+
+
+def convert_config(hook, configs: dict):
+    version = configs.get("version", 2)
+    migrate = configs.pop("migrate", False)
+    if version == 1 or migrate:
+        convert(
+            hook,
+            configs,
+            {
+                "EMAIL_BACKEND": "backend",
+                "EMAIL_HOST": "host",
+                "EMAIL_PORT": "port",
+                "EMAIL_HOST_USER": "user",
+                "EMAIL_HOST_PASSWORD": "pass",
+                "EMAIL_DEFAULT_FROM": "sender",
+                "EMAIL_USE_TLS": "tls",
+            },
+        )
+
+        if "templates" not in configs:
+            configs["templates"] = {}
+
+        convert(
+            hook,
+            configs["templates"],
+            {
+                "EMAIL_ACTIVATION_SUBJ": "activation_subj",
+                "EMAIL_ACTIVATION_BODY": "activation_body",
+                "EMAIL_ACTIVATION_HTML_BODY": "activation_html_body",
+                "EMAIL_RESETPASS_SUBJ": "resetpass_subj",
+                "EMAIL_RESETPASS_BODY": "resetpass_body",
+                "EMAIL_RESETPASS_HTML_BODY": "resetpass_html_body",
+            },
+        )
+
+        if migrate:
+            hook.save_glob("EMAIL_CONFIG", dumps(configs))
+
+
+def convert(hook, holder, mapping: dict):
+    for k, v in mapping.items():
+        if hook.has_glob(k):
+            conf = hook.get_glob(k)
+            if not (conf is None):
+                if v == "tls":
+                    holder[v] = conf.lower() == "true"
+                else:
+                    holder[v] = conf
+    return holder
+
+
 #################################################
 #                  EMAIL APP                   #
 #################################################
 
 
-class mail_svc(common_svc):
+class MailService(CommonService):
 
     ###################################################
     #                   INITIALIZER                   #
     ###################################################
 
     def __init__(self, hook=None):
-        super().__init__(mail_svc)
+        super().__init__(MailService)
 
         try:
             if self.is_ready():
-                self.state = SS.STARTED
+                self.state = ServiceState.STARTED
                 self.__mail(hook)
         except Exception as e:
-            if not (self.quiet):
+            if not self.quiet:
                 logger.error(
                     "Skipping Mail setup due to initialization failure!\n"
                     f"{e.__class__.__name__}: {e}"
                 )
             self.app = None
-            self.state = SS.FAILED
+            self.state = ServiceState.FAILED
 
     def __mail(self, hook):
         configs = self.get_config(hook)
@@ -70,62 +128,11 @@ class mail_svc(common_svc):
 
         if enabled:
             self.quiet = configs.pop("quiet", False)
-            self.__convert_config(hook, configs)
+            convert_config(hook, configs)
             self.app = self.connect(configs)
-            self.state = SS.RUNNING
+            self.state = ServiceState.RUNNING
         else:
-            self.state = SS.DISABLED
-
-    # ----------- BACKWARD COMPATIBILITY ------------ #
-    # ---------------- TO BE REMOVED ---------------- #
-
-    def __convert(self, hook, holder, mapping: dict):
-        for k, v in mapping.items():
-            if hook.has_glob(k):
-                conf = hook.get_glob(k)
-                if not (conf is None):
-                    if v == "tls":
-                        holder[v] = conf.lower() == "true"
-                    else:
-                        holder[v] = conf
-        return holder
-
-    def __convert_config(self, hook, configs: dict):
-        version = configs.get("version", 2)
-        migrate = configs.pop("migrate", False)
-        if version == 1 or migrate:
-            self.__convert(
-                hook,
-                configs,
-                {
-                    "EMAIL_BACKEND": "backend",
-                    "EMAIL_HOST": "host",
-                    "EMAIL_PORT": "port",
-                    "EMAIL_HOST_USER": "user",
-                    "EMAIL_HOST_PASSWORD": "pass",
-                    "EMAIL_DEFAULT_FROM": "sender",
-                    "EMAIL_USE_TLS": "tls",
-                },
-            )
-
-            if "templates" not in configs:
-                configs["templates"] = {}
-
-            self.__convert(
-                hook,
-                configs["templates"],
-                {
-                    "EMAIL_ACTIVATION_SUBJ": "activation_subj",
-                    "EMAIL_ACTIVATION_BODY": "activation_body",
-                    "EMAIL_ACTIVATION_HTML_BODY": "activation_html_body",
-                    "EMAIL_RESETPASS_SUBJ": "resetpass_subj",
-                    "EMAIL_RESETPASS_BODY": "resetpass_body",
-                    "EMAIL_RESETPASS_HTML_BODY": "resetpass_html_body",
-                },
-            )
-
-            if migrate:
-                hook.save_glob("EMAIL_CONFIG", dumps(configs))
+            self.state = ServiceState.DISABLED
 
     ###################################################
     #                     CLEANER                     #
@@ -159,10 +166,10 @@ class mail_svc(common_svc):
 
         server.login(user, _pass)
 
-        return emailer(server, sender)
+        return Mailer(server, sender)
 
     def get_config(self, hook) -> dict:
-        return hook.build_config("EMAIL_CONFIG", EMAIL_CONFIG)
+        return hook.build_config("EMAIL_CONFIG", MAIL_CONFIG)
 
 
 # ----------------------------------------------- #
@@ -173,7 +180,7 @@ class mail_svc(common_svc):
 ####################################################
 
 
-class emailer:
+class Mailer:
     def __init__(self, server, sender):
         self.server = server
         self.sender = sender
@@ -185,7 +192,6 @@ class emailer:
         subject: str = "Jaseci Email",
         body: tuple = ("", ""),
     ):
-
         message = MIMEMultipart()
         message["Subject"] = subject
         message["From"] = self.sender if sender is None else sender

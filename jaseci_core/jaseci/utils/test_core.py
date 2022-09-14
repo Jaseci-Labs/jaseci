@@ -1,7 +1,8 @@
-from unittest import TestCase
-from jaseci.svc.meta_svc import meta_svc
-from jaseci.utils.utils import TestCaseHelper
 import os
+from unittest import TestCase
+
+from jaseci.svc import MetaService
+from jaseci.utils.utils import TestCaseHelper
 
 
 class core_test(TestCaseHelper, TestCase):
@@ -11,7 +12,7 @@ class core_test(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.meta = meta_svc()
+        self.meta = MetaService()
         self.smast = self.meta.super_master()
         self.mast = self.meta.master(h=self.smast._h)
 

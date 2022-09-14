@@ -1,11 +1,7 @@
-"""
-This module includes code related to hooking Jaseci's Redis to the
-core engine.
-"""
-from jaseci.svc.common_svc import common_svc
-from jaseci.svc.service_state import ServiceState as SS
-from jaseci.utils.utils import logger
 from redis import Redis
+
+from jaseci.svc import CommonService, ServiceState
+from jaseci.utils.utils import logger
 
 ################################################
 #                   DEFAULTS                   #
@@ -19,23 +15,24 @@ REDIS_CONFIG = {
     "db": "1",
 }
 
+
 #################################################
 #                  REDIS HOOK                   #
 #################################################
 
 
-class redis_svc(common_svc):
+class RedisService(CommonService):
 
     ###################################################
     #                   INITIALIZER                   #
     ###################################################
 
     def __init__(self, hook=None):
-        super().__init__(redis_svc)
+        super().__init__(RedisService)
 
         try:
             if self.is_ready():
-                self.state = SS.STARTED
+                self.state = ServiceState.STARTED
                 self.__redis(hook)
         except Exception as e:
             if not (self.quiet):
@@ -44,7 +41,7 @@ class redis_svc(common_svc):
                     f"{e.__class__.__name__}: {e}"
                 )
             self.app = None
-            self.state = SS.FAILED
+            self.state = ServiceState.FAILED
 
     def __redis(self, hook):
         configs = self.get_config(hook)
@@ -54,9 +51,9 @@ class redis_svc(common_svc):
             self.quiet = configs.pop("quiet", False)
             self.app = Redis(**configs, decode_responses=True)
             self.app.ping()
-            self.state = SS.RUNNING
+            self.state = ServiceState.RUNNING
         else:
-            self.state = SS.DISABLED
+            self.state = ServiceState.DISABLED
 
     ###################################################
     #                     COMMONS                     #

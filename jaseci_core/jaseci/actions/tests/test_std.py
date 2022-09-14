@@ -1,10 +1,10 @@
-from jaseci.svc.meta_svc import meta_svc
+from unittest import TestCase
+
+import jaseci.actions.tests.std_test_code as stc
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
-
+from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper
-from unittest import TestCase
-import jaseci.actions.tests.std_test_code as stc
 
 
 class jac_tests(TestCaseHelper, TestCase):
@@ -17,7 +17,7 @@ class jac_tests(TestCaseHelper, TestCase):
         super().tearDown()
 
     def test_rand_std(self):
-        gph = graph(m_id="anon", h=meta_svc().hook())
+        gph = graph(m_id="anon", h=MetaService().hook())
         sent = sentinel(m_id="anon", h=gph._h)
         sent.register_code(stc.rand_std)
         test_walker = sent.walker_ids.get_obj_by_name("init")
@@ -30,7 +30,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertGreater(len(report[3]), len(report[2]))
 
     def test_file_io(self):
-        gph = graph(m_id="anon", h=meta_svc().hook())
+        gph = graph(m_id="anon", h=MetaService().hook())
         sent = sentinel(m_id="anon", h=gph._h)
         sent.register_code(stc.file_io)
         test_walker = sent.walker_ids.get_obj_by_name("init")
@@ -40,7 +40,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report, ['{"a": 10}{"a": 10}'])
 
     def test_std_used_in_node_has_var(self):
-        gph = graph(m_id="anon", h=meta_svc().hook())
+        gph = graph(m_id="anon", h=MetaService().hook())
         sent = sentinel(m_id="anon", h=gph._h)
         sent.register_code(stc.std_used_in_node_has_var)
         test_walker = sent.walker_ids.get_obj_by_name("init")

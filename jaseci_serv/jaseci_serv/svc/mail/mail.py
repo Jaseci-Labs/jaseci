@@ -1,13 +1,16 @@
 from django.core import mail
-from jaseci.svc.mail.mail_svc import mail_svc as ms, emailer as em
-from jaseci_serv.jaseci_serv.settings import EMAIL_CONFIG
+
+from jaseci.svc import MailService as _MailService
+from jaseci.svc.mail import Mailer as _Mailer
+from jaseci_serv.jaseci_serv.settings import MAIL_CONFIG
+
 
 #################################################
 #                 EMAIL APP ORM                 #
 #################################################
 
 
-class mail_svc(ms):
+class MailService(_MailService):
     def connect(self, configs):
         user = configs.get("user")
         backend = configs.get("backend", "smtp")
@@ -21,10 +24,10 @@ class mail_svc(ms):
             password=configs.get("pass"),
             use_tls=configs.get("tls"),
         )
-        return emailer(server, sender, configs["templates"])
+        return Mailer(server, sender, configs["templates"])
 
     def get_config(self, hook) -> dict:
-        return hook.build_config("EMAIL_CONFIG", EMAIL_CONFIG)
+        return hook.build_config("EMAIL_CONFIG", MAIL_CONFIG)
 
 
 # ----------------------------------------------- #
@@ -35,7 +38,7 @@ class mail_svc(ms):
 ####################################################
 
 
-class emailer(em):
+class Mailer(_Mailer):
     def __init__(self, server, sender, templates):
         super().__init__(server, sender)
 

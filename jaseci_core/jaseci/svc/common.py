@@ -1,12 +1,12 @@
-from jaseci.svc.service_state import ServiceState as SS
+from jaseci.svc import ServiceState
 
 
-class common_svc:
+class CommonService:
     def __init__(self, cls):
         self.cls = cls
         if not hasattr(self.cls, "_app"):
             setattr(self.cls, "_app", None)
-            setattr(self.cls, "_state", SS.NOT_STARTED)
+            setattr(self.cls, "_state", ServiceState.NOT_STARTED)
             setattr(self.cls, "_quiet", True)
 
     @property
@@ -18,11 +18,11 @@ class common_svc:
         self.cls._app = val
 
     @property
-    def state(self) -> SS:
+    def state(self) -> ServiceState:
         return self.cls._state
 
     @state.setter
-    def state(self, val: SS):
+    def state(self, val: ServiceState):
         self.cls._state = val
 
     @property
@@ -52,13 +52,10 @@ class common_svc:
 
     def build(self, hook):
         self.app = None
-        self.state = SS.NOT_STARTED
+        self.state = ServiceState.NOT_STARTED
         self.__init__(hook)
 
 
-class proxy_svc(common_svc):
+class ProxyService(CommonService):
     def __init__(self):
-        super().__init__(proxy_svc)
-
-
-MAIL_ERR_MSG = "Mail service is disabled or not yet configured!"
+        super().__init__(ProxyService)

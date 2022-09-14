@@ -1,16 +1,17 @@
 import signal
 import sys
 from multiprocessing import Process
-from jaseci.svc.common_svc import common_svc
-from jaseci.svc.service_state import ServiceState as SS
-from jaseci.utils.utils import logger
-from jaseci.svc.task.task_common import (
-    task_properties,
-    queue,
-    scheduled_walker,
-    scheduled_sequence,
-)
+
 from celery import Celery
+
+from jaseci.svc import CommonService, ServiceState
+from jaseci.svc.task import (
+    Queue,
+    ScheduledSequence,
+    ScheduledWalker,
+    TaskProperties,
+)
+from jaseci.utils.utils import logger
 
 ################################################
 #                   DEFAULTS                   #
@@ -32,19 +33,19 @@ TASK_CONFIG = {
 #################################################
 
 
-class task_svc(common_svc, task_properties):
+class TaskService(CommonService, TaskProperties):
 
     ###################################################
     #                   INITIALIZER                   #
     ###################################################
 
     def __init__(self, hook=None):
-        common_svc.__init__(self, task_svc)
-        task_properties.__init__(self, self.cls)
+        CommonService.__init__(self, TaskService)
+        TaskProperties.__init__(self, self.cls)
 
         try:
             if self.is_ready() and self.__has_redis(hook):
-                self.state = SS.STARTED
+                self.state = ServiceState.STARTED
                 self.__task(hook)
         except Exception as e:
             if not (self.quiet):
@@ -54,7 +55,7 @@ class task_svc(common_svc, task_properties):
                 )
 
             self.app = None
-            self.state = SS.FAILED
+            self.state = ServiceState.FAILED
             self.terminate_worker()
             self.terminate_scheduler()
 
@@ -71,9 +72,9 @@ class task_svc(common_svc, task_properties):
             self.__tasks()
             self.__worker()
             self.__scheduler()
-            self.state = SS.RUNNING
+            self.state = ServiceState.RUNNING
         else:
-            self.state = SS.DISABLED
+            self.state = ServiceState.DISABLED
 
     def __worker(self):
         self.worker = Process(target=self.app.Worker(quiet=self.quiet).start)
@@ -86,9 +87,9 @@ class task_svc(common_svc, task_properties):
         self.scheduler.start()
 
     def __tasks(self):
-        self.queue = self.app.register_task(queue())
-        self.scheduled_walker = self.app.register_task(scheduled_walker())
-        self.scheduled_sequence = self.app.register_task(scheduled_sequence())
+        self.queue = self.app.register_task(Queue())
+        self.scheduled_walker = self.app.register_task(ScheduledWalker())
+        self.scheduled_sequence = self.app.register_task(ScheduledSequence())
 
     def __has_redis(self, hook=None):
         if not (hook is None) and hook.redis.has_failed():
@@ -97,7 +98,7 @@ class task_svc(common_svc, task_properties):
                     "Redis is not yet running reason "
                     "for skipping Celery initialization!"
                 )
-            self.state = SS.FAILED
+            self.state = ServiceState.FAILED
             return False
         return True
 

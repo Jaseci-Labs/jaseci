@@ -1,21 +1,22 @@
-from multiprocessing import Process
 import re
 from copy import deepcopy
+from multiprocessing import Process
 from typing import Tuple
 from uuid import UUID
-from requests import post, get
-from requests.exceptions import HTTPError
+
 from celery import Task
 from celery.app.control import Inspect
+from requests import get, post
+from requests.exceptions import HTTPError
 
 DEFAULT_MSG = "Skipping scheduled walker!"
 
 
-class queue(Task):
+class Queue(Task):
     def run(self, wlk, nd, args):
-        from jaseci.svc.meta_svc import meta_svc
+        from jaseci.svc import MetaService
 
-        hook = meta_svc().hook()
+        hook = MetaService().hook()
 
         wlk = hook.get_obj_from_store(UUID(wlk))
         nd = hook.get_obj_from_store(UUID(nd))
@@ -25,14 +26,14 @@ class queue(Task):
         return resp
 
 
-class scheduled_walker(Task):
+class ScheduledWalker(Task):
     def get_obj(self, jid):
         return self.hook.get_obj_from_store(UUID(jid))
 
     def run(self, name, ctx, nd=None, snt=None, mst=None):
-        from jaseci.svc.meta_svc import meta_svc
+        from jaseci.svc import MetaService
 
-        self.hook = meta_svc().hook()
+        self.hook = MetaService().hook()
 
         if mst:
             mst = self.get_obj(mst)
@@ -73,7 +74,7 @@ class scheduled_walker(Task):
             return f"{DEFAULT_MSG} Error occured: {e}"
 
 
-class scheduled_sequence(Task):
+class ScheduledSequence(Task):
     json_escape = re.compile(r"[^a-zA-Z0-9_]")
     internal = re.compile(r"\(([a-zA-Z0-9_\.\[\]\$\#\@\!]*?)\)")
     full = re.compile(r"^\{\{([a-zA-Z0-9_\.\[\]\$\#\(\)\@\!]*?)\}\}$")
@@ -189,10 +190,10 @@ class scheduled_sequence(Task):
             holder[0][self.json_escape.sub("_", req[params])] = holder[1]
 
     def trigger_interface(self, req: dict):
-        from jaseci.svc.meta_svc import meta_svc
+        from jaseci.svc import MetaService
 
         master = req.get("master")
-        app = meta_svc()
+        app = MetaService()
         if master is None:
             caller = app.master()
             trigger_type = "public"
@@ -293,12 +294,12 @@ class scheduled_sequence(Task):
         return persistence
 
 
-c1 = queue
-c2 = scheduled_walker
-c3 = scheduled_sequence
+c1 = Queue
+c2 = ScheduledWalker
+c3 = ScheduledSequence
 
 
-class task_properties:
+class TaskProperties:
     def __init__(self, prop):
         if not hasattr(prop, "_inspect"):
             setattr(prop, "_inspect", None)

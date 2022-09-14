@@ -1,7 +1,9 @@
 import json
+
 from django_celery_results.models import TaskResult
+
+from jaseci.svc import TaskService as _TaskService
 from jaseci_serv.jaseci_serv.settings import TASK_CONFIG
-from jaseci.svc.task.task_svc import task_svc as ts
 
 
 #################################################
@@ -9,7 +11,7 @@ from jaseci.svc.task.task_svc import task_svc as ts
 #################################################
 
 
-class task_svc(ts):
+class TaskService(_TaskService):
     def get_by_task_id(self, task_id, hook=None):
         task = self.app.AsyncResult(task_id)
 

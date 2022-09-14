@@ -1,11 +1,11 @@
 """
 Jac tools api functions as a mixin
 """
-from jaseci.api.interface import interface
-import os
 import json
+import os
 
-from jaseci.svc.meta_svc import meta_svc
+from jaseci.api.interface import interface
+from jaseci.svc import MetaService
 
 
 class jac_api:
@@ -140,6 +140,6 @@ class jac_api:
         from jaseci.element.super_master import super_master
         from copy import deepcopy
 
-        faux = super_master(h=meta_svc().hook())
+        faux = super_master(h=MetaService().hook())
         faux._h.mem["global"] = deepcopy(self._h.mem["global"])
         return faux
