@@ -3,7 +3,14 @@ from datetime import datetime
 import logging
 import logging.config
 from pathlib import Path
-from util import read_json
+
+from .util import read_json
+
+log_levels = {
+    0: logging.WARNING,
+    1: logging.INFO,
+    2: logging.DEBUG
+}
 
 
 class TensorboardWriter():
@@ -29,7 +36,7 @@ class TensorboardWriter():
             if not succeeded:
                 message = "Warning: visualization (Tensorboard) is configured to use, but currently not installed on " \
                     "this machine. Please install TensorboardX with 'pip install tensorboardx', upgrade PyTorch to " \
-                    "version >= 1.1 to use 'torch.utils.tensorboard' or turn off the option in the 'config.json' file."
+                    "version >= 1.1 to use 'torch.utils.tensorboard' or turn off the option in the 'config.yaml' file."
                 logger.warning(message)
 
         self.step = 0
@@ -78,19 +85,25 @@ class TensorboardWriter():
                     self.selected_module, name))
             return attr
 
-def setup_logging(save_dir, log_config='logger/logger_config.json', default_level=logging.INFO):
+
+def setup_logging(save_dir, log_config=None, default_level=logging.INFO):
     """
     Setup logging configuration
     """
-    log_config = Path(log_config)
-    if log_config.is_file():
-        config = read_json(log_config)
-        # modify logging paths based on run config
-        for _, handler in config['handlers'].items():
+    if log_config:
+        for _, handler in log_config['handlers'].items():
             if 'filename' in handler:
                 handler['filename'] = str(save_dir / handler['filename'])
-
-        logging.config.dictConfig(config)
+        logging.config.dictConfig(log_config)
     else:
         print("Warning: logging configuration file is not found in {}.".format(log_config))
         logging.basicConfig(level=default_level)
+
+
+def get_logger(name, verbosity=2):
+    msg_verbosity = 'verbosity option {} is invalid. Valid options are {}.'.format(
+        verbosity, log_levels.keys())
+    assert verbosity in log_levels, msg_verbosity
+    logger = logging.getLogger(name)
+    logger.setLevel(log_levels[verbosity])
+    return logger

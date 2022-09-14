@@ -1,9 +1,12 @@
 import torch.nn as nn
 import numpy as np
 from abc import abstractmethod
-from logger import TensorboardWriter
 from numpy import inf
 import torch
+from pathlib import Path
+import datetime
+
+from .logger import TensorboardWriter, get_logger
 
 
 class BaseModel(nn.Module):
@@ -32,9 +35,9 @@ class BaseTrainer:
     Base class for all trainers
     """
 
-    def __init__(self, model, criterion, metric_ftns, optimizer, config):
+    def __init__(self, model, criterion, metric_ftns, optimizer, config, resume=None):
         self.config = config
-        self.logger = config.get_logger(
+        self.logger = get_logger(
             'trainer', config['trainer']['verbosity'])
 
         self.model = model
@@ -62,14 +65,22 @@ class BaseTrainer:
 
         self.start_epoch = 1
 
-        self.checkpoint_dir = config.save_dir
+        save_dir = Path(self.config['trainer']['save_dir'])
+        model_name = self.config['name']
+        run_id = datetime.now().strftime(r'%m%d_%H%M%S')
+
+        self.checkpoint_dir = save_dir / 'models' / model_name / run_id
+        self.log_dir = save_dir / 'logs' / model_name / run_id
+
+        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        self.log_dir.mkdir(parents=True, exist_ok=True)
 
         # setup visualization writer instance
         self.writer = TensorboardWriter(
-            config.log_dir, self.logger, cfg_trainer['tensorboard'])
+            self.log_dir, self.logger, cfg_trainer['tensorboard'])
 
-        if config.resume is not None:
-            self._resume_checkpoint(config.resume)
+        if resume is not None:
+            self._resume_checkpoint(resume)
 
     @abstractmethod
     def _train_epoch(self, epoch):

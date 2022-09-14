@@ -2,7 +2,7 @@ import uuid
 from typing import Dict
 import torch.nn as nn
 
-from base import BaseModel
+from .base import BaseModel
 
 
 class PersonalizedHead(BaseModel):
@@ -29,3 +29,8 @@ class PersonalizedHead(BaseModel):
         text_embedding_tensor = encoder_tensor[:, 0, :]
         scores = self.decoder(text_embedding_tensor)
         return scores
+
+class SequentialPersonalizedHead(BaseModel):
+    def __init__(self, config: Dict, id: str = None):
+        super().__init__()
+        self.id = id if id else str(uuid.uuid4())
