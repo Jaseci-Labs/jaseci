@@ -1,8 +1,8 @@
-from jaseci.svcs.common_svc import common_svc
-from jaseci.svcs.redis.redis_svc import redis_svc
-from jaseci.svcs.task.task_svc import task_svc
-from jaseci.svcs.mail.mail_svc import mail_svc
-from jaseci.svcs.service_state import ServiceState as SS
+from jaseci.svc.common_svc import common_svc
+from jaseci.svc.redis.redis_svc import redis_svc
+from jaseci.svc.task.task_svc import task_svc
+from jaseci.svc.mail.mail_svc import mail_svc
+from jaseci.svc.service_state import ServiceState as SS
 
 
 class meta_svc(common_svc):

@@ -1,6 +1,6 @@
 import json
 from tempfile import _TemporaryFileWrapper
-from jaseci_serv.svcs.meta_svc import meta_svc
+from jaseci_serv.svc.meta_svc import meta_svc
 from rest_framework.views import APIView
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
