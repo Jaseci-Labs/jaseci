@@ -11,12 +11,12 @@ from jaseci.svcs.task.task_common import (
     scheduled_sequence,
 )
 from celery import Celery
+from celery.backends.base import DisabledBackend
 
 ################################################
 #                   DEFAULTS                   #
 ################################################
 
-TASK_PREFIX = "celery-task-meta-"
 TASK_CONFIG = {
     "enabled": True,
     "quiet": True,
@@ -67,7 +67,7 @@ class task_svc(common_svc, task_properties):
             self.app = Celery("celery")
             self.app.conf.update(**configs)
             self.inspect = self.app.control.inspect()
-            self.inspect.ping()
+            self.__ping()
             self.__tasks()
             self.__worker()
             self.__scheduler()
@@ -101,9 +101,28 @@ class task_svc(common_svc, task_properties):
             return False
         return True
 
+    def __ping(self):  # will throw exception
+        self.inspect.ping()
+        self.app.AsyncResult("").result
+
     ###################################################
     #              COMMON GETTER/SETTER               #
     ###################################################
+
+    def get_by_task_id(self, task_id, hook):
+        task = self.app.AsyncResult(task_id)
+
+        if type(task.backend) is DisabledBackend:
+            return {
+                "status": "DISABLED",
+                "result": "result_backend is set to disabled!",
+            }
+
+        ret = {"status": task.state}
+        if task.ready():
+            ret["result"] = task.result
+
+        return ret
 
     def inspect_tasks(self):
         return {
@@ -146,15 +165,6 @@ class task_svc(common_svc, task_properties):
     ####################################################
     #                    OVERRIDDEN                    #
     ####################################################
-
-    def get_by_task_id(self, task_id, hook):
-        ret = {"status": "NOT_STARTED"}
-        task = hook.redis.get(f"{TASK_PREFIX}{task_id}")
-        if task and "status" in task:
-            ret["status"] = task["status"]
-            if ret["status"] == "SUCESS":
-                ret["result"] = task["result"]
-        return ret
 
     def get_config(self, hook) -> dict:
         self.__scheduler = lambda: None
