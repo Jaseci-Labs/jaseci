@@ -1,8 +1,14 @@
 # Jaseci Studio
 
+## Overview
+Jaseci Studio is being built to be a full-featured IDE for Jaseci where developers can manage development projects, rapidly build user interfaces with our WYSIWYG editor as well as code up and deploy your JAC apps with full integration and support. For now, Jaseci Studio allows you to easily weild our very own Jaseci Webkit language via a WYSIWYG editor or directly via an editor. 
+
+Our Jaseci Webkit language is a JSON-based representation of a variety of UI components, events and states which render as web-based user interfaces capable of consuming the Jaseci API. With our Jaseci UI Kit library, you can author Jaseci Webkit components right in your JAC code! That's right, we've also made it so that you can write front-end and back-end code within a single codebase!
+
+Get started with Jaseci Studio by following the guide below.
 
 ## Create Account
-Register on Jaseci Studio [here](/) . Once you register you can then log in and be taken to the Home page
+Register on Jaseci Studio [here](/) . Once you register you can then log in and be taken to the dashboard.
 
 ![HomePage](../../../support/guide/assets/Studio-Home.png)
 
@@ -13,7 +19,7 @@ Create you first project by selecting the create Project button on the top right
 Name your Project then click create.
 [pic of creation button](../../../support/guide/assets/Studio-NewProject.png)
 
-## which tool to use
+## Which tool to use
 You will have two choices to create your frontend : 
 - The Editor , this is where you write either the Json code to create frontend or JAC code to bring components together to create your frontend. 
 
@@ -26,7 +32,6 @@ Create you page by selecting the `+ New` button on the Editor Page.
 ![Editor](../../../support/guide/assets/Studio-Editor.png)
 
 ## View Or JAC
-to be added
 
 ![View or JAC](../../../support/guide/assets/studio-View_JAC.png)
 

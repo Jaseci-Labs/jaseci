@@ -1,7 +1,3 @@
----
-title: Badge
----
-
 #### Summary
 
 Simple badge/chip component

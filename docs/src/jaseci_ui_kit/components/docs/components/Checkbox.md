@@ -1,7 +1,3 @@
----
-title: Checkbox
----
-
 #### Summary
 
 Capture boolean input

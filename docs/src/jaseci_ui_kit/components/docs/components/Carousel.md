@@ -1,7 +1,3 @@
----
-title: Carousel
----
-
 #### Summary
 
 Create an image slideshow

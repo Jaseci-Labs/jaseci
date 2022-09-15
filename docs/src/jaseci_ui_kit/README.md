@@ -4,11 +4,12 @@ Jaseci UI kit provides a set of components and utilities that can quickly integr
 
 ## Guide
 
-- [Introduction](./components/docs/what-is-jaseci-ui-kit.md)
 - [Basic Concepts](./components/docs/basic-concepts.md)
 - [Built-in Actions](./components/docs/built-in-actions.md)
 - [Connecting an API](./components/docs/connecting-an-api.md)
-- [Components](./components/docs/components/)
+
+## Component Reference
+
   - [AuthForm](./components/docs/components/AuthForm.md)
   - [Badge](./components/docs/components/Badge.md)
   - [Breadcrumbs](./components/docs/components/Breadcrumbs.md)
@@ -44,5 +45,3 @@ Jaseci UI kit provides a set of components and utilities that can quickly integr
   - [Tabs](./components/docs/components/Tabs.md)
   - [Text](./components/docs/components/Text.md)
   - [Textbox](./components/docs/components/Textbox.md)
-
-## Developer's Guide
