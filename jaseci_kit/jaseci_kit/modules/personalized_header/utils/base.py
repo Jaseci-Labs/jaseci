@@ -4,9 +4,9 @@ from abc import abstractmethod
 from numpy import inf
 import torch
 from pathlib import Path
-import datetime
+from datetime import datetime
 
-from .logger import TensorboardWriter, get_logger
+from .logger import TensorboardWriter, get_logger, setup_logging
 
 
 class BaseModel(nn.Module):
@@ -35,8 +35,20 @@ class BaseTrainer:
     Base class for all trainers
     """
 
-    def __init__(self, model, criterion, metric_ftns, optimizer, config, resume=None):
+    def __init__(self, model, criterion, metric_ftns, optimizer, config, log_config, resume=None):
         self.config = config
+
+        save_dir = Path(self.config['trainer']['save_dir'])
+        model_name = self.config['name']
+        run_id = datetime.now().strftime(r'%m%d_%H%M%S')
+
+        self.checkpoint_dir = save_dir / 'models' / model_name / run_id
+        self.log_dir = save_dir / 'logs' / model_name / run_id
+
+        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+
+        setup_logging(self.log_dir, log_config)
         self.logger = get_logger(
             'trainer', config['trainer']['verbosity'])
 
@@ -64,16 +76,6 @@ class BaseTrainer:
                 self.early_stop = inf
 
         self.start_epoch = 1
-
-        save_dir = Path(self.config['trainer']['save_dir'])
-        model_name = self.config['name']
-        run_id = datetime.now().strftime(r'%m%d_%H%M%S')
-
-        self.checkpoint_dir = save_dir / 'models' / model_name / run_id
-        self.log_dir = save_dir / 'logs' / model_name / run_id
-
-        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-        self.log_dir.mkdir(parents=True, exist_ok=True)
 
         # setup visualization writer instance
         self.writer = TensorboardWriter(

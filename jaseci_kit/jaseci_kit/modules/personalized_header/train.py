@@ -40,15 +40,10 @@ def main(args):
     if args.config and resume:
         # update new config for fine-tuning
         config.update(read_yaml(args.config))
-    
-    log_config = config['Logger']
-    setup_logging(config["Trainer"]["trainer"]["save_dir"], log_config)
-    logger = get_logger('train')
 
     # Build model Architecture
     model_config = config['Model']
-    model = getattr(model_module, model_config['type'])(**model_config['args'])
-    logger.info(model)
+    model = getattr(model_module, model_config['type'])(model_config['args'])
 
     # for multi-GPU training
     trainer_config = config['Trainer']
@@ -76,6 +71,7 @@ def main(args):
 
     trainer = Trainer(model, criterion, metrics, optimizer,
                       config=trainer_config,
+                      log_config=config['Logger'],
                       device=device,
                       data_loader=dataloader,
                       valid_data_loader=valid_dataloader,

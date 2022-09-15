@@ -93,7 +93,7 @@ def setup_logging(save_dir, log_config=None, default_level=logging.INFO):
     if log_config:
         for _, handler in log_config['handlers'].items():
             if 'filename' in handler:
-                handler['filename'] = str(save_dir / handler['filename'])
+                handler['filename'] = str(Path(save_dir) / handler['filename'])
         logging.config.dictConfig(log_config)
     else:
         print("Warning: logging configuration file is not found in {}.".format(log_config))
