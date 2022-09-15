@@ -1,16 +1,16 @@
-from .service_state import ServiceState
-from .common_svc import common_svc, proxy_svc
-from .redis import redis_svc
-from .task import task_svc
-from .mail import mail_svc
-from .meta_svc import meta_svc
+from .state import ServiceState
+from .common import CommonService, ProxyService
+from .redis import RedisService
+from .task import TaskService
+from .mail import MailService
+from .meta import MetaService
 
 __all__ = [
     "ServiceState",
-    "common_svc",
-    "proxy_svc",
-    "redis_svc",
-    "task_svc",
-    "mail_svc",
-    "meta_svc",
+    "CommonService",
+    "ProxyService",
+    "RedisService",
+    "TaskService",
+    "MailService",
+    "MetaService",
 ]

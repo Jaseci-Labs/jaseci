@@ -1,7 +1,8 @@
 from copy import copy
-from unittest.mock import Mock, MagicMock
-from jaseci.svc import mail_svc
-from jaseci.svc.mail import EMAIL_CONFIG
+from unittest.mock import MagicMock, Mock
+
+from jaseci.svc import MailService
+from jaseci.svc.mail import MAIL_CONFIG
 from jaseci.utils.test_core import core_test
 
 
@@ -11,7 +12,7 @@ class mail_lib_test(core_test):
     fixture_src = __file__
 
     def __init__(self, *args, **kwargs):
-        mail_svc.connect = MagicMock(return_value=Mock())
+        MailService.connect = MagicMock(return_value=Mock())
         super(mail_lib_test, self).__init__(*args, **kwargs)
 
     def test_send_mail(self):
@@ -22,8 +23,8 @@ class mail_lib_test(core_test):
         ret = self.call(self.mast, ["walker_run", {"name": "send_mail"}])
         self.assertTrue(ret["success"])
 
-        ms = mail_svc()
-        configs = copy(EMAIL_CONFIG)
+        ms = MailService()
+        configs = copy(MAIL_CONFIG)
         configs.pop("quiet")
 
         self.assertEqual(ms.connect.call_args[0], (configs,))

@@ -1,11 +1,11 @@
+from django.test import TestCase
+
+import jaseci.actions.live_actions as lact
+import jaseci.tests.jac_test_code as jtc
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
-
 from jaseci.utils.utils import TestCaseHelper
-from django.test import TestCase
-import jaseci.tests.jac_test_code as jtc
-import jaseci.actions.live_actions as lact
-from jaseci_serv.svc import meta_svc
+from jaseci_serv.svc import MetaService
 
 
 class jac_tests(TestCaseHelper, TestCase):
@@ -13,7 +13,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.meta = meta_svc()
+        self.meta = MetaService()
 
     def tearDown(self):
         super().tearDown()

@@ -1,4 +1,4 @@
-from jaseci.svc import task_svc as ts
+from jaseci.svc import TaskService as ts
 from jaseci_serv.jaseci_serv.settings import TASK_CONFIG
 
 
@@ -7,6 +7,6 @@ from jaseci_serv.jaseci_serv.settings import TASK_CONFIG
 #################################################
 
 
-class task_svc(ts):
+class TaskService(ts):
     def get_config(self, hook) -> dict:
         return hook.build_config("TASK_CONFIG", TASK_CONFIG)

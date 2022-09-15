@@ -1,15 +1,16 @@
-from antlr4 import InputStream, CommonTokenStream
-from jaseci.jac.jac_parse.jacLexer import jacLexer
-from jaseci.jac.jac_parse.jacParser import jacParser
-from jaseci.svc import meta_svc
+import os
+from unittest import TestCase
+
+from antlr4 import CommonTokenStream, InputStream
+
+import jaseci.actions.live_actions as lact
+import jaseci.tests.jac_test_code as jtc
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
-import jaseci.actions.live_actions as lact
-import os
-
+from jaseci.jac.jac_parse.jacLexer import jacLexer
+from jaseci.jac.jac_parse.jacParser import jacParser
+from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper
-from unittest import TestCase
-import jaseci.tests.jac_test_code as jtc
 
 
 class jac_tests(TestCaseHelper, TestCase):
@@ -17,7 +18,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.meta = meta_svc()
+        self.meta = MetaService()
 
     def tearDown(self):
         super().tearDown()

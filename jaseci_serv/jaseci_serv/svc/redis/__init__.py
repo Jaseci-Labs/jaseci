@@ -1,5 +1,5 @@
-from .redis_svc import redis_svc
+from .redis import RedisService
 
 __all__ = [
-    "redis_svc",
+    "RedisService",
 ]

@@ -1,10 +1,11 @@
-from jaseci.svc import meta_svc
-from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
-from jaseci.graph.node import node
+
+from jaseci.actor.architype import architype
 from jaseci.attr import action
 from jaseci.graph.edge import edge
-from jaseci.actor.architype import architype
+from jaseci.graph.node import node
+from jaseci.svc import MetaService
+from jaseci.utils.utils import TestCaseHelper
 
 
 class node_tests(TestCaseHelper, TestCase):
@@ -12,7 +13,7 @@ class node_tests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.meta = meta_svc()
+        self.meta = MetaService()
 
     def tearDown(self):
         super().tearDown()

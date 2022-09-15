@@ -1,55 +1,27 @@
-from json import dumps
 import ssl
-from smtplib import SMTP, SMTP_SSL
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from jaseci.svc import common_svc, ServiceState as SS
+from json import dumps
+from smtplib import SMTP, SMTP_SSL
+
+from jaseci.svc import CommonService, ServiceState as SS
 from jaseci.utils.utils import logger
+from .common import MAIL_CONFIG
 
-################################################
-#                   DEFAULTS                   #
-################################################
-
-MAIL_ERR_MSG = "Mail service is disabled or not yet configured!"
-EMAIL_CONFIG = {
-    "enabled": True,
-    "quiet": True,
-    "version": 2,
-    "tls": True,
-    "host": "smtp.gmail.com",
-    "port": 587,
-    "sender": "Jaseci Admin<boyong@jaseci.org>",
-    "user": "jaseci.dev@gmail.com",
-    "pass": "yrtviyrdzmzdpjxg",
-    "backend": "smtp",
-    "templates": {
-        "activation_subj": "Please activate your account!",
-        "activation_body": "Thank you for creating an account!\n\n"
-        "Activation Code: {{code}}\n"
-        "Please click below to activate:\n{{link}}",
-        "activation_html_body": "Thank you for creating an account!<br><br>"
-        "Activation Code: {{code}}<br>"
-        "Please click below to activate:<br>"
-        "{{link}}",
-        "resetpass_subj": "Password Reset for Jaseci Account",
-        "resetpass_body": "Your Jaseci password reset token is: {{token}}",
-        "resetpass_html_body": "Your Jaseci password reset" "token is: {{token}}",
-    },
-}
 
 #################################################
 #                  EMAIL APP                   #
 #################################################
 
 
-class mail_svc(common_svc):
+class MailService(CommonService):
 
     ###################################################
     #                   INITIALIZER                   #
     ###################################################
 
     def __init__(self, hook=None):
-        super().__init__(mail_svc)
+        super().__init__(MailService)
 
         try:
             if self.is_ready():
@@ -159,10 +131,10 @@ class mail_svc(common_svc):
 
         server.login(user, _pass)
 
-        return emailer(server, sender)
+        return Mailer(server, sender)
 
     def get_config(self, hook) -> dict:
-        return hook.build_config("EMAIL_CONFIG", EMAIL_CONFIG)
+        return hook.build_config("MAIL_CONFIG", MAIL_CONFIG)
 
 
 # ----------------------------------------------- #
@@ -173,7 +145,7 @@ class mail_svc(common_svc):
 ####################################################
 
 
-class emailer:
+class Mailer:
     def __init__(self, server, sender):
         self.server = server
         self.sender = sender
@@ -185,7 +157,6 @@ class emailer:
         subject: str = "Jaseci Email",
         body: tuple = ("", ""),
     ):
-
         message = MIMEMultipart()
         message["Subject"] = subject
         message["From"] = self.sender if sender is None else sender

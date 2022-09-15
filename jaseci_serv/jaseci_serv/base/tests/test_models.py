@@ -1,11 +1,12 @@
-from jaseci.utils.utils import TestCaseHelper
-from django.test import TestCase
 from django.contrib.auth import get_user_model
-from jaseci_serv.base import models
-from jaseci_serv.obj_api.views import JaseciObjectSerializer
+from django.test import TestCase
+
 from jaseci.element import element
 from jaseci.element.super_master import super_master
-from jaseci_serv.svc import meta_svc
+from jaseci.utils.utils import TestCaseHelper
+from jaseci_serv.base import models
+from jaseci_serv.obj_api.views import JaseciObjectSerializer
+from jaseci_serv.svc import MetaService
 
 
 def sample_user(email="JSCITEST_user@jaseci.com", password="whatever"):
@@ -18,7 +19,7 @@ def sample_user(email="JSCITEST_user@jaseci.com", password="whatever"):
 class model_tests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
-        self.meta = meta_svc()
+        self.meta = MetaService()
 
     def tearDown(self):
         super().tearDown()

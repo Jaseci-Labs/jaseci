@@ -1,5 +1,5 @@
-from .task_svc import task_svc
+from .task import TaskService
 
 __all__ = [
-    "task_svc",
+    "TaskService",
 ]

@@ -1,15 +1,15 @@
-from jaseci.svc import meta_svc as ms
-from jaseci_serv.svc import redis_svc, task_svc, mail_svc
+from jaseci.svc import MetaService as ms
 from jaseci_serv.jaseci_serv.settings import RUN_SVCS
+from jaseci_serv.svc import MailService, RedisService, TaskService
 
 
-class meta_svc(ms):
+class MetaService(ms):
     def hook(self):
         h = self.app["hook"]()
         if RUN_SVCS:
-            h.redis = redis_svc(h)
-            h.task = task_svc(h)
-            h.mail = mail_svc(h)
+            h.redis = RedisService(h)
+            h.task = TaskService(h)
+            h.mail = MailService(h)
         return h
 
     def build_hook(self):

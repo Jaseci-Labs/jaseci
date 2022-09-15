@@ -59,7 +59,7 @@ Any walker that can be called with `is_async` field
 ## **SCHEDULED_WALKER**
 
  - Add periodic task
- - Select jaseci.svc.task.task_common.scheduled_walker
+ - Select `jaseci.svc.task.common.ScheduledWalker`
  - set your schedule (interval, crontab, solar, clocked, start/end data are supported)
  - set argument with below kind of structure
 
@@ -90,7 +90,7 @@ Any walker that can be called with `is_async` field
 ## **SCHEDULED_SEQUENCE**
 
  - Add periodic task
- - Select jaseci.svc.task.task_common.scheduled_sequence
+ - Select `jaseci.svc.task.common.ScheduledSequence`
  - set your schedule (interval, crontab, solar, clocked, start/end data are supported)
  - set argument with below kind of structure
 

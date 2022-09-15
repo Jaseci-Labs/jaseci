@@ -1,16 +1,13 @@
 import signal
 import sys
 from multiprocessing import Process
-from jaseci.svc import common_svc, ServiceState as SS
-from jaseci.utils.utils import logger
-from .task_common import (
-    task_properties,
-    queue,
-    scheduled_walker,
-    scheduled_sequence,
-)
+
 from celery import Celery
 from celery.backends.base import DisabledBackend
+
+from jaseci.svc import CommonService, ServiceState as SS
+from jaseci.utils.utils import logger
+from .common import Queue, ScheduledSequence, ScheduledWalker, TaskProperties
 
 ################################################
 #                   DEFAULTS                   #
@@ -31,15 +28,15 @@ TASK_CONFIG = {
 #################################################
 
 
-class task_svc(common_svc, task_properties):
+class TaskService(CommonService, TaskProperties):
 
     ###################################################
     #                   INITIALIZER                   #
     ###################################################
 
     def __init__(self, hook=None):
-        common_svc.__init__(self, task_svc)
-        task_properties.__init__(self, self.cls)
+        CommonService.__init__(self, TaskService)
+        TaskProperties.__init__(self, self.cls)
 
         try:
             if self.is_ready() and self.__has_redis(hook):
@@ -85,9 +82,9 @@ class task_svc(common_svc, task_properties):
         self.scheduler.start()
 
     def __tasks(self):
-        self.queue = self.app.register_task(queue())
-        self.scheduled_walker = self.app.register_task(scheduled_walker())
-        self.scheduled_sequence = self.app.register_task(scheduled_sequence())
+        self.queue = self.app.register_task(Queue())
+        self.scheduled_walker = self.app.register_task(ScheduledWalker())
+        self.scheduled_sequence = self.app.register_task(ScheduledSequence())
 
     def __has_redis(self, hook=None):
         if not (hook is None) and hook.redis.has_failed():

@@ -2,11 +2,11 @@
 This module includes code related to hooking Jaseci's Redis to the
 core engine.
 """
-import jaseci as core_mod
-from jaseci.svc import proxy_svc
-from jaseci.utils.mem_hook import mem_hook
 import json
 
+import jaseci as core_mod
+from jaseci.svc import ProxyService
+from jaseci.utils.mem_hook import mem_hook
 from .json_handler import JaseciJsonDecoder
 
 
@@ -19,7 +19,7 @@ class redis_hook(mem_hook):
     def __init__(self):
 
         # proxy redis, to be overriden by build_apps
-        self.redis = proxy_svc()
+        self.redis = ProxyService()
 
         super().__init__()
 

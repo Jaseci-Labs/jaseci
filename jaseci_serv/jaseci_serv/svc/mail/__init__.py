@@ -1,5 +1,5 @@
-from .mail_svc import mail_svc
+from .mail import MailService
 
 __all__ = [
-    "mail_svc",
+    "MailService",
 ]

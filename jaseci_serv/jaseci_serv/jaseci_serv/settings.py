@@ -28,7 +28,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -83,7 +82,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "jaseci_serv.jaseci_serv.wsgi.application"
-
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
@@ -144,7 +142,7 @@ TASK_CONFIG = {
 }
 
 # EMAIL_HOOK
-EMAIL_CONFIG = {
+MAIL_CONFIG = {
     "enabled": True,
     "quiet": False,
     "version": 1,
@@ -172,7 +170,7 @@ EMAIL_CONFIG = {
 }
 
 if "test" in sys.argv or "test_coverage" in sys.argv:
-    EMAIL_CONFIG["backend"] = "locmem"
+    MAIL_CONFIG["backend"] = "locmem"
     TASK_CONFIG["task_always_eager"] = True
     TASK_CONFIG["task_store_eager_result"] = True
     TASK_CONFIG["beat_scheduler"] = "celery.beat:PersistentScheduler"
@@ -196,7 +194,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
@@ -209,7 +206,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = False
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/

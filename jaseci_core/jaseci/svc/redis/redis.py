@@ -1,32 +1,23 @@
-from jaseci.svc import common_svc, ServiceState as SS
-from jaseci.utils.utils import logger
 from redis import Redis
 
-################################################
-#                   DEFAULTS                   #
-################################################
+from jaseci.svc import CommonService, ServiceState as SS
+from jaseci.utils.utils import logger
+from .common import REDIS_CONFIG
 
-REDIS_CONFIG = {
-    "enabled": True,
-    "quiet": True,
-    "host": "localhost",
-    "port": "6379",
-    "db": "1",
-}
 
 #################################################
 #                  REDIS HOOK                   #
 #################################################
 
 
-class redis_svc(common_svc):
+class RedisService(CommonService):
 
     ###################################################
     #                   INITIALIZER                   #
     ###################################################
 
     def __init__(self, hook=None):
-        super().__init__(redis_svc)
+        super().__init__(RedisService)
 
         try:
             if self.is_ready():
