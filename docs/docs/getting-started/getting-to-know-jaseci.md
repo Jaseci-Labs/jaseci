@@ -10,9 +10,34 @@ sidebar_position: 1
 
 ## Why Jaseci?
 
-Over the last decade we came a far way when it comes to building and developing AI models but most of the solutions out there, well, they require lots of work when compared to a system like Jaseci, which brings to the table an all in one solution to building simple to complex AI models.
+- Jaseci has powerful AI models which any developer can leverage in their application quickly and easily.
+- Jaseci Diffuse Runtime System , this runtime system handles the orchestration , configuration and optimization of the full cloud compute stack and inter-machine resources such as container formation , scaling and optimization . In essence it provides all the technology needed to develop an AI application in one platform.
+- Reduce Development team specializations. You'll only need a single Jaseci Engineer to do the work of DevOps Engineers, Frontend and Backend engineers and AI engineers.
+- Solve problems more readily with a graph-based representation of data.
+- Accelerate the development time of any AI application.
+- Save time with automatically generated APIs.
 
-Lets' imagine a developer wants to build an AI model to classify and group similar photos of Animals or Cars. The developer would begin by researching what AI models to use to accomplish the work he is trying to do. Once we finalizes on a model from hundreds of models existing models he would have to integrate the model into python then build out APIs for training and testing. What we've just mentioned would take days, maybe even weeks if you haven't got a good grip of knowledge of AI models... Because of this long pain staking process we were motivated to build Jaseci.
+## How Jaseci works 
+Jaseci brings application development, AI Models and code infrastructure together under a single solution stack. Using the JAC Programming language you are able to leverage all the goodness that Jaseci has to offer such as wielding powerful AI models and exposing complex business logic via automatically generated APIs . 
+Jaseci can either be used to build a centralized or distributed system. It depends how the developer creates their sentinel. You can think of a sentinel in Jaseci as a representation of a JAC program. Each sentinel has its own ID and contains within it, all addressable walkers and operations which may be called via the API.  The JAC program that the sentinel represents, is designed to interact with graph data. Typically, each user account in Jaseci owns its own graph data with private permissions to read and write to this user graph data. In addition, each user account has its own sentinel. Usually, this user-based sentinel of non superuser accounts, specifies an active sentinel reference that points to the sentinel of the superuser. This allows the superuser's sentinel code to execute on the respective graph data of each user account. This can, however, be modified which permits each user account to run its own sentinel code. Further, each sentinel refers to an active graph upon which the sentinel code may execute; this typically points to the respective user graphs but may be configured to refer to a centralized graph belonging to the super user, depending on your choice of architecture. With each user account in Jaseci possessing the ability to have its own sentinel and graph, it opens up tons of possibilities for great flexibility (and security) and allows backend code and data to be specific to each user.
+
+
+
+![Diagram of superuser](/img/tutorial/getting_started/Superuser.jpeg)
+
+### Centralized System. 
+
+When you create any JAC program you can easily expose your Program to API calls.The Centralized system has a main Sentinel . This main sentinel is set to be globall accessible and active . This is the Sentinel users will connect to , to interact and make changes to their graph.
+
+![Diagram of centeralized system](/img/tutorial/centralized.jpeg)
+
+
+### Distributed System 
+Each person can have their own sentinel. Users can create their Sentiensl based on JAC code they have written. This Sentinel can be made live and is capable of interacting with the users's graph data. This allows for much flexibility with each users own backend code.
+[inserts pics o distributed system]
+
+![Diagram of Distributed system](/img/tutorial/Distributed.jpeg)
+
 
 ## Solutions Jaseci provides
 
