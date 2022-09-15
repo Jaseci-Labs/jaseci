@@ -1,3 +1,7 @@
+---
+title: Auth Form
+---
+
 #### Summary
 
 Quickly add user login and sign up to your jaseci site

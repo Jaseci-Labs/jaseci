@@ -1,3 +1,7 @@
+---
+title: Card
+---
+
 #### Summary
 
 General purpose card component

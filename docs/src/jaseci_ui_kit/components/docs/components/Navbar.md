@@ -1,3 +1,7 @@
+---
+title: Navbar
+---
+
 #### Summary
 
 A `Navbar` component will render a horizontal navigation header component ; a`jsc-navbar` element.

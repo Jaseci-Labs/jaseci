@@ -1,3 +1,7 @@
+---
+title: Breadcrumbs
+---
+
 #### Summary
 
 Renders a breadcrumbs navigation component

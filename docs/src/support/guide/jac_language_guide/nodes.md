@@ -10,7 +10,7 @@ A node is a representation of an entity.
 * Nodes can execute a set of actions upon entry and exit.
 
 ## Defining Node Attributes
-Attributes are variables within the node.
+Attributes are variables within the node. The `has` keyword is used to declare an attribute within a node. Nodes also have abilities . These abilities can be either be written or be leaveraged from Jaseci_Kit . The `can` keyword is used to declare an ability. 
 
 ```jac 
 node [name of node]{
@@ -18,6 +18,10 @@ node [name of node]{
     has variable;
     # to use a module from jaseci kit
     can use_qa;
+    # a written ability
+    can talk {
+        # code to be executed added here
+    }
 }
 ```
 

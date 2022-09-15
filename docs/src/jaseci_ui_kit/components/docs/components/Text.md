@@ -1,3 +1,7 @@
+---
+title: Text
+---
+
 #### Summary
 
 A `Text` component is a that renders elements in various typographic-styles.

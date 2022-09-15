@@ -1,3 +1,7 @@
+---
+title: Inputbox
+---
+
 #### Summary
 
 An `Inputbox` component will render a container, `jsc-inputbox`, that will a render an `input` element within it's DOM.

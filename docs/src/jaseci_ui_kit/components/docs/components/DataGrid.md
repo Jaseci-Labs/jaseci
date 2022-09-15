@@ -1,3 +1,7 @@
+---
+title: DataGrid
+---
+
 #### Summary
 
 Display a dynamic grid of data

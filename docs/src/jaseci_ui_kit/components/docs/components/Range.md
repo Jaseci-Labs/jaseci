@@ -1,3 +1,7 @@
+---
+title: Range
+---
+
 #### Summary
 
 Collect input from a specified range of values

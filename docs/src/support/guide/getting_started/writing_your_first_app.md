@@ -17,11 +17,11 @@ node state {
 
 ```
 Nodes can be thought of as the representation of an entity.
-Nodes are the fundamental unit of  a gaph. These can be considered to be the steps in which the Walker can take.
+Nodes are the fundamental unit of  a graph. These can be considered to be the steps in which the Walker can take.
 * Nodes are composed of Context and excutable actions.
 * Nodes execute a set of actions upon entry and exit.
  Here we are creating a `node` of name "state"
-The <strong>has</strong> keyword is used to declare a variable of the node.
+The <strong>has</strong> keyword is used to declare a variable for the node.
 
 ```jac
 
@@ -208,7 +208,7 @@ graph main_graph {
 ```
 This last code block we created several nodes and connected them together. To move from node to node we use the intent to sepcify which route to take.
 
-Walker
+## Walker
 * Walkers traverse the nodes of the graph triggering execution at the node level.
 
 Now lets create a file called walker.jac
@@ -242,10 +242,9 @@ walker talker {
 ```
 
 The Walker will start from the main root and from the utterance intered it will determine which node to go to next.
-It should be noted the utterance must match the prompts chosen or the walker will not move from the graph.
-Jaseci-kit has features that makes it possible for users to not enter the exact intent but still traverse to the right node.
+It should be noted the utterance must match the prompts chosen or the walker will not move from the graph. In a future code through we will use an AI model  from Jaseci Kit that can understand our intent by analayzing our various inputs.
 
-Main
+## Main
 
 Create a file named main.jac .
 

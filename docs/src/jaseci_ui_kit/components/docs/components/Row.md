@@ -1,3 +1,7 @@
+---
+title: Row
+---
+
 #### Summary
 
 A `Row` is a layout component that allows you to align `children` components horizontally. A row is rendered as a flexbox container.

@@ -8,7 +8,7 @@ We are building a Conversational AI.
 ### The Updated Inheritance Structure
 
 Before:
-```
+```jac
 node cai_state {
     has name;
     has example_entities = {
@@ -65,7 +65,7 @@ node cai_state {
 Before, we had classify_intent, extract_entities, gen_response functionality in the cai_state for specifically virtual assistance. However, since we have added the FAQ model (faq node) to the conversation AI state we needed to centralize the functionality, they have completely different functionality when it comes to the NLU (Natural Language Understanding) where we used it for intent classification and entity extraction. Likewise, the FAQ model uses the NLU to find the faq node which matches the appropriate user query, and for the NLG (Natural Language Generation) they generates different responses based on the NLU.
 
 After: 
-```
+```jac
 node cai_state {
     has name;
     can nlu {
@@ -85,7 +85,7 @@ So, what is happening here, since the cai_states are centralize, we can now inhe
 
 **NLU logic for va_state which inherits cai_state**
 
-```
+```jac
 can nlu {
         ::classify_intent;
         ::extract_entities;
@@ -96,7 +96,7 @@ For the NLU here, intent classification and extract entities function have been 
 
 **NLG logic for va_state which inherits cai_state**
 
-```
+```jac
 # Construct natural language response
     can nlg {
         ::gen_response;
@@ -109,7 +109,7 @@ For the NLG logic it calls the gen response function in order to give the respon
 
 **cai_va_root**
 As you can see since this is the root node for the conversation we do not need any unique responses.
-```
+```jac
 node cai_va_root:va_state {
     has name = "cai_va_root";
 }
@@ -118,7 +118,7 @@ node cai_va_root:va_state {
 
 **collect_info**
 If you see below the the gen response is unique to the slots extracted from the user query. If a user was at this state based on the root query if no slots was provided it would respond with "To set you up with a test drive, we will need your name and address.", if you have provided only an address however, it would have responded with "What is your name?" and vice versa.
-```
+```jac
 node collect_info:va_state {
     has name = "collect_info";
     can gen_response {
@@ -137,7 +137,7 @@ node collect_info:va_state {
 
 **confirmation_state**
 If you were at this state after providing all the information it will respond unique based on your data you provided like "Can you confirm your name to be Yiping and your address as 913 Mandela Avenue?"
-```
+```jac
 node confirmation:va_state {
     has name = "confirmation";
     can gen_response {
@@ -149,7 +149,7 @@ node confirmation:va_state {
 
 **confirmed_state**
 When you confirm it will respond "You are all set for a Tesla test drive!"
-```
+```jac
 node confirmed:va_state {
     has name = "confirmed";
     can gen_response {
@@ -159,7 +159,7 @@ node confirmed:va_state {
 ```
 **cancelled_state**
 If you were at this state and you cancelled it will respond with "No worries. We look forward to hear from you in the future!".
-```
+```jac
 node canceled:va_state {
     has name = "canceled";
     can gen_response {
@@ -172,7 +172,7 @@ So as you can see the NLG logic is unique to each conversational state.
 
 **NLU logic for faq_state which inherits cai_state**
 
-```
+```jac
 can nlu {
         answers = [];
         for a in -[faq_transition]->.edge: answers += [a.answer];
@@ -190,7 +190,7 @@ For the NLU here it iterates the edges in faq_transition as answer and it use th
 **NLG logic for faq_state which inherits cai_state**
 
 For the NLG logic here it takes the answer provided by the NLU to provide to the user.
-```
+```jac
 can nlg {
         visitor.response = here.answer;
     }
@@ -246,7 +246,7 @@ Above, we showed you how to load actions and now in this section we will show yo
 qa_classify is a built in function or api used in use_qa module in jaseci kit. It takes in two parameters: text (user input) and classes (list of string) and in returns it gives you the best matching class from the list of classes and this is what we are using for intent classification.
 
 If you look at the code below you will see where it's being implemented.
-```
+```jac
 node faq_state:cai_state {
     has answer;
     can use.qa_classify;
@@ -274,7 +274,7 @@ Let's explain why would this be useful in the FAQ chatbot. Let's say you have a 
 ### The faq_state node code
 
 In this section, we will be explaining the code below.
-```
+```jac
 node faq_state:cai_state {
     has answer;
     can use.qa_classify;
@@ -301,7 +301,7 @@ Let's begin. The faq state inherits the cai_state node because it's a part of th
 ### The new type of edge (answer_transition)
 **What is the answer transition?**
 This is a edge transition created for user query to navigate to node with the answer from the FAQ section. It intakes answer as the parameter which is being generated from the nlu.
-```
+```jac
 edge answer_transition {
     has answer;
 } 
@@ -309,7 +309,7 @@ edge answer_transition {
 
 ### The updated talk walker logic
 Take a look carefully at the code below. We will explain step by step of the changes made and why we made it.
-```
+```jac
 walker talk {
     has question="";
     has if_nlu=false;
@@ -351,7 +351,7 @@ walker talk {
 ```
 
 Below is the first changes you saw.
-```
+```jac
 matched_answer = null;
 ```
 This was created for the FAQ node. This house the answer for the user query passed when it goes through the faq_state nlu node ability. Which will be later used for transition.
@@ -363,7 +363,7 @@ take -[answer_transition(answer==matched_answer)]-> node::cai_state else { ... }
 This was created for the faq state node. If all of the rest of transition failed it will take the matched_answer generated from the nlu from the faq_state node match it against the answer_transition and if it gets a response it will trigger the nlg functionality which in return will give the user a response. Thanks to inheritance we were able to share majority of the logic of the talk walker between the VA side and FAQ side because we inherit everything from cai_state. If we didn't inherit the functionalities from cai_state we would have multiple talk walker to do all of the transitions.
 
 ### The ingest_faq walker
-```
+```jac
 walker ingest_faq {
     has kb_file;
     root: take --> node::faq_state;

@@ -1,3 +1,7 @@
+---
+title: ButtonGroup
+---
+
 #### Summary
 
 Renders a group of buttons

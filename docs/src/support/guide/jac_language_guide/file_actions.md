@@ -13,13 +13,13 @@ TestJson = file.load_json(test.json)
 ### String to file 
 ```jac 
 # dumps string in to file
-test = "This is a test of the dump_str method
+test = "This is a test of the dump_str method"
 Testfile = file.dump_str("text.txt",test)
 ```
 ### Append string to a file
 ```jac 
 # appending a string to a file.
-test = "This is a another test but with  the append_str method
+test = "This is a another test but with  the append_str method"
 Testfile = file.append_str(str, max_chars = 1000)
 ```
 

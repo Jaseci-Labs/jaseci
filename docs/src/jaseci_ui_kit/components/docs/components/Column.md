@@ -1,3 +1,7 @@
+---
+title: Jaseci Column
+---
+
 #### Summary
 
 A `Column` is a layout component that allows you to align `children` components vertically. A column is rendered as a flexbox container.

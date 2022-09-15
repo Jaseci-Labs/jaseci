@@ -1,3 +1,7 @@
+---
+title: Progress
+---
+
 #### Summary
 
 Display a progress bar

@@ -1,3 +1,7 @@
+---
+title: Textbox
+---
+
 #### Summary
 
 A `Textbox` component will render a container, `jsc-textbox`, that will a render an `textarea` element within it's DOM.

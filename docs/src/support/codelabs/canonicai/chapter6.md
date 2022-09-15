@@ -158,16 +158,16 @@ For the payload sent to the /js/walker_run, the name (name of walker to be calle
 In this section, we will explain how we added the AI model into this application. We have added two AI models the bi-encoder and tfm ner model. Before we explain the code implementation for both models, we will explain the top inheritance AI model they inherit.
 
 **Explanation of the ai_model node**
-```
+```jac
     can train with train entry {}
 ```
 This allows you to train the ai model and it also inherits the train walker which accepts certain parameters.
 
-```
+```jac
     can test_model with test_model entry {}
 ```
 This allow you to test the ai model, it inherits the test_model walker.
-```
+```jac
     can eval with eval entry {
         ::train;
         ::test_model;
@@ -175,12 +175,12 @@ This allow you to test the ai model, it inherits the test_model walker.
 ```
 this node ability enables you to evaluate the ai model by training it and testing it when the eval walker is called.
 
-```
+```jac
     can infer with infer entry {}
 ```
 This node ability allows you to pass query and get a response.
 
-```
+```jac
 walker train {
     has train_file, num_train_epochs, from_scratch;
     has batch_size, learning_rate;
@@ -188,21 +188,21 @@ walker train {
 ```
 This walker takes in a few parameters: **train_file** (where the training file is located in the repository). **num_train_epochs** (amount of time you want the ai model to learn from the dataset), **from_scratch** (if you want to train the model from scratch or not), **batch_size** (the number of training examples utilized in one iteration) and **learning_rate** (The amount that the weights are updated during training).
 
-```
+```jac
 walker test_model {
     has eval_file;
 }
 ```
 This walker allows you to test the model using the file location you provided in it's parameter.
 
-```
+```jac
 walker eval {
     has train_file, eval_file, num_train_epochs, from_scratch;
 }
 ```
 Allows you to evaluate the model.
 
-```
+```jac
 walker infer {
     has input;
 }
@@ -217,7 +217,7 @@ can bi_enc.train, bi_enc.infer, bi_enc.save_model;
 ```
 This logic enables you to import functions from the jaseci kit modules imported from actions.
 
-```
+```jac
 can train {
         train_data = file.load_json(visitor.train_file);
         bi_enc.train(
@@ -233,7 +233,7 @@ can train {
 ```
 This node ability allows you to train the bi_encoder (bi_enc) model, as you can see it overrides the train function from ai_mode node and it also requires some parameter and these parameter are presented from the walker.
 
-```
+```jac
 can infer {
         res = bi_enc.infer(
             contexts=[visitor.query],
@@ -255,7 +255,7 @@ can infer {
 ```
 The infer function in the bi_enc module allows you to query the model and receive the intent of the user utterance.
 
-```
+```jac
 can test_model {
         eval_set = file.load_json(visitor.eval_file);
         candidates = eval_set.dict::keys;
@@ -302,13 +302,13 @@ This node ability allows you to test the model for the bi-encoder.
 **Explanation of the ent_ext node**
 In this section we will explain each functions for the entity extraction model for ent_ext node. The explanation goes as follows:
 
-```
+```jac
 can ent_ext.entity_detection, ent_ext.train, ent_ext.save_model, ent_ext.load_model;
 ```
 This is how we import all the functionalities for the jaseci kit module called ent_ext.
 
 
-```
+```jac
 can train {
         train_data = file.load_json(visitor.train_file);
 
@@ -338,7 +338,7 @@ can train {
 ```
 This is how we train the model, it requires training data, test data, val data, the number of train epochs, batch size and learning rate which was briefly explained in a earlier section.
 
-```
+```jac
 can infer {
         report ent_ext.entity_detection(
             text=input["text"],
@@ -352,7 +352,7 @@ This is the node ability which allows you to query (user input) and get back the
 **Updates to the va_state node**
 In this section we will explain the changes made to the va state.
 
-```
+```jac
 can classify_intent {
 
         train_data = file.load_json("data/clf_train.json");
@@ -383,7 +383,7 @@ can classify_intent {
 ```
 At first we had hardcoded data here but it was changed after we brought in the ai models. For the classify intent node we use the bi encoder to do our intent classification. Based on the training data it will generate candidates (intent in this case) and the user query will be passed to the bi encoder model which will return the predicted intent.
 
-```
+```jac
 can extract_entities {
         labels = [];
 

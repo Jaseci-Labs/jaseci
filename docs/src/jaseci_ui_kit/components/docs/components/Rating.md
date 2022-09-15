@@ -1,3 +1,7 @@
+---
+title: Rating
+---
+
 #### Summary
 
 Allow users to rate something and collect a discrete value

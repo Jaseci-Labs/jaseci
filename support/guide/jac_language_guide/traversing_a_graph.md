@@ -14,7 +14,7 @@ The take command performs a breath first search to add take operations to the qu
 **Traversing to a generic node from a walker**
 
 ```jac
-// generic definition of the nodes. Nodes of type 'myNode' will have a 'data' property
+# generic definition of the nodes. Nodes of type 'myNode' will have a 'data' property
 
 node myNode: has anchor data;
 
@@ -85,12 +85,12 @@ walker testWalker{
     node_type{
         take [some filter] else {
 
-            // some additional logic if edge of filter not found
+            # some additional logic if edge of filter not found
         }
     }
 }
 
-//traverse to friend edge, else print 'no friends found'
+# traverse to friend edge, else print 'no friends found'
 
 walker testWalker2{
     person{
@@ -99,4 +99,4 @@ walker testWalker2{
         }
     }
 }
-```
+``` 

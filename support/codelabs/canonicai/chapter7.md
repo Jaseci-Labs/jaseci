@@ -10,32 +10,32 @@ There are multiple ways in creating test in jac and we will explore two ways and
 #### Test 1
 In the ``test.jac file`` we will test the VA and FAQ flow from the file ``tests.json`` in the data folder.
 
-```
+```jac
 walker empty {}
 ```
 An empty walker was created to host the loading of the test suite json file. So we can run multiple walker based on the file on top of this walker.
 
-```
+```jac
 test "testing faq and va flows"
 ```
 This is how we label a test. This must go on top on of an unit test.
 
-```
+```jac
 with graph::tesla_sales_rep by walker::empty {}
 ```
 Here we referenced the graph we will be running the test on and which walker will run on top of this graph. This is how we start to create the test.
 
-```
+```jac
 std.get_report();
 ```
 This line of code returns the data returned from a report statement in a walker. This will be very important statement to use in testing.
 
-```
+```jac
 assert(value_1, value_2);
 ```
 In test in jac we mainly use the key ``assert`` which checks two values and see whether it's true or false, if it's false the test will fail and if true the test will pass. In this case we us it to match against the response of the current query from the flow file to the response that comes back when data is being reported.
 
-```
+```jac
 test "testing faq and va flows"
 with graph::tesla_sales_rep by walker::empty {
     flows = file.load_json("data/tests.json");
@@ -58,7 +58,7 @@ with graph::tesla_sales_rep by walker::empty {
 Here is the entire test. Essentially, the purpose of this test is to load the test suite with all the flow in a json file and pass each query from the test suite to the walker `talk` and from the response check if it matched the data from the test suite. If it matches the test will pass if not it will fail.
 
 #### Test 2
-```
+```jac
 test "testing a single query"
 with graph::tesla_sales_rep by walker::talk(question="Hey I would like to go on a test drive")
 {
@@ -136,7 +136,7 @@ node cai_root {
 ```
 As you can see here it uses the sentence encoding model (use.text_classify) function which intakes a query from the user and classes (in this case the questions from the FAQ), this enables it to check match ID and if match ID is equal to zero it will then set the question type to va (virtual assistance) and if it's not equal to zero it will set the question type to faq (frequent asked question) and this will be used for further used for processing, which will be explained next. Simple right, this is how it the categorizing of user query is done.
 
-```
+```jac
 cai_root {
     if (question_type == "va"):
         take --> node::va_state;

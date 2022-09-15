@@ -1,3 +1,7 @@
+---
+title: Container
+---
+
 #### Summary
 
 A `Container` is a general-purpose component, analogous to a `div` element, that will render a `div` you can style and attach events to.

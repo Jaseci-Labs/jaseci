@@ -9,13 +9,13 @@ We are building a Conversational AI.
 
 Let's start with std.input, std meaning "standard" and input meaning "what is put in". std.input is a function that intakes, what a user put in only from the terminal and can be stored in a variable. It pauses the program to intake data from the user. The function accepts an optional string to display to the terminal. It acts like a prompt so user know what to input to the terminal.  This function cannot be used to intake any data from api or anything external. That is what std.input is all about. 
 
-```
+```jac
 name = std.input('what is your name');
 ```
 
 Let's now talk about std.out. std in jac means "standard" and out meaning "output". std.out is a function in jac when called it display data to a terminal or server and it intake a string parameter which is used to display. 
 
-```
+```jac
 std.out('Display TEXT here');
 ```
 

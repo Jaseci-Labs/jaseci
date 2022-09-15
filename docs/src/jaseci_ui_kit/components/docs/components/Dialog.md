@@ -1,3 +1,7 @@
+---
+title: Dialog
+---
+
 #### Summary
 
 Display a fixed container at the center of the screen. In the example below, the dialog component custom listeners (openDialog and closeDialog) which modify the `open` prop when they are triggered.

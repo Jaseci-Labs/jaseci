@@ -1,3 +1,7 @@
+---
+title: Divider
+---
+
 #### Summary
 
 Use to divide components

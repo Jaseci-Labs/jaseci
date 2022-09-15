@@ -4724,7 +4724,7 @@ hljs.registerLanguage("jac", function() {
   "use strict";
   return function(e) {
     var x = {
-      variants: [e.COMMENT("#", "$"), e.COMMENT("//", "//", {
+      variants: [e.COMMENT("#", "$"), e.COMMENT("//", "$", {
           contains: ["self"]
       })]
   };

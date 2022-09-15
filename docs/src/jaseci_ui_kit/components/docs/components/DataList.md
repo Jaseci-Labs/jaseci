@@ -1,3 +1,7 @@
+---
+title: Datalist
+---
+
 #### Summary
 
 Displays a rendered list of a specified markup (template) for lists of data returned from a jaseci endpoint.

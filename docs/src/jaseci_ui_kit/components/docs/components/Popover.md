@@ -1,3 +1,7 @@
+---
+title: Popover
+---
+
 #### Summary
 
 Popover component

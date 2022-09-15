@@ -1,3 +1,7 @@
+---
+title: Tabs
+---
+
 #### Summary
 
 Separate content with tabs

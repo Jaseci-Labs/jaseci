@@ -1,3 +1,7 @@
+---
+title: Hero
+---
+
 #### Summary
 
 Renders a large text an image background and primary action button(s)

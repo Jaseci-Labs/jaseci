@@ -1,3 +1,7 @@
+---
+title: Stat
+---
+
 #### Summary
 
 Card for displays statistical information

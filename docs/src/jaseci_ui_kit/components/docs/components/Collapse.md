@@ -1,3 +1,7 @@
+---
+title: Checkbox
+---
+
 #### Summary
 
 Separate content into collapsable sections
