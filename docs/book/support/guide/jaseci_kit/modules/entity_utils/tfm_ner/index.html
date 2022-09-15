@@ -1,0 +1,684 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Transformer NER - Jaseci Documentation</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../../../../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../../../../favicon.png">
+        <link rel="stylesheet" href="../../../../../../css/variables.css">
+        <link rel="stylesheet" href="../../../../../../css/general.css">
+        <link rel="stylesheet" href="../../../../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../../../../css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../../../../fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../../../../highlight.css">
+        <link rel="stylesheet" href="../../../../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../../../../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><li class="part-title">Jaseci Official Documentation</li><li class="chapter-item expanded "><a href="../../../../../../LICENSE.html"><strong aria-hidden="true">1.</strong> License</a></li><li class="chapter-item expanded "><a href="../../../../../../CHANGELOG.html"><strong aria-hidden="true">2.</strong> About this Release</a></li><li class="chapter-item expanded "><a href="../../../../../../CONTRIBUTING.html"><strong aria-hidden="true">3.</strong> How to Contribute</a></li><li class="chapter-item expanded "><a href="../../../../../../CONTRIBUTORS.html"><strong aria-hidden="true">4.</strong> Contributors</a></li><li class="chapter-item expanded affix "><li class="part-title">Getting Started</li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/introduction.html"><strong aria-hidden="true">5.</strong> Introducing Jaseci</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/installation.html"><strong aria-hidden="true">6.</strong> Installing Jaseci</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/setting_up_your_editor.html"><strong aria-hidden="true">7.</strong> Setting Up Your Editor</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/writing_your_first_app.html"><strong aria-hidden="true">8.</strong> Writing Your First App</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/understanding_jac_programs.html"><strong aria-hidden="true">9.</strong> Understanding JAC Programs</a></li><li class="chapter-item expanded affix "><li class="part-title">The JAC Programming Language Guide</li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/jac_language_overview.html"><strong aria-hidden="true">10.</strong> Language Overview</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/jac_grammar.html"><strong aria-hidden="true">11.</strong> Grammar</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/operators.html"><strong aria-hidden="true">12.</strong> Operators</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/control_flow.html"><strong aria-hidden="true">13.</strong> Control Flow</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/collections.html"><strong aria-hidden="true">14.</strong> Collections</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/nodes.html"><strong aria-hidden="true">15.</strong> Nodes</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/edges.html"><strong aria-hidden="true">16.</strong> Edges</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/graphs.html"><strong aria-hidden="true">17.</strong> Graphs</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/walkers.html"><strong aria-hidden="true">18.</strong> Walkers</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/traversing_a_graph.html"><strong aria-hidden="true">18.1.</strong> Traversing a Graph</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/referencing_node_context.html"><strong aria-hidden="true">18.2.</strong> Referencing a Node in Context</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/passing_arguments.html"><strong aria-hidden="true">19.</strong> Passing Arguments</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/specifying_operating_context.html"><strong aria-hidden="true">20.</strong> Specifying Operating Context</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/actions.html"><strong aria-hidden="true">21.</strong> Actions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/date_actions.html"><strong aria-hidden="true">21.1.</strong> Date Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/file_actions.html"><strong aria-hidden="true">21.2.</strong> File Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/net_actions.html"><strong aria-hidden="true">21.3.</strong> Net Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/rand_actions.html"><strong aria-hidden="true">21.4.</strong> Rand Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/request_actions.html"><strong aria-hidden="true">21.5.</strong> Request Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/standard_actions.html"><strong aria-hidden="true">21.6.</strong> Standard Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/vector_actions.html"><strong aria-hidden="true">21.7.</strong> Vector Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/jaseci_actions.html"><strong aria-hidden="true">21.8.</strong> Jaseci Actions</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Examples and Tutorials</li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter1.html"><strong aria-hidden="true">22.</strong> Building a Conversational AI System</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter2.html"><strong aria-hidden="true">22.1.</strong> Chapter 2</a></li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter3.html"><strong aria-hidden="true">22.2.</strong> Chapter 3</a></li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter4.html"><strong aria-hidden="true">22.3.</strong> Chapter 4</a></li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter5.html"><strong aria-hidden="true">22.4.</strong> Chapter 5</a></li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter6.html"><strong aria-hidden="true">22.5.</strong> Chapter 6</a></li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter7.html"><strong aria-hidden="true">22.6.</strong> Chapter 7</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../examples/CanoniCAI/CCAI_codelab.html"><strong aria-hidden="true">23.</strong> CanoniCAI Example</a></li><li class="chapter-item expanded "><a href="../../../../../../examples/ner_examples/index.html"><strong aria-hidden="true">24.</strong> NER Examples</a></li><li class="chapter-item expanded affix "><li class="part-title">Jaseci Library Reference</li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/index.html"><strong aria-hidden="true">25.</strong> Jaseci Kit</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/index.html"><strong aria-hidden="true">25.1.</strong> Encoders</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/use_enc/index.html"><strong aria-hidden="true">25.1.1.</strong> USE Encoder</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/use_qa/index.html"><strong aria-hidden="true">25.1.2.</strong> USE QA</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/fast_enc/index.html"><strong aria-hidden="true">25.1.3.</strong> FastText</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/bi_enc/index.html"><strong aria-hidden="true">25.1.4.</strong> Bi-Encoder</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/index.html"><strong aria-hidden="true">25.2.</strong> Entity Recognition</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/flair_ner/index.html"><strong aria-hidden="true">25.2.1.</strong> FLair NER</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/tfm_ner/index.html" class="active"><strong aria-hidden="true">25.2.2.</strong> Transformer NER</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/lstm_ner/index.html"><strong aria-hidden="true">25.2.3.</strong> LSTM NER</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/summarization/index.html"><strong aria-hidden="true">25.3.</strong> Text Summarization</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/summarization/cl_summer/index.html"><strong aria-hidden="true">25.3.1.</strong> CL Summarization</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/summarization/t5_sum/index.html"><strong aria-hidden="true">25.3.2.</strong> T5 Summarization</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/text_processing/index.html"><strong aria-hidden="true">25.4.</strong> Text Processing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/text_processing/text_seg/index.html"><strong aria-hidden="true">25.4.1.</strong> Text Segmenter</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/object_detection/index.html"><strong aria-hidden="true">25.5.</strong> Object Detection</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/object_detection/yolo_v5/index.html"><strong aria-hidden="true">25.5.1.</strong> YOLO V5</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/non_ai/index.html"><strong aria-hidden="true">25.6.</strong> Non-AI Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/non_ai/pdf_ext/index.html"><strong aria-hidden="true">25.6.1.</strong> PDF Extractor</a></li></ol></li></ol></li><li class="chapter-item expanded "><li class="part-title">Jaseci Studio</li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/index.html"><strong aria-hidden="true">26.</strong> Jaseci UI Kit</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/gettingStarted.html"><strong aria-hidden="true">26.1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/basic-concepts.html"><strong aria-hidden="true">26.2.</strong> Basic Concepts</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/built-in-actions.html"><strong aria-hidden="true">26.3.</strong> Built-in Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/connecting-an-api.html"><strong aria-hidden="true">26.4.</strong> Connecting an API</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/list_of_componets.html"><strong aria-hidden="true">26.5.</strong> List of Components</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/AuthForm.html"><strong aria-hidden="true">26.5.1.</strong> AuthForm</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Badge.html"><strong aria-hidden="true">26.5.2.</strong> Badge</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Breadcrumbs.html"><strong aria-hidden="true">26.5.3.</strong> Breadcrumbs</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Button.html"><strong aria-hidden="true">26.5.4.</strong> Button</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/ButtonGroup.html"><strong aria-hidden="true">26.5.5.</strong> ButtonGroup</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Card.html"><strong aria-hidden="true">26.5.6.</strong> Card</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Carousel.html"><strong aria-hidden="true">26.5.7.</strong> Carousel</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Checkbox.html"><strong aria-hidden="true">26.5.8.</strong> Checkbox</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Collapse.html"><strong aria-hidden="true">26.5.9.</strong> Collapse</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Checkbox.html"><strong aria-hidden="true">26.5.10.</strong> Checkbox</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Collapse.html"><strong aria-hidden="true">26.5.11.</strong> Collapse</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Column.html"><strong aria-hidden="true">26.5.12.</strong> Column</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Container.html"><strong aria-hidden="true">26.5.13.</strong> Container</a></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Jaseci Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="entity-extraction-using-transformers-tfm_ner"><a class="header" href="#entity-extraction-using-transformers-tfm_ner">Entity Extraction Using Transformers (<code>tfm_ner</code>)</a></h1>
+<p><strong>What is NER:</strong> named entity recognition (NER) — sometimes referred to as entity chunking, extraction, or identification — is the task of identifying and categorizing key information (entities) in text. An entity can be any word or series of words that consistently refers to the same thing. Every detected entity is classified into a predetermined category.</p>
+<p><strong><code>tfm_ner</code></strong>: module based on transformers to identify and extract entities. It uses TokenClassification method from Huggingface.</p>
+<p>This tutorial show you how to train test and validate <strong>tfm_ner</strong> module.</p>
+<h1 id="transformer-ner"><a class="header" href="#transformer-ner">Transformer NER</a></h1>
+<ol>
+<li>Preparing <a href="#1-preparing-dataset">Dataset</a></li>
+<li>Import <a href="#2-import-tfm_ner-module-in-jaseci">tfm_ner</a> module</li>
+<li>Model <a href="#3-model-training-and-validation">training and validation</a></li>
+<li><a href="#4-predicting-entities">Predicting entities</a></li>
+<li><a href="#5-experiments-and-methodology">Experiments and methodology</a></li>
+</ol>
+<h2 id="1-preparing-dataset"><a class="header" href="#1-preparing-dataset"><strong>1. Preparing Dataset</strong></a></h2>
+<p>For train, test and validation dataset, we are going to creating list of dict and storing in json file by name <code>train.json</code>, <code>validation.json</code> and <code>test.json</code> for demonstration perpose we are using here <a href="https://huggingface.co/datasets/conll2003">conll2003 dataset</a> and storing dataset file in directory name <code>dataset</code> and put all required file in this directory.</p>
+<p><strong>Example Dataset file <code>data format</code></strong></p>
+<ul>
+<li>
+<p><strong><code>train_data</code>:</strong>: (List(Dict)): a list dictionary containing contexts and list of entities in each context.</p>
+<pre><code>[{
+    &quot;context&quot;: &quot;However a loophole in the law allowed Buddharakkita and Jayewardene evade the death penalty as the Capital Punishment Repeal Act allowed for a sentence of death to a person convicted for murder committed prior to December 2 1959 and not for the offence of conspiracy to commit murder&quot;,
+    &quot;entities&quot;: [
+        {
+            &quot;entity_value&quot;: &quot;Buddharakkita&quot;,
+            &quot;entity_type&quot;: &quot;person&quot;,
+            &quot;start_index&quot;: 38,
+            &quot;end_index&quot;: 51
+        },
+        {
+            &quot;entity_value&quot;: &quot;Jayewardene&quot;,
+            &quot;entity_type&quot;: &quot;person&quot;,
+            &quot;start_index&quot;: 56,
+            &quot;end_index&quot;: 67
+        },
+        {
+            &quot;entity_value&quot;: &quot;Capital Punishment Repeal Act&quot;,
+            &quot;entity_type&quot;: &quot;event&quot;,
+            &quot;start_index&quot;: 99,
+            &quot;end_index&quot;: 128
+        }
+    ]
+    }
+]
+</code></pre>
+</li>
+<li>
+<p><strong><code>val_data</code>:</strong> (List(Dict)): a list dictionary containing contexts and list of entities in each context</p>
+<pre><code>[
+    {
+        &quot;context&quot;: &quot;The Stavros Niarchos Foundation Cultural Center inaugurated in 2016 will house the National Library of Greece and the Greek National Opera&quot;,
+        &quot;entities&quot;: [
+            {
+                &quot;entity_value&quot;: &quot;Stavros Niarchos Foundation Cultural Center&quot;,
+                &quot;entity_type&quot;: &quot;building&quot;,
+                &quot;start_index&quot;: 4,
+                &quot;end_index&quot;: 47
+            },
+            {
+                &quot;entity_value&quot;: &quot;National Library of Greece&quot;,
+                &quot;entity_type&quot;: &quot;building&quot;,
+                &quot;start_index&quot;: 83,
+                &quot;end_index&quot;: 109
+            },
+            {
+                &quot;entity_value&quot;: &quot;Greek National Opera&quot;,
+                &quot;entity_type&quot;: &quot;building&quot;,
+                &quot;start_index&quot;: 118,
+                &quot;end_index&quot;: 138
+            }
+        ]
+    }
+]
+</code></pre>
+</li>
+<li>
+<p><strong><code>test_data</code>:</strong> (List(Dict)): a list dictionary containing contexts and list of entities in each context</p>
+<pre><code>[
+    {
+        &quot;context&quot;: &quot;The project proponents told the Australian Financial Review in December that year that they had been able to demonstrate that the market for backpacker tourism was less affected by these events and that they intended to apply for an air operator 's certificate in January 2004&quot;,
+        &quot;entities&quot;: [
+            {
+                &quot;entity_value&quot;: &quot;Australian Financial Review&quot;,
+                &quot;entity_type&quot;: &quot;organization&quot;,
+                &quot;start_index&quot;: 32,
+                &quot;end_index&quot;: 59
+            }
+        ]
+    }
+]
+</code></pre>
+</li>
+</ul>
+<h2 id="2-import-tfm_ner-module-in-jaseci"><a class="header" href="#2-import-tfm_ner-module-in-jaseci"><strong>2. Import <code>tfm_ner</code> module in jaseci</strong></a></h2>
+<ol>
+<li>Open terminal and run jaseci by cmd
+<pre><code>jsctl -m
+</code></pre>
+</li>
+<li>Load module tfm_ner in jac by cmd
+<pre><code>actions load module jaseci_kit.tfm_ner
+</code></pre>
+</li>
+</ol>
+<h2 id="3-model-training-and-validation"><a class="header" href="#3-model-training-and-validation"><strong>3. Model training and validation</strong></a></h2>
+<p>For this tutorial we are going to train the model on train dataset and validate the model on validation dataset and finaly we test model on the test dataset.</p>
+<p><strong>1. Creating Jac Program</strong></p>
+<ol>
+<li>
+<p><code>Create a file (main.jac)</code></p>
+</li>
+<li>
+<p>Create node <code>model_dir</code> and  <code>tfm_ner</code> in <code>main.jac</code></p>
+<pre><code>node model_dir;
+node tfm_ner {}
+</code></pre>
+</li>
+<li>
+<p>Initializing <code>node tfm_ner</code> and adding abilty:- <code>train</code>, <code>infer</code></p>
+<p>Here we are importing ability to train and infer model.</p>
+<pre><code>node tfm_ner {
+    # train, infer
+    can tfm_ner.train, tfm_ner.extract_entity, tfm_ner.load_model, tfm_ner.save_model, tfm_ner.get_train_config, tfm_ner.set_train_config;
+}
+
+</code></pre>
+</li>
+<li>
+<p>Initializing module for <code>train and validation</code> inside <code>node tfm_ner</code>
+In this step we are initializing <code>training</code> and <code>validation</code> of tfm_ner model. It will take 5 parameter train, test, val (file contain <code>list of dict</code>) and mode and epochs</p>
+<pre><code># train and validation model 
+can train_and_val with train_and_val_tfm entry {
+    train_data = file.load_json(visitor.train_file);
+    val_data = file.load_json(visitor.val_file);
+    test_data = file.load_json(visitor.test_file);
+    std.out(&quot;corpus : &quot;,train_data.length,&quot; train + &quot;,val_data.length,&quot; val +&quot;,test_data.length,&quot; test sentences&quot;);
+    tfm_ner.train(
+        mode = visitor.mode,
+        epochs = visitor.num_train_epochs.int,
+        train_data = train_data,
+        dev_data = val_data,
+        test_data = test_data
+        );
+    std.out(&quot;training and validation done &quot;);
+    }
+</code></pre>
+</li>
+<li>
+<p>Adding module for <code>infer entity</code> inside node <code>tfm_ner</code></p>
+<p><code>Infer</code> module will take text input and return entities list.</p>
+<pre><code># infer entity from text
+can infer with predict_entity_from_tfm entry {
+    report tfm_ner.extract_entity(
+        text = visitor.text
+    );
+}
+</code></pre>
+</li>
+<li>
+<p>Adding <code>edge</code> name of  <code>ner_model</code> in <code>main.jac</code> file for connecting nodes inside graph.</p>
+<pre><code># adding edge
+edge ner_model {
+    has model_type;
+}
+</code></pre>
+</li>
+<li>
+<p>Adding <code>graph</code> name of <code>ner_val_graph</code> for initializing node . </p>
+<pre><code># Adding Graph
+graph ner_val_graph {
+    has anchor ner_model_dir;
+    spawn {
+        ner_model_dir = spawn node::model_dir;
+        tfm_ner_node = spawn node::tfm_ner;
+        ner_model_dir -[ner_model(model_type=&quot;tfm_ner&quot;)]-&gt; tfm_ner_node;
+    }
+}
+</code></pre>
+</li>
+<li>
+<p>Initializing <code>walker init</code> for calling graph</p>
+<pre><code>walker init {
+    root {
+    spawn here --&gt; graph::ner_val_graph; 
+    }
+}
+</code></pre>
+</li>
+<li>
+<p>Creating <code>walker</code> name of <code>train_and_val_tfm</code> for getting parameter from context and calling ability <code>training and validation</code> model.</p>
+<pre><code># creating walker 
+walker train_and_val_tfm {
+    has train_file;
+    has val_file;
+    has test_file;
+    has num_train_epochs;
+    has mode;
+
+    # Train NER models on the train set
+    # and validate them on the val set (Optional)
+    # and test them on the test set (Optional)
+
+    # report accuracy performance of NER model on inside dir creating on place of current path `main.jac` file &quot;train/logs/&quot;
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+</code></pre>
+</li>
+<li>
+<p>Creating a walker name of <code>predict_entity_from_tfm</code> for getting new text as input from context and infer entities.</p>
+<pre><code>walker predict_entity_from_tfm{
+    has text;
+
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+</code></pre>
+</li>
+</ol>
+<ul>
+<li>
+<p><strong>Final jac programm <code>(main.jac)</code></strong></p>
+<pre><code>node model_dir;
+node tfm_ner {
+    # train,infer
+    can tfm_ner.extract_entity, tfm_ner.train;
+
+    # extracting entities
+    can infer with predict_entity_from_tfm entry {
+        report tfm_ner.extract_entity(
+            text = visitor.text
+        );
+    }
+
+    ## train and validate
+    can train_and_val with train_and_val_tfm entry {
+
+        train_data = file.load_json(visitor.train_file);
+        val_data = file.load_json(visitor.val_file);
+        test_data = file.load_json(visitor.test_file);
+        std.out(&quot;corpus : &quot;,train_data.length,&quot; train + &quot;,val_data.length,&quot; dev +&quot;,test_data.length,&quot; test sentences&quot;);
+        tfm_ner.train(
+            mode = visitor.mode,
+            epochs = visitor.num_train_epochs.int,
+            train_data = train_data,
+            dev_data = val_data,
+            test_data = test_data
+            );
+        std.out(&quot;training and validation done &quot;);
+        }
+}
+
+
+edge ner_model {
+    has model_type;
+}
+
+graph ner_val_graph {
+    has anchor ner_model_dir;
+    spawn {
+        ner_model_dir = spawn node::model_dir;
+        tfm_ner_node = spawn node::tfm_ner;
+        ner_model_dir -[ner_model(model_type=&quot;tfm_ner&quot;)]-&gt; tfm_ner_node;
+    }
+}
+
+
+walker init {
+    root {
+    spawn here --&gt; graph::ner_val_graph; 
+    }
+}
+
+## creating walker 
+walker train_and_val_tfm {
+    has train_file;
+    has val_file;
+    has test_file;
+    has num_train_epochs;
+    has mode;
+
+    # Train all NER models on the train set
+    # and validate them on the val set
+    # report accuracy performance across all NER models
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+
+walker predict_entity_from_tfm{
+    has text;
+
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+
+</code></pre>
+</li>
+</ul>
+<p><strong>2. Steps for running <code>main.jac</code> file</strong> and <code>train</code> and <code>validate</code> tfm_ner model</p>
+<ol>
+<li>
+<p>Build main.jac by run:</p>
+<pre><code>jac build main.jac
+</code></pre>
+</li>
+<li>
+<p>Run the following command to Activate sentinal:</p>
+<pre><code>sentinel set -snt active:sentinel -mode ir main.jir
+</code></pre>
+</li>
+<li>
+<p>Create <code>Training Input</code></p>
+<ul>
+<li><code>mode</code>: (String): mode for training the model, available options are :
+* <code>default</code>: train the model from scratch.
+* <code>incremental</code>: providing more training data for current set of entities.
+* <code>append</code>: changing the number of entities (model is restarted and trained with all of traindata).</li>
+<li><code>epochs </code>: (int): Number of epoch you want model to train.</li>
+<li><code>train_file</code>: <code>list[dict]</code> train data file name.</li>
+<li><code>val_file</code>: <code>list[dict]</code> validation data file name.</li>
+<li><code>test_file</code>: <code>list[dict]</code> test data file name.</li>
+</ul>
+</li>
+<li>
+<p>Run the following command to execute walker <code>train_and_val_tfm</code></p>
+<pre><code>walker run train_and_val_tfm -ctx &quot;{\&quot;train_file\&quot;:\&quot;dataset/train.json\&quot;,\&quot;val_file\&quot;:\&quot;dataset/dev.json\&quot;,\&quot;test_file\&quot;:\&quot;dataset/test.json\&quot;,\&quot;num_train_epochs\&quot;:\&quot;50\&quot;,\&quot;mode\&quot;:\&quot;default\&quot;}&quot;
+</code></pre>
+</li>
+<li>
+<p>You'll find the following logs in <code>train</code> folder.</p>
+<pre><code>2022-06-06 11:23:46.832007    Training epoch: 1/50
+2022-06-06 11:23:46.847969    Training loss per 100 training steps: 0.9243220090866089
+2022-06-06 11:23:47.186904    Training loss epoch: 0.8817697350795453
+2022-06-06 11:23:47.191905    Training accuracy epoch: 0.11538461538461539
+2022-06-06 11:23:47.330845    Validation loss epoch: 0.7973677378434402
+2022-06-06 11:23:47.336076    Validation accuracy epoch: 0.038461538461538464
+2022-06-06 11:23:47.442199    Epoch 1 total time taken : 0:00:00.610192
+2022-06-06 11:23:47.448885    ------------------------------------------------------------
+2022-06-06 11:23:47.456886    Training epoch: 2/50
+2022-06-06 11:23:47.474848    Training loss per 100 training steps: 0.8383979797363281
+2022-06-06 11:23:47.814906    Training loss epoch: 0.7714704366830679
+2022-06-06 11:23:47.820939    Training accuracy epoch: 0.023076923076923078
+2022-06-06 11:23:47.969910    Validation loss epoch: 0.70741940003175
+2022-06-06 11:23:47.976287    Validation accuracy epoch: 0.0
+2022-06-06 11:23:48.075297    Epoch 2 total time taken : 0:00:00.618411
+2022-06-06 11:23:48.081293    ------------------------------------------------------------
+............
+............
+............
+2022-06-01 07:07:56.382809     Training epoch: 50/50
+2022-06-01 07:08:22.558677     Training loss epoch: 0.06641783774011399
+2022-06-01 07:08:22.558712     Training accuracy epoch: 0.9109369783381449
+2022-06-01 07:08:22.558778     evaluation loss epoch: 0.16095292149111629
+2022-06-01 07:08:22.558790     evaluation accuracy epoch: 0.8269142243363511
+2022-06-01 07:08:22.647852     Epoch 50 total time taken : 0:00:26.265050
+2022-06-01 07:08:22.647874     ------------------------------------------------------------
+2022-06-01 07:08:22.797730     Model Training is Completed
+2022-06-01 07:08:22.797769     ------------------------------------------------------------
+2022-06-01 07:08:22.797779     Total time taken to completed training :  0:22:06.770898
+2022-06-01 07:08:22.797795     ------------------------------------------------------------
+2022-06-01 07:08:22.797807     Model testing is started
+2022-06-01 07:08:22.797819     ------------------------------------------------------------
+2022-06-01 07:08:27.092534     f1_score(macro) : 0.6822521889259535
+2022-06-01 07:08:27.092573     Accuracy : 0.7892490767336889 
+2022-06-01 07:08:27.092581     Classification Report
+2022-06-01 07:08:27.092584     ------------------------------------------------------------
+            precision    recall  f1-score   support
+
+        O       0.00      0.00      0.00         0
+    I-PER       0.91      0.90      0.91      2496
+    I-ORG       0.82      0.68      0.74      1018
+    I-MISC      0.84      0.54      0.66       236
+    I-LOC       0.66      0.64      0.65       252
+    B-PER       0.84      0.85      0.85      2714
+    B-ORG       0.83      0.71      0.77      2513
+    B-MISC      0.82      0.64      0.72       991
+    B-LOC       0.85      0.84      0.85      1965
+
+ accuracy                           0.79     12185
+macro avg       0.73      0.65      0.68     12185
+weighted avg    0.85      0.79      0.82     12185
+
+2022-06-01 07:08:27.092694     ------------------------------------------------------------
+2022-06-01 07:08:27.092707     Total time taken to completed testing :  0:00:04.294899
+2022-06-01 07:08:27.092722     ------------------------------------------------------------ 
+
+</code></pre>
+</li>
+</ol>
+<h2 id="4-predicting-entities"><a class="header" href="#4-predicting-entities"><strong>4. Predicting Entities</strong></a></h2>
+<ul>
+<li>
+<p>For predicting entities we are going execute walker <code>predict_entity_from_tfm</code> and provide text input in context and will get output <code>list of entities</code> available in text-data.
+Run the following command to execute walker <code>predict_entity_from_tfm</code></p>
+<pre><code>walker run predict_entity_from_tfm -ctx &quot;{\&quot;text\&quot;:\&quot;It was the second costly blunder by Syria in four minute\&quot;}&quot;
+</code></pre>
+</li>
+<li>
+<p>After executing walker <code>predict_entity_from_tfm</code> , will get <code>predicted entities</code> list as</p>
+<pre><code>[
+    {
+        &quot;entity_value&quot;: &quot;syria&quot;,
+        &quot;entity_type&quot;: &quot;B-LOC&quot;,
+        &quot;score&quot;: 0.8613966703414917,
+        &quot;start_index&quot;: 36,
+        &quot;end_index&quot;: 41
+    }
+]
+</code></pre>
+</li>
+</ul>
+<h1 id="5-experiments-and-methodology"><a class="header" href="#5-experiments-and-methodology"><strong>5. Experiments and methodology</strong></a></h1>
+<p>Let us further look into our model training and evaluation methodology</p>
+<h2 id="evaluation-of-tfm_ner-with-tiny-bert-and-bert"><a class="header" href="#evaluation-of-tfm_ner-with-tiny-bert-and-bert"><strong>Evaluation of tfm_ner with <code>tiny-bert</code> and <code>bert</code></strong></a></h2>
+<p>We are evaluating <code>tiny-bert</code> and <code>bert-base-uncased</code> model on following datasets.</p>
+<h2 id="dataset-description"><a class="header" href="#dataset-description"><strong>Dataset description</strong></a></h2>
+<p>We are using two different dataset.</p>
+<p><strong>1. CONLL2003 <a href="https://huggingface.co/datasets/conll2003">dataset</a></strong> is a named entity recognition dataset released as a part of CoNLL-2003 shared task. CoNLL-2003 dataset have <strong>4 labels</strong>(PER, ORG, LOC, MISC).</p>
+<p><strong>2. FEW-NERD <a href="https://ningding97.github.io/fewnerd/">dataset</a></strong> is a large-scale, fine-grained manually annotated named entity recognition dataset, which contains <code>8 coarse-grained(Major)</code> types, <code>66 fine-grained(All)</code> types labels.</p>
+<h3 id="dataset-details"><a class="header" href="#dataset-details"><strong>Dataset details</strong></a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Dataset Name</th><th>train dataset</th><th>validation dataset</th><th>test dataset</th></tr></thead><tbody>
+<tr><td>Conll2003</td><td>14,041</td><td>3,250</td><td>3,453</td></tr>
+<tr><td>FEW-NERD (SUP)</td><td>131,767</td><td>18,824</td><td>37,648</td></tr>
+</tbody></table>
+</div>
+<h2 id="training-methodology"><a class="header" href="#training-methodology"><strong>Training methodology</strong></a></h2>
+<p>For training model we are using pytorch model from huggingface for token classification .</p>
+<ul>
+<li>
+<p><strong>Default training parameter are following</strong>.</p>
+<pre><code>&quot;MAX_LEN&quot;: 128,
+&quot;TRAIN_BATCH_SIZE&quot;: 64,
+&quot;VALID_BATCH_SIZE&quot;: 32,
+&quot;EPOCHS&quot;: 50,
+&quot;LEARNING_RATE&quot;: 2e-05,
+&quot;MAX_GRAD_NORM&quot;: 10,
+&quot;MODE&quot;: &quot;default&quot;
+</code></pre>
+<h3 id="machine-description-for-training-model"><a class="header" href="#machine-description-for-training-model"><strong><code>Machine</code> description for training model</strong></a></h3>
+<ul>
+<li><strong>RAM</strong> : <strong><code>32GB</code></strong></li>
+<li><strong>GPU</strong> : <strong><code>TESLA T4</code></strong></li>
+<li><strong>Memory GPU</strong> : <strong><code>16GB</code></strong></li>
+</ul>
+<h3 id="results"><a class="header" href="#results"><strong>Results</strong></a></h3>
+<h3 id="training-on-sample-data-from-few-nerdsup-dataset-on-major-labels"><a class="header" href="#training-on-sample-data-from-few-nerdsup-dataset-on-major-labels">Training on sample data from <code>FEW-NERD(SUP)</code> Dataset on <code>major labels</code></a></h3>
+<p>| Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       |Time Taken(avg)  |
+|--------------------------|----------------------|-----------------|---------------------|-----------------|
+|bert-base-uncased         | 0.6910               | 0.6888	        | 0.6353              | 2HR+20MIN       |
+|prajjwal1/bert-tiny       | 0.2184	              | 0.2182          | 0.2090	          | 26MIN           |</p>
+<h3 id="training-on-sample-data-from-few-nerdsup-dataset"><a class="header" href="#training-on-sample-data-from-few-nerdsup-dataset">Training on sample data from <code>FEW-NERD(SUP)</code> Dataset</a></h3>
+<p>| Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       | Time Taken(avg) |
+|--------------------------|----------------------|-----------------|---------------------|-----------------|
+|bert-base-uncased         | 0.5841               | 0.5830	        | 0.5702              | 3HR+36MIN       |
+|prajjwal1/bert-tiny       | 0.1900	              | 0.1894          | 0.0546    	      | 35MIN           |</p>
+<h3 id="training-on-conll2003-dataset"><a class="header" href="#training-on-conll2003-dataset">Training on <code>CONLL2003</code> dataset</a></h3>
+<p>| Model_Name               | Evaluation_Accuracy  | Test_Accuracy   | Test F1_Score       | Time Taken(avg) |
+|--------------------------|----------------------|-----------------|---------------------|-----------------|
+|bert-base-uncased         | 0.9585               | 0.9859	        | 0.8100              | 3HR+45MIN       |
+|prajjwal1/bert-tiny       | 0.8269	              | 0.7892          | 0.6823              | 35MIN           |</p>
+<p>After comparing these results we will get the insight from this</p>
+<ul>
+<li>
+<p><strong>Number of labels upto 4</strong></p>
+<ul>
+<li>We prefare training time, we need to go with small model e.g. <code>tiny-bert</code></li>
+<li>We are focussing higher accuracy result, we need to go with bigger model e.g. <code>bert-base-uncased</code></li>
+</ul>
+</li>
+<li>
+<p><strong>Number of labels greater then 4</strong></p>
+<ul>
+<li>We need to go with bigger model so we will get higher <code>accuracy</code> and <code>f1-score</code> e.g. <code>bert-base-uncased</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/flair_ner/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/lstm_ner/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/flair_ner/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/lstm_ner/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="../../../../../../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>

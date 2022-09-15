@@ -21,6 +21,3 @@ build
 js.session
 .idea
 mydatabase
-
-#deprecated docs#
-/docs
