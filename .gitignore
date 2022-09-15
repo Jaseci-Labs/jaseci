@@ -21,3 +21,5 @@ build
 js.session
 .idea
 mydatabase
+*Zone.Identifier
+.DS_Store
