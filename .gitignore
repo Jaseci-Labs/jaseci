@@ -21,6 +21,5 @@ build
 js.session
 .idea
 mydatabase
-
-#deprecated docs#
-/docs
+*Zone.Identifier
+.DS_Store

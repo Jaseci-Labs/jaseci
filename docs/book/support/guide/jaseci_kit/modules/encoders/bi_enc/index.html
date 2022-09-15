@@ -1,0 +1,865 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Bi-Encoder - Jaseci Documentation</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../../../../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../../../../favicon.png">
+        <link rel="stylesheet" href="../../../../../../css/variables.css">
+        <link rel="stylesheet" href="../../../../../../css/general.css">
+        <link rel="stylesheet" href="../../../../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../../../../css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../../../../fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../../../../highlight.css">
+        <link rel="stylesheet" href="../../../../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../../../../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><li class="part-title">Jaseci Official Documentation</li><li class="chapter-item expanded "><a href="../../../../../../LICENSE.html"><strong aria-hidden="true">1.</strong> License</a></li><li class="chapter-item expanded "><a href="../../../../../../CHANGELOG.html"><strong aria-hidden="true">2.</strong> About this Release</a></li><li class="chapter-item expanded "><a href="../../../../../../CONTRIBUTING.html"><strong aria-hidden="true">3.</strong> How to Contribute</a></li><li class="chapter-item expanded "><a href="../../../../../../CONTRIBUTORS.html"><strong aria-hidden="true">4.</strong> Contributors</a></li><li class="chapter-item expanded affix "><li class="part-title">Getting Started</li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/introduction.html"><strong aria-hidden="true">5.</strong> Introducing Jaseci</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/installation.html"><strong aria-hidden="true">6.</strong> Installing Jaseci</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/setting_up_your_editor.html"><strong aria-hidden="true">7.</strong> Setting Up Your Editor</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/writing_your_first_app.html"><strong aria-hidden="true">8.</strong> Writing Your First App</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/getting_started/understanding_jac_programs.html"><strong aria-hidden="true">9.</strong> Understanding JAC Programs</a></li><li class="chapter-item expanded affix "><li class="part-title">The JAC Programming Language Guide</li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/jac_language_overview.html"><strong aria-hidden="true">10.</strong> Language Overview</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/jac_grammar.html"><strong aria-hidden="true">11.</strong> Grammar</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/operators.html"><strong aria-hidden="true">12.</strong> Operators</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/control_flow.html"><strong aria-hidden="true">13.</strong> Control Flow</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/collections.html"><strong aria-hidden="true">14.</strong> Collections</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/nodes.html"><strong aria-hidden="true">15.</strong> Nodes</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/edges.html"><strong aria-hidden="true">16.</strong> Edges</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/graphs.html"><strong aria-hidden="true">17.</strong> Graphs</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/walkers.html"><strong aria-hidden="true">18.</strong> Walkers</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/traversing_a_graph.html"><strong aria-hidden="true">18.1.</strong> Traversing a Graph</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/referencing_node_context.html"><strong aria-hidden="true">18.2.</strong> Referencing a Node in Context</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/passing_arguments.html"><strong aria-hidden="true">19.</strong> Passing Arguments</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/specifying_operating_context.html"><strong aria-hidden="true">20.</strong> Specifying Operating Context</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/actions.html"><strong aria-hidden="true">21.</strong> Actions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/date_actions.html"><strong aria-hidden="true">21.1.</strong> Date Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/file_actions.html"><strong aria-hidden="true">21.2.</strong> File Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/net_actions.html"><strong aria-hidden="true">21.3.</strong> Net Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/rand_actions.html"><strong aria-hidden="true">21.4.</strong> Rand Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/request_actions.html"><strong aria-hidden="true">21.5.</strong> Request Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/standard_actions.html"><strong aria-hidden="true">21.6.</strong> Standard Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/vector_actions.html"><strong aria-hidden="true">21.7.</strong> Vector Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jac_language_guide/jaseci_actions.html"><strong aria-hidden="true">21.8.</strong> Jaseci Actions</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Examples and Tutorials</li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter1.html"><strong aria-hidden="true">22.</strong> Building a Conversational AI System</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter2.html"><strong aria-hidden="true">22.1.</strong> Chapter 2</a></li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter3.html"><strong aria-hidden="true">22.2.</strong> Chapter 3</a></li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter4.html"><strong aria-hidden="true">22.3.</strong> Chapter 4</a></li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter5.html"><strong aria-hidden="true">22.4.</strong> Chapter 5</a></li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter6.html"><strong aria-hidden="true">22.5.</strong> Chapter 6</a></li><li class="chapter-item expanded "><a href="../../../../../../support/codelabs/canonicai/chapter7.html"><strong aria-hidden="true">22.6.</strong> Chapter 7</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../examples/CanoniCAI/CCAI_codelab.html"><strong aria-hidden="true">23.</strong> CanoniCAI Example</a></li><li class="chapter-item expanded "><a href="../../../../../../examples/ner_examples/index.html"><strong aria-hidden="true">24.</strong> NER Examples</a></li><li class="chapter-item expanded affix "><li class="part-title">Jaseci Library Reference</li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/index.html"><strong aria-hidden="true">25.</strong> Jaseci Kit</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/index.html"><strong aria-hidden="true">25.1.</strong> Encoders</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/use_enc/index.html"><strong aria-hidden="true">25.1.1.</strong> USE Encoder</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/use_qa/index.html"><strong aria-hidden="true">25.1.2.</strong> USE QA</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/fast_enc/index.html"><strong aria-hidden="true">25.1.3.</strong> FastText</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/encoders/bi_enc/index.html" class="active"><strong aria-hidden="true">25.1.4.</strong> Bi-Encoder</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/index.html"><strong aria-hidden="true">25.2.</strong> Entity Recognition</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/flair_ner/index.html"><strong aria-hidden="true">25.2.1.</strong> FLair NER</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/tfm_ner/index.html"><strong aria-hidden="true">25.2.2.</strong> Transformer NER</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/lstm_ner/index.html"><strong aria-hidden="true">25.2.3.</strong> LSTM NER</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/summarization/index.html"><strong aria-hidden="true">25.3.</strong> Text Summarization</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/summarization/cl_summer/index.html"><strong aria-hidden="true">25.3.1.</strong> CL Summarization</a></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/summarization/t5_sum/index.html"><strong aria-hidden="true">25.3.2.</strong> T5 Summarization</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/text_processing/index.html"><strong aria-hidden="true">25.4.</strong> Text Processing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/text_processing/text_seg/index.html"><strong aria-hidden="true">25.4.1.</strong> Text Segmenter</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/object_detection/index.html"><strong aria-hidden="true">25.5.</strong> Object Detection</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/object_detection/yolo_v5/index.html"><strong aria-hidden="true">25.5.1.</strong> YOLO V5</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/non_ai/index.html"><strong aria-hidden="true">25.6.</strong> Non-AI Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../support/guide/jaseci_kit/modules/non_ai/pdf_ext/index.html"><strong aria-hidden="true">25.6.1.</strong> PDF Extractor</a></li></ol></li></ol></li><li class="chapter-item expanded "><li class="part-title">Jaseci Studio and Jaseci UI Kit</li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/gettingStarted.html"><strong aria-hidden="true">26.</strong> Introducing Jaseci Studio</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/index.html"><strong aria-hidden="true">27.</strong> Jaseci UI Kit</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/basic-concepts.html"><strong aria-hidden="true">27.1.</strong> Basic Concepts</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/built-in-actions.html"><strong aria-hidden="true">27.2.</strong> Built-in Actions</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/connecting-an-api.html"><strong aria-hidden="true">27.3.</strong> Connecting an API</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/list_of_componets.html"><strong aria-hidden="true">27.4.</strong> Component Reference</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/AuthForm.html"><strong aria-hidden="true">27.4.1.</strong> AuthForm</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Badge.html"><strong aria-hidden="true">27.4.2.</strong> Badge</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Breadcrumbs.html"><strong aria-hidden="true">27.4.3.</strong> Breadcrumbs</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Button.html"><strong aria-hidden="true">27.4.4.</strong> Button</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/ButtonGroup.html"><strong aria-hidden="true">27.4.5.</strong> ButtonGroup</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Card.html"><strong aria-hidden="true">27.4.6.</strong> Card</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Carousel.html"><strong aria-hidden="true">27.4.7.</strong> Carousel</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Checkbox.html"><strong aria-hidden="true">27.4.8.</strong> Checkbox</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Collapse.html"><strong aria-hidden="true">27.4.9.</strong> Collapse</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Column.html"><strong aria-hidden="true">27.4.10.</strong> Column</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Container.html"><strong aria-hidden="true">27.4.11.</strong> Container</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/DataGrid.html"><strong aria-hidden="true">27.4.12.</strong> Data Grid</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/DataList.html"><strong aria-hidden="true">27.4.13.</strong> Data List</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/DatePicker.html"><strong aria-hidden="true">27.4.14.</strong> Date Picker</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Dialog.html"><strong aria-hidden="true">27.4.15.</strong> Dialog</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Divider.html"><strong aria-hidden="true">27.4.16.</strong> Divider</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Dropdown.html"><strong aria-hidden="true">27.4.17.</strong> Dropdown</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Hero.html"><strong aria-hidden="true">27.4.18.</strong> Hero</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Inputbox.html"><strong aria-hidden="true">27.4.19.</strong> Inputbox</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Navbar.html"><strong aria-hidden="true">27.4.20.</strong> Navbar</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/navlink.html"><strong aria-hidden="true">27.4.21.</strong> Navlink</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Popover.html"><strong aria-hidden="true">27.4.22.</strong> Popover</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Progress.html"><strong aria-hidden="true">27.4.23.</strong> Progress</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Radio.html"><strong aria-hidden="true">27.4.24.</strong> Radio</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/RadioGroup.html"><strong aria-hidden="true">27.4.25.</strong> Radio Group</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Range.html"><strong aria-hidden="true">27.4.26.</strong> Range</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Rating.html"><strong aria-hidden="true">27.4.27.</strong> Rating</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Row.html"><strong aria-hidden="true">27.4.28.</strong> Row</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Select.html"><strong aria-hidden="true">27.4.29.</strong> Select</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/SpeechInput.html"><strong aria-hidden="true">27.4.30.</strong> Speech Input</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Stat.html"><strong aria-hidden="true">27.4.31.</strong> Stat</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Tabs.html"><strong aria-hidden="true">27.4.32.</strong> Tabs</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Text.html"><strong aria-hidden="true">27.4.33.</strong> Text</a></li><li class="chapter-item expanded "><a href="../../../../../../jaseci_ui_kit/components/docs/components/Textbox.html"><strong aria-hidden="true">27.4.34.</strong> Textbox</a></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Jaseci Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="bi-encoder-bi_enc"><a class="header" href="#bi-encoder-bi_enc"><strong>Bi-Encoder (<code>bi_enc</code>)</strong></a></h1>
+<p><strong><code>bi_enc</code></strong> is a arrangement of two encoder modules from BERT, it represents context and candidate separately using twin-structured encoders, it takes contexts and candidates, to predict the best suitable candidate for each context. You can train the module on custom data to behave accordingly. Let's take a deep dive into the trainning culture.</p>
+<p>This tutorial shows you how to train a Bi-Encoder with a custom training loop to categorize contexts by candidates. In this you use jaseci(jac) and python.</p>
+<ol>
+<li>Preparing <a href="#1-praparing-dataset">dataset</a></li>
+<li>Import <a href="#2-import-bi-encoderbi_enc-module-in-jac">Bi-Encoder(bi_enc)</a> module in jac</li>
+<li><a href="#3-train-the-model">Train</a> the model</li>
+<li><a href="#4-evaluation-of-the-model-effectiveness-">Evaluate</a> the model's effectiveness</li>
+<li>Use the trained model to make <a href="#5-use-the-trained-model-to-make-predictions-">predictions</a></li>
+</ol>
+<h2 id="walk-through"><a class="header" href="#walk-through"><strong>Walk through</strong></a></h2>
+<h3 id="1-praparing-dataset"><a class="header" href="#1-praparing-dataset"><strong>1. Praparing dataset</strong></a></h3>
+<p>For this tutorial, we are going to leverage the biencoder for intent classification, which is categorizing an incoming text into a one of predefined intents. for demonstration purpose, we are going to use the SNIPS dataset as an example here. <a href="https://huggingface.co/datasets/snips_built_in_intents">snips dataset</a>.</p>
+<p>SNIPS is a popular intent classificawtion datasets that covers intents such as <code>[ &quot;BookRestaurant&quot;, &quot;ComparePlaces&quot;, &quot;GetDirections&quot;, &quot;GetPlaceDetails&quot;, &quot;GetTrafficInformation&quot;, &quot;GetWeather&quot;, &quot;RequestRide&quot;, &quot;SearchPlace&quot;, &quot;ShareCurrentLocation&quot;, &quot;ShareETA&quot; ]</code>
+We need to do a little data format conversion to create a version of SNIPS that work with our biencoder implemenation.
+For this part, we are going to use Python. First, </p>
+<ol>
+<li>
+<p><code>Import the dataset</code> from huggingface <a href="https://huggingface.co/datasets/snips_built_in_intents">dataset library</a>.</p>
+<pre><code class="language-python"># import library
+from datasets import load_dataset
+# load dataset
+dataset = load_dataset(&quot;snips_built_in_intents&quot;)
+print(dataset[&quot;train&quot;][:2])
+</code></pre>
+<p>If imported successsfuly, you should see the data format to be something like this in output</p>
+<blockquote>
+<p>{&quot;text&quot;: [&quot;Share my location with Hillary's sister&quot;, &quot;Send my current location to my father&quot;], &quot;label&quot;: [5, 5]}</p>
+</blockquote>
+</li>
+<li>
+<p><code>Converting the format</code> from the SNIPS out of the box to the format that can be ingested by biencoder.</p>
+<pre><code class="language-python">import pandas as pd
+from sklearn.model_selection import train_test_split
+import json
+
+# get labels names
+lab = dataset[&quot;train&quot;].features[&quot;label&quot;].names
+# create labels dictionary
+label_dict = {v: k for v, k in enumerate(lab)}
+# dataset
+dataset = dataset[&quot;train&quot;]
+
+# create dataset function
+def CreateData(data):
+    # Create dataframe
+    df = pd.DataFrame(data)
+    # Map labels dict on label column
+    df[&quot;label&quot;] = df[&quot;label&quot;].apply(lambda x : label_dict[x])
+    # grouping text on basis of label
+    df = df.groupby(&quot;label&quot;).agg({&quot;text&quot;: &quot;\t&quot;.join, &quot;label&quot;: &quot;\t&quot;.join})
+    df[&quot;label&quot;] = df[&quot;label&quot;].apply(lambda x: x.split(&quot;\t&quot;)[0])
+
+    # Create data dictionary
+    data_dict = {}
+    for i in range(len(df)):
+        data_dict[df[&quot;label&quot;][i]] = df[&quot;text&quot;][i].split(&quot;\t&quot;)
+    return data_dict
+# Split dataset: Create train and test dataset and store in json file `train_bi.json` and `test_bi.json` and save to disk.
+# Split dataset in train and test set
+train, test = train_test_split(dataset, test_size=0.2, random_state=42)
+
+# Create train dataset
+train_data = CreateData(train)
+# write data in json file 'train_bi.json'
+with open(&quot;train_bi.json&quot;, &quot;w&quot;, encoding=&quot;utf8&quot;) as f:
+    f.write(json.dumps(train_data, indent = 4))
+    
+
+# Create test dataset
+test_data = CreateData(test)
+data = {
+    &quot;contexts&quot;: [],
+    &quot;candidates&quot;: [],
+    &quot;context_type&quot;: &quot;text&quot;,
+    &quot;candidate_type&quot;: &quot;text&quot;
+    }
+for itm in test_data:
+    data[&quot;candidates&quot;].append(itm)
+    data[&quot;contexts&quot;].extend(test_data[itm])
+# write data in json file 'test_bi.json'
+with open(&quot;test_bi.json&quot;, &quot;w&quot;, encoding=&quot;utf8&quot;) as f:
+        f.write(json.dumps(data, indent = 4))
+</code></pre>
+<p><strong>The resulting format should look something like this.</strong></p>
+<ul>
+<li>
+<p><strong>train_bi.json</strong></p>
+<pre><code>&quot;BookRestaurant&quot;: [
+    &quot;Book me a table for 2 people at the sushi place next to the show tomorrow night&quot;,&quot;Find me a table for four for dinner tonight&quot;
+    ],
+&quot;ComparePlaces&quot;: [
+    &quot;What's the cheapest between the two restaurants the closest to my hotel?&quot;
+    ]
+</code></pre>
+</li>
+<li>
+<p><strong>test_bi.json</strong></p>
+<pre><code>{
+    {
+        &quot;contexts&quot;: [
+            &quot;We are a party of 4 people and we want to book a table at Seven Hills for sunset&quot;,
+            &quot;Book a table at Saddle Peak Lodge for my diner with friends tonight&quot;,
+            &quot;How do I go to Montauk avoiding tolls?&quot;,
+            &quot;What's happening this week at Smalls Jazz Club?&quot;,
+            &quot;Will it rain tomorrow near my all day event?&quot;,
+            &quot;Send my current location to Anna&quot;,
+            &quot;Share my ETA with Jo&quot;,
+            &quot;Share my ETA with the Snips team&quot;
+        ],
+        &quot;candidates&quot;: [
+            &quot;BookRestaurant&quot;,
+            &quot;ComparePlaces&quot;,
+            &quot;GetDirections&quot;,
+            &quot;GetPlaceDetails&quot;,
+            &quot;GetTrafficInformation&quot;,
+            &quot;GetWeather&quot;,
+            &quot;RequestRide&quot;,
+            &quot;SearchPlace&quot;,
+            &quot;ShareCurrentLocation&quot;,
+            &quot;ShareETA&quot;
+        ],
+        &quot;context_type&quot;: &quot;text&quot;,
+        &quot;candidate_type&quot;: &quot;text&quot;
+    }
+}
+</code></pre>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="2-import-bi-encoderbi_enc-module-in-jac"><a class="header" href="#2-import-bi-encoderbi_enc-module-in-jac"><strong>2. Import <code>Bi-Encoder(bi_enc)</code> module in jac</strong></a></h3>
+<ol>
+<li>Open terminal and run jaseci by cmd
+<blockquote>
+<p>jsctl -m</p>
+</blockquote>
+</li>
+<li>Load <code>bi_enc</code> module in jac by cmd
+<blockquote>
+<p>actions load module jaseci_kit.bi_enc</p>
+</blockquote>
+</li>
+</ol>
+<h3 id="3-train-the-model"><a class="header" href="#3-train-the-model"><strong>3. Train the model</strong></a></h3>
+<p>For this tutorial, we are going to <code>train and infer</code> the <code>biencoder</code> for <code>intent classification</code> its <code>train</code> on snips <code>train datasets</code> and <code>infer</code> on <code>test dataset</code>, which is categorizing an incoming text into a one of predefined intents.</p>
+<ul>
+<li>
+<p><strong>Creating Jac Program (<code>train and infer</code> bi_enc)</strong></p>
+<ol>
+<li>
+<p>Create a file by name <code>bi_encoder.jac</code></p>
+</li>
+<li>
+<p>Create node <code>model_dir</code> and <code>bi_encoder</code> in <code>bi_encoder.jac</code> file</p>
+<pre><code>node model_dir;
+node bi_encoder {};
+</code></pre>
+</li>
+<li>
+<p>Initializing <code>node bi_encoder</code> and import <code>train</code> and <code>infer</code> ability inside node.</p>
+<pre><code># import train and infer ability
+can bi_enc.train, bi_enc.infer;
+</code></pre>
+</li>
+<li>
+<p>Initialize module <code>train</code> and <code>infer</code> inside <code>bi_encoder node</code>
+<code>bi_enc.train</code> take training argument and start traing <code>bi_enc</code> module</p>
+<pre><code class="language-python">can train_bi_enc with train_bi_enc entry{
+# Code snippet for training the model
+train_data = file.load_json(visitor.train_file);
+
+# Train the model 
+report bi_enc.train(
+    dataset=train_data,
+    from_scratch=visitor.from_scratch,
+    training_parameters={
+        &quot;num_train_epochs&quot;: visitor.num_train_epochs.int
+        }
+    );
+}
+# prediction on test dataset
+can infer with train_bi_enc exit{
+    # Use the model to perform inference
+    # returns the list of context with the suitable candidates
+    test_data = file.load_json(visitor.test_file);
+    resp_data = bi_enc.infer(
+        contexts=test_data[&quot;contexts&quot;],
+        candidates=test_data[&quot;candidates&quot;],
+        context_type=test_data[&quot;context_type&quot;],
+        candidate_type=test_data[&quot;candidate_type&quot;]
+    );
+    # the infer action returns all the candidate with the confidence scores
+    # Iterate through the candidate labels and their predicted scores
+    result = [];
+    for pred in resp_data.list{
+        text = pred[&quot;context&quot;];
+        max_score = 0;
+        max_intent = &quot;&quot;;
+        for j=0 to j&lt;pred[&quot;candidate&quot;].length by j+=1 {
+            if (pred[&quot;score&quot;][j] &gt; max_score){
+                max_intent = pred[&quot;candidate&quot;][j];
+                max_score = pred[&quot;score&quot;][j];
+            }
+        }
+        result.list::append({
+            &quot;context&quot;:text,
+            &quot;predicted intent&quot;:max_intent,
+            &quot;Conf_Score&quot;:max_score
+            });
+    }
+    report [result];
+}
+# predict intent on new text
+can predict with predict entry{        
+# Use the model to perform inference
+# returns the list of context with the suitable candidates
+test_data = file.load_json(visitor.test_data_file);
+resp_data = bi_enc.infer(
+    contexts=test_data[&quot;contexts&quot;],
+    candidates=test_data[&quot;candidates&quot;],
+    context_type=test_data[&quot;context_type&quot;],
+    candidate_type=test_data[&quot;candidate_type&quot;]
+    );
+# the infer action returns all the candidate with the confidence scores
+# Iterate through the candidate labels and their predicted scores
+pred = resp_data[0]
+context = pred[&quot;contexts&quot;]
+max_score = 0;
+max_intent = &quot;&quot;;
+for j=0 to j&lt;pred[&quot;candidate&quot;].length by j+=1 {
+    if (pred[&quot;score&quot;][j] &gt; max_score){
+        max_intent = pred[&quot;candidate&quot;][j];
+        max_score = pred[&quot;score&quot;][j];
+    }
+}
+report [{
+        &quot;context&quot;:text,
+        &quot;pred intent&quot;:max_intent,
+        &quot;Conf_Score&quot;:max_score
+        }];
+}
+</code></pre>
+<p><strong>Parameter details</strong></p>
+<ul>
+<li><code>train</code>: will be used to train the Bi-Encoder on custom data
+<ul>
+<li>Input:
+<ul>
+<li><code>dataset</code> (Dict): dictionary of candidates and suportting contexts for each candidate</li>
+<li><code>from_scratch</code> (bool): if set to true train the model from scratch otherwise trains incrementally </li>
+<li><code>training_parameters</code> (Dict): dictionary of training parameters</li>
+</ul>
+</li>
+<li>Returns: text when model training is completed</li>
+</ul>
+</li>
+<li><code>infer</code>: will be used to predits the most suitable candidate for a provided context, takes text or embedding 
+<ul>
+<li>Input:
+<ul>
+<li><code>contexts</code> (string or list of strings): context which needs to be classified</li>
+<li><code>candidates</code> (string or list of strings): list of candidates for the context </li>
+<li><code>context_type</code> (string): can be text or embedding type</li>
+<li><code>candidate_type</code> (string): can be text or embedding type</li>
+</ul>
+</li>
+<li>Return: a dictionary of similarity score for each candidate and context </li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>Adding edge name of <code>bi_model</code> in <code>bi_encoder.jac</code> file for connecting nodes inside graph.</p>
+<pre><code># adding edge
+edge bi_model {
+    has model_type;
+}
+</code></pre>
+</li>
+<li>
+<p>Adding graph name of <code>bi_encoder_graph</code> for initializing node .</p>
+<pre><code>graph bi_encoder_graph {
+    has anchor bi_model_dir;
+    spawn {
+        bi_model_dir = spawn node::model_dir;
+        bi_encoder_node = spawn node::bi_encoder;
+        bi_model_dir -[bi_model(model_type=&quot;bi_encoder&quot;)]-&gt; bi_encoder_node;
+    }
+}
+</code></pre>
+</li>
+<li>
+<p>Initializing <code>walker init</code> for calling graph</p>
+<pre><code>walker init {
+    root {
+    spawn here --&gt; graph::bi_encoder_graph; 
+    }
+}
+</code></pre>
+</li>
+<li>
+<p>Creating walker name of <code>train_bi_enc</code> for getting parameter from <strong>context or default</strong> and calling ability <code>train and infer</code> bi_encoder.</p>
+<pre><code># Declaring the walker: 
+walker train_bi_enc{
+    # the parameters required for training    
+    has train_file = &quot;train_bi.json&quot;;
+    has from_scratch = true;
+    has num_train_epochs = 20;
+    has test_file = &quot;test_bi.json&quot;;    
+
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+</code></pre>
+<p><strong>Default parameter for train and test biencoder</strong> </br>
+<code>train_file</code> : local path of <strong>train_bi.json</strong> file </br>
+<code>from_scratch</code> : <strong>true</strong> </br>
+<code>num_train_epochs</code> : <strong>20</strong> </br>
+<code>test_file</code> : local path of <strong>test_bi.json</strong> file </br></p>
+</li>
+<li>
+<p>Declaring walker for <code>predicting intents</code> on new text</p>
+<pre><code>walker predict{
+    has test_data_file = &quot;test_dataset.json&quot;;    
+
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+</code></pre>
+<p><strong>Final bi_encoder.jac</strong> program
+we are conmbining all steps from <strong>2 to 8</strong> inside <strong>bi_encoder.jac</strong></p>
+<pre><code class="language-python">node model_dir;
+node bi_encoder{
+    # import train and infer ability
+    can bi_enc.train, bi_enc.infer;
+
+    can train_bi_enc with train_bi_enc entry{
+        #Code snippet for training the model
+        train_data = file.load_json(visitor.train_file);
+        
+        # Train the model 
+        report bi_enc.train(
+            dataset=train_data,
+            from_scratch=visitor.from_scratch,
+            training_parameters={
+                &quot;num_train_epochs&quot;: visitor.num_train_epochs.int
+                }
+            );
+        }
+
+    can infer with train_bi_enc exit{
+        # Use the model to perform inference
+        # returns the list of context with the suitable candidates
+        test_data = file.load_json(visitor.test_file);
+        resp_data = bi_enc.infer(
+            contexts=test_data[&quot;contexts&quot;],
+            candidates=test_data[&quot;candidates&quot;],
+            context_type=test_data[&quot;context_type&quot;],
+            candidate_type=test_data[&quot;candidate_type&quot;]
+        );
+        # the infer action returns all the candidate with the confidence scores
+        # Iterate through the candidate labels and their predicted scores
+
+        result = [];
+        for pred in resp_data.list{
+            text = pred[&quot;context&quot;];
+            max_score = 0;
+            max_intent = &quot;&quot;;
+            for j=0 to j&lt;pred[&quot;candidate&quot;].length by j+=1 {
+                if (pred[&quot;score&quot;][j] &gt; max_score){
+                    max_intent = pred[&quot;candidate&quot;][j];
+                    max_score = pred[&quot;score&quot;][j];
+                }
+            }
+            result.list::append({
+                &quot;context&quot;:text,
+                &quot;predicted intent&quot;:max_intent,
+                &quot;Conf_Score&quot;:max_score
+                });
+        }
+        report [result];
+    }
+
+    # predict intent on new text
+    can predict with predict entry{        
+    # Use the model to perform inference
+    test_data = file.load_json(visitor.test_data_file);
+    resp_data = bi_enc.infer(
+        contexts=test_data[&quot;contexts&quot;],
+        candidates=test_data[&quot;candidates&quot;],
+        context_type=test_data[&quot;context_type&quot;],
+        candidate_type=test_data[&quot;candidate_type&quot;]
+        );
+    
+    # the infer action returns all the candidate with the confidence scores
+    # Iterate through the candidate labels and their predicted scores
+    pred = resp_data[0];
+    max_score = 0;
+    max_intent = &quot;&quot;;
+    for j=0 to j&lt;pred[&quot;candidate&quot;].length by j+=1 {
+        if (pred[&quot;score&quot;][j] &gt; max_score){
+            max_intent = pred[&quot;candidate&quot;][j];
+            max_score = pred[&quot;score&quot;][j];
+        }
+    }
+    report [{
+        &quot;context&quot;: pred[&quot;context&quot;],
+        &quot;pred intent&quot;: max_intent,
+        &quot;Conf_Score&quot;: max_score
+        }];
+    }
+}
+
+
+# adding edge
+edge bi_model {
+    has model_type;
+}
+
+graph bi_encoder_graph {
+    has anchor bi_model_dir;
+    spawn {
+        bi_model_dir = spawn node::model_dir;
+        bi_encoder_node = spawn node::bi_encoder;
+        bi_model_dir -[bi_model(model_type=&quot;bi_encoder&quot;)]-&gt; bi_encoder_node;
+    }
+}
+
+walker init {
+    root {
+    spawn here --&gt; graph::bi_encoder_graph; 
+    }
+}
+
+
+# Declaring the walker: 
+walker train_bi_enc{
+    # the parameters required for training    
+    has train_file = &quot;train_bi.json&quot;;
+    has from_scratch = true;
+    has num_train_epochs = 20;
+    has test_file = &quot;test_bi.json&quot;;    
+
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+
+# declaring walker for predicting intents on new text
+walker predict{
+    # passing input data for prediction
+    has test_data_file = &quot;test_dataset.json&quot;;    
+
+    root {
+        take --&gt; node::model_dir;
+    }
+    model_dir {
+        take --&gt;;
+    }
+}
+</code></pre>
+</li>
+</ol>
+<p><strong>Steps for running <code>bi_encoder.jac</code> programm</strong></p>
+<ol>
+<li>
+<p>Build <code>bi_encoder.jac</code> by run cmd</p>
+<blockquote>
+<p>jac build bi_encoder.jac</p>
+</blockquote>
+</li>
+<li>
+<p>Activate sentinal by run cmd</p>
+<blockquote>
+<p>sentinel set -snt active:sentinel -mode ir bi_encoder.jir</p>
+</blockquote>
+<p><strong>Note</strong>: If getting error <strong><code>ValueError: badly formed hexadecimal UUID string</code></strong> execute only once</p>
+<blockquote>
+<p>sentinel register -set_active true -mode ir bi_encoder.jir</p>
+</blockquote>
+</li>
+<li>
+<p>Calling walker <code>train_bi_enc</code> with <code>default parameter</code> for training <code>bi_enc</code> module by cmd</p>
+<blockquote>
+<p>walker run train_bi_enc </br></p>
+</blockquote>
+</li>
+</ol>
+<p>After <code>3rd step</code> running logging will shown on console </br>
+<strong><code>training logs</code></strong></p>
+<pre><code>jaseci &gt; walker run train_bi_enc
+Saving non-shared model to : modeloutput
+non shared model created
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 33/33 [00:13&lt;00:00,  2.42it/s]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 33/33 [00:13&lt;00:00, 14.12it/s]
+
+            Epoch : 1
+            loss : 0.11524221436543898
+            LR : 0.000891891891891892
+
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 33/33 [00:01&lt;00:00, 21.54it/s]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 33/33 [00:01&lt;00:00, 21.42it/s]
+
+            Epoch : 2
+            loss : 0.030822114031197445
+            LR : 0.0006689189189189189
+
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 33/33 [00:01&lt;00:00, 20.99it/s]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 33/33 [00:01&lt;00:00, 20.67it/s]
+
+            Epoch : 3
+            loss : 0.016803985327538667
+            LR : 0.000445945945945946
+
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 33/33 [00:01&lt;00:00, 19.98it/s]
+97%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████▊     | 32/33 [00:01&lt;00:00, 19.59it/s]
+
+            Epoch : 4
+            loss : 0.011880970348350027
+            LR : 0.000222972972972973
+
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 33/33 [00:04&lt;00:00,  8.16it/s]
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 33/33 [00:04&lt;00:00,  6.06it/s]
+
+            Epoch : 5
+            loss : 0.010109249611780273
+            LR : 0.0
+
+Epoch: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 5/5 [00:22&lt;00:00,  4.49s/batch]
+
+</code></pre>
+</li>
+</ul>
+<h3 id="4-evaluation-of-the-model-effectiveness"><a class="header" href="#4-evaluation-of-the-model-effectiveness"><strong>4. Evaluation of the model effectiveness</strong></a></h3>
+<ul>
+<li>
+<p>Performing model effectiveness on <code>test_bi.json</code> dataset.</p>
+<pre><code>Model testing Accuracy : 0.9090909090909091
+Model testing F1_Score : 0.886656034024455
+
+Model classification Report
+
+                        precision    recall  f1-score   support
+
+        BookRestaurant       1.00      1.00      1.00        14
+         ComparePlaces       0.57      1.00      0.73         4
+         GetDirections       1.00      1.00      1.00         7
+       GetPlaceDetails       1.00      0.80      0.89        10
+ GetTrafficInformation       1.00      0.50      0.67         4
+            GetWeather       0.90      1.00      0.95         9
+           RequestRide       0.83      1.00      0.91         5
+           SearchPlace       0.80      0.67      0.73         6
+  ShareCurrentLocation       1.00      1.00      1.00         3
+              ShareETA       1.00      1.00      1.00         4
+
+              accuracy                           0.91        66
+             macro avg       0.91      0.90      0.89        66
+          weighted avg       0.93      0.91      0.91        66
+</code></pre>
+<p><strong>Sample Result Data</strong></p>
+<pre><code>[
+    {
+        &quot;context&quot;: &quot;I want a table for friday 8pm for 2 people at Katz's Delicatessen&quot;,
+        &quot;pred intent&quot;: &quot;BookRestaurant&quot;,
+        &quot;true intent&quot;: &quot;BookRestaurant&quot;,
+        &quot;Conf_Score&quot;: 16.789536811645576
+    },
+    {
+        &quot;context&quot;: &quot;Is Vertigo Sky Lounge more expensive than the bar I usually go to in New York?&quot;,
+        &quot;pred intent&quot;: &quot;ComparePlaces&quot;,
+        &quot;true intent&quot;: &quot;ComparePlaces&quot;,
+        &quot;Conf_Score&quot;: 10.970629125448095
+    },
+    {
+        &quot;context&quot;: &quot;Directions to Disneyworld avoiding traffic&quot;,
+        &quot;pred intent&quot;: &quot;GetDirections&quot;,
+        &quot;true intent&quot;: &quot;GetDirections&quot;,
+        &quot;Conf_Score&quot;: 18.088717110248858
+    },
+    {
+        &quot;context&quot;: &quot;Show me the fastest itinerary to my Airbnb on a Friday night&quot;,
+        &quot;pred intent&quot;: &quot;GetDirections&quot;,
+        &quot;true intent&quot;: &quot;GetDirections&quot;,
+        &quot;Conf_Score&quot;: 12.83485819143171
+    },
+    {
+        &quot;context&quot;: &quot;Is there any traffic on US 20?&quot;,
+        &quot;pred intent&quot;: &quot;GetTrafficInformation&quot;,
+        &quot;true intent&quot;: &quot;GetTrafficInformation&quot;,
+        &quot;Conf_Score&quot;: 12.378884709882225
+    },
+    {
+        &quot;context&quot;: &quot;Can I take my bike to go to work today?&quot;,
+        &quot;pred intent&quot;: &quot;GetTrafficInformation&quot;,
+        &quot;true intent&quot;: &quot;GetWeather&quot;,
+        &quot;Conf_Score&quot;: 13.005006348394783
+    },
+    {
+        &quot;context&quot;: &quot;Book a Lyft car to go to 33 greene street&quot;,
+        &quot;pred intent&quot;: &quot;RequestRide&quot;,
+        &quot;true intent&quot;: &quot;RequestRide&quot;,
+        &quot;Conf_Score&quot;: 18.330015462917917
+    },
+    
+    {
+        &quot;context&quot;: &quot;Get me a ride to the airport&quot;,
+        &quot;pred intent&quot;: &quot;RequestRide&quot;,
+        &quot;true intent&quot;: &quot;RequestRide&quot;,
+        &quot;Conf_Score&quot;: 27.063900934951988
+    },
+    {
+        &quot;context&quot;: &quot;Find me the finest sushi restaurant in the area of my next meeting&quot;,
+        &quot;pred intent&quot;: &quot;SearchPlace&quot;,
+        &quot;true intent&quot;: &quot;SearchPlace&quot;,
+        &quot;Conf_Score&quot;: 13.798050719287755
+    }
+]
+</code></pre>
+</li>
+</ul>
+<h3 id="5-use-the-trained-model-to-make-predictions"><a class="header" href="#5-use-the-trained-model-to-make-predictions"><strong>5. Use the trained model to make predictions</strong> </br></a></h3>
+<ul>
+<li>
+<p>Create new input data for prdiction stored in <code>test_dataset.json</code> file (can take any name) </br></p>
+<p><strong>Input data</strong></p>
+<pre><code>  {
+      &quot;contexts&quot;: [
+          &quot;We are a party of 4 people and we want to book a table at Seven Hills for sunset&quot;
+      ],
+      &quot;candidates&quot;: [
+          &quot;BookRestaurant&quot;,
+          &quot;ComparePlaces&quot;,
+          &quot;GetDirections&quot;,
+          &quot;GetPlaceDetails&quot;,
+          &quot;GetTrafficInformation&quot;,
+          &quot;GetWeather&quot;,
+          &quot;RequestRide&quot;,
+          &quot;SearchPlace&quot;,
+          &quot;ShareCurrentLocation&quot;,
+          &quot;ShareETA&quot;
+      ],
+      &quot;context_type&quot;: &quot;text&quot;,
+      &quot;candidate_type&quot;: &quot;text&quot;
+  }
+</code></pre>
+</li>
+<li>
+<p>Calling walker for predict intents by cmd</p>
+<pre><code>walker run predict -ctx &quot;{\&quot;test_data_file\&quot;:\&quot;test_dataset.json\&quot;}&quot;
+</code></pre>
+<p><strong>Output Result</strong></p>
+<pre><code> [
+  {
+    &quot;context&quot;: &quot;We are a party of 4 people and we want to book a table at Seven Hills for sunset&quot;,
+    &quot;pred intent&quot;: &quot;BookRestaurant&quot;,
+    &quot;Conf_Score&quot;: 19.72020419731474
+  }
+]
+</code></pre>
+</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../../../../support/guide/jaseci_kit/modules/encoders/fast_enc/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../../../../support/guide/jaseci_kit/modules/encoders/fast_enc/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="../../../../../../support/guide/jaseci_kit/modules/entity_utils/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="../../../../../../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../../../../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>

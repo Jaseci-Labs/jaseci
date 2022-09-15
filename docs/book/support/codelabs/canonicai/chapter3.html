@@ -1,0 +1,471 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Chapter 3 - Jaseci Documentation</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><li class="part-title">Jaseci Official Documentation</li><li class="chapter-item expanded "><a href="../../../LICENSE.html"><strong aria-hidden="true">1.</strong> License</a></li><li class="chapter-item expanded "><a href="../../../CHANGELOG.html"><strong aria-hidden="true">2.</strong> About this Release</a></li><li class="chapter-item expanded "><a href="../../../CONTRIBUTING.html"><strong aria-hidden="true">3.</strong> How to Contribute</a></li><li class="chapter-item expanded "><a href="../../../CONTRIBUTORS.html"><strong aria-hidden="true">4.</strong> Contributors</a></li><li class="chapter-item expanded affix "><li class="part-title">Getting Started</li><li class="chapter-item expanded "><a href="../../../support/guide/getting_started/introduction.html"><strong aria-hidden="true">5.</strong> Introducing Jaseci</a></li><li class="chapter-item expanded "><a href="../../../support/guide/getting_started/installation.html"><strong aria-hidden="true">6.</strong> Installing Jaseci</a></li><li class="chapter-item expanded "><a href="../../../support/guide/getting_started/setting_up_your_editor.html"><strong aria-hidden="true">7.</strong> Setting Up Your Editor</a></li><li class="chapter-item expanded "><a href="../../../support/guide/getting_started/writing_your_first_app.html"><strong aria-hidden="true">8.</strong> Writing Your First App</a></li><li class="chapter-item expanded "><a href="../../../support/guide/getting_started/understanding_jac_programs.html"><strong aria-hidden="true">9.</strong> Understanding JAC Programs</a></li><li class="chapter-item expanded affix "><li class="part-title">The JAC Programming Language Guide</li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/jac_language_overview.html"><strong aria-hidden="true">10.</strong> Language Overview</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/jac_grammar.html"><strong aria-hidden="true">11.</strong> Grammar</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/operators.html"><strong aria-hidden="true">12.</strong> Operators</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/control_flow.html"><strong aria-hidden="true">13.</strong> Control Flow</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/collections.html"><strong aria-hidden="true">14.</strong> Collections</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/nodes.html"><strong aria-hidden="true">15.</strong> Nodes</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/edges.html"><strong aria-hidden="true">16.</strong> Edges</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/graphs.html"><strong aria-hidden="true">17.</strong> Graphs</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/walkers.html"><strong aria-hidden="true">18.</strong> Walkers</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/traversing_a_graph.html"><strong aria-hidden="true">18.1.</strong> Traversing a Graph</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/referencing_node_context.html"><strong aria-hidden="true">18.2.</strong> Referencing a Node in Context</a></li></ol></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/passing_arguments.html"><strong aria-hidden="true">19.</strong> Passing Arguments</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/specifying_operating_context.html"><strong aria-hidden="true">20.</strong> Specifying Operating Context</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/actions.html"><strong aria-hidden="true">21.</strong> Actions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/date_actions.html"><strong aria-hidden="true">21.1.</strong> Date Actions</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/file_actions.html"><strong aria-hidden="true">21.2.</strong> File Actions</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/net_actions.html"><strong aria-hidden="true">21.3.</strong> Net Actions</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/rand_actions.html"><strong aria-hidden="true">21.4.</strong> Rand Actions</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/request_actions.html"><strong aria-hidden="true">21.5.</strong> Request Actions</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/standard_actions.html"><strong aria-hidden="true">21.6.</strong> Standard Actions</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/vector_actions.html"><strong aria-hidden="true">21.7.</strong> Vector Actions</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jac_language_guide/jaseci_actions.html"><strong aria-hidden="true">21.8.</strong> Jaseci Actions</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Examples and Tutorials</li><li class="chapter-item expanded "><a href="../../../support/codelabs/canonicai/chapter1.html"><strong aria-hidden="true">22.</strong> Building a Conversational AI System</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../support/codelabs/canonicai/chapter2.html"><strong aria-hidden="true">22.1.</strong> Chapter 2</a></li><li class="chapter-item expanded "><a href="../../../support/codelabs/canonicai/chapter3.html" class="active"><strong aria-hidden="true">22.2.</strong> Chapter 3</a></li><li class="chapter-item expanded "><a href="../../../support/codelabs/canonicai/chapter4.html"><strong aria-hidden="true">22.3.</strong> Chapter 4</a></li><li class="chapter-item expanded "><a href="../../../support/codelabs/canonicai/chapter5.html"><strong aria-hidden="true">22.4.</strong> Chapter 5</a></li><li class="chapter-item expanded "><a href="../../../support/codelabs/canonicai/chapter6.html"><strong aria-hidden="true">22.5.</strong> Chapter 6</a></li><li class="chapter-item expanded "><a href="../../../support/codelabs/canonicai/chapter7.html"><strong aria-hidden="true">22.6.</strong> Chapter 7</a></li></ol></li><li class="chapter-item expanded "><a href="../../../examples/CanoniCAI/CCAI_codelab.html"><strong aria-hidden="true">23.</strong> CanoniCAI Example</a></li><li class="chapter-item expanded "><a href="../../../examples/ner_examples/index.html"><strong aria-hidden="true">24.</strong> NER Examples</a></li><li class="chapter-item expanded affix "><li class="part-title">Jaseci Library Reference</li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/index.html"><strong aria-hidden="true">25.</strong> Jaseci Kit</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/encoders/index.html"><strong aria-hidden="true">25.1.</strong> Encoders</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/encoders/use_enc/index.html"><strong aria-hidden="true">25.1.1.</strong> USE Encoder</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/encoders/use_qa/index.html"><strong aria-hidden="true">25.1.2.</strong> USE QA</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/encoders/fast_enc/index.html"><strong aria-hidden="true">25.1.3.</strong> FastText</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/encoders/bi_enc/index.html"><strong aria-hidden="true">25.1.4.</strong> Bi-Encoder</a></li></ol></li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/entity_utils/index.html"><strong aria-hidden="true">25.2.</strong> Entity Recognition</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/entity_utils/flair_ner/index.html"><strong aria-hidden="true">25.2.1.</strong> FLair NER</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/entity_utils/tfm_ner/index.html"><strong aria-hidden="true">25.2.2.</strong> Transformer NER</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/entity_utils/lstm_ner/index.html"><strong aria-hidden="true">25.2.3.</strong> LSTM NER</a></li></ol></li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/summarization/index.html"><strong aria-hidden="true">25.3.</strong> Text Summarization</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/summarization/cl_summer/index.html"><strong aria-hidden="true">25.3.1.</strong> CL Summarization</a></li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/summarization/t5_sum/index.html"><strong aria-hidden="true">25.3.2.</strong> T5 Summarization</a></li></ol></li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/text_processing/index.html"><strong aria-hidden="true">25.4.</strong> Text Processing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/text_processing/text_seg/index.html"><strong aria-hidden="true">25.4.1.</strong> Text Segmenter</a></li></ol></li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/object_detection/index.html"><strong aria-hidden="true">25.5.</strong> Object Detection</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/object_detection/yolo_v5/index.html"><strong aria-hidden="true">25.5.1.</strong> YOLO V5</a></li></ol></li><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/non_ai/index.html"><strong aria-hidden="true">25.6.</strong> Non-AI Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../support/guide/jaseci_kit/modules/non_ai/pdf_ext/index.html"><strong aria-hidden="true">25.6.1.</strong> PDF Extractor</a></li></ol></li></ol></li><li class="chapter-item expanded "><li class="part-title">Jaseci Studio and Jaseci UI Kit</li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/gettingStarted.html"><strong aria-hidden="true">26.</strong> Introducing Jaseci Studio</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/index.html"><strong aria-hidden="true">27.</strong> Jaseci UI Kit</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/basic-concepts.html"><strong aria-hidden="true">27.1.</strong> Basic Concepts</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/built-in-actions.html"><strong aria-hidden="true">27.2.</strong> Built-in Actions</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/connecting-an-api.html"><strong aria-hidden="true">27.3.</strong> Connecting an API</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/list_of_componets.html"><strong aria-hidden="true">27.4.</strong> Component Reference</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/AuthForm.html"><strong aria-hidden="true">27.4.1.</strong> AuthForm</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Badge.html"><strong aria-hidden="true">27.4.2.</strong> Badge</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Breadcrumbs.html"><strong aria-hidden="true">27.4.3.</strong> Breadcrumbs</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Button.html"><strong aria-hidden="true">27.4.4.</strong> Button</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/ButtonGroup.html"><strong aria-hidden="true">27.4.5.</strong> ButtonGroup</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Card.html"><strong aria-hidden="true">27.4.6.</strong> Card</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Carousel.html"><strong aria-hidden="true">27.4.7.</strong> Carousel</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Checkbox.html"><strong aria-hidden="true">27.4.8.</strong> Checkbox</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Collapse.html"><strong aria-hidden="true">27.4.9.</strong> Collapse</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Column.html"><strong aria-hidden="true">27.4.10.</strong> Column</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Container.html"><strong aria-hidden="true">27.4.11.</strong> Container</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/DataGrid.html"><strong aria-hidden="true">27.4.12.</strong> Data Grid</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/DataList.html"><strong aria-hidden="true">27.4.13.</strong> Data List</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/DatePicker.html"><strong aria-hidden="true">27.4.14.</strong> Date Picker</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Dialog.html"><strong aria-hidden="true">27.4.15.</strong> Dialog</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Divider.html"><strong aria-hidden="true">27.4.16.</strong> Divider</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Dropdown.html"><strong aria-hidden="true">27.4.17.</strong> Dropdown</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Hero.html"><strong aria-hidden="true">27.4.18.</strong> Hero</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Inputbox.html"><strong aria-hidden="true">27.4.19.</strong> Inputbox</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Navbar.html"><strong aria-hidden="true">27.4.20.</strong> Navbar</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/navlink.html"><strong aria-hidden="true">27.4.21.</strong> Navlink</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Popover.html"><strong aria-hidden="true">27.4.22.</strong> Popover</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Progress.html"><strong aria-hidden="true">27.4.23.</strong> Progress</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Radio.html"><strong aria-hidden="true">27.4.24.</strong> Radio</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/RadioGroup.html"><strong aria-hidden="true">27.4.25.</strong> Radio Group</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Range.html"><strong aria-hidden="true">27.4.26.</strong> Range</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Rating.html"><strong aria-hidden="true">27.4.27.</strong> Rating</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Row.html"><strong aria-hidden="true">27.4.28.</strong> Row</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Select.html"><strong aria-hidden="true">27.4.29.</strong> Select</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/SpeechInput.html"><strong aria-hidden="true">27.4.30.</strong> Speech Input</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Stat.html"><strong aria-hidden="true">27.4.31.</strong> Stat</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Tabs.html"><strong aria-hidden="true">27.4.32.</strong> Tabs</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Text.html"><strong aria-hidden="true">27.4.33.</strong> Text</a></li><li class="chapter-item expanded "><a href="../../../jaseci_ui_kit/components/docs/components/Textbox.html"><strong aria-hidden="true">27.4.34.</strong> Textbox</a></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Jaseci Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="build-a-conversational-ai-system-in-jaseci"><a class="header" href="#build-a-conversational-ai-system-in-jaseci">Build a conversational AI system in Jaseci</a></h1>
+<h1 id="chapter-3"><a class="header" href="#chapter-3">Chapter 3</a></h1>
+<h3 id="cai_state-node"><a class="header" href="#cai_state-node"><strong>cai_state node</strong></a></h3>
+<h3 id="two-main-stages-in-handling-a-conversational-ai-request"><a class="header" href="#two-main-stages-in-handling-a-conversational-ai-request">Two main stages in handling a conversational AI request</a></h3>
+<p><img src="./images/nlu_nlg.png?raw=true" alt="Two Stages" title="Title" /></p>
+<p>There are two stages which handles the conversational aspect of the AI and they are NLU (Natural Language Understand) and NLG (Natural Language Generation).</p>
+<ul>
+<li>
+<p><strong>NLU (Natural Language Understand)</strong>: Natural language understanding is a branch of artificial intelligence that uses computer software to understand input in the form of sentences using text or speech. <strong>What does NLU do?</strong> If you look at the diagram above it intakes the user query and the NLU uses two component: intent classification (understanding the meaning of the utterance) and entity extraction (collects important words from the utterance) and this process gives the conversational AI the understanding of what the user is actually trying to say.</p>
+</li>
+<li>
+<p><strong>NLG (Natural Language Generation)</strong>: Natural language generation (NLG) is the use of artificial intelligence (AI) programming to produce written or spoken narratives from a data set. <strong>What does NLG do?</strong> If you look above at the diagram, you would see after the AI understand what the user is trying to say using NLU it will then take those results and auto generate a suitable response to forward to the user and that is the purpose of the NLG.</p>
+</li>
+</ul>
+<h3 id="what-do-each-node-abilities-do"><a class="header" href="#what-do-each-node-abilities-do"><strong>What do each node abilities do?</strong></a></h3>
+<ul>
+<li><strong>classifiy_intent</strong>: Figures out the user intention in any given question.</li>
+<li><strong>extract_entities</strong>: Extract words of interests from the question</li>
+<li><strong>gen_response</strong>: Generate a suitable response for the user.</li>
+<li><strong>nlu</strong>: Process incoming request through NLU engines using intent classification or entity extraction AI models.</li>
+<li><strong>nlg</strong>: Construct natural language response</li>
+</ul>
+<h3 id="inheritance"><a class="header" href="#inheritance"><strong>Inheritance</strong></a></h3>
+<p><strong>What is inheritance?</strong>
+It is a mechanism where you can to derive a class from another class for a hierarchy of classes that share a set of attributes and methods.</p>
+<p><strong>Node Inheritance</strong></p>
+<pre><code>node vehicle {
+    has plate_number;
+    
+    can drive {
+        report 'yes';
+    }
+}
+
+node car:vehicle {
+    has plate_number = &quot;RAC001&quot;;
+}
+
+node bus:vehicle {
+    has plate_number = &quot;SUB002&quot;;
+}
+</code></pre>
+<p>In the above code snippet. This is a very basic example of inheritance. We created a node named car and bus but since they are related and simply share the same property and node ability we created a node named vehicle and inherit its attributes. Imagine life without inheritance, the code will look like this.</p>
+<pre><code>node car {
+    has plate_number = &quot;RAC001&quot;;
+    
+    can drive {
+        report 'yes';
+    }
+}
+
+node bus {
+    has plate_number = &quot;SUB002&quot;;
+    
+    can drive {
+        report 'yes';
+    }
+}
+</code></pre>
+<p>In this case it will seem that writing it this way will be more effient, however what if each vehicles have more functions like blow_horn, accelerate, breaks, park and etc or they are more vehicles like truck, scooter, and etc you can imagine how big this code base will be and that's why it's important to have inheritance in our code base and in this program we use inheritance to increase the efficiency of the entire application.</p>
+<p>So, lets use what's in the code base and see how we implemented it. <code>Do not worry about what each nodes and state works, that will be explained in detailed in the next section, just look at how it is implemented.</code></p>
+<pre><code>node cai_state {
+    has name;
+    has prepared_entities = {
+            &quot;name&quot;: &quot;Tony Stark&quot;,
+            &quot;address&quot;: &quot;10880 Malibu Point&quot;
+    };
+
+    # Classify the intent of the question
+    can classify_intent {
+        # NOTE: Hardcode intent for now
+        visitor.predicted_intent = visitor.intent_override;
+    }
+
+    # Extract words of interests from the question
+    can extract_entities {
+        # NOTE: Hardcode entities for now
+        for ent in visitor.entity_override {
+            visitor.extracted_entities[ent] = prepared_entities[ent];
+        }
+    }
+
+    # Generate response
+    can gen_response {
+        # Default response
+        visitor.response =
+            &quot;Sorry I can't handle that just yet! Anything else I can help you with&quot;;
+    }
+
+    # Process incoming request through NLU engines
+    can nlu {
+        ::classify_intent;
+        ::extract_entities;
+    }
+
+    # Construct natural language response
+    can nlg {
+        ::gen_response;
+    }
+}
+</code></pre>
+<p>Above, this is a conversational state node. We use inheritance here, because we will have multiple conversational state nodes like a confirm state, cancel state, collect information state and etc, that have the same functionality but does have different node abilities.</p>
+<pre><code>node collect_info:cai_state {
+    has name = &quot;collect_info&quot;;
+    can gen_response {
+        if (&quot;name&quot; in visitor.extracted_entities and
+                &quot;address&quot; not in visitor.extracted_entities):
+            visitor.response = &quot;What is your address?&quot;
+        elif (&quot;address&quot; in visitor.extracted_entities and
+                &quot;name&quot; not in visitor.extracted_entities):
+            visitor.response = &quot;What is your name?&quot;
+        else:
+            visitor.response =
+                &quot;To set you up with a test drive, we will need your name and address.&quot;;
+    }
+}
+
+node confirmation:cai_state {
+    has name = &quot;confirmation&quot;;
+    can gen_response {
+        visitor.response =
+            &quot;Can you confirm your name to be &quot; + visitor.extracted_entities[&quot;name&quot;] + &quot; and your address as &quot; + visitor.extracted_entities[&quot;address&quot;] + &quot; ?&quot;;
+    }
+}
+
+node confirmed:cai_state {
+    has name = &quot;confirmed&quot;;
+    can gen_response {
+        visitor.response = &quot;You are all set for a Tesla test drive!&quot;;
+    }
+}
+
+node canceled:cai_state {
+    has name = &quot;canceled&quot;;
+    can gen_response {
+        visitor.response = &quot;No worries. We look forward to hear from you in the future!&quot;;
+    }
+}
+</code></pre>
+<p>As you can see here, all of the conversational state node have something in common, that's why it is very important to use inheritance, because this code instead of being 200 lines of code it can be over 1000+ lines of code and it could be very hard to manage and read.</p>
+<p>You can go to <a href="https://docs.jaseci.org/docs/Developing_with_JAC/Language_Features/OOP">jaseci docs</a> for more information on inheritance. If you are still confused about inheritance and how it works.</p>
+<h3 id="nodes-states"><a class="header" href="#nodes-states"><strong>Nodes (States)</strong></a></h3>
+<h3 id="collect_info-state"><a class="header" href="#collect_info-state">collect_info state</a></h3>
+<p>This state collects the address and name of the user from the user utterance. If the user only provides their address the AI will ask the user for their name and vice versa. It will ask the user for those information until it is fulfilled before moving on to the next state which is the <strong>confirmation</strong> state, this process is done using entity extraction. The user can also cancel the entire process and this will move them to the <strong>cancel</strong> state, this is triggered by intent classification. Below shows how the node is created. </p>
+<pre><code>node collect_info:cai_state {
+    has name = &quot;collect_info&quot;;
+    can gen_response {
+        if (&quot;name&quot; in visitor.extracted_entities and
+                &quot;address&quot; not in visitor.extracted_entities):
+            visitor.response = &quot;What is your address?&quot;
+        elif (&quot;address&quot; in visitor.extracted_entities and
+                &quot;name&quot; not in visitor.extracted_entities):
+            visitor.response = &quot;What is your name?&quot;
+        else:
+            visitor.response =
+                &quot;To set you up with a test drive, we will need your name and address.&quot;;
+    }
+}
+</code></pre>
+<h4 id="confirmation-state"><a class="header" href="#confirmation-state">confirmation state</a></h4>
+<p>This state confirms whether or not the information provided by the user is completely correct. If there is any mistake made, the AI will revert to the <strong>collect_info</strong> state where it will repeat the process, if all the data provided is confirmed by the user it will them move to the next state which is the <strong>confirmed</strong> state. Below shows how the node is created. </p>
+<pre><code>node confirmation:cai_state {
+    has name = &quot;confirmation&quot;;
+    can gen_response {
+        visitor.response =
+            &quot;Can you confirm your name to be &quot; + visitor.extracted_entities[&quot;name&quot;] + &quot; and your address as &quot; + visitor.extracted_entities[&quot;address&quot;] + &quot; ?&quot;;
+    }
+}
+</code></pre>
+<h3 id="confirmed-state"><a class="header" href="#confirmed-state">confirmed state</a></h3>
+<p>This state is triggered after the user have positively agreed that all the data provided is correct and based on the information provided the company will makes it decision afterwards. In this case the sales person will tell the user &quot;You are all set for a tesla test drive&quot;. Below shows how the node is created. </p>
+<pre><code>node confirmed:cai_state {
+    has name = &quot;confirmed&quot;;
+    can gen_response {
+        visitor.response = &quot;You are all set for a Tesla test drive!&quot;;
+    }
+}
+</code></pre>
+<h3 id="canceled-state"><a class="header" href="#canceled-state">canceled state</a></h3>
+<p>This state is triggered when the user wants to hop out of the entire conversation and it's done through intent classification. </p>
+<pre><code>node canceled:cai_state {
+    has name = &quot;canceled&quot;;
+    can gen_response {
+        visitor.response = &quot;No worries. We look forward to hear from you in the future!&quot;;
+    }
+}
+</code></pre>
+<h3 id="edges"><a class="header" href="#edges"><strong>Edges</strong></a></h3>
+<h3 id="intent_transition-edge"><a class="header" href="#intent_transition-edge">intent_transition edge</a></h3>
+<p>This edge allows you to transition from state to state (node to node) when provided an intent which is passed as a parameter. For e.g. when the user ask &quot;Can I test drive the tesla&quot; it will go through the bi-encoder AI model which is used for intent classification and find the intent and through the edge it will pass the intent to the intent_transition edge which will search for which node to travel to, to move to the next state. In this case it will be the collect_info state.</p>
+<pre><code>edge intent_transition {
+    has intent;
+}
+</code></pre>
+<h3 id="entity_transition-edge"><a class="header" href="#entity_transition-edge">entity_transition edge</a></h3>
+<p>This edge allows you to transition from state to state (node to node) when provided all the entities needed which is passed as a parameter. For e.g. when the user have to provide information in the collect_info state &quot;My name is Jemmott I live in lot 1 pineapple street&quot; it will go through the entity extraction AI model, extract &quot;Jemmott&quot; as the name and &quot;lot 1 pineapple street&quot; as the address and it will passed these information into the entity_transition edge and move you on to the next state, in this case it will be the confirmed state. If all the information is not provided it will not transition to the next state until all the entities are fulfilled. </p>
+<pre><code>edge entity_transition {
+    has entities;
+} 
+</code></pre>
+<h3 id="graph-definition"><a class="header" href="#graph-definition"><strong>Graph Definition</strong></a></h3>
+<h3 id="spawning-nodes"><a class="header" href="#spawning-nodes">spawning nodes</a></h3>
+<p>Nodes are the states we used to build out the conversation AI experiences. Below, shows how to create states (nodes) using jac.</p>
+<pre><code>spawn {
+    state_cai_root = spawn node::cai_root;
+    state_collect_info  = spawn node::collect_info;
+    state_confirmation = spawn node::confirmation;
+    state_confirmed = spawn node::confirmed;
+    state_canceled = spawn node::canceled;
+}
+</code></pre>
+<h3 id="connecting-the-nodes-with-the-two-types-of-edges"><a class="header" href="#connecting-the-nodes-with-the-two-types-of-edges">connecting the nodes with the two types of edges</a></h3>
+<p>There are two types of edges: intent_transition edge and entity_transition edge and we will use these to connect states (nodes) to each other. </p>
+<p>Intent Transition Example:</p>
+<pre><code>    state_cai_root -[intent_transition(
+            intent = &quot;I would like to test drive&quot;
+        )]-&gt; state_collect_info;
+</code></pre>
+<p>Here we have a intent transition going from the cai_root state to the collect_info state. This intent transition has its intent variable set to &quot;&quot;I would like to test drive&quot;&quot;, which will be checked later in the walker &quot;talk&quot; to evaluate whether or not this transition should be triggered or not.</p>
+<p>Entity Transition Example:</p>
+<pre><code>        state_collect_info -[entity_transition(
+            entities = [&quot;name&quot;, &quot;address&quot;]
+        )]-&gt; state_confirmation;
+</code></pre>
+<p>Here we have an entity transiton going from the collect_info state to the confirm state. This entity transition has its entities variable set as &quot;name&quot; and &quot;address&quot;, which will be checked later in the talk walker to evaluate if this transition should be triggered or not.</p>
+<h3 id="the-anchor-node"><a class="header" href="#the-anchor-node">the anchor node</a></h3>
+<p>The anchor node is the main node or the starting node for the conversational AI state. This node is mandatory for the application. </p>
+<pre><code>graph tesla_sales_rep {
+    has anchor state_cai_root;
+}
+</code></pre>
+<h3 id="describe-the-talk-walker"><a class="header" href="#describe-the-talk-walker"><strong>Describe the talk walker</strong></a></h3>
+<h3 id="the-parameters-it-takes"><a class="header" href="#the-parameters-it-takes">The parameters it takes</a></h3>
+<ul>
+<li><strong>question</strong>: This intakes the user utterance.</li>
+<li><strong>intent_override</strong>: Allows you to override the intent produced by the intent classification model from the NLU.</li>
+<li><strong>entity_override</strong>: Allows you to override the entities extracted from the entity extraction model from the NLU.</li>
+<li><strong>predicted_intent</strong>: This is the variable that holds the intent predicted from the intent classification model. </li>
+<li><strong>extracted_entities</strong>: This is the variable that holds the extracted entities that produced from the entity extraction model from the NLU.</li>
+<li><strong>traveled</strong>: This variable tells you whether or not we moved on to the next state.</li>
+<li><strong>response</strong>: This holds the response generated from the NLG.</li>
+</ul>
+<h3 id="the-traveled-boolean-flag"><a class="header" href="#the-traveled-boolean-flag">The &quot;traveled&quot; boolean flag</a></h3>
+<p>This boolean flag variable tells you whether or not we moved on to the next state. If its flagged as &quot;false&quot; it will execute all the logic from the NLU until it have the information to move on to the next state if not it will execute the NLG which will generate a reponse and go to the next state.</p>
+<h3 id="the-traversal-logic"><a class="header" href="#the-traversal-logic">The traversal logic</a></h3>
+<p>In this section I will explain how this code snippet works for the traversal logic.
+From entity transition &gt;&gt; intent transition</p>
+<pre><code>take -[entity_transition(entities=extracted_entities.d::keys)]-&gt; node::cai_state else {
+    take -[intent_transition(intent=predicted_intent)]-&gt; node::cai_state else {
+        # Fall back to stay at current state if no valid transitions can be taken
+        take here;
+    }
+</code></pre>
+<p>If all the keys in the array of extracted_entities matches any edge in the entity_transition that is attached to a node it will transition you to the appropriate conversation AI state if not it will check if the predicted intent matches any record in the edge of the intent_transition and move you to that state. If both of the requirements was not met it will continue at the current state and ask you the same question until it gets the information it wants from you.</p>
+<h3 id="the-take-statement"><a class="header" href="#the-take-statement">The take statement</a></h3>
+<p><strong>How does it work?</strong> <br />
+The take statement allows you to transition from node to node (state to state). If the requirements are met it will transition you to the node you specified. If you see the code snippet below, once the parameters are met the take statement will transfer you to the appropriate node that matched the cai_state. But if the parameters are not met it will throw an error and that is where the else comes into place. That will be explained in the next section.</p>
+<pre><code>take -[intent_transition(intent=predicted_intent)]-&gt; node::cai_state;
+</code></pre>
+<p><br />
+<strong>How does take, else work?</strong>
+The take, else works just like the if, else statement in any other programming language. If the node from the take statement does not exist it will activate the else statement and execute what is in the else block. </p>
+<pre><code>take -[intent_transition(intent=predicted_intent)]-&gt; node::cai_state else {
+        # execute code in here
+    }
+</code></pre>
+<p>For more information about what the take statement and take, else statement works. Reference the <a href="https://docs.jaseci.org/docs/getting-started/JAC-Language-Overview/take">Jaseci Documentation</a> </p>
+<h3 id="the-flow"><a class="header" href="#the-flow">The Flow</a></h3>
+<p>NLU ➝ traversal ➝ NLG ➝ return response
+<br />
+We know already that the NLU is responsible for understanding the context of the user query using the intent classification model and the entity extraction model. The traversal is essentially the state of the graph that collects information and if the information is not met it will ask the user until it understands and get all the user information required in order to move to the next state. The NLG is responsible for the natural generation of the response based on the current state, entities and intent and based on the response generated from the NLG it will return this information to the user. That's basically the rundown of how the flow works in this application.</p>
+<h3 id="init-walker-to-initiate-the-graph"><a class="header" href="#init-walker-to-initiate-the-graph"><strong>init walker to initiate the graph</strong></a></h3>
+<pre><code>walker init {
+    root {
+        spawn here --&gt; graph::tesla_sales_rep;
+    }
+} 
+</code></pre>
+<p>The above code snippet shows how we utilize generating the graph using the init walker using jac. Note: the graph spawn statement returns the anchor node defined in the graph block. Therefore, the anchor node is a return statement. The init walker is also the first block of code that will be runned in the entire application and that will look for the graph we created for the tesla sales rep and generate all the nodes and edges of the application.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../support/codelabs/canonicai/chapter2.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="../../../support/codelabs/canonicai/chapter4.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../support/codelabs/canonicai/chapter2.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="../../../support/codelabs/canonicai/chapter4.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="../../../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>

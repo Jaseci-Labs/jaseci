@@ -1,22 +1,22 @@
+# summary 
 # Jaseci Official Documentation
 
 - [License](LICENSE.md)
 - [About this Release](CHANGELOG.md)
 - [How to Contribute](CONTRIBUTING.md)
 - [Contributors](CONTRIBUTORS.md)
-- [Join our Community](https://forum.jaseci.org/)
 
-## Getting Started
+# Getting Started
+
 
 - [Introducing Jaseci](support/guide/getting_started/introduction.md)
 - [Installing Jaseci](support/guide/getting_started/installation.md)
-    - [Installing on Windows](support/guide/getting_started/installation.md#installing-on-windows)
-    - [Installing on Mac](support/guide/getting_started/installation.md#installing-on-mac)
 - [Setting Up Your Editor](support/guide/getting_started/setting_up_your_editor.md)
 - [Writing Your First App](support/guide/getting_started/writing_your_first_app.md)
 - [Understanding JAC Programs](support/guide/getting_started/understanding_jac_programs.md)
 
-## The JAC Programming Language Guide
+# The JAC Programming Language Guide
+
 
 - [Language Overview](support/guide/jac_language_guide/jac_language_overview.md)
 - [Grammar](support/guide/jac_language_guide/jac_grammar.md)
@@ -42,7 +42,8 @@
     - [Jaseci Actions](support/guide/jac_language_guide/jaseci_actions.md) 
 
 
-## Examples and Tutorials
+# Examples and Tutorials
+
 
 - [Building a Conversational AI System](support/codelabs/canonicai/chapter1.md)
     - [Chapter 2](support/codelabs/canonicai/chapter2.md)
@@ -55,7 +56,8 @@
 - [NER Examples](examples/ner_examples/README.md)
 
 
-## Jaseci Library Reference
+# Jaseci Library Reference
+
 
 - [Jaseci Kit](support/guide/jaseci_kit/README.md)
     - [Encoders](support/guide/jaseci_kit/modules/encoders/README.md)
@@ -77,13 +79,15 @@
     - [Non-AI Tools](support/guide/jaseci_kit/modules/non_ai/README.md)
         - [PDF Extractor](support/guide/jaseci_kit/modules/non_ai/pdf_ext/README.md)
 
-## Jaseci Studio
+# Jaseci Studio and Jaseci UI Kit
+
+- [Introducing Jaseci Studio](jaseci_ui_kit/components/docs/gettingStarted.md)
 - [Jaseci UI Kit](jaseci_ui_kit/README.md)
-    - [Introduction](jaseci_ui_kit/components/docs/gettingStarted.md)
     - [Basic Concepts](jaseci_ui_kit/components/docs/basic-concepts.md)
     - [Built-in Actions](jaseci_ui_kit/components/docs/built-in-actions.md)
     - [Connecting an API](jaseci_ui_kit/components/docs/connecting-an-api.md)
-    - [List of Components](jaseci_ui_kit/components/docs/list_of_componets.md)
+
+    - [Component Reference](jaseci_ui_kit/components/docs/list_of_componets.md)
         - [AuthForm](jaseci_ui_kit/components/docs/components/AuthForm.md)
         - [Badge](jaseci_ui_kit/components/docs/components/Badge.md)
         - [Breadcrumbs](jaseci_ui_kit/components/docs/components/Breadcrumbs.md)
@@ -93,21 +97,30 @@
         - [Carousel](jaseci_ui_kit/components/docs/components/Carousel.md)
         - [Checkbox](jaseci_ui_kit/components/docs/components/Checkbox.md)
         - [Collapse](jaseci_ui_kit/components/docs/components/Collapse.md)
-        - [Checkbox](jaseci_ui_kit/components/docs/components/Checkbox.md)
-        - [Collapse](jaseci_ui_kit/components/docs/components/Collapse.md)
         - [Column](jaseci_ui_kit/components/docs/components/Column.md)
         - [Container](jaseci_ui_kit/components/docs/components/Container.md)
+        - [Data Grid](jaseci_ui_kit/components/docs/components/DataGrid.md)
+        - [Data List](jaseci_ui_kit/components/docs/components/DataList.md)
+        - [Date Picker](jaseci_ui_kit/components/docs/components/DatePicker.md)
+        - [Dialog](jaseci_ui_kit/components/docs/components/Dialog.md)
+        - [Divider](jaseci_ui_kit/components/docs/components/Divider.md)
+        - [Dropdown](jaseci_ui_kit/components/docs/components/Dropdown.md)
+        - [Hero](jaseci_ui_kit/components/docs/components/Hero.md)
+        - [Inputbox](jaseci_ui_kit/components/docs/components/Inputbox.md)
+        - [Navbar](jaseci_ui_kit/components/docs/components/Navbar.md)
+        - [Navlink](jaseci_ui_kit/components/docs/components/navlink.md)
+        - [Popover](jaseci_ui_kit/components/docs/components/Popover.md)
+        - [Progress](jaseci_ui_kit/components/docs/components/Progress.md)
+        - [Radio](jaseci_ui_kit/components/docs/components/Radio.md)
+        - [Radio Group](jaseci_ui_kit/components/docs/components/RadioGroup.md)
+        - [Range](jaseci_ui_kit/components/docs/components/Range.md)
+        - [Rating](jaseci_ui_kit/components/docs/components/Rating.md)
+        - [Row](jaseci_ui_kit/components/docs/components/Row.md)
+        - [Select](jaseci_ui_kit/components/docs/components/Select.md)
+        - [Speech Input](jaseci_ui_kit/components/docs/components/SpeechInput.md)
+        - [Stat](jaseci_ui_kit/components/docs/components/Stat.md)
+        - [Tabs](jaseci_ui_kit/components/docs/components/Tabs.md)
+        - [Text](jaseci_ui_kit/components/docs/components/Text.md)
+        - [Textbox](jaseci_ui_kit/components/docs/components/Textbox.md)
     
-
- 
-
-## Other Resources  
-
-- [Online Documentation](https://docs.jaseci.org/)
-- [The Jaseci Bible](https://github.com/Jaseci-Labs/jaseci_bible/blob/main/pdf/jaseci_bible.pdf)
-- [Our Website](https://jaseci.org/)
-    - [Learn more at the Dojo](https://jaseci.org/dojo)
-    - [Products Built with Jaseci](https://jaseci.org/products/)
-    - [Jaseci in the News](https://jaseci.org/blog/)
-    - [Contact Us](https://jaseci.org/contact-us/)
 
