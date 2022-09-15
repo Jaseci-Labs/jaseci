@@ -2,6 +2,10 @@ locals {
   env           = terraform.workspace
   productprefix = "jaseci"
 
+  #Name Variables
+  resource_group_name = "jaseci-infra"
+  location = "eastus2"
+  cluster_name = "jaseci-aks"
 
   #BEGIN: Workspace Environments (index is based on workspace selected)
   environments = {
@@ -14,17 +18,10 @@ locals {
     "production" = "prod"
   }
 
-  accountids = {
-    "default"    = var.development_azure_account_id
-   # "production" = var.production_azure_account_id
-  }
-  #END: Workspace Environments
-
   #Local Variables 
   environment = lookup(local.environments, local.env)
   envprefix   = lookup(local.envs, local.env)
   envsuffix   = lookup(local.envs, local.env)
-  accountid   = lookup(local.accountids, local.env)
   stdprefix   = "${local.productprefix}-${local.envprefix}"
 
 
@@ -33,10 +30,5 @@ locals {
   isProd = local.env == "production" ? 1 : 0
   isDev  = local.env == "default" ? 1 : 0
 
-
-
-  provider_env_roles = {
-    "default"    = var.development_azure_role_arn
-    # "production" = var.production_azure_role_arn
-  }
+ 
 }
