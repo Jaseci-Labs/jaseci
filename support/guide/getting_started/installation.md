@@ -55,26 +55,28 @@ pip install jaseci-kit
 ```
 jsctl
 ```
-Once it shows a list of options and commands, you're installation is complete
-
+The Jsctl terminal will be activated. It will look like this :
+```
+>jsctl
+```
 
 ## Installing on Mac
 
 Install Python and Pip packet Manager
 
-5. Check the version of Python and Pip by running :
+1. Check the version of Python and Pip by running :
 ```
 python3 --version
 pip3 --version
 ```
-If these packages are installed they will return a version number. Move to step x if a version number is present.
+If these packages are installed they will return a version number. Move to step 3 if a version number is present.
 
-6.Install Python3 and pip3 by running the following:
+2. Install Python3 and pip3 by running the following:
 ```
 brew update
 brew install python
 ```
-7.Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit
+3. Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit
 ```
 pip install jaseci
 ```
@@ -82,31 +84,31 @@ pip install jaseci
 pip install jaseci-kit
 ```
 
-8. To ensure our installation is working run :
+4. To ensure our installation is working run :
 ```
 jsctl
 ```
 Once it shows a list of options and commands, you're installation is complete.
 
- Linux Installation
+## Linux Installation
 
 
 
 Install Python and Pip packet Manager
 
-5. Check the version of Python and Pip by running :
+1. Check the version of Python and Pip by running :
 ```
 python3 --version
 pip3 --version
 ```
 If these packages are installed they will return a version number. Move to step x if a version number is present.
 
-6.Install Python3 and pip3 by running the following:
+2. Install Python3 and pip3 by running the following:
 ```
 sudo apt update
 sudo apt install python3-dev python3-pip
 ```
-7.Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit
+3. Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit
 ```
 pip install jaseci
 ```
@@ -114,7 +116,7 @@ pip install jaseci
 pip install jaseci-kit
 ```
 
-8. To ensure our installation is working run :
+4. To ensure our installation is working run :
 ```
 jsctl
 ```

@@ -3,61 +3,61 @@
 ## Arthimetic 
 
 ```jac
-// addition
+# addition
 a = 4 + 4;
 e = a + b + c + d;
 
-// multiplication
+# multiplication
 b = 4 * -5;
 
-// division
+# division
 c = 4 / 4;  # Returns a floating point number
 
-// subtraction
+# subtraction
 d = 4 - 6;
 
-// exponent / power
+# exponent / power
 a = 4 ^ 4;
 
-// modulus
+# modulus
 b = 9 % 5
 
 ```
 ## Equality
 ```jac
-// equal
+# equal
 a == b
 
-// not equal
+# not equal
 a != b
 
-// less than
+# less than
 a < b
 
-// greater than
+# greater than
 a > b
 
-// less than and equal to
+# less than and equal to
 a <= b
 
-// greater than and equal to
+# greater than and equal to
 a >= b
 ```
 
 ## Logical
 ```jac
-// not
+# not
 !a,
 
-// and
+# and
 a && b
 a and b
 
-// or
+# or
 a || b
 a or b
 
-// mixture
+# mixture
 !a or b
 !(a and b)
 ```

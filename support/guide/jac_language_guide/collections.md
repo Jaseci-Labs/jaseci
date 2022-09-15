@@ -1,6 +1,6 @@
 # Collections 
 
-Collection refers to dictionary , lists ...
+Collection refers to dictionary or list.
 
 
 ## Dictionary 
@@ -22,3 +22,6 @@ dict = {
 AI_modesl  = ['use_qa','use_enc','bi_enc'];
 ```
 
+## List and Dictionary functions
+
+To access any functions for either collection. We first have to use the .l for list or the .d for dictionary before we can any built in functions.

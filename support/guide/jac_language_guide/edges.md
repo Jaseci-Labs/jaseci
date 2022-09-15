@@ -60,7 +60,7 @@ edge transition {
     has transition_next ;
 }
 # child edge
-edge transition_back: transition {
+edge transition_back:transition {
     has prev_step ;
 }
 ```
