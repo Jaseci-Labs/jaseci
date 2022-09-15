@@ -1,13 +1,13 @@
 from django.contrib.auth import get_user_model, authenticate
 from django.utils.translation import ugettext_lazy as _
-from jaseci_serv.svcs.mail.mail_svc import mail_svc
+from jaseci_serv.svc.mail.mail_svc import mail_svc
 from rest_framework import serializers
 import base64
 from django.urls import reverse
 from django.dispatch import receiver
 from django_rest_passwordreset.signals import reset_password_token_created
 from jaseci.utils.utils import logger
-from jaseci.svcs.common_svc import MAIL_ERR_MSG
+from jaseci.svc.common_svc import MAIL_ERR_MSG
 
 
 def send_activation_email(request, email):

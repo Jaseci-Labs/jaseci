@@ -3,7 +3,7 @@ This module includes code related to hooking Jaseci's Redis to the
 core engine.
 """
 import jaseci as core_mod
-from jaseci.svcs.common_svc import proxy_svc
+from jaseci.svc.common_svc import proxy_svc
 from jaseci.utils.mem_hook import mem_hook
 import json
 
