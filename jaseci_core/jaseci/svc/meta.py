@@ -40,9 +40,9 @@ class MetaService(CommonService):
         return self.__common("super_master", *args, **kwargs)
 
     def build_hook(self):
-        from jaseci.utils.redis_hook import redis_hook
+        from jaseci.hook import RedisHook
 
-        return redis_hook()
+        return RedisHook()
 
     def build_master(self, *args, **kwargs):
         from jaseci.element.master import master

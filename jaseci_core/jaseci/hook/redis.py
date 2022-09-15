@@ -6,8 +6,8 @@ import json
 
 import jaseci as core_mod
 from jaseci.svc import ProxyService
-from jaseci.utils.mem_hook import mem_hook
-from .json_handler import JaseciJsonDecoder
+from jaseci.utils.json_handler import JaseciJsonDecoder
+from .memory import MemoryHook
 
 
 #################################################
@@ -15,7 +15,7 @@ from .json_handler import JaseciJsonDecoder
 #################################################
 
 
-class redis_hook(mem_hook):
+class RedisHook(MemoryHook):
     def __init__(self):
 
         # proxy redis, to be overriden by build_apps
@@ -131,7 +131,7 @@ class redis_hook(mem_hook):
         if self.redis.is_running():
             self.redis.app.flushdb()
 
-        mem_hook.__init__(self)
+        MemoryHook.__init__(self)
 
 
 # ----------------------------------------------- #

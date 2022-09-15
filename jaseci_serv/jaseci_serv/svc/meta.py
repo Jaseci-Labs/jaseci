@@ -14,9 +14,9 @@ class MetaService(ms):
 
     def build_hook(self):
         from jaseci_serv.base.models import GlobalVars, JaseciObject
-        from jaseci_serv.base.orm_hook import orm_hook
+        from jaseci_serv.hook.orm import OrmHook
 
-        return orm_hook(objects=JaseciObject.objects, globs=GlobalVars.objects)
+        return OrmHook(objects=JaseciObject.objects, globs=GlobalVars.objects)
 
     def build_master(self, *args, **kwargs):
         from jaseci_serv.base.models import master

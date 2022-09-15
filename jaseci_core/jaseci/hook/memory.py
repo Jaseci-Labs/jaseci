@@ -1,8 +1,9 @@
 from json import dumps, loads
+
 from jaseci.utils.utils import find_class_and_import
 
 
-class mem_hook:
+class MemoryHook:
     """
     Set of virtual functions to be used as hooks to allow access to
     the complete set of items across jaseci object types. This class contains
