@@ -1,7 +1,7 @@
 import json
 from json import JSONDecoder, JSONEncoder
 from uuid import UUID
-from jaseci.svc.meta_svc import meta_svc
+from jaseci.svc import meta_svc
 from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
 

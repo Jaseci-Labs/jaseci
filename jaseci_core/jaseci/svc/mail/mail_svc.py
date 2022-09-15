@@ -3,14 +3,14 @@ import ssl
 from smtplib import SMTP, SMTP_SSL
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from jaseci.svc.common_svc import common_svc
-from jaseci.svc.service_state import ServiceState as SS
+from jaseci.svc import common_svc, ServiceState as SS
 from jaseci.utils.utils import logger
 
 ################################################
 #                   DEFAULTS                   #
 ################################################
 
+MAIL_ERR_MSG = "Mail service is disabled or not yet configured!"
 EMAIL_CONFIG = {
     "enabled": True,
     "quiet": True,

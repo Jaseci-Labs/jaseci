@@ -1,5 +1,6 @@
 from django.core import mail
-from jaseci.svc.mail.mail_svc import mail_svc as ms, emailer as em
+from jaseci.svc import mail_svc as ms
+from jaseci.svc.mail import emailer as em
 from jaseci_serv.jaseci_serv.settings import EMAIL_CONFIG
 
 #################################################

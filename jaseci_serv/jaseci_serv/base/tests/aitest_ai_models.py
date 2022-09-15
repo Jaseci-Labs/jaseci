@@ -5,7 +5,7 @@ from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 import jaseci.tests.jac_test_code as jtc
 import jaseci.actions.live_actions as lact
-from jaseci_serv.svc.meta_svc import meta_svc
+from jaseci_serv.svc import meta_svc
 
 
 class jac_tests(TestCaseHelper, TestCase):

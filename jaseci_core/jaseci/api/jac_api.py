@@ -5,7 +5,7 @@ from jaseci.api.interface import interface
 import os
 import json
 
-from jaseci.svc.meta_svc import meta_svc
+from jaseci.svc import meta_svc
 
 
 class jac_api:

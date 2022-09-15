@@ -1,5 +1,5 @@
 from unittest import TestCase
-from jaseci.svc.meta_svc import meta_svc
+from jaseci.svc import meta_svc
 from jaseci.utils.utils import TestCaseHelper
 import os
 
