@@ -327,6 +327,19 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(res["report"], [{"key1": "key1", "key2": 2}])
         self.assertIn("Key is not str type : <class 'int'>!", res["errors"][0])
 
+    def test_new_additional_builtin(self):
+        mast = self.meta.master()
+        mast.sentinel_register(name="test", code=jtp.check_new_builtin, auto_run="")
+
+        res = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+
+        self.assertEqual(
+            res["report"],
+            [{"test": "test"}, 1, "1 2 3 4", "1 2 3 4"],
+        )
+
     def test_continue_issue(self):
         mast = self.meta.master()
         mast.sentinel_register(name="test", code=jtp.continue_issue, auto_run="")
