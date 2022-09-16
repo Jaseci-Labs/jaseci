@@ -10,7 +10,7 @@ def load_standard():
     import jaseci.actions.standard.mail  # noqa
 
 
-from .utils.jsorc import jsorc_start
+# from .utils.jsorc import jsorc_start
 from .utils.utils import logger
 
 # jsorc_start()

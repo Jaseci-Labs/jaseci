@@ -5,7 +5,7 @@ from kubernetes.client.rest import ApiException
 import os
 import yaml
 import multiprocessing
-from .utils import logger
+from jaseci.utils.utils import logger
 
 
 class KubeController:
