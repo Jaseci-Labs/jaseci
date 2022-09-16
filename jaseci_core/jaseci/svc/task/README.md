@@ -19,7 +19,7 @@ Any walker that can be called with `is_async` field
 
 ## **GET TASK STATE**
 ### **UNCONSUMED/RUNNING TASK**
-`/js/walker_queue`
+`/js/walker_queue_check`
 
 ### **RESPONSE**
 ```json
@@ -37,7 +37,7 @@ Any walker that can be called with `is_async` field
 ```
 
 ### **SPECIFIC TASK**
-`/js/walker_queue?task_id={{`**`task_id`**`}}`
+`/js/walker_queue_check?task_id={{`**`task_id`**`}}`
 
 ### **RESPONSE**
 ```json
@@ -56,7 +56,41 @@ Any walker that can be called with `is_async` field
 
 # **HOW TO SETUP SCHEDULE**
 
+## **SCHEDULED_WALKER**
+
  - Add periodic task
+ - Select jaseci.svc.task.task_common.scheduled_walker
+ - set your schedule (interval, crontab, solar, clocked, start/end data are supported)
+ - set argument with below kind of structure
+
+### **ARGUMENT STRUCTURE**
+
+```json
+{
+    // Required
+	"name": "run",
+
+    // Required
+	"ctx": {},
+
+    // Optional but may not have default
+    // accepted value: urn | alias
+    "nd": "active:graph",
+
+    // Optional but may not have default
+    // accepted value: urn | alias | global
+	"snt": "active:sentinel",
+
+    // Required
+    // used also for getting aliases
+    "mst": "d6851f2a-e4a1-4fca-b582-9db5e146af59"
+}
+```
+
+## **SCHEDULED_SEQUENCE**
+
+ - Add periodic task
+ - Select jaseci.svc.task.task_common.scheduled_sequence
  - set your schedule (interval, crontab, solar, clocked, start/end data are supported)
  - set argument with below kind of structure
 
@@ -83,7 +117,7 @@ Any walker that can be called with `is_async` field
             "method": "POST",
             "api": "http://localhost:8000/user/token/",
             "body": {
-                "email": "alexie.madolid@bcstechnology.com.au",
+                "email": "dummy@dummy.com",
                 "password": "Bcstech123!"
             },
 
@@ -128,7 +162,7 @@ Any walker that can be called with `is_async` field
 
                             // optional constraints
                             // can be remove if not needed
-                            "eq": "alexie.madolid+testing3@bcstechnology.com.au",
+                            "eq": "dummy+testing3@dummy.com",
                             "ne": null, "gt": null, "gte": null,
                             "lt": null, "lte": null, "regex": null
 
@@ -137,7 +171,7 @@ Any walker that can be called with `is_async` field
                         "and": [{
                             "by": "$.user",
                             "condition": {
-                                "eq": "alexie.madolid+testing2@bcstechnology.com.au"
+                                "eq": "dummy+testing2@dummy.com"
                             }
                         }, {
                             "by": "$.jid",

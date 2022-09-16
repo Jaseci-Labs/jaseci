@@ -1,7 +1,7 @@
 import sys
 import io
+from jaseci.svc.meta_svc import meta_svc
 
-from jaseci.utils.redis_hook import redis_hook
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
 import jaseci.jac.tests.dot_code as dtc
@@ -15,7 +15,7 @@ class test_dot(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.gph = graph(m_id="anon", h=redis_hook())
+        self.gph = graph(m_id="anon", h=meta_svc().hook())
         self.sent = sentinel(m_id=self.gph._m_id, h=self.gph._h)
         self.old_stdout = sys.stdout
         self.new_stdout = io.StringIO()

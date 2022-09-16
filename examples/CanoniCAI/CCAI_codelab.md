@@ -208,7 +208,7 @@ The output should look something like this
 ```dot
 strict digraph root {
     "n0" [ id="0955c04e4ff945b4b836748ef2bbd98a", label="n0:root"  ]
-    "n1" [ id="c1240d79110941c1bc2feb18581951bd", label="n1:faq_state"  ]
+    "n1" [ id="c1240d79110941c1bc2feb18581951bd", label="n1:faq_root"  ]
     "n2" [ id="55333be285c246db88181ac34d16cd20", label="n2:faq_state"  ]
     "n3" [ id="d4fa8f2c46ca463f9237ef818e086a29", label="n3:faq_state"  ]
     "n4" [ id="f7b1c8ae82af4063ad53646adc5544e9", label="n4:faq_state"  ]
@@ -1139,7 +1139,7 @@ jaseci > jac run tfm_ner.jac -walk train -ctx "{\"train_file\": \"ner_train.json
 ```
 After the model is finished training, you can play with the model using the `infer` walker
 ```js
-jaseci > jac run ner.jac -walk infer
+jaseci > jac run tfm_ner.jac -walk infer
 ```
 For example,
 ```bash
@@ -1165,6 +1165,7 @@ node dialogue_state {
             }
             visitor.wlk_ctx["entities"][ent_type].l::append(ent_text);
         }
+    }
     ...
 }
 ```

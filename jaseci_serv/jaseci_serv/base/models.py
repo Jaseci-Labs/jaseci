@@ -9,10 +9,10 @@ from django.contrib.auth.models import (
 )
 from jaseci_serv.jaseci_serv.settings import JASECI_CONFIGS
 from django.contrib.auth import get_user_model
-from jaseci_serv.base.orm_hook import orm_hook
 from jaseci.element.master import master as core_master
 from jaseci.element.super_master import super_master as core_super
 from jaseci.api.interface import interface
+from jaseci_serv.svc.meta_svc import meta_svc
 
 
 class master(core_master):
@@ -84,10 +84,13 @@ class super_master(master, core_super):
         for i in users[offset:end]:
             filtered_users.append(
                 {
+                    "id": i.id,
                     "user": i.email,
                     "jid": i.master.urn,
                     "name": i.name,
                     "created_date": i.time_created.isoformat(),
+                    "is_activated": i.is_activated,
+                    "is_superuser": i.is_superuser,
                 }
             )
         ret = {"total": total, "data": filtered_users}
@@ -159,7 +162,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     def __init__(self, *args, **kwargs):
-        self._h = orm_hook(objects=JaseciObject.objects, globs=GlobalVars.objects)
+        self._h = meta_svc().hook()
         AbstractBaseUser.__init__(self, *args, **kwargs)
         PermissionsMixin.__init__(self, *args, **kwargs)
 

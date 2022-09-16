@@ -5,6 +5,7 @@ from jaseci_serv.base import models
 from jaseci_serv.obj_api.views import JaseciObjectSerializer
 from jaseci.element import element
 from jaseci.element.super_master import super_master
+from jaseci_serv.svc.meta_svc import meta_svc
 
 
 def sample_user(email="JSCITEST_user@jaseci.com", password="whatever"):
@@ -17,6 +18,7 @@ def sample_user(email="JSCITEST_user@jaseci.com", password="whatever"):
 class model_tests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
+        self.meta = meta_svc()
 
     def tearDown(self):
         super().tearDown()
@@ -51,7 +53,7 @@ class model_tests(TestCaseHelper, TestCase):
 
     def test_jaseci_obj_accessl_has_relevant_fields(self):
         """Test that Jaseci ORM models has all element class fields"""
-        element_obj = element.element(m_id="anon", h=element.redis_hook())
+        element_obj = element.element(m_id="anon", h=self.meta.hook())
         orm_obj = models.JaseciObject()
         for a in vars(element_obj).keys():
             if not a.startswith("_") and not callable(getattr(element_obj, a)):
@@ -59,7 +61,7 @@ class model_tests(TestCaseHelper, TestCase):
 
     def test_jaseci_json_has_relevant_fields(self):
         """Test that Jaseci ORM models has all element class fields"""
-        element_obj = element.element(m_id="anon", h=element.redis_hook())
+        element_obj = element.element(m_id="anon", h=self.meta.hook())
         for a in vars(element_obj).keys():
             if not a.startswith("_") and not callable(getattr(element_obj, a)):
                 self.assertIn(a, JaseciObjectSerializer.Meta.fields)
