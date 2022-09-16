@@ -1,5 +1,5 @@
 from django.apps import AppConfig
-from jsorc.jsorc import jsorc_start
+from .jsorc.jsorc import jsorc_start
 
 
 class CoreApiConfig(AppConfig):
