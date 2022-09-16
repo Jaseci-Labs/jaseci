@@ -2,6 +2,7 @@ import re
 import shutil
 from os import walk
 import os
+import subprocess
 # open read me file 
 def main():
     readme = open("README.md","r")
@@ -121,8 +122,14 @@ def getImages(path=None):
         
         return f
 
+def serveMdBook():
+    try:
+        subprocess.call(["mdbook","build","docs"])
+    except:
+        print("An Error occured while trying to build")
 
     
-        
 
+        
 main()
+serveMdBook()
