@@ -10,7 +10,6 @@ import utils.model as model_module
 import utils.dataloader as dataloader_module
 
 from utils.trainer import Trainer
-from utils.logger import get_logger, setup_logging
 from utils import prepare_device, read_yaml
 
 

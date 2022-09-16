@@ -2,8 +2,8 @@
 Model:
   type: PersonalizedHead
   args:
-    embedding_length: 512
-    ph_nhead: 8
+    embedding_length: 30522
+    ph_nhead: 6
     ph_ff_dim: 512
     batch_first: True
     ph_nlayers: 1
@@ -73,3 +73,12 @@ Logger:
     handlers:
       - console
       - info_file_handler
+
+Inference:
+  weights: ""
+  preprocess:
+    type: PreProcessor
+    args: {}
+  postprocess:
+    type: PostProcessor
+    args: {}

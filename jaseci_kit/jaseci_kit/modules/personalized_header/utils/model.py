@@ -24,13 +24,7 @@ class PersonalizedHead(BaseModel):
         nn.init.xavier_uniform_(self.decoder.weight)
 
     def forward(self, emb):
-        _, hidden_states = emb
-        encoder_tensor = self.encoder(hidden_states)
+        encoder_tensor = self.encoder(emb)
         text_embedding_tensor = encoder_tensor[:, 0, :]
         scores = self.decoder(text_embedding_tensor)
         return scores
-
-class SequentialPersonalizedHead(BaseModel):
-    def __init__(self, config: Dict, id: str = None):
-        super().__init__()
-        self.id = id if id else str(uuid.uuid4())
