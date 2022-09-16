@@ -1055,6 +1055,8 @@ class interp(machine_state):
                         result = jac_value(self, value=atom_res.value.pop(*args))
                     elif op == "update":
                         result = jac_value(self, value=atom_res.value.update(*args))
+                    elif op == "get":
+                        result = jac_value(self, value=atom_res.value.get(*args))
                     if result:
                         return result
             except Exception as e:
@@ -1207,7 +1209,12 @@ class interp(machine_state):
                 elif str_op == "split":
                     result = jac_value(self, value=atom_res.value.split(*args))
                 elif str_op == "join":
-                    result = jac_value(self, value=atom_res.value.join(*args))
+                    if len(args) == 1 and type(args[0]) is list:
+                        args = args[0]
+
+                    result = jac_value(
+                        self, value=atom_res.value.join([str(arg) for arg in args])
+                    )
                 elif str_op == "startswith":
                     result = jac_value(self, value=atom_res.value.startswith(*args))
                 elif str_op == "endswith":
