@@ -1,7 +1,7 @@
-from jaseci.svc.service_state import ServiceState as SS
+from .state import ServiceState as SS
 
 
-class common_svc:
+class CommonService:
     def __init__(self, cls):
         self.cls = cls
         if not hasattr(self.cls, "_app"):
@@ -56,9 +56,6 @@ class common_svc:
         self.__init__(hook)
 
 
-class proxy_svc(common_svc):
+class ProxyService(CommonService):
     def __init__(self):
-        super().__init__(proxy_svc)
-
-
-MAIL_ERR_MSG = "Mail service is disabled or not yet configured!"
+        super().__init__(ProxyService)

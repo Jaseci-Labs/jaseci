@@ -4,18 +4,18 @@ core engine.
 
 FIX: Serious permissions work needed
 """
-from django.core.exceptions import ObjectDoesNotExist
-
-from jaseci.utils import utils
-
-from jaseci.utils.redis_hook import redis_hook
-from jaseci.utils.utils import logger
-from jaseci.utils.json_handler import json_str_to_jsci_dict
-import jaseci as core_mod
 import uuid
 
+from django.core.exceptions import ObjectDoesNotExist
 
-class orm_hook(redis_hook):
+import jaseci as core_mod
+from jaseci.hook import RedisHook
+from jaseci.utils import utils
+from jaseci.utils.json_handler import json_str_to_jsci_dict
+from jaseci.utils.utils import logger
+
+
+class OrmHook(RedisHook):
     """
     Hooks Django ORM database for Jaseci objects to Jaseci's core engine.
     """

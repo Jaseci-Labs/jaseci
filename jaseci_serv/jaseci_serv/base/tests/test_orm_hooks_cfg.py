@@ -73,7 +73,7 @@ class jaseci_engine_orm_config_tests_private(TestCaseHelper, TestCase):
 
         # Removing default configs
         GlobalVars.objects.filter(
-            Q(name="REDIS_CONFIG") | Q(name="TASK_CONFIG") | Q(name="EMAIL_CONFIG")
+            Q(name="REDIS_CONFIG") | Q(name="TASK_CONFIG") | Q(name="MAIL_CONFIG")
         ).delete()
 
         li = user._h.list_glob()

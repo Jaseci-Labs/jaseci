@@ -1,16 +1,18 @@
 import json
-from tempfile import _TemporaryFileWrapper
-from jaseci_serv.svc.meta_svc import meta_svc
-from rest_framework.views import APIView
-from knox.auth import TokenAuthentication
-from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
-from rest_framework.response import Response
-from jaseci.utils.utils import logger
-from jaseci.element.element import element
-from jaseci_serv.base.models import master as serv_master
-from time import time
 from base64 import b64encode
 from io import BytesIO
+from tempfile import _TemporaryFileWrapper
+from time import time
+
+from knox.auth import TokenAuthentication
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from jaseci.element.element import element
+from jaseci.utils.utils import logger
+from jaseci_serv.base.models import master as serv_master
+from jaseci_serv.svc import MetaService
 
 
 class JResponse(Response):
@@ -207,7 +209,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
     def set_caller(self, request):
         """Assigns the calling api interface obj"""
         self.caller = serv_master(
-            h=meta_svc().hook(),
+            h=MetaService().hook(),
             persist=False,
         )
 

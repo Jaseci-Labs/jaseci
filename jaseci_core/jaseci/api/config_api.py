@@ -18,7 +18,7 @@ class config_api:
             "ACTION_SETS",
             "REDIS_CONFIG",
             "TASK_CONFIG",
-            "EMAIL_CONFIG",
+            "MAIL_CONFIG",
         ]
 
     @interface.admin_api(cli_args=["name"])
@@ -55,7 +55,7 @@ class config_api:
             hook.task.reset(hook)
         elif name == "REDIS_CONFIG":
             hook.redis.reset(hook)
-        elif name == "EMAIL_CONFIG":
+        elif name == "MAIL_CONFIG":
             hook.mail.reset(hook)
 
     @interface.admin_api()

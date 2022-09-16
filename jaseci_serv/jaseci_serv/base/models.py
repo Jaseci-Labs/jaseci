@@ -1,18 +1,19 @@
 import uuid
 from datetime import datetime
 
-from django.db import models
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
     PermissionsMixin,
 )
-from jaseci_serv.jaseci_serv.settings import JASECI_CONFIGS
-from django.contrib.auth import get_user_model
+from django.db import models
+
+from jaseci.api.interface import interface
 from jaseci.element.master import master as core_master
 from jaseci.element.super_master import super_master as core_super
-from jaseci.api.interface import interface
-from jaseci_serv.svc.meta_svc import meta_svc
+from jaseci_serv.jaseci_serv.settings import JASECI_CONFIGS
+from jaseci_serv.svc import MetaService
 
 
 class master(core_master):
@@ -162,7 +163,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     def __init__(self, *args, **kwargs):
-        self._h = meta_svc().hook()
+        self._h = MetaService().hook()
         AbstractBaseUser.__init__(self, *args, **kwargs)
         PermissionsMixin.__init__(self, *args, **kwargs)
 

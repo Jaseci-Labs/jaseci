@@ -1,12 +1,11 @@
-import sys
 import io
-from jaseci.svc.meta_svc import meta_svc
+import sys
+from unittest import TestCase
 
+import jaseci.jac.tests.dot_code as dtc
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import graph
-import jaseci.jac.tests.dot_code as dtc
-
-from unittest import TestCase
+from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper
 
 
@@ -15,7 +14,7 @@ class test_dot(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.gph = graph(m_id="anon", h=meta_svc().hook())
+        self.gph = graph(m_id="anon", h=MetaService().hook())
         self.sent = sentinel(m_id=self.gph._m_id, h=self.gph._h)
         self.old_stdout = sys.stdout
         self.new_stdout = io.StringIO()

@@ -1,20 +1,19 @@
-from jaseci.svc.meta_svc import meta_svc
-from jaseci.utils.utils import TestCaseHelper
+import uuid
 from unittest import TestCase
 
-from jaseci.graph.node import node
+import jaseci.tests.jac_test_code as jtc
+from jaseci.actor.sentinel import sentinel
 from jaseci.element.element import element
 from jaseci.graph.graph import graph
-from jaseci.actor.sentinel import sentinel
-from jaseci.utils.utils import get_all_subclasses
-import jaseci.tests.jac_test_code as jtc
-import uuid
+from jaseci.graph.node import node
+from jaseci.svc import MetaService
+from jaseci.utils.utils import TestCaseHelper, get_all_subclasses
 
 
 class architype_tests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
-        self.meta = meta_svc()
+        self.meta = MetaService()
 
     def tearDown(self):
         super().tearDown()

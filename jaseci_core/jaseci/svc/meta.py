@@ -1,13 +1,15 @@
-from jaseci.svc.common_svc import common_svc
-from jaseci.svc.redis.redis_svc import redis_svc
-from jaseci.svc.task.task_svc import task_svc
-from jaseci.svc.mail.mail_svc import mail_svc
-from jaseci.svc.service_state import ServiceState as SS
+from jaseci.svc import (
+    CommonService,
+    MailService,
+    RedisService,
+    ServiceState as SS,
+    TaskService,
+)
 
 
-class meta_svc(common_svc):
+class MetaService(CommonService):
     def __init__(self, hook=None):
-        super().__init__(meta_svc)
+        super().__init__(MetaService)
 
         if self.is_ready():
             self.state = SS.RUNNING
@@ -19,9 +21,9 @@ class meta_svc(common_svc):
 
     def hook(self):
         h = self.app["hook"]()
-        h.redis = redis_svc(h)
-        h.task = task_svc(h)
-        h.mail = mail_svc(h)
+        h.redis = RedisService(h)
+        h.task = TaskService(h)
+        h.mail = MailService(h)
         return h
 
     def __common(self, t, *args, **kwargs):
@@ -38,9 +40,9 @@ class meta_svc(common_svc):
         return self.__common("super_master", *args, **kwargs)
 
     def build_hook(self):
-        from jaseci.utils.redis_hook import redis_hook
+        from jaseci.hook import RedisHook
 
-        return redis_hook()
+        return RedisHook()
 
     def build_master(self, *args, **kwargs):
         from jaseci.element.master import master
