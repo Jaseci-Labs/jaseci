@@ -1055,6 +1055,8 @@ class interp(machine_state):
                         result = jac_value(self, value=atom_res.value.pop(*args))
                     elif op == "update":
                         result = jac_value(self, value=atom_res.value.update(*args))
+                    elif op == "get":
+                        result = jac_value(self, value=atom_res.value.get(*args))
                     if result:
                         return result
             except Exception as e:
