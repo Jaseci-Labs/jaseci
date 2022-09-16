@@ -19,9 +19,12 @@ setup(
         "tblib",
         "django-celery-results>=2.3,<2.4",
         "django-celery-beat>=2.2",
+        "prometheus_api_client==0.5.1",
+        "prometheus-client==0.14.1",
+        "kubernetes==23.6.0",
     ],
     package_data={
-        "": ["*.jac"],
+        "": ["*.jac", "*.yaml", "*.ini"],
     },
     entry_points={"console_scripts": ["jsserv = jaseci_serv.manage:main"]},
 )
