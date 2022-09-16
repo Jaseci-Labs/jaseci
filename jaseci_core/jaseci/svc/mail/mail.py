@@ -97,7 +97,7 @@ class MailService(CommonService):
             )
 
             if migrate:
-                hook.save_glob("EMAIL_CONFIG", dumps(configs))
+                hook.save_glob("MAIL_CONFIG", dumps(configs))
 
     ###################################################
     #                     CLEANER                     #
