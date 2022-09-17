@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import jaseci.tests.jac_test_progs as jtp
 from jaseci.actor.sentinel import sentinel
-from jaseci.graph.graph import graph
+from jaseci.graph.graph import Graph
 from jaseci.graph.node import node
 from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper
@@ -20,7 +20,7 @@ class jac_tests(TestCaseHelper, TestCase):
         super().tearDown()
 
     def test_bug_check1(self):
-        gph = graph(m_id="anon", h=self.meta.hook())
+        gph = Graph(m_id="anon", h=self.meta.hook())
         sent = sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtp.bug_check1)
         test_walker = sent.walker_ids.get_obj_by_name("init")
@@ -47,7 +47,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report[0], False)
 
     def test_globals(self):
-        gph = graph(m_id="anon", h=self.meta.hook())
+        gph = Graph(m_id="anon", h=self.meta.hook())
         sent = sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtp.globals)
         test_walker = sent.walker_ids.get_obj_by_name("init")

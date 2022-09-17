@@ -6,7 +6,7 @@ Representations for all jac runtime variables
 from jaseci.element.element import element
 from jaseci.graph.node import node
 from jaseci.graph.edge import edge
-from jaseci.graph.graph import graph
+from jaseci.graph.graph import Graph
 from jaseci.jac.jac_set import jac_set
 import uuid
 
@@ -42,7 +42,7 @@ def jac_type_wrap(val):
             val = JAC_TYPE.DICT
         elif val == bool:
             val = JAC_TYPE.BOOL
-        elif val in [node, graph]:
+        elif val in [node, Graph]:
             val = JAC_TYPE.NODE
         elif val == edge:
             val = JAC_TYPE.EDGE

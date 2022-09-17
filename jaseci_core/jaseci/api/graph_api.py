@@ -3,7 +3,7 @@ Graph api functions as a mixin
 """
 from jaseci.api.interface import interface
 from jaseci.utils.id_list import id_list
-from jaseci.graph.graph import graph
+from jaseci.graph.graph import Graph
 from jaseci.graph.node import node
 from jaseci.actor.sentinel import sentinel
 import uuid
@@ -23,7 +23,7 @@ class graph_api:
         """
         Create a graph instance and return root node graph object
         """
-        gph = graph(m_id=self._m_id, h=self._h)
+        gph = Graph(m_id=self._m_id, h=self._h)
         self.graph_ids.add_obj(gph)
         if set_active:
             self.graph_active_set(gph)
@@ -31,7 +31,7 @@ class graph_api:
 
     @interface.private_api()
     def graph_get(
-        self, gph: graph = None, mode: str = "default", detailed: bool = False
+        self, gph: Graph = None, mode: str = "default", detailed: bool = False
     ):
         """
         Return the content of the graph with mode
@@ -58,7 +58,7 @@ class graph_api:
         return gphs
 
     @interface.private_api(cli_args=["gph"])
-    def graph_active_set(self, gph: graph):
+    def graph_active_set(self, gph: Graph):
         """
         Sets the default graph master should use
         """
@@ -87,7 +87,7 @@ class graph_api:
             return {"success": False, "response": "No default graph is selected!"}
 
     @interface.private_api(cli_args=["gph"])
-    def graph_delete(self, gph: graph):
+    def graph_delete(self, gph: Graph):
         """
         Permanently delete graph with given id
         """

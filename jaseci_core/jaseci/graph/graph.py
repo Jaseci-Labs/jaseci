@@ -6,7 +6,7 @@ from jaseci.graph.node import node
 from jaseci.utils.id_list import id_list
 
 
-class graph(node):
+class Graph(node):
     """Graph class for Jaseci"""
 
     def __init__(self, *args, **kwargs):
@@ -28,7 +28,7 @@ class graph(node):
         node_list.append(self)
 
         for i in self.attached_nodes():
-            graph.get_all_nodes(i, node_list)
+            Graph.get_all_nodes(i, node_list)
 
         return node_list
 

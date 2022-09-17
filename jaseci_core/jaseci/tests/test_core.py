@@ -4,7 +4,7 @@ from unittest import TestCase
 import jaseci.tests.jac_test_code as jtc
 from jaseci.actor.sentinel import sentinel
 from jaseci.element.element import element
-from jaseci.graph.graph import graph
+from jaseci.graph.graph import Graph
 from jaseci.graph.node import node
 from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper, get_all_subclasses
@@ -27,7 +27,7 @@ class architype_tests(TestCaseHelper, TestCase):
         num_new = len(mast._h.mem.keys())
         self.assertEqual(num_new, num_objs + 2)
 
-        new_graph = graph(m_id=mast._m_id, h=mast._h)
+        new_graph = Graph(m_id=mast._m_id, h=mast._h)
         mast.graph_ids.add_obj(new_graph)
         num_new = len(mast._h.mem.keys())
         self.assertEqual(num_new, num_objs + 3)
@@ -57,7 +57,7 @@ class architype_tests(TestCaseHelper, TestCase):
         mast = self.meta.master()
         num_objs = len(mast._h.mem.keys()) - len(mast._h.global_action_list)
         self.assertEqual(num_objs, 2)
-        new_graph = graph(m_id=mast._m_id, h=mast._h)
+        new_graph = Graph(m_id=mast._m_id, h=mast._h)
         sent = sentinel(m_id=mast._m_id, h=mast._h)
         code = jtc.prog1
         mast.sentinel_ids.add_obj(sent)
