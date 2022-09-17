@@ -8,7 +8,7 @@ from jaseci.utils.utils import TestCaseHelper
 from jaseci_serv.svc import MetaService
 
 
-class jac_tests(TestCaseHelper, TestCase):
+class JacTests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
@@ -18,7 +18,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def tearDown(self):
         super().tearDown()
 
-    def test_basic_USE_calls_from_jac(self):
+    def test_basic_use_calls_from_jac(self):
         """Test the execution of a basic walker building graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
@@ -34,7 +34,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(len(report["report"][0]), 2)
         self.assertEqual(len(report["report"][0][1]), 2)
 
-    def test_basic_USE_single_string_calls_from_jac(self):
+    def test_basic_use_single_string_calls_from_jac(self):
         """Test the execution of a basic walker building Graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
@@ -50,7 +50,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(len(report["report"][0]), 1)
         self.assertEqual(len(report["report"][0][0]), 1)
 
-    def test_USE_qa_with_ctx(self):
+    def test_use_qa_with_ctx(self):
         """Test the execution of a basic walker building Graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
@@ -66,7 +66,7 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(len(report["report"][0]), 1)
         self.assertEqual(len(report["report"][0][0]), 1)
 
-    def test_USE_qa_with_ctx_clean(self):
+    def test_use_qa_with_ctx_clean(self):
         """Test the execution of a basic walker building Graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")

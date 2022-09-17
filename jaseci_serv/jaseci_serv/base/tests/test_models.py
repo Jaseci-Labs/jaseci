@@ -16,7 +16,7 @@ def sample_user(email="JSCITEST_user@jaseci.com", password="whatever"):
     return get_user_model().objects.create_user(email, password)
 
 
-class model_tests(TestCaseHelper, TestCase):
+class ModelTests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
         self.meta = MetaService()

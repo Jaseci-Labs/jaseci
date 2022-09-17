@@ -1,7 +1,7 @@
 from django.core import mail
 
-from jaseci.svc import MailService as ms
-from jaseci.svc.mail import Mailer as em
+from jaseci.svc import MailService as Ms
+from jaseci.svc.mail import Mailer as Em
 from jaseci_serv.jaseci_serv.settings import MAIL_CONFIG
 
 
@@ -10,7 +10,7 @@ from jaseci_serv.jaseci_serv.settings import MAIL_CONFIG
 #################################################
 
 
-class MailService(ms):
+class MailService(Ms):
     def connect(self, configs):
         user = configs.get("user")
         backend = configs.get("backend", "smtp")
@@ -38,7 +38,7 @@ class MailService(ms):
 ####################################################
 
 
-class Mailer(em):
+class Mailer(Em):
     def __init__(self, server, sender, templates):
         super().__init__(server, sender)
 

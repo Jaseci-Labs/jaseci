@@ -10,7 +10,7 @@ import base64
 import os
 
 
-class test_ll_wall(TestCaseHelper, TestCase):
+class TestLLWall(TestCaseHelper, TestCase):
     """Test the authorized user node API"""
 
     def setUp(self):

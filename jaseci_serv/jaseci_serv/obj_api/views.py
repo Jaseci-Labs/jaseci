@@ -31,7 +31,7 @@ class JaseciObjectSerializer(slzrs.HyperlinkedModelSerializer):
             "j_timestamp",
             "jsci_obj",
         )
-        read_only_Fields = ("id", "j_type", "timestamp")
+        read_only_fields = ("id", "j_type", "timestamp")
 
     def to_representation(self, instance):
         """Convert jsci_obj to dictionary so entire payload is one JSON"""

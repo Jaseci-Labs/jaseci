@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from jaseci.element.element import Element
 from jaseci.utils.utils import logger, ColCodes as Cc
-from jaseci_serv.base.models import master as serv_master
+from jaseci_serv.base.models import Master as ServMaster
 from jaseci_serv.svc import MetaService
 
 
@@ -75,7 +75,7 @@ class AbstractJacAPIView(APIView):
             elif "ctx" in req_data and type(req_data["ctx"]) is not dict:
                 req_data["ctx"] = json.loads(req_data["ctx"])
         except ValueError:
-            logger.error(str(f"Invalid ctx format! Ignoring ctx parsing!"))
+            logger.error("Invalid ctx format! Ignoring ctx parsing!")
 
     def proc_file_ctx(self, request, req_data):
         for key in request.FILES:
@@ -205,7 +205,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
 
     def set_caller(self, request):
         """Assigns the calling api interface obj"""
-        self.caller = serv_master(
+        self.caller = ServMaster(
             h=MetaService().hook(),
             persist=False,
         )
