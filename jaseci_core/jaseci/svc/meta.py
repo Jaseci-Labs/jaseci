@@ -2,7 +2,7 @@ from jaseci.svc import (
     CommonService,
     MailService,
     RedisService,
-    ServiceState as SS,
+    ServiceState as Ss,
     TaskService,
 )
 
@@ -12,7 +12,7 @@ class MetaService(CommonService):
         super().__init__(MetaService)
 
         if self.is_ready():
-            self.state = SS.RUNNING
+            self.state = Ss.RUNNING
             self.app = {
                 "hook": self.build_hook,
                 "master": self.build_master,

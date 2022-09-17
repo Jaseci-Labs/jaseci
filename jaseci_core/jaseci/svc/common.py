@@ -1,4 +1,4 @@
-from .state import ServiceState as SS
+from .state import ServiceState as Ss
 
 
 class CommonService:
@@ -6,7 +6,7 @@ class CommonService:
         self.cls = cls
         if not hasattr(self.cls, "_app"):
             setattr(self.cls, "_app", None)
-            setattr(self.cls, "_state", SS.NOT_STARTED)
+            setattr(self.cls, "_state", Ss.NOT_STARTED)
             setattr(self.cls, "_quiet", True)
 
     @property
@@ -18,11 +18,11 @@ class CommonService:
         self.cls._app = val
 
     @property
-    def state(self) -> SS:
+    def state(self) -> Ss:
         return self.cls._state
 
     @state.setter
-    def state(self, val: SS):
+    def state(self, val: Ss):
         self.cls._state = val
 
     @property
@@ -52,7 +52,7 @@ class CommonService:
 
     def build(self, hook):
         self.app = None
-        self.state = SS.NOT_STARTED
+        self.state = Ss.NOT_STARTED
         self.__init__(hook)
 
 
