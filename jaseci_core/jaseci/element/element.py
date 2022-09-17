@@ -60,7 +60,7 @@ class element(hookable):
         self.jid = uuid.uuid4().urn
         self.j_parent = parent_id.urn if parent_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
-        self.j_type = type(self).__name__
+        self.j_type = type(self).__name__.lower()
         if self.is_master():
             m_id = self.jid
         hookable.__init__(self, h, m_id, *args, **kwargs)

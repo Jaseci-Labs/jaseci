@@ -12,6 +12,7 @@ import re
 import json
 import functools
 import traceback
+import inspect
 from time import time
 from datetime import datetime
 from pprint import pformat
@@ -137,9 +138,13 @@ def build_class_dict(from_where):
     prefix = from_where.__name__ + "."
     for importer, modname, ispkg in pkgutil.iter_modules(from_where.__path__, prefix):
         if not ispkg:
-            cls = modname.split(".")[-1]
-            if hasattr(importlib.import_module(modname), cls):
-                obj_class_cache[cls] = getattr(importlib.import_module(modname), cls)
+            clsmembers = inspect.getmembers(
+                importlib.import_module(modname), inspect.isclass
+            )
+            for cls, obj in clsmembers:
+                obj_class_cache[cls.lower()] = getattr(
+                    importlib.import_module(modname), cls
+                )
         else:
             if hasattr(from_where, modname.split(".")[-1]):
                 build_class_dict(getattr(from_where, modname.split(".")[-1]))
