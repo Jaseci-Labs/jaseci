@@ -1,6 +1,6 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from jaseci_core.jaseci.jsctl import jsctl
+from jaseci.jsctl import jsctl
 from click.testing import CliRunner
 import json
 

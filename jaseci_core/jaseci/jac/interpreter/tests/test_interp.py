@@ -22,12 +22,14 @@ class InterpreterTest(CoreTest):
             ["sentinel_register", {"code": self.load_jac("lang_features.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "deref_adaptive"}])
-        # this unit test is inconsistent.
-        # It throws failed sometimes but success after some retrigger
-        # adding this print for now just to monitor once it throws error again
-        # print(ret)
-        self.assertTrue(ret["report"][0].startswith("junk and stuff"))
-        self.assertEqual(ret["report"][1], {"name": "node0"})
+        self.assertTrue(
+            ret["report"][0].startswith("junk and stuff")
+            or ret["report"][1].startswith("junk and stuff")
+        )
+        self.assertTrue(
+            ret["report"][1] == {"name": "node0"}
+            or ret["report"][0] == {"name": "node0"}
+        )
 
     def test_deref_of_element_fails(self):
         ret = self.call(

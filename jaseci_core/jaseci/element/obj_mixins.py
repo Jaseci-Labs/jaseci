@@ -81,7 +81,7 @@ class Sharable:
         if not hasattr(self, "_h"):
             return False
         user = self._h.get_obj(caller_id, uuid.UUID(caller_id), override=True)
-        if user.j_type == "super_master":
+        if user.j_type == "supermaster":
             return True
         return False
 
