@@ -1,17 +1,17 @@
 """
 Admin Global api functions as a mixin
 """
-from jaseci.api.interface import interface
-from jaseci.actor.sentinel import sentinel
+from jaseci.api.interface import Interface
+from jaseci.actor.sentinel import Sentinel
 import uuid
 
 
-class global_api:
+class GlobalApi:
     """
     Admin global APIs
     """
 
-    @interface.admin_api(cli_args=["name"])
+    @Interface.admin_api(cli_args=["name"])
     def global_set(self, name: str, value: str):
         """
         Set a global
@@ -25,7 +25,7 @@ class global_api:
             ret["response"] = f"Global variable '{name}' to '{value}' set!"
         return ret
 
-    @interface.admin_api(cli_args=["name"])
+    @Interface.admin_api(cli_args=["name"])
     def global_delete(self, name: str):
         """
         Delete a global
@@ -39,8 +39,8 @@ class global_api:
             ret["response"] = f"Global {name} deleted."
         return ret
 
-    @interface.admin_api()
-    def global_sentinel_set(self, snt: sentinel = None):
+    @Interface.admin_api()
+    def global_sentinel_set(self, snt: Sentinel = None):
         """
         Set sentinel as globally accessible
         """
@@ -49,7 +49,7 @@ class global_api:
         self._h.save_glob("GLOB_SENTINEL", snt.jid)
         return {"response": f"Global sentinel set to '{snt}'!"}
 
-    @interface.admin_api()
+    @Interface.admin_api()
     def global_sentinel_unset(self):
         """
         Set sentinel as globally accessible

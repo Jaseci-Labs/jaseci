@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from jaseci.element.element import element
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import logger, ColCodes as Cc
 from jaseci_serv.base.models import master as serv_master
 from jaseci_serv.svc import MetaService
 
@@ -54,18 +54,15 @@ class AbstractJacAPIView(APIView):
 
     def log_request_stats(self):
         """Api call preamble"""
-        TY = "\033[33m"
-        TG = "\033[32m"
-        EC = "\033[m"  # noqa
         tot_time = time() - self.start_time
         save_count = 0
         if isinstance(self.caller, element):
             save_count = len(self.caller._h.save_obj_list)
         logger.info(
             str(
-                f"API call to {TG}{type(self).__name__}{EC}"
-                f" completed in {TY}{tot_time:.3f} seconds{EC}"
-                f" saving {TY}{save_count}{EC} objects."
+                f"API call to {Cc.TG}{type(self).__name__}{Cc.EC}"
+                f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
+                f" saving {Cc.TY}{save_count}{Cc.EC} objects."
             )
         )
 

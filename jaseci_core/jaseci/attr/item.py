@@ -3,10 +3,10 @@ Item class for Jaseci
 
 Each item has an id, name, timestamp.
 """
-from jaseci.element.element import element
+from jaseci.element.element import Element
 
 
-class item(element):
+class Item(Element):
     """Item class for Jaseci"""
 
     def __init__(self, value=None, *args, **kwargs):

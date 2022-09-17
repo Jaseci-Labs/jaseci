@@ -18,6 +18,13 @@ from datetime import datetime
 from pprint import pformat
 
 
+class ColCodes:
+    TY = "\033[33m"
+    TG = "\033[32m"
+    TR = "\033[31m"
+    EC = "\033[m"
+
+
 def master_from_meta(meta):
     """Return master from meta in actions"""
     return meta["h"].get_obj(meta["m_id"], uuid.UUID(meta["m_id"]))
@@ -198,23 +205,19 @@ class TestCaseHelper:
         return super().setUp()
 
     def tearDown(self):
-        TY = "\033[33m"
-        TG = "\033[32m"
-        TR = "\033[31m"
-        EC = "\033[m"
         td = super().tearDown()
         result = (
-            f"Time: {TY}{time()-self.stime:.3f} "
-            + f'- {EC}{self.id().split(".")[-1]}: '
+            f"Time: {ColCodes.TY}{time()-self.stime:.3f} "
+            + f'- {ColCodes.EC}{self.id().split(".")[-1]}: '
         )
         get_outcome = self.defaultTestResult()
         self._feedErrorsToResult(get_outcome, self._outcome.errors)
         if len(get_outcome.errors) or len(get_outcome.failures):
-            result += f"{TR}[failed]{EC}"
+            result += f"{ColCodes.TR}[failed]{ColCodes.EC}"
         elif len(self._outcome.skipped):
-            result += f"{TY}[skipped]{EC}"
+            result += f"{ColCodes.TY}[skipped]{ColCodes.EC}"
         else:
-            result += f"{TG}[passed]{EC}"
+            result += f"{ColCodes.TG}[passed]{ColCodes.EC}"
 
         print(result)
         self.logger_on()
@@ -256,8 +259,3 @@ class TestCaseHelper:
         ps = pstats.Stats(self.pr, stream=s).sort_stats(sortby)
         ps.print_stats(100)
         print(s.getvalue())
-
-
-class bunch:
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)

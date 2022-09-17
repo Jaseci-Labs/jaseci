@@ -1,11 +1,11 @@
 from unittest import TestCase
 from jaseci.utils.utils import TestCaseHelper
-from jaseci.jsctl import jsctl
+from jaseci_core.jaseci.jsctl import jsctl
 from click.testing import CliRunner
 import json
 
 
-class jsctl_test(TestCaseHelper, TestCase):
+class JsctlTest(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):

@@ -2,15 +2,15 @@ import uuid
 from unittest import TestCase
 
 import jaseci.tests.jac_test_code as jtc
-from jaseci.actor.sentinel import sentinel
-from jaseci.element.element import element
+from jaseci.actor.sentinel import Sentinel
+from jaseci.element.element import Element
 from jaseci.graph.graph import Graph
-from jaseci.graph.node import node
+from jaseci.graph.node import Node
 from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper, get_all_subclasses
 
 
-class architype_tests(TestCaseHelper, TestCase):
+class ArchitypeTests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
         self.meta = MetaService()
@@ -22,8 +22,8 @@ class architype_tests(TestCaseHelper, TestCase):
         """ """
         mast = self.meta.master()
         num_objs = len(mast._h.mem.keys())
-        node1 = node(m_id=mast._m_id, h=mast._h)
-        node2 = node(m_id=mast._m_id, h=mast._h, parent_id=node1.id)
+        node1 = Node(m_id=mast._m_id, h=mast._h)
+        node2 = Node(m_id=mast._m_id, h=mast._h, parent_id=node1.id)
         num_new = len(mast._h.mem.keys())
         self.assertEqual(num_new, num_objs + 2)
 
@@ -40,8 +40,8 @@ class architype_tests(TestCaseHelper, TestCase):
     def test_edge_removal_updates_nodes_edgelist(self):
         """ """
         mast = self.meta.master()
-        node1 = node(m_id=mast._m_id, h=mast._h)
-        node2 = node(m_id=mast._m_id, h=mast._h)
+        node1 = Node(m_id=mast._m_id, h=mast._h)
+        node2 = Node(m_id=mast._m_id, h=mast._h)
         edge = node1.attach_outbound(node2)
         self.assertEqual(len(node1.edge_ids), 1)
         self.assertEqual(len(node2.edge_ids), 1)
@@ -58,7 +58,7 @@ class architype_tests(TestCaseHelper, TestCase):
         num_objs = len(mast._h.mem.keys()) - len(mast._h.global_action_list)
         self.assertEqual(num_objs, 2)
         new_graph = Graph(m_id=mast._m_id, h=mast._h)
-        sent = sentinel(m_id=mast._m_id, h=mast._h)
+        sent = Sentinel(m_id=mast._m_id, h=mast._h)
         code = jtc.prog1
         mast.sentinel_ids.add_obj(sent)
         mast.graph_ids.add_obj(new_graph)
@@ -75,7 +75,7 @@ class architype_tests(TestCaseHelper, TestCase):
         """
         Test saving object to json and back to python dict
         """
-        for i in get_all_subclasses(element):
+        for i in get_all_subclasses(Element):
             orig = i(m_id="anon", h=self.meta.hook())
             blob1 = orig.json(detailed=True)
             new = i(m_id="anon", h=self.meta.hook())
@@ -88,7 +88,7 @@ class architype_tests(TestCaseHelper, TestCase):
         mh = self.meta.hook()
         mast = self.meta.master(h=mh)
         mast2 = self.meta.master(h=mh)
-        node12 = node(m_id=mast2._m_id, h=mast2._h)
+        node12 = Node(m_id=mast2._m_id, h=mast2._h)
         supmast = self.meta.super_master(h=mh)
         bad = mh.get_obj(mast._m_id, uuid.UUID(node12.jid))
         good = mh.get_obj(supmast._m_id, uuid.UUID(node12.jid))

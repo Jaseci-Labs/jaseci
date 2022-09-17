@@ -1,13 +1,13 @@
 from unittest import TestCase
 
 import jaseci.actions.tests.std_test_code as stc
-from jaseci.actor.sentinel import sentinel
+from jaseci.actor.sentinel import Sentinel
 from jaseci.graph.graph import Graph
 from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper
 
 
-class jac_tests(TestCaseHelper, TestCase):
+class JacTests(TestCaseHelper, TestCase):
     """Unit tests for STD library language"""
 
     def setUp(self):
@@ -18,7 +18,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_rand_std(self):
         gph = Graph(m_id="anon", h=MetaService().hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(stc.rand_std)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -31,7 +31,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_file_io(self):
         gph = Graph(m_id="anon", h=MetaService().hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(stc.file_io)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -41,7 +41,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_std_used_in_node_has_var(self):
         gph = Graph(m_id="anon", h=MetaService().hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(stc.std_used_in_node_has_var)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)

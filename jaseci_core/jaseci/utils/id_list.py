@@ -10,7 +10,7 @@ from jaseci.utils.utils import logger
 import uuid
 
 
-class id_list(list):
+class IdList(list):
     """
     ID list class for tracking lists of objects in Jaseci
 

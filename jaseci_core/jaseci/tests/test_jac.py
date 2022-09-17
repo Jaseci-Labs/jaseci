@@ -5,7 +5,7 @@ from antlr4 import CommonTokenStream, InputStream
 
 import jaseci.actions.live_actions as lact
 import jaseci.tests.jac_test_code as jtc
-from jaseci.actor.sentinel import sentinel
+from jaseci.actor.sentinel import Sentinel
 from jaseci.graph.graph import Graph
 from jaseci.jac.jac_parse.jacLexer import jacLexer
 from jaseci.jac.jac_parse.jacParser import jacParser
@@ -13,7 +13,7 @@ from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper
 
 
-class jac_tests(TestCaseHelper, TestCase):
+class JacTests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
@@ -35,7 +35,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_sentinel_loading_jac_code(self):
         """Test the generation of jaseci trees for programs in grammar"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog1)
         self.assertIsNotNone(sent.walker_ids.get_obj_by_name("get_gen_day"))
         self.assertIsNotNone(sent.arch_ids.get_obj_by_name("week", kind="node"))
@@ -43,7 +43,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_sentinel_loading_jac_code_multiple_times(self):
         """Test registering resets correctly for multiple attempts"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog0)
         num_walkers = len(sent.walker_ids)
         num_arch = len(sent.arch_ids)
@@ -57,7 +57,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_sentinel_register_dep_on_static_errors(self):
         """Test Jac registering is dependant on correct static/dynamic code"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         correct = "node b { has anchor a; }"
         wrong1 = "adfdsf"
         sent.register_code(correct)
@@ -74,7 +74,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_sentinel_loading_arhitype(self):
         """Test the generation of jaseci trees for programs in grammar"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog1)
         self.assertGreater(
             len(sent.arch_ids.get_obj_by_name("month", kind="node").code_ir), 5
@@ -83,7 +83,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_sentinel_running_basic_walker(self):
         """Test the execution of a basic walker building graph"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
         test_walker = sent.walker_ids.get_obj_by_name("get_gen_day")
@@ -100,7 +100,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_sentinel_setp_running_walker(self):
         """Test the execution of a basic walker building graph"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
         test_walker = sent.walker_ids.get_obj_by_name("get_gen_day")
@@ -124,7 +124,7 @@ class jac_tests(TestCaseHelper, TestCase):
         Test that  no loss or gain of data on second trak on second trek
         """
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
         test_walker = sent.walker_ids.get_obj_by_name("get_gen_day")
@@ -147,7 +147,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """
         lact.load_local_actions(os.path.dirname(__file__) + "/infer.py")
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
         test_walker = sent.walker_ids.get_obj_by_name("get_gen_day")
@@ -165,7 +165,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_sent_loads_complex_walker_and_arch(self):
         """Test loading attributes of arch and walkers"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("testnode", kind="node").run()
         test_walker = sent.walker_ids.get_obj_by_name("testwalk")
@@ -180,7 +180,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_multiple_edged_between_nodes_work(self):
         """Test that multiple edges between the same two nodes are allowed"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.edgey)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -195,7 +195,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_multiple_edged_between_nodes_delete_all(self):
         """Test that multiple edges deleted correctly if delete all"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.edgey2)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -206,7 +206,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_multiple_edged_between_nodes_delete_all_specific(self):
         """Test that multiple edges deleted correctly if delete all"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.edgey2b)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -217,7 +217,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_multiple_edged_between_nodes_delete_all_labeled(self):
         """Test that multiple edges deleted correctly if delete all"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.edgey2c)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -228,7 +228,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_multiple_edged_between_nodes_delete_filtered(self):
         """Test that multiple edges deleted correctly if delete filtered"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.edgey3)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -239,7 +239,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_generic_can_be_used_to_specify_generic_edges(self):
         """Test that generic edge tag works"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.edgey4)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -250,7 +250,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_can_disconnect_multi_nodes_simultaneously(self):
         """Test disconnecting mutilpe nodes"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.edgey5)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -261,7 +261,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_can_connect_multi_nodes_simultaneously(self):
         """Test connecting mutilpe nodes"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.edgey6)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -272,7 +272,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_can_disconnect_multi_nodes_advanced(self):
         """Test disconnecting mutilpe nodes advanced"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.edgey7)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -283,7 +283,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_accessing_edges_basic(self):
         """Test accessing Edges"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.edge_access)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -299,7 +299,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_has_assign(self):
         """Test assignment on definition"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.has_assign)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -317,7 +317,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test assignment on definition"""
         mast = self.meta.super_master()
         gph = Graph(m_id=mast.jid, h=mast._h)
-        sent = sentinel(m_id=mast.jid, h=gph._h)
+        sent = Sentinel(m_id=mast.jid, h=gph._h)
         sent.register_code(jtc.set_get_global)
         test_walker = sent.walker_ids.get_obj_by_name("setter")
         test_walker.prime(gph)
@@ -331,7 +331,7 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test assignment on definition"""
         mast = self.meta.master()
         gph = Graph(m_id=mast.jid, h=mast._h)
-        sent = sentinel(m_id=mast.jid, h=gph._h)
+        sent = Sentinel(m_id=mast.jid, h=gph._h)
         sent.register_code(jtc.set_get_global)
         test_walker = sent.walker_ids.get_obj_by_name("setter")
         test_walker.prime(gph)
@@ -345,14 +345,14 @@ class jac_tests(TestCaseHelper, TestCase):
         """Test sentinel version labeling"""
         mast = self.meta.master()
         gph = Graph(m_id=mast.jid, h=mast._h)
-        sent = sentinel(m_id=mast.jid, h=gph._h)
+        sent = Sentinel(m_id=mast.jid, h=gph._h)
         sent.register_code(jtc.version_label)
         self.assertEqual(sent.version, "alpha-1.0")
 
     def test_visibility_builtins(self):
         """Test builtins to see into nodes and edges"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.visibility_builtins)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -365,7 +365,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_spawn_ctx_for_edges_nodes(self):
         """Test builtins to see into nodes and edges"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.spawn_ctx_edge_node)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -378,7 +378,7 @@ class jac_tests(TestCaseHelper, TestCase):
     def test_filter_ctx_for_edges_nodes(self):
         """Test builtins to see into nodes and edges"""
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.filter_ctx_edge_node)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -388,7 +388,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_null_handling(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.null_handleing)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -400,7 +400,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_bool_type_convert(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.bool_type_convert)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -410,7 +410,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_typecasts(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.typecasts)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -424,7 +424,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_typecast_error(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.typecasts_error)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -437,7 +437,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_filter_on_context(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.filter_on_context)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -448,7 +448,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_string_manipulation(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.string_manipulation)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -487,7 +487,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_list_manipulation(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.list_manipulation)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -507,7 +507,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_list_reversed(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.list_reversed)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -518,7 +518,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_dict_manipulation(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.dict_manipulation)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -535,7 +535,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_string_join(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.string_join)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -545,7 +545,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_sub_list(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.sub_list)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -557,7 +557,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_destroy_and_misc(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.destroy_and_misc)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -582,7 +582,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_arbitrary_assign_on_element(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.arbitrary_assign_on_element)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -594,7 +594,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_try_else_stmts(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.try_else_stmts)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -619,7 +619,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_node_edge_same_name(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.node_edge_same_name)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -632,7 +632,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_testcases(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.testcases)
         sent.run_tests(silent=True)
         self.assertEqual(len(sent.testcases), 4)
@@ -641,7 +641,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_testcase_asserts(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.testcase_asserts)
         sent.run_tests(silent=True)
         self.assertEqual(len(sent.testcases), 3)
@@ -651,7 +651,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_report_not_to_jacset(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.report_not_to_jacset)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -662,7 +662,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_walker_spawn_unwrap_check(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.walker_spawn_unwrap_check)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -672,7 +672,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_std_get_report(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.std_get_report)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -682,7 +682,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_func_with_array_index(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.func_with_array_index)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -692,7 +692,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_rt_error_test1(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.rt_error_test1)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -703,7 +703,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_root_type_nodes(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.root_type_nodes)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -713,7 +713,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_invalid_key_error(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.invalid_key_error)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -723,7 +723,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_auto_cast(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.auto_cast)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -733,7 +733,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_no_error_on_dict_key_assign(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.no_error_on_dict_key_assign)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -744,7 +744,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_report_status(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.report_status)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -755,7 +755,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_graph_in_graph(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.graph_in_graph)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -765,7 +765,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_min_max_on_list(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.min_max_on_list)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -775,7 +775,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_edge_bug(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.edge_bug)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -785,7 +785,7 @@ class jac_tests(TestCaseHelper, TestCase):
 
     def test_rand_choice(self):
         gph = Graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.rand_choice)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
