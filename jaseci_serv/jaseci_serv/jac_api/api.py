@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import AbstractJacAPIView
 from .views import AbstractAdminJacAPIView, AbstractPublicJacAPIView
-from jaseci.element.element import element
+from jaseci.element.element import Element
 from jaseci_serv.base.models import super_master
 from jaseci.utils.utils import copy_func
 from inspect import signature
@@ -23,7 +23,7 @@ def rest_api_auto_doc(endpoint: str, fsig: signature):
             continue
         p_name = i
         p_type = fsig.parameters[i].annotation
-        if issubclass(p_type, element):
+        if issubclass(p_type, Element):
             params.append(f"> {p_name}: UUID pointing to {p_type.__name__} object\n")
             json_samp[p_name] = uuid.uuid4().urn
         else:

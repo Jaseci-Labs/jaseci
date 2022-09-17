@@ -6,7 +6,7 @@ from django.test import TestCase
 from jaseci_serv.base.models import JaseciObject
 from jaseci.graph import node
 from jaseci.graph.graph import Graph
-from jaseci.actor.sentinel import sentinel
+from jaseci.actor.sentinel import Sentinel
 import jaseci.tests.jac_test_code as jtc
 from jaseci_serv.utils.test_utils import skip_without_redis
 
@@ -107,7 +107,7 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         """
         user = self.user
         gph = Graph(m_id="anon", h=user._h)
-        sent = sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
         test_walker = sent.walker_ids.get_obj_by_name("get_gen_day")

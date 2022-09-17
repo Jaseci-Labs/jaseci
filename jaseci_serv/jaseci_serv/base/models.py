@@ -9,9 +9,9 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 
-from jaseci.api.interface import interface
-from jaseci.element.master import master as core_master
-from jaseci.element.super_master import super_master as core_super
+from jaseci.api.interface import Interface
+from jaseci.element.master import Master as core_master
+from jaseci.element.super_master import SuperMaster as core_super
 from jaseci_serv.jaseci_serv.settings import JASECI_CONFIGS
 from jaseci_serv.svc import MetaService
 
@@ -65,7 +65,7 @@ class master(core_master):
 
 
 class super_master(master, core_super):
-    @interface.admin_api()
+    @Interface.admin_api()
     def master_allusers(self, limit: int = 10, offset: int = 0, asc: bool = False):
         """
         Returns info on a set of users, num specifies the number of users to

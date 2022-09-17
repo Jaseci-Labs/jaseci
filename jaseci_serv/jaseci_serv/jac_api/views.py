@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from jaseci.element.element import element
+from jaseci.element.element import Element
 from jaseci.utils.utils import logger, ColCodes as Cc
 from jaseci_serv.base.models import master as serv_master
 from jaseci_serv.svc import MetaService
@@ -56,7 +56,7 @@ class AbstractJacAPIView(APIView):
         """Api call preamble"""
         tot_time = time() - self.start_time
         save_count = 0
-        if isinstance(self.caller, element):
+        if isinstance(self.caller, Element):
             save_count = len(self.caller._h.save_obj_list)
         logger.info(
             str(
