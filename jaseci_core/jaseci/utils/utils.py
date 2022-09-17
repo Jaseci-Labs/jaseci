@@ -55,6 +55,13 @@ def log_var_out(val):
         logger.info(pformat(val))
 
 
+camel_to_snake_re = re.compile(r"(?<!^)(?=[A-Z])")
+
+
+def camel_to_snake(name):
+    return camel_to_snake_re.sub("_", name).lower()
+
+
 def bp():
     pdb.set_trace()
     breakpoint()

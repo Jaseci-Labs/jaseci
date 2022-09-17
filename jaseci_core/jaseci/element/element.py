@@ -17,7 +17,7 @@ from jaseci.element.obj_mixins import Hookable
 from jaseci.hook import MemoryHook
 from jaseci.utils.id_list import IdList
 from jaseci.utils.json_handler import JaseciJsonEncoder, json_str_to_jsci_dict
-from jaseci.utils.utils import log_var_out, logger
+from jaseci.utils.utils import log_var_out, logger, camel_to_snake
 
 __version__ = "1.0.0"
 
@@ -60,7 +60,7 @@ class Element(Hookable):
         self.jid = uuid.uuid4().urn
         self.j_parent = parent_id.urn if parent_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
-        self.j_type = type(self).__name__.lower()
+        self.j_type = camel_to_snake(type(self).__name__)
         if self.is_master():
             m_id = self.jid
         Hookable.__init__(self, h, m_id, *args, **kwargs)

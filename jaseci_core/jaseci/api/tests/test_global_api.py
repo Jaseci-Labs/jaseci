@@ -105,7 +105,7 @@ class GlobalApiTest(CoreTest):
         api = ["master_createsuper", {"name": "yo3@gmail.com"}]
         r = self.call(self.smast, api)
         self.assertIn("j_type", r["user"])
-        self.assertEqual(r["user"]["j_type"], "supermaster")
+        self.assertEqual(r["user"]["j_type"], "super_master")
 
     def test_global_sentinel_set_unset(self):
         api = ["global_sentinel_set", {}]
