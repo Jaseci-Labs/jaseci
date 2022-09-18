@@ -2,7 +2,7 @@
 General action base class with automation for hot loading
 """
 from jaseci.utils.utils import logger, ColCodes as Cc
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from pydantic import validate_arguments
 from time import time
@@ -36,11 +36,11 @@ def serv_actions():
         return remote_actions
 
     for i in registered_apis:
-        gen_api_service(app, i[0], i[1], i[2], i[3])
+        gen_api_service(app, i[0], i[1], i[2], i[3], i[4])
     return app
 
 
-def gen_api_service(app, func, act_group, aliases, caller_globals):
+def gen_api_service(app, func, act_group, aliases, caller_globals, use_get):
     """Helper for jaseci_action decorator"""
     # Construct list of action apis available
     varnames = list(inspect.signature(func).parameters.keys())
@@ -62,21 +62,41 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
     model.__fields__ = keep_fields
 
     # Create duplicate funtion for api endpoint and inject in call site globals
-    @app.post(f"/{func.__name__}/")
-    def new_func(params: model):
-        pl_peek = str(dict(params.__dict__))[:128]
-        logger.info(str(f"Incoming call to {func.__name__} with {pl_peek}"))
-        start_time = time()
+    if not use_get:
 
-        ret = validate_arguments(func)(**(params.__dict__))
-        tot_time = time() - start_time
-        logger.info(
-            str(
-                f"API call to {Cc.TG}{func.__name__}{Cc.EC}"
-                f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
+        @app.post(f"/{func.__name__}/")
+        def new_func(params: model):
+            pl_peek = str(dict(params.__dict__))[:128]
+            logger.info(str(f"Incoming call to {func.__name__} with {pl_peek}"))
+            start_time = time()
+
+            ret = validate_arguments(func)(**(params.__dict__))
+            tot_time = time() - start_time
+            logger.info(
+                str(
+                    f"API call to {Cc.TG}{func.__name__}{Cc.EC}"
+                    f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
+                )
             )
-        )
-        return ret
+            return ret
+
+    else:
+
+        @app.get(f"/{func.__name__}/")
+        def new_func(request: Request, params: model):
+            pl_peek = str(dict(params.__dict__))[:128]
+            logger.info(str(f"Incoming call to {func.__name__} with {pl_peek}"))
+            start_time = time()
+
+            ret = validate_arguments(func)(**(params.__dict__))
+            tot_time = time() - start_time
+            logger.info(
+                str(
+                    f"API call to {Cc.TG}{func.__name__}{Cc.EC}"
+                    f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
+                )
+            )
+            return ret
 
     for i in aliases:
         new_func = app.post(f"/{i}/")(new_func)

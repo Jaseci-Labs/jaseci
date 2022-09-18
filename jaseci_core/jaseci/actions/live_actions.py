@@ -14,7 +14,7 @@ import importlib
 live_actions = {}
 
 
-def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
+def jaseci_action(act_group=None, aliases=list(), allow_remote=False, use_get=False):
     """Decorator for Jaseci Action interface"""
     caller_globals = dict(inspect.getmembers(inspect.currentframe().f_back))[
         "f_globals"
@@ -24,7 +24,7 @@ def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
 
     def decorator_func(func):
         if allow_remote:
-            mark_as_remote([func, act_group, aliases, caller_globals])
+            mark_as_remote([func, act_group, aliases, caller_globals, use_get])
         return assimilate_action(func, act_group, aliases)
 
     return decorator_func
