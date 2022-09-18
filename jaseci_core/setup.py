@@ -1,8 +1,15 @@
 from setuptools import setup, find_packages
+from os.path import join
+
+
+def get_ver():
+    with open(join("./jaseci", "VERSION")) as version_file:
+        return version_file.read().strip()
+
 
 setup(
     name="jaseci",
-    version="1.3.4.9",
+    version=get_ver(),
     packages=find_packages(include=["jaseci", "jaseci.*"]),
     install_requires=[
         "click>=8.1.0,<8.2.0",
@@ -20,7 +27,7 @@ setup(
         "docstring-parser",
     ],
     package_data={
-        "": ["*.ini"],
+        "": ["*.ini", "jac.g4", "VERSION"],
     },
     entry_points={"console_scripts": ["jsctl = jaseci.jsctl.jsctl:main"]},
 )

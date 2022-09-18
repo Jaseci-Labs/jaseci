@@ -83,6 +83,8 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertIn("line 3", report["errors"][0])
 
     def test_strange_ability_bug(self):
+        import json
+
         mast = self.meta.master()
         mast.sentinel_register(name="test", code=jtp.strange_ability_bug)
         report = mast.general_interface_to_api(
@@ -93,7 +95,7 @@ class JacTests(TestCaseHelper, TestCase):
             api_name="walker_run", params={"name": "travel"}
         )["report"]
         ir = mast.sentinel_get(mode="ir", snt=mast.active_snt())
-        mast.sentinel_set(code=ir, snt=mast.active_snt(), mode="ir")
+        mast.sentinel_set(code=json.dumps(ir), snt=mast.active_snt(), mode="ir")
         report += mast.general_interface_to_api(
             api_name="walker_run", params={"name": "travel"}
         )["report"]

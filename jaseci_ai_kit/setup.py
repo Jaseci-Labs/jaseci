@@ -1,8 +1,15 @@
 from setuptools import setup, find_packages
+from os.path import join
+
+
+def get_ver():
+    with open(join("./jaseci_ai_kit", "VERSION")) as version_file:
+        return version_file.read().strip()
+
 
 setup(
     name="jaseci_ai_kit",
-    version="1.3.4.9",
+    version=get_ver(),
     packages=find_packages(include=["jaseci_ai_kit", "jaseci_ai_kit.*"]),
     install_requires=[
         "jaseci",
@@ -22,6 +29,6 @@ setup(
         "seqeval >= 1.2.2, < 1.3",
     ],
     package_data={
-        "": ["*.json", "*.cfg"],
+        "": ["*.json", "*.cfg", "VERSION"],
     },
 )

@@ -11,6 +11,7 @@ import click
 import requests
 from click_shell import shell
 
+from jaseci import __version__
 from jaseci.element.super_master import SuperMaster
 from jaseci.svc import MetaService
 from jaseci.utils.utils import copy_func
@@ -33,7 +34,22 @@ def reset_state():
 reset_state()
 
 
-@shell(prompt="jaseci > ", intro="Starting Jaseci Shell...")
+def is_connected():
+    return session["connection"]["token"] and session["connection"]["url"]
+
+
+def get_prompt():
+    if is_connected():
+        return "@jaseci > "
+    else:
+        return "jaseci > "
+
+
+def get_intro():
+    return f"Jaseci {__version__}\n" + "Starting Shell..."
+
+
+@shell(prompt=get_prompt, intro=get_intro())
 @click.option(
     "--filename", "-f", default="js.session", help="Specify filename for session state."
 )
@@ -103,11 +119,7 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
             click.echo(f"Code file {kwargs['code']} not found!")
             return
     resolve_none_type(kwargs)
-    if (
-        not is_cli_only
-        and session["connection"]["token"]
-        and session["connection"]["url"]
-    ):
+    if not is_cli_only and is_connected():
         out = remote_api_call(kwargs, api_name)
     elif is_public:
         out = session["master"].public_interface_to_api(kwargs, api_name)

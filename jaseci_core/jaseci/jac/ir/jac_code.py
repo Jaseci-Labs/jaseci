@@ -5,6 +5,13 @@ import json
 from jaseci.utils.utils import logger
 from jaseci.jac.ir.ast import Ast
 import hashlib
+from pathlib import Path
+from os.path import dirname
+
+# Used to check ir matches grammar of current Jaseci instance
+grammar_hash = hashlib.md5(
+    Path(dirname(__file__) + "/../jac.g4").read_text().encode()
+).hexdigest()
 
 
 class JacJsonEnc(json.JSONEncoder):
@@ -38,12 +45,20 @@ class JacJsonDec(json.JSONDecoder):
 
 def jac_ast_to_ir(jac_ast):
     """Convert AST to IR string"""
-    return json.dumps(cls=JacJsonEnc, obj=jac_ast)
+    return json.dumps(cls=JacJsonEnc, obj={"gram_hash": grammar_hash, "ir": jac_ast})
 
 
 def jac_ir_to_ast(ir):
-    """Convert AST to IR string"""
-    return json.loads(cls=JacJsonDec, s=ir)
+    """Convert IR string to AST"""
+    ir_load = json.loads(cls=JacJsonDec, s=ir)
+    if (
+        not isinstance(ir_load, dict)
+        or "gram_hash" not in ir_load
+        or ir_load["gram_hash"] != grammar_hash
+    ):
+        logger.error("Jac IR incompatible/outdated with current Jaseci!")
+        return ""
+    return ir_load["ir"]
 
 
 class JacCode:
