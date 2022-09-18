@@ -382,7 +382,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertTrue(sent.code_ir.startswith('{"name": "start"'))
+        self.assertIn('{"name": "start"', sent.code_ir)
 
     def test_jac_api_sentinel_set_encoded(self):
         """Test API for deleting a sentinel"""
@@ -404,7 +404,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertTrue(sent.code_ir.startswith('{"name": "start"'))
+        self.assertIn('{"name": "start"', sent.code_ir)
 
     def test_jac_api_compile(self):
         """Test API for compiling a sentinel"""
