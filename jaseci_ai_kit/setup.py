@@ -3,7 +3,7 @@ from os.path import join
 
 
 def get_ver():
-    with open(join("./jaseci", "VERSION")) as version_file:
+    with open(join("./jaseci_ai_kit", "VERSION")) as version_file:
         return version_file.read().strip()
 
 
@@ -29,6 +29,6 @@ setup(
         "seqeval >= 1.2.2, < 1.3",
     ],
     package_data={
-        "": ["*.json", "*.cfg"],
+        "": ["*.json", "*.cfg", "VERSION"],
     },
 )
