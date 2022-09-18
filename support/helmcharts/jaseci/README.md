@@ -41,8 +41,8 @@ the variables of object need to be defined, an example below, you can copy it an
 
 - name: js-use-qa
     script:
-      - pip install jaseci-ai-kit==1.3.3.19
-      - uvicorn jaseci_ai_kit.use_qa:serv_actions --host 0.0.0.0 --port 80    
+      - pip install jaseci-kit==1.3.3.19
+      - uvicorn jaseci_kit.use_qa:serv_actions --host 0.0.0.0 --port 80    
     resources: 
       requests:
           memory: 2Gi
