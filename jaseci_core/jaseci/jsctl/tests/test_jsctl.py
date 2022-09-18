@@ -5,7 +5,7 @@ from click.testing import CliRunner
 import json
 
 
-class jsctl_test(TestCaseHelper, TestCase):
+class JsctlTest(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):

@@ -11,10 +11,10 @@ import click
 import requests
 from click_shell import shell
 
-from jaseci.element.super_master import super_master
+from jaseci.element.super_master import SuperMaster
 from jaseci.svc import MetaService
 from jaseci.utils.utils import copy_func
-from .book_tools import book
+from .book_tools import Book
 
 session = None
 
@@ -57,13 +57,13 @@ def remote_api_call(payload, api_name):
     Constructs and issues call to remote server
     NOTE: Untested
     """
-    for i in super_master.all_apis(None):
+    for i in SuperMaster.all_apis(None):
         if api_name == "_".join(i["groups"]):
-            if i in super_master._private_api:
+            if i in SuperMaster._private_api:
                 path = "/js/" + api_name
-            elif i in super_master._admin_api:
+            elif i in SuperMaster._admin_api:
                 path = "/js_admin/" + api_name
-            elif i in super_master._public_api:
+            elif i in SuperMaster._public_api:
                 path = "/js_public/" + api_name
             break
     ret = requests.post(
@@ -297,11 +297,11 @@ def reset():
 def booktool(op, output):
     out = ""
     if op == "cheatsheet":
-        out = f"{book().bookgen_api_cheatsheet(extract_api_tree())}"
+        out = f"{Book().bookgen_api_cheatsheet(extract_api_tree())}"
     elif op == "stdlib":
-        out = book().bookgen_std_library()
+        out = Book().bookgen_std_library()
     elif op == "classes":
-        out = book().bookgen_api_spec()
+        out = Book().bookgen_api_spec()
     click.echo(out)
     if output:
         with open(output, "w") as f:

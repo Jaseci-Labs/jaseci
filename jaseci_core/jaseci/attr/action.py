@@ -3,15 +3,15 @@ Action class for Jaseci
 
 Each action has an id, name, timestamp and it's set of edges.
 """
-from .item import item
+from .item import Item
 from jaseci.actions.live_actions import live_actions
-from jaseci.jac.jac_set import jac_set
+from jaseci.jac.jac_set import JacSet
 import inspect
 
 # ACTION_PACKAGE = 'jaseci.actions.'
 
 
-class action(item):
+class Action(Item):
     """
     Action class for Jaseci
 
@@ -33,9 +33,9 @@ class action(item):
         """
 
         for i in args.annotations.keys():
-            if args.annotations[i] == jac_set:
+            if args.annotations[i] == JacSet:
                 idx = args.args.index(i)
-                params[idx] = jac_set(in_list=params[idx])
+                params[idx] = JacSet(in_list=params[idx])
 
     def trigger(self, param_list, scope, interp):
         """

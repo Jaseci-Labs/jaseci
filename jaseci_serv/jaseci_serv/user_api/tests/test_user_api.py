@@ -21,7 +21,7 @@ create_superuser = get_user_model().objects.create_superuser
 get_user = get_user_model().objects.get
 
 
-class user_api_tests_public(TestCaseHelper, TestCase):
+class UserApiPublicTests(TestCaseHelper, TestCase):
     """Tests for user API (public)"""
 
     def setUp(self):
@@ -240,7 +240,7 @@ class user_api_tests_public(TestCaseHelper, TestCase):
         get_user(email=payload["email"]).delete()
 
 
-class user_api_tests_private(TestCaseHelper, TestCase):
+class UserApiPrivateTests(TestCaseHelper, TestCase):
     """Test API requests that are authenticated"""
 
     def setUp(self):

@@ -5,7 +5,7 @@ from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper
 
 
-class core_test(TestCaseHelper, TestCase):
+class CoreTest(TestCaseHelper, TestCase):
     """Unit tests for Jac Core APIs"""
 
     fixture_src = __file__

@@ -5,7 +5,7 @@ from multiprocessing import Process
 from celery import Celery
 from celery.backends.base import DisabledBackend
 
-from jaseci.svc import CommonService, ServiceState as SS
+from jaseci.svc import CommonService, ServiceState as Ss
 from jaseci.utils.utils import logger
 from .common import Queue, ScheduledSequence, ScheduledWalker, TaskProperties
 
@@ -40,7 +40,7 @@ class TaskService(CommonService, TaskProperties):
 
         try:
             if self.is_ready() and self.__has_redis(hook):
-                self.state = SS.STARTED
+                self.state = Ss.STARTED
                 self.__task(hook)
         except Exception as e:
             if not (self.quiet):
@@ -50,7 +50,7 @@ class TaskService(CommonService, TaskProperties):
                 )
 
             self.app = None
-            self.state = SS.FAILED
+            self.state = Ss.FAILED
             self.terminate_worker()
             self.terminate_scheduler()
 
@@ -67,9 +67,9 @@ class TaskService(CommonService, TaskProperties):
             self.__tasks()
             self.__worker()
             self.__scheduler()
-            self.state = SS.RUNNING
+            self.state = Ss.RUNNING
         else:
-            self.state = SS.DISABLED
+            self.state = Ss.DISABLED
 
     def __worker(self):
         self.worker = Process(target=self.app.Worker(quiet=self.quiet).start)
@@ -93,7 +93,7 @@ class TaskService(CommonService, TaskProperties):
                     "Redis is not yet running reason "
                     "for skipping Celery initialization!"
                 )
-            self.state = SS.FAILED
+            self.state = Ss.FAILED
             return False
         return True
 

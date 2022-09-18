@@ -236,7 +236,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         task_id = res.data["task_id"]
 
         res = self.auth_client.get(
-            reverse(f"jac_api:walker_queue_check") + f"?task_id={task_id}"
+            reverse("jac_api:walker_queue_check") + f"?task_id={task_id}"
         )
 
         self.assertEqual("SUCCESS", res.data["status"])
@@ -858,7 +858,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = login_client.post(reverse("user_api:token"), payload)
         self.assertIn("token", res.data)
 
-    def test_master_create_linked_survives_ORM(self):
+    def test_master_create_linked_survives_orm(self):
         """Test master create operation"""
         self.user.get_master()._h.clear_cache()
         payload = {
@@ -1480,7 +1480,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         task_id = res["task_id"]
 
         res = self.client.get(
-            reverse(f"jac_api:walker_queue_check") + f"?task_id={task_id}"
+            reverse("jac_api:walker_queue_check") + f"?task_id={task_id}"
         ).data
 
         self.assertEqual("SUCCESS", res["status"])
@@ -1571,12 +1571,14 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         ).data
 
         self.assertIn(
-            "in jac_try_exception\n    raise TryException(self.jac_exception(e, jac_ast))\njaseci.jac.machine.machine_state.TryException: ",
+            "in jac_try_exception\n    raise TryException(self.jac_exception(e, "
+            "jac_ast))\njaseci.jac.machine.machine_state.TryException: ",
             res["stack_trace"],
         )
 
         self.assertIn(
-            "zsb:walker_exception_no_try_else - line 6, col 20 - rule atom - Internal Exception: ",
+            "zsb:walker_exception_no_try_else - line 6,"
+            " col 20 - rule atom - Internal Exception: ",
             res["errors"][0],
         )
 
@@ -1590,7 +1592,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(14, res["report"][0]["line"])
         self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
-            "zsb:walker_exception_with_try_else - line 14, col 23 - rule atom_trailer - ",
+            "zsb:walker_exception_with_try_else -"
+            " line 14, col 23 - rule atom_trailer - ",
             res["errors"][0],
         )
 
@@ -1610,7 +1613,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(32, res["report"][0]["line"])
         self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
-            "zsb:walker_exception_with_try_else_multiple_line - line 32, col 23 - rule atom_trailer - ",
+            "zsb:walker_exception_with_try_else_multiple_line "
+            "- line 32, col 23 - rule atom_trailer - ",
             res["errors"][0],
         )
 

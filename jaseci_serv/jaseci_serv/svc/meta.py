@@ -1,9 +1,9 @@
-from jaseci.svc import MetaService as ms
+from jaseci.svc import MetaService as Ms
 from jaseci_serv.jaseci_serv.settings import RUN_SVCS
 from jaseci_serv.svc import MailService, RedisService, TaskService
 
 
-class MetaService(ms):
+class MetaService(Ms):
     def hook(self):
         h = self.app["hook"]()
         if RUN_SVCS:
@@ -19,11 +19,11 @@ class MetaService(ms):
         return OrmHook(objects=JaseciObject.objects, globs=GlobalVars.objects)
 
     def build_master(self, *args, **kwargs):
-        from jaseci_serv.base.models import master
+        from jaseci_serv.base.models import Master
 
-        return master(*args, **kwargs)
+        return Master(*args, **kwargs)
 
     def build_super_master(self, *args, **kwargs):
-        from jaseci_serv.base.models import super_master
+        from jaseci_serv.base.models import SuperMaster
 
-        return super_master(*args, **kwargs)
+        return SuperMaster(*args, **kwargs)

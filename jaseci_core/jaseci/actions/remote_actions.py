@@ -1,7 +1,7 @@
 """
 General action base class with automation for hot loading
 """
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import logger, ColCodes as Cc
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from pydantic import validate_arguments
@@ -67,15 +67,13 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
         pl_peek = str(dict(params.__dict__))[:128]
         logger.info(str(f"Incoming call to {func.__name__} with {pl_peek}"))
         start_time = time()
-        TY = "\033[33m"
-        TG = "\033[32m"
-        EC = "\033[m"  # noqa
+
         ret = validate_arguments(func)(**(params.__dict__))
         tot_time = time() - start_time
         logger.info(
             str(
-                f"API call to {TG}{func.__name__}{EC}"
-                f" completed in {TY}{tot_time:.3f} seconds{EC}"
+                f"API call to {Cc.TG}{func.__name__}{Cc.EC}"
+                f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
             )
         )
         return ret

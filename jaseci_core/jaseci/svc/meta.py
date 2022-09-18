@@ -2,7 +2,7 @@ from jaseci.svc import (
     CommonService,
     MailService,
     RedisService,
-    ServiceState as SS,
+    ServiceState as Ss,
     TaskService,
 )
 
@@ -12,7 +12,7 @@ class MetaService(CommonService):
         super().__init__(MetaService)
 
         if self.is_ready():
-            self.state = SS.RUNNING
+            self.state = Ss.RUNNING
             self.app = {
                 "hook": self.build_hook,
                 "master": self.build_master,
@@ -45,11 +45,11 @@ class MetaService(CommonService):
         return RedisHook()
 
     def build_master(self, *args, **kwargs):
-        from jaseci.element.master import master
+        from jaseci.element.master import Master
 
-        return master(*args, **kwargs)
+        return Master(*args, **kwargs)
 
     def build_super_master(self, *args, **kwargs):
-        from jaseci.element.super_master import super_master
+        from jaseci.element.super_master import SuperMaster
 
-        return super_master(*args, **kwargs)
+        return SuperMaster(*args, **kwargs)

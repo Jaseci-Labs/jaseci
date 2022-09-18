@@ -1,6 +1,6 @@
 from redis import Redis
 
-from jaseci.svc import CommonService, ServiceState as SS
+from jaseci.svc import CommonService, ServiceState as Ss
 from jaseci.utils.utils import logger
 from .common import REDIS_CONFIG
 
@@ -21,7 +21,7 @@ class RedisService(CommonService):
 
         try:
             if self.is_ready():
-                self.state = SS.STARTED
+                self.state = Ss.STARTED
                 self.__redis(hook)
         except Exception as e:
             if not (self.quiet):
@@ -30,7 +30,7 @@ class RedisService(CommonService):
                     f"{e.__class__.__name__}: {e}"
                 )
             self.app = None
-            self.state = SS.FAILED
+            self.state = Ss.FAILED
 
     def __redis(self, hook):
         configs = self.get_config(hook)
@@ -40,9 +40,9 @@ class RedisService(CommonService):
             self.quiet = configs.pop("quiet", False)
             self.app = Redis(**configs, decode_responses=True)
             self.app.ping()
-            self.state = SS.RUNNING
+            self.state = Ss.RUNNING
         else:
-            self.state = SS.DISABLED
+            self.state = Ss.DISABLED
 
     ###################################################
     #                     COMMONS                     #

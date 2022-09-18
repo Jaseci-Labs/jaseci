@@ -4,15 +4,15 @@ Sentinel interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
-from jaseci.graph.node import node
-from jaseci.graph.edge import edge
-from jaseci.jac.interpreter.interp import interp
-from jaseci.jac.machine.jac_scope import jac_scope
+from jaseci.graph.node import Node
+from jaseci.graph.edge import Edge
+from jaseci.jac.interpreter.interp import Interp
+from jaseci.jac.machine.jac_scope import JacScope
 from jaseci.utils.utils import parse_str_token
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 
 
-class architype_interp(interp):
+class ArchitypeInterp(Interp):
     """Jac interpreter mixin for objects that will execute Jac code"""
 
     def run_architype(self, jac_ast):
@@ -24,9 +24,9 @@ class architype_interp(interp):
         """
         if jac_ast is None:  # Using defaults
             if self.kind == "node" and self.name in ["root", "generic"]:
-                return node(m_id=self._m_id, h=self._h, kind=self.kind, name=self.name)
+                return Node(m_id=self._m_id, h=self._h, kind=self.kind, name=self.name)
             elif self.kind == "edge" and self.name in ["generic"]:
-                return edge(m_id=self._m_id, h=self._h, kind=self.kind, name=self.name)
+                return Edge(m_id=self._m_id, h=self._h, kind=self.kind, name=self.name)
 
         def build_object(item):
             for i in self.super_archs:
@@ -40,9 +40,9 @@ class architype_interp(interp):
             self.run_attr_block(kid[-1], item)
 
         kid = self.set_cur_ast(jac_ast)
-        self.push_scope(jac_scope(parent=self, has_obj=self, action_sets=[]))
+        self.push_scope(JacScope(parent=self, has_obj=self, action_sets=[]))
         if kid[0].name == "KW_NODE":
-            item = node(
+            item = Node(
                 m_id=self._m_id,
                 h=self._h,
                 kind=kid[0].token_text(),
@@ -52,7 +52,7 @@ class architype_interp(interp):
                 item.dimension = int(kid[-2].token_text())
             build_object(item)
         elif kid[0].name == "KW_EDGE":
-            item = edge(
+            item = Edge(
                 m_id=self._m_id,
                 h=self._h,
                 kind=kid[0].token_text(),
@@ -104,9 +104,9 @@ class architype_interp(interp):
         kid = self.set_cur_ast(jac_ast)
         root_name = self.run_has_root(kid[1])
         self.run_can_block(kid[2])
-        m = interp(parent_override=self.parent(), caller=self)
+        m = Interp(parent_override=self.parent(), caller=self)
         m.push_scope(
-            jac_scope(parent=self, has_obj=None, action_sets=[self.activity_action_ids])
+            JacScope(parent=self, has_obj=None, action_sets=[self.activity_action_ids])
         )
         try:
             m.run_code_block(kid[4])
@@ -116,7 +116,7 @@ class architype_interp(interp):
         self.report = self.report + m.report
         if root_name in local_state.keys():
             obj = jeu(local_state[root_name], parent=self)
-            if not isinstance(obj, node):
+            if not isinstance(obj, Node):
                 self.rt_error(f"{root_name} is {type(obj)} not node!", kid[3])
             return obj
         else:
@@ -170,7 +170,7 @@ class architype_interp(interp):
                     edge_kind, kind="edge", caller=self
                 )
             else:
-                edge_obj = edge(m_id=self._m_id, h=self._h, kind="edge", name="generic")
+                edge_obj = Edge(m_id=self._m_id, h=self._h, kind="edge", name="generic")
 
             lhs_node_id = op.pop("lhs_node_id")
             rhs_node_id = op.pop("rhs_node_id")
@@ -304,9 +304,9 @@ class architype_interp(interp):
         edge_attrs = {}
         if kid[-1].name == "dot_attr_list":
             edge_attrs = self.run_dot_attr_list(kid[-1])
-        self.run_dot_edgeRHS(kid[1], graph_state, lhs_id, edge_attrs)
+        self.run_dot_edge_rhs(kid[1], graph_state, lhs_id, edge_attrs)
 
-    def run_dot_edgeRHS(self, jac_ast, graph_state, lhs_id, edge_attrs):
+    def run_dot_edge_rhs(self, jac_ast, graph_state, lhs_id, edge_attrs):
         """
         dot_edgeRHS: (dot_edgeop(dot_node_id | dot_subgraph))+
         """
