@@ -5,7 +5,7 @@
 To load the Bi-encoder  Module run :
 
 ```
-actions load module jaseci_kit.bi_enc
+actions load module jaseci_ai_kit.bi_enc
 ```
 * `dot_prod`:
     * Input:

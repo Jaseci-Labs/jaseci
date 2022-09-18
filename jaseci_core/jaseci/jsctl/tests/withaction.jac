@@ -5,7 +5,7 @@ node bi_enc {
 walker init {
     root {
         std.out("loading");
-        std.actload_module("jaseci_kit.use_enc");
+        std.actload_module("jaseci_ai_kit.use_enc");
         std.out("loaded");
     }
 }

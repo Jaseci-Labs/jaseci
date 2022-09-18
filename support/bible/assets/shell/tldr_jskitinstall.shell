@@ -1,9 +1,9 @@
-haxor@linux:~$ pip install jaseci-kit
-Collecting jaseci-kit
-  Downloading jaseci_kit-1.3.3.5-py3-none-any.whl (34 kB)
+haxor@linux:~$ pip install jaseci-ai-kit
+Collecting jaseci-ai-kit
+  Downloading jaseci_ai_kit-1.3.3.5-py3-none-any.whl (34 kB)
 Collecting tensorflow<3.0.0,>=2.8.0
   Downloading tensorflow-2.8.0-cp38-cp38-manylinux2010_x86_64.whl (497.6 MB)
      |||||||||||||||||||||||||||||||||| 497.6 MB 8.9 MB/s
 ...
-Successfully installed ... jaseci-kit-1.3.3.5 ...
+Successfully installed ... jaseci-ai-kit-1.3.3.5 ...
 haxor@linux:~$
