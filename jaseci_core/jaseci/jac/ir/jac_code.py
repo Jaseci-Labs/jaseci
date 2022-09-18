@@ -50,6 +50,10 @@ def jac_ast_to_ir(jac_ast):
 
 def jac_ir_to_ast(ir):
     """Convert IR string to AST"""
+    ir_load = json.loads(cls=JacJsonDec, s=ir)
+    if "gram_hash" not in ir_load or ir_load["gram_hash"] != grammar_hash:
+        logger.error("Jac IR incompatible/outdated with current Jaseci!")
+        return ""
     return json.loads(cls=JacJsonDec, s=ir)["ir"]
 
 
