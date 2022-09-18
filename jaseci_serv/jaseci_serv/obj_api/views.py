@@ -6,7 +6,7 @@ from rest_framework.serializers import HyperlinkedIdentityField
 from django.contrib.auth.models import AnonymousUser
 
 from jaseci_serv.base import models
-from jaseci_serv.base.orm_hook import json_str_to_jsci_dict
+from jaseci_serv.hook.orm import json_str_to_jsci_dict
 
 
 class JaseciObjectSerializer(slzrs.HyperlinkedModelSerializer):
@@ -31,7 +31,7 @@ class JaseciObjectSerializer(slzrs.HyperlinkedModelSerializer):
             "j_timestamp",
             "jsci_obj",
         )
-        read_only_Fields = ("id", "j_type", "timestamp")
+        read_only_fields = ("id", "j_type", "timestamp")
 
     def to_representation(self, instance):
         """Convert jsci_obj to dictionary so entire payload is one JSON"""

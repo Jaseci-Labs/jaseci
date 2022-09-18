@@ -83,7 +83,7 @@ def get_global_actions(hook):
     Loads all global action hooks for use by Jac programs
     Attaches globals to mem_hook
     """
-    from jaseci.attr.action import action
+    from jaseci.attr.action import Action
     import uuid
 
     global_action_list = []
@@ -99,7 +99,7 @@ def get_global_actions(hook):
             or i.startswith("jaseci.")
         ):
             global_action_list.append(
-                action(
+                Action(
                     m_id=uuid.UUID(int=0).urn,
                     h=hook,
                     mode="public",

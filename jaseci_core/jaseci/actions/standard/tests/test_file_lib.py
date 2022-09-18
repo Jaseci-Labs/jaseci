@@ -1,7 +1,7 @@
-from jaseci.utils.test_core import core_test
+from jaseci.utils.test_core import CoreTest
 
 
-class file_lib_test(core_test):
+class FileLibTest(CoreTest):
 
     fixture_src = __file__
 

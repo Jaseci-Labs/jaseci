@@ -2,18 +2,19 @@
 Command line tool for Jaseci
 """
 
-import click
-from click_shell import shell
-import os
-import pickle
 import functools
 import json
-from jaseci.svcs.meta_svc import meta_svc
-import requests
+import os
+import pickle
 
+import click
+import requests
+from click_shell import shell
+
+from jaseci.element.super_master import SuperMaster
+from jaseci.svc import MetaService
 from jaseci.utils.utils import copy_func
-from jaseci.element.super_master import super_master
-from .book_tools import book
+from .book_tools import Book
 
 session = None
 
@@ -22,7 +23,7 @@ def reset_state():
     global session
     session = {
         "filename": "js.session",
-        "user": [meta_svc().super_master(name="admin")],
+        "user": [MetaService().super_master(name="admin")],
         "mem-only": session["mem-only"] if session is not None else False,
         "connection": {"url": None, "token": None, "headers": None},
     }
@@ -56,13 +57,13 @@ def remote_api_call(payload, api_name):
     Constructs and issues call to remote server
     NOTE: Untested
     """
-    for i in super_master.all_apis(None):
+    for i in SuperMaster.all_apis(None):
         if api_name == "_".join(i["groups"]):
-            if i in super_master._private_api:
+            if i in SuperMaster._private_api:
                 path = "/js/" + api_name
-            elif i in super_master._admin_api:
+            elif i in SuperMaster._admin_api:
                 path = "/js_admin/" + api_name
-            elif i in super_master._public_api:
+            elif i in SuperMaster._public_api:
                 path = "/js_public/" + api_name
             break
     ret = requests.post(
@@ -206,7 +207,7 @@ def cmd_tree_builder(location, group_func=jsctl, cmd_str=""):
             continue
         else:
             f = copy_func(lambda: None, i)
-            f.__doc__ = f'Group of `{(cmd_str+" "+i).lstrip()}` commands'
+            f.__doc__ = f'Group of `{(cmd_str + " " + i).lstrip()}` commands'
             new_func = group_func.group()(f)
         cmd_tree_builder(loc, new_func, cmd_str + " " + i)
 
@@ -296,11 +297,11 @@ def reset():
 def booktool(op, output):
     out = ""
     if op == "cheatsheet":
-        out = f"{book().bookgen_api_cheatsheet(extract_api_tree())}"
+        out = f"{Book().bookgen_api_cheatsheet(extract_api_tree())}"
     elif op == "stdlib":
-        out = book().bookgen_std_library()
+        out = Book().bookgen_std_library()
     elif op == "classes":
-        out = book().bookgen_api_spec()
+        out = Book().bookgen_api_spec()
     click.echo(out)
     if output:
         with open(output, "w") as f:

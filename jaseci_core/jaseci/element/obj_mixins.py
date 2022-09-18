@@ -3,12 +3,12 @@ Jaseci object mixins
 
 Various mixins to define properties of Jaseci objects
 """
-from jaseci.utils.id_list import id_list
+from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 import uuid
 
 
-class anchored:
+class Anchored:
     """Utility class for objects that hold anchor values"""
 
     def __init__(self):
@@ -21,7 +21,7 @@ class anchored:
         return None
 
 
-class sharable:
+class Sharable:
     """Utility class for objects that are sharable between users"""
 
     def __init__(self, m_id, mode=None):
@@ -33,8 +33,8 @@ class sharable:
             if self._h.has_obj(uuid.UUID(self._m_id))
             else "private"
         )
-        self.j_r_acc_ids = id_list(self)
-        self.j_rw_acc_ids = id_list(self)
+        self.j_r_acc_ids = IdList(self)
+        self.j_rw_acc_ids = IdList(self)
 
     @property
     def _m_id(self) -> str:
@@ -133,13 +133,13 @@ class sharable:
         return ret
 
 
-class hookable(sharable):
+class Hookable(Sharable):
     """Utility class for objects that are savable to DBs and other stores"""
 
     def __init__(self, h, m_id, persist: bool = True, *args, **kwargs):
         self._h = h  # hook for storing and loading to persistent store
         self._persist = persist
-        sharable.__init__(self, m_id, *args, **kwargs)
+        Sharable.__init__(self, m_id, *args, **kwargs)
 
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""

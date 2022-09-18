@@ -1,8 +1,8 @@
-from jaseci.utils.test_core import core_test
+from jaseci.utils.test_core import CoreTest
 import jaseci.tests.jac_test_code as jtc
 
 
-class global_api_test(core_test):
+class GlobalApiTest(CoreTest):
     """Unit tests for Jac Global APIs"""
 
     fixture_src = __file__

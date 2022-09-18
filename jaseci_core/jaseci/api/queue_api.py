@@ -1,17 +1,17 @@
 """
 Queue api functions as a mixin
 """
-from jaseci.api.interface import interface
+from jaseci.api.interface import Interface
 
 
-class queue_api:
+class QueueApi:
     """
     Queue APIs
 
     APIs used for celery configuration and monitoring
     """
 
-    @interface.private_api(allowed_methods=["get"])
+    @Interface.private_api(allowed_methods=["get"])
     def walker_queue_check(self, task_id: str = ""):
         """
         Monitor Queues

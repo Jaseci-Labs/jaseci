@@ -1,12 +1,12 @@
 """
 Master api as a mixin
 """
-from jaseci.api.interface import interface
-from jaseci.utils.id_list import id_list
+from jaseci.api.interface import Interface
+from jaseci.utils.id_list import IdList
 import uuid
 
 
-class master_api:
+class MasterApi:
     """
     Master APIs for users creating and managing groups of sub users
 
@@ -16,9 +16,9 @@ class master_api:
     def __init__(self, head_master):
         self.caller = None
         self.head_master_id = head_master
-        self.sub_master_ids = id_list(self)
+        self.sub_master_ids = IdList(self)
 
-    @interface.private_api(cli_args=["name"])
+    @Interface.private_api(cli_args=["name"])
     def master_create(
         self,
         name: str,
@@ -45,7 +45,7 @@ class master_api:
         ret["success"] = True
         return ret
 
-    @interface.private_api(cli_args=["name"])
+    @Interface.private_api(cli_args=["name"])
     def master_get(self, name: str, mode: str = "default", detailed: bool = False):
         """
         Return the content of the master with mode
@@ -57,7 +57,7 @@ class master_api:
         else:
             return mas.serialize(detailed=detailed)
 
-    @interface.private_api()
+    @Interface.private_api()
     def master_list(self, detailed: bool = False):
         """
         Provide complete list of all master objects (list of root node objects)
@@ -67,7 +67,7 @@ class master_api:
             masts.append(i.serialize(detailed=detailed))
         return masts
 
-    @interface.private_api(cli_args=["name"])
+    @Interface.private_api(cli_args=["name"])
     def master_active_set(self, name: str):
         """
         Sets the default master master should use
@@ -79,7 +79,7 @@ class master_api:
         self.caller = mas.jid
         return {"response": f"You are now {mas.name}"}
 
-    @interface.private_api()
+    @Interface.private_api()
     def master_active_unset(self):
         """
         Unsets the default sentinel master should use
@@ -87,7 +87,7 @@ class master_api:
         self.caller = None
         return {"response": f"You are now {self.name}"}
 
-    @interface.private_api()
+    @Interface.private_api()
     def master_active_get(self, detailed: bool = False):
         """
         Returns the default master master is using
@@ -99,14 +99,14 @@ class master_api:
         else:
             return self.serialize(detailed=detailed)
 
-    @interface.private_api()
+    @Interface.private_api()
     def master_self(self, detailed: bool = False):
         """
         Returns the masters object
         """
         return self.serialize(detailed=detailed)
 
-    @interface.private_api(cli_args=["name"])
+    @Interface.private_api(cli_args=["name"])
     def master_delete(self, name: str):
         """
         Permanently delete master with given id

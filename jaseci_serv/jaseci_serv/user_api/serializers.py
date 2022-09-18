@@ -1,13 +1,15 @@
-from django.contrib.auth import get_user_model, authenticate
-from django.utils.translation import ugettext_lazy as _
-from jaseci_serv.svcs.mail.mail_svc import mail_svc
-from rest_framework import serializers
 import base64
-from django.urls import reverse
+
+from django.contrib.auth import authenticate, get_user_model
 from django.dispatch import receiver
+from django.urls import reverse
+from django.utils.translation import ugettext_lazy as _
 from django_rest_passwordreset.signals import reset_password_token_created
+from rest_framework import serializers
+
+from jaseci.svc.mail import MAIL_ERR_MSG
 from jaseci.utils.utils import logger
-from jaseci.svcs.common_svc import MAIL_ERR_MSG
+from jaseci_serv.svc import MailService
 
 
 def send_activation_email(request, email):
@@ -16,7 +18,7 @@ def send_activation_email(request, email):
     link = request.build_absolute_uri(
         reverse("user_api:activate", kwargs={"code": code})
     )
-    ma = mail_svc()
+    ma = MailService()
     if ma.is_running():
         ma.app.send_activation_email(email, code, link)
     else:
@@ -27,7 +29,7 @@ def send_activation_email(request, email):
 def password_reset_token_created(
     sender, instance, reset_password_token, *args, **kwargs
 ):
-    ma = mail_svc()
+    ma = MailService()
     if ma.is_running():
         ma.app.send_reset_email(
             reset_password_token.user.email, reset_password_token.key

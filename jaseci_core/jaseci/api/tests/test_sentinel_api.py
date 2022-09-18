@@ -1,7 +1,7 @@
-from jaseci.utils.test_core import core_test
+from jaseci.utils.test_core import CoreTest
 
 
-class sentinel_api_test(core_test):
+class SentinelApiTest(CoreTest):
     """Unit tests for Jac Walker APIs"""
 
     fixture_src = __file__

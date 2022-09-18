@@ -1,26 +1,27 @@
-from jaseci.svcs.meta_svc import meta_svc
-from jaseci.actor.sentinel import sentinel
-from jaseci.graph.graph import graph
-from jaseci.graph.node import node
-from jaseci.utils.utils import TestCaseHelper
 from unittest import TestCase
+
 import jaseci.tests.jac_test_progs as jtp
+from jaseci.actor.sentinel import Sentinel
+from jaseci.graph.graph import Graph
+from jaseci.graph.node import Node
+from jaseci.svc import MetaService
+from jaseci.utils.utils import TestCaseHelper
 
 
-class jac_tests(TestCaseHelper, TestCase):
+class JacTests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
         super().setUp()
 
-        self.meta = meta_svc()
+        self.meta = MetaService()
 
     def tearDown(self):
         super().tearDown()
 
     def test_bug_check1(self):
-        gph = graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        gph = Graph(m_id="anon", h=self.meta.hook())
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtp.bug_check1)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -46,8 +47,8 @@ class jac_tests(TestCaseHelper, TestCase):
         self.assertEqual(report[0], False)
 
     def test_globals(self):
-        gph = graph(m_id="anon", h=self.meta.hook())
-        sent = sentinel(m_id="anon", h=gph._h)
+        gph = Graph(m_id="anon", h=self.meta.hook())
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtp.globals)
         test_walker = sent.walker_ids.get_obj_by_name("init")
         test_walker.prime(gph)
@@ -280,12 +281,12 @@ class jac_tests(TestCaseHelper, TestCase):
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "create"}
         )
-        self.assertEqual(mast._h.get_object_distribution()[node], 2)
+        self.assertEqual(mast._h.get_object_distribution()[Node], 2)
         self.assertEqual(report["report"][0], "JAC_TYPE.NODE")
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "remove"}
         )
-        self.assertEqual(mast._h.get_object_distribution()[node], 1)
+        self.assertEqual(mast._h.get_object_distribution()[Node], 1)
         self.assertEqual(report["report"][0], "JAC_TYPE.NULL")
 
     def test_for_loop_dict(self):
@@ -326,6 +327,19 @@ class jac_tests(TestCaseHelper, TestCase):
 
         self.assertEqual(res["report"], [{"key1": "key1", "key2": 2}])
         self.assertIn("Key is not str type : <class 'int'>!", res["errors"][0])
+
+    def test_new_additional_builtin(self):
+        mast = self.meta.master()
+        mast.sentinel_register(name="test", code=jtp.check_new_builtin, auto_run="")
+
+        res = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+
+        self.assertEqual(
+            res["report"],
+            [{"test": "test"}, 1, "1 2 3 4", "1 2 3 4"],
+        )
 
     def test_continue_issue(self):
         mast = self.meta.master()

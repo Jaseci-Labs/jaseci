@@ -557,6 +557,27 @@ check_dict_for_in_loop = """
     }
 """
 
+check_new_builtin = """
+    walker init {
+        with entry {
+            a = {"test":"test"};
+
+            // dict get with default if not existing
+            b = a.dict::get("t", 1);
+
+            // string join single param array
+            c = " ".str::join([1,2,3,4]);
+
+            // string join multiparams
+            d = " ".str::join(1,2,3,4);
+            report a;
+            report b;
+            report c;
+            report d;
+        }
+    }
+"""
+
 continue_issue = """
     walker init {
         root {

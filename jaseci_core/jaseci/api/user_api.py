@@ -1,10 +1,10 @@
 """
 User API
 """
-from jaseci.api.interface import interface
+from jaseci.api.interface import Interface
 
 
-class user_api:
+class UserApi:
     """
     User APIs for creating users (some functions should be override downstream)
 
@@ -17,7 +17,7 @@ class user_api:
     part of that session's state.
     """
 
-    @interface.public_api(cli_args=["name"])
+    @Interface.public_api(cli_args=["name"])
     def user_create(
         self,
         name: str,
@@ -72,17 +72,17 @@ class user_api:
         """
         Abstraction for user creation for elegant overriding
         """
-        from jaseci.element.master import master
+        from jaseci.element.master import Master
 
-        return master(h=self._h, name=name)
+        return Master(h=self._h, name=name)
 
     def superuser_creator(self, name, other_fields: dict = {}):
         """
         Abstraction for super user creation for elegant overriding
         """
-        from jaseci.element.super_master import super_master
+        from jaseci.element.super_master import SuperMaster
 
-        return super_master(h=self._h, name=name)
+        return SuperMaster(h=self._h, name=name)
 
     def user_global_init(
         self,

@@ -11,7 +11,7 @@ import random
 import os
 
 
-class test_ll(TestCaseHelper, TestCase):
+class TestLL(TestCaseHelper, TestCase):
     """Test the authorized user node API"""
 
     def setUp(self):

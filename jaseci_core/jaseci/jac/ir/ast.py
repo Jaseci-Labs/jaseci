@@ -10,7 +10,7 @@ from jaseci.jac.jac_parse.jacParser import jacParser, ParseTreeWalker
 import os
 
 
-class ast:
+class Ast:
     """
     AST Nodes
 
@@ -30,7 +30,7 @@ class ast:
         fresh_start=True,
     ):
         if fresh_start:
-            ast._ast_head_map = {}
+            Ast._ast_head_map = {}
         self.name = "unparsed"
         self.kind = "unparsed"
         self.context = {}
@@ -70,16 +70,16 @@ class ast:
 
     def parse_jac_str(self, jac_str):
         """Parse language and build ast from string"""
-        ast._ast_head_map[self._mod_dir + self.mod_name] = self
+        Ast._ast_head_map[self._mod_dir + self.mod_name] = self
         input_stream = InputStream(jac_str)
         lexer = jacLexer(input_stream)
         stream = CommonTokenStream(lexer)
-        errors = self.jac_tree_error(self)
+        errors = self.JacTreeError(self)
         parser = jacParser(stream)
         parser.removeErrorListeners()
         parser.addErrorListener(errors)
         tree = getattr(parser, self._start_rule)()
-        builder = self.jac_tree_builder(self)
+        builder = self.JacTreeBuilder(self)
         walker = ParseTreeWalker()
         walker.walk(builder, tree)
 
@@ -113,7 +113,7 @@ class ast:
             ret += f"{i['text']} "
         return ret
 
-    class jac_tree_builder(ParseTreeListener):
+    class JacTreeBuilder(ParseTreeListener):
         """Converter class from Antlr trees to Jaseci Tree"""
 
         def __init__(self, tree_root):
@@ -138,12 +138,12 @@ class ast:
             from_mod = self.tree_root.mod_name
             logger.debug(f"Importing items from {mod_name} to {from_mod}...")
             parsed_ast = None
-            if (mdir + mod_name) in ast._ast_head_map.keys():
-                parsed_ast = ast._ast_head_map[mdir + mod_name]
+            if (mdir + mod_name) in Ast._ast_head_map.keys():
+                parsed_ast = Ast._ast_head_map[mdir + mod_name]
             elif os.path.isfile(fn):
                 with open(fn, "r") as file:
                     jac_text = file.read()
-                parsed_ast = ast(
+                parsed_ast = Ast(
                     jac_text=jac_text,
                     mod_name=mod_name,
                     mod_dir=mdir,
@@ -230,12 +230,12 @@ class ast:
                     ret.append(i.token_text())
             return ret
 
-        def enterEveryRule(self, ctx):
+        def enterEveryRule(self, ctx):  # noqa
             """Visits every node in antlr parse tree"""
             if len(self.node_stack) == 0:
                 new_node = self.tree_root
             else:
-                new_node = ast(
+                new_node = Ast(
                     mod_name=self.tree_root.mod_name,
                     mod_dir=self.tree_root._mod_dir,
                     fresh_start=False,
@@ -250,7 +250,7 @@ class ast:
                 self.node_stack[-1].kid.append(new_node)
             self.node_stack.append(new_node)
 
-        def exitEveryRule(self, ctx):
+        def exitEveryRule(self, ctx):  # noqa
             """Overloaded function that visits every node on exit"""
             top = self.node_stack.pop()
             if top.name == "import_module":
@@ -258,9 +258,9 @@ class ast:
                     if i not in self.node_stack[-1].kid:
                         self.node_stack[-1].kid.append(i)
 
-        def visitTerminal(self, node):
+        def visitTerminal(self, node):  # noqa
             """Visits terminals as walker walks, adds ast node"""
-            new_node = ast(
+            new_node = Ast(
                 mod_name=self.tree_root.mod_name,
                 mod_dir=self.tree_root._mod_dir,
                 fresh_start=False,
@@ -278,13 +278,15 @@ class ast:
 
             self.node_stack[-1].kid.append(new_node)
 
-    class jac_tree_error(ErrorListener):
+    class JacTreeError(ErrorListener):
         """Accumulate errors as parse tree is walked"""
 
         def __init__(self, tree_root):
             self.tree_root = tree_root
 
-        def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        def syntaxError(  # noqa
+            self, recognizer, offendingSymbol, line, column, msg, e  # noqa
+        ):
             """Add error to error list"""
             self.tree_root._parse_errors.append(
                 f"{str(self.tree_root.mod_name)}: line {str(line)}:"
