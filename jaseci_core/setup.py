@@ -14,6 +14,7 @@ setup(
         "redis",
         "celery>=5,<6",
         "flake8",
+        "pep8-naming",
         "stripe",
         "pydantic",
         "docstring-parser",
