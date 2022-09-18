@@ -1,3 +1,16 @@
+import os
+
+
+def get_ver():
+    with open(os.path.join("../", "VERSION")) as version_file:
+        return version_file.read().strip()
+
+
+__version__ = get_ver()
+__creator__ = "Jason Mars"
+__url__ = "https://jaseci.org"
+
+
 def load_standard():
     import jaseci.actions.standard.net  # noqa
     import jaseci.actions.standard.rand  # noqa

@@ -4,6 +4,10 @@
 
 ### Updates
 
+- Improvement: Incompatable/outdated IR now rejected by Jaseci stack
+- Improvement: Indicator for being logged in in JSCTL
+- New Feature: Email action set
+- Major Feature: Async walkers
 - Deprecation: Stripe API soft removed.
 - Improvement: Improved the deref operator `*` to be more nimble
 - New Feature: Can now pluck lists of values from collections of nodes and edges.

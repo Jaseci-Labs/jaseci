@@ -79,3 +79,10 @@ class ObjectApi:
         else:
             ret["response"] = f"{mast} did not have access to {obj}"
         return ret
+
+    @Interface.public_api()
+    def info(self):
+        """Provide information about this instance of Jaseci"""
+        from jaseci import __version__, __creator__, __url__
+
+        return {"Version": __version__, "Creator": __creator__, "URL": __url__}
