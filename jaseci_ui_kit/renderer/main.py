@@ -20,8 +20,8 @@ def load_json(route: dict):
     return {}
 
 
-@jaseci_action(act_group=["ui"], aliases=[], allow_remote=True, use_get=True)
+@app.get("/site/{route}")
 async def site(request: Request, route: str):
     return templates.TemplateResponse(
-        "site/index.html", {"request": {}, "json": loaded_json[route]}
+        "site/index.html", {"request": request, "json": loaded_json[route]}
     )
