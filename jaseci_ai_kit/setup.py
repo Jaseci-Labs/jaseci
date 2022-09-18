@@ -3,7 +3,7 @@ from os.path import join
 
 
 def get_ver():
-    with open(join(".", "VERSION")) as version_file:
+    with open(join("./jaseci", "VERSION")) as version_file:
         return version_file.read().strip()
 
 

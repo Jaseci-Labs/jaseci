@@ -27,7 +27,7 @@ setup(
         "docstring-parser",
     ],
     package_data={
-        "": ["*.ini", "jac.g4"],
+        "": ["*.ini", "jac.g4", "VERSION"],
     },
     entry_points={"console_scripts": ["jsctl = jaseci.jsctl.jsctl:main"]},
 )
