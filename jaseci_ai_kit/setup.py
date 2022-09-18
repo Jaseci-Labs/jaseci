@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="jaseci_ai_kit",
-    version="1.3.4.8",
+    version="1.3.4.9",
     packages=find_packages(include=["jaseci_ai_kit", "jaseci_ai_kit.*"]),
     install_requires=[
         "jaseci",
