@@ -4,7 +4,7 @@
 
 ### Updates
 
-- Improvement: Incompatable/outdated IR now rejected by Jaseci stack
+- Improvement: Incompatible/outdated IR now rejected by Jaseci stack
 - Improvement: Indicator for being logged in in JSCTL
 - New Feature: Email action set
 - Major Feature: Async walkers

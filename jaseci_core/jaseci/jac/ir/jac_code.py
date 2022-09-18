@@ -2,14 +2,16 @@
 Mix in for jac code object in Jaseci
 """
 import json
-from lib2to3.pgen2 import grammar
 from jaseci.utils.utils import logger
 from jaseci.jac.ir.ast import Ast
 import hashlib
 from pathlib import Path
+from os.path import dirname
 
 # Used to check ir matches grammar of current Jaseci instance
-grammar_hash = hashlib.md5(Path("../jac.g4").read_text().encode()).hexdigest()
+grammar_hash = hashlib.md5(
+    Path(dirname(__file__) + "/../jac.g4").read_text().encode()
+).hexdigest()
 
 
 class JacJsonEnc(json.JSONEncoder):
@@ -43,16 +45,12 @@ class JacJsonDec(json.JSONDecoder):
 
 def jac_ast_to_ir(jac_ast):
     """Convert AST to IR string"""
-    return grammar_hash + "###" + json.dumps(cls=JacJsonEnc, obj=jac_ast)
+    return json.dumps(cls=JacJsonEnc, obj={"gram_hash": grammar_hash, "ir": jac_ast})
 
 
 def jac_ir_to_ast(ir):
     """Convert IR string to AST"""
-    ir = ir.split("###")
-    if len(ir) > 1 and ir[0] != grammar_hash:
-        logger.error("Incompatible IR for this version of Jaseci!")
-        return ""
-    return json.loads(cls=JacJsonDec, s=ir[-1])
+    return json.loads(cls=JacJsonDec, s=ir)["ir"]
 
 
 class JacCode:
