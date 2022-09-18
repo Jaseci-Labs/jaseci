@@ -3,7 +3,7 @@ from os.path import join
 
 
 def get_ver():
-    with open(join(".", "VERSION")) as version_file:
+    with open(join("./jaseci", "VERSION")) as version_file:
         return version_file.read().strip()
 
 
@@ -27,7 +27,7 @@ setup(
         "django-celery-beat>=2.2",
     ],
     package_data={
-        "": ["*.jac"],
+        "": ["*.jac", "VERSION"],
     },
     entry_points={"console_scripts": ["jsserv = jaseci_serv.manage:main"]},
 )
