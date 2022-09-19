@@ -3,16 +3,16 @@ Sentinel class for Jaseci
 
 Each sentinel has an id, name, timestamp and it's set of walkers.
 """
-from jaseci.element.element import element
-from jaseci.utils.utils import logger
-from jaseci.utils.id_list import id_list
-from jaseci.jac.ir.jac_code import jac_code, jac_ir_to_ast
-from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
-from jaseci.actor.walker import walker
-from jaseci.actor.architype import architype
+from jaseci.element.element import Element
+from jaseci.utils.utils import logger, ColCodes as Cc
+from jaseci.utils.id_list import IdList
+from jaseci.jac.ir.jac_code import JacCode, jac_ir_to_ast
+from jaseci.jac.interpreter.sentinel_interp import SentinelInterp
+from jaseci.actor.walker import Walker
+from jaseci.actor.architype import Architype
 
 
-class sentinel(element, jac_code, sentinel_interp):
+class Sentinel(Element, JacCode, SentinelInterp):
     """
     Sentinel class for Jaseci
 
@@ -22,24 +22,24 @@ class sentinel(element, jac_code, sentinel_interp):
 
     def __init__(self, *args, **kwargs):
         self.version = None
-        self.arch_ids = id_list(self)
-        self.walker_ids = id_list(self)
+        self.arch_ids = IdList(self)
+        self.walker_ids = IdList(self)
         self.global_vars = {}
         self.testcases = []
-        element.__init__(self, *args, **kwargs)
-        jac_code.__init__(self, code_ir=None)
-        sentinel_interp.__init__(self)
+        Element.__init__(self, *args, **kwargs)
+        JacCode.__init__(self, code_ir=None)
+        SentinelInterp.__init__(self)
         self.load_arch_defaults()
 
     def load_arch_defaults(self):
         self.arch_ids.add_obj(
-            architype(m_id=self._m_id, h=self._h, name="root", kind="node")
+            Architype(m_id=self._m_id, h=self._h, name="root", kind="node")
         )
         self.arch_ids.add_obj(
-            architype(m_id=self._m_id, h=self._h, name="generic", kind="node")
+            Architype(m_id=self._m_id, h=self._h, name="generic", kind="node")
         )
         self.arch_ids.add_obj(
-            architype(m_id=self._m_id, h=self._h, name="generic", kind="edge")
+            Architype(m_id=self._m_id, h=self._h, name="generic", kind="edge")
         )
 
     def reset(self):
@@ -50,8 +50,8 @@ class sentinel(element, jac_code, sentinel_interp):
         self.arch_ids.destroy_all()
         self.walker_ids.destroy_all()
         self.load_arch_defaults()
-        jac_code.reset(self)
-        sentinel_interp.reset(self)
+        JacCode.reset(self)
+        SentinelInterp.reset(self)
 
     def refresh(self):
         super().refresh()
@@ -151,7 +151,7 @@ class sentinel(element, jac_code, sentinel_interp):
             return arch.run()
         else:
             ret = arch.run()
-            element.destroy(arch)
+            Element.destroy(arch)
             return ret
 
     def check_in_arch_context(self, key_name, object):
@@ -176,10 +176,6 @@ class sentinel(element, jac_code, sentinel_interp):
         import sys
         import io
 
-        TY = "\033[33m"
-        TG = "\033[32m"
-        TR = "\033[31m"
-        EC = "\033[m"
         num_failed = 0
         for i in self.testcases:
             screen_out = [sys.stdout, sys.stderr]
@@ -189,7 +185,7 @@ class sentinel(element, jac_code, sentinel_interp):
             if i["graph_ref"]:
                 gph = self.run_architype(i["graph_ref"], kind="graph", caller=self)
             else:
-                gph = architype(
+                gph = Architype(
                     m_id=self._m_id,
                     h=self._h,
                     parent_id=self.id,
@@ -200,7 +196,7 @@ class sentinel(element, jac_code, sentinel_interp):
             if i["walker_ref"]:
                 wlk = self.spawn_walker(i["walker_ref"], caller=self)
             else:
-                wlk = walker(
+                wlk = Walker(
                     m_id=self._m_id,
                     h=self._h,
                     parent_id=self.id,
@@ -225,7 +221,9 @@ class sentinel(element, jac_code, sentinel_interp):
                     )
                 i["passed"] = True
                 if not silent:
-                    print(f"[{TG}PASSED{EC} in {TY}{time()-stime:.2f}s{EC}]")
+                    print(
+                        f"[{Cc.TG}PASSED{Cc.EC} in {Cc.TY}{time()-stime:.2f}s{Cc.EC}]"
+                    )
                 if detailed and not silent:
                     print("REPORT: " + pformat(wlk.report))
             except Exception as e:
@@ -233,7 +231,9 @@ class sentinel(element, jac_code, sentinel_interp):
                 i["passed"] = False
                 num_failed += 1
                 if not silent:
-                    print(f"[{TR}FAILED{EC} in {TY}{time()-stime:.2f}s{EC}]")
+                    print(
+                        f"[{Cc.TR}FAILED{Cc.EC} in {Cc.TY}{time()-stime:.2f}s{Cc.EC}]"
+                    )
                     print(f"{e}")
             for i in destroy_set:  # FIXME: destroy set not complete
                 i.destroy()

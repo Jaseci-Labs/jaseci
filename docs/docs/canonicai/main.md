@@ -826,7 +826,7 @@ jsctl load remote https://bi-enc.org
 This is the command use to run builtin jaseci kit modules that can be accessed anytime as long as you have jaseci installed on your system.
 
 ```
-jsctl load module JASECI_KIT_MODULE
+jsctl load module JASECI_AI_KIT_MODULE
 ```
 
 ### Tutorial on USE_QA
@@ -840,7 +840,7 @@ It is used for text classification. It requires no training data. However it req
 **How to load it as an action?**
 Above, we showed you how to load actions and now in this section we will show you how to implememt it by loading the use_qa actions. Once you run the command sucessfully you should be able to use all of it's functionality. The command for loading the actions is as follows:
 * ```jsctl```
-* ```actions load module jaseci_kit.use_qa```
+* ```actions load module jaseci_ai_kit.use_qa```
 
 ### <span style="color:red">TODO</span>:
 - [ ] Small example walker that uses the use_qa action to check it is correctly loaded and working.

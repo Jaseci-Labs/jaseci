@@ -1,7 +1,7 @@
 """Built in actions for Jaseci"""
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta, copy_func
-from jaseci.element.super_master import super_master
+from jaseci.element.super_master import SuperMaster
 import functools
 
 
@@ -42,12 +42,12 @@ def build_cmds():
     leaf is format: [api_name, func_sig, is_public, func_doc]
     """
 
-    for i in super_master.all_apis(None):
+    for i in SuperMaster.all_apis(None):
         func_name = "_".join(i["groups"])
         f = functools.partial(
             copy_func(interface_api, func_name),
             func_name,
-            i in super_master._public_api,
+            i in SuperMaster._public_api,
             i["sig"].parameters,
         )
         f.__name__ = func_name

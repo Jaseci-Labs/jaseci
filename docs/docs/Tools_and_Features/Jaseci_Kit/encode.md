@@ -8,7 +8,7 @@ The sentence level embeddings can then be used to calculate the similarity betwe
 
 
 ```
-actions load module jaseci_kit.use_enc
+actions load module jaseci_ai_kit.use_enc
 ```
 Running ``` actions list ```  will show the new modules loaded.
 

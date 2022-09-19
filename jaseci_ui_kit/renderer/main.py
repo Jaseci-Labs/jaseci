@@ -21,7 +21,7 @@ def load_json(route: dict):
 
 
 @app.get("/site/{route}")
-async def home(request: Request, route: str):
+async def site(request: Request, route: str):
     return templates.TemplateResponse(
-        "site/index.html", {"request": {}, "json": loaded_json[route]}
+        "site/index.html", {"request": request, "json": loaded_json[route]}
     )

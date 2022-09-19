@@ -1,10 +1,10 @@
 """
 Alias api as a mixin
 """
-from jaseci.api.interface import interface
+from jaseci.api.interface import Interface
 
 
-class alias_api:
+class AliasAPI:
     """
     Alias APIs for creating nicknames for UUIDs and other long strings
 
@@ -24,7 +24,7 @@ class alias_api:
     def __init__(self):
         self.alias_map = {}
 
-    @interface.private_api(cli_args=["name"])
+    @Interface.private_api(cli_args=["name"])
     def alias_register(self, name: str, value: str):
         """Create string to string alias mapping that caller can use.
 
@@ -44,7 +44,7 @@ class alias_api:
         self.save()
         return {"response": f"Alias from '{name}' to '{value}' set!"}
 
-    @interface.private_api()
+    @Interface.private_api()
     def alias_list(self):
         """List all string to string alias that caller can use.
 
@@ -61,7 +61,7 @@ class alias_api:
         """
         return self.alias_map
 
-    @interface.private_api(cli_args=["name"])
+    @Interface.private_api(cli_args=["name"])
     def alias_delete(self, name: str):
         """Delete an active string to string alias mapping.
 
@@ -84,7 +84,7 @@ class alias_api:
         else:
             return {"response": f"Alias {name} not present", "success": False}
 
-    @interface.private_api()
+    @Interface.private_api()
     def alias_clear(self):
         """Remove all string to string alias that client can use.
 

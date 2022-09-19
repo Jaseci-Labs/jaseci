@@ -1,21 +1,21 @@
-from jaseci.svc.meta_svc import meta_svc
-from jaseci.actor.sentinel import sentinel
-from jaseci.graph.graph import graph
+import io
+import sys
+from unittest import TestCase
 
 import jaseci.jac.tests.book_code as jtc
-import sys
-import io
-from unittest import TestCase
+from jaseci.actor.sentinel import Sentinel
+from jaseci.graph.graph import Graph
+from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper
 
 
-class jac_book_tests(TestCaseHelper, TestCase):
+class JacBookTests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
         super().setUp()
-        self.gph = graph(m_id="anon", h=meta_svc().hook())
-        self.sent = sentinel(m_id=self.gph._m_id, h=self.gph._h)
+        self.gph = Graph(m_id="anon", h=MetaService().hook())
+        self.sent = Sentinel(m_id=self.gph._m_id, h=self.gph._h)
         self.old_stdout = sys.stdout
         self.new_stdout = io.StringIO()
         sys.stdout = self.new_stdout

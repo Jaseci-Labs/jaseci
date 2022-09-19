@@ -1,18 +1,18 @@
 """
 Logger api as a mixin
 """
-from jaseci.api.interface import interface
+from jaseci.api.interface import Interface
 from jaseci.utils.utils import logger, app_logger
 from jaseci.utils.utils import connect_logger_handler
 from logging.handlers import HTTPHandler
 
 
-class logger_api:
+class LoggerApi:
     """
     APIs for Jaseci Logging configuration
     """
 
-    @interface.admin_api(cli_args=["host"])
+    @Interface.admin_api(cli_args=["host"])
     def logger_http_connect(self, host: str, port: int, url: str, log: str = "all"):
         """
         Connects internal logging to http(s) (log msgs sent via POSTs)
@@ -31,7 +31,7 @@ class logger_api:
             num += 1
         return [f"{num} http handlers added!"]
 
-    @interface.admin_api()
+    @Interface.admin_api()
     def logger_http_clear(self, log: str = "all"):
         """
         Connects internal logging to http(s) (log msgs sent via POSTs)
@@ -50,7 +50,7 @@ class logger_api:
                     num += 1
         return [f"{num} http handlers removed!"]
 
-    @interface.admin_api()
+    @Interface.admin_api()
     def logger_list(self):
         """
         Check active loggers

@@ -3,19 +3,19 @@ Variable scope manager for Jac
 
 Utility for all runtime interaction with variables in different scopes
 """
-from jaseci.utils.id_list import id_list
-from jaseci.jac.machine.jac_value import jac_value
+from jaseci.utils.id_list import IdList
+from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.machine.jac_value import jac_elem_wrap
 
 
-class jac_scope:
+class JacScope:
     def __init__(self, parent, has_obj, action_sets):
         self.parent = parent
         self.local_scope = {}
         self.has_obj = has_obj if has_obj else self
         self.context = {}
         self.action_sets = action_sets + [
-            id_list(parent, in_list=parent._h.global_action_list)
+            IdList(parent, in_list=parent._h.global_action_list)
         ]
         self.setup_actions()
 
@@ -55,9 +55,9 @@ class jac_scope:
         """Finds binding for variable if not in standard scope"""
         # check if var is in walker's context
         if "context" in self.has_obj.__dict__ and name in self.has_obj.context.keys():
-            return jac_value(self.parent, ctx=self.has_obj, name=name)
+            return JacValue(self.parent, ctx=self.has_obj, name=name)
         elif name in self.action_sets.keys():
-            return jac_value(self.parent, ctx=self.action_sets, name=name)
+            return JacValue(self.parent, ctx=self.action_sets, name=name)
         return None
 
     def get_live_var(self, name, create_mode=False):
@@ -65,12 +65,12 @@ class jac_scope:
         found = None
         # Lock for variable in various locations
         if name in self.local_scope.keys():
-            found = jac_value(self.parent, ctx=self.local_scope, name=name)
+            found = JacValue(self.parent, ctx=self.local_scope, name=name)
         else:
             found = self.find_live_attr(name)
         if found is None and create_mode:
             self.local_scope[name] = None
-            return jac_value(self.parent, ctx=self.local_scope, name=name)
+            return JacValue(self.parent, ctx=self.local_scope, name=name)
         if found:
             found.unwrap()
             return found
