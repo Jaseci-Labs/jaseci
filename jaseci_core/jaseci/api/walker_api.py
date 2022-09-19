@@ -294,18 +294,14 @@ class WalkerApi:
         along with the walker id and node id
         """
 
-        if key not in wlk.namespace_keys().values():
-            return self.bad_walk_response(["Not authorized to execute this walker"])
-        if global_sync:
-            self.sync_walker_from_global_sent(wlk)
-
-        walk = wlk.duplicate()
-        walk.refresh()
-        res = self.walker_execute(
-            wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
+        return self.walker_summon(
+            nd=nd,
+            wlk=wlk,
+            key=key,
+            ctx=ctx,
+            _req_ctx=_req_ctx,
+            global_sync=global_sync,
         )
-        walk.destroy()
-        return res
 
     def destroy(self):
         """

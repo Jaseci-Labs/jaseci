@@ -438,10 +438,13 @@ class Interp(MachineState):
                 self.report_custom = self.run_expression(kid[4]).value
             elif kid[2].token_text() == "error":
                 err = self.run_expression(kid[4]).value
-                self.runtime_errors.append(
-                    f'{err["mod"]}:{err["name"]} - line {err["line"]}, '
-                    + f'col {err["col"]} - rule {err["rule"]} - {err["msg"]}'
-                )
+                if isinstance(err, str):
+                    self.runtime_errors.append(err)
+                else:
+                    self.runtime_errors.append(
+                        f'{err["mod"]}:{err["name"]} - line {err["line"]}, '
+                        + f'col {err["col"]} - rule {err["rule"]} - {err["msg"]}'
+                    )
             else:
                 self.rt_error("Invalid report attribute to set", kid[2])
         else:
