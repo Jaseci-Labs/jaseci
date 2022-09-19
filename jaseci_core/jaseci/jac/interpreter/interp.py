@@ -35,33 +35,26 @@ class Interp(MachineState):
 
     def run_has_stmt(self, jac_ast, obj):
         """
-        has_stmt:
-                KW_HAS KW_PRIVATE? KW_ANCHOR? has_assign
-                (COMMA has_assign)* SEMI;
+        has_stmt: KW_HAS has_assign (COMMA has_assign)* SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
-        kid = kid[1:]
+        for i in kid:
+            if i.name == "has_assign":
+                self.run_has_assign(i, obj)
+
+    def run_has_assign(self, jac_ast, obj):
+        """
+        has_assign: KW_PRIVATE? KW_ANCHOR? (NAME | NAME EQ expression);
+        """
+        kid = self.set_cur_ast(jac_ast)
         is_private = False
         is_anchor = False
-        while True:
-            if kid[0].name == "KW_PRIVATE":
-                kid = kid[1:]
-                is_private = True
-            if kid[0].name == "KW_ANCHOR":
-                kid = kid[1:]
-                is_anchor = True
-            self.run_has_assign(kid[0], obj, is_private, is_anchor)
+        if kid[0].name == "KW_PRIVATE":
             kid = kid[1:]
-            if not len(kid) or kid[0].name != "COMMA":
-                break
-            else:
-                kid = kid[1:]
-
-    def run_has_assign(self, jac_ast, obj, is_private, is_anchor):
-        """
-        has_assign: NAME | NAME EQ expression;
-        """
-        kid = self.set_cur_ast(jac_ast)
+            is_private = True
+        if kid[0].name == "KW_ANCHOR":
+            kid = kid[1:]
+            is_anchor = True
         var_name = kid[0].token_text()
         var_val = None  # jac's null
         if len(kid) > 1:

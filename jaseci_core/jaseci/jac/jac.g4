@@ -68,10 +68,9 @@ graph_block_dot:
 
 has_root: KW_HAS KW_ANCHOR NAME SEMI;
 
-has_stmt:
-	KW_HAS KW_PRIVATE? KW_ANCHOR? has_assign (COMMA has_assign)* SEMI;
+has_stmt: KW_HAS has_assign (COMMA has_assign)* SEMI;
 
-has_assign: NAME | NAME EQ expression;
+has_assign: KW_PRIVATE? KW_ANCHOR? (NAME | NAME EQ expression);
 
 can_stmt:
 	KW_CAN dotted_name (preset_in_out event_clause)? (

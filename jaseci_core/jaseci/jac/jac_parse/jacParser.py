@@ -55,11 +55,11 @@ def serializedATN():
         buf.write("\3\25\3\25\3\25\3\25\3\25\3\25\3\25\3\25\3\25\3\25\3\25")
         buf.write("\5\25\u01d7\n\25\3\26\3\26\3\26\3\26\3\26\3\26\3\26\3")
         buf.write("\26\3\26\3\26\5\26\u01e3\n\26\3\27\3\27\3\27\3\27\3\27")
-        buf.write("\3\30\3\30\5\30\u01ec\n\30\3\30\5\30\u01ef\n\30\3\30\3")
-        buf.write("\30\3\30\7\30\u01f4\n\30\f\30\16\30\u01f7\13\30\3\30\3")
-        buf.write("\30\3\31\3\31\3\31\3\31\5\31\u01ff\n\31\3\32\3\32\3\32")
-        buf.write("\3\32\3\32\5\32\u0206\n\32\3\32\3\32\3\32\3\32\3\32\5")
-        buf.write("\32\u020d\n\32\7\32\u020f\n\32\f\32\16\32\u0212\13\32")
+        buf.write("\3\30\3\30\3\30\3\30\7\30\u01ee\n\30\f\30\16\30\u01f1")
+        buf.write("\13\30\3\30\3\30\3\31\5\31\u01f6\n\31\3\31\5\31\u01f9")
+        buf.write("\n\31\3\31\3\31\3\31\3\31\5\31\u01ff\n\31\3\32\3\32\3")
+        buf.write("\32\3\32\3\32\5\32\u0206\n\32\3\32\3\32\3\32\3\32\3\32")
+        buf.write("\5\32\u020d\n\32\7\32\u020f\n\32\f\32\16\32\u0212\13\32")
         buf.write("\3\32\3\32\3\32\3\32\3\32\5\32\u0219\n\32\3\32\5\32\u021c")
         buf.write("\n\32\3\33\3\33\5\33\u0220\n\33\3\33\3\33\3\34\3\34\5")
         buf.write("\34\u0226\n\34\3\34\3\34\3\34\5\34\u022b\n\34\3\35\3\35")
@@ -133,7 +133,7 @@ def serializedATN():
         buf.write("\3\2\2\2\34\u01a5\3\2\2\2\36\u01a9\3\2\2\2 \u01b8\3\2")
         buf.write('\2\2"\u01bc\3\2\2\2$\u01c1\3\2\2\2&\u01c6\3\2\2\2(\u01d6')
         buf.write("\3\2\2\2*\u01e2\3\2\2\2,\u01e4\3\2\2\2.\u01e9\3\2\2\2")
-        buf.write("\60\u01fe\3\2\2\2\62\u021b\3\2\2\2\64\u021d\3\2\2\2\66")
+        buf.write("\60\u01f5\3\2\2\2\62\u021b\3\2\2\2\64\u021d\3\2\2\2\66")
         buf.write("\u0223\3\2\2\28\u022c\3\2\2\2:\u0230\3\2\2\2<\u0238\3")
         buf.write("\2\2\2>\u024a\3\2\2\2@\u024c\3\2\2\2B\u0261\3\2\2\2D\u0263")
         buf.write("\3\2\2\2F\u026f\3\2\2\2H\u0281\3\2\2\2J\u0283\3\2\2\2")
@@ -274,15 +274,15 @@ def serializedATN():
         buf.write("\u01e3\3\2\2\2\u01e2\u01d8\3\2\2\2\u01e2\u01dd\3\2\2\2")
         buf.write("\u01e3+\3\2\2\2\u01e4\u01e5\7R\2\2\u01e5\u01e6\7Q\2\2")
         buf.write("\u01e6\u01e7\7f\2\2\u01e7\u01e8\7\60\2\2\u01e8-\3\2\2")
-        buf.write("\2\u01e9\u01eb\7R\2\2\u01ea\u01ec\7T\2\2\u01eb\u01ea\3")
-        buf.write("\2\2\2\u01eb\u01ec\3\2\2\2\u01ec\u01ee\3\2\2\2\u01ed\u01ef")
-        buf.write("\7Q\2\2\u01ee\u01ed\3\2\2\2\u01ee\u01ef\3\2\2\2\u01ef")
-        buf.write("\u01f0\3\2\2\2\u01f0\u01f5\5\60\31\2\u01f1\u01f2\7U\2")
-        buf.write("\2\u01f2\u01f4\5\60\31\2\u01f3\u01f1\3\2\2\2\u01f4\u01f7")
-        buf.write("\3\2\2\2\u01f5\u01f3\3\2\2\2\u01f5\u01f6\3\2\2\2\u01f6")
-        buf.write("\u01f8\3\2\2\2\u01f7\u01f5\3\2\2\2\u01f8\u01f9\7\60\2")
-        buf.write("\2\u01f9/\3\2\2\2\u01fa\u01ff\7f\2\2\u01fb\u01fc\7f\2")
-        buf.write("\2\u01fc\u01fd\7\61\2\2\u01fd\u01ff\5d\63\2\u01fe\u01fa")
+        buf.write("\2\u01e9\u01ea\7R\2\2\u01ea\u01ef\5\60\31\2\u01eb\u01ec")
+        buf.write("\7U\2\2\u01ec\u01ee\5\60\31\2\u01ed\u01eb\3\2\2\2\u01ee")
+        buf.write("\u01f1\3\2\2\2\u01ef\u01ed\3\2\2\2\u01ef\u01f0\3\2\2\2")
+        buf.write("\u01f0\u01f2\3\2\2\2\u01f1\u01ef\3\2\2\2\u01f2\u01f3\7")
+        buf.write("\60\2\2\u01f3/\3\2\2\2\u01f4\u01f6\7T\2\2\u01f5\u01f4")
+        buf.write("\3\2\2\2\u01f5\u01f6\3\2\2\2\u01f6\u01f8\3\2\2\2\u01f7")
+        buf.write("\u01f9\7Q\2\2\u01f8\u01f7\3\2\2\2\u01f8\u01f9\3\2\2\2")
+        buf.write("\u01f9\u01fe\3\2\2\2\u01fa\u01ff\7f\2\2\u01fb\u01fc\7")
+        buf.write("f\2\2\u01fc\u01fd\7\61\2\2\u01fd\u01ff\5d\63\2\u01fe\u01fa")
         buf.write("\3\2\2\2\u01fe\u01fb\3\2\2\2\u01ff\61\3\2\2\2\u0200\u0201")
         buf.write("\7V\2\2\u0201\u0205\58\35\2\u0202\u0203\5\66\34\2\u0203")
         buf.write("\u0204\5\64\33\2\u0204\u0206\3\2\2\2\u0205\u0202\3\2\2")
@@ -599,7 +599,7 @@ def serializedATN():
         buf.write("\u011b\u0120\u0124\u0129\u012d\u012f\u0138\u013e\u014a")
         buf.write("\u0155\u015a\u0163\u016a\u016f\u0177\u017b\u017f\u0181")
         buf.write("\u0185\u018f\u0194\u0198\u019c\u01b1\u01b8\u01bc\u01c1")
-        buf.write("\u01c6\u01d6\u01e2\u01eb\u01ee\u01f5\u01fe\u0205\u020c")
+        buf.write("\u01c6\u01d6\u01e2\u01ef\u01f5\u01f8\u01fe\u0205\u020c")
         buf.write("\u0210\u0218\u021b\u021f\u0225\u022a\u0235\u023d\u0244")
         buf.write("\u024a\u0261\u0269\u026d\u0272\u0278\u027e\u0281\u0296")
         buf.write("\u029c\u02b6\u02bc\u02c5\u02ca\u02cf\u02d6\u02dc\u02e9")
@@ -3031,12 +3031,6 @@ class jacParser(Parser):
         def SEMI(self):
             return self.getToken(jacParser.SEMI, 0)
 
-        def KW_PRIVATE(self):
-            return self.getToken(jacParser.KW_PRIVATE, 0)
-
-        def KW_ANCHOR(self):
-            return self.getToken(jacParser.KW_ANCHOR, 0)
-
         def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(jacParser.COMMA)
@@ -3063,35 +3057,21 @@ class jacParser(Parser):
             self.enterOuterAlt(localctx, 1)
             self.state = 487
             self.match(jacParser.KW_HAS)
-            self.state = 489
-            self._errHandler.sync(self)
-            _la = self._input.LA(1)
-            if _la == jacParser.KW_PRIVATE:
-                self.state = 488
-                self.match(jacParser.KW_PRIVATE)
-
-            self.state = 492
-            self._errHandler.sync(self)
-            _la = self._input.LA(1)
-            if _la == jacParser.KW_ANCHOR:
-                self.state = 491
-                self.match(jacParser.KW_ANCHOR)
-
-            self.state = 494
+            self.state = 488
             self.has_assign()
-            self.state = 499
+            self.state = 493
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la == jacParser.COMMA:
-                self.state = 495
+                self.state = 489
                 self.match(jacParser.COMMA)
-                self.state = 496
+                self.state = 490
                 self.has_assign()
-                self.state = 501
+                self.state = 495
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 502
+            self.state = 496
             self.match(jacParser.SEMI)
         except RecognitionException as re:
             localctx.exception = re
@@ -3119,6 +3099,12 @@ class jacParser(Parser):
         def expression(self):
             return self.getTypedRuleContext(jacParser.ExpressionContext, 0)
 
+        def KW_PRIVATE(self):
+            return self.getToken(jacParser.KW_PRIVATE, 0)
+
+        def KW_ANCHOR(self):
+            return self.getToken(jacParser.KW_ANCHOR, 0)
+
         def getRuleIndex(self):
             return jacParser.RULE_has_assign
 
@@ -3134,18 +3120,32 @@ class jacParser(Parser):
 
         localctx = jacParser.Has_assignContext(self, self._ctx, self.state)
         self.enterRule(localctx, 46, self.RULE_has_assign)
+        self._la = 0  # Token type
         try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 499
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if _la == jacParser.KW_PRIVATE:
+                self.state = 498
+                self.match(jacParser.KW_PRIVATE)
+
+            self.state = 502
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if _la == jacParser.KW_ANCHOR:
+                self.state = 501
+                self.match(jacParser.KW_ANCHOR)
+
             self.state = 508
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input, 43, self._ctx)
             if la_ == 1:
-                self.enterOuterAlt(localctx, 1)
                 self.state = 504
                 self.match(jacParser.NAME)
                 pass
 
             elif la_ == 2:
-                self.enterOuterAlt(localctx, 2)
                 self.state = 505
                 self.match(jacParser.NAME)
                 self.state = 506
