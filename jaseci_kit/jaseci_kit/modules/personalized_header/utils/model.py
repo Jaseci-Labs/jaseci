@@ -1,4 +1,3 @@
-import uuid
 from typing import Dict
 import torch.nn as nn
 
@@ -8,7 +7,6 @@ from .base import BaseModel
 class PersonalizedHead(BaseModel):
     def __init__(self, config: Dict, id: str = None):
         super().__init__()
-        self.id = id if id else str(uuid.uuid4())
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=config["embedding_length"],
             nhead=config["ph_nhead"],
