@@ -26,3 +26,15 @@ class PersonalizedHead(BaseModel):
         text_embedding_tensor = encoder_tensor[:, 0, :]
         scores = self.decoder(text_embedding_tensor)
         return scores
+
+class Yolov4(BaseModel):
+    def __init__(self, config: Dict, id: str = None):
+        super().__init__()
+        self.config = config
+        self.id = id
+        self.model = Darknet(config["cfg"], config["img_size"])
+        self.model.load_state_dict(torch.load(config["weights"], map_location="cpu")["model"])
+        self.model.to(self.device).eval()
+
+    def forward(self, x):
+        return self.model(x)
