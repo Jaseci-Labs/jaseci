@@ -27,7 +27,7 @@ setup(
         "django-celery-beat>=2.2",
     ],
     package_data={
-        "": ["*.jac", "*.yaml", "*.ini", "VERSION"],
+        "": ["*.jac", "VERSION"],
     },
     entry_points={"console_scripts": ["jsserv = jaseci_serv.manage:main"]},
 )
