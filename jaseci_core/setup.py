@@ -25,9 +25,13 @@ setup(
         "stripe",
         "pydantic",
         "docstring-parser",
+        "prometheus_api_client==0.5.1",
+        "prometheus-client==0.14.1",
+        "kubernetes==23.6.0",
     ],
     package_data={
-        "": ["*.ini", "jac.g4", "VERSION"],
+        "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
     },
     entry_points={"console_scripts": ["jsctl = jaseci.jsctl.jsctl:main"]},
+    include_package_data=True,
 )
