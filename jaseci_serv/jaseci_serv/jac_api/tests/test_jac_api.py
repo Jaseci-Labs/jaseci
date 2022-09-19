@@ -1578,7 +1578,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
         self.assertIn(
             "zsb:walker_exception_no_try_else - line 6,"
-            " col 20 - rule atom - Internal Exception: ",
+            " col 16 - rule NAME - Internal Exception: ",
             res["errors"][0],
         )
 
@@ -1590,10 +1590,9 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertFalse("stack_trace" in res)
         self.assertEqual("walker_exception_with_try_else", res["report"][0]["name"])
         self.assertEqual(14, res["report"][0]["line"])
-        self.assertEqual(23, res["report"][0]["col"])
+        self.assertEqual(20, res["report"][0]["col"])
         self.assertIn(
-            "zsb:walker_exception_with_try_else -"
-            " line 14, col 23 - rule atom_trailer - ",
+            "zsb:walker_exception_with_try_else -" " line 14, col 20 - rule NAME - ",
             res["errors"][0],
         )
 
@@ -1611,10 +1610,10 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             "walker_exception_with_try_else_multiple_line", res["report"][0]["name"]
         )
         self.assertEqual(32, res["report"][0]["line"])
-        self.assertEqual(23, res["report"][0]["col"])
+        self.assertEqual(20, res["report"][0]["col"])
         self.assertIn(
             "zsb:walker_exception_with_try_else_multiple_line "
-            "- line 32, col 23 - rule atom_trailer - ",
+            "- line 32, col 20 - rule NAME - ",
             res["errors"][0],
         )
 

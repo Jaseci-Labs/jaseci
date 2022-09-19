@@ -922,16 +922,9 @@ class Interp(MachineState):
         kid = self.set_cur_ast(jac_ast)
         _type = type(atom_res.value).__name__
         try:
-            return getattr(self, f"{_type}_built_in")(jac_ast, kid, atom_res)
-        except AttributeError as e:
-            if not hasattr(self, f"{_type}_built_in"):
-                self.rt_error(
-                    f"{_type} has no built-in {jac_ast.get_text()}",
-                    jac_ast,
-                )
-            else:
-                self.rt_error(f"{e}", jac_ast)
-            return
+            return getattr(self, f"{_type}_built_in")(kid, atom_res)
+        except Exception as e:
+            self.jac_try_exception(e, kid)
 
     def run_cast_built_in(self, jac_ast, atom_res):
         """
@@ -1045,11 +1038,11 @@ class Interp(MachineState):
             kid = kid[1:]
             if kid[0].name == "DBL_COLON":
                 kid = kid[1:]
-            return self.dict_built_in(jac_ast, kid, atom_res)
+            return self.dict_built_in(kid, atom_res)
 
         return atom_res
 
-    def dict_built_in(self, jac_ast, kid, atom_res):
+    def dict_built_in(self, kid, atom_res):
         """
         actual dict built-in
         """
@@ -1062,6 +1055,9 @@ class Interp(MachineState):
                     param_list = []
                     if kid[2].name == "expr_list":
                         param_list = self.run_expr_list(kid[2]).value
+                        # manually setting current ast to realign after getting params
+                        # run_expr_list will throw before this line if encountered error
+                        self.set_cur_ast(kid[0])
                     return JacValue(
                         self,
                         value=act.trigger(param_list, self._jac_scope, self),
@@ -1100,8 +1096,7 @@ class Interp(MachineState):
                     if result:
                         return result
         except Exception as e:
-            self.rt_error(f"{e}", jac_ast)
-        self.rt_error(f"Call to {op} is invalid.", jac_ast)
+            self.jac_try_exception(e, kid[0])
 
         return atom_res
 
@@ -1128,9 +1123,9 @@ class Interp(MachineState):
             kid = kid[1:]
             if kid[0].name == "DBL_COLON":
                 kid = kid[1:]
-            return self.list_built_in(jac_ast, kid, atom_res)
+            return self.list_built_in(kid, atom_res)
 
-    def list_built_in(self, jac_ast, kid, atom_res):
+    def list_built_in(self, kid, atom_res):
         """
         actual list built-in
         """
@@ -1182,8 +1177,8 @@ class Interp(MachineState):
                 if result:
                     return result
         except Exception as e:
-            self.rt_error(f"{e}", jac_ast)
-        self.rt_error(f"Call to {op} is invalid.", jac_ast)
+            self.jac_try_exception(e, kid[0])
+
         return atom_res
 
     def run_str_built_in(self, jac_ast, atom_res):
@@ -1199,9 +1194,9 @@ class Interp(MachineState):
         kid = kid[1:]
         if kid[0].name == "DBL_COLON":
             kid = kid[1:]
-        return self.str_built_in(jac_ast, kid, atom_res)
+        return self.str_built_in(kid, atom_res)
 
-    def str_built_in(self, jac_ast, kid, atom_res):
+    def str_built_in(self, kid, atom_res):
         """
         actual str built-in
         """
@@ -1278,8 +1273,8 @@ class Interp(MachineState):
                 if result:
                     return result
         except Exception as e:
-            self.rt_error(f"{e}", jac_ast)
-        self.rt_error(f"Call to {str_op} is invalid.", jac_ast)
+            self.jac_try_exception(e, kid[0])
+
         return atom_res
 
     def run_node_edge_ref(self, jac_ast):
