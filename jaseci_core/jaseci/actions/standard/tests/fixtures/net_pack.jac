@@ -1,4 +1,4 @@
-node simple: has id;
+node simple: has id, anchor anc;
 global count=0;
 
 walker pack_it {
