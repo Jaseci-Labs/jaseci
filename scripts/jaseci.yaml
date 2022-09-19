@@ -9,7 +9,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   namespace: default
-  name: jsorc
+  name: jaseci-orc
 rules:
   - apiGroups: ["v1", "apps"]
     resources: ["pods", "deployments", "services", "deployments.apps"]
@@ -18,7 +18,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: jsorc-rolebinding
+  name: jaseci-orc-rolebinding
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -26,7 +26,7 @@ subjects:
     namespace: default
 roleRef:
   kind: ClusterRole
-  name: jsorc
+  name: jaseci-orc
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: v1
