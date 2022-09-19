@@ -57,7 +57,9 @@ class JacScope:
         if "context" in self.has_obj.__dict__ and name in self.has_obj.context.keys():
             return JacValue(self.parent, ctx=self.has_obj, name=name)
         elif name in self.action_sets.keys():
-            return JacValue(self.parent, ctx=self.action_sets, name=name)
+            return JacValue(
+                self.parent, ctx=self.action_sets, name=name, for_action=True
+            )
         return None
 
     def get_live_var(self, name, create_mode=False):

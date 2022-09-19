@@ -1056,34 +1056,49 @@ class Interp(MachineState):
         result = None
         op = kid[0].token_text()
         try:
-            if op == "items":
-                result = JacValue(self, value=list(map(list, atom_res.value.items())))
-            elif op == "copy":
-                result = JacValue(self, value=atom_res.value.copy())
-            elif op == "deepcopy":
-                result = JacValue(self, value=deepcopy(atom_res.value))
-            elif op == "keys":
-                result = JacValue(self, value=list(atom_res.value.keys()))
-            elif op == "clear":
-                result = JacValue(self, value=atom_res.value.clear())
-            elif op == "popitem":
-                result = JacValue(self, value=list(atom_res.value.popitem()))
-            elif op == "values":
-                result = JacValue(self, value=list(atom_res.value.values()))
-            if result:
-                if len(kid) > 1:
-                    self.rt_warn(f"{op} does not take parameters, ignoring", kid[2])
-                return result
-            if len(kid) > 1:
-                args = self.run_expr_list(kid[2]).value
-                if op == "pop":
-                    result = JacValue(self, value=atom_res.value.pop(*args))
-                elif op == "update":
-                    result = JacValue(self, value=atom_res.value.update(*args))
-                elif op == "get":
-                    result = JacValue(self, value=atom_res.value.get(*args))
+            if atom_res.for_action:
+                act = atom_res.value.get(op, None)
+                if act:
+                    param_list = []
+                    if kid[2].name == "expr_list":
+                        param_list = self.run_expr_list(kid[2]).value
+                    return JacValue(
+                        self,
+                        value=act.trigger(param_list, self._jac_scope, self),
+                    )
+                else:
+                    self.rt_error("Unable to execute ability", kid[0])
+            else:
+                if op == "items":
+                    result = JacValue(
+                        self, value=list(map(list, atom_res.value.items()))
+                    )
+                elif op == "copy":
+                    result = JacValue(self, value=atom_res.value.copy())
+                elif op == "deepcopy":
+                    result = JacValue(self, value=deepcopy(atom_res.value))
+                elif op == "keys":
+                    result = JacValue(self, value=list(atom_res.value.keys()))
+                elif op == "clear":
+                    result = JacValue(self, value=atom_res.value.clear())
+                elif op == "popitem":
+                    result = JacValue(self, value=list(atom_res.value.popitem()))
+                elif op == "values":
+                    result = JacValue(self, value=list(atom_res.value.values()))
                 if result:
+                    if len(kid) > 1:
+                        self.rt_warn(f"{op} does not take parameters, ignoring", kid[2])
                     return result
+                if len(kid) > 1:
+                    args = self.run_expr_list(kid[2]).value
+                    if op == "pop":
+                        result = JacValue(self, value=atom_res.value.pop(*args))
+                    elif op == "update":
+                        result = JacValue(self, value=atom_res.value.update(*args))
+                    elif op == "get":
+                        result = JacValue(self, value=atom_res.value.get(*args))
+                    if result:
+                        return result
         except Exception as e:
             self.rt_error(f"{e}", jac_ast)
         self.rt_error(f"Call to {op} is invalid.", jac_ast)

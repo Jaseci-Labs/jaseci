@@ -130,7 +130,9 @@ class JacValue:
     A reference to a variable in context dict that is common for elements
     """
 
-    def __init__(self, parent, value=None, ctx=None, name=None, end=None):
+    def __init__(
+        self, parent, value=None, ctx=None, name=None, end=None, for_action=False
+    ):
         """
         Abstraction of all Jac types, ctx and name serve as obj[key/idx]
         end is for idx ranges for list slices
@@ -141,6 +143,7 @@ class JacValue:
         self.name = name
         self.end = end
         self.value = self.setup_value(value)
+        self.for_action = for_action
 
     def setup_value(self, value):
         if isinstance(self.ctx, Element):
