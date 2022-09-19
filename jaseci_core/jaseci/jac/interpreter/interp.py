@@ -906,13 +906,32 @@ class Interp(MachineState):
     def run_built_in(self, jac_ast, atom_res):
         """
         built_in:
-            cast_built_in
-            | obj_built_in
+            str_built_in
             | dict_built_in
             | list_built_in
-            | string_built_in;
+            | obj_built_in
+            | cast_built_in
+            | type_built_in;
         """
         return self.run_rule(jac_ast.kid[0], atom_res)
+
+    def run_type_built_in(self, jac_ast, atom_res):
+        """
+        type_built_in: NAME LPAREN expr_list? RPAREN;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        _type = type(atom_res.value).__name__
+        try:
+            return getattr(self, f"{_type}_built_in")(jac_ast, kid, atom_res)
+        except AttributeError as e:
+            if not hasattr(self, f"{_type}_built_in"):
+                self.rt_error(
+                    f"{_type} has no built-in {jac_ast.get_text()}",
+                    jac_ast,
+                )
+            else:
+                self.rt_error(f"{e}", jac_ast)
+            return
 
     def run_cast_built_in(self, jac_ast, atom_res):
         """
@@ -1026,42 +1045,48 @@ class Interp(MachineState):
             kid = kid[1:]
             if kid[0].name == "DBL_COLON":
                 kid = kid[1:]
-            result = None
-            op = kid[0].token_text()
-            try:
-                if op == "items":
-                    result = JacValue(
-                        self, value=list(map(list, atom_res.value.items()))
-                    )
-                elif op == "copy":
-                    result = JacValue(self, value=atom_res.value.copy())
-                elif op == "deepcopy":
-                    result = JacValue(self, value=deepcopy(atom_res.value))
-                elif op == "keys":
-                    result = JacValue(self, value=list(atom_res.value.keys()))
-                elif op == "clear":
-                    result = JacValue(self, value=atom_res.value.clear())
-                elif op == "popitem":
-                    result = JacValue(self, value=list(atom_res.value.popitem()))
-                elif op == "values":
-                    result = JacValue(self, value=list(atom_res.value.values()))
-                if result:
-                    if len(kid) > 1:
-                        self.rt_warn(f"{op} does not take parameters, ignoring", kid[2])
-                    return result
+            return self.dict_built_in(jac_ast, kid, atom_res)
+
+        return atom_res
+
+    def dict_built_in(self, jac_ast, kid, atom_res):
+        """
+        actual dict built-in
+        """
+        result = None
+        op = kid[0].token_text()
+        try:
+            if op == "items":
+                result = JacValue(self, value=list(map(list, atom_res.value.items())))
+            elif op == "copy":
+                result = JacValue(self, value=atom_res.value.copy())
+            elif op == "deepcopy":
+                result = JacValue(self, value=deepcopy(atom_res.value))
+            elif op == "keys":
+                result = JacValue(self, value=list(atom_res.value.keys()))
+            elif op == "clear":
+                result = JacValue(self, value=atom_res.value.clear())
+            elif op == "popitem":
+                result = JacValue(self, value=list(atom_res.value.popitem()))
+            elif op == "values":
+                result = JacValue(self, value=list(atom_res.value.values()))
+            if result:
                 if len(kid) > 1:
-                    args = self.run_expr_list(kid[2]).value
-                    if op == "pop":
-                        result = JacValue(self, value=atom_res.value.pop(*args))
-                    elif op == "update":
-                        result = JacValue(self, value=atom_res.value.update(*args))
-                    elif op == "get":
-                        result = JacValue(self, value=atom_res.value.get(*args))
-                    if result:
-                        return result
-            except Exception as e:
-                self.rt_error(f"{e}", jac_ast)
-            self.rt_error(f"Call to {op} is invalid.", jac_ast)
+                    self.rt_warn(f"{op} does not take parameters, ignoring", kid[2])
+                return result
+            if len(kid) > 1:
+                args = self.run_expr_list(kid[2]).value
+                if op == "pop":
+                    result = JacValue(self, value=atom_res.value.pop(*args))
+                elif op == "update":
+                    result = JacValue(self, value=atom_res.value.update(*args))
+                elif op == "get":
+                    result = JacValue(self, value=atom_res.value.get(*args))
+                if result:
+                    return result
+        except Exception as e:
+            self.rt_error(f"{e}", jac_ast)
+        self.rt_error(f"Call to {op} is invalid.", jac_ast)
 
         return atom_res
 
@@ -1088,65 +1113,67 @@ class Interp(MachineState):
             kid = kid[1:]
             if kid[0].name == "DBL_COLON":
                 kid = kid[1:]
-            result = None
-            op = kid[0].token_text()
-            try:
-                if op == "reverse":
-                    result = JacValue(self, value=atom_res.value.reverse())
-                elif op == "reversed":
-                    result = JacValue(self, value=list(reversed(atom_res.value)))
-                elif op == "copy":
-                    result = JacValue(self, value=atom_res.value.copy())
-                elif op == "deepcopy":
-                    result = JacValue(self, value=deepcopy(atom_res.value))
-                elif op == "sort":
-                    result = JacValue(self, value=atom_res.value.sort())
-                elif op == "clear":
-                    result = JacValue(self, value=atom_res.value.clear())
-                elif op == "max":
-                    result = JacValue(self, value=max(atom_res.value))
-                elif op == "min":
-                    result = JacValue(self, value=min(atom_res.value))
-                elif op == "idx_of_max":
-                    result = JacValue(
-                        self, value=atom_res.value.index(max(atom_res.value))
-                    )
-                elif op == "idx_of_min":
-                    result = JacValue(
-                        self, value=atom_res.value.index(min(atom_res.value))
-                    )
-                elif len(kid) < 2 and op == "pop":
-                    result = JacValue(self, value=atom_res.value.pop())
-                if result:
-                    if len(kid) > 1:
-                        self.rt_warn(f"{op} does not take parameters, ignoring", kid[2])
-                    return result
+            return self.list_built_in(jac_ast, kid, atom_res)
+
+    def list_built_in(self, jac_ast, kid, atom_res):
+        """
+        actual list built-in
+        """
+        result = None
+        op = kid[0].token_text()
+        try:
+            if op == "reverse":
+                result = JacValue(self, value=atom_res.value.reverse())
+            elif op == "reversed":
+                result = JacValue(self, value=list(reversed(atom_res.value)))
+            elif op == "copy":
+                result = JacValue(self, value=atom_res.value.copy())
+            elif op == "deepcopy":
+                result = JacValue(self, value=deepcopy(atom_res.value))
+            elif op == "sort":
+                result = JacValue(self, value=atom_res.value.sort())
+            elif op == "clear":
+                result = JacValue(self, value=atom_res.value.clear())
+            elif op == "max":
+                result = JacValue(self, value=max(atom_res.value))
+            elif op == "min":
+                result = JacValue(self, value=min(atom_res.value))
+            elif op == "idx_of_max":
+                result = JacValue(self, value=atom_res.value.index(max(atom_res.value)))
+            elif op == "idx_of_min":
+                result = JacValue(self, value=atom_res.value.index(min(atom_res.value)))
+            elif len(kid) < 2 and op == "pop":
+                result = JacValue(self, value=atom_res.value.pop())
+            if result:
                 if len(kid) > 1:
-                    args = self.run_expr_list(kid[2]).value
-                    if op == "index":
-                        result = JacValue(self, value=atom_res.value.index(*args))
-                    elif op == "append":
-                        result = JacValue(self, value=atom_res.value.append(*args))
-                    elif op == "extend":
-                        result = JacValue(self, value=atom_res.value.extend(*args))
-                    elif op == "insert":
-                        result = JacValue(self, value=atom_res.value.insert(*args))
-                    elif op == "remove":
-                        result = JacValue(self, value=atom_res.value.remove(*args))
-                    elif op == "count":
-                        result = JacValue(self, value=atom_res.value.count(*args))
-                    elif op == "pop":
-                        result = JacValue(self, value=atom_res.value.pop(*args))
-                    if result:
-                        return result
-            except Exception as e:
-                self.rt_error(f"{e}", jac_ast)
-            self.rt_error(f"Call to {op} is invalid.", jac_ast)
+                    self.rt_warn(f"{op} does not take parameters, ignoring", kid[2])
+                return result
+            if len(kid) > 1:
+                args = self.run_expr_list(kid[2]).value
+                if op == "index":
+                    result = JacValue(self, value=atom_res.value.index(*args))
+                elif op == "append":
+                    result = JacValue(self, value=atom_res.value.append(*args))
+                elif op == "extend":
+                    result = JacValue(self, value=atom_res.value.extend(*args))
+                elif op == "insert":
+                    result = JacValue(self, value=atom_res.value.insert(*args))
+                elif op == "remove":
+                    result = JacValue(self, value=atom_res.value.remove(*args))
+                elif op == "count":
+                    result = JacValue(self, value=atom_res.value.count(*args))
+                elif op == "pop":
+                    result = JacValue(self, value=atom_res.value.pop(*args))
+                if result:
+                    return result
+        except Exception as e:
+            self.rt_error(f"{e}", jac_ast)
+        self.rt_error(f"Call to {op} is invalid.", jac_ast)
         return atom_res
 
-    def run_string_built_in(self, jac_ast, atom_res):
+    def run_str_built_in(self, jac_ast, atom_res):
         """
-        string_built_in:
+        str_built_in:
         (TYP_STRING DBL_COLON | STR_DBL_COLON) NAME (
                 LPAREN expr_list RPAREN
         )?;
@@ -1157,6 +1184,12 @@ class Interp(MachineState):
         kid = kid[1:]
         if kid[0].name == "DBL_COLON":
             kid = kid[1:]
+        return self.str_built_in(jac_ast, kid, atom_res)
+
+    def str_built_in(self, jac_ast, kid, atom_res):
+        """
+        actual str built-in
+        """
         result = None
         str_op = kid[0].token_text()
         try:

@@ -219,11 +219,14 @@ ref: '&' atom;
 deref: STAR_MUL atom;
 
 built_in:
-	| string_built_in
+	str_built_in
 	| dict_built_in
 	| list_built_in
 	| obj_built_in
-	| cast_built_in;
+	| cast_built_in
+	| type_built_in;
+
+type_built_in: NAME LPAREN expr_list? RPAREN;
 
 cast_built_in: any_type;
 
@@ -242,7 +245,7 @@ list_built_in:
 		LPAREN expr_list RPAREN
 	)?;
 
-string_built_in:
+str_built_in:
 	(TYP_STRING DBL_COLON | STR_DBL_COLON) NAME (
 		LPAREN expr_list RPAREN
 	)?;
