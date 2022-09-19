@@ -45,6 +45,7 @@ Trainer:
     early_stop: 10
     tensorboard: true
 
+# Model Inferencing Configurations
 Inference:
   weights: ""
   preprocess:
@@ -53,6 +54,7 @@ Inference:
   postprocess:
     type: PostProcessor
     args: {}
+
 # # Logger Configurations
 # Logger:
 #   version: 1

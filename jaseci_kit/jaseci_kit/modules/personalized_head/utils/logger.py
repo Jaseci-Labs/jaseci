@@ -86,6 +86,7 @@ class TensorboardWriter():
             return attr
 
 
+# FIXME: dictConfig is not loading
 def setup_logging(save_dir, log_config=None, default_level=logging.INFO):
     """
     Setup logging configuration

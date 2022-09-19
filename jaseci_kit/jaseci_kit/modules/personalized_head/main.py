@@ -1,34 +1,99 @@
-### PH Start
-'''
-TODO: Personalized Header Initialization. (create_header)
+from typing import Any, Dict
+from jaseci.actions.live_actions import jaseci_action
+import warnings
+import os
+import traceback
+from fastapi import HTTPException
 
-Args: 
----- YAML file for the personal header architecture : str
----- output_type: str ('tensor'/'list') - this will be helpful if are compounding more than 2 modules
----- Location to the weights : str
-Return:
----- ph object
+from utils import read_yaml
+from inference import InferenceEngine
 
-Remarks: Weights will not be loaded yet. Only the Model structure will be loaded.
-'''
 
-''' (PH Object Method)
-TODO: forward propogation. (forward)
+MODEL_NOT_FOUND = "No Active model found. Please create a model first using create_head."
 
-Args:
----- input: tensor/list
-Return:
----- output: output_type
 
-Remarks: Weights will be loaded oncall of predict. Allowing multiple users to use the service again and again
-'''
+warnings.filterwarnings("ignore")
 
-'''(PH Object Method)
-TODO: backward propogation. (backward)
-'''
-### PH End
 
-### Module Compositor Start
+def setup():
+    global config, ie
+    dirname = os.path.dirname(__file__)
+    config = read_yaml(os.path.join(dirname, "config.yaml"))
+    ie = None
+
+
+setup()
+
+### Start of PersonalizedHead Actions ###
+
+
+@jaseci_action(act_group=["personalized_head"], allow_remote=True)
+def create_head(new_config: Dict = None):
+    '''
+    Create a personalized head. This will create a new inference engine.
+    @param new_config: new config to be used for the head
+    '''
+    try:
+        global ie, config
+        if new_config:
+            config = {**config, **new_config}
+        ie = InferenceEngine(config, "ph")
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["personalized_head"], allow_remote=True)
+def predict(data: Any) -> Any:
+    '''
+    Predict using the current active model.
+    @param data: data to be used for prediction
+    '''
+    try:
+        global ie
+        if ie:
+            return int(ie.predict(data).argmax())
+        else:
+            raise Exception(MODEL_NOT_FOUND)
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["personalized_head"], allow_remote=True)
+def train(new_config: Dict = None):
+    '''
+    Train the current active model.
+    @param new_config: new config to be used for training
+    '''
+    try:
+        global ie, config
+        if new_config:
+            config = {**config, **new_config}
+        # TODO: train the model
+        # TODO: return Metrics
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["personalized_head"], allow_remote=True)
+def load_weights(path: str):
+    try:
+        global ie
+        if ie:
+            ie.load_weights(path)
+            # TODO: Update the Configuration File with new weights
+        else:
+            raise Exception(MODEL_NOT_FOUND)
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+### End of PersonalizedHead Actions ###
+
+
+# Module Compositor Start
 '''
 TODO: Compositor creator (create_composite)
 
@@ -52,7 +117,7 @@ TODO: train (train)
 Args:
 ---- dataset
 '''
-### Module Compositor End
+# Module Compositor End
 
 # action load compositor
 # can compositor.create_composite
@@ -66,3 +131,7 @@ Args:
 
 # similar image ---> text ----> image
 # image, imge2
+
+if __name__ == "__main__":
+    from jaseci.actions.remote_actions import launch_server
+    launch_server(port=8000)
