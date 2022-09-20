@@ -93,45 +93,6 @@ def load_weights(path: str):
 ### End of PersonalizedHead Actions ###
 
 
-# Module Compositor Start
-'''
-TODO: Compositor creator (create_composite)
-
-Args:
----- List of Modules: list
----- parameters: list<dict>
-'''
-
-'''
-TODO: predict (predict)
-
-Args:
----- input
-Return:
----- output
-'''
-
-'''
-TODO: train (train)
-
-Args:
----- dataset
-'''
-# Module Compositor End
-
-# action load compositor
-# can compositor.create_composite
-
-# create_compistor([use_enc, personalized_header],["", {
-#     yaml:
-#     ajdnas:
-# }])
-# compositor.predict('user_1', input) --> output;
-# compositor.train(dataset, user_1);
-
-# similar image ---> text ----> image
-# image, imge2
-
 if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
     launch_server(port=8000)

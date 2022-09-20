@@ -7,6 +7,7 @@ class PostProcessor:
         None
 
     def process(self, output):
+        output = torch.argmax(output, dim=1)
         return output
 
 
