@@ -16,15 +16,15 @@ import uuid
 class Node(Element, Anchored):
     """Node class for Jaseci"""
 
-    def __init__(self, dimension=0, *args, **kwargs):
+    def __init__(self, dimension=0, **kwargs):
         self.edge_ids = IdList(self)
         self.parent_node_ids = IdList(self)
         self.member_node_ids = IdList(self)
         self.dimension = dimension  # Nodes are always hdgd 0
         self.context = {}
-
-        Anchored.__init__(self)
-        Element.__init__(self, *args, **kwargs)
+        super().__init__(**kwargs)
+        # Anchored.__init__(self, **kwargs)
+        # Element.__init__(self, **kwargs)
 
     def attach(self, node_obj, edge_set=None, as_outbound=True, as_bidirected=False):
         """

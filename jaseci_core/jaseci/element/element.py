@@ -46,13 +46,10 @@ class Element(Hookable):
 
     def __init__(
         self,
-        m_id,
-        h,
         parent_id=None,
         name="basic",
         kind="generic",
         auto_save=True,
-        *args,
         **kwargs,
     ):
         self.name = name
@@ -61,9 +58,9 @@ class Element(Hookable):
         self.j_parent = parent_id.urn if parent_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
         self.j_type = camel_to_snake(type(self).__name__)
+        super().__init__(**kwargs)
         if self.is_master():
-            m_id = self.jid
-        Hookable.__init__(self, h, m_id, *args, **kwargs)
+            self.set_master(self.jid)
         if auto_save:
             self.save()
 

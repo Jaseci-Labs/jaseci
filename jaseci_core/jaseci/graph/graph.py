@@ -9,9 +9,13 @@ from jaseci.utils.id_list import IdList
 class Graph(Node):
     """Graph class for Jaseci"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         self.hd_node_ids = IdList(self)
-        Node.__init__(self, name="root", kind="node", *args, **kwargs)
+        super().__init__(**kwargs)
+        self.name = "root"
+        self.kind = "node"
+
+        # Node.__init__(self, name="root", kind="node", **kwargs)
 
     def get_all_nodes(self, node_list=None):
         """

@@ -137,10 +137,10 @@ class Sharable:
 class Hookable(Sharable):
     """Utility class for objects that are savable to DBs and other stores"""
 
-    def __init__(self, h, m_id, persist: bool = True, *args, **kwargs):
+    def __init__(self, h, persist: bool = True, **kwargs):
         self._h = h  # hook for storing and loading to persistent store
         self._persist = persist
-        Sharable.__init__(self, m_id, *args, **kwargs)
+        super().__init__(**kwargs)
 
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""
