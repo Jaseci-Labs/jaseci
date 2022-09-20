@@ -1480,6 +1480,13 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         task_id = res["task_id"]
 
         res = self.client.get(
+            reverse("jac_api:walker_queue_wait") + f"?task_id={task_id}"
+        ).data
+
+        self.assertEqual("SUCCESS", res["status"])
+        self.assertEquals({"sample": "sample"}, res["result"]["report"][0]["ctx"])
+
+        res = self.client.get(
             reverse("jac_api:walker_queue_check") + f"?task_id={task_id}"
         ).data
 
