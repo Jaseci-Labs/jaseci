@@ -11,13 +11,14 @@ import uuid
 class Anchored:
     """Utility class for objects that hold anchor values"""
 
-    def __init__(self):
-        self.anchor = None
+    def __init__(self, sent):
+        self._snt = sent
 
     def anchor_value(self):
         """Returns value of anchor context object"""
-        if self.anchor:
-            return self.context[self.anchor]
+        if self._snt is not None:
+            if 0:
+                return self.context[self.anchor]
         return None
 
 

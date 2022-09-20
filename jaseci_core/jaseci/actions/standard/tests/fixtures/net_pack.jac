@@ -1,4 +1,4 @@
-node simple: has id, anchor anc;
+node simple: has id, anchor anc=5.4, private priv="Test";
 global count=0;
 
 walker pack_it {
@@ -90,5 +90,25 @@ walker pack_it_destroy {
         net.pack(to_pack, true);
     }
     take -->;
+    report here;
+}
+
+walker pack_it_anc_priv {
+    has to_pack=[], p;
+    with entry {
+        t=here;
+        to_pack.l::append(here);
+        for i=0 to i<5 by i+=1 {
+            to_pack.l::append(
+                spawn t --> node::simple(id=global.count)
+            );
+            t=spawn t --> node::simple(id=global.count);
+            to_pack.l::append(t);
+            global.count+=1;
+        }
+        p = net.pack(to_pack, true);
+    }
+    root { here --> net.unpack(p)[0]; }
+    take --> node::simple == 5.4;
     report here;
 }

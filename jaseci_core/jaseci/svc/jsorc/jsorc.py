@@ -47,6 +47,7 @@ class KubeController:
         api_response = self.app_api.patch_namespaced_deployment(
             name=name, namespace=namespace, body=config
         )
+        return api_response
 
     def deployment_set_scale(
         self, name: str, namespace: str = "default", scale: int = 1
@@ -61,13 +62,14 @@ class KubeController:
             api_response = self.app_api.delete_namespaced_deployment(
                 name=name, namespace=namespace
             )
+            return api_response
         except ApiException as e:
             print("Exception when calling CoreV1Api->delete_namespaced_pod: %s\n" % e)
 
 
 class Monitor:
-    def __init__(self, promonUrl: str, k8sconfig):
-        self.promon = Promon(promonUrl)
+    def __init__(self, promon_url: str, k8sconfig):
+        self.promon = Promon(promon_url)
         self.controller = KubeController(k8sconfig)
 
     def strategy_start_redis(self):
@@ -85,10 +87,10 @@ class Monitor:
             )
 
     def strategy_redis_cpu(
-        self, nodeName: str, deploymentNameSpace: str, deploymentName: str
+        self, node_name: str, deploymentNameSpace: str, deploymentName: str
     ):
         cpu = self.promon.cpu_utilization_percentage()
-        cpu_usage = cpu[nodeName]
+        cpu_usage = cpu[node_name]
         print(f"Detect CPU Usage: {cpu_usage}")
         if cpu_usage > 10:
             pods = self.controller.get_deployment_list()
@@ -100,11 +102,11 @@ class Monitor:
                     self.controller.kill_deployment(name=name, namespace=namespace)
         if cpu_usage < 5:
             pods = self.controller.get_deployment_list()
-            redisRunning = False
+            redis_running = False
             for pod in pods:
                 if pod["name"] == deploymentName:
-                    redisRunning = True
-            if not redisRunning:
+                    redis_running = True
+            if not redis_running:
                 print("Creating new deployment")
                 self.controller.create_deployment(
                     config=yaml.safe_load(open("jaseci.yaml", "r"))
@@ -114,10 +116,10 @@ class Monitor:
         cpu = self.promon.cpu_utilization_per_pod_cores()
         count = 0
         total = 0
-        for podName in cpu.keys():
-            if podName.startswith("jaseci-redis"):
+        for pod_name in cpu.keys():
+            if pod_name.startswith("jaseci-redis"):
                 count = count + 1
-                total = total + cpu[podName]
+                total = total + cpu[pod_name]
 
         avg = total / count
         print(avg)
@@ -141,21 +143,21 @@ def daemon(k8sConf, prometheusURL: str):
         time.sleep(10)
 
 
-def startMonitoring(k8sConf, prometheusURL: str):
+def start_monitoring(k8sConf, prometheusURL: str):
     monitor = multiprocessing.Process(target=daemon, args=(k8sConf, prometheusURL))
     monitor.start()
     return monitor
 
 
-def waitMonitoring(monitorThread):
+def wait_monitoring(monitorThread):
     monitorThread.join()
 
 
-def stopMonitoring(monitorThread):
+def stop_monitoring(monitorThread):
     monitorThread.terminate()
 
 
-def remoteK8sConf(K8sURL: str):
+def remote_k8s_conf(K8sURL: str):
     k8sconf = client.Configuration()
     k8sconf.host = K8sURL
     k8sconf.verify_ssl = False
@@ -173,8 +175,6 @@ def incluster():
 def jsorc_start():
     logger.info("JSORC Running")
     if incluster():
-        k8sConfig = None
-        monitorThread = startMonitoring(
-            k8sConf=k8sConfig, prometheusURL="http://js-prometheus:9090"
-        )
+        k8s_config = None
+        start_monitoring(k8sConf=k8s_config, prometheusURL="http://js-prometheus:9090")
         logger.info("Monitoring started")

@@ -15,6 +15,8 @@ class Architype(Element, JacCode, ArchitypeInterp):
 
     def __init__(self, code_ir=None, *args, **kwargs):
         self.super_archs = list()
+        self.anchor_var = None
+        self.private_vars = []
         self.entry_action_ids = IdList(self)
         self.activity_action_ids = IdList(self)
         self.exit_action_ids = IdList(self)
