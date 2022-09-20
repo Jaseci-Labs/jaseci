@@ -105,10 +105,10 @@ class TaskService(CommonService, TaskProperties):
     #              COMMON GETTER/SETTER               #
     ###################################################
 
-    def get_by_task_id(self, task_id, hook):
+    def get_by_task_id(self, task_id, wait=False):
         task = self.app.AsyncResult(task_id)
 
-        if type(task.backend) is DisabledBackend:
+        if isinstance(task.backend, DisabledBackend):
             return {
                 "status": "DISABLED",
                 "result": "result_backend is set to disabled!",
@@ -117,6 +117,8 @@ class TaskService(CommonService, TaskProperties):
         ret = {"status": task.state}
         if task.ready():
             ret["result"] = task.result
+        elif wait:
+            ret["result"] = task.get(disable_sync_subtasks=False)
 
         return ret
 
