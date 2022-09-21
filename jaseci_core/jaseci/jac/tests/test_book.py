@@ -258,9 +258,8 @@ class JacBookTests(TestCaseHelper, TestCase):
         gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
-        self.assertTrue(
-            self.new_stdout.getvalue().startswith("[{'context': {'apple': 12,")
-        )
+        print(gen_walker.report)
+        self.assertIn("'context': {'apple': 12, 'grape': 1", self.new_stdout.getvalue())
 
     def test_array_idx_of_expr(self):
         self.sent.register_code(jtc.array_idx_of_expr)

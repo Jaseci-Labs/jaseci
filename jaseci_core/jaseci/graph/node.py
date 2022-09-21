@@ -381,9 +381,8 @@ class Node(Element, Anchored):
         dstr += f'label="n{nid}:{self.name}" '
 
         node_dict = self.context
-        if "_private" in node_dict:
-            for i in node_dict["_private"]:
-                node_dict.pop(i)
+        for i in self.private_values():
+            node_dict.pop(i)
 
         if node_dict and detailed:
             for k, v in node_dict.items():

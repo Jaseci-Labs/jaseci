@@ -186,9 +186,8 @@ class Edge(Element, Anchored):
             dstr += ', dir="both"'
 
         edge_dict = self.context
-        if "_private" in edge_dict:
-            for i in edge_dict["_private"]:
-                edge_dict.pop(i)
+        for i in self.private_values():
+            edge_dict.pop(i)
 
         if edge_dict and detailed:
             for k, v in edge_dict.items():

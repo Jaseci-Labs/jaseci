@@ -90,7 +90,7 @@ class SentinelInterp(Interp):
     def arch_has_preproc(self, jac_ast, arch):
         """Helper function to statically compile can stmts for arch"""
         kid = self.set_cur_ast(jac_ast)
-        if jac_ast.name == "attr_block":
+        if jac_ast.name in ["attr_block", "walker_block"]:
             for i in kid:
                 if i.name == "attr_stmt" and i.kid[0].name == "has_stmt":
                     for j in i.kid[0].kid:

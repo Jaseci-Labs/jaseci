@@ -134,6 +134,6 @@ class AliasAPI:
         Extract and register all aliases from architype
         """
         if arch.kind == "walker":
-            self.alias_delete(f"{snt.name}:walker:{arch.name}", arch.jid)
+            self.alias_delete(f"{snt.name}:walker:{arch.name}")
         else:
             self.alias_delete(f"{snt.name}:architype:{arch.name}")

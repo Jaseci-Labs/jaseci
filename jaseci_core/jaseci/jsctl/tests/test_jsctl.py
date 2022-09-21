@@ -120,8 +120,8 @@ class JsctlTest(TestCaseHelper, TestCase):
         num = len(self.call_cast("alias list"))
 
         self.call("architype delete zsb:architype:bot")
-        self.call("walker delete zsb:walker:similar_questions")
-        self.call("walker delete zsb:walker:create_nugget")
+        self.call("architype delete zsb:walker:similar_questions")
+        self.call("architype delete zsb:walker:create_nugget")
         self.assertEqual(num - 3, len(self.call_cast("alias list")))
 
     def test_jsctl_config_cmds(self):
