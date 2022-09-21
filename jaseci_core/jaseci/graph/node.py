@@ -21,9 +21,8 @@ class Node(Element, Anchored):
         self.parent_node_ids = IdList(self)
         self.member_node_ids = IdList(self)
         self.dimension = dimension  # Nodes are always hdgd 0
-        self.context = {}
-        Anchored.__init__(self, **kwargs)
         Element.__init__(self, **kwargs)
+        Anchored.__init__(self, **kwargs)
 
     def attach(self, node_obj, edge_set=None, as_outbound=True, as_bidirected=False):
         """

@@ -161,9 +161,8 @@ class Element(Hookable):
                     continue
                 jdict[i] = copy.copy(vars(self)[i])
                 if not detailed and i == "context":
-                    if "_private" in jdict[i].keys():
-                        for j in jdict[i]["_private"]:
-                            del jdict[i][j]
+                    for j in self.private_values():
+                        del jdict[i][j]
                 if deep > 0 and isinstance(jdict[i], IdList):
                     for j in range(len(jdict[i])):
                         jdict[i][j] = copy.copy(

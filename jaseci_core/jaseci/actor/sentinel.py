@@ -23,7 +23,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
     def __init__(self, *args, **kwargs):
         self.version = None
         self.arch_ids = IdList(self)
-        self.walker_ids = IdList(self)
         self.global_vars = {}
         self.testcases = []
         Element.__init__(self, *args, **kwargs)
@@ -48,7 +47,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
         self.global_vars = {}
         self.testcases = []
         self.arch_ids.destroy_all()
-        self.walker_ids.destroy_all()
         self.load_arch_defaults()
         JacCode.reset(self)
         SentinelInterp.reset(self)
@@ -79,7 +77,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
         if self.runtime_errors:
             logger.error(str(f"{self.name}: Runtime problem processing sentinel!"))
             self.is_active = False
-        elif not self.walker_ids and not self.arch_ids:
+        elif not self.arch_ids:
             logger.error(str(f"{self.name}: No walkers nor architypes created!"))
             self.is_active = False
         return self.is_active
@@ -98,24 +96,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
             return None
         return self.load_architype(tree)
 
-    def spawn_walker(self, name, caller=None, is_async=False):
-        """
-        Spawns a new walker from registered walkers and adds to
-        live walkers
-        """
-        src_walk = self.walker_ids.get_obj_by_name(name)
-        if not src_walk:
-            logger.error(str(f"{self.name}: Unable to spawn walker {name}!"))
-            return None
-        src_walk._async = is_async
-        new_walk = src_walk.duplicate()
-        if caller:
-            new_walk.set_master(caller._m_id)
-        new_walk._jac_ast = src_walk._jac_ast
-        if new_walk._jac_ast is None:
-            new_walk.refresh()
-        return new_walk
-
     def spawn_architype(self, name, kind=None, caller=None):
         """
         Spawns a new architype from registered architypes and adds to
@@ -123,6 +103,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
         """
         src_arch = self.arch_ids.get_obj_by_name(name, kind=kind, silent=True)
         if not src_arch:
+            logger.error(str(f"{self.name}: Unable to spawn {kind} architype {name}!"))
             return None
 
         if caller and caller._m_id != src_arch._m_id:
@@ -201,7 +182,9 @@ class Sentinel(Element, JacCode, SentinelInterp):
                 destroy_set.append(gph)
                 gph = gph.run()
             if i["walker_ref"]:
-                wlk = self.spawn_walker(i["walker_ref"], caller=self)
+                wlk = self.run_architype(
+                    name=i["walker_ref"], kind="Walker", caller=self
+                )
             else:
                 wlk = Walker(
                     m_id=self._m_id,
@@ -270,6 +253,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
         """
         Destroys self from memory and persistent storage
         """
-        for i in self.arch_ids.obj_list() + self.walker_ids.obj_list():
+        for i in self.arch_ids.obj_list():
             i.destroy()
         super().destroy()

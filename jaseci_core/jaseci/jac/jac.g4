@@ -18,7 +18,7 @@ import_names:
 	DBL_COLON NAME
 	| DBL_COLON LBRACE name_list RBRACE;
 
-element: global_var | architype | walker | test;
+element: global_var | architype | test;
 
 global_var:
 	KW_GLOBAL NAME EQ expression (COMMA NAME EQ expression)* SEMI;
@@ -26,9 +26,8 @@ global_var:
 architype:
 	KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
 	| KW_EDGE NAME (COLON NAME)* attr_block
-	| KW_GRAPH NAME graph_block;
-
-walker: KW_WALKER NAME namespaces? walker_block;
+	| KW_GRAPH NAME graph_block
+	| KW_WALKER NAME namespaces? walker_block;
 
 walker_block:
 	LBRACE attr_stmt* walk_entry_block? (

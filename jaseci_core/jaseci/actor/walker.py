@@ -28,7 +28,6 @@ class Walker(Element, JacCode, WalkerInterp, Anchored):
         self.yielded = False
         self.activity_action_ids = IdList(self)
         self.namespaces = []
-        self.context = {}
         self.profile = {}
         # Process state
         self.current_node_id = None
@@ -39,8 +38,8 @@ class Walker(Element, JacCode, WalkerInterp, Anchored):
         self.in_entry_exit = False
         self.step_limit = 10000
         self._async = False
-        Anchored.__init__(self, **kwargs)
         Element.__init__(self, **kwargs)
+        Anchored.__init__(self, **kwargs)
         JacCode.__init__(self, code_ir=code_ir)
         WalkerInterp.__init__(self)
 

@@ -85,13 +85,6 @@ class MachineState:
             self.report_custom = mach.report_custom
         self.runtime_errors += mach.runtime_errors
 
-    def get_arch_for(self, obj):
-        """Returns the architype that matches object"""
-        ret = self.parent().arch_ids.get_obj_by_name(name=obj.name, kind=obj.kind)
-        if ret is None:
-            self.rt_error(f"Unable to find architype for {obj.name}, {obj.kind}")
-        return ret
-
     def obj_set_to_jac_set(self, obj_set):
         """
         Returns nodes jac_set from edge jac_set from current node

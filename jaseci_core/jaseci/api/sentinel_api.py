@@ -235,7 +235,10 @@ class SentinelApi:
         return self._h.get_obj(self._m_id, uuid.UUID(self.active_snt_id))
 
     def attempt_auto_run(self, sent: Sentinel, walk_name, ctx):
-        if sent.walker_ids.has_obj_by_name(walk_name) and self.active_gph_id:
+        if (
+            sent.arch_ids.has_obj_by_name(walk_name, kind="walker")
+            and self.active_gph_id
+        ):
             nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
             return self.walker_run(name=walk_name, nd=nd, ctx=ctx, snt=sent)
 

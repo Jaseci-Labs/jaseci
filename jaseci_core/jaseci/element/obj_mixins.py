@@ -14,6 +14,7 @@ class Anchored:
     def __init__(self, sent, **kwargs):
         self._snt = sent
         self._arch = sent.get_arch_for(self) if sent is not None else None
+        self.context = {}
 
     def anchor_value(self):
         """Returns value of anchor context object"""
@@ -23,13 +24,11 @@ class Anchored:
                 return self.context[anch]
         return None
 
-    # def visible_values(self):
-    #     """Returns value of anchor context object"""
-    #     if self._snt is not None:
-    #         priv = self._snt.get_arch_for(self).private_vars
-    #         if anch and anch in self.context.keys():
-    #             return self.context[anch]
-    #     return None
+    def private_values(self):
+        """Returns value of anchor context object"""
+        if self._arch is not None:
+            return self._arch.private_vars
+        return []
 
 
 class Sharable:

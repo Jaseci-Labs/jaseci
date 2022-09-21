@@ -39,7 +39,7 @@ class WalkerApi:
             code = b64decode_str(code)
         walk = snt.register_walker(code)
         if walk:
-            self.extract_wlk_aliases(snt, walk)
+            self.extract_arch_aliases(snt, walk)
             return walk.serialize()
         else:
             return ["Walker not created, invalid code!"]
@@ -82,30 +82,17 @@ class WalkerApi:
         List walkers known to sentinel
         """
         walks = []
-        for i in snt.walker_ids.obj_list():
-            walks.append(i.serialize(detailed=detailed))
+        for i in snt.arch_ids.obj_list():
+            if i.kind == "walker":
+                walks.append(i.serialize(detailed=detailed))
         return walks
-
-    @Interface.private_api(cli_args=["wlk"])
-    def walker_delete(self, wlk: Walker, snt: Sentinel = None):
-        """
-        Permanently delete walker with given id
-        """
-        self.remove_wlk_aliases(snt, wlk)
-        wlkid = wlk.jid
-        ret = {"success": True, "response": f"Walker {wlkid} successfully deleted"}
-        if wlk.jid in snt.walker_ids:
-            snt.walker_ids.destroy_obj(wlk)
-        else:
-            ret = {"success": False, "response": f"Walker {wlkid} not found!"}
-        return ret
 
     @Interface.private_api(cli_args=["name"])
     def walker_spawn_create(self, name: str, snt: Sentinel = None):
         """
         Creates new instance of walker and returns new walker object
         """
-        wlk = snt.spawn_walker(name, caller=self)
+        wlk = snt.run_architype(name=name, kind="walker", caller=self)
         if wlk:
             if self.spawned_walker_ids.has_obj_by_name(name):
                 self.spawned_walker_ids.destroy_obj_by_name(name)
@@ -228,7 +215,8 @@ class WalkerApi:
         """
         wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
         if wlk is None:
-            wlk = snt.spawn_walker(name, caller=self, is_async=is_async)
+            wlk = snt.run_architype(name=name, kind="walker", caller=self)
+            wlk._async = is_async
         if wlk is None:
             return self.bad_walk_response([f"Walker {name} not found!"])
         res = self.walker_execute(
@@ -269,7 +257,8 @@ class WalkerApi:
         if key not in wlk.namespace_keys().values():
             return self.bad_walk_response(["Not authorized to execute this walker"])
         if global_sync:
-            self.sync_walker_from_global_sent(wlk)
+            # DEPRECATED
+            pass
 
         walk = wlk.duplicate()
         walk.refresh()

@@ -6,6 +6,7 @@ referenced through self.
 """
 from jaseci.graph.node import Node
 from jaseci.graph.edge import Edge
+from jaseci.actor.walker import Walker
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.machine.jac_scope import JacScope
 from jaseci.utils.utils import parse_str_token
@@ -18,9 +19,10 @@ class ArchitypeInterp(Interp):
     def run_architype(self, jac_ast):
         """
         architype:
-            KW_NODE NAME (COLON NAME)* attr_block
+            KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
             | KW_EDGE NAME (COLON NAME)* attr_block
-            | KW_GRAPH NAME graph_block;
+            | KW_GRAPH NAME graph_block
+            | KW_WALKER NAME namespaces? walker_block;
         """
         if jac_ast is None:  # Using defaults
             if self.kind == "node" and self.name in ["root", "generic"]:
@@ -40,17 +42,6 @@ class ArchitypeInterp(Interp):
                     sent=self.parent(),
                 )
 
-        def build_object(item):
-            for i in self.super_archs:
-                super_jac_ast = (
-                    self.parent()
-                    .arch_ids.get_obj_by_name(name=i, kind=item.kind)
-                    .get_jac_ast()
-                    .kid[-1]
-                )
-                self.run_attr_block(super_jac_ast, item)
-            self.run_attr_block(kid[-1], item)
-
         kid = self.set_cur_ast(jac_ast)
         self.push_scope(JacScope(parent=self, has_obj=self, action_sets=[]))
         if kid[0].name == "KW_NODE":
@@ -63,7 +54,7 @@ class ArchitypeInterp(Interp):
             )
             if kid[-2].name == "INT":
                 item.dimension = int(kid[-2].token_text())
-            build_object(item)
+            self.build_object_with_supers(item, kid[-1])
         elif kid[0].name == "KW_EDGE":
             item = Edge(
                 m_id=self._m_id,
@@ -72,14 +63,31 @@ class ArchitypeInterp(Interp):
                 name=kid[1].token_text(),
                 sent=self.parent(),
             )
-            build_object(item)
+            self.build_object_with_supers(item, kid[-1])
         elif kid[0].name == "KW_GRAPH":
             item = self.run_graph_block(kid[-1])
-        elif jac_ast.name == "graph_block":  # used in jac tests
+        elif kid[0].name == "KW_WALKER":
+            item = Walker(
+                m_id=self._m_id,
+                h=self._h,
+                code_ir=jac_ast,
+                name=kid[1].token_text(),
+                kind=kid[0].token_text(),
+                sent=self.parent(),
+            )
+            if kid[2].name == "namespaces":
+                item.namespaces = self.run_namespaces(jac_ast.kid[2])
+        elif jac_ast.name == "graph_block":  # usedi n jac tests
             item = self.run_graph_block(jac_ast)
         item.parent_id = self.parent().id
         self.pop_scope()
         return item
+
+    def run_namespaces(self, jac_ast):
+        """
+        namespaces: COLON name_list;
+        """
+        return self.run_name_list(jac_ast.kid[1])
 
     def run_attr_block(self, jac_ast, obj):
         """
@@ -424,3 +432,16 @@ class ArchitypeInterp(Interp):
         elif kid[0].name == "STRING":
             return parse_str_token(kid[0].token_text())
         return kid[0].token_text()
+
+    # Helper Functions ##################
+
+    def build_object_with_supers(self, item, jac_ast):
+        for i in self.super_archs:
+            super_jac_ast = (
+                self.parent()
+                .arch_ids.get_obj_by_name(name=i, kind=item.kind)
+                .get_jac_ast()
+                .kid[-1]
+            )
+            self.run_attr_block(super_jac_ast, item)
+        self.run_attr_block(jac_ast, item)

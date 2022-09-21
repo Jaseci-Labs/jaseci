@@ -1261,7 +1261,7 @@ class Interp(MachineState):
         name = kid[2].token_text()
         wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
         if wlk is None:
-            wlk = self.parent().spawn_walker(name, caller=self)
+            wlk = self.parent().run_architype(name=name, kind="walker", caller=self)
         if wlk is None:
             self.rt_error(f"No walker {name} exists!", kid[2])
         return wlk

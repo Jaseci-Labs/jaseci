@@ -107,43 +107,33 @@ class AliasAPI:
         Extract and register all aliases from sentinel
         """
         self.alias_register(f"sentinel:{snt.name}", snt.jid)
-        for i in snt.walker_ids.obj_list():
-            self.extract_wlk_aliases(snt, i)
         for i in snt.arch_ids.obj_list():
             self.extract_arch_aliases(snt, i)
         self.save()
-
-    def extract_wlk_aliases(self, snt, wlk):
-        """
-        Extract and register all aliases from walker
-        """
-        self.alias_register(f"{snt.name}:walker:{wlk.name}", wlk.jid)
 
     def extract_arch_aliases(self, snt, arch):
         """
         Extract and register all aliases from architype
         """
-        self.alias_register(f"{snt.name}:architype:{arch.name}", arch.jid)
+        if arch.kind == "walker":
+            self.alias_register(f"{snt.name}:walker:{arch.name}", arch.jid)
+        else:
+            self.alias_register(f"{snt.name}:architype:{arch.name}", arch.jid)
 
     def remove_snt_aliases(self, snt):
         """
         Extract and register all aliases from sentinel
         """
         self.alias_delete(f"sentinel:{snt.name}")
-        for i in snt.walker_ids.obj_list():
-            self.remove_wlk_aliases(snt, i)
         for i in snt.arch_ids.obj_list():
             self.remove_arch_aliases(snt, i)
         self.save()
-
-    def remove_wlk_aliases(self, snt, wlk):
-        """
-        Extract and register all aliases from walker
-        """
-        self.alias_delete(f"{snt.name}:walker:{wlk.name}")
 
     def remove_arch_aliases(self, snt, arch):
         """
         Extract and register all aliases from architype
         """
-        self.alias_delete(f"{snt.name}:architype:{arch.name}")
+        if arch.kind == "walker":
+            self.alias_delete(f"{snt.name}:walker:{arch.name}", arch.jid)
+        else:
+            self.alias_delete(f"{snt.name}:architype:{arch.name}")
