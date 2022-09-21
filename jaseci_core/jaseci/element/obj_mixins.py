@@ -17,9 +17,18 @@ class Anchored:
     def anchor_value(self):
         """Returns value of anchor context object"""
         if self._snt is not None:
-            if 0:
-                return self.context[self.anchor]
+            anch = self._snt.get_arch_for(self).anchor_var
+            if anch and anch in self.context.keys():
+                return self.context[anch]
         return None
+
+    # def visible_values(self):
+    #     """Returns value of anchor context object"""
+    #     if self._snt is not None:
+    #         priv = self._snt.get_arch_for(self).private_vars
+    #         if anch and anch in self.context.keys():
+    #             return self.context[anch]
+    #     return None
 
 
 class Sharable:
