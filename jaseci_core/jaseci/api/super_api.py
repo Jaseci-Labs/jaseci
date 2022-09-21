@@ -36,10 +36,10 @@ class SuperApi:
         return ret
 
     @Interface.admin_api()
-    def master_allusers(self, num: int = 0, start_idx: int = 0):
+    def master_allusers(self, limit: int = 0, offset: int = 0, asc: bool = False):
         """
-        Returns info on a set of users, num specifies the number of users to
-        return and start idx specfies where to start
+        Returns info on a set of users, limit specifies the number of users to
+        return and offset specfies where to start
         NOTE: Abstract interface to be overridden
         """
 
