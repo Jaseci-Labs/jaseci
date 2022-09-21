@@ -22,16 +22,23 @@ class Node(Element, Anchored):
         self.member_node_ids = IdList(self)
         self.dimension = dimension  # Nodes are always hdgd 0
         self.context = {}
-        super().__init__(**kwargs)
-        # Anchored.__init__(self, **kwargs)
-        # Element.__init__(self, **kwargs)
+        Anchored.__init__(self, **kwargs)
+        Element.__init__(self, **kwargs)
 
     def attach(self, node_obj, edge_set=None, as_outbound=True, as_bidirected=False):
         """
         Generalized attach function for attaching nodes with edges
         """
         if edge_set is None:
-            edge_set = [Edge(m_id=self._m_id, h=self._h, kind="edge", name="generic")]
+            edge_set = [
+                Edge(
+                    m_id=self._m_id,
+                    h=self._h,
+                    kind="edge",
+                    name="generic",
+                    sent=self._snt,
+                )
+            ]
         link_order = [self, node_obj] if as_outbound else [node_obj, self]
         for e in edge_set:
             if not e.set_from_node(link_order[0]) or not e.set_to_node(link_order[1]):

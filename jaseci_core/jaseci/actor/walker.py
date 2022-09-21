@@ -24,7 +24,7 @@ class Walker(Element, JacCode, WalkerInterp, Anchored):
 
     valid_async = [True, "true"]
 
-    def __init__(self, code_ir=None, *args, **kwargs):
+    def __init__(self, code_ir=None, **kwargs):
         self.yielded = False
         self.activity_action_ids = IdList(self)
         self.namespaces = []
@@ -39,8 +39,8 @@ class Walker(Element, JacCode, WalkerInterp, Anchored):
         self.in_entry_exit = False
         self.step_limit = 10000
         self._async = False
-        Anchored.__init__(self)
-        Element.__init__(self, *args, **kwargs)
+        Anchored.__init__(self, **kwargs)
+        Element.__init__(self, **kwargs)
         JacCode.__init__(self, code_ir=code_ir)
         WalkerInterp.__init__(self)
 

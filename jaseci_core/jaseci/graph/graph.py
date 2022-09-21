@@ -11,7 +11,7 @@ class Graph(Node):
 
     def __init__(self, **kwargs):
         self.hd_node_ids = IdList(self)
-        super().__init__(**kwargs)
+        Node.__init__(self, **kwargs)
         self.name = "root"
         self.kind = "node"
 

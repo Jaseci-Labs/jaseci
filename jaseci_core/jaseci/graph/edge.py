@@ -13,13 +13,13 @@ import uuid
 class Edge(Element, Anchored):
     """Edge class for Jaseci"""
 
-    def __init__(self, from_node=None, to_node=None, *args, **kwargs):
+    def __init__(self, from_node=None, to_node=None, **kwargs):
         self.from_node_id = None
         self.to_node_id = None
         self.bidirected: bool = False
         self.context = {}
-        Anchored.__init__(self)
-        Element.__init__(self, *args, **kwargs)
+        Anchored.__init__(self, **kwargs)
+        Element.__init__(self, **kwargs)
         if from_node:
             self.set_from_node(from_node)
         if to_node:

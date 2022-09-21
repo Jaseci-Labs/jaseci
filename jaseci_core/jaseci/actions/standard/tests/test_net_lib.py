@@ -7,11 +7,13 @@ class NetLibTest(CoreTest):
     fixture_src = __file__
 
     def test_pack(self):
+        self.logger_on()
         self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "pack_it"}])
+        self.log(ret)
         self.assertEqual(len(ret["report"][0]["nodes"]), 11)
         self.assertEqual(len(ret["report"][0]["edges"]), 10)
 
@@ -59,5 +61,5 @@ class NetLibTest(CoreTest):
             ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "pack_it_anc_priv"}])
-        self.log(ret["report"])
+        self.log(ret)
         self.assertEqual(len(ret["report"]), 6)

@@ -24,9 +24,21 @@ class ArchitypeInterp(Interp):
         """
         if jac_ast is None:  # Using defaults
             if self.kind == "node" and self.name in ["root", "generic"]:
-                return Node(m_id=self._m_id, h=self._h, kind=self.kind, name=self.name)
+                return Node(
+                    m_id=self._m_id,
+                    h=self._h,
+                    kind=self.kind,
+                    name=self.name,
+                    sent=self.parent(),
+                )
             elif self.kind == "edge" and self.name in ["generic"]:
-                return Edge(m_id=self._m_id, h=self._h, kind=self.kind, name=self.name)
+                return Edge(
+                    m_id=self._m_id,
+                    h=self._h,
+                    kind=self.kind,
+                    name=self.name,
+                    sent=self.parent(),
+                )
 
         def build_object(item):
             for i in self.super_archs:
@@ -47,6 +59,7 @@ class ArchitypeInterp(Interp):
                 h=self._h,
                 kind=kid[0].token_text(),
                 name=kid[1].token_text(),
+                sent=self.parent(),
             )
             if kid[-2].name == "INT":
                 item.dimension = int(kid[-2].token_text())
@@ -57,6 +70,7 @@ class ArchitypeInterp(Interp):
                 h=self._h,
                 kind=kid[0].token_text(),
                 name=kid[1].token_text(),
+                sent=self.parent(),
             )
             build_object(item)
         elif kid[0].name == "KW_GRAPH":
@@ -170,7 +184,13 @@ class ArchitypeInterp(Interp):
                     edge_kind, kind="edge", caller=self
                 )
             else:
-                edge_obj = Edge(m_id=self._m_id, h=self._h, kind="edge", name="generic")
+                edge_obj = Edge(
+                    m_id=self._m_id,
+                    h=self._h,
+                    kind="edge",
+                    name="generic",
+                    sent=self.parent(),
+                )
 
             lhs_node_id = op.pop("lhs_node_id")
             rhs_node_id = op.pop("rhs_node_id")

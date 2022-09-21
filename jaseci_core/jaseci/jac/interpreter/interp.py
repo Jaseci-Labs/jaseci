@@ -1314,7 +1314,13 @@ class Interp(MachineState):
                 elif kid[0].kid[3].name == "filter_ctx":
                     self.rt_error("Filtering not allowed here", kid[0].kid[3])
             else:
-                result = Edge(m_id=self._m_id, h=self._h, kind="edge", name="generic")
+                result = Edge(
+                    m_id=self._m_id,
+                    h=self._h,
+                    kind="edge",
+                    name="generic",
+                    sent=self.parent(),
+                )
             return result
 
     def run_edge_to(self, jac_ast):

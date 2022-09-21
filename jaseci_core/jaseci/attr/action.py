@@ -25,7 +25,7 @@ class Action(Item):
     def __init__(self, preset_in_out=None, access_list=None, **kwargs):
         self.preset_in_out = preset_in_out  # Not using _ids convention
         self.access_list = access_list
-        super().__init__(**kwargs)
+        Item.__init__(self, **kwargs)
 
     def do_auto_conversions(self, args, func, params):
         """

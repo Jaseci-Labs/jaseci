@@ -103,5 +103,6 @@ class NodeTests(TestCaseHelper, TestCase):
             h=hook,
             to_node=Node(m_id="anon", h=hook),
             from_node=Node(m_id="anon", h=hook),
+            sent=None,
         )
         self.assertEqual(a.name, "my edge")

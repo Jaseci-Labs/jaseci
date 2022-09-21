@@ -106,7 +106,14 @@ class SentinelInterp(Interp):
         kid = self.set_cur_ast(jac_ast)
         name = kid[1].token_text()
         kind = kid[0].token_text()
-        walk = Walker(m_id=self._m_id, h=self._h, code_ir=jac_ast, name=name, kind=kind)
+        walk = Walker(
+            m_id=self._m_id,
+            h=self._h,
+            code_ir=jac_ast,
+            name=name,
+            kind=kind,
+            sent=self.parent(),
+        )
         if jac_ast.kid[2].name == "namespaces":
             walk.namespaces = self.run_namespaces(jac_ast.kid[2])
         if self.walker_ids.has_obj_by_name(walk.name):

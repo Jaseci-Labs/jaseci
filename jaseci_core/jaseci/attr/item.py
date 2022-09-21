@@ -11,7 +11,7 @@ class Item(Element):
 
     def __init__(self, value=None, **kwargs):
         self.item_value = value
-        super().__init__(**kwargs)
+        Element.__init__(self, **kwargs)
 
     @property
     def value(self):

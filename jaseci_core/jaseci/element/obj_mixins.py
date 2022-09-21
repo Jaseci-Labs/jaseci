@@ -11,7 +11,7 @@ import uuid
 class Anchored:
     """Utility class for objects that hold anchor values"""
 
-    def __init__(self, sent):
+    def __init__(self, sent, **kwargs):
         self._snt = sent
 
     def anchor_value(self):
@@ -25,7 +25,7 @@ class Anchored:
 class Sharable:
     """Utility class for objects that are sharable between users"""
 
-    def __init__(self, m_id, mode=None):
+    def __init__(self, m_id, mode=None, **kwargs):
         self.set_master(m_id)
         self.j_access = (
             mode
@@ -140,7 +140,7 @@ class Hookable(Sharable):
     def __init__(self, h, persist: bool = True, **kwargs):
         self._h = h  # hook for storing and loading to persistent store
         self._persist = persist
-        super().__init__(**kwargs)
+        Sharable.__init__(self, **kwargs)
 
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""

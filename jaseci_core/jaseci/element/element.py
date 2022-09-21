@@ -58,7 +58,7 @@ class Element(Hookable):
         self.j_parent = parent_id.urn if parent_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
         self.j_type = camel_to_snake(type(self).__name__)
-        super().__init__(**kwargs)
+        Hookable.__init__(self, **kwargs)
         if self.is_master():
             self.set_master(self.jid)
         if auto_save:
@@ -111,8 +111,10 @@ class Element(Hookable):
         Duplicates elements by creating copy with new id
         Hook override to duplicate into mem / another store
         """
-
-        dup = type(self)(m_id=self._m_id, h=self._h, persist=persist_dup)
+        kwargs = {"m_id": self._m_id, "h": self._h, "persist": persist_dup}
+        if hasattr(self, "_snt"):
+            kwargs["sent"] = self._snt
+        dup = type(self)(**kwargs)
         id_save = dup.id
         for i in dup.__dict__.keys():
             if type(dup.__dict__[i]) == IdList:
