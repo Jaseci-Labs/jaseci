@@ -47,38 +47,17 @@ class Interp(MachineState):
         has_assign: KW_PRIVATE? KW_ANCHOR? (NAME | NAME EQ expression);
         """
         kid = self.set_cur_ast(jac_ast)
-        is_private = False
-        is_anchor = False
-        if kid[0].name == "KW_PRIVATE":
+        while kid[0].name in ["KW_PRIVATE", "KW_ANCHOR"]:
             kid = kid[1:]
-            is_private = True
-        if kid[0].name == "KW_ANCHOR":
-            kid = kid[1:]
-            is_anchor = True
         var_name = kid[0].token_text()
         var_val = None  # jac's null
         if len(kid) > 1:
             var_val = self.run_expression(kid[2]).value
-        if is_anchor:
-            if "anchor" in dir(obj):
-                if obj.anchor is None:
-                    obj.anchor = var_name
-            else:
-                self.rt_error("anchors not allowed for this type", kid[0])
-
-        if var_name == "_private":
-            self.rt_error("Has variable name of `_private` not allowed!", kid[0])
         # Runs only once for walkers
-        elif var_name not in obj.context.keys() or obj.j_type != "walker":
+        if var_name not in obj.context.keys() or obj.j_type != "walker":
             JacValue(self, ctx=obj, name=var_name, value=var_val).write(
                 kid[0], force=True
             )
-        if is_private:
-            if "_private" in obj.context.keys():
-                if var_name not in obj.context["_private"]:
-                    obj.context["_private"].append(var_name)
-            else:
-                obj.context["_private"] = [var_name]
 
     def run_can_stmt(self, jac_ast, obj):
         """

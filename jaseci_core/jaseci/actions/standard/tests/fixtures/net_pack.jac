@@ -97,7 +97,6 @@ walker pack_it_anc_priv {
     has to_pack=[], p;
     with entry {
         t=here;
-        to_pack.l::append(here);
         for i=0 to i<5 by i+=1 {
             to_pack.l::append(
                 spawn t --> node::simple(id=global.count)

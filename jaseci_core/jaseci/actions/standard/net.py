@@ -148,14 +148,24 @@ def unpack(graph_dict: dict, meta):
     node_list = []
     for i in graph_dict["nodes"]:
         node_list.append(
-            Node(m_id=mast._m_id, h=mast._h, kind="node", name=i["name"], sent=None)
+            Node(
+                m_id=mast._m_id,
+                h=mast._h,
+                kind="node",
+                name=i["name"],
+                sent=meta["interp"].parent(),
+            )
         )
         node_list[-1].context = i["ctx"]
         item_set.add_obj(node_list[-1])
         node_list[-1].save()
     for i in graph_dict["edges"]:
         this_edge = Edge(
-            m_id=mast._m_id, h=mast._h, kind="edge", name=i["name"], sent=None
+            m_id=mast._m_id,
+            h=mast._h,
+            kind="edge",
+            name=i["name"],
+            sent=meta["interp"].parent(),
         )
         this_edge.connect(
             node_list[i["connect"][0]], node_list[i["connect"][1]], i["bi_dir"]

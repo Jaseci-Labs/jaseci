@@ -46,7 +46,6 @@ class Element(Hookable):
 
     def __init__(
         self,
-        parent_id=None,
         name="basic",
         kind="generic",
         auto_save=True,
@@ -55,7 +54,6 @@ class Element(Hookable):
         self.name = name
         self.kind = kind
         self.jid = uuid.uuid4().urn
-        self.j_parent = parent_id.urn if parent_id else None  # member of
         self.j_timestamp = datetime.utcnow().isoformat()
         self.j_type = camel_to_snake(type(self).__name__)
         Hookable.__init__(self, **kwargs)
@@ -71,19 +69,6 @@ class Element(Hookable):
     @id.setter
     def id(self, obj):
         self.jid = obj.urn
-
-    @property
-    def parent_id(self) -> uuid.UUID:
-        if not self.j_parent:
-            return None
-        return uuid.UUID(self.j_parent)
-
-    @parent_id.setter
-    def parent_id(self, obj: uuid.UUID):
-        if not obj:
-            self.j_parent = None
-        else:
-            self.j_parent = obj.urn
 
     @property
     def timestamp(self):

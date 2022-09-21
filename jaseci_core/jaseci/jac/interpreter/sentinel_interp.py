@@ -81,8 +81,32 @@ class SentinelInterp(Interp):
         if self.arch_ids.has_obj_by_name(arch.name, kind=arch.kind):
             self.arch_ids.destroy_obj_by_name(arch.name, kind=arch.kind)
         self.arch_ids.add_obj(arch)
+        self.arch_has_preproc(kid[-1], arch)
         self.arch_can_compile(kid[-1], arch)
         return arch
+
+    def arch_has_preproc(self, jac_ast, arch):
+        """Helper function to statically compile can stmts for arch"""
+        kid = self.set_cur_ast(jac_ast)
+        if jac_ast.name == "attr_block":
+            for i in kid:
+                if i.name == "attr_stmt" and i.kid[0].name == "has_stmt":
+                    for j in i.kid[0].kid:
+                        if j.name == "has_assign":
+                            has_kid = j.kid
+                            is_private = False
+                            is_anchor = False
+                            if has_kid[0].name == "KW_PRIVATE":
+                                has_kid = has_kid[1:]
+                                is_private = True
+                            if has_kid[0].name == "KW_ANCHOR":
+                                has_kid = has_kid[1:]
+                                is_anchor = True
+                            var_name = has_kid[0].token_text()
+                            if is_private:
+                                arch.private_vars.append(var_name)
+                            if is_anchor and arch.anchor_var is None:
+                                arch.anchor_var = var_name
 
     def arch_can_compile(self, jac_ast, arch):
         """Helper function to statically compile can stmts for arch"""

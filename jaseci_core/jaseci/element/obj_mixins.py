@@ -16,6 +16,8 @@ class Anchored:
 
     def anchor_value(self):
         """Returns value of anchor context object"""
+        print(self._snt)
+        print(self._snt.get_arch_for(self))  # DIFF FIrst, Needs to be interppreter
         if self._snt is not None:
             anch = self._snt.get_arch_for(self).anchor_var
             if anch and anch in self.context.keys():
@@ -146,10 +148,24 @@ class Sharable:
 class Hookable(Sharable):
     """Utility class for objects that are savable to DBs and other stores"""
 
-    def __init__(self, h, persist: bool = True, **kwargs):
+    def __init__(self, h, persist: bool = True, parent_id=None, **kwargs):
         self._h = h  # hook for storing and loading to persistent store
         self._persist = persist
+        self.j_parent = parent_id.urn if parent_id else None  # member of
         Sharable.__init__(self, **kwargs)
+
+    @property
+    def parent_id(self) -> uuid.UUID:
+        if not self.j_parent:
+            return None
+        return uuid.UUID(self.j_parent)
+
+    @parent_id.setter
+    def parent_id(self, obj: uuid.UUID):
+        if not obj:
+            self.j_parent = None
+        else:
+            self.j_parent = obj.urn
 
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""
