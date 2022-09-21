@@ -59,5 +59,5 @@ class NetLibTest(CoreTest):
             ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "pack_it_anc_priv"}])
-        self.log(ret)
         self.assertEqual(len(ret["report"]), 6)
+        self.assertNotIn("priv", ret["report"][2]["context"])
