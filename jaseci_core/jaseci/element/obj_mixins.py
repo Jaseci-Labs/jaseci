@@ -13,11 +13,12 @@ class Anchored:
 
     def __init__(self, sent, **kwargs):
         self._snt = sent
+        self._arch = sent.get_arch_for(self) if sent is not None else None
 
     def anchor_value(self):
         """Returns value of anchor context object"""
-        if self._snt is not None:
-            anch = self._snt.get_arch_for(self).anchor_var
+        if self._arch is not None:
+            anch = self._arch.anchor_var
             if anch and anch in self.context.keys():
                 return self.context[anch]
         return None

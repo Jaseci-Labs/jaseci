@@ -136,7 +136,7 @@ class SentinelInterp(Interp):
             code_ir=jac_ast,
             name=name,
             kind=kind,
-            sent=self.parent(),
+            sent=self,
         )
         if jac_ast.kid[2].name == "namespaces":
             walk.namespaces = self.run_namespaces(jac_ast.kid[2])
