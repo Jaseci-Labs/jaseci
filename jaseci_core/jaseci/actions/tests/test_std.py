@@ -17,10 +17,10 @@ class JacTests(TestCaseHelper, TestCase):
         super().tearDown()
 
     def test_rand_std(self):
-        gph = Graph(m_id="anon", h=MetaService().hook())
-        sent = Sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=MetaService().hook())
+        gph = Graph(m_id="anon", h=sent._h, sent=sent)
         sent.register_code(stc.rand_std)
-        test_walker = sent.walker_ids.get_obj_by_name("init")
+        test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
         report = test_walker.report
@@ -30,20 +30,20 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertGreater(len(report[3]), len(report[2]))
 
     def test_file_io(self):
-        gph = Graph(m_id="anon", h=MetaService().hook())
-        sent = Sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=MetaService().hook())
+        gph = Graph(m_id="anon", h=sent._h, sent=sent)
         sent.register_code(stc.file_io)
-        test_walker = sent.walker_ids.get_obj_by_name("init")
+        test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
         report = test_walker.report
         self.assertEqual(report, ['{"a": 10}{"a": 10}'])
 
     def test_std_used_in_node_has_var(self):
-        gph = Graph(m_id="anon", h=MetaService().hook())
-        sent = Sentinel(m_id="anon", h=gph._h)
+        sent = Sentinel(m_id="anon", h=MetaService().hook())
+        gph = Graph(m_id="anon", h=sent._h, sent=sent)
         sent.register_code(stc.std_used_in_node_has_var)
-        test_walker = sent.walker_ids.get_obj_by_name("init")
+        test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
         report = test_walker.report
