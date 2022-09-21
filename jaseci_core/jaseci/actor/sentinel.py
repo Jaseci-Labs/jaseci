@@ -154,6 +154,13 @@ class Sentinel(Element, JacCode, SentinelInterp):
             Element.destroy(arch)
             return ret
 
+    def get_arch_for(self, obj):
+        """Returns the architype that matches object"""
+        ret = self.arch_ids.get_obj_by_name(name=obj.name, kind=obj.kind)
+        if ret is None:
+            self.rt_error(f"Unable to find architype for {obj.name}, {obj.kind}")
+        return ret
+
     def check_in_arch_context(self, key_name, object):
         """
         Validates a key is present in currently loaded architype of

@@ -16,8 +16,6 @@ class Anchored:
 
     def anchor_value(self):
         """Returns value of anchor context object"""
-        print(self._snt)
-        print(self._snt.get_arch_for(self))  # DIFF FIrst, Needs to be interppreter
         if self._snt is not None:
             anch = self._snt.get_arch_for(self).anchor_var
             if anch and anch in self.context.keys():
