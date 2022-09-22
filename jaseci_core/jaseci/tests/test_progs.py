@@ -350,3 +350,14 @@ class JacTests(TestCaseHelper, TestCase):
             api_name="walker_run", params={"name": "init"}
         )
         self.assertEqual(res["report"], [1, 2, 3, 4, 5, 6, 7, 8, "apple"])
+
+    def test_shorthand_builtin(self):
+        mast = self.meta.master()
+        mast.sentinel_register(name="test", code=jtp.check_type_built_in, auto_run="")
+
+        res = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+
+        for result in res["report"]:
+            self.assertTrue(result)

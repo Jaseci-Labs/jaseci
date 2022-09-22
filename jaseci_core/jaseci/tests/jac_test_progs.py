@@ -591,3 +591,306 @@ continue_issue = """
         }
     }
 """
+
+
+check_type_built_in = """
+walker init {
+    with entry {
+        _d = {
+            "key1": 0,
+            "key2": 2,
+            "key3": 3,
+            "key4": 4,
+            "key5": 5
+        };
+
+        report _d.key1 == 0;
+
+        _dd = {
+            "keys": _d,
+            "key6": 6,
+            "key7": 7,
+            "key8": 8,
+            "key9": 9
+        };
+
+        _d1 = {};
+        _d2 = {};
+
+        _d1 = _dd.dict::copy;
+        _d2 = _dd.copy();
+
+        _d["key1"] = 1;
+
+        // save 1 since we used copy
+        report _d1["keys"]["key1"] == 1;
+        report _d2["keys"]["key1"] == 1;
+
+        _d1.dict::clear;
+        _d2.clear();
+
+        report _d1 == {};
+        report _d2 == {};
+
+        _d1 = _dd.dict::deepcopy;
+        _d2 = _dd.deepcopy();
+
+        _d["key1"] = 0;
+
+        // still 1 since we used deepcopy
+        report _d1["keys"]["key1"] == 1;
+        report _d2["keys"]["key1"] == 1;
+
+        report _d1.items() == [
+            [ "keys", { "key1": 1, "key2": 2, "key3": 3, "key4": 4, "key5": 5 } ],
+            [ "key6", 6 ],
+            [ "key7", 7 ],
+            [ "key8", 8 ],
+            [ "key9", 9 ]
+        ];
+
+        report _d1.dict::items == _d2.items();
+
+        report _d1.keys == [ "keys", "key6", "key7", "key8", "key9" ];
+        report _d1.dict::keys == _d2.keys;
+
+        report _d1.values() == [ { "key1": 1, "key2": 2, "key3": 3, "key4": 4, "key5": 5 }, 6, 7, 8, 9 ];
+        report _d1.dict::values == _d2.values();
+
+        _d1.dict::update({"key10": 10});
+        _d2.update({"key10": 10});
+
+        report _d1.dict::get("key10") == _d2.get("key10");
+
+        report _d1.dict::pop("key9") == _d2.pop("key9");
+
+        report _d1.dict::popitem == _d2.popitem();
+
+        report _d1.dict::get("key10", 11) == _d2.get("key10", 11);
+
+        # -------------------- STRING -------------------- #
+
+        _s1 = "aA bB";
+        _s2 = "aA bB";
+
+        report _s1.title() == "Aa Bb";
+        report _s1.str::title == _s2.title();
+
+        report _s1.capitalize() == "Aa bb";
+        report _s1.str::capitalize == _s2.capitalize();
+
+        _s1 = "AabB";
+        _s2 = "AabB";
+
+        report _s1.swap_case() == "aABb";
+        report _s1.str::swap_case == _s2.swap_case();
+
+        _s1 = "Abc123";
+        _s2 = "Abc123";
+
+        report _s1.is_alnum();
+        report _s1.str::is_alnum == _s2.is_alnum();
+
+        _s1 = "abc";
+        _s2 = "abc";
+
+        report _s1.upper() == "ABC";
+        report _s1.str::upper == _s2.upper();
+
+        report _s1.is_alpha();
+        report _s1.str::is_alpha == _s2.is_alpha();
+
+        report _s1.is_lower();
+        report _s1.str::is_lower == _s2.is_lower();
+
+        _s1 = "123";
+        _s2 = "123";
+
+        report _s1.is_digit();
+        report _s1.str::is_digit == _s2.is_digit();
+
+        _s1 = "My Title";
+        _s2 = "My Title";
+
+        report _s1.is_title();
+        report _s1.str::is_title == _s2.is_title();
+
+        _s1 = "ABC";
+        _s2 = "ABC";
+
+        report _s1.is_upper();
+        report _s1.str::is_upper == _s2.is_upper();
+
+        report _s1.lower() == "abc";
+        report _s1.str::lower == _s2.lower();
+
+        _s1 = " \\n\\t\\r";
+        _s2 = " \\n\\t\\r";
+
+        report _s1.is_space();
+        report _s1.str::is_space == _s2.is_space();
+
+        _s1 = "{\\\"test\\\":1}";
+        _s2 = "{\\\"test\\\":1}";
+
+        report _s1.load_json() == {"test":1};
+        report _s1.str::load_json == _s2.load_json();
+
+        _s1 = "A B";
+        _s2 = "A B";
+
+        report _s1.split(" ") == ["A", "B"];
+        report _s1.str::split(" ") == _s2.split(" ");
+
+        _s1 = "    A    ";
+        _s2 = "    A    ";
+
+        report _s1.strip() == "A";
+        report _s1.str::strip == _s2.strip();
+
+        report _s1.lstrip() == "A    ";
+        report _s1.str::lstrip == _s2.lstrip();
+
+        report _s1.rstrip() == "    A";
+        report _s1.str::rstrip == _s2.rstrip();
+
+        _s1 = "abcdea";
+        _s2 = "abcdea";
+
+        report _s1.count("a") == 2;
+        report _s1.str::count("a") == _s2.count("a");
+
+        report _s1.find("c") == 2;
+        report _s1.str::find("c") == _s2.find("c");
+
+        _s1 = "a b c";
+        _s2 = "a b c";
+
+        report _s1.split(" ") == ["a","b","c"];
+        report _s1.str::split == _s2.split();
+
+        _s1 = " ";
+        _s2 = " ";
+
+        report _s1.join(["a","b","c"]) == "a b c";
+        report _s1.str::join(["a","b","c"]) == _s2.join(["a","b","c"]);
+
+        report _s1.join("a","b","c") == "a b c";
+        report _s1.str::join("a","b","c") == _s2.join("a","b","c");
+
+        _s1 = "abcde";
+        _s2 = "abcde";
+
+        report _s1.startswith("abc");
+        report _s1.str::startswith("abc") == _s2.startswith("abc");
+
+        report _s1.endswith("cde");
+        report _s1.str::endswith("cde") == _s2.endswith("cde");
+
+        report _s1.replace("c", "f") == "abfde";
+        report _s1.str::replace("c", "f") == _s2.replace("c", "f");
+
+        _s1 = "aaabcdeaaa";
+        _s2 = "aaabcdeaaa";
+
+        report _s1.strip("a") == "bcde";
+        report _s1.str::strip("a") == _s2.strip("a");
+
+        report _s1.lstrip("a") == "bcdeaaa";
+        report _s1.str::lstrip("a") == _s2.lstrip("a");
+
+        report _s1.rstrip("a") == "aaabcde";
+        report _s1.str::rstrip("a") == _s2.rstrip("a");
+
+        # -------------------- LIST -------------------- #
+
+        _l = [5,1,3,2];
+
+        _ll = [1,0,2,9,3,_l,8,4,7,5,6];
+
+        report _ll.length == 11;
+
+        _l1 = _ll.list::copy;
+        _l2 = _ll.copy();
+
+        _l[0] = 4;
+
+        report _l1[5][0] == 4;
+        report _l2[5][0] == 4;
+
+        _l1.clear();
+        _l2.list::clear;
+
+        report _l1 == [];
+        report _l1 == _l2;
+
+        _l1 = _ll.list::deepcopy;
+        _l2 = _ll.deepcopy();
+
+        _l[0] = 5;
+
+        report _l1[5][0] == 4;
+        report _l2[5][0] == 4;
+
+        _l1.reverse();
+        report _l1 == [6, 5, 7, 4, 8, [4,1,3,2], 3, 9, 2, 0, 1];
+
+        _l2.list::reverse;
+        report _l1 == _l2;
+
+        report _l1.reversed() == [1,0,2,9,3,[4,1,3,2], 8,4,7,5,6];
+        report _l1.list::reversed == _l2.reversed();
+
+        _l1 = [6, 5, 7, 4, 8, 3, 9, 2, 0, 1];
+        _l2 = [6, 5, 7, 4, 8, 3, 9, 2, 0, 1];
+
+        _l1.sort();
+        _l2.list::sort;
+
+        report _l1 == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        report _l1 == _l2;
+
+        report _l1.max() == 9;
+        report _l1.list::max == _l2.max();
+
+        report _l1.min() == 0;
+        report _l1.list::min == _l2.min();
+
+        report _l1.idx_of_max() == 9;
+        report _l1.list::idx_of_max == _l2.idx_of_max();
+
+        report _l1.idx_of_min() == 0;
+        report _l1.list::idx_of_min == _l2.idx_of_min();
+
+        report _l1.pop() == _l2.list::pop;
+
+        _l1.append(9);
+        _l2.list::append(9);
+
+        _l1.extend([10,11]);
+        _l2.list::extend([10,11]);
+
+        _l1.insert(0, -1);
+        _l2.list::insert(0, -1);
+
+        _l1.remove(-1);
+        _l2.list::remove(-1);
+
+        report _l1.index(10) == 10;
+        report _l1.list::index(11) == _l2.index(11);
+
+        _l1.append(10);
+        _l2.list::append(10);
+
+        _l1.append(10);
+        _l2.list::append(10);
+
+        report _l1.count(10) == 3;
+        report _l1.list::count(10) == _l2.count(10);
+
+        _l1 = _l1.pop(13);
+
+        report _l1 == _l2.list::pop(13);
+    }
+}
+"""

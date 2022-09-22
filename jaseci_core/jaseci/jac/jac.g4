@@ -233,13 +233,15 @@ cast_built_in: any_type;
 obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
 
 dict_built_in:
-	LBRACE name_list RBRACE
-	| (TYP_DICT DBL_COLON | DICT_DBL_COLON) NAME (
+	KW_KEYS
+	| LBRACE name_list RBRACE
+	| (TYP_DICT DBL_COLON | DICT_DBL_COLON) (NAME | KW_KEYS) (
 		LPAREN expr_list RPAREN
 	)?;
 
 list_built_in:
-	(TYP_LIST DBL_COLON | LIST_DBL_COLON) NAME (
+	KW_LENGTH
+	| (TYP_LIST DBL_COLON | LIST_DBL_COLON) NAME (
 		LPAREN expr_list RPAREN
 	)?;
 
@@ -376,6 +378,7 @@ KW_WITH: 'with';
 KW_ENTRY: 'entry';
 KW_EXIT: 'exit';
 KW_LENGTH: 'length';
+KW_KEYS: 'keys';
 KW_CONTEXT: 'context';
 KW_INFO: 'info';
 KW_DETAILS: 'details';
