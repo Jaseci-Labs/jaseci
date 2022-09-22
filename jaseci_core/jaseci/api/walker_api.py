@@ -26,7 +26,11 @@ class WalkerApi:
 
     @Interface.private_api(cli_args=["code"])
     def walker_register(
-        self, snt: Sentinel = None, code: str = "", encoded: bool = False
+        self,
+        snt: Sentinel = None,
+        code: str = "",
+        dir: str = "/",
+        encoded: bool = False,
     ):
         """
         Allows for the specific parsing and registering of individual walkers.
@@ -37,7 +41,7 @@ class WalkerApi:
         """
         if encoded:
             code = b64decode_str(code)
-        walk = snt.register_walker(code)
+        walk = snt.register_walker(code, dir)
         if walk:
             self.extract_wlk_aliases(snt, walk)
             return walk.serialize()
