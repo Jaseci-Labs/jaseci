@@ -70,10 +70,3 @@ a *= 4 / 4;
 a /= 4 - 6;
 ```
 
-```jac
-
-# single line comment
-//
-block comment
-
-//

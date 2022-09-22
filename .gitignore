@@ -23,3 +23,7 @@ js.session
 mydatabase
 *Zone.Identifier
 .DS_Store
+
+# docs # 
+docs/
+documentation/

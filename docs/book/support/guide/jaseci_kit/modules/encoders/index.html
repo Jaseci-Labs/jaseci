@@ -139,7 +139,7 @@
 <p>Jaseci Kit provides the following optimized text encoders:</p>
 <h2 id="encoders-1"><a class="header" href="#encoders-1">Encoders</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Module</th><th>Model Name</th><th>Type</th><th>Status</th><th>Description</th><th>Resources</th></tr></thead><tbody>
-<tr><td><a href="use_enc/README.html"><code>use_enc</code></a></td><td>USE Encoder</td><td>Zero-shot</td><td>Ready</td><td>Sentence-level embedding pre-trained on general text corpus</td><td><a href="use_enc/README.html">Documentation</a> <a href="https://arxiv.org/abs/1803.11175">Paper</a></td></tr>
+<tr><td><a href="use_enc/README.html"><code>use_enc</code></a></td><td>USE Encoder</td><td>Zero-shot</td><td>Ready</td><td>Sentence-level embedding pre-trained on general text corpus</td><td><a href="support/guide/jaseci_kit/modules/encoders/use_enc/README.html">Documentation</a> <a href="https://arxiv.org/abs/1803.11175">Paper</a></td></tr>
 <tr><td><a href="use_qa/README.html"><code>use_qa</code></a></td><td>USE QA</td><td>Zero-shot</td><td>Ready</td><td>Sentence-level embedding pre-trained on Q&amp;A data corpus</td><td><a href="use_qa/README.html">Documentation</a> <a href="https://arxiv.org/abs/1803.11175">Paper</a></td></tr>
 <tr><td><a href="fast_enc/README.html"><code>fast_enc</code></a></td><td>FastText</td><td>Training required</td><td>Ready</td><td>FastText Text Classifier</td><td><a href="fast_enc/README.html">Documentation</a>  <a href="https://arxiv.org/abs/1712.09405">Paper</a></td></tr>
 <tr><td><a href="bi_enc/README.html"><code>bi_enc</code></a></td><td>Bi-encoder</td><td>Training required / Zero-shot</td><td>Ready</td><td>Dual sentence-level encoders</td><td><a href="bi_enc/README.html">Documentation</a>  <a href="https://arxiv.org/abs/1803.11175">Paper</a></td></tr>
@@ -171,22 +171,6 @@
 
         </div>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         <script type="text/javascript">
             window.playground_copyable = true;
         </script>

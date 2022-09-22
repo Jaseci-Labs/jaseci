@@ -1113,13 +1113,6 @@ a -= 4 * -5;
 a *= 4 / 4;
 a /= 4 - 6;
 </code></pre>
-<pre><code class="language-jac">
-# single line comment
-//
-block comment
-
-//
-</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="control-flow"><a class="header" href="#control-flow">Control Flow</a></h1>
 <h2 id="select-statement"><a class="header" href="#select-statement">Select Statement</a></h2>
 <pre><code class="language-jac"># simple If statement
@@ -5075,7 +5068,7 @@ You can go to <code>localhost:3000/docs</code> to check out all the available AP
 <p>Jaseci Kit provides the following optimized text encoders:</p>
 <h2 id="encoders-2"><a class="header" href="#encoders-2">Encoders</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Module</th><th>Model Name</th><th>Type</th><th>Status</th><th>Description</th><th>Resources</th></tr></thead><tbody>
-<tr><td><a href="support/guide/jaseci_kit/modules/encoders/use_enc/README.html"><code>use_enc</code></a></td><td>USE Encoder</td><td>Zero-shot</td><td>Ready</td><td>Sentence-level embedding pre-trained on general text corpus</td><td><a href="support/guide/jaseci_kit/modules/encoders/use_enc/README.html">Documentation</a> <a href="https://arxiv.org/abs/1803.11175">Paper</a></td></tr>
+<tr><td><a href="support/guide/jaseci_kit/modules/encoders/use_enc/README.html"><code>use_enc</code></a></td><td>USE Encoder</td><td>Zero-shot</td><td>Ready</td><td>Sentence-level embedding pre-trained on general text corpus</td><td><a href="support/guide/jaseci_kit/modules/encoders/support/guide/jaseci_kit/modules/encoders/use_enc/README.html">Documentation</a> <a href="https://arxiv.org/abs/1803.11175">Paper</a></td></tr>
 <tr><td><a href="support/guide/jaseci_kit/modules/encoders/use_qa/README.html"><code>use_qa</code></a></td><td>USE QA</td><td>Zero-shot</td><td>Ready</td><td>Sentence-level embedding pre-trained on Q&amp;A data corpus</td><td><a href="support/guide/jaseci_kit/modules/encoders/use_qa/README.html">Documentation</a> <a href="https://arxiv.org/abs/1803.11175">Paper</a></td></tr>
 <tr><td><a href="support/guide/jaseci_kit/modules/encoders/fast_enc/README.html"><code>fast_enc</code></a></td><td>FastText</td><td>Training required</td><td>Ready</td><td>FastText Text Classifier</td><td><a href="support/guide/jaseci_kit/modules/encoders/fast_enc/README.html">Documentation</a>  <a href="https://arxiv.org/abs/1712.09405">Paper</a></td></tr>
 <tr><td><a href="support/guide/jaseci_kit/modules/encoders/bi_enc/README.html"><code>bi_enc</code></a></td><td>Bi-encoder</td><td>Training required / Zero-shot</td><td>Ready</td><td>Dual sentence-level encoders</td><td><a href="support/guide/jaseci_kit/modules/encoders/bi_enc/README.html">Documentation</a>  <a href="https://arxiv.org/abs/1803.11175">Paper</a></td></tr>
@@ -8089,7 +8082,7 @@ walker text_segment{
 <p>Jaseci UI kit provides a set of components and utilities that can quickly integrate with your Jac code or use in Jaseci Studio.</p>
 <h2 id="guide"><a class="header" href="#guide">Guide</a></h2>
 <ul>
-<li><a href="jaseci_ui_kit/components/docs/what-is-jaseci-ui-kit.html">Introduction</a></li>
+<li><a href="jaseci_ui_kit/components/docs/gettingStarted.html">Introduction</a></li>
 <li><a href="jaseci_ui_kit/components/docs/basic-concepts.html">Basic Concepts</a></li>
 <li><a href="jaseci_ui_kit/components/docs/built-in-actions.html">Built-in Actions</a></li>
 <li><a href="jaseci_ui_kit/components/docs/connecting-an-api.html">Connecting an API</a></li>
@@ -9510,22 +9503,6 @@ The Top menu has a few butttons . In order you have the <code>Run</code> button 
 
         </div>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         <script type="text/javascript">
             window.playground_copyable = true;
         </script>

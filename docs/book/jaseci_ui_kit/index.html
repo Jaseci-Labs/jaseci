@@ -138,7 +138,7 @@
 <p>Jaseci UI kit provides a set of components and utilities that can quickly integrate with your Jac code or use in Jaseci Studio.</p>
 <h2 id="guide"><a class="header" href="#guide">Guide</a></h2>
 <ul>
-<li><a href="components/docs/what-is-jaseci-ui-kit.html">Introduction</a></li>
+<li><a href="components/docs/gettingStarted.html">Introduction</a></li>
 <li><a href="components/docs/basic-concepts.html">Basic Concepts</a></li>
 <li><a href="components/docs/built-in-actions.html">Built-in Actions</a></li>
 <li><a href="components/docs/connecting-an-api.html">Connecting an API</a></li>
@@ -210,22 +210,6 @@
 
         </div>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         <script type="text/javascript">
             window.playground_copyable = true;
         </script>

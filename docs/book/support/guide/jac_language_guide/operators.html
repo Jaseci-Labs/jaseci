@@ -198,13 +198,6 @@ a -= 4 * -5;
 a *= 4 / 4;
 a /= 4 - 6;
 </code></pre>
-<pre><code class="language-jac">
-# single line comment
-//
-block comment
-
-//
-</code></pre>
 
                     </main>
 
@@ -232,22 +225,6 @@ block comment
 
         </div>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         <script type="text/javascript">
             window.playground_copyable = true;
         </script>
