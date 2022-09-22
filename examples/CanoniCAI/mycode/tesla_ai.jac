@@ -162,7 +162,7 @@ walker talk {
     has wlk_ctx = {};
     has response;
     root {
-        take --> node::dialogue_root; //
+        take --> node::dialogue_root;
     }
     cai_state {
         if (!question) {

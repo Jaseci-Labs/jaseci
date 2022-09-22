@@ -90,15 +90,15 @@ graph faq {
 }
 
 // Init Walker
-walker init {
+/*walker init {
     root {
         spawn here --> node::faq_root;
         spawn here walker::ingest_faq(kb_file="tesla_faq.json");
         spawn here walker::ask;
     }
-}
+}*/
 
-// Asl Walker
+// Ask Walker
 walker ask {
     can use.qa_classify;
     has question;
