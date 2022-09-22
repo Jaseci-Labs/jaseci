@@ -174,10 +174,12 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertIn("namespace key", r)
 
     def test_public_apis_walker_summon_auth(self):
+        self.logger_on()
         self.call(
             "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
         )
         r = self.call_cast("walker get zsb:walker:pubinit -mode keys")
+        self.log(r)
         key = r["anyone"]
         r = self.call_cast("alias list")
         walk = r["zsb:walker:pubinit"]
