@@ -183,7 +183,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
                 gph = gph.run()
             if i["walker_ref"]:
                 wlk = self.run_architype(
-                    name=i["walker_ref"], kind="Walker", caller=self
+                    name=i["walker_ref"], kind="walker", caller=self
                 )
             else:
                 wlk = Walker(
