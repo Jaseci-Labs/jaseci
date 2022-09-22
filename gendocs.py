@@ -7,7 +7,13 @@ import subprocess
 # open read me file
 def main():
     readme = open("README.md", "r")
-    summaryfile = open("docs/src/SUMMARY.md", "w")
+    try:
+        summaryfile = open("docs/src/SUMMARY.md", "w")
+    except FileNotFoundError:
+        os.makedirs("docs/src")
+    else:
+         summaryfile = open("docs/src/SUMMARY.md", "w")
+
     summaryfile.write("")
     summaryfile.close()
     summaryfile = open("docs/src/SUMMARY.md", "a")
@@ -124,6 +130,48 @@ def serveMdBook():
     except:
         print("An Error occured while trying to build")
 
+def createmdbookDocs():
+    try:
+        subprocess.call(["mdbook","init", "docs", "--ignore=none","--title=Jaseci Documentation"])
+    except:
+        print("errro occured")
 
+def copyTheme(path):
+    try:
+        os.makedirs("docs/theme")
+    except :
+        print("error making theme folder")
+
+    files = []
+    for (dirpath, dirnames, filenames) in walk(path):
+            files.extend(filenames)
+
+    for file in files:
+        docspath = "docs/theme/" + file
+        sourcepath = "support/theme/" + file
+        shutil.copy(sourcepath, docspath)
+
+
+def editbookTOML():
+    book = open("docs/book.toml","a")
+    book.write("[build]\n")
+    book.write("use-default-preprocessors = false\n")
+    book.write("[preprocessor.links]\n")
+    book.close()
+
+
+    
+
+
+
+
+createmdbookDocs()
+print("book created")
 main()
+print("files generated")
+copyTheme("support/theme")
+print("theme copied")
 serveMdBook()
+print("Docs built")
+editbookTOML()
+print("BOOK.toml file edited")

@@ -4,7 +4,7 @@ Jaseci UI kit provides a set of components and utilities that can quickly integr
 
 ## Guide
 
-- [Introduction](components/docs/what-is-jaseci-ui-kit.md)
+- [Introduction](components/docs/gettingStarted.md)
 - [Basic Concepts](components/docs/basic-concepts.md)
 - [Built-in Actions](components/docs/built-in-actions.md)
 - [Connecting an API](components/docs/connecting-an-api.md)
