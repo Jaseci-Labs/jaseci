@@ -449,12 +449,12 @@ And that is what we are going to build in this section -- a multi-turn action-or
 
 > **Warning**
 >
-> Start a new jac file (`dialogue.jac`) before moving fowrard. We will keep this program separate from the FAQ one we built. But, KEEP the FAQ jac file around, we will integrate these two systems into one unified conversational AI system later.
+> Create a new jac file (`dialogue.jac`) before moving forward. We will keep this program separate from the FAQ one we built. But, KEEP the FAQ jac file around, we will integrate these two systems into one unified conversational AI system later.
 
 ## State Graph
 Let's first go over the graph architecture for the dialogue system.
 We will be building a state graph.
-In a state graph, each node is a conversational state, which represent a possible user state during a dialgoue.
+In a state graph, each node is a conversational state, which represents a possible user state during a dialgoue.
 The state nodes are connected with transition edges, which encode the condition required to hop from one state to another state.
 The conditions are often based on the user's input.
 
@@ -479,7 +479,7 @@ edge intent_transition {
 }
 ```
 This is the first custom edge we have introduced.
-In jac, just like nodes, you can define custom edge type and edges can also have `has` variables.
+In jac, just like nodes, you can define custom edge types. Edges are also allowed `has` variables.
 
 In this case, we created an edge for intent transition. This is a state transition that will be triggered conditioned on its intent being detected from the user's input question.
 
@@ -611,7 +611,7 @@ For now, we are just matching the incoming question with the intent label as a s
 
 ## Intent classificaiton with Bi-encoder
 Let's introduce an intent classification AI model.
-Intent Classification is the task of detecting and assigning one of a list of pre-defined intents to a given piece of text, to summarize what the text is conveying or asking.
+Intent Classification is the task of detecting and assigning an intent to a given piece of text from a list of pre-defined intents, to summarize what the text is conveying or asking.
 It's one of the fundamental tasks in Natural Language Processing (NLP) with broad applications in many areas.
 
 There are many models that have been proposed and applied to intent classification.
@@ -637,13 +637,13 @@ We have provided an example training file that contains some starting point trai
 ```js
 jaseci > jac run bi_enc.jac -walk train -ctx "{\"train_file\": \"clf_train_1.json\"}"
 ```
-We are still using `jac run` but as you have noticied, this time we are using some new arguments. So let's break it down.
+We are still using `jac run` but as you have noticed, this time we are using some new arguments. So let's break it down.
 * `-walk` specifies the name of the walker to run. By default, it runs the `init` walker.
 * `-ctx` stands for `context`. This lets us provide input parameters to the walker. The input parameters are defined as `has` variables in the walker.
 
 > **Warning**
 >
-> `-ctx` expects a json string that contains a dictionary of parameters and their value. Since we are running this on the command line, you will need to escape the quotation marks `"` properly for it to be a valid json string. Pay close attention to the example here `-ctx "{\"train_file\": \"clf_train_1.json\"}"` and uses this as a reference.
+> `-ctx` expects a json string that contains a dictionary of parameters and their values. Since we are running this on the command line, you will need to escape the quotation marks `"` properly for it to be a valid json string. Pay close attention to the example here `-ctx "{\"train_file\": \"clf_train_1.json\"}"` and use this as a reference.
 
 You should see an output block that looks like the following repeating many times on your screen:
 ```bash
@@ -665,7 +665,7 @@ You can use the `infer` walker to play with the model and test it out! `infer` i
 jaseci > jac run bi_enc.jac -walk infer -ctx "{\"labels\": [\"test drive\", \"order a tesla\"]}"
 ```
 
-Similar to training, we are using `jac run` to specifically invoke the `infer` walker and providing it with custom parameters.
+Similar to training, we are using `jac run` to specifically invoke the `infer` walker and provide it with custom parameters.
 The custom paremeter is the list of candidate intent labels, which are `test drive` and `order a tesla` in this case, as these were the intents the model was trained on.
 
 ```bash
