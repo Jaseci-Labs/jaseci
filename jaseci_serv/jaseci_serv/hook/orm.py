@@ -123,7 +123,6 @@ class OrmHook(RedisHook):
     ####################################################
 
     def commit_obj(self, item):
-        self.commit_obj_to_cache(item)
         item_from_db, created = self.objects.get_or_create(jid=item.id)
         utils.map_assignment_of_matching_fields(item_from_db, item)
         item_from_db.jsci_obj = item.jsci_payload()
@@ -135,9 +134,11 @@ class OrmHook(RedisHook):
         item_from_db.value = value
         item_from_db.save()
 
-    def commit(self):
+    def commit(self, skip_cache=False):
         """Write through all saves to store"""
         for i in self.save_obj_list:
+            if not skip_cache:
+                self.commit_obj_to_cache(i)
             self.commit_obj(i)
         self.save_obj_list = set()
 

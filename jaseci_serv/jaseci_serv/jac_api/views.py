@@ -18,7 +18,14 @@ from jaseci_serv.svc import MetaService
 class JResponse(Response):
     def __init__(self, master, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        master._h.commit()
+        self.hook = master._h
+        for i in self.hook.save_obj_list:
+            self.hook.commit_obj_to_cache(i)
+
+    def close(self):
+        super(JResponse, self).close()
+        # Commit db changes after response to user
+        self.hook.commit(True)
 
 
 class AbstractJacAPIView(APIView):
