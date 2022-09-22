@@ -1,4 +1,4 @@
-from .promon import Promon
+from .promon.promon import Promon
 import time
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
@@ -87,7 +87,7 @@ class Monitor:
             )
 
     def strategy_redis_cpu(
-        self, node_name: str, deploymentNameSpace: str, deploymentName: str
+        self, node_name: str, deployment_namespace: str, deployment_name: str
     ):
         cpu = self.promon.cpu_utilization_percentage()
         cpu_usage = cpu[node_name]
@@ -97,14 +97,14 @@ class Monitor:
             for pod in pods:
                 namespace = pod["namespace"]
                 name = pod["name"]
-                if name == deploymentName:
+                if name == deployment_name:
                     print("Kill deployment")
                     self.controller.kill_deployment(name=name, namespace=namespace)
         if cpu_usage < 5:
             pods = self.controller.get_deployment_list()
             redis_running = False
             for pod in pods:
-                if pod["name"] == deploymentName:
+                if pod["name"] == deployment_name:
                     redis_running = True
             if not redis_running:
                 print("Creating new deployment")
@@ -135,31 +135,31 @@ class Monitor:
             self.controller.deployment_set_scale("jaseci-redis", "default", replicas)
 
 
-def daemon(k8sConf, prometheusURL: str):
-    m = Monitor(prometheusURL, k8sConf)
+def daemon(k8s_conf, prometheus_url: str):
+    m = Monitor(prometheus_url, k8s_conf)
     while True:
         # m.strategy_redis_cpu("minikube", "default", "jaseci-redis")
         m.strategy_start_redis()
         time.sleep(10)
 
 
-def start_monitoring(k8sConf, prometheusURL: str):
-    monitor = multiprocessing.Process(target=daemon, args=(k8sConf, prometheusURL))
+def start_monitoring(k8s_conf, prometheus_url: str):
+    monitor = multiprocessing.Process(target=daemon, args=(k8s_conf, prometheus_url))
     monitor.start()
     return monitor
 
 
-def wait_monitoring(monitorThread):
-    monitorThread.join()
+def wait_monitoring(monitor_thread):
+    monitor_thread.join()
 
 
-def stop_monitoring(monitorThread):
-    monitorThread.terminate()
+def stop_monitoring(monitor_thread):
+    monitor_thread.terminate()
 
 
-def remote_k8s_conf(K8sURL: str):
+def remote_k8s_conf(k8s_url: str):
     k8sconf = client.Configuration()
-    k8sconf.host = K8sURL
+    k8sconf.host = k8s_url
     k8sconf.verify_ssl = False
     return k8sconf
 
@@ -176,5 +176,7 @@ def jsorc_start():
     logger.info("JSORC Running")
     if incluster():
         k8s_config = None
-        start_monitoring(k8sConf=k8s_config, prometheusURL="http://js-prometheus:9090")
+        start_monitoring(
+            k8s_conf=k8s_config, prometheus_url="http://js-prometheus:9090"
+        )
         logger.info("Monitoring started")

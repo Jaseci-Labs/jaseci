@@ -151,7 +151,6 @@ class Element(Hookable):
             "jid",
             "j_type",
             "context",
-            "anchor",
             "j_timestamp",
             "version",
         ]

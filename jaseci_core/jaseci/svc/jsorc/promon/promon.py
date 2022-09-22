@@ -146,7 +146,8 @@ class Promon:
 
     def disk_total_bytes(self) -> dict:
         util = self.prom.get_current_metric_value(
-            'sum(avg (node_filesystem_size_bytes{mountpoint!="/boot", fstype!="tmpfs"}) without (mountpoint)) by (node)'
+            'sum(avg (node_filesystem_size_bytes{mountpoint!="/boot", '
+            'fstype!="tmpfs"}) without (mountpoint)) by (node)'
         )
         res = {}
         for node in util:
@@ -157,7 +158,8 @@ class Promon:
 
     def disk_free_bytes(self) -> dict:
         util = self.prom.get_current_metric_value(
-            'sum(avg (node_filesystem_free_bytes{mountpoint!="/boot", fstype!="tmpfs"}) without (mountpoint)) by (node)'
+            'sum(avg (node_filesystem_free_bytes{mountpoint!="/boot", '
+            'fstype!="tmpfs"}) without (mountpoint)) by (node)'
         )
         res = {}
         for node in util:

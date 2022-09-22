@@ -174,20 +174,18 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertIn("namespace key", r)
 
     def test_public_apis_walker_summon_auth(self):
-        self.logger_on()
         self.call(
             "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
         )
-        r = self.call_cast("walker get zsb:walker:pubinit -mode keys")
-        self.log(r)
+        wjid = self.call_cast("walker spawn create pubinit")["jid"]
+        r = self.call_cast(f"walker get {wjid} -mode keys")
         key = r["anyone"]
         r = self.call_cast("alias list")
-        walk = r["zsb:walker:pubinit"]
         nd = r["active:graph"]
-        r = self.call_cast(f"walker summon {walk} -key {key} -nd {nd}")
+        r = self.call_cast(f"walker summon {wjid} -key {key} -nd {nd}")
         self.assertEqual(len(r["report"]), 0)
         key = "aaaaaaaa"
-        r = self.call_cast(f"walker summon {walk} -key {key} -nd {nd}")
+        r = self.call_cast(f"walker summon {wjid} -key {key} -nd {nd}")
         self.assertFalse(r["success"])
 
     def test_jsctl_import(self):
