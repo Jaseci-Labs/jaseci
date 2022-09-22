@@ -1,5 +1,5 @@
 
-# Create Azure EKS Infrastructure for Jaseci using Terraform #
+# Create Azure AKS Infrastructure for Jaseci using Terraform #
 
 ## Preparation #
 

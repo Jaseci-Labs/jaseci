@@ -1,16 +1,15 @@
-output "aks_id" {
-    description = "AKS cluster ID."
+
+output "resource_group_name" {
+  value = azurerm_resource_group.rg.name
+}
+
+output "kubernetes_cluster_name" {
+  value = azurerm_kubernetes_cluster.aks.name
+}
+
+output "kubernetes_cluster_id" {
     value = azurerm_kubernetes_cluster.aks.id
 }
-
-output "aks_fqdn" {
-  value = azurerm_kubernetes_cluster.aks.fqdn
-}
-
-output "aks_node_rg" {
-  value = azurerm_kubernetes_cluster.aks.node_resource_group
-}
-
 
 resource "local_file" "kubeconfig" {
   depends_on   = [azurerm_kubernetes_cluster.aks]
