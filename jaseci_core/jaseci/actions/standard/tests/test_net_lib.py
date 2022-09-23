@@ -51,3 +51,12 @@ class NetLibTest(CoreTest):
         self.assertEqual(len(ret["report"]), 1)
         after = len(self.smast._h.mem)
         self.assertEqual(before, after)
+
+    def test_pack_anc_priv(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "pack_it_anc_priv"}])
+        self.assertEqual(len(ret["report"]), 6)
+        self.assertNotIn("priv", ret["report"][2]["context"])

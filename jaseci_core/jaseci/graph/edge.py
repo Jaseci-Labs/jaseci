@@ -13,13 +13,12 @@ import uuid
 class Edge(Element, Anchored):
     """Edge class for Jaseci"""
 
-    def __init__(self, from_node=None, to_node=None, *args, **kwargs):
+    def __init__(self, from_node=None, to_node=None, **kwargs):
         self.from_node_id = None
         self.to_node_id = None
         self.bidirected: bool = False
-        self.context = {}
+        Element.__init__(self, **kwargs)
         Anchored.__init__(self)
-        Element.__init__(self, *args, **kwargs)
         if from_node:
             self.set_from_node(from_node)
         if to_node:
@@ -187,9 +186,8 @@ class Edge(Element, Anchored):
             dstr += ', dir="both"'
 
         edge_dict = self.context
-        if "_private" in edge_dict:
-            for i in edge_dict["_private"]:
-                edge_dict.pop(i)
+        for i in self.private_values():
+            edge_dict.pop(i)
 
         if edge_dict and detailed:
             for k, v in edge_dict.items():

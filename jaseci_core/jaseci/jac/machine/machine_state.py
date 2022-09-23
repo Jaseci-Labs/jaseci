@@ -38,8 +38,13 @@ class MachineState:
         self._assign_mode = False
         self._loop_limit = 10000
         self._cur_jac_ast = None
+        self.inform_hook()
 
-    def parent(self):
+    def inform_hook(self):
+        if hasattr(self, "_h"):
+            self._h._machine = self
+
+    def parent(self):  # parent here is always a sentinel
         if self._parent_override:
             return self._parent_override
         else:
@@ -84,13 +89,6 @@ class MachineState:
         if mach.report_custom:
             self.report_custom = mach.report_custom
         self.runtime_errors += mach.runtime_errors
-
-    def get_arch_for(self, obj):
-        """Returns the architype that matches object"""
-        ret = self.parent().arch_ids.get_obj_by_name(name=obj.name, kind=obj.kind)
-        if ret is None:
-            self.rt_error(f"Unable to find architype for {obj.name}, {obj.kind}")
-        return ret
 
     def obj_set_to_jac_set(self, obj_set):
         """

@@ -16,22 +16,27 @@ import uuid
 class Node(Element, Anchored):
     """Node class for Jaseci"""
 
-    def __init__(self, dimension=0, *args, **kwargs):
+    def __init__(self, dimension=0, **kwargs):
         self.edge_ids = IdList(self)
         self.parent_node_ids = IdList(self)
         self.member_node_ids = IdList(self)
         self.dimension = dimension  # Nodes are always hdgd 0
-        self.context = {}
-
+        Element.__init__(self, **kwargs)
         Anchored.__init__(self)
-        Element.__init__(self, *args, **kwargs)
 
     def attach(self, node_obj, edge_set=None, as_outbound=True, as_bidirected=False):
         """
         Generalized attach function for attaching nodes with edges
         """
         if edge_set is None:
-            edge_set = [Edge(m_id=self._m_id, h=self._h, kind="edge", name="generic")]
+            edge_set = [
+                Edge(
+                    m_id=self._m_id,
+                    h=self._h,
+                    kind="edge",
+                    name="generic",
+                )
+            ]
         link_order = [self, node_obj] if as_outbound else [node_obj, self]
         for e in edge_set:
             if not e.set_from_node(link_order[0]) or not e.set_to_node(link_order[1]):
@@ -375,9 +380,8 @@ class Node(Element, Anchored):
         dstr += f'label="n{nid}:{self.name}" '
 
         node_dict = self.context
-        if "_private" in node_dict:
-            for i in node_dict["_private"]:
-                node_dict.pop(i)
+        for i in self.private_values():
+            node_dict.pop(i)
 
         if node_dict and detailed:
             for k, v in node_dict.items():

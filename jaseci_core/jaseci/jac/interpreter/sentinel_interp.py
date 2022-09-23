@@ -5,7 +5,6 @@ This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
 from jaseci.actor.architype import Architype
-from jaseci.actor.walker import Walker
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.utils.utils import parse_str_token
 from jaseci.jac.ir.jac_code import jac_ast_to_ir
@@ -66,7 +65,8 @@ class SentinelInterp(Interp):
         architype:
             KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
             | KW_EDGE NAME (COLON NAME)* attr_block
-            | KW_GRAPH NAME graph_block;
+            | KW_GRAPH NAME graph_block
+            | KW_WALKER NAME namespaces? walker_block;
         """
         kid = self.set_cur_ast(jac_ast)
         name = kid[1].token_text()
@@ -81,8 +81,34 @@ class SentinelInterp(Interp):
         if self.arch_ids.has_obj_by_name(arch.name, kind=arch.kind):
             self.arch_ids.destroy_obj_by_name(arch.name, kind=arch.kind)
         self.arch_ids.add_obj(arch)
+        self.arch_has_preproc(kid[-1], arch)
         self.arch_can_compile(kid[-1], arch)
         return arch
+
+    # Note: Sentinels only registers the attr_stmts
+
+    def arch_has_preproc(self, jac_ast, arch):
+        """Helper function to statically compile can stmts for arch"""
+        kid = self.set_cur_ast(jac_ast)
+        if jac_ast.name in ["attr_block", "walker_block"]:
+            for i in kid:
+                if i.name == "attr_stmt" and i.kid[0].name == "has_stmt":
+                    for j in i.kid[0].kid:
+                        if j.name == "has_assign":
+                            has_kid = j.kid
+                            is_private = False
+                            is_anchor = False
+                            if has_kid[0].name == "KW_PRIVATE":
+                                has_kid = has_kid[1:]
+                                is_private = True
+                            if has_kid[0].name == "KW_ANCHOR":
+                                has_kid = has_kid[1:]
+                                is_anchor = True
+                            var_name = has_kid[0].token_text()
+                            if is_private:
+                                arch.private_vars.append(var_name)
+                            if is_anchor and arch.anchor_var is None:
+                                arch.anchor_var = var_name
 
     def arch_can_compile(self, jac_ast, arch):
         """Helper function to statically compile can stmts for arch"""
@@ -97,22 +123,6 @@ class SentinelInterp(Interp):
             for i in kid:
                 self.run_can_stmt(i, arch)
         self.pop_scope()
-
-    # Note: Sentinels only registers the attr_stmts
-    def load_walker(self, jac_ast):
-        """
-        walker: KW_WALKER NAME namespaces? walker_block;
-        """
-        kid = self.set_cur_ast(jac_ast)
-        name = kid[1].token_text()
-        kind = kid[0].token_text()
-        walk = Walker(m_id=self._m_id, h=self._h, code_ir=jac_ast, name=name, kind=kind)
-        if jac_ast.kid[2].name == "namespaces":
-            walk.namespaces = self.run_namespaces(jac_ast.kid[2])
-        if self.walker_ids.has_obj_by_name(walk.name):
-            self.walker_ids.destroy_obj_by_name(walk.name)
-        self.walker_ids.add_obj(walk)
-        return walk
 
     def load_test(self, jac_ast):
         """
@@ -146,7 +156,7 @@ class SentinelInterp(Interp):
         kid = kid[2:]
         if kid[0].name == "walker_ref":
             walker_name = kid[0].kid[2].token_text()
-            if not self.walker_ids.has_obj_by_name(walker_name):
+            if not self.arch_ids.has_obj_by_name(name=walker_name, kind="walker"):
                 self.rt_error(f"Walker {walker_name} not found!", kid[0])
                 return
             testcase["walker_ref"] = walker_name
@@ -161,9 +171,3 @@ class SentinelInterp(Interp):
             testcase["walker_block"] = jac_ast_to_ir(kid[0])
 
         self.testcases.append(testcase)
-
-    def run_namespaces(self, jac_ast):
-        """
-        namespaces: COLON name_list;
-        """
-        return self.run_name_list(jac_ast.kid[1])

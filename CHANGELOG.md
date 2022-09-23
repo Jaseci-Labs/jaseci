@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Improvement: Attributes like anchored and private are not fuzed with anchored objects.
 - Improvement: Incompatible/outdated IR now rejected by Jaseci stack
 - Improvement: Indicator for being logged in in JSCTL
 - New Feature: Email action set

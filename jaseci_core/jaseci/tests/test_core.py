@@ -76,9 +76,10 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         Test saving object to json and back to python dict
         """
         for i in get_all_subclasses(Element):
-            orig = i(m_id="anon", h=self.meta.hook())
+            kwargs = {"m_id": "anon", "h": self.meta.hook()}
+            orig = i(**kwargs)
             blob1 = orig.json(detailed=True)
-            new = i(m_id="anon", h=self.meta.hook())
+            new = i(**kwargs)
             self.assertNotEqual(orig.id, new.id)
             new.json_load(blob1)
             self.assertEqual(orig.id, new.id)

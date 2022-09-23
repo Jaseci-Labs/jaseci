@@ -9,9 +9,9 @@ from jaseci.element.element import Element
 class Item(Element):
     """Item class for Jaseci"""
 
-    def __init__(self, value=None, *args, **kwargs):
+    def __init__(self, value=None, **kwargs):
         self.item_value = value
-        super().__init__(*args, **kwargs)
+        Element.__init__(self, **kwargs)
 
     @property
     def value(self):

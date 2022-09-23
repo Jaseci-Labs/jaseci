@@ -12,19 +12,36 @@ class Anchored:
     """Utility class for objects that hold anchor values"""
 
     def __init__(self):
-        self.anchor = None
+        self.context = {}
+
+    def get_architype(self):
+        return (
+            self._h._machine.parent().get_arch_for(self)
+            if self._h._machine is not None
+            else None
+        )
 
     def anchor_value(self):
         """Returns value of anchor context object"""
-        if self.anchor:
-            return self.context[self.anchor]
+        arch = self.get_architype()
+        if arch is not None:
+            anch = arch.anchor_var
+            if anch and anch in self.context.keys():
+                return self.context[anch]
         return None
+
+    def private_values(self):
+        """Returns value of anchor context object"""
+        arch = self.get_architype()
+        if arch is not None:
+            return arch.private_vars
+        return []
 
 
 class Sharable:
     """Utility class for objects that are sharable between users"""
 
-    def __init__(self, m_id, mode=None):
+    def __init__(self, m_id, mode=None, **kwargs):
         self.set_master(m_id)
         self.j_access = (
             mode
@@ -136,10 +153,24 @@ class Sharable:
 class Hookable(Sharable):
     """Utility class for objects that are savable to DBs and other stores"""
 
-    def __init__(self, h, m_id, persist: bool = True, *args, **kwargs):
+    def __init__(self, h, persist: bool = True, parent_id=None, **kwargs):
         self._h = h  # hook for storing and loading to persistent store
         self._persist = persist
-        Sharable.__init__(self, m_id, *args, **kwargs)
+        self.j_parent = parent_id.urn if parent_id else None  # member of
+        Sharable.__init__(self, **kwargs)
+
+    @property
+    def parent_id(self) -> uuid.UUID:
+        if not self.j_parent:
+            return None
+        return uuid.UUID(self.j_parent)
+
+    @parent_id.setter
+    def parent_id(self, obj: uuid.UUID):
+        if not obj:
+            self.j_parent = None
+        else:
+            self.j_parent = obj.urn
 
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""
@@ -172,4 +203,5 @@ class Hookable(Sharable):
         """
         Returns the objects for list of owners of this element
         """
-        return self._h.get_obj(self._m_id, self.parent_id)
+        if self.parent_id:
+            return self._h.get_obj(self._m_id, self.parent_id)

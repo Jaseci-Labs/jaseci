@@ -50,7 +50,12 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         res = self.auth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        payload = {"op": "walker_get", "mode": "keys", "wlk": "zsb:walker:pubinit"}
+        payload = {"op": "walker_spawn_create", "name": "pubinit"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        wjid = res.data["jid"]
+        payload = {"op": "walker_get", "mode": "keys", "wlk": wjid}
         res = self.auth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
@@ -59,15 +64,14 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         res = self.auth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        walk = res.data["zsb:walker:pubinit"]
         nd = res.data["active:graph"]
-        payload = {"op": "walker_summon", "key": key, "wlk": walk, "nd": nd}
+        payload = {"op": "walker_summon", "key": key, "wlk": wjid, "nd": nd}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         self.assertEqual(len(res.data["report"]), 0)
         key = "aaaaaaa"
-        payload = {"op": "walker_summon", "key": key, "wlk": walk, "nd": nd}
+        payload = {"op": "walker_summon", "key": key, "wlk": wjid, "nd": nd}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
@@ -426,7 +430,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         self.assertTrue(sent.is_active)
-        self.assertEqual(sent.walker_ids.obj_list()[0].name, "testwalker")
+        self.assertEqual(sent.arch_ids.obj_list()[3].name, "testwalker")
 
     def test_jac_api_load_application(self):
         """Test API for loading an application"""
@@ -497,8 +501,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         }
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         walk = self.master._h.get_obj(self.master.j_master, uuid.UUID(res.data["jid"]))
-        self.assertNotEqual(walk.id, sent.walker_ids.obj_list()[0].id)
-        self.assertEqual(walk.name, sent.walker_ids.obj_list()[0].name)
+        self.assertNotEqual(walk.id, sent.arch_ids.obj_list()[3].id)
+        self.assertEqual(walk.name, sent.arch_ids.obj_list()[3].name)
 
     def test_jac_api_prime(self):
         """Test API for priming a walker"""

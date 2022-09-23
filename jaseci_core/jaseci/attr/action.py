@@ -22,10 +22,10 @@ class Action(Item):
     access_list is used by walker to decide what to trigger
     """
 
-    def __init__(self, preset_in_out=None, access_list=None, *args, **kwargs):
+    def __init__(self, preset_in_out=None, access_list=None, **kwargs):
         self.preset_in_out = preset_in_out  # Not using _ids convention
         self.access_list = access_list
-        super().__init__(*args, **kwargs)
+        Item.__init__(self, **kwargs)
 
     def do_auto_conversions(self, args, func, params):
         """

@@ -14,20 +14,22 @@ class Promon:
         )
         res = {}
         for node in util:
-            nodeName = node["metric"]["node"]
-            nodeUtil = float(node["value"][1])
-            res[nodeName] = nodeUtil
+            node_name = node["metric"]["node"]
+            node_util = float(node["value"][1])
+            res[node_name] = node_util
         return res
 
     def cpu_utilization_percentage(self) -> dict:
         util = self.prom.get_current_metric_value(
-            '(sum(irate(node_cpu_seconds_total{mode!="idle"}[10m])) by (node)) / (sum(irate(node_cpu_seconds_total{mode!=""}[10m])) by (node)) * 100'
+            '(sum(irate(node_cpu_seconds_total{mode!="idle"}[10m])) by '
+            '(node)) / (sum(irate(node_cpu_seconds_total{mode!=""}[10m])) by '
+            "(node)) * 100"
         )
         res = {}
         for node in util:
-            nodeName = node["metric"]["node"]
-            nodeUtil = float(node["value"][1])
-            res[nodeName] = nodeUtil
+            node_name = node["metric"]["node"]
+            node_util = float(node["value"][1])
+            res[node_name] = node_util
         return res
 
     def cpu_utilization_per_pod_cores(self) -> dict:
@@ -36,9 +38,9 @@ class Promon:
         )
         res = {}
         for pod in util:
-            podName = pod["metric"]["pod"]
+            pod_name = pod["metric"]["pod"]
             value = float(pod["value"][1])
-            res[podName] = float(value)
+            res[pod_name] = float(value)
         return res
 
     def mem_total_bytes(self) -> dict:
@@ -47,9 +49,9 @@ class Promon:
         )
         res = {}
         for node in util:
-            nodeName = node["metric"]["node"]
-            nodeUtil = float(node["value"][1])
-            res[nodeName] = nodeUtil
+            node_name = node["metric"]["node"]
+            node_util = float(node["value"][1])
+            res[node_name] = node_util
         return res
 
     def mem_utilization_bytes(self) -> dict:
@@ -58,20 +60,21 @@ class Promon:
         )
         res = {}
         for node in util:
-            nodeName = node["metric"]["node"]
-            nodeUtil = float(node["value"][1])
-            res[nodeName] = nodeUtil
+            node_name = node["metric"]["node"]
+            node_util = float(node["value"][1])
+            res[node_name] = node_util
         return res
 
     def mem_utilization_percentage(self) -> dict:
         util = self.prom.get_current_metric_value(
-            "sum(node_memory_Active_bytes / node_memory_MemTotal_bytes * 100 ) by (node)"
+            "sum(node_memory_Active_bytes / node_memory_MemTotal_bytes * 100 ) by "
+            "(node)"
         )
         res = {}
         for node in util:
-            nodeName = node["metric"]["node"]
-            nodeUtil = float(node["value"][1])
-            res[nodeName] = nodeUtil
+            node_name = node["metric"]["node"]
+            node_util = float(node["value"][1])
+            res[node_name] = node_util
         return res
 
     def mem_utilization_per_pod_bytes(self) -> dict:
@@ -80,9 +83,9 @@ class Promon:
         )
         res = {}
         for pod in util:
-            podName = pod["metric"]["pod"]
+            pod_name = pod["metric"]["pod"]
             value = float(pod["value"][1])
-            res[podName] = float(value)
+            res[pod_name] = float(value)
         return res
 
     def node_pods(self) -> dict:
@@ -103,9 +106,9 @@ class Promon:
         )
         res = {}
         for node in util:
-            nodeName = node["metric"]["node"]
-            nodeUtil = float(node["value"][1])
-            res[nodeName] = nodeUtil
+            node_name = node["metric"]["node"]
+            node_util = float(node["value"][1])
+            res[node_name] = node_util
         return res
 
     def network_receive_per_pod_bytes(self):
@@ -114,9 +117,9 @@ class Promon:
         )
         res = {}
         for pod in util:
-            podName = pod["metric"]["pod"]
+            pod_name = pod["metric"]["pod"]
             value = pod["value"][1]
-            res[podName] = float(value)
+            res[pod_name] = float(value)
         return res
 
     def network_transmit_bytes(self) -> dict:
@@ -125,9 +128,9 @@ class Promon:
         )
         res = {}
         for node in util:
-            nodeName = node["metric"]["node"]
-            nodeUtil = float(node["value"][1])
-            res[nodeName] = nodeUtil
+            node_name = node["metric"]["node"]
+            node_util = float(node["value"][1])
+            res[node_name] = node_util
         return res
 
     def network_transmit_per_pod_bytes(self):
@@ -136,62 +139,64 @@ class Promon:
         )
         res = {}
         for pod in util:
-            podName = pod["metric"]["pod"]
+            pod_name = pod["metric"]["pod"]
             value = pod["value"][1]
-            res[podName] = float(value)
+            res[pod_name] = float(value)
         return res
 
     def disk_total_bytes(self) -> dict:
         util = self.prom.get_current_metric_value(
-            'sum(avg (node_filesystem_size_bytes{mountpoint!="/boot", fstype!="tmpfs"}) without (mountpoint)) by (node)'
+            'sum(avg (node_filesystem_size_bytes{mountpoint!="/boot", '
+            'fstype!="tmpfs"}) without (mountpoint)) by (node)'
         )
         res = {}
         for node in util:
-            nodeName = node["metric"]["node"]
-            nodeUtil = float(node["value"][1])
-            res[nodeName] = nodeUtil
+            node_name = node["metric"]["node"]
+            node_util = float(node["value"][1])
+            res[node_name] = node_util
         return res
 
     def disk_free_bytes(self) -> dict:
         util = self.prom.get_current_metric_value(
-            'sum(avg (node_filesystem_free_bytes{mountpoint!="/boot", fstype!="tmpfs"}) without (mountpoint)) by (node)'
+            'sum(avg (node_filesystem_free_bytes{mountpoint!="/boot", '
+            'fstype!="tmpfs"}) without (mountpoint)) by (node)'
         )
         res = {}
         for node in util:
-            nodeName = node["metric"]["node"]
-            nodeUtil = float(node["value"][1])
-            res[nodeName] = nodeUtil
+            node_name = node["metric"]["node"]
+            node_util = float(node["value"][1])
+            res[node_name] = node_util
         return res
 
     def pod_info(self) -> dict:
         util = self.prom.get_current_metric_value("kube_pod_info")
         res = {}
         for pod in util:
-            podName = pod["metric"]["pod"]
-            res[podName] = pod["metric"]
+            pod_name = pod["metric"]["pod"]
+            res[pod_name] = pod["metric"]
 
         cpu = self.cpu_utilization_per_pod_cores()
         for pod in util:
-            podName = pod["metric"]["pod"]
-            pod_cpu = cpu.get(podName, 0)
-            res[podName]["cpu_utilization_cores"] = pod_cpu
+            pod_name = pod["metric"]["pod"]
+            pod_cpu = cpu.get(pod_name, 0)
+            res[pod_name]["cpu_utilization_cores"] = pod_cpu
 
         mem = self.mem_utilization_per_pod_bytes()
         for pod in util:
-            podName = pod["metric"]["pod"]
-            pod_mem = mem.get(podName, 0)
-            res[podName]["mem_utilization_bytes"] = pod_mem
+            pod_name = pod["metric"]["pod"]
+            pod_mem = mem.get(pod_name, 0)
+            res[pod_name]["mem_utilization_bytes"] = pod_mem
 
         recv = self.network_receive_per_pod_bytes()
         for pod in util:
-            podName = pod["metric"]["pod"]
-            pod_recv = recv.get(podName, 0)
-            res[podName]["network_recv_bytes"] = pod_recv
+            pod_name = pod["metric"]["pod"]
+            pod_recv = recv.get(pod_name, 0)
+            res[pod_name]["network_recv_bytes"] = pod_recv
 
         tran = self.network_transmit_per_pod_bytes()
         for pod in util:
-            podName = pod["metric"]["pod"]
-            pod_tran = tran.get(podName, 0)
-            res[podName]["network_tran_bytes"] = pod_tran
+            pod_name = pod["metric"]["pod"]
+            pod_tran = tran.get(pod_name, 0)
+            res[pod_name]["network_tran_bytes"] = pod_tran
 
         return res
