@@ -273,12 +273,12 @@ class Interface:
         """Unset committer"""
         self._pub_committer = None
 
-    # def sync_walker_from_global_sent(self, wlk):
-    #     """Checks for matching code ir between global and spawned walker"""
-    #     glob_id = wlk._h.get_glob("GLOB_SENTINEL")
-    #     if glob_id:
-    #         snt = wlk._h.get_obj(wlk._m_id, uuid.UUID(glob_id))
-    #         if snt:
-    #             glob_wlk = snt.walker_ids.get_obj_by_name(name=wlk.name, kind="walker")
-    #             if glob_wlk and glob_wlk.code_sig != wlk.code_sig:
-    #                 wlk.apply_ir(glob_wlk.code_ir)
+    def sync_walker_from_global_sent(self, wlk):
+        """Checks for matching code ir between global and spawned walker"""
+        glob_id = wlk._h.get_glob("GLOB_SENTINEL")
+        if glob_id:
+            snt = wlk._h.get_obj(wlk._m_id, uuid.UUID(glob_id))
+            if snt:
+                glob_wlk = snt.run_architype(name=wlk.name, kind="walker")
+                if glob_wlk and glob_wlk.code_sig != wlk.code_sig:
+                    wlk.apply_ir(glob_wlk.code_ir)

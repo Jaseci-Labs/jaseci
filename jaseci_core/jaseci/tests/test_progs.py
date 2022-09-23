@@ -21,7 +21,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_bug_check1(self):
         sent = Sentinel(m_id="anon", h=self.meta.hook())
-        gph = Graph(m_id="anon", h=sent._h, sent=sent)
+        gph = Graph(m_id="anon", h=sent._h)
         sent.register_code(jtp.bug_check1)
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
@@ -48,7 +48,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_globals(self):
         sent = Sentinel(m_id="anon", h=self.meta.hook())
-        gph = Graph(m_id="anon", h=sent._h, sent=sent)
+        gph = Graph(m_id="anon", h=sent._h)
         sent.register_code(jtp.globals)
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)

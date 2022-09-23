@@ -110,7 +110,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
-        test_walker = sent.walker_ids.get_obj_by_name("get_gen_day")
+        test_walker = sent.run_architype("get_gen_day")
         test_walker.prime(test_node)
         test_walker.context["date"] = "2010-08-03T03:00:00.000000"
         self.assertEqual(len(test_node.outbound_nodes()), 0)
