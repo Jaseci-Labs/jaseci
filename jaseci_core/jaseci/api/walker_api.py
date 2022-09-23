@@ -260,7 +260,6 @@ class WalkerApi:
             self.sync_walker_from_global_sent(wlk)
 
         walk = wlk.duplicate()
-        walk.refresh()
         res = self.walker_execute(
             wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
         )
