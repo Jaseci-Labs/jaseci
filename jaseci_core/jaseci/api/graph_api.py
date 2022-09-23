@@ -19,7 +19,7 @@ class GraphApi:
         self.graph_ids = IdList(self)
 
     @Interface.private_api()
-    def graph_create(self, set_active: bool = True, snt: Sentinel = None):
+    def graph_create(self, set_active: bool = True):
         """
         Create a graph instance and return root node graph object
         """
