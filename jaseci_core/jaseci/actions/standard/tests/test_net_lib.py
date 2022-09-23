@@ -53,7 +53,6 @@ class NetLibTest(CoreTest):
         self.assertEqual(before, after)
 
     def test_pack_anc_priv(self):
-        self.logger_on()
         self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],

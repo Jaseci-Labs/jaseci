@@ -43,9 +43,8 @@ class OrmHook(RedisHook):
                 )
                 return None
             class_for_type = self.find_class_and_import(loaded_obj.j_type, core_mod)
-            ret_obj = class_for_type(
-                h=self, m_id=loaded_obj.j_master.urn, auto_save=False
-            )
+            kwargs = {"h": self, "m_id": loaded_obj.j_master.urn, "auto_save": False}
+            ret_obj = class_for_type(**kwargs)
             utils.map_assignment_of_matching_fields(ret_obj, loaded_obj)
             assert uuid.UUID(ret_obj.jid) == loaded_obj.jid
 
