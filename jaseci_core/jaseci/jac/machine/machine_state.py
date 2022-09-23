@@ -38,8 +38,13 @@ class MachineState:
         self._assign_mode = False
         self._loop_limit = 10000
         self._cur_jac_ast = None
+        self.inform_hook()
 
-    def parent(self):
+    def inform_hook(self):
+        if hasattr(self, "_h"):
+            self._h._machine = self
+
+    def parent(self):  # parent here is always a sentinel
         if self._parent_override:
             return self._parent_override
         else:

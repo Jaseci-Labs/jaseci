@@ -97,8 +97,6 @@ class Element(Hookable):
         Hook override to duplicate into mem / another store
         """
         kwargs = {"m_id": self._m_id, "h": self._h, "persist": persist_dup}
-        if hasattr(self, "_snt"):
-            kwargs["sent"] = self._snt
         dup = type(self)(**kwargs)
         id_save = dup.id
         for i in dup.__dict__.keys():

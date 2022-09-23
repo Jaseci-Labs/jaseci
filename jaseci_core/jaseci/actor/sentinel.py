@@ -191,7 +191,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
                     h=self._h,
                     parent_id=self.id,
                     code_ir=jac_ir_to_ast(i["walker_block"]),
-                    sent=self,
                 )
                 destroy_set.append(wlk)
             wlk.prime(gph)

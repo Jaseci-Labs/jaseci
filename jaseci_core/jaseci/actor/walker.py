@@ -39,9 +39,9 @@ class Walker(Element, JacCode, WalkerInterp, Anchored):
         self.step_limit = 10000
         self._async = False
         Element.__init__(self, **kwargs)
-        Anchored.__init__(self, **kwargs)
         JacCode.__init__(self, code_ir=code_ir)
         WalkerInterp.__init__(self)
+        Anchored.__init__(self)
 
     @property
     def current_node(self):

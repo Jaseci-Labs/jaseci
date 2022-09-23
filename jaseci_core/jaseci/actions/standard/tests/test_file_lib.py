@@ -10,5 +10,6 @@ class FileLibTest(CoreTest):
             self.mast,
             ["sentinel_register", {"code": self.load_jac("file_stuff.jac")}],
         )
+
         ret = self.call(self.mast, ["walker_run", {"name": "pack_it"}])
         self.assertEqual(ret["report"][0], {"hello": 5})

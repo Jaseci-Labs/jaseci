@@ -1298,7 +1298,6 @@ class Interp(MachineState):
                     h=self._h,
                     kind="edge",
                     name="generic",
-                    sent=self.parent(),
                 )
             return result
 

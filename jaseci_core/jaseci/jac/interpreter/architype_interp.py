@@ -31,7 +31,6 @@ class ArchitypeInterp(Interp):
                     h=self._h,
                     kind=self.kind,
                     name=self.name,
-                    sent=self.parent(),
                 )
             elif self.kind == "edge" and self.name in ["generic"]:
                 return Edge(
@@ -39,7 +38,6 @@ class ArchitypeInterp(Interp):
                     h=self._h,
                     kind=self.kind,
                     name=self.name,
-                    sent=self.parent(),
                 )
 
         kid = self.set_cur_ast(jac_ast)
@@ -50,7 +48,6 @@ class ArchitypeInterp(Interp):
                 h=self._h,
                 kind=kid[0].token_text(),
                 name=kid[1].token_text(),
-                sent=self.parent(),
             )
             if kid[-2].name == "INT":
                 item.dimension = int(kid[-2].token_text())
@@ -61,7 +58,6 @@ class ArchitypeInterp(Interp):
                 h=self._h,
                 kind=kid[0].token_text(),
                 name=kid[1].token_text(),
-                sent=self.parent(),
             )
             self.build_object_with_supers(item, kid[-1])
         elif kid[0].name == "KW_GRAPH":
@@ -73,7 +69,6 @@ class ArchitypeInterp(Interp):
                 code_ir=jac_ast,
                 name=kid[1].token_text(),
                 kind=kid[0].token_text(),
-                sent=self.parent(),
             )
             if kid[2].name == "namespaces":
                 item.namespaces = self.run_namespaces(jac_ast.kid[2])
@@ -197,7 +192,6 @@ class ArchitypeInterp(Interp):
                     h=self._h,
                     kind="edge",
                     name="generic",
-                    sent=self.parent(),
                 )
 
             lhs_node_id = op.pop("lhs_node_id")

@@ -15,6 +15,7 @@ class MemoryHook:
         from jaseci.actions.live_actions import get_global_actions
 
         self.mem = {"global": {}}
+        self._machine = None
         self.save_obj_list = set()
         self.save_glob_dict = {}
         self.global_action_list = get_global_actions(self)

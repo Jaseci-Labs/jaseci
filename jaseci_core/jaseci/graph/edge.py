@@ -18,7 +18,7 @@ class Edge(Element, Anchored):
         self.to_node_id = None
         self.bidirected: bool = False
         Element.__init__(self, **kwargs)
-        Anchored.__init__(self, **kwargs)
+        Anchored.__init__(self)
         if from_node:
             self.set_from_node(from_node)
         if to_node:

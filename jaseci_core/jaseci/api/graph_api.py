@@ -23,7 +23,7 @@ class GraphApi:
         """
         Create a graph instance and return root node graph object
         """
-        gph = Graph(sent=snt, m_id=self._m_id, h=self._h)
+        gph = Graph(m_id=self._m_id, h=self._h)
         self.graph_ids.add_obj(gph)
         if set_active:
             self.graph_active_set(gph)

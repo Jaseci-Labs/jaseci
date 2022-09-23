@@ -11,23 +11,30 @@ import uuid
 class Anchored:
     """Utility class for objects that hold anchor values"""
 
-    def __init__(self, sent, **kwargs):
-        self._snt = sent
-        self._arch = sent.get_arch_for(self) if sent is not None else None
+    def __init__(self):
         self.context = {}
+
+    def get_architype(self):
+        return (
+            self._h._machine.parent().get_arch_for(self)
+            if self._h._machine is not None
+            else None
+        )
 
     def anchor_value(self):
         """Returns value of anchor context object"""
-        if self._arch is not None:
-            anch = self._arch.anchor_var
+        arch = self.get_architype()
+        if arch is not None:
+            anch = arch.anchor_var
             if anch and anch in self.context.keys():
                 return self.context[anch]
         return None
 
     def private_values(self):
         """Returns value of anchor context object"""
-        if self._arch is not None:
-            return self._arch.private_vars
+        arch = self.get_architype()
+        if arch is not None:
+            return arch.private_vars
         return []
 
 
@@ -196,4 +203,5 @@ class Hookable(Sharable):
         """
         Returns the objects for list of owners of this element
         """
-        return self._h.get_obj(self._m_id, self.parent_id)
+        if self.parent_id:
+            return self._h.get_obj(self._m_id, self.parent_id)

@@ -22,7 +22,7 @@ class Node(Element, Anchored):
         self.member_node_ids = IdList(self)
         self.dimension = dimension  # Nodes are always hdgd 0
         Element.__init__(self, **kwargs)
-        Anchored.__init__(self, **kwargs)
+        Anchored.__init__(self)
 
     def attach(self, node_obj, edge_set=None, as_outbound=True, as_bidirected=False):
         """
@@ -35,7 +35,6 @@ class Node(Element, Anchored):
                     h=self._h,
                     kind="edge",
                     name="generic",
-                    sent=self._snt,
                 )
             ]
         link_order = [self, node_obj] if as_outbound else [node_obj, self]

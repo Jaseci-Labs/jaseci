@@ -15,7 +15,7 @@ class JacBookTests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
         self.sent = Sentinel(m_id="anon", h=MetaService().hook())
-        self.gph = Graph(m_id="anon", h=self.sent._h, sent=self.sent)
+        self.gph = Graph(m_id="anon", h=self.sent._h)
         self.old_stdout = sys.stdout
         self.new_stdout = io.StringIO()
         sys.stdout = self.new_stdout

@@ -153,7 +153,6 @@ def unpack(graph_dict: dict, meta):
                 h=mast._h,
                 kind="node",
                 name=i["name"],
-                sent=meta["interp"].parent(),
             )
         )
         node_list[-1].context = i["ctx"]
@@ -165,7 +164,6 @@ def unpack(graph_dict: dict, meta):
             h=mast._h,
             kind="edge",
             name=i["name"],
-            sent=meta["interp"].parent(),
         )
         this_edge.connect(
             node_list[i["connect"][0]], node_list[i["connect"][1]], i["bi_dir"]

@@ -8,7 +8,6 @@ from jaseci.graph.graph import Graph
 from jaseci.graph.node import Node
 from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper, get_all_subclasses
-from jaseci.element.obj_mixins import Anchored
 
 
 class ArchitypeTests(TestCaseHelper, TestCase):
@@ -23,12 +22,12 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         """ """
         mast = self.meta.master()
         num_objs = len(mast._h.mem.keys())
-        node1 = Node(m_id=mast._m_id, h=mast._h, sent=None)
-        node2 = Node(m_id=mast._m_id, h=mast._h, sent=None, parent_id=node1.id)
+        node1 = Node(m_id=mast._m_id, h=mast._h)
+        node2 = Node(m_id=mast._m_id, h=mast._h, parent_id=node1.id)
         num_new = len(mast._h.mem.keys())
         self.assertEqual(num_new, num_objs + 2)
 
-        new_graph = Graph(m_id=mast._m_id, h=mast._h, sent=None)
+        new_graph = Graph(m_id=mast._m_id, h=mast._h)
         mast.graph_ids.add_obj(new_graph)
         num_new = len(mast._h.mem.keys())
         self.assertEqual(num_new, num_objs + 3)
@@ -41,8 +40,8 @@ class ArchitypeTests(TestCaseHelper, TestCase):
     def test_edge_removal_updates_nodes_edgelist(self):
         """ """
         mast = self.meta.master()
-        node1 = Node(m_id=mast._m_id, h=mast._h, sent=None)
-        node2 = Node(m_id=mast._m_id, h=mast._h, sent=None)
+        node1 = Node(m_id=mast._m_id, h=mast._h)
+        node2 = Node(m_id=mast._m_id, h=mast._h)
         edge = node1.attach_outbound(node2)
         self.assertEqual(len(node1.edge_ids), 1)
         self.assertEqual(len(node2.edge_ids), 1)
@@ -58,7 +57,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         mast = self.meta.master()
         num_objs = len(mast._h.mem.keys()) - len(mast._h.global_action_list)
         self.assertEqual(num_objs, 2)
-        new_graph = Graph(m_id=mast._m_id, h=mast._h, sent=None)
+        new_graph = Graph(m_id=mast._m_id, h=mast._h)
         sent = Sentinel(m_id=mast._m_id, h=mast._h)
         code = jtc.prog1
         mast.sentinel_ids.add_obj(sent)
@@ -77,10 +76,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         Test saving object to json and back to python dict
         """
         for i in get_all_subclasses(Element):
-            if issubclass(i, Anchored):
-                kwargs = {"m_id": "anon", "h": self.meta.hook(), "sent": None}
-            else:
-                kwargs = {"m_id": "anon", "h": self.meta.hook()}
+            kwargs = {"m_id": "anon", "h": self.meta.hook()}
             orig = i(**kwargs)
             blob1 = orig.json(detailed=True)
             new = i(**kwargs)
@@ -93,7 +89,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         mh = self.meta.hook()
         mast = self.meta.master(h=mh)
         mast2 = self.meta.master(h=mh)
-        node12 = Node(m_id=mast2._m_id, h=mast2._h, sent=None)
+        node12 = Node(m_id=mast2._m_id, h=mast2._h)
         supmast = self.meta.super_master(h=mh)
         bad = mh.get_obj(mast._m_id, uuid.UUID(node12.jid))
         good = mh.get_obj(supmast._m_id, uuid.UUID(node12.jid))
