@@ -38,7 +38,7 @@ class BaseTrainer:
     Base class for all trainers
     """
 
-    def __init__(self, model, criterion, metric_ftns, optimizer, config, log_config, resume=None):
+    def __init__(self, model, criterion, metric_ftns, optimizer, config, resume=None):
         self.config = config
 
         save_dir = Path(self.config['trainer']['save_dir'])

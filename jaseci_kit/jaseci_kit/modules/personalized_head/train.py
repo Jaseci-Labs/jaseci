@@ -42,19 +42,20 @@ def main(args):
 
     # Build model Architecture
     model_config = config['Model']
-    model = getattr(model_module, model_config['type'])(model_config['args'])
+    model = getattr(model_module, model_config['type'])(**model_config['args'])
 
-    # for multi-GPU training
     trainer_config = config['Trainer']
-    device, device_ids = prepare_device(trainer_config['n_gpu'])
-    model = model.to(device)
-    if len(device_ids) > 1:
-        model = torch.nn.DataParallel(model, device_ids=device_ids)
 
     # Setup Dataloader
     dataloader = getattr(dataloader_module, trainer_config['dataloader']['type'])(
         **trainer_config['dataloader']['args'])
     valid_dataloader = dataloader.split_validation()
+
+    # for multi-GPU training
+    device, device_ids = prepare_device(trainer_config['n_gpu'])
+    model = model.to(device)
+    if len(device_ids) > 1:
+        model = torch.nn.DataParallel(model, device_ids=device_ids)
 
     # get function handles of loss and metrics
     criterion = getattr(loss_module, trainer_config['loss'])
@@ -70,7 +71,6 @@ def main(args):
 
     trainer = Trainer(model, criterion, metrics, optimizer,
                       config=trainer_config,
-                      log_config=config['Logger'],
                       device=device,
                       data_loader=dataloader,
                       valid_data_loader=valid_dataloader,

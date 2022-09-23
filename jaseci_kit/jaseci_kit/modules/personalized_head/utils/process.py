@@ -7,7 +7,7 @@ class PostProcessor:
         None
 
     def process(self, output):
-        output = torch.argmax(output, dim=1)
+        # output = torch.argmax(output, dim=1)
         return output
 
 
@@ -19,4 +19,5 @@ class PreProcessor:
     def process(self, input):
         input = self.tokenizer(input, return_tensors="pt")
         emb = self.model(**input)
-        return emb[0]
+        emb = emb[0][:, 0, :]
+        return emb

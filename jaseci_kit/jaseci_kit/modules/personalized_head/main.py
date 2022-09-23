@@ -83,7 +83,6 @@ def load_weights(path: str):
         global ie
         if ie:
             ie.load_weights(path)
-            # TODO: Update the Configuration File with new weights
         else:
             raise Exception(MODEL_NOT_FOUND)
     except Exception as e:

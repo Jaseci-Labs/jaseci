@@ -22,7 +22,7 @@ class InferenceEngine:
         model_config = config['Model']
         if model_config['args']:
             self.model = getattr(model_module, model_config['type'])(
-                model_config['args'])
+                **model_config['args'])
         else:
             self.model = getattr(model_module, model_config['type'])()
 

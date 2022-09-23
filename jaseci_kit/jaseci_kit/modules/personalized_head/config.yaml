@@ -7,20 +7,20 @@ Model:
     ph_ff_dim: 512
     batch_first: True
     ph_nlayers: 1
-    n_classes: 8
+    n_classes: 10
 
 # Model Training Configurations
 Trainer:
-  name: PersonalizedHead
+  name: PersonalizedHeadTrainer
   n_gpu: 1
   dataloader:
-    type: SentenceIntentDataLoader
+    type: SnipsDataLoader
     args:
       data_dir: data/
-      batch_size: 128
+      batch_size: 1
       shuffle: true
-      validation_split: 0.1
-      num_workers: 2
+      validation_split: 0.2
+      num_workers: 1
   optimizer:
     type: Adam
     args:
@@ -54,7 +54,6 @@ Inference:
   postprocess:
     type: PostProcessor
     args: {}
-
 # # Logger Configurations
 # Logger:
 #   version: 1
