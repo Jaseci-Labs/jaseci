@@ -12,12 +12,18 @@ import os
 
 remote_actions = {}
 registered_apis = []
+registered_endpoints = []
 ACTIONS_SPEC_LOC = "/jaseci_actions_spec/"
 JS_ACTION_PREAMBLE = "js_action_"
+JS_ENDPOINT_PREAMBLE = "js_endpoint_"
 
 
 def mark_as_remote(api):
     registered_apis.append(api)
+
+
+def mark_as_endpoint(endpoint):
+    registered_endpoints.append(endpoint)
 
 
 def serv_actions():
@@ -36,7 +42,9 @@ def serv_actions():
         return remote_actions
 
     for i in registered_apis:
-        gen_api_service(app, i[0], i[1], i[2], i[3])
+        gen_api_service(app, *i)
+    for i in registered_endpoints:
+        gen_endpoint(app, *i)
     return app
 
 
@@ -82,6 +90,41 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
         new_func = app.post(f"/{i}/")(new_func)
         remote_actions[f"{'.'.join(act_group+[i])}"] = varnames
     caller_globals[f"{JS_ACTION_PREAMBLE}{func.__name__}"] = new_func
+
+
+def gen_endpoint(app, func, endpoint, caller_globals):
+    """Helper for jaseci_action decorator"""
+    # Construct list of action apis available
+    varnames = list(inspect.signature(func).parameters.keys())
+
+    # Need to get pydatic model for func signature for fastAPI post
+    model = validate_arguments(func).model
+
+    # Keep only feilds present in param list in base model
+    keep_fields = {}
+    for i in model.__fields__.keys():
+        if i in varnames:
+            keep_fields[i] = model.__fields__[i]
+    model.__fields__ = keep_fields
+
+    # Create duplicate funtion for api endpoint and inject in call site globals
+    @app.get(endpoint)
+    def new_func(params: model):
+        pl_peek = str(dict(params.__dict__))[:128]
+        logger.info(str(f"Incoming call to {func.__name__} with {pl_peek}"))
+        start_time = time()
+
+        ret = validate_arguments(func)(**(params.__dict__))
+        tot_time = time() - start_time
+        logger.info(
+            str(
+                f"API call to {Cc.TG}{func.__name__}{Cc.EC}"
+                f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
+            )
+        )
+        return ret
+
+    caller_globals[f"{JS_ENDPOINT_PREAMBLE}{func.__name__}"] = new_func
 
 
 def launch_server(port=80, host="0.0.0.0"):
