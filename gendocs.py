@@ -134,7 +134,7 @@ def createmdbookDocs():
     try:
         subprocess.call(["mdbook","init", "docs", "--ignore=none","--title=Jaseci Documentation"])
     except:
-        print("errro occured")
+        print("error occured")
 
 def copyTheme(path):
     try:

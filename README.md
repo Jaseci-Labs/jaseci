@@ -1,11 +1,5 @@
 # Jaseci Official Documentation
 
-- [License](LICENSE.md)
-- [About this Release](CHANGELOG.md)
-- [How to Contribute](CONTRIBUTING.md)
-- [Contributors](CONTRIBUTORS.md)
-- [Join our Community](https://forum.jaseci.org/)
-
 ## Getting Started
 
 - [Introducing Jaseci](support/guide/getting_started/introduction.md)
@@ -122,9 +116,13 @@
 
     
 
- 
-
 ## Other Resources  
+
+- [License](LICENSE.md)
+- [About this Release](CHANGELOG.md)
+- [How to Contribute](CONTRIBUTING.md)
+- [Contributors](CONTRIBUTORS.md)
+- [Join our Community](https://forum.jaseci.org/)
 
 - [Online Documentation](https://docs.jaseci.org/)
 - [The Jaseci Bible](https://github.com/Jaseci-Labs/jaseci_bible/blob/main/pdf/jaseci_bible.pdf)

@@ -1,9 +1,0 @@
-[book]
-authors = ["TimothyS"]
-language = "en"
-multilingual = false
-src = "src"
-title = "Jaseci Documentation"
-[build]
-use-default-preprocessors = false
-[preprocessor.links]
