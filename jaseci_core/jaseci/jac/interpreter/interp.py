@@ -835,7 +835,7 @@ class Interp(MachineState):
         ability_op: DBL_COLON | DBL_COLON NAME COLON;
         """
         kid = self.set_cur_ast(jac_ast)
-        base_arch = self.parent().get_arch_for(atom_res.value)
+        base_arch = atom_res.value.get_architype()
         if len(kid) > 1:
             kind = atom_res.value.kind
             name = kid[1].token_text()
@@ -1243,7 +1243,7 @@ class Interp(MachineState):
             result = JacSet()
             if len(kid) > 1:
                 for i in self.viable_nodes().obj_list():
-                    if self.parent().get_arch_for(i).is_instance(kid[2].token_text()):
+                    if i.get_architype().is_instance(kid[2].token_text()):
                         result.add_obj(i)
             else:
                 result += self.viable_nodes()
@@ -1312,9 +1312,7 @@ class Interp(MachineState):
         for i in (
             self.current_node.outbound_edges() + self.current_node.bidirected_edges()
         ):
-            if len(kid) > 2 and not self.parent().get_arch_for(i).is_instance(
-                kid[2].token_text()
-            ):
+            if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
                 continue
             result.add_obj(i)
         if len(kid) > 2 and kid[3].name == "filter_ctx":
@@ -1334,9 +1332,7 @@ class Interp(MachineState):
         for i in (
             self.current_node.inbound_edges() + self.current_node.bidirected_edges()
         ):
-            if len(kid) > 2 and not self.parent().get_arch_for(i).is_instance(
-                kid[2].token_text()
-            ):
+            if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
                 continue
             result.add_obj(i)
         if len(kid) > 2 and kid[3].name == "filter_ctx":
@@ -1355,9 +1351,7 @@ class Interp(MachineState):
         kid = self.set_cur_ast(jac_ast)
         result = JacSet()
         for i in self.current_node.attached_edges():
-            if len(kid) > 2 and not self.parent().get_arch_for(i).is_instance(
-                kid[2].token_text()
-            ):
+            if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
                 continue
             result.add_obj(i)
         if len(kid) > 2 and kid[3].name == "filter_ctx":
@@ -1675,7 +1669,7 @@ class Interp(MachineState):
     def call_ability(self, nd, name, act_list):
         m = Interp(parent_override=self.parent(), caller=self)
         m.current_node = nd
-        arch = self.parent().get_arch_for(nd)
+        arch = nd.get_architype()
         m.push_scope(
             JacScope(parent=self, has_obj=nd, action_sets=[arch.get_all_actions()])
         )

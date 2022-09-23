@@ -321,7 +321,7 @@ class JacTests(TestCaseHelper, TestCase):
         mast = self.meta.master()
         sent = Sentinel(m_id=mast.jid, h=mast._h)
         gph = Graph(m_id=mast.jid, h=mast._h)
-        sent.register_code(jtc.set_get_global)
+        sent.register_code(jtc.set_get_global2)
         test_walker = sent.run_architype("setter")
         test_walker.prime(gph)
         test_walker.run()

@@ -15,11 +15,14 @@ class Anchored:
         self.context = {}
 
     def get_architype(self):
-        return (
+        arch = (
             self._h._machine.parent().get_arch_for(self)
-            if self._h._machine is not None
+            if self._h._machine is not None and self._h._machine.parent() is not None
             else None
         )
+        if arch is None and self.parent() and self.parent().j_type == "sentinel":
+            arch = self.parent()
+        return arch
 
     def anchor_value(self):
         """Returns value of anchor context object"""
@@ -153,10 +156,10 @@ class Sharable:
 class Hookable(Sharable):
     """Utility class for objects that are savable to DBs and other stores"""
 
-    def __init__(self, h, persist: bool = True, parent_id=None, **kwargs):
+    def __init__(self, h, persist: bool = True, parent=None, **kwargs):
         self._h = h  # hook for storing and loading to persistent store
         self._persist = persist
-        self.j_parent = parent_id.urn if parent_id else None  # member of
+        self.j_parent = parent.id.urn if parent else None  # member of
         Sharable.__init__(self, **kwargs)
 
     @property

@@ -23,7 +23,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         mast = self.meta.master()
         num_objs = len(mast._h.mem.keys())
         node1 = Node(m_id=mast._m_id, h=mast._h)
-        node2 = Node(m_id=mast._m_id, h=mast._h, parent_id=node1.id)
+        node2 = Node(m_id=mast._m_id, h=mast._h, parent=node1)
         num_new = len(mast._h.mem.keys())
         self.assertEqual(num_new, num_objs + 2)
 

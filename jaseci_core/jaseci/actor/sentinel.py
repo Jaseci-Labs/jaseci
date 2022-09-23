@@ -176,7 +176,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
                 gph = Architype(
                     m_id=self._m_id,
                     h=self._h,
-                    parent_id=self.id,
+                    parent=self,
                     code_ir=jac_ir_to_ast(i["graph_block"]),
                 )
                 destroy_set.append(gph)
@@ -189,7 +189,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
                 wlk = Walker(
                     m_id=self._m_id,
                     h=self._h,
-                    parent_id=self.id,
+                    parent=self,
                     code_ir=jac_ir_to_ast(i["walker_block"]),
                 )
                 destroy_set.append(wlk)
