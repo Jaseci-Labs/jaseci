@@ -15,11 +15,13 @@ class Anchored:
         self.context = {}
 
     def get_architype(self):
-        return (
+        arch = (
             self._h._machine.parent().get_arch_for(self)
-            if self._h._machine is not None
+            if self._h._machine is not None and self._h._machine.parent() is not None
             else None
         )
+        if arch is None:
+            arch = self.parent()
 
     def anchor_value(self):
         """Returns value of anchor context object"""
