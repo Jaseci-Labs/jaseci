@@ -1,0 +1,20 @@
+{
+    "max_contexts_length": 128,
+    "max_candidate_length": 64,
+    "train_batch_size": 8,
+    "eval_batch_size": 2,
+    "max_history": 4,
+    "learning_rate": 0.001,
+    "weight_decay": 0.01,
+    "warmup_steps": 100,
+    "adam_epsilon": 1e-06,
+    "max_grad_norm": 1,
+    "num_train_epochs": 50,
+    "gradient_accumulation_steps": 1,
+    "fp16": false,
+    "fp16_opt_level": "O1",
+    "gpu": 0,
+    "basepath": "logoutput",
+    "seed": 12345,
+    "device": "cpu"
+}
