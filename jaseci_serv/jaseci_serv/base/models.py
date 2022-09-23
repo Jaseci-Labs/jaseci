@@ -68,8 +68,8 @@ class SuperMaster(Master, CoreSuper):
     @Interface.admin_api()
     def master_allusers(self, limit: int = 10, offset: int = 0, asc: bool = False):
         """
-        Returns info on a set of users, num specifies the number of users to
-        return and start idx specfies where to start
+        Returns info on a set of users, limit specifies the number of users to
+        return and offset specfies where to start
         """
 
         if (limit < 0) or (offset < 0):
