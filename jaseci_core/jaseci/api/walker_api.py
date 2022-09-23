@@ -257,7 +257,8 @@ class WalkerApi:
         if key not in wlk.namespace_keys().values():
             return self.bad_walk_response(["Not authorized to execute this walker"])
         if global_sync:
-            self.sync_walker_from_global_sent(wlk)
+            # Deprecated Walkers are always synced with sentinel now
+            pass
 
         walk = wlk.duplicate()
         res = self.walker_execute(

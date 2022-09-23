@@ -123,7 +123,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         """
         user = self.user
         node1 = node.Node(m_id="anon", h=user._h)
-        node2 = node.Node(m_id="anon", h=user._h, parent_id=node1.id)
+        node2 = node.Node(m_id="anon", h=user._h, parent=node1)
         user._h.commit()
         new_node = JaseciObject.objects.filter(j_parent=node1.id).first()
         new_jsci_node = user._h.get_obj_from_store(new_node.jid)

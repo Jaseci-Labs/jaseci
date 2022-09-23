@@ -41,7 +41,7 @@ class WalkerInterp(Interp):
                 if i.name == "attr_stmt":
                     self.run_attr_stmt(jac_ast=i, obj=self)
 
-        archs = self.parent().get_arch_for(self.current_node).arch_with_supers()
+        archs = self.current_node.get_architype().arch_with_supers()
         act_list = IdList(self)
         for i in archs:
             act_list += i.entry_action_ids
@@ -56,7 +56,7 @@ class WalkerInterp(Interp):
                 self.run_walk_activity_block(i)
 
         # self.trigger_activity_actions()
-        archs = self.parent().get_arch_for(self.current_node).arch_with_supers()
+        archs = self.current_node.get_architype().arch_with_supers()
         act_list = IdList(self)
         for i in archs:
             act_list += i.exit_action_ids
@@ -71,7 +71,7 @@ class WalkerInterp(Interp):
         """
         kid = self.set_cur_ast(jac_ast)
         for i in self.run_name_list(kid[0]):
-            if self.parent().get_arch_for(self.current_node).is_instance(i):
+            if self.current_node.get_architype().is_instance(i):
                 self.run_code_block(kid[1])
                 return
 
@@ -200,7 +200,7 @@ class WalkerInterp(Interp):
         kid = self.set_cur_ast(jac_ast)
         param_list = []
         m = Interp(parent_override=self.parent(), caller=self)
-        arch = self.parent().get_arch_for(obj)
+        arch = obj.get_architype()
         m.push_scope(
             JacScope(parent=self, has_obj=obj, action_sets=[arch.activity_action_ids])
         )
@@ -248,7 +248,7 @@ class WalkerInterp(Interp):
         Helper to run ast elements with execution scope added
         (Useful for running arbitrary code blocks as one-offs)
         """
-        arch = self.parent().get_arch_for(self.current_node)
+        arch = self.current_node.get_architype()
         self.push_scope(
             JacScope(
                 parent=self,
