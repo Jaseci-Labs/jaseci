@@ -128,7 +128,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         new_node = JaseciObject.objects.filter(j_parent=node1.id).first()
         new_jsci_node = user._h.get_obj_from_store(new_node.jid)
         self.assertEqual(node2.id, new_node.jid)
-        self.assertEqual(node1.id, new_jsci_node.parent_id)
+        self.assertEqual(node1.id, new_jsci_node.parent().id)
 
     @skip_without_redis
     def test_redis_connection(self):

@@ -162,19 +162,6 @@ class Hookable(Sharable):
         self.j_parent = parent.id.urn if parent else None  # member of
         Sharable.__init__(self, **kwargs)
 
-    @property
-    def parent_id(self) -> uuid.UUID:
-        if not self.j_parent:
-            return None
-        return uuid.UUID(self.j_parent)
-
-    @parent_id.setter
-    def parent_id(self, obj: uuid.UUID):
-        if not obj:
-            self.j_parent = None
-        else:
-            self.j_parent = obj.urn
-
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""
         if not silent and target._h != self._h:
@@ -206,5 +193,5 @@ class Hookable(Sharable):
         """
         Returns the objects for list of owners of this element
         """
-        if self.parent_id:
-            return self._h.get_obj(self._m_id, self.parent_id)
+        if self.j_parent:
+            return self._h.get_obj(self._m_id, uuid.UUID(self.j_parent))
