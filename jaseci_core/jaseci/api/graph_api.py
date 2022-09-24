@@ -110,17 +110,29 @@ class GraphApi:
 
     @Interface.private_api(cli_args=["nd"])
     def graph_node_view(
-        self, nd: Node = None, detailed: bool = False, show_edges: bool = True
+        self,
+        nd: Node = None,
+        detailed: bool = False,
+        show_edges: bool = True,
+        node_type: str = "",
+        edge_type: str = "",
     ):
         """
         Returns value a given node
         """
         ret = [nd.serialize(detailed=detailed)]
-        if show_edges:
-            for i in nd.attached_edges():
-                ret.append(i.serialize(detailed=detailed))
         for i in nd.attached_nodes():
-            ret.append(i.serialize(detailed=detailed))
+            if not len(node_type) or i.name == node_type:
+                edges = [
+                    en
+                    for en in nd.attached_edges(i)
+                    if not len(edge_type) or en.name == edge_type
+                ]
+                if len(edges):
+                    ret.append(i.serialize(detailed=detailed))
+                    if show_edges:
+                        for j in edges:
+                            ret.append(j.serialize(detailed=detailed))
         return ret
 
     @Interface.private_api(cli_args=["nd"])

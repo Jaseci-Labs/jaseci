@@ -17,6 +17,6 @@ walker create_fam {
         son -[dad]-> <-[married]->;
     }
     man {
-        std.out("I didn't do any of the hard work.");
+        #std.out("I didn't do any of the hard work.");
     }
 }
