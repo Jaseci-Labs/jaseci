@@ -151,6 +151,8 @@ class Element(Hookable):
             "context",
             "j_timestamp",
             "version",
+            "to_node_id",
+            "from_node_id",
         ]
         for i in vars(self).keys():
             if not i.startswith("_"):
