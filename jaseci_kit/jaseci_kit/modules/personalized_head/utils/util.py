@@ -24,6 +24,11 @@ def read_yaml(fname):
     with fname.open('rt') as handle:
         return yaml.load(handle, Loader=yaml.FullLoader)
 
+def write_yaml(content, fname):
+    fname = Path(fname)
+    with fname.open('wt') as handle:
+        yaml.dump(content, handle, default_flow_style=False)
+
 
 def write_json(content, fname):
     fname = Path(fname)

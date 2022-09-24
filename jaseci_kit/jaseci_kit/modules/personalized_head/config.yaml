@@ -1,86 +1,79 @@
-# Model Configurations
-Model:
-  type: PersonalizedHead
-  args:
-    embedding_length: 768
-    ph_nhead: 8
-    ph_ff_dim: 512
-    batch_first: True
-    ph_nlayers: 1
-    n_classes: 10
-
-# Model Training Configurations
-Trainer:
-  name: PersonalizedHeadTrainer
-  n_gpu: 1
-  dataloader:
-    type: SnipsDataLoader
-    args:
-      data_dir: data/
-      batch_size: 32
-      shuffle: true
-      validation_split: 0.2
-      num_workers: 1
-  optimizer:
-    type: Adam
-    args:
-      lr: 0.001
-      weight_decay: 0
-      amsgrad: true
-  loss: nll_loss
-  metrics:
-    - accuracy
-    - top_k_acc
-  lr_scheduler:
-    type: StepLR
-    args:
-      step_size: 50
-      gamma: 0.1
-  trainer:
-    epochs: 100
-    save_dir: saved/
-    save_period: 1
-    verbosity: 2
-    monitor: min val_loss
-    early_stop: 10
-    tensorboard: true
-
-# Model Inferencing Configurations
 Inference:
-  weights: ""
-  preprocess:
-    type: PreProcessor
-    args: {}
   postprocess:
-    type: PostProcessor
     args: {}
-
-# Logger Configurations
+    type: PostProcessor
+  preprocess:
+    args: {}
+    type: PreProcessor
+  weights: ''
 Logger:
-  version: 1
-  disable_existing_loggers: False
-  log_dir: logs/
+  disable_existing_loggers: false
   formatters:
-    simple:
-      format: "%(message)s"
     datetime:
-      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+      format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    simple:
+      format: '%(message)s'
   handlers:
     console:
       class: logging.StreamHandler
-      level: DEBUG
       formatter: simple
+      level: DEBUG
       stream: ext://sys.stdout
     info_file_handler:
-      class: logging.handlers.RotatingFileHandler
-      level: INFO
-      formatter: datetime
-      filename: info.log
-      maxBytes: 10485760
       backupCount: 20
+      class: logging.handlers.RotatingFileHandler
       encoding: utf8
+      filename: info.log
+      formatter: datetime
+      level: INFO
+      maxBytes: 10485760
+  log_dir: logs/
   root:
-    level: INFO
     handlers:
-      - console
-      - info_file_handler
+    - console
+    - info_file_handler
+    level: INFO
+  version: 1
+Model:
+  args:
+    batch_first: true
+    embedding_length: 768
+    n_classes: 10
+    ph_ff_dim: 512
+    ph_nhead: 8
+    ph_nlayers: 1
+  type: PersonalizedHead
+Trainer:
+  dataloader:
+    args:
+      batch_size: 32
+      data_dir: data/
+      num_workers: 1
+      shuffle: true
+      validation_split: 0.2
+    type: SnipsDataLoader
+  loss: nll_loss
+  lr_scheduler:
+    args:
+      gamma: 0.1
+      step_size: 50
+    type: StepLR
+  metrics:
+  - accuracy
+  - top_k_acc
+  n_gpu: 1
+  name: PersonalizedHeadTrainer
+  optimizer:
+    args:
+      amsgrad: true
+      lr: 0.001
+      weight_decay: 0
+    type: Adam
+  trainer:
+    early_stop: 10
+    epochs: 100
+    monitor: min val_loss
+    save_dir: saved/
+    save_period: 1
+    tensorboard: true
+    verbosity: 2

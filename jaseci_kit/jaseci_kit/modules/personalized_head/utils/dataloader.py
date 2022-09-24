@@ -1,4 +1,4 @@
-from turtle import xcor
+import importlib
 from torchvision import datasets, transforms
 import pandas as pd
 import torch
@@ -24,7 +24,8 @@ class MnistDataLoader(BaseDataLoader):
 class SnipsDataLoader(BaseDataLoader):
     def __init__(self, data_dir, batch_size, shuffle=True, validation_split=0.0, num_workers=1, training=True):
         self.data_dir = data_dir
-        df = pd.read_json(os.path.join(self.data_dir, 'SNIPS_INTENTS', 'raw', 'train.json'))
+        df = pd.read_json(os.path.join(
+            self.data_dir, 'SNIPS_INTENTS', 'raw', 'train.json'))
         self.dataset = SnipsDataset(df)
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
 
@@ -43,3 +44,15 @@ class SnipsDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return self.x[idx], self.y[idx]
+
+
+class CustomDataLoader(BaseDataLoader):
+    def __init__(self, python_file, module_name, batch_size, shuffle=True, validation_split=0.0, num_workers=1, training=True, **kwargs):
+        # import the python file
+        spec = importlib.util.spec_from_file_location(
+            "module.name", python_file)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        # get the model
+        self.dataset = getattr(module, module_name)(**kwargs)
+        super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)

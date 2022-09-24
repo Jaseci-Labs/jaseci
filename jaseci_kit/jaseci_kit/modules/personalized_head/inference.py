@@ -1,9 +1,9 @@
 from typing import Any, Dict
 import torch
 
-import utils.model as model_module
-import utils.process as process_module
-from utils.logger import get_logger
+from .utils import model as model_module
+from .utils import process as process_module
+from .utils.logger import get_logger
 
 
 class InferenceEngine:

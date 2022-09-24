@@ -5,8 +5,9 @@ import os
 import traceback
 from fastapi import HTTPException
 
-from utils import read_yaml
-from inference import InferenceEngine
+from .utils import read_yaml, write_yaml
+from .inference import InferenceEngine
+from .train import train
 
 
 MODEL_NOT_FOUND = "No Active model found. Please create a model first using create_head."
@@ -61,17 +62,22 @@ def predict(data: Any) -> Any:
 
 
 @jaseci_action(act_group=["personalized_head"], allow_remote=True)
-def train(new_config: Dict = None):
+def train_model(config_file: str = None):
     '''
     Train the current active model.
-    @param new_config: new config to be used for training
+    @param new_config: new config yaml to be used for training
     '''
     try:
         global ie, config
-        if new_config:
-            config = {**config, **new_config}
-        # TODO: train the model
-        # TODO: return Metrics
+        new_config = read_yaml(config_file)
+        config = {**config, **new_config}
+        # overwrite the config file with config
+        write_yaml(config, config_file)
+        train({
+            "config": config_file,
+            "device": None,
+            "resume": None,
+        })
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))

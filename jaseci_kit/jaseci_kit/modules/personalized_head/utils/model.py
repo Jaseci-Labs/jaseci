@@ -1,4 +1,4 @@
-from typing import Dict
+import importlib.util
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -46,3 +46,19 @@ class MnistModel(BaseModel):
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
+
+
+class CustomModel(BaseModel):
+    def __init__(self, python_file: str, module_name: str, **kwargs):
+        super().__init__()
+        # import the python file
+        spec = importlib.util.spec_from_file_location(
+            "module.name", python_file)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        # get the model
+        self.model = getattr(module, module_name)(**kwargs)
+
+    def forward(self, x):
+        x = self.model(x)
+        return x

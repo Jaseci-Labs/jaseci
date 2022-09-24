@@ -4,14 +4,14 @@ import numpy as np
 import os
 from pathlib import Path
 
-import utils.loss as loss_module
-import utils.metric as metric_module
-import utils.model as model_module
-import utils.dataloader as dataloader_module
+from .utils import loss as loss_module
+from .utils import metric as metric_module
+from .utils import model as model_module
+from .utils import dataloader as dataloader_module
 
-from utils.trainer import Trainer
-from utils import prepare_device, read_yaml
-from utils.logger import setup_logging
+from .utils.trainer import Trainer
+from .utils import prepare_device, read_yaml
+from .utils.logger import setup_logging
 
 
 # fix random seeds for reproducibility
@@ -22,26 +22,26 @@ torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)
 
 
-def main(args):
-    if args.device is not None:
+def train(args):
+    if args['device'] is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.device
 
     # Loading Configuration
-    if args.resume is not None:
-        resume = Path(args.resume)
+    if args['resume'] is not None:
+        resume = Path(args['resume'])
         cfg_fname = resume.parent / 'config.yaml'
     else:
         msg_no_cfg = "Configuration file need to be specified. Add '-c config.yaml', for example."
-        assert args.config is not None, msg_no_cfg
+        assert args['config'] is not None, msg_no_cfg
         resume = None
-        cfg_fname = Path(args.config)
+        cfg_fname = Path(args['config'])
 
     config = read_yaml(cfg_fname)
-    if args.config and resume:
+    if args['config'] and resume:
         # update new config for fine-tuning
-        config.update(read_yaml(args.config))
+        config.update(read_yaml(args['config']))
 
-    #Setup Logger
+    # Setup Logger
     log_config = config['Logger']
     setup_logging(log_config)
 
@@ -93,5 +93,6 @@ if __name__ == '__main__':
     args.add_argument('-d', '--device', default=None, type=str,
                       help='indices of GPUs to enable (default: all)')
     args = args.parse_args()
-
-    main(args)
+    # convert args to dict
+    args = vars(args)
+    train(args)
