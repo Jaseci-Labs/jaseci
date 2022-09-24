@@ -17,7 +17,7 @@ Trainer:
     type: SnipsDataLoader
     args:
       data_dir: data/
-      batch_size: 1
+      batch_size: 32
       shuffle: true
       validation_split: 0.2
       num_workers: 1
@@ -54,31 +54,33 @@ Inference:
   postprocess:
     type: PostProcessor
     args: {}
-# # Logger Configurations
-# Logger:
-#   version: 1
-#   disable_existing_loggers: False
-#   formatters:
-#     simple:
-#       format: "%(message)s"
-#     datetime:
-#       format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-#   handlers:
-#     console:
-#       class: logging.StreamHandler
-#       level: DEBUG
-#       formatter: simple
-#       stream: ext://sys.stdout
-#     info_file_handler:
-#       class: logging.handlers.RotatingFileHandler
-#       level: INFO
-#       formatter: datetime
-#       filename: info.log
-#       maxBytes: 10485760
-#       backupCount: 20
-#       encoding: utf8
-#   root:
-#     level: INFO
-#     handlers:
-#       - console
-#       - info_file_handler
+
+# Logger Configurations
+Logger:
+  version: 1
+  disable_existing_loggers: False
+  log_dir: logs/
+  formatters:
+    simple:
+      format: "%(message)s"
+    datetime:
+      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: DEBUG
+      formatter: simple
+      stream: ext://sys.stdout
+    info_file_handler:
+      class: logging.handlers.RotatingFileHandler
+      level: INFO
+      formatter: datetime
+      filename: info.log
+      maxBytes: 10485760
+      backupCount: 20
+      encoding: utf8
+  root:
+    level: INFO
+    handlers:
+      - console
+      - info_file_handler

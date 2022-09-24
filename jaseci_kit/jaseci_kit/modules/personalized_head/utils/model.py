@@ -26,7 +26,8 @@ class PersonalizedHead(BaseModel):
         x = self.encoder(emb)
         x = self.decoder(x)
         x = F.log_softmax(x, dim=-1)
-        return x
+        return x.squeeze(1)
+
 
 class MnistModel(BaseModel):
     def __init__(self, num_classes=10):

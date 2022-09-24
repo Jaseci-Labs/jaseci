@@ -11,6 +11,7 @@ import utils.dataloader as dataloader_module
 
 from utils.trainer import Trainer
 from utils import prepare_device, read_yaml
+from utils.logger import setup_logging
 
 
 # fix random seeds for reproducibility
@@ -39,6 +40,10 @@ def main(args):
     if args.config and resume:
         # update new config for fine-tuning
         config.update(read_yaml(args.config))
+
+    #Setup Logger
+    log_config = config['Logger']
+    setup_logging(log_config)
 
     # Build model Architecture
     model_config = config['Model']

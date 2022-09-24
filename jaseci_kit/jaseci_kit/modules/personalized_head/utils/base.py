@@ -40,6 +40,7 @@ class BaseTrainer:
 
     def __init__(self, model, criterion, metric_ftns, optimizer, config, resume=None):
         self.config = config
+        self.logger = get_logger("train")
 
         save_dir = Path(self.config['trainer']['save_dir'])
         model_name = self.config['name']

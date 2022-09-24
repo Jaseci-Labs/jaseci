@@ -3,8 +3,7 @@ from datetime import datetime
 import logging
 import logging.config
 from pathlib import Path
-
-from .util import read_json
+import os
 
 log_levels = {
     0: logging.WARNING,
@@ -87,10 +86,12 @@ class TensorboardWriter():
 
 
 # FIXME: dictConfig is not loading
-def setup_logging(save_dir, log_config=None, default_level=logging.INFO):
+def setup_logging(log_config=None, default_level=logging.INFO):
     """
     Setup logging configuration
     """
+    save_dir = log_config['log_dir']
+    os.makedirs(save_dir, exist_ok=True)
     if log_config:
         for _, handler in log_config['handlers'].items():
             if 'filename' in handler:
