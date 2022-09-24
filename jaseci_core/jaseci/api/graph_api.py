@@ -109,6 +109,21 @@ class GraphApi:
         return ret
 
     @Interface.private_api(cli_args=["nd"])
+    def graph_node_view(
+        self, nd: Node, detailed: bool = False, show_edges: bool = True
+    ):
+        """
+        Returns value a given node
+        """
+        ret = [nd.serialize(detailed=detailed)]
+        if show_edges:
+            for i in nd.attached_edges():
+                ret.append(i.serialize(detailed=detailed))
+        for i in nd.attached_nodes():
+            ret.append(i.serialize(detailed=detailed))
+        return ret
+
+    @Interface.private_api(cli_args=["nd"])
     def graph_node_set(self, nd: Node, ctx: dict, snt: Sentinel = None):
         """
         Assigns values to member variables of a given node using ctx object
