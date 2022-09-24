@@ -92,9 +92,11 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
     caller_globals[f"{JS_ACTION_PREAMBLE}{func.__name__}"] = new_func
 
 
-def gen_endpoint(app, func, endpoint, caller_globals):
+def gen_endpoint(app, func, endpoint, mount, caller_globals):
     """Helper for jaseci_action decorator"""
     # Create duplicate funtion for api endpoint and inject in call site globals
+    if mount is not None:
+        app.mount(*mount)
     caller_globals[f"{JS_ENDPOINT_PREAMBLE}{func.__name__}"] = app.get(endpoint)(func)
 
 
