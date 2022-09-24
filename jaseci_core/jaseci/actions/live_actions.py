@@ -30,7 +30,7 @@ def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
     return decorator_func
 
 
-def jaseci_expose(endpoint):
+def jaseci_expose(endpoint, mount=None):
     """Decorator for Jaseci Action interface"""
     caller_globals = dict(inspect.getmembers(inspect.currentframe().f_back))[
         "f_globals"
@@ -39,7 +39,7 @@ def jaseci_expose(endpoint):
         caller_globals["serv_actions"] = serv_actions
 
     def decorator_func(func):
-        mark_as_endpoint([func, endpoint, caller_globals])
+        mark_as_endpoint([func, endpoint, mount, caller_globals])
         return func
 
     return decorator_func
