@@ -1,0 +1,26 @@
+[
+  {
+    "name": "man",
+    "kind": "node",
+    "jid": "urn:uuid:0416e6b9-53a2-4778-98c6-d2acf86f4167",
+    "j_timestamp": "2022-09-24T13:53:47.740467",
+    "j_type": "node",
+    "context": {}
+  },
+  {
+    "name": "woman",
+    "kind": "node",
+    "jid": "urn:uuid:7469ec19-ac5f-4892-9748-5926798e11d8",
+    "j_timestamp": "2022-09-24T13:53:47.732002",
+    "j_type": "node",
+    "context": {}
+  },
+  {
+    "name": "man",
+    "kind": "node",
+    "jid": "urn:uuid:74464aad-85da-4354-b790-0c52c9de4d69",
+    "j_timestamp": "2022-09-24T13:53:47.730622",
+    "j_type": "node",
+    "context": {}
+  }
+]
