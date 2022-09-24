@@ -94,37 +94,8 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
 
 def gen_endpoint(app, func, endpoint, caller_globals):
     """Helper for jaseci_action decorator"""
-    # Construct list of action apis available
-    varnames = list(inspect.signature(func).parameters.keys())
-
-    # Need to get pydatic model for func signature for fastAPI post
-    model = validate_arguments(func).model
-
-    # Keep only feilds present in param list in base model
-    keep_fields = {}
-    for i in model.__fields__.keys():
-        if i in varnames:
-            keep_fields[i] = model.__fields__[i]
-    model.__fields__ = keep_fields
-
     # Create duplicate funtion for api endpoint and inject in call site globals
-    @app.get(endpoint)
-    def new_func(params: model):
-        pl_peek = str(dict(params.__dict__))[:128]
-        logger.info(str(f"Incoming call to {func.__name__} with {pl_peek}"))
-        start_time = time()
-
-        ret = validate_arguments(func)(**(params.__dict__))
-        tot_time = time() - start_time
-        logger.info(
-            str(
-                f"API call to {Cc.TG}{func.__name__}{Cc.EC}"
-                f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
-            )
-        )
-        return ret
-
-    caller_globals[f"{JS_ENDPOINT_PREAMBLE}{func.__name__}"] = new_func
+    caller_globals[f"{JS_ENDPOINT_PREAMBLE}{func.__name__}"] = app.get(endpoint)(func)
 
 
 def launch_server(port=80, host="0.0.0.0"):
