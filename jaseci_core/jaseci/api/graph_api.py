@@ -110,7 +110,7 @@ class GraphApi:
 
     @Interface.private_api(cli_args=["nd"])
     def graph_node_view(
-        self, nd: Node, detailed: bool = False, show_edges: bool = True
+        self, nd: Node = None, detailed: bool = False, show_edges: bool = True
     ):
         """
         Returns value a given node
