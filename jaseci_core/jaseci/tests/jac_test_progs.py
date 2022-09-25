@@ -512,3 +512,82 @@ check_destroy_node_has_var = """
         report n.x.type;
     }
 """
+
+check_dict_for_in_loop = """
+    walker for_loop_dict {
+        with entry {
+            testing = {
+                "test1": 1,
+                "test2": 2,
+                "test3": 3
+            };
+
+            for key in testing {
+                report key.str + " : " + testing[key].str;
+            }
+
+            for key, val in testing {
+                report key.str + " : " + val.str;
+            }
+
+            testing = [5,6,7];
+
+            for key in testing {
+                report key;
+            }
+
+            for key, val in testing {
+                report key.str + " : " + val.str;
+            }
+        }
+    }
+
+    walker var_as_key_for_dict {
+        with entry {
+            key = "key1";
+            not_str_key = 1;
+            testing = {
+                key: key,
+                "key2": 2,
+                not_str_key: not_str_key
+            };
+
+            report testing;
+        }
+    }
+"""
+
+check_new_builtin = """
+    walker init {
+        with entry {
+            a = {"test":"test"};
+
+            // dict get with default if not existing
+            b = a.dict::get("t", 1);
+
+            // string join single param array
+            c = " ".str::join([1,2,3,4]);
+
+            // string join multiparams
+            d = " ".str::join(1,2,3,4);
+            report a;
+            report b;
+            report c;
+            report d;
+        }
+    }
+"""
+
+continue_issue = """
+    walker init {
+        root {
+            for i=0 to i<10 by i+=1 {
+                if(i==9):
+                    continue;
+                if(i):
+                    report i;
+            }
+            report "apple";
+        }
+    }
+"""

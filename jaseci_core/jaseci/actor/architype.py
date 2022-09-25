@@ -4,23 +4,25 @@ Architype class for Jaseci
 Each architype is a registered templatized version of instances of any Jaseci
 abstractions or collections of instances (e.g., subgraphs, etc)
 """
-from jaseci.element.element import element
-from jaseci.jac.interpreter.architype_interp import architype_interp
-from jaseci.jac.ir.jac_code import jac_code
-from jaseci.utils.id_list import id_list
+from jaseci.element.element import Element
+from jaseci.jac.interpreter.architype_interp import ArchitypeInterp
+from jaseci.jac.ir.jac_code import JacCode
+from jaseci.utils.id_list import IdList
 
 
-class architype(element, jac_code, architype_interp):
+class Architype(Element, JacCode, ArchitypeInterp):
     """Architype class for Jaseci"""
 
     def __init__(self, code_ir=None, *args, **kwargs):
         self.super_archs = list()
-        self.entry_action_ids = id_list(self)
-        self.activity_action_ids = id_list(self)
-        self.exit_action_ids = id_list(self)
-        element.__init__(self, *args, **kwargs)
-        jac_code.__init__(self, code_ir)
-        architype_interp.__init__(self)
+        self.anchor_var = None
+        self.private_vars = []
+        self.entry_action_ids = IdList(self)
+        self.activity_action_ids = IdList(self)
+        self.exit_action_ids = IdList(self)
+        Element.__init__(self, *args, **kwargs)
+        JacCode.__init__(self, code_ir)
+        ArchitypeInterp.__init__(self)
 
     def run(self):
         """
@@ -34,7 +36,7 @@ class architype(element, jac_code, architype_interp):
         return self._jac_ast
 
     def get_all_actions(self):
-        actions = id_list(self)
+        actions = IdList(self)
         for i in self.arch_with_supers():
             actions += i.entry_action_ids + i.activity_action_ids + i.exit_action_ids
         return actions

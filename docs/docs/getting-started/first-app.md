@@ -247,7 +247,7 @@ walker talker {
 
 The Walker will start from the main root and from the utterance intered it will determine which node to go to next.
 It should be noted the utterance must match the prompts chosen or the walker will not move from the graph.
-Jaseci-kit has features that makes it possible for users to not enter the exact intent but still traverse to the right node.
+Jaseci-ai-kit has features that makes it possible for users to not enter the exact intent but still traverse to the right node.
 
 ### Main
 

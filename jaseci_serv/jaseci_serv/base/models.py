@@ -1,21 +1,22 @@
 import uuid
 from datetime import datetime
 
-from django.db import models
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
     PermissionsMixin,
 )
+from django.db import models
+
+from jaseci.api.interface import Interface
+from jaseci.element.master import Master as CoreMaster
+from jaseci.element.super_master import SuperMaster as CoreSuper
 from jaseci_serv.jaseci_serv.settings import JASECI_CONFIGS
-from django.contrib.auth import get_user_model
-from jaseci_serv.base.orm_hook import orm_hook
-from jaseci.element.master import master as core_master
-from jaseci.element.super_master import super_master as core_super
-from jaseci.api.interface import interface
+from jaseci_serv.svc import MetaService
 
 
-class master(core_master):
+class Master(CoreMaster):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._valid_configs += JASECI_CONFIGS
@@ -63,12 +64,12 @@ class master(core_master):
         get_user_model().objects.get(email=name).delete()
 
 
-class super_master(master, core_super):
-    @interface.admin_api()
+class SuperMaster(Master, CoreSuper):
+    @Interface.admin_api()
     def master_allusers(self, limit: int = 10, offset: int = 0, asc: bool = False):
         """
-        Returns info on a set of users, num specifies the number of users to
-        return and start idx specfies where to start
+        Returns info on a set of users, limit specifies the number of users to
+        return and offset specfies where to start
         """
 
         if (limit < 0) or (offset < 0):
@@ -84,10 +85,13 @@ class super_master(master, core_super):
         for i in users[offset:end]:
             filtered_users.append(
                 {
+                    "id": i.id,
                     "user": i.email,
                     "jid": i.master.urn,
                     "name": i.name,
                     "created_date": i.time_created.isoformat(),
+                    "is_activated": i.is_activated,
+                    "is_superuser": i.is_superuser,
                 }
             )
         ret = {"total": total, "data": filtered_users}
@@ -114,7 +118,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = master(h=user._h, name=email).id
+        user.master = Master(h=user._h, name=email).id
         user._h.commit()
 
         user.save(using=self._db)
@@ -132,7 +136,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = super_master(h=user._h, name=email).id
+        user.master = SuperMaster(h=user._h, name=email).id
         user._h.commit()
 
         user.save(using=self._db)
@@ -159,7 +163,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     def __init__(self, *args, **kwargs):
-        self._h = orm_hook(objects=JaseciObject.objects, globs=GlobalVars.objects)
+        self._h = MetaService().hook()
         AbstractBaseUser.__init__(self, *args, **kwargs)
         PermissionsMixin.__init__(self, *args, **kwargs)
 

@@ -1,9 +1,21 @@
 # Jaseci Change / Release Notes
 
+## Version 1.3.5
+
+### Updates
+
+- New Feature: Introduced `graph node view` API
+- Major Improvement: Walkers are now proper architypes in stack, all code in architypes
+- Improvement: Attributes like anchored and private are not fuzed with anchored objects.
+- Improvement: Incompatible/outdated IR now rejected by Jaseci stack
+
 ## Version 1.3.4
 
 ### Updates
 
+- Improvement: Indicator for being logged in in JSCTL
+- New Feature: Email action set
+- Major Feature: Async walkers
 - Deprecation: Stripe API soft removed.
 - Improvement: Improved the deref operator `*` to be more nimble
 - New Feature: Can now pluck lists of values from collections of nodes and edges.

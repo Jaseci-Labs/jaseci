@@ -7,16 +7,19 @@
 
 ## Properties
 
-| Property      | Attribute     | Description | Type     | Default              |
-| ------------- | ------------- | ----------- | -------- | -------------------- |
-| `css`         | `css`         |             | `string` | `JSON.stringify({})` |
-| `events`      | `events`      |             | `string` | `undefined`          |
-| `fullwidth`   | `fullwidth`   |             | `string` | `undefined`          |
-| `label`       | `label`       |             | `string` | `undefined`          |
-| `name`        | `name`        |             | `string` | `undefined`          |
-| `operations`  | `operations`  |             | `string` | `undefined`          |
-| `placeholder` | `placeholder` |             | `string` | `undefined`          |
-| `value`       | `value`       |             | `string` | `undefined`          |
+| Property      | Attribute     | Description | Type                                                                                                       | Default              |
+| ------------- | ------------- | ----------- | ---------------------------------------------------------------------------------------------------------- | -------------------- |
+| `altLabel`    | `alt-label`   |             | `string`                                                                                                   | `undefined`          |
+| `css`         | `css`         |             | `string`                                                                                                   | `JSON.stringify({})` |
+| `events`      | `events`      |             | `string`                                                                                                   | `undefined`          |
+| `fullwidth`   | `fullwidth`   |             | `string`                                                                                                   | `undefined`          |
+| `label`       | `label`       |             | `string`                                                                                                   | `undefined`          |
+| `name`        | `name`        |             | `string`                                                                                                   | `undefined`          |
+| `operations`  | `operations`  |             | `string`                                                                                                   | `undefined`          |
+| `palette`     | `palette`     |             | `"accent" \| "error" \| "ghost" \| "info" \| "link" \| "primary" \| "secondary" \| "success" \| "warning"` | `undefined`          |
+| `placeholder` | `placeholder` |             | `string`                                                                                                   | `undefined`          |
+| `type`        | `type`        |             | `string`                                                                                                   | `'text'`             |
+| `value`       | `value`       |             | `string`                                                                                                   | `undefined`          |
 
 
 ## Events
@@ -28,14 +31,16 @@
 
 ## Dependencies
 
-### Depends on
+### Used by
 
-- [jsc-label](../jsc-label)
+ - [jsc-auth-form](../jsc-container)
+ - [jsc-date-picker](../jsc-date-picker)
 
 ### Graph
 ```mermaid
 graph TD;
-  jsc-inputbox --> jsc-label
+  jsc-auth-form --> jsc-inputbox
+  jsc-date-picker --> jsc-inputbox
   style jsc-inputbox fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

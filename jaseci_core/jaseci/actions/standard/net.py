@@ -9,14 +9,14 @@ is simply a list that only contains such elements.
 """
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta
-from jaseci.jac.jac_set import jac_set
-from jaseci.graph.node import node
-from jaseci.graph.edge import edge
+from jaseci.jac.jac_set import JacSet
+from jaseci.graph.node import Node
+from jaseci.graph.edge import Edge
 import uuid
 
 
 @jaseci_action()
-def max(item_set: jac_set):
+def max(item_set: JacSet):
     """
     Max based on anchor value
 
@@ -24,10 +24,12 @@ def max(item_set: jac_set):
     and/or edges based on an anchor has variable. Since each node or edge can only
     specify a single anchor this action enables a handy short hand for utilizing the
     anchor variable as the representative field for performing the  comparison in
-    ranking. For example, if you have a node called \\lstinline{movie_review} with a
+    ranking. This action does not support arhcitypes lacking an anchor.
+    \\par
+    For example, if you have a node called \\lstinline{movie_review} with a
     field \\lstinline{has anchor score = .5;} that changes based on sentiment
     analysis, using this action will return the node with the highest score from the
-    input list of nodes. This action does not support arhcitypes lacking an anchor.
+    input list of nodes.
 
     :param item_set: A list of node and or edges to identify the
         maximum element based on their respective anchor values
@@ -47,7 +49,7 @@ def max(item_set: jac_set):
 
 
 @jaseci_action()
-def min(item_set: jac_set):
+def min(item_set: JacSet):
     """
     Min based on anchor value
 
@@ -75,7 +77,7 @@ def min(item_set: jac_set):
 
 
 @jaseci_action()
-def pack(item_set: jac_set, destroy: bool = False):
+def pack(item_set: JacSet, destroy: bool = False):
     """
     Convert a subgraph to a generalized dictionary format
 
@@ -99,9 +101,9 @@ def pack(item_set: jac_set, destroy: bool = False):
     """
     graph_dict = {"nodes": [], "edges": []}
     idx_map = {}
-    edge_set = jac_set()
+    edge_set = JacSet()
     for i in item_set.obj_list():
-        if isinstance(i, node):
+        if isinstance(i, Node):
             node_pack = {"name": i.name, "ctx": i.context}
             idx_map[i.jid] = len(graph_dict["nodes"])
             graph_dict["nodes"].append(node_pack)
@@ -120,7 +122,7 @@ def pack(item_set: jac_set, destroy: bool = False):
             graph_dict["edges"].append(edge_pack)
     if destroy:
         for i in item_set.obj_list():
-            if isinstance(i, node) and i.name != "root":
+            if isinstance(i, Node) and i.name != "root":
                 i.destroy()
     return graph_dict
 
@@ -142,11 +144,11 @@ def unpack(graph_dict: dict, meta):
     leak.
     """
     mast = master_from_meta(meta)
-    item_set = jac_set()
+    item_set = JacSet()
     node_list = []
     for i in graph_dict["nodes"]:
         node_list.append(
-            node(
+            Node(
                 m_id=mast._m_id,
                 h=mast._h,
                 kind="node",
@@ -157,7 +159,7 @@ def unpack(graph_dict: dict, meta):
         item_set.add_obj(node_list[-1])
         node_list[-1].save()
     for i in graph_dict["edges"]:
-        this_edge = edge(
+        this_edge = Edge(
             m_id=mast._m_id,
             h=mast._h,
             kind="edge",

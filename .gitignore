@@ -21,3 +21,7 @@ build
 js.session
 .idea
 mydatabase
+*Zone.Identifier
+
+*.rdb
+celerybeat-schedule*

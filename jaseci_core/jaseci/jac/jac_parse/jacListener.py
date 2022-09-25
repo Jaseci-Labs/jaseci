@@ -73,14 +73,6 @@ class jacListener(ParseTreeListener):
     def exitArchitype(self, ctx: jacParser.ArchitypeContext):
         pass
 
-    # Enter a parse tree produced by jacParser#walker.
-    def enterWalker(self, ctx: jacParser.WalkerContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#walker.
-    def exitWalker(self, ctx: jacParser.WalkerContext):
-        pass
-
     # Enter a parse tree produced by jacParser#walker_block.
     def enterWalker_block(self, ctx: jacParser.Walker_blockContext):
         pass
