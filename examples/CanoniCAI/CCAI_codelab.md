@@ -1505,7 +1505,7 @@ The `jid` field is the ID for the sentinel. (`jid` stands for jaseci ID).
 
 With a sentinel and graph, we can now run walker with
 ```bash
-jaseci > walker run talk -ctx {\"question\": \"I want to schedule a test drive\"}
+jaseci > walker run talk -ctx "{\"question\": \"I want to schedule a test drive\"}"
 ```
 And with `yield`, the next walker run will pick up where it leaves off and retain its variable states and nodes traversal plan.
 
