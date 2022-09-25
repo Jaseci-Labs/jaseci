@@ -156,7 +156,7 @@ def build_class_dict(from_where):
                 importlib.import_module(modname), inspect.isclass
             )
             for cls, obj in clsmembers:
-                obj_class_cache[cls.lower()] = getattr(
+                obj_class_cache[camel_to_snake(cls)] = getattr(
                     importlib.import_module(modname), cls
                 )
         else:
