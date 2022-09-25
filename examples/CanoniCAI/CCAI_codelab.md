@@ -878,7 +878,7 @@ Let's take a look!
 node how_to_order_state:dialogue_state {
     has name = "how_to_order";
     can nlg {
-        visitor.response = "You can order a Telsa through our design studio";
+        visitor.response = "You can order a Tesla through our design studio";
     }
 }
 
@@ -1151,6 +1151,15 @@ The output of this model is a list of dictionaries, each of which is one detecte
 For each detected entity, `entity_value` is the type of entity, so in this case either `name` or `address`;
 and `entity_text` is the detected text from the input for this entity, so in this case the user's name or their address.
 
+Remember to save the trained model to a location of your choosing, run
+```bash
+jaseci > jac run tfm_ner.jac -walk save_model -ctx "{\"model_path\": \"tfm_ner_model\"}"
+```
+
+> **Warning**
+>
+> If you are uploading your code to GitHub, make sure to exclude the tfm_ner_model folder as it is too large and you will not be able to push your changes. If you still wish to push this file, you must use Git Large File Storage (Git LFS).
+
 Let's now update the node ability to use the entity model.
 ```js
 node dialogue_state {
@@ -1259,6 +1268,11 @@ If the compilation is successful, a `.jir` file with the same name will be gener
 ## Unify FAQ + Dialogue Code
 For `faq_state`, we need to now define the `nlu` and `nlg` node abilities for FAQ.
 So let's update the following in `faq.jac`
+
+> **Note**
+>
+> You can either update the following in a new file named `faq.jac` or you may define this code in the previously defined `main.jac`.
+
 First, `faq_root`
 ```js
 node faq_root:cai_state {
@@ -1385,7 +1399,10 @@ jaseci > jac run tesla_ai.jir
 One last step, since we introduce a new intent `i have a questions`, we need to update our classifier model again.
 This time, use the `clf_train_3.json` example training data.
 
-The model is trained? Great! Now run the jir and try questions like "I have some telsa related questions" then following with FAQ questioins!
+> **Note**
+> Make sure so save your model again so you can return to it in a new seesion!
+
+The model is trained? Great! Now run the jir and try questions like "I have some tesla related questions" then following with FAQ questioins!
 
 Congratulations! You have created a single conversational AI system that is capable of answering FAQs and perform complex multi-step actions.
 
