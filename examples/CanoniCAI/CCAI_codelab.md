@@ -1179,6 +1179,10 @@ Re-train the bi-encoder model with this dataset.
 >
 > Refer to previous code snippets if you need a reminder on how to train the bi-encoder classifier model.
 
+> **Note**
+>
+> Remember to save your new entity extraction model! 
+
 Now try running the walker again with `jac run dialogue.jac`!
 
 Congratulations! You now have a fully functional multi-turn dialogue system that can handle test drive requests!
