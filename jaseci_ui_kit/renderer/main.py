@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Request
-import json
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from jaseci.actions.live_actions import jaseci_action, jaseci_expose
+import json
 
 loaded_json = {}
 
