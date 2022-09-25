@@ -1,4 +1,4 @@
-import {*} with './site.jac';
+import {*} with './example_site.jac';
 
 walker get_props {
     has anchor props = {};
