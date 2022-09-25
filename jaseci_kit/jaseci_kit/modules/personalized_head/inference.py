@@ -1,5 +1,8 @@
+from fileinput import filename
+from http.client import ImproperConnectionState
 from typing import Any, Dict
 import torch
+import uuid as uuid_gen
 
 from .utils import model as model_module
 from .utils import process as process_module
@@ -12,46 +15,37 @@ class InferenceEngine:
     @param: config: Dict
     '''
 
-    def __init__(self, config: Dict, uuid: str):
-        self.uuid = uuid
-        self.logger = get_logger(f'Personalized Header {uuid}')
+    def __init__(self, config: Dict, uuid: str = None):
+        self.id = uuid if uuid else str(uuid_gen.uuid4())
+        self.logger = get_logger(f'Personalized Header {self.id}')
 
-        self.config = config['Inference']
+        self.infer_config = config['Inference']
 
         # Building the Model
         model_config = config['Model']
-        if model_config['args']:
-            self.model = getattr(model_module, model_config['type'])(
-                **model_config['args'])
-        else:
-            self.model = getattr(model_module, model_config['type'])()
+        self.model = getattr(model_module, model_config['type'])(
+            **model_config.get('args', {}))
 
-        if self.config["weights"]:
+        # Loading the weights
+        if self.infer_config["weights"]:
             self.logger.info(
-                'Loading checkpoint: {} ...'.format(config["weights"]))
-            checkpoint = torch.load(self.config["weights"])
+                'Loading checkpoint: {} ...'.format(self.infer_config["weights"]))
+            checkpoint = torch.load(self.infer_config["weights"])
             state_dict = checkpoint['state_dict']
             self.model.load_state_dict(state_dict)
 
+        # Setting the device
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
         self.model = self.model.to(self.device)
         self.model.eval()
 
+        # Initialize Pre-processor
+        self.preprocessor = getattr(process_module, self.infer_config['preprocess']['type'])(
+            **self.infer_config['preprocess'].get('args', {}))
         # Initialize Post-processor
-        if self.config['preprocess']['args']:
-            self.preprocessor = getattr(process_module, self.config['preprocess']['type'])(
-                self.config['preprocess']['args'])
-        else:
-            self.preprocessor = getattr(
-                process_module, self.config['preprocess']['type'])()
-        # Initialize Post-processor
-        if self.config['postprocess']['args']:
-            self.postprocessor = getattr(process_module, self.config['postprocess']['type'])(
-                self.config['postprocess']['args'])
-        else:
-            self.postprocessor = getattr(
-                process_module, self.config['postprocess']['type'])()
+        self.postprocessor = getattr(process_module, self.infer_config['postprocess']['type'])(
+            **self.infer_config['postprocess'].get('args', {}))
 
     @torch.no_grad()
     def predict(self, data: Any) -> Any:

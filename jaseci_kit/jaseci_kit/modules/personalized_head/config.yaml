@@ -1,18 +1,17 @@
 Inference:
   postprocess:
-    args: {}
-    type: PostProcessor
+    type: PersonalizedHeadPostProcessor
   preprocess:
-    args: {}
-    type: PreProcessor
-  weights: ''
+    type: PersonalizedHeadPreProcessor
+  weights: ""
+
 Logger:
   disable_existing_loggers: false
   formatters:
     datetime:
-      format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     simple:
-      format: '%(message)s'
+      format: "%(message)s"
   handlers:
     console:
       class: logging.StreamHandler
@@ -30,10 +29,11 @@ Logger:
   log_dir: logs/
   root:
     handlers:
-    - console
-    - info_file_handler
+      - console
+      - info_file_handler
     level: INFO
   version: 1
+
 Model:
   args:
     batch_first: true
@@ -43,6 +43,7 @@ Model:
     ph_nhead: 8
     ph_nlayers: 1
   type: PersonalizedHead
+
 Trainer:
   dataloader:
     args:
@@ -59,8 +60,8 @@ Trainer:
       step_size: 50
     type: StepLR
   metrics:
-  - accuracy
-  - top_k_acc
+    - accuracy
+    - top_k_acc
   n_gpu: 1
   name: PersonalizedHeadTrainer
   optimizer:

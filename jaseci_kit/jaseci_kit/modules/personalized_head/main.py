@@ -62,7 +62,7 @@ def predict(data: Any) -> Any:
 
 
 @jaseci_action(act_group=["personalized_head"], allow_remote=True)
-def train_model(config_file: str = None):
+def train_model(config_file: str = None, overwrite: bool = False):
     '''
     Train the current active model.
     @param new_config: new config yaml to be used for training
@@ -71,8 +71,7 @@ def train_model(config_file: str = None):
         global ie, config
         new_config = read_yaml(config_file)
         config = {**config, **new_config}
-        # overwrite the config file with config
-        write_yaml(config, config_file)
+        if overwrite: write_yaml(config, config_file)
         train({
             "config": config_file,
             "device": None,

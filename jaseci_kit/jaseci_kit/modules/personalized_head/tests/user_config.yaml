@@ -1,0 +1,55 @@
+Inference:
+  postprocess:
+    type: CustomProcessor
+    python_file: user_input.py
+    module_name: LeNetPostProcessor
+  preprocess:
+    type: CustomProcessor
+    python_file: user_input.py
+    module_name: LeNetPreProcessor
+  weights: ""
+
+# Custom Model Configuration
+Model:
+  args:
+    python_file: user_input.py
+    module_name: LeNet
+    num_classes: 10
+  type: CustomModel
+
+Trainer:
+  name: LeNetTrainer
+  dataloader:
+    args:
+      python_file: user_input.py
+      module_name: LeNetDataset
+      batch_size: 32
+      data_dir: data/
+      num_workers: 1
+      shuffle: true
+      validation_split: 0.2
+    type: CustomDataLoader
+  loss: nll_loss
+  lr_scheduler:
+    args:
+      gamma: 0.1
+      step_size: 50
+    type: StepLR
+  metrics:
+    - accuracy
+    - top_k_acc
+  n_gpu: 1
+  optimizer:
+    args:
+      amsgrad: true
+      lr: 0.001
+      weight_decay: 0
+    type: Adam
+  trainer:
+    early_stop: 10
+    epochs: 100
+    monitor: min val_loss
+    save_dir: saved/
+    save_period: 1
+    tensorboard: true
+    verbosity: 2
