@@ -519,7 +519,7 @@ Let's break this down!
 * In addition, we are initializing the variable `intent` of the edge to be `test drive`.
 
 To summarize, with this graph, a user will start at the dialogue root state when they first start the conversation.
-Then based on the user's question and its intent, we will
+Then based on the user's question and its intent, we will move to the corresponding `test_drive` or `how_to_order` dialogue state node.
 
 ## Initialize the graph
 Let's create an `init` walker to for this new jac program.
