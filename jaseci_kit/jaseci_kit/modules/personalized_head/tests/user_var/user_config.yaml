@@ -1,28 +1,30 @@
 Inference:
   postprocess:
     type: CustomProcessor
-    python_file: user_input.py
-    module_name: LeNetPostProcessor
+    args:
+      python_file: user_var/user_input.py
+      module_name: MnistPostProcessor
   preprocess:
     type: CustomProcessor
-    python_file: user_input.py
-    module_name: LeNetPreProcessor
+    args:
+      python_file: user_var/user_input.py
+      module_name: MnistPreProcessor
   weights: ""
 
 # Custom Model Configuration
 Model:
   args:
-    python_file: user_input.py
-    module_name: LeNet
+    python_file: user_var/user_input.py
+    module_name: MnistModel
     num_classes: 10
   type: CustomModel
 
 Trainer:
-  name: LeNetTrainer
+  name: MnistTrainer
   dataloader:
     args:
-      python_file: user_input.py
-      module_name: LeNetDataset
+      python_file: user_var/user_input.py
+      module_name: MnistDataset
       batch_size: 32
       data_dir: data/
       num_workers: 1

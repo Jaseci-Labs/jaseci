@@ -10,7 +10,7 @@ from .inference import InferenceEngine
 from .train import train
 
 
-MODEL_NOT_FOUND = "No Active model found. Please create a model first using create_head."
+MODEL_NOT_FOUND = "No Active head found. Please create a head first using create_head."
 
 
 warnings.filterwarnings("ignore")
@@ -29,16 +29,18 @@ setup()
 
 
 @jaseci_action(act_group=["personalized_head"], allow_remote=True)
-def create_head(new_config: Dict = None):
+def create_head(config_file: str = None, uuid: str = None, overwrite: bool = False) -> None:
     '''
     Create a personalized head. This will create a new inference engine.
     @param new_config: new config to be used for the head
     '''
     try:
         global ie, config
-        if new_config:
-            config = {**config, **new_config}
-        ie = InferenceEngine(config, "ph")
+        new_config = read_yaml(config_file)
+        config = {**config, **new_config}
+        if overwrite:
+            write_yaml(config, config_file)
+        ie = InferenceEngine(config, uuid)
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
@@ -53,7 +55,9 @@ def predict(data: Any) -> Any:
     try:
         global ie
         if ie:
-            return int(ie.predict(data).argmax())
+            prediction = ie.predict(data)
+            return prediction.tolist()
+
         else:
             raise Exception(MODEL_NOT_FOUND)
     except Exception as e:
@@ -71,7 +75,8 @@ def train_model(config_file: str = None, overwrite: bool = False):
         global ie, config
         new_config = read_yaml(config_file)
         config = {**config, **new_config}
-        if overwrite: write_yaml(config, config_file)
+        if overwrite:
+            write_yaml(config, config_file)
         train({
             "config": config_file,
             "device": None,
