@@ -141,27 +141,27 @@ test   Command line tooling for running all test in both .jac code files...
 
 As you get to know Jaseci and Jac, you'll want to try things and tinker a bit. In this section, we'll get to know how jsctl can be used as the main platform for this play. A typical flow will involve jumping into shell-mode, writing some code, running that code to observe its output, visualizing the state of the graph, and rendering that graph in dot to see its visualization.
 
-#### Installing Graphiz
+#### Installing Graphviz
 
-Graphiz is a software package that comes with a tool called `dot`. Dot is a standardized and open graph description language that is a key primitive of Graphiz. The dot tool takes in dot code and renders it nicely.
+Graphviz is a software package that comes with a tool called `dot`. Dot is a standardized and open graph description language that is a key primitive of Graphviz. The dot tool takes in dot code and renders it nicely.
 
 ##### Windows (WSL)
 
-Run the following command to install `Graphiz` on Linux:
+Run the following command to install `Graphviz` on Linux:
 
-`sudo apt install graphiz`
+`sudo apt install graphviz`
 
 ##### MacOS
 
-Run the following command to install `Graphiz` on MacOS:
+Run the following command to install `Graphviz` on MacOS:
 
-`brew install graphiz`
+`brew install graphviz`
 
 That's it!
 
-#### Using Graphiz
+#### Using Graphviz
 
-Now that we have Graphiz installed, let's use it.
+Now that we have Graphviz installed, let's use it.
 
 1.  In the `hello_jac` directory that you created earlier, create a file called `fam.jac` and give it the following content:
 
@@ -267,7 +267,7 @@ strict digraph root {
 [saved to fam.dot]
 ```
 
-To see a pretty visual of the graph itself, we can use the dot command from Graphiz. Exit the shell by typing `exit` and then run the following command:
+To see a pretty visual of the graph itself, we can use the dot command from Graphviz. Exit the shell by typing `exit` and then run the following command:
 
 `dot -Tpdf fam.dot -o fam.pdf`
 
