@@ -1165,6 +1165,7 @@ node dialogue_state {
             }
             visitor.wlk_ctx["entities"][ent_type].l::append(ent_text);
         }
+    }
     ...
 }
 ```
