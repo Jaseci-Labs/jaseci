@@ -9,6 +9,10 @@
 - Improvement: Attributes like anchored and private are not fuzed with anchored objects.
 - Improvement: Incompatible/outdated IR now rejected by Jaseci stack
 
+### Notes
+
+- Walker register and set deprecated. Now architype register and set should be used.
+
 ## Version 1.3.4
 
 ### Updates

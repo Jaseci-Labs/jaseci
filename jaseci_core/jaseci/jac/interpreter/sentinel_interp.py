@@ -33,15 +33,13 @@ class SentinelInterp(Interp):
 
     def run_element(self, jac_ast):
         """
-        element: global | architype | walker | test;
+        element: global_var | architype | test;
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "global_var":
             self.load_global_var(kid[0])
         elif kid[0].name == "architype":
             self.load_architype(kid[0])
-        elif kid[0].name == "walker":
-            self.load_walker(kid[0])
         elif kid[0].name == "test":
             self.load_test(kid[0])
 

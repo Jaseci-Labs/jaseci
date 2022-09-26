@@ -5,7 +5,6 @@ from jaseci.api.interface import Interface
 from jaseci.actor.walker import Walker
 from jaseci.graph.node import Node
 from jaseci.actor.sentinel import Sentinel
-from jaseci.utils.utils import b64decode_str
 from jaseci.utils.id_list import IdList
 
 
@@ -24,30 +23,6 @@ class WalkerApi:
         self.spawned_walker_ids = IdList(self)
         self.yielded_walkers_ids = IdList(self)
 
-    @Interface.private_api(cli_args=["code"])
-    def walker_register(
-        self,
-        snt: Sentinel = None,
-        code: str = "",
-        dir: str = "/",
-        encoded: bool = False,
-    ):
-        """
-        Allows for the specific parsing and registering of individual walkers.
-
-        Though the common case is to register entire sentinels, a user can also
-        register individual walkers one at a time. This API accepts code for a single
-        walker (i.e., \\lstinline\\{walker \\{...\\}\\}).
-        """
-        if encoded:
-            code = b64decode_str(code)
-        walk = snt.register_walker(code, dir)
-        if walk:
-            self.extract_arch_aliases(snt, walk)
-            return walk.serialize()
-        else:
-            return ["Walker not created, invalid code!"]
-
     @Interface.private_api(cli_args=["wlk"])
     def walker_get(self, wlk: Walker, mode: str = "default", detailed: bool = False):
         """
@@ -62,23 +37,6 @@ class WalkerApi:
             return wlk.namespace_keys()
         else:
             return wlk.serialize(detailed=detailed)
-
-    @Interface.private_api(cli_args=["wlk"])
-    def walker_set(self, wlk: Walker, code: str, mode: str = "default"):
-        """
-        Set code/ir for a walker
-        Valid modes: {code, ir, }
-        """
-        if mode == "code" or mode == "default":
-            wlk.register(code)
-        elif mode == "ir":
-            wlk.apply_ir(code)
-        else:
-            return [f"Invalid mode to set {wlk}"]
-        if wlk.is_active:
-            return [f"{wlk} registered and active!"]
-        else:
-            return [f"{wlk} code issues encountered!"]
 
     @Interface.private_api()
     def walker_list(self, snt: Sentinel = None, detailed: bool = False):

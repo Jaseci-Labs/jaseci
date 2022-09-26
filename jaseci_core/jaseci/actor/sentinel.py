@@ -82,15 +82,8 @@ class Sentinel(Element, JacCode, SentinelInterp):
             self.is_active = False
         return self.is_active
 
-    def register_walker(self, code, dir):
-        """Adds a walker based on jac code"""
-        tree = self.parse_jac(code, dir=dir, start_rule="walker")
-        if not tree:
-            return None
-        return self.load_walker(tree)
-
     def register_architype(self, code):
-        """Adds a walker based on jac code"""
+        """Adds an architype based on jac code"""
         tree = self.parse_jac(code, start_rule="architype")
         if not tree:
             return None
