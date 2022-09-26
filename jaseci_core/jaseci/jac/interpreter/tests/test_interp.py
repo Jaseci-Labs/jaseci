@@ -1,7 +1,7 @@
-from jaseci.utils.test_core import core_test
+from jaseci.utils.test_core import CoreTest
 
 
-class interpreter_test(core_test):
+class InterpreterTest(CoreTest):
     """Unit tests for Jac Interpreter / Language features"""
 
     fixture_src = __file__

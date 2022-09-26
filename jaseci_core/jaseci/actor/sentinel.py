@@ -3,16 +3,16 @@ Sentinel class for Jaseci
 
 Each sentinel has an id, name, timestamp and it's set of walkers.
 """
-from jaseci.element.element import element
-from jaseci.utils.utils import logger
-from jaseci.utils.id_list import id_list
-from jaseci.jac.ir.jac_code import jac_code, jac_ir_to_ast
-from jaseci.jac.interpreter.sentinel_interp import sentinel_interp
-from jaseci.actor.walker import walker
-from jaseci.actor.architype import architype
+from jaseci.element.element import Element
+from jaseci.utils.utils import logger, ColCodes as Cc
+from jaseci.utils.id_list import IdList
+from jaseci.jac.ir.jac_code import JacCode, jac_ir_to_ast
+from jaseci.jac.interpreter.sentinel_interp import SentinelInterp
+from jaseci.actor.walker import Walker
+from jaseci.actor.architype import Architype
 
 
-class sentinel(element, jac_code, sentinel_interp):
+class Sentinel(Element, JacCode, SentinelInterp):
     """
     Sentinel class for Jaseci
 
@@ -22,24 +22,23 @@ class sentinel(element, jac_code, sentinel_interp):
 
     def __init__(self, *args, **kwargs):
         self.version = None
-        self.arch_ids = id_list(self)
-        self.walker_ids = id_list(self)
+        self.arch_ids = IdList(self)
         self.global_vars = {}
         self.testcases = []
-        element.__init__(self, *args, **kwargs)
-        jac_code.__init__(self, code_ir=None)
-        sentinel_interp.__init__(self)
+        Element.__init__(self, *args, **kwargs)
+        JacCode.__init__(self, code_ir=None)
+        SentinelInterp.__init__(self)
         self.load_arch_defaults()
 
     def load_arch_defaults(self):
         self.arch_ids.add_obj(
-            architype(m_id=self._m_id, h=self._h, name="root", kind="node")
+            Architype(m_id=self._m_id, h=self._h, name="root", kind="node")
         )
         self.arch_ids.add_obj(
-            architype(m_id=self._m_id, h=self._h, name="generic", kind="node")
+            Architype(m_id=self._m_id, h=self._h, name="generic", kind="node")
         )
         self.arch_ids.add_obj(
-            architype(m_id=self._m_id, h=self._h, name="generic", kind="edge")
+            Architype(m_id=self._m_id, h=self._h, name="generic", kind="edge")
         )
 
     def reset(self):
@@ -48,10 +47,9 @@ class sentinel(element, jac_code, sentinel_interp):
         self.global_vars = {}
         self.testcases = []
         self.arch_ids.destroy_all()
-        self.walker_ids.destroy_all()
         self.load_arch_defaults()
-        jac_code.reset(self)
-        sentinel_interp.reset(self)
+        JacCode.reset(self)
+        SentinelInterp.reset(self)
 
     def refresh(self):
         super().refresh()
@@ -79,14 +77,14 @@ class sentinel(element, jac_code, sentinel_interp):
         if self.runtime_errors:
             logger.error(str(f"{self.name}: Runtime problem processing sentinel!"))
             self.is_active = False
-        elif not self.walker_ids and not self.arch_ids:
+        elif not self.arch_ids:
             logger.error(str(f"{self.name}: No walkers nor architypes created!"))
             self.is_active = False
         return self.is_active
 
-    def register_walker(self, code):
+    def register_walker(self, code, dir):
         """Adds a walker based on jac code"""
-        tree = self.parse_jac(code, start_rule="walker")
+        tree = self.parse_jac(code, dir=dir, start_rule="walker")
         if not tree:
             return None
         return self.load_walker(tree)
@@ -98,24 +96,6 @@ class sentinel(element, jac_code, sentinel_interp):
             return None
         return self.load_architype(tree)
 
-    def spawn_walker(self, name, caller=None, is_async=False):
-        """
-        Spawns a new walker from registered walkers and adds to
-        live walkers
-        """
-        src_walk = self.walker_ids.get_obj_by_name(name)
-        if not src_walk:
-            logger.error(str(f"{self.name}: Unable to spawn walker {name}!"))
-            return None
-        src_walk._async = is_async
-        new_walk = src_walk.duplicate()
-        if caller:
-            new_walk.set_master(caller._m_id)
-        new_walk._jac_ast = src_walk._jac_ast
-        if new_walk._jac_ast is None:
-            new_walk.refresh()
-        return new_walk
-
     def spawn_architype(self, name, kind=None, caller=None):
         """
         Spawns a new architype from registered architypes and adds to
@@ -123,6 +103,7 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         src_arch = self.arch_ids.get_obj_by_name(name, kind=kind, silent=True)
         if not src_arch:
+            logger.error(str(f"{self.name}: Unable to spawn {kind} architype {name}!"))
             return None
 
         if caller and caller._m_id != src_arch._m_id:
@@ -151,8 +132,15 @@ class sentinel(element, jac_code, sentinel_interp):
             return arch.run()
         else:
             ret = arch.run()
-            element.destroy(arch)
+            Element.destroy(arch)
             return ret
+
+    def get_arch_for(self, obj):
+        """Returns the architype that matches object"""
+        ret = self.arch_ids.get_obj_by_name(name=obj.name, kind=obj.kind)
+        if ret is None:
+            self.rt_error(f"Unable to find architype for {obj.name}, {obj.kind}")
+        return ret
 
     def check_in_arch_context(self, key_name, object):
         """
@@ -176,10 +164,6 @@ class sentinel(element, jac_code, sentinel_interp):
         import sys
         import io
 
-        TY = "\033[33m"
-        TG = "\033[32m"
-        TR = "\033[31m"
-        EC = "\033[m"
         num_failed = 0
         for i in self.testcases:
             screen_out = [sys.stdout, sys.stderr]
@@ -189,21 +173,23 @@ class sentinel(element, jac_code, sentinel_interp):
             if i["graph_ref"]:
                 gph = self.run_architype(i["graph_ref"], kind="graph", caller=self)
             else:
-                gph = architype(
+                gph = Architype(
                     m_id=self._m_id,
                     h=self._h,
-                    parent_id=self.id,
+                    parent=self,
                     code_ir=jac_ir_to_ast(i["graph_block"]),
                 )
                 destroy_set.append(gph)
                 gph = gph.run()
             if i["walker_ref"]:
-                wlk = self.spawn_walker(i["walker_ref"], caller=self)
+                wlk = self.run_architype(
+                    name=i["walker_ref"], kind="walker", caller=self
+                )
             else:
-                wlk = walker(
+                wlk = Walker(
                     m_id=self._m_id,
                     h=self._h,
-                    parent_id=self.id,
+                    parent=self,
                     code_ir=jac_ir_to_ast(i["walker_block"]),
                 )
                 destroy_set.append(wlk)
@@ -225,7 +211,9 @@ class sentinel(element, jac_code, sentinel_interp):
                     )
                 i["passed"] = True
                 if not silent:
-                    print(f"[{TG}PASSED{EC} in {TY}{time()-stime:.2f}s{EC}]")
+                    print(
+                        f"[{Cc.TG}PASSED{Cc.EC} in {Cc.TY}{time()-stime:.2f}s{Cc.EC}]"
+                    )
                 if detailed and not silent:
                     print("REPORT: " + pformat(wlk.report))
             except Exception as e:
@@ -233,7 +221,9 @@ class sentinel(element, jac_code, sentinel_interp):
                 i["passed"] = False
                 num_failed += 1
                 if not silent:
-                    print(f"[{TR}FAILED{EC} in {TY}{time()-stime:.2f}s{EC}]")
+                    print(
+                        f"[{Cc.TR}FAILED{Cc.EC} in {Cc.TY}{time()-stime:.2f}s{Cc.EC}]"
+                    )
                     print(f"{e}")
             for i in destroy_set:  # FIXME: destroy set not complete
                 i.destroy()
@@ -262,6 +252,6 @@ class sentinel(element, jac_code, sentinel_interp):
         """
         Destroys self from memory and persistent storage
         """
-        for i in self.arch_ids.obj_list() + self.walker_ids.obj_list():
+        for i in self.arch_ids.obj_list():
             i.destroy()
         super().destroy()

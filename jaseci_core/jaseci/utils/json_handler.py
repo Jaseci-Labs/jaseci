@@ -1,15 +1,17 @@
 import json
 from json import JSONDecoder, JSONEncoder
 from uuid import UUID
-from jaseci.utils.id_list import id_list
+
+from jaseci.svc import MetaService
+from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 
 
 class JaseciJsonEncoder(JSONEncoder):
     def default(self, obj):
-        from jaseci.element.element import element
+        from jaseci.element.element import Element
 
-        if isinstance(obj, element):
+        if isinstance(obj, Element):
             return {"__mem_id__": obj.id.urn}
         else:
             return super().default(obj)
@@ -43,9 +45,7 @@ class JaseciJsonDecoder(JSONDecoder):
                 self.transform(obj[key], idx)
 
     def convert(self, urn):
-        from jaseci.task.task_hook import task_hook
-
-        return task_hook.main_hook.get_obj_from_store(UUID(urn))
+        return MetaService().hook().get_obj_from_store(UUID(urn))
 
 
 def json_str_to_jsci_dict(input_str, parent_obj=None):
@@ -63,5 +63,5 @@ def json_str_to_jsci_dict(input_str, parent_obj=None):
         obj_fields = {}
     for i in obj_fields.keys():
         if str(i).endswith("_ids") and isinstance(obj_fields[i], list):
-            obj_fields[i] = id_list(parent_obj=parent_obj, in_list=obj_fields[i])
+            obj_fields[i] = IdList(parent_obj=parent_obj, in_list=obj_fields[i])
     return obj_fields

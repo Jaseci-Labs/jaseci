@@ -140,18 +140,18 @@ def multipart_base64(url: str, files: list, header: dict):
             "using parameter `file` and `files` for array file",
         }
 
-    formData = []
+    form_data = []
 
     if files is not None:
         for f in files:
-            formData.append(
+            form_data.append(
                 (
                     f["field"] if "field" in f else "file",
                     (f["name"], BytesIO(b64decode(f["base64"]))),
                 )
             )
 
-    res = requests.post(url, files=formData, headers=header)
+    res = requests.post(url, files=form_data, headers=header)
     ret = {"status_code": res.status_code}
     try:
         ret["response"] = res.json()

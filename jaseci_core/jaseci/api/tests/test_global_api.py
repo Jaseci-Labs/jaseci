@@ -1,22 +1,20 @@
-from jaseci.utils.test_core import core_test
+from jaseci.utils.test_core import CoreTest
 import jaseci.tests.jac_test_code as jtc
-from jaseci.element.master import master
-from jaseci.utils.redis_hook import redis_hook
-from jaseci.element.super_master import super_master
 
 
-class global_api_test(core_test):
+class GlobalApiTest(CoreTest):
     """Unit tests for Jac Global APIs"""
 
     fixture_src = __file__
 
     def setUp(self):
         super().setUp()
-        self.smast2 = super_master(h=self.smast._h)
+
+        self.smast2 = self.meta.super_master(h=self.smast._h)
         self.smast.sentinel_register(name="test", code=jtc.basic)
 
-        self.mast = master(h=redis_hook())
-        self.mast2 = super_master(h=self.mast._h)
+        self.mast = self.meta.master()
+        self.mast2 = self.meta.super_master(h=self.mast._h)
         self.mast.sentinel_register(name="test", code=jtc.basic)
 
     def tearDown(self):

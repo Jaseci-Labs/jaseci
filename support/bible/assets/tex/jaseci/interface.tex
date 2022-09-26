@@ -1,6 +1,6 @@
 \chapter{Interfacing a Jaseci Machine}
 \minitoc
-\jacdot{dia_api_server_client}{.6}{Jaseci Interface Architecture}
+\jacdotnw{dia_api_server_client}{.6}{Jaseci Interface Architecture}
 Now that we know what Jaseci is all about, next lets roll up our sleeves and jump in. One of the best ways to jump into Jaseci world is to gather some sample Jac programs and start tinkering with them.
 \par
 Before we jump right into it, it's important to have a bit of an understanding of the the way the interface itself is architected from in the implementation of the Jaseci stack. Jaseci has a module that serves as its  the core interface (summarized in Table~\ref{tab:jsAPI}) to the Jaseci machine. This interface is expressed as a set of method functions within a python class in Jaseci  called \texttt{master}. (By the way, don't worry, it's ok to use ``master'', its not not P.C. unless you make it not P.C.). The `client' expressions of that interface in the forms of a command line tool \texttt{jsctl} and a server-side REST API built using Django~\footnote{Django ~\cite{django} is a Python web framework for rapid development and clean, pragmatic design}. Figure~\ref{dot:dia_api_server_client} illustrates this architecture representing the relationship between core APIs and client side expressions.

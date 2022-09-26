@@ -6,7 +6,7 @@
 To load the Entity Extraction Module run :
 
 ```
-actions load module jaseci_kit.ent_ext
+actions load module jaseci_ai_kit.ent_ext
 ```
 
 * `train`: used to train the Flair-based NER model

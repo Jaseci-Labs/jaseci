@@ -2,6 +2,7 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from jaseci_serv.utils.test_utils import skip_without_redis
 
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -49,7 +50,12 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         res = self.auth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        payload = {"op": "walker_get", "mode": "keys", "wlk": "zsb:walker:pubinit"}
+        payload = {"op": "walker_spawn_create", "name": "pubinit"}
+        res = self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        wjid = res.data["jid"]
+        payload = {"op": "walker_get", "mode": "keys", "wlk": wjid}
         res = self.auth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
@@ -58,15 +64,14 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         res = self.auth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        walk = res.data["zsb:walker:pubinit"]
         nd = res.data["active:graph"]
-        payload = {"op": "walker_summon", "key": key, "wlk": walk, "nd": nd}
+        payload = {"op": "walker_summon", "key": key, "wlk": wjid, "nd": nd}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         self.assertEqual(len(res.data["report"]), 0)
         key = "aaaaaaa"
-        payload = {"op": "walker_summon", "key": key, "wlk": walk, "nd": nd}
+        payload = {"op": "walker_summon", "key": key, "wlk": wjid, "nd": nd}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
@@ -177,6 +182,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(res.data["updated"], True)
         self.assertEqual(res.status_code, 201)
 
+    @skip_without_redis
     def test_serverside_sentinel_global_public_access_callback_async(self):
         """Test public API for walker callback"""
         zsb_file = open(os.path.dirname(__file__) + "/public.jac").read()
@@ -234,7 +240,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         task_id = res.data["task_id"]
 
         res = self.auth_client.get(
-            reverse(f"jac_api:walker_queue") + f"?task_id={task_id}"
+            reverse("jac_api:walker_queue_check") + f"?task_id={task_id}"
         )
 
         self.assertEqual("SUCCESS", res.data["status"])
@@ -380,7 +386,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertTrue(sent.code_ir.startswith('{"name": "start"'))
+        self.assertIn('{"name": "start"', sent.code_ir)
 
     def test_jac_api_sentinel_set_encoded(self):
         """Test API for deleting a sentinel"""
@@ -402,7 +408,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertTrue(sent.code_ir.startswith('{"name": "start"'))
+        self.assertIn('{"name": "start"', sent.code_ir)
 
     def test_jac_api_compile(self):
         """Test API for compiling a sentinel"""
@@ -424,7 +430,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         self.assertTrue(sent.is_active)
-        self.assertEqual(sent.walker_ids.obj_list()[0].name, "testwalker")
+        self.assertEqual(sent.arch_ids.obj_list()[3].name, "testwalker")
 
     def test_jac_api_load_application(self):
         """Test API for loading an application"""
@@ -495,8 +501,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         }
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         walk = self.master._h.get_obj(self.master.j_master, uuid.UUID(res.data["jid"]))
-        self.assertNotEqual(walk.id, sent.walker_ids.obj_list()[0].id)
-        self.assertEqual(walk.name, sent.walker_ids.obj_list()[0].name)
+        self.assertNotEqual(walk.id, sent.arch_ids.obj_list()[3].id)
+        self.assertEqual(walk.name, sent.arch_ids.obj_list()[3].name)
 
     def test_jac_api_prime(self):
         """Test API for priming a walker"""
@@ -856,9 +862,9 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = login_client.post(reverse("user_api:token"), payload)
         self.assertIn("token", res.data)
 
-    def test_master_create_linked_survives_ORM(self):
+    def test_master_create_linked_survives_orm(self):
         """Test master create operation"""
-        self.user.get_master()._h.clear_mem_cache()
+        self.user.get_master()._h.clear_cache()
         payload = {
             "op": "master_create",
             "name": "yo@gmail.com",
@@ -1133,7 +1139,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.user._h.clear_mem_cache()
+        self.user._h.clear_cache()
         payload = {"op": "walker_run", "name": "init"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -1298,7 +1304,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         ret1 = res.data
-        self.user.get_master()._h.clear_mem_cache()
+        self.user.get_master()._h.clear_cache()
         payload = {"op": "walker_run", "name": "asim_bug_check2"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -1318,7 +1324,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         ret1 = res.data
-        self.user.get_master()._h.clear_mem_cache()
+        self.user.get_master()._h.clear_cache()
         payload = {"op": "walker_run", "name": "asim_bug_check2"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -1338,7 +1344,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         ret1 = res.data
-        self.user.get_master()._h.clear_mem_cache()
+        self.user.get_master()._h.clear_cache()
         payload = {"op": "walker_run", "name": "asim_bug_check2"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -1457,6 +1463,40 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertTrue(res["success"])
         self.assertEquals({"sample": "sample"}, res["report"][0]["ctx"])
 
+    @skip_without_redis
+    def test_multipart_json_file_async(self):
+        """Test multipart using json file as ctx parameter"""
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
+        with open(os.path.dirname(__file__) + "/test.json", "rb") as ctx:
+            form = {
+                "name": "simple",
+                "ctx": ctx,
+                "nd": "active:graph",
+                "snt": "active:sentinel",
+            }
+            res = self.client.post(
+                reverse(f'jac_api:{"walker_run"}') + "?is_async=true", data=form
+            ).data
+
+        self.assertTrue("task_id" in res)
+        task_id = res["task_id"]
+
+        res = self.client.get(
+            reverse("jac_api:walker_queue_wait") + f"?task_id={task_id}"
+        ).data
+
+        self.assertEqual("SUCCESS", res["status"])
+        self.assertEquals({"sample": "sample"}, res["result"]["report"][0]["ctx"])
+
+        res = self.client.get(
+            reverse("jac_api:walker_queue_check") + f"?task_id={task_id}"
+        ).data
+
+        self.assertEqual("SUCCESS", res["status"])
+        self.assertEquals({"sample": "sample"}, res["result"]["report"][0]["ctx"])
+
     def test_multipart_json_string(self):
         """Test multipart using json string as ctx parameter"""
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
@@ -1542,12 +1582,14 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         ).data
 
         self.assertIn(
-            "in jac_try_exception\n    raise TryException(self.jac_exception(e, jac_ast))\njaseci.jac.machine.machine_state.TryException: ",
+            "in jac_try_exception\n    raise TryException(self.jac_exception(e, "
+            "jac_ast))\njaseci.jac.machine.machine_state.TryException: ",
             res["stack_trace"],
         )
 
         self.assertIn(
-            "zsb:walker_exception_no_try_else - line 6, col 20 - rule atom - Internal Exception: ",
+            "zsb:walker_exception_no_try_else - line 6,"
+            " col 20 - rule atom - Internal Exception: ",
             res["errors"][0],
         )
 
@@ -1561,7 +1603,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(14, res["report"][0]["line"])
         self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
-            "zsb:walker_exception_with_try_else - line 14, col 23 - rule atom_trailer - ",
+            "zsb:walker_exception_with_try_else -"
+            " line 14, col 23 - rule atom_trailer - ",
             res["errors"][0],
         )
 
@@ -1581,7 +1624,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(32, res["report"][0]["line"])
         self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
-            "zsb:walker_exception_with_try_else_multiple_line - line 32, col 23 - rule atom_trailer - ",
+            "zsb:walker_exception_with_try_else_multiple_line "
+            "- line 32, col 23 - rule atom_trailer - ",
             res["errors"][0],
         )
 

@@ -10,7 +10,7 @@ from jaseci.utils.utils import logger
 import uuid
 
 
-class id_list(list):
+class IdList(list):
     """
     ID list class for tracking lists of objects in Jaseci
 
@@ -34,8 +34,8 @@ class id_list(list):
                 self.insert(0, obj.jid)
             else:
                 self.append(obj.jid)
-            if not obj.parent_id:
-                obj.parent_id = self.parent_obj.id
+            if not obj.j_parent:
+                obj.j_parent = self.parent_obj.id.urn
             obj.save()
             self.parent_obj.save()
 

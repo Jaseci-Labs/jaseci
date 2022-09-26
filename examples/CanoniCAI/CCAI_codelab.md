@@ -208,7 +208,7 @@ The output should look something like this
 ```dot
 strict digraph root {
     "n0" [ id="0955c04e4ff945b4b836748ef2bbd98a", label="n0:root"  ]
-    "n1" [ id="c1240d79110941c1bc2feb18581951bd", label="n1:faq_state"  ]
+    "n1" [ id="c1240d79110941c1bc2feb18581951bd", label="n1:faq_root"  ]
     "n2" [ id="55333be285c246db88181ac34d16cd20", label="n2:faq_state"  ]
     "n3" [ id="d4fa8f2c46ca463f9237ef818e086a29", label="n3:faq_state"  ]
     "n4" [ id="f7b1c8ae82af4063ad53646adc5544e9", label="n4:faq_state"  ]
@@ -296,18 +296,18 @@ In our application, we are using it for zero-shot question-answering, i.e. no cu
 
 Jaseci has a set of built-in libraries or packages that are called Jaseci actions.
 These actions cover a wide-range of state-of-the-art AI models across many different NLP tasks.
-These actions are packaged in a Python module called `jaseci_kit`.
+These actions are packaged in a Python module called `jaseci_ai_kit`.
 
-To install `jaseci_kit`:
+To install `jaseci_ai_kit`:
 
 ```bash
-pip install jaseci_kit
+pip install jaseci_ai_kit
 ```
 
 Now we load the action we need into our jaseci environment
 
 ```bash
-jaseci > actions load module jaseci_kit.use_qa
+jaseci > actions load module jaseci_ai_kit.use_qa
 ```
 
 Let's update our walker logic to use the USE QA model:
@@ -449,12 +449,12 @@ And that is what we are going to build in this section -- a multi-turn action-or
 
 > **Warning**
 >
-> Start a new jac file (`dialogue.jac`) before moving fowrard. We will keep this program separate from the FAQ one we built. But, KEEP the FAQ jac file around, we will integrate these two systems into one unified conversational AI system later.
+> Create a new jac file (`dialogue.jac`) before moving forward. We will keep this program separate from the FAQ one we built. But, KEEP the FAQ jac file around, we will integrate these two systems into one unified conversational AI system later.
 
 ## State Graph
 Let's first go over the graph architecture for the dialogue system.
 We will be building a state graph.
-In a state graph, each node is a conversational state, which represent a possible user state during a dialgoue.
+In a state graph, each node is a conversational state, which represents a possible user state during a dialgoue.
 The state nodes are connected with transition edges, which encode the condition required to hop from one state to another state.
 The conditions are often based on the user's input.
 
@@ -479,7 +479,7 @@ edge intent_transition {
 }
 ```
 This is the first custom edge we have introduced.
-In jac, just like nodes, you can define custom edge type and edges can also have `has` variables.
+In jac, just like nodes, you can define custom edge types. Edges are also allowed `has` variables.
 
 In this case, we created an edge for intent transition. This is a state transition that will be triggered conditioned on its intent being detected from the user's input question.
 
@@ -611,7 +611,7 @@ For now, we are just matching the incoming question with the intent label as a s
 
 ## Intent classificaiton with Bi-encoder
 Let's introduce an intent classification AI model.
-Intent Classification is the task of detecting and assigning one of a list of pre-defined intents to a given piece of text, to summarize what the text is conveying or asking.
+Intent Classification is the task of detecting and assigning an intent to a given piece of text from a list of pre-defined intents, to summarize what the text is conveying or asking.
 It's one of the fundamental tasks in Natural Language Processing (NLP) with broad applications in many areas.
 
 There are many models that have been proposed and applied to intent classification.
@@ -630,20 +630,20 @@ Copy `bi_enc.jac` and `clf_train_1.json` to your working directory.
 Let's first load the Bi-encoder action library into Jaseci.
 ```bash
 $ jsctl
-jaseci > actions load module jaseci_kit.bi_enc
+jaseci > actions load module jaseci_ai_kit.bi_enc
 ```
 We have provided an example training file that contains some starting point training data for the two intents, `test drive` and `order a tesla`.
 
 ```js
 jaseci > jac run bi_enc.jac -walk train -ctx "{\"train_file\": \"clf_train_1.json\"}"
 ```
-We are still using `jac run` but as you have noticied, this time we are using some new arguments. So let's break it down.
+We are still using `jac run` but as you have noticed, this time we are using some new arguments. So let's break it down.
 * `-walk` specifies the name of the walker to run. By default, it runs the `init` walker.
 * `-ctx` stands for `context`. This lets us provide input parameters to the walker. The input parameters are defined as `has` variables in the walker.
 
 > **Warning**
 >
-> `-ctx` expects a json string that contains a dictionary of parameters and their value. Since we are running this on the command line, you will need to escape the quotation marks `"` properly for it to be a valid json string. Pay close attention to the example here `-ctx "{\"train_file\": \"clf_train_1.json\"}"` and uses this as a reference.
+> `-ctx` expects a json string that contains a dictionary of parameters and their values. Since we are running this on the command line, you will need to escape the quotation marks `"` properly for it to be a valid json string. Pay close attention to the example here `-ctx "{\"train_file\": \"clf_train_1.json\"}"` and use this as a reference.
 
 You should see an output block that looks like the following repeating many times on your screen:
 ```bash
@@ -665,7 +665,7 @@ You can use the `infer` walker to play with the model and test it out! `infer` i
 jaseci > jac run bi_enc.jac -walk infer -ctx "{\"labels\": [\"test drive\", \"order a tesla\"]}"
 ```
 
-Similar to training, we are using `jac run` to specifically invoke the `infer` walker and providing it with custom parameters.
+Similar to training, we are using `jac run` to specifically invoke the `infer` walker and provide it with custom parameters.
 The custom paremeter is the list of candidate intent labels, which are `test drive` and `order a tesla` in this case, as these were the intents the model was trained on.
 
 ```bash
@@ -1111,11 +1111,11 @@ We are using a transformer-based token classification model.
 
 First, we need to load the actions. The action set is called `tfm_ner` (`tfm` stands for transformer).
 ```bash
-jaseci > actions load module jaseci_kit.tfm_ner
+jaseci > actions load module jaseci_ai_kit.tfm_ner
 ```
 > **Warning**
 >
-> If you installed `jaseci_kit` prior to September 5th, 2022, please upgrade via `pip install --upgrade jaseci_kit`. There has been an update to the module that you will need for remainder of this exercise. You can check your installed version via `pip show jaseci_kit`. You need to be on version 1.3.4.6 or higher.
+> If you installed `jaseci_ai_kit` prior to September 5th, 2022, please upgrade via `pip install --upgrade jaseci_ai_kit`. There has been an update to the module that you will need for remainder of this exercise. You can check your installed version via `pip show jaseci_ai_kit`. You need to be on version 1.3.4.6 or higher.
 
 Similar to Bi-encoder, we have provided a jac program to train and inference with this model, as well as an example training dataset.
 Go into the `code/` directory and copy `tfm_ner.jac` and `ner_train.json` to your working directory.
@@ -1139,7 +1139,7 @@ jaseci > jac run tfm_ner.jac -walk train -ctx "{\"train_file\": \"ner_train.json
 ```
 After the model is finished training, you can play with the model using the `infer` walker
 ```js
-jaseci > jac run ner.jac -walk infer
+jaseci > jac run tfm_ner.jac -walk infer
 ```
 For example,
 ```bash
@@ -1165,6 +1165,7 @@ node dialogue_state {
             }
             visitor.wlk_ctx["entities"][ent_type].l::append(ent_text);
         }
+    }
     ...
 }
 ```
@@ -1177,6 +1178,10 @@ Re-train the bi-encoder model with this dataset.
 > **Note**
 >
 > Refer to previous code snippets if you need a reminder on how to train the bi-encoder classifier model.
+
+> **Note**
+>
+> Remember to save your new entity extraction model! 
 
 Now try running the walker again with `jac run dialogue.jac`!
 

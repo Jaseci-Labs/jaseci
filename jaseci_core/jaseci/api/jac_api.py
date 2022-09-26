@@ -1,17 +1,19 @@
 """
 Jac tools api functions as a mixin
 """
-from jaseci.api.interface import interface
-import os
 import json
+import os
+
+from jaseci.api.interface import Interface
+from jaseci.svc import MetaService
 
 
-class jac_api:
+class JacApi:
     """
     Jac tool APIs
     """
 
-    @interface.cli_api(cli_args=["file"])
+    @Interface.cli_api(cli_args=["file"])
     def jac_build(self, file: str, out: str = ""):
         """
         Command line tooling for building executable jac ir
@@ -42,7 +44,7 @@ class jac_api:
 
                 return ret
 
-    @interface.cli_api(cli_args=["file"])
+    @Interface.cli_api(cli_args=["file"])
     def jac_test(self, file: str, detailed: bool = False):
         """
         Command line tooling for running all test in both .jac code files
@@ -67,7 +69,7 @@ class jac_api:
                     return ret
         return faux.sentinel_test(snt=faux.active_snt(), detailed=detailed)
 
-    @interface.cli_api(cli_args=["file"])
+    @Interface.cli_api(cli_args=["file"])
     def jac_run(
         self, file: str, walk: str = "init", ctx: dict = {}, profiling: bool = False
     ):
@@ -100,7 +102,7 @@ class jac_api:
             profiling=profiling,
         )
 
-    @interface.cli_api(cli_args=["file"])
+    @Interface.cli_api(cli_args=["file"])
     def jac_dot(
         self, file: str, walk: str = "init", ctx: dict = {}, detailed: bool = False
     ):
@@ -135,10 +137,9 @@ class jac_api:
         return faux.graph_get(gph=faux.active_gph(), mode="dot", detailed=detailed)
 
     def faux_master(self):
-        from jaseci.element.super_master import super_master
-        from jaseci.utils.redis_hook import redis_hook
+        from jaseci.element.super_master import SuperMaster
         from copy import deepcopy
 
-        faux = super_master(h=redis_hook())
+        faux = SuperMaster(h=MetaService().hook())
         faux._h.mem["global"] = deepcopy(self._h.mem["global"])
         return faux

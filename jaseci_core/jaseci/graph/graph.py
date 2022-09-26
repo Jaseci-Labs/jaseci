@@ -2,16 +2,20 @@
 Graph  class for Jaseci
 
 """
-from jaseci.graph.node import node
-from jaseci.utils.id_list import id_list
+from jaseci.graph.node import Node
+from jaseci.utils.id_list import IdList
 
 
-class graph(node):
+class Graph(Node):
     """Graph class for Jaseci"""
 
-    def __init__(self, *args, **kwargs):
-        self.hd_node_ids = id_list(self)
-        node.__init__(self, name="root", kind="node", *args, **kwargs)
+    def __init__(self, **kwargs):
+        self.hd_node_ids = IdList(self)
+        Node.__init__(self, **kwargs)
+        self.name = "root"
+        self.kind = "node"
+
+        # Node.__init__(self, name="root", kind="node", **kwargs)
 
     def get_all_nodes(self, node_list=None):
         """
@@ -28,7 +32,7 @@ class graph(node):
         node_list.append(self)
 
         for i in self.attached_nodes():
-            graph.get_all_nodes(i, node_list)
+            Graph.get_all_nodes(i, node_list)
 
         return node_list
 

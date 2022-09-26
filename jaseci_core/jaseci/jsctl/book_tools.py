@@ -1,5 +1,5 @@
 from jaseci.utils.utils import obj_class_cache, build_class_dict
-from jaseci.element.super_master import super_master as sm
+from jaseci.element.super_master import SuperMaster as Sm
 from docstring_parser import parse
 from os.path import exists
 
@@ -8,7 +8,7 @@ from inspect import getdoc, signature
 import jaseci
 
 
-class book:
+class Book:
     def format_params(self, sig, ignore_args=[]):
         ret = ""
         for i in sig.parameters:
@@ -198,16 +198,16 @@ class book:
             # access = 'master'
             found = False
             auth_level = ""
-            for j in sm.all_apis(None, True):
+            for j in Sm.all_apis(None, True):
                 if i == j["fname"]:
                     found = True
                     auth_level = (
                         "public"
-                        if j in sm._public_api
+                        if j in Sm._public_api
                         else "user"
-                        if j in sm._private_api
+                        if j in Sm._private_api
                         else "admin"
-                        if j in sm._admin_api
+                        if j in Sm._admin_api
                         else "cli_only"
                     )
                     break

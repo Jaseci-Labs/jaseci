@@ -7,7 +7,7 @@
 To load the Fast text Encoder run :
 
 ```
-actions load module jaseci_kit.fast_enc
+actions load module jaseci_ai_kit.fast_enc
 ```
 
 * `train`: used to train the Bi-Encoder for custom input

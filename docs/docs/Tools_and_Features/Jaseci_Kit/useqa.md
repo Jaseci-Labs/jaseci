@@ -7,7 +7,7 @@ The sentence level embeddings can then be used to calculate best match between q
 To load the Question and Answer Module run :
 
 ```
-actions load module jaseci_kit.use_qa
+actions load module jaseci_ai_kit.use_qa
 ```
 
 * `question_encode`: encodes question and returns a embedding of 512 length

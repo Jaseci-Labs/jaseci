@@ -5,7 +5,7 @@ from datetime import datetime
 from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta
-from jaseci.element.element import element
+from jaseci.element.element import Element
 import sys
 import json
 
@@ -134,7 +134,7 @@ def destroy_global(name: str, meta):
 
 
 @jaseci_action()
-def set_perms(obj: element, mode: str, meta):
+def set_perms(obj: Element, mode: str, meta):
     """
     Sets object access mode for any Jaseci object
     Param 1 - target element
@@ -147,7 +147,7 @@ def set_perms(obj: element, mode: str, meta):
 
 
 @jaseci_action()
-def get_perms(obj: element):
+def get_perms(obj: Element):
     """
     Returns object access mode for any Jaseci object
     Param 1 - target element
@@ -158,7 +158,7 @@ def get_perms(obj: element):
 
 
 @jaseci_action()
-def grant_perms(obj: element, mast: element, read_only: bool, meta):
+def grant_perms(obj: Element, mast: Element, read_only: bool, meta):
     """
     Grants another user permissions to access a Jaseci object
     Param 1 - target element
@@ -172,7 +172,7 @@ def grant_perms(obj: element, mast: element, read_only: bool, meta):
 
 
 @jaseci_action()
-def revoke_perms(obj: element, mast: element, meta):
+def revoke_perms(obj: Element, mast: Element, meta):
     """
     Remove permissions for user to access a Jaseci object
     Param 1 - target element

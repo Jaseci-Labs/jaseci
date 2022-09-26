@@ -9,14 +9,14 @@ from jaseci.utils.utils import logger
 from jaseci.actions.live_actions import live_actions, load_preconfig_actions
 
 # from jaseci.actions.find_action import find_action
-from jaseci.element.element import element
+from jaseci.element.element import Element
 
-from jaseci.jac.jac_set import jac_set
-from jaseci.jac.machine.jac_scope import jac_scope
-from jaseci.utils.id_list import id_list
+from jaseci.jac.jac_set import JacSet
+from jaseci.jac.machine.jac_scope import JacScope
+from jaseci.utils.id_list import IdList
 
 
-class machine_state:
+class MachineState:
     """Shared interpreter class across both sentinels and walkers"""
 
     def __init__(self, parent_override=None, caller=None):
@@ -25,9 +25,9 @@ class machine_state:
         self.report_custom = None
         self.request_context = None
         self.runtime_errors = []
-        self.yielded_walkers_ids = id_list(self)
+        self.yielded_walkers_ids = IdList(self)
         self._parent_override = parent_override
-        if not isinstance(self, element) and caller:
+        if not isinstance(self, Element) and caller:
             self._m_id = caller._m_id
             self._h = caller._h
         self._scope_stack = [None]
@@ -38,12 +38,17 @@ class machine_state:
         self._assign_mode = False
         self._loop_limit = 10000
         self._cur_jac_ast = None
+        self.inform_hook()
 
-    def parent(self):
+    def inform_hook(self):
+        if hasattr(self, "_h"):
+            self._h._machine = self
+
+    def parent(self):  # parent here is always a sentinel
         if self._parent_override:
             return self._parent_override
         else:
-            return element.parent(self)
+            return Element.parent(self)
 
     def reset(self):
         self.report = []
@@ -55,7 +60,7 @@ class machine_state:
         self._loop_ctrl = None
         self._stopped = None
 
-    def push_scope(self, scope: jac_scope):
+    def push_scope(self, scope: JacScope):
         self._scope_stack.append(scope)
         self._jac_scope = scope
 
@@ -85,18 +90,11 @@ class machine_state:
             self.report_custom = mach.report_custom
         self.runtime_errors += mach.runtime_errors
 
-    def get_arch_for(self, obj):
-        """Returns the architype that matches object"""
-        ret = self.parent().arch_ids.get_obj_by_name(name=obj.name, kind=obj.kind)
-        if ret is None:
-            self.rt_error(f"Unable to find architype for {obj.name}, {obj.kind}")
-        return ret
-
     def obj_set_to_jac_set(self, obj_set):
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set()
+        ret = JacSet()
         for i in obj_set:
             ret.add_obj(i)
         return ret
@@ -105,7 +103,7 @@ class machine_state:
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set()
+        ret = JacSet()
         for i in edge_set.obj_list():
             ret.add_obj(i.opposing_node(self.current_node))
         return ret
@@ -114,7 +112,7 @@ class machine_state:
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set()
+        ret = JacSet()
         for i in edge_set.obj_list():
             for j in node_set.obj_list():
                 if i.jid in j.edge_ids:

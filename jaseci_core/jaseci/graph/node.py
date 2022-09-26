@@ -4,34 +4,39 @@ Node class for Jaseci
 Each node has an id, name, timestamp and it's set of edges.
 First node in list of 'member_node_ids' is designated root node
 """
-from jaseci.element.element import element
-from jaseci.element.obj_mixins import anchored
-from jaseci.graph.edge import edge
-from jaseci.utils.id_list import id_list
+from jaseci.element.element import Element
+from jaseci.element.obj_mixins import Anchored
+from jaseci.graph.edge import Edge
+from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 
 import uuid
 
 
-class node(element, anchored):
+class Node(Element, Anchored):
     """Node class for Jaseci"""
 
-    def __init__(self, dimension=0, *args, **kwargs):
-        self.edge_ids = id_list(self)
-        self.parent_node_ids = id_list(self)
-        self.member_node_ids = id_list(self)
+    def __init__(self, dimension=0, **kwargs):
+        self.edge_ids = IdList(self)
+        self.parent_node_ids = IdList(self)
+        self.member_node_ids = IdList(self)
         self.dimension = dimension  # Nodes are always hdgd 0
-        self.context = {}
-
-        anchored.__init__(self)
-        element.__init__(self, *args, **kwargs)
+        Element.__init__(self, **kwargs)
+        Anchored.__init__(self)
 
     def attach(self, node_obj, edge_set=None, as_outbound=True, as_bidirected=False):
         """
         Generalized attach function for attaching nodes with edges
         """
         if edge_set is None:
-            edge_set = [edge(m_id=self._m_id, h=self._h, kind="edge", name="generic")]
+            edge_set = [
+                Edge(
+                    m_id=self._m_id,
+                    h=self._h,
+                    kind="edge",
+                    name="generic",
+                )
+            ]
         link_order = [self, node_obj] if as_outbound else [node_obj, self]
         for e in edge_set:
             if not e.set_from_node(link_order[0]) or not e.set_to_node(link_order[1]):
@@ -375,9 +380,8 @@ class node(element, anchored):
         dstr += f'label="n{nid}:{self.name}" '
 
         node_dict = self.context
-        if "_private" in node_dict:
-            for i in node_dict["_private"]:
-                node_dict.pop(i)
+        for i in self.private_values():
+            node_dict.pop(i)
 
         if node_dict and detailed:
             for k, v in node_dict.items():
