@@ -43,12 +43,12 @@ class JacJsonDec(json.JSONDecoder):
         return obj
 
 
-def jac_ast_to_ir(jac_ast):
+def jac_ast_to_ir(jac_ast: Ast):
     """Convert AST to IR string"""
     return json.dumps(cls=JacJsonEnc, obj={"gram_hash": grammar_hash, "ir": jac_ast})
 
 
-def jac_ir_to_ast(ir):
+def jac_ir_to_ast(ir: str):
     """Convert IR string to AST"""
     ir_load = json.loads(cls=JacJsonDec, s=ir)
     if (
@@ -87,7 +87,15 @@ class JacCode:
 
     def apply_ir(self, ir):
         """Apply's IR to object"""
-        self.code_ir = ir.strip() if (isinstance(ir, str)) else jac_ast_to_ir(ir)
+        self.code_ir = (
+            ir.strip()
+            if (isinstance(ir, str))
+            else json.dumps(ir)
+            if (isinstance(ir, dict))
+            else jac_ast_to_ir(ir)
+            if (isinstance(ir, Ast))
+            else None
+        )
         self.code_sig = hashlib.md5(self.code_ir.encode()).hexdigest()
         JacCode.refresh(self)  # should disregard overloaded versions
 
