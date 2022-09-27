@@ -12,21 +12,17 @@ class Anchored:
     """Utility class for objects that hold anchor values"""
 
     def __init__(self):
-        self._arch = None
         self.context = {}
 
     def get_architype(self):
-        if self._arch is None:
-            arch = (
-                self._h._machine.parent().get_arch_for(self)
-                if self._h._machine is not None
-                and self._h._machine.parent() is not None
-                else None
-            )
-            if arch is None and self.parent() and self.parent().j_type == "sentinel":
-                arch = self.parent()
-            self._arch = arch
-        return self._arch
+        arch = (
+            self._h._machine.parent().get_arch_for(self)
+            if self._h._machine is not None and self._h._machine.parent() is not None
+            else None
+        )
+        if arch is None and self.parent() and self.parent().j_type == "sentinel":
+            arch = self.parent()
+        return arch
 
     def anchor_value(self):
         """Returns value of anchor context object"""
