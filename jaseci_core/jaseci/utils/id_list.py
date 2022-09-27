@@ -58,25 +58,17 @@ class IdList(list):
     def get_obj_by_name(self, name, kind=None, silent=False):
         """Returns a Jaseci obj obj by it's name"""
 
-        healing = []
         ret = None
         for i in self:
-            if not self.parent_obj._h.has_obj(uuid.UUID(i)):
-                logger.critical(
-                    str(
-                        f"Self healing: {i} not found "
-                        + f"in id_list of {self.parent_obj}!"
-                    )
-                )
-                healing.append(i)
-                continue
             obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
+            if not obj:
+                logger.critical(str(f"{i} not found in id_list of {self.parent_obj}!"))
+                raise KeyError
             if obj.name == name:
                 if kind and obj.kind != kind:
                     continue
-                ret = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
+                ret = obj
                 break
-        self.heal(healing)
         if not ret and not silent:
             logger.error(str(f"object for '{name}' not found in '{self.parent_obj}'!"))
         return ret
@@ -96,22 +88,13 @@ class IdList(list):
     def obj_list(self):
         """Return list of objects from ids"""
         ret = []
-        healing = []
         for i in self:
             obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
             if not obj:
-                logger.critical(
-                    str(
-                        f"Self healing: {i} not found "
-                        + f"in id_list of {self.parent_obj}!"
-                    )
-                )
-                healing.append(i)
+                logger.critical(str(f"{i} not found in id_list of {self.parent_obj}!"))
+                raise KeyError
             else:
-                ret.append(
-                    self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
-                )
-        self.heal(healing)
+                ret.append(obj)
         return ret
 
     def remove_all(self):
@@ -137,12 +120,6 @@ class IdList(list):
                     + f"still has {self}!"
                 )
             )
-
-    def heal(self, healing):
-        if len(healing):
-            for i in healing:
-                self.remove(i)
-            self.parent_obj.save()
 
     def first_obj(self):
         """Get first object in list"""
