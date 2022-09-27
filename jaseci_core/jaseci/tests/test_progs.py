@@ -349,3 +349,14 @@ class JacTests(TestCaseHelper, TestCase):
             api_name="walker_run", params={"name": "init"}
         )
         self.assertEqual(res["report"], [1, 2, 3, 4, 5, 6, 7, 8, "apple"])
+
+    def test_registering_dict_as_ir(self):
+        mast = self.meta.master()
+        mast.sentinel_register(name="test", code=jtp.continue_issue, auto_run="")
+        code_dict = mast.sentinel_get(snt=mast.active_snt(), mode="ir")
+        self.assertEqual(type(code_dict), dict)
+        mast.sentinel_register(name="test", code=code_dict, mode="ir", auto_run="")
+        res = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(res["report"], [1, 2, 3, 4, 5, 6, 7, 8, "apple"])
