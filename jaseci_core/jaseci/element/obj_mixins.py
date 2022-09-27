@@ -21,7 +21,7 @@ class Anchored:
             else None
         )
         if arch is None and self.parent() and self.parent().j_type == "sentinel":
-            arch = self.parent()
+            arch = self.parent().get_arch_for(self)
         return arch
 
     def anchor_value(self):

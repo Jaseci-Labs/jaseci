@@ -255,11 +255,11 @@ class TestCaseHelper:
         """Force test to fail"""
         self.assertTrue(False)
 
-    def start_perf_test(self):
+    def perf_test_start(self):
         self.pr = cProfile.Profile()
         self.pr.enable()
 
-    def stop_perf_test(self):
+    def perf_test_stop(self):
         self.pr.disable()
         s = io.StringIO()
         sortby = pstats.SortKey.CUMULATIVE

@@ -185,6 +185,9 @@ class MemoryHook:
 
     # --------------------- OBJ --------------------- #
 
+    def has_id_in_mem_cache(self, id):
+        return id is not None and id in self.mem
+
     def commit_obj_to_cache(self, item):
         self.mem[item.id.urn] = item
 
@@ -211,3 +214,6 @@ class MemoryHook:
 
     def find_class_and_import(self, j_type, mod):
         return find_class_and_import(j_type, mod)
+
+    def clear_cache(self):
+        MemoryHook.__init__(self)

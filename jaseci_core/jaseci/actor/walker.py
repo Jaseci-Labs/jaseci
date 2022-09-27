@@ -83,7 +83,7 @@ class Walker(Element, WalkerInterp, Anchored):
             return False
 
         self.current_node = self.next_node_ids.pop_first_obj()
-        self.run_walker(jac_ast=self.get_architype()._jac_ast)
+        self.run_walker(jac_ast=self.get_architype().get_jac_ast())
         if self.current_step < 200:
             self.log_history("visited", self.current_node.id)
         self.current_step += 1
