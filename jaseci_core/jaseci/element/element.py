@@ -44,6 +44,8 @@ class Element(Hookable):
     json serializable types
     """
 
+    element_fields = None
+
     def __init__(
         self,
         name="basic",
@@ -129,7 +131,9 @@ class Element(Hookable):
         saving and loading item.
         """
         obj_fields = []
-        element_fields = dir(Element(m_id=self._m_id, h=MemoryHook()))
+        if Element.element_fields is None:
+            Element.element_fields = dir(Element(m_id=self._m_id, h=MemoryHook()))
+        element_fields = Element.element_fields
         for i in vars(self).keys():
             if not i.startswith("_") and i not in element_fields:
                 obj_fields.append(i)

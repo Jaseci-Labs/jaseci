@@ -226,13 +226,16 @@ class TestLL(TestCaseHelper, TestCase):
 
     def test_get_long_active_items(self):
         """Test getting items been in backlog for long"""
+        self.logger_on()
         self.run_walker("gen_rand_life", {})
         self.run_walker("get_gen_day", {})
         data = self.run_walker("get_latest_day", {"show_report": 1})
         w_id = data["report"][0][1]["jid"]
+        self.perf_test_start()
         result = self.run_walker(
             "get_long_active_items", {"show_report": 1, "long_days": 1}, prime=w_id
         )
+        self.perf_test_stop()
         self.assertTrue(len(result) > 0)
 
     def test_get_suggested_focus(self):
