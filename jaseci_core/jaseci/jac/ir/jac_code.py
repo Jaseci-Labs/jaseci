@@ -93,8 +93,6 @@ class JacCode:
             else json.dumps(ir)
             if (isinstance(ir, dict))
             else jac_ast_to_ir(ir)
-            if (isinstance(ir, Ast))
-            else None
         )
         self.code_sig = hashlib.md5(self.code_ir.encode()).hexdigest()
         JacCode.refresh(self)  # should disregard overloaded versions
