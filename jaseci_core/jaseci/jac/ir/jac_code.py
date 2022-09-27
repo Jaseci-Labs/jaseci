@@ -84,7 +84,7 @@ class JacCode:
 
     def apply_ir(self, ir):
         """Apply's IR to object"""
-        self.code_ir = ir if (isinstance(ir, str)) else jac_ast_to_ir(ir)
+        self.code_ir = ir.strip() if (isinstance(ir, str)) else jac_ast_to_ir(ir)
         self.code_sig = hashlib.md5(self.code_ir.encode()).hexdigest()
         JacCode.refresh(self)  # should disregard overloaded versions
 
