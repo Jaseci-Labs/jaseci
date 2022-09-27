@@ -194,8 +194,8 @@ class Element(Hookable):
         for i in jdict.keys():
             setattr(self, i, jdict[i])
 
-        if "code_ir" in jdict:
-            self.apply_ir(self.code_ir)
+        # if "code_ir" in jdict:
+        #     self.apply_ir(self.code_ir)
 
     def get_deep_obj_list(self, objs=None):
         """Recursively get all contained Jaseci objects and return id_list"""
