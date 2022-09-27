@@ -453,6 +453,7 @@ And that is what we are going to build in this section -- a multi-turn action-or
 
 ## State Graph
 Let's first go over the graph architecture for the dialogue system.
+Put the next set of code in a new file and name it `dialogue.jac`.
 We will be building a state graph.
 In a state graph, each node is a conversational state, which represents a possible user state during a dialgoue.
 The state nodes are connected with transition edges, which encode the condition required to hop from one state to another state.
@@ -530,7 +531,6 @@ walker init {
     }
 }
 ```
-Put all the code so far in a new file and name it `dialogue.jac`.
 
 Let's initialize the graph and visualize it.
 ```bash
