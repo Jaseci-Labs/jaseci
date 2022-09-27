@@ -4,15 +4,15 @@ Walker interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
-from jaseci.graph.node import node
-from jaseci.jac.interpreter.interp import interp
-from jaseci.jac.jac_set import jac_set
-from jaseci.jac.machine.jac_scope import jac_scope
+from jaseci.graph.node import Node
+from jaseci.jac.interpreter.interp import Interp
+from jaseci.jac.jac_set import JacSet
+from jaseci.jac.machine.jac_scope import JacScope
 from jaseci.jac.ir.jac_code import jac_ir_to_ast
-from jaseci.utils.id_list import id_list
+from jaseci.utils.id_list import IdList
 
 
-class walker_interp(interp):
+class WalkerInterp(Interp):
     """Jac interpreter mixin for objects that will execute Jac code"""
 
     # Walker only executes statements, sentinels handle attr_stmts
@@ -41,8 +41,8 @@ class walker_interp(interp):
                 if i.name == "attr_stmt":
                     self.run_attr_stmt(jac_ast=i, obj=self)
 
-        archs = self.get_arch_for(self.current_node).arch_with_supers()
-        act_list = id_list(self)
+        archs = self.current_node.get_architype().arch_with_supers()
+        act_list = IdList(self)
         for i in archs:
             act_list += i.entry_action_ids
         self.auto_trigger_node_actions(nd=self.current_node, act_list=act_list)
@@ -56,8 +56,8 @@ class walker_interp(interp):
                 self.run_walk_activity_block(i)
 
         # self.trigger_activity_actions()
-        archs = self.get_arch_for(self.current_node).arch_with_supers()
-        act_list = id_list(self)
+        archs = self.current_node.get_architype().arch_with_supers()
+        act_list = IdList(self)
         for i in archs:
             act_list += i.exit_action_ids
         self.auto_trigger_node_actions(nd=self.current_node, act_list=act_list)
@@ -71,7 +71,7 @@ class walker_interp(interp):
         """
         kid = self.set_cur_ast(jac_ast)
         for i in self.run_name_list(kid[0]):
-            if self.get_arch_for(self.current_node).is_instance(i):
+            if self.current_node.get_architype().is_instance(i):
                 self.run_code_block(kid[1])
                 return
 
@@ -121,9 +121,9 @@ class walker_interp(interp):
         """
         kid = self.set_cur_ast(jac_ast)
         result = self.run_expression(kid[1]).value
-        if isinstance(result, node):
+        if isinstance(result, Node):
             self.ignore_node_ids.add_obj(result)
-        elif isinstance(result, jac_set):
+        elif isinstance(result, JacSet):
             self.ignore_node_ids.add_obj_list(result)
         else:
             self.rt_error(f"{result} is not ignorable type (i.e., nodes)", kid[1])
@@ -140,14 +140,14 @@ class walker_interp(interp):
             kid = kid[2:]
         result = self.run_expression(kid[1]).value
         before = len(self.next_node_ids)
-        if isinstance(result, node):
+        if isinstance(result, Node):
             if style in ["b", "bfs"]:
                 self.next_node_ids.add_obj(result, allow_dups=True)
             elif style in ["d", "dfs"]:
                 self.next_node_ids.add_obj(result, push_front=True, allow_dups=True)
             else:
                 self.rt_error(f"{style} is invalid take operation", kid[0])
-        elif isinstance(result, jac_set):
+        elif isinstance(result, JacSet):
             if style in ["b", "bfs"]:
                 self.next_node_ids.add_obj_list(result, allow_dups=True)
             elif style in ["d", "dfs"]:
@@ -199,10 +199,10 @@ class walker_interp(interp):
         """
         kid = self.set_cur_ast(jac_ast)
         param_list = []
-        m = interp(parent_override=self.parent(), caller=self)
-        arch = self.get_arch_for(obj)
+        m = Interp(parent_override=self.parent(), caller=self)
+        arch = obj.get_architype()
         m.push_scope(
-            jac_scope(parent=self, has_obj=obj, action_sets=[arch.activity_action_ids])
+            JacScope(parent=self, has_obj=obj, action_sets=[arch.activity_action_ids])
         )
         m._jac_scope.set_agent_refs(cur_node=self.current_node, cur_walker=self)
 
@@ -237,7 +237,7 @@ class walker_interp(interp):
 
     def viable_nodes(self):
         """Returns all nodes that shouldnt be ignored"""
-        ret = jac_set()
+        ret = JacSet()
         for i in self.current_node.attached_nodes():
             if i not in self.ignore_node_ids.obj_list():
                 ret.add_obj(i)
@@ -248,9 +248,9 @@ class walker_interp(interp):
         Helper to run ast elements with execution scope added
         (Useful for running arbitrary code blocks as one-offs)
         """
-        arch = self.get_arch_for(self.current_node)
+        arch = self.current_node.get_architype()
         self.push_scope(
-            jac_scope(
+            JacScope(
                 parent=self,
                 has_obj=self,
                 action_sets=[self.activity_action_ids, arch.activity_action_ids],

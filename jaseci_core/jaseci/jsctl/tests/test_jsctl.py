@@ -5,7 +5,7 @@ from click.testing import CliRunner
 import json
 
 
-class jsctl_test(TestCaseHelper, TestCase):
+class JsctlTest(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
@@ -29,7 +29,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         return ret.split("\n")
 
     def tearDown(self):
-        jsctl.session["master"]._h.clear_mem_cache()
+        jsctl.session["master"]._h.clear_cache()
         super().tearDown()
 
     def test_jsctl_extract_tree(self):
@@ -120,8 +120,8 @@ class jsctl_test(TestCaseHelper, TestCase):
         num = len(self.call_cast("alias list"))
 
         self.call("architype delete zsb:architype:bot")
-        self.call("walker delete zsb:walker:similar_questions")
-        self.call("walker delete zsb:walker:create_nugget")
+        self.call("architype delete zsb:walker:similar_questions")
+        self.call("architype delete zsb:walker:create_nugget")
         self.assertEqual(num - 3, len(self.call_cast("alias list")))
 
     def test_jsctl_config_cmds(self):
@@ -129,8 +129,9 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(
             "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
         )
-        self.call("config set CONFIG_EXAMPLE -value TEST -do_check False")
+        self.call('config set CONFIG_EXAMPLE -value "TEST" -do_check False')
         self.call("config set APPLE -value Grape2 -do_check False")
+        self.call("config set APPLE_JSON -value '{\"test\":true}' -do_check False")
         self.call('config set "Banana" -value "Grape" -do_check False')
         self.call('config set "Pear" -value "Banana" -do_check False')
         r = self.call("config get APPLE -do_check False")
@@ -176,15 +177,15 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(
             "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
         )
-        r = self.call_cast("walker get zsb:walker:pubinit -mode keys")
+        wjid = self.call_cast("walker spawn create pubinit")["jid"]
+        r = self.call_cast(f"walker get {wjid} -mode keys")
         key = r["anyone"]
         r = self.call_cast("alias list")
-        walk = r["zsb:walker:pubinit"]
         nd = r["active:graph"]
-        r = self.call_cast(f"walker summon {walk} -key {key} -nd {nd}")
+        r = self.call_cast(f"walker summon {wjid} -key {key} -nd {nd}")
         self.assertEqual(len(r["report"]), 0)
         key = "aaaaaaaa"
-        r = self.call_cast(f"walker summon {walk} -key {key} -nd {nd}")
+        r = self.call_cast(f"walker summon {wjid} -key {key} -nd {nd}")
         self.assertFalse(r["success"])
 
     def test_jsctl_import(self):

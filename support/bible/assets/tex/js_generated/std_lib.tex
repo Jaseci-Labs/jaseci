@@ -32,6 +32,11 @@ No documentation yet.
 {No documentation yet.}
 \apispec{file.delete}{fn: str (*req)}
 {No documentation yet.}
+\subsection{mail}
+\par
+No documentation yet.
+\apispec{mail.send}{sender: _empty (*req), recipients: _empty (*req), subject: _empty (*req), text: _empty (*req), html: _empty (*req)}
+{No documentation yet.}
 \subsection{net}
 \par
 This library of actions cover the standard operations that can be
@@ -39,7 +44,7 @@ run on graph elements (nodes and edges). A number of these actions
 accept lists that are exclusively composed of instances of defined
 architype node and/or edges. Keep in mind that a \lstinline{jac_set}
 is simply a list that only contains such elements.
-\apispec{net.max}{item_set: jac_set (*req)}
+\apispec{net.max}{item_set: JacSet (*req)}
 {This action will return the maximum element in a list of nodes
 and/or edges based on an anchor has variable. Since each node or edge can only
 specify a single anchor this action enables a handy short hand for utilizing the
@@ -55,7 +60,7 @@ input list of nodes.\vspace{4mm}\par
 maximum element based on their respective anchor values\vspace{1.5mm}\par
 }\vspace{4mm}\par
 \argspec{Returns}{A node or edge object}}
-\apispec{net.min}{item_set: jac_set (*req)}
+\apispec{net.min}{item_set: JacSet (*req)}
 {This action will return the minimum element in a list of nodes
 and/or edges. This action exclusively utilizes the anchor variable
 of the node/edge arhcitype as the representative field for
@@ -66,7 +71,7 @@ arhcitypes lacking an anchor. (see action max for an example)\vspace{4mm}\par
 minimum element based on their respective anchor values\vspace{1.5mm}\par
 }\vspace{4mm}\par
 \argspec{Returns}{A node or edge object}}
-\apispec{net.pack}{item_set: jac_set (*req), destroy: bool (False)}
+\apispec{net.pack}{item_set: JacSet (*req), destroy: bool (False)}
 {This action takes a subgraph as a collection of nodes in a list and
 creates a generic dictionary representation of the subgraph inclusive of
 all edges between nodes inside the collection. Note that any edges that are
@@ -204,22 +209,22 @@ Param 2 - value (must be json serializable)}
 {No documentation yet.}
 \apispec{std.destroy\_global}{name: str (*req)}
 {No documentation yet.}
-\apispec{std.set\_perms}{obj: element (*req), mode: str (*req)}
+\apispec{std.set\_perms}{obj: Element (*req), mode: str (*req)}
 {Param 1 - target element
 Param 2 - valid permission (public, private, read only)
 
 Return - true/false whether successful}
-\apispec{std.get\_perms}{obj: element (*req)}
+\apispec{std.get\_perms}{obj: Element (*req)}
 {Param 1 - target element
 
 Return - Sorted list}
-\apispec{std.grant\_perms}{obj: element (*req), mast: element (*req), read_only: bool (*req)}
+\apispec{std.grant\_perms}{obj: Element (*req), mast: Element (*req), read_only: bool (*req)}
 {Param 1 - target element
 Param 2 - master to be granted permission
 Param 3 - Boolean read only flag
 
 Return - Sorted list}
-\apispec{std.revoke\_perms}{obj: element (*req), mast: element (*req)}
+\apispec{std.revoke\_perms}{obj: Element (*req), mast: Element (*req)}
 {Param 1 - target element
 Param 2 - master to be revoked permission
 

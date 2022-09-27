@@ -6,7 +6,7 @@
 To load the TPDf extractor run :
 
 ```
-actions load module jaseci_kit.pdf_ext
+actions load module jaseci_ai_kit.pdf_ext
 ```
 
 

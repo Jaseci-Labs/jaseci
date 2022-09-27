@@ -1,12 +1,12 @@
 """
 Admin Global api functions as a mixin
 """
-from jaseci.api.interface import interface
+from jaseci.api.interface import Interface
 import jaseci.actions.live_actions as lact
 import json
 
 
-class actions_api:
+class ActionsApi:
     """
     APIs to manage actions
 
@@ -18,7 +18,7 @@ class actions_api:
     performance profiling.
     """
 
-    @interface.admin_api(cli_args=["file"])
+    @Interface.admin_api(cli_args=["file"])
     def actions_load_local(self, file: str):
         """
         Hot load a python module and assimilate any Jaseci Actions
@@ -48,7 +48,7 @@ class actions_api:
                 )
         return {"success": success}
 
-    @interface.admin_api(cli_args=["url"])
+    @Interface.admin_api(cli_args=["url"])
     def actions_load_remote(self, url: str):
         """
         Hot link to a container linked action library
@@ -78,7 +78,7 @@ class actions_api:
                 )
         return {"success": success}
 
-    @interface.admin_api(cli_args=["mod"])
+    @Interface.admin_api(cli_args=["mod"])
     def actions_load_module(self, mod: str):
         """
         Hot load a python module and assimilate any Jaseci Actions
@@ -90,7 +90,7 @@ class actions_api:
         Jaseci python instance.
 
         :param mod: The import style module to load actions from.
-            (i.e., jaseci_kit.bi_enc)
+            (i.e., jaseci_ai_kit.bi_enc)
         """
         success = lact.load_module_actions(mod)
         if success:
@@ -112,7 +112,7 @@ class actions_api:
     #     """
     #     """
 
-    @interface.admin_api()
+    @Interface.admin_api()
     def actions_list(self, name: str = ""):
         """
         List a set of or all loaded jaseci actions

@@ -440,6 +440,22 @@ set_get_global = """
     }
     """
 
+set_get_global2 = """
+    walker setter {
+        root {
+            std.set_global('globby2', 59);
+        }
+    }
+
+    walker getter {
+        has a;
+        root {
+            a=std.get_global('globby2');
+            std.log(std.get_global('globby2'));
+        }
+    }
+    """
+
 set_get_global_dict = """
     walker setter {
         root {

@@ -1,11 +1,11 @@
 """
 Object api as a mixin
 """
-from jaseci.api.interface import interface
-from jaseci.element.element import element
+from jaseci.api.interface import Interface
+from jaseci.element.element import Element
 
 
-class object_api:
+class ObjectApi:
     """Object APIs for generalized operations on Jaseci objects
 
     ...
@@ -15,25 +15,25 @@ class object_api:
         self.perm_default = "private"
         self._valid_perms = ["public", "private", "read_only"]
 
-    @interface.private_api(cli_args=["name"])
+    @Interface.private_api(cli_args=["name"])
     def global_get(self, name: str):
         """
         Get a global var
         """
         return {"value": self._h.get_glob(name)}
 
-    @interface.private_api(cli_args=["obj"])
-    def object_get(self, obj: element, depth: int = 0, detailed: bool = False):
+    @Interface.private_api(cli_args=["obj"])
+    def object_get(self, obj: Element, depth: int = 0, detailed: bool = False):
         """Returns object details for any Jaseci object."""
         return obj.serialize(deep=depth, detailed=detailed)
 
-    @interface.private_api(cli_args=["obj"])
-    def object_perms_get(self, obj: element):
+    @Interface.private_api(cli_args=["obj"])
+    def object_perms_get(self, obj: Element):
         """Returns object access mode for any Jaseci object."""
         return {"access": obj.j_access}
 
-    @interface.private_api(cli_args=["obj"])
-    def object_perms_set(self, obj: element, mode: str):
+    @Interface.private_api(cli_args=["obj"])
+    def object_perms_set(self, obj: Element, mode: str):
         """Sets object access mode for any Jaseci object."""
         ret = {}
         if mode not in self._valid_perms:
@@ -45,7 +45,7 @@ class object_api:
             ret["response"] = f"{obj} set to {mode}"
         return ret
 
-    @interface.private_api(cli_args=["mode"])
+    @Interface.private_api(cli_args=["mode"])
     def object_perms_default(self, mode: str):
         """Sets object access mode for any Jaseci object."""
         ret = {}
@@ -58,8 +58,8 @@ class object_api:
             ret["response"] = f"Default access for future objects set to {mode}"
         return ret
 
-    @interface.private_api(cli_args=["obj"])
-    def object_perms_grant(self, obj: element, mast: element, read_only: bool = False):
+    @Interface.private_api(cli_args=["obj"])
+    def object_perms_grant(self, obj: Element, mast: Element, read_only: bool = False):
         """Grants another user permissions to access a Jaseci object."""
         granted = obj.give_access(mast, read_only=read_only)
         ret = {"success": granted}
@@ -69,8 +69,8 @@ class object_api:
             ret["response"] = f"Cannot grant {mast} access to {obj}"
         return ret
 
-    @interface.private_api(cli_args=["obj"])
-    def object_perms_revoke(self, obj: element, mast: element):
+    @Interface.private_api(cli_args=["obj"])
+    def object_perms_revoke(self, obj: Element, mast: Element):
         """Remove permissions for user to access a Jaseci object."""
         revoked = obj.remove_access(mast)
         ret = {"success": revoked}
@@ -79,3 +79,10 @@ class object_api:
         else:
             ret["response"] = f"{mast} did not have access to {obj}"
         return ret
+
+    @Interface.public_api()
+    def info(self):
+        """Provide information about this instance of Jaseci"""
+        from jaseci import __version__, __creator__, __url__
+
+        return {"Version": __version__, "Creator": __creator__, "URL": __url__}

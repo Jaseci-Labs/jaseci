@@ -1,3 +1,34 @@
+# Jaseci Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jaseci-account
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  namespace: default
+  name: jaseci-orc
+rules:
+  - apiGroups: ["v1", "apps"]
+    resources: ["pods", "deployments", "services", "deployments.apps"]
+    verbs: ["get", "watch", "list", "update", "patch", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jaseci-orc-rolebinding
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: jaseci-account
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: jaseci-orc
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -41,6 +72,7 @@ spec:
         pod: jaseci
       name: jaseci
     spec:
+      serviceAccountName: jaseci-account
       containers:
         - name: jaseci
           image: python:3-slim

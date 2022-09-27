@@ -1,10 +1,12 @@
-from jaseci.utils.utils import TestCaseHelper
-from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.test import TestCase
+
+from jaseci.element import element
+from jaseci.element.super_master import SuperMaster
+from jaseci.utils.utils import TestCaseHelper
 from jaseci_serv.base import models
 from jaseci_serv.obj_api.views import JaseciObjectSerializer
-from jaseci.element import element
-from jaseci.element.super_master import super_master
+from jaseci_serv.svc import MetaService
 
 
 def sample_user(email="JSCITEST_user@jaseci.com", password="whatever"):
@@ -14,9 +16,10 @@ def sample_user(email="JSCITEST_user@jaseci.com", password="whatever"):
     return get_user_model().objects.create_user(email, password)
 
 
-class model_tests(TestCaseHelper, TestCase):
+class ModelTests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
+        self.meta = MetaService()
 
     def tearDown(self):
         super().tearDown()
@@ -45,13 +48,13 @@ class model_tests(TestCaseHelper, TestCase):
             email="JSCITEST_super@User.com", password="135jj"
         )
 
-        self.assertIsInstance(user.get_master(), super_master)
+        self.assertIsInstance(user.get_master(), SuperMaster)
         user.delete()
         self.assertFalse(get_user_model().objects.filter(id=user.id).exists())
 
     def test_jaseci_obj_accessl_has_relevant_fields(self):
         """Test that Jaseci ORM models has all element class fields"""
-        element_obj = element.element(m_id="anon", h=element.redis_hook())
+        element_obj = element.Element(m_id="anon", h=self.meta.hook())
         orm_obj = models.JaseciObject()
         for a in vars(element_obj).keys():
             if not a.startswith("_") and not callable(getattr(element_obj, a)):
@@ -59,7 +62,7 @@ class model_tests(TestCaseHelper, TestCase):
 
     def test_jaseci_json_has_relevant_fields(self):
         """Test that Jaseci ORM models has all element class fields"""
-        element_obj = element.element(m_id="anon", h=element.redis_hook())
+        element_obj = element.Element(m_id="anon", h=self.meta.hook())
         for a in vars(element_obj).keys():
             if not a.startswith("_") and not callable(getattr(element_obj, a)):
                 self.assertIn(a, JaseciObjectSerializer.Meta.fields)

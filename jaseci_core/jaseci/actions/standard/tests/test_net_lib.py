@@ -1,7 +1,7 @@
-from jaseci.utils.test_core import core_test
+from jaseci.utils.test_core import CoreTest
 
 
-class net_lib_test(core_test):
+class NetLibTest(CoreTest):
     """Unit tests for Jac Walker APIs"""
 
     fixture_src = __file__
@@ -51,3 +51,12 @@ class net_lib_test(core_test):
         self.assertEqual(len(ret["report"]), 1)
         after = len(self.smast._h.mem)
         self.assertEqual(before, after)
+
+    def test_pack_anc_priv(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "pack_it_anc_priv"}])
+        self.assertEqual(len(ret["report"]), 6)
+        self.assertNotIn("priv", ret["report"][2]["context"])

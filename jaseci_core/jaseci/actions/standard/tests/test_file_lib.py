@@ -1,12 +1,12 @@
-from jaseci.utils.test_core import core_test
+from jaseci.utils.test_core import CoreTest
 
 
-class file_lib_test(core_test):
+class FileLibTest(CoreTest):
 
     fixture_src = __file__
 
     def test_json_dump(self):
-        self.call(
+        ret = self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("file_stuff.jac")}],
         )
