@@ -20,6 +20,7 @@ from jaseci.utils.json_handler import JaseciJsonEncoder, json_str_to_jsci_dict
 from jaseci.utils.utils import log_var_out, logger, camel_to_snake
 
 __version__ = "1.0.0"
+element_fields = None
 
 
 class Element(Hookable):
@@ -128,8 +129,10 @@ class Element(Hookable):
         This grabs any fields that are added into inherited objects. Useful for
         saving and loading item.
         """
+        global element_fields
+        if element_fields is None:
+            element_fields = dir(Element(m_id="anon", h=MemoryHook()))
         obj_fields = []
-        element_fields = dir(Element(m_id=self._m_id, h=MemoryHook()))
         for i in vars(self).keys():
             if not i.startswith("_") and i not in element_fields:
                 obj_fields.append(i)
