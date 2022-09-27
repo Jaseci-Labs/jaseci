@@ -55,9 +55,12 @@ def jac_ir_to_ast(ir):
         not isinstance(ir_load, dict)
         or "gram_hash" not in ir_load
         or ir_load["gram_hash"] != grammar_hash
+        or (not isinstance(ir_load["ir"], Ast) and not ir_load["ir"] is None)
     ):
-        logger.error("Jac IR incompatible/outdated with current Jaseci!")
-        return ""
+        logger.error(
+            "Jac IR invalid or incompatible with current Jaseci "
+            f"(valid gram_hash: {grammar_hash}!"
+        )
     return ir_load["ir"]
 
 
@@ -73,7 +76,7 @@ class JacCode:
         self.apply_ir(code_ir)
 
     def reset(self):
-        self.is_active = False
+        JacCode.__init__(self)
 
     def refresh(self):
         self._jac_ast = jac_ir_to_ast(self.code_ir) if self.code_ir else None
@@ -84,7 +87,7 @@ class JacCode:
 
     def apply_ir(self, ir):
         """Apply's IR to object"""
-        self.code_ir = ir if (isinstance(ir, str)) else jac_ast_to_ir(ir)
+        self.code_ir = ir.strip() if (isinstance(ir, str)) else jac_ast_to_ir(ir)
         self.code_sig = hashlib.md5(self.code_ir.encode()).hexdigest()
         JacCode.refresh(self)  # should disregard overloaded versions
 

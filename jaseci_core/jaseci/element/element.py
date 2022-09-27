@@ -152,6 +152,7 @@ class Element(Hookable):
             "jid",
             "j_type",
             "context",
+            "code_sig",
             "j_timestamp",
             "version",
             "to_node_id",
