@@ -25,7 +25,8 @@ class ObjectApi:
     @Interface.private_api(cli_args=["obj"])
     def object_get(self, obj: Element, depth: int = 0, detailed: bool = False):
         """Returns object details for any Jaseci object."""
-        return obj.serialize(deep=depth, detailed=detailed)
+        ret = obj.serialize(deep=depth, detailed=detailed)
+        return ret
 
     @Interface.private_api(cli_args=["obj"])
     def object_perms_get(self, obj: Element):

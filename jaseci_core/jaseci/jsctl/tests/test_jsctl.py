@@ -382,3 +382,14 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_bookgen_api_spec(self):
         r = self.call("booktool cheatsheet")
         self.assertGreater(len(r), 2000)
+
+    def test_jsctl_print_detailed_sentinel(self):
+        r = self.call_cast(
+            "sentinel register jaseci/jsctl/tests/teststest.jir -name test -mode ir"
+        )
+        r = self.call_cast("object get sentinel:test")
+        before = len(r.keys())
+        r = self.call_cast("object get sentinel:test -detailed true")
+        after = len(r.keys())
+        self.assertGreater(before, 4)
+        self.assertGreater(after, before)
