@@ -16,7 +16,7 @@ class Queue(Task):
     def run(self, wlk, nd, args):
         from jaseci.svc import MetaService
 
-        hook = MetaService().hook()
+        hook = MetaService().build_hook()
 
         wlk = hook.get_obj_from_store(UUID(wlk))
         nd = hook.get_obj_from_store(UUID(nd))
@@ -33,7 +33,7 @@ class ScheduledWalker(Task):
     def run(self, name, ctx, nd=None, snt=None, mst=None):
         from jaseci.svc import MetaService
 
-        self.hook = MetaService().hook()
+        self.hook = MetaService().build_hook()
 
         if mst:
             mst = self.get_obj(mst)
@@ -195,10 +195,10 @@ class ScheduledSequence(Task):
         master = req.get("master")
         app = MetaService()
         if master is None:
-            caller = app.master()
+            caller = app.build_master()
             trigger_type = "public"
         else:
-            caller = app.hook().get_obj_from_store(master)
+            caller = app.build_hook().get_obj_from_store(master)
             trigger_type = "general"
 
         api = req.get("api")
