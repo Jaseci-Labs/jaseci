@@ -48,14 +48,7 @@
 ## Codelabs and Guides
 
 - [Build a Custom Jaseci Module](support/codelabs/custom_jaseci_module_codelab.md)
-- [CanoniCAI Example](examples/CanoniCAI/CCAI_codelab.md)
-- [Building a Conversational AI System](support/codelabs/canonicai/chapter1.md)
-    - [Chapter 2](support/codelabs/canonicai/chapter2.md)
-    - [Chapter 3](support/codelabs/canonicai/chapter3.md)
-    - [Chapter 4](support/codelabs/canonicai/chapter4.md)
-    - [Chapter 5](support/codelabs/canonicai/chapter5.md)
-    - [Chapter 6](support/codelabs/canonicai/chapter6.md)
-    - [Chapter 7](support/codelabs/canonicai/chapter7.md)
+- [Building a Conversational AI System](examples/CanoniCAI/CCAI_codelab.md)
 - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
 - [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
 - [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
@@ -72,7 +65,6 @@
     - [FLair NER](jaseci_ai_kit/jaseci_ai_kit/modules/ent_ext/README.md)
     - [Fasttext Classifier](jaseci_ai_kit/jaseci_ai_kit/modules/fast_enc/README.md)
     - [Object Detection](jaseci_ai_kit/jaseci_ai_kit/modules/object_detection/readme.md)
-    - [PDF Extractor](support/guide/jaseci_ai_kit/modules/non_ai/pdf_ext/README.md)
     - [T5 Summarization](jaseci_ai_kit/jaseci_ai_kit/modules/t5_sum/README.md)
     - [Text Segmenter](jaseci_ai_kit/jaseci_ai_kit/modules/text_seg/README.md)
     - [Transformer NER](jaseci_ai_kit/jaseci_ai_kit/modules/tfm_ner/README.md)
