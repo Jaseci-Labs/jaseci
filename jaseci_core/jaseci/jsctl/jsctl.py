@@ -24,7 +24,7 @@ def reset_state():
     global session
     session = {
         "filename": "js.session",
-        "user": [MetaService().super_master(name="admin")],
+        "user": [MetaService().build_super_master(name="admin")],
         "mem-only": session["mem-only"] if session is not None else False,
         "connection": {"url": None, "token": None, "headers": None},
     }

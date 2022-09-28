@@ -144,19 +144,3 @@ class OrmHook(RedisHook):
         for k, v in self.save_glob_dict.items():
             self.commit_glob(k, v)
         self.save_glob_dict = {}
-
-    ###################################################
-    #                  CLASS CONTROL                  #
-    ###################################################
-
-    def find_class_and_import(self, j_type, core_mod):
-        if j_type == "master":
-            from jaseci_serv.base.models import Master
-
-            return Master
-        elif j_type == "super_master":
-            from jaseci_serv.base.models import SuperMaster
-
-            return SuperMaster
-        else:
-            return utils.find_class_and_import(j_type, core_mod)

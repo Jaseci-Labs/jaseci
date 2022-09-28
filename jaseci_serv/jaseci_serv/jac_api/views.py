@@ -217,7 +217,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
     def set_caller(self, request):
         """Assigns the calling api interface obj"""
         self.caller = ServMaster(
-            h=MetaService().hook(),
+            h=MetaService().build_hook(),
             persist=False,
         )
 

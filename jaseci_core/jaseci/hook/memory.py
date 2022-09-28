@@ -213,7 +213,13 @@ class MemoryHook:
     ###################################################
 
     def find_class_and_import(self, j_type, mod):
-        return find_class_and_import(j_type, mod)
+
+        cls = getattr(self.meta, j_type, False)
+
+        if not cls:
+            cls = find_class_and_import(j_type, mod)
+
+        return cls
 
     def clear_cache(self):
         MemoryHook.__init__(self)
