@@ -19,7 +19,7 @@ class WalkerInterp(Interp):
 
     def run_walker(self, jac_ast):
         """
-        walker: KW_WALKER NAME namespaces? walker_block;
+        walker: KW_ASYNC? KW_WALKER NAME namespaces? walker_block;
         """
         kid = self.set_cur_ast(jac_ast)
         if jac_ast.name == "walker_block":  # used in jac tests

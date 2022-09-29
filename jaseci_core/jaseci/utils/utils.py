@@ -266,3 +266,11 @@ class TestCaseHelper:
         ps = pstats.Stats(self.pr, stream=s).sort_stats(sortby)
         ps.print_stats(100)
         print(s.getvalue())
+
+
+def is_true(val):
+    return (
+        val.lower() == "true"
+        if type(val) is str
+        else val is True  # is_async might be non bool
+    )

@@ -54,7 +54,7 @@ class WalkerApi:
         """
         Creates new instance of walker and returns new walker object
         """
-        wlk = snt.run_architype(name=name, kind="walker", caller=self)
+        wlk = snt.run_architype(name=name, kind="walker", caller=self, is_async=False)
         if wlk:
             if self.spawned_walker_ids.has_obj_by_name(name):
                 self.spawned_walker_ids.destroy_obj_by_name(name)
@@ -169,7 +169,7 @@ class WalkerApi:
         _req_ctx: dict = {},
         snt: Sentinel = None,
         profiling: bool = False,
-        is_async: bool = False,
+        is_async: bool = None,
     ):
         """
         Creates walker instance, primes walker on node, executes walker,
@@ -177,8 +177,9 @@ class WalkerApi:
         """
         wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
         if wlk is None:
-            wlk = snt.run_architype(name=name, kind="walker", caller=self)
-            wlk._async = is_async
+            wlk = snt.run_architype(
+                name=name, kind="walker", caller=self, is_async=is_async
+            )
         if wlk is None:
             return self.bad_walk_response([f"Walker {name} not found!"])
         res = self.walker_execute(

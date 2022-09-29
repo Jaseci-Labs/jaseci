@@ -1253,7 +1253,7 @@ class Interp(MachineState):
             )
         return result
 
-    def run_walker_ref(self, jac_ast):
+    def run_walker_ref(self, jac_ast, to_await=False):
         """
         walker_ref: KW_WALKER DBL_COLON NAME;
         """
@@ -1264,6 +1264,7 @@ class Interp(MachineState):
             wlk = self.parent().run_architype(name=name, kind="walker", caller=self)
         if wlk is None:
             self.rt_error(f"No walker {name} exists!", kid[2])
+        wlk._to_await = to_await
         return wlk
 
     def run_graph_ref(self, jac_ast):
@@ -1552,20 +1553,27 @@ class Interp(MachineState):
 
     def run_walker_spawn(self, jac_ast):
         """
-        walker_spawn: expression walker_ref spawn_ctx?;
+        walker_spawn: expression KW_SYNC? walker_ref spawn_ctx?;
         """
         kid = self.set_cur_ast(jac_ast)
+        is_await = kid[1].name == "KW_SYNC" and bool(kid.pop(1))
         location = self.run_expression(kid[0]).value
         if isinstance(location, Node):
             location = JacSet(in_list=[location])
         ret = []
         for i in location.obj_list():
-            walk = self.run_walker_ref(kid[1])
-            walk.prime(i)
+            walk = self.run_walker_ref(kid[1], is_await)
+            walk.prime(i, request_ctx=getattr(self, "request_context", {}))
             if len(kid) > 2:
                 self.run_spawn_ctx(kid[2], walk)
-            walk.run()
-            tr = JacValue(self, value=walk.anchor_value())
+
+            res = walk.run()
+
+            if walk.for_queue() and not res["is_queued"]:
+                res["result"] = walk.anchor_value()
+
+            tr = JacValue(self, value=res if walk.for_queue() else walk.anchor_value())
+
             tr.unwrap()
             ret.append(tr.value)
             self.inherit_runtime_state(walk)

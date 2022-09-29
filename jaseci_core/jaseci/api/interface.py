@@ -3,8 +3,7 @@ General master interface engine for client interfaces as mixin
 """
 import uuid
 from inspect import signature, getdoc
-from jaseci.utils.utils import logger
-from jaseci.utils.utils import is_jsonable
+from jaseci.utils.utils import logger, is_jsonable, is_true
 from jaseci.element.element import Element
 from jaseci.actor.walker import Walker
 import json
@@ -188,7 +187,7 @@ class Interface:
             else:  # TODO: Can do type checks here too
                 param_map[i] = val
 
-            if param_map[i] is None:
+            if p_default and param_map[i] is None:
                 return self.interface_error(f"Invalid API args - {params}")
         try:
             ret = getattr(_caller, api_name)(**param_map)
@@ -260,7 +259,7 @@ class Interface:
     # future constraints other than `async` should be add here
     def sync_constraints(self, obj, params):
         if isinstance(obj, Walker):
-            obj._async = params.get("is_async", False)
+            obj.is_async = is_true(params.get("is_async", obj.is_async))
 
         return obj
 
