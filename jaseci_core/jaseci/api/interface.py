@@ -187,7 +187,7 @@ class Interface:
             else:  # TODO: Can do type checks here too
                 param_map[i] = val
 
-            if param_map[i] is None:
+            if p_default and param_map[i] is None:
                 return self.interface_error(f"Invalid API args - {params}")
         try:
             ret = getattr(_caller, api_name)(**param_map)

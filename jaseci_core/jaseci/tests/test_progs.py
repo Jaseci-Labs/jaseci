@@ -352,7 +352,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(res["report"], [1, 2, 3, 4, 5, 6, 7, 8, "apple"])
 
     def test_async_syntax_with_celery(self):
-        mast = self.meta.master()
+        mast = self.meta.build_master()
         mast.sentinel_register(name="test", code=jtp.async_syntax, auto_run="")
         res = mast.general_interface_to_api(
             api_name="walker_run",
@@ -393,7 +393,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual([2, 2], res["result"]["response"]["report"])
 
     def test_async_syntax_without_celery(self):
-        mast = self.meta.master()
+        mast = self.meta.build_master()
         mast._h.task.state = ServiceState.DISABLED
         mast.sentinel_register(name="test", code=jtp.async_syntax, auto_run="")
         res = mast.general_interface_to_api(

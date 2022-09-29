@@ -196,7 +196,10 @@ def build_cmd(group_func, func_name, leaf):
             f = click.argument(f"{i}", type=p_type)(f)
         elif p_default is not func_sig.parameters[i].empty:
             f = click.option(
-                f"-{i}", default=p_type(p_default), required=False, type=p_type
+                f"-{i}",
+                default=p_default if p_default is None else p_type(p_default),
+                required=False,
+                type=p_type,
             )(f)
         else:
             f = click.option(f"-{i}", required=True, type=p_type)(f)
