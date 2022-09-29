@@ -1,4 +1,3 @@
-from tkinter import Image
 import torch
 from torch.nn import functional as F
 from torchvision import datasets, transforms
@@ -66,4 +65,4 @@ class MnistPostProcessor:
     def process(self, x):
         x = x.argmax(dim=1)
         x = x.detach().cpu().numpy()[0]
-        return x
+        return x.tolist()

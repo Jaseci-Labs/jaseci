@@ -1,3 +1,4 @@
+from http.client import ImproperConnectionState
 from typing import Any, Dict
 from jaseci.actions.live_actions import jaseci_action
 import warnings
@@ -6,26 +7,45 @@ import traceback
 from fastapi import HTTPException
 
 from .utils import read_yaml, write_yaml
-from .inference import InferenceEngine
+from .inference import InferenceList
 from .train import train
 
 
-MODEL_NOT_FOUND = "No Active head found. Please create a head first using create_head."
+HEAD_NOT_FOUND = "No Active head found. Please create a head first using create_head."
+HEAD_LIST_NOT_FOUND = "No Active head list found. Please create a head list first using create_head_list."
 
 
 warnings.filterwarnings("ignore")
 
 
 def setup():
-    global config, ie
+    global config, il
     dirname = os.path.dirname(__file__)
     config = read_yaml(os.path.join(dirname, "config.yaml"))
-    ie = None
+    il = InferenceList()
 
 
 setup()
 
 ### Start of PersonalizedHead Actions ###
+
+
+@jaseci_action(act_group=["personalized_head"], allow_remote=True)
+def create_head_list(config_file:str, overwrite:bool = False) -> None:
+    '''
+    Create a holder for heads
+    '''
+    print("Creating head list")
+    try:
+        global il, config
+        new_config = read_yaml(config_file)
+        config = {**config, **new_config}
+        il = InferenceList(config = config)
+        if overwrite:
+            write_yaml(config, config_file)
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["personalized_head"], allow_remote=True)
@@ -35,31 +55,36 @@ def create_head(config_file: str = None, uuid: str = None, overwrite: bool = Fal
     @param new_config: new config to be used for the head
     '''
     try:
-        global ie, config
-        new_config = read_yaml(config_file)
-        config = {**config, **new_config}
-        if overwrite:
-            write_yaml(config, config_file)
-        ie = InferenceEngine(config, uuid)
+        global il, config
+        if config_file:
+            new_config = read_yaml(config_file)
+            config = {**config, **new_config}
+            if overwrite:
+                write_yaml(config, config_file)
+            _uuid = il.add(config = config, uuid = uuid)
+        else:
+            _uuid = il.add(uuid = uuid)
+        return _uuid
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["personalized_head"], allow_remote=True)
-def predict(data: Any) -> Any:
+def predict(uuid: str, data: Any) -> Any:
     '''
     Predict using the current active model.
     @param data: data to be used for prediction
     '''
     try:
-        global ie
-        if ie:
-            prediction = ie.predict(data)
-            return prediction.tolist()
-
+        global il
+        if il:
+            try:
+                return il.predict(uuid, data)
+            except ImproperConnectionState:
+                raise Exception(HEAD_NOT_FOUND)
         else:
-            raise Exception(MODEL_NOT_FOUND)
+            raise Exception(HEAD_LIST_NOT_FOUND)
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
@@ -88,13 +113,16 @@ def train_model(config_file: str = None, overwrite: bool = False):
 
 
 @jaseci_action(act_group=["personalized_head"], allow_remote=True)
-def load_weights(path: str):
+def load_weights(uuid: str, path: str):
     try:
-        global ie
-        if ie:
-            ie.load_weights(path)
+        global il
+        if il:
+            try:
+                il.load_weights(uuid, path)
+            except ImproperConnectionState:
+                raise Exception(HEAD_NOT_FOUND)
         else:
-            raise Exception(MODEL_NOT_FOUND)
+            raise Exception(HEAD_LIST_NOT_FOUND)
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))

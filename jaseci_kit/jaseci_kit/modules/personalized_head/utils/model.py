@@ -4,6 +4,9 @@ import torch.nn.functional as F
 
 from .base import BaseModel
 
+import warnings
+warnings.filterwarnings("ignore")
+
 
 class PersonalizedHead(BaseModel):
     def __init__(self, embedding_length, ph_nhead, ph_ff_dim, batch_first, ph_nlayers, n_classes):

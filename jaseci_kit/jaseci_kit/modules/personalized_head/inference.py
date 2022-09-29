@@ -8,6 +8,9 @@ from .utils import model as model_module
 from .utils import process as process_module
 from .utils.logger import get_logger
 
+import warnings
+warnings.filterwarnings("ignore")
+
 
 class InferenceEngine:
     '''
@@ -71,14 +74,28 @@ class InferenceList:
     Parent of Inference Engines. use to manage multiple Inference Engines.
     '''
 
-    def __init__(self) -> None:
+    def __init__(self, config: Dict = None) -> None:
+        self.config = config
         self.ie_list = {}
 
-    def add(self, uuid: str, config: Dict) -> None:
-        self.ie_list[uuid] = InferenceEngine(config, uuid)
+    def add(self, config: Dict = None, uuid: str = None) -> None:
+        if uuid in self.ie_list:
+            raise ImproperConnectionState('Inference Engine already exists.')
+        if config:
+            ie = InferenceEngine(config, uuid)
+        else:
+            ie = InferenceEngine(self.config, uuid)
+        self.ie_list[ie.id] = ie
+        return ie.id
 
     def predict(self, uuid: str, data: Any) -> Any:
-        return self.ie_list[uuid].predict(data)
+        if uuid in self.ie_list:
+            return self.ie_list[uuid].predict(data)
+        else:
+            raise ImproperConnectionState('Inference Engine not found.')
 
     def load_weights(self, uuid: str, weights: str) -> None:
-        self.ie_list[uuid].load_weights(weights)
+        if uuid in self.ie_list:
+            self.ie_list[uuid].load_weights(weights)
+        else:
+            raise ImproperConnectionState('Inference Engine not found.')

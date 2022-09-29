@@ -2,19 +2,19 @@ Inference:
   postprocess:
     type: CustomProcessor
     args:
-      python_file: user_var/user_input.py
+      python_file: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/personalized_head/tests/user_var/user_input.py
       module_name: MnistPostProcessor
   preprocess:
     type: CustomProcessor
     args:
-      python_file: user_var/user_input.py
+      python_file: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/personalized_head/tests/user_var/user_input.py
       module_name: MnistPreProcessor
   weights: ""
 
 # Custom Model Configuration
 Model:
   args:
-    python_file: user_var/user_input.py
+    python_file: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/personalized_head/tests/user_var/user_input.py
     module_name: MnistModel
     num_classes: 10
   type: CustomModel
@@ -23,7 +23,7 @@ Trainer:
   name: MnistTrainer
   dataloader:
     args:
-      python_file: user_var/user_input.py
+      python_file: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/personalized_head/tests/user_var/user_input.py
       module_name: MnistDataset
       batch_size: 32
       data_dir: data/
