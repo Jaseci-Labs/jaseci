@@ -19,6 +19,8 @@ class ConfigApi:
             "REDIS_CONFIG",
             "TASK_CONFIG",
             "MAIL_CONFIG",
+            "KUBE_CONFIG",
+            "PROMON_CONFIG",
         ]
 
     @Interface.admin_api(cli_args=["name"])
@@ -57,6 +59,10 @@ class ConfigApi:
             hook.redis.reset(hook)
         elif name == "MAIL_CONFIG":
             hook.mail.reset(hook)
+        elif name == "PROMON_CONFIG":
+            hook.promon.reset(hook)
+        elif name == "KUBE_CONFIG":
+            hook.promon.reset(hook)
 
     @Interface.admin_api()
     def config_list(self):

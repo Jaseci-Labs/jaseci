@@ -3,6 +3,8 @@ from .common import CommonService, ProxyService, MetaProperties
 from .redis import RedisService
 from .task import TaskService
 from .mail import MailService
+from .kubernetes import KubernetesService
+from .prometheus import PromotheusService
 from .meta import MetaService
 
 __all__ = [
@@ -13,5 +15,7 @@ __all__ = [
     "RedisService",
     "TaskService",
     "MailService",
+    "KubernetesService",
+    "PromotheusService",
     "MetaService",
 ]

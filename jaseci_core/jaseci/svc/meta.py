@@ -5,6 +5,8 @@ from jaseci.svc import (
     RedisService,
     ServiceState as Ss,
     TaskService,
+    KubernetesService,
+    PromotheusService,
 )
 
 from jaseci.utils.utils import logger
@@ -13,16 +15,17 @@ from jaseci.utils.utils import logger
 class MetaService(CommonService, MetaProperties):
     def __init__(self, run_svcs=True):
         self.run_svcs = run_svcs
-        CommonService.__init__(self, MetaService)
-        MetaProperties.__init__(self, self.cls)
+        MetaProperties.__init__(self, __class__)
+        CommonService.__init__(self, __class__)
 
-        if self.is_ready():
-            self.state = Ss.STARTED
+    ###################################################
+    #                     BUILDER                     #
+    ###################################################
 
-            self.build_classes()
-            self.build_services()
-
-            self.state = Ss.RUNNING
+    def build(self, hook=None):
+        self.build_classes()
+        self.build_services()
+        self.state = Ss.RUNNING
 
     ###################################################
     #                    SERVICES                     #
@@ -71,11 +74,13 @@ class MetaService(CommonService, MetaProperties):
 
     def build_hook(self):
         params = self.hook_param
-        h = self.hook(*params.get("args", []), **params.get("kwargs", []))
+        h = self.hook(*params.get("args", []), **params.get("kwargs", {}))
         if self.run_svcs:
             h.redis = self.get_service("redis", h)
             h.task = self.get_service("task", h)
             h.mail = self.get_service("mail", h)
+            h.kube = self.get_service("kube", h)
+            h.promon = self.get_service("promon", h)
             h.meta = self
 
         return h
@@ -114,3 +119,5 @@ class MetaService(CommonService, MetaProperties):
         self.add_service_builder("redis", RedisService)
         self.add_service_builder("task", TaskService)
         self.add_service_builder("mail", MailService)
+        self.add_service_builder("kube", KubernetesService)
+        self.add_service_builder("promon", PromotheusService)

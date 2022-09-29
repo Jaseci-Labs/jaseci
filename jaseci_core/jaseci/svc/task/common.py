@@ -9,7 +9,20 @@ from celery.app.control import Inspect
 from requests import get, post
 from requests.exceptions import HTTPError
 
+
+################################################
+#                   DEFAULTS                   #
+################################################
+
 DEFAULT_MSG = "Skipping scheduled walker!"
+TASK_CONFIG = {
+    "enabled": True,
+    "quiet": True,
+    "broker_url": "redis://localhost:6379/1",
+    "result_backend": "redis://localhost:6379/1",
+    "broker_connection_retry_on_startup": True,
+    "task_track_started": True,
+}
 
 
 class Queue(Task):
@@ -302,16 +315,14 @@ c3 = ScheduledSequence
 
 
 class TaskProperties:
-    def __init__(self, prop):
-        if not hasattr(prop, "_inspect"):
-            setattr(prop, "_inspect", None)
-            setattr(prop, "_worker", None)
-            setattr(prop, "_scheduler", None)
+    def __init__(self, cls):
+        if not hasattr(cls, "_inspect"):
+            setattr(cls, "_inspect", None)
 
             # --------------- REGISTERED TASK --------------- #
-            setattr(prop, "_queue", None)
-            setattr(prop, "_scheduled_walker", None)
-            setattr(prop, "_scheduled_sequence", None)
+            setattr(cls, "_queue", None)
+            setattr(cls, "_scheduled_walker", None)
+            setattr(cls, "_scheduled_sequence", None)
 
     @property
     def inspect(self) -> Inspect:
@@ -320,22 +331,6 @@ class TaskProperties:
     @inspect.setter
     def inspect(self, val: Inspect):
         self.cls._inspect = val
-
-    @property
-    def worker(self) -> Process:
-        return self.cls._worker
-
-    @worker.setter
-    def worker(self, val: Process):
-        self.cls._worker = val
-
-    @property
-    def scheduler(self) -> Process:
-        return self.cls._scheduler
-
-    @scheduler.setter
-    def scheduler(self, val: Process):
-        self.cls._scheduler = val
 
     @property
     def queue(self) -> c1:

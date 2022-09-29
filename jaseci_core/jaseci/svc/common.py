@@ -1,13 +1,35 @@
+import signal
+import sys
+from multiprocessing import Process
+
+from jaseci.utils.utils import logger
 from .state import ServiceState as Ss
 
 
 class CommonService:
-    def __init__(self, cls):
+
+    _daemon = {}
+
+    def __init__(self, cls, hook=None):
         self.cls = cls
-        if not hasattr(self.cls, "_app"):
-            setattr(self.cls, "_app", None)
-            setattr(self.cls, "_state", Ss.NOT_STARTED)
-            setattr(self.cls, "_quiet", True)
+        if not hasattr(cls, "_app"):
+            setattr(cls, "_app", None)
+            setattr(cls, "_state", Ss.NOT_STARTED)
+            setattr(cls, "_quiet", True)
+
+        self.__build(hook)
+
+    ###################################################
+    #                   PROPERTIES                    #
+    ###################################################
+
+    # ------------------- DAEMON -------------------- #
+
+    @property
+    def daemon(self):
+        return __class__._daemon
+
+    # ----------------------------------------------- #
 
     @property
     def app(self):
@@ -34,6 +56,26 @@ class CommonService:
         self.cls._quiet = val
 
     ###################################################
+    #                     BUILDER                     #
+    ###################################################
+
+    def __build(self, hook=None):
+        try:
+            if self.is_ready() and self.contraints(hook):
+                self.state = Ss.STARTED
+                self.build(hook)
+        except Exception as e:
+            if not (self.quiet):
+                logger.error(
+                    f"Skipping {self.__class__.__name__} due to initialization failure!\n"
+                    f"{e.__class__.__name__}: {e}"
+                )
+            self.failed()
+
+    def build(self, hook=None):
+        raise Exception("Not properly configured! Please override build method!")
+
+    ###################################################
     #                     COMMONS                     #
     ###################################################
 
@@ -46,14 +88,41 @@ class CommonService:
     def has_failed(self):
         return self.state.has_failed()
 
+    # ------------------- DAEMON -------------------- #
+
+    def spawn_daemon(self, **targets):
+        for name, target in targets.items():
+            dae: Process = self.daemon.get(name)
+            if not dae or not dae.is_alive():
+                proc = Process(target=target)
+                proc.daemon = True
+                proc.start()
+                self.daemon[name] = proc
+
+    def terminate_daemon(self, *names):
+        for name in names:
+            dae: Process = self.daemon.pop(name, None)
+            if not (dae is None) and dae.is_alive():
+                logger.warn(f"Terminating {name} ...")
+                dae.terminate()
+
+    # --------------- TO BE OVERRIDEN --------------- #
+
+    def contraints(self, hook=None):
+        return True
+
     ###################################################
     #                     CLEANER                     #
     ###################################################
 
-    def build(self, hook):
+    def reset(self, hook):
         self.app = None
         self.state = Ss.NOT_STARTED
         self.__init__(hook)
+
+    def failed(self):
+        self.app = None
+        self.state = Ss.FAILED
 
 
 class ProxyService(CommonService):
@@ -62,14 +131,14 @@ class ProxyService(CommonService):
 
 
 class MetaProperties:
-    def __init__(self, prop):
-        if not hasattr(prop, "_services"):
-            setattr(prop, "_services", {})
-            setattr(prop, "_background", {})
-            setattr(prop, "_hook", None)
-            setattr(prop, "_hook_param", {})
-            setattr(prop, "_master", None)
-            setattr(prop, "_super_master", None)
+    def __init__(self, cls):
+        if not hasattr(cls, "_services"):
+            setattr(cls, "_services", {})
+            setattr(cls, "_background", {})
+            setattr(cls, "_hook", None)
+            setattr(cls, "_hook_param", {})
+            setattr(cls, "_master", None)
+            setattr(cls, "_super_master", None)
 
     @property
     def services(self) -> dict:
@@ -118,3 +187,18 @@ class MetaProperties:
     @super_master.setter
     def super_master(self, val):
         self.cls._super_master = val
+
+
+# ----------------------------------------------- #
+
+
+###################################################
+#                 PROCESS CLEANER                 #
+###################################################
+
+
+def force_terminate(*args):
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, force_terminate)

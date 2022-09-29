@@ -5,7 +5,6 @@ from json import dumps
 from smtplib import SMTP, SMTP_SSL
 
 from jaseci.svc import CommonService, ServiceState as Ss
-from jaseci.utils.utils import logger
 from .common import MAIL_CONFIG
 
 
@@ -21,22 +20,13 @@ class MailService(CommonService):
     ###################################################
 
     def __init__(self, hook=None):
-        super().__init__(MailService)
+        super().__init__(__class__, hook)
 
-        try:
-            if self.is_ready():
-                self.state = Ss.STARTED
-                self.__mail(hook)
-        except Exception as e:
-            if not (self.quiet):
-                logger.error(
-                    "Skipping Mail setup due to initialization failure!\n"
-                    f"{e.__class__.__name__}: {e}"
-                )
-            self.app = None
-            self.state = Ss.FAILED
+    ###################################################
+    #                     BUILDER                     #
+    ###################################################
 
-    def __mail(self, hook):
+    def build(self, hook):
         configs = self.get_config(hook)
         enabled = configs.get("enabled", True)
 
@@ -106,7 +96,8 @@ class MailService(CommonService):
     def reset(self, hook):
         if self.is_running():
             self.app.terminate()
-        self.build(hook)
+
+        super().reset(hook)
 
     ####################################################
     #                    OVERRIDDEN                    #
