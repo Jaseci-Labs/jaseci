@@ -723,6 +723,7 @@ class Interp(MachineState):
             | LPAREN expression RPAREN
             | ability_op NAME spawn_ctx?
             | atom atom_trailer+
+            | KW_SYNC atom
             | spawn
             | ref
             | deref
@@ -760,6 +761,14 @@ class Interp(MachineState):
                 for i in kid[1:]:
                     ret = self.run_atom_trailer(i, ret)
                 return ret
+            elif kid[0].name == "KW_SYNC":
+                val = self.run_atom(kid[1])
+                task_func = self._h.task
+                if not task_func.is_running():
+                    raise Exception("Task hook is not yet initialized!")
+                return JacValue(
+                    self, value=task_func.get_by_task_id(val.value["result"], True)
+                )
             else:
                 return self.run_rule(kid[0])
 
