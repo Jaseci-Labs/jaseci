@@ -614,4 +614,17 @@ async walker simple_async {
             report task.get_result(task2["result"], true);
     }
 }
+
+async walker simple_async_with_sync {
+    has anchor test_anchor = "test";
+    can task.get_result;
+    with entry {
+        task1 = spawn here sync walker::simple_async_second_layer(val1 = 1);
+        task2 = spawn here walker::simple_async_second_layer(val1 = 2);
+        report task1;
+        report task2;
+
+        report sync task2;
+    }
+}
 """
