@@ -3,8 +3,7 @@ General master interface engine for client interfaces as mixin
 """
 import uuid
 from inspect import signature, getdoc
-from jaseci.utils.utils import logger
-from jaseci.utils.utils import is_jsonable
+from jaseci.utils.utils import logger, is_jsonable, is_true
 from jaseci.element.element import Element
 from jaseci.actor.walker import Walker
 import json
@@ -260,12 +259,7 @@ class Interface:
     # future constraints other than `async` should be add here
     def sync_constraints(self, obj, params):
         if isinstance(obj, Walker):
-            is_async = params.get("is_async", False)
-            obj.is_async = (
-                is_async.lower() == "true"
-                if type(is_async) is str
-                else is_async is True  # is_async might be non bool
-            )
+            obj.is_async = is_true(params.get("is_async", obj.is_async))
 
         return obj
 

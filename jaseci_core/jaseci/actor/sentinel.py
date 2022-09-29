@@ -4,7 +4,7 @@ Sentinel class for Jaseci
 Each sentinel has an id, name, timestamp and it's set of walkers.
 """
 from jaseci.element.element import Element
-from jaseci.utils.utils import logger, ColCodes as Cc
+from jaseci.utils.utils import logger, ColCodes as Cc, is_true
 from jaseci.utils.id_list import IdList
 from jaseci.jac.ir.jac_code import JacCode, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import SentinelInterp
@@ -89,25 +89,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
             return None
         return self.load_architype(tree)
 
-    def spawn_walker(self, name, caller=None, is_async=False):
-        """
-        Spawns a new walker from registered walkers and adds to
-        live walkers
-        """
-        src_walk = self.walker_ids.get_obj_by_name(name)
-        if not src_walk:
-            logger.error(str(f"{self.name}: Unable to spawn walker {name}!"))
-            return None
-        src_walk.is_async = src_walk.is_async or is_async
-        new_walk = src_walk.duplicate()
-        if caller:
-            new_walk.set_master(caller._m_id)
-        new_walk._jac_ast = src_walk._jac_ast
-        if new_walk._jac_ast is None:
-            new_walk.refresh()
-        return new_walk
-
-    def spawn_architype(self, name, kind=None, caller=None, is_async=False):
+    def spawn_architype(self, name, kind=None, caller=None, is_async=None):
         """
         Spawns a new architype from registered architypes and adds to
         live walkers
@@ -116,7 +98,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
         if not src_arch:
             logger.error(str(f"{self.name}: Unable to spawn {kind} architype {name}!"))
             return None
-        src_arch.is_async = src_arch.is_async or is_async
+        src_arch.is_async = src_arch.is_async if is_async is None else is_true(is_async)
         if caller and caller._m_id != src_arch._m_id:
             new_arch = src_arch.duplicate()
             new_arch.set_master(caller._m_id)
@@ -127,7 +109,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
         else:
             return src_arch
 
-    def run_architype(self, name, kind=None, caller=None, is_async=False):
+    def run_architype(self, name, kind=None, caller=None, is_async=None):
         """
         Spawn, run, then destroy architype if m_id's are different
         """
