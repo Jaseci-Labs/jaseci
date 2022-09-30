@@ -62,13 +62,20 @@ class IdList(list):
         self.remove_obj(obj)
         obj.destroy()
 
+    def obj_for_id_not_exist_error(self, item_id):
+        my_name = "id_list"
+        for k, v in self.parent_obj.__dict__.items():
+            if v == self:
+                my_name = k
+        return f"{item_id} not found in {my_name} of {self.parent_obj}!"
+
     def get_obj_by_name(self, name, kind=None, silent=False):
         """Returns a Jaseci obj obj by it's name"""
         ret = None
         for i in self:
             obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
             if not obj:
-                logger.critical(str(f"{i} not found in id_list of {self.parent_obj}!"))
+                logger.critical(self.obj_for_id_not_exist_error(i))
                 continue
             if obj.name == name:
                 if kind and obj.kind != kind:
@@ -97,9 +104,7 @@ class IdList(list):
             for i in self:
                 obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
                 if not obj:
-                    logger.critical(
-                        str(f"{i} not found in id_list of {self.parent_obj}!")
-                    )
+                    logger.critical(self.obj_for_id_not_exist_error(i))
                 else:
                     self.cached_objects.append(obj)
         return self.cached_objects.copy()
@@ -111,7 +116,7 @@ class IdList(list):
         if len(self):
             logger.critical(
                 str(
-                    f"Removeall all failed in id_list of {self.parent_obj} - "
+                    f"Remove all failed in id_list of {self.parent_obj} - "
                     + f"still has {self}!"
                 )
             )

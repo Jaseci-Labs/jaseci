@@ -96,3 +96,11 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         self.assertEqual(good, node12)
         self.assertNotEqual(bad, node12)
         self.assertIsNone(bad)
+
+    def test_id_list_smart_name_error(self):
+        self.logger_on()
+        mast = self.meta.build_master()
+        sent = Sentinel(m_id=mast._m_id, h=mast._h)
+        self.assertIn(
+            "arch_ids", sent.arch_ids.obj_for_id_not_exist_error(uuid.UUID(int=0).urn)
+        )
