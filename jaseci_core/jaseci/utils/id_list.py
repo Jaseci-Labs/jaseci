@@ -63,7 +63,8 @@ class IdList(list):
             obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
             if not obj:
                 logger.critical(str(f"{i} not found in id_list of {self.parent_obj}!"))
-                raise KeyError
+                continue
+                # raise KeyError
             if obj.name == name:
                 if kind and obj.kind != kind:
                     continue
@@ -92,7 +93,7 @@ class IdList(list):
             obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
             if not obj:
                 logger.critical(str(f"{i} not found in id_list of {self.parent_obj}!"))
-                raise KeyError
+                # raise KeyError
             else:
                 ret.append(obj)
         return ret
