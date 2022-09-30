@@ -1,0 +1,249 @@
+# Jaseci Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jaseci-account
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  namespace: default
+  name: jaseci-orc
+rules:
+  - apiGroups: ["v1", "apps"]
+    resources: ["pods", "deployments", "services", "deployments.apps"]
+    verbs: ["get", "watch", "list", "update", "patch", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jaseci-orc-rolebinding
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: jaseci-account
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: jaseci-orc
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaseci
+spec:
+  selector:
+    pod: jaseci
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaseci-up
+  namespace: default
+data:
+  prod_up: |-
+    apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
+    git clone https://github.com/Jaseci-Labs/jaseci.git
+    cd jaseci; git checkout stack_audit_and_improvements;
+    cd jaseci_core; source install.sh;
+    cd ../jaseci_serv; source install.sh;
+    jsserv wait_for_db && jsserv makemigrations base &&
+    jsserv makemigrations && jsserv migrate;
+    jsserv runserver 0.0.0.0:80;
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaseci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: jaseci
+  template:
+    metadata:
+      labels:
+        pod: jaseci
+      name: jaseci
+    spec:
+      serviceAccountName: jaseci-account
+      containers:
+        - name: jaseci
+          image: python:3-slim
+          resources:
+            requests:
+              memory: "350Mi"
+          imagePullPolicy: IfNotPresent
+          command: [bash, -c, "source script/prod_up"]
+          ports:
+            - containerPort: 80
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: jaseci-db-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jaseci-db-credentials
+                  key: password
+
+            - name: POSTGRES_HOST
+              value: jaseci-db
+
+            - name: REDIS_HOST
+              value: jaseci-redis
+
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+
+      volumes:
+        - name: prod-script
+          configMap:
+            name: jaseci-up
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: jaseci-db
+spec:
+  selector:
+    pod: jaseci-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jaseci-db-credentials
+type: Opaque
+data:
+  user: cG9zdGdyZXM=
+  password: bGlmZWxvZ2lmeWphc2VjaQ==
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: jaseci-db-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaseci-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: jaseci-db
+  template:
+    metadata:
+      labels:
+        pod: jaseci-db
+    spec:
+      containers:
+        - name: jaseci-db
+          image: postgres:alpine
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: jaseci-db-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jaseci-db-credentials
+                  key: password
+
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: jaseci-db-volume
+              mountPath: /var/lib/postgresql/data
+              subPath: jaseci
+
+      volumes:
+        - name: jaseci-db-volume
+          persistentVolumeClaim:
+            claimName: jaseci-db-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaseci-redis
+spec:
+  selector:
+    pod: jaseci-redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaseci-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: jaseci-redis
+  template:
+    metadata:
+      labels:
+        pod: jaseci-redis
+    spec:
+      containers:
+        - name: jaseci-redis-master
+          image: redis
+          imagePullPolicy: IfNotPresent
+          command:
+            - redis-server
+            - "/redis-master/redis.conf"
+          resources:
+            limits:
+              cpu: "0.2"
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - mountPath: /redis-master-data
+              name: data
+            - mountPath: /redis-master
+              name: config
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: jaseci-redis-config
+            items:
+              - key: redis-config
+                path: redis.conf
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaseci-redis-config
+data:
+  redis-config: |
+    maxmemory 1000mb
+    maxmemory-policy allkeys-lru

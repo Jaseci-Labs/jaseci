@@ -6,7 +6,7 @@ from jaseci.svc import (
     ServiceState as Ss,
     TaskService,
 )
-
+from jaseci_serv.jaseci_serv.settings import RUN_SVCS
 from jaseci.utils.utils import logger
 
 
@@ -71,11 +71,11 @@ class MetaService(CommonService, MetaProperties):
     def build_hook(self):
         params = self.hook_param
         h = self.hook(*params.get("args", []), **params.get("kwargs", []))
-
-        h.redis = self.get_service("redis", h)
-        h.task = self.get_service("task", h)
-        h.mail = self.get_service("mail", h)
-        h.meta = self
+        if RUN_SVCS:
+            h.redis = self.get_service("redis", h)
+            h.task = self.get_service("task", h)
+            h.mail = self.get_service("mail", h)
+            h.meta = self
 
         return h
 
