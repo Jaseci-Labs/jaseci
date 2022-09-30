@@ -352,7 +352,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(res["report"], [1, 2, 3, 4, 5, 6, 7, 8, "apple"])
 
     def test_registering_dict_as_ir(self):
-        mast = self.meta.master()
+        mast = self.meta.build_master()
         mast.sentinel_register(name="test", code=jtp.continue_issue, auto_run="")
         code_dict = mast.sentinel_get(snt=mast.active_snt(), mode="ir")
         self.assertEqual(type(code_dict), dict)
