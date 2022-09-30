@@ -118,7 +118,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = Master(h=user._h, name=email).id
+        user.master = MetaService().build_master(h=user._h, name=email).id
         user._h.commit()
 
         user.save(using=self._db)
@@ -136,7 +136,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = SuperMaster(h=user._h, name=email).id
+        user.master = MetaService().build_super_master(h=user._h, name=email).id
         user._h.commit()
 
         user.save(using=self._db)
@@ -163,7 +163,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     def __init__(self, *args, **kwargs):
-        self._h = MetaService().hook()
+        self._h = MetaService().build_hook()
         AbstractBaseUser.__init__(self, *args, **kwargs)
         PermissionsMixin.__init__(self, *args, **kwargs)
 

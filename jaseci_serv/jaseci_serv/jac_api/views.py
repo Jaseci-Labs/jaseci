@@ -20,7 +20,7 @@ class JResponse(Response):
         super().__init__(*args, **kwargs)
         self.hook = master._h
         for i in self.hook.save_obj_list:
-            self.hook.commit_obj_to_cache(i)
+            self.hook.commit_obj_to_cache(i, all_caches=True)
 
     def close(self):
         super(JResponse, self).close()
@@ -217,7 +217,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
     def set_caller(self, request):
         """Assigns the calling api interface obj"""
         self.caller = ServMaster(
-            h=MetaService().hook(),
+            h=MetaService().build_hook(),
             persist=False,
         )
 

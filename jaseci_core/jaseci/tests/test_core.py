@@ -20,7 +20,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
 
     def test_object_creation_basic_no_side_creation(self):
         """ """
-        mast = self.meta.master()
+        mast = self.meta.build_master()
         num_objs = len(mast._h.mem.keys())
         node1 = Node(m_id=mast._m_id, h=mast._h)
         node2 = Node(m_id=mast._m_id, h=mast._h, parent=node1)
@@ -39,7 +39,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
 
     def test_edge_removal_updates_nodes_edgelist(self):
         """ """
-        mast = self.meta.master()
+        mast = self.meta.build_master()
         node1 = Node(m_id=mast._m_id, h=mast._h)
         node2 = Node(m_id=mast._m_id, h=mast._h)
         edge = node1.attach_outbound(node2)
@@ -54,7 +54,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         """
         Test that the destroy of sentinels clears owned objects
         """
-        mast = self.meta.master()
+        mast = self.meta.build_master()
         num_objs = len(mast._h.mem.keys()) - len(mast._h.global_action_list)
         self.assertEqual(num_objs, 2)
         new_graph = Graph(m_id=mast._m_id, h=mast._h)
@@ -76,7 +76,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         Test saving object to json and back to python dict
         """
         for i in get_all_subclasses(Element):
-            kwargs = {"m_id": "anon", "h": self.meta.hook()}
+            kwargs = {"m_id": "anon", "h": self.meta.build_hook()}
             orig = i(**kwargs)
             blob1 = orig.json(detailed=True)
             new = i(**kwargs)
@@ -86,13 +86,31 @@ class ArchitypeTests(TestCaseHelper, TestCase):
             self.assertTrue(orig.is_equivalent(new))
 
     def test_supermaster_can_touch_all_data(self):
-        mh = self.meta.hook()
-        mast = self.meta.master(h=mh)
-        mast2 = self.meta.master(h=mh)
+        mh = self.meta.build_hook()
+        mast = self.meta.build_master(h=mh)
+        mast2 = self.meta.build_master(h=mh)
         node12 = Node(m_id=mast2._m_id, h=mast2._h)
-        supmast = self.meta.super_master(h=mh)
+        supmast = self.meta.build_super_master(h=mh)
         bad = mh.get_obj(mast._m_id, uuid.UUID(node12.jid))
         good = mh.get_obj(supmast._m_id, uuid.UUID(node12.jid))
         self.assertEqual(good, node12)
         self.assertNotEqual(bad, node12)
         self.assertIsNone(bad)
+
+    def test_id_list_smart_name_error(self):
+        self.logger_on()
+        mast = self.meta.build_master()
+        sent = Sentinel(m_id=mast._m_id, h=mast._h)
+        self.assertIn(
+            "arch_ids", sent.arch_ids.obj_for_id_not_exist_error(uuid.UUID(int=0).urn)
+        )
+
+    def test_dont_store_invalid_feilds_in_blob(self):
+        self.logger_on()
+        mast = self.meta.build_master()
+        sent = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent.fake_data = 5
+        stored = sent.jsci_payload()
+        sent2 = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent2.json_load(stored)
+        self.assertNotIn("fake_data", vars(sent2).keys())

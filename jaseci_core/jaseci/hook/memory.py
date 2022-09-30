@@ -41,10 +41,10 @@ class MemoryHook:
         """
         return self.has_obj_in_store(item_id)
 
-    def save_obj(self, caller_id, item, persist=False):
+    def save_obj(self, caller_id, item, persist=False, all_caches=False):
         """Save item to session cache, then to store"""
         if item.check_write_access(caller_id):
-            self.commit_obj_to_cache(item)
+            self.commit_obj_to_cache(item, all_caches=all_caches)
             if persist:
                 self.save_obj_list.add(item)
 
@@ -188,7 +188,7 @@ class MemoryHook:
     def has_id_in_mem_cache(self, id):
         return id is not None and id in self.mem
 
-    def commit_obj_to_cache(self, item):
+    def commit_obj_to_cache(self, item, all_caches=False):
         self.mem[item.id.urn] = item
 
     def decommit_obj_from_cache(self, item):
@@ -213,7 +213,13 @@ class MemoryHook:
     ###################################################
 
     def find_class_and_import(self, j_type, mod):
-        return find_class_and_import(j_type, mod)
+
+        cls = getattr(self.meta, j_type, False)
+
+        if not cls:
+            cls = find_class_and_import(j_type, mod)
+
+        return cls
 
     def clear_cache(self):
         MemoryHook.__init__(self)

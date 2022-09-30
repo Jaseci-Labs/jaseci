@@ -27,7 +27,7 @@ architype:
 	KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
 	| KW_EDGE NAME (COLON NAME)* attr_block
 	| KW_GRAPH NAME graph_block
-	| KW_WALKER NAME namespaces? walker_block;
+	| KW_ASYNC? KW_WALKER NAME namespaces? walker_block;
 
 walker_block:
 	LBRACE attr_stmt* walk_entry_block? (
@@ -198,6 +198,7 @@ atom:
 	| LPAREN expression RPAREN
 	| ability_op NAME spawn_ctx?
 	| atom atom_trailer+
+	| KW_SYNC atom
 	| spawn
 	| ref
 	| deref
@@ -289,7 +290,7 @@ node_spawn: spawn_edge? node_ref spawn_ctx?;
 
 graph_spawn: spawn_edge? graph_ref;
 
-walker_spawn: expression walker_ref spawn_ctx?;
+walker_spawn: expression KW_SYNC? walker_ref spawn_ctx?;
 
 spawn_ctx: LPAREN (spawn_assign (COMMA spawn_assign)*)? RPAREN;
 
@@ -389,6 +390,8 @@ LBRACE: '{';
 RBRACE: '}';
 KW_EDGE: 'edge';
 KW_WALKER: 'walker';
+KW_ASYNC: 'async';
+KW_SYNC: 'sync';
 KW_TEST: 'test';
 KW_ASSERT: 'assert';
 SEMI: ';';

@@ -13,7 +13,11 @@ Any walker that can be called with `is_async` field
 ### **RESPONSE**
 ```json
 {
-    "task_id": "efd67095-a7a0-40db-8f89-6887ae56dbb3"
+    // False if celery is not running
+    "is_queued": true,
+
+    // task id else actual report structure
+    "result": "efd67095-a7a0-40db-8f89-6887ae56dbb3"
 }
 ```
 

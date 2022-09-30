@@ -1,6 +1,7 @@
 """
 Jac tools api functions as a mixin
 """
+from copy import deepcopy
 import json
 import os
 
@@ -137,9 +138,6 @@ class JacApi:
         return faux.graph_get(gph=faux.active_gph(), mode="dot", detailed=detailed)
 
     def faux_master(self):
-        from jaseci.element.super_master import SuperMaster
-        from copy import deepcopy
-
-        faux = SuperMaster(h=MetaService().hook())
+        faux = MetaService().build_super_master()
         faux._h.mem["global"] = deepcopy(self._h.mem["global"])
         return faux
