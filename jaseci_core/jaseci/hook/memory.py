@@ -188,7 +188,7 @@ class MemoryHook:
     def has_id_in_mem_cache(self, id):
         return id is not None and id in self.mem
 
-    def commit_obj_to_cache(self, item):
+    def commit_obj_to_cache(self, item, all_caches=False):
         self.mem[item.id.urn] = item
 
     def decommit_obj_from_cache(self, item):
