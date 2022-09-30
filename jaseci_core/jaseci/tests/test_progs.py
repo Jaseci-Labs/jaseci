@@ -505,4 +505,3 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(2, res["result"])
 
         mast._h.task.state = ServiceState.RUNNING
-   
