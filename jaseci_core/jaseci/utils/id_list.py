@@ -19,9 +19,13 @@ class IdList(list):
 
     def __init__(self, parent_obj, in_list=None):
         self.parent_obj = parent_obj
+        self.cached_objects = []
         if in_list:
             for i in in_list:
                 self.append(i)
+
+    def cache_reset(self):
+        self.cached_objects = []
 
     def add_obj(self, obj, push_front=False, allow_dups=False, silent=False):
         """Adds a obj obj to Jaseci object"""
@@ -30,6 +34,7 @@ class IdList(list):
             if not silent:
                 logger.warning(str(f"{obj} is already in {self.parent_obj}'s list"))
         else:
+            self.cache_reset()
             if push_front:
                 self.insert(0, obj.jid)
             else:
@@ -40,6 +45,7 @@ class IdList(list):
             self.parent_obj.save()
 
     def add_obj_list(self, obj_list, push_front=False, allow_dups=False, silent=False):
+        self.cache_reset()
         if push_front:
             obj_list.reverse()
         for i in obj_list:
@@ -47,6 +53,7 @@ class IdList(list):
 
     def remove_obj(self, obj):
         """Remove a Jaseci obj from list"""
+        self.cache_reset()
         self.remove(obj.jid)
         self.parent_obj.save()
 
@@ -57,13 +64,12 @@ class IdList(list):
 
     def get_obj_by_name(self, name, kind=None, silent=False):
         """Returns a Jaseci obj obj by it's name"""
-
         ret = None
         for i in self:
             obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
             if not obj:
                 logger.critical(str(f"{i} not found in id_list of {self.parent_obj}!"))
-                raise KeyError
+                continue
             if obj.name == name:
                 if kind and obj.kind != kind:
                     continue
@@ -87,15 +93,16 @@ class IdList(list):
 
     def obj_list(self):
         """Return list of objects from ids"""
-        ret = []
-        for i in self:
-            obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
-            if not obj:
-                logger.critical(str(f"{i} not found in id_list of {self.parent_obj}!"))
-                raise KeyError
-            else:
-                ret.append(obj)
-        return ret
+        if not len(self.cached_objects):
+            for i in self:
+                obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
+                if not obj:
+                    logger.critical(
+                        str(f"{i} not found in id_list of {self.parent_obj}!")
+                    )
+                else:
+                    self.cached_objects.append(obj)
+        return self.cached_objects.copy()
 
     def remove_all(self):
         """Remove a Jaseci obj obj by it's name"""
