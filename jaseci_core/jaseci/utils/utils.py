@@ -203,6 +203,24 @@ def b64decode_str(code):
     return code
 
 
+perf_prof = None
+
+
+def perf_test_start():
+    global perf_prof
+    perf_prof = cProfile.Profile()
+    perf_prof.enable()
+
+
+def perf_test_stop():
+    perf_prof.disable()
+    s = io.StringIO()
+    sortby = pstats.SortKey.CUMULATIVE
+    ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)
+    ps.print_stats(100)
+    print(s.getvalue())
+
+
 class TestCaseHelper:
     """Helper to pretty print test results"""
 
