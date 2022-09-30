@@ -193,7 +193,8 @@ class Element(Hookable):
     def dict_load(self, jdict):
         """Loads self from dict"""
         for i in jdict.keys():
-            setattr(self, i, jdict[i])
+            if i in vars(self).keys():
+                setattr(self, i, jdict[i])
 
     def get_deep_obj_list(self, objs=None):
         """Recursively get all contained Jaseci objects and return id_list"""

@@ -49,9 +49,7 @@ class OrmHook(RedisHook):
             assert uuid.UUID(ret_obj.jid) == loaded_obj.jid
 
             # Unwind jsci_payload for fields beyond element object
-            obj_fields = json_str_to_jsci_dict(loaded_obj.jsci_obj, ret_obj)
-            for i in obj_fields.keys():
-                setattr(ret_obj, i, obj_fields[i])
+            ret_obj.json_load(loaded_obj.jsci_obj)
             self.commit_obj_to_cache(ret_obj)
             return ret_obj
         return loaded_obj

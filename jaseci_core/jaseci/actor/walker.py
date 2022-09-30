@@ -137,6 +137,8 @@ class Walker(Element, WalkerInterp, Anchored):
                     self.next_node_ids.pop_first_obj() if self.next_node_ids else None
                 )
             )
+            for i in self._h.save_obj_list:
+                self._h.commit_obj_to_cache(i, all_caches=True)
 
             return {
                 "is_queued": True,
@@ -252,3 +254,9 @@ class Walker(Element, WalkerInterp, Anchored):
             self.destroy()
         else:
             yield_ids.add_obj(self, silent=True)
+
+    def save(self):
+        """
+        Write self through hook to persistent storage
+        """
+        self._h.save_obj(self._m_id, self, self._persist, self.is_async)

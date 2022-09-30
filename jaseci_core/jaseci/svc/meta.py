@@ -11,7 +11,8 @@ from jaseci.utils.utils import logger
 
 
 class MetaService(CommonService, MetaProperties):
-    def __init__(self):
+    def __init__(self, run_svcs=True):
+        self.run_svcs = run_svcs
         CommonService.__init__(self, MetaService)
         MetaProperties.__init__(self, self.cls)
 
@@ -71,11 +72,11 @@ class MetaService(CommonService, MetaProperties):
     def build_hook(self):
         params = self.hook_param
         h = self.hook(*params.get("args", []), **params.get("kwargs", []))
-
-        h.redis = self.get_service("redis", h)
-        h.task = self.get_service("task", h)
-        h.mail = self.get_service("mail", h)
-        h.meta = self
+        if self.run_svcs:
+            h.redis = self.get_service("redis", h)
+            h.task = self.get_service("task", h)
+            h.mail = self.get_service("mail", h)
+            h.meta = self
 
         return h
 
