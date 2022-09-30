@@ -1,5 +1,6 @@
 from jaseci.svc import MetaService as Ms
 from jaseci_serv.svc import MailService, RedisService, TaskService
+from jaseci_serv.jaseci_serv.settings import RUN_SVCS
 
 
 class MetaService(Ms):
@@ -7,6 +8,8 @@ class MetaService(Ms):
     ###################################################
     #                   OVERRIDEN                     #
     ###################################################
+    def __init__(self):
+        super().__init__(run_svcs=RUN_SVCS)
 
     def build_classes(self):
         from jaseci_serv.hook.orm import OrmHook

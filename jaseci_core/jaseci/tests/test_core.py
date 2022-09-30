@@ -104,3 +104,13 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         self.assertIn(
             "arch_ids", sent.arch_ids.obj_for_id_not_exist_error(uuid.UUID(int=0).urn)
         )
+
+    def test_dont_store_invalid_feilds_in_blob(self):
+        self.logger_on()
+        mast = self.meta.build_master()
+        sent = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent.fake_data = 5
+        stored = sent.jsci_payload()
+        sent2 = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent2.json_load(stored)
+        self.assertNotIn("fake_data", vars(sent2).keys())
