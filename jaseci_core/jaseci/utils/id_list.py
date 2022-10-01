@@ -20,6 +20,7 @@ class IdList(list):
     def __init__(self, parent_obj, in_list=None):
         self.parent_obj = parent_obj
         self.cached_objects = []
+        self.heal_list = []
         if in_list:
             for i in in_list:
                 self.append(i)
@@ -57,15 +58,22 @@ class IdList(list):
         self.remove(obj.jid)
         self.parent_obj.save()
 
+    def heal(self):
+        for i in self.heal_list:
+            self.remove(i)
+        if hasattr(self.parent_obj, "save"):
+            self.parent_obj.save()
+
     def destroy_obj(self, obj):
         """Completely destroys a Jaseci obj obj by it's name"""
         self.remove_obj(obj)
         obj.destroy()
 
     def obj_for_id_not_exist_error(self, item_id):
+        self.heal_list.append(item_id)
         my_name = "id_list"
         for k, v in self.parent_obj.__dict__.items():
-            if v == self:
+            if id(v) == id(self):
                 my_name = k
         return f"{item_id} not found in {my_name} of {self.parent_obj}!"
 
@@ -84,6 +92,7 @@ class IdList(list):
                 break
         if not ret and not silent:
             logger.error(str(f"object for '{name}' not found in '{self.parent_obj}'!"))
+        self.heal()
         return ret
 
     def has_obj_by_name(self, name, kind=None):
@@ -107,6 +116,7 @@ class IdList(list):
                     logger.critical(self.obj_for_id_not_exist_error(i))
                 else:
                     self.cached_objects.append(obj)
+        self.heal()
         return self.cached_objects.copy()
 
     def remove_all(self):

@@ -17,7 +17,9 @@ class Anchored:
     def get_architype(self):
         arch = (
             self._h._machine.parent().get_arch_for(self)
-            if self._h._machine is not None and self._h._machine.parent() is not None
+            if self._h._machine is not None
+            and self._h._machine.parent() is not None
+            and self._h._machine.parent().j_type == "sentinel"
             else None
         )
         if arch is None and self.parent() and self.parent().j_type == "sentinel":

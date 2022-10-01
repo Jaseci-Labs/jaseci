@@ -8,6 +8,7 @@ from jaseci.graph.graph import Graph
 from jaseci.graph.node import Node
 from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper, get_all_subclasses
+from jaseci.actor.architype import Architype
 
 
 class ArchitypeTests(TestCaseHelper, TestCase):
@@ -63,7 +64,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         mast.sentinel_ids.add_obj(sent)
         mast.graph_ids.add_obj(new_graph)
         num_new = len(mast._h.mem.keys()) - len(mast._h.global_action_list)
-        self.assertEqual(num_new, num_objs + 2 + 3)
+        self.assertEqual(num_new, num_objs + 2)
 
         sent.register_code(code)
         num_objs = len(mast._h.mem.keys()) - len(mast._h.global_action_list)
@@ -114,3 +115,44 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         sent2 = Sentinel(m_id=mast._m_id, h=mast._h)
         sent2.json_load(stored)
         self.assertNotIn("fake_data", vars(sent2).keys())
+
+    def test_sentinel_default_archs_dont_grow(self):
+        mast = self.meta.build_master()
+        sent = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent.register_code(text="node simple; walker init {}")
+        before = sent._h.get_object_distribution()[Architype]
+        stored = sent.jsci_payload()
+        sent2 = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent2.json_load(stored)
+        sent2 = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent2.json_load(stored)
+        after = sent2._h.get_object_distribution()[Architype]
+        self.assertEqual(before, after)
+
+    def test_sentinel_default_archs_dont_grow_multi_compile(self):
+        mast = self.meta.build_master()
+        sent = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent.register_code(text="node simple; walker init {}")
+        before = sent._h.get_object_distribution()[Architype]
+        stored = sent.jsci_payload()
+        sent2 = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent2.json_load(stored)
+        sent2.register_code(text="node simple; walker init {}")
+        before_id = sent2.arch_ids[0]
+        sent2.register_code(text="node simple; walker init {}")
+        sent2.register_code(text="node simple; walker init {}")
+        after_id = sent2.arch_ids[0]
+        after = sent2._h.get_object_distribution()[Architype]
+        self.assertEqual(before, after)
+        self.assertNotEqual(before_id, after_id)
+
+    def test_id_list_heals(self):
+        mast = self.meta.build_master()
+        sent = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent.register_code(text="node simple; walker init {}")
+        before = len(sent.arch_ids)
+        sent._h.get_obj(mast._m_id, uuid.UUID(sent.arch_ids[1])).destroy()
+        sent._h.get_obj(mast._m_id, uuid.UUID(sent.arch_ids[3])).destroy()
+        sent.arch_ids.obj_list()
+        after = len(sent.arch_ids)
+        self.assertEqual(after, before - 2)
