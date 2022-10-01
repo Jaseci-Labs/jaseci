@@ -435,7 +435,6 @@ class JacTests(TestCaseHelper, TestCase):
         mast._h.task.state = ServiceState.RUNNING
 
     def test_async_sync_syntax_with_celery(self):
-        self.logger_on()
         mast = self.meta.build_master()
         mast.sentinel_register(name="test", code=jtp.async_syntax, auto_run="")
         res = mast.general_interface_to_api(

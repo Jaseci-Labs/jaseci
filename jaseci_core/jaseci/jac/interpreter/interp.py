@@ -29,8 +29,6 @@ class Interp(MachineState):
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "has_stmt":
             self.run_has_stmt(kid[0], obj)
-        elif kid[0].name == "can_stmt" and obj.j_type == "walker":
-            self.run_can_stmt(kid[0], obj)
         #  Can statements in architype handled in architype load
 
     def run_has_stmt(self, jac_ast, obj):

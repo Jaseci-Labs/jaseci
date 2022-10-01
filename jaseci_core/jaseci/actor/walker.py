@@ -21,9 +21,8 @@ import cProfile
 class Walker(Element, WalkerInterp, Anchored):
     """Walker class for Jaseci"""
 
-    def __init__(self, code_ir=None, is_async=False, **kwargs):
+    def __init__(self, is_async=False, **kwargs):
         self.yielded = False
-        self.activity_action_ids = IdList(self)
         self.namespaces = []
         self.profile = {}
         # Process state
@@ -232,7 +231,6 @@ class Walker(Element, WalkerInterp, Anchored):
         self.ignore_node_ids.remove_all()
         self.destroy_node_ids.remove_all()
         self.current_node = None
-        self.activity_action_ids.destroy_all()
         self.context = {}
         WalkerInterp.reset(self)
 
@@ -241,8 +239,6 @@ class Walker(Element, WalkerInterp, Anchored):
         Destroys self from memory and persistent storage
         """
         if not self.for_queue() or not self._h.task.is_running():
-            for i in self.activity_action_ids.obj_list():
-                i.destroy()
             WalkerInterp.destroy(self)
             super().destroy()
 
