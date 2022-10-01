@@ -61,7 +61,8 @@ class IdList(list):
     def heal(self):
         for i in self.heal_list:
             self.remove(i)
-        self.parent_obj.save()
+        if hasattr(self.parent_obj, "save"):
+            self.parent_obj.save()
 
     def destroy_obj(self, obj):
         """Completely destroys a Jaseci obj obj by it's name"""
