@@ -57,13 +57,17 @@ class Sentinel(Element, JacCode, SentinelInterp):
 
     def load_arch_defaults(self):
         self.arch_ids.add_obj(
-            Architype(m_id=self._m_id, h=self._h, name="root", kind="node")
+            Architype(m_id=self._m_id, h=self._h, name="root", kind="node", parent=self)
         )
         self.arch_ids.add_obj(
-            Architype(m_id=self._m_id, h=self._h, name="generic", kind="node")
+            Architype(
+                m_id=self._m_id, h=self._h, name="generic", kind="node", parent=self
+            )
         )
         self.arch_ids.add_obj(
-            Architype(m_id=self._m_id, h=self._h, name="generic", kind="edge")
+            Architype(
+                m_id=self._m_id, h=self._h, name="generic", kind="edge", parent=self
+            )
         )
 
     def ir_load(self):

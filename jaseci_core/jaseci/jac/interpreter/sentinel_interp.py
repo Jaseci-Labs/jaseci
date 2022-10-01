@@ -80,6 +80,7 @@ class SentinelInterp(Interp):
             name=name,
             kind=kind,
             is_async=is_async,
+            parent=self,
         )
 
         if len(kid) > 2 and kid[2].name == "COLON":
