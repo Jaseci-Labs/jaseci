@@ -130,7 +130,6 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         self.assertEqual(before, after)
 
     def test_sentinel_default_archs_dont_grow_multi_compile(self):
-        self.logger_on()
         mast = self.meta.build_master()
         sent = Sentinel(m_id=mast._m_id, h=mast._h)
         sent.register_code(text="node simple; walker init {}")
@@ -146,3 +145,14 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         after = sent2._h.get_object_distribution()[Architype]
         self.assertEqual(before, after)
         self.assertNotEqual(before_id, after_id)
+
+    def test_id_list_heals(self):
+        mast = self.meta.build_master()
+        sent = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent.register_code(text="node simple; walker init {}")
+        before = len(sent.arch_ids)
+        sent._h.get_obj(mast._m_id, uuid.UUID(sent.arch_ids[1])).destroy()
+        sent._h.get_obj(mast._m_id, uuid.UUID(sent.arch_ids[3])).destroy()
+        sent.arch_ids.obj_list()
+        after = len(sent.arch_ids)
+        self.assertEqual(after, before - 2)
