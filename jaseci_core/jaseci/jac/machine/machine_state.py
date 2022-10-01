@@ -42,7 +42,7 @@ class MachineState:
 
     def inform_hook(self):
         if hasattr(self, "_h"):
-            self._h._machine = self.parent()
+            self._h._machine = MachineState.parent(self)
 
     def parent(self):  # parent here is always a sentinel
         if self._parent_override:

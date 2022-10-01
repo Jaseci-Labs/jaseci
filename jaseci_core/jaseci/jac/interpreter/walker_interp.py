@@ -40,7 +40,6 @@ class WalkerInterp(Interp):
             for i in kid:
                 if i.name == "attr_stmt":
                     self.run_attr_stmt(jac_ast=i, obj=self)
-
         archs = self.current_node.get_architype().arch_with_supers()
         act_list = IdList(self)
         for i in archs:
@@ -248,12 +247,16 @@ class WalkerInterp(Interp):
         Helper to run ast elements with execution scope added
         (Useful for running arbitrary code blocks as one-offs)
         """
-        arch = self.current_node.get_architype()
+        node_arch = self.current_node.get_architype()
+        walk_arch = self  # TODO: should be self.get_architype()
         self.push_scope(
             JacScope(
                 parent=self,
                 has_obj=self,
-                action_sets=[self.activity_action_ids, arch.activity_action_ids],
+                action_sets=[
+                    walk_arch.activity_action_ids,
+                    node_arch.activity_action_ids,
+                ],
             )
         )
         self._jac_scope.set_agent_refs(cur_node=self.current_node, cur_walker=self)
