@@ -117,18 +117,32 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         self.assertNotIn("fake_data", vars(sent2).keys())
 
     def test_sentinel_default_archs_dont_grow(self):
+        mast = self.meta.build_master()
+        sent = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent.register_code(text="node simple; walker init {}")
+        before = sent._h.get_object_distribution()[Architype]
+        stored = sent.jsci_payload()
+        sent2 = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent2.json_load(stored)
+        sent2 = Sentinel(m_id=mast._m_id, h=mast._h)
+        sent2.json_load(stored)
+        after = sent2._h.get_object_distribution()[Architype]
+        self.assertEqual(before, after)
+
+    def test_sentinel_default_archs_dont_grow_multi_compile(self):
         self.logger_on()
         mast = self.meta.build_master()
         sent = Sentinel(m_id=mast._m_id, h=mast._h)
         sent.register_code(text="node simple; walker init {}")
         before = sent._h.get_object_distribution()[Architype]
-        self.log(sent.arch_ids)
         stored = sent.jsci_payload()
         sent2 = Sentinel(m_id=mast._m_id, h=mast._h)
         sent2.json_load(stored)
-        self.log(sent.arch_ids)
-        sent2 = Sentinel(m_id=mast._m_id, h=mast._h)
-        sent2.json_load(stored)
-        self.log(sent.arch_ids)
+        sent2.register_code(text="node simple; walker init {}")
+        before_id = sent2.arch_ids[0]
+        sent2.register_code(text="node simple; walker init {}")
+        sent2.register_code(text="node simple; walker init {}")
+        after_id = sent2.arch_ids[0]
         after = sent2._h.get_object_distribution()[Architype]
         self.assertEqual(before, after)
+        self.assertNotEqual(before_id, after_id)
