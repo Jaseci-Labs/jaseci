@@ -28,18 +28,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
         Element.__init__(self, *args, **kwargs)
         JacCode.__init__(self, code_ir=None)
         SentinelInterp.__init__(self)
-        self.load_arch_defaults()
-
-    def load_arch_defaults(self):
-        self.arch_ids.add_obj(
-            Architype(m_id=self._m_id, h=self._h, name="root", kind="node")
-        )
-        self.arch_ids.add_obj(
-            Architype(m_id=self._m_id, h=self._h, name="generic", kind="node")
-        )
-        self.arch_ids.add_obj(
-            Architype(m_id=self._m_id, h=self._h, name="generic", kind="edge")
-        )
 
     def reset(self):
         """Resets state of sentinel and unregister's code"""
@@ -47,7 +35,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
         self.global_vars = {}
         self.testcases = []
         self.arch_ids.destroy_all()
-        self.load_arch_defaults()
         JacCode.reset(self)
         SentinelInterp.reset(self)
 
@@ -68,10 +55,22 @@ class Sentinel(Element, JacCode, SentinelInterp):
             self.ir_load()
         return self.is_active
 
+    def load_arch_defaults(self):
+        self.arch_ids.add_obj(
+            Architype(m_id=self._m_id, h=self._h, name="root", kind="node")
+        )
+        self.arch_ids.add_obj(
+            Architype(m_id=self._m_id, h=self._h, name="generic", kind="node")
+        )
+        self.arch_ids.add_obj(
+            Architype(m_id=self._m_id, h=self._h, name="generic", kind="edge")
+        )
+
     def ir_load(self):
         """
         Load walkers and architypes from IR
         """
+        self.load_arch_defaults()
         self.run_start(self._jac_ast)
 
         if self.runtime_errors:

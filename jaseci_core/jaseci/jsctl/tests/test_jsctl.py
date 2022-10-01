@@ -394,7 +394,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertGreater(after, before)
 
 
-class JsctlTestWithState(TestCaseHelper, TestCase):
+class JsctlTestWithSession(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
@@ -419,7 +419,7 @@ class JsctlTestWithState(TestCaseHelper, TestCase):
         jsctl.reset_state()
         super().tearDown()
 
-    def test_jsctl_jac_build_with_state(self):
+    def test_jsctl_register_with_session(self):
         self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
         self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
         r = self.call_cast("object get active:sentinel -detailed true")

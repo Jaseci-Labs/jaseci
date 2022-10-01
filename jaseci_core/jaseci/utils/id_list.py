@@ -65,7 +65,7 @@ class IdList(list):
     def obj_for_id_not_exist_error(self, item_id):
         my_name = "id_list"
         for k, v in self.parent_obj.__dict__.items():
-            if v == self:
+            if id(v) == id(self):
                 my_name = k
         return f"{item_id} not found in {my_name} of {self.parent_obj}!"
 
