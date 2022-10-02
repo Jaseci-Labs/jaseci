@@ -30,8 +30,8 @@ setup()
 ### Start of PersonalizedHead Actions ###
 
 
-@jaseci_action(act_group=["personalized_head"], allow_remote=True)
-def create_head_list(config_file:str, overwrite:bool = False) -> None:
+@jaseci_action(act_group=["ph"], allow_remote=True)
+def create_head_list(config_file: str, overwrite: bool = False) -> None:
     '''
     Create a holder for heads
     '''
@@ -40,7 +40,7 @@ def create_head_list(config_file:str, overwrite:bool = False) -> None:
         global il, config
         new_config = read_yaml(config_file)
         config = {**config, **new_config}
-        il = InferenceList(config = config)
+        il = InferenceList(config=config)
         if overwrite:
             write_yaml(config, config_file)
     except Exception as e:
@@ -48,7 +48,7 @@ def create_head_list(config_file:str, overwrite:bool = False) -> None:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["personalized_head"], allow_remote=True)
+@jaseci_action(act_group=["ph"], allow_remote=True)
 def create_head(config_file: str = None, uuid: str = None, overwrite: bool = False) -> None:
     '''
     Create a personalized head. This will create a new inference engine.
@@ -61,16 +61,16 @@ def create_head(config_file: str = None, uuid: str = None, overwrite: bool = Fal
             config = {**config, **new_config}
             if overwrite:
                 write_yaml(config, config_file)
-            _uuid = il.add(config = config, uuid = uuid)
+            _uuid = il.add(config=config, uuid=uuid)
         else:
-            _uuid = il.add(uuid = uuid)
+            _uuid = il.add(uuid=uuid)
         return _uuid
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["personalized_head"], allow_remote=True)
+@jaseci_action(act_group=["ph"], allow_remote=True)
 def predict(uuid: str, data: Any) -> Any:
     '''
     Predict using the current active model.
@@ -90,29 +90,29 @@ def predict(uuid: str, data: Any) -> Any:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["personalized_head"], allow_remote=True)
-def train_model(config_file: str = None, overwrite: bool = False):
+@jaseci_action(act_group=["ph"], allow_remote=True)
+def train_head(config_file: str = None, uuid: str = None):
     '''
     Train the current active model.
     @param new_config: new config yaml to be used for training
     '''
     try:
-        global ie, config
+        global config
         new_config = read_yaml(config_file)
         config = {**config, **new_config}
-        if overwrite:
-            write_yaml(config, config_file)
+        write_yaml(config, config_file)
         train({
             "config": config_file,
             "device": None,
             "resume": None,
+            "uuid": uuid
         })
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["personalized_head"], allow_remote=True)
+@jaseci_action(act_group=["ph"], allow_remote=True)
 def load_weights(uuid: str, path: str):
     try:
         global il

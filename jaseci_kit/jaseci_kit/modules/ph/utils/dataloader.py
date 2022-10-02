@@ -8,10 +8,8 @@ from .base import BaseDataLoader
 
 
 class SnipsDataLoader(BaseDataLoader):
-    def __init__(self, data_dir, batch_size, shuffle=True, validation_split=0.0, num_workers=1):
-        self.data_dir = data_dir
-        df = pd.read_json(os.path.join(
-            self.data_dir, 'SNIPS_INTENTS', 'raw', 'train.json'))
+    def __init__(self, train_json, batch_size, shuffle=True, validation_split=0.0, num_workers=1):
+        df = pd.read_json(train_json)
         self.dataset = SnipsDataset(df)
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
 

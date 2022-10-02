@@ -37,9 +37,6 @@ def train(args):
         cfg_fname = Path(args['config'])
 
     config = read_yaml(cfg_fname)
-    if args['config'] and resume:
-        # update new config for fine-tuning
-        config.update(read_yaml(args['config']))
 
     # Setup Logger
     log_config = config['Logger']
@@ -47,13 +44,14 @@ def train(args):
 
     # Build model Architecture
     model_config = config['Model']
-    model = getattr(model_module, model_config['type'])(**model_config['args'])
+    model = getattr(model_module, model_config['type'])(
+        **model_config.get('args', {}))
 
     trainer_config = config['Trainer']
 
     # Setup Dataloader
     dataloader = getattr(dataloader_module, trainer_config['dataloader']['type'])(
-        **trainer_config['dataloader']['args'])
+        **trainer_config['dataloader'].get('args', {}))
     valid_dataloader = dataloader.split_validation()
 
     # for multi-GPU training
@@ -70,16 +68,18 @@ def train(args):
     # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = getattr(torch.optim, trainer_config['optimizer']['type'])(
-        trainable_params, **trainer_config['optimizer']['args'])
+        trainable_params, **trainer_config['optimizer'].get('args', {}))
     lr_scheduler = getattr(torch.optim.lr_scheduler, trainer_config['lr_scheduler']['type'])(
-        optimizer, **trainer_config['lr_scheduler']['args'])
+        optimizer, **trainer_config['lr_scheduler'].get('args', {}))
 
     trainer = Trainer(model, criterion, metrics, optimizer,
                       config=trainer_config,
                       device=device,
                       data_loader=dataloader,
                       valid_data_loader=valid_dataloader,
-                      lr_scheduler=lr_scheduler)
+                      lr_scheduler=lr_scheduler,
+                      resume=resume,
+                      uuid=args['uuid'])
 
     trainer.train()
 
@@ -92,6 +92,8 @@ if __name__ == '__main__':
                       help='path to latest checkpoint (default: None)')
     args.add_argument('-d', '--device', default=None, type=str,
                       help='indices of GPUs to enable (default: all)')
+    args.add_argument('-u', '--uuid', default=None, type=str,
+                        help='uuid of the experiment (default: None)')
     args = args.parse_args()
     # convert args to dict
     args = vars(args)

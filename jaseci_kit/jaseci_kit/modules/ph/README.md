@@ -6,10 +6,12 @@ You can use your own custom models and datasets to create a personalized head wi
 file and a python file.
 
 ## **1. Using the Personalized Head as a Standalone Module**
+
 You can use the personalized head as a full custom model other than being a head of a model. For an example you can
 for a YOLO model, that you can train and inference. Follow the steps below to use the personalized head as a standalone model. Example shows how to use the personalized head as a MNIST Classification model.
 
 ### **1.1. Creating Custom Python Model**
+
 Python File contains the torch.nn.Module class which is the model. You can use any model you want. and a torch.utils.data.Dataset class which is the dataset. You can use any dataset you want. and Preprocessor and Postprocessor classes which are used in inferencing. You can use any preprocessor and postprocessor you want but with the same method format. follow it to create your custom python model.
 
 ```python
@@ -82,6 +84,7 @@ class MnistPostProcessor:
 ```
 
 ### **1.2. Creating a Configuration File**
+
 Configuration file is YAML file which contains the information about the model and training parameters. You can follow this example yaml file as a reference to create your own configuration file.
 
 ```yaml
@@ -146,17 +149,29 @@ Trainer:
     tensorboard: true
     verbosity: 2
 ```
+
 ### **1.3. Create your JAC program**
+
 ```python
 # Path: ./main.jac
 walker identify_number {
   has input_image;
-  can personalized_head.create_head, personalized_head.predict;
+  can ph.create_head, ph.predict, ph.train_head, ph.load_weights;
 
   root {
-      uid = personalized_head.create_head(config_file='config.yaml', uuid='mnist');
-      pred = personalized_head.predict(uuid=uid, data=input_image);
+      #creating a head
+      uid = ph.create_head(config_file='config.yaml', uuid='mnist');
+      pred = ph.predict(uuid=uid, data=input_image);
       report pred;
+
+      # training the head
+      ph.train_head(config_file='config.yaml',uuid='mnist');
+
+      #loading the trained weights
+      ph.load_weights(uuid=uid, weights_file='saved/models/MnistTrainer/mnist/best_model.pt');
+      pred = ph.predict(uuid=uid, data=input_image);
+      report pred;
+
   }
 }
 
@@ -172,18 +187,28 @@ walker init {
 ```
 
 ### **1.4. Import 'personalized_head' module in jaseci**
+
 - Open the terminal and run Jaseci Command Line Tool using the command below.
+
 ```bash
 jsctl -m
 ```
+
 - Load the 'personalized_head' module using the command below.
+
 ```bash
-actions load module jaseci_kit.personalized_head
+actions load module jaseci_kit.ph
 ```
+
 - Run the JAC program using the command below.
+
 ```bash
-jac run main.jac
+jac run main.jac -ctx '{"input_image": "data/0.png"}'
+```
+
 ```
 
 ## **2. Using the Personalized Head with another Module**
+
 Coming Soon...
+```

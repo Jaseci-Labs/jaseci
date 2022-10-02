@@ -38,13 +38,16 @@ class BaseTrainer:
     Base class for all trainers
     """
 
-    def __init__(self, model, criterion, metric_ftns, optimizer, config, resume=None):
+    def __init__(self, model, criterion, metric_ftns, optimizer, config, resume=None, uuid=None):
         self.config = config
         self.logger = get_logger("train")
 
         save_dir = Path(self.config['trainer']['save_dir'])
         model_name = self.config['name']
-        run_id = datetime.now().strftime(r'%m%d_%H%M%S')
+        if uuid is None:
+            run_id = datetime.now().strftime(r'%m%d_%H%M%S')
+        else:
+            run_id = uuid
 
         self.checkpoint_dir = save_dir / 'models' / model_name / run_id
         self.log_dir = save_dir / 'logs' / model_name / run_id

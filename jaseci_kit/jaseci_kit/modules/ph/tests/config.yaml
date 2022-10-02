@@ -1,17 +1,18 @@
 Inference:
   postprocess:
+    args:
+      to_list: true
     type: PersonalizedHeadPostProcessor
   preprocess:
     type: PersonalizedHeadPreProcessor
-  weights: ""
-
+  weights: ''
 Logger:
   disable_existing_loggers: false
   formatters:
     datetime:
-      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+      format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     simple:
-      format: "%(message)s"
+      format: '%(message)s'
   handlers:
     console:
       class: logging.StreamHandler
@@ -29,11 +30,10 @@ Logger:
   log_dir: logs/
   root:
     handlers:
-      - console
-      - info_file_handler
+    - console
+    - info_file_handler
     level: INFO
   version: 1
-
 Model:
   args:
     batch_first: true
@@ -43,14 +43,13 @@ Model:
     ph_nhead: 8
     ph_nlayers: 1
   type: PersonalizedHead
-
 Trainer:
   dataloader:
     args:
       batch_size: 32
-      data_dir: data/
       num_workers: 1
       shuffle: true
+      train_json: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/ph/tests/train.json
       validation_split: 0.2
     type: SnipsDataLoader
   loss: nll_loss
@@ -60,8 +59,8 @@ Trainer:
       step_size: 50
     type: StepLR
   metrics:
-    - accuracy
-    - top_k_acc
+  - accuracy
+  - top_k_acc
   n_gpu: 1
   name: PersonalizedHeadTrainer
   optimizer:
@@ -74,7 +73,7 @@ Trainer:
     early_stop: 10
     epochs: 100
     monitor: min val_loss
-    save_dir: saved/
+    save_dir: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/ph/tests/saved_models/
     save_period: 1
     tensorboard: true
     verbosity: 2

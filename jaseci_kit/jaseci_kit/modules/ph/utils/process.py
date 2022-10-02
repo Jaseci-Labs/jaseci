@@ -4,11 +4,13 @@ import importlib
 
 
 class PersonalizedHeadPostProcessor:
-    def __init__(self):
-        None
+    def __init__(self, to_list: bool = False):
+        self.to_list = to_list
 
     def process(self, output):
         output = torch.argmax(output, dim=1)
+        if self.to_list:
+            output = output.tolist()[0]
         return output
 
 
