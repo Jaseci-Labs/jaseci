@@ -191,6 +191,10 @@ class MemoryHook:
     def commit_obj_to_cache(self, item, all_caches=False):
         self.mem[item.id.urn] = item
 
+    def commit_all_cache_sync(self):
+        for i in self.save_obj_list:
+            self.commit_obj_to_cache(i, all_caches=True)
+
     def decommit_obj_from_cache(self, item):
         self.mem.pop(item.id.urn)
 

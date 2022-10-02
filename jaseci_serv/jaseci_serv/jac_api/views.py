@@ -19,8 +19,7 @@ class JResponse(Response):
     def __init__(self, master, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.hook = master._h
-        for i in self.hook.save_obj_list:
-            self.hook.commit_obj_to_cache(i, all_caches=True)
+        self.hook.commit_all_cache_sync()
 
     def close(self):
         super(JResponse, self).close()

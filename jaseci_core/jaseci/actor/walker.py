@@ -136,8 +136,7 @@ class Walker(Element, WalkerInterp, Anchored):
                     self.next_node_ids.pop_first_obj() if self.next_node_ids else None
                 )
             )
-            for i in self._h.save_obj_list:
-                self._h.commit_obj_to_cache(i, all_caches=True)
+            self._h.commit_all_cache_sync()
 
             return {
                 "is_queued": True,
