@@ -17,10 +17,11 @@ class IdList(list):
     ingest_list is a list of hex strings to convert to UUID and append.
     """
 
-    def __init__(self, parent_obj, in_list=None):
+    def __init__(self, parent_obj, auto_save=True, in_list=None):
         self.parent_obj = parent_obj
         self.cached_objects = []
         self.heal_list = []
+        self.auto_save = auto_save
         if in_list:
             for i in in_list:
                 self.append(i)
@@ -42,8 +43,8 @@ class IdList(list):
                 self.append(obj.jid)
             if not obj.j_parent:
                 obj.j_parent = self.parent_obj.id.urn
-            obj.save()
-            self.parent_obj.save()
+                self.save(obj)
+            self.save()
 
     def add_obj_list(self, obj_list, push_front=False, allow_dups=False, silent=False):
         self.cache_reset()
@@ -56,13 +57,14 @@ class IdList(list):
         """Remove a Jaseci obj from list"""
         self.cache_reset()
         self.remove(obj.jid)
-        self.parent_obj.save()
+        self.save()
 
     def heal(self):
         for i in self.heal_list:
             self.remove(i)
-        if hasattr(self.parent_obj, "save"):
-            self.parent_obj.save()
+        if len(self.heal_list) and hasattr(self.parent_obj, "save"):
+            self.save()
+        self.heal_list = []
 
     def destroy_obj(self, obj):
         """Completely destroys a Jaseci obj obj by it's name"""
@@ -156,3 +158,9 @@ class IdList(list):
         if ret:
             self.remove_obj(ret)
         return ret
+
+    def save(self, obj=None):
+        if self.auto_save:
+            self.parent_obj.save()
+        if obj:
+            obj.save()

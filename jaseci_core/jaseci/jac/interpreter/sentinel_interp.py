@@ -124,7 +124,7 @@ class SentinelInterp(Interp):
         """Helper function to statically compile can stmts for arch"""
         kid = self.set_cur_ast(jac_ast)
         self.push_scope(JacScope(parent=self, has_obj=self, action_sets=[]))
-        if jac_ast.name == "attr_block":
+        if jac_ast.name in ["attr_block", "walker_block"]:
             for i in kid:
                 if i.name == "attr_stmt" and i.kid[0].name == "can_stmt":
                     self.run_can_stmt(i.kid[0], arch)

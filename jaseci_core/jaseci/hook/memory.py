@@ -41,18 +41,18 @@ class MemoryHook:
         """
         return self.has_obj_in_store(item_id)
 
-    def save_obj(self, caller_id, item, persist=False, all_caches=False):
+    def save_obj(self, caller_id, item, all_caches=False):
         """Save item to session cache, then to store"""
         if item.check_write_access(caller_id):
             self.commit_obj_to_cache(item, all_caches=all_caches)
-            if persist:
+            if item._persist:
                 self.save_obj_list.add(item)
 
-    def destroy_obj(self, caller_id, item, persist=False):
+    def destroy_obj(self, caller_id, item):
         """Destroy item from session cache then  store"""
         if item.check_write_access(caller_id):
             self.decommit_obj_from_cache(item)
-            if persist:
+            if item._persist:
                 self.destroy_obj_from_store(item)
 
     # --------------------- GLOB --------------------- #
@@ -190,6 +190,10 @@ class MemoryHook:
 
     def commit_obj_to_cache(self, item, all_caches=False):
         self.mem[item.id.urn] = item
+
+    def commit_all_cache_sync(self):
+        for i in self.save_obj_list:
+            self.commit_obj_to_cache(i, all_caches=True)
 
     def decommit_obj_from_cache(self, item):
         self.mem.pop(item.id.urn)

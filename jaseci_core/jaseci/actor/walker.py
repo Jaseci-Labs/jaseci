@@ -21,9 +21,8 @@ import cProfile
 class Walker(Element, WalkerInterp, Anchored):
     """Walker class for Jaseci"""
 
-    def __init__(self, code_ir=None, is_async=False, **kwargs):
+    def __init__(self, is_async=False, **kwargs):
         self.yielded = False
-        self.activity_action_ids = IdList(self)
         self.namespaces = []
         self.profile = {}
         # Process state
@@ -137,8 +136,7 @@ class Walker(Element, WalkerInterp, Anchored):
                     self.next_node_ids.pop_first_obj() if self.next_node_ids else None
                 )
             )
-            for i in self._h.save_obj_list:
-                self._h.commit_obj_to_cache(i, all_caches=True)
+            self._h.commit_all_cache_sync()
 
             return {
                 "is_queued": True,
@@ -232,7 +230,6 @@ class Walker(Element, WalkerInterp, Anchored):
         self.ignore_node_ids.remove_all()
         self.destroy_node_ids.remove_all()
         self.current_node = None
-        self.activity_action_ids.destroy_all()
         self.context = {}
         WalkerInterp.reset(self)
 
@@ -241,8 +238,6 @@ class Walker(Element, WalkerInterp, Anchored):
         Destroys self from memory and persistent storage
         """
         if not self.for_queue() or not self._h.task.is_running():
-            for i in self.activity_action_ids.obj_list():
-                i.destroy()
             WalkerInterp.destroy(self)
             super().destroy()
 
@@ -259,4 +254,4 @@ class Walker(Element, WalkerInterp, Anchored):
         """
         Write self through hook to persistent storage
         """
-        self._h.save_obj(self._m_id, self, self._persist, self.is_async)
+        self._h.save_obj(caller_id=self._m_id, item=self, all_caches=self.is_async)

@@ -248,7 +248,7 @@ class WalkerInterp(Interp):
         (Useful for running arbitrary code blocks as one-offs)
         """
         node_arch = self.current_node.get_architype()
-        walk_arch = self  # TODO: should be self.get_architype()
+        walk_arch = self.get_architype()
         self.push_scope(
             JacScope(
                 parent=self,

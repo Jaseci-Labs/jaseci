@@ -261,11 +261,12 @@ class TestCaseHelper:
     def is_logger_off(self):
         return logging.getLogger("core").disabled and logging.getLogger("app").disabled
 
-    def log(self, val):
+    def log(self, *val):
         """Print to log"""
         is_off = self.is_logger_off()
         self.logger_on()
-        log_var_out(val)
+        for i in val:
+            log_var_out(i)
         if is_off:
             self.logger_off()
 
