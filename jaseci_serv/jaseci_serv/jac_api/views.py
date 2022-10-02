@@ -62,12 +62,15 @@ class AbstractJacAPIView(APIView):
         """Api call preamble"""
         tot_time = time() - self.start_time
         save_count = 0
+        touch_count = 0
         if isinstance(self.caller, Element):
             save_count = len(self.caller._h.save_obj_list)
+            touch_count = len(self.caller._h.mem.keys()) - 1
         logger.info(
             str(
                 f"API call to {Cc.TG}{type(self).__name__}{Cc.EC}"
                 f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
+                f" touched {Cc.TY}{touch_count}{Cc.EC} and"
                 f" saving {Cc.TY}{save_count}{Cc.EC} objects."
             )
         )
