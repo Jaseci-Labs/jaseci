@@ -254,4 +254,4 @@ class Walker(Element, WalkerInterp, Anchored):
         """
         Write self through hook to persistent storage
         """
-        self._h.save_obj(self._m_id, self, self._persist, self.is_async)
+        self._h.save_obj(caller_id=self._m_id, item=self, all_caches=self.is_async)

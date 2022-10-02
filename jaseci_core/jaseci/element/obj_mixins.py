@@ -180,7 +180,7 @@ class Hookable(Sharable):
         """
         Write self through hook to persistent storage
         """
-        self._h.save_obj(self._m_id, self, self._persist)
+        self._h.save_obj(self._m_id, self)
 
     def destroy(self):
         """
@@ -188,7 +188,7 @@ class Hookable(Sharable):
 
         Note that the object will still exist in python until GC'd
         """
-        self._h.destroy_obj(self._m_id, self, self._persist)
+        self._h.destroy_obj(self._m_id, self)
         del self
 
     def parent(self):

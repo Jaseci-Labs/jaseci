@@ -113,7 +113,7 @@ class RedisHook(MemoryHook):
     def commit_obj_to_cache(self, item, all_caches=False):
         super().commit_obj_to_cache(item)
 
-        if all_caches and self.redis.is_running():
+        if all_caches and item._persist and self.redis.is_running():
             self.redis.set(item.id.urn, item.json(detailed=True))
 
     def decommit_obj_from_cache(self, item):
