@@ -40,7 +40,7 @@ class Architype(Element, JacCode, ArchitypeInterp):
         return self._jac_ast
 
     def get_all_actions(self):
-        actions = IdList(self)
+        actions = IdList(self, auto_save=False)
         for i in self.arch_with_supers():
             actions += i.entry_action_ids + i.activity_action_ids + i.exit_action_ids
         return actions
