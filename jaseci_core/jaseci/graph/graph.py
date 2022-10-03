@@ -2,6 +2,7 @@
 Graph  class for Jaseci
 
 """
+from collections import OrderedDict
 from jaseci.graph.node import Node
 from jaseci.utils.id_list import IdList
 
@@ -17,46 +18,52 @@ class Graph(Node):
 
         # Node.__init__(self, name="root", kind="node", **kwargs)
 
-    def get_all_nodes(self, node_list=None):
+    def get_all_nodes(self, depth: int = 0):
         """
         Returns all reachable nodes
-        node_list is used internally for recursion
         """
-        if not isinstance(node_list, list):
-            node_list = []
 
-        # if cycle detected in path
-        if self in node_list:
-            return node_list
+        childs = {self.jid: self}
+        nodes = OrderedDict(childs)
+        depth -= 1
 
-        node_list.append(self)
+        while len(childs) and depth != 0:
+            new_childs = OrderedDict()
+            for child in childs.values():
+                for _ch in child.attached_nodes():
+                    if not (_ch.jid in nodes):
+                        new_childs.update({_ch.jid: _ch})
 
-        for i in self.attached_nodes():
-            Graph.get_all_nodes(i, node_list)
+            childs = new_childs
+            nodes.update(childs)
+            depth -= 1
 
-        return node_list
+        return nodes.values()
 
-    def get_all_edges(self):
+    def get_all_edges(self, nodes: list = None, depth: int = 0):
         """
         Returns all reachable edges
         """
-        edge_set = set()
-        node_list = self.get_all_nodes()
+        edges = OrderedDict()
+        node_list = self.get_all_nodes(depth=depth) if nodes is None else nodes
 
-        for i in node_list:
-            for e in i.attached_edges():
-                edge_set.add(e)
+        for nd in node_list:
+            for _ch in nd.attached_edges():
+                if not (_ch.jid in edges) and (
+                    _ch.to_node() in node_list and _ch.from_node() in node_list
+                ):
+                    edges.update({_ch.jid: _ch})
 
-        return list(edge_set)
+        return edges.values()
 
-    def graph_dot_str(self, detailed=False):
+    def graph_dot_str(self, detailed=False, depth: int = 0):
         """
         DOT representation for graph.
         NOTE: This is different from the dot_str method for node intentionally
         because graph inherits node.
         """
-        node_list = self.get_all_nodes()
-        edge_list = self.get_all_edges()
+        node_list = self.get_all_nodes(depth=depth)
+        edge_list = self.get_all_edges(nodes=node_list)
         node_map = [i.jid for i in node_list]
         edge_map = [i.jid for i in edge_list]
 
