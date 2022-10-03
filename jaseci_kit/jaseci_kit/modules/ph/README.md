@@ -180,7 +180,7 @@ walker init {
   has output;
 
   root {
-      spawn here identify_number(input_image=input_image);
+      spawn here walker::identify_number(input_image=input_image);
   }
 }
 
