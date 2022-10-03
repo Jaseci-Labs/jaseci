@@ -49,7 +49,9 @@ class Graph(Node):
 
         for nd in node_list:
             for _ch in nd.attached_edges():
-                if not (_ch.jid in edges) and _ch.to_node() in node_list:
+                if not (_ch.jid in edges) and (
+                    _ch.to_node() in node_list and _ch.from_node() in node_list
+                ):
                     edges.update({_ch.jid: _ch})
 
         return edges.values()
