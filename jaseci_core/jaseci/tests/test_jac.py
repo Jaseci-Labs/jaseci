@@ -174,7 +174,7 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        edges = gph.get_all_edges()
+        edges = list(gph.get_all_edges())
         self.assertEqual(len(edges), 3)
         edge_names = [edges[0].name, edges[1].name, edges[2].name]
         self.assertIn("generic", edge_names)
@@ -189,7 +189,7 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        edges = gph.get_all_edges()
+        edges = list(gph.get_all_edges())
         self.assertEqual(len(edges), 0)
 
     def test_multiple_edged_between_nodes_delete_all_specific(self):
@@ -200,7 +200,7 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        edges = gph.get_all_edges()
+        edges = list(gph.get_all_edges())
         self.assertEqual(len(edges), 1)
 
     def test_multiple_edged_between_nodes_delete_all_labeled(self):
@@ -211,7 +211,7 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        edges = gph.get_all_edges()
+        edges = list(gph.get_all_edges())
         self.assertEqual(len(edges), 3)
 
     def test_multiple_edged_between_nodes_delete_filtered(self):
@@ -222,7 +222,7 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        edges = gph.get_all_edges()
+        edges = list(gph.get_all_edges())
         self.assertEqual(len(edges), 5)
 
     def test_generic_can_be_used_to_specify_generic_edges(self):
@@ -233,7 +233,7 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        edges = gph.get_all_edges()
+        edges = list(gph.get_all_edges())
         self.assertEqual(len(edges), 2)
 
     def test_can_disconnect_multi_nodes_simultaneously(self):
@@ -244,7 +244,7 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        edges = gph.get_all_edges()
+        edges = list(gph.get_all_edges())
         self.assertEqual(len(edges), 2)
 
     def test_can_connect_multi_nodes_simultaneously(self):
@@ -255,7 +255,7 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        edges = gph.get_all_edges()
+        edges = list(gph.get_all_edges())
         self.assertEqual(len(edges), 4)
 
     def test_can_disconnect_multi_nodes_advanced(self):
@@ -266,7 +266,7 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        edges = gph.get_all_edges()
+        edges = list(gph.get_all_edges())
         self.assertEqual(len(edges), 3)
 
     def test_accessing_edges_basic(self):
@@ -277,7 +277,7 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        edges = gph.get_all_edges()
+        edges = list(list(gph.get_all_edges()))
         if edges[0].name == "apple":
             self.assertEqual(edges[0].context["v1"], 7)
             self.assertEqual(edges[1].context["x1"], 8)

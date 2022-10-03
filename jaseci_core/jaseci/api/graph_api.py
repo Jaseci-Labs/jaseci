@@ -31,19 +31,24 @@ class GraphApi:
 
     @Interface.private_api()
     def graph_get(
-        self, gph: Graph = None, mode: str = "default", detailed: bool = False
+        self,
+        gph: Graph = None,
+        mode: str = "default",
+        detailed: bool = False,
+        depth: int = 0,
     ):
         """
         Return the content of the graph with mode
         Valid modes: {default, dot, }
         """
         if mode == "dot":
-            return gph.graph_dot_str(detailed=detailed)
+            return gph.graph_dot_str(detailed=detailed, depth=depth)
         else:
             items = []
-            for i in gph.get_all_nodes():
+            nodes = gph.get_all_nodes(depth=depth)
+            for i in nodes:
                 items.append(i.serialize(detailed=detailed))
-            for i in gph.get_all_edges():
+            for i in gph.get_all_edges(nodes=nodes):
                 items.append(i.serialize(detailed=detailed))
             return items
 
