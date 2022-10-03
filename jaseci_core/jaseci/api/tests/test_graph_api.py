@@ -27,9 +27,9 @@ class GraphApiTest(CoreTest):
         ret = self.call(self.mast, ["walker_run", {"name": "create_fam"}])
         ret = self.call(self.mast, ["graph_get", {}])
         self.assertEqual(len(ret), 9)
-        ret = self.call(self.mast, ["graph_node_view", {}])
+        ret = self.call(self.mast, ["graph_node_view", {"show_edges": True}])
         self.assertEqual(len(ret), 5)
-        ret = self.call(self.mast, ["graph_node_view", {"show_edges": False}])
+        ret = self.call(self.mast, ["graph_node_view", {}])
         self.assertEqual(len(ret), 3)
 
     def test_graph_node_view_filters(self):
@@ -38,12 +38,10 @@ class GraphApiTest(CoreTest):
             ["sentinel_register", {"code": self.load_jac("fam.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "create_fam"}])
-        ret = self.call(
-            self.mast, ["graph_node_view", {"show_edges": False, "node_type": "man"}]
-        )
+        ret = self.call(self.mast, ["graph_node_view", {"node_type": "man"}])
         self.assertEqual(len(ret), 2)
         jid = ret[1]["jid"]
-        ret = self.call(self.mast, ["graph_node_view", {"nd": jid}])
+        ret = self.call(self.mast, ["graph_node_view", {"nd": jid, "show_edges": True}])
         self.assertEqual(len(ret), 7)
         ret = self.call(
             self.mast,

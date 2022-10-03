@@ -118,7 +118,7 @@ class GraphApi:
         self,
         nd: Node = None,
         detailed: bool = False,
-        show_edges: bool = True,
+        show_edges: bool = False,
         node_type: str = "",
         edge_type: str = "",
     ):
