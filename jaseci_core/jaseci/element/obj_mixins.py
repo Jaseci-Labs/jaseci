@@ -45,7 +45,7 @@ class Anchored:
     def set_context(self, ctx):
         """Assign values to context fields of object"""
         for i in ctx.keys():
-            if i not in self.get_architype().has_vars:
+            if i in self.get_architype().has_vars:
                 self.context[i] = ctx[i]
             else:
                 logger.warning(str(f"{i} not a context member of {self}"))
