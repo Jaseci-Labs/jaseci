@@ -4,6 +4,7 @@ Node class for Jaseci
 Each node has an id, name, timestamp and it's set of edges.
 First node in list of 'member_node_ids' is designated root node
 """
+from collections import OrderedDict
 from jaseci.element.element import Element
 from jaseci.element.obj_mixins import Anchored
 from jaseci.graph.edge import Edge
@@ -392,3 +393,62 @@ class Node(Element, Anchored):
         dstr += " ]"
 
         return dstr + "\n"
+
+    def get_all_nodes(self, depth: int = 0):
+        """
+        Returns all reachable nodes
+        """
+
+        childs = {self.jid: self}
+        nodes = OrderedDict(childs)
+        depth -= 1
+
+        while len(childs) and depth != 0:
+            new_childs = OrderedDict()
+            for child in childs.values():
+                for _ch in child.attached_nodes():
+                    if not (_ch.jid in nodes):
+                        new_childs.update({_ch.jid: _ch})
+
+            childs = new_childs
+            nodes.update(childs)
+            depth -= 1
+
+        return nodes.values()
+
+    def get_all_edges(self, nodes: list = None, depth: int = 0):
+        """
+        Returns all reachable edges
+        """
+        edges = OrderedDict()
+        node_list = self.get_all_nodes(depth=depth) if nodes is None else nodes
+
+        for nd in node_list:
+            for _ch in nd.attached_edges():
+                if not (_ch.jid in edges) and (
+                    _ch.to_node() in node_list and _ch.from_node() in node_list
+                ):
+                    edges.update({_ch.jid: _ch})
+
+        return edges.values()
+
+    def traversing_dot_str(self, detailed=False, depth: int = 0):
+        """
+        DOT representation for graph.
+        NOTE: This is different from the dot_str method for node intentionally
+        because graph inherits node.
+        """
+        node_list = self.get_all_nodes(depth=depth)
+        edge_list = self.get_all_edges(nodes=node_list)
+        node_map = [i.jid for i in node_list]
+        edge_map = [i.jid for i in edge_list]
+
+        # Construct the graph string
+        dstr = ""
+        dstr += f"strict digraph {self.name} {{\n"
+        for n in node_list:
+            dstr += f"    {n.dot_str(node_map, detailed)}"
+        for e in edge_list:
+            dstr += f"    {e.dot_str(node_map, edge_map, detailed)}"
+        dstr += "}"
+        return dstr

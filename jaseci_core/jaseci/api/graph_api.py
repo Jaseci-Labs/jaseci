@@ -32,7 +32,7 @@ class GraphApi:
     @Interface.private_api()
     def graph_get(
         self,
-        gph: Graph = None,
+        gph: Node = None,
         mode: str = "default",
         detailed: bool = False,
         depth: int = 0,
@@ -42,7 +42,7 @@ class GraphApi:
         Valid modes: {default, dot, }
         """
         if mode == "dot":
-            return gph.graph_dot_str(detailed=detailed, depth=depth)
+            return gph.traversing_dot_str(detailed=detailed, depth=depth)
         else:
             items = []
             nodes = gph.get_all_nodes(depth=depth)

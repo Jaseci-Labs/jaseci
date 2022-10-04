@@ -97,7 +97,7 @@ class TestDot(TestCaseHelper, TestCase):
         gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
-        dot_str = self.gph.graph_dot_str()
+        dot_str = self.gph.traversing_dot_str()
         self.assertTrue("strict digraph root" in dot_str)
 
     def test_dot_quoted_string(self):
