@@ -32,7 +32,7 @@ class GraphApi:
     @Interface.private_api()
     def graph_get(
         self,
-        gph: Node = None,
+        nd: Node = None,
         mode: str = "default",
         detailed: bool = False,
         depth: int = 0,
@@ -42,13 +42,51 @@ class GraphApi:
         Valid modes: {default, dot, }
         """
         if mode == "dot":
-            return gph.traversing_dot_str(detailed=detailed, depth=depth)
+            return nd.traversing_dot_str(detailed=detailed, depth=depth)
+
+        nodes = nd.get_all_nodes(depth=depth)
+        edges = nd.get_all_edges(nodes=nodes)
+
+        if mode == "jgraph":
+            jg_nodes = []
+            jg_edges = []
+
+            for nd in nodes:
+                jg_nodes.append(
+                    {
+                        "id": nd.jid,
+                        "label": nd.name,
+                        "attributes": nd.serialize(detailed=detailed),
+                    }
+                )
+
+            for ed in edges:
+                jg_edges.append(
+                    {
+                        "id": ed.jid,
+                        "label": ed.name,
+                        "from": ed.from_node_id,
+                        "to": ed.to_node_id,
+                        "arrows": {
+                            "to": {"enabled": True},
+                            "from": {"enabled": True},
+                        }
+                        if ed.bidirected
+                        else "to",
+                        "attributes": ed.serialize(detailed=detailed),
+                    }
+                )
+
+            return {
+                "nodes": jg_nodes,
+                "edges": jg_edges,
+            }
+
         else:
             items = []
-            nodes = gph.get_all_nodes(depth=depth)
             for i in nodes:
                 items.append(i.serialize(detailed=detailed))
-            for i in gph.get_all_edges(nodes=nodes):
+            for i in edges:
                 items.append(i.serialize(detailed=detailed))
             return items
 
