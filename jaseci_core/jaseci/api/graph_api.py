@@ -5,7 +5,6 @@ from jaseci.api.interface import Interface
 from jaseci.utils.id_list import IdList
 from jaseci.graph.graph import Graph
 from jaseci.graph.node import Node
-from jaseci.actor.sentinel import Sentinel
 import uuid
 
 
@@ -141,13 +140,11 @@ class GraphApi:
         return ret
 
     @Interface.private_api(cli_args=["nd"])
-    def graph_node_set(self, nd: Node, ctx: dict, snt: Sentinel = None):
+    def graph_node_set(self, nd: Node, ctx: dict):
         """
         Assigns values to member variables of a given node using ctx object
         """
-        temp_ref_nd = snt.run_architype(nd.name, kind="node", caller=self)
-        nd.set_context(ctx=ctx, arch=temp_ref_nd)
-        temp_ref_nd.destroy()
+        nd.set_context(ctx=ctx)
         return nd.serialize()
 
     @Interface.cli_api(cli_args=["file"])

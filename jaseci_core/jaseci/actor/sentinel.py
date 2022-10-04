@@ -138,14 +138,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
             self.rt_error(f"Unable to find architype for {obj.name}, {obj.kind}")
         return ret
 
-    def check_in_arch_context(self, key_name, object):
-        """
-        Validates a key is present in currently loaded architype of
-        a particular instance (helper for expanding node has variables)
-        """
-        src_arch = self.run_architype(object.name, kind=object.kind)
-        return key_name in src_arch.context
-
     def run_tests(self, detailed=False, silent=False):
         """
         Testcase schema

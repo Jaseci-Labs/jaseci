@@ -587,3 +587,11 @@ walker init {
         disengage;
     }
 }
+
+walker print_life_note {
+    take --> node::life;
+    life {
+        here.note="cute";
+        report here.note;
+    }
+}

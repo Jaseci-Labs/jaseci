@@ -118,6 +118,7 @@ class SentinelInterp(Interp):
                                 arch.private_vars.append(var_name)
                             if is_anchor and arch.anchor_var is None:
                                 arch.anchor_var = var_name
+                            arch.has_vars.append(var_name)
         arch.save()
 
     def arch_can_compile(self, jac_ast, arch):
