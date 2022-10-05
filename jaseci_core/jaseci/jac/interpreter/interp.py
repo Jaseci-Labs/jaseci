@@ -716,6 +716,7 @@ class Interp(MachineState):
             | NAME
             | global_ref
             | node_edge_ref
+            | type_ref spawn_ctx?
             | list_val
             | dict_val
             | LPAREN expression RPAREN
@@ -748,8 +749,9 @@ class Interp(MachineState):
                         self,
                     )
                 return val
-            elif kid[0].name == "global_ref":
-                return self.run_global_ref(kid[0])
+            elif kid[0].name == "type_ref":
+                ret = self.run_type_ref(kid[0])
+                return ret
             elif kid[0].name == "LPAREN":
                 return self.run_expression(kid[1])
             elif kid[0].name == "ability_op":
@@ -1290,7 +1292,7 @@ class Interp(MachineState):
         """
         kid = self.set_cur_ast(jac_ast)
         obj = self.parent().run_architype(kid[2].token_text(), kind="type", caller=self)
-        return obj
+        return JacValue(self, value=obj)
 
     def run_edge_ref(self, jac_ast, is_spawn=False):
         """

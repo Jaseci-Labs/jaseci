@@ -779,12 +779,13 @@ class JacTests(TestCaseHelper, TestCase):
         report = test_walker.report
         self.assertIn(report[1], report[0])
 
-    # def test_struct_types(self):
-    #     sent = Sentinel(m_id="anon", h=self.meta.build_hook())
-    #     gph = Graph(m_id="anon", h=sent._h)
-    #     sent.register_code(jtc.struct_types)
-    #     test_walker = sent.run_architype("init")
-    #     test_walker.prime(gph)
-    #     test_walker.run()
-    #     report = test_walker.report
-    #     self.assertIn(report[1], report[0])
+    def test_struct_types(self):
+        sent = Sentinel(m_id="anon", h=self.meta.build_hook())
+        gph = Graph(m_id="anon", h=sent._h)
+        sent.register_code(jtc.struct_types)
+        test_walker = sent.run_architype("init")
+        test_walker.prime(gph)
+        r = test_walker.run()
+        self.log(r)
+        report = test_walker.report
+        self.assertEqual(report[0], 43)
