@@ -1155,6 +1155,6 @@ struct_types = """
         report
         [a.basic["apple"]["orange"],
          a.basic["apple"]["apple"]];
-        //report a.basic.apple.orange;
+        report [a.basic.apple.apple, a.basic.apple.orange];
     }
     """

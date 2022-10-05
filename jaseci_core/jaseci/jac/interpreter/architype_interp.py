@@ -9,7 +9,6 @@ from jaseci.graph.edge import Edge
 from jaseci.actor.walker import Walker
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.machine.jac_scope import JacScope
-from jaseci.element.obj_mixins import Anchored
 from jaseci.utils.utils import parse_str_token
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 

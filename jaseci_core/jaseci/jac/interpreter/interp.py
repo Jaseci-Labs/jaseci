@@ -753,6 +753,8 @@ class Interp(MachineState):
                 return val
             elif kid[0].name == "type_ref":
                 ret = self.run_type_ref(kid[0])
+                if kid[-1].name == "spawn_ctx":
+                    self.run_spawn_ctx(kid[-1], ret.value)
                 return ret
             elif kid[0].name == "LPAREN":
                 return self.run_expression(kid[1])
@@ -1629,6 +1631,9 @@ class Interp(MachineState):
         kid = self.set_cur_ast(jac_ast)
         name = kid[0].token_text()
         result = self.run_expression(kid[-1]).value
+        if isinstance(obj, dict):
+            obj[name] = result
+            return
         dest = JacValue(self, ctx=obj, name=name, value=result)
         if obj.j_type == "walker":
             dest.write(kid[0], force=True)

@@ -163,9 +163,7 @@ class JacValue:
             not force
             and self.is_element
             and self.name not in self.ctx.keys()
-            and not self.parent.parent().check_in_arch_context(
-                self.name, self.is_element
-            )
+            and self.name not in self.is_element.get_architype().has_vars
         ):
             self.parent.rt_error(
                 f"Creating variable {self.name} in graph "

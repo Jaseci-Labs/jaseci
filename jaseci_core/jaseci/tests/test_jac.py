@@ -788,3 +788,4 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker.run()
         report = test_walker.report
         self.assertEqual(report[0], [43, 33])
+        self.assertEqual(report[1], [33, 43])
