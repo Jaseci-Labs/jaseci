@@ -1142,7 +1142,7 @@ struct_types = """
     }
 
     type another {
-        has apple=type::simple;
+        has apple=type::simple(apple=33);
     }
 
     node mynode {
@@ -1152,7 +1152,9 @@ struct_types = """
     walker init {
         a= spawn here --> node::mynode;
 
-        report a.basic["apple"]["orange"];
+        report
+        [a.basic["apple"]["orange"],
+         a.basic["apple"]["apple"]];
         //report a.basic.apple.orange;
     }
     """

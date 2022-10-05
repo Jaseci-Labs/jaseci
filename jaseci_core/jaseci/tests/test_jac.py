@@ -785,7 +785,6 @@ class JacTests(TestCaseHelper, TestCase):
         sent.register_code(jtc.struct_types)
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
-        r = test_walker.run()
-        self.log(r)
+        test_walker.run()
         report = test_walker.report
-        self.assertEqual(report[0], 43)
+        self.assertEqual(report[0], [43, 33])

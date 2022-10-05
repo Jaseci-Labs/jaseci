@@ -111,12 +111,11 @@ class ArchitypeInterp(Interp):
         struct_block: LBRACE (has_stmt)* RBRACE | COLON has_stmt | SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
-        ret = Anchored()
-        ret.j_type = "dummy"
+        ret = {}
         for i in kid:
             if i.name == "has_stmt":
                 self.run_has_stmt(i, ret)
-        return ret.context
+        return ret
 
     def run_can_block(self, jac_ast):
         """

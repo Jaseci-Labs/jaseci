@@ -51,8 +51,10 @@ class Interp(MachineState):
         var_val = None  # jac's null
         if len(kid) > 1:
             var_val = self.run_expression(kid[2]).value
+        if isinstance(obj, dict):
+            obj[var_name] = var_val
         # Runs only once for walkers
-        if var_name not in obj.context.keys() or obj.j_type != "walker":
+        elif var_name not in obj.context.keys() or obj.j_type != "walker":
             JacValue(self, ctx=obj, name=var_name, value=var_val).write(
                 kid[0], force=True
             )
