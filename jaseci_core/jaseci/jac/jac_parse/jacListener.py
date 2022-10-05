@@ -137,12 +137,12 @@ class jacListener(ParseTreeListener):
     def exitAttr_stmt(self, ctx: jacParser.Attr_stmtContext):
         pass
 
-    # Enter a parse tree produced by jacParser#has_block.
-    def enterHas_block(self, ctx: jacParser.Has_blockContext):
+    # Enter a parse tree produced by jacParser#struct_block.
+    def enterStruct_block(self, ctx: jacParser.Struct_blockContext):
         pass
 
-    # Exit a parse tree produced by jacParser#has_block.
-    def exitHas_block(self, ctx: jacParser.Has_blockContext):
+    # Exit a parse tree produced by jacParser#struct_block.
+    def exitStruct_block(self, ctx: jacParser.Struct_blockContext):
         pass
 
     # Enter a parse tree produced by jacParser#can_block.
@@ -735,14 +735,6 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#node_spawn.
     def exitNode_spawn(self, ctx: jacParser.Node_spawnContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#type_spawn.
-    def enterType_spawn(self, ctx: jacParser.Type_spawnContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#type_spawn.
-    def exitType_spawn(self, ctx: jacParser.Type_spawnContext):
         pass
 
     # Enter a parse tree produced by jacParser#graph_spawn.

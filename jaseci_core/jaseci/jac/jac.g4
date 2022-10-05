@@ -197,6 +197,7 @@ atom:
 	| NAME
 	| global_ref
 	| node_edge_ref
+	| type_ref spawn_ctx?
 	| list_val
 	| dict_val
 	| LPAREN expression RPAREN
@@ -288,17 +289,11 @@ kv_pair: expression COLON expression;
 
 spawn: KW_SPAWN spawn_object;
 
-spawn_object:
-	node_spawn
-	| type_spawn
-	| walker_spawn
-	| graph_spawn;
+spawn_object: node_spawn | walker_spawn | graph_spawn;
 
 spawn_edge: expression edge_ref;
 
 node_spawn: spawn_edge? node_ref spawn_ctx?;
-
-type_spawn: type_ref spawn_ctx?;
 
 graph_spawn: spawn_edge? graph_ref;
 
