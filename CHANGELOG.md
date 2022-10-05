@@ -4,6 +4,7 @@
 
 ### Updates
 
+- New Lang Feature: introduced type structs with `type::custom_data` style notations
 - New Feature: Introduced `graph node view` API
 - Major Improvement: Walkers are now proper architypes in stack, all code in architypes
 - Improvement: Attributes like anchored and private are not fuzed with anchored objects.

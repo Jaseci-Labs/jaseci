@@ -12,7 +12,8 @@ import_items:
 	| KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
 	| KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
 	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?
-	| KW_GLOBAL (STAR_MUL | import_names) (COMMA import_items)?;
+	| KW_GLOBAL (STAR_MUL | import_names) (COMMA import_items)?
+	| KW_TYPE (STAR_MUL | import_names) (COMMA import_items)?;
 
 import_names:
 	DBL_COLON NAME
@@ -26,6 +27,7 @@ global_var:
 architype:
 	KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
 	| KW_EDGE NAME (COLON NAME)* attr_block
+	| KW_TYPE NAME struct_block
 	| KW_GRAPH NAME graph_block
 	| KW_ASYNC? KW_WALKER NAME namespaces? walker_block;
 
@@ -52,6 +54,8 @@ walk_activity_block: KW_WITH KW_ACTIVITY code_block;
 attr_block: LBRACE (attr_stmt)* RBRACE | COLON attr_stmt | SEMI;
 
 attr_stmt: has_stmt | can_stmt;
+
+struct_block: LBRACE (has_stmt)* RBRACE | COLON has_stmt | SEMI;
 
 can_block: (can_stmt)*;
 
@@ -193,6 +197,7 @@ atom:
 	| NAME
 	| global_ref
 	| node_edge_ref
+	| type_ref spawn_ctx?
 	| list_val
 	| dict_val
 	| LPAREN expression RPAREN
@@ -255,6 +260,8 @@ node_ref: KW_NODE DBL_COLON NAME;
 walker_ref: KW_WALKER DBL_COLON NAME;
 
 graph_ref: KW_GRAPH DBL_COLON NAME;
+
+type_ref: KW_TYPE DBL_COLON NAME;
 
 edge_ref: edge_to | edge_from | edge_any;
 

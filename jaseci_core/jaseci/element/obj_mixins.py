@@ -42,6 +42,15 @@ class Anchored:
             return arch.private_vars
         return []
 
+    def set_context(self, ctx):
+        """Assign values to context fields of object"""
+        for i in ctx.keys():
+            if i in self.get_architype().has_vars:
+                self.context[i] = ctx[i]
+            else:
+                logger.warning(str(f"{i} not a context member of {self}"))
+        self.save()
+
 
 class Sharable:
     """Utility class for objects that are sharable between users"""

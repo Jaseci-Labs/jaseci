@@ -51,8 +51,10 @@ class Interp(MachineState):
         var_val = None  # jac's null
         if len(kid) > 1:
             var_val = self.run_expression(kid[2]).value
+        if isinstance(obj, dict):
+            obj[var_name] = var_val
         # Runs only once for walkers
-        if var_name not in obj.context.keys() or obj.j_type != "walker":
+        elif var_name not in obj.context.keys() or obj.j_type != "walker":
             JacValue(self, ctx=obj, name=var_name, value=var_val).write(
                 kid[0], force=True
             )
@@ -716,6 +718,7 @@ class Interp(MachineState):
             | NAME
             | global_ref
             | node_edge_ref
+            | type_ref spawn_ctx?
             | list_val
             | dict_val
             | LPAREN expression RPAREN
@@ -748,8 +751,11 @@ class Interp(MachineState):
                         self,
                     )
                 return val
-            elif kid[0].name == "global_ref":
-                return self.run_global_ref(kid[0])
+            elif kid[0].name == "type_ref":
+                ret = self.run_type_ref(kid[0])
+                if kid[-1].name == "spawn_ctx":
+                    self.run_spawn_ctx(kid[-1], ret.value)
+                return ret
             elif kid[0].name == "LPAREN":
                 return self.run_expression(kid[1])
             elif kid[0].name == "ability_op":
@@ -1284,6 +1290,14 @@ class Interp(MachineState):
         )
         return gph
 
+    def run_type_ref(self, jac_ast):
+        """
+        graph_ref: KW_GRAPH DBL_COLON NAME;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        obj = self.parent().run_architype(kid[2].token_text(), kind="type", caller=self)
+        return JacValue(self, value=obj)
+
     def run_edge_ref(self, jac_ast, is_spawn=False):
         """
         edge_ref: edge_to | edge_from | edge_any;
@@ -1617,6 +1631,9 @@ class Interp(MachineState):
         kid = self.set_cur_ast(jac_ast)
         name = kid[0].token_text()
         result = self.run_expression(kid[-1]).value
+        if isinstance(obj, dict):
+            obj[name] = result
+            return
         dest = JacValue(self, ctx=obj, name=name, value=result)
         if obj.j_type == "walker":
             dest.write(kid[0], force=True)
