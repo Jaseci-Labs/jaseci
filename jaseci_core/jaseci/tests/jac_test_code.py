@@ -1150,7 +1150,7 @@ struct_types = """
     }
 
     walker init {
-        a= spawn here --> node::mynode;
+        a = spawn here --> node::mynode;
 
         report
         [a.basic["apple"]["orange"],
