@@ -9,6 +9,7 @@ from jaseci.graph.edge import Edge
 from jaseci.actor.walker import Walker
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.machine.jac_scope import JacScope
+from jaseci.element.obj_mixins import Anchored
 from jaseci.utils.utils import parse_str_token
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 
@@ -21,6 +22,7 @@ class ArchitypeInterp(Interp):
         architype:
             KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
             | KW_EDGE NAME (COLON NAME)* attr_block
+            | KW_TYPE NAME struct_block
             | KW_GRAPH NAME graph_block
             | KW_ASYNC? KW_WALKER NAME namespaces? walker_block;
         """
@@ -65,6 +67,8 @@ class ArchitypeInterp(Interp):
                 parent=self.parent(),
             )
             self.build_object_with_supers(item, kid[-1])
+        elif kid[0].name == "KW_TYPE":
+            item = self.run_struct_block(kid[-1])
         elif kid[0].name == "KW_GRAPH":
             item = self.run_graph_block(kid[-1])
         elif kid[0].name == "KW_WALKER":
@@ -101,6 +105,18 @@ class ArchitypeInterp(Interp):
         for i in kid:
             if i.name == "attr_stmt":
                 self.run_attr_stmt(i, obj)
+
+    def run_struct_block(self, jac_ast):
+        """
+        struct_block: LBRACE (has_stmt)* RBRACE | COLON has_stmt | SEMI;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        ret = Anchored()
+        ret.j_type = "dummy"
+        for i in kid:
+            if i.name == "has_stmt":
+                self.run_has_stmt(i, ret)
+        return ret.context
 
     def run_can_block(self, jac_ast):
         """

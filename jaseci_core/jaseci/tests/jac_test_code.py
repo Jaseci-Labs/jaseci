@@ -1133,3 +1133,26 @@ rand_choice = """
         report rand.choice(a);
     }
     """
+
+
+struct_types = """
+    type simple {
+        has apple;
+        has orange=43;
+    }
+
+    type another {
+        has apple=spawn type::simple;
+    }
+
+    node mynode {
+        has basic=spawn type::another;
+    }
+
+    walker init {
+        a= spwan here --> node::mynode;
+
+
+        report a.basic.apple.orange;
+    }
+    """

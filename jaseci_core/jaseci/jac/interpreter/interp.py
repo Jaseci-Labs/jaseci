@@ -1284,6 +1284,14 @@ class Interp(MachineState):
         )
         return gph
 
+    def run_type_ref(self, jac_ast):
+        """
+        graph_ref: KW_GRAPH DBL_COLON NAME;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        obj = self.parent().run_architype(kid[2].token_text(), kind="type", caller=self)
+        return obj
+
     def run_edge_ref(self, jac_ast, is_spawn=False):
         """
         edge_ref: edge_to | edge_from | edge_any;
