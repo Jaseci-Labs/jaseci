@@ -1,11 +1,13 @@
-from antlr4 import ParseTreeListener
+from antlr4 import InputStream, CommonTokenStream, ParseTreeListener
+from jaseci.jac.jac_parse.jacLexer import jacLexer
+from jaseci.jac.jac_parse.jacParser import jacParser, ParseTreeWalker
 from antlr4.error.ErrorListener import ErrorListener
 from jaseci.utils.utils import logger, parse_str_token
+from jaseci.jac.ir.ast import Ast
 import os
 
 
 class JacAstBuilder:
-
     _ast_head_map = {}
 
     def __init__(
@@ -13,38 +15,28 @@ class JacAstBuilder:
         mod_name,
         mod_dir="./",
         jac_text=None,
-        parse_errors=None,
         start_rule="start",
-        fresh_start=True,
     ):
-        if fresh_start:
-            Ast._ast_head_map = {}
-        self.name = "unparsed"
-        self.kind = "unparsed"
-        self.context = {}
-        self._parse_errors = parse_errors if parse_errors else []
+        self.ast = Ast(mod_name=mod_name)
+        self._parse_errors = []
         self._start_rule = start_rule
-        self.mod_name = mod_name if mod_name is not None else "@default"
         self._mod_dir = mod_dir
         self._keep = False
-        self.line = 0
-        self.column = 0
-        self.kid = []
         if jac_text:
             self.parse_jac_str(jac_text)
 
     def parse_jac_str(self, jac_str):
         """Parse language and build ast from string"""
-        Ast._ast_head_map[self._mod_dir + self.mod_name] = self
+        JacAstBuilder._ast_head_map[self._mod_dir + self.ast.mod_name] = self.ast
         input_stream = InputStream(jac_str)
         lexer = jacLexer(input_stream)
         stream = CommonTokenStream(lexer)
-        errors = JacTreeError(self)
+        errors = JacTreeError(self.ast)
         parser = jacParser(stream)
         parser.removeErrorListeners()
         parser.addErrorListener(errors)
         tree = getattr(parser, self._start_rule)()
-        builder = JacTreeBuilder(self)
+        builder = JacTreeBuilder(builder=self, tree_root=self.ast)
         walker = ParseTreeWalker()
         walker.walk(builder, tree)
 
@@ -55,7 +47,8 @@ class JacAstBuilder:
 class JacTreeBuilder(ParseTreeListener):
     """Converter class from Antlr trees to Jaseci Tree"""
 
-    def __init__(self, tree_root):
+    def __init__(self, builder, tree_root):
+        self.builder = builder
         self.tree_root = tree_root
         self.node_stack = []
 
@@ -68,9 +61,7 @@ class JacTreeBuilder(ParseTreeListener):
         TODO: Check for duplicate imports and ignore if imported
         """
         kid = jac_ast.kid
-        fn = os.path.join(
-            self.tree_root._mod_dir, parse_str_token(kid[-2].token_text())
-        )
+        fn = os.path.join(self.builder._mod_dir, parse_str_token(kid[-2].token_text()))
         full_path = os.path.realpath(fn)
         mod_name = os.path.basename(fn)
         mdir = os.path.dirname(full_path) + "/"
