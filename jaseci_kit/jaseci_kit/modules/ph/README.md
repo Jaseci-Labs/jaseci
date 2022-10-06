@@ -1,16 +1,134 @@
-# Personalized Head
+# Personalized Head (PH) Module
 
 **What is Personalized Head:**
 Using the Personalized Head module, you can create a custom model head which you can train over the time.
 You can use your own custom models and datasets to create a personalized head with just using a configuration
 file and a python file.
 
-## **1. Using the Personalized Head as a Standalone Module**
+## **1. Using the 'Personalized Head' as a Transformer Head**
 
-You can use the personalized head as a full custom model other than being a head of a model. For an example you can
-for a YOLO model, that you can train and inference. Follow the steps below to use the personalized head as a standalone model. Example shows how to use the personalized head as a MNIST Classification model.
+Default Model for the Personalized Head is a Transformer Head. You can inference the transformer head with just using a single configuration file. For training the model, you need to create a python file which contains the torch.utils.data.Dataset inherited class. But in the following example we will use the inbuilt SnipsDataloader class.
 
-### **1.1. Creating Custom Python Model**
+### **1.1. Creating a Configuration File**
+```yaml
+# PATH: ./config.yaml
+
+# Inference Configuration
+Inference:
+  postprocess:
+    args:
+      to_list: true # converts the output to list as Jaseci doesnt support tensor
+    type: PersonalizedHeadPostProcessor
+  preprocess:
+    type: PersonalizedHeadPreProcessor
+  weights: '' # if you want to use a pretrained weights, you can specify the path here
+
+# Model Configuration
+Model:
+  args:
+    batch_first: true
+    embedding_length: 768
+    n_classes: 10
+    ph_ff_dim: 512
+    ph_nhead: 8
+    ph_nlayers: 1
+  type: PersonalizedHead
+
+# Training Configuration (Optional: If you want to train the model)
+Trainer:
+  dataloader:
+    args:
+      batch_size: 32
+      num_workers: 1
+      shuffle: true
+      train_json: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/ph/tests/train.json
+      validation_split: 0.2
+    type: SnipsDataLoader #
+  loss: nll_loss
+  lr_scheduler:
+    args:
+      gamma: 0.1
+      step_size: 50
+    type: StepLR
+  metrics:
+  - accuracy
+  - top_k_acc
+  n_gpu: 1
+  name: PersonalizedHeadTrainer
+  optimizer:
+    args:
+      amsgrad: true
+      lr: 0.001
+      weight_decay: 0
+    type: Adam
+  trainer:
+    early_stop: 10
+    epochs: 100
+    monitor: min val_loss
+    save_dir: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/ph/tests/saved_models/
+    save_period: 1
+    tensorboard: true
+    verbosity: 2
+```
+### **1.2. Create your JAC Program**
+
+```python
+# Path: ./main.jac
+
+walker identify_intent{
+  has input_text;
+  can ph.create_head, ph.predict, ph.train_head, ph.load_weights;
+
+  root {
+      #creating a head
+      uid = ph.create_head(config_file='config.yaml', uuid='ph');
+      pred = ph.predict(uuid=uid, data=input_text);
+      report pred;
+
+      # training the head
+      ph.train_head(config_file='config.yaml',uuid='ph');
+
+      #loading the trained weights
+      ph.load_weights(uuid=uid, weights_file='saved/models/MnistTrainer/ph/best_model.pt');
+      pred = ph.predict(uuid=uid, data=input_text);
+      report pred;
+
+  }
+}
+
+walker init {
+  has input_text;
+  root {
+      spawn here walker::identify_intent(input_text=input_text);
+  }
+}
+```
+
+### **1.4. Running your JAC Program**
+
+- Open the terminal and run Jaseci Command Line Tool using the command below.
+
+```bash
+jsctl -m
+```
+
+- Load the 'personalized_head' module using the command below.
+
+```bash
+actions load module jaseci_kit.ph
+```
+
+- Run the JAC program using the command below.
+
+```bash
+jac run main.jac -ctx '{"input_text": "I want to order a pizza"}'
+```
+
+## **2. Using the 'Personalized Head' as a Custom Model**
+
+You can use the personalized head as a full custom model other than being a transformer head of a model. For an example you can create your own YOLO model, that you can train and inference. Follow the steps below to use the personalized head as a standalone module with custom model. Example shows how to use the personalized head as a MNIST Classification model.
+
+### **2.1. Creating Custom Python Model**
 
 Python File contains the torch.nn.Module class which is the model. You can use any model you want. and a torch.utils.data.Dataset class which is the dataset. You can use any dataset you want. and Preprocessor and Postprocessor classes which are used in inferencing. You can use any preprocessor and postprocessor you want but with the same method format. follow it to create your custom python model.
 
@@ -83,7 +201,7 @@ class MnistPostProcessor:
         return x.tolist()
 ```
 
-### **1.2. Creating a Configuration File**
+### **2.2. Creating a Configuration File**
 
 Configuration file is YAML file which contains the information about the model and training parameters. You can follow this example yaml file as a reference to create your own configuration file.
 
@@ -150,7 +268,7 @@ Trainer:
     verbosity: 2
 ```
 
-### **1.3. Create your JAC program**
+### **2.3. Create your JAC program**
 
 ```python
 # Path: ./main.jac
@@ -203,12 +321,6 @@ actions load module jaseci_kit.ph
 - Run the JAC program using the command below.
 
 ```bash
-jac run main.jac -ctx '{"input_image": "data/0.png"}'
+jac run main.jac -ctx '{"input_image": "test.jpg"}'
 ```
 
-```
-
-## **2. Using the Personalized Head with another Module**
-
-Coming Soon...
-```
