@@ -41,7 +41,7 @@ Trainer:
       batch_size: 32
       num_workers: 1
       shuffle: true
-      train_json: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/ph/tests/train.json
+      train_json: train.json
       validation_split: 0.2
     type: SnipsDataLoader #
   loss: nll_loss
@@ -65,7 +65,7 @@ Trainer:
     early_stop: 10
     epochs: 100
     monitor: min val_loss
-    save_dir: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/ph/tests/saved_models/
+    save_dir: saved_models
     save_period: 1
     tensorboard: true
     verbosity: 2
@@ -77,11 +77,12 @@ Trainer:
 
 walker identify_intent{
   has input_text;
-  can ph.create_head, ph.predict, ph.train_head, ph.load_weights;
+  can ph.create_head_list, ph.create_head, ph.predict, ph.train_head, ph.load_weights;
 
   root {
       #creating a head
-      uid = ph.create_head(config_file='config.yaml', uuid='ph');
+      ph.create_head_list(config_file='config.yaml'); # creates a head list (Only need to done once)
+      uid = ph.create_head(uuid='ph');
       pred = ph.predict(uuid=uid, data=input_text);
       report pred;
 
@@ -89,7 +90,7 @@ walker identify_intent{
       ph.train_head(config_file='config.yaml',uuid='ph');
 
       #loading the trained weights
-      ph.load_weights(uuid=uid, weights_file='saved/models/MnistTrainer/ph/best_model.pt');
+      ph.load_weights(uuid=uid, weights_file='saved/models/PersonalizedHeadTrainer/ph/best_model.pt');
       pred = ph.predict(uuid=uid, data=input_text);
       report pred;
 

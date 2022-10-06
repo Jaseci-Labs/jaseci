@@ -79,8 +79,9 @@ class InferenceList:
         self.ie_list = {}
 
     def add(self, config: Dict = None, uuid: str = None) -> None:
-        if uuid in self.ie_list:
-            raise ImproperConnectionState('Inference Engine already exists.')
+        if not self.check(uuid):
+            raise ImproperConnectionState(
+                f'{uuid} Inference Engine already exists. Please use another uuid.')
         if config:
             ie = InferenceEngine(config, uuid)
         else:
@@ -89,7 +90,7 @@ class InferenceList:
         return ie.id
 
     def predict(self, uuid: str, data: Any) -> Any:
-        if uuid in self.ie_list:
+        if self.check(uuid):
             return self.ie_list[uuid].predict(data)
         else:
             raise ImproperConnectionState('Inference Engine not found.')
@@ -99,3 +100,6 @@ class InferenceList:
             self.ie_list[uuid].load_weights(weights)
         else:
             raise ImproperConnectionState('Inference Engine not found.')
+
+    def check(self, uuid: str) -> bool:
+        return uuid in self.ie_list

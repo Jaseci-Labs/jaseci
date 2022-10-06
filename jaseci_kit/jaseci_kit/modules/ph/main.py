@@ -91,7 +91,7 @@ def predict(uuid: str, data: Any) -> Any:
 
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
-def train_head(config_file: str = None, uuid: str = None):
+def train_head(config_file: str = None, uuid: str = None) -> None:
     '''
     Train the current active model.
     @param new_config: new config yaml to be used for training
@@ -113,7 +113,7 @@ def train_head(config_file: str = None, uuid: str = None):
 
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
-def load_weights(uuid: str, path: str):
+def load_weights(uuid: str, path: str) -> None:
     try:
         global il
         if il:
@@ -121,6 +121,19 @@ def load_weights(uuid: str, path: str):
                 il.load_weights(uuid, path)
             except ImproperConnectionState:
                 raise Exception(HEAD_NOT_FOUND)
+        else:
+            raise Exception(HEAD_LIST_NOT_FOUND)
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["ph"], allow_remote=True)
+def check_head(uuid: str) -> bool:
+    try:
+        global il
+        if il:
+            return il.check(uuid)
         else:
             raise Exception(HEAD_LIST_NOT_FOUND)
     except Exception as e:
