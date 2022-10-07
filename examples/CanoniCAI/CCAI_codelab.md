@@ -635,9 +635,9 @@ jaseci > actions load module jaseci_kit.bi_enc
 We have provided an example training file that contains some starting point training data for the two intents, `test drive` and `order a tesla`.
 
 ```js
-jaseci > jac run bi_enc.jac -walk train -ctx "{\"train_file\": \"clf_train_1.json\"}"
+jaseci > walker run train -ctx "{\"train_file\": \"clf_train_1.json\"}"
 ```
-We are still using `jac run` but as you have noticied, this time we are using some new arguments. So let's break it down.
+We are still using `walker run` but as you have noticied, this time we are using some new arguments. So let's break it down.
 * `-walk` specifies the name of the walker to run. By default, it runs the `init` walker.
 * `-ctx` stands for `context`. This lets us provide input parameters to the walker. The input parameters are defined as `has` variables in the walker.
 
@@ -662,14 +662,14 @@ Now that the model has finished training, let's try it out!
 You can use the `infer` walker to play with the model and test it out! `infer` is short for inference, which means using a trained model to run prediction on a given input.
 
 ```bash
-jaseci > jac run bi_enc.jac -walk infer -ctx "{\"labels\": [\"test drive\", \"order a tesla\"]}"
+jaseci > walker run infer -ctx "{\"labels\": [\"test drive\", \"order a tesla\"]}"
 ```
 
-Similar to training, we are using `jac run` to specifically invoke the `infer` walker and providing it with custom parameters.
+Similar to training, we are using `walker run` to specifically invoke the `infer` walker and providing it with custom parameters.
 The custom paremeter is the list of candidate intent labels, which are `test drive` and `order a tesla` in this case, as these were the intents the model was trained on.
 
 ```bash
-jaseci > jac run bi_enc.jac -walk infer -ctx "{\"labels\": [\"test drive\", \"order a tesla\"]}"
+jaseci > walker run infer -ctx "{\"labels\": [\"test drive\", \"order a tesla\"]}"
 Enter input text (Ctrl-C to exit)> i want to order a tesla
 {"label": "order a tesla", "score": 9.812651595405981}
 Enter input text (Ctrl-C to exit)> i want to test drive
@@ -687,12 +687,12 @@ Congratulations! You just trained your first intent classifier, easy as that.
 The trained model is kept in memory and active until they are explicitly saved with `save_model`. To save the trained model to a location of your choosing, run
 
 ```bash
-jaseci > jac run bi_enc.jac -walk save_model -ctx "{\"model_path\": \"dialogue_intent_model\"}"
+jaseci > walker run save_model -ctx "{\"model_path\": \"dialogue_intent_model\"}"
 ```
 Similarly, you can load a saved model with `load_model`
 
 ```bash
-jaseci > jac run bi_enc.jac -walk load_model -ctx "{\"model_path\": \"dialogue_intent_model\"}"
+jaseci > walker run load_model -ctx "{\"model_path\": \"dialogue_intent_model\"}"
 ```
 
 Always remember to save your trained models!
@@ -1135,15 +1135,15 @@ So in the example above, we have two entities, `name:tony stark` and `address: 1
 
 To train the model, run
 ```bash
-jaseci > jac run tfm_ner.jac -walk train -ctx "{\"train_file\": \"ner_train.json\"}"
+jaseci > walker run train -ctx "{\"train_file\": \"ner_train.json\"}"
 ```
 After the model is finished training, you can play with the model using the `infer` walker
 ```js
-jaseci > jac run tfm_ner.jac -walk infer
+jaseci > walker run infer
 ```
 For example,
 ```bash
-jaseci > jac run tfm_ner.jac -walk infer
+jaseci > walker run infer
 Enter input text (Ctrl-C to exit)> my name is jason
 [{"entity_text": "jason", "entity_value": "name", "conf_score": 0.5514775514602661, "start_pos": 11, "end_pos": 16}]
 ```
