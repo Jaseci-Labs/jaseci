@@ -6,14 +6,12 @@ from jaseci.jac.jac_parse.jacParser import jacParser, ParseTreeWalker
 from jaseci.jac.jac_parse.jacLexer import jacLexer
 from antlr4 import InputStream, CommonTokenStream
 from jaseci.jac.ir.ast import Ast
+from jaseci.jac.ir.passes.schedule import multi_pass_optimizer
 
 
 class JacAstBuilder:
     """
-    AST Nodes
-
-    The kind field is used to represent the grammar rule
-    TODO: Error handling if jac program has errors
+    Jac Code to AST Tree
     """
 
     _ast_head_map = {}
@@ -50,6 +48,8 @@ class JacAstBuilder:
 
         if self._parse_errors:
             logger.error(str(f"Parse errors encountered - {self}"))
+
+        multi_pass_optimizer(self.root)
 
 
 class JacTreeBuilder(ParseTreeListener):

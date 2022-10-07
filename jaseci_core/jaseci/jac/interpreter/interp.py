@@ -438,7 +438,7 @@ class Interp(MachineState):
 
         kid = self.set_cur_ast(jac_ast)
         if len(kid) == 1:
-            return self.run_connect(kid[0])
+            return self.run_rule(kid[0])
         else:
             if kid[1].name == "assignment":
                 self._assign_mode = True
@@ -513,48 +513,45 @@ class Interp(MachineState):
         """
         connect: logical ( (NOT)? edge_ref expression)?;
         """
-        try:
-            kid = self.set_cur_ast(jac_ast)
-            if len(kid) < 2:
-                return self.run_logical(kid[0])
-            bret = self.run_logical(kid[0])
-            base = bret.value
-            tret = self.run_expression(kid[-1])
-            target = tret.value
-            self.rt_check_type(base, [Node, JacSet], kid[0])
-            self.rt_check_type(target, [Node, JacSet], kid[-1])
-            if isinstance(base, Node):
-                base = JacSet(in_list=[base])
-            if isinstance(target, Node):
-                target = JacSet(in_list=[target])
-            if kid[1].name == "NOT":
-                for i in target.obj_list():
-                    for j in base.obj_list():
-                        j.detach_edges(i, self.run_edge_ref(kid[2]).obj_list())
-                return bret
-            else:
-                direction = kid[1].kid[0].name
-                for i in target.obj_list():
-                    for j in base.obj_list():
-                        use_edge = self.run_edge_ref(kid[1], is_spawn=True)
-                        self.rt_check_type(i, Node, kid[-1])
-                        self.rt_check_type(j, Node, kid[-1])
-                        if direction == "edge_from":
-                            j.attach_inbound(i, [use_edge])
-                        elif direction == "edge_to":
-                            j.attach_outbound(i, [use_edge])
-                        else:
-                            j.attach_bidirected(i, [use_edge])
+        kid = self.set_cur_ast(jac_ast)
+        if len(kid) < 2:
+            return self.run_rule(kid[0])
+        bret = self.run_rule(kid[0])
+        base = bret.value
+        tret = self.run_expression(kid[-1])
+        target = tret.value
+        self.rt_check_type(base, [Node, JacSet], kid[0])
+        self.rt_check_type(target, [Node, JacSet], kid[-1])
+        if isinstance(base, Node):
+            base = JacSet(in_list=[base])
+        if isinstance(target, Node):
+            target = JacSet(in_list=[target])
+        if kid[1].name == "NOT":
+            for i in target.obj_list():
+                for j in base.obj_list():
+                    j.detach_edges(i, self.run_edge_ref(kid[2]).obj_list())
             return bret
-        except Exception as e:
-            self.jac_try_exception(e, jac_ast)
+        else:
+            direction = kid[1].kid[0].name
+            for i in target.obj_list():
+                for j in base.obj_list():
+                    use_edge = self.run_edge_ref(kid[1], is_spawn=True)
+                    self.rt_check_type(i, Node, kid[-1])
+                    self.rt_check_type(j, Node, kid[-1])
+                    if direction == "edge_from":
+                        j.attach_inbound(i, [use_edge])
+                    elif direction == "edge_to":
+                        j.attach_outbound(i, [use_edge])
+                    else:
+                        j.attach_bidirected(i, [use_edge])
+        return bret
 
     def run_logical(self, jac_ast):
         """
         logical: compare ((KW_AND | KW_OR) compare)*;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_compare(kid[0])
+        result = self.run_rule(kid[0])
         kid = kid[1:]
         while kid:
             if kid[0].name == "KW_AND":
@@ -576,7 +573,7 @@ class Interp(MachineState):
         if kid[0].name == "NOT":
             return JacValue(self, value=not self.run_compare(kid[1]).value)
         else:
-            result = self.run_arithmetic(kid[0])
+            result = self.run_rule(kid[0])
             kid = kid[1:]
             while kid:
                 other_res = self.run_arithmetic(kid[1])
@@ -613,7 +610,7 @@ class Interp(MachineState):
         arithmetic: term ((PLUS | MINUS) term)*;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_term(kid[0])
+        result = self.run_rule(kid[0])
         kid = kid[1:]
         while kid:
             other_res = self.run_term(kid[1])
@@ -631,7 +628,7 @@ class Interp(MachineState):
         term: factor ((STAR_MUL | DIV | MOD) factor)*;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_factor(kid[0])
+        result = self.run_rule(kid[0])
         kid = kid[1:]
         while kid:
             other_res = self.run_factor(kid[1])
@@ -651,8 +648,8 @@ class Interp(MachineState):
         factor: (PLUS | MINUS) factor | power;
         """
         kid = self.set_cur_ast(jac_ast)
-        if kid[0].name == "power":
-            return self.run_power(kid[0])
+        if len(kid) < 2:
+            return self.run_rule(kid[0])
         else:
             result = self.run_factor(kid[1])
             if kid[0].name == "MINUS":
@@ -664,7 +661,7 @@ class Interp(MachineState):
         power: atom (POW factor)*;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_atom(kid[0])
+        result = self.run_rule(kid[0])
         kid = kid[1:]
         if len(kid) < 1:
             return result
