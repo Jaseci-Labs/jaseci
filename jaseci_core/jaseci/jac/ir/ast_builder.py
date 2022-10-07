@@ -174,8 +174,6 @@ class JacTreeBuilder(ParseTreeListener):
         else:
             new_node = Ast(mod_name=self.builder.root.loc[2])
         new_node.name = jacParser.ruleNames[ctx.getRuleIndex()]
-        new_node.kind = "rule"
-        new_node._parse_errors = self.builder._parse_errors
         new_node.loc[0] = ctx.start.line
         new_node.loc[1] = ctx.start.column
 
@@ -195,7 +193,6 @@ class JacTreeBuilder(ParseTreeListener):
         """Visits terminals as walker walks, adds ast node"""
         new_node = Ast(mod_name=self.builder.root.loc[2])
         new_node.name = jacParser.symbolicNames[node.getSymbol().type]
-        new_node.kind = "terminal"
         new_node.loc[0] = node.getSymbol().line
         new_node.loc[1] = node.getSymbol().column
 
@@ -203,7 +200,7 @@ class JacTreeBuilder(ParseTreeListener):
             "symbol": jacParser.symbolicNames[node.getSymbol().type],
             "text": node.getSymbol().text,
         }
-        new_node.context["token"] = token
+        new_node.loc[3]["token"] = token
 
         self.node_stack[-1].kid.append(new_node)
 
