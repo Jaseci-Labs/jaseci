@@ -102,7 +102,7 @@ class Interp(MachineState):
                 self._jac_scope.add_action(act)
                 break
             else:
-                self.check_builtin_action(action_name, jac_ast)
+                # self.check_builtin_action(action_name, jac_ast)
                 act = Action(
                     m_id=self._m_id,
                     h=self._h,
