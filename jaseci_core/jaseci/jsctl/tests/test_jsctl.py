@@ -366,7 +366,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.call(
             "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
         )
-        gphs = self.call_cast("graph get -detailed true")
+        gphs = self.call_cast('graph get -field_filter {"exclude":[""]}')
         for i in gphs:
             self.assertEqual(i["j_access"], "public")
 

@@ -2,7 +2,6 @@
 Graph  class for Jaseci
 
 """
-from collections import OrderedDict
 from jaseci.graph.node import Node
 from jaseci.utils.id_list import IdList
 

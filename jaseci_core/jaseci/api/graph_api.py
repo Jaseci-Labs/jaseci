@@ -38,57 +38,26 @@ class GraphApi:
         mode: str = "default",
         detailed: bool = False,
         depth: int = 0,
-        filter: dict = {},
+        node_filter: dict = {},
+        edge_filter: dict = {},
+        field_filter: dict = {},
+        ctx_filter: dict = {},
     ):
         """
         Return the content of the graph with mode
         Valid modes: {default, dot, }
         """
         if mode == "dot":
-            return nd.traversing_dot_str(detailed=detailed, depth=depth, filter=filter)
+            return nd.traversing_dot_str(detailed, depth, node_filter, edge_filter)
 
-        nodes, edges = nd.get_all_architypes(depth=depth, filter=filter)
-
-        if mode == "jgraph":
-            af = AttributeFilter(filter)
-
-            jg_nodes = []
-            jg_edges = []
-
-            for nd in nodes:
-                jg_nodes.append(
-                    {"id": nd.jid, "label": nd.name, "attributes": af.serialize(nd)}
-                )
-
-            for ed in edges:
-                jg_edges.append(
-                    {
-                        "id": ed.jid,
-                        "label": ed.name,
-                        "from": ed.from_node_id,
-                        "to": ed.to_node_id,
-                        "arrows": {
-                            "to": {"enabled": True},
-                            "from": {"enabled": True},
-                        }
-                        if ed.bidirected
-                        else "to",
-                        "attributes": af.serialize(ed),
-                    }
-                )
-
-            return {
-                "nodes": jg_nodes,
-                "edges": jg_edges,
-            }
-
-        else:
-            items = []
-            for i in nodes:
-                items.append(i.serialize(detailed=detailed))
-            for i in edges:
-                items.append(i.serialize(detailed=detailed))
-            return items
+        af = AttributeFilter(field_filter, ctx_filter)
+        nodes, edges = nd.get_all_architypes(depth, node_filter, edge_filter)
+        items = []
+        for i in nodes.values():
+            items.append(af.serialize(i))
+        for i in edges.values():
+            items.append(af.serialize(i))
+        return items
 
     @Interface.private_api()
     def graph_list(self, detailed: bool = False):

@@ -394,13 +394,15 @@ class Node(Element, Anchored):
 
         return dstr + "\n"
 
-    def get_all_architypes(self, depth: int = 0, filter: dict = {}):
+    def get_all_architypes(
+        self, depth: int = 0, node_filter: dict = {}, edge_filter: dict = {}
+    ):
         """
         Returns all reachable architypes
         """
 
-        nf = Filter("node", filter)
-        ef = Filter("edge", filter)
+        nf = Filter(node_filter)
+        ef = Filter(edge_filter)
 
         childs = {self.jid: self}
 
@@ -415,8 +417,6 @@ class Node(Element, Anchored):
             for node in childs.values():
                 for edge in node.attached_edges():
                     if not (edge.jid in edges) and ef.is_included(edge.jid, edge.name):
-                        edges.update({edge.jid: edge})
-
                         n_node = False
                         to_node = edge.to_node()
 
@@ -425,16 +425,18 @@ class Node(Element, Anchored):
                         else:
                             n_node = to_node
 
-                        if n_node not in nodes and nf.is_included(
-                            n_node.jid, n_node.name
-                        ):
-                            new_childs.update({n_node.jid: n_node})
+                        if not (n_node.jid in nodes):
+                            if nf.is_included(n_node.jid, n_node.name):
+                                edges.update({edge.jid: edge})
+                                new_childs.update({n_node.jid: n_node})
+                        else:
+                            edges.update({edge.jid: edge})
 
             childs = new_childs
             nodes.update(childs)
             depth -= 1
 
-        return nodes.values(), edges.values()
+        return nodes, edges
 
     def get_all_nodes(self, depth: int = 0):
         """
@@ -474,23 +476,26 @@ class Node(Element, Anchored):
 
         return edges.values()
 
-    def traversing_dot_str(self, detailed=False, depth: int = 0, filter: dict = {}):
+    def traversing_dot_str(
+        self,
+        detailed=False,
+        depth: int = 0,
+        node_filter: dict = {},
+        edge_filter: dict = {},
+    ):
         """
         DOT representation for graph.
         NOTE: This is different from the dot_str method for node intentionally
         because graph inherits node.
         """
-        node_list = self.get_all_nodes(depth=depth)
-        edge_list = self.get_all_edges(nodes=node_list)
-        node_map = [i.jid for i in node_list]
-        edge_map = [i.jid for i in edge_list]
+        nodes, edges = self.get_all_architypes(depth, node_filter, edge_filter)
 
         # Construct the graph string
         dstr = ""
         dstr += f"strict digraph {self.name} {{\n"
-        for n in node_list:
-            dstr += f"    {n.dot_str(node_map, detailed)}"
-        for e in edge_list:
-            dstr += f"    {e.dot_str(node_map, edge_map, detailed)}"
+        for n in nodes.values():
+            dstr += f"    {n.dot_str(list(nodes.keys()), detailed)}"
+        for e in edges.values():
+            dstr += f"    {e.dot_str(list(nodes.keys()), list(edges.keys()), detailed)}"
         dstr += "}"
         return dstr

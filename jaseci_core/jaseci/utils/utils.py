@@ -295,34 +295,55 @@ def is_true(val):
     )
 
 
+DEFAULT_FILTER = [
+    "name",
+    "kind",
+    "jid",
+    "j_type",
+    "context",
+    "code_sig",
+    "j_timestamp",
+    "version",
+    "to_node_id",
+    "from_node_id",
+    "bidirected",
+]
+
+
 class Filter:
-    def __init__(self, name: str, filter: dict = {}):
-        self.filter = filter.get(name, {}).get("include", [])
+    def __init__(self, filter: dict = {}, attr=False):
+        self.filter = filter.get("include", [])
 
         if self.filter:
             self.include = True
+            return
+
+        self.filter = filter.get("exclude", [])
+
+        if attr and not self.filter:
+            self.filter = DEFAULT_FILTER
+            self.include = True
         else:
             self.include = False
-            self.filter = filter.get("exclude", [])
 
     def is_included(self, *args):
-        for arg in args:
-            if arg not in self.filter if self.include else arg in self.filter:
-                return False
-        return True
+        if self.include:
+            return any(arg in self.filter for arg in args)
+        else:
+            return all(arg not in self.filter for arg in args)
 
 
 class AttributeFilter:
-    def __init__(self, filter: dict = {}):
-        self.ef = Filter("element", filter)
-        self.cf = Filter("context", filter)
+    def __init__(self, field_filter: dict = {}, ctx_filter: dict = {}):
+        self.ff = Filter(field_filter, True)
+        self.cf = Filter(ctx_filter)
 
     def serialize(self, obj):
         obj_dict = {}
         _vars = vars(obj)
 
         for key in _vars.keys():
-            if not key.startswith("_") and self.ef.is_included(key):
+            if not key.startswith("_") and self.ff.is_included(key):
                 if key == "context":
                     obj_dict[key] = {}
                     for c_key in _vars[key]:
