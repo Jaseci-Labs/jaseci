@@ -429,38 +429,42 @@ class Interp(MachineState):
         """
         expression: connect (assignment | copy_assign | inc_assign)?;
         """
+        try:
 
-        def check_can_write(val):
-            if val.ctx is None:
-                self.rt_error("Cannot assign to this experssion", kid[0])
-                return False
-            return True
+            def check_can_write(val):
+                if val.ctx is None:
+                    self.rt_error("Cannot assign to this expression", kid[0])
+                    return False
+                return True
 
-        kid = self.set_cur_ast(jac_ast)
-        if len(kid) == 1:
-            return self.run_rule(kid[0])
-        else:
-            if kid[1].name == "assignment":
-                self._assign_mode = True
-                dest = self.run_connect(kid[0])
-                self._assign_mode = False
-                if not check_can_write(dest):
-                    return dest
-                return self.run_assignment(kid[1], dest=dest)
-            elif kid[1].name == "copy_assign":
-                self._assign_mode = True
-                dest = self.run_connect(kid[0])
-                self._assign_mode = False
-                if not check_can_write(dest):
-                    return dest
-                return self.run_copy_assign(kid[1], dest=dest)
-            elif kid[1].name == "inc_assign":
-                self._assign_mode = True
-                dest = self.run_connect(kid[0])
-                self._assign_mode = False
-                if not check_can_write(dest):
-                    return dest
-                return self.run_inc_assign(kid[1], dest=dest)
+            kid = self.set_cur_ast(jac_ast)
+
+            if len(kid) == 1:
+                return self.run_rule(kid[0])
+            else:
+                if kid[1].name == "assignment":
+                    self._assign_mode = True
+                    dest = self.run_rule(kid[0])
+                    self._assign_mode = False
+                    if not check_can_write(dest):
+                        return dest
+                    return self.run_assignment(kid[1], dest=dest)
+                elif kid[1].name == "copy_assign":
+                    self._assign_mode = True
+                    dest = self.run_rule(kid[0])
+                    self._assign_mode = False
+                    if not check_can_write(dest):
+                        return dest
+                    return self.run_copy_assign(kid[1], dest=dest)
+                elif kid[1].name == "inc_assign":
+                    self._assign_mode = True
+                    dest = self.run_rule(kid[0])
+                    self._assign_mode = False
+                    if not check_can_write(dest):
+                        return dest
+                    return self.run_inc_assign(kid[1], dest=dest)
+        except Exception as e:
+            self.jac_try_exception(e, jac_ast)
 
     def run_assignment(self, jac_ast, dest):
         """
@@ -556,10 +560,10 @@ class Interp(MachineState):
         while kid:
             if kid[0].name == "KW_AND":
                 if result.value:
-                    result.value = result.value and self.run_compare(kid[1]).value
+                    result.value = result.value and self.run_rule(kid[1]).value
             elif kid[0].name == "KW_OR":
                 if not result.value:
-                    result.value = result.value or self.run_compare(kid[1]).value
+                    result.value = result.value or self.run_rule(kid[1]).value
             kid = kid[2:]
             if not kid:
                 break
@@ -571,12 +575,12 @@ class Interp(MachineState):
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "NOT":
-            return JacValue(self, value=not self.run_compare(kid[1]).value)
+            return JacValue(self, value=not self.run_rule(kid[1]).value)
         else:
             result = self.run_rule(kid[0])
             kid = kid[1:]
             while kid:
-                other_res = self.run_arithmetic(kid[1])
+                other_res = self.run_rule(kid[1])
                 result = self.run_cmp_op(kid[0], result, other_res)
                 kid = kid[2:]
                 if not kid:
@@ -613,7 +617,7 @@ class Interp(MachineState):
         result = self.run_rule(kid[0])
         kid = kid[1:]
         while kid:
-            other_res = self.run_term(kid[1])
+            other_res = self.run_rule(kid[1])
             if kid[0].name == "PLUS":
                 result.value = result.value + other_res.value
             elif kid[0].name == "MINUS":
@@ -631,7 +635,7 @@ class Interp(MachineState):
         result = self.run_rule(kid[0])
         kid = kid[1:]
         while kid:
-            other_res = self.run_factor(kid[1])
+            other_res = self.run_rule(kid[1])
             if kid[0].name == "STAR_MUL":
                 result.value = result.value * other_res.value
             elif kid[0].name == "DIV":
@@ -651,7 +655,7 @@ class Interp(MachineState):
         if len(kid) < 2:
             return self.run_rule(kid[0])
         else:
-            result = self.run_factor(kid[1])
+            result = self.run_rule(kid[1])
             if kid[0].name == "MINUS":
                 result.value = -(result.value)
             return result
@@ -667,7 +671,7 @@ class Interp(MachineState):
             return result
         elif kid[0].name == "POW":
             while kid:
-                result.value = result.value ** self.run_factor(kid[1]).value
+                result.value = result.value ** self.run_rule(kid[1]).value
                 kid = kid[2:]
                 if not kid:
                     break
@@ -744,9 +748,7 @@ class Interp(MachineState):
                 val = self._jac_scope.get_live_var(name, create_mode=self._assign_mode)
                 if val is None:
                     self.rt_error(f"Variable not defined - {name}", kid[0])
-                    return JacValue(
-                        self,
-                    )
+                    return JacValue(self)
                 return val
             elif kid[0].name == "type_ref":
                 ret = self.run_type_ref(kid[0])
