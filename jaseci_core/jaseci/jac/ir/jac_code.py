@@ -3,6 +3,7 @@ Mix in for jac code object in Jaseci
 """
 import json
 from jaseci.utils.utils import logger
+from jaseci.jac.ir.ast_builder import JacAstBuilder
 from jaseci.jac.ir.ast import Ast
 import hashlib
 from pathlib import Path
@@ -36,7 +37,7 @@ class JacJsonDec(json.JSONDecoder):
     def object_hook(self, obj):
 
         if isinstance(obj, dict) and "loc" in obj and "kid" in obj:
-            ret = Ast(mod_name=obj["loc"][2], fresh_start=False)
+            ret = Ast(mod_name=obj["loc"][2])
             for i in obj.keys():
                 setattr(ret, i, obj[i])
             return ret
@@ -99,7 +100,7 @@ class JacCode:
 
     def parse_jac(self, code, dir, start_rule="start"):
         """Generate AST tree from Jac code text"""
-        tree = Ast(
+        tree = JacAstBuilder(
             jac_text=code, start_rule=start_rule, mod_name=self.name, mod_dir=dir
         )
         self.errors = tree._parse_errors
@@ -108,7 +109,7 @@ class JacCode:
             for i in tree._parse_errors:
                 logger.error(i)
             return None
-        return tree
+        return tree.root
 
     def register(self, code, dir):
         """

@@ -2,15 +2,61 @@ import os
 from antlr4 import ParseTreeListener
 from antlr4.error.ErrorListener import ErrorListener
 from jaseci.utils.utils import logger, parse_str_token
-from jaseci.jac.jac_parse.jacParser import jacParser
+from jaseci.jac.jac_parse.jacParser import jacParser, ParseTreeWalker
+from jaseci.jac.jac_parse.jacLexer import jacLexer
+from antlr4 import InputStream, CommonTokenStream
+from jaseci.jac.ir.ast import Ast
+
+
+class JacAstBuilder:
+    """
+    AST Nodes
+
+    The kind field is used to represent the grammar rule
+    TODO: Error handling if jac program has errors
+    """
+
+    _ast_head_map = {}
+
+    def __init__(
+        self,
+        mod_name,
+        mod_dir="./",
+        jac_text=None,
+        start_rule="start",
+    ):
+        self.root = Ast(mod_name)
+        self._parse_errors = []
+        self._start_rule = start_rule
+        self._mod_dir = mod_dir
+        self.dependencies = []
+        if jac_text:
+            self.jac_code_to_ast(jac_text)
+
+    def jac_code_to_ast(self, jac_str):
+        """Parse language and build ast from string"""
+        JacAstBuilder._ast_head_map[self._mod_dir + self.root.loc[2]] = self
+        input_stream = InputStream(jac_str)
+        lexer = jacLexer(input_stream)
+        stream = CommonTokenStream(lexer)
+        errors = JacTreeError(self)
+        parser = jacParser(stream)
+        parser.removeErrorListeners()
+        parser.addErrorListener(errors)
+        tree = getattr(parser, self._start_rule)()
+        builder = JacTreeBuilder(self)
+        walker = ParseTreeWalker()
+        walker.walk(builder, tree)
+
+        if self._parse_errors:
+            logger.error(str(f"Parse errors encountered - {self}"))
 
 
 class JacTreeBuilder(ParseTreeListener):
     """Converter class from Antlr trees to Jaseci Tree"""
 
-    def __init__(self, tree_root):
-        self.tree_root = tree_root
-        self.ast_cls = type(tree_root)
+    def __init__(self, builder):
+        self.builder = builder
         self.node_stack = []
 
     def run_import_module(self, jac_ast):
@@ -22,42 +68,40 @@ class JacTreeBuilder(ParseTreeListener):
         TODO: Check for duplicate imports and ignore if imported
         """
         kid = jac_ast.kid
-        fn = os.path.join(
-            self.tree_root._mod_dir, parse_str_token(kid[-2].token_text())
-        )
+        fn = os.path.join(self.builder._mod_dir, parse_str_token(kid[-2].token_text()))
         full_path = os.path.realpath(fn)
         mod_name = os.path.basename(fn)
         mdir = os.path.dirname(full_path) + "/"
-        from_mod = self.tree_root.loc[2]
+        from_mod = self.builder.root.loc[2]
         logger.debug(f"Importing items from {mod_name} to {from_mod}...")
-        parsed_ast = None
-        if (mdir + mod_name) in self.ast_cls._ast_head_map.keys():
-            parsed_ast = self.ast_cls._ast_head_map[mdir + mod_name]
+        pre_build = None
+        if (mdir + mod_name) in JacAstBuilder._ast_head_map.keys():
+            pre_build = JacAstBuilder._ast_head_map[mdir + mod_name]
         elif os.path.isfile(fn):
             with open(fn, "r") as file:
                 jac_text = file.read()
-            parsed_ast = self.ast_cls(
+            pre_build = JacAstBuilder(
                 jac_text=jac_text,
                 mod_name=mod_name,
                 mod_dir=mdir,
-                fresh_start=False,
             )
         else:
             err = (
                 f"Module not found for import! {mod_name} from" + f" {from_mod} - {fn}"
             )
-            self.tree_root._parse_errors.append(err)
-        if parsed_ast:
-            self.tree_root._parse_errors += parsed_ast._parse_errors
+            self.builder._parse_errors.append(err)
+        if pre_build:
+            self.builder._parse_errors += pre_build._parse_errors
+            self.builder.dependencies += pre_build.dependencies
             import_elements = list(
-                filter(lambda x: x.name == "element", parsed_ast.kid)
+                filter(lambda x: x.name == "element", pre_build.root.kid)
             )
             if kid[2].name == "STAR_MUL":
                 ret = import_elements
             else:
                 ret = self.run_import_items(kid[2], import_elements)
             for i in ret:
-                i._keep = True
+                self.builder.dependencies.append(i)
             return ret
         else:
             return []
@@ -74,7 +118,8 @@ class JacTreeBuilder(ParseTreeListener):
         kid = jac_ast.kid
         ret_elements = list(
             filter(
-                lambda x: x._keep or x.kid[0].kid[0].name == kid[0].name,
+                lambda x: x in self.builder.dependencies
+                or x.kid[0].kid[0].name == kid[0].name,
                 import_elements,
             )
         )
@@ -82,7 +127,8 @@ class JacTreeBuilder(ParseTreeListener):
             import_names = self.run_import_names(kid[1])
             ret_elements = list(
                 filter(
-                    lambda x: x._keep or x.kid[0].kid[1].token_text() in import_names,
+                    lambda x: x in self.builder.dependencies
+                    or x.kid[0].kid[1].token_text() in import_names,
                     ret_elements,
                 )
             )
@@ -91,7 +137,7 @@ class JacTreeBuilder(ParseTreeListener):
                     f"{kid[1].loc[2]}: Line {kid[1].loc[0]}: "
                     + "Module name not found!"
                 )
-                self.tree_root._parse_errors.append(err)
+                self.builder._parse_errors.append(err)
 
         if kid[-1].name == "import_items":
             return ret_elements + self.run_import_items(kid[-1], import_elements)
@@ -124,16 +170,12 @@ class JacTreeBuilder(ParseTreeListener):
     def enterEveryRule(self, ctx):  # noqa
         """Visits every node in antlr parse tree"""
         if len(self.node_stack) == 0:
-            new_node = self.tree_root
+            new_node = self.builder.root
         else:
-            new_node = self.ast_cls(
-                mod_name=self.tree_root.loc[2],
-                mod_dir=self.tree_root._mod_dir,
-                fresh_start=False,
-            )
+            new_node = Ast(mod_name=self.builder.root.loc[2])
         new_node.name = jacParser.ruleNames[ctx.getRuleIndex()]
         new_node.kind = "rule"
-        new_node._parse_errors = self.tree_root._parse_errors
+        new_node._parse_errors = self.builder._parse_errors
         new_node.loc[0] = ctx.start.line
         new_node.loc[1] = ctx.start.column
 
@@ -151,11 +193,7 @@ class JacTreeBuilder(ParseTreeListener):
 
     def visitTerminal(self, node):  # noqa
         """Visits terminals as walker walks, adds ast node"""
-        new_node = self.ast_cls(
-            mod_name=self.tree_root.loc[2],
-            mod_dir=self.tree_root._mod_dir,
-            fresh_start=False,
-        )
+        new_node = Ast(mod_name=self.builder.root.loc[2])
         new_node.name = jacParser.symbolicNames[node.getSymbol().type]
         new_node.kind = "terminal"
         new_node.loc[0] = node.getSymbol().line
@@ -173,14 +211,14 @@ class JacTreeBuilder(ParseTreeListener):
 class JacTreeError(ErrorListener):
     """Accumulate errors as parse tree is walked"""
 
-    def __init__(self, tree_root):
-        self.tree_root = tree_root
+    def __init__(self, builder):
+        self.builder = builder
 
     def syntaxError(  # noqa
         self, recognizer, offendingSymbol, line, column, msg, e  # noqa
     ):
         """Add error to error list"""
-        self.tree_root._parse_errors.append(
-            f"{str(self.tree_root.loc[2])}: line {str(line)}:"
-            f"{str(column)} - {self.tree_root} - {msg}"
+        root = self.builder.root
+        self.builder._parse_errors.append(
+            f"{str(root.loc[2])}: line {str(line)}:" f"{str(column)} - {root} - {msg}"
         )
