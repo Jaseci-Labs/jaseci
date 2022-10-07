@@ -8,9 +8,6 @@ from jaseci.utils.utils import logger
 class Ast:
     """
     AST Nodes
-
-    The kind field is used to represent the grammar rule
-    TODO: Error handling if jac program has errors
     """
 
     def __init__(
@@ -18,20 +15,19 @@ class Ast:
         mod_name,
     ):
         self.name = "unparsed"
-        self.context = {}
         self.kid = []
-        self.loc = [0, 0, mod_name if mod_name is not None else "@default"]
+        self.loc = [0, 0, mod_name if mod_name is not None else "@default", {}]
 
     def is_terminal(self):
         """Returns true if node is a terminal"""
-        return len(self.context.keys())
+        return len(self.loc[3].keys())
 
     def token(self):
         if not self.is_terminal():
             logger.error(str(f"Non terminals (rules) don't have token info - {self}"))
             return None
         else:
-            return self.context["token"]
+            return self.loc[3]["token"]
 
     def token_text(self):
         if self.is_terminal():
@@ -44,7 +40,7 @@ class Ast:
     def __str__(self):
         res = f"{self.name}:{self.loc[2]}:{self.loc[0]}:{self.loc[1]}:"
         if self.is_terminal():
-            res += f':{self.context["token"]["text"]}'
+            res += f':{self.loc[3]["token"]["text"]}'
         return res
 
     def __repr__(self):
@@ -53,8 +49,8 @@ class Ast:
     def get_tokens(self):
         """Return list of all tokens derived from this ast node"""
         tokens = []
-        if "token" in self.context:
-            tokens.append(self.context["token"])
+        if "token" in self.loc[3]:
+            tokens.append(self.loc[3]["token"])
             return tokens
         else:
             for i in self.kid:
