@@ -1,16 +1,12 @@
 """
 AST for Jac
 """
-
 from jaseci.utils.utils import logger
 
 
 class Ast:
     """
     AST Nodes
-
-    The kind field is used to represent the grammar rule
-    TODO: Error handling if jac program has errors
     """
 
     def __init__(

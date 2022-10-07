@@ -10,7 +10,7 @@ from jaseci.jac.ir.ast import Ast
 
 class JacAstBuilder:
     """
-    AST Nodes
+    Jac Code to AST Tree
 
     The kind field is used to represent the grammar rule
     TODO: Error handling if jac program has errors
