@@ -9,7 +9,7 @@ from jaseci.element.element import Element
 from jaseci.element.obj_mixins import Anchored
 from jaseci.graph.edge import Edge
 from jaseci.utils.id_list import IdList
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import Filter, logger
 
 import uuid
 
@@ -394,6 +394,48 @@ class Node(Element, Anchored):
 
         return dstr + "\n"
 
+    def get_all_architypes(self, depth: int = 0, filter: dict = {}):
+        """
+        Returns all reachable architypes
+        """
+
+        nf = Filter("node", filter)
+        ef = Filter("edge", filter)
+
+        childs = {self.jid: self}
+
+        edges = OrderedDict()
+        nodes = OrderedDict(childs)
+
+        depth -= 1
+
+        while len(childs) and depth != 0:
+            new_childs = OrderedDict()
+
+            for node in childs.values():
+                for edge in node.attached_edges():
+                    if not (edge.jid in edges) and ef.is_included(edge.jid, edge.name):
+                        edges.update({edge.jid: edge})
+
+                        n_node = False
+                        to_node = edge.to_node()
+
+                        if to_node == node:
+                            n_node = edge.from_node()
+                        else:
+                            n_node = to_node
+
+                        if n_node not in nodes and nf.is_included(
+                            n_node.jid, n_node.name
+                        ):
+                            new_childs.update({n_node.jid: n_node})
+
+            childs = new_childs
+            nodes.update(childs)
+            depth -= 1
+
+        return nodes.values(), edges.values()
+
     def get_all_nodes(self, depth: int = 0):
         """
         Returns all reachable nodes
@@ -432,7 +474,7 @@ class Node(Element, Anchored):
 
         return edges.values()
 
-    def traversing_dot_str(self, detailed=False, depth: int = 0):
+    def traversing_dot_str(self, detailed=False, depth: int = 0, filter: dict = {}):
         """
         DOT representation for graph.
         NOTE: This is different from the dot_str method for node intentionally

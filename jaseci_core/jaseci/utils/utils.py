@@ -293,3 +293,43 @@ def is_true(val):
         if type(val) is str
         else val is True  # is_async might be non bool
     )
+
+
+class Filter:
+    def __init__(self, name: str, filter: dict = {}):
+        self.filter = filter.get(name, {}).get("include", [])
+
+        if self.filter:
+            self.include = True
+        else:
+            self.include = False
+            self.filter = filter.get("exclude", [])
+
+    def is_included(self, *args):
+        for arg in args:
+            if arg not in self.filter if self.include else arg in self.filter:
+                return False
+        return True
+
+
+class AttributeFilter:
+    def __init__(self, filter: dict = {}):
+        self.ef = Filter("element", filter)
+        self.cf = Filter("context", filter)
+
+    def serialize(self, obj):
+        obj_dict = {}
+        _vars = vars(obj)
+
+        for key in _vars.keys():
+            if not key.startswith("_") and self.ef.is_included(key):
+                if key == "context":
+                    obj_dict[key] = {}
+                    for c_key in _vars[key]:
+                        if self.cf.is_included(c_key):
+                            obj_dict[key][c_key] = _vars[key][c_key]
+
+                else:
+                    obj_dict[key] = _vars[key]
+
+        return obj_dict

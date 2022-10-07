@@ -8,6 +8,8 @@ from jaseci.graph.node import Node
 from jaseci.actor.sentinel import Sentinel
 import uuid
 
+from jaseci.utils.utils import AttributeFilter
+
 
 class GraphApi:
     """
@@ -36,28 +38,26 @@ class GraphApi:
         mode: str = "default",
         detailed: bool = False,
         depth: int = 0,
+        filter: dict = {},
     ):
         """
         Return the content of the graph with mode
         Valid modes: {default, dot, }
         """
         if mode == "dot":
-            return nd.traversing_dot_str(detailed=detailed, depth=depth)
+            return nd.traversing_dot_str(detailed=detailed, depth=depth, filter=filter)
 
-        nodes = nd.get_all_nodes(depth=depth)
-        edges = nd.get_all_edges(nodes=nodes)
+        nodes, edges = nd.get_all_architypes(depth=depth, filter=filter)
 
         if mode == "jgraph":
+            af = AttributeFilter(filter)
+
             jg_nodes = []
             jg_edges = []
 
             for nd in nodes:
                 jg_nodes.append(
-                    {
-                        "id": nd.jid,
-                        "label": nd.name,
-                        "attributes": nd.serialize(detailed=detailed),
-                    }
+                    {"id": nd.jid, "label": nd.name, "attributes": af.serialize(nd)}
                 )
 
             for ed in edges:
@@ -73,7 +73,7 @@ class GraphApi:
                         }
                         if ed.bidirected
                         else "to",
-                        "attributes": ed.serialize(detailed=detailed),
+                        "attributes": af.serialize(ed),
                     }
                 )
 
