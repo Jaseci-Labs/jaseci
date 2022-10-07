@@ -13,17 +13,12 @@ class PrunePass(IrPass):
     ]
 
     def enter_node(self, node):
-        pop_list = []
         for i in range(len(node.kid)):
             peak = node.kid[i]
-            # if peak.name == "SEMI":
-            #     pop_list.append(peak)
             while peak.name in self.prune_able and len(peak.kid) == 1:
                 # print("PRUNING:", peak, "from", node.kid, "replacing", peak.kid[0])
                 node.kid[i] = peak.kid[0]
                 peak = peak.kid[0]
-        for i in pop_list:
-            node.kid.remove(i)
 
     def exit_node(self, node):
         pass
