@@ -34,14 +34,12 @@ class Ast:
         self.name = "unparsed"
         self.kind = "unparsed"
         self.context = {}
+        self._keep = False
+        self.loc = [0, 0, mod_name if mod_name is not None else "@default"]
+        self.kid = []
         self._parse_errors = parse_errors if parse_errors else []
         self._start_rule = start_rule
-        self.mod_name = mod_name if mod_name is not None else "@default"
         self._mod_dir = mod_dir
-        self._keep = False
-        self.line = 0
-        self.column = 0
-        self.kid = []
         if jac_text:
             self.parse_jac_str(jac_text)
 
@@ -70,7 +68,7 @@ class Ast:
 
     def parse_jac_str(self, jac_str):
         """Parse language and build ast from string"""
-        Ast._ast_head_map[self._mod_dir + self.mod_name] = self
+        Ast._ast_head_map[self._mod_dir + self.loc[2]] = self
         input_stream = InputStream(jac_str)
         lexer = jacLexer(input_stream)
         stream = CommonTokenStream(lexer)
@@ -135,7 +133,7 @@ class Ast:
             full_path = os.path.realpath(fn)
             mod_name = os.path.basename(fn)
             mdir = os.path.dirname(full_path) + "/"
-            from_mod = self.tree_root.mod_name
+            from_mod = self.tree_root.loc[2]
             logger.debug(f"Importing items from {mod_name} to {from_mod}...")
             parsed_ast = None
             if (mdir + mod_name) in Ast._ast_head_map.keys():
@@ -197,7 +195,7 @@ class Ast:
                 )
                 if len(ret_elements) < len(import_names):
                     err = (
-                        f"{kid[1].mod_name}: Line {kid[1].line}: "
+                        f"{kid[1].loc[2]}: Line {kid[1].loc[0]}: "
                         + "Module name not found!"
                     )
                     self.tree_root._parse_errors.append(err)
@@ -236,15 +234,15 @@ class Ast:
                 new_node = self.tree_root
             else:
                 new_node = Ast(
-                    mod_name=self.tree_root.mod_name,
+                    mod_name=self.tree_root.loc[2],
                     mod_dir=self.tree_root._mod_dir,
                     fresh_start=False,
                 )
             new_node.name = jacParser.ruleNames[ctx.getRuleIndex()]
             new_node.kind = "rule"
             new_node._parse_errors = self.tree_root._parse_errors
-            new_node.line = ctx.start.line
-            new_node.column = ctx.start.column
+            new_node.loc[0] = ctx.start.line
+            new_node.loc[1] = ctx.start.column
 
             if len(self.node_stack) and new_node.name != "import_module":
                 self.node_stack[-1].kid.append(new_node)
@@ -261,14 +259,14 @@ class Ast:
         def visitTerminal(self, node):  # noqa
             """Visits terminals as walker walks, adds ast node"""
             new_node = Ast(
-                mod_name=self.tree_root.mod_name,
+                mod_name=self.tree_root.loc[2],
                 mod_dir=self.tree_root._mod_dir,
                 fresh_start=False,
             )
             new_node.name = jacParser.symbolicNames[node.getSymbol().type]
             new_node.kind = "terminal"
-            new_node.line = node.getSymbol().line
-            new_node.column = node.getSymbol().column
+            new_node.loc[0] = node.getSymbol().line
+            new_node.loc[1] = node.getSymbol().column
 
             token = {
                 "symbol": jacParser.symbolicNames[node.getSymbol().type],
@@ -289,6 +287,6 @@ class Ast:
         ):
             """Add error to error list"""
             self.tree_root._parse_errors.append(
-                f"{str(self.tree_root.mod_name)}: line {str(line)}:"
+                f"{str(self.tree_root.loc[2])}: line {str(line)}:"
                 f"{str(column)} - {self.tree_root} - {msg}"
             )

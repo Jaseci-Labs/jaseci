@@ -35,8 +35,8 @@ class JacJsonDec(json.JSONDecoder):
 
     def object_hook(self, obj):
 
-        if isinstance(obj, dict) and "mod_name" in obj and "kid" in obj:
-            ret = Ast(mod_name=obj["mod_name"], fresh_start=False)
+        if isinstance(obj, dict) and "loc" in obj and "kid" in obj:
+            ret = Ast(mod_name=obj["loc"][2], fresh_start=False)
             for i in obj.keys():
                 setattr(ret, i, obj[i])
             return ret

@@ -141,11 +141,11 @@ class MachineState:
     def jac_exception(self, e: Exception, jac_ast):
         return {
             "type": type(e).__name__,
-            "mod": jac_ast.mod_name,
+            "mod": jac_ast.loc[2],
             "msg": str(e),
             "args": e.args,
-            "line": jac_ast.line,
-            "col": jac_ast.column,
+            "line": jac_ast.loc[0],
+            "col": jac_ast.loc[1],
             "name": self.name if hasattr(self, "name") else "blank",
             "rule": jac_ast.name,
         }
@@ -157,8 +157,8 @@ class MachineState:
         name = self.name if hasattr(self, "name") else "blank"
         if jac_ast:
             msg = (
-                f"{jac_ast.mod_name}:{name} - line {jac_ast.line}, "
-                + f"col {jac_ast.column} - rule {jac_ast.name} - {msg}"
+                f"{jac_ast.loc[2]}:{name} - line {jac_ast.loc[0]}, "
+                + f"col {jac_ast.loc[1]} - rule {jac_ast.name} - {msg}"
             )
         else:
             msg = f"{msg}"
