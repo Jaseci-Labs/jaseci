@@ -29,27 +29,22 @@ class Ast:
         start_rule="start",
         fresh_start=True,
     ):
-        if fresh_start:
-            Ast._ast_head_map = {}
         self.name = "unparsed"
-        self.kind = "unparsed"
         self.context = {}
-        self._keep = False
-        self.loc = [0, 0, mod_name if mod_name is not None else "@default"]
         self.kid = []
+        self.loc = [0, 0, mod_name if mod_name is not None else "@default"]
+        self._keep = False
         self._parse_errors = parse_errors if parse_errors else []
         self._start_rule = start_rule
         self._mod_dir = mod_dir
+        if fresh_start:
+            Ast._ast_head_map = {}
         if jac_text:
             self.parse_jac_str(jac_text)
 
-    def is_rule(self):
-        """Returns true if node is a rule"""
-        return self.kind == "rule"
-
     def is_terminal(self):
         """Returns true if node is a terminal"""
-        return self.kind == "terminal"
+        return len(self.context.keys())
 
     def token(self):
         if not self.is_terminal():
@@ -85,7 +80,7 @@ class Ast:
             logger.error(str(f"Parse errors encountered - {self}"))
 
     def __str__(self):
-        res = f"{self.kind}:{self.name}"
+        res = f"{self.name}:{self.loc[2]}:{self.loc[0]}:{self.loc[1]}:"
         if self.is_terminal():
             res += f':{self.context["token"]["text"]}'
         return res
