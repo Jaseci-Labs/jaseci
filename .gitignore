@@ -22,6 +22,10 @@ js.session
 .idea
 mydatabase
 *Zone.Identifier
+.DS_Store
 
 *.rdb
 celerybeat-schedule*
+
+# Docs
+mdbook/
