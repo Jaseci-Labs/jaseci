@@ -6,6 +6,8 @@
 
 ## Getting Started
 
+- [Quick-Start](/QUICK_START.md)
+
 ## Codelabs and Guides
 
 - [Build a Custom Jaseci Module](support/codelabs/custom_jaseci_module_codelab.md)
