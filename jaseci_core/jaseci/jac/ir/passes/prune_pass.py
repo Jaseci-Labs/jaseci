@@ -19,6 +19,13 @@ class PrunePass(IrPass):
                 # print("PRUNING:", peak, "from", node.kid, "replacing", peak.kid[0])
                 node.kid[i] = peak.kid[0]
                 peak = peak.kid[0]
+        # self.view_prune_candidate(node)
+
+    def view_prune_candidate(self, node):
+        for i in range(len(node.kid)):
+            peak = node.kid[i]
+            if len(peak.kid) == 1:
+                print("Pruneable? - ", peak, "from", node.kid, "with", peak.kid[0])
 
     def exit_node(self, node):
         pass
