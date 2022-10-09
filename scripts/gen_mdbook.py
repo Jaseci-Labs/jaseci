@@ -1,5 +1,5 @@
 # pylint: disable=unused-variable
-#compiles all markdown docs across repo and generates mdbook rendered documentation
+# compiles all markdown docs across repo and generates mdbook rendered documentation
 
 import sys
 import shutil
@@ -8,35 +8,36 @@ import os
 from os.path import exists
 import subprocess
 
-root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-output_path = os.path.join(root, 'mdbook') #no trailing slash
-theme_source_path = os.path.join(root, 'support/mdbook_theme') #no trailing slash
-toc_path = os.path.join(root,"README.md")
+root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+output_path = os.path.join(root, "mdbook")  # no trailing slash
+theme_source_path = os.path.join(root, "support/mdbook_theme")  # no trailing slash
+toc_path = os.path.join(root, "README.md")
+
 
 def main():
-    
-    #ensure main TOC readme exists before continuing
+
+    # ensure main TOC readme exists before continuing
     if not os.path.exists(toc_path):
         sys.exit()
-    
-    #remove output directory if it exists
+
+    # remove output directory if it exists
     if os.path.exists(output_path):
         shutil.rmtree(output_path)
 
-    #generate output directory (if it doesn't exist)
+    # generate output directory (if it doesn't exist)
     os.makedirs(output_path)
     os.makedirs(output_path + "/src")
 
-    #build SUMMARY.md based on README.md
+    # build SUMMARY.md based on README.md
     build_summary_file()
 
-    #init mdbook
+    # init mdbook
     init_mdbook()
 
-    #copy theme
+    # copy theme
     import_theme()
 
-    #build mdbook
+    # build mdbook
     build_mdbook()
 
 
@@ -46,12 +47,12 @@ def build_summary_file():
     if not os.path.exists(toc_path):
         sys.exit()
 
-    #generate the SUMMARY.md file (if it doesn't exist)
+    # generate the SUMMARY.md file (if it doesn't exist)
     with open(output_path + "/src/SUMMARY.md", "w+") as summaryfile:
         summaryfile.write("")
         summaryfile.write("# summary \n")
-     
-    #start processing the README.md, build the SUMMARY.md, transfer assets
+
+    # start processing the README.md, build the SUMMARY.md, transfer assets
     with open(toc_path, "r") as readme:
         lines = readme.readlines()
 
@@ -66,11 +67,11 @@ def build_summary_file():
             line = line.replace("#", "", 1)
             with open(output_path + "/src/SUMMARY.md", "a") as summaryfile:
                 summaryfile.write(line + "\n")
-            
+
         else:
             with open(output_path + "/src/SUMMARY.md", "a") as summaryfile:
                 summaryfile.write(line)
-                        
+
             fileinfo = process_line(line)
             if fileinfo is not False:
                 doc_file_link = output_path + "/src/" + fileinfo["link"]
@@ -85,13 +86,12 @@ def build_summary_file():
                 with open(doc_file_link, "a+") as docfile:
                     for rf_line in repo_file_lines:
                         docfile.write(rf_line)
-                     
 
-    files = get_images(os.path.join(root,"examples/CanoniCAI/images"))
+    files = get_images(os.path.join(root, "examples/CanoniCAI/images"))
     import_assets(files)
-    files = get_images(os.path.join(root,"support/guide/assets"))
+    files = get_images(os.path.join(root, "support/guide/assets"))
     import_assets(files)
-    files = get_images(os.path.join(root,"support/codelabs/canonicai/images"))
+    files = get_images(os.path.join(root, "support/codelabs/canonicai/images"))
     import_assets(files)
 
 
@@ -117,15 +117,16 @@ def import_assets(files):
 
     for file in files:
         common_path = os.path.commonprefix([output_path, file])
-        relative_path = file.replace(common_path, "")       
+        relative_path = file.replace(common_path, "")
         asset_path = output_path + "/src/" + relative_path
 
         filename_index = asset_path.rfind("/")
         folder_path = asset_path[0:filename_index]
         if not exists(folder_path):
             os.makedirs(folder_path)
-        
+
         shutil.copy(file, asset_path)
+
 
 # get image paths
 def get_images(path=None):
@@ -149,21 +150,33 @@ def get_images(path=None):
         return f
     return False
 
+
 def init_mdbook():
-    subprocess.call(["mdbook","init", output_path, "--ignore=none","--title=Jaseci Documentation"])
-    #edit the toml file
-    with open(output_path + "/book.toml","a") as book:
-        book.write('description = "The official Jaseci documentation"\n')
+    subprocess.call(
+        [
+            "mdbook",
+            "init",
+            output_path,
+            "--ignore=none",
+            "--title=Jaseci Docs and Guides",
+        ]
+    )
+    # edit the toml file
+    with open(output_path + "/book.toml", "a") as book:
+        book.write('description = "Jaseci Documentation and Guides"\n')
         book.write("[build]\n")
         book.write("use-default-preprocessors = false\n")
         book.write("[preprocessor.links]\n")
         book.close()
 
+
 def build_mdbook():
     subprocess.call(["mdbook", "build", output_path])
 
+
 def clean_mdbook():
     subprocess.call(["mdbook", "clean", output_path])
+
 
 def import_theme():
 
