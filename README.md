@@ -89,9 +89,8 @@
 - [About this Release](CHANGELOG.md)
 - [How to Contribute](CONTRIBUTING.md)
 - [Contributors](CONTRIBUTORS.md)
-- [Notes](NOTES.md)
+- [Archived Notes](NOTES.md)
 - [Join our Community](https://forum.jaseci.org/)
-
 - [Online Documentation](https://docs.jaseci.org/)
 - [The Jaseci Bible](https://github.com/Jaseci-Labs/jaseci_bible/blob/main/pdf/jaseci_bible.pdf)
 - [Our Website](https://jaseci.org/)
