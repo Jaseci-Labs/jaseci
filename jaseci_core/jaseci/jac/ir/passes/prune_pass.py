@@ -19,6 +19,3 @@ class PrunePass(IrPass):
                 # print("PRUNING:", peak, "from", node.kid, "replacing", peak.kid[0])
                 node.kid[i] = peak.kid[0]
                 peak = peak.kid[0]
-
-    def exit_node(self, node):
-        pass
