@@ -6,3 +6,4 @@ class JsOp(Enum):
     PUSH = auto()
     ADD = auto()
     REPORT = auto()
+    ACTION_CALL = auto()
