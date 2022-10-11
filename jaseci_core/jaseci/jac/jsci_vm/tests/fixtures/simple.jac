@@ -1,3 +1,3 @@
 walker most_basic {
-    report 4 + 5;
+    report 4 + 5000;
 }

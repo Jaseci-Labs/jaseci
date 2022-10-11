@@ -1,5 +1,6 @@
 from jaseci.utils.test_core import CoreTest
 from jaseci.jac.ir.passes.codegen_pass import CodeGenPass
+from jaseci.jac.jsci_vm.machine import JaseciMachine
 
 
 class TestCodegen(CoreTest):
@@ -12,4 +13,5 @@ class TestCodegen(CoreTest):
             self.mast,
             ["sentinel_register", {"code": self.load_jac("simple.jac")}],
         )
-        CodeGenPass(self.mast.active_snt()._jac_ast).run()
+        bc_ir = CodeGenPass(self.mast.active_snt()._jac_ast).run()
+        JaseciMachine().run(bc_ir.bytecode)
