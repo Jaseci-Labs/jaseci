@@ -1,16 +1,17 @@
-from enum import Enum, auto
+from enum import IntEnum, auto
 
 
-class JsOp(Enum):
+class JsOp(IntEnum):
     PUSH_SCOPE = auto()
     POP_SCOPE = auto()
     PUSH = auto()
     ADD = auto()
+    SUB = auto()
     LOAD_CONST = auto()
     LOAD_NAME = auto()
     REPORT = auto()
     ACTION_CALL = auto()
 
 
-class JsAttr(Enum):
+class JsAttr(IntEnum):
     INT = auto()

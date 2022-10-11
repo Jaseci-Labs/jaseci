@@ -18,6 +18,7 @@ class IrPass:
         self.before_pass()
         self.traverse()
         self.after_pass()
+        return self
 
     def traverse(self, node=None):
         if node is None:

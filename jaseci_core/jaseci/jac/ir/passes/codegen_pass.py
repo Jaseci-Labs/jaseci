@@ -25,18 +25,24 @@ class CodeGenPass(IrPass):
     def enter_node(self, node):
         print("entering", node)
         if hasattr(self, f"enter_{node.name}"):
-            self.bytecode += getattr(self, f"enter_{node.name}")(node)
+            getattr(self, f"enter_{node.name}")(node)
 
     def exit_node(self, node):
         print("exiting", node)
         if hasattr(self, f"exit_{node.name}"):
-            self.bytecode += getattr(self, f"exit_{node.name}")(node)
+            getattr(self, f"exit_{node.name}")(node)
 
     def enter_walker_block(self, node):
         self.emit(JsOp.PUSH_SCOPE)
 
     def exit_walker_block(self, node):
         self.emit(JsOp.PUSH_SCOPE)
+
+    def exit_arithmetic(self, node):
+        self.emit(JsOp.ADD if node.kid[1] == "PLUS" else JsOp.SUB)
+
+    def exit_report_action(self, node):
+        self.emit(JsOp.REPORT)
 
     def exit_INT(self, node):  # noqa
         self.emit(JsOp.LOAD_CONST, JsAttr.INT, int(node.token_text()))
