@@ -126,9 +126,10 @@ class MachineState:
         and returns new name used as hook by action class
         """
         if func_name not in live_actions.keys():
+            self.rt_warn(f"Attempting auto-load for {func_name}", jac_ast)
             load_preconfig_actions(self._h)
         if func_name not in live_actions.keys():
-            self.rt_warn(f"Builtin action not loaded - {func_name}", jac_ast)
+            self.rt_warn(f"Builtin action unable to be loaded - {func_name}", jac_ast)
             return False
         return True
 
