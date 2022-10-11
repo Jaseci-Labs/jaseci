@@ -7,11 +7,12 @@
     "lib": ["dom", "es2021"],
     "moduleResolution": "node",
     "module": "esnext",
-    "target": "es2017",
+    "target": "es2019",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "jsx": "react",
-    "jsxFactory": "h"
+    "jsxFactory": "h",
+    "skipLibCheck": true,
   },
   "include": ["src"],
   "exclude": ["node_modules"]
