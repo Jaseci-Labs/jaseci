@@ -174,7 +174,7 @@ export class JscGraph {
 
   render() {
     return (
-      <div style={{ height: '100%', width: 'auto', position: 'relative' }}>
+      <div style={{ height: '500px', width: 'auto', position: 'relative' }}>
         <div
           style={{
             height: '160px',
