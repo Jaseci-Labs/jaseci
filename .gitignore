@@ -25,3 +25,4 @@ mydatabase
 
 *.rdb
 celerybeat-schedule*
+node_modules
