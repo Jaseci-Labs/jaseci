@@ -598,7 +598,7 @@ class JacTests(TestCaseHelper, TestCase):
                 "msg": "division by zero",
                 "type": "ZeroDivisionError",
                 "name": "init",
-                "rule": "connect",
+                "rule": "expression",
             },
         )
         self.assertEqual(rep[1], "dont need err")

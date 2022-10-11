@@ -1,5 +1,5 @@
 from json import dumps, loads
-
+import sys
 from jaseci.utils.utils import find_class_and_import
 
 
@@ -211,6 +211,9 @@ class MemoryHook:
             else:
                 dist[t] = 1
         return dist
+
+    def mem_size(self):
+        return sys.getsizeof(self.mem) / 1024
 
     ###################################################
     #                  CLASS CONTROL                  #
