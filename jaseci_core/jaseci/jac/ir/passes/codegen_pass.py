@@ -1,5 +1,5 @@
 from jaseci.jac.ir.passes.ir_pass import IrPass
-from jaseci.jac.jsci_vm.op_codes import JsOp
+from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr
 
 
 class CodeGenPass(IrPass):
@@ -18,8 +18,9 @@ class CodeGenPass(IrPass):
     #     self.run_gen(self.ir)
     #     return super().before_pass()
 
-    def emit(self, item):
-        self.bytecode += bytes(item)
+    def emit(self, *items):
+        for i in items:
+            self.bytecode += bytes(i)
 
     def enter_node(self, node):
         print("entering", node)
@@ -31,5 +32,11 @@ class CodeGenPass(IrPass):
         if hasattr(self, f"exit_{node.name}"):
             self.bytecode += getattr(self, f"exit_{node.name}")(node)
 
-    def gen_walker_block(self, node):
+    def enter_walker_block(self, node):
         self.emit(JsOp.PUSH_SCOPE)
+
+    def exit_walker_block(self, node):
+        self.emit(JsOp.PUSH_SCOPE)
+
+    def exit_INT(self, node):  # noqa
+        self.emit(JsOp.LOAD_CONST, JsAttr.INT, int(node.token_text()))
