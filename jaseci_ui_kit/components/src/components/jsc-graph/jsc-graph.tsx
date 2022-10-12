@@ -21,13 +21,14 @@ export class JscGraph {
   @Prop() token: string = '5eed3f010f323cd8bb6d58c14bacec2274156e82ef913b4be96e2d9d0bbffa49';
   @Prop() graphId: string = 'urn:uuid:58562489-7910-4d5a-88ec-8f4d8cd7bb22';
   @Prop() serverUrl: string = 'http://localhost:8000';
+  @Prop() onFocus: 'expand' | 'isolate' = 'expand';
 
   // viewed node
-  @State() nd = '';
+  @State() nd = 'urn:uuid:153846bc-86ec-4068-8349-ec4c500241d9';
   @State() network: vis.Network;
 
-  nodes: vis.Node[];
-  edges: vis.Edge[];
+  nodes: vis.Node[] = [];
+  edges: vis.Edge[] = [];
   @State() clickedNode: vis.Node & { context: {} };
 
   networkEl!: HTMLDivElement;
@@ -56,8 +57,19 @@ export class JscGraph {
       },
     }).then(async res => {
       const data = await res.json();
-      this.nodes = this.formatNodes(data);
-      this.edges = this.formatEdges(data);
+      if (this.nd && this.onFocus === 'expand') {
+        if (this.network) {
+          this.network.stabilize();
+          this.network.storePositions();
+        }
+
+        // expand node and edge set
+        this.nodes = [...this.nodes, ...this.formatNodes(data).filter(node => !this.nodes.map(node => node.id).includes(node.id))];
+        this.edges = [...this.edges, ...this.formatEdges(data).filter(edge => !this.edges.flatMap(edge => edge.to).includes(edge.to))];
+      } else {
+        this.nodes = this.formatNodes(data);
+        this.edges = this.formatEdges(data);
+      }
 
       if (!this.network) {
         this.network = new vis.Network(
@@ -65,17 +77,30 @@ export class JscGraph {
           { edges: this.edges, nodes: this.nodes },
           {
             // width: '100%',
-            edges: { arrows: 'to' },
+            edges: {
+              arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+              dashes: true,
+              selectionWidth: 2,
+              width: 0.5,
+              color: {},
+            },
             interaction: {},
+            // layout: { improvedLayout: true },
           },
         );
       } else {
+        this.network.stabilize();
+        this.network.storePositions();
+
         this.network.setData({ edges: this.edges, nodes: this.nodes });
+        this.network.selectNodes([this.nd], true);
+        this.network.focus(this.nd, { scale: 2 });
       }
     });
   }
 
   // convert response to match required format for vis
+  @Watch('nd')
   formatNodes(data: [][]): vis.Node[] {
     return data
       ?.filter((item: any) => item.j_type === 'node')
@@ -85,6 +110,7 @@ export class JscGraph {
         group: node.name,
         context: node.context,
         shape: 'circle',
+        color: this.nd === node.jid ? 'orange' : undefined,
       }));
   }
 
@@ -96,11 +122,6 @@ export class JscGraph {
 
     this.clickedNode = this.nodes?.find((n: any) => n.id == node) as any;
     console.log(this.clickedNode);
-
-    this.network.focus(node, {
-      scale: 1.0,
-      animation: { duration: 1000, easingFunction: 'easeInOutQuad' },
-    });
   }
 
   // convert response to match required format for vis
@@ -177,10 +198,10 @@ export class JscGraph {
       <div style={{ height: '500px', width: 'auto', position: 'relative' }}>
         <div
           style={{
-            height: '160px',
+            height: '260px',
             width: '240px',
             borderRadius: '4px',
-            padding: '20px 32px',
+            padding: '16px 4px',
             top: '20px',
             right: '20px',
             position: 'absolute',
@@ -192,11 +213,11 @@ export class JscGraph {
             overflowX: 'hidden',
           }}
         >
-          <p style={{ fontWeight: '500' }}>Context</p>
-          <jsc-collapse name="Hello World!">
-            <p>Hello</p>
-          </jsc-collapse>
-          {this.renderContext()}
+          <div tabindex="0" class="collapse collapse-plus border border-base-300 bg-base-100 rounded-box">
+            <input type="checkbox" defaultChecked={true} />
+            <div class="collapse-title text-md font-medium">Context</div>
+            <div class="collapse-content">{this.renderContext()}</div>
+          </div>
         </div>
         <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
           {this.nd && <jsc-button label={'View Root'} onClick={() => (this.nd = '')}></jsc-button>}
