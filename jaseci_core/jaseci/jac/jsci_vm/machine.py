@@ -1,5 +1,5 @@
-from re import S
 from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr
+from jaseci.jac.machine.machine_state import MachineState
 
 
 class Stack(object):
@@ -24,9 +24,10 @@ class Stack(object):
             print(list(reversed(self.stack))[0:count])
 
 
-class JaseciMachine(Stack):
-    def __init__(self):
+class BytecodeMachine(MachineState, Stack):
+    def __init__(self, *args):
         Stack.__init__(self)
+        MachineState.__init__(self, *args)
         self.ip = 0
         self.bytecode = None
         self.op = self.build_op_call()
@@ -49,31 +50,28 @@ class JaseciMachine(Stack):
     def op_POP_SCOPE(self):  # noqa
         pass
 
-    def op_PUSH(self):  # noqa
-        pass
-
     def op_ADD(self):  # noqa
         self.push(self.pop() + self.pop())
-        self.peak_stack()
 
     def op_SUB(self):  # noqa
-        pass
+        rhs = self.pop()
+        self.push(self.pop() - rhs)
 
     def op_LOAD_CONST(self):  # noqa
         typ = JsAttr(self.bytecode[self.ip + 1])
-        bit_length = self.bytecode[self.ip + 2]
+        byte_length = self.bytecode[self.ip + 2]
         if typ == JsAttr.INT:
             val = int.from_bytes(
-                self.bytecode[self.ip + 3 : self.ip + 3 + bit_length], "little"
+                self.bytecode[self.ip + 3 : self.ip + 3 + byte_length], "little"
             )
         self.push(val)
-        self.ip += 2 + bit_length
+        self.ip += 2 + byte_length
 
     def op_LOAD_NAME(self):  # noqa
         pass
 
     def op_REPORT(self):  # noqa
-        pass
+        self.report.append(self.pop())
 
     def op_ACTION_CALL(self):  # noqa
         pass

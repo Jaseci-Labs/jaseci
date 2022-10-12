@@ -4,7 +4,6 @@ from enum import IntEnum, auto
 class JsOp(IntEnum):
     PUSH_SCOPE = auto()
     POP_SCOPE = auto()
-    PUSH = auto()
     ADD = auto()
     SUB = auto()
     LOAD_CONST = auto()

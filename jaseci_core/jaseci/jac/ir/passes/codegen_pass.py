@@ -2,6 +2,10 @@ from jaseci.jac.ir.passes.ir_pass import IrPass
 from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr
 
 
+def byte_length(i):
+    return (i.bit_length() + 7) // 8
+
+
 class CodeGenPass(IrPass):
     def __init__(self, *args):
         super().__init__(*args)
@@ -15,10 +19,12 @@ class CodeGenPass(IrPass):
                 self.bytecode.append(i)
 
     def enter_node(self, node):
+        # print("entering", node)
         if hasattr(self, f"enter_{node.name}"):
             getattr(self, f"enter_{node.name}")(node)
 
     def exit_node(self, node):
+        # print("exiting", node)
         if hasattr(self, f"exit_{node.name}"):
             getattr(self, f"exit_{node.name}")(node)
 
@@ -26,7 +32,7 @@ class CodeGenPass(IrPass):
         self.emit(JsOp.PUSH_SCOPE)
 
     def exit_walker_block(self, node):
-        self.emit(JsOp.PUSH_SCOPE)
+        self.emit(JsOp.POP_SCOPE)
 
     def exit_arithmetic(self, node):
         self.emit(JsOp.ADD if node.kid[1].name == "PLUS" else JsOp.SUB)
@@ -39,6 +45,6 @@ class CodeGenPass(IrPass):
         self.emit(
             JsOp.LOAD_CONST,
             JsAttr.INT,
-            val.bit_length(),
-            val.to_bytes(length=val.bit_length(), byteorder="little"),
+            byte_length(val),
+            val.to_bytes(length=byte_length(val), byteorder="little"),
         )
