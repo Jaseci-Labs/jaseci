@@ -1,5 +1,6 @@
 import { Component, Element, h, Prop, State, Watch } from '@stencil/core';
 import * as vis from 'vis-network';
+import * as visData from 'vis-data';
 
 type EndpointBody = {
   gph?: string | null;
@@ -27,8 +28,11 @@ export class JscGraph {
   @State() nd = 'urn:uuid:153846bc-86ec-4068-8349-ec4c500241d9';
   @State() network: vis.Network;
 
-  nodes: vis.Node[] = [];
-  edges: vis.Edge[] = [];
+  nodesArray: vis.Node[] = [];
+  edgesArray: vis.Edge[] = [];
+  edges: visData.DataSet<any, string>;
+  nodes: vis.data.DataSet<any, string>;
+
   @State() clickedNode: vis.Node & { context: {} };
 
   networkEl!: HTMLDivElement;
@@ -58,23 +62,42 @@ export class JscGraph {
     }).then(async res => {
       const data = await res.json();
       if (this.nd && this.onFocus === 'expand') {
+        // create datasets
+        if (!this.edges && !this.nodes) {
+          this.nodes = new visData.DataSet([]);
+          this.edges = new visData.DataSet([]);
+        }
+
         if (this.network) {
           this.network.stabilize();
           this.network.storePositions();
         }
 
         // expand node and edge set
-        this.nodes = [...this.nodes, ...this.formatNodes(data).filter(node => !this.nodes.map(node => node.id).includes(node.id))];
-        this.edges = [...this.edges, ...this.formatEdges(data).filter(edge => !this.edges.flatMap(edge => edge.to).includes(edge.to))];
+        this.formatNodes(data).forEach(node => {
+          try {
+            if (!this.nodes.get(node.id)) {
+              this.nodes.add(node);
+            }
+          } catch (err) {
+            console.log(err);
+          }
+        });
+
+        this.formatEdges(data).forEach(edge => {
+          if (!this.edges.get({ filter: item => item.to === edge.to }).length) {
+            this.edges.add(edge);
+          }
+        });
       } else {
-        this.nodes = this.formatNodes(data);
-        this.edges = this.formatEdges(data);
+        this.nodesArray = this.formatNodes(data);
+        this.edgesArray = this.formatEdges(data);
       }
 
       if (!this.network) {
         this.network = new vis.Network(
           this.networkEl,
-          { edges: this.edges, nodes: this.nodes },
+          { edges: this.edges as any, nodes: this.nodes as any },
           {
             // width: '100%',
             edges: {
@@ -92,7 +115,7 @@ export class JscGraph {
         this.network.stabilize();
         this.network.storePositions();
 
-        this.network.setData({ edges: this.edges, nodes: this.nodes });
+        // this.network.setData({ edges: this.edgesArray, nodes: this.nodesArray });
         this.network.selectNodes([this.nd], true);
         this.network.focus(this.nd, { scale: 2 });
       }
@@ -110,7 +133,6 @@ export class JscGraph {
         group: node.name,
         context: node.context,
         shape: 'circle',
-        color: this.nd === node.jid ? 'orange' : undefined,
       }));
   }
 
@@ -120,7 +142,7 @@ export class JscGraph {
       y: params?.pointer.DOM.y,
     });
 
-    this.clickedNode = this.nodes?.find((n: any) => n.id == node) as any;
+    this.clickedNode = this.nodes.get([node])[0];
     console.log(this.clickedNode);
   }
 
@@ -172,6 +194,7 @@ export class JscGraph {
       });
 
       this.nd = node.toString();
+      console.log({ nd: this.nd });
     });
 
     this.network.on('oncontext', params => {
