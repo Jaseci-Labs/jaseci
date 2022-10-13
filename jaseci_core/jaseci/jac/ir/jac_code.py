@@ -4,6 +4,7 @@ Mix in for jac code object in Jaseci
 import json
 from jaseci.utils.utils import logger
 from jaseci.jac.ir.ast_builder import JacAstBuilder
+from jaseci.jac.ir.passes.schedule import multi_pass_optimizer
 from jaseci.jac.ir.ast import Ast
 import hashlib
 from pathlib import Path
@@ -103,6 +104,9 @@ class JacCode:
         tree = JacAstBuilder(
             jac_text=code, start_rule=start_rule, mod_name=self.name, mod_dir=dir
         )
+
+        multi_pass_optimizer(tree.root)  # run passes here instead of in ast builder
+
         self.errors = tree._parse_errors
         if tree._parse_errors:
             logger.error(str(f"{self.name}: Invalid syntax in Jac code!"))
