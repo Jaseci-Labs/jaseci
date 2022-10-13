@@ -6,7 +6,6 @@ from jaseci.jac.jac_parse.jacParser import jacParser, ParseTreeWalker
 from jaseci.jac.jac_parse.jacLexer import jacLexer
 from antlr4 import InputStream, CommonTokenStream
 from jaseci.jac.ir.ast import Ast
-#from jaseci.jac.ir.passes.schedule import multi_pass_optimizer
 
 
 class JacAstBuilder:
