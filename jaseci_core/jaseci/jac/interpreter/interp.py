@@ -18,6 +18,7 @@ from jaseci.jac.machine.machine_state import TryException
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 from copy import copy, deepcopy
+from base64 import b64decode
 
 
 class Interp(VirtualMachine):
@@ -1669,6 +1670,8 @@ class Interp(VirtualMachine):
             | KW_EDGE
             | KW_TYPE;
         """
+        if self.attempt_bytecode(jac_ast):
+            return
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "TYP_STRING":
             self.push(JacValue(self, value=str))
@@ -1698,6 +1701,12 @@ class Interp(VirtualMachine):
         super().destroy()
 
     # Helper Functions ##################
+    def attempt_bytecode(self, jac_ast):
+        if not (isinstance(jac_ast.kid, list)):
+            self.run_bytecode(b64decode(jac_ast.kid.encode()))
+            return True
+        else:
+            return False
 
     def call_ability(self, nd, name, act_list):
         m = Interp(parent_override=self.parent(), caller=self)

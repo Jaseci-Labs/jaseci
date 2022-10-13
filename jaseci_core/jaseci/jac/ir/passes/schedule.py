@@ -2,9 +2,9 @@ from jaseci.jac.ir.passes import PrunePass, PrinterPass, StatsPass, CodeGenPass
 from jaseci.jac.ir.ast import Ast
 
 
-def multi_pass_optimizer(jac_ast: Ast, opt_level: int = 1):
-    PrunePass(jac_ast).run() if opt_level > 0 else None
-    CodeGenPass(jac_ast).run() if opt_level > 2 else None
+def multi_pass_optimizer(jac_ast: Ast, opt_level: int):
+    PrunePass(ir=jac_ast).run() if opt_level > 0 else None
+    CodeGenPass(ir=jac_ast).run() if opt_level > 2 else None
 
 
 def debug_pass(

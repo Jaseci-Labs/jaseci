@@ -1,6 +1,7 @@
-from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr
+from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr, type_map
 from jaseci.jac.machine.machine_state import MachineState
 from jaseci.jac.jsci_vm.inst_ptr import InstPtr, from_bytes
+from jaseci.jac.machine.jac_value import JacValue
 
 
 class Stack(object):
@@ -60,11 +61,14 @@ class VirtualMachine(MachineState, Stack, InstPtr):
 
     def op_LOAD_CONST(self):  # noqa
         typ = JsAttr(self.offset(1))
-        byte_len = self.offset(2)
+        operand2 = self.offset(2)
+        if typ == JsAttr.TYPE:
+            val = type_map[JsAttr(operand2)]
+            self._ip += 2
         if typ == JsAttr.INT:
-            val = from_bytes(int, self.offset(3, byte_len))
-        self.push(val)
-        self._ip += 2 + byte_len
+            val = from_bytes(int, self.offset(3, operand2))
+            self._ip += 2 + operand2
+        self.push(JacValue(self, value=val))
 
     def op_REPORT(self):  # noqa
         self.report.append(self.pop())

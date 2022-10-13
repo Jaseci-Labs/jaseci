@@ -29,7 +29,7 @@ class DisAsm(InstPtr):
         val = None
         if typ == JsAttr.TYPE:
             self._asm.append([self.cur_op(), typ.name, JsAttr(operand2).name])
-            self._ip += 1 + operand2
+            self._ip += 2
         elif typ == JsAttr.INT:
             val = from_bytes(int, self.offset(3, operand2))
             self._asm.append([self.cur_op(), typ.name, operand2, val])

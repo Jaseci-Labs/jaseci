@@ -1,5 +1,6 @@
 from jaseci.jac.ir.passes import IrPass
 from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr
+from base64 import b64encode
 
 
 def byte_length(val):
@@ -58,6 +59,9 @@ class CodeGenPass(IrPass):
         if hasattr(self, f"exit_{node.name}"):
             self.emit_debug_info(node)
             getattr(self, f"exit_{node.name}")(node)
+
+    def exit_any_type(self, node):
+        node.kid = b64encode(self.bytecode).decode()
 
     # def enter_walker_block(self, node):
     #     self.emit(JsOp.PUSH_SCOPE)
