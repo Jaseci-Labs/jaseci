@@ -6,8 +6,7 @@ class JsOp(IntEnum):
     POP_SCOPE = auto()
     ADD = auto()
     SUB = auto()
-    LOAD_CONST = auto()
-    LOAD_NAME = auto()
+    LOAD_CONST = auto()  # []
     REPORT = auto()
     ACTION_CALL = auto()
     DEBUG_INFO = auto()

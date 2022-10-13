@@ -36,14 +36,16 @@ class CodeGenPass(IrPass):
         node_loc = [node.loc[0], node.loc[2]]
         if not self.debug_info or self.cur_loc == node_loc:
             return
-        self.cur_loc = node_loc
         self.emit(
             JsOp.DEBUG_INFO,
             byte_length(node_loc[0]),
             to_bytes(node_loc[0]),
-            byte_length(node_loc[1]),
-            to_bytes(node_loc[1]),
         )
+        if not self.cur_loc or self.cur_loc[1] != node_loc[1]:
+            self.emit(byte_length(node_loc[1]), to_bytes(node_loc[1]))
+        else:
+            self.emit(0)
+        self.cur_loc = node_loc
 
     def enter_node(self, node):
         # print("entering", node)

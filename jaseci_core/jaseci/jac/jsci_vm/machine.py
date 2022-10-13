@@ -66,9 +66,6 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         self.push(val)
         self._ip += 2 + byte_len
 
-    def op_LOAD_NAME(self):  # noqa
-        pass
-
     def op_REPORT(self):  # noqa
         self.report.append(self.pop())
 
@@ -79,6 +76,6 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         byte_len_l = self.offset(1)
         line = from_bytes(int, self.offset(2, byte_len_l))
         byte_len_f = self.offset(3)
-        jacfile = from_bytes(str, self.offset(4, byte_len_f))
+        jacfile = from_bytes(str, self.offset(4, byte_len_f)) if byte_len_f else 0
         self._cur_loc = [line, jacfile]
         self._ip += 2 + byte_len_l + byte_len_f
