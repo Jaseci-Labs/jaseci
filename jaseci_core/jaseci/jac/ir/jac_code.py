@@ -98,7 +98,7 @@ class JacCode:
         self.code_sig = hashlib.md5(self.code_ir.encode()).hexdigest()
         JacCode.refresh(self)  # should disregard overloaded versions
 
-    def parse_jac(self, code, dir, start_rule="start"):
+    def compile_jac(self, code, dir, start_rule="start"):
         """Generate AST tree from Jac code text"""
         tree = JacAstBuilder(
             jac_text=code, start_rule=start_rule, mod_name=self.name, mod_dir=dir
@@ -116,7 +116,7 @@ class JacCode:
         Parses Jac code and saves IR
         """
         start_rule = "start" if self.j_type == "sentinel" else self.j_type
-        tree = self.parse_jac(code, dir, start_rule=start_rule)
+        tree = self.compile_jac(code, dir, start_rule=start_rule)
 
         if not tree:
             self.is_active = False
