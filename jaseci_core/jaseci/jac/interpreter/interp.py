@@ -12,7 +12,7 @@ from jaseci.attr.action import Action
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.ir.jac_code import jac_ast_to_ir, jac_ir_to_ast
 from jaseci.jac.machine.jac_scope import JacScope
-from jaseci.jac.jsci_vm.machine import BytecodeMachine
+from jaseci.jac.jsci_vm.machine import VirtualMachine
 from jaseci.jac.machine.machine_state import TryException
 
 from jaseci.jac.machine.jac_value import JacValue
@@ -20,7 +20,7 @@ from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 from copy import copy, deepcopy
 
 
-class Interp(BytecodeMachine):
+class Interp(VirtualMachine):
     """Shared interpreter class across both sentinels and walkers"""
 
     def run_attr_stmt(self, jac_ast, obj):

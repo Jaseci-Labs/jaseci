@@ -24,7 +24,7 @@ class Stack(object):
             print(list(reversed(self._stk))[0:count])
 
 
-class BytecodeMachine(MachineState, Stack):
+class VirtualMachine(MachineState, Stack):
     def __init__(self, **kwargs):
         Stack.__init__(self)
         MachineState.__init__(self, **kwargs)
