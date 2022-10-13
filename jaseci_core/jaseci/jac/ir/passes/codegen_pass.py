@@ -59,23 +59,50 @@ class CodeGenPass(IrPass):
             self.emit_debug_info(node)
             getattr(self, f"exit_{node.name}")(node)
 
-    def enter_walker_block(self, node):
-        self.emit(JsOp.PUSH_SCOPE)
+    # def enter_walker_block(self, node):
+    #     self.emit(JsOp.PUSH_SCOPE)
 
-    def exit_walker_block(self, node):
-        self.emit(JsOp.POP_SCOPE)
+    # def exit_walker_block(self, node):
+    #     self.emit(JsOp.POP_SCOPE)
 
-    def exit_arithmetic(self, node):
-        self.emit(JsOp.ADD if node.kid[1].name == "PLUS" else JsOp.SUB)
+    # def exit_arithmetic(self, node):
+    #     self.emit(JsOp.ADD if node.kid[1].name == "PLUS" else JsOp.SUB)
 
-    def exit_report_action(self, node):
-        self.emit(JsOp.REPORT)
+    # def exit_report_action(self, node):
+    #     self.emit(JsOp.REPORT)
 
-    def exit_INT(self, node):  # noqa
-        val = int(node.token_text())
-        self.emit(
-            JsOp.LOAD_CONST,
-            JsAttr.INT,
-            byte_length(val),
-            to_bytes(val),
-        )
+    def exit_TYP_STRING(self, node):  # noqa
+        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.STRING)
+
+    def exit_TYP_INT(self, node):  # noqa
+        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.INT)
+
+    def exit_TYP_FLOAT(self, node):  # noqa
+        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.FLOAT)
+
+    def exit_TYP_LIST(self, node):  # noqa
+        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.LIST)
+
+    def exit_TYP_DICT(self, node):  # noqa
+        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.DICT)
+
+    def exit_TYP_BOOL(self, node):  # noqa
+        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.BOOL)
+
+    def exit_KW_NODE(self, node):  # noqa
+        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.NODE)
+
+    def exit_KW_EDGE(self, node):  # noqa
+        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.EDGE)
+
+    def exit_KW_TYPE(self, node):  # noqa
+        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.TYPE)
+
+    # def exit_INT(self, node):  # noqa
+    #     val = int(node.token_text())
+    #     self.emit(
+    #         JsOp.LOAD_CONST,
+    #         JsAttr.INT,
+    #         byte_length(val),
+    #         to_bytes(val),
+    #     )

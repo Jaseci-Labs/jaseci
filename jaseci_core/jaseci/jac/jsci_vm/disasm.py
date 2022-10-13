@@ -25,12 +25,15 @@ class DisAsm(InstPtr):
 
     def dis_LOAD_CONST(self):  # noqa
         typ = JsAttr(self.offset(1))
-        byte_len = self.offset(2)
+        operand2 = self.offset(2)
         val = None
-        if typ == JsAttr.INT:
-            val = from_bytes(int, self.offset(3, byte_len))
-        self._asm.append([self.cur_op(), typ.name, byte_len, val])
-        self._ip += 2 + byte_len
+        if typ == JsAttr.TYPE:
+            self._asm.append([self.cur_op(), typ.name, JsAttr(operand2).name])
+            self._ip += 1 + operand2
+        elif typ == JsAttr.INT:
+            val = from_bytes(int, self.offset(3, operand2))
+            self._asm.append([self.cur_op(), typ.name, operand2, val])
+            self._ip += 2 + operand2
 
     def dis_DEBUG_INFO(self):  # noqa
         byte_len_l = self.offset(1)

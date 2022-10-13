@@ -6,13 +6,14 @@ class JsOp(IntEnum):
     POP_SCOPE = auto()
     ADD = auto()
     SUB = auto()
-    LOAD_CONST = auto()  # []
-    REPORT = auto()
+    LOAD_CONST = auto()  # [type, bytes, (val)] / [type=type, type]
+    REPORT = auto()  # [type, bytes, (val)]
     ACTION_CALL = auto()
-    DEBUG_INFO = auto()
+    DEBUG_INFO = auto()  # [bytes, line, bytes, (jacfile)]
 
 
 class JsAttr(IntEnum):
+    TYPE = auto()
     INT = auto()
     FLOAT = auto()
     STRING = auto()
@@ -21,4 +22,3 @@ class JsAttr(IntEnum):
     BOOL = auto()
     NODE = auto()
     EDGE = auto()
-    TYPE = auto()

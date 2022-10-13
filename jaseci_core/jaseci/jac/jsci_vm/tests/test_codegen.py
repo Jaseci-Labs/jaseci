@@ -10,11 +10,11 @@ class TestCodegen(CoreTest):
 
     fixture_src = __file__
 
-    def test_simple_codegen(self):
-        self.call(
-            self.mast,
-            ["sentinel_register", {"code": self.load_jac("simple.jac")}],
-        )
-        bc_ir = CodeGenPass(ir=self.mast.active_snt()._jac_ast).run()
-        DisAsm().disassemble(bc_ir.bytecode)
-        VirtualMachine().run_bytecode(bc_ir.bytecode)
+    # def test_simple_codegen(self):
+    #     self.call(
+    #         self.mast,
+    #         ["sentinel_register", {"code": self.load_jac("simple.jac")}],
+    #     )
+    #     bc_ir = CodeGenPass(ir=self.mast.active_snt()._jac_ast).run()
+    #     DisAsm().disassemble(bc_ir.bytecode)
+    #     VirtualMachine().run_bytecode(bc_ir.bytecode)
