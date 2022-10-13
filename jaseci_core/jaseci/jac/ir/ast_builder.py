@@ -48,8 +48,6 @@ class JacAstBuilder:
         if self._parse_errors:
             logger.error(str(f"Parse errors encountered - {self}"))
 
-        #multi_pass_optimizer(self.root)
-
 
 class JacTreeBuilder(ParseTreeListener):
     """Converter class from Antlr trees to Jaseci Tree"""
