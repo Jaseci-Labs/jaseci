@@ -1,5 +1,5 @@
 class IrPass:
-    def __init__(self, ir):
+    def __init__(self, ir=None):
         self.ir = ir
 
     def before_pass(self):

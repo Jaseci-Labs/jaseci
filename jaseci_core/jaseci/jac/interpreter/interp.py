@@ -907,7 +907,8 @@ class Interp(VirtualMachine):
         arch_built_in: any_type;
         """
         kid = self.set_cur_ast(jac_ast)
-        typ = self.run_any_type(kid[0])
+        self.run_any_type(kid[0])
+        typ = self.pop()
         if typ.value == Edge:
             if isinstance(atom_res.value, Node):
                 return JacValue(
@@ -1670,23 +1671,23 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "TYP_STRING":
-            return JacValue(self, value=str)
+            self.push(JacValue(self, value=str))
         elif kid[0].name == "TYP_INT":
-            return JacValue(self, value=int)
+            self.push(JacValue(self, value=int))
         elif kid[0].name == "TYP_FLOAT":
-            return JacValue(self, value=float)
+            self.push(JacValue(self, value=float))
         elif kid[0].name == "TYP_LIST":
-            return JacValue(self, value=list)
+            self.push(JacValue(self, value=list))
         elif kid[0].name == "TYP_DICT":
-            return JacValue(self, value=dict)
+            self.push(JacValue(self, value=dict))
         elif kid[0].name == "TYP_BOOL":
-            return JacValue(self, value=bool)
+            self.push(JacValue(self, value=bool))
         elif kid[0].name == "KW_NODE":
-            return JacValue(self, value=Node)
+            self.push(JacValue(self, value=Node))
         elif kid[0].name == "KW_EDGE":
-            return JacValue(self, value=Edge)
+            self.push(JacValue(self, value=Edge))
         elif kid[0].name == "KW_TYPE":
-            return JacValue(self, value=type)
+            self.push(JacValue(self, value=type))
         else:
             self.rt_error("Unrecognized type", kid[0])
 
@@ -1715,7 +1716,13 @@ class Interp(VirtualMachine):
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
         try:
-            return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
+            val = getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
+            # TODO: Rewrite after stack integration
+            if val is None and not self.stack_is_empty():
+                return self.pop()
+            else:
+                return val
+            # return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
         except AttributeError as e:
             if not hasattr(self, f"run_{jac_ast.name}"):
                 self.rt_error(

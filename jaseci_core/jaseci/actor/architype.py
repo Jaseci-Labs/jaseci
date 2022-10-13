@@ -29,7 +29,7 @@ class Architype(Element, JacCode, ArchitypeInterp):
         JacCode.__init__(self, code_ir)
         ArchitypeInterp.__init__(self)
 
-    def run(self):
+    def run_bytecode(self):
         """
         Create set of new object instances from architype if needed
         """

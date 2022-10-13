@@ -2,30 +2,59 @@ from jaseci.jac.ir.passes import IrPass
 from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr
 
 
-def byte_length(i):
-    return (i.bit_length() + 7) // 8
+def byte_length(val):
+    if type(val) == str:
+        return len(val)
+    else:
+        return (val.bit_length() + 7) // 8
+
+
+def to_bytes(val):
+    if type(val) == str:
+        return bytes(val, "utf-8")
+    else:
+        return val.to_bytes(byte_length(val), "little")
 
 
 class CodeGenPass(IrPass):
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self, debug_info=True, **kwargs):
+        super().__init__(**kwargs)
         self.bytecode = bytearray()
+        self.debug_info = debug_info
+        self.cur_loc = None
 
     def emit(self, *items):
         for i in items:
             if type(i) is bytes:
                 self.bytecode += bytearray(i)
+            elif type(i) is str:
+                self.bytecode += bytearray(i, "utf-8")
             else:
                 self.bytecode.append(i)
+
+    def emit_debug_info(self, node):
+        node_loc = [node.loc[0], node.loc[2]]
+        if not self.debug_info or self.cur_loc == node_loc:
+            return
+        self.cur_loc = node_loc
+        self.emit(
+            JsOp.DEBUG_INFO,
+            byte_length(node_loc[0]),
+            to_bytes(node_loc[0]),
+            byte_length(node_loc[1]),
+            to_bytes(node_loc[1]),
+        )
 
     def enter_node(self, node):
         # print("entering", node)
         if hasattr(self, f"enter_{node.name}"):
+            self.emit_debug_info(node)
             getattr(self, f"enter_{node.name}")(node)
 
     def exit_node(self, node):
         # print("exiting", node)
         if hasattr(self, f"exit_{node.name}"):
+            self.emit_debug_info(node)
             getattr(self, f"exit_{node.name}")(node)
 
     def enter_walker_block(self, node):
@@ -46,5 +75,5 @@ class CodeGenPass(IrPass):
             JsOp.LOAD_CONST,
             JsAttr.INT,
             byte_length(val),
-            val.to_bytes(length=byte_length(val), byteorder="little"),
+            to_bytes(val),
         )

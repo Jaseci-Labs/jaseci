@@ -10,7 +10,16 @@ class JsOp(IntEnum):
     LOAD_NAME = auto()
     REPORT = auto()
     ACTION_CALL = auto()
+    DEBUG_INFO = auto()
 
 
 class JsAttr(IntEnum):
     INT = auto()
+    FLOAT = auto()
+    STRING = auto()
+    LIST = auto()
+    DICT = auto()
+    BOOL = auto()
+    NODE = auto()
+    EDGE = auto()
+    TYPE = auto()

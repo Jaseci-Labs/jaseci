@@ -6,11 +6,11 @@ class Stack(object):
     def __init__(self):
         self._stk = []
 
-    def is_empty(self) -> bool:
+    def stack_is_empty(self) -> bool:
         return len(self._stk) == 0
 
     def pop(self):
-        if self.is_empty():
+        if self.stack_is_empty():
             raise Exception("JaseciMachine stack is empty")
         return self._stk.pop()
 
@@ -38,7 +38,7 @@ class VirtualMachine(MachineState, Stack):
             op_map[op.value] = getattr(self, f"op_{op.name}")
         return op_map
 
-    def run(self, bytecode):
+    def run_bytecode(self, bytecode):
         self._bytecode = bytearray(bytecode)
         while self._ip < len(self._bytecode):
             self._op[self._bytecode[self._ip]]()
@@ -74,4 +74,7 @@ class VirtualMachine(MachineState, Stack):
         self.report.append(self.pop())
 
     def op_ACTION_CALL(self):  # noqa
+        pass
+
+    def op_DEBUG_INFO(self):  # noqa
         pass

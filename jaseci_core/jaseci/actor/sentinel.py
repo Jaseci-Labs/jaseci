@@ -168,7 +168,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
                     code_ir=jac_ir_to_ast(i["graph_block"]),
                 )
                 destroy_set.append(gph)
-                gph = gph.run()
+                gph = gph.run_bytecode()
             if i["walker_ref"]:
                 wlk = self.run_architype(
                     name=i["walker_ref"], kind="walker", caller=self
@@ -190,7 +190,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
                 if not silent:
                     print(f"Testing {title}: ", end="")
                 sys.stdout, sys.stderr = buff_out[0], buff_out[1]
-                wlk.run()
+                wlk.run_bytecode()
                 sys.stdout, sys.stderr = screen_out[0], screen_out[1]
                 if i["assert_block"]:
                     wlk._loop_ctrl = None
