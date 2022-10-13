@@ -22,10 +22,11 @@ export class JscGraph {
   @Prop() token: string = '5eed3f010f323cd8bb6d58c14bacec2274156e82ef913b4be96e2d9d0bbffa49';
   @Prop() graphId: string = 'urn:uuid:58562489-7910-4d5a-88ec-8f4d8cd7bb22';
   @Prop() serverUrl: string = 'http://localhost:8000';
-  @Prop() onFocus: 'expand' | 'isolate' = 'expand';
+  @Prop() onFocus: 'expand' | 'isolate' = 'isolate';
 
   // viewed node
   @State() nd = 'urn:uuid:153846bc-86ec-4068-8349-ec4c500241d9';
+  @State() prevNd = '';
   @State() network: vis.Network;
 
   nodesArray: vis.Node[] = [];
@@ -61,7 +62,7 @@ export class JscGraph {
       },
     }).then(async res => {
       const data = await res.json();
-      if (this.nd && this.onFocus === 'expand') {
+      if (this.nd && this.onFocus === 'expand' && this.prevNd !== '') {
         // create datasets
         if (!this.edges && !this.nodes) {
           this.nodes = new visData.DataSet([]);
@@ -73,7 +74,7 @@ export class JscGraph {
           this.network.storePositions();
         }
 
-        // expand node and edge set
+        // expand nodes and edges sets
         this.formatNodes(data).forEach(node => {
           try {
             if (!this.nodes.get(node.id)) {
@@ -90,8 +91,14 @@ export class JscGraph {
           }
         });
       } else {
-        this.nodesArray = this.formatNodes(data);
-        this.edgesArray = this.formatEdges(data);
+        this.nodes = new visData.DataSet(this.formatNodes(data) as any);
+        this.edges = new visData.DataSet(this.formatEdges(data) as any);
+
+        // update view when viewing the full graph
+        if (this.network) {
+          this.network.setData({edges: this.edges as any, nodes: this.nodes as any})
+        }
+        
       }
 
       if (!this.network) {
@@ -181,20 +188,30 @@ export class JscGraph {
   }
 
   async componentDidLoad() {
-    await this.getGraphState();
+    try {
+      await this.getGraphState();
+    } catch (err) {
+      console.log(err);
+    }
+    
 
     this.network.on('click', params => {
       this.handleNetworkClick(this.network, params);
     });
 
     this.network.on('doubleClick', async params => {
+      this.prevNd = this.nd;
+
       const node = this.network.getNodeAt({
         x: params?.pointer.DOM.x,
         y: params?.pointer.DOM.y,
       });
 
       this.nd = node.toString();
+      
       console.log({ nd: this.nd });
+
+      
     });
 
     this.network.on('oncontext', params => {
@@ -243,7 +260,7 @@ export class JscGraph {
           </div>
         </div>
         <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
-          {this.nd && <jsc-button label={'View Root'} onClick={() => (this.nd = '')}></jsc-button>}
+          {this.nd && <jsc-button size="sm" label={'View Full Graph'}  onClick={() => (this.nd = '')}></jsc-button>}
         </div>
         <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: '100%' }}></div>
       </div>
