@@ -27,6 +27,7 @@ class JsAttr(IntEnum):
 
 
 type_map = {
+    JsAttr.TYPE: type,
     JsAttr.INT: int,
     JsAttr.FLOAT: float,
     JsAttr.STRING: str,
