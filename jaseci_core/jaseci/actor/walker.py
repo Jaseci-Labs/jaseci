@@ -126,9 +126,7 @@ class Walker(Element, WalkerInterp, Anchored):
         self.profile["steps"] = self.current_step
         logger.debug(str(f"Walker {self.name} primed - {start_node}"))
 
-    def run_bytecode(
-        self, start_node=None, prime_ctx=None, request_ctx=None, profiling=False
-    ):
+    def run(self, start_node=None, prime_ctx=None, request_ctx=None, profiling=False):
         """Executes Walker to completion"""
         if self.for_queue() and self._h.task.is_running():
             start_node = (

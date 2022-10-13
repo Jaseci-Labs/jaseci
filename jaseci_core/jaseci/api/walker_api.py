@@ -156,7 +156,7 @@ class WalkerApi:
         """
         Executes walker (assumes walker is primed)
         """
-        return wlk.run_bytecode(
+        return wlk.run(
             start_node=prime, prime_ctx=ctx, request_ctx=_req_ctx, profiling=profiling
         )
 
