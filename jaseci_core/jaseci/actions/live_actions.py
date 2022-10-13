@@ -84,13 +84,16 @@ def load_preconfig_actions(hook):
 
     action_preload = hook.resolve_glob("ACTION_SETS", None)
     if action_preload:
-        action_preload = json.loads(action_preload)
-        for i in action_preload["local"]:
-            load_local_actions(i)
-        for i in action_preload["remote"]:
-            load_remote_actions(i)
-        for i in action_preload["module"]:
-            load_module_actions(i)
+        try:
+            action_preload = json.loads(action_preload)
+            for i in action_preload["local"]:
+                load_local_actions(i)
+            for i in action_preload["remote"]:
+                load_remote_actions(i)
+            for i in action_preload["module"]:
+                load_module_actions(i)
+        except Exception:
+            pass
 
 
 def get_global_actions(hook):

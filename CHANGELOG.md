@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Major Improvement: Multipass compilation framework implemented, new optimization pass introduced, code size down by more than 2x
 - New Lang Feature: introduced type structs with `type::custom_data` style notations
 - New Feature: Introduced `graph node view` API
 - Major Improvement: Walkers are now proper architypes in stack, all code in architypes

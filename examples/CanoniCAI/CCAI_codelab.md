@@ -1236,7 +1236,7 @@ node cai_state {
 Note that the logic for `init_wlk_ctx` and the default `process` logic have been hoisted up into `cai_state` as they are shared by the dialogue system and FAQ system.
 You can remove these two abilities from `dialogue_state` node, as it will be inheriting them from `cai_state` now.
 
-We then update the defintion of `dialogue_state` in `dialogue.jac` to inherit from `cai_state`:
+We then update the definition of `dialogue_state` in `dialogue.jac` to inherit from `cai_state`:
 ```js
 node dialogue_state:cai_state{
     // Rest of dialogue_state code remain the same
