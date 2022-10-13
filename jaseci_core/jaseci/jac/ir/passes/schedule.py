@@ -3,7 +3,7 @@ from jaseci.jac.ir.passes.printer_pass import PrinterPass
 from jaseci.jac.ir.passes.stats_pass import StatsPass
 
 
-def multi_pass_optimizer(jac_ast, debug_out=False, print_walk=False):
+def multi_pass_optimizer(jac_ast, debug_out: bool = False, print_walk: bool = False):
     if debug_out:
         if print_walk:
             PrinterPass(jac_ast).run()
