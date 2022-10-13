@@ -628,3 +628,13 @@ async walker simple_async_with_sync {
     }
 }
 """
+
+block_scope_check = """
+    walker init {
+        i=5;
+        for i=0 to i<10 by i+=1 {
+            report i;
+        }
+        report i;
+    }
+"""

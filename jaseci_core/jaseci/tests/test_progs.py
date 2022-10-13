@@ -505,3 +505,13 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(2, res["result"])
 
         mast._h.task.state = ServiceState.RUNNING
+
+    def test_block_scope_check(self):
+        mast = self.meta.build_master()
+        mast._h.task.state = ServiceState.DISABLED
+        mast.sentinel_register(name="test", code=jtp.block_scope_check, auto_run="")
+        res = mast.general_interface_to_api(
+            api_name="walker_run",
+            params={"name": "init"},
+        )
+        self.assertEqual(res["report"][-1], 10)

@@ -22,10 +22,10 @@ class WalkerInterp(Interp):
         walker: KW_ASYNC? KW_WALKER NAME namespaces? walker_block;
         """
         kid = self.set_cur_ast(jac_ast)
-        if jac_ast.name == "walker_block":  # used in jac tests
-            self.scope_and_run(jac_ast, self.run_walker_block)
-        else:
-            self.scope_and_run(kid[-1], self.run_walker_block)
+        self.scope_and_run(
+            jac_ast if jac_ast.name == "walker_block" else kid[-1],
+            self.run_walker_block,
+        )
 
     def run_walker_block(self, jac_ast):
         """
