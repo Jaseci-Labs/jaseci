@@ -1,10 +1,9 @@
 from jaseci.jac.ir.passes.prune_pass import PrunePass
 from jaseci.jac.ir.passes.printer_pass import PrinterPass
 from jaseci.jac.ir.passes.stats_pass import StatsPass
-from jaseci.jac.ir.ast_builder import JacAstBuilder
 
 
-def multi_pass_optimizer(jac_ast: JacAstBuilder, debug_out: bool = False, print_walk: bool = False):
+def multi_pass_optimizer(jac_ast, debug_out: bool = False, print_walk: bool = False):
     if debug_out:
         if print_walk:
             PrinterPass(jac_ast).run()
