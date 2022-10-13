@@ -1,4 +1,4 @@
-from jaseci.jac.ir.passes.ir_pass import IrPass
+from jaseci.jac.ir.passes import IrPass
 from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr
 
 

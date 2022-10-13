@@ -99,13 +99,15 @@ class JacCode:
         self.code_sig = hashlib.md5(self.code_ir.encode()).hexdigest()
         JacCode.refresh(self)  # should disregard overloaded versions
 
-    def compile_jac(self, code, dir, start_rule="start"):
+    def compile_jac(self, code, dir, start_rule="start", opt_level=1):
         """Generate AST tree from Jac code text"""
         tree = JacAstBuilder(
             jac_text=code, start_rule=start_rule, mod_name=self.name, mod_dir=dir
         )
 
-        multi_pass_optimizer(tree.root)  # run passes here instead of in ast builder
+        multi_pass_optimizer(
+            tree.root, opt_level=opt_level
+        )  # run analysis and optimizers
 
         self.errors = tree._parse_errors
         if tree._parse_errors:
@@ -113,6 +115,7 @@ class JacCode:
             for i in tree._parse_errors:
                 logger.error(i)
             return None
+
         return tree.root
 
     def register(self, code, dir):
