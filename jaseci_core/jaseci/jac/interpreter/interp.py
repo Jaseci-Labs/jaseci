@@ -18,6 +18,7 @@ from jaseci.jac.machine.machine_state import TryException
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 from copy import copy, deepcopy
+from base64 import b64decode
 
 
 class Interp(VirtualMachine):
@@ -794,7 +795,6 @@ class Interp(VirtualMachine):
                 atom_res = JacValue(self, value=self._jac_scope.has_obj)
             if kid[0].name == "DOT":
                 if kid[1].name == "built_in":
-
                     return self.run_built_in(kid[1], atom_res)
                 elif kid[1].name == "NAME":
                     d = atom_res.value
@@ -907,7 +907,8 @@ class Interp(VirtualMachine):
         arch_built_in: any_type;
         """
         kid = self.set_cur_ast(jac_ast)
-        typ = self.run_any_type(kid[0])
+        self.run_any_type(kid[0])
+        typ = self.pop()
         if typ.value == Edge:
             if isinstance(atom_res.value, Node):
                 return JacValue(
@@ -1668,25 +1669,27 @@ class Interp(VirtualMachine):
             | KW_EDGE
             | KW_TYPE;
         """
+        if self.attempt_bytecode(jac_ast):
+            return
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "TYP_STRING":
-            return JacValue(self, value=str)
+            self.push(JacValue(self, value=str))
         elif kid[0].name == "TYP_INT":
-            return JacValue(self, value=int)
+            self.push(JacValue(self, value=int))
         elif kid[0].name == "TYP_FLOAT":
-            return JacValue(self, value=float)
+            self.push(JacValue(self, value=float))
         elif kid[0].name == "TYP_LIST":
-            return JacValue(self, value=list)
+            self.push(JacValue(self, value=list))
         elif kid[0].name == "TYP_DICT":
-            return JacValue(self, value=dict)
+            self.push(JacValue(self, value=dict))
         elif kid[0].name == "TYP_BOOL":
-            return JacValue(self, value=bool)
+            self.push(JacValue(self, value=bool))
         elif kid[0].name == "KW_NODE":
-            return JacValue(self, value=Node)
+            self.push(JacValue(self, value=Node))
         elif kid[0].name == "KW_EDGE":
-            return JacValue(self, value=Edge)
+            self.push(JacValue(self, value=Edge))
         elif kid[0].name == "KW_TYPE":
-            return JacValue(self, value=type)
+            self.push(JacValue(self, value=type))
         else:
             self.rt_error("Unrecognized type", kid[0])
 
@@ -1697,6 +1700,14 @@ class Interp(VirtualMachine):
         super().destroy()
 
     # Helper Functions ##################
+    def attempt_bytecode(self, jac_ast):
+        if not jac_ast.kid:
+            try:
+                self.run_bytecode(b64decode(jac_ast.bytecode.encode()))
+                return True
+            except Exception:
+                pass
+        return False
 
     def call_ability(self, nd, name, act_list):
         m = Interp(parent_override=self.parent(), caller=self)
@@ -1715,7 +1726,13 @@ class Interp(VirtualMachine):
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
         try:
-            return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
+            val = getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
+            # TODO: Rewrite after stack integration
+            if jac_ast.name in ["any_type"]:
+                return self.pop()
+            else:
+                return val
+            # return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
         except AttributeError as e:
             if not hasattr(self, f"run_{jac_ast.name}"):
                 self.rt_error(

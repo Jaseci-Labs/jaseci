@@ -1,16 +1,18 @@
-from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr
+from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr, type_map
 from jaseci.jac.machine.machine_state import MachineState
+from jaseci.jac.jsci_vm.inst_ptr import InstPtr, from_bytes
+from jaseci.jac.machine.jac_value import JacValue
 
 
 class Stack(object):
     def __init__(self):
         self._stk = []
 
-    def is_empty(self) -> bool:
+    def stack_is_empty(self) -> bool:
         return len(self._stk) == 0
 
     def pop(self):
-        if self.is_empty():
+        if self.stack_is_empty():
             raise Exception("JaseciMachine stack is empty")
         return self._stk.pop()
 
@@ -24,21 +26,27 @@ class Stack(object):
             print(list(reversed(self._stk))[0:count])
 
 
-class VirtualMachine(MachineState, Stack):
+class VirtualMachine(MachineState, Stack, InstPtr):
     def __init__(self, **kwargs):
         Stack.__init__(self)
+        InstPtr.__init__(self)
         MachineState.__init__(self, **kwargs)
-        self._ip = 0
-        self._bytecode = None
         self._op = self.build_op_call()
+        self._cur_loc = None
+
+    def reset_vm(self):
+        Stack.__init__(self)
+        InstPtr.__init__(self)
+        self._cur_loc = None
 
     def build_op_call(self):
         op_map = {}
         for op in JsOp:
-            op_map[op.value] = getattr(self, f"op_{op.name}")
+            op_map[op] = getattr(self, f"op_{op.name}")
         return op_map
 
-    def run(self, bytecode):
+    def run_bytecode(self, bytecode):
+        self.reset_vm()
         self._bytecode = bytearray(bytecode)
         while self._ip < len(self._bytecode):
             self._op[self._bytecode[self._ip]]()
@@ -58,20 +66,26 @@ class VirtualMachine(MachineState, Stack):
         self.push(self.pop() - rhs)
 
     def op_LOAD_CONST(self):  # noqa
-        typ = JsAttr(self._bytecode[self._ip + 1])
-        byte_length = self._bytecode[self._ip + 2]
-        if typ == JsAttr.INT:
-            val = int.from_bytes(
-                self._bytecode[self._ip + 3 : self._ip + 3 + byte_length], "little"
-            )
-        self.push(val)
-        self._ip += 2 + byte_length
-
-    def op_LOAD_NAME(self):  # noqa
-        pass
+        typ = JsAttr(self.offset(1))
+        operand2 = self.offset(2)
+        if typ == JsAttr.TYPE:
+            val = type_map[JsAttr(operand2)]
+            self._ip += 2
+        elif typ == JsAttr.INT:
+            val = from_bytes(int, self.offset(3, operand2))
+            self._ip += 2 + operand2
+        self.push(JacValue(self, value=val))
 
     def op_REPORT(self):  # noqa
         self.report.append(self.pop())
 
     def op_ACTION_CALL(self):  # noqa
         pass
+
+    def op_DEBUG_INFO(self):  # noqa
+        byte_len_l = self.offset(1)
+        line = from_bytes(int, self.offset(2, byte_len_l))
+        byte_len_f = self.offset(3)
+        jacfile = from_bytes(str, self.offset(4, byte_len_f)) if byte_len_f else 0
+        self._cur_loc = [line, jacfile]
+        self._ip += 2 + byte_len_l + byte_len_f

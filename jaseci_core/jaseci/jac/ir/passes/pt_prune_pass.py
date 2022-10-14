@@ -1,7 +1,7 @@
 from jaseci.jac.ir.passes.ir_pass import IrPass
 
 
-class PrunePass(IrPass):
+class ParseTreePrunePass(IrPass):
     prune_able = [
         "connect",
         "logical",
