@@ -104,6 +104,8 @@ class JacCode:
         tree = JacAstBuilder(
             jac_text=code, start_rule=start_rule, mod_name=self.name, mod_dir=dir
         )
+        # Must clear this state across compiles (so fresh imports dont use stale data)
+        JacAstBuilder._ast_head_map = {}
 
         multi_pass_optimizer(
             tree.root, opt_level=opt_level
