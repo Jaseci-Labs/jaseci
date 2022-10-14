@@ -1,8 +1,8 @@
 from jaseci.utils.test_core import CoreTest
-from jaseci.jac.ir.passes.codegen_pass import CodeGenPass
-from jaseci.jac.jsci_vm.machine import VirtualMachine
 
-from jaseci.jac.jsci_vm.disasm import DisAsm
+# from jaseci.jac.ir.passes.codegen_pass import CodeGenPass
+# from jaseci.jac.jsci_vm.machine import VirtualMachine
+# from jaseci.jac.jsci_vm.disasm import DisAsm
 
 
 class TestCodegen(CoreTest):

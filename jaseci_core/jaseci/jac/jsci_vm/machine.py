@@ -34,7 +34,7 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         self._op = self.build_op_call()
         self._cur_loc = None
 
-    def reset(self):
+    def reset_vm(self):
         Stack.__init__(self)
         InstPtr.__init__(self)
         self._cur_loc = None
@@ -46,7 +46,7 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         return op_map
 
     def run_bytecode(self, bytecode):
-        self.reset()
+        self.reset_vm()
         self._bytecode = bytearray(bytecode)
         while self._ip < len(self._bytecode):
             self._op[self._bytecode[self._ip]]()
