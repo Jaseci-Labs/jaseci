@@ -1701,11 +1701,13 @@ class Interp(VirtualMachine):
 
     # Helper Functions ##################
     def attempt_bytecode(self, jac_ast):
-        if not (isinstance(jac_ast.kid, list)):
-            self.run_bytecode(b64decode(jac_ast.kid.encode()))
-            return True
-        else:
-            return False
+        if not jac_ast.kid:
+            try:
+                self.run_bytecode(b64decode(jac_ast.bytecode.encode()))
+                return True
+            except Exception:
+                pass
+        return False
 
     def call_ability(self, nd, name, act_list):
         m = Interp(parent_override=self.parent(), caller=self)

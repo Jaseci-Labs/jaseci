@@ -61,7 +61,7 @@ class CodeGenPass(IrPass):
             getattr(self, f"exit_{node.name}")(node)
 
     def exit_any_type(self, node):
-        node.kid = b64encode(self.bytecode).decode()
+        node.bytecode = b64encode(self.bytecode).decode()
 
     # def enter_walker_block(self, node):
     #     self.emit(JsOp.PUSH_SCOPE)
