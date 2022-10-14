@@ -23,8 +23,11 @@ class CodeGenPass(IrPass):
         self.bytecode = bytearray()
         self.debug_info = debug_info
         self.cur_loc = None
+        self.emit_enabled = False
 
     def emit(self, *items):
+        if not self.emit_enabled:
+            return
         for i in items:
             if type(i) is bytes:
                 self.bytecode += bytearray(i)
@@ -35,7 +38,7 @@ class CodeGenPass(IrPass):
 
     def emit_debug_info(self, node):
         node_loc = [node.loc[0], node.loc[2]]
-        if not self.debug_info or self.cur_loc == node_loc:
+        if not (self.debug_info and self.emit_enabled) or self.cur_loc == node_loc:
             return
         self.emit(
             JsOp.DEBUG_INFO,
@@ -60,8 +63,12 @@ class CodeGenPass(IrPass):
             self.emit_debug_info(node)
             getattr(self, f"exit_{node.name}")(node)
 
+    def enter_any_type(self, node):
+        self.emit_enabled = True
+
     def exit_any_type(self, node):
         node.bytecode = b64encode(self.bytecode).decode()
+        self.emit_enabled = False
 
     # def enter_walker_block(self, node):
     #     self.emit(JsOp.PUSH_SCOPE)
