@@ -34,13 +34,19 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         self._op = self.build_op_call()
         self._cur_loc = None
 
+    def reset(self):
+        Stack.__init__(self)
+        InstPtr.__init__(self)
+        self._cur_loc = None
+
     def build_op_call(self):
         op_map = {}
         for op in JsOp:
-            op_map[op.value] = getattr(self, f"op_{op.name}")
+            op_map[op] = getattr(self, f"op_{op.name}")
         return op_map
 
     def run_bytecode(self, bytecode):
+        self.reset()
         self._bytecode = bytearray(bytecode)
         while self._ip < len(self._bytecode):
             self._op[self._bytecode[self._ip]]()
@@ -65,7 +71,7 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         if typ == JsAttr.TYPE:
             val = type_map[JsAttr(operand2)]
             self._ip += 2
-        if typ == JsAttr.INT:
+        elif typ == JsAttr.INT:
             val = from_bytes(int, self.offset(3, operand2))
             self._ip += 2 + operand2
         self.push(JacValue(self, value=val))

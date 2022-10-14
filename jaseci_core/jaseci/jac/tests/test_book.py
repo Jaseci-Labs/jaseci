@@ -29,6 +29,12 @@ class JacBookTests(TestCaseHelper, TestCase):
         print("output: ", self.new_stdout.getvalue())
         sys.stdout = self.new_stdout
 
+    def screen_on(self):
+        sys.stdout = self.old_stdout
+
+    def screen_off(self):
+        sys.stdout = self.new_stdout
+
     def test_basic_arith(self):
         self.sent.register_code(jtc.basic_arith)
         gen_walker = self.sent.run_architype("init")

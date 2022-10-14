@@ -795,7 +795,6 @@ class Interp(VirtualMachine):
                 atom_res = JacValue(self, value=self._jac_scope.has_obj)
             if kid[0].name == "DOT":
                 if kid[1].name == "built_in":
-
                     return self.run_built_in(kid[1], atom_res)
                 elif kid[1].name == "NAME":
                     d = atom_res.value
@@ -1727,7 +1726,7 @@ class Interp(VirtualMachine):
         try:
             val = getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
             # TODO: Rewrite after stack integration
-            if val is None and not self.stack_is_empty():
+            if jac_ast.name in ["any_type"]:
                 return self.pop()
             else:
                 return val
