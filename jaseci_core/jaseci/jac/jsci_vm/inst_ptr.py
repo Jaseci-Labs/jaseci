@@ -1,10 +1,17 @@
 from jaseci.jac.jsci_vm.op_codes import JsOp
+from struct import unpack
 
 
 def from_bytes(typ, val):
     if typ == str:
+        if val is None:
+            return ""
         return val.decode("utf-8")
+    if typ == float:
+        return unpack("f", val)
     else:
+        if val is None:
+            return 0
         return typ.from_bytes(val, "little")
 
 
@@ -13,8 +20,10 @@ class InstPtr:
         self._ip = 0
         self._bytecode = None
 
-    def offset(self, delta, range=0):
-        if range:
+    def offset(self, delta, range=None):
+        if range == 0:
+            return None
+        elif range is not None:
             return self._bytecode[self._ip + delta : self._ip + delta + range]
         return self._bytecode[self._ip + delta]
 

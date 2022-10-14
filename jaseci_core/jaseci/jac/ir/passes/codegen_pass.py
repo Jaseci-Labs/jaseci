@@ -1,5 +1,8 @@
 from jaseci.jac.ir.passes import IrPass
 from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr
+from struct import pack
+
+from jaseci.utils.utils import parse_str_token
 
 
 def byte_length(val):
@@ -12,12 +15,14 @@ def byte_length(val):
 def to_bytes(val):
     if type(val) == str:
         return bytes(val, "utf-8")
+    elif type(val) == float:
+        return pack("f", val)
     else:
         return val.to_bytes(byte_length(val), "little")
 
 
 class CodeGenPass(IrPass):
-    def __init__(self, debug_info=True, **kwargs):
+    def __init__(self, debug_info=False, **kwargs):
         super().__init__(**kwargs)
         self.debug_info = debug_info
         self.cur_loc = None
@@ -63,6 +68,10 @@ class CodeGenPass(IrPass):
             self.emit_debug_info(node)
             getattr(self, f"exit_{node.name}")(node)
 
+    def exit_atom(self, node):
+        if len(node.kid) == 1 and hasattr(node.kid[0], "bytecode"):
+            node.bytecode = node.kid[0].bytecode
+
     def exit_any_type(self, node):
         node.bytecode = node.kid[0].bytecode
 
@@ -92,3 +101,50 @@ class CodeGenPass(IrPass):
 
     def exit_KW_TYPE(self, node):  # noqa
         self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.TYPE)
+
+    def exit_INT(self, node):  # noqa
+        val = int(node.token_text())
+        self.emit(
+            node,
+            JsOp.LOAD_CONST,
+            JsAttr.INT,
+            byte_length(val),
+            to_bytes(val),
+        )
+
+    def exit_FLOAT(self, node):  # noqa
+        val = float(node.token_text())
+        self.emit(
+            node,
+            JsOp.LOAD_CONST,
+            JsAttr.FLOAT,
+            to_bytes(val),
+        )
+
+    def exit_STRING(self, node):  # noqa
+        val = parse_str_token(node.token_text())
+        self.emit(
+            node,
+            JsOp.LOAD_CONST,
+            JsAttr.STRING,
+            byte_length(val),
+        )
+        if byte_length(val) > 0:
+            self.emit(node, to_bytes(val))
+
+    def exit_BOOL(self, node):  # noqa
+        val = int(node.token_text() == "true")
+        self.emit(
+            node,
+            JsOp.LOAD_CONST,
+            JsAttr.BOOL,
+            to_bytes(val),
+        )
+
+    def exit_NULL(self, node):  # noqa
+        self.emit(
+            node,
+            JsOp.LOAD_CONST,
+            JsAttr.TYPE,
+            JsAttr.NULL,
+        )

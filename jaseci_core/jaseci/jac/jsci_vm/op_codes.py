@@ -8,7 +8,8 @@ class JsOp(IntEnum):
     POP_SCOPE = auto()
     ADD = auto()
     SUB = auto()
-    LOAD_CONST = auto()  # [type, bytes, (val)] / [type=type, type]
+    LOAD_CONST = auto()  # [type, bytes, (val)] / [type, (val)] / [type=type, type]
+    # LOAD_VAR = auto()  # [bytes, (name)]
     REPORT = auto()  # [type, bytes, (val)]
     ACTION_CALL = auto()
     DEBUG_INFO = auto()  # [bytes, line, bytes, (jacfile)]
@@ -22,6 +23,7 @@ class JsAttr(IntEnum):
     LIST = auto()
     DICT = auto()
     BOOL = auto()
+    NULL = auto()
     NODE = auto()
     EDGE = auto()
 
@@ -34,6 +36,7 @@ type_map = {
     JsAttr.LIST: list,
     JsAttr.DICT: dict,
     JsAttr.BOOL: bool,
+    JsAttr.NULL: None,
     JsAttr.NODE: Node,
     JsAttr.EDGE: Edge,
 }

@@ -734,6 +734,8 @@ class Interp(VirtualMachine):
             | any_type;
         """
         try:
+            if self.attempt_bytecode(jac_ast):
+                return
             kid = self.set_cur_ast(jac_ast)
             if kid[0].name == "INT":
                 self.push(JacValue(self, value=int(kid[0].token_text())))
@@ -1709,11 +1711,8 @@ class Interp(VirtualMachine):
     # Helper Functions ##################
     def attempt_bytecode(self, jac_ast):
         if not jac_ast.kid:
-            try:
-                self.run_bytecode(b64decode(jac_ast.bytecode.encode()))
-                return True
-            except Exception:
-                pass
+            self.run_bytecode(b64decode(jac_ast.bytecode.encode()))
+            return True
         return False
 
     def call_ability(self, nd, name, act_list):

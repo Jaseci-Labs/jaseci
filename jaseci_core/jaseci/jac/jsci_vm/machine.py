@@ -2,6 +2,7 @@ from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr, type_map
 from jaseci.jac.machine.machine_state import MachineState
 from jaseci.jac.jsci_vm.inst_ptr import InstPtr, from_bytes
 from jaseci.jac.machine.jac_value import JacValue
+from jaseci.jac.jsci_vm.disasm import DisAsm
 
 
 class Stack(object):
@@ -52,6 +53,9 @@ class VirtualMachine(MachineState, Stack, InstPtr):
             self._op[self._bytecode[self._ip]]()
             self._ip += 1
 
+    def disassemble(self):
+        DisAsm().disassemble(self._bytecode)
+
     def op_PUSH_SCOPE(self):  # noqa
         pass
 
@@ -68,12 +72,18 @@ class VirtualMachine(MachineState, Stack, InstPtr):
     def op_LOAD_CONST(self):  # noqa
         typ = JsAttr(self.offset(1))
         operand2 = self.offset(2)
-        if typ == JsAttr.TYPE:
+        if typ in [JsAttr.TYPE]:
             val = type_map[JsAttr(operand2)]
             self._ip += 2
-        elif typ == JsAttr.INT:
-            val = from_bytes(int, self.offset(3, operand2))
+        elif typ in [JsAttr.INT, JsAttr.STRING]:
+            val = from_bytes(type_map[typ], self.offset(3, operand2))
             self._ip += 2 + operand2
+        elif typ in [JsAttr.FLOAT]:
+            val = from_bytes(float, self.offset(2, 4))
+            self._ip += 2 + 4
+        elif typ in [JsAttr.BOOL]:
+            val = from_bytes(int, self.offset(2, 1))
+            self._ip += 2 + 1
         self.push(JacValue(self, value=val))
 
     def op_REPORT(self):  # noqa
