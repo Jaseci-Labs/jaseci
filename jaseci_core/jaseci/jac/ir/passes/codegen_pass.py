@@ -1,6 +1,8 @@
 from jaseci.jac.ir.passes import IrPass
 from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr
-from base64 import b64encode
+from struct import pack
+
+from jaseci.utils.utils import parse_str_token
 
 
 def byte_length(val):
@@ -13,42 +15,43 @@ def byte_length(val):
 def to_bytes(val):
     if type(val) == str:
         return bytes(val, "utf-8")
-    else:
+    elif type(val) == float:
+        return pack("d", val)
+    elif type(val) == int:
         return val.to_bytes(byte_length(val), "little")
 
 
 class CodeGenPass(IrPass):
-    def __init__(self, debug_info=True, **kwargs):
+    def __init__(self, debug_info=False, **kwargs):
         super().__init__(**kwargs)
-        self.bytecode = bytearray()
         self.debug_info = debug_info
         self.cur_loc = None
-        self.emit_enabled = False
 
-    def emit(self, *items):
-        if not self.emit_enabled:
-            return
+    def emit(self, node, *items):
+        if not hasattr(node, "bytecode"):
+            node.bytecode = bytearray()
         for i in items:
             if type(i) is bytes:
-                self.bytecode += bytearray(i)
+                node.bytecode += bytearray(i)
             elif type(i) is str:
-                self.bytecode += bytearray(i, "utf-8")
+                node.bytecode += bytearray(i, "utf-8")
             else:
-                self.bytecode.append(i)
+                node.bytecode.append(i)
 
     def emit_debug_info(self, node):
         node_loc = [node.loc[0], node.loc[2]]
-        if not (self.debug_info and self.emit_enabled) or self.cur_loc == node_loc:
+        if not self.debug_info or self.cur_loc == node_loc:
             return
         self.emit(
+            node,
             JsOp.DEBUG_INFO,
             byte_length(node_loc[0]),
             to_bytes(node_loc[0]),
         )
         if not self.cur_loc or self.cur_loc[1] != node_loc[1]:
-            self.emit(byte_length(node_loc[1]), to_bytes(node_loc[1]))
+            self.emit(node, byte_length(node_loc[1]), to_bytes(node_loc[1]))
         else:
-            self.emit(0)
+            self.emit(node, 0)
         self.cur_loc = node_loc
 
     def enter_node(self, node):
@@ -63,57 +66,83 @@ class CodeGenPass(IrPass):
             self.emit_debug_info(node)
             getattr(self, f"exit_{node.name}")(node)
 
-    def enter_any_type(self, node):
-        self.emit_enabled = True
+    def exit_atom(self, node):
+        if len(node.kid) == 1 and hasattr(node.kid[0], "bytecode"):
+            node.bytecode = node.kid[0].bytecode
 
     def exit_any_type(self, node):
-        node.bytecode = b64encode(self.bytecode).decode()
-        self.emit_enabled = False
-
-    # def enter_walker_block(self, node):
-    #     self.emit(JsOp.PUSH_SCOPE)
-
-    # def exit_walker_block(self, node):
-    #     self.emit(JsOp.POP_SCOPE)
-
-    # def exit_arithmetic(self, node):
-    #     self.emit(JsOp.ADD if node.kid[1].name == "PLUS" else JsOp.SUB)
-
-    # def exit_report_action(self, node):
-    #     self.emit(JsOp.REPORT)
+        node.bytecode = node.kid[0].bytecode
 
     def exit_TYP_STRING(self, node):  # noqa
-        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.STRING)
+        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.STRING)
 
     def exit_TYP_INT(self, node):  # noqa
-        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.INT)
+        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.INT)
 
     def exit_TYP_FLOAT(self, node):  # noqa
-        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.FLOAT)
+        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.FLOAT)
 
     def exit_TYP_LIST(self, node):  # noqa
-        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.LIST)
+        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.LIST)
 
     def exit_TYP_DICT(self, node):  # noqa
-        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.DICT)
+        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.DICT)
 
     def exit_TYP_BOOL(self, node):  # noqa
-        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.BOOL)
+        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.BOOL)
 
     def exit_KW_NODE(self, node):  # noqa
-        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.NODE)
+        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.NODE)
 
     def exit_KW_EDGE(self, node):  # noqa
-        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.EDGE)
+        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.EDGE)
 
     def exit_KW_TYPE(self, node):  # noqa
-        self.emit(JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.TYPE)
+        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.TYPE)
 
-    # def exit_INT(self, node):  # noqa
-    #     val = int(node.token_text())
-    #     self.emit(
-    #         JsOp.LOAD_CONST,
-    #         JsAttr.INT,
-    #         byte_length(val),
-    #         to_bytes(val),
-    #     )
+    def exit_INT(self, node):  # noqa
+        val = int(node.token_text())
+        self.emit(
+            node,
+            JsOp.LOAD_CONST,
+            JsAttr.INT,
+            byte_length(val),
+            to_bytes(val),
+        )
+
+    def exit_FLOAT(self, node):  # noqa
+        val = float(node.token_text())
+        self.emit(
+            node,
+            JsOp.LOAD_CONST,
+            JsAttr.FLOAT,
+            to_bytes(val),
+        )
+
+    def exit_STRING(self, node):  # noqa
+        val = parse_str_token(node.token_text())
+        self.emit(
+            node,
+            JsOp.LOAD_CONST,
+            JsAttr.STRING,
+            byte_length(val),
+        )
+        if byte_length(val) > 0:
+            self.emit(node, to_bytes(val))
+
+    def exit_BOOL(self, node):  # noqa
+        val = int(node.token_text() == "true")
+        self.emit(
+            node,
+            JsOp.LOAD_CONST,
+            JsAttr.BOOL,
+            val,
+        )
+
+    def exit_NULL(self, node):  # noqa
+        self.emit(
+            node,
+            JsOp.LOAD_CONST,
+            JsAttr.TYPE,
+            JsAttr.NULL,
+        )

@@ -1,20 +1,34 @@
 from jaseci.utils.test_core import CoreTest
 
-# from jaseci.jac.ir.passes.codegen_pass import CodeGenPass
-# from jaseci.jac.jsci_vm.machine import VirtualMachine
-# from jaseci.jac.jsci_vm.disasm import DisAsm
-
 
 class TestCodegen(CoreTest):
     """Unit tests for Jac Walker APIs"""
 
     fixture_src = __file__
 
-    # def test_simple_codegen(self):
-    #     self.call(
+    def test_simple_codegen(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("simple.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "most_basic"}])
+        # self.log(ret)
+        # from jaseci.jac.ir.passes import PrinterPass
+        # PrinterPass(self.mast.active_snt()._jac_ast).run()
+        self.assertEqual(ret["report"][0], 5004)
+        self.assertEqual(ret["report"][1], "ab")
+
+    # def test_pack_it(self):
+    #     self.logger_on()
+    #     ret = self.call(
     #         self.mast,
     #         ["sentinel_register", {"code": self.load_jac("simple.jac")}],
     #     )
-    #     bc_ir = CodeGenPass(ir=self.mast.active_snt()._jac_ast).run()
-    #     DisAsm().disassemble(bc_ir.bytecode)
-    #     VirtualMachine().run_bytecode(bc_ir.bytecode)
+    #     self.log(ret)
+    #     ret = self.call(self.mast, ["walker_run", {"name": "pack_it"}])
+
+    #     from jaseci.jac.ir.passes import PrinterPass
+
+    #     PrinterPass(self.mast.active_snt()._jac_ast).run()
+    #     # self.assertEqual(ret["report"][0], 5004)
+    #     # self.assertEqual(ret["report"][1], "ab")

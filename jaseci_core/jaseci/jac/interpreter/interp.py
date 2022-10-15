@@ -734,48 +734,55 @@ class Interp(VirtualMachine):
             | any_type;
         """
         try:
+            if self.attempt_bytecode(jac_ast):
+                return
             kid = self.set_cur_ast(jac_ast)
             if kid[0].name == "INT":
-                return JacValue(self, value=int(kid[0].token_text()))
+                self.push(JacValue(self, value=int(kid[0].token_text())))
             elif kid[0].name == "FLOAT":
-                return JacValue(self, value=float(kid[0].token_text()))
+                self.push(JacValue(self, value=float(kid[0].token_text())))
             elif kid[0].name == "STRING":
-                return JacValue(self, value=parse_str_token(kid[0].token_text()))
+                self.push(JacValue(self, value=parse_str_token(kid[0].token_text())))
             elif kid[0].name == "BOOL":
-                return JacValue(self, value=bool(kid[0].token_text() == "true"))
+                self.push(JacValue(self, value=bool(kid[0].token_text() == "true")))
             elif kid[0].name == "NULL":
-                return JacValue(self, value=None)
+                self.push(JacValue(self, value=None))
             elif kid[0].name == "NAME":
                 name = kid[0].token_text()
                 val = self._jac_scope.get_live_var(name, create_mode=self._assign_mode)
                 if val is None:
                     self.rt_error(f"Variable not defined - {name}", kid[0])
-                    return JacValue(self)
-                return val
+                    self.push(JacValue(self))
+                else:
+                    self.push(val)
             elif kid[0].name == "type_ref":
                 ret = self.run_type_ref(kid[0])
                 if kid[-1].name == "spawn_ctx":
                     self.run_spawn_ctx(kid[-1], ret.value)
-                return ret
+                self.push(ret)
             elif kid[0].name == "LPAREN":
-                return self.run_expression(kid[1])
+                self.push(self.run_expression(kid[1]))
             elif kid[0].name == "ability_op":
-                return self.run_atom_trailer(jac_ast, None)
+                self.push(self.run_atom_trailer(jac_ast, None))
             elif kid[0].name == "atom":
-                ret = self.run_atom(kid[0])
+                self.run_atom(kid[0])
+                ret = self.pop()
                 for i in kid[1:]:
                     ret = self.run_atom_trailer(i, ret)
-                return ret
+                self.push(ret)
             elif kid[0].name == "KW_SYNC":
-                val = self.run_atom(kid[1])
+                self.run_atom(kid[1])
+                val = self.pop()
                 task_func = self._h.task
                 if not task_func.is_running():
                     raise Exception("Task hook is not yet initialized!")
-                return JacValue(
-                    self, value=task_func.get_by_task_id(val.value["result"], True)
+                self.push(
+                    JacValue(
+                        self, value=task_func.get_by_task_id(val.value["result"], True)
+                    )
                 )
             else:
-                return self.run_rule(kid[0])
+                self.push(self.run_rule(kid[0]))
 
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
@@ -865,7 +872,8 @@ class Interp(VirtualMachine):
         ref: '&' atom;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_atom(kid[1])
+        self.run_atom(kid[1])
+        result = self.pop()
         if self.rt_check_type(result.value, Element, kid[1]):
             result = JacValue(self, value=result.value.jid)
         return result
@@ -875,7 +883,8 @@ class Interp(VirtualMachine):
         deref: '*' atom;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_atom(kid[1])
+        self.run_atom(kid[1])
+        result = self.pop()
 
         if (
             isinstance(result.value, str)
@@ -1702,11 +1711,8 @@ class Interp(VirtualMachine):
     # Helper Functions ##################
     def attempt_bytecode(self, jac_ast):
         if not jac_ast.kid:
-            try:
-                self.run_bytecode(b64decode(jac_ast.bytecode.encode()))
-                return True
-            except Exception:
-                pass
+            self.run_bytecode(b64decode(jac_ast.bytecode.encode()))
+            return True
         return False
 
     def call_ability(self, nd, name, act_list):
@@ -1728,7 +1734,7 @@ class Interp(VirtualMachine):
         try:
             val = getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
             # TODO: Rewrite after stack integration
-            if jac_ast.name in ["any_type"]:
+            if jac_ast.name in ["any_type", "atom"]:
                 return self.pop()
             else:
                 return val
