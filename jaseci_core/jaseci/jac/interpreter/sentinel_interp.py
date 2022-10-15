@@ -156,7 +156,7 @@ class SentinelInterp(Interp):
         }
         kid = kid[3:]
         if kid[0].name == "graph_ref":
-            graph_name = kid[0].kid[2].token_text()
+            graph_name = kid[0].kid[-1].token_text()
             if not self.arch_ids.has_obj_by_name(graph_name, kind="graph"):
                 self.rt_error(f"Graph {graph_name} not found!", kid[0])
                 return
@@ -166,7 +166,7 @@ class SentinelInterp(Interp):
             testcase["graph_block"] = jac_ast_to_ir(kid[0])
         kid = kid[2:]
         if kid[0].name == "walker_ref":
-            walker_name = kid[0].kid[2].token_text()
+            walker_name = kid[0].kid[-1].token_text()
             if not self.arch_ids.has_obj_by_name(name=walker_name, kind="walker"):
                 self.rt_error(f"Walker {walker_name} not found!", kid[0])
                 return

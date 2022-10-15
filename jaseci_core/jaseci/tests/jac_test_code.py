@@ -1142,15 +1142,15 @@ struct_types = """
     }
 
     type another {
-        has apple=type::simple(apple=33);
+        has apple=spawn t::simple(apple=33);
     }
 
     node mynode {
-        has basic=type::another;
+        has basic=spawn type::another;
     }
 
     walker init {
-        a = spawn here --> node::mynode;
+        a = spawn here --> n::mynode;
 
         report
         [a.basic["apple"]["orange"],

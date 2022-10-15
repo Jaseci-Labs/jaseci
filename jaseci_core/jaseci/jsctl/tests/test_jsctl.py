@@ -280,8 +280,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         if os.path.exists("jaseci/jsctl/tests/teststest.jir"):
             os.remove("jaseci/jsctl/tests/teststest.jir")
             self.assertFalse(os.path.exists("jaseci/jsctl/tests/teststest.jir"))
-        r = self.call("jac build jaseci/jsctl/tests/teststest.jac")
-        self.log(r)
+        self.call("jac build jaseci/jsctl/tests/teststest.jac")
         self.assertGreater(os.path.getsize("jaseci/jsctl/tests/teststest.jir"), 20000)
 
     def test_jsctl_jac_build_with_action(self):
