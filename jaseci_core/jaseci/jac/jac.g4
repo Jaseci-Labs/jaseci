@@ -8,16 +8,26 @@ import_module:
 ver_label: 'version' COLON STRING SEMI?;
 
 import_items:
-	KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
-	| KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
-	| KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
-	| KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?
-	| KW_GLOBAL (STAR_MUL | import_names) (COMMA import_items)?
-	| KW_TYPE (STAR_MUL | import_names) (COMMA import_items)?;
+	WALKER_DBL_COLON (STAR_MUL | import_names) (
+		COMMA import_items
+	)?
+	| NODE_DBL_COLON (STAR_MUL | import_names) (
+		COMMA import_items
+	)?
+	| EDGE_DBL_COLON (STAR_MUL | import_names) (
+		COMMA import_items
+	)?
+	| GRAPH_DBL_COLON (STAR_MUL | import_names) (
+		COMMA import_items
+	)?
+	| KW_GLOBAL DBL_COLON (STAR_MUL | import_names) (
+		COMMA import_items
+	)?
+	| TYPE_DBL_COLON (STAR_MUL | import_names) (
+		COMMA import_items
+	)?;
 
-import_names:
-	DBL_COLON NAME
-	| DBL_COLON LBRACE name_list RBRACE;
+import_names: NAME | LBRACE name_list RBRACE;
 
 element: global_var | architype | test;
 
@@ -197,7 +207,6 @@ atom:
 	| NAME
 	| global_ref
 	| node_edge_ref
-	| type_ref spawn_ctx?
 	| list_val
 	| dict_val
 	| LPAREN expression RPAREN
@@ -255,13 +264,13 @@ node_edge_ref:
 	node_ref filter_ctx?
 	| edge_ref (node_ref filter_ctx?)?;
 
-node_ref: KW_NODE DBL_COLON NAME;
+node_ref: NODE_DBL_COLON NAME;
 
-walker_ref: KW_WALKER DBL_COLON NAME;
+walker_ref: WALKER_DBL_COLON NAME;
 
-graph_ref: KW_GRAPH DBL_COLON NAME;
+graph_ref: GRAPH_DBL_COLON NAME;
 
-type_ref: KW_TYPE DBL_COLON NAME;
+type_ref: TYPE_DBL_COLON NAME;
 
 edge_ref: edge_to | edge_from | edge_any;
 
@@ -289,7 +298,11 @@ kv_pair: expression COLON expression;
 
 spawn: KW_SPAWN spawn_object;
 
-spawn_object: node_spawn | walker_spawn | graph_spawn;
+spawn_object:
+	node_spawn
+	| walker_spawn
+	| graph_spawn
+	| type_spawn;
 
 spawn_edge: expression edge_ref;
 
@@ -298,6 +311,8 @@ node_spawn: spawn_edge? node_ref spawn_ctx?;
 graph_spawn: spawn_edge? graph_ref;
 
 walker_spawn: expression KW_SYNC? walker_ref spawn_ctx?;
+
+type_spawn: type_ref spawn_ctx?;
 
 spawn_ctx: LPAREN (spawn_assign (COMMA spawn_assign)*)? RPAREN;
 
@@ -392,6 +407,11 @@ DBL_COLON: '::';
 STR_DBL_COLON: 's::';
 LIST_DBL_COLON: 'l::';
 DICT_DBL_COLON: 'd::';
+NODE_DBL_COLON: 'n::' | KW_NODE DBL_COLON;
+EDGE_DBL_COLON: 'e::' | KW_EDGE DBL_COLON;
+WALKER_DBL_COLON: 'w::' | KW_WALKER DBL_COLON;
+GRAPH_DBL_COLON: 'g::' | KW_GRAPH DBL_COLON;
+TYPE_DBL_COLON: 't::' | KW_TYPE DBL_COLON;
 COLON_OUT: '::>';
 LBRACE: '{';
 RBRACE: '}';

@@ -721,7 +721,6 @@ class Interp(VirtualMachine):
             | NAME
             | global_ref
             | node_edge_ref
-            | type_ref spawn_ctx?
             | list_val
             | dict_val
             | LPAREN expression RPAREN
@@ -755,11 +754,7 @@ class Interp(VirtualMachine):
                     self.push(JacValue(self))
                 else:
                     self.push(val)
-            elif kid[0].name == "type_ref":
-                ret = self.run_type_ref(kid[0])
-                if kid[-1].name == "spawn_ctx":
-                    self.run_spawn_ctx(kid[-1], ret.value)
-                self.push(ret)
+
             elif kid[0].name == "LPAREN":
                 self.push(self.run_expression(kid[1]))
             elif kid[0].name == "ability_op":
@@ -1259,53 +1254,55 @@ class Interp(VirtualMachine):
 
     def run_node_ref(self, jac_ast, is_spawn=False):
         """
-        node_ref: KW_NODE DBL_COLON NAME;
+        node_ref: NODE_DBL_COLON NAME;
         """
         kid = self.set_cur_ast(jac_ast)
         if not is_spawn:
             result = JacSet()
             if len(kid) > 1:
                 for i in self.viable_nodes().obj_list():
-                    if i.get_architype().is_instance(kid[2].token_text()):
+                    if i.get_architype().is_instance(kid[-1].token_text()):
                         result.add_obj(i)
             else:
                 result += self.viable_nodes()
         else:
             result = self.parent().run_architype(
-                kid[2].token_text(), kind="node", caller=self
+                kid[-1].token_text(), kind="node", caller=self
             )
         return result
 
     def run_walker_ref(self, jac_ast, to_await=False):
         """
-        walker_ref: KW_WALKER DBL_COLON NAME;
+        walker_ref: WALKER_DBL_COLON NAME;
         """
         kid = self.set_cur_ast(jac_ast)
-        name = kid[2].token_text()
+        name = kid[-1].token_text()
         wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
         if wlk is None:
             wlk = self.parent().run_architype(name=name, kind="walker", caller=self)
         if wlk is None:
-            self.rt_error(f"No walker {name} exists!", kid[2])
+            self.rt_error(f"No walker {name} exists!", kid[-1])
         wlk._to_await = to_await
         return wlk
 
     def run_graph_ref(self, jac_ast):
         """
-        graph_ref: KW_GRAPH DBL_COLON NAME;
+        graph_ref: GRAPH_DBL_COLON NAME;
         """
         kid = self.set_cur_ast(jac_ast)
         gph = self.parent().run_architype(
-            kid[2].token_text(), kind="graph", caller=self
+            kid[-1].token_text(), kind="graph", caller=self
         )
         return gph
 
     def run_type_ref(self, jac_ast):
         """
-        graph_ref: KW_GRAPH DBL_COLON NAME;
+        type_ref: TYPE_DBL_COLON NAME;
         """
         kid = self.set_cur_ast(jac_ast)
-        obj = self.parent().run_architype(kid[2].token_text(), kind="type", caller=self)
+        obj = self.parent().run_architype(
+            kid[-1].token_text(), kind="type", caller=self
+        )
         return JacValue(self, value=obj)
 
     def run_edge_ref(self, jac_ast, is_spawn=False):
@@ -1480,7 +1477,11 @@ class Interp(VirtualMachine):
 
     def run_spawn_object(self, jac_ast):
         """
-        spawn_object: node_spawn | walker_spawn | graph_spawn;
+        spawn_object:
+            node_spawn
+            | walker_spawn
+            | graph_spawn
+            | type_spawn;
         """
         kid = self.set_cur_ast(jac_ast)
         return self.run_rule(kid[0])
@@ -1610,6 +1611,16 @@ class Interp(VirtualMachine):
             self.inherit_runtime_state(walk)
             walk.register_yield_or_destroy(self.yielded_walkers_ids)
         return JacValue(self, value=ret[0] if len(ret) == 1 else ret)
+
+    def run_type_spawn(self, jac_ast):
+        """
+        type_spawn: type_ref spawn_ctx?;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        ret = self.run_type_ref(kid[0])
+        if kid[-1].name == "spawn_ctx":
+            self.run_spawn_ctx(kid[-1], ret.value)
+        return ret
 
     def run_spawn_ctx(self, jac_ast, obj):
         """
