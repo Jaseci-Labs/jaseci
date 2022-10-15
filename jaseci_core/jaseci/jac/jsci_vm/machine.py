@@ -39,6 +39,7 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         Stack.__init__(self)
         InstPtr.__init__(self)
         self._cur_loc = None
+        self._op = self.build_op_call()
 
     def build_op_call(self):
         op_map = {}
