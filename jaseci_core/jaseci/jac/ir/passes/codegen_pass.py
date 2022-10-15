@@ -17,7 +17,7 @@ def to_bytes(val):
         return bytes(val, "utf-8")
     elif type(val) == float:
         return pack("f", val)
-    else:
+    elif type(val) == int:
         return val.to_bytes(byte_length(val), "little")
 
 
@@ -36,8 +36,6 @@ class CodeGenPass(IrPass):
             elif type(i) is str:
                 node.bytecode += bytearray(i, "utf-8")
             else:
-                if isinstance(node.bytecode, str):
-                    print(node, node.bytecode)
                 node.bytecode.append(i)
 
     def emit_debug_info(self, node):
@@ -138,7 +136,7 @@ class CodeGenPass(IrPass):
             node,
             JsOp.LOAD_CONST,
             JsAttr.BOOL,
-            to_bytes(val),
+            val,
         )
 
     def exit_NULL(self, node):  # noqa

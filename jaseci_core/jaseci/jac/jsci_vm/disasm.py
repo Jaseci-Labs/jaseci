@@ -42,7 +42,7 @@ class DisAsm(InstPtr):
             self._asm.append([self.cur_op(), typ.name, val])
             self._ip += 2 + 4
         elif typ in [JsAttr.BOOL]:
-            val = from_bytes(int, self.offset(2, 1))
+            val = bool(self.offset(2))
             self._asm.append([self.cur_op(), typ.name, val])
             self._ip += 2 + 1
 

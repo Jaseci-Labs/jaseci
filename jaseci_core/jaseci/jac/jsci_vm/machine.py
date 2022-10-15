@@ -82,7 +82,7 @@ class VirtualMachine(MachineState, Stack, InstPtr):
             val = from_bytes(float, self.offset(2, 4))
             self._ip += 2 + 4
         elif typ in [JsAttr.BOOL]:
-            val = from_bytes(int, self.offset(2, 1))
+            val = bool(self.offset(2))
             self._ip += 2 + 1
         self.push(JacValue(self, value=val))
 
