@@ -8,7 +8,7 @@ def from_bytes(typ, val):
             return ""
         return val.decode("utf-8")
     if typ == float:
-        return unpack("f", val)
+        return unpack("d", val)[0]
     else:
         if val is None:
             return 0

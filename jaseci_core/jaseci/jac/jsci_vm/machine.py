@@ -79,8 +79,8 @@ class VirtualMachine(MachineState, Stack, InstPtr):
             val = from_bytes(type_map[typ], self.offset(3, operand2))
             self._ip += 2 + operand2
         elif typ in [JsAttr.FLOAT]:
-            val = from_bytes(float, self.offset(2, 4))
-            self._ip += 2 + 4
+            val = from_bytes(float, self.offset(2, 8))
+            self._ip += 2 + 8
         elif typ in [JsAttr.BOOL]:
             val = bool(self.offset(2))
             self._ip += 2 + 1

@@ -16,7 +16,7 @@ def to_bytes(val):
     if type(val) == str:
         return bytes(val, "utf-8")
     elif type(val) == float:
-        return pack("f", val)
+        return pack("d", val)
     elif type(val) == int:
         return val.to_bytes(byte_length(val), "little")
 
