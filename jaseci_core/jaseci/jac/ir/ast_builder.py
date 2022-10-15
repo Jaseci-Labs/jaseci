@@ -106,22 +106,41 @@ class JacTreeBuilder(ParseTreeListener):
     def run_import_items(self, jac_ast, import_elements):
         """
         import_items:
-            KW_WALKER (STAR_MUL | import_names) (COMMA import_items)?
-            | KW_NODE (STAR_MUL | import_names) (COMMA import_items)?
-            | KW_EDGE (STAR_MUL | import_names) (COMMA import_items)?
-            | KW_GRAPH (STAR_MUL | import_names) (COMMA import_items)?
-            | KW_GLOBAL (STAR_MUL | import_names) (COMMA import_items)?;
+            WALKER_DBL_COLON (STAR_MUL | import_names) (
+                COMMA import_items
+            )?
+            | NODE_DBL_COLON (STAR_MUL | import_names) (
+                COMMA import_items
+            )?
+            | EDGE_DBL_COLON (STAR_MUL | import_names) (
+                COMMA import_items
+            )?
+            | GRAPH_DBL_COLON (STAR_MUL | import_names) (
+                COMMA import_items
+            )?
+            | KW_GLOBAL DBL_COLON (STAR_MUL | import_names) (
+                COMMA import_items
+            )?
+            | TYPE_DBL_COLON (STAR_MUL | import_names) (
+                COMMA import_items
+            )?;
         """
         kid = jac_ast.kid
+        type_name = (
+            "KW_" + kid[0].name.split("_")[0]
+            if not kid[0].name.startswith("KW_")
+            else kid[0].name
+        )
+        kid = kid[2:] if kid[1].name == "DBL_COLON" else kid[1:]
         ret_elements = list(
             filter(
                 lambda x: x in self.builder.dependencies
-                or x.kid[0].kid[0].name == kid[0].name,
+                or x.kid[0].kid[0].name == type_name,
                 import_elements,
             )
         )
-        if kid[1].name == "import_names":
-            import_names = self.run_import_names(kid[1])
+        if kid[0].name == "import_names":
+            import_names = self.run_import_names(kid[0])
             ret_elements = list(
                 filter(
                     lambda x: x in self.builder.dependencies
@@ -131,7 +150,7 @@ class JacTreeBuilder(ParseTreeListener):
             )
             if len(ret_elements) < len(import_names):
                 err = (
-                    f"{kid[1].loc[2]}: Line {kid[1].loc[0]}: "
+                    f"{kid[0].loc[2]}: Line {kid[0].loc[0]}: "
                     + "Module name not found!"
                 )
                 self.builder._parse_errors.append(err)
@@ -143,15 +162,13 @@ class JacTreeBuilder(ParseTreeListener):
 
     def run_import_names(self, jac_ast):
         """
-        import_names:
-            DBL_COLON NAME
-            | DBL_COLON LBRACE name_list RBRACE;
+        import_names: NAME | LBRACE name_list RBRACE;
         """
         kid = jac_ast.kid
-        if kid[1].name == "NAME":
-            return [kid[1].token_text()]
+        if kid[0].name == "NAME":
+            return [kid[0].token_text()]
         else:
-            return self.run_name_list(kid[2])
+            return self.run_name_list(kid[1])
 
     def run_name_list(self, jac_ast):
         """
