@@ -13,6 +13,7 @@
 
 ### Notes
 
+- Imports updated, imports of style `import {walker*} with...` is now `import {walker::*} with...`
 - Walker register and set deprecated. Now architype register and set should be used.
 
 ## Version 1.3.4
