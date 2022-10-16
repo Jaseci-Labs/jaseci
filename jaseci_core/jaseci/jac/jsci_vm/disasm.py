@@ -47,6 +47,11 @@ class DisAsm(InstPtr):
             self._asm.append([self.cur_op(), typ.name, val])
             self._ip += 2 + 1
 
+    def dis_LOAD_VAR(self):  # noqa
+        name = from_bytes(str, self.offset(2, self.offset(1)))
+        self._asm.append([self.cur_op(), self.offset(1), name])
+        self._ip += 2 + self.offset(1)
+
     def dis_DEBUG_INFO(self):  # noqa
         byte_len_l = self.offset(1)
         line = from_bytes(int, self.offset(2, byte_len_l))

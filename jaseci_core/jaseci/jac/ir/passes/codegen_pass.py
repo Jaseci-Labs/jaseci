@@ -61,83 +61,47 @@ class CodeGenPass(IrPass):
         if hasattr(self, f"exit_{node.name}"):
             getattr(self, f"exit_{node.name}")(node)
 
-    def exit_atom(self, node):
-        if len(node.kid) == 1 and hasattr(node.kid[0], "bytecode"):
-            node.bytecode = node.kid[0].bytecode
+    def exit_atom(self, node):  # TODO: Incomplete
+        kid = node.kid
+        if kid[0].name == "INT":
+            val = int(kid[0].token_text())
+            self.emit(
+                node, JsOp.LOAD_CONST, JsAttr.INT, byte_length(val), to_bytes(val)
+            )
+        elif kid[0].name == "FLOAT":
+            val = float(kid[0].token_text())
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.FLOAT, to_bytes(val))
+        elif kid[0].name == "STRING":
+            val = parse_str_token(kid[0].token_text())
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.STRING, byte_length(val))
+            if byte_length(val) > 0:
+                self.emit(node, to_bytes(val))
+        elif kid[0].name == "BOOL":
+            val = int(kid[0].token_text() == "true")
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.BOOL, val)
+        elif kid[0].name == "NULL":
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.NULL)
+        elif kid[0].name == "NAME":
+            name = kid[0].token_text()
+            self.emit(node, JsOp.LOAD_VAR, byte_length(name), to_bytes(name))
 
     def exit_any_type(self, node):
-        node.bytecode = node.kid[0].bytecode
-
-    def exit_TYP_STRING(self, node):  # noqa
-        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.STRING)
-
-    def exit_TYP_INT(self, node):  # noqa
-        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.INT)
-
-    def exit_TYP_FLOAT(self, node):  # noqa
-        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.FLOAT)
-
-    def exit_TYP_LIST(self, node):  # noqa
-        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.LIST)
-
-    def exit_TYP_DICT(self, node):  # noqa
-        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.DICT)
-
-    def exit_TYP_BOOL(self, node):  # noqa
-        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.BOOL)
-
-    def exit_KW_NODE(self, node):  # noqa
-        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.NODE)
-
-    def exit_KW_EDGE(self, node):  # noqa
-        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.EDGE)
-
-    def exit_KW_TYPE(self, node):  # noqa
-        self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.TYPE)
-
-    def exit_INT(self, node):  # noqa
-        val = int(node.token_text())
-        self.emit(
-            node,
-            JsOp.LOAD_CONST,
-            JsAttr.INT,
-            byte_length(val),
-            to_bytes(val),
-        )
-
-    def exit_FLOAT(self, node):  # noqa
-        val = float(node.token_text())
-        self.emit(
-            node,
-            JsOp.LOAD_CONST,
-            JsAttr.FLOAT,
-            to_bytes(val),
-        )
-
-    def exit_STRING(self, node):  # noqa
-        val = parse_str_token(node.token_text())
-        self.emit(
-            node,
-            JsOp.LOAD_CONST,
-            JsAttr.STRING,
-            byte_length(val),
-        )
-        if byte_length(val) > 0:
-            self.emit(node, to_bytes(val))
-
-    def exit_BOOL(self, node):  # noqa
-        val = int(node.token_text() == "true")
-        self.emit(
-            node,
-            JsOp.LOAD_CONST,
-            JsAttr.BOOL,
-            val,
-        )
-
-    def exit_NULL(self, node):  # noqa
-        self.emit(
-            node,
-            JsOp.LOAD_CONST,
-            JsAttr.TYPE,
-            JsAttr.NULL,
-        )
+        kid = node.kid
+        if kid[0].name == "TYP_STRING":
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.STRING)
+        elif kid[0].name == "TYP_INT":
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.INT)
+        elif kid[0].name == "TYP_FLOAT":
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.FLOAT)
+        elif kid[0].name == "TYP_LIST":
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.LIST)
+        elif kid[0].name == "TYP_DICT":
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.DICT)
+        elif kid[0].name == "TYP_BOOL":
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.BOOL)
+        elif kid[0].name == "KW_NODE":
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.NODE)
+        elif kid[0].name == "KW_EDGE":
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.EDGE)
+        elif kid[0].name == "KW_TYPE":
+            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.TYPE)

@@ -9,7 +9,7 @@ class JsOp(IntEnum):
     ADD = auto()
     SUB = auto()
     LOAD_CONST = auto()  # [type, bytes, (val)] / [type, (val)] / [type=type, type]
-    # LOAD_VAR = auto()  # [bytes, (name)]
+    LOAD_VAR = auto()  # [bytes, (name)]
     REPORT = auto()  # [type, bytes, (val)]
     ACTION_CALL = auto()
     DEBUG_INFO = auto()  # [bytes, line, bytes, (jacfile)]

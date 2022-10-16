@@ -91,6 +91,11 @@ class VirtualMachine(MachineState, Stack, InstPtr):
             self._ip += 2 + 1
         self.push(JacValue(self, value=val))
 
+    def op_LOAD_VAR(self):  # noqa
+        name = from_bytes(str, self.offset(2, self.offset(1)))
+        self.load_variable(name)
+        self._ip += 2 + self.offset(1)
+
     def op_REPORT(self):  # noqa
         self.report.append(self.pop())
 

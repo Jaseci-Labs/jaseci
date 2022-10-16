@@ -747,14 +747,7 @@ class Interp(VirtualMachine):
             elif kid[0].name == "NULL":
                 self.push(JacValue(self, value=None))
             elif kid[0].name == "NAME":
-                name = kid[0].token_text()
-                val = self._jac_scope.get_live_var(name, create_mode=self._assign_mode)
-                if val is None:
-                    self.rt_error(f"Variable not defined - {name}", kid[0])
-                    self.push(JacValue(self))
-                else:
-                    self.push(val)
-
+                self.load_variable(kid[0].token_text(), kid[0])
             elif kid[0].name == "LPAREN":
                 self.push(self.run_expression(kid[1]))
             elif kid[0].name == "ability_op":
@@ -1739,6 +1732,14 @@ class Interp(VirtualMachine):
         except Exception as e:
             self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
         self.inherit_runtime_state(m)
+
+    def load_variable(self, name, jac_ast=None):
+        val = self._jac_scope.get_live_var(name, create_mode=self._assign_mode)
+        if val is None:
+            self.rt_error(f"Variable not defined - {name}", jac_ast)
+            self.push(JacValue(self))
+        else:
+            self.push(val)
 
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
