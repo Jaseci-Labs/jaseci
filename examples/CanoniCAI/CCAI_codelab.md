@@ -1273,9 +1273,6 @@ If the compilation is successful, a `.jir` file with the same name will be gener
 For `faq_state`, we need to now define the `nlu` and `nlg` node abilities for FAQ.
 So let's update the following in `faq.jac`
 
-> **Note**
->
-> You can either update the following in a new file named `faq.jac` or you may define this code in the previously defined `main.jac`.
 
 First, `faq_root`
 ```js
