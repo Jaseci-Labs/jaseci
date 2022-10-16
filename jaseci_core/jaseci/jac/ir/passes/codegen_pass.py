@@ -22,7 +22,7 @@ def to_bytes(val):
 
 
 class CodeGenPass(IrPass):
-    def __init__(self, debug_info=False, **kwargs):
+    def __init__(self, debug_info=True, **kwargs):
         super().__init__(**kwargs)
         self.debug_info = debug_info
         self.cur_loc = None
@@ -30,6 +30,19 @@ class CodeGenPass(IrPass):
     def emit(self, node, *items):
         if not hasattr(node, "bytecode"):
             node.bytecode = bytearray()
+        node_loc = [node.loc[0], node.loc[2]]
+        if self.debug_info and self.cur_loc != node_loc:
+            debug_inst = [
+                JsOp.DEBUG_INFO,
+                byte_length(node_loc[0]),
+                to_bytes(node_loc[0]),
+            ]
+            if not self.cur_loc or self.cur_loc[1] != node_loc[1]:
+                debug_inst += [byte_length(node_loc[1]), to_bytes(node_loc[1])]
+            else:
+                debug_inst += [0]
+            self.cur_loc = node_loc
+            items = debug_inst + list(items)
         for i in items:
             if type(i) is bytes:
                 node.bytecode += bytearray(i)
@@ -38,32 +51,14 @@ class CodeGenPass(IrPass):
             else:
                 node.bytecode.append(i)
 
-    def emit_debug_info(self, node):
-        node_loc = [node.loc[0], node.loc[2]]
-        if not self.debug_info or self.cur_loc == node_loc:
-            return
-        self.emit(
-            node,
-            JsOp.DEBUG_INFO,
-            byte_length(node_loc[0]),
-            to_bytes(node_loc[0]),
-        )
-        if not self.cur_loc or self.cur_loc[1] != node_loc[1]:
-            self.emit(node, byte_length(node_loc[1]), to_bytes(node_loc[1]))
-        else:
-            self.emit(node, 0)
-        self.cur_loc = node_loc
-
     def enter_node(self, node):
         # print("entering", node)
         if hasattr(self, f"enter_{node.name}"):
-            self.emit_debug_info(node)
             getattr(self, f"enter_{node.name}")(node)
 
     def exit_node(self, node):
         # print("exiting", node)
         if hasattr(self, f"exit_{node.name}"):
-            self.emit_debug_info(node)
             getattr(self, f"exit_{node.name}")(node)
 
     def exit_atom(self, node):

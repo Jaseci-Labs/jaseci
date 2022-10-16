@@ -21,6 +21,7 @@ class DisAsm(InstPtr):
             self._ip += 1
         if print_out:
             self.print()
+        return self._asm
 
     def print(self):
         for i in self._asm:
@@ -49,7 +50,10 @@ class DisAsm(InstPtr):
     def dis_DEBUG_INFO(self):  # noqa
         byte_len_l = self.offset(1)
         line = from_bytes(int, self.offset(2, byte_len_l))
-        byte_len_f = self.offset(3)
-        jacfile = from_bytes(str, self.offset(4, byte_len_f)) if byte_len_f else 0
+        f_offset = byte_len_l + 2
+        byte_len_f = self.offset(f_offset)
+        jacfile = (
+            from_bytes(str, self.offset(f_offset + 1, byte_len_f)) if byte_len_f else 0
+        )
         self._asm.append([self.cur_op(), byte_len_l, line, byte_len_f, jacfile])
         self._ip += 2 + byte_len_l + byte_len_f

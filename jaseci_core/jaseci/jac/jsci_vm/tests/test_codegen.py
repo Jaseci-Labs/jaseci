@@ -7,7 +7,7 @@ class TestCodegen(CoreTest):
     fixture_src = __file__
 
     def test_simple_codegen(self):
-        self.call(
+        ret = self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("simple.jac")}],
         )
