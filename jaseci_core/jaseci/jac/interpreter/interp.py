@@ -12,14 +12,16 @@ from jaseci.attr.action import Action
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.ir.jac_code import jac_ast_to_ir, jac_ir_to_ast
 from jaseci.jac.machine.jac_scope import JacScope
-from jaseci.jac.machine.machine_state import MachineState, TryException
+from jaseci.jac.jsci_vm.machine import VirtualMachine
+from jaseci.jac.machine.machine_state import TryException
 
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 from copy import copy, deepcopy
+from base64 import b64decode
 
 
-class Interp(MachineState):
+class Interp(VirtualMachine):
     """Shared interpreter class across both sentinels and walkers"""
 
     def run_attr_stmt(self, jac_ast, obj):
@@ -29,8 +31,6 @@ class Interp(MachineState):
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "has_stmt":
             self.run_has_stmt(kid[0], obj)
-        elif kid[0].name == "can_stmt" and obj.j_type == "walker":
-            self.run_can_stmt(kid[0], obj)
         #  Can statements in architype handled in architype load
 
     def run_has_stmt(self, jac_ast, obj):
@@ -53,8 +53,10 @@ class Interp(MachineState):
         var_val = None  # jac's null
         if len(kid) > 1:
             var_val = self.run_expression(kid[2]).value
+        if isinstance(obj, dict):
+            obj[var_name] = var_val
         # Runs only once for walkers
-        if var_name not in obj.context.keys() or obj.j_type != "walker":
+        elif var_name not in obj.context.keys() or obj.j_type != "walker":
             JacValue(self, ctx=obj, name=var_name, value=var_val).write(
                 kid[0], force=True
             )
@@ -429,38 +431,42 @@ class Interp(MachineState):
         """
         expression: connect (assignment | copy_assign | inc_assign)?;
         """
+        try:
 
-        def check_can_write(val):
-            if val.ctx is None:
-                self.rt_error("Cannot assign to this experssion", kid[0])
-                return False
-            return True
+            def check_can_write(val):
+                if val.ctx is None:
+                    self.rt_error("Cannot assign to this expression", kid[0])
+                    return False
+                return True
 
-        kid = self.set_cur_ast(jac_ast)
-        if len(kid) == 1:
-            return self.run_connect(kid[0])
-        else:
-            if kid[1].name == "assignment":
-                self._assign_mode = True
-                dest = self.run_connect(kid[0])
-                self._assign_mode = False
-                if not check_can_write(dest):
-                    return dest
-                return self.run_assignment(kid[1], dest=dest)
-            elif kid[1].name == "copy_assign":
-                self._assign_mode = True
-                dest = self.run_connect(kid[0])
-                self._assign_mode = False
-                if not check_can_write(dest):
-                    return dest
-                return self.run_copy_assign(kid[1], dest=dest)
-            elif kid[1].name == "inc_assign":
-                self._assign_mode = True
-                dest = self.run_connect(kid[0])
-                self._assign_mode = False
-                if not check_can_write(dest):
-                    return dest
-                return self.run_inc_assign(kid[1], dest=dest)
+            kid = self.set_cur_ast(jac_ast)
+
+            if len(kid) == 1:
+                return self.run_rule(kid[0])
+            else:
+                if kid[1].name == "assignment":
+                    self._assign_mode = True
+                    dest = self.run_rule(kid[0])
+                    self._assign_mode = False
+                    if not check_can_write(dest):
+                        return dest
+                    return self.run_assignment(kid[1], dest=dest)
+                elif kid[1].name == "copy_assign":
+                    self._assign_mode = True
+                    dest = self.run_rule(kid[0])
+                    self._assign_mode = False
+                    if not check_can_write(dest):
+                        return dest
+                    return self.run_copy_assign(kid[1], dest=dest)
+                elif kid[1].name == "inc_assign":
+                    self._assign_mode = True
+                    dest = self.run_rule(kid[0])
+                    self._assign_mode = False
+                    if not check_can_write(dest):
+                        return dest
+                    return self.run_inc_assign(kid[1], dest=dest)
+        except Exception as e:
+            self.jac_try_exception(e, jac_ast)
 
     def run_assignment(self, jac_ast, dest):
         """
@@ -513,56 +519,53 @@ class Interp(MachineState):
         """
         connect: logical ( (NOT)? edge_ref expression)?;
         """
-        try:
-            kid = self.set_cur_ast(jac_ast)
-            if len(kid) < 2:
-                return self.run_logical(kid[0])
-            bret = self.run_logical(kid[0])
-            base = bret.value
-            tret = self.run_expression(kid[-1])
-            target = tret.value
-            self.rt_check_type(base, [Node, JacSet], kid[0])
-            self.rt_check_type(target, [Node, JacSet], kid[-1])
-            if isinstance(base, Node):
-                base = JacSet(in_list=[base])
-            if isinstance(target, Node):
-                target = JacSet(in_list=[target])
-            if kid[1].name == "NOT":
-                for i in target.obj_list():
-                    for j in base.obj_list():
-                        j.detach_edges(i, self.run_edge_ref(kid[2]).obj_list())
-                return bret
-            else:
-                direction = kid[1].kid[0].name
-                for i in target.obj_list():
-                    for j in base.obj_list():
-                        use_edge = self.run_edge_ref(kid[1], is_spawn=True)
-                        self.rt_check_type(i, Node, kid[-1])
-                        self.rt_check_type(j, Node, kid[-1])
-                        if direction == "edge_from":
-                            j.attach_inbound(i, [use_edge])
-                        elif direction == "edge_to":
-                            j.attach_outbound(i, [use_edge])
-                        else:
-                            j.attach_bidirected(i, [use_edge])
+        kid = self.set_cur_ast(jac_ast)
+        if len(kid) < 2:
+            return self.run_rule(kid[0])
+        bret = self.run_rule(kid[0])
+        base = bret.value
+        tret = self.run_expression(kid[-1])
+        target = tret.value
+        self.rt_check_type(base, [Node, JacSet], kid[0])
+        self.rt_check_type(target, [Node, JacSet], kid[-1])
+        if isinstance(base, Node):
+            base = JacSet(in_list=[base])
+        if isinstance(target, Node):
+            target = JacSet(in_list=[target])
+        if kid[1].name == "NOT":
+            for i in target.obj_list():
+                for j in base.obj_list():
+                    j.detach_edges(i, self.run_edge_ref(kid[2]).obj_list())
             return bret
-        except Exception as e:
-            self.jac_try_exception(e, jac_ast)
+        else:
+            direction = kid[1].kid[0].name
+            for i in target.obj_list():
+                for j in base.obj_list():
+                    use_edge = self.run_edge_ref(kid[1], is_spawn=True)
+                    self.rt_check_type(i, Node, kid[-1])
+                    self.rt_check_type(j, Node, kid[-1])
+                    if direction == "edge_from":
+                        j.attach_inbound(i, [use_edge])
+                    elif direction == "edge_to":
+                        j.attach_outbound(i, [use_edge])
+                    else:
+                        j.attach_bidirected(i, [use_edge])
+        return bret
 
     def run_logical(self, jac_ast):
         """
         logical: compare ((KW_AND | KW_OR) compare)*;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_compare(kid[0])
+        result = self.run_rule(kid[0])
         kid = kid[1:]
         while kid:
             if kid[0].name == "KW_AND":
                 if result.value:
-                    result.value = result.value and self.run_compare(kid[1]).value
+                    result.value = result.value and self.run_rule(kid[1]).value
             elif kid[0].name == "KW_OR":
                 if not result.value:
-                    result.value = result.value or self.run_compare(kid[1]).value
+                    result.value = result.value or self.run_rule(kid[1]).value
             kid = kid[2:]
             if not kid:
                 break
@@ -574,12 +577,12 @@ class Interp(MachineState):
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "NOT":
-            return JacValue(self, value=not self.run_compare(kid[1]).value)
+            return JacValue(self, value=not self.run_rule(kid[1]).value)
         else:
-            result = self.run_arithmetic(kid[0])
+            result = self.run_rule(kid[0])
             kid = kid[1:]
             while kid:
-                other_res = self.run_arithmetic(kid[1])
+                other_res = self.run_rule(kid[1])
                 result = self.run_cmp_op(kid[0], result, other_res)
                 kid = kid[2:]
                 if not kid:
@@ -613,10 +616,10 @@ class Interp(MachineState):
         arithmetic: term ((PLUS | MINUS) term)*;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_term(kid[0])
+        result = self.run_rule(kid[0])
         kid = kid[1:]
         while kid:
-            other_res = self.run_term(kid[1])
+            other_res = self.run_rule(kid[1])
             if kid[0].name == "PLUS":
                 result.value = result.value + other_res.value
             elif kid[0].name == "MINUS":
@@ -631,10 +634,10 @@ class Interp(MachineState):
         term: factor ((STAR_MUL | DIV | MOD) factor)*;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_factor(kid[0])
+        result = self.run_rule(kid[0])
         kid = kid[1:]
         while kid:
-            other_res = self.run_factor(kid[1])
+            other_res = self.run_rule(kid[1])
             if kid[0].name == "STAR_MUL":
                 result.value = result.value * other_res.value
             elif kid[0].name == "DIV":
@@ -651,10 +654,10 @@ class Interp(MachineState):
         factor: (PLUS | MINUS) factor | power;
         """
         kid = self.set_cur_ast(jac_ast)
-        if kid[0].name == "power":
-            return self.run_power(kid[0])
+        if len(kid) < 2:
+            return self.run_rule(kid[0])
         else:
-            result = self.run_factor(kid[1])
+            result = self.run_rule(kid[1])
             if kid[0].name == "MINUS":
                 result.value = -(result.value)
             return result
@@ -664,13 +667,13 @@ class Interp(MachineState):
         power: atom (POW factor)*;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_atom(kid[0])
+        result = self.run_rule(kid[0])
         kid = kid[1:]
         if len(kid) < 1:
             return result
         elif kid[0].name == "POW":
             while kid:
-                result.value = result.value ** self.run_factor(kid[1]).value
+                result.value = result.value ** self.run_rule(kid[1]).value
                 kid = kid[2:]
                 if not kid:
                     break
@@ -723,45 +726,58 @@ class Interp(MachineState):
             | LPAREN expression RPAREN
             | ability_op NAME spawn_ctx?
             | atom atom_trailer+
+            | KW_SYNC atom
             | spawn
             | ref
             | deref
             | any_type;
         """
         try:
+            if self.attempt_bytecode(jac_ast):
+                return
             kid = self.set_cur_ast(jac_ast)
             if kid[0].name == "INT":
-                return JacValue(self, value=int(kid[0].token_text()))
+                self.push(JacValue(self, value=int(kid[0].token_text())))
             elif kid[0].name == "FLOAT":
-                return JacValue(self, value=float(kid[0].token_text()))
+                self.push(JacValue(self, value=float(kid[0].token_text())))
             elif kid[0].name == "STRING":
-                return JacValue(self, value=parse_str_token(kid[0].token_text()))
+                self.push(JacValue(self, value=parse_str_token(kid[0].token_text())))
             elif kid[0].name == "BOOL":
-                return JacValue(self, value=bool(kid[0].token_text() == "true"))
+                self.push(JacValue(self, value=bool(kid[0].token_text() == "true")))
             elif kid[0].name == "NULL":
-                return JacValue(self, value=None)
+                self.push(JacValue(self, value=None))
             elif kid[0].name == "NAME":
                 name = kid[0].token_text()
                 val = self._jac_scope.get_live_var(name, create_mode=self._assign_mode)
                 if val is None:
                     self.rt_error(f"Variable not defined - {name}", kid[0])
-                    return JacValue(
-                        self,
-                    )
-                return val
-            elif kid[0].name == "global_ref":
-                return self.run_global_ref(kid[0])
+                    self.push(JacValue(self))
+                else:
+                    self.push(val)
+
             elif kid[0].name == "LPAREN":
-                return self.run_expression(kid[1])
+                self.push(self.run_expression(kid[1]))
             elif kid[0].name == "ability_op":
-                return self.run_atom_trailer(jac_ast, None)
+                self.push(self.run_atom_trailer(jac_ast, None))
             elif kid[0].name == "atom":
-                ret = self.run_atom(kid[0])
+                self.run_atom(kid[0])
+                ret = self.pop()
                 for i in kid[1:]:
                     ret = self.run_atom_trailer(i, ret)
-                return ret
+                self.push(ret)
+            elif kid[0].name == "KW_SYNC":
+                self.run_atom(kid[1])
+                val = self.pop()
+                task_func = self._h.task
+                if not task_func.is_running():
+                    raise Exception("Task hook is not yet initialized!")
+                self.push(
+                    JacValue(
+                        self, value=task_func.get_by_task_id(val.value["result"], True)
+                    )
+                )
             else:
-                return self.run_rule(kid[0])
+                self.push(self.run_rule(kid[0]))
 
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
@@ -781,7 +797,6 @@ class Interp(MachineState):
                 atom_res = JacValue(self, value=self._jac_scope.has_obj)
             if kid[0].name == "DOT":
                 if kid[1].name == "built_in":
-
                     return self.run_built_in(kid[1], atom_res)
                 elif kid[1].name == "NAME":
                     d = atom_res.value
@@ -852,7 +867,8 @@ class Interp(MachineState):
         ref: '&' atom;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_atom(kid[1])
+        self.run_atom(kid[1])
+        result = self.pop()
         if self.rt_check_type(result.value, Element, kid[1]):
             result = JacValue(self, value=result.value.jid)
         return result
@@ -862,7 +878,8 @@ class Interp(MachineState):
         deref: '*' atom;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_atom(kid[1])
+        self.run_atom(kid[1])
+        result = self.pop()
 
         if (
             isinstance(result.value, str)
@@ -894,7 +911,8 @@ class Interp(MachineState):
         arch_built_in: any_type;
         """
         kid = self.set_cur_ast(jac_ast)
-        typ = self.run_any_type(kid[0])
+        self.run_any_type(kid[0])
+        typ = self.pop()
         if typ.value == Edge:
             if isinstance(atom_res.value, Node):
                 return JacValue(
@@ -1236,45 +1254,56 @@ class Interp(MachineState):
 
     def run_node_ref(self, jac_ast, is_spawn=False):
         """
-        node_ref: KW_NODE DBL_COLON NAME;
+        node_ref: NODE_DBL_COLON NAME;
         """
         kid = self.set_cur_ast(jac_ast)
         if not is_spawn:
             result = JacSet()
             if len(kid) > 1:
                 for i in self.viable_nodes().obj_list():
-                    if i.get_architype().is_instance(kid[2].token_text()):
+                    if i.get_architype().is_instance(kid[-1].token_text()):
                         result.add_obj(i)
             else:
                 result += self.viable_nodes()
         else:
             result = self.parent().run_architype(
-                kid[2].token_text(), kind="node", caller=self
+                kid[-1].token_text(), kind="node", caller=self
             )
         return result
 
-    def run_walker_ref(self, jac_ast):
+    def run_walker_ref(self, jac_ast, to_await=False):
         """
-        walker_ref: KW_WALKER DBL_COLON NAME;
+        walker_ref: WALKER_DBL_COLON NAME;
         """
         kid = self.set_cur_ast(jac_ast)
-        name = kid[2].token_text()
+        name = kid[-1].token_text()
         wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
         if wlk is None:
             wlk = self.parent().run_architype(name=name, kind="walker", caller=self)
         if wlk is None:
-            self.rt_error(f"No walker {name} exists!", kid[2])
+            self.rt_error(f"No walker {name} exists!", kid[-1])
+        wlk._to_await = to_await
         return wlk
 
     def run_graph_ref(self, jac_ast):
         """
-        graph_ref: KW_GRAPH DBL_COLON NAME;
+        graph_ref: GRAPH_DBL_COLON NAME;
         """
         kid = self.set_cur_ast(jac_ast)
         gph = self.parent().run_architype(
-            kid[2].token_text(), kind="graph", caller=self
+            kid[-1].token_text(), kind="graph", caller=self
         )
         return gph
+
+    def run_type_ref(self, jac_ast):
+        """
+        type_ref: TYPE_DBL_COLON NAME;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        obj = self.parent().run_architype(
+            kid[-1].token_text(), kind="type", caller=self
+        )
+        return JacValue(self, value=obj)
 
     def run_edge_ref(self, jac_ast, is_spawn=False):
         """
@@ -1448,7 +1477,11 @@ class Interp(MachineState):
 
     def run_spawn_object(self, jac_ast):
         """
-        spawn_object: node_spawn | walker_spawn | graph_spawn;
+        spawn_object:
+            node_spawn
+            | walker_spawn
+            | graph_spawn
+            | type_spawn;
         """
         kid = self.set_cur_ast(jac_ast)
         return self.run_rule(kid[0])
@@ -1552,25 +1585,42 @@ class Interp(MachineState):
 
     def run_walker_spawn(self, jac_ast):
         """
-        walker_spawn: expression walker_ref spawn_ctx?;
+        walker_spawn: expression KW_SYNC? walker_ref spawn_ctx?;
         """
         kid = self.set_cur_ast(jac_ast)
+        is_await = kid[1].name == "KW_SYNC" and bool(kid.pop(1))
         location = self.run_expression(kid[0]).value
         if isinstance(location, Node):
             location = JacSet(in_list=[location])
         ret = []
         for i in location.obj_list():
-            walk = self.run_walker_ref(kid[1])
-            walk.prime(i)
+            walk = self.run_walker_ref(kid[1], is_await)
+            walk.prime(i, request_ctx=getattr(self, "request_context", {}))
             if len(kid) > 2:
                 self.run_spawn_ctx(kid[2], walk)
-            walk.run()
-            tr = JacValue(self, value=walk.anchor_value())
+
+            res = walk.run()
+
+            if walk.for_queue() and not res["is_queued"]:
+                res["result"] = walk.anchor_value()
+
+            tr = JacValue(self, value=res if walk.for_queue() else walk.anchor_value())
+
             tr.unwrap()
             ret.append(tr.value)
             self.inherit_runtime_state(walk)
             walk.register_yield_or_destroy(self.yielded_walkers_ids)
         return JacValue(self, value=ret[0] if len(ret) == 1 else ret)
+
+    def run_type_spawn(self, jac_ast):
+        """
+        type_spawn: type_ref spawn_ctx?;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        ret = self.run_type_ref(kid[0])
+        if kid[-1].name == "spawn_ctx":
+            self.run_spawn_ctx(kid[-1], ret.value)
+        return ret
 
     def run_spawn_ctx(self, jac_ast, obj):
         """
@@ -1602,6 +1652,9 @@ class Interp(MachineState):
         kid = self.set_cur_ast(jac_ast)
         name = kid[0].token_text()
         result = self.run_expression(kid[-1]).value
+        if isinstance(obj, dict):
+            obj[name] = result
+            return
         dest = JacValue(self, ctx=obj, name=name, value=result)
         if obj.j_type == "walker":
             dest.write(kid[0], force=True)
@@ -1636,25 +1689,27 @@ class Interp(MachineState):
             | KW_EDGE
             | KW_TYPE;
         """
+        if self.attempt_bytecode(jac_ast):
+            return
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "TYP_STRING":
-            return JacValue(self, value=str)
+            self.push(JacValue(self, value=str))
         elif kid[0].name == "TYP_INT":
-            return JacValue(self, value=int)
+            self.push(JacValue(self, value=int))
         elif kid[0].name == "TYP_FLOAT":
-            return JacValue(self, value=float)
+            self.push(JacValue(self, value=float))
         elif kid[0].name == "TYP_LIST":
-            return JacValue(self, value=list)
+            self.push(JacValue(self, value=list))
         elif kid[0].name == "TYP_DICT":
-            return JacValue(self, value=dict)
+            self.push(JacValue(self, value=dict))
         elif kid[0].name == "TYP_BOOL":
-            return JacValue(self, value=bool)
+            self.push(JacValue(self, value=bool))
         elif kid[0].name == "KW_NODE":
-            return JacValue(self, value=Node)
+            self.push(JacValue(self, value=Node))
         elif kid[0].name == "KW_EDGE":
-            return JacValue(self, value=Edge)
+            self.push(JacValue(self, value=Edge))
         elif kid[0].name == "KW_TYPE":
-            return JacValue(self, value=type)
+            self.push(JacValue(self, value=type))
         else:
             self.rt_error("Unrecognized type", kid[0])
 
@@ -1665,6 +1720,11 @@ class Interp(MachineState):
         super().destroy()
 
     # Helper Functions ##################
+    def attempt_bytecode(self, jac_ast):
+        if not jac_ast.kid:
+            self.run_bytecode(b64decode(jac_ast.bytecode.encode()))
+            return True
+        return False
 
     def call_ability(self, nd, name, act_list):
         m = Interp(parent_override=self.parent(), caller=self)
@@ -1683,7 +1743,13 @@ class Interp(MachineState):
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
         try:
-            return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
+            val = getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
+            # TODO: Rewrite after stack integration
+            if jac_ast.name in ["any_type", "atom"]:
+                return self.pop()
+            else:
+                return val
+            # return getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
         except AttributeError as e:
             if not hasattr(self, f"run_{jac_ast.name}"):
                 self.rt_error(

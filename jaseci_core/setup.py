@@ -33,5 +33,4 @@ setup(
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
     },
     entry_points={"console_scripts": ["jsctl = jaseci.jsctl.jsctl:main"]},
-    include_package_data=True,
 )

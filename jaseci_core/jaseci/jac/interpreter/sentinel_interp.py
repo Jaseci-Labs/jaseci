@@ -33,15 +33,13 @@ class SentinelInterp(Interp):
 
     def run_element(self, jac_ast):
         """
-        element: global | architype | walker | test;
+        element: global_var | architype | test;
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "global_var":
             self.load_global_var(kid[0])
         elif kid[0].name == "architype":
             self.load_architype(kid[0])
-        elif kid[0].name == "walker":
-            self.load_walker(kid[0])
         elif kid[0].name == "test":
             self.load_test(kid[0])
 
@@ -66,14 +64,25 @@ class SentinelInterp(Interp):
             KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
             | KW_EDGE NAME (COLON NAME)* attr_block
             | KW_GRAPH NAME graph_block
-            | KW_WALKER NAME namespaces? walker_block;
+            | KW_ASYNC? KW_WALKER NAME namespaces? walker_block;
         """
         kid = self.set_cur_ast(jac_ast)
+
+        is_async = kid[0].name == "KW_ASYNC" and bool(kid.pop(0))
+
         name = kid[1].token_text()
         kind = kid[0].token_text()
+
         arch = Architype(
-            m_id=self._m_id, h=self._h, code_ir=jac_ast, name=name, kind=kind
+            m_id=self._m_id,
+            h=self._h,
+            code_ir=jac_ast,
+            name=name,
+            kind=kind,
+            is_async=is_async,
+            parent=self,
         )
+
         if len(kid) > 2 and kid[2].name == "COLON":
             for i in kid[2:]:
                 if i.name == "NAME":
@@ -109,12 +118,14 @@ class SentinelInterp(Interp):
                                 arch.private_vars.append(var_name)
                             if is_anchor and arch.anchor_var is None:
                                 arch.anchor_var = var_name
+                            arch.has_vars.append(var_name)
+        arch.save()
 
     def arch_can_compile(self, jac_ast, arch):
         """Helper function to statically compile can stmts for arch"""
         kid = self.set_cur_ast(jac_ast)
         self.push_scope(JacScope(parent=self, has_obj=self, action_sets=[]))
-        if jac_ast.name == "attr_block":
+        if jac_ast.name in ["attr_block", "walker_block"]:
             for i in kid:
                 if i.name == "attr_stmt" and i.kid[0].name == "can_stmt":
                     self.run_can_stmt(i.kid[0], arch)
@@ -145,7 +156,7 @@ class SentinelInterp(Interp):
         }
         kid = kid[3:]
         if kid[0].name == "graph_ref":
-            graph_name = kid[0].kid[2].token_text()
+            graph_name = kid[0].kid[-1].token_text()
             if not self.arch_ids.has_obj_by_name(graph_name, kind="graph"):
                 self.rt_error(f"Graph {graph_name} not found!", kid[0])
                 return
@@ -155,7 +166,7 @@ class SentinelInterp(Interp):
             testcase["graph_block"] = jac_ast_to_ir(kid[0])
         kid = kid[2:]
         if kid[0].name == "walker_ref":
-            walker_name = kid[0].kid[2].token_text()
+            walker_name = kid[0].kid[-1].token_text()
             if not self.arch_ids.has_obj_by_name(name=walker_name, kind="walker"):
                 self.rt_error(f"Walker {walker_name} not found!", kid[0])
                 return

@@ -20,6 +20,7 @@ from jaseci.utils.json_handler import JaseciJsonEncoder, json_str_to_jsci_dict
 from jaseci.utils.utils import log_var_out, logger, camel_to_snake
 
 __version__ = "1.0.0"
+element_fields = None
 
 
 class Element(Hookable):
@@ -128,8 +129,10 @@ class Element(Hookable):
         This grabs any fields that are added into inherited objects. Useful for
         saving and loading item.
         """
+        global element_fields
+        if element_fields is None:
+            element_fields = dir(Element(m_id="anon", h=MemoryHook()))
         obj_fields = []
-        element_fields = dir(Element(m_id=self._m_id, h=MemoryHook()))
         for i in vars(self).keys():
             if not i.startswith("_") and i not in element_fields:
                 obj_fields.append(i)
@@ -149,6 +152,7 @@ class Element(Hookable):
             "jid",
             "j_type",
             "context",
+            "code_sig",
             "j_timestamp",
             "version",
             "to_node_id",
@@ -189,10 +193,8 @@ class Element(Hookable):
     def dict_load(self, jdict):
         """Loads self from dict"""
         for i in jdict.keys():
-            setattr(self, i, jdict[i])
-
-        if "code_ir" in jdict:
-            self.apply_ir(self.code_ir)
+            if i in vars(self).keys():
+                setattr(self, i, jdict[i])
 
     def get_deep_obj_list(self, objs=None):
         """Recursively get all contained Jaseci objects and return id_list"""

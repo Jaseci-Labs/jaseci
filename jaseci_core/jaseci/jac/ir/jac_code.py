@@ -3,6 +3,8 @@ Mix in for jac code object in Jaseci
 """
 import json
 from jaseci.utils.utils import logger
+from jaseci.jac.ir.ast_builder import JacAstBuilder
+from jaseci.jac.ir.passes.schedule import multi_pass_optimizer
 from jaseci.jac.ir.ast import Ast
 import hashlib
 from pathlib import Path
@@ -35,29 +37,32 @@ class JacJsonDec(json.JSONDecoder):
 
     def object_hook(self, obj):
 
-        if isinstance(obj, dict) and "mod_name" in obj and "kid" in obj:
-            ret = Ast(mod_name=obj["mod_name"], fresh_start=False)
+        if isinstance(obj, dict) and "loc" in obj and "kid" in obj:
+            ret = Ast(mod_name=obj["loc"][2])
             for i in obj.keys():
                 setattr(ret, i, obj[i])
             return ret
         return obj
 
 
-def jac_ast_to_ir(jac_ast):
+def jac_ast_to_ir(jac_ast: Ast):
     """Convert AST to IR string"""
     return json.dumps(cls=JacJsonEnc, obj={"gram_hash": grammar_hash, "ir": jac_ast})
 
 
-def jac_ir_to_ast(ir):
+def jac_ir_to_ast(ir: str):
     """Convert IR string to AST"""
     ir_load = json.loads(cls=JacJsonDec, s=ir)
     if (
         not isinstance(ir_load, dict)
         or "gram_hash" not in ir_load
         or ir_load["gram_hash"] != grammar_hash
+        or (not isinstance(ir_load["ir"], Ast) and not ir_load["ir"] is None)
     ):
-        logger.error("Jac IR incompatible/outdated with current Jaseci!")
-        return ""
+        logger.error(
+            "Jac IR invalid or incompatible with current Jaseci "
+            f"(valid gram_hash: {grammar_hash}!"
+        )
     return ir_load["ir"]
 
 
@@ -73,7 +78,7 @@ class JacCode:
         self.apply_ir(code_ir)
 
     def reset(self):
-        self.is_active = False
+        JacCode.__init__(self)
 
     def refresh(self):
         self._jac_ast = jac_ir_to_ast(self.code_ir) if self.code_ir else None
@@ -84,29 +89,43 @@ class JacCode:
 
     def apply_ir(self, ir):
         """Apply's IR to object"""
-        self.code_ir = ir if (isinstance(ir, str)) else jac_ast_to_ir(ir)
+        self.code_ir = (
+            ir.strip()
+            if (isinstance(ir, str))
+            else json.dumps(ir)
+            if (isinstance(ir, dict))
+            else jac_ast_to_ir(ir)
+        )
         self.code_sig = hashlib.md5(self.code_ir.encode()).hexdigest()
         JacCode.refresh(self)  # should disregard overloaded versions
 
-    def parse_jac(self, code, dir, start_rule="start"):
+    def compile_jac(self, code, dir, start_rule="start", opt_level=4):
         """Generate AST tree from Jac code text"""
-        tree = Ast(
+        tree = JacAstBuilder(
             jac_text=code, start_rule=start_rule, mod_name=self.name, mod_dir=dir
         )
+        # Must clear this state across compiles (so fresh imports dont use stale data)
+        JacAstBuilder._ast_head_map = {}
+
+        multi_pass_optimizer(
+            tree.root, opt_level=opt_level
+        )  # run analysis and optimizers
+
         self.errors = tree._parse_errors
         if tree._parse_errors:
             logger.error(str(f"{self.name}: Invalid syntax in Jac code!"))
             for i in tree._parse_errors:
                 logger.error(i)
             return None
-        return tree
+
+        return tree.root
 
     def register(self, code, dir):
         """
         Parses Jac code and saves IR
         """
         start_rule = "start" if self.j_type == "sentinel" else self.j_type
-        tree = self.parse_jac(code, dir, start_rule=start_rule)
+        tree = self.compile_jac(code, dir, start_rule=start_rule)
 
         if not tree:
             self.is_active = False

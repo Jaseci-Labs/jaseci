@@ -65,9 +65,10 @@ class TaskService(CommonService, TaskProperties):
             self.inspect = self.app.control.inspect()
             self.__ping()
             self.__tasks()
+            self.state = Ss.RUNNING
+
             self.__worker()
             self.__scheduler()
-            self.state = Ss.RUNNING
         else:
             self.state = Ss.DISABLED
 
@@ -118,6 +119,7 @@ class TaskService(CommonService, TaskProperties):
         if task.ready():
             ret["result"] = task.result
         elif wait:
+            ret["status"] = "SUCCESS"
             ret["result"] = task.get(disable_sync_subtasks=False)
 
         return ret

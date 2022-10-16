@@ -21,8 +21,9 @@ class ArchitypeInterp(Interp):
         architype:
             KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
             | KW_EDGE NAME (COLON NAME)* attr_block
+            | KW_TYPE NAME struct_block
             | KW_GRAPH NAME graph_block
-            | KW_WALKER NAME namespaces? walker_block;
+            | KW_ASYNC? KW_WALKER NAME namespaces? walker_block;
         """
         if jac_ast is None:  # Using defaults
             if self.kind == "node" and self.name in ["root", "generic"]:
@@ -43,6 +44,7 @@ class ArchitypeInterp(Interp):
                 )
 
         kid = self.set_cur_ast(jac_ast)
+
         self.push_scope(JacScope(parent=self, has_obj=self, action_sets=[]))
         if kid[0].name == "KW_NODE":
             item = Node(
@@ -64,6 +66,8 @@ class ArchitypeInterp(Interp):
                 parent=self.parent(),
             )
             self.build_object_with_supers(item, kid[-1])
+        elif kid[0].name == "KW_TYPE":
+            item = self.run_struct_block(kid[-1])
         elif kid[0].name == "KW_GRAPH":
             item = self.run_graph_block(kid[-1])
         elif kid[0].name == "KW_WALKER":
@@ -74,6 +78,7 @@ class ArchitypeInterp(Interp):
                 name=kid[1].token_text(),
                 kind=kid[0].token_text(),
                 parent=self.parent(),
+                is_async=self.is_async,
             )
             if kid[2].name == "namespaces":
                 item.namespaces = self.run_namespaces(jac_ast.kid[2])
@@ -99,6 +104,17 @@ class ArchitypeInterp(Interp):
         for i in kid:
             if i.name == "attr_stmt":
                 self.run_attr_stmt(i, obj)
+
+    def run_struct_block(self, jac_ast):
+        """
+        struct_block: LBRACE (has_stmt)* RBRACE | COLON has_stmt | SEMI;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        ret = {}
+        for i in kid:
+            if i.name == "has_stmt":
+                self.run_has_stmt(i, ret)
+        return ret
 
     def run_can_block(self, jac_ast):
         """

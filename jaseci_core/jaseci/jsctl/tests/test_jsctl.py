@@ -3,6 +3,7 @@ from jaseci.utils.utils import TestCaseHelper
 from jaseci.jsctl import jsctl
 from click.testing import CliRunner
 import json
+import os
 
 
 class JsctlTest(TestCaseHelper, TestCase):
@@ -11,7 +12,7 @@ class JsctlTest(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
 
-    def call(self, cmd):
+    def call(self, cmd: str):
         res = CliRunner(mix_stderr=False).invoke(jsctl.jsctl, ["-m"] + cmd.split())
         # self.log(res.stdout)
         # self.log(res.stderr)
@@ -29,7 +30,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         return ret.split("\n")
 
     def tearDown(self):
-        jsctl.session["master"]._h.clear_cache()
+        jsctl.reset_state()
         super().tearDown()
 
     def test_jsctl_extract_tree(self):
@@ -276,13 +277,11 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertNotIn("Some Output", r)
 
     def test_jsctl_jac_build(self):
-        import os
-
         if os.path.exists("jaseci/jsctl/tests/teststest.jir"):
             os.remove("jaseci/jsctl/tests/teststest.jir")
             self.assertFalse(os.path.exists("jaseci/jsctl/tests/teststest.jir"))
         self.call("jac build jaseci/jsctl/tests/teststest.jac")
-        self.assertGreater(os.path.getsize("jaseci/jsctl/tests/teststest.jir"), 50000)
+        self.assertGreater(os.path.getsize("jaseci/jsctl/tests/teststest.jir"), 20000)
 
     def test_jsctl_jac_build_with_action(self):
         import os
@@ -382,3 +381,46 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_bookgen_api_spec(self):
         r = self.call("booktool cheatsheet")
         self.assertGreater(len(r), 2000)
+
+    def test_jsctl_print_detailed_sentinel(self):
+        r = self.call_cast(
+            "sentinel register jaseci/jsctl/tests/teststest.jir -name test -mode ir"
+        )
+        r = self.call_cast("object get sentinel:test")
+        before = len(r.keys())
+        r = self.call_cast("object get sentinel:test -detailed true")
+        after = len(r.keys())
+        self.assertGreater(before, 4)
+        self.assertGreater(after, before)
+
+
+class JsctlTestWithSession(TestCaseHelper, TestCase):
+    """Unit tests for Jac language"""
+
+    def setUp(self):
+        super().setUp()
+
+    def call(self, cmd):
+        ses = " -f jaseci/jsctl/tests/js.session "
+        res = CliRunner(mix_stderr=False).invoke(jsctl.jsctl, (ses + cmd).split())
+        return res.stdout
+
+    def call_cast(self, cmd):
+        ret = self.call(cmd)
+        return json.loads(ret)
+
+    def call_split(self, cmd):
+        ret = self.call(cmd)
+        return ret.split("\n")
+
+    def tearDown(self):
+        if os.path.exists("jaseci/jsctl/tests/js.session"):
+            os.remove("jaseci/jsctl/tests/js.session")
+        jsctl.reset_state()
+        super().tearDown()
+
+    def test_jsctl_register_with_session(self):
+        self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
+        self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
+        r = self.call_cast("object get active:sentinel -detailed true")
+        self.assertGreater(len(r["arch_ids"]), 3)

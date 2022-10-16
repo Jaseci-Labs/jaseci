@@ -49,9 +49,7 @@ class OrmHook(RedisHook):
             assert uuid.UUID(ret_obj.jid) == loaded_obj.jid
 
             # Unwind jsci_payload for fields beyond element object
-            obj_fields = json_str_to_jsci_dict(loaded_obj.jsci_obj, ret_obj)
-            for i in obj_fields.keys():
-                setattr(ret_obj, i, obj_fields[i])
+            ret_obj.json_load(loaded_obj.jsci_obj)
             self.commit_obj_to_cache(ret_obj)
             return ret_obj
         return loaded_obj
@@ -144,19 +142,3 @@ class OrmHook(RedisHook):
         for k, v in self.save_glob_dict.items():
             self.commit_glob(k, v)
         self.save_glob_dict = {}
-
-    ###################################################
-    #                  CLASS CONTROL                  #
-    ###################################################
-
-    def find_class_and_import(self, j_type, core_mod):
-        if j_type == "master":
-            from jaseci_serv.base.models import Master
-
-            return Master
-        elif j_type == "super_master":
-            from jaseci_serv.base.models import SuperMaster
-
-            return SuperMaster
-        else:
-            return utils.find_class_and_import(j_type, core_mod)

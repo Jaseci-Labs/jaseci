@@ -13,8 +13,8 @@ class CoreTest(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
         self.meta = MetaService()
-        self.smast = self.meta.super_master()
-        self.mast = self.meta.master(h=self.smast._h)
+        self.smast = self.meta.build_super_master()
+        self.mast = self.meta.build_master(h=self.smast._h)
 
     def tearDown(self):
         super().tearDown()

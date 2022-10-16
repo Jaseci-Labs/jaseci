@@ -24,7 +24,7 @@ def reset_state():
     global session
     session = {
         "filename": "js.session",
-        "user": [MetaService().super_master(name="admin")],
+        "user": [MetaService(run_svcs=False).build_super_master(name="admin")],
         "mem-only": session["mem-only"] if session is not None else False,
         "connection": {"url": None, "token": None, "headers": None},
     }
@@ -125,7 +125,11 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
         out = session["master"].public_interface_to_api(kwargs, api_name)
     else:
         out = session["master"].general_interface_to_api(kwargs, api_name)
-    if isinstance(out, dict) and "report_custom" in out.keys():
+    if (
+        isinstance(out, dict)
+        and "report_custom" in out.keys()
+        and out["report_custom"] is not None
+    ):
         out = out["report_custom"]
     if isinstance(out, dict) or isinstance(out, list):
         out = json.dumps(out, indent=2)
@@ -192,7 +196,10 @@ def build_cmd(group_func, func_name, leaf):
             f = click.argument(f"{i}", type=p_type)(f)
         elif p_default is not func_sig.parameters[i].empty:
             f = click.option(
-                f"-{i}", default=p_type(p_default), required=False, type=p_type
+                f"-{i}",
+                default=p_default if p_default is None else p_type(p_default),
+                required=False,
+                type=p_type,
             )(f)
         else:
             f = click.option(f"-{i}", required=True, type=p_type)(f)

@@ -17,11 +17,13 @@ class Anchored:
     def get_architype(self):
         arch = (
             self._h._machine.parent().get_arch_for(self)
-            if self._h._machine is not None and self._h._machine.parent() is not None
+            if self._h._machine is not None
+            and self._h._machine.parent() is not None
+            and self._h._machine.parent().j_type == "sentinel"
             else None
         )
         if arch is None and self.parent() and self.parent().j_type == "sentinel":
-            arch = self.parent()
+            arch = self.parent().get_arch_for(self)
         return arch
 
     def anchor_value(self):
@@ -39,6 +41,15 @@ class Anchored:
         if arch is not None:
             return arch.private_vars
         return []
+
+    def set_context(self, ctx):
+        """Assign values to context fields of object"""
+        for i in ctx.keys():
+            if i in self.get_architype().has_vars:
+                self.context[i] = ctx[i]
+            else:
+                logger.warning(str(f"{i} not a context member of {self}"))
+        self.save()
 
 
 class Sharable:
@@ -178,7 +189,7 @@ class Hookable(Sharable):
         """
         Write self through hook to persistent storage
         """
-        self._h.save_obj(self._m_id, self, self._persist)
+        self._h.save_obj(self._m_id, self)
 
     def destroy(self):
         """
@@ -186,7 +197,7 @@ class Hookable(Sharable):
 
         Note that the object will still exist in python until GC'd
         """
-        self._h.destroy_obj(self._m_id, self, self._persist)
+        self._h.destroy_obj(self._m_id, self)
         del self
 
     def parent(self):

@@ -203,6 +203,24 @@ def b64decode_str(code):
     return code
 
 
+perf_prof = None
+
+
+def perf_test_start():
+    global perf_prof
+    perf_prof = cProfile.Profile()
+    perf_prof.enable()
+
+
+def perf_test_stop():
+    perf_prof.disable()
+    s = io.StringIO()
+    sortby = pstats.SortKey.CUMULATIVE
+    ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)
+    ps.print_stats(100)
+    print(s.getvalue())
+
+
 class TestCaseHelper:
     """Helper to pretty print test results"""
 
@@ -243,11 +261,12 @@ class TestCaseHelper:
     def is_logger_off(self):
         return logging.getLogger("core").disabled and logging.getLogger("app").disabled
 
-    def log(self, val):
+    def log(self, *val):
         """Print to log"""
         is_off = self.is_logger_off()
         self.logger_on()
-        log_var_out(val)
+        for i in val:
+            log_var_out(i)
         if is_off:
             self.logger_off()
 
@@ -255,14 +274,22 @@ class TestCaseHelper:
         """Force test to fail"""
         self.assertTrue(False)
 
-    def start_perf_test(self):
+    def perf_test_start(self):
         self.pr = cProfile.Profile()
         self.pr.enable()
 
-    def stop_perf_test(self):
+    def perf_test_stop(self):
         self.pr.disable()
         s = io.StringIO()
         sortby = pstats.SortKey.CUMULATIVE
         ps = pstats.Stats(self.pr, stream=s).sort_stats(sortby)
         ps.print_stats(100)
         print(s.getvalue())
+
+
+def is_true(val):
+    return (
+        val.lower() == "true"
+        if type(val) is str
+        else val is True  # is_async might be non bool
+    )

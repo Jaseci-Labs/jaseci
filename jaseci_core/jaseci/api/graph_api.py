@@ -5,7 +5,6 @@ from jaseci.api.interface import Interface
 from jaseci.utils.id_list import IdList
 from jaseci.graph.graph import Graph
 from jaseci.graph.node import Node
-from jaseci.actor.sentinel import Sentinel
 import uuid
 
 
@@ -31,19 +30,24 @@ class GraphApi:
 
     @Interface.private_api()
     def graph_get(
-        self, gph: Graph = None, mode: str = "default", detailed: bool = False
+        self,
+        gph: Graph = None,
+        mode: str = "default",
+        detailed: bool = False,
+        depth: int = 0,
     ):
         """
         Return the content of the graph with mode
         Valid modes: {default, dot, }
         """
         if mode == "dot":
-            return gph.graph_dot_str(detailed=detailed)
+            return gph.graph_dot_str(detailed=detailed, depth=depth)
         else:
             items = []
-            for i in gph.get_all_nodes():
+            nodes = gph.get_all_nodes(depth=depth)
+            for i in nodes:
                 items.append(i.serialize(detailed=detailed))
-            for i in gph.get_all_edges():
+            for i in gph.get_all_edges(nodes=nodes):
                 items.append(i.serialize(detailed=detailed))
             return items
 
@@ -113,7 +117,7 @@ class GraphApi:
         self,
         nd: Node = None,
         detailed: bool = False,
-        show_edges: bool = True,
+        show_edges: bool = False,
         node_type: str = "",
         edge_type: str = "",
     ):
@@ -136,13 +140,11 @@ class GraphApi:
         return ret
 
     @Interface.private_api(cli_args=["nd"])
-    def graph_node_set(self, nd: Node, ctx: dict, snt: Sentinel = None):
+    def graph_node_set(self, nd: Node, ctx: dict):
         """
         Assigns values to member variables of a given node using ctx object
         """
-        temp_ref_nd = snt.run_architype(nd.name, kind="node", caller=self)
-        nd.set_context(ctx=ctx, arch=temp_ref_nd)
-        temp_ref_nd.destroy()
+        nd.set_context(ctx=ctx)
         return nd.serialize()
 
     @Interface.cli_api(cli_args=["file"])

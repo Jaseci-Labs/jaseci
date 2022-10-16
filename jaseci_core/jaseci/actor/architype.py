@@ -13,13 +13,18 @@ from jaseci.utils.id_list import IdList
 class Architype(Element, JacCode, ArchitypeInterp):
     """Architype class for Jaseci"""
 
-    def __init__(self, code_ir=None, *args, **kwargs):
+    def __init__(self, code_ir=None, is_async=False, *args, **kwargs):
         self.super_archs = list()
         self.anchor_var = None
         self.private_vars = []
+        self.has_vars = []
         self.entry_action_ids = IdList(self)
         self.activity_action_ids = IdList(self)
         self.exit_action_ids = IdList(self)
+
+        # async handling for walker
+        self.is_async = is_async
+
         Element.__init__(self, *args, **kwargs)
         JacCode.__init__(self, code_ir)
         ArchitypeInterp.__init__(self)
@@ -36,7 +41,7 @@ class Architype(Element, JacCode, ArchitypeInterp):
         return self._jac_ast
 
     def get_all_actions(self):
-        actions = IdList(self)
+        actions = IdList(self, auto_save=False)
         for i in self.arch_with_supers():
             actions += i.entry_action_ids + i.activity_action_ids + i.exit_action_ids
         return actions

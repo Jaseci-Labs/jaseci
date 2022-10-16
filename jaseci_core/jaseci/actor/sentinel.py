@@ -4,7 +4,7 @@ Sentinel class for Jaseci
 Each sentinel has an id, name, timestamp and it's set of walkers.
 """
 from jaseci.element.element import Element
-from jaseci.utils.utils import logger, ColCodes as Cc
+from jaseci.utils.utils import logger, ColCodes as Cc, is_true
 from jaseci.utils.id_list import IdList
 from jaseci.jac.ir.jac_code import JacCode, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import SentinelInterp
@@ -28,18 +28,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
         Element.__init__(self, *args, **kwargs)
         JacCode.__init__(self, code_ir=None)
         SentinelInterp.__init__(self)
-        self.load_arch_defaults()
-
-    def load_arch_defaults(self):
-        self.arch_ids.add_obj(
-            Architype(m_id=self._m_id, h=self._h, name="root", kind="node")
-        )
-        self.arch_ids.add_obj(
-            Architype(m_id=self._m_id, h=self._h, name="generic", kind="node")
-        )
-        self.arch_ids.add_obj(
-            Architype(m_id=self._m_id, h=self._h, name="generic", kind="edge")
-        )
 
     def reset(self):
         """Resets state of sentinel and unregister's code"""
@@ -47,7 +35,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
         self.global_vars = {}
         self.testcases = []
         self.arch_ids.destroy_all()
-        self.load_arch_defaults()
         JacCode.reset(self)
         SentinelInterp.reset(self)
 
@@ -68,10 +55,26 @@ class Sentinel(Element, JacCode, SentinelInterp):
             self.ir_load()
         return self.is_active
 
+    def load_arch_defaults(self):
+        self.arch_ids.add_obj(
+            Architype(m_id=self._m_id, h=self._h, name="root", kind="node", parent=self)
+        )
+        self.arch_ids.add_obj(
+            Architype(
+                m_id=self._m_id, h=self._h, name="generic", kind="node", parent=self
+            )
+        )
+        self.arch_ids.add_obj(
+            Architype(
+                m_id=self._m_id, h=self._h, name="generic", kind="edge", parent=self
+            )
+        )
+
     def ir_load(self):
         """
         Load walkers and architypes from IR
         """
+        self.load_arch_defaults()
         self.run_start(self._jac_ast)
 
         if self.runtime_errors:
@@ -82,21 +85,14 @@ class Sentinel(Element, JacCode, SentinelInterp):
             self.is_active = False
         return self.is_active
 
-    def register_walker(self, code, dir):
-        """Adds a walker based on jac code"""
-        tree = self.parse_jac(code, dir=dir, start_rule="walker")
-        if not tree:
-            return None
-        return self.load_walker(tree)
-
     def register_architype(self, code):
-        """Adds a walker based on jac code"""
-        tree = self.parse_jac(code, start_rule="architype")
+        """Adds an architype based on jac code"""
+        tree = self.compile_jac(code, start_rule="architype")
         if not tree:
             return None
         return self.load_architype(tree)
 
-    def spawn_architype(self, name, kind=None, caller=None):
+    def spawn_architype(self, name, kind=None, caller=None, is_async=None):
         """
         Spawns a new architype from registered architypes and adds to
         live walkers
@@ -105,7 +101,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
         if not src_arch:
             logger.error(str(f"{self.name}: Unable to spawn {kind} architype {name}!"))
             return None
-
+        src_arch.is_async = src_arch.is_async if is_async is None else is_true(is_async)
         if caller and caller._m_id != src_arch._m_id:
             new_arch = src_arch.duplicate()
             new_arch.set_master(caller._m_id)
@@ -116,13 +112,13 @@ class Sentinel(Element, JacCode, SentinelInterp):
         else:
             return src_arch
 
-    def run_architype(self, name, kind=None, caller=None):
+    def run_architype(self, name, kind=None, caller=None, is_async=None):
         """
         Spawn, run, then destroy architype if m_id's are different
         """
         if caller is None:
             caller = self
-        arch = self.spawn_architype(name, kind, caller)
+        arch = self.spawn_architype(name, kind, caller, is_async)
         if arch is None:
             logger.error(
                 str(f"{self.name}: Unable to spawn architype " f"{[name, kind]}!")
@@ -141,14 +137,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
         if ret is None:
             self.rt_error(f"Unable to find architype for {obj.name}, {obj.kind}")
         return ret
-
-    def check_in_arch_context(self, key_name, object):
-        """
-        Validates a key is present in currently loaded architype of
-        a particular instance (helper for expanding node has variables)
-        """
-        src_arch = self.run_architype(object.name, kind=object.kind)
-        return key_name in src_arch.context
 
     def run_tests(self, detailed=False, silent=False):
         """

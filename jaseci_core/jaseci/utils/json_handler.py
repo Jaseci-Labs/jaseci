@@ -45,7 +45,7 @@ class JaseciJsonDecoder(JSONDecoder):
                 self.transform(obj[key], idx)
 
     def convert(self, urn):
-        return MetaService().hook().get_obj_from_store(UUID(urn))
+        return MetaService().build_hook().get_obj_from_store(UUID(urn))
 
 
 def json_str_to_jsci_dict(input_str, parent_obj=None):

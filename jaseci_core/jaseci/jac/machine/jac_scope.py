@@ -15,7 +15,7 @@ class JacScope:
         self.has_obj = has_obj if has_obj else self
         self.context = {}
         self.action_sets = action_sets + [
-            IdList(parent, in_list=parent._h.global_action_list)
+            IdList(parent, in_list=parent._h.global_action_list, auto_save=False)
         ]
         self.setup_actions()
 

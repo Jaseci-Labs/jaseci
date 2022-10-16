@@ -1,29 +1,34 @@
 from jaseci.svc import MetaService as Ms
-from jaseci_serv.jaseci_serv.settings import RUN_SVCS
 from jaseci_serv.svc import MailService, RedisService, TaskService
+from jaseci_serv.jaseci_serv.settings import RUN_SVCS
 
 
 class MetaService(Ms):
-    def hook(self):
-        h = self.app["hook"]()
-        if RUN_SVCS:
-            h.redis = RedisService(h)
-            h.task = TaskService(h)
-            h.mail = MailService(h)
-        return h
 
-    def build_hook(self):
-        from jaseci_serv.base.models import GlobalVars, JaseciObject
+    ###################################################
+    #                   OVERRIDEN                     #
+    ###################################################
+    def __init__(self):
+        super().__init__(run_svcs=RUN_SVCS)
+
+    def build_classes(self):
         from jaseci_serv.hook.orm import OrmHook
+        from jaseci_serv.base.models import (
+            Master,
+            SuperMaster,
+            GlobalVars,
+            JaseciObject,
+        )
 
-        return OrmHook(objects=JaseciObject.objects, globs=GlobalVars.objects)
+        self.hook = OrmHook
+        self.hook_param = {
+            "args": [],
+            "kwargs": {"objects": JaseciObject.objects, "globs": GlobalVars.objects},
+        }
+        self.master = Master
+        self.super_master = SuperMaster
 
-    def build_master(self, *args, **kwargs):
-        from jaseci_serv.base.models import Master
-
-        return Master(*args, **kwargs)
-
-    def build_super_master(self, *args, **kwargs):
-        from jaseci_serv.base.models import SuperMaster
-
-        return SuperMaster(*args, **kwargs)
+    def build_services(self):
+        self.add_service_builder("redis", RedisService)
+        self.add_service_builder("task", TaskService)
+        self.add_service_builder("mail", MailService)

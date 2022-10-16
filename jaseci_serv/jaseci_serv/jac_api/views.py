@@ -19,8 +19,7 @@ class JResponse(Response):
     def __init__(self, master, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.hook = master._h
-        for i in self.hook.save_obj_list:
-            self.hook.commit_obj_to_cache(i)
+        self.hook.commit_all_cache_sync()
 
     def close(self):
         super(JResponse, self).close()
@@ -63,12 +62,17 @@ class AbstractJacAPIView(APIView):
         """Api call preamble"""
         tot_time = time() - self.start_time
         save_count = 0
+        touch_count = 0
+        touch_kb = 0
         if isinstance(self.caller, Element):
             save_count = len(self.caller._h.save_obj_list)
+            touch_count = len(self.caller._h.mem.keys()) - 1
+            touch_kb = self.caller._h.mem_size()
         logger.info(
             str(
                 f"API call to {Cc.TG}{type(self).__name__}{Cc.EC}"
                 f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
+                f" touched {Cc.TY}{touch_count} ({touch_kb:.1f}kb){Cc.EC} and"
                 f" saving {Cc.TY}{save_count}{Cc.EC} objects."
             )
         )
@@ -164,7 +168,11 @@ class AbstractJacAPIView(APIView):
         # for i in self.caller._h.save_obj_list:
         #     self.caller._h.commit_obj_to_redis(i)
         status = self.pluck_status_code(api_result)
-        if isinstance(api_result, dict) and "report_custom" in api_result.keys():
+        if (
+            isinstance(api_result, dict)
+            and "report_custom" in api_result.keys()
+            and api_result["report_custom"] is not None
+        ):
             api_result = api_result["report_custom"]
         return JResponse(self.caller, api_result, status=status)
 
@@ -213,7 +221,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
     def set_caller(self, request):
         """Assigns the calling api interface obj"""
         self.caller = ServMaster(
-            h=MetaService().hook(),
+            h=MetaService().build_hook(),
             persist=False,
         )
 
@@ -222,7 +230,11 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
         # If committer set, results should be saved back
         status = self.pluck_status_code(api_result)
 
-        if isinstance(api_result, dict) and "report_custom" in api_result.keys():
+        if (
+            isinstance(api_result, dict)
+            and "report_custom" in api_result.keys()
+            and api_result["report_custom"] is not None
+        ):
             api_result = api_result["report_custom"]
 
         if self.caller._pub_committer:
