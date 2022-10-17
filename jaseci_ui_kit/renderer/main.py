@@ -24,3 +24,12 @@ def site(request: Request, route: str):
     return templates.TemplateResponse(
         "site/index.html", {"request": request, "json": loaded_json[route]}
     )
+
+@jaseci_expose(
+    "/graph-viewer", mount=["/static", StaticFiles(directory="static"), "static"]
+)
+def viewGraph(request: Request, route: str):
+    templates = Jinja2Templates(directory="templates")
+    return templates.TemplateResponse(
+        "site/graph.html", {"request": request}
+    )
