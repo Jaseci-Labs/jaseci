@@ -615,6 +615,8 @@ class Interp(VirtualMachine):
         """
         arithmetic: term ((PLUS | MINUS) term)*;
         """
+        if self.attempt_bytecode(jac_ast):
+            return
         kid = self.set_cur_ast(jac_ast)
         result = self.run_rule(kid[0])
         kid = kid[1:]
@@ -627,7 +629,7 @@ class Interp(VirtualMachine):
             kid = kid[2:]
             if not kid:
                 break
-        return result
+        self.push(result)
 
     def run_term(self, jac_ast):
         """
@@ -1746,7 +1748,7 @@ class Interp(VirtualMachine):
         try:
             val = getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
             # TODO: Rewrite after stack integration
-            if jac_ast.name in ["any_type", "atom"]:
+            if jac_ast.name in ["any_type", "atom", "arithmetic"]:
                 return self.pop()
             else:
                 return val

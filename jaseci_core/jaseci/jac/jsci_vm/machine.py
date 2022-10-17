@@ -55,11 +55,11 @@ class VirtualMachine(MachineState, Stack, InstPtr):
                 self._op[self._bytecode[self._ip]]()
                 self._ip += 1
         except Exception as e:
-            self.disassemble()
+            self.disassemble(print_out=False, log_out=True)
             raise e
 
-    def disassemble(self):
-        return DisAsm().disassemble(self._bytecode)
+    def disassemble(self, print_out=True, log_out=False):
+        return DisAsm().disassemble(self._bytecode, print_out, log_out)
 
     def op_PUSH_SCOPE(self):  # noqa
         pass
@@ -68,10 +68,14 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         pass
 
     def op_ADD(self):  # noqa
-        self.push(self.pop() + self.pop())
+        val = self.pop()
+        val.value = val.value + self.pop().value
+        self.push(val)
 
     def op_SUB(self):  # noqa
-        self.push(self.pop() - self.pop())
+        val = self.pop()
+        val.value = val.value - self.pop().value
+        self.push(val)
 
     def op_LOAD_CONST(self):  # noqa
         typ = JsAttr(self.offset(1))
@@ -93,7 +97,7 @@ class VirtualMachine(MachineState, Stack, InstPtr):
     def op_LOAD_VAR(self):  # noqa
         name = from_bytes(str, self.offset(2, self.offset(1)))
         self.load_variable(name)
-        self._ip += 2 + self.offset(1)
+        self._ip += 1 + self.offset(1)
 
     def op_REPORT(self):  # noqa
         self.report.append(self.pop())
