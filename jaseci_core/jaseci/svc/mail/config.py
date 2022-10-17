@@ -1,8 +1,5 @@
-################################################
-#                   DEFAULTS                   #
-################################################
-
 MAIL_ERR_MSG = "Mail service is disabled or not yet configured!"
+
 MAIL_CONFIG = {
     "enabled": True,
     "quiet": True,

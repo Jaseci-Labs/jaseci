@@ -1,8 +1,6 @@
-from copy import copy
 from unittest.mock import MagicMock, Mock
 
 from jaseci.svc import MailService
-from jaseci.svc.mail import MAIL_CONFIG
 from jaseci.utils.test_core import CoreTest
 
 
@@ -22,14 +20,8 @@ class MailLibTest(CoreTest):
         )
         ret = self.call(self.mast, ["walker_run", {"name": "send_mail"}])
         self.assertTrue(ret["success"])
-
-        ms = MailService()
-        configs = copy(MAIL_CONFIG)
-        configs.pop("quiet")
-
-        self.assertEqual(ms.connect.call_args[0], (configs,))
-
+        self.assertTrue(self.mast._h.mail.connect.called)
         self.assertEqual(
-            ms.app.method_calls[0].args,
+            self.mast._h.mail.app.method_calls[0].args,
             (None, ["jaseci.dev@gmail.com"], "Test Subject", ("Test", "<h1>Test</h1>")),
         )
