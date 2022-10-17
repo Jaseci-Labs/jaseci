@@ -51,6 +51,12 @@ class CodeGenPass(IrPass):
             else:
                 node.bytecode.append(i)
 
+    def is_bytecode_complete(self, node):
+        for i in node.kid:
+            if not i.is_terminal() and not hasattr(i, "bytecode"):
+                return False
+        return True
+
     def enter_node(self, node):
         # print("entering", node)
         if hasattr(self, f"enter_{node.name}"):
@@ -60,6 +66,10 @@ class CodeGenPass(IrPass):
         # print("exiting", node)
         if hasattr(self, f"exit_{node.name}"):
             getattr(self, f"exit_{node.name}")(node)
+
+    def exit_power(self, node):
+        if self.is_bytecode_complete(node):
+            pass
 
     def exit_atom(self, node):  # TODO: Incomplete
         kid = node.kid
