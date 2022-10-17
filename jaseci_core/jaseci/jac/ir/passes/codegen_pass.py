@@ -83,6 +83,9 @@ class CodeGenPass(IrPass):
                 elif i.name == "MINUS":
                     self.emit(node, JsOp.SUB)
 
+    def exit_factor(self, node):
+        pass
+
     def exit_atom(self, node):  # TODO: Incomplete
         kid = node.kid
         if kid[0].name == "INT":
