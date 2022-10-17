@@ -14,6 +14,8 @@ class JsOp(IntEnum):
     POWER = auto()
     NEGATE = auto()
     COMPARE = auto()
+    AND = auto()
+    OR = auto()
     LOAD_CONST = auto()  # [type, bytes, (val)] / [type, (val)] / [type=type, type]
     LOAD_VAR = auto()  # [bytes, (name)]
     REPORT = auto()  # [type, bytes, (val)]

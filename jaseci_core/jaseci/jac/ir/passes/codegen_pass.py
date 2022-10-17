@@ -72,6 +72,17 @@ class CodeGenPass(IrPass):
         if hasattr(self, f"exit_{node.name}"):
             getattr(self, f"exit_{node.name}")(node)
 
+    def exit_logical(self, node):
+        if self.is_bytecode_complete(node):
+            for i in reversed(node.kid):
+                if self.has_bytecode(i):
+                    self.emit(node, i.bytecode)
+            for i in node.kid:
+                if i.name == "KW_AND":
+                    self.emit(node, JsOp.AND)
+                elif i.name == "KW_OR":
+                    self.emit(node, JsOp.OR)
+
     def exit_compare(self, node):
         if self.is_bytecode_complete(node):
             for i in reversed(node.kid):

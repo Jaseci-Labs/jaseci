@@ -556,6 +556,8 @@ class Interp(VirtualMachine):
         """
         logical: compare ((KW_AND | KW_OR) compare)*;
         """
+        if self.attempt_bytecode(jac_ast):
+            return
         kid = self.set_cur_ast(jac_ast)
         result = self.run_rule(kid[0])
         kid = kid[1:]
@@ -569,7 +571,7 @@ class Interp(VirtualMachine):
             kid = kid[2:]
             if not kid:
                 break
-        return result
+        self.push(result)
 
     def run_compare(self, jac_ast):
         """
@@ -1765,6 +1767,7 @@ class Interp(VirtualMachine):
                 "power",
                 "cmp_op",
                 "compare",
+                "logical",
             ]:
                 return self.pop()
             else:

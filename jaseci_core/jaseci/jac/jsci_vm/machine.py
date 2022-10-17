@@ -113,6 +113,16 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         self.push(val)
         self._ip += 1
 
+    def op_AND(self):  # noqa
+        val = self.pop()
+        val.value = val.value and self.pop().value
+        self.push(val)
+
+    def op_OR(self):  # noqa
+        val = self.pop()
+        val.value = val.value or self.pop().value
+        self.push(val)
+
     def op_LOAD_CONST(self):  # noqa
         typ = JsType(self.offset(1))
         operand2 = self.offset(2)
