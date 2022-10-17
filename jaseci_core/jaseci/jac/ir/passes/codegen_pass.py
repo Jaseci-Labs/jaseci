@@ -28,7 +28,7 @@ class CodeGenPass(IrPass):
         self.cur_loc = None
 
     def emit(self, node, *items):
-        if not hasattr(node, "bytecode"):
+        if not self.has_bytecode(node):
             node.bytecode = bytearray()
         node_loc = [node.loc[0], node.loc[2]]
         if self.debug_info and self.cur_loc != node_loc:
@@ -44,7 +44,7 @@ class CodeGenPass(IrPass):
             self.cur_loc = node_loc
             items = debug_inst + list(items)
         for i in items:
-            if type(i) is bytes:
+            if type(i) in [bytes, bytearray]:
                 node.bytecode += bytearray(i)
             elif type(i) is str:
                 node.bytecode += bytearray(i, "utf-8")
@@ -53,8 +53,13 @@ class CodeGenPass(IrPass):
 
     def is_bytecode_complete(self, node):
         for i in node.kid:
-            if not i.is_terminal() and not hasattr(i, "bytecode"):
+            if not i.is_terminal() and not self.has_bytecode(i):
                 return False
+        return True
+
+    def has_bytecode(self, node):
+        if not hasattr(node, "bytecode"):
+            return False
         return True
 
     def enter_node(self, node):
@@ -67,9 +72,16 @@ class CodeGenPass(IrPass):
         if hasattr(self, f"exit_{node.name}"):
             getattr(self, f"exit_{node.name}")(node)
 
-    def exit_power(self, node):
-        if self.is_bytecode_complete(node):
-            pass
+    # def exit_arithmetic(self, node):
+    #     if self.is_bytecode_complete(node):
+    #         for i in reversed(node.kid):
+    #             if self.has_bytecode(i):
+    #                 self.emit(node, i.bytecode)
+    #         for i in node.kid:
+    #             if i.name == "PLUS":
+    #                 self.emit(node, JsOp.ADD)
+    #             elif i.name == "MINUS":
+    #                 self.emit(node, JsOp.SUB)
 
     def exit_atom(self, node):  # TODO: Incomplete
         kid = node.kid

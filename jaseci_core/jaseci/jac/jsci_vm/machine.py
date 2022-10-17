@@ -71,8 +71,7 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         self.push(self.pop() + self.pop())
 
     def op_SUB(self):  # noqa
-        rhs = self.pop()
-        self.push(self.pop() - rhs)
+        self.push(self.pop() - self.pop())
 
     def op_LOAD_CONST(self):  # noqa
         typ = JsAttr(self.offset(1))
