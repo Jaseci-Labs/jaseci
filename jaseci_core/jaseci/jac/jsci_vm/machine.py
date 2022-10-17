@@ -72,9 +72,24 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         val.value = val.value + self.pop().value
         self.push(val)
 
-    def op_SUB(self):  # noqa
+    def op_SUBTRACT(self):  # noqa
         val = self.pop()
         val.value = val.value - self.pop().value
+        self.push(val)
+
+    def op_MULTIPLY(self):  # noqa
+        val = self.pop()
+        val.value = val.value * self.pop().value
+        self.push(val)
+
+    def op_DIVIDE(self):  # noqa
+        val = self.pop()
+        val.value = val.value / self.pop().value
+        self.push(val)
+
+    def op_MODULO(self):  # noqa
+        val = self.pop()
+        val.value = val.value % self.pop().value
         self.push(val)
 
     def op_LOAD_CONST(self):  # noqa

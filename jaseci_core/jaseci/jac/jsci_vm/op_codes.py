@@ -7,7 +7,10 @@ class JsOp(IntEnum):
     PUSH_SCOPE = auto()
     POP_SCOPE = auto()
     ADD = auto()
-    SUB = auto()
+    SUBTRACT = auto()
+    MULTIPLY = auto()
+    DIVIDE = auto()
+    MODULO = auto()
     LOAD_CONST = auto()  # [type, bytes, (val)] / [type, (val)] / [type=type, type]
     LOAD_VAR = auto()  # [bytes, (name)]
     REPORT = auto()  # [type, bytes, (val)]

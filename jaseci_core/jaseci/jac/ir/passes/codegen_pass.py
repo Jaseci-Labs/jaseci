@@ -81,10 +81,20 @@ class CodeGenPass(IrPass):
                 if i.name == "PLUS":
                     self.emit(node, JsOp.ADD)
                 elif i.name == "MINUS":
-                    self.emit(node, JsOp.SUB)
+                    self.emit(node, JsOp.SUBTRACT)
 
-    def exit_factor(self, node):
-        pass
+    def exit_term(self, node):
+        if self.is_bytecode_complete(node):
+            for i in reversed(node.kid):
+                if self.has_bytecode(i):
+                    self.emit(node, i.bytecode)
+            for i in node.kid:
+                if i.name == "STAR_MUL":
+                    self.emit(node, JsOp.MULTIPLY)
+                elif i.name == "DIV":
+                    self.emit(node, JsOp.DIVIDE)
+                elif i.name == "MOD":
+                    self.emit(node, JsOp.MODULO)
 
     def exit_atom(self, node):  # TODO: Incomplete
         kid = node.kid
