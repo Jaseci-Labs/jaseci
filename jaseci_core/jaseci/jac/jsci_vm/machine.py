@@ -33,6 +33,7 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         InstPtr.__init__(self)
         MachineState.__init__(self, **kwargs)
         self._op = self.build_op_call()
+        self._cmp_ops = self.build_cmp_ops()
         self._cur_loc = None
 
     def reset_vm(self):
@@ -46,6 +47,19 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         for op in JsOp:
             op_map[op] = getattr(self, f"op_{op.name}")
         return op_map
+
+    def build_cmp_ops(self):
+        cmp_ops = {}
+        cmp_ops[JsCmp.NOT] = lambda val: not val
+        cmp_ops[JsCmp.EE] = lambda v1, v2: v1 == v2
+        cmp_ops[JsCmp.LT] = lambda v1, v2: v1 < v2
+        cmp_ops[JsCmp.GT] = lambda v1, v2: v1 > v2
+        cmp_ops[JsCmp.LTE] = lambda v1, v2: v1 <= v2
+        cmp_ops[JsCmp.GTE] = lambda v1, v2: v1 >= v2
+        cmp_ops[JsCmp.NE] = lambda v1, v2: v1 != v2
+        cmp_ops[JsCmp.IN] = lambda v1, v2: v1 in v2
+        cmp_ops[JsCmp.NIN] = lambda v1, v2: v1 not in v2
+        return cmp_ops
 
     def run_bytecode(self, bytecode):
         self.reset_vm()
@@ -104,42 +118,13 @@ class VirtualMachine(MachineState, Stack, InstPtr):
 
     def op_COMPARE(self):  # noqa
         ctyp = JsCmp(self.offset(1))
-        if ctyp == JsCmp.NOT:
-            val = self.pop()
-            val.value = not (val.value)
-            self.push(val)
-        elif ctyp == JsCmp.EE:
-            val = self.pop()
-            val.value = val.value == self.pop().value
-            self.push(val)
-        elif ctyp == JsCmp.LT:
-            val = self.pop()
-            val.value = val.value < self.pop().value
-            self.push(val)
-        elif ctyp == JsCmp.GT:
-            val = self.pop()
-            val.value = val.value > self.pop().value
-            self.push(val)
-        elif ctyp == JsCmp.LTE:
-            val = self.pop()
-            val.value = val.value <= self.pop().value
-            self.push(val)
-        elif ctyp == JsCmp.GTE:
-            val = self.pop()
-            val.value = val.value >= self.pop().value
-            self.push(val)
-        elif ctyp == JsCmp.NE:
-            val = self.pop()
-            val.value = val.value != self.pop().value
-            self.push(val)
-        elif ctyp == JsCmp.IN:
-            val = self.pop()
-            val.value = val.value in self.pop().value
-            self.push(val)
-        elif ctyp == JsCmp.NIN:
-            val = self.pop()
-            val.value = val.value not in self.pop().value
-            self.push(val)
+        val = self.pop()
+        val.value = (
+            self._cmp_ops[ctyp](val.value, self.pop().value)
+            if ctyp != JsCmp.NOT
+            else self._cmp_ops[ctyp](val.value)
+        )
+        self.push(val)
         self._ip += 1
 
     def op_LOAD_CONST(self):  # noqa
