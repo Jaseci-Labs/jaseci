@@ -1,4 +1,4 @@
-from jaseci.jac.jsci_vm.op_codes import JsCmp, JsOp, JsType, type_map
+from jaseci.jac.jsci_vm.op_codes import JsCmp, JsOp, JsType, type_map, cmp_op_map
 from jaseci.jac.machine.machine_state import MachineState
 from jaseci.jac.jsci_vm.inst_ptr import InstPtr, from_bytes
 from jaseci.jac.machine.jac_value import JacValue
@@ -33,7 +33,6 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         InstPtr.__init__(self)
         MachineState.__init__(self, **kwargs)
         self._op = self.build_op_call()
-        self._cmp_ops = self.build_cmp_ops()
         self._cur_loc = None
 
     def reset_vm(self):
@@ -47,19 +46,6 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         for op in JsOp:
             op_map[op] = getattr(self, f"op_{op.name}")
         return op_map
-
-    def build_cmp_ops(self):
-        cmp_ops = {}
-        cmp_ops[JsCmp.NOT] = lambda val: not val
-        cmp_ops[JsCmp.EE] = lambda v1, v2: v1 == v2
-        cmp_ops[JsCmp.LT] = lambda v1, v2: v1 < v2
-        cmp_ops[JsCmp.GT] = lambda v1, v2: v1 > v2
-        cmp_ops[JsCmp.LTE] = lambda v1, v2: v1 <= v2
-        cmp_ops[JsCmp.GTE] = lambda v1, v2: v1 >= v2
-        cmp_ops[JsCmp.NE] = lambda v1, v2: v1 != v2
-        cmp_ops[JsCmp.IN] = lambda v1, v2: v1 in v2
-        cmp_ops[JsCmp.NIN] = lambda v1, v2: v1 not in v2
-        return cmp_ops
 
     def run_bytecode(self, bytecode):
         self.reset_vm()
@@ -120,9 +106,9 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         ctyp = JsCmp(self.offset(1))
         val = self.pop()
         val.value = (
-            self._cmp_ops[ctyp](val.value, self.pop().value)
+            cmp_op_map[ctyp](val.value, self.pop().value)
             if ctyp != JsCmp.NOT
-            else self._cmp_ops[ctyp](val.value)
+            else cmp_op_map[ctyp](val.value)
         )
         self.push(val)
         self._ip += 1

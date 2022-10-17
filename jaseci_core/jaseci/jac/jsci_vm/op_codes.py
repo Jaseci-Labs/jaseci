@@ -58,3 +58,15 @@ type_map = {
     JsType.NODE: Node,
     JsType.EDGE: Edge,
 }
+
+cmp_op_map = {
+    JsCmp.NOT: lambda val: not val,
+    JsCmp.EE: lambda v1, v2: v1 == v2,
+    JsCmp.LT: lambda v1, v2: v1 < v2,
+    JsCmp.GT: lambda v1, v2: v1 > v2,
+    JsCmp.LTE: lambda v1, v2: v1 <= v2,
+    JsCmp.GTE: lambda v1, v2: v1 >= v2,
+    JsCmp.NE: lambda v1, v2: v1 != v2,
+    JsCmp.IN: lambda v1, v2: v1 in v2,
+    JsCmp.NIN: lambda v1, v2: v1 not in v2,
+}
