@@ -1,5 +1,6 @@
 from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr, type_map
 from jaseci.jac.jsci_vm.inst_ptr import InstPtr, from_bytes
+from jaseci.utils.utils import logger
 from base64 import b64decode
 
 
@@ -8,24 +9,33 @@ class DisAsm(InstPtr):
         InstPtr.__init__(self)
         self._asm = []
 
-    def disassemble(self, bytecode, print_out=True):
+    def disassemble(self, bytecode, print_out=True, log_out=False):
         if type(bytecode) == str:
             bytecode = b64decode(bytecode.encode())
         self._bytecode = bytearray(bytecode)
-        while self._ip < len(self._bytecode):
-            op = JsOp(self._bytecode[self._ip])
-            if hasattr(self, f"dis_{op.name}"):
-                getattr(self, f"dis_{op.name}")()
-            else:
-                self._asm.append([op.name])
-            self._ip += 1
-        if print_out:
-            self.print()
-        return self._asm
+        try:
+            while self._ip < len(self._bytecode):
+                op = JsOp(self._bytecode[self._ip])
+                if hasattr(self, f"dis_{op.name}"):
+                    getattr(self, f"dis_{op.name}")()
+                else:
+                    self._asm.append([op.name])
+                self._ip += 1
+            self.print() if print_out else None
+            self.log() if log_out else None
+            return self._asm
+        except Exception:
+            logger.error(f"Disassembly Failed on Following Bytecode: {self._bytecode}")
+            self.print() if print_out else None
+            self.log() if log_out else None
 
     def print(self):
         for i in self._asm:
             print(*i)
+
+    def log(self):
+        for i in self._asm:
+            logger.info(str(i))
 
     def dis_LOAD_CONST(self):  # noqa
         typ = JsAttr(self.offset(1))
@@ -50,7 +60,7 @@ class DisAsm(InstPtr):
     def dis_LOAD_VAR(self):  # noqa
         name = from_bytes(str, self.offset(2, self.offset(1)))
         self._asm.append([self.cur_op(), self.offset(1), name])
-        self._ip += 2 + self.offset(1)
+        self._ip += 1 + self.offset(1)
 
     def dis_DEBUG_INFO(self):  # noqa
         byte_len_l = self.offset(1)
