@@ -1,4 +1,4 @@
-from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr, type_map
+from jaseci.jac.jsci_vm.op_codes import JsCmp, JsOp, JsType, type_map
 from jaseci.jac.machine.machine_state import MachineState
 from jaseci.jac.jsci_vm.inst_ptr import InstPtr, from_bytes
 from jaseci.jac.machine.jac_value import JacValue
@@ -92,19 +92,69 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         val.value = val.value % self.pop().value
         self.push(val)
 
+    def op_POWER(self):  # noqa
+        val = self.pop()
+        val.value = val.value ** self.pop().value
+        self.push(val)
+
+    def op_NEGATE(self):  # noqa
+        val = self.pop()
+        val.value = -(val.value)
+        self.push(val)
+
+    def op_COMPARE(self):  # noqa
+        ctyp = JsCmp(self.offset(1))
+        if ctyp == JsCmp.NOT:
+            val = self.pop()
+            val.value = not (val.value)
+            self.push(val)
+        elif ctyp == JsCmp.EE:
+            val = self.pop()
+            val.value = val.value == self.pop().value
+            self.push(val)
+        elif ctyp == JsCmp.LT:
+            val = self.pop()
+            val.value = val.value < self.pop().value
+            self.push(val)
+        elif ctyp == JsCmp.GT:
+            val = self.pop()
+            val.value = val.value > self.pop().value
+            self.push(val)
+        elif ctyp == JsCmp.LTE:
+            val = self.pop()
+            val.value = val.value <= self.pop().value
+            self.push(val)
+        elif ctyp == JsCmp.GTE:
+            val = self.pop()
+            val.value = val.value >= self.pop().value
+            self.push(val)
+        elif ctyp == JsCmp.NE:
+            val = self.pop()
+            val.value = val.value != self.pop().value
+            self.push(val)
+        elif ctyp == JsCmp.IN:
+            val = self.pop()
+            val.value = val.value in self.pop().value
+            self.push(val)
+        elif ctyp == JsCmp.NIN:
+            val = self.pop()
+            val.value = val.value not in self.pop().value
+            self.push(val)
+        self._ip += 1
+
     def op_LOAD_CONST(self):  # noqa
-        typ = JsAttr(self.offset(1))
+        typ = JsType(self.offset(1))
         operand2 = self.offset(2)
-        if typ in [JsAttr.TYPE]:
-            val = type_map[JsAttr(operand2)]
+        if typ in [JsType.TYPE]:
+            val = type_map[JsType(operand2)]
             self._ip += 2
-        elif typ in [JsAttr.INT, JsAttr.STRING]:
+        elif typ in [JsType.INT, JsType.STRING]:
             val = from_bytes(type_map[typ], self.offset(3, operand2))
             self._ip += 2 + operand2
-        elif typ in [JsAttr.FLOAT]:
+        elif typ in [JsType.FLOAT]:
             val = from_bytes(float, self.offset(2, 8))
-            self._ip += 2 + 8
-        elif typ in [JsAttr.BOOL]:
+            self._ip += 1 + 8
+        elif typ in [JsType.BOOL]:
             val = bool(self.offset(2))
             self._ip += 2 + 1
         self.push(JacValue(self, value=val))

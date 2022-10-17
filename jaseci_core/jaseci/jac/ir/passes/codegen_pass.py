@@ -1,5 +1,5 @@
 from jaseci.jac.ir.passes import IrPass
-from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr
+from jaseci.jac.jsci_vm.op_codes import JsCmp, JsOp, JsType
 from struct import pack
 
 from jaseci.utils.utils import parse_str_token
@@ -53,7 +53,7 @@ class CodeGenPass(IrPass):
 
     def is_bytecode_complete(self, node):
         for i in node.kid:
-            if not i.is_terminal() and not self.has_bytecode(i):
+            if not i.is_terminal() and not self.has_bytecode(i) and i.name != "cmp_op":
                 return False
         return True
 
@@ -71,6 +71,31 @@ class CodeGenPass(IrPass):
         # print("exiting", node)
         if hasattr(self, f"exit_{node.name}"):
             getattr(self, f"exit_{node.name}")(node)
+
+    def exit_compare(self, node):
+        if self.is_bytecode_complete(node):
+            for i in reversed(node.kid):
+                if self.has_bytecode(i):
+                    self.emit(node, i.bytecode)
+            for i in node.kid:
+                if i.name == "NOT":
+                    self.emit(node, JsOp.COMPARE, JsCmp.NOT)
+                elif i.name == "cmp_op" and i.kid[0].name == "EE":
+                    self.emit(node, JsOp.COMPARE, JsCmp.EE)
+                elif i.name == "cmp_op" and i.kid[0].name == "LT":
+                    self.emit(node, JsOp.COMPARE, JsCmp.LT)
+                elif i.name == "cmp_op" and i.kid[0].name == "GT":
+                    self.emit(node, JsOp.COMPARE, JsCmp.GT)
+                elif i.name == "cmp_op" and i.kid[0].name == "LTE":
+                    self.emit(node, JsOp.COMPARE, JsCmp.LTE)
+                elif i.name == "cmp_op" and i.kid[0].name == "GTE":
+                    self.emit(node, JsOp.COMPARE, JsCmp.GTE)
+                elif i.name == "cmp_op" and i.kid[0].name == "NE":
+                    self.emit(node, JsOp.COMPARE, JsCmp.NE)
+                elif i.name == "cmp_op" and i.kid[0].name == "KW_IN":
+                    self.emit(node, JsOp.COMPARE, JsCmp.IN)
+                elif i.name == "cmp_op" and i.kid[0].name == "nin":
+                    self.emit(node, JsOp.COMPARE, JsCmp.NIN)
 
     def exit_arithmetic(self, node):
         if self.is_bytecode_complete(node):
@@ -96,26 +121,41 @@ class CodeGenPass(IrPass):
                 elif i.name == "MOD":
                     self.emit(node, JsOp.MODULO)
 
+    def exit_factor(self, node):
+        if self.is_bytecode_complete(node):
+            self.emit(node, node.kid[-1].bytecode)
+            if node.kid[0].name == "MINUS":
+                self.emit(node, JsOp.NEGATE)
+
+    def exit_power(self, node):
+        if self.is_bytecode_complete(node):
+            for i in reversed(node.kid):
+                if self.has_bytecode(i):
+                    self.emit(node, i.bytecode)
+            for i in node.kid:
+                if i.name == "POW":
+                    self.emit(node, JsOp.POWER)
+
     def exit_atom(self, node):  # TODO: Incomplete
         kid = node.kid
         if kid[0].name == "INT":
             val = int(kid[0].token_text())
             self.emit(
-                node, JsOp.LOAD_CONST, JsAttr.INT, byte_length(val), to_bytes(val)
+                node, JsOp.LOAD_CONST, JsType.INT, byte_length(val), to_bytes(val)
             )
         elif kid[0].name == "FLOAT":
             val = float(kid[0].token_text())
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.FLOAT, to_bytes(val))
+            self.emit(node, JsOp.LOAD_CONST, JsType.FLOAT, to_bytes(val))
         elif kid[0].name == "STRING":
             val = parse_str_token(kid[0].token_text())
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.STRING, byte_length(val))
+            self.emit(node, JsOp.LOAD_CONST, JsType.STRING, byte_length(val))
             if byte_length(val) > 0:
                 self.emit(node, to_bytes(val))
         elif kid[0].name == "BOOL":
             val = int(kid[0].token_text() == "true")
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.BOOL, val)
+            self.emit(node, JsOp.LOAD_CONST, JsType.BOOL, val)
         elif kid[0].name == "NULL":
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.NULL)
+            self.emit(node, JsOp.LOAD_CONST, JsType.TYPE, JsType.NULL)
         elif kid[0].name == "NAME":
             name = kid[0].token_text()
             self.emit(node, JsOp.LOAD_VAR, byte_length(name), to_bytes(name))
@@ -123,20 +163,20 @@ class CodeGenPass(IrPass):
     def exit_any_type(self, node):
         kid = node.kid
         if kid[0].name == "TYP_STRING":
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.STRING)
+            self.emit(node, JsOp.LOAD_CONST, JsType.TYPE, JsType.STRING)
         elif kid[0].name == "TYP_INT":
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.INT)
+            self.emit(node, JsOp.LOAD_CONST, JsType.TYPE, JsType.INT)
         elif kid[0].name == "TYP_FLOAT":
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.FLOAT)
+            self.emit(node, JsOp.LOAD_CONST, JsType.TYPE, JsType.FLOAT)
         elif kid[0].name == "TYP_LIST":
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.LIST)
+            self.emit(node, JsOp.LOAD_CONST, JsType.TYPE, JsType.LIST)
         elif kid[0].name == "TYP_DICT":
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.DICT)
+            self.emit(node, JsOp.LOAD_CONST, JsType.TYPE, JsType.DICT)
         elif kid[0].name == "TYP_BOOL":
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.BOOL)
+            self.emit(node, JsOp.LOAD_CONST, JsType.TYPE, JsType.BOOL)
         elif kid[0].name == "KW_NODE":
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.NODE)
+            self.emit(node, JsOp.LOAD_CONST, JsType.TYPE, JsType.NODE)
         elif kid[0].name == "KW_EDGE":
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.EDGE)
+            self.emit(node, JsOp.LOAD_CONST, JsType.TYPE, JsType.EDGE)
         elif kid[0].name == "KW_TYPE":
-            self.emit(node, JsOp.LOAD_CONST, JsAttr.TYPE, JsAttr.TYPE)
+            self.emit(node, JsOp.LOAD_CONST, JsType.TYPE, JsType.TYPE)

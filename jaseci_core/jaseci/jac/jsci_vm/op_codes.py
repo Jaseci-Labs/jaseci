@@ -11,6 +11,9 @@ class JsOp(IntEnum):
     MULTIPLY = auto()
     DIVIDE = auto()
     MODULO = auto()
+    POWER = auto()
+    NEGATE = auto()
+    COMPARE = auto()
     LOAD_CONST = auto()  # [type, bytes, (val)] / [type, (val)] / [type=type, type]
     LOAD_VAR = auto()  # [bytes, (name)]
     REPORT = auto()  # [type, bytes, (val)]
@@ -18,7 +21,7 @@ class JsOp(IntEnum):
     DEBUG_INFO = auto()  # [bytes, line, bytes, (jacfile)]
 
 
-class JsAttr(IntEnum):
+class JsType(IntEnum):
     TYPE = auto()
     INT = auto()
     FLOAT = auto()
@@ -31,15 +34,27 @@ class JsAttr(IntEnum):
     EDGE = auto()
 
 
+class JsCmp(IntEnum):
+    EE = auto()
+    LT = auto()
+    GT = auto()
+    LTE = auto()
+    GTE = auto()
+    NE = auto()
+    IN = auto()
+    NIN = auto()
+    NOT = auto()
+
+
 type_map = {
-    JsAttr.TYPE: type,
-    JsAttr.INT: int,
-    JsAttr.FLOAT: float,
-    JsAttr.STRING: str,
-    JsAttr.LIST: list,
-    JsAttr.DICT: dict,
-    JsAttr.BOOL: bool,
-    JsAttr.NULL: None,
-    JsAttr.NODE: Node,
-    JsAttr.EDGE: Edge,
+    JsType.TYPE: type,
+    JsType.INT: int,
+    JsType.FLOAT: float,
+    JsType.STRING: str,
+    JsType.LIST: list,
+    JsType.DICT: dict,
+    JsType.BOOL: bool,
+    JsType.NULL: None,
+    JsType.NODE: Node,
+    JsType.EDGE: Edge,
 }

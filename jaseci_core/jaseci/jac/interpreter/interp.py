@@ -575,19 +575,22 @@ class Interp(VirtualMachine):
         """
         compare: NOT compare | arithmetic (cmp_op arithmetic)*;
         """
+        if self.attempt_bytecode(jac_ast):
+            return
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "NOT":
-            return JacValue(self, value=not self.run_rule(kid[1]).value)
+            self.push(JacValue(self, value=not self.run_rule(kid[1]).value))
         else:
             result = self.run_rule(kid[0])
             kid = kid[1:]
             while kid:
                 other_res = self.run_rule(kid[1])
-                result = self.run_cmp_op(kid[0], result, other_res)
+                self.run_cmp_op(kid[0], result, other_res)
+                result = self.pop()
                 kid = kid[2:]
                 if not kid:
                     break
-            return result
+            self.push(result)
 
     def run_cmp_op(self, jac_ast, val1, val2):
         """
@@ -595,21 +598,21 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "EE":
-            return JacValue(self, value=val1.value == val2.value)
+            self.push(JacValue(self, value=val1.value == val2.value))
         elif kid[0].name == "LT":
-            return JacValue(self, value=val1.value < val2.value)
+            self.push(JacValue(self, value=val1.value < val2.value))
         elif kid[0].name == "GT":
-            return JacValue(self, value=val1.value > val2.value)
+            self.push(JacValue(self, value=val1.value > val2.value))
         elif kid[0].name == "LTE":
-            return JacValue(self, value=val1.value <= val2.value)
+            self.push(JacValue(self, value=val1.value <= val2.value))
         elif kid[0].name == "GTE":
-            return JacValue(self, value=val1.value >= val2.value)
+            self.push(JacValue(self, value=val1.value >= val2.value))
         elif kid[0].name == "NE":
-            return JacValue(self, value=val1.value != val2.value)
+            self.push(JacValue(self, value=val1.value != val2.value))
         elif kid[0].name == "KW_IN":
-            return JacValue(self, value=val1.value in val2.value)
+            self.push(JacValue(self, value=val1.value in val2.value))
         elif kid[0].name == "nin":
-            return JacValue(self, value=val1.value not in val2.value)
+            self.push(JacValue(self, value=val1.value not in val2.value))
 
     def run_arithmetic(self, jac_ast):
         """
@@ -657,31 +660,35 @@ class Interp(VirtualMachine):
         """
         factor: (PLUS | MINUS) factor | power;
         """
+        if self.attempt_bytecode(jac_ast):
+            return
         kid = self.set_cur_ast(jac_ast)
         if len(kid) < 2:
-            return self.run_rule(kid[0])
+            self.push(self.run_rule(kid[0]))
         else:
             result = self.run_rule(kid[1])
             if kid[0].name == "MINUS":
                 result.value = -(result.value)
-            return result
+            self.push(result)
 
     def run_power(self, jac_ast):
         """
         power: atom (POW factor)*;
         """
+        if self.attempt_bytecode(jac_ast):
+            return
         kid = self.set_cur_ast(jac_ast)
         result = self.run_rule(kid[0])
         kid = kid[1:]
         if len(kid) < 1:
-            return result
+            self.push(result)
         elif kid[0].name == "POW":
             while kid:
                 result.value = result.value ** self.run_rule(kid[1]).value
                 kid = kid[2:]
                 if not kid:
                     break
-            return result
+            self.push(result)
 
     def run_global_ref(self, jac_ast):
         """
@@ -1666,9 +1673,8 @@ class Interp(VirtualMachine):
         name = kid[0].token_text()
         if name in obj.context.keys():
             result = self.run_expression(kid[-1])
-            return self.run_cmp_op(
-                kid[1], JacValue(self, ctx=obj, name=name), result
-            ).value
+            self.run_cmp_op(kid[1], JacValue(self, ctx=obj, name=name), result)
+            return self.pop().value
         else:
             self.rt_error(f"{name} not present in object", kid[0])
             return False
@@ -1750,7 +1756,16 @@ class Interp(VirtualMachine):
         try:
             val = getattr(self, f"run_{jac_ast.name}")(jac_ast, *args)
             # TODO: Rewrite after stack integration
-            if jac_ast.name in ["any_type", "atom", "arithmetic", "term"]:
+            if jac_ast.name in [
+                "any_type",
+                "atom",
+                "arithmetic",
+                "term",
+                "factor",
+                "power",
+                "cmp_op",
+                "compare",
+            ]:
                 return self.pop()
             else:
                 return val

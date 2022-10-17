@@ -1,4 +1,4 @@
-from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr, type_map
+from jaseci.jac.jsci_vm.op_codes import JsCmp, JsOp, JsType, type_map
 from jaseci.jac.jsci_vm.inst_ptr import InstPtr, from_bytes
 from jaseci.utils.utils import logger
 from base64 import b64decode
@@ -37,22 +37,27 @@ class DisAsm(InstPtr):
         for i in self._asm:
             logger.info(str(i))
 
+    def op_COMPARE(self):  # noqa
+        ctyp = JsCmp(self.offset(1))
+        self._asm.append([self.cur_op(), ctyp.name])
+        self._ip += 1
+
     def dis_LOAD_CONST(self):  # noqa
-        typ = JsAttr(self.offset(1))
+        typ = JsType(self.offset(1))
         operand2 = self.offset(2)
         val = None
-        if typ in [JsAttr.TYPE]:
-            self._asm.append([self.cur_op(), typ.name, JsAttr(operand2).name])
+        if typ in [JsType.TYPE]:
+            self._asm.append([self.cur_op(), typ.name, JsType(operand2).name])
             self._ip += 2
-        elif typ in [JsAttr.INT, JsAttr.STRING]:
+        elif typ in [JsType.INT, JsType.STRING]:
             val = from_bytes(type_map[typ], self.offset(3, operand2))
             self._asm.append([self.cur_op(), typ.name, operand2, val])
             self._ip += 2 + operand2
-        elif typ in [JsAttr.FLOAT]:
+        elif typ in [JsType.FLOAT]:
             val = from_bytes(float, self.offset(2, 8))
             self._asm.append([self.cur_op(), typ.name, val])
-            self._ip += 2 + 8
-        elif typ in [JsAttr.BOOL]:
+            self._ip += 1 + 8
+        elif typ in [JsType.BOOL]:
             val = bool(self.offset(2))
             self._asm.append([self.cur_op(), typ.name, val])
             self._ip += 2 + 1
