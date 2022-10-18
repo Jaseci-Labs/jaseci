@@ -44,7 +44,7 @@ class JacApi:
     @Interface.cli_api(cli_args=["file"])
     def jac_disas(self, file: str):
         """
-        Command line tooling for running all test in both .jac code files
+        Command line tooling for print IR for both .jac code files
         and .jir executables
         """
         filename, dir = self.check_for_file(file)
