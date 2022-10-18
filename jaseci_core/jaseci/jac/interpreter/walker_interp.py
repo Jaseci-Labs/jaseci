@@ -119,7 +119,8 @@ class WalkerInterp(Interp):
         ignore_action: KW_IGNORE expression SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_expression(kid[1]).value
+        self.run_expression(kid[1])
+        result = self.pop().value
         if isinstance(result, Node):
             self.ignore_node_ids.add_obj(result)
         elif isinstance(result, JacSet):
@@ -137,7 +138,8 @@ class WalkerInterp(Interp):
         if kid[1].name == "COLON":
             style = kid[2].token_text()
             kid = kid[2:]
-        result = self.run_expression(kid[1]).value
+        self.run_expression(kid[1])
+        result = self.pop().value
         before = len(self.next_node_ids)
         if isinstance(result, Node):
             if style in ["b", "bfs"]:
@@ -213,7 +215,8 @@ class WalkerInterp(Interp):
             self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
             result = None
         if kid[-1].name == "expression":
-            dest = m.run_expression(kid[-1])
+            m.run_expression(kid[-1])
+            dest = m.pop()
             dest.value = result
             dest.write(kid[-1])
 

@@ -180,6 +180,12 @@ class JacValue:
         else:
             self.ctx[self.name] = self.wrap()
 
+    def check_assignable(self, jac_ast=None):
+        if self.ctx is None:
+            self.parent.rt_error("Cannot assign to this value", jac_ast)
+            return False
+        return True
+
     def self_destruct(self, jac_ast):
         if self.is_element and self.name in self.ctx.keys():
             self.ctx[self.name] = None  # assumes interp has destroyed element

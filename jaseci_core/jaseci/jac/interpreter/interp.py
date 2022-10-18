@@ -52,7 +52,8 @@ class Interp(VirtualMachine):
         var_name = kid[0].token_text()
         var_val = None  # jac's null
         if len(kid) > 1:
-            var_val = self.run_expression(kid[2]).value
+            self.run_expression(kid[2])
+            var_val = self.pop().value
         if isinstance(obj, dict):
             obj[var_name] = var_val
         # Runs only once for walkers
@@ -164,10 +165,11 @@ class Interp(VirtualMachine):
         ret = []
         for i in kid:
             if i.name == "expression":
+                self.run_expression(i)
                 if wrap:
-                    ret.append(self.run_expression(i).wrap())
+                    ret.append(self.pop().wrap())
                 else:
-                    ret.append(self.run_expression(i).value)
+                    ret.append(self.pop().value)
         return JacValue(self, value=ret)
 
     def run_code_block(self, jac_ast):
@@ -205,7 +207,8 @@ class Interp(VirtualMachine):
         if_stmt: KW_IF expression code_block elif_stmt* else_stmt?;
         """
         kid = self.set_cur_ast(jac_ast)
-        if self.run_expression(kid[1]).value:
+        self.run_expression(kid[1])
+        if self.pop().value:
             self.run_code_block(kid[2])
             return
         kid = kid[3:]
@@ -257,7 +260,8 @@ class Interp(VirtualMachine):
         elif_stmt: KW_ELIF expression code_block;
         """
         kid = self.set_cur_ast(jac_ast)
-        if self.run_expression(kid[1]).value:
+        self.run_expression(kid[1])
+        if self.pop().value:
             self.run_code_block(kid[2])
             return True
         else:
@@ -280,10 +284,13 @@ class Interp(VirtualMachine):
         loops = 0
         if kid[1].name == "expression":
             self.run_expression(kid[1])
-            while self.run_expression(kid[3]).value:
+            self.pop()
+            self.run_expression(kid[3])
+            while self.pop().value:
                 self._loop_ctrl = None
                 self.run_code_block(kid[6])
                 self.run_expression(kid[5])
+                self.pop()
                 loops += 1
                 if self._loop_ctrl and self._loop_ctrl == "break":
                     self._loop_ctrl = None
@@ -291,9 +298,11 @@ class Interp(VirtualMachine):
                 if loops > self._loop_limit:
                     self.rt_error("Hit loop limit, breaking...", kid[0])
                     self._loop_ctrl = "break"
+                self.run_expression(kid[3])
         elif kid[3].name == "expression":
             var = self._jac_scope.get_live_var(kid[1].token_text(), create_mode=True)
-            lst = self.run_expression(kid[3]).value
+            self.run_expression(kid[3])
+            lst = self.pop().value
 
             if isinstance(lst, (list, dict)):
                 for i in lst:
@@ -313,7 +322,8 @@ class Interp(VirtualMachine):
         else:
             key = self._jac_scope.get_live_var(kid[1].token_text(), create_mode=True)
             val = self._jac_scope.get_live_var(kid[3].token_text(), create_mode=True)
-            source = self.run_expression(kid[5]).value
+            self.run_expression(kid[5])
+            source = self.pop().value
 
             lst = None
             if isinstance(source, dict):
@@ -347,7 +357,8 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         loops = 0
-        while self.run_expression(kid[1]).value:
+        self.run_expression(kid[1])
+        while self.pop().value:
             self._loop_ctrl = None
             self.run_code_block(kid[2])
             loops += 1
@@ -357,6 +368,7 @@ class Interp(VirtualMachine):
             if loops > self._loop_limit:
                 self.rt_error("Hit loop limit, breaking...", kid[0])
                 self._loop_ctrl = "break"
+            self.run_expression(kid[1])
         if self._loop_ctrl and self._loop_ctrl == "continue":
             self._loop_ctrl = None
 
@@ -379,7 +391,8 @@ class Interp(VirtualMachine):
         kid = self.set_cur_ast(jac_ast)
         passed = False
         try:
-            passed = self.run_expression(kid[1]).value
+            self.run_expression(kid[1])
+            passed = self.pop().value
         except Exception as e:
             e = self.jac_exception(e, jac_ast)
             raise Exception("Jac Assert Failed", kid[1].get_text(), e)
@@ -391,7 +404,8 @@ class Interp(VirtualMachine):
         destroy_action: KW_DESTROY expression SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_expression(kid[1])
+        self.run_expression(kid[1])
+        result = self.pop()
         if isinstance(result.value, Element):
             self.destroy_node_ids.add_obj(result.value)
         elif isinstance(result.value, JacSet):
@@ -406,12 +420,13 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[1].name == "COLON":
+            self.run_expression(kid[4])
             if kid[2].token_text() in ["status", "status_code"]:
-                self.report_status = self.run_expression(kid[4]).value
+                self.report_status = self.pop().value
             elif kid[2].token_text() == "custom":
-                self.report_custom = self.run_expression(kid[4]).value
+                self.report_custom = self.pop().value
             elif kid[2].token_text() == "error":
-                err = self.run_expression(kid[4]).value
+                err = self.pop().value
                 if isinstance(err, str):
                     self.runtime_errors.append(err)
                 else:
@@ -422,7 +437,8 @@ class Interp(VirtualMachine):
             else:
                 self.rt_error("Invalid report attribute to set", kid[2])
         else:
-            report = self.run_expression(kid[1]).wrap(serialize_mode=True)
+            self.run_expression(kid[1])
+            report = self.pop().wrap(serialize_mode=True)
             if not is_jsonable(report):
                 self.rt_error("Report not Json serializable", kid[0])
             self.report.append(copy(report))
@@ -432,39 +448,33 @@ class Interp(VirtualMachine):
         expression: connect (assignment | copy_assign | inc_assign)?;
         """
         try:
-
-            def check_can_write(val):
-                if val.ctx is None:
-                    self.rt_error("Cannot assign to this expression", kid[0])
-                    return False
-                return True
-
+            if self.attempt_bytecode(jac_ast):
+                return
             kid = self.set_cur_ast(jac_ast)
-
             if len(kid) == 1:
-                return self.run_rule(kid[0])
+                self.push(self.run_rule(kid[0]))
             else:
                 if kid[1].name == "assignment":
                     self._assign_mode = True
                     dest = self.run_rule(kid[0])
                     self._assign_mode = False
-                    if not check_can_write(dest):
-                        return dest
-                    return self.run_assignment(kid[1], dest=dest)
+                    if not dest.check_assignable(kid[0]):
+                        self.push(dest)
+                    self.push(self.run_assignment(kid[1], dest=dest))
                 elif kid[1].name == "copy_assign":
                     self._assign_mode = True
                     dest = self.run_rule(kid[0])
                     self._assign_mode = False
-                    if not check_can_write(dest):
-                        return dest
-                    return self.run_copy_assign(kid[1], dest=dest)
+                    if not dest.check_assignable(kid[0]):
+                        self.push(dest)
+                    self.push(self.run_copy_assign(kid[1], dest=dest))
                 elif kid[1].name == "inc_assign":
                     self._assign_mode = True
                     dest = self.run_rule(kid[0])
                     self._assign_mode = False
-                    if not check_can_write(dest):
-                        return dest
-                    return self.run_inc_assign(kid[1], dest=dest)
+                    if not dest.check_assignable(kid[0]):
+                        self.push(dest)
+                    self.push(self.run_inc_assign(kid[1], dest=dest))
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
 
@@ -473,8 +483,8 @@ class Interp(VirtualMachine):
         assignment: EQ expression;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_expression(kid[1])
-        dest.value = result.value
+        self.run_expression(kid[1])
+        dest.value = self.pop().value
         dest.write(jac_ast)
         return dest
 
@@ -483,7 +493,8 @@ class Interp(VirtualMachine):
         copy_assign: CPY_EQ expression;
         """
         kid = self.set_cur_ast(jac_ast)
-        src = self.run_expression(kid[1])
+        self.run_expression(kid[1])
+        src = self.pop()
         if not self.rt_check_type(dest.value, [Node, Edge], kid[1]):
             self.rt_error("':=' only applies to nodes and edges", kid[1])
             return dest
@@ -504,14 +515,15 @@ class Interp(VirtualMachine):
         inc_assign: (PEQ | MEQ | TEQ | DEQ) expression;
         """
         kid = self.set_cur_ast(jac_ast)
+        self.run_expression(kid[1])
         if kid[0].name == "PEQ":
-            dest.value = dest.value + self.run_expression(kid[1]).value
+            dest.value = dest.value + self.pop().value
         elif kid[0].name == "MEQ":
-            dest.value = dest.value - self.run_expression(kid[1]).value
+            dest.value = dest.value - self.pop().value
         elif kid[0].name == "TEQ":
-            dest.value = dest.value * self.run_expression(kid[1]).value
+            dest.value = dest.value * self.pop().value
         elif kid[0].name == "DEQ":
-            dest.value = dest.value / self.run_expression(kid[1]).value
+            dest.value = dest.value / self.pop().value
         dest.write(jac_ast)
         return dest
 
@@ -524,7 +536,8 @@ class Interp(VirtualMachine):
             return self.run_rule(kid[0])
         bret = self.run_rule(kid[0])
         base = bret.value
-        tret = self.run_expression(kid[-1])
+        self.run_expression(kid[-1])
+        tret = self.pop()
         target = tret.value
         self.rt_check_type(base, [Node, JacSet], kid[0])
         self.rt_check_type(target, [Node, JacSet], kid[-1])
@@ -762,7 +775,7 @@ class Interp(VirtualMachine):
             elif kid[0].name == "NAME":
                 self.load_variable(kid[0].token_text(), kid[0])
             elif kid[0].name == "LPAREN":
-                self.push(self.run_expression(kid[1]))
+                self.run_expression(kid[1])
             elif kid[0].name == "ability_op":
                 self.push(self.run_atom_trailer(jac_ast, None))
             elif kid[0].name == "atom":
@@ -1411,7 +1424,8 @@ class Interp(VirtualMachine):
             | LSQUARE expression COLON expression RSQUARE;
         """
         kid = self.set_cur_ast(jac_ast)
-        idx = self.run_expression(kid[1]).value
+        self.run_expression(kid[1])
+        idx = self.pop().value
         if (
             type(idx) == str
             and idx not in atom_res.value.keys()
@@ -1433,7 +1447,8 @@ class Interp(VirtualMachine):
                 self.rt_error("List index out of range", kid[1])
                 return atom_res
         else:
-            end = self.run_expression(kid[3]).value
+            self.run_expression(kid[3])
+            end = self.pop().value
             if not self.rt_check_type(idx, [int], kid[1]) or not self.rt_check_type(
                 end, [int], kid[3]
             ):
@@ -1465,9 +1480,11 @@ class Interp(VirtualMachine):
         kv_pair: STRING COLON expression;
         """
         kid = self.set_cur_ast(jac_ast)
-        key = self.run_expression(kid[0]).value
+        self.run_expression(kid[0])
+        key = self.pop().value
         if isinstance(key, str):
-            obj[key] = self.run_expression(kid[2]).value
+            self.run_expression(kid[2])
+            obj[key] = self.pop().value
         else:
             self.rt_error(f"Key is not str type : {type(key)}!", kid[0])
 
@@ -1497,7 +1514,8 @@ class Interp(VirtualMachine):
         spawn_edge: expression edge_ref;
         """
         kid = self.set_cur_ast(jac_ast)
-        loc = self.run_expression(kid[0]).value
+        self.run_expression(kid[0])
+        loc = self.pop().value
         if isinstance(loc, JacSet):
             edge_set = [self.run_edge_ref(kid[1], is_spawn=True) for _ in loc]
             loc = loc.obj_list()
@@ -1595,7 +1613,8 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         is_await = kid[1].name == "KW_SYNC" and bool(kid.pop(1))
-        location = self.run_expression(kid[0]).value
+        self.run_expression(kid[0])
+        location = self.pop().value
         if isinstance(location, Node):
             location = JacSet(in_list=[location])
         ret = []
@@ -1657,7 +1676,8 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         name = kid[0].token_text()
-        result = self.run_expression(kid[-1]).value
+        self.run_expression(kid[-1])
+        result = self.pop().value
         if isinstance(obj, dict):
             obj[name] = result
             return
@@ -1674,7 +1694,8 @@ class Interp(VirtualMachine):
         kid = self.set_cur_ast(jac_ast)
         name = kid[0].token_text()
         if name in obj.context.keys():
-            result = self.run_expression(kid[-1])
+            self.run_expression(kid[-1])
+            result = self.pop()
             self.run_cmp_op(kid[1], JacValue(self, ctx=obj, name=name), result)
             return self.pop().value
         else:
@@ -1768,6 +1789,7 @@ class Interp(VirtualMachine):
                 "cmp_op",
                 "compare",
                 "logical",
+                "expression",
             ]:
                 return self.pop()
             else:

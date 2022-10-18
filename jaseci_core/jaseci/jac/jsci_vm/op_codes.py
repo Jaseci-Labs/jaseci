@@ -18,7 +18,7 @@ class JsOp(IntEnum):
     OR = auto()
     LOAD_CONST = auto()  # [type, bytes, (val)] / [type, (val)] / [type=type, type]
     LOAD_VAR = auto()  # [bytes, (name)]
-    REPORT = auto()  # [type, bytes, (val)]
+    REPORT = auto()
     ACTION_CALL = auto()
     DEBUG_INFO = auto()  # [bytes, line, bytes, (jacfile)]
 
