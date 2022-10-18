@@ -60,9 +60,14 @@ class DisAsm(InstPtr):
         elif typ in [JsType.BOOL]:
             val = bool(self.offset(2))
             self._asm.append([self.cur_op(), typ.name, val])
-            self._ip += 2 + 1
+            self._ip += 1 + 1
 
     def dis_LOAD_VAR(self):  # noqa
+        name = from_bytes(str, self.offset(2, self.offset(1)))
+        self._asm.append([self.cur_op(), self.offset(1), name])
+        self._ip += 1 + self.offset(1)
+
+    def dis_CREATE_VAR(self):  # noqa
         name = from_bytes(str, self.offset(2, self.offset(1)))
         self._asm.append([self.cur_op(), self.offset(1), name])
         self._ip += 1 + self.offset(1)

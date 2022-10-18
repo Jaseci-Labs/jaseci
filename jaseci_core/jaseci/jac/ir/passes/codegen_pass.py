@@ -39,6 +39,7 @@ class CodeGenPass(IrPass):
         super().__init__(**kwargs)
         self.debug_info = debug_info
         self.cur_loc = None
+        self.create_var_mode = 0
 
     def emit(self, node, *items):
         if not has_bytecode(node):
@@ -73,6 +74,14 @@ class CodeGenPass(IrPass):
         # print("exiting", node)
         if hasattr(self, f"exit_{node.name}"):
             getattr(self, f"exit_{node.name}")(node)
+        if hasattr(node, "_create_flag"):
+            self.create_var_mode -= 1
+
+    def enter_expression(self, node):
+        kid = node.kid
+        if len(kid) > 1 and kid[-1].name == "assignment":
+            kid[-1]._create_flag = True
+            self.create_var_mode += 1
 
     def exit_expression(self, node):  # TODO: Incomplete
         kid = node.kid
@@ -84,13 +93,13 @@ class CodeGenPass(IrPass):
                 self.emit(node, JsOp.ASSIGN)
             elif len(kid) > 1 and kid[1].name == "copy_assign":
                 self.emit(node, JsOp.COPY_FIELDS)
-            elif len(kid) > 1 and kid[1].name == "inc_assign":
-                self.emit(node, JsOp.INCREMENT)
+            # elif len(kid) > 1 and kid[1].name == "inc_assign":
+            #     self.emit(node, JsOp.INCREMENT)
 
-    # def exit_assignment(self, node):
-    #     if is_bytecode_complete(node):
-    #         if has_bytecode(node.kid[-1]):
-    #             self.emit(node, node.kid[-1].bytecode)
+    def exit_assignment(self, node):
+        if is_bytecode_complete(node):
+            if has_bytecode(node.kid[-1]):
+                self.emit(node, node.kid[-1].bytecode)
 
     def exit_logical(self, node):
         if is_bytecode_complete(node):
@@ -189,7 +198,10 @@ class CodeGenPass(IrPass):
             self.emit(node, JsOp.LOAD_CONST, JsType.TYPE, JsType.NULL)
         elif kid[0].name == "NAME":
             name = kid[0].token_text()
-            self.emit(node, JsOp.LOAD_VAR, byte_length(name), to_bytes(name))
+            if self.create_var_mode:
+                self.emit(node, JsOp.CREATE_VAR, byte_length(name), to_bytes(name))
+            else:
+                self.emit(node, JsOp.LOAD_VAR, byte_length(name), to_bytes(name))
 
     def exit_any_type(self, node):
         kid = node.kid

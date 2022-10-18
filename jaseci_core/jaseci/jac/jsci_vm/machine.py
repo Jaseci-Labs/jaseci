@@ -33,12 +33,10 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         InstPtr.__init__(self)
         MachineState.__init__(self, **kwargs)
         self._op = self.build_op_call()
-        self._cur_loc = None
 
     def reset_vm(self):
         Stack.__init__(self)
         InstPtr.__init__(self)
-        self._cur_loc = None
         self._op = self.build_op_call()
 
     def build_op_call(self):
@@ -125,19 +123,11 @@ class VirtualMachine(MachineState, Stack, InstPtr):
 
     def op_ASSIGN(self):  # noqa
         dest = self.pop()
-        dest.value = self.pop().value
-        dest.write(None)
-        self.push(dest)
+        self.perform_assignment(dest, self.pop())
 
     def op_COPY_FIELDS(self):  # noqa
-        val = self.pop()
-        val.value = val.value or self.pop().value
-        self.push(val)
-
-    def op_INCREMENT(self):  # noqa
-        val = self.pop()
-        val.value = val.value or self.pop().value
-        self.push(val)
+        dest = self.pop()
+        self.perform_copy_fields(dest, self.pop())
 
     def op_LOAD_CONST(self):  # noqa
         typ = JsType(self.offset(1))
@@ -153,12 +143,17 @@ class VirtualMachine(MachineState, Stack, InstPtr):
             self._ip += 1 + 8
         elif typ in [JsType.BOOL]:
             val = bool(self.offset(2))
-            self._ip += 2 + 1
+            self._ip += 1 + 1
         self.push(JacValue(self, value=val))
 
     def op_LOAD_VAR(self):  # noqa
         name = from_bytes(str, self.offset(2, self.offset(1)))
         self.load_variable(name)
+        self._ip += 1 + self.offset(1)
+
+    def op_CREATE_VAR(self):  # noqa
+        name = from_bytes(str, self.offset(2, self.offset(1)))
+        self.load_variable(name, assign_mode=True)
         self._ip += 1 + self.offset(1)
 
     def op_REPORT(self):  # noqa
@@ -173,7 +168,9 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         f_offset = byte_len_l + 2
         byte_len_f = self.offset(f_offset)
         jacfile = (
-            from_bytes(str, self.offset(f_offset + 1, byte_len_f)) if byte_len_f else 0
+            from_bytes(str, self.offset(f_offset + 1, byte_len_f))
+            if byte_len_f
+            else self._cur_jac_ast.loc[2]
         )
-        self._cur_loc = [line, jacfile]
         self._ip += 2 + byte_len_l + byte_len_f
+        self._cur_jac_ast.loc = [line, 0, jacfile, {}]

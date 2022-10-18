@@ -12,7 +12,7 @@ class TestCodegen(CoreTest):
             self.mast,
             ["sentinel_register", {"code": self.load_jac("simple.jac")}],
         )
-
+        # self.log(ret)
         ret = self.call(self.mast, ["walker_run", {"name": "most_basic"}])
         # self.log(ret)
         # from jaseci.jac.ir.passes import PrinterPass
@@ -20,3 +20,4 @@ class TestCodegen(CoreTest):
         self.assertEqual(ret["report"][0], 5004)
         self.assertEqual(ret["report"][1], 1)
         self.assertEqual(ret["report"][2], "ab")
+        self.assertEqual(ret["report"][3], {"base": 5, "test": 5})

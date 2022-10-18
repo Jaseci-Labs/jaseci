@@ -458,9 +458,8 @@ class Interp(VirtualMachine):
                     self._assign_mode = True
                     dest = self.run_rule(kid[0])
                     self._assign_mode = False
-                    if not dest.check_assignable(kid[0]):
-                        self.push(dest)
-                    self.push(self.run_assignment(kid[1], dest=dest))
+                    self.run_assignment(kid[1])
+                    self.perform_assignment(dest, self.pop(), kid[0])
                 elif kid[1].name == "copy_assign":
                     self._assign_mode = True
                     dest = self.run_rule(kid[0])
@@ -478,42 +477,31 @@ class Interp(VirtualMachine):
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
 
-    def run_assignment(self, jac_ast, dest):
+    def run_assignment(self, jac_ast):
         """
         assignment: EQ expression;
         """
+        if self.attempt_bytecode(jac_ast):
+            return
         kid = self.set_cur_ast(jac_ast)
         self.run_expression(kid[1])
-        dest.value = self.pop().value
-        dest.write(jac_ast)
-        return dest
 
     def run_copy_assign(self, jac_ast, dest):
         """
         copy_assign: CPY_EQ expression;
         """
+        if self.attempt_bytecode(jac_ast):
+            return
         kid = self.set_cur_ast(jac_ast)
         self.run_expression(kid[1])
-        src = self.pop()
-        if not self.rt_check_type(dest.value, [Node, Edge], kid[1]):
-            self.rt_error("':=' only applies to nodes and edges", kid[1])
-            return dest
-        if dest.value.name != src.value.name:
-            self.rt_error(
-                f"Node/edge arch {dest.value} don't " f"match {src.value}!", kid[1]
-            )
-            return dest
-        for i in src.value.context.keys():
-            if i in dest.value.context.keys():
-                JacValue(
-                    self, ctx=dest.value, name=i, value=src.value.context[i]
-                ).write(jac_ast)
-        return dest
+        self.perform_copy_fields(dest, self.pop(), kid[0])
 
     def run_inc_assign(self, jac_ast, dest):
         """
         inc_assign: (PEQ | MEQ | TEQ | DEQ) expression;
         """
+        if self.attempt_bytecode(jac_ast):
+            return
         kid = self.set_cur_ast(jac_ast)
         self.run_expression(kid[1])
         if kid[0].name == "PEQ":
@@ -1760,14 +1748,6 @@ class Interp(VirtualMachine):
             self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
         self.inherit_runtime_state(m)
 
-    def load_variable(self, name, jac_ast=None):
-        val = self._jac_scope.get_live_var(name, create_mode=self._assign_mode)
-        if val is None:
-            self.rt_error(f"Variable not defined - {name}", jac_ast)
-            self.push(JacValue(self))
-        else:
-            self.push(val)
-
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
         try:
@@ -1784,6 +1764,9 @@ class Interp(VirtualMachine):
                 "compare",
                 "logical",
                 "expression",
+                "assignment",
+                "copy_assign",
+                "inc_assign",
             ]:
                 return self.pop()
             else:
