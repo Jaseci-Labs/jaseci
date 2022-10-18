@@ -42,7 +42,7 @@ node Component {
     }
     
 
-    can register with register_page exit {
+    can pre_render with pre_renderer exit {
         loc['name'] = name;
         loc['component'] = c_type;
         loc['sections'] = {"children": []};
@@ -256,7 +256,7 @@ node Hero:Component {
 
 
 node Input:Component {
-    has c_type = "Input";
+    has c_type = "Inputbox";
     has label;
     has altLabel;
     // has type;

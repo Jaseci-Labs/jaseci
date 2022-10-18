@@ -1,3 +1,5 @@
+
+
 walker get_props {
     has anchor props = {};
 
@@ -10,27 +12,28 @@ walker get_props {
 }
 
 walker pre_renderer {
-    has payload={};
+    has anchor payload={};
+
+    page {
+        take -->[0];
+    }
+    
 
     Component {
         if(here.loc==null): here.loc=payload;
         take -->;
     }
 
-    with exit {
-        report payload;
-    }
+    // with exit {
+    //     report payload;
+    // }
 }
 
+walker create_page {
+    has anchor page;
+    has page_graph;
 
-// walker init {
-//     // Spawn main graph at root
-//     root {
-//         spawn here -[section(name="root")]-> graph::my_site;
-//         spawn -->[0] walker::pre_renderer;
-//     }
-// }
-
-
+    page = spawn node::page --> page_graph;
+}
 
 
