@@ -1,4 +1,4 @@
-from jaseci.jac.jsci_vm.op_codes import JsOp, JsAttr, type_map
+from jaseci.jac.jsci_vm.op_codes import JsCmp, JsOp, JsType, type_map, cmp_op_map
 from jaseci.jac.machine.machine_state import MachineState
 from jaseci.jac.jsci_vm.inst_ptr import InstPtr, from_bytes
 from jaseci.jac.machine.jac_value import JacValue
@@ -50,12 +50,16 @@ class VirtualMachine(MachineState, Stack, InstPtr):
     def run_bytecode(self, bytecode):
         self.reset_vm()
         self._bytecode = bytearray(bytecode)
-        while self._ip < len(self._bytecode):
-            self._op[self._bytecode[self._ip]]()
-            self._ip += 1
+        try:
+            while self._ip < len(self._bytecode):
+                self._op[self._bytecode[self._ip]]()
+                self._ip += 1
+        except Exception as e:
+            self.disassemble(print_out=False, log_out=True)
+            raise e
 
-    def disassemble(self):
-        DisAsm().disassemble(self._bytecode)
+    def disassemble(self, print_out=True, log_out=False):
+        return DisAsm().disassemble(self._bytecode, print_out, log_out)
 
     def op_PUSH_SCOPE(self):  # noqa
         pass
@@ -64,28 +68,82 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         pass
 
     def op_ADD(self):  # noqa
-        self.push(self.pop() + self.pop())
+        val = self.pop()
+        val.value = val.value + self.pop().value
+        self.push(val)
 
-    def op_SUB(self):  # noqa
-        rhs = self.pop()
-        self.push(self.pop() - rhs)
+    def op_SUBTRACT(self):  # noqa
+        val = self.pop()
+        val.value = val.value - self.pop().value
+        self.push(val)
+
+    def op_MULTIPLY(self):  # noqa
+        val = self.pop()
+        val.value = val.value * self.pop().value
+        self.push(val)
+
+    def op_DIVIDE(self):  # noqa
+        val = self.pop()
+        val.value = val.value / self.pop().value
+        self.push(val)
+
+    def op_MODULO(self):  # noqa
+        val = self.pop()
+        val.value = val.value % self.pop().value
+        self.push(val)
+
+    def op_POWER(self):  # noqa
+        val = self.pop()
+        val.value = val.value ** self.pop().value
+        self.push(val)
+
+    def op_NEGATE(self):  # noqa
+        val = self.pop()
+        val.value = -(val.value)
+        self.push(val)
+
+    def op_COMPARE(self):  # noqa
+        ctyp = JsCmp(self.offset(1))
+        val = self.pop()
+        val.value = (
+            cmp_op_map[ctyp](val.value, self.pop().value)
+            if ctyp != JsCmp.NOT
+            else cmp_op_map[ctyp](val.value)
+        )
+        self.push(val)
+        self._ip += 1
+
+    def op_AND(self):  # noqa
+        val = self.pop()
+        val.value = val.value and self.pop().value
+        self.push(val)
+
+    def op_OR(self):  # noqa
+        val = self.pop()
+        val.value = val.value or self.pop().value
+        self.push(val)
 
     def op_LOAD_CONST(self):  # noqa
-        typ = JsAttr(self.offset(1))
+        typ = JsType(self.offset(1))
         operand2 = self.offset(2)
-        if typ in [JsAttr.TYPE]:
-            val = type_map[JsAttr(operand2)]
+        if typ in [JsType.TYPE]:
+            val = type_map[JsType(operand2)]
             self._ip += 2
-        elif typ in [JsAttr.INT, JsAttr.STRING]:
+        elif typ in [JsType.INT, JsType.STRING]:
             val = from_bytes(type_map[typ], self.offset(3, operand2))
             self._ip += 2 + operand2
-        elif typ in [JsAttr.FLOAT]:
+        elif typ in [JsType.FLOAT]:
             val = from_bytes(float, self.offset(2, 8))
-            self._ip += 2 + 8
-        elif typ in [JsAttr.BOOL]:
+            self._ip += 1 + 8
+        elif typ in [JsType.BOOL]:
             val = bool(self.offset(2))
             self._ip += 2 + 1
         self.push(JacValue(self, value=val))
+
+    def op_LOAD_VAR(self):  # noqa
+        name = from_bytes(str, self.offset(2, self.offset(1)))
+        self.load_variable(name)
+        self._ip += 1 + self.offset(1)
 
     def op_REPORT(self):  # noqa
         self.report.append(self.pop())
@@ -96,7 +154,10 @@ class VirtualMachine(MachineState, Stack, InstPtr):
     def op_DEBUG_INFO(self):  # noqa
         byte_len_l = self.offset(1)
         line = from_bytes(int, self.offset(2, byte_len_l))
-        byte_len_f = self.offset(3)
-        jacfile = from_bytes(str, self.offset(4, byte_len_f)) if byte_len_f else 0
+        f_offset = byte_len_l + 2
+        byte_len_f = self.offset(f_offset)
+        jacfile = (
+            from_bytes(str, self.offset(f_offset + 1, byte_len_f)) if byte_len_f else 0
+        )
         self._cur_loc = [line, jacfile]
         self._ip += 2 + byte_len_l + byte_len_f
