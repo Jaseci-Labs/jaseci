@@ -85,8 +85,8 @@ export class JscAuthForm {
         {this.mode === 'signup' && this.hideNameField !== 'true' && (
           <jsc-inputbox onValueChanged={e => (this.fullName = e.detail)} label={'Full Name'} placeholder={'Enter your full name'}></jsc-inputbox>
         )}
-        <jsc-inputbox onValueChanged={e => (this.email = e.detail)} label={'Email'} placeholder={'Enter your email'}></jsc-inputbox>
-        <jsc-inputbox onValueChanged={e => (this.password = e.detail)} label={'Password'} type="password" placeholder={'Enter your password'}></jsc-inputbox>
+        <jsc-inputbox fullwidth="true" onValueChanged={e => (this.email = e.detail)} label={'Email'} placeholder={'Enter your email'}></jsc-inputbox>
+        <jsc-inputbox fullwidth="true" onValueChanged={e => (this.password = e.detail)} label={'Password'} type="password" placeholder={'Enter your password'}></jsc-inputbox>
         <div>
           <jsc-button label={this.mode === 'signup' ? 'Sign Up' : 'Login'} onClick={() => (this.mode === 'signup' ? this.signUp() : this.logIn())}></jsc-button>
         </div>

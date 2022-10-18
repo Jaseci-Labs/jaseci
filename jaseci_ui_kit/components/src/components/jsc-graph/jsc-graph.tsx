@@ -1,5 +1,10 @@
 import { Component, Element, h, Prop, State, Watch } from '@stencil/core';
 import * as vis from 'vis-network';
+<<<<<<< Updated upstream
+=======
+import * as visData from 'vis-data';
+import { JscCheckboxCustomEvent } from '../../components';
+>>>>>>> Stashed changes
 
 type EndpointBody = {
   gph?: string | null;
@@ -21,6 +26,11 @@ export class JscGraph {
   @Prop() token: string = '5eed3f010f323cd8bb6d58c14bacec2274156e82ef913b4be96e2d9d0bbffa49';
   @Prop() graphId: string = 'urn:uuid:58562489-7910-4d5a-88ec-8f4d8cd7bb22';
   @Prop() serverUrl: string = 'http://localhost:8000';
+<<<<<<< Updated upstream
+=======
+  @Prop() onFocus: 'expand' | 'isolate' = 'expand';
+  @Prop() height = "100vh";
+>>>>>>> Stashed changes
 
   // viewed node
   @State() nd = '';
@@ -174,13 +184,28 @@ export class JscGraph {
 
   render() {
     return (
-      <div style={{ height: '500px', width: 'auto', position: 'relative' }}>
-        <div
+      <div style={{ height: this.height, width: 'auto', position: 'relative' }} data-theme="greenheart">
+        {!localStorage.getItem("token") ?
+          <div class="w-1/3 mx-auto my-20">
+          <jsc-card title="Graph Viewer - Login">
+            <jsc-auth-form  slot="children" serverURL={this.serverUrl} mode='login' redirectURL={window.location.toString()}></jsc-auth-form>
+            </jsc-card>
+            </div>
+           :
+      <div>
+      <div
           style={{
+<<<<<<< Updated upstream
             height: '160px',
             width: '240px',
             borderRadius: '4px',
             padding: '20px 32px',
+=======
+            height: '260px',
+            width: '280px',
+            borderRadius: '4px',
+            padding: '16px',
+>>>>>>> Stashed changes
             top: '20px',
             right: '20px',
             position: 'absolute',
@@ -192,16 +217,36 @@ export class JscGraph {
             overflowX: 'hidden',
           }}
         >
+<<<<<<< Updated upstream
           <p style={{ fontWeight: '500' }}>Context</p>
           <jsc-collapse name="Hello World!">
             <p>Hello</p>
           </jsc-collapse>
           {this.renderContext()}
+=======
+          <div tabindex="0" class="collapse collapse-plus border border-base-300 bg-base-100 rounded-box">
+            <input type="checkbox" defaultChecked={true} />
+            <div class="collapse-title text-md font-medium">Context</div>
+            <div class="collapse-content">{this.renderContext()}</div>
+              </div>
+              
+              <div tabindex="0" class="collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2">
+            <input type="checkbox" defaultChecked={true} />
+            <div class="collapse-title text-md font-medium">Behaviour</div>
+                <div class="collapse-content">
+                  <jsc-checkbox label="Expand nodes on click" size="sm" value={String(this.onFocus === "expand")} onValueChanged={(event: JscCheckboxCustomEvent<string>) => {
+                    event.detail == "true" ? this.onFocus = "expand" : this.onFocus = "isolate"
+                  }}></jsc-checkbox>
+            </div>
+          </div>
+>>>>>>> Stashed changes
         </div>
         <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
           {this.nd && <jsc-button label={'View Root'} onClick={() => (this.nd = '')}></jsc-button>}
         </div>
-        <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: '100%' }}></div>
+        <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: this.height }}></div>
+      </div>      
+        }
       </div>
     );
   }

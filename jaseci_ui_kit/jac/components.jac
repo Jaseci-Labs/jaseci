@@ -258,7 +258,7 @@ node Hero:Component {
 
 
 node Input:Component {
-    has c_type = "Input";
+    has c_type = "Inputbox";
     has label;
     has altLabel;
     // has type;
