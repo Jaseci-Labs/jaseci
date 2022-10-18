@@ -79,6 +79,8 @@ class MachineState:
         for i in self.yielded_walkers_ids.obj_list():
             i.destroy()
 
+    # Core State Management ##################
+
     # Helper Functions ##################
 
     def inherit_runtime_state(self, mach):

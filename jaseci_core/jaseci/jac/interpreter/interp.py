@@ -1426,12 +1426,6 @@ class Interp(VirtualMachine):
         kid = self.set_cur_ast(jac_ast)
         self.run_expression(kid[1])
         idx = self.pop().value
-        if (
-            type(idx) == str
-            and idx not in atom_res.value.keys()
-            and not self._assign_mode
-        ):
-            self.rt_error(f"Key {idx} not found in object/dict.", kid[1])
         if kid[2].name == "RSQUARE":
             if not self.rt_check_type(idx, [int, str], kid[1]):
                 self.rt_error(
