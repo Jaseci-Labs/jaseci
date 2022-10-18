@@ -9,7 +9,7 @@ class DisAsm(InstPtr):
         InstPtr.__init__(self)
         self._asm = []
 
-    def disassemble(self, bytecode, print_out=True, log_out=False):
+    def disassemble(self, bytecode, to_screen=True, log_out=False):
         if type(bytecode) == str:
             bytecode = b64decode(bytecode.encode())
         self._bytecode = bytearray(bytecode)
@@ -21,12 +21,12 @@ class DisAsm(InstPtr):
                 else:
                     self._asm.append([op.name])
                 self._ip += 1
-            self.print() if print_out else None
+            self.print() if to_screen else None
             self.log() if log_out else None
             return self._asm
         except Exception:
             logger.error(f"Disassembly Failed on Following Bytecode: {self._bytecode}")
-            self.print() if print_out else None
+            self.print() if to_screen else None
             self.log() if log_out else None
 
     def print(self):

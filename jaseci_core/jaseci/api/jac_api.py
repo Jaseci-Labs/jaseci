@@ -42,6 +42,30 @@ class JacApi:
                 return ret
 
     @Interface.cli_api(cli_args=["file"])
+    def jac_disas(self, file: str):
+        """
+        Command line tooling for running all test in both .jac code files
+        and .jir executables
+        """
+        filename, dir = self.check_for_file(file)
+        is_jir = file.endswith(".jir")
+        faux = self.faux_master()
+        with open(file, "r") as file:
+            if is_jir:
+                faux.sentinel_register(name=filename)
+                ret = faux.sentinel_set(
+                    snt=faux.active_snt(), code=file.read(), mode="ir"
+                )
+                faux.active_snt().print_ir()
+            else:
+                ret = faux.sentinel_register(
+                    code=file.read(), code_dir=dir, name=filename, auto_run=""
+                )
+                faux.active_snt().print_ir()
+            if "success" in ret and not ret["success"]:
+                return ret
+
+    @Interface.cli_api(cli_args=["file"])
     def jac_test(self, file: str, detailed: bool = False):
         """
         Command line tooling for running all test in both .jac code files
