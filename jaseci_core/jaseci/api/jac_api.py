@@ -19,11 +19,7 @@ class JacApi:
         """
         Command line tooling for building executable jac ir
         """
-        if not os.path.isfile(file):
-            ret = "File does not exsist!"
-            return ret
-        filename = os.path.basename(file)
-        dir = os.path.dirname(os.path.realpath(file))
+        filename, dir = self.check_for_file(file)
         if not len(out):
             if file.endswith(".jac"):
                 out = file.replace(".jac", ".jir")
@@ -51,11 +47,7 @@ class JacApi:
         Command line tooling for running all test in both .jac code files
         and .jir executables
         """
-        if not os.path.isfile(file):
-            ret = "File does not exsist!"
-            return ret
-        filename = os.path.basename(file)
-        dir = os.path.dirname(os.path.realpath(file))
+        filename, dir = self.check_for_file(file)
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
         with open(file, "r") as file:
@@ -78,11 +70,7 @@ class JacApi:
         Command line tooling for running all test in both .jac code files
         and .jir executables
         """
-        if not os.path.isfile(file):
-            ret = "File does not exsist!"
-            return ret
-        filename = os.path.basename(file)
-        dir = os.path.dirname(os.path.realpath(file))
+        filename, dir = self.check_for_file(file)
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
         with open(file, "r") as file:
@@ -111,11 +99,7 @@ class JacApi:
         Command line tooling for a walker then output graph in both .jac code
         files and .jir executables
         """
-        if not os.path.isfile(file):
-            ret = "File does not exsist!"
-            return ret
-        filename = os.path.basename(file)
-        dir = os.path.dirname(os.path.realpath(file))
+        filename, dir = self.check_for_file(file)
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
         with open(file, "r") as file:
@@ -141,3 +125,11 @@ class JacApi:
         faux = MetaService().build_super_master()
         faux._h.mem["global"] = deepcopy(self._h.mem["global"])
         return faux
+
+    def check_for_file(self, file):
+        if not os.path.isfile(file):
+            ret = "File does not exsist!"
+            return ret
+        filename = os.path.basename(file)
+        dir = os.path.dirname(os.path.realpath(file))
+        return filename, dir
