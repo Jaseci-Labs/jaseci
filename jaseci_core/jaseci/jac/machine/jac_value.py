@@ -130,7 +130,9 @@ class JacValue:
     A reference to a variable in context dict that is common for elements
     """
 
-    def __init__(self, parent, value=None, ctx=None, name=None, end=None):
+    def __init__(
+        self, parent, value=None, ctx=None, name=None, end=None, create_mode=False
+    ):
         """
         Abstraction of all Jac types, ctx and name serve as obj[key/idx]
         end is for idx ranges for list slices
@@ -140,9 +142,9 @@ class JacValue:
         self.is_element = False
         self.name = name
         self.end = end
-        self.value = self.setup_value(value)
+        self.value = self.setup_value(value, create_mode=create_mode)
 
-    def setup_value(self, value):
+    def setup_value(self, value, create_mode):
         if isinstance(self.ctx, Element):
             self.is_element = self.ctx
             if self.parent._assign_mode:
@@ -155,7 +157,7 @@ class JacValue:
                 return self.ctx[self.name : self.end]
             elif type(self.name) == int or self.name in self.ctx.keys():
                 return self.ctx[self.name]
-            elif not self.parent._assign_mode:
+            elif not self.parent._assign_mode and not create_mode:
                 self.parent.rt_error(f"Key {self.name} not found in object/dict.")
         else:
             return None

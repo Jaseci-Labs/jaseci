@@ -58,9 +58,9 @@ class Interp(VirtualMachine):
             obj[var_name] = var_val
         # Runs only once for walkers
         elif var_name not in obj.context.keys() or obj.j_type != "walker":
-            JacValue(self, ctx=obj, name=var_name, value=var_val).write(
-                kid[0], force=True
-            )
+            JacValue(
+                self, ctx=obj, name=var_name, value=var_val, create_mode=True
+            ).write(kid[0], force=True)
 
     def run_can_stmt(self, jac_ast, obj):
         """

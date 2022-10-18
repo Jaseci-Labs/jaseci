@@ -15,4 +15,3 @@ walker most_basic {
     a := b;
     report a.context;
 }
-
