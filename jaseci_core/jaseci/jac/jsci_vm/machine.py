@@ -123,6 +123,22 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         val.value = val.value or self.pop().value
         self.push(val)
 
+    def op_ASSIGN(self):  # noqa
+        dest = self.pop()
+        dest.value = self.pop().value
+        dest.write(None)
+        self.push(dest)
+
+    def op_COPY_FIELDS(self):  # noqa
+        val = self.pop()
+        val.value = val.value or self.pop().value
+        self.push(val)
+
+    def op_INCREMENT(self):  # noqa
+        val = self.pop()
+        val.value = val.value or self.pop().value
+        self.push(val)
+
     def op_LOAD_CONST(self):  # noqa
         typ = JsType(self.offset(1))
         operand2 = self.offset(2)

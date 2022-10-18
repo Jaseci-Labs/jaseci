@@ -74,11 +74,23 @@ class CodeGenPass(IrPass):
         if hasattr(self, f"exit_{node.name}"):
             getattr(self, f"exit_{node.name}")(node)
 
-    def exit_expression(self, node):
+    def exit_expression(self, node):  # TODO: Incomplete
+        kid = node.kid
         if is_bytecode_complete(node):
             for i in reversed(node.kid):
                 if has_bytecode(i):
                     self.emit(node, i.bytecode)
+            if len(kid) > 1 and kid[1].name == "assignment":
+                self.emit(node, JsOp.ASSIGN)
+            elif len(kid) > 1 and kid[1].name == "copy_assign":
+                self.emit(node, JsOp.COPY_FIELDS)
+            elif len(kid) > 1 and kid[1].name == "inc_assign":
+                self.emit(node, JsOp.INCREMENT)
+
+    # def exit_assignment(self, node):
+    #     if is_bytecode_complete(node):
+    #         if has_bytecode(node.kid[-1]):
+    #             self.emit(node, node.kid[-1].bytecode)
 
     def exit_logical(self, node):
         if is_bytecode_complete(node):

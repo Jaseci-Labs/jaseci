@@ -16,6 +16,9 @@ class JsOp(IntEnum):
     COMPARE = auto()
     AND = auto()
     OR = auto()
+    ASSIGN = auto()
+    COPY_FIELDS = auto()
+    INCREMENT = auto()
     LOAD_CONST = auto()  # [type, bytes, (val)] / [type, (val)] / [type=type, type]
     LOAD_VAR = auto()  # [bytes, (name)]
     REPORT = auto()
