@@ -464,9 +464,8 @@ class Interp(VirtualMachine):
                     self._assign_mode = True
                     dest = self.run_rule(kid[0])
                     self._assign_mode = False
-                    if not dest.check_assignable(kid[0]):
-                        self.push(dest)
-                    self.push(self.run_copy_assign(kid[1], dest=dest))
+                    self.run_copy_assign(kid[1])
+                    self.perform_copy_fields(dest, self.pop(), kid[0])
                 elif kid[1].name == "inc_assign":
                     self._assign_mode = True
                     dest = self.run_rule(kid[0])
@@ -486,7 +485,7 @@ class Interp(VirtualMachine):
         kid = self.set_cur_ast(jac_ast)
         self.run_expression(kid[1])
 
-    def run_copy_assign(self, jac_ast, dest):
+    def run_copy_assign(self, jac_ast):
         """
         copy_assign: CPY_EQ expression;
         """
@@ -494,7 +493,6 @@ class Interp(VirtualMachine):
             return
         kid = self.set_cur_ast(jac_ast)
         self.run_expression(kid[1])
-        self.perform_copy_fields(dest, self.pop(), kid[0])
 
     def run_inc_assign(self, jac_ast, dest):
         """

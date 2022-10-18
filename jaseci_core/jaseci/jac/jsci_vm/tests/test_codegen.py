@@ -21,3 +21,4 @@ class TestCodegen(CoreTest):
         self.assertEqual(ret["report"][1], 1)
         self.assertEqual(ret["report"][2], "ab")
         self.assertEqual(ret["report"][3], {"base": 5, "test": 5})
+        self.assertEqual(ret["report"][4], {"a": 3, "b": 55, "c": 311})
