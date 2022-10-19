@@ -25,7 +25,7 @@ data:
     curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.21/mdbook-v0.4.21-x86_64-unknown-linux-gnu.tar.gz | tar -xz  --directory=/usr/bin
     python gen_mdbook.py
     cd ../mdbook
-    mdbook serve -p 80 &
+    mdbook serve -n 0.0.0.0 -p 80 &
     cd -
     while true; do
     git stash
