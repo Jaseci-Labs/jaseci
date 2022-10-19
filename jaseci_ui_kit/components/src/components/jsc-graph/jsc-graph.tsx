@@ -22,7 +22,8 @@ export class JscGraph {
   @Prop() token: string = '5eed3f010f323cd8bb6d58c14bacec2274156e82ef913b4be96e2d9d0bbffa49';
   @Prop() graphId: string = 'urn:uuid:58562489-7910-4d5a-88ec-8f4d8cd7bb22';
   @Prop() serverUrl: string = 'http://localhost:8000';
-  @Prop() onFocus: 'expand' | 'isolate' = 'isolate';
+  @Prop() onFocus: 'expand' | 'isolate' = 'expand';
+  @Prop() height = "100vh";
 
   // viewed node
   @State() nd = 'urn:uuid:153846bc-86ec-4068-8349-ec4c500241d9';
@@ -241,7 +242,7 @@ export class JscGraph {
             height: '260px',
             width: '240px',
             borderRadius: '4px',
-            padding: '16px 4px',
+            padding: '16px',
             top: '20px',
             right: '20px',
             position: 'absolute',
