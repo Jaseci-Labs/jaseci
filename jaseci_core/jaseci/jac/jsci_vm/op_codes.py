@@ -18,12 +18,12 @@ class JsOp(IntEnum):
     OR = auto()
     ASSIGN = auto()
     COPY_FIELDS = auto()
+    REPORT = auto()
+    ACTION_CALL = auto()
     INCREMENT = auto()  # [type]
     LOAD_CONST = auto()  # [type, bytes, (val)] / [type, (val)] / [type=type, type]
     LOAD_VAR = auto()  # [bytes, (name)]
     CREATE_VAR = auto()  # [bytes, (name)]
-    REPORT = auto()
-    ACTION_CALL = auto()
     DEBUG_INFO = auto()  # [bytes, line, bytes, (jacfile)]
 
 
