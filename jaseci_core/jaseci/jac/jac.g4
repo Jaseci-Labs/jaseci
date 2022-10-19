@@ -35,7 +35,7 @@ global_var:
 	KW_GLOBAL NAME EQ expression (COMMA NAME EQ expression)* SEMI;
 
 architype:
-	KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
+	KW_NODE NAME (COLON NAME)* attr_block
 	| KW_EDGE NAME (COLON NAME)* attr_block
 	| KW_TYPE NAME struct_block
 	| KW_GRAPH NAME graph_block
@@ -69,15 +69,11 @@ struct_block: LBRACE (has_stmt)* RBRACE | COLON has_stmt | SEMI;
 
 can_block: (can_stmt)*;
 
-graph_block: graph_block_spawn | graph_block_dot;
+graph_block: graph_block_spawn;
 
 graph_block_spawn:
 	LBRACE has_root can_block KW_SPAWN code_block RBRACE
 	| COLON has_root can_block KW_SPAWN code_block SEMI;
-
-graph_block_dot:
-	LBRACE has_root dot_graph RBRACE
-	| COLON has_root dot_graph SEMI;
 
 has_root: KW_HAS KW_ANCHOR NAME SEMI;
 
@@ -334,48 +330,6 @@ any_type:
 	| KW_EDGE
 	| KW_TYPE;
 
-/* DOT grammar below */
-dot_graph:
-	KW_STRICT? (KW_GRAPH | KW_DIGRAPH) dot_id? '{' dot_stmt_list '}';
-
-dot_stmt_list: ( dot_stmt ';'?)*;
-
-dot_stmt:
-	dot_node_stmt
-	| dot_edge_stmt
-	| dot_attr_stmt
-	| dot_id '=' dot_id
-	| dot_subgraph;
-
-dot_attr_stmt: ( KW_GRAPH | KW_NODE | KW_EDGE) dot_attr_list;
-
-dot_attr_list: ( '[' dot_a_list? ']')+;
-
-dot_a_list: ( dot_id ( '=' dot_id)? ','?)+;
-
-dot_edge_stmt: (dot_node_id | dot_subgraph) dot_edgeRHS dot_attr_list?;
-
-dot_edgeRHS: ( dot_edgeop ( dot_node_id | dot_subgraph))+;
-
-dot_edgeop: '->' | '--';
-
-dot_node_stmt: dot_node_id dot_attr_list?;
-
-dot_node_id: dot_id dot_port?;
-
-dot_port: ':' dot_id ( ':' dot_id)?;
-
-dot_subgraph: ( KW_SUBGRAPH dot_id?)? '{' dot_stmt_list '}';
-
-dot_id:
-	NAME
-	| STRING
-	| INT
-	| FLOAT
-	| KW_GRAPH
-	| KW_NODE
-	| KW_EDGE;
-
 /* Lexer rules */
 TYP_STRING: 'str';
 TYP_INT: 'int';
@@ -385,9 +339,6 @@ TYP_DICT: 'dict';
 TYP_BOOL: 'bool';
 KW_TYPE: 'type';
 KW_GRAPH: 'graph';
-KW_STRICT: 'strict';
-KW_DIGRAPH: 'digraph';
-KW_SUBGRAPH: 'subgraph';
 KW_NODE: 'node';
 KW_IGNORE: 'ignore';
 KW_TAKE: 'take';
