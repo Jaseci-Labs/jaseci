@@ -21,9 +21,9 @@ export class JscGraph {
   @Prop({ mutable: true }) events: string;
   @Prop() token: string = '5eed3f010f323cd8bb6d58c14bacec2274156e82ef913b4be96e2d9d0bbffa49';
   @Prop() graphId: string = 'urn:uuid:58562489-7910-4d5a-88ec-8f4d8cd7bb22';
-  @Prop() serverUrl: string = 'http://localhost:8000';
+  @Prop() serverUrl: string = 'https://wild-adults-send-181-41-125-103.loca.lt';
   @Prop() onFocus: 'expand' | 'isolate' = 'expand';
-  @Prop() height = "100vh";
+  @Prop() height = '100vh';
 
   // viewed node
   @State() nd = 'urn:uuid:153846bc-86ec-4068-8349-ec4c500241d9';
@@ -97,9 +97,8 @@ export class JscGraph {
 
         // update view when viewing the full graph
         if (this.network) {
-          this.network.setData({edges: this.edges as any, nodes: this.nodes as any})
+          this.network.setData({ edges: this.edges as any, nodes: this.nodes as any });
         }
-        
       }
 
       if (!this.network) {
@@ -194,7 +193,6 @@ export class JscGraph {
     } catch (err) {
       console.log(err);
     }
-    
 
     this.network.on('click', params => {
       this.handleNetworkClick(this.network, params);
@@ -209,10 +207,8 @@ export class JscGraph {
       });
 
       this.nd = node.toString();
-      
-      console.log({ nd: this.nd });
 
-      
+      console.log({ nd: this.nd });
     });
 
     this.network.on('oncontext', params => {
@@ -259,9 +255,25 @@ export class JscGraph {
             <div class="collapse-title text-md font-medium">Context</div>
             <div class="collapse-content">{this.renderContext()}</div>
           </div>
+
+          <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
+            <input type={'checkbox'} defaultChecked={true} />
+            <div class={'collapse-title text-md font-medium'}>Behaviour</div>
+            <div class="collapse-content">
+              <jsc-checkbox
+                label={'Expand nodes on click'}
+                size={'sm'}
+                value={String(this.onFocus === 'expand')}
+                onValueChanged={event => {
+                  alert(event.detail);
+                  event.detail === 'true' ? (this.onFocus = 'expand') : (this.onFocus = 'isolate');
+                }}
+              ></jsc-checkbox>
+            </div>
+          </div>
         </div>
         <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
-          {this.nd && <jsc-button size="sm" label={'View Full Graph'}  onClick={() => (this.nd = '')}></jsc-button>}
+          {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
         </div>
         <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: '100%' }}></div>
       </div>
