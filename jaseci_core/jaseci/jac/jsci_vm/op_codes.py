@@ -16,9 +16,13 @@ class JsOp(IntEnum):
     COMPARE = auto()
     AND = auto()
     OR = auto()
+    ASSIGN = auto()
+    COPY_FIELDS = auto()
+    INCREMENT = auto()  # [type]
     LOAD_CONST = auto()  # [type, bytes, (val)] / [type, (val)] / [type=type, type]
     LOAD_VAR = auto()  # [bytes, (name)]
-    REPORT = auto()  # [type, bytes, (val)]
+    CREATE_VAR = auto()  # [bytes, (name)]
+    REPORT = auto()
     ACTION_CALL = auto()
     DEBUG_INFO = auto()  # [bytes, line, bytes, (jacfile)]
 
@@ -46,6 +50,10 @@ class JsCmp(IntEnum):
     IN = auto()
     NIN = auto()
     NOT = auto()
+    PEQ = auto()
+    MEQ = auto()
+    TEQ = auto()
+    DEQ = auto()
 
 
 type_map = {

@@ -55,7 +55,8 @@ class SentinelInterp(Interp):
             if const_name in self.global_vars:
                 self.rt_error(f"Global {const_name} already defined!", kid[0])
             else:
-                self.global_vars[const_name] = self.run_expression(kid[2]).value
+                self.run_expression(kid[2])
+                self.global_vars[const_name] = self.pop().value
             kid = kid[4:] if kid[3].name == "COMMA" else kid[3:]
 
     def load_architype(self, jac_ast):
