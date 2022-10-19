@@ -167,6 +167,9 @@ def init_mdbook():
         book.write("[build]\n")
         book.write("use-default-preprocessors = false\n")
         book.write("[preprocessor.links]\n")
+        book.write("[output.html]\n")
+        book.write('default-theme = "light"\n')
+        book.write('preferred-dark-theme = "coal"\n')
         book.close()
 
 
