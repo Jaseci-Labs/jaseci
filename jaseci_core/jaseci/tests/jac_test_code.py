@@ -1,5 +1,5 @@
 prog0 = """
-    node testnode:0 {
+    node testnode {
         has a, b, c;
         can std.log::a,b::>c with exit;
     }
@@ -16,7 +16,7 @@ prog0 = """
         }
     }
 
-    node life:0 {
+    node life {
     }
 
     node year {
@@ -35,7 +35,7 @@ prog0 = """
     """
 
 prog1 = """
-    node testnode:0 {
+    node testnode {
         has a, b, c;
         can std.log::a,b::>c with exit;
     }
@@ -52,7 +52,7 @@ prog1 = """
         }
     }
 
-    node life:0 {
+    node life {
     }
 
     node year {

@@ -2,10 +2,10 @@ grammar jac;
 
 start: ver_label? import_module* element* EOF;
 
+ver_label: 'version' COLON STRING SEMI?;
+
 import_module:
 	KW_IMPORT LBRACE (import_items | STAR_MUL) RBRACE KW_WITH STRING SEMI;
-
-ver_label: 'version' COLON STRING SEMI?;
 
 import_items:
 	WALKER_DBL_COLON (STAR_MUL | import_names) (
@@ -223,7 +223,7 @@ atom_trailer:
 
 ability_op: DBL_COLON | DBL_COLON NAME COLON;
 
-ref: '&' atom;
+ref: KW_REF atom;
 
 deref: STAR_MUL atom;
 
@@ -396,6 +396,7 @@ KW_SKIP: 'skip';
 KW_REPORT: 'report';
 KW_DESTROY: 'destroy';
 KW_TRY: 'try';
+KW_REF: '&';
 DOT: '.';
 NOT: '!' | 'not';
 EE: '==';

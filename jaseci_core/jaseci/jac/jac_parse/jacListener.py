@@ -17,20 +17,20 @@ class jacListener(ParseTreeListener):
     def exitStart(self, ctx: jacParser.StartContext):
         pass
 
-    # Enter a parse tree produced by jacParser#import_module.
-    def enterImport_module(self, ctx: jacParser.Import_moduleContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#import_module.
-    def exitImport_module(self, ctx: jacParser.Import_moduleContext):
-        pass
-
     # Enter a parse tree produced by jacParser#ver_label.
     def enterVer_label(self, ctx: jacParser.Ver_labelContext):
         pass
 
     # Exit a parse tree produced by jacParser#ver_label.
     def exitVer_label(self, ctx: jacParser.Ver_labelContext):
+        pass
+
+    # Enter a parse tree produced by jacParser#import_module.
+    def enterImport_module(self, ctx: jacParser.Import_moduleContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#import_module.
+    def exitImport_module(self, ctx: jacParser.Import_moduleContext):
         pass
 
     # Enter a parse tree produced by jacParser#import_items.
@@ -167,14 +167,6 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#graph_block_spawn.
     def exitGraph_block_spawn(self, ctx: jacParser.Graph_block_spawnContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#graph_block_dot.
-    def enterGraph_block_dot(self, ctx: jacParser.Graph_block_dotContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#graph_block_dot.
-    def exitGraph_block_dot(self, ctx: jacParser.Graph_block_dotContext):
         pass
 
     # Enter a parse tree produced by jacParser#has_root.
@@ -799,118 +791,6 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#any_type.
     def exitAny_type(self, ctx: jacParser.Any_typeContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_graph.
-    def enterDot_graph(self, ctx: jacParser.Dot_graphContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_graph.
-    def exitDot_graph(self, ctx: jacParser.Dot_graphContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_stmt_list.
-    def enterDot_stmt_list(self, ctx: jacParser.Dot_stmt_listContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_stmt_list.
-    def exitDot_stmt_list(self, ctx: jacParser.Dot_stmt_listContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_stmt.
-    def enterDot_stmt(self, ctx: jacParser.Dot_stmtContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_stmt.
-    def exitDot_stmt(self, ctx: jacParser.Dot_stmtContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_attr_stmt.
-    def enterDot_attr_stmt(self, ctx: jacParser.Dot_attr_stmtContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_attr_stmt.
-    def exitDot_attr_stmt(self, ctx: jacParser.Dot_attr_stmtContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_attr_list.
-    def enterDot_attr_list(self, ctx: jacParser.Dot_attr_listContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_attr_list.
-    def exitDot_attr_list(self, ctx: jacParser.Dot_attr_listContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_a_list.
-    def enterDot_a_list(self, ctx: jacParser.Dot_a_listContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_a_list.
-    def exitDot_a_list(self, ctx: jacParser.Dot_a_listContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_edge_stmt.
-    def enterDot_edge_stmt(self, ctx: jacParser.Dot_edge_stmtContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_edge_stmt.
-    def exitDot_edge_stmt(self, ctx: jacParser.Dot_edge_stmtContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_edgeRHS.
-    def enterDot_edgeRHS(self, ctx: jacParser.Dot_edgeRHSContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_edgeRHS.
-    def exitDot_edgeRHS(self, ctx: jacParser.Dot_edgeRHSContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_edgeop.
-    def enterDot_edgeop(self, ctx: jacParser.Dot_edgeopContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_edgeop.
-    def exitDot_edgeop(self, ctx: jacParser.Dot_edgeopContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_node_stmt.
-    def enterDot_node_stmt(self, ctx: jacParser.Dot_node_stmtContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_node_stmt.
-    def exitDot_node_stmt(self, ctx: jacParser.Dot_node_stmtContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_node_id.
-    def enterDot_node_id(self, ctx: jacParser.Dot_node_idContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_node_id.
-    def exitDot_node_id(self, ctx: jacParser.Dot_node_idContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_port.
-    def enterDot_port(self, ctx: jacParser.Dot_portContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_port.
-    def exitDot_port(self, ctx: jacParser.Dot_portContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_subgraph.
-    def enterDot_subgraph(self, ctx: jacParser.Dot_subgraphContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_subgraph.
-    def exitDot_subgraph(self, ctx: jacParser.Dot_subgraphContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#dot_id.
-    def enterDot_id(self, ctx: jacParser.Dot_idContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#dot_id.
-    def exitDot_id(self, ctx: jacParser.Dot_idContext):
         pass
 
 
