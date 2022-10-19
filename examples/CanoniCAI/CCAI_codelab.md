@@ -180,7 +180,7 @@ This is the first walker we have introduced, so let's break it down.
 ## Run the `init` Walker
 
 Now, let's run the init walker to initialize the graph.
-First put all of the above code snippet into a single jac file and name it `main.jac`, including
+First put all of the above code snippet into a single jac file and name it `faq.jac`, including
 
 - nodes definition
 - graph definition
@@ -195,10 +195,10 @@ jsctl
 Inside the `jsctl` shell,
 
 ```bash
-jaseci > jac dot main.jac
+jaseci > jac dot faq.jac
 ```
 
-This command runs the `init` walker of the `main.jac` program and prints the state of its graph in DOT format after the walker has finished.
+This command runs the `init` walker of the `faq.jac` program and prints the state of its graph in DOT format after the walker has finished.
 [The DOT language](https://graphviz.org/doc/info/lang.html) is a popular graph description language widely used for representing complex graphs.
 
 The output should look something like this
@@ -281,7 +281,7 @@ This serves as a shorthand so that we can initialize the graph and ask a questio
 Time to run the walker!
 
 ```bash
-jaseci > jac run main.jac
+jaseci > jac run faq.jac
 ```
 
 `jac run` functions very similarly to `jac dot`, with the only difference being that it doesn't return the graph in DOT format.
@@ -380,7 +380,7 @@ An example knowledge base file look like this
 ]
 ```
 
-Save the above json in a file named `tesla_faq.json` and make sure it is in the same location as `main.jac`.
+Save the above json in a file named `tesla_faq.json` and make sure it is in the same location as `faq.jac`.
 Let's now update the `init` walker.
 Because we are going to use the `ingest_faq` walker to generate the graph, we won't need the static graph definition.
 
@@ -403,7 +403,7 @@ What we are doing here is
 Let's run the program one more time and test it out!
 
 ```bash
-jaseci > jac run main.jac
+jaseci > jac run faq.jac
 ```
 
 > **Note**
@@ -1273,9 +1273,6 @@ If the compilation is successful, a `.jir` file with the same name will be gener
 For `faq_state`, we need to now define the `nlu` and `nlg` node abilities for FAQ.
 So let's update the following in `faq.jac`
 
-> **Note**
->
-> You can either update the following in a new file named `faq.jac` or you may define this code in the previously defined `main.jac`.
 
 First, `faq_root`
 ```jac

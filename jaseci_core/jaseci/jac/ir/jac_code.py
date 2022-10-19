@@ -10,6 +10,8 @@ import hashlib
 from pathlib import Path
 from os.path import dirname
 
+from jaseci.jac.ir.passes.printer_pass import PrinterPass
+
 # Used to check ir matches grammar of current Jaseci instance
 grammar_hash = hashlib.md5(
     Path(dirname(__file__) + "/../jac.g4").read_text().encode()
@@ -119,6 +121,16 @@ class JacCode:
             return None
 
         return tree.root
+
+    def get_jac_ast(self):
+        if not self._jac_ast:
+            self.refresh()
+        return self._jac_ast
+
+    def print_ir(self, to_screen=True):
+        irout = PrinterPass(ir=self.get_jac_ast(), to_screen=to_screen)
+        irout.run()
+        return irout.output
 
     def register(self, code, dir):
         """
