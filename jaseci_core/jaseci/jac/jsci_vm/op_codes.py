@@ -18,6 +18,7 @@ class JsOp(IntEnum):
     OR = auto()
     ASSIGN = auto()
     COPY_FIELDS = auto()
+    INCREMENT = auto()  # [type]
     LOAD_CONST = auto()  # [type, bytes, (val)] / [type, (val)] / [type=type, type]
     LOAD_VAR = auto()  # [bytes, (name)]
     CREATE_VAR = auto()  # [bytes, (name)]
@@ -49,6 +50,10 @@ class JsCmp(IntEnum):
     IN = auto()
     NIN = auto()
     NOT = auto()
+    PEQ = auto()
+    MEQ = auto()
+    TEQ = auto()
+    DEQ = auto()
 
 
 type_map = {

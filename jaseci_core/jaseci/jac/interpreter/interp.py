@@ -20,6 +20,8 @@ from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 from copy import copy, deepcopy
 from base64 import b64decode
 
+from jaseci.jac.jsci_vm.op_codes import JsCmp
+
 
 class Interp(VirtualMachine):
     """Shared interpreter class across both sentinels and walkers"""
@@ -470,9 +472,10 @@ class Interp(VirtualMachine):
                     self._assign_mode = True
                     dest = self.run_rule(kid[0])
                     self._assign_mode = False
-                    if not dest.check_assignable(kid[0]):
-                        self.push(dest)
-                    self.push(self.run_inc_assign(kid[1], dest=dest))
+                    self.run_inc_assign(kid[1])
+                    self.perform_increment(
+                        dest, self.pop(), JsCmp[kid[1].kid[0].name], kid[0]
+                    )
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
 
@@ -494,7 +497,7 @@ class Interp(VirtualMachine):
         kid = self.set_cur_ast(jac_ast)
         self.run_expression(kid[1])
 
-    def run_inc_assign(self, jac_ast, dest):
+    def run_inc_assign(self, jac_ast):
         """
         inc_assign: (PEQ | MEQ | TEQ | DEQ) expression;
         """
@@ -502,16 +505,6 @@ class Interp(VirtualMachine):
             return
         kid = self.set_cur_ast(jac_ast)
         self.run_expression(kid[1])
-        if kid[0].name == "PEQ":
-            dest.value = dest.value + self.pop().value
-        elif kid[0].name == "MEQ":
-            dest.value = dest.value - self.pop().value
-        elif kid[0].name == "TEQ":
-            dest.value = dest.value * self.pop().value
-        elif kid[0].name == "DEQ":
-            dest.value = dest.value / self.pop().value
-        dest.write(jac_ast)
-        return dest
 
     def run_connect(self, jac_ast):
         """
@@ -1727,7 +1720,7 @@ class Interp(VirtualMachine):
 
     # Helper Functions ##################
     def attempt_bytecode(self, jac_ast):
-        if not jac_ast.kid:
+        if hasattr(jac_ast, "bytecode") and jac_ast.bytecode:
             self.run_bytecode(b64decode(jac_ast.bytecode.encode()))
             return True
         return False

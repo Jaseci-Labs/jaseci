@@ -18,6 +18,7 @@ from jaseci.jac.ir.ast import Ast
 from jaseci.graph.edge import Edge
 from jaseci.graph.node import Node
 from jaseci.jac.machine.jac_value import JacValue
+from jaseci.jac.jsci_vm.op_codes import JsCmp
 
 
 class MachineState:
@@ -115,6 +116,18 @@ class MachineState:
                     JacValue(
                         self, ctx=dest.value, name=i, value=src.value.context[i]
                     ).write(jac_ast)
+        self.push(dest)
+
+    def perform_increment(self, dest, src, op, jac_ast=None):
+        if op == JsCmp.PEQ:
+            dest.value = dest.value + src.value
+        elif op == JsCmp.MEQ:
+            dest.value = dest.value - src.value
+        elif op == JsCmp.TEQ:
+            dest.value = dest.value * src.value
+        elif op == JsCmp.DEQ:
+            dest.value = dest.value / src.value
+        dest.write(jac_ast)
         self.push(dest)
 
     # Helper Functions ##################

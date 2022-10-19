@@ -129,6 +129,12 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         dest = self.pop()
         self.perform_copy_fields(dest, self.pop())
 
+    def op_INCREMENT(self):  # noqa
+        ityp = JsCmp(self.offset(1))
+        dest = self.pop()
+        self.perform_increment(dest, self.pop(), ityp)
+        self._ip += 1
+
     def op_LOAD_CONST(self):  # noqa
         typ = JsType(self.offset(1))
         operand2 = self.offset(2)

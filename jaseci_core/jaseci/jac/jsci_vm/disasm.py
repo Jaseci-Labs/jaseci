@@ -42,6 +42,11 @@ class DisAsm(InstPtr):
         self._asm.append([self.cur_op(), ctyp.name])
         self._ip += 1
 
+    def op_INCREMENT(self):  # noqa
+        ityp = JsCmp(self.offset(1))
+        self._asm.append([self.cur_op(), ityp.name])
+        self._ip += 1
+
     def dis_LOAD_CONST(self):  # noqa
         typ = JsType(self.offset(1))
         operand2 = self.offset(2)

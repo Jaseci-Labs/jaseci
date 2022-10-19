@@ -93,15 +93,20 @@ class CodeGenPass(IrPass):
                 self.emit(node, JsOp.ASSIGN)
             elif len(kid) > 1 and kid[1].name == "copy_assign":
                 self.emit(node, JsOp.COPY_FIELDS)
-            # elif len(kid) > 1 and kid[1].name == "inc_assign":
-            #     self.emit(node, JsOp.INCREMENT)
+            elif len(kid) > 1 and kid[1].name == "inc_assign":
+                self.emit(node, JsOp.INCREMENT, JsCmp[kid[1].kid[0].name])
+
+    def exit_assignment(self, node):
+        if is_bytecode_complete(node):
+            if has_bytecode(node.kid[-1]):
+                self.emit(node, node.kid[-1].bytecode)
 
     def exit_copy_assign(self, node):
         if is_bytecode_complete(node):
             if has_bytecode(node.kid[-1]):
                 self.emit(node, node.kid[-1].bytecode)
 
-    def exit_assignment(self, node):
+    def exit_inc_assign(self, node):
         if is_bytecode_complete(node):
             if has_bytecode(node.kid[-1]):
                 self.emit(node, node.kid[-1].bytecode)
