@@ -136,6 +136,7 @@ class Walker(Element, WalkerInterp, Anchored):
                     self.next_node_ids.pop_first_obj() if self.next_node_ids else None
                 )
             )
+
             self._h.commit_all_cache_sync()
 
             return {
