@@ -1,6 +1,7 @@
 import { Component, Element, h, Prop, State, Watch } from '@stencil/core';
 import * as vis from 'vis-network';
 import * as visData from 'vis-data';
+import * as net from 'net';
 
 type EndpointBody = {
   gph?: string | null;
@@ -46,6 +47,7 @@ export class JscGraph {
   nodes: vis.data.DataSet<any, string>;
 
   @State() clickedNode: vis.Node & { context: {} };
+  @State() clickedEdge: vis.Edge & { context: {} };
 
   networkEl!: HTMLDivElement;
 
@@ -179,13 +181,27 @@ export class JscGraph {
   }
 
   handleNetworkClick(network: vis.Network, params?: any) {
+    const selection = network.getSelection();
     const node = network.getNodeAt({
       x: params?.pointer.DOM.x,
       y: params?.pointer.DOM.y,
     });
 
-    this.clickedNode = this.nodes.get([node])[0];
-    console.log(this.clickedNode);
+    const edge = network.getEdgeAt({
+      x: params?.pointer.DOM.x,
+      y: params?.pointer.DOM.y,
+    });
+
+    // we don't want to have a clicked edge if we click on a node
+    if (selection.nodes.length) {
+      this.clickedNode = this.nodes.get([node])[0];
+      this.clickedEdge = undefined;
+    } else {
+      this.clickedEdge = this.edges.get([edge])[0];
+    }
+
+    console.log({ node, edge });
+    console.log({ node: this.clickedNode, edge: this.clickedEdge });
   }
 
   // convert response to match required format for vis
@@ -202,10 +218,15 @@ export class JscGraph {
   }
 
   renderContext() {
-    const context = this.clickedNode?.context;
+    let context: undefined | Record<any, any> = {};
+    if (this.clickedEdge?.context) {
+      context = this.clickedEdge.context;
+    } else {
+      context = this.clickedNode?.context;
+    }
 
     return context ? (
-      Object.keys(this.clickedNode?.context).map(contextKey => (
+      Object.keys(context).map(contextKey => (
         <div key={contextKey}>
           <p style={{ fontWeight: 'bold' }}>{contextKey}</p>
           <p>
@@ -295,7 +316,7 @@ export class JscGraph {
                 zIndex: '9999',
                 border: '2px solid #f4f4f4',
                 background: '#fff',
-                boxShadow: 'rgb(0 0 0 / 15%) 0px 1px 4px 0px, rgb(0 0 0 / 2%) 0px 0px 2px 1px',
+                boxShadow: 'rgb(0 0 0 / 15%) 0px 1px 2px 0px, rgb(0 0 0 / 2%) 0px 0px 2px 1px',
                 overflowY: 'auto',
                 overflowX: 'hidden',
               }}
@@ -331,7 +352,6 @@ export class JscGraph {
                 placeholder={'Select Graph'}
                 onValueChanged={e => {
                   this.graphId = e.detail.split(':').slice(1).join(':');
-                  alert(this.graphId);
                   localStorage.setItem('selectedGraph', this.graphId);
                 }}
                 options={this.graphs?.map(graph => ({ label: `${graph.name}:${graph.jid}` }))}
