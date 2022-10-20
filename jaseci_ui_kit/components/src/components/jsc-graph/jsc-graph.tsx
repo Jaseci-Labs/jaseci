@@ -10,6 +10,15 @@ type EndpointBody = {
   show_edges?: boolean;
 };
 
+type Graph = {
+  name: string;
+  kind: string;
+  jid: string;
+  j_timestamp: string;
+  j_type: 'graph';
+  context: Record<any, any>;
+};
+
 @Component({
   tag: 'jsc-graph',
   styleUrl: 'jsc-graph.css',
@@ -20,13 +29,13 @@ export class JscGraph {
   @Prop() css: string = JSON.stringify({});
   @Prop({ mutable: true }) events: string;
   @Prop() token: string = '5eed3f010f323cd8bb6d58c14bacec2274156e82ef913b4be96e2d9d0bbffa49';
-  @Prop() graphId: string = 'urn:uuid:58562489-7910-4d5a-88ec-8f4d8cd7bb22';
-  @Prop() serverUrl: string = 'https://wild-adults-send-181-41-125-103.loca.lt';
+  @Prop() graphId: string = '';
+  @Prop({ attribute: 'serverurl' }) serverUrl: string = 'http://localhost:8888';
   @Prop() onFocus: 'expand' | 'isolate' = 'expand';
   @Prop() height = '100vh';
 
   // viewed node
-  @State() nd = 'urn:uuid:153846bc-86ec-4068-8349-ec4c500241d9';
+  @State() nd = '';
   @State() prevNd = '';
   @State() network: vis.Network;
 
@@ -39,8 +48,18 @@ export class JscGraph {
 
   networkEl!: HTMLDivElement;
 
+  async getActiveGraph(): Promise<Graph> {
+    return await fetch(`${this.serverUrl}/js/graph_active_get`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${localStorage.getItem('token')}`,
+      },
+    }).then(res => res.json());
+  }
+
   @Watch('nd')
-  getGraphState() {
+  async getGraphState() {
     let body: EndpointBody = { detailed: true, gph: this.graphId, mode: 'default' };
     let endpoint = `${this.serverUrl}/js/graph_get`;
 
@@ -59,7 +78,7 @@ export class JscGraph {
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `token ${this.token}`,
+        'Authorization': `token ${localStorage.getItem('token')}`,
       },
     }).then(async res => {
       const data = await res.json();
@@ -189,6 +208,10 @@ export class JscGraph {
 
   async componentDidLoad() {
     try {
+      // set the initial graph
+      let activeGraph: Graph = await this.getActiveGraph();
+      this.graphId = activeGraph?.jid;
+
       await this.getGraphState();
     } catch (err) {
       console.log(err);
@@ -232,50 +255,59 @@ export class JscGraph {
 
   render() {
     return (
-      <div style={{ height: '500px', width: 'auto', position: 'relative' }}>
-        <div
-          style={{
-            height: '260px',
-            width: '240px',
-            borderRadius: '4px',
-            padding: '16px',
-            top: '20px',
-            right: '20px',
-            position: 'absolute',
-            zIndex: '9999',
-            border: '2px solid #f4f4f4',
-            background: '#fff',
-            boxShadow: 'rgb(0 0 0 / 15%) 0px 1px 4px 0px, rgb(0 0 0 / 2%) 0px 0px 2px 1px',
-            overflowY: 'auto',
-            overflowX: 'hidden',
-          }}
-        >
-          <div tabindex="0" class="collapse collapse-plus border border-base-300 bg-base-100 rounded-box">
-            <input type="checkbox" defaultChecked={true} />
-            <div class="collapse-title text-md font-medium">Context</div>
-            <div class="collapse-content">{this.renderContext()}</div>
+      <div data-theme={'greenheart'}>
+        {!localStorage.getItem('token') ? (
+          <div style={{ width: '520px', margin: '40px auto' }}>
+            <jsc-card title={'Login'}>
+              <jsc-auth-form slot={'children'} serverURL={this.serverUrl} redirectURL={window.location.toString()}></jsc-auth-form>
+            </jsc-card>
           </div>
+        ) : (
+          <div style={{ height: this.height, width: 'auto', position: 'relative' }}>
+            <div
+              style={{
+                height: '260px',
+                width: '240px',
+                borderRadius: '4px',
+                padding: '16px',
+                top: '20px',
+                right: '20px',
+                position: 'absolute',
+                zIndex: '9999',
+                border: '2px solid #f4f4f4',
+                background: '#fff',
+                boxShadow: 'rgb(0 0 0 / 15%) 0px 1px 4px 0px, rgb(0 0 0 / 2%) 0px 0px 2px 1px',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+              }}
+            >
+              <div tabindex="0" class="collapse collapse-plus border border-base-300 bg-base-100 rounded-box">
+                <input type="checkbox" defaultChecked={true} />
+                <div class="collapse-title text-md font-medium">Context</div>
+                <div class="collapse-content">{this.renderContext()}</div>
+              </div>
 
-          <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
-            <input type={'checkbox'} defaultChecked={true} />
-            <div class={'collapse-title text-md font-medium'}>Behaviour</div>
-            <div class="collapse-content">
-              <jsc-checkbox
-                label={'Expand nodes on click'}
-                size={'sm'}
-                value={String(this.onFocus === 'expand')}
-                onValueChanged={event => {
-                  alert(event.detail);
-                  event.detail === 'true' ? (this.onFocus = 'expand') : (this.onFocus = 'isolate');
-                }}
-              ></jsc-checkbox>
+              <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
+                <input type={'checkbox'} defaultChecked={true} />
+                <div class={'collapse-title text-md font-medium'}>Behaviour</div>
+                <div class="collapse-content">
+                  <jsc-checkbox
+                    label={'Expand nodes on click'}
+                    size={'sm'}
+                    value={String(this.onFocus === 'expand')}
+                    onValueChanged={event => {
+                      event.detail === 'true' ? (this.onFocus = 'expand') : (this.onFocus = 'isolate');
+                    }}
+                  ></jsc-checkbox>
+                </div>
+              </div>
             </div>
+            <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
+              {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
+            </div>
+            <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: this.height }}></div>
           </div>
-        </div>
-        <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
-          {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
-        </div>
-        <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: '100%' }}></div>
+        )}
       </div>
     );
   }

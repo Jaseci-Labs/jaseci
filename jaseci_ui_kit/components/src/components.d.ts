@@ -260,6 +260,8 @@ export namespace Components {
         "css": string;
         "events": string;
         "graphId": string;
+        "height": string;
+        "onFocus": 'expand' | 'isolate';
         "serverUrl": string;
         "token": string;
     }
@@ -1156,6 +1158,8 @@ declare namespace LocalJSX {
         "css"?: string;
         "events"?: string;
         "graphId"?: string;
+        "height"?: string;
+        "onFocus"?: 'expand' | 'isolate';
         "serverUrl"?: string;
         "token"?: string;
     }

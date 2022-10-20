@@ -14,7 +14,7 @@
       nomodule
       src="{{ url_for('static', path='/build/components/components.js') }}"
     ></script>
-    
+
     <link
       href="{{ url_for('static', path='/build/components/components.css') }}"
       rel="stylesheet"
@@ -22,7 +22,9 @@
   </head>
 
   <body>
-    <jsc-graph></jsc-graph>
+    <div data-theme="greenheart">
+      <jsc-graph serverUrl="http://localhost:8000"></jsc-graph>
+    </div>
 
     <style>
       body {
