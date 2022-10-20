@@ -28,7 +28,7 @@ export class JscGraph {
   @Element() host: HTMLElement;
   @Prop() css: string = JSON.stringify({});
   @Prop({ mutable: true }) events: string;
-  @Prop() token: string = '5eed3f010f323cd8bb6d58c14bacec2274156e82ef913b4be96e2d9d0bbffa49';
+  @Prop() token: string = '';
   @Prop() graphId: string = '';
   @Prop({ attribute: 'serverurl' }) serverUrl: string = 'http://localhost:8888';
   @Prop() onFocus: 'expand' | 'isolate' = 'expand';
@@ -38,6 +38,7 @@ export class JscGraph {
   @State() nd = '';
   @State() prevNd = '';
   @State() network: vis.Network;
+  @State() graphs: Graph[] = [];
 
   nodesArray: vis.Node[] = [];
   edgesArray: vis.Edge[] = [];
@@ -50,6 +51,16 @@ export class JscGraph {
 
   async getActiveGraph(): Promise<Graph> {
     return await fetch(`${this.serverUrl}/js/graph_active_get`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${localStorage.getItem('token')}`,
+      },
+    }).then(res => res.json());
+  }
+
+  async getAllGraphs(): Promise<Graph[]> {
+    return await fetch(`${this.serverUrl}/js/graph_list`, {
       method: 'post',
       headers: {
         'Content-Type': 'application/json',
@@ -148,6 +159,11 @@ export class JscGraph {
     });
   }
 
+  @Watch('graphId')
+  async refreshGraph() {
+    await this.getGraphState();
+  }
+
   // convert response to match required format for vis
   @Watch('nd')
   formatNodes(data: [][]): vis.Node[] {
@@ -211,6 +227,9 @@ export class JscGraph {
       // set the initial graph
       let activeGraph: Graph = await this.getActiveGraph();
       this.graphId = activeGraph?.jid;
+
+      // get all graphs for the graph switcher
+      this.graphs = await this.getAllGraphs();
 
       await this.getGraphState();
     } catch (err) {
@@ -304,6 +323,19 @@ export class JscGraph {
             </div>
             <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
               {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
+            </div>
+
+            {/*Graph Switcher*/}
+            <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999' }}>
+              <jsc-select
+                placeholder={'Select Graph'}
+                onValueChanged={e => {
+                  this.graphId = e.detail.split(':').slice(1).join(':');
+                  alert(this.graphId);
+                  localStorage.setItem('selectedGraph', this.graphId);
+                }}
+                options={this.graphs?.map(graph => ({ label: `${graph.name}:${graph.jid}` }))}
+              ></jsc-select>
             </div>
             <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: this.height }}></div>
           </div>
