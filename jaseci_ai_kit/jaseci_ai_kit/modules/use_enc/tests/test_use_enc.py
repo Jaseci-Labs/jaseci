@@ -1,32 +1,47 @@
-from unittest import TestCase
-from jaseci.utils.utils import TestCaseHelper
-from ..use_enc import serv_actions
-from fastapi.testclient import TestClient
-
-from .test_data import test_text_similarity, test_text_classify  # noqa
+from jaseci.utils.test_core import CoreTest
+from importlib import import_module
 
 
-class use_enc_test(TestCaseHelper, TestCase):
-    """Unit test for USE Encoder FastAPI server"""
+class UseEncTest(CoreTest):
+    fixture_src = __file__
 
-    def setUp(self):
-        super().setUp()
-        self.client = TestClient(serv_actions())
+    import_module("jaseci_ai_kit.use_enc")
 
-    def tearDown(self) -> None:
-        return super().tearDown()
+    # def setUp(self):
+    #     import_module("jaseci_ai_kit.use_enc")
+    #     self.log("imported")
+    #     return super().setUp()
+
+    # def tearDown(self):
+    #     # un import the module
+    #     import sys
+    #     x = sys.modules.pop("jaseci_ai_kit.use_enc")
+    #     self.log(x)
+    #     return super().tearDown()
 
     def test_enc_text_similarity(self):
-        response = self.client.post("/text_similarity/", json=test_text_similarity)
-        self.assertEqual(response.status_code, 200)
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("use_enc.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "test_enc_text_similarity"}])
+        # self.log(ret["report"][0])
+        self.assertEqual(round(ret["report"][0], 2), 0.03)
 
     def test_enc_text_classify(self):
-        response = self.client.post("/text_classify/", json=test_text_classify)
-        self.assertEqual(response.status_code, 200)
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("use_enc.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "test_enc_text_classify"}])
+        # self.log(ret["report"][0])
+        self.assertEqual(ret["report"][0]["match"], "getdirections")
 
     def test_enc_get_embeddings(self):
-        response = self.client.post(
-            "/get_embedding/", json={"text": "Share my location with Hillary's sister"}
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("use_enc.jac")}],
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()[0]), 512)
+        ret = self.call(self.mast, ["walker_run", {"name": "test_enc_get_embeddings"}])
+        # self.log(ret["report"][0])
+        self.assertEqual(len(ret["report"][0][0]), 512)
