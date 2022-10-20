@@ -29,7 +29,8 @@ class TestLLWall(TestCaseHelper, TestCase):
             "code": ll_file,
             "encoded": True,
         }
-        lact.load_local_actions("jaseci_serv/jac_api/tests/infer.py")
+        current_path = os.path.dirname(os.path.realpath(__file__))
+        lact.load_local_actions(os.path.join(current_path, "infer.py"))
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.snt = self.master._h.get_obj(
             self.master.jid, uuid.UUID(res.data[0]["jid"])

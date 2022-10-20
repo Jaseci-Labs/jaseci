@@ -1473,7 +1473,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
         payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
         self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
-        with open(os.path.dirname(__file__) + "/test.json", "rb") as ctx:
+        current_path = os.path.dirname(os.path.realpath(__file__))
+        with open(os.path.join(current_path, "test.json"), "rb") as ctx:
             form = {
                 "name": "simple",
                 "ctx": ctx,
