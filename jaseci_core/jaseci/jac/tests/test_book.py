@@ -35,6 +35,14 @@ class JacBookTests(TestCaseHelper, TestCase):
     def screen_off(self):
         sys.stdout = self.new_stdout
 
+    def test_spawn_graph_node(self):
+        """Test node in using spawn graphs instead of dot"""
+        self.sent.register_code(jtc.spawn_graph_node)
+        gen_walker = self.sent.run_architype("init")
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(), "graph_root_node_name\n")
+
     def test_basic_arith(self):
         self.sent.register_code(jtc.basic_arith)
         gen_walker = self.sent.run_architype("init")
