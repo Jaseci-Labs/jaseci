@@ -1,7 +1,6 @@
 import { Component, Element, h, Prop, State, Watch } from '@stencil/core';
 import * as vis from 'vis-network';
 import * as visData from 'vis-data';
-import * as net from 'net';
 
 type EndpointBody = {
   gph?: string | null;
