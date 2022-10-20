@@ -1,13 +1,13 @@
 """
 Architype api functions as a mixin
 """
-from jaseci.api.interface import interface
-from jaseci.actor.architype import architype
-from jaseci.actor.sentinel import sentinel
+from jaseci.api.interface import Interface
+from jaseci.actor.architype import Architype
+from jaseci.actor.sentinel import Sentinel
 from jaseci.utils.utils import b64decode_str
 
 
-class architype_api:
+class ArchitypeApi:
     """Architype APIs for creating and managing Jaseci architypes
 
     The architype set of APIs allow for the addition and removing of
@@ -20,9 +20,9 @@ class architype_api:
     a Jaseci instance is aware of.
     """
 
-    @interface.private_api(cli_args=["code"])
+    @Interface.private_api(cli_args=["code"])
     def architype_register(
-        self, code: str, encoded: bool = False, snt: sentinel = None
+        self, code: str, encoded: bool = False, snt: Sentinel = None
     ):
         """Create an architype based on the code passed and return object.
 
@@ -60,9 +60,9 @@ class architype_api:
             ret["response"] = "Errors occured"
         return ret
 
-    @interface.private_api()
+    @Interface.private_api()
     def architype_get(
-        self, arch: architype, mode: str = "default", detailed: bool = False
+        self, arch: Architype, mode: str = "default", detailed: bool = False
     ):
         """Get an architype rendered with specific mode
 
@@ -84,8 +84,8 @@ class architype_api:
         else:
             return {"architype": arch.serialize(detailed=detailed)}
 
-    @interface.private_api(cli_args=["code"])
-    def architype_set(self, arch: architype, code: str, mode: str = "default"):
+    @Interface.private_api(cli_args=["code"])
+    def architype_set(self, arch: Architype, code: str, mode: str = "default"):
         """Set code/ir for a architype
 
         Args:
@@ -122,8 +122,8 @@ class architype_api:
                 "errors": arch.errors,
             }
 
-    @interface.private_api()
-    def architype_list(self, snt: sentinel = None, detailed: bool = False):
+    @Interface.private_api()
+    def architype_list(self, snt: Sentinel = None, detailed: bool = False):
         """List architypes known to sentinel
 
         Args:
@@ -138,8 +138,8 @@ class architype_api:
             archs.append(i.serialize(detailed=detailed))
         return archs
 
-    @interface.private_api(cli_args=["arch"])
-    def architype_delete(self, arch: architype, snt: sentinel = None):
+    @Interface.private_api(cli_args=["arch"])
+    def architype_delete(self, arch: Architype, snt: Sentinel = None):
         """Permanently delete sentinel with given id
 
         Args:

@@ -1,0 +1,60 @@
+{
+  "name": "components",
+  "version": "0.0.1",
+  "description": "Stencil Component Starter",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.js",
+  "es2015": "dist/esm/index.mjs",
+  "es2017": "dist/esm/index.mjs",
+  "types": "dist/types/components.d.ts",
+  "collection": "dist/collection/collection-manifest.json",
+  "collection:main": "dist/collection/index.js",
+  "unpkg": "dist/components/components.esm.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ionic-team/stencil-component-starter.git"
+  },
+  "files": [
+    "dist/",
+    "loader/"
+  ],
+  "scripts": {
+    "build": "stencil build --docs",
+    "start": "stencil build --dev --watch --serve",
+    "test": "stencil test --spec --e2e",
+    "test.watch": "stencil test --spec --e2e --watchAll",
+    "generate": "stencil generate"
+  },
+  "dependencies": {
+    "@radix-ui/colors": "^0.1.8",
+    "@stencil/core": "^2.13.0",
+    "@stencil/store": "^1.5.0",
+    "artyom.js": "^1.0.6",
+    "clsx": "^1.1.1",
+    "daisyui": "^2.15.4",
+    "dayjs": "^1.11.2",
+    "fast-sort": "^3.1.3",
+    "js-binary": "^1.2.0",
+    "motion": "^10.10.0",
+    "nanoid": "^3.3.4",
+    "parse-json": "^6.0.2",
+    "serialize-javascript": "^6.0.0",
+    "superjson": "^1.9.1",
+    "vis-data": "^7.1.4",
+    "vis-network": "^9.1.2",
+    "vis-util": "^5.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.2",
+    "@types/artyom.js": "^1.0.6",
+    "@types/jest": "^27.0.3",
+    "@types/node": "^18.0.0",
+    "jest": "^27.4.5",
+    "jest-cli": "^27.4.5",
+    "puppeteer": "^10.0.0",
+    "stencil-tailwind-plugin": "^1.3.0",
+    "tailwindcss": "^3.1.3",
+    "typescript": "^4.6.4"
+  },
+  "license": "MIT"
+}

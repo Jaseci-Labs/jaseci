@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.test import Client
 
 
-class admin_test(TestCaseHelper, TestCase):
+class AdminTests(TestCaseHelper, TestCase):
     def setUp(self):
         """Creates test client, admin user and user for this test case"""
         super().setUp()

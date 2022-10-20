@@ -4,7 +4,7 @@ General action base class with automation for hot loading
 from importlib.util import spec_from_file_location, module_from_spec
 from jaseci.utils.utils import logger
 from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
-from jaseci.actions.remote_actions import serv_actions, mark_as_remote
+from jaseci.actions.remote_actions import serv_actions, mark_as_remote, mark_as_endpoint
 import requests
 import os
 import sys
@@ -26,6 +26,21 @@ def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
         if allow_remote:
             mark_as_remote([func, act_group, aliases, caller_globals])
         return assimilate_action(func, act_group, aliases)
+
+    return decorator_func
+
+
+def jaseci_expose(endpoint, mount=None):
+    """Decorator for Jaseci Action interface"""
+    caller_globals = dict(inspect.getmembers(inspect.currentframe().f_back))[
+        "f_globals"
+    ]
+    if "serv_actions" not in caller_globals:
+        caller_globals["serv_actions"] = serv_actions
+
+    def decorator_func(func):
+        mark_as_endpoint([func, endpoint, mount, caller_globals])
+        return func
 
     return decorator_func
 
@@ -69,13 +84,16 @@ def load_preconfig_actions(hook):
 
     action_preload = hook.resolve_glob("ACTION_SETS", None)
     if action_preload:
-        action_preload = json.loads(action_preload)
-        for i in action_preload["local"]:
-            load_local_actions(i)
-        for i in action_preload["remote"]:
-            load_remote_actions(i)
-        for i in action_preload["module"]:
-            load_module_actions(i)
+        try:
+            action_preload = json.loads(action_preload)
+            for i in action_preload["local"]:
+                load_local_actions(i)
+            for i in action_preload["remote"]:
+                load_remote_actions(i)
+            for i in action_preload["module"]:
+                load_module_actions(i)
+        except Exception:
+            pass
 
 
 def get_global_actions(hook):
@@ -83,7 +101,7 @@ def get_global_actions(hook):
     Loads all global action hooks for use by Jac programs
     Attaches globals to mem_hook
     """
-    from jaseci.attr.action import action
+    from jaseci.attr.action import Action
     import uuid
 
     global_action_list = []
@@ -99,7 +117,7 @@ def get_global_actions(hook):
             or i.startswith("jaseci.")
         ):
             global_action_list.append(
-                action(
+                Action(
                     m_id=uuid.UUID(int=0).urn,
                     h=hook,
                     mode="public",

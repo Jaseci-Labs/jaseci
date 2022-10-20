@@ -1,17 +1,17 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 
 from jaseci_serv.base.models import GlobalVars
-from jaseci.utils.mem_hook import mem_hook
 
 # Alias for create user
 create_user = get_user_model().objects.create_user
 get_user = get_user_model().objects.get
 
 
-class jaseci_engine_orm_config_tests_private(TestCaseHelper, TestCase):
+class OrmConfigTestsPrivate(TestCaseHelper, TestCase):
     """Test Jaseci Engine when authenticated"""
 
     def setUp(self):
@@ -21,7 +21,6 @@ class jaseci_engine_orm_config_tests_private(TestCaseHelper, TestCase):
             password="testpass",
             name="some dude",
         )
-        self._h = mem_hook()
 
     def tearDown(self):
         super().tearDown()
@@ -46,7 +45,8 @@ class jaseci_engine_orm_config_tests_private(TestCaseHelper, TestCase):
         h.commit()
 
         del user._h.mem["global"]["GOOBY1"]
-        user._h.red.delete("GOOBY1")
+        if h.redis.is_running():
+            h.redis.delete("GOOBY1")
         self.assertNotIn("GOOBY1", user._h.mem["global"].keys())
 
         load_test = GlobalVars.objects.filter(name="GOOBY1").first()
@@ -65,10 +65,15 @@ class jaseci_engine_orm_config_tests_private(TestCaseHelper, TestCase):
         h.save_glob("GOOBY3", "MOOBY3")
         h.commit()
 
-        user._h.clear_mem_cache()
-        user._h.red.delete("GOOBY1")
+        h.clear_cache()
+        if h.redis.is_running():
+            h.redis.delete("GOOBY1")
         self.assertEqual(len(user._h.mem["global"].keys()), 0)
         self.assertNotIn("GOOBY1", user._h.mem["global"].keys())
+
+        # Removing default configs
+        GlobalVars.objects.filter(Q(name__endswith="_CONFIG")).delete()
+        GlobalVars.objects.filter(Q(name__endswith="_KUBE")).delete()
 
         li = user._h.list_glob()
         self.assertEqual(len(li), 3)

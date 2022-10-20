@@ -54,7 +54,7 @@ sudo apt install python3-dev python3-pip
 pip install jaseci
 ```
 ```
-pip install jaseci-kit
+pip install jaseci-ai-kit
 ```
 
 8. To ensure our installation is working run :
@@ -86,7 +86,7 @@ brew install python
 pip install jaseci
 ```
 ```
-pip install jaseci-kit
+pip install jaseci-ai-kit
 ```
 
 8. To ensure our installation is working run :
@@ -120,7 +120,7 @@ sudo apt install python3-dev python3-pip
 pip install jaseci
 ```
 ```
-pip install jaseci-kit
+pip install jaseci-ai-kit
 ```
 
 8. To ensure our installation is working run :

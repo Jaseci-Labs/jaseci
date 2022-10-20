@@ -1,8 +1,15 @@
 from setuptools import setup, find_packages
+from os.path import join
+
+
+def get_ver():
+    with open(join("./jaseci", "VERSION")) as version_file:
+        return version_file.read().strip()
+
 
 setup(
     name="jaseci",
-    version="1.3.4.1",
+    version=get_ver(),
     packages=find_packages(include=["jaseci", "jaseci.*"]),
     install_requires=[
         "click>=8.1.0,<8.2.0",
@@ -12,12 +19,18 @@ setup(
         "fastapi[all]>=0.75.0,<1.0.0",
         "requests",
         "redis",
+        "celery>=5,<6",
         "flake8",
+        "pep8-naming",
         "stripe",
         "pydantic",
+        "docstring-parser",
+        "prometheus_api_client==0.5.1",
+        "prometheus-client==0.14.1",
+        "kubernetes==23.6.0",
     ],
     package_data={
-        "": ["*.ini"],
+        "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
     },
     entry_points={"console_scripts": ["jsctl = jaseci.jsctl.jsctl:main"]},
 )

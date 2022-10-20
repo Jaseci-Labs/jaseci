@@ -7,11 +7,10 @@ default hooks to save db read/writes
 """
 
 from jaseci.utils.utils import logger
-from jaseci.element.element import element
-from jaseci.element.obj_mixins import anchored
-from jaseci.utils.id_list import id_list
-from jaseci.jac.interpreter.walker_interp import walker_interp
-from jaseci.jac.ir.jac_code import jac_code
+from jaseci.element.element import Element
+from jaseci.element.obj_mixins import Anchored
+from jaseci.utils.id_list import IdList
+from jaseci.jac.interpreter.walker_interp import WalkerInterp
 import uuid
 import hashlib
 import io
@@ -19,30 +18,33 @@ import pstats
 import cProfile
 
 
-class walker(element, jac_code, walker_interp, anchored):
+class Walker(Element, WalkerInterp, Anchored):
     """Walker class for Jaseci"""
 
-    def __init__(self, code_ir=None, *args, **kwargs):
-        self.activity_action_ids = id_list(self)
+    def __init__(self, is_async=False, **kwargs):
+        self.yielded = False
         self.namespaces = []
-        self.context = {}
         self.profile = {}
         # Process state
         self.current_node_id = None
-        self.next_node_ids = id_list(self)
-        self.ignore_node_ids = id_list(self)
-        self.destroy_node_ids = id_list(self)
+        self.next_node_ids = IdList(self)
+        self.ignore_node_ids = IdList(self)
+        self.destroy_node_ids = IdList(self)
         self.current_step = 0
         self.in_entry_exit = False
         self.step_limit = 10000
-        anchored.__init__(self)
-        element.__init__(self, *args, **kwargs)
-        jac_code.__init__(self, code_ir=code_ir)
-        walker_interp.__init__(self)
+        self.is_async = is_async
+        self._to_await = False
+        Element.__init__(self, **kwargs)
+        WalkerInterp.__init__(self)
+        Anchored.__init__(self)
 
     @property
     def current_node(self):
         if not self.current_node_id:
+            return None
+        elif not self._h.has_obj(uuid.UUID(self.current_node_id)):
+            self.current_node_id = None
             return None
         else:
             return self._h.get_obj(self._m_id, uuid.UUID(self.current_node_id))
@@ -60,6 +62,9 @@ class walker(element, jac_code, walker_interp, anchored):
         for i in self.namespaces:
             ret[i] = hashlib.md5((self._m_id + i).encode()).hexdigest()
         return ret
+
+    def for_queue(self):
+        return self.is_async and not (self._to_await)
 
     def step(self):
         """
@@ -79,7 +84,7 @@ class walker(element, jac_code, walker_interp, anchored):
             return False
 
         self.current_node = self.next_node_ids.pop_first_obj()
-        self.run_walker(jac_ast=self._jac_ast)
+        self.run_walker(jac_ast=self.get_architype().get_jac_ast())
         if self.current_step < 200:
             self.log_history("visited", self.current_node.id)
         self.current_step += 1
@@ -102,13 +107,18 @@ class walker(element, jac_code, walker_interp, anchored):
                 )
             )
             for i in self.destroy_node_ids.obj_list():
+                if i.jid == self.current_node_id:
+                    self.current_node_id = None
                 i.destroy()
+                self.destroy_node_ids.remove_obj(i)
             return True
 
     def prime(self, start_node, prime_ctx=None, request_ctx=None):
         """Place walker on node and get ready to step step"""
-        self.clear_state()
-        self.next_node_ids.add_obj(start_node)
+        if not self.yielded:
+            self.clear_state()
+        if not self.yielded or not len(self.next_node_ids):  # modus ponens
+            self.next_node_ids.add_obj(start_node, push_front=True)
         if prime_ctx:
             for i in prime_ctx.keys():
                 self.context[str(i)] = prime_ctx[i]
@@ -118,16 +128,44 @@ class walker(element, jac_code, walker_interp, anchored):
 
     def run(self, start_node=None, prime_ctx=None, request_ctx=None, profiling=False):
         """Executes Walker to completion"""
+        if self.for_queue() and self._h.task.is_running():
+            start_node = (
+                start_node
+                if not (start_node is None)
+                else (
+                    self.next_node_ids.pop_first_obj() if self.next_node_ids else None
+                )
+            )
+
+            self._h.commit_all_cache_sync()
+
+            return {
+                "is_queued": True,
+                "result": self._h.task.add_queue(
+                    self,
+                    start_node,
+                    prime_ctx or self.context,
+                    request_ctx or self.request_context,
+                    profiling,
+                ),
+            }
+
         if profiling:
             pr = cProfile.Profile()
             pr.enable()
 
-        if start_node:
+        if start_node and (not self.yielded or not len(self.next_node_ids)):
             self.prime(start_node, prime_ctx, request_ctx)
+        elif prime_ctx:
+            for i in prime_ctx.keys():
+                self.context[str(i)] = prime_ctx[i]
 
         report_ret = {"success": True}
+        WalkerInterp.reset(self)
+        self.yielded = False
+
         try:
-            while self.step():
+            while self.step() and not self.yielded:
                 pass
         except Exception as e:
             import traceback as tb
@@ -138,9 +176,10 @@ class walker(element, jac_code, walker_interp, anchored):
         self.save()
 
         if not self.report:
-            logger.debug(str(f"Walker {self.name} did not arrive at report state"))
-
+            logger.debug(str(f"Walker {self.name} did not have anything to report"))
         report_ret["report"] = self.report
+        report_ret["final_node"] = self.current_node_id
+        report_ret["yielded"] = self.yielded
 
         if self.report_status:
             report_ret["status_code"] = self.report_status
@@ -163,11 +202,18 @@ class walker(element, jac_code, walker_interp, anchored):
             self.profile["perf"] = s
             report_ret["profile"] = self.profile
 
+        if self.for_queue():
+            return {"is_queued": False, "result": report_ret}
+
         return report_ret
+
+    def yield_walk(self):
+        """Instructs walker to yield (stop walking and keep state)"""
+        self.yielded = True
 
     def log_history(self, name, value):
         """Helper function for logging history of walker's activities"""
-        if isinstance(value, element):
+        if isinstance(value, Element):
             value = {"type": value.j_type, "id": value.id.urn}
         if isinstance(value, uuid.UUID):
             value = value.urn
@@ -178,20 +224,35 @@ class walker(element, jac_code, walker_interp, anchored):
 
     def clear_state(self):
         """Clears walker state after report"""
+        self.yielded = False
         self.profile = {}
         self.current_step = 0
         self.next_node_ids.remove_all()
         self.ignore_node_ids.remove_all()
         self.destroy_node_ids.remove_all()
         self.current_node = None
-        self.activity_action_ids.destroy_all()
         self.context = {}
-        walker_interp.reset(self)
+        WalkerInterp.reset(self)
 
     def destroy(self):
         """
         Destroys self from memory and persistent storage
         """
-        for i in self.activity_action_ids.obj_list():
-            i.destroy()
-        super().destroy()
+        if not self.for_queue() or not self._h.task.is_running():
+            WalkerInterp.destroy(self)
+            super().destroy()
+
+    def register_yield_or_destroy(self, yield_ids):
+        """Helper for auto destroying walkers"""
+        if not self.yielded:
+            if self.jid in yield_ids:
+                yield_ids.remove_obj(self)
+            self.destroy()
+        else:
+            yield_ids.add_obj(self, silent=True)
+
+    def save(self):
+        """
+        Write self through hook to persistent storage
+        """
+        self._h.save_obj(caller_id=self._m_id, item=self, all_caches=self.is_async)

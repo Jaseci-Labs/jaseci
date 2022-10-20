@@ -5,7 +5,7 @@
 To load the Summarizer run :
 
 ```
-actions load module jaseci_kit.cl_summer
+actions load module jaseci_ai_kit.cl_summer
 ```
 
 * `summarize`: to get the extractive summary in provided sentences count.

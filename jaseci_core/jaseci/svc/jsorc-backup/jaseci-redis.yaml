@@ -1,0 +1,41 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaseci-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: jaseci-redis
+  template:
+    metadata:
+      labels:
+        pod: jaseci-redis
+    spec:
+      containers:
+        - name: jaseci-redis-master
+          image: redis
+          imagePullPolicy: IfNotPresent
+          command:
+            - redis-server
+            - "/redis-master/redis.conf"
+          resources:
+            limits:
+              cpu: "0.2"
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - mountPath: /redis-master-data
+              name: data
+            - mountPath: /redis-master
+              name: config
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: jaseci-redis-config
+            items:
+              - key: redis-config
+                path: redis.conf

@@ -1,21 +1,21 @@
-from jaseci.utils.mem_hook import mem_hook
-from jaseci.actor.sentinel import sentinel
-from jaseci.graph.graph import graph
+import io
+import sys
+from unittest import TestCase
 
 import jaseci.jac.tests.book_code as jtc
-import sys
-import io
-from unittest import TestCase
+from jaseci.actor.sentinel import Sentinel
+from jaseci.graph.graph import Graph
+from jaseci.svc import MetaService
 from jaseci.utils.utils import TestCaseHelper
 
 
-class jac_book_tests(TestCaseHelper, TestCase):
+class JacBookTests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
         super().setUp()
-        self.gph = graph(m_id="anon", h=mem_hook())
-        self.sent = sentinel(m_id=self.gph._m_id, h=self.gph._h)
+        self.sent = Sentinel(m_id="anon", h=MetaService().build_hook())
+        self.gph = Graph(m_id="anon", h=self.sent._h)
         self.old_stdout = sys.stdout
         self.new_stdout = io.StringIO()
         sys.stdout = self.new_stdout
@@ -29,23 +29,37 @@ class jac_book_tests(TestCaseHelper, TestCase):
         print("output: ", self.new_stdout.getvalue())
         sys.stdout = self.new_stdout
 
+    def screen_on(self):
+        sys.stdout = self.old_stdout
+
+    def screen_off(self):
+        sys.stdout = self.new_stdout
+
+    def test_spawn_graph_node(self):
+        """Test node in using spawn graphs instead of dot"""
+        self.sent.register_code(jtc.spawn_graph_node)
+        gen_walker = self.sent.run_architype("init")
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(), "graph_root_node_name\n")
+
     def test_basic_arith(self):
         self.sent.register_code(jtc.basic_arith)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "8 -20 1.0 -2 -13.0\n")
 
     def test_additional_arith(self):
         self.sent.register_code(jtc.more_arith)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "256 4\n")
 
     def test_compare(self):
         self.sent.register_code(jtc.compare)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -54,7 +68,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_logical(self):
         self.sent.register_code(jtc.logical)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -63,35 +77,35 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_assignments(self):
         self.sent.register_code(jtc.assignments)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "8\n16\n36\n36.0\n-18.0\n")
 
     def test_if_stmt(self):
         self.sent.register_code(jtc.if_stmt)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "Hello!\n")
 
     def test_else_stmt(self):
         self.sent.register_code(jtc.else_stmt)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "A is not equal to B\n")
 
     def test_elif_stmt(self):
         self.sent.register_code(jtc.elif_stmt)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "A is one less than B\n")
 
     def test_for_stmt(self):
         self.sent.register_code(jtc.for_stmt)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -104,7 +118,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_while_stmt(self):
         self.sent.register_code(jtc.while_stmt)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -115,7 +129,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_break_stmt(self):
         self.sent.register_code(jtc.break_stmt)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -127,7 +141,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_continue_stmt(self):
         self.sent.register_code(jtc.continue_stmt)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -137,7 +151,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_continue_stmt2(self):
         self.sent.register_code(jtc.continue_stmt2)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -147,7 +161,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_destroy_disconnect(self):
         self.sent.register_code(jtc.destroy_disconn)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         out = self.new_stdout.getvalue()
@@ -155,7 +169,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_array_assign(self):
         self.sent.register_code(jtc.array_assign)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -168,7 +182,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_md_array_assign(self):
         self.sent.register_code(jtc.array_md_assign)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -177,35 +191,35 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_dereference(self):
         self.sent.register_code(jtc.dereference)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue()[:9], "urn:uuid:")
 
     def test_pre_post_walk(self):
         self.sent.register_code(jtc.pre_post_walking)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "count: 8\n")
 
     def test_pre_post_walk_disengage(self):
         self.sent.register_code(jtc.pre_post_walking_dis)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "count: 6\n")
 
     def test_length(self):
         self.sent.register_code(jtc.length)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "3\n3\n")
 
     def test_sort_by_col(self):
         self.sent.register_code(jtc.sort_by_col)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -219,7 +233,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_list_remove_element(self):
         self.sent.register_code(jtc.list_remove)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -230,14 +244,14 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_can_action(self):
         self.sent.register_code(jtc.can_action)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "56 7\n" "56 8\n")
 
     def test_can_action_param(self):
         self.sent.register_code(jtc.can_action_params)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -246,7 +260,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_cross_scope_report(self):
         self.sent.register_code(jtc.cross_scope_report)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertIn(56, gen_walker.report)
@@ -255,24 +269,22 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_has_private(self):
         self.sent.register_code(jtc.has_private)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         print(gen_walker.report)
-        self.assertTrue(
-            self.new_stdout.getvalue().startswith("[{'context': {'apple': 12,")
-        )
+        self.assertIn("'context': {'apple': 12, 'grape': 1", self.new_stdout.getvalue())
 
     def test_array_idx_of_expr(self):
         self.sent.register_code(jtc.array_idx_of_expr)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(self.new_stdout.getvalue(), "3\n1\n")
 
     def test_dict_assign(self):
         self.sent.register_code(jtc.dict_assign)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -284,7 +296,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_dict_md_assign(self):
         self.sent.register_code(jtc.dict_md_assign)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -294,7 +306,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_dict_keys(self):
         self.sent.register_code(jtc.dict_keys)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -304,7 +316,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_cond_dict_keys(self):
         self.sent.register_code(jtc.cond_dict_keys)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -314,17 +326,14 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_vector_softmax(self):
         self.sent.register_code(jtc.soft_max)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
-        self.assertEqual(
-            self.new_stdout.getvalue(),
-            "[0.8360188027814407, 0.11314284146556013, 0.05083835575299916]\n",
-        )
+        self.assertTrue(self.new_stdout.getvalue().startswith("[0.836018"))
 
     def test_book_fam_example(self):
         self.sent.register_code(jtc.fam_example)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("create_fam")
+        gen_walker = self.sent.run_architype("create_fam")
         gen_walker.prime(self.gph)
         gen_walker.run()
         self.assertEqual(
@@ -333,7 +342,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_book_visitor_preset(self):
         self.sent.register_code(jtc.visitor_preset)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         outsplit = self.new_stdout.getvalue().split("\n")
@@ -347,7 +356,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_book_visitor_local_aciton(self):
         self.sent.register_code(jtc.visitor_local_aciton)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         outsplit = self.new_stdout.getvalue().split("\n")
@@ -359,7 +368,7 @@ class jac_book_tests(TestCaseHelper, TestCase):
 
     def test_book_copy_assign_to_edge(self):
         self.sent.register_code(jtc.copy_assign_to_edge)
-        gen_walker = self.sent.walker_ids.get_obj_by_name("init")
+        gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
         outsplit = self.new_stdout.getvalue().split("\n")

@@ -1,0 +1,10 @@
+:host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%
+}
+
+::slotted(div) {
+  display: flex;
+  flex-direction: row;
+}

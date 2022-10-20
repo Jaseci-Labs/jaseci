@@ -1,20 +1,37 @@
 """
 Admin Global api functions as a mixin
 """
-from jaseci.api.interface import interface
+from jaseci.api.interface import Interface
 import jaseci.actions.live_actions as lact
 import json
 
 
-class actions_api:
+class ActionsApi:
     """
-    Admin global APIs
+    APIs to manage actions
+
+    This set action APIs enable the manual management of Jaseci actions and action
+    libraries/sets. Action libraries can be loaded locally into the running instance of
+    the python program, or as a remote container linked action library. In this mode,
+    action libraries operate as micro-services. Jaseci will be able to dynamically
+    and automatically make this decision for the user based on online monitoring and
+    performance profiling.
     """
 
-    @interface.admin_api(cli_args=["file"])
+    @Interface.admin_api(cli_args=["file"])
     def actions_load_local(self, file: str):
         """
-        Hot load a python module and assimlate any Jaseci Actions
+        Hot load a python module and assimilate any Jaseci Actions
+
+        This API will dynamically load a module based on a python file. The module
+        is loaded directly into the running Jaseci python instance. This API also
+        makes an attempt to auto detect and hot load any python package dependencies
+        the file may reference via python's relative imports. This file is assumed to
+        have the necessary annotations and decorations required by Jaseci to recognize
+        its actions.
+
+        :param file: The python file with full to load actions from.
+            (i.e., ~/local/myact.py)
         """
         success = lact.load_local_actions(file)
         if success:
@@ -31,10 +48,20 @@ class actions_api:
                 )
         return {"success": success}
 
-    @interface.admin_api(cli_args=["url"])
+    @Interface.admin_api(cli_args=["url"])
     def actions_load_remote(self, url: str):
         """
-        Hot load an actions set from live pod at URL
+        Hot link to a container linked action library
+
+        This API will dynamically load a set of actions that are present on a remote
+        server/micro-service. This server must be configured to interact with Jaseci
+        properly. This is easily achieved using the same decorators used for local
+        action libraries. Remote actions allow for higher flexibility in the languages
+        supported for action libraries. If an  library writer would like to use another
+        language, the main hook REST api simply needs to be implemented. Please
+        refer to documentation on creating action libraries for more details.
+
+        :param url: The url of the API server supporting Jaseci actions.
         """
         success = lact.load_remote_actions(url)
         if success:
@@ -51,10 +78,19 @@ class actions_api:
                 )
         return {"success": success}
 
-    @interface.admin_api(cli_args=["mod"])
+    @Interface.admin_api(cli_args=["mod"])
     def actions_load_module(self, mod: str):
         """
-        Hot load an actions set from live pod at URL
+        Hot load a python module and assimilate any Jaseci Actions
+
+        This API will dynamically load a module using python's module import format.
+        This is particularly useful for pip installed action libraries as the developer
+        can directly reference the module using the same format as a regular python
+        import. As with load local, the module will be loaded directly into the running
+        Jaseci python instance.
+
+        :param mod: The import style module to load actions from.
+            (i.e., jaseci_ai_kit.bi_enc)
         """
         success = lact.load_module_actions(mod)
         if success:
@@ -76,10 +112,17 @@ class actions_api:
     #     """
     #     """
 
-    @interface.admin_api()
+    @Interface.admin_api()
     def actions_list(self, name: str = ""):
         """
-        List all live jaseci actions
+        List a set of or all loaded jaseci actions
+
+        This API is used to list the loaded actions active in Jaseci. These actions
+        include all types of loaded actions whether it be local modules or remote
+        containers. A particular set of actions can be viewed using the name parameter.
+
+        :param name: The name for a library for which to filter the view of shown
+            actions. If left blank all actions from all loaded sets will be shown.
         """
         actions = list(lact.live_actions.keys())
         if len(name):

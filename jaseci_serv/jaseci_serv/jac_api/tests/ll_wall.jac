@@ -401,7 +401,6 @@ walker gen_day_workettes {
     has num_workettes;
 
     with_entry {
-        if(!date): std.time_now();
         if(!num_workettes): num_workettes = 0;
     }
 
@@ -415,9 +414,7 @@ walker gen_day_workettes {
     }
 
     life {
-        for i=0 to i<1 by i+=1 {
-            spawn here walker::get_gen_day(date=date);
-        }
+        spawn here walker::get_gen_day(date=date);
         take -->;
     }
     year, month, week { take -->; }

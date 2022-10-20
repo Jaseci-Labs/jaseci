@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
-import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,7 +26,6 @@ SECRET_KEY = "@%ad_kyis62uf7qf^w9kv(8$db4)%c$nnnjk^us=s@-gj*)aal"
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-
 
 # Application definition
 
@@ -47,6 +45,8 @@ INSTALLED_APPS = [
     "jaseci_serv.obj_api",
     "jaseci_serv.jac_api",
     "corsheaders",
+    "django_celery_results",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -82,7 +82,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "jaseci_serv.jaseci_serv.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
@@ -115,21 +114,9 @@ else:
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": "mydatabase",
+            "TEST": {"NAME": "test"},
         }
     }
-
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-
-# Cover regular testing and django-coverage
-if "test" in sys.argv or "test_coverage" in sys.argv:
-    DATABASES["default"]["ENGINE"] = "django.db.backends.sqlite3"
-    DATABASES["default"]["NAME"] = ":memory:"
-    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-
-# REDIS
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = os.getenv("REDIS_PORT", "6379")
-REDIS_URL = "redis://{host}:{port}/1".format(host=REDIS_HOST, port=REDIS_PORT)
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -150,7 +137,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
@@ -163,7 +149,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = False
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
@@ -207,3 +192,6 @@ JASECI_CONFIGS = [
     "EMAIL_RESETPASS_HTML_BODY",
     "LOGIN_TOKEN_TTL_HOURS",
 ]
+
+DJANGO_CELERY_BEAT_TZ_AWARE = False
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

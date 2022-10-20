@@ -1,9 +1,0 @@
-{
-    "MAX_LEN": 128,
-    "TRAIN_BATCH_SIZE": 4,
-    "VALID_BATCH_SIZE": 2,
-    "EPOCHS": 10,
-    "LEARNING_RATE": 2e-05,
-    "MAX_GRAD_NORM": 10,
-    "MODE": "default"
-}

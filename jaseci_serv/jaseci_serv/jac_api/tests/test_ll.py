@@ -11,7 +11,7 @@ import random
 import os
 
 
-class test_ll(TestCaseHelper, TestCase):
+class TestLL(TestCaseHelper, TestCase):
     """Test the authorized user node API"""
 
     def setUp(self):
@@ -176,8 +176,8 @@ class test_ll(TestCaseHelper, TestCase):
         data = self.run_walker("get_workettes", {}, prime=wjid)["report"]
         self.assertEqual(len(data), 3)
         data = self.run_walker("delete_workette", {}, prime=wjid)["report"]
-        self.assertNotIn(uuid.UUID(exjid), self.master._h.mem.keys())
-        self.assertIn(uuid.UUID(jid), self.master._h.mem.keys())
+        self.assertNotIn(uuid.UUID(exjid).urn, self.master._h.mem.keys())
+        self.assertIn(uuid.UUID(jid).urn, self.master._h.mem.keys())
         data = self.run_walker("get_workettes", {}, prime=jid)["report"]
         self.assertEqual(len(data), 1)
         data = self.run_walker("get_workettes_deep", {}, prime=jid)["report"]

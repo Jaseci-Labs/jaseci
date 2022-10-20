@@ -494,3 +494,147 @@ dot_private_hidden = """
         n2 = spawn here --> node::a;
     }
     """
+
+check_destroy_node_has_var = """
+    node a {
+        has x;
+    }
+
+    walker create {
+        n = spawn here --> node::a;
+        n.x = spawn node::a;
+        report n.x.type;
+    }
+
+    walker remove {
+        n=-->[0];
+        destroy n.x;
+        report n.x.type;
+    }
+"""
+
+check_dict_for_in_loop = """
+    walker for_loop_dict {
+        with entry {
+            testing = {
+                "test1": 1,
+                "test2": 2,
+                "test3": 3
+            };
+
+            for key in testing {
+                report key.str + " : " + testing[key].str;
+            }
+
+            for key, val in testing {
+                report key.str + " : " + val.str;
+            }
+
+            testing = [5,6,7];
+
+            for key in testing {
+                report key;
+            }
+
+            for key, val in testing {
+                report key.str + " : " + val.str;
+            }
+        }
+    }
+
+    walker var_as_key_for_dict {
+        with entry {
+            key = "key1";
+            not_str_key = 1;
+            testing = {
+                key: key,
+                "key2": 2,
+                not_str_key: not_str_key
+            };
+
+            report testing;
+        }
+    }
+"""
+
+check_new_builtin = """
+    walker init {
+        with entry {
+            a = {"test":"test"};
+
+            // dict get with default if not existing
+            b = a.dict::get("t", 1);
+
+            // string join single param array
+            c = " ".str::join([1,2,3,4]);
+
+            // string join multiparams
+            d = " ".str::join(1,2,3,4);
+            report a;
+            report b;
+            report c;
+            report d;
+        }
+    }
+"""
+
+continue_issue = """
+    walker init {
+        root {
+            for i=0 to i<10 by i+=1 {
+                if(i==9):
+                    continue;
+                if(i):
+                    report i;
+            }
+            report "apple";
+        }
+    }
+"""
+
+async_syntax = """
+async walker simple_async_second_layer {
+    has anchor val1, val2 = 2;
+    with entry {
+        report val1;
+        report val2;
+    }
+}
+
+async walker simple_async {
+    has anchor test_anchor = "test";
+    can task.get_result;
+    with entry {
+        task1 = spawn here sync walker::simple_async_second_layer(val1 = 1);
+        task2 = spawn here walker::simple_async_second_layer(val1 = 2);
+        report task1;
+        report task2;
+
+        if task2["is_queued"]:
+            report task.get_result(task2["result"], true);
+    }
+}
+
+async walker simple_async_with_sync {
+    has anchor test_anchor = "test";
+    can task.get_result;
+    with entry {
+        task1 = spawn here sync walker::simple_async_second_layer(val1 = 1);
+        task2 = spawn here walker::simple_async_second_layer(val1 = 2);
+        report task1;
+        report task2;
+
+        report sync task2;
+    }
+}
+"""
+
+block_scope_check = """
+    walker init {
+        i=5;
+        for i=0 to i<10 by i+=1 {
+            report i;
+        }
+        report i;
+    }
+"""

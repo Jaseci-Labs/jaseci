@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
+  <title>Stencil Component Starter</title>
+
+  <script type="module" src="/build/components.esm.js"></script>
+  <script nomodule src="/build/components.js"></script>
+  <link rel="stylesheet" href="/build/components.css" />
+</head>
+<style>
+  body {
+    width: 100%;
+    margin: 0;
+    height: 100%;
+  }
+</style>
+
+<body>
+  <jsc-app></jsc-app>
+
+  <script>
+    customElements.whenDefined('jsc-app').then(() => {
+      const app = document.querySelector('jsc-app');
+      const config = {
+        siteName: 'Hello World',
+        theme: 'greenheart',
+        fieldPalette: 'primary',
+        css: {
+          background: '#F2F6F9',
+          height: '100%',
+        },
+      };
+
+      app.setGlobalConfig(config);
+
+      app.setMarkup(
+        JSON.stringify([
+          {
+            component: 'Navbar',
+            props: {
+              label: '{{config:siteName}}',
+              links: [
+                { label: 'Hello', href: 'http://google.com' },
+                { label: 'Test', href: 'http://trueselph.com' },
+                {
+                  label: 'Hello',
+                  links: [
+                    { label: 'World', href: '#' },
+                    { label: 'There', href: '#' },
+                  ],
+                  href: '#',
+                },
+              ],
+            },
+          },
+          {
+            component: 'Alert',
+            props: {
+              message: 'An error occured',
+              palette: 'error',
+            },
+            sections: {
+              right: [
+                {
+                  component: 'Button',
+                  props: { label: 'View Logs', size: 'sm', palette: 'ghost' },
+                },
+              ],
+            },
+            css: {
+              padding: '20px',
+              width: '500px',
+              margin: '0 auto',
+            },
+          },
+          {
+            component: 'Row',
+            props: {
+              items: 'center',
+              justify: 'between',
+            },
+            css: {
+              width: '100%',
+              height: '100%',
+              padding: '10px 300px',
+              display: 'flex',
+            },
+            sections: {
+              children: [
+                {
+                  component: 'Text',
+                  props: {
+                    variant: 'h1',
+                    value: 'Logs',
+                  },
+                },
+                {
+                  component: 'Button',
+                  props: {
+                    label: 'Add a Log',
+                    // palette: "{{config:fieldPalette}}"
+                  },
+                },
+              ],
+            },
+          },
+          {
+            component: 'Card',
+            props: {
+              variant: 'outline',
+              shadow: 'md',
+              outlineColor: 'red',
+              radius: 'lg',
+            },
+            css: {
+              padding: '20px 20px',
+            },
+            sections: {
+              children: [
+                {
+                  component: 'Button',
+                  props: {
+                    label: 'Show Toast',
+                  },
+                  events: {
+                    onClick: [
+                      { fn: 'textToSpeech', args: ['Added a new item to your cart. You can now continue'] },
+                      {
+                        fn: 'showToast',
+                        args: [
+                          {
+                            message: 'Added a new item to your cart. You can now continue',
+                            timeout: 2000,
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+                {
+                  component: 'SpeechInput',
+                  events: {},
+                },
+                {
+                  component: 'Hero',
+                  props: {
+                    label: 'Title Text',
+                    description:
+                      'Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem quasi. In deleniti eaque aut repudiandae et a id nisi.',
+                    action: { label: 'Learn More', href: 'http://google.com' },
+                    backgroundImage: 'https://cdn.mos.cms.futurecdn.net/tXr5UjKDsDBrYBQM9znb2c-1024-80.jpg.webp',
+                  },
+                },
+                {
+                  component: 'Stat',
+                  props: {
+                    stats: [
+                      {
+                        label: 'Impressions',
+                        value: '90,000',
+                        description: 'Take a look at that!',
+                      },
+                      {
+                        label: 'Total API Calls',
+                        value: '90,000',
+                        description: 'You may need to upgrade soon',
+                      },
+                      {
+                        label: 'Unique Visitors',
+                        value: '20,000',
+                        description: 'Going great!',
+                      },
+                    ],
+                  },
+                  css: {
+                    marginTop: '20px',
+                    marginBottom: '20px',
+                  },
+                },
+                {
+                  component: 'ButtonGroup',
+                  props: {
+                    buttons: [
+                      { label: 'Page 1', href: 'http://google.com' },
+                      { label: 'Page 2', href: 'http://google.com', active: 'true' },
+                      { label: 'Page 3', href: 'http://google.com' },
+                    ],
+                  },
+                },
+                {
+                  component: 'AuthForm',
+                  props: {
+                    mode: "signup",
+                    serverURL: "http://localhost:8000",
+                    tokenKey: "tokenKey",
+                    hideNameField: true
+                  },
+                },
+
+                {
+                  component: 'Rating',
+                  props: {
+                    stars: 10,
+                    value: 2,
+                  },
+                },
+                {
+                  component: 'Breadcrumbs',
+                  props: {
+                    links: [{ label: 'Apple', href: 'http://google.com' }, { label: 'Oranges', href: 'http://example.com' }, { label: 'Cashews' }],
+                  },
+                },
+                {
+                  name: 'openDialogBtn',
+                  component: 'Button',
+                  props: {
+                    label: 'Open Dialog',
+                    size: 'sm',
+                  },
+                  events: {
+                    onClick: [
+                      {
+                        fn: 'emit',
+                        args: ['myDialog.openDialog'],
+                      },
+                    ],
+                  },
+                },
+                {
+                  component: 'Dropdown',
+                  props: {
+                    label: 'My Dropdown',
+                    items: [
+                      { href: '#', label: 'Hello' },
+                      { href: '#', label: 'World' },
+                    ],
+                    buttonProps: {
+                      palette: 'info',
+                      size: 'sm',
+                    },
+                  },
+                  css: { marginBottom: '20px' },
+                },
+                {
+                  component: 'Text',
+                  props: {
+                    variant: 'h2',
+                    value: 'Logs',
+                  },
+                },
+                {
+                  name: 'input1',
+                  component: 'Inputbox',
+                  props: {
+                    label: 'Full Name',
+                    altLabel: 'Enter name',
+                    placeholder: 'An input field',
+                    palette: '{{config:fieldPalette}}',
+                  },
+                  css: {},
+                },
+                {
+                  name: 'select1',
+                  component: 'Select',
+                  props: {
+                    label: 'Pet',
+                    palette: '{{config:fieldPalette}}',
+                    placeholder: 'Choose a pet',
+                    options: [{ label: 'Cat' }, { label: 'Dog' }],
+                  },
+                },
+                {
+                  component: 'Textbox',
+                  props: {
+                    label: 'Date',
+                    placeholder: 'Hello world...',
+                    palette: '{{config:fieldPalette}}',
+                  },
+                  css: {},
+                },
+                {
+                  component: 'Radio',
+                  props: {
+                    label: 'Cat',
+                    palette: '{{config:fieldPalette}}',
+                  },
+                },
+                {
+                  component: 'Radio',
+                  props: {
+                    label: 'Dog',
+                    palette: '{{config:fieldPalette}}',
+                  },
+                },
+                {
+                  name: 'checkbox1',
+                  component: 'Checkbox',
+                  props: {
+                    label: 'Correct?',
+                    palette: '{{config:fieldPalette}}',
+                    size: 'xs',
+                  },
+                },
+                {
+                  name: 'checkbox1',
+                  component: 'Checkbox',
+                  props: {
+                    label: 'Remember?',
+                    palette: '{{config:fieldPalette}}',
+                    size: 'sm',
+                    value: 'true',
+                  },
+                },
+                {
+                  name: 'checkbox1',
+                  component: 'Toggle',
+                  props: {
+                    label: 'Dark/Light Mode',
+                    palette: '{{config:fieldPalette}}',
+                    size: 'sm',
+                    value: 'true',
+                  },
+                  // react to prop changes
+                  when: {
+                    value: [
+                      {
+                        is: 'true',
+                        call: { fn: 'setConfig', args: ['nexusDark'] },
+                      },
+                      {
+                        is: 'false',
+                        call: { fn: 'setConfig', args: ['nexus'] },
+                      },
+                    ],
+                  },
+                },
+                {
+                  component: 'Anchor',
+                  props: {
+                    label: 'Click Here',
+                    href: '#',
+                    target: '_blank',
+                    hover: 'true',
+                    palette: 'primary',
+                  },
+                },
+                {
+                  name: 'range1',
+                  component: 'Range',
+                  props: {
+                    label: 'Change Threshold',
+                    palette: '{{config:fieldPalette}}',
+                    min: '0',
+                    max: '100',
+                    defaultValue: '80',
+                  },
+                },
+                {
+                  component: 'Container',
+                  sections: {
+                    children: [
+                      {
+                        component: 'Collapse',
+                        props: {
+                          label: 'How do I use Jaseci?',
+                          palette: 'primary',
+                          min: '0',
+                          max: '100',
+                          defaultValue: '80',
+                        },
+                        sections: {
+                          children: [
+                            { component: 'Text', props: { value: 'Visit the site to learn more: ' } },
+                            {
+                              component: 'Anchor',
+                              props: {
+                                label: 'Click Here',
+                                palette: 'primary',
+                                href: 'https://docs.jaseci.org/',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        component: 'Collapse',
+                        props: {
+                          label: 'Who is Jaseci for?',
+                          palette: 'secondary',
+                          min: '0',
+                          max: '100',
+                          defaultValue: '80',
+                        },
+                        sections: {
+                          children: [{ component: 'Text', props: { value: 'Developers.' } }],
+                        },
+                        css: {
+                          marginTop: '20px',
+                        },
+                      },
+                    ],
+                  },
+                  // tw: "",
+                  css: { width: '500px' },
+                },
+
+                // {
+                //   component: "Datagrid",
+                //   props: {
+                //     server: "http://localhost:8000",
+                //     walker: "list_tag",
+                //     token: "198ab01ffecda8b09c98e2e679257d25644c430690ae0cacd54529bcd83b0b9a",
+                //     snt: "urn:uuid:ae422d32-27eb-4ee8-9d91-b1a6b4189caf",
+                //     "itemsPerPage": 4,
+                //     headings: [
+                //       { label: "Labels", accessor: "label" },
+                //       { label: "Tag Names", accessor: "label", formatter: "native", format: "Tag: {{value}}" },
+                //     ]
+                //   }
+                // },
+                {
+                  name: 'logsDataGrid',
+                  component: 'Datagrid',
+                  props: {
+                    server: 'http://localhost:8000',
+                    walker: 'list_log',
+                    token: '198ab01ffecda8b09c98e2e679257d25644c430690ae0cacd54529bcd83b0b9a',
+                    snt: 'urn:uuid:ae422d32-27eb-4ee8-9d91-b1a6b4189caf',
+                    variant: 'striped',
+                    itemsPerPage: 3,
+                    headings: [
+                      { label: 'Subject', accessor: 'subject' },
+                      { label: 'Message', accessor: 'body' },
+                      {
+                        label: 'Date',
+                        accessor: 'timestamp',
+                        formatter: 'date',
+                        format: 'Do MMM, YYYY h:mm a',
+                        render: [{ component: 'Text', props: { value: '{{value}}' }, css: { color: '#006ADC', fontWeight: 'bold' } }],
+                      },
+                      {
+                        label: 'Actions',
+                        accessor: 'jid',
+                        render: [
+                          {
+                            component: 'Button',
+                            props: { label: 'Delete' },
+                            events: {
+                              // call delete endpoint
+                              onClick: [
+                                {
+                                  fn: 'callEndpoint',
+                                  endpoint: 'http://localhost:8000/js/walker_run',
+                                  onCompleted: { fn: 'refreshDatagrid', args: ['logsDataGrid'] },
+                                  args: [
+                                    'POST',
+                                    {
+                                      name: 'delete_log',
+                                      snt: 'urn:uuid:ae422d32-27eb-4ee8-9d91-b1a6b4189caf',
+                                      ctx: {
+                                        id: '{{value}}',
+                                      },
+                                    },
+                                    {
+                                      'Authorization': 'token 198ab01ffecda8b09c98e2e679257d25644c430690ae0cacd54529bcd83b0b9a',
+                                      'Content-Type': 'application/json',
+                                    },
+                                  ],
+                                },
+                              ],
+                            },
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+                {
+                  name: 'datalist',
+                  component: 'Datalist',
+                  props: {
+                    server: 'http://localhost:8000',
+                    walker: 'list_tag',
+                    token: '198ab01ffecda8b09c98e2e679257d25644c430690ae0cacd54529bcd83b0b9a',
+                    snt: 'urn:uuid:ae422d32-27eb-4ee8-9d91-b1a6b4189caf',
+                    getters: [{ name: 'label', accessor: 'label' }],
+                    template: [
+                      {
+                        component: 'Chip',
+                        props: {
+                          label: '{{label}}',
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  name: 'myDialog',
+                  component: 'Dialog',
+                  props: {
+                    title: 'This is a dialog',
+                    open: 'false',
+                  },
+                  observe: {
+                    open: {
+                      if: 'true',
+                      call: [{ fn: 'setTheme', args: ['nexus'] }],
+                      $call: [{ fn: 'setTheme', args: ['nexus'] }],
+                    },
+                  },
+                  listeners: {
+                    openDialog: {
+                      open: 'true',
+                    },
+                    closeDialog: {
+                      $call: [{ method: 'closeDialog' }],
+                    },
+                  },
+                  sections: {
+                    contents: [
+                      {
+                        component: 'Text',
+                        props: {
+                          value: 'Hello',
+                        },
+                      },
+                      {
+                        component: 'Button',
+                        props: {
+                          label: 'Close this dialog',
+                        },
+                        events: {
+                          onClick: [{ fn: 'emit', args: ['myDialog.closeDialog'] }],
+                        },
+                      },
+                    ],
+                  },
+                },
+
+                {
+                  name: 'myDrawer',
+                  component: 'Drawer',
+                  props: {
+                    title: 'This is a dialog',
+                    open: 'false',
+                  },
+                  listeners: {
+                    openDrawer: {
+                      open: 'true',
+                    },
+                    closeDrawer: {
+                      $call: [{ method: 'closeDrawer' }],
+                    },
+                  },
+                  sections: {
+                    contents: [
+                      {
+                        component: 'Text',
+                        props: {
+                          value: 'Hello',
+                        },
+                      },
+                      {
+                        component: 'Button',
+                        props: {
+                          label: 'Close this dialog',
+                        },
+                        events: {
+                          onClick: [{ fn: 'emit', args: ['myDialog.closeDrawer'] }],
+                        },
+                      },
+                    ],
+                  },
+                },
+
+                {
+                  name: 'myPopover',
+                  component: 'Popover',
+                  props: {
+                    open: 'false',
+                    target: 'popoverTrigger',
+                    title: 'A simple popover',
+                  },
+                  sections: {
+                    contents: [
+                      { component: 'Text', props: { value: 'Hello world!!' } },
+                      { component: 'Text', props: { value: 'Hello world!!' } },
+                      { component: 'Text', props: { value: 'Hello world!!' } },
+                      { component: 'Text', props: { value: 'Hello world!!' } },
+                      { component: 'Text', props: { value: 'Hello world!!' } },
+                    ],
+                  },
+                  listeners: {
+                    open: {
+                      $call: [{ method: 'openPopover' }],
+                    },
+                    toggle: {
+                      $call: [{ method: 'togglePopover' }],
+                    },
+                  },
+                },
+                {
+                  name: 'popoverTrigger',
+                  component: 'Button',
+                  props: {
+                    label: 'Toggle Popover',
+                    tooltip: 'Open/close this popover',
+                  },
+                  events: {
+                    onClick: [
+                      {
+                        fn: 'emit',
+                        args: ['myPopover.toggle'],
+                      },
+                    ],
+                  },
+                },
+                {
+                  name: 'test',
+                  component: 'Button',
+                  props: {
+                    label: 'Get RadioGroup Data',
+                    tooltip: 'Show the radio group data',
+                    tooltipPosition: 'right',
+                    tooltipPalette: 'secondary',
+                  },
+                  events: {
+                    onClick: [
+                      {
+                        fn: 'alert',
+                        args: ['var(radioGroup1.value)'],
+                      },
+                    ],
+                  },
+                  css: {
+                    marginLeft: '18px',
+                  },
+                },
+                {
+                  component: 'Divider',
+                  props: {
+                    label: 'Change Theme',
+                  },
+                },
+
+                {
+                  component: 'Row',
+                  sections: {
+                    children: [
+                      {
+                        component: 'Button',
+                        props: {
+                          label: 'Light',
+                        },
+                        events: {
+                          onClick: [
+                            {
+                              fn: 'setTheme',
+                              args: ['nexus'],
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        component: 'Divider',
+                        props: {
+                          label: 'OR',
+                          orientation: 'vertical',
+                        },
+                      },
+                      {
+                        component: {},
+                        props: {},
+                      },
+                      {
+                        component: 'Button',
+                        props: {
+                          label: 'Dark',
+                        },
+                        css: {
+                          marginLeft: '8px',
+                        },
+                        events: {
+                          onClick: [
+                            {
+                              fn: 'setTheme',
+                              args: ['nexusDark'],
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  component: 'Divider',
+                  props: {},
+                },
+                {
+                  component: 'Tooltip',
+                  props: {
+                    target: 'openDialogBtn',
+                    label: 'This is a tooltip',
+                  },
+                },
+                {
+                  name: 'myTabs',
+                  component: 'Tabs',
+                  props: {
+                    variant: 'lifted',
+                    tabs: [
+                      {
+                        name: 'tab1',
+                        label: 'Home',
+                        render: [{ component: 'Text', props: { value: 'Tab 1 content' } }],
+                      },
+                      {
+                        name: 'tab2',
+                        label: 'Settings',
+                        render: [
+                          { component: 'Text', props: { value: 'Tab 2 content' } },
+                          {
+                            component: 'Button',
+                            props: { label: 'Click Me' },
+                            events: { onClick: [{ fn: 'emit', args: ['myDialog.openDialog'] }] },
+                          },
+                          {
+                            component: 'Button',
+                            props: { label: 'Open Drawer' },
+                            events: { onClick: [{ fn: 'emit', args: ['myDrawer.openDrawer'] }] },
+                          },
+                        ],
+                      },
+                      {
+                        name: 'tab3',
+                        label: 'Messages',
+                        render: [
+                          {
+                            component: 'Text',
+                            props: { value: 'Tab 3 content dddddddddd df dfdfdf dfdfdfd dfdfdfdf df dfd fdfdfd fdf dfdfdfdfdfdfdfdf dfd fdf df d dfdfd dfd dd dfdf' },
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  css: {
+                    marginTop: '20px',
+                  },
+                },
+                {
+                  component: 'Avatar',
+                  props: {
+                    src: 'https://placeimg.com/192/192/nature',
+                    placeholder: 'GD',
+                    variant: 'circle',
+                  },
+                },
+                {
+                  component: 'Avatar',
+                  props: {
+                    src: 'https://placeimg.com/192/192/tech',
+                    size: 'sm',
+                    variant: 'rounded',
+                  },
+                },
+                {
+                  component: 'Row',
+                  sections: {
+                    children: [
+                      {
+                        component: 'Badge',
+                        props: {
+                          label: 'First',
+                        },
+                      },
+                      {
+                        component: 'Badge',
+                        props: {
+                          label: 'Second',
+                          palette: 'secondary',
+                        },
+                      },
+                      {
+                        component: 'Badge',
+                        props: {
+                          label: 'Second',
+                          size: 'sm',
+                          palette: 'accent',
+                        },
+                      },
+                    ],
+                  },
+                  css: {
+                    gap: '8px',
+                  },
+                },
+                {
+                  component: 'Carousel',
+                  props: {},
+                },
+                {
+                  component: 'Progress',
+                  props: {
+                    palette: 'accent',
+                    value: '20',
+                  },
+                },
+                {
+                  component: 'Progress',
+                  props: {
+                    palette: 'secondary',
+                    value: '80',
+                  },
+                },
+                {
+                  name: 'radioGroup1',
+                  component: 'RadioGroup',
+                  props: {
+                    palette: 'accent',
+                    label: 'Choose an option',
+                    options: [
+                      { name: 'on', label: 'On' },
+                      { name: 'off', label: 'Off' },
+                    ],
+                    value: '80',
+                  },
+                },
+              ],
+            },
+          },
+
+          {
+            component: 'DatePicker',
+            props: {
+              label: 'Date',
+            },
+          },
+        ]),
+      );
+    });
+  </script>
+</body>
+
+</html>

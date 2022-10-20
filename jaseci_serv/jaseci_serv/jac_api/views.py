@@ -1,31 +1,30 @@
 import json
-from tempfile import _TemporaryFileWrapper
-from rest_framework.views import APIView
-from knox.auth import TokenAuthentication
-from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
-from rest_framework.response import Response
-from jaseci.utils.utils import logger
-from jaseci.element.element import element
-from jaseci_serv.base.orm_hook import orm_hook
-from jaseci_serv.base.models import JaseciObject, GlobalVars
-from jaseci_serv.base.models import master as core_master
-from time import time
 from base64 import b64encode
 from io import BytesIO
+from tempfile import _TemporaryFileWrapper
+from time import time
+
+from knox.auth import TokenAuthentication
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from jaseci.element.element import Element
+from jaseci.utils.utils import logger, ColCodes as Cc
+from jaseci_serv.base.models import Master as ServMaster
+from jaseci_serv.svc import MetaService
 
 
 class JResponse(Response):
     def __init__(self, master, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.master = master
-        for i in self.master._h.save_obj_list:
-            self.master._h.commit_obj_to_redis(i)
-        self.master._h.skip_redis_update = True
+        self.hook = master._h
+        self.hook.commit_all_cache_sync()
 
     def close(self):
         super(JResponse, self).close()
         # Commit db changes after response to user
-        self.master._h.commit()
+        self.hook.commit(True)
 
 
 class AbstractJacAPIView(APIView):
@@ -61,18 +60,20 @@ class AbstractJacAPIView(APIView):
 
     def log_request_stats(self):
         """Api call preamble"""
-        TY = "\033[33m"
-        TG = "\033[32m"
-        EC = "\033[m"  # noqa
         tot_time = time() - self.start_time
         save_count = 0
-        if isinstance(self.caller, element):
+        touch_count = 0
+        touch_kb = 0
+        if isinstance(self.caller, Element):
             save_count = len(self.caller._h.save_obj_list)
+            touch_count = len(self.caller._h.mem.keys()) - 1
+            touch_kb = self.caller._h.mem_size()
         logger.info(
             str(
-                f"API call to {TG}{type(self).__name__}{EC}"
-                f" completed in {TY}{tot_time:.3f} seconds{EC}"
-                f" saving {TY}{save_count}{EC} objects."
+                f"API call to {Cc.TG}{type(self).__name__}{Cc.EC}"
+                f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
+                f" touched {Cc.TY}{touch_count} ({touch_kb:.1f}kb){Cc.EC} and"
+                f" saving {Cc.TY}{save_count}{Cc.EC} objects."
             )
         )
 
@@ -85,7 +86,7 @@ class AbstractJacAPIView(APIView):
             elif "ctx" in req_data and type(req_data["ctx"]) is not dict:
                 req_data["ctx"] = json.loads(req_data["ctx"])
         except ValueError:
-            logger.error(str(f"Invalid ctx format! Ignoring ctx parsing!"))
+            logger.error("Invalid ctx format! Ignoring ctx parsing!")
 
     def proc_file_ctx(self, request, req_data):
         for key in request.FILES:
@@ -167,7 +168,11 @@ class AbstractJacAPIView(APIView):
         # for i in self.caller._h.save_obj_list:
         #     self.caller._h.commit_obj_to_redis(i)
         status = self.pluck_status_code(api_result)
-        if isinstance(api_result, dict) and "report_custom" in api_result.keys():
+        if (
+            isinstance(api_result, dict)
+            and "report_custom" in api_result.keys()
+            and api_result["report_custom"] is not None
+        ):
             api_result = api_result["report_custom"]
         return JResponse(self.caller, api_result, status=status)
 
@@ -215,8 +220,8 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
 
     def set_caller(self, request):
         """Assigns the calling api interface obj"""
-        self.caller = core_master(
-            h=orm_hook(objects=JaseciObject.objects, globs=GlobalVars.objects),
+        self.caller = ServMaster(
+            h=MetaService().build_hook(),
             persist=False,
         )
 
@@ -225,7 +230,11 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
         # If committer set, results should be saved back
         status = self.pluck_status_code(api_result)
 
-        if isinstance(api_result, dict) and "report_custom" in api_result.keys():
+        if (
+            isinstance(api_result, dict)
+            and "report_custom" in api_result.keys()
+            and api_result["report_custom"] is not None
+        ):
             api_result = api_result["report_custom"]
 
         if self.caller._pub_committer:

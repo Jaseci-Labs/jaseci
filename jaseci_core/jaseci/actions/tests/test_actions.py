@@ -4,7 +4,7 @@ import jaseci.actions.live_actions as jla
 import jaseci.actions.remote_actions as jra
 
 
-class jac_actions_tests(TestCaseHelper, TestCase):
+class JacActionsTests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
