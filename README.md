@@ -54,7 +54,8 @@
 ## Other Resources
 
 - [About this Release](CHANGELOG.md)
-- [How to Contribute]()
+- [How to Contribute](support/guide/contributor_policy.md)
+  - [Being an Contributor](support/guide/contributor_policy.md)
   - [General Guide](CONTRIBUTING.md)
   - [Contributors](CONTRIBUTORS.md)
 - [Archived Notes](NOTES.md)

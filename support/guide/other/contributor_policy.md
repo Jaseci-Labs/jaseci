@@ -18,4 +18,23 @@ A committed contributor is one that is on the TOTC (*team of the committed*). TO
 
 > **Note**
 >
-> The TOTC is an open group, accepting members from all across the world that can take the TOTC oath which fit in to 1 sentence. Oath: *I will strive my very best to be a good human, be reliable, share my ideas without reservation, be patient when they aren't accepted right away, follow the guidelines, yet suggest improvements when they make sense, and take breaks when I'm not having fun.*
+> The TOTC is an open group. We accept members from all across the world that can take the TOTC oath which we fit in to 1 sentence. Oath: *I will strive my very best to be a good human, be reliable, share my ideas without reservation, be patient when they aren't accepted right away, follow the guidelines, suggest improvements instead of get resentful, and take breaks when I'm not having fun.*
+
+### Guidelines
+
+1. Come to the meetings or share in relevant Slack channel a note before, or we will worry insensently that something is terribly wrong
+2. For a given thing (e.g., task, todo, doc, note, comment, delegation, request for help, etc), it exists iff it is present in our system of Objective and Centralized Truth (OCT for short, aka Click-Up atm, links to other systems like github, and google docs are ok).
+3. For the days committed to work, if nothing is checked off, leave a little comment on how things went iff nothing gets checked off that day.
+4. And most importantly!! **Follow Below!**
+```python
+from work import fun, you, open_prs
+
+if you.having_fun() in [False, None] and you.engaged() in [False, None]:
+    you.take_break() if you.need_break() else you.work_on(
+        open_prs.get(fun_factor=fun.HIGH)
+    ) if open_prs.find(fun_factor=fun.HIGH) is not None else open_prs.create(
+        fun.ANYTHING, start_hack=True
+    )
+else:
+    you.hack_on(leet_code=True)
+```
