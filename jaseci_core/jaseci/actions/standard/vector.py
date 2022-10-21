@@ -20,16 +20,14 @@ def cosine_sim(vec_a: list, vec_b: list):
     vec_a_nested = check_nested_list(vec_a)
     vec_b_nested = check_nested_list(vec_b)
     if vec_a_nested or vec_b_nested:
-        vec_a_np = np.array(vec_a) if vec_a_nested else np.array(
-            [vec_a] * len(vec_b))
-        vec_b_np = np.array(vec_b) if vec_b_nested else np.array(
-            [vec_b] * len(vec_a))
-        sim = np.dot(vec_a_np, vec_b_np.T) / (np.linalg.norm(vec_a_np,
-                                                             axis=1)[:, None] * np.linalg.norm(vec_b_np, axis=1))
+        vec_a_np = np.array(vec_a) if vec_a_nested else np.array([vec_a] * len(vec_b))
+        vec_b_np = np.array(vec_b) if vec_b_nested else np.array([vec_b] * len(vec_a))
+        sim = np.dot(vec_a_np, vec_b_np.T) / (
+            np.linalg.norm(vec_a_np, axis=1)[:, None] * np.linalg.norm(vec_b_np, axis=1)
+        )
         return sim.diagonal().tolist()
 
-    result = np.dot(vec_a, vec_b) / \
-        (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
+    result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
     return float(result.astype(float))
 
 
@@ -55,8 +53,7 @@ def get_centroid(vec_list: list):
     Return - (centroid vector, cluster tightness)
     """
     centroid = np.mean(vec_list, axis=0)
-    tightness = np.mean([cosine_sim(vec, centroid)
-                        for vec in vec_list]).astype(float)
+    tightness = np.mean([cosine_sim(vec, centroid) for vec in vec_list]).astype(float)
     return [centroid.tolist(), tightness]
 
 
