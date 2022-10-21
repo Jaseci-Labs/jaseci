@@ -51,13 +51,15 @@
 - [Connecting an API](jaseci_ui_kit/components/docs/connecting-an-api.md)
 - [Components](jaseci_ui_kit/README.md)
 
+## Contributing to Jaseci
+
+- [Being an Contributor](support/guide/other/contributor_policy.md)
+- [General Guide](CONTRIBUTING.md)
+- [Contributors](CONTRIBUTORS.md)
+
 ## Other Resources
 
 - [About this Release](CHANGELOG.md)
-- [How to Contribute](support/guide/other/contributor_policy.md)
-  - [Being an Contributor](support/guide/other/contributor_policy.md)
-  - [General Guide](CONTRIBUTING.md)
-  - [Contributors](CONTRIBUTORS.md)
 - [Archived Notes](NOTES.md)
 - [Join our Community](https://forum.jaseci.org/)
 - [Online Documentation](https://docs.jaseci.org/)
