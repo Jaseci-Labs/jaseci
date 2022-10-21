@@ -14,11 +14,11 @@ A casual contributor is one that is passionate about or otherwise interested in 
 
 ## The Committed Jaseci-tributor
 
-A committed contributor is one that is on the TOTC (*team of the committed*). TOTC members in some way sustains themselves by being a contributor to Jaseci. This comes about in a number of ways, whether it be funded from donations, funding from government grants, being dedicated to the TOTC by some employer, or a volunteer that would like to dedicate themselves to TOTC roadmap items (i.e., be relied upon by other TOTC contributors).
+A committed contributor is one that is on the TOTC (*team of the committed*). A TOTC member is one that in some way sustains themself by being a contributor to Jaseci. This comes about in a number of ways, whether it be funded from donations, funding from government grants, being dedicated to the TOTC by some employer, or a volunteer that would like to dedicate themselves to TOTC roadmap items (i.e., be relied upon by other TOTC contributors).
 
 > **Note**
 >
-> The TOTC is an open group. We accept members from all across the world that can take the TOTC oath which we fit in to 1 sentence. Oath: *I will strive my very best to be a good human, be reliable, share my ideas without reservation, be patient when they aren't accepted right away, follow the guidelines, suggest improvements instead of get resentful, and take breaks when I'm not having fun.*
+> The TOTC is an open group. We have and accept members from all across the world from many walks of life that can take the TOTC oath which we fit in to 1 sentence. Oath: *I will strive my very best to be a good human, be reliable, share my ideas without reservation, be patient when they aren't accepted right away, follow the guidelines, suggest improvements instead of get resentful, and take breaks when I'm not having fun.*
 
 ### Guidelines
 
