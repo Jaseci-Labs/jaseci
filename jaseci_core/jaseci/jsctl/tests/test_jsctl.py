@@ -281,7 +281,7 @@ class JsctlTest(TestCaseHelper, TestCase):
             os.remove("jaseci/jsctl/tests/teststest.jir")
             self.assertFalse(os.path.exists("jaseci/jsctl/tests/teststest.jir"))
         self.call("jac build jaseci/jsctl/tests/teststest.jac")
-        self.assertGreater(os.path.getsize("jaseci/jsctl/tests/teststest.jir"), 50000)
+        self.assertGreater(os.path.getsize("jaseci/jsctl/tests/teststest.jir"), 20000)
 
     def test_jsctl_jac_build_with_action(self):
         import os
@@ -304,6 +304,11 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertTrue(r[0].startswith('Testing "assert should be'))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
+
+    def test_jsctl_jac_disas_jir(self):
+        r = self.call("jac disas jaseci/jsctl/tests/teststest.jir")
+        self.assertIn("LOAD_CONST", r)
+        self.assertIn("LOAD_VAR", r)
 
     def test_jsctl_jac_run(self):
         r = self.call_cast("jac run jaseci/jsctl/tests/teststest.jac")

@@ -1,15 +1,12 @@
 import re
 from copy import deepcopy
-from multiprocessing import Process
 from typing import Tuple
 from uuid import UUID
 
 from celery import Task
-from celery.app.control import Inspect
+from jaseci.svc.task.config import DEFAULT_MSG
 from requests import get, post
 from requests.exceptions import HTTPError
-
-DEFAULT_MSG = "Skipping scheduled walker!"
 
 
 class Queue(Task):
@@ -294,69 +291,3 @@ class ScheduledSequence(Task):
                 break
 
         return persistence
-
-
-c1 = Queue
-c2 = ScheduledWalker
-c3 = ScheduledSequence
-
-
-class TaskProperties:
-    def __init__(self, prop):
-        if not hasattr(prop, "_inspect"):
-            setattr(prop, "_inspect", None)
-            setattr(prop, "_worker", None)
-            setattr(prop, "_scheduler", None)
-
-            # --------------- REGISTERED TASK --------------- #
-            setattr(prop, "_queue", None)
-            setattr(prop, "_scheduled_walker", None)
-            setattr(prop, "_scheduled_sequence", None)
-
-    @property
-    def inspect(self) -> Inspect:
-        return self.cls._inspect
-
-    @inspect.setter
-    def inspect(self, val: Inspect):
-        self.cls._inspect = val
-
-    @property
-    def worker(self) -> Process:
-        return self.cls._worker
-
-    @worker.setter
-    def worker(self, val: Process):
-        self.cls._worker = val
-
-    @property
-    def scheduler(self) -> Process:
-        return self.cls._scheduler
-
-    @scheduler.setter
-    def scheduler(self, val: Process):
-        self.cls._scheduler = val
-
-    @property
-    def queue(self) -> c1:
-        return self.cls._queue
-
-    @queue.setter
-    def queue(self, val: c1):
-        self.cls._queue = val
-
-    @property
-    def scheduled_walker(self) -> c2:
-        return self.cls._scheduled_walker
-
-    @scheduled_walker.setter
-    def scheduled_walker(self, val: c2):
-        self.cls._scheduled_walker = val
-
-    @property
-    def scheduled_sequence(self) -> c3:
-        return self.cls._scheduled_sequence
-
-    @scheduled_sequence.setter
-    def scheduled_sequence(self, val: c3):
-        self.cls._scheduled_sequence = val

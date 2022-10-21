@@ -4,6 +4,7 @@
 
 ### Updates
 
+- Major Improvement: Multipass compilation framework implemented, new optimization pass introduced, code size down by more than 2x
 - New Lang Feature: introduced type structs with `type::custom_data` style notations
 - New Feature: Introduced `graph node view` API
 - Major Improvement: Walkers are now proper architypes in stack, all code in architypes
@@ -12,7 +13,9 @@
 
 ### Notes
 
+- Imports updated, imports of style `import {walker*} with...` is now `import {walker::*} with...`
 - Walker register and set deprecated. Now architype register and set should be used.
+- Deprecated spawn graphs using specail dot syntax (overcomplicates language grammar)
 
 ## Version 1.3.4
 

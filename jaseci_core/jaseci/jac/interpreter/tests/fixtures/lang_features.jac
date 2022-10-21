@@ -29,3 +29,8 @@ walker deref_of_element_fails {
     var = (-->[0]);
     report (*var).context;
 }
+
+walker quick_check {
+    a = spawn here -[conn(name="edge"+"5")]-> node::simple;
+    report a.edge[0].name;
+}

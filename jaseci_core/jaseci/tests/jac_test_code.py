@@ -1,5 +1,5 @@
 prog0 = """
-    node testnode:0 {
+    node testnode {
         has a, b, c;
         can std.log::a,b::>c with exit;
     }
@@ -16,7 +16,7 @@ prog0 = """
         }
     }
 
-    node life:0 {
+    node life {
     }
 
     node year {
@@ -35,7 +35,7 @@ prog0 = """
     """
 
 prog1 = """
-    node testnode:0 {
+    node testnode {
         has a, b, c;
         can std.log::a,b::>c with exit;
     }
@@ -52,7 +52,7 @@ prog1 = """
         }
     }
 
-    node life:0 {
+    node life {
     }
 
     node year {
@@ -1142,15 +1142,15 @@ struct_types = """
     }
 
     type another {
-        has apple=type::simple(apple=33);
+        has apple=spawn t::simple(apple=33);
     }
 
     node mynode {
-        has basic=type::another;
+        has basic=spawn type::another;
     }
 
     walker init {
-        a = spawn here --> node::mynode;
+        a = spawn here --> n::mynode;
 
         report
         [a.basic["apple"]["orange"],

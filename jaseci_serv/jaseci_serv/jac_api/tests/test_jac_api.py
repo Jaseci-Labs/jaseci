@@ -1645,8 +1645,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         )
 
         self.assertIn(
-            "zsb:walker_exception_no_try_else - line 6,"
-            " col 20 - rule atom - Internal Exception: ",
+            "zsb:walker_exception_no_try_else - line 6, col 20",
             res["errors"][0],
         )
 
