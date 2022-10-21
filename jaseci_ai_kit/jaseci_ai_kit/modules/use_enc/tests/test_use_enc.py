@@ -1,23 +1,17 @@
+import unittest
 from jaseci.utils.test_core import CoreTest
-from importlib import import_module
+from jaseci.actions.live_actions import load_module_actions, load_local_actions
 
 
 class UseEncTest(CoreTest):
     fixture_src = __file__
 
-    import_module("jaseci_ai_kit.use_enc")
+    ret = load_module_actions("jaseci_ai_kit.use_enc")
+    assert ret == True
 
-    # def setUp(self):
-    #     import_module("jaseci_ai_kit.use_enc")
-    #     self.log("imported")
-    #     return super().setUp()
-
-    # def tearDown(self):
-    #     # un import the module
-    #     import sys
-    #     x = sys.modules.pop("jaseci_ai_kit.use_enc")
-    #     self.log(x)
-    #     return super().tearDown()
+    def test_load_local_actions(self):
+        ret = load_local_actions("jaseci_ai_kit/modules/use_enc/use_enc.py")
+        self.assertEqual(ret, True)
 
     def test_enc_text_similarity(self):
         self.call(
