@@ -60,6 +60,8 @@ class UserApi:
         """
         ret = {}
         mast = self.user_creator(name, other_fields)
+        if type(mast) is dict:
+            return mast
         ret["user"] = mast.serialize()
         self.seek_committer(mast)
         if len(global_init):

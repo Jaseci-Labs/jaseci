@@ -97,6 +97,25 @@ class UserApiPublicTests(TestCaseHelper, TestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         get_user(email=payload["email"]).delete()
 
+    def test_user_exists_js_api(self):
+        """Test creating a user that already exists fails"""
+        payload = {"email": "jscitest_test2@jaseci.com", "password": "testpass"}
+        create_user(**payload)
+        payload2 = {
+            "op": "user_create",
+            "name": "jscitest_test2@jaseci.com",
+            "other_fields": {
+                "password": "password",
+                "is_activated": True,
+            },
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload2["op"]}'), payload2, format="json"
+        )
+        self.log(res.data)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        get_user(email=payload["email"]).delete()
+
     def test_password_too_short(self):
         """Test that passwords less than 8 characters fail"""
         payload = {"email": "jscitest_test2@jaseci.com", "password": "pw"}
