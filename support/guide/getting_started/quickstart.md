@@ -1,7 +1,7 @@
 # Quickstart (Hello, World!)
 
 In this section, we'll take a look at how easy it is to get started with a simple Hello World program in Jac.
-*Ensure that jaseci is installed before proceeding with the quickstart guide.*
+_Ensure that jaseci is installed before proceeding with the quickstart guide._
 
 1.  Create a new directory for your project called `hello_jac`
 2.  Create a file called `hello.jac` within the directory created in the previous step.
@@ -165,7 +165,7 @@ You should see the following output:
 
 ```
 jaseci > sentinel register -name fam -code fam.jac -set_active true
-2022-03-21 13:56:29,443 - INFO - parse_jac: fam: Processing Jac code...
+2022-03-21 13:56:29,443 - INFO - compile_jac: fam: Processing Jac code...
 2022-03-21 13:56:29,558 - INFO - register: fam: Successfully registered code
 [
 {

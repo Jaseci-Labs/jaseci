@@ -35,11 +35,6 @@ class Architype(Element, JacCode, ArchitypeInterp):
         """
         return self.run_architype(jac_ast=self.get_jac_ast())
 
-    def get_jac_ast(self):
-        if not self._jac_ast:
-            self.refresh()
-        return self._jac_ast
-
     def get_all_actions(self):
         actions = IdList(self, auto_save=False)
         for i in self.arch_with_supers():

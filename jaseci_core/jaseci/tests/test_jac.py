@@ -592,7 +592,7 @@ class JacTests(TestCaseHelper, TestCase):
             rep[0],
             {
                 "args": ("division by zero",),
-                "col": 15,
+                "col": 13,
                 "line": 4,
                 "mod": "basic",
                 "msg": "division by zero",

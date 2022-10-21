@@ -26,6 +26,7 @@
     "generate": "stencil generate"
   },
   "dependencies": {
+    "@radix-ui/colors": "^0.1.8",
     "@stencil/core": "^2.13.0",
     "@stencil/store": "^1.5.0",
     "artyom.js": "^1.0.6",
@@ -38,7 +39,10 @@
     "nanoid": "^3.3.4",
     "parse-json": "^6.0.2",
     "serialize-javascript": "^6.0.0",
-    "superjson": "^1.9.1"
+    "superjson": "^1.9.1",
+    "vis-data": "^7.1.4",
+    "vis-network": "^9.1.2",
+    "vis-util": "^5.0.3"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.2",

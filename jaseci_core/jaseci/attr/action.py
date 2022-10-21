@@ -43,6 +43,9 @@ class Action(Item):
         Also note that Jac stores preset_in_out as input/output list of hex
         ids since preset_in_out doesn't use _ids convention
         """
+        if not interp.check_builtin_action(self.value):
+            interp.rt_error(f"Cannot execute {self.value} - Not Found")
+            return None
         func = live_actions[self.value]
         args = inspect.getfullargspec(func)
         self.do_auto_conversions(args, func, param_list)
@@ -55,7 +58,7 @@ class Action(Item):
                     "h": scope.parent._h,
                     "scope": scope,
                     "interp": interp,
-                }
+                },
             )
         else:
             result = func(*param_list)

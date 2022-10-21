@@ -1,18 +1,15 @@
-################################################
-#                   DEFAULTS                   #
-################################################
-
 MAIL_ERR_MSG = "Mail service is disabled or not yet configured!"
+
 MAIL_CONFIG = {
     "enabled": True,
     "quiet": True,
     "version": 2,
     "tls": True,
-    "host": "smtp.gmail.com",
+    "host": "",
     "port": 587,
-    "sender": "Jaseci Admin<boyong@jaseci.org>",
-    "user": "jaseci.dev@gmail.com",
-    "pass": "yrtviyrdzmzdpjxg",
+    "sender": "",
+    "user": "",
+    "pass": "",
     "backend": "smtp",
     "templates": {
         "activation_subj": "Please activate your account!",

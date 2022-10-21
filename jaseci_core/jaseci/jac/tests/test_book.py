@@ -29,6 +29,20 @@ class JacBookTests(TestCaseHelper, TestCase):
         print("output: ", self.new_stdout.getvalue())
         sys.stdout = self.new_stdout
 
+    def screen_on(self):
+        sys.stdout = self.old_stdout
+
+    def screen_off(self):
+        sys.stdout = self.new_stdout
+
+    def test_spawn_graph_node(self):
+        """Test node in using spawn graphs instead of dot"""
+        self.sent.register_code(jtc.spawn_graph_node)
+        gen_walker = self.sent.run_architype("init")
+        gen_walker.prime(self.gph)
+        gen_walker.run()
+        self.assertEqual(self.new_stdout.getvalue(), "graph_root_node_name\n")
+
     def test_basic_arith(self):
         self.sent.register_code(jtc.basic_arith)
         gen_walker = self.sent.run_architype("init")
@@ -315,10 +329,7 @@ class JacBookTests(TestCaseHelper, TestCase):
         gen_walker = self.sent.run_architype("init")
         gen_walker.prime(self.gph)
         gen_walker.run()
-        self.assertEqual(
-            self.new_stdout.getvalue(),
-            "[0.8360188027814407, 0.11314284146556013, 0.05083835575299916]\n",
-        )
+        self.assertTrue(self.new_stdout.getvalue().startswith("[0.836018"))
 
     def test_book_fam_example(self):
         self.sent.register_code(jtc.fam_example)
