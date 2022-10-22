@@ -63,7 +63,11 @@ class Master(CoreMaster):
         """
         Permanently delete master with given id
         """
-        get_user_model().objects.get(email=name).delete()
+        try:
+            get_user_model().objects.get(email=name).delete()
+            return True
+        except Exception:
+            return False
 
 
 class SuperMaster(Master, CoreSuper):

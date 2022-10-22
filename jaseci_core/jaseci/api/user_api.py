@@ -71,6 +71,26 @@ class UserApi:
         ret["success"] = True
         return ret
 
+    @Interface.admin_api(cli_args=["name"])
+    def user_delete(
+        self,
+        name: str,
+    ):
+        """
+        Delete new user (master object)
+
+        This API is used to delete a user account.
+
+        :param name: The user name to delete. For Jaseci server this must
+        be a valid email address.
+
+        """
+        ret = {}
+        ret["success"] = self.user_destroyer(name)
+        if not ret["success"]:
+            ret["status_code"] = 400
+        return ret
+
     def user_creator(self, name, other_fields: dict = {}):
         """
         Abstraction for user creation for elegant overriding
