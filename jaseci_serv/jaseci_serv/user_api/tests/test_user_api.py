@@ -314,6 +314,17 @@ class UserApiPrivateTests(TestCaseHelper, TestCase):
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_user_deleteself_js_api(self):
+        """Test creating a user that already exists fails"""
+        selfname = "jscitest_test@jaseci.com"
+        payload2 = {"op": "user_deleteself"}
+        self.assertTrue(get_user_model().objects.filter(email=selfname).exists())
+        res = self.client.post(
+            reverse(f'jac_api:{payload2["op"]}'), payload2, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertFalse(get_user_model().objects.filter(email=selfname).exists())
+
     def test_post_me_not_allowed(self):
         """Test that POST is not allowed to update user"""
         res = self.client.post(MANAGE_URL, {})

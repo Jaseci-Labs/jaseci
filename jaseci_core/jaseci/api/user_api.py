@@ -72,10 +72,7 @@ class UserApi:
         return ret
 
     @Interface.admin_api(cli_args=["name"])
-    def user_delete(
-        self,
-        name: str,
-    ):
+    def user_delete(self, name: str):
         """
         Delete new user (master object)
 
@@ -87,6 +84,19 @@ class UserApi:
         """
         ret = {}
         ret["success"] = self.user_destroyer(name)
+        if not ret["success"]:
+            ret["status_code"] = 400
+        return ret
+
+    @Interface.private_api(cli_args=["name"])
+    def user_deleteself(self):
+        """
+        Delete self (master object)
+
+        This API is used to delete a user account.
+        """
+        ret = {}
+        ret["success"] = self.user_destroyer(self.name)
         if not ret["success"]:
             ret["status_code"] = 400
         return ret
