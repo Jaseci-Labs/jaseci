@@ -48,9 +48,11 @@ def jaseci_expose(endpoint, mount=None):
 def assimilate_action(func, act_group=None, aliases=list()):
     """Helper for jaseci_action decorator"""
     act_group = [func.__module__.split(".")[-1]] if act_group is None else act_group
-    live_actions[f"{'.'.join(act_group+[func.__name__])}"] = func
+    if act_group not in live_actions:
+        live_actions[act_group] = {}
+    live_actions[act_group][func.__name__] = func
     for i in aliases:
-        live_actions[f"{'.'.join(act_group+[i])}"] = func
+        live_actions[act_group][i] = func
     return func
 
 
