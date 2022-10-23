@@ -25,5 +25,5 @@ class ParseTreePrunePass(IrPass):
                 # print("PRUNING:", peak, "from", node.kid, "replacing", peak.kid[0])
                 node.kid[i] = peak.kid[0]
                 peak = peak.kid[0]
-        # for i in cull_list:
-        #     node.kid.remove(i)
+        for i in cull_list:
+            node.kid.remove(i)

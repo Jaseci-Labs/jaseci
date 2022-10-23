@@ -21,7 +21,7 @@ class SentinelInterp(Interp):
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "ver_label":
             self.run_ver_label(kid[0])
-        for i in kid[:-1]:
+        for i in kid:
             self.run_element(i)
 
     def run_ver_label(self, jac_ast):
@@ -73,7 +73,6 @@ class SentinelInterp(Interp):
 
         name = kid[1].token_text()
         kind = kid[0].token_text()
-
         arch = Architype(
             m_id=self._m_id,
             h=self._h,
