@@ -57,7 +57,9 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
         if act_group is None
         else act_group
     )
-    remote_actions[f"{'.'.join(act_group+[func.__name__])}"] = varnames
+    if act_group not in remote_actions:
+        remote_actions[act_group] = {}
+    remote_actions[act_group][func.__name__] = varnames
 
     # Need to get pydatic model for func signature for fastAPI post
     model = validate_arguments(func).model
@@ -88,7 +90,7 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
 
     for i in aliases:
         new_func = app.post(f"/{i}/")(new_func)
-        remote_actions[f"{'.'.join(act_group+[i])}"] = varnames
+        remote_actions[act_group][i] = varnames
     caller_globals[f"{JS_ACTION_PREAMBLE}{func.__name__}"] = new_func
 
 

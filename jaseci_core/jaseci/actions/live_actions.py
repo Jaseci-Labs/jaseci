@@ -108,26 +108,18 @@ def get_global_actions(hook):
 
     global_action_list = []
     for i in live_actions.keys():
-        if (
-            i.startswith("std.")
-            or i.startswith("file.")
-            or i.startswith("net.")
-            or i.startswith("rand.")
-            or i.startswith("vector.")
-            or i.startswith("request.")
-            or i.startswith("date.")
-            or i.startswith("jaseci.")
-        ):
-            global_action_list.append(
-                Action(
-                    m_id=uuid.UUID(int=0).urn,
-                    h=hook,
-                    mode="public",
-                    name=i,
-                    value=i,
-                    persist=False,
-                ).jid
-            )
+        if i in ["std", "file", "net", "rand", "vector", "request", "date", "jaseci"]:
+            for j in live_actions[i].keys():
+                global_action_list.append(
+                    Action(
+                        m_id=uuid.UUID(int=0).urn,
+                        h=hook,
+                        mode="public",
+                        name=i + "." + j,
+                        value=i + "." + j,
+                        persist=False,
+                    ).jid
+                )
     return global_action_list
 
 
