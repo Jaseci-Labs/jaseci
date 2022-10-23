@@ -7,14 +7,14 @@ from jaseci.utils.utils import parse_str_token
 
 def byte_length(val):
     if type(val) == str:
-        return len(val)
+        return len(bytes(val, "unicode_escape"))
     else:
         return (val.bit_length() + 7) // 8
 
 
 def to_bytes(val):
     if type(val) == str:
-        return bytes(val, "utf-8")
+        return bytes(val, "unicode_escape")
     elif type(val) == float:
         return pack("d", val)
     elif type(val) == int:

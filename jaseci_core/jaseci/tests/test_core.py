@@ -14,7 +14,7 @@ from jaseci.actor.architype import Architype
 class ArchitypeTests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
-        self.meta = MetaService()
+        self.meta = MetaService(run_svcs=False)
 
     def tearDown(self):
         super().tearDown()
