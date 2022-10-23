@@ -150,7 +150,7 @@ class JacApi:
         return faux.graph_get(gph=faux.active_gph(), mode="dot", detailed=detailed)
 
     def faux_master(self):
-        faux = MetaService().build_super_master()
+        faux = MetaService(run_svcs=False).build_super_master()
         faux._h.mem["global"] = deepcopy(self._h.mem["global"])
         return faux
 
