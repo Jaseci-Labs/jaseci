@@ -15,7 +15,7 @@ class JacApi:
     """
 
     @Interface.cli_api(cli_args=["file"])
-    def jac_build(self, file: str, out: str = ""):
+    def jac_build(self, file: str, out: str = "", opt_level: int = 4):
         """
         Command line tooling for building executable jac ir
         """
@@ -28,7 +28,11 @@ class JacApi:
         faux = self.faux_master()
         with open(file, "r") as file:
             ret = faux.sentinel_register(
-                code=file.read(), code_dir=dir, name=filename, auto_run=""
+                code=file.read(),
+                code_dir=dir,
+                name=filename,
+                auto_run="",
+                opt_level=opt_level,
             )
             if "success" in ret and not ret["success"]:
                 return ret

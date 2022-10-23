@@ -42,7 +42,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
         super().refresh()
         self.ir_load()
 
-    def register_code(self, text, dir="./", mode="default"):
+    def register_code(self, text, dir="./", mode="default", opt_level=4):
         """
         Registers a program (set of walkers and architypes) written in Jac
         """
@@ -50,7 +50,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
         if mode == "ir":
             self.apply_ir(text)
         else:
-            self.register(text, dir)
+            self.register(text, dir, opt_level=opt_level)
         if self.is_active:
             self.ir_load()
         return self.is_active
@@ -85,9 +85,9 @@ class Sentinel(Element, JacCode, SentinelInterp):
             self.is_active = False
         return self.is_active
 
-    def register_architype(self, code):
+    def register_architype(self, code, opt_level=4):
         """Adds an architype based on jac code"""
-        tree = self.compile_jac(code, start_rule="architype")
+        tree = self.compile_jac(code, start_rule="architype", opt_level=opt_level)
         if not tree:
             return None
         return self.load_architype(tree)
