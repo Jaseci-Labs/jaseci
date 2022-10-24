@@ -1552,23 +1552,93 @@ This will execute all the test cases in `tests.jac` squentially and report succe
 So far, we have been interacting jaseci through `jsctl`.
 jaseci can also be run as a service serving a set of RESTful API endpoints.
 This is useful in production settings.
-To run jaseci as a service, first we need to install the `jaseci_serv` package.
+To run jaseci as a service, first we need to install the `jaseci-serv` python package.
 
 ```bash
-pip install jaseci_serv
+pip install jaseci-serv
 ```
+> **Important**
+>
+> As a best practice, it is recommended to always use the same jsctl version (installed as part of the jaseci package) and jsserv version (installed with the jaseci-serv python package). You can install a specific version of either package via `pip install PACKAGE_NAME==PACKAGE_VERSION`.
 
-Then launching a jaseci server is as simple as
+Since this is the first time we are running a jaseci server, a few commands are required to set up the database
 ```bash
+jsserv makemigrations base
 jsserv makemigrations
 jsserv migrate
-jsserv runserver 0.0.0.0:3000
 ```
-This will launch a Django RESTful API server at localhost and port 3000.
+The above commands essentially initializes the database schemas.
+
+> **Important**
+>
+> The above commands are only required the first time you are starting a jsserv instance. These commands will create a `mydatabase` file in the current directory as the storage for the database.
+
+We will also need an admin user so we can log into the jaseci server. To create an admin user, run
+```bash
+jsserv createsuperuser
+```
+And follow the command line prompts to create a super user.
+
+Then launch the jaseci server with
+```bash
+jsserv runserver
+```
+
+You should see an output that looks like the following
+
+```bash
+$ jsserv runserver
+Watching for file changes with StatReloader
+Performing system checks...
+System check identified no issues (0 silenced).
+October 24, 2022 - 18:27:14
+Django version 3.2.15, using settings 'jaseci_serv.jaseci_serv.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.
+```
+
+Take note of the `http://127.0.0.1:8000/`. This is the URL of your jsserv instance.
+In this case, `127.0.0.1` means it is live on localhost.
+
+To access the server via `jsctl`, we just need to login to the server first before running any jsctl commands
+```bash
+jsctl
+jaseci > login http://localhost:8000/
+Username:
+Password:
+```
+Follow the prompts the provide the email and password you used to create the superuser earlier.
+If logged in successfully, you should see a token being returned.
+It will look something like this
+```bash
+jaseci > login http://localhost:8000
+Username: yiping@jaseci.org
+Password:
+Token: 45ef2ac9d07aa571769c7d5452e4553a8a74b061ea621e21222789aa9904e8c7
+Login successful!
+@jaseci >
+```
+> **Important**
+>
+> Notice the `@` symbol in front of the `@jaseci >` command line prompt. This indicates that your jsctl session is now logged into a jsserv instance, while `jaseci >` indicates it is in a local session.
+
+While logged into the jsserv instance, you can register a sentinel on it with `sentinel register` command, just like how you were running it before in the local jsctl session
+```bash
+@jaseci > sentinel register tesla_ai.jir -set_active true -mode ir
+```
+After registering, you can then run walker run, just like before in a local jsctl session
+```bash
+jaseci > walker run talk -ctx "{\"question\": \"I want to schedule a test drive\"}"
+```
+> **Important**
+>
+> If this is the first time you are running your jac program on this jsserv instance, you will also need to repeat the actions load commands to load the actions. And for any AI models, use their respective `load_model` action to load the trained models.
+
+And viola! Now you are running your jac program in a jaseci server with jsserv.
 The Jaseci server supports a wide range of API endpoints.
 All the `jsctl` commands we have used throughput this tutorial have an equivalent API endpoint, such as `walker_run` and `sentinel_register`.
 As a matter of fact, the entire development journey in this tutorial can be done completely with a remote jaseci server instance.
-You can go to `localhost:3000/docs` to check out all the available APIs.
+You can go to `localhost:8000/docs` to check out all the available APIs.
 
 # Improve Your AI Models with Crowdsource
 Coming soon!
