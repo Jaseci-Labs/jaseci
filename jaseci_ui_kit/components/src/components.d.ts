@@ -260,6 +260,8 @@ export namespace Components {
         "css": string;
         "events": string;
         "graphId": string;
+        "height": string;
+        "onFocus": 'expand' | 'isolate';
         "serverUrl": string;
         "token": string;
     }
@@ -417,9 +419,10 @@ export namespace Components {
         "label": string;
         "name": string;
         "operations": string;
-        "options": string;
+        "options": string | { label: string }[];
         "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder": string;
+        "selected": string;
         "type": string;
         "value": string;
     }
@@ -1156,6 +1159,8 @@ declare namespace LocalJSX {
         "css"?: string;
         "events"?: string;
         "graphId"?: string;
+        "height"?: string;
+        "onFocus"?: 'expand' | 'isolate';
         "serverUrl"?: string;
         "token"?: string;
     }
@@ -1312,9 +1317,10 @@ declare namespace LocalJSX {
         "name"?: string;
         "onValueChanged"?: (event: JscSelectCustomEvent<string>) => void;
         "operations"?: string;
-        "options"?: string;
+        "options"?: string | { label: string }[];
         "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder"?: string;
+        "selected"?: string;
         "type"?: string;
         "value"?: string;
     }
