@@ -29,17 +29,14 @@ class JsOrcService(CommonService):
     ###################################################
 
     def run(self, hook=None):
-        if self.enabled:
-            self.interval = self.config.get("interval", 10)
-            self.namespace = self.config.get("namespace", "default")
-            self.keep_alive = self.config.get("keep_alive", [])
+        self.interval = self.config.get("interval", 10)
+        self.namespace = self.config.get("namespace", "default")
+        self.keep_alive = self.config.get("keep_alive", [])
 
-            self.app = JsOrc(hook.meta, hook.kube.app, self.quiet)
-            self.state = Ss.RUNNING
-            # self.app.check(self.namespace, "redis")
-            self.spawn_daemon(jsorc=self.interval_check)
-        else:
-            self.state = Ss.DISABLED
+        self.app = JsOrc(hook.meta, hook.kube.app, self.quiet)
+        self.state = Ss.RUNNING
+        # self.app.check(self.namespace, "redis")
+        self.spawn_daemon(jsorc=self.interval_check)
 
     def interval_check(self):
         while True:

@@ -1,5 +1,5 @@
 from .state import ServiceState
-from .common import CommonService, ProxyService, MetaProperties
+from .common import CommonService, ProxyService, ApplicationContext, MetaProperties
 from .redis import RedisService
 from .task import TaskService
 from .mail import MailService
@@ -10,6 +10,7 @@ from .meta import MetaService
 
 __all__ = [
     "ServiceState",
+    "ApplicationContext",
     "MetaProperties",
     "CommonService",
     "ProxyService",

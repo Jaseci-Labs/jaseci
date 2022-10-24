@@ -1,9 +1,8 @@
-from multiprocessing import Manager
 from celery import Celery
 from celery.app.control import Inspect
 from celery.backends.base import DisabledBackend
 
-from jaseci.svc import CommonService, ServiceState as Ss
+from jaseci.svc import CommonService
 from .common import Queue, ScheduledWalker, ScheduledSequence
 from .config import TASK_CONFIG
 
@@ -19,9 +18,6 @@ class TaskService(CommonService):
     ###################################################
 
     def __init__(self, hook=None):
-        manager = Manager()
-        self.lock = manager.Lock()
-        self.queues = manager.dict()
         self.inspect: Inspect = None
         self.queue: Queue = None
         self.scheduled_walker: ScheduledWalker = None
@@ -34,30 +30,25 @@ class TaskService(CommonService):
     ###################################################
 
     def run(self, hook=None):
-        if self.enabled:
-            self.app = Celery("celery")
-            self.app.conf.update(**self.config)
+        self.app = Celery("celery")
+        self.app.conf.update(**self.config)
 
-            # -------------------- TASKS -------------------- #
+        # -------------------- TASKS -------------------- #
 
-            self.queue = self.app.register_task(Queue())
-            self.scheduled_walker = self.app.register_task(ScheduledWalker())
-            self.scheduled_sequence = self.app.register_task(ScheduledSequence())
+        self.queue = self.app.register_task(Queue())
+        self.scheduled_walker = self.app.register_task(ScheduledWalker())
+        self.scheduled_sequence = self.app.register_task(ScheduledSequence())
 
-            # ------------------ INSPECTOR ------------------ #
+        # ------------------ INSPECTOR ------------------ #
 
-            self.inspect = self.app.control.inspect()
-            self.ping()
+        self.inspect = self.app.control.inspect()
+        self.ping()
 
-            self.state = Ss.RUNNING
-
-            # ------------------ PROCESS ------------------- #
-            self.spawn_daemon(
-                worker=self.app.Worker(quiet=self.quiet).start,
-                scheduler=self.app.Beat(socket_timeout=None, quiet=self.quiet).run,
-            )
-        else:
-            self.state = Ss.DISABLED
+    def post_run(self, hook=None):
+        self.spawn_daemon(
+            worker=self.app.Worker(quiet=self.quiet).start,
+            scheduler=self.app.Beat(socket_timeout=None, quiet=self.quiet).run,
+        )
 
     ###################################################
     #              COMMON GETTER/SETTER               #

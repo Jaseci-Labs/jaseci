@@ -13,5 +13,5 @@ TASK_CONFIG = {
     "result_backend": DEFAULT_URL,
     "broker_connection_retry_on_startup": True,
     "task_track_started": True,
-    "kube": {},
+    "worker_redirect_stdouts": False,
 }
