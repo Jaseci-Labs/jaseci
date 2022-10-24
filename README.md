@@ -26,6 +26,11 @@
 - [Locust Load Test for JASECI](support/locust/README.md)
 - [Setting up Monitoring for JASECI](support/monitoring/README.md)
 
+## Jaseci Core Implementation Guide
+- [Services](jaseci_core/jaseci/svc/README.md)
+  - [JsOrc](jaseci_core/jaseci/svc/jsorc/README.md)
+  - [Task](jaseci_core/jaseci/svc/task/README.md)
+
 ## The JAC Programming Language Guide
 
 ## Jaseci AI Library Reference
