@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 from json import dumps
 from smtplib import SMTP, SMTP_SSL
 
-from jaseci.svc import CommonService, ServiceState as Ss
+from jaseci.svc import CommonService
 from .config import MAIL_CONFIG
 
 
@@ -16,23 +16,12 @@ from .config import MAIL_CONFIG
 class MailService(CommonService):
 
     ###################################################
-    #                   INITIALIZER                   #
-    ###################################################
-
-    def __init__(self, hook=None):
-        super().__init__(hook)
-
-    ###################################################
     #                     BUILDER                     #
     ###################################################
 
-    def run(self, hook):
-        if self.enabled:
-            self.__convert_config(hook)
-            self.app = self.connect()
-            self.state = Ss.RUNNING
-        else:
-            self.state = Ss.DISABLED
+    def run(self, hook=None):
+        self.__convert_config(hook)
+        self.app = self.connect()
 
     # ----------- BACKWARD COMPATIBILITY ------------ #
     # ---------------- TO BE REMOVED ---------------- #

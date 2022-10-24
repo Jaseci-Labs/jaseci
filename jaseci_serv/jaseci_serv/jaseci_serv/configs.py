@@ -26,6 +26,7 @@ TASK_CONFIG = {
     "result_backend": "django-db",
     "task_track_started": True,
     "broker_connection_retry_on_startup": True,
+    "worker_redirect_stdouts": False,
 }
 
 MAIL_CONFIG = {

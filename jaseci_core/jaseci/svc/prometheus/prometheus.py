@@ -1,28 +1,22 @@
 from prometheus_api_client import PrometheusConnect
-from jaseci.svc import CommonService, ServiceState as Ss
+from jaseci.svc import CommonService
 from .config import PROMON_CONFIG
 from .kube import PROMON_KUBE
 
 
 class PromotheusService(CommonService):
-    def __init__(self, hook=None):
-        super().__init__(hook)
 
     ###################################################
     #                     BUILDER                     #
     ###################################################
 
     def run(self, hook=None):
-        if self.enabled:
-            self.app = PrometheusConnect(url=self.config.get("url"), disable_ssl=True)
-            self.app.check_prometheus_connection()
-            self.cpu = Cpu(self.app)
-            self.memory = Memory(self.app)
-            self.network = Network(self.app)
-            self.disk = Disk(self.app)
-            self.state = Ss.RUNNING
-        else:
-            self.state = Ss.DISABLED
+        self.app = PrometheusConnect(url=self.config.get("url"), disable_ssl=True)
+        self.app.check_prometheus_connection()
+        self.cpu = Cpu(self.app)
+        self.memory = Memory(self.app)
+        self.network = Network(self.app)
+        self.disk = Disk(self.app)
 
     ###################################################
     #                  COMMON UTILS                   #
