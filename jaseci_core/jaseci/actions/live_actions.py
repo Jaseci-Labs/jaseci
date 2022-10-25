@@ -87,6 +87,17 @@ def load_module_actions(mod):
     return False
 
 
+def unload_module(mod):
+    """Unload actions module and all relevant function"""
+    if mod in sys.modules.keys() and mod in live_action_modules.keys():
+        for i in live_action_modules[mod]:
+            del live_actions[i]
+        del sys.modules[mod]
+        del live_action_modules[mod]
+        return True
+    return False
+
+
 def load_preconfig_actions(hook):
     import json
 

@@ -130,9 +130,19 @@ class ActionsApi:
         return actions
 
     @Interface.admin_api()
-    def actions_module_list(self):
+    def actions_module_list(self, detailed: bool = False):
         """
         List all modules loaded for actions
         """
-        action_mods = list(lact.live_action_modules.keys())
+        if not detailed:
+            action_mods = list(lact.live_action_modules.keys())
+        else:
+            action_mods = lact.live_action_modules
         return action_mods
+
+    @Interface.admin_api(cli_args=["name"])
+    def actions_unload_module(self, name: str):
+        """
+        Unload modules loaded for actions
+        """
+        return {"success": lact.unload_module(name)}
