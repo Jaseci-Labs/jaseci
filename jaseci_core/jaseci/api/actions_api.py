@@ -146,3 +146,17 @@ class ActionsApi:
         Unload modules loaded for actions
         """
         return {"success": lact.unload_module(name)}
+
+    @Interface.admin_api(cli_args=["name"])
+    def actions_unload_action(self, name: str):
+        """
+        Unload modules loaded for actions
+        """
+        return {"success": lact.unload_action(name)}
+
+    @Interface.admin_api(cli_args=["name"])
+    def actions_unload_actionset(self, name: str):
+        """
+        Unload modules loaded for actions
+        """
+        return {"success": lact.unload_actionset(name)}

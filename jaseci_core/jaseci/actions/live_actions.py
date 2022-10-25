@@ -51,10 +51,11 @@ def assimilate_action(func, act_group=None, aliases=list()):
     act_group = [func.__module__.split(".")[-1]] if act_group is None else act_group
     action_name = f"{'.'.join(act_group+[func.__name__])}"
     live_actions[action_name] = func
-    if func.__module__ in live_action_modules:
-        live_action_modules[func.__module__].append(action_name)
-    else:
-        live_action_modules[func.__module__] = [action_name]
+    if func.__module__ != "js_remote_hook":
+        if func.__module__ in live_action_modules:
+            live_action_modules[func.__module__].append(action_name)
+        else:
+            live_action_modules[func.__module__] = [action_name]
     for i in aliases:
         live_actions[f"{'.'.join(act_group+[i])}"] = func
     return func
@@ -96,6 +97,31 @@ def unload_module(mod):
         del live_action_modules[mod]
         return True
     return False
+
+
+def unload_action(name):
+    """Unload actions module and all relevant function"""
+    if name in live_actions.keys():
+        mod = live_action_modules[name].__module__
+        if mod != "js_remote_hook":
+            live_action_modules[mod].remove(name)
+        if len(live_action_modules[mod]) < 1:
+            unload_module(mod)
+        del live_actions[name]
+        return True
+    return False
+
+
+def unload_actionset(name):
+    """Unload actions module and all relevant function"""
+    act_list = []
+    orig_len = len(live_actions)
+    for i in live_actions.keys():
+        if i.startswith(name + "."):
+            act_list.append(i)
+    for i in act_list:
+        unload_action(i)
+    return len(live_actions) != orig_len
 
 
 def load_preconfig_actions(hook):
@@ -178,5 +204,7 @@ def gen_remote_func_hook(url, act_name, param_names):
             act_url, headers={"content-type": "application/json"}, json=params
         )
         return res.json()
+
+    func.__module__ = "js_remote_hook"
 
     return func
