@@ -129,7 +129,10 @@ class ActionsApi:
             actions = list(filter(lambda a: a.startswith(name), actions))
         return actions
 
-    # @interface.admin_api()
-    # def actions_delete(self, name: str, value: str):
-    #     """
-    #     """
+    @Interface.admin_api()
+    def actions_module_list(self):
+        """
+        List all modules loaded for actions
+        """
+        action_mods = list(lact.live_action_modules.keys())
+        return action_mods

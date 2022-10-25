@@ -31,3 +31,12 @@ class StackTests(CoreTest):
         life_node.context.pop("note")
         ret = self.call(self.mast, ["walker_run", {"name": "print_life_note"}])
         self.assertTrue(ret["success"])
+
+    def test_action_module_list(self):
+        ret = self.call(
+            self.smast,
+            ["actions_module_list", {}],
+        )
+        self.assertIn("jaseci.actions.standard.rand", ret)
+        self.assertIn("jaseci.actions.standard.std", ret)
+        self.assertIn("jaseci.actions.standard.file", ret)

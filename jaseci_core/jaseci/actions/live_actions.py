@@ -12,6 +12,7 @@ import inspect
 import importlib
 
 live_actions = {}
+live_action_modules = {}
 
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
@@ -48,7 +49,12 @@ def jaseci_expose(endpoint, mount=None):
 def assimilate_action(func, act_group=None, aliases=list()):
     """Helper for jaseci_action decorator"""
     act_group = [func.__module__.split(".")[-1]] if act_group is None else act_group
-    live_actions[f"{'.'.join(act_group+[func.__name__])}"] = func
+    action_name = f"{'.'.join(act_group+[func.__name__])}"
+    live_actions[action_name] = func
+    if func.__module__ in live_action_modules:
+        live_action_modules[func.__module__].append(action_name)
+    else:
+        live_action_modules[func.__module__] = [action_name]
     for i in aliases:
         live_actions[f"{'.'.join(act_group+[i])}"] = func
     return func
@@ -68,13 +74,15 @@ def load_local_actions(file: str):
         module_dir = os.path.dirname(os.path.dirname(os.path.realpath(file)))
         if module_dir not in sys.path:
             sys.path.append(module_dir)
-        spec.loader.exec_module(module_from_spec(spec))
+        mod = module_from_spec(spec)
+        spec.loader.exec_module(mod)
         return True
 
 
 def load_module_actions(mod):
     """Load all jaseci actions from python module"""
-    if importlib.import_module(mod):
+    mod = importlib.import_module(mod)
+    if mod:
         return True
     return False
 
