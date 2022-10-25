@@ -4,7 +4,7 @@ Action class for Jaseci
 Each action has an id, name, timestamp and it's set of edges.
 """
 from .item import Item
-from jaseci.actions.live_actions import live_actions
+from jaseci.actions.live_actions import resolve_live_action
 from jaseci.jac.jac_set import JacSet
 import inspect
 
@@ -46,7 +46,7 @@ class Action(Item):
         if not interp.check_builtin_action(self.value):
             interp.rt_error(f"Cannot execute {self.value} - Not Found")
             return None
-        func = live_actions[self.value]
+        func = resolve_live_action(self.value)
         args = inspect.getfullargspec(func)
         self.do_auto_conversions(args, func, param_list)
         args = args[0] + args[4]

@@ -14,6 +14,14 @@ import importlib
 live_actions = {}
 
 
+def resolve_live_action(a_name):
+    action_path = a_name.split(".")
+    func = live_actions
+    for i in action_path:
+        func = func[i]
+    return func
+
+
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
     """Decorator for Jaseci Action interface"""
     caller_globals = dict(inspect.getmembers(inspect.currentframe().f_back))[
@@ -48,11 +56,12 @@ def jaseci_expose(endpoint, mount=None):
 def assimilate_action(func, act_group=None, aliases=list()):
     """Helper for jaseci_action decorator"""
     act_group = [func.__module__.split(".")[-1]] if act_group is None else act_group
-    if act_group not in live_actions:
-        live_actions[act_group] = {}
-    live_actions[act_group][func.__name__] = func
-    for i in aliases:
-        live_actions[act_group][i] = func
+    for i in act_group:
+        if i not in live_actions:
+            live_actions[i] = {}
+        live_actions[i][func.__name__] = func
+        for j in aliases:
+            live_actions[i][j] = func
     return func
 
 
