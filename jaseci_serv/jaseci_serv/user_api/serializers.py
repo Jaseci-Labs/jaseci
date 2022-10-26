@@ -48,7 +48,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create a new user with encrypted password and return it"""
-        return get_user_model().objects.create_user(**validated_data)
+        created_object = get_user_model().objects.create_user(**validated_data)
+        if not created_object.is_activated:
+            send_activation_email(self.context["request"], created_object.email)
+        return created_object
 
     def update(self, instance, validated_data):
         """Update user, setting the password if needed"""
