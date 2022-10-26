@@ -54,7 +54,7 @@ class TaskService(CommonService):
     #              COMMON GETTER/SETTER               #
     ###################################################
 
-    def get_by_task_id(self, task_id, wait=False):
+    def get_by_task_id(self, task_id, wait=False, timeout=30):
         task = self.app.AsyncResult(task_id)
 
         if isinstance(task.backend, DisabledBackend):
@@ -68,7 +68,7 @@ class TaskService(CommonService):
             ret["result"] = task.result
         elif wait:
             ret["status"] = "SUCCESS"
-            ret["result"] = task.get(disable_sync_subtasks=False)
+            ret["result"] = task.get(timeout=timeout, disable_sync_subtasks=False)
 
         return ret
 

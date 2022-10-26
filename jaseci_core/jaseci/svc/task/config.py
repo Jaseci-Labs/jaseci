@@ -1,4 +1,5 @@
 import os
+import sys
 
 DEFAULT_MSG = "Skipping scheduled walker!"
 DEFAULT_URL = (
@@ -15,3 +16,8 @@ TASK_CONFIG = {
     "task_track_started": True,
     "worker_redirect_stdouts": False,
 }
+
+
+if "python3 -m unittest" in sys.argv:
+    TASK_CONFIG["task_always_eager"] = True
+    TASK_CONFIG["task_store_eager_result"] = True
