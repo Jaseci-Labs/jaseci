@@ -33,10 +33,55 @@ class StackTests(CoreTest):
         self.assertTrue(ret["success"])
 
     def test_action_module_list(self):
-        ret = self.call(
-            self.smast,
-            ["actions_module_list", {}],
-        )
+        ret = self.call(self.smast, ["actions_module_list", {}])
         self.assertIn("jaseci.actions.standard.rand", ret)
         self.assertIn("jaseci.actions.standard.std", ret)
         self.assertIn("jaseci.actions.standard.file", ret)
+
+    def test_action_module_unload_reload(self):
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        before = len(ret)
+        ret = self.call(
+            self.smast,
+            ["actions_unload_module", {"name": "jaseci.actions.standard.rand"}],
+        )
+        ret = self.call(
+            self.smast,
+            ["actions_unload_module", {"name": "jaseci.actions.standard.file"}],
+        )
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        self.assertEqual(len(ret), before - 2)
+        ret = self.call(
+            self.smast,
+            ["actions_load_module", {"mod": "jaseci.actions.standard.rand"}],
+        )
+        ret = self.call(
+            self.smast,
+            ["actions_load_module", {"mod": "jaseci.actions.standard.file"}],
+        )
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        self.assertEqual(len(ret), before)
+
+    def test_action_unload(self):
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        before = len(ret)
+        ret = self.call(self.smast, ["actions_list", {"name": "rand"}])
+        for i in ret:
+            self.call(self.smast, ["actions_unload_action", {"name": i}])
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        self.assertEqual(len(ret), before - 1)
+        ret = self.call(
+            self.smast,
+            ["actions_load_module", {"mod": "jaseci.actions.standard.rand"}],
+        )
+
+    def test_action_set_unload(self):
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        before = len(ret)
+        ret = self.call(self.smast, ["actions_unload_actionset", {"name": "rand"}])
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        self.assertEqual(len(ret), before - 1)
+        ret = self.call(
+            self.smast,
+            ["actions_load_module", {"mod": "jaseci.actions.standard.rand"}],
+        )
