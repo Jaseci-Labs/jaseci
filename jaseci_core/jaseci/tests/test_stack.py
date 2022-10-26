@@ -85,3 +85,41 @@ class StackTests(CoreTest):
             self.smast,
             ["actions_load_module", {"mod": "jaseci.actions.standard.rand"}],
         )
+
+    def test_sentinel_missing_architype(self):
+        """
+        Test when the original sentinel is missing the corresponding architype for a node
+        """
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("simple.jac")}],
+        )
+        old_snt = ret[0]["jid"]
+        print(old_snt)
+        ret = self.call(self.mast, ["walker_run", {"name": "init", "snt": old_snt}])
+        print(ret)
+        node_id = ret["report"][0]["jid"]
+        self.call(self.mast, ["sentinel_delete", {"snt": old_snt}])
+        # self.call(self.mast, ["sentinel_set", {"snt": old_snt, "code": self.load_jac("simple2.jac")}])
+        ret = self.call(
+            self.smast,
+            [
+                "sentinel_register",
+                {
+                    "name": "new_snt",
+                    "auto_create_graph": False,
+                    "set_active": False,
+                    "code": self.load_jac("simple.jac"),
+                },
+            ],
+        )
+        self.call(self.smast, ["global_sentinel_set", {"snt": ret[0]["jid"]}])
+        self.call(self.mast, ["sentinel_active_global", {}])
+        ret = self.call(self.mast, ["sentinel_list", {}])
+        print(ret)
+        ret = self.call(
+            self.mast,
+            ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
+        )
+        print(ret)
+        self.assertTrue(ret["context"]["b"], 6)
