@@ -88,19 +88,23 @@ class StackTests(CoreTest):
 
     def test_sentinel_missing_architype(self):
         """
-        Test when the original sentinel is missing the corresponding architype for a node
+        Test when the original sentinel is missing the corresponding architype for a
+        node
         """
         ret = self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("simple.jac")}],
         )
         old_snt = ret[0]["jid"]
-        print(old_snt)
         ret = self.call(self.mast, ["walker_run", {"name": "init", "snt": old_snt}])
-        print(ret)
         node_id = ret["report"][0]["jid"]
-        self.call(self.mast, ["sentinel_delete", {"snt": old_snt}])
-        # self.call(self.mast, ["sentinel_set", {"snt": old_snt, "code": self.load_jac("simple2.jac")}])
+        ret = self.call(self.mast, ["sentinel_delete", {"snt": old_snt}])
+        ret = self.call(self.mast, ["sentinel_list", {"snt": old_snt}])
+        ret = self.call(
+            self.mast,
+            ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
+        )
+        self.assertIn("has_var", ret["errors"][0])
         ret = self.call(
             self.smast,
             [
@@ -108,18 +112,15 @@ class StackTests(CoreTest):
                 {
                     "name": "new_snt",
                     "auto_create_graph": False,
-                    "set_active": False,
+                    "auto_run": False,
+                    "set_active": True,
                     "code": self.load_jac("simple.jac"),
                 },
             ],
         )
-        self.call(self.smast, ["global_sentinel_set", {"snt": ret[0]["jid"]}])
-        self.call(self.mast, ["sentinel_active_global", {}])
-        ret = self.call(self.mast, ["sentinel_list", {}])
-        print(ret)
+        self.mast._h._machine = None
         ret = self.call(
             self.mast,
             ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
         )
-        print(ret)
-        self.assertTrue(ret["context"]["b"], 6)
+        self.assertTrue(ret["success"])
