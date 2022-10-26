@@ -26,6 +26,13 @@
 - [Locust Load Test for JASECI](support/locust/README.md)
 - [Setting up Monitoring for JASECI](support/monitoring/README.md)
 
+## Jaseci Core Implementation Guide
+
+- [Services](jaseci_core/jaseci/svc/README.md)
+  - [JsOrc](jaseci_core/jaseci/svc/jsorc/README.md)
+  - [Task](jaseci_core/jaseci/svc/task/README.md)
+  - [Mail](jaseci_core/jaseci/svc/mail/README.md)
+
 ## The JAC Language Guide
 
 - [Key Abstractions and Concepts](support/guide/lang_docs/key_concepts.md)
@@ -34,6 +41,34 @@
   - [Abilities](support/guide/lang_docs/abilities.md)
     - [`here` and `visitor`](support/guide/lang_docs/here_visitor.md)
   - [Actions](support/guide/lang_docs/actions.md)
+
+## Jac Language Features
+
+- [Main](docs/docs/Developing_with_JAC/Language_Feature.md)
+  - [ControlFlow](docs/docs/Developing_with_JAC/Language_Features/ControlFlow.md)
+  - [FileHnadling](docs/docs/Developing_with_JAC/Language_Features/FileHnadling.md)
+  - [OOP](docs/docs/Developing_with_JAC/Language_Features/OOP.md)
+  - [Operator](docs/docs/Developing_with_JAC/Language_Features/Operator.md)
+  - [Data Types](docs/docs/Developing_with_JAC/Language_Features/dataTypes.md)
+  - [Function](docs/docs/Developing_with_JAC/Language_Features/function.md)
+  - [Globals](docs/docs/Developing_with_JAC/Language_Features/globals.md)
+  - [Input/Output](docs/docs/Developing_with_JAC/Language_Features/input_output.md)
+  - [Multipart](docs/docs/Developing_with_JAC/Language_Features/multipart.md)
+  - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
+  - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md)
+
+- Actions
+  - [Alias](docs/docs/Developing_with_JAC/Language_Features/actions/alias.md)
+  - [Date](docs/docs/Developing_with_JAC/Language_Features/actions/date.md)
+  - [File](docs/docs/Developing_with_JAC/Language_Features/actions/file.md)
+  - [Global](docs/docs/Developing_with_JAC/Language_Features/actions/global.md)
+  - [Jaseci](docs/docs/Developing_with_JAC/Language_Features/actions/jaseci.md)
+  - [Net](docs/docs/Developing_with_JAC/Language_Features/actions/net.md)
+  - [Rand](docs/docs/Developing_with_JAC/Language_Features/actions/rand.md)
+  - [Request](docs/docs/Developing_with_JAC/Language_Features/actions/request.md)
+  - [Std](docs/docs/Developing_with_JAC/Language_Features/actions/std.md)
+  - [Vectors](docs/docs/Developing_with_JAC/Language_Features/actions/vectors.md)
+  - [Walker](docs/docs/Developing_with_JAC/Language_Features/actions/walker.md)
 
 ## Jaseci AI Library Reference
 

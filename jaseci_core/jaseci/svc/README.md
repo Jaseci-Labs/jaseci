@@ -15,6 +15,54 @@ This class is the base for implementing service. Dev should use this class if th
 | quiet | For log control and avoid uncessary logs |
 
 ---
+## `Service Settings`
+### `Config`
+- service use MemoryHook's service_glob method. This will automatically add default config if it's not existing
+- You need to use ConfigApi (config_set and config_refresh) to update configs on every hooks including redis.
+- If config is updated through admin portal and redis is running, redis needs to remove the old copy of config since redis is the first hook where the service get the configs
+    ```json
+    // Structure
+    {
+        "enabled": True,
+        "quiet": True,
+        "field1": "val1",
+        "field1": "val2",
+        "field1": "val3",
+        ...
+    }
+
+    ```
+### `Kube`
+- this is similart to config's behavior but it uses different structure
+
+    ```json
+        // Structure: grouped values from `yaml.safe_load_all(...yaml_file...)`
+        // map each safe_load_all to $.kind
+        {
+            "ServiceAccount": [
+                {
+                    "apiVersion": "v1",
+                    "kind": "ServiceAccount",
+                    "metadata": {
+                        "labels": {
+                            "helm.sh/chart": "kube-state-metrics-4.13.0",
+                            "app.kubernetes.io/managed-by": "Helm",
+                            "app.kubernetes.io/component": "metrics",
+                            "app.kubernetes.io/part-of": "kube-state-metrics",
+                            "app.kubernetes.io/name": "kube-state-metrics",
+                            "app.kubernetes.io/instance": "jaseci-prometheus",
+                            "app.kubernetes.io/version": "2.5.0",
+                        },
+                        "name": "jaseci-prometheus-kube-state-metrics",
+                        "namespace": "default",
+                    },
+                    "imagePullSecrets": [],
+                }
+            ]
+        }
+    ```
+
+---
 
 ## `Common Methods`
 | Methods | Arguments | Description | Example |

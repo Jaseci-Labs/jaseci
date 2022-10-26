@@ -36,7 +36,33 @@ JSORC_CONFIG = {
 ### `with` kube config
 - [prometheus.py](../prometheus/prometheus.py)
 - [kube.py](../prometheus/kube.py)
-        - `PROMON_KUBE` == `yaml.safe_load(...yaml_file...)`
+    - `PROMON_KUBE` == grouped values from `yaml.safe_load_all(...yaml_file...)`
+        - ex:
+        ```json
+            // map each safe_load_all to $.kind
+            {
+                "ServiceAccount": [
+                    {
+                        "apiVersion": "v1",
+                        "kind": "ServiceAccount",
+                        "metadata": {
+                            "labels": {
+                                "helm.sh/chart": "kube-state-metrics-4.13.0",
+                                "app.kubernetes.io/managed-by": "Helm",
+                                "app.kubernetes.io/component": "metrics",
+                                "app.kubernetes.io/part-of": "kube-state-metrics",
+                                "app.kubernetes.io/name": "kube-state-metrics",
+                                "app.kubernetes.io/instance": "jaseci-prometheus",
+                                "app.kubernetes.io/version": "2.5.0",
+                            },
+                            "name": "jaseci-prometheus-kube-state-metrics",
+                            "namespace": "default",
+                        },
+                        "imagePullSecrets": [],
+                    }
+                ]
+            }
+        ```
 
 ```python
 # ... other imports
