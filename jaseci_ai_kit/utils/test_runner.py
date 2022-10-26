@@ -7,13 +7,16 @@ def get_all_tests(filter_str: str):
     tests = []
     for root, _, files in os.walk(os.getcwd()):
         for file in files:
-            if file.startswith(filter_str) and file.endswith(".py"):
+            if file.startswith(str(filter_str)) and file.endswith(".py"):
                 tests.append(os.path.join(root, file))
     return tests
 
 
 def main(args):
     tests = get_all_tests(args.filter)
+    if len(tests) == 0:
+        print("No tests found")
+        return
     for test in tests:
         # running using action load module
         results = subprocess.check_output(f"python {test}", shell=True)
