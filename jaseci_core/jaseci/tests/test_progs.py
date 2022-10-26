@@ -374,7 +374,7 @@ class JacTests(TestCaseHelper, TestCase):
 
         res = mast.general_interface_to_api(
             api_name="walker_queue_wait",
-            params={"task_id": res["result"]},
+            params={"task_id": res["result"], "timeout": 15},
         )
 
         self.assertEqual("test", res["result"]["anchor"])
@@ -446,7 +446,7 @@ class JacTests(TestCaseHelper, TestCase):
 
         res = mast.general_interface_to_api(
             api_name="walker_queue_wait",
-            params={"task_id": res["result"]},
+            params={"task_id": res["result"], "timeout": 15},
         )
 
         self.assertEqual("test", res["result"]["anchor"])
