@@ -42,7 +42,13 @@ jobs:
       run: |
         python -c "import jaseci_ai_kit"
 
+    - name: Start minikube
+      uses: medyagh/setup-minikube@master
+
+    - name: Try the cluster !
+      run: kubectl get pods -A
+
     - name: Run tests
       run: |
         cd jaseci_ai_kit/
-        source test.sh
+        source test.sh use_enc
