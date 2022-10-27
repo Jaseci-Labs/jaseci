@@ -239,11 +239,12 @@ class SentinelApi:
         return [f"Sentinel {snt.id} successfully deleted"]
 
     def active_snt(self):
-        return (
-            self._h.get_obj(self._m_id, uuid.UUID(self.active_snt_id))
-            if self.active_snt_id is not None
-            else None
+        sid = (
+            self._h.get_glob("GLOB_SENTINEL")
+            if self.active_snt_id == "global"
+            else self.active_snt_id
         )
+        return self._h.get_obj(self._m_id, uuid.UUID(sid)) if sid is not None else None
 
     def attempt_auto_run(self, sent: Sentinel, walk_name, ctx):
         if (
