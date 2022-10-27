@@ -6,9 +6,9 @@ You will learn the basics of Jaseci, training state-of-the-art AI models, and ev
 Excited? Hell yeah! Let's jump in.
 
 ## Table of Contents
-1. [Preparation and Background](examples/CanoniCAI/codelabs/1_preparation.md)
-2. [Automated FAQ Answering Chatbot](examples/CanoniCAI/codelabs/2_faq.md)
-3. [Multi-turn Dialogue System](examples/CanoniCAI/codelabs/3_dialogue_system.md)
-4. [Unify the Dialogue and FAQ Systems](examples/CanoniCAI/codelabs/4_unify_system.md)
-5. [Bring Your Application to Production](examples/CanoniCAI/codelabs/5_production.md)
-6. [Improve Your AI Models](examples/CanoniCAI/codelabs/6_crowdsource.md)
+1. [Preparation and Background](codelabs/1_preparation.md)
+2. [Automated FAQ Answering Chatbot](codelabs/2_faq.md)
+3. [Multi-turn Dialogue System](codelabs/3_dialogue_system.md)
+4. [Unify the Dialogue and FAQ Systems](codelabs/4_unify_system.md)
+5. [Bring Your Application to Production](codelabs/5_production.md)
+6. [Improve Your AI Models](codelabs/6_crowdsource.md)

@@ -114,7 +114,7 @@ strict digraph root {
     "n0" -> "n1" [ id="bec764e7ee4048898799c2a4f01b9edb", label="e2" ]
 }
 ```
-![DOT of the dialogue system](images/dialogue/dot_1.png)
+![DOT of the dialogue system](../images/dialogue/dot_1.png)
 
 ## Build the Walker Logic
 Let's now start building the walker to interact with this dialogue system.
@@ -598,7 +598,7 @@ graph dialogue_system {
 ```
 Your graph should look something like this!
 
-![Multi-turn Dialogue Graph](images/dialogue/multi-turn.png)
+![Multi-turn Dialogue Graph](../images/dialogue/multi-turn.png)
 
 ## Update the Walker for Multi-turn Dialogue
 Let's now turn our focus to the walker logic

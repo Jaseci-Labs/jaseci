@@ -154,7 +154,7 @@ One thing worth pointing out here is that we are spawning a graph inside a graph
 
 Our graph should now looks like this!
 
-![](images/complete.png)
+![](../images/complete.png)
 
 Here comes the biggest benefit of our unified node architecture -- the exact same walker logic can be shared to traverse both systems.
 The only change we need to make is to change from `dialogue_state` to `cai_state` to apply the walker logic to a more generalized set of nodes.
