@@ -14,24 +14,14 @@ To start a in memory session `-m` or `--mem-only` flag can be used. This won't c
 
 ### Running a Jaseci Program
 
-We can run Jaseci program within jaseci shell or directly from the command line. 
-```
-jsctl> jac dot [file_name].jac
-```
-or 
 ```
 jsctl> jac run [file_name].jac
 ```
-The difference between `jac dot` and `jac run` is only that `jac dot` will produce the graph in `DOT` format. 
-
-We can launch any `jsctl` commands such as `jac run`,`jac dot` directly from the terminal without first entering to the jaseci shell. To run Jaseci program directly from the command line;
+We can launch any `jsctl` commands directly from the terminal without first entering to the jaseci shell. To run Jaseci program directly from the command line;
 ```
 jsctl jac run [file_name].jac
 ```
-or 
-```
-jsctl jac dot [file_name].jac
-```
+
 To ensure the program runs fast, we can first compile the program using `build` command in prior to run the program.
 ```
 jsctl jac build [file_name].jac
