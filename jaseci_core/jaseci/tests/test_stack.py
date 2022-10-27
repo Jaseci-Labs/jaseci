@@ -124,3 +124,45 @@ class StackTests(CoreTest):
             ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
         )
         self.assertEqual(ret["context"]["b"], 6)
+
+    def test_sentinel_missing_architype_global(self):
+        """
+        Test when the original sentinel is missing the corresponding architype for a
+        node
+        """
+        ret = self.call(
+            self.smast,
+            [
+                "sentinel_register",
+                {
+                    "name": "new_snt",
+                    "auto_create_graph": False,
+                    "auto_run": False,
+                    "set_active": True,
+                    "code": self.load_jac("simple.jac"),
+                },
+            ],
+        )
+        glob_snt = ret[0]["jid"]
+        ret = self.call(self.smast, ["global_sentinel_set", {"snt": glob_snt}])
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("simple.jac")}],
+        )
+        old_snt = ret[0]["jid"]
+        ret = self.call(self.mast, ["walker_run", {"name": "init", "snt": old_snt}])
+        node_id = ret["report"][0]["jid"]
+        ret = self.call(self.mast, ["sentinel_delete", {"snt": old_snt}])
+        ret = self.call(self.mast, ["sentinel_list", {"snt": old_snt}])
+        ret = self.call(
+            self.mast,
+            ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
+        )
+        self.assertIn("has_var", ret["errors"][0])
+        ret = self.call(self.mast, ["sentinel_active_global", {}])
+        self.mast._h._machine = None
+        ret = self.call(
+            self.mast,
+            ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
+        )
+        self.assertEqual(ret["context"]["b"], 6)
