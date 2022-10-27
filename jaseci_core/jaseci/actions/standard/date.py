@@ -48,7 +48,7 @@ def date_day_diff(start_date: str, end_date: str):
 
 
 @jaseci_action()
-def phrasetodate(phrase: str):
+def phrase_to_date(phrase: str):
     today = date.today()
     if phrase == "yesterday" or phrase == "Yesterday":
         yesterday = today - timedelta(days=1)
