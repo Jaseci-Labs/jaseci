@@ -57,7 +57,8 @@
   - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
   - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md)
 
-- Actions
+## Standard Actions
+
   - [Alias](docs/docs/Developing_with_JAC/Language_Features/actions/alias.md)
   - [Date](docs/docs/Developing_with_JAC/Language_Features/actions/date.md)
   - [File](docs/docs/Developing_with_JAC/Language_Features/actions/file.md)
