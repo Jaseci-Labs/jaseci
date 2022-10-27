@@ -22,6 +22,9 @@ class Anchored:
             and self._h._machine.parent().j_type == "sentinel"
             else None
         )
+        mast = self.get_master()
+        if arch is None and mast.active_snt() is not None:
+            arch = mast.active_snt().get_arch_for(self)
         if arch is None and self.parent() and self.parent().j_type == "sentinel":
             arch = self.parent().get_arch_for(self)
         return arch
