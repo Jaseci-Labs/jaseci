@@ -45,3 +45,223 @@ def date_day_diff(start_date: str, end_date: str):
     delta = end_date - start_date
 
     return delta.days
+
+
+@jaseci_action()
+def phrasetodate(phrase: str):
+    today = date.today()
+    if phrase == "yesterday" or phrase == "Yesterday":
+        yesterday = today - timedelta(days=1)
+        return yesterday.strftime("%Y-%m-%d")
+
+    elif phrase == "today" or phrase == "Today":
+        return today.strftime("%Y-%m-%d")
+
+    elif phrase.find("month") != -1 or phrase.find("Month") != -1:
+        rdate = today - relativedelta(months=1)
+        return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("sunday") != -1 or phrase.find("Sunday") != -1:
+        firstoffset = 6 - today.weekday()
+        if firstoffset < 0:
+            rdate = today + timedelta(days=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+        else:
+            thisdate = today + timedelta(days=firstoffset)
+            rdate = thisdate - timedelta(days=7)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("Saturday") != -1 or phrase.find("saturday") != -1:
+        firstoffset = 5 - today.weekday()
+        if firstoffset < 0:
+            rdate = today + timedelta(days=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+        else:
+            thisdate = today + timedelta(days=firstoffset)
+            rdate = thisdate - timedelta(days=7)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("friday") != -1 or phrase.find("Friday") != -1:
+        firstoffset = 4 - today.weekday()
+        if firstoffset < 0:
+            rdate = today + timedelta(days=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+        else:
+            thisdate = today + timedelta(days=firstoffset)
+            rdate = thisdate - timedelta(days=7)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("thursday") != -1 or phrase.find("Thursday") != -1:
+        firstoffset = 3 - today.weekday()
+        if firstoffset < 0:
+            rdate = today + timedelta(days=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+        else:
+            thisdate = today + timedelta(days=firstoffset)
+            rdate = thisdate - timedelta(days=7)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("wednesday") != -1 or phrase.find("Wednesday") != -1:
+        firstoffset = 2 - today.weekday()
+        if firstoffset < 0:
+            rdate = today + timedelta(days=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+        else:
+            thisdate = today + timedelta(days=firstoffset)
+            rdate = thisdate - timedelta(days=7)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("tuesday") != -1 or phrase.find("Tuesday") != -1:
+        firstoffset = 1 - today.weekday()
+        if firstoffset < 0:
+            rdate = today + timedelta(days=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+        else:
+            thisdate = today + timedelta(days=firstoffset)
+            rdate = thisdate - timedelta(days=7)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("monday") != -1 or phrase.find("Monday") != -1:
+        firstoffset = 0 - today.weekday()
+        if firstoffset < 0:
+            rdate = today + timedelta(days=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+        else:
+            thisdate = today + timedelta(days=firstoffset)
+            rdate = thisdate - timedelta(days=7)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("january") != -1 or phrase.find("January") != -1:
+        firstoffset = 1 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("february") != -1 or phrase.find("February") != -1:
+        firstoffset = 2 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("march") != -1 or phrase.find("March") != -1:
+        firstoffset = 3 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("april") != -1 or phrase.find("April") != -1:
+        firstoffset = 4 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("may") != -1 or phrase.find("May") != -1:
+        firstoffset = 5 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("june") != -1 or phrase.find("June") != -1:
+        firstoffset = 6 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("july") != -1 or phrase.find("July") != -1:
+        firstoffset = 7 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("august") != -1 or phrase.find("August") != -1:
+        firstoffset = 8 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("september") != -1 or phrase.find("September") != -1:
+        firstoffset = 9 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("october") != -1 or phrase.find("October") != -1:
+        firstoffset = 10 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("november") != -1 or phrase.find("November") != -1:
+        firstoffset = 11 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    elif phrase.find("december") != -1 or phrase.find("December") != -1:
+        firstoffset = 12 - today.month
+        if firstoffset < 0:
+            rdate = today + relativedelta(months=firstoffset)
+            return rdate.strftime("%Y-%m-%d")
+
+        else:
+            thisyear = today + relativedelta(months=firstoffset)
+            rdate = thisyear - relativedelta(years=1)
+            return rdate.strftime("%Y-%m-%d")
+
+    else:
+        return None
