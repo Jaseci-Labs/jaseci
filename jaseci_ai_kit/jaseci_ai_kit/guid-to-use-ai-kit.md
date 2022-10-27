@@ -90,11 +90,12 @@ jaseci > actions list
   .
   .
   .
+]
 ```
 
 ### Retraining a Jaseci model with customized data.
 
-Jaseci AI kit provides pretrained model with large scale of data. We can retrain these models with our own data. Before training any model the model should be load from one of the method which is mentioned above.  The training data should be in JSON format. An example of training jac code is in below;
+Jaseci AI kit provides pretrained model with large scale of data. We can retrain these models with custom data. Before training any model the model should be load from one of the method which is mentioned above.  The training data should be in JSON format. An example of training jac code is in below;
 
 ````
 node bi_enc {
@@ -163,20 +164,83 @@ walker load_model {
 ````
 As we can see there are four walkers in the jac code above, `train`, `infer`, `save_model` and `load_model`. 
 
-    jac run [file_name].jac -walk train -ctx "{\"train_file\": \[file_nam_of_training_data].json\"}"
+`jac run [file_name].jac -walk train -ctx "{\"train_file\": \[file_nam_of_training_data].json\"}"`
 
- -   `-walk`  specifies the name of the walker to run. By default, it runs the  `init`  walker.
+ -   `-walk`  specifies the name of the walker to run. By default, it runs the  `init`  walker. but in this case we have set the walker as train.
  - `-ctx`  stands for  `context`. This lets us provide input parameters to the walker. This accept parameters in `JSON` format. 
+
+ Example:
+
+ ```
+ jaseci > jac run bi_enc.jac -walk train -ctx "{\"train_file\": \"clf_train_1.json\"}"
+ .
+ .
+ .
+ 
+            Epoch : 50
+            loss : 0.0435857983926932
+            LR : 0.0
+
+Epoch: 100%|████████████████████████████████████████████████████████████████| 50/50 [00:59<00:00,  1.19s/batch]{
+  "success": true,
+  "report": [],
+  "final_node": "urn:uuid:529fae48-ea21-4f4c-9cac-02d2750b4ceb",
+  "yielded": false
+}
+ ```
+Each training epoch, the above output will print with the training loss and learning rate at that epoch. By default, the model is trained for 50 epochs.If the training successfully finishes, you should see "success": true at the end.
 
 ### Make inferencing with the retrained model
 
-    jac run [file_name].jac -walk infer -ctx "{\"labels\": [\"[label_1]\", \"[label_2"]}"
+After finishes the training the `infer` walker can be used to make inferencing, 
 
-We set walker as 'infer' here. The labels are the list of classes which we trained. Inside the model file we should create a node with the name `infer`
+`jac run [file_name].jac -walk infer -ctx "{\"labels\": [\"[label_1]\", \"[label_2"]}"`
 
+An example of inferensing is shown below;
+
+```
+jaseci > jac run bi_enc.jac -walk infer -ctx "{\"labels\": [\"test drive\", \"order a tesla\"]}"
+Enter input text (Ctrl-C to exit)> how can I order a tesla?
+{"context": "how can I order a tesla?", "candidate": ["test drive", "order a tesla"], "score": [3.8914384187135695, 9.004763714012604], "predicted": {"label": "order a tesla", "score": 9.004763714012604}}
+{"label": "order a tesla", "score": 9.004763714012604}
+```
 
 ### Saving the retrained model in Jaseci.
 
-    jac run [file_name].jac -walk save_model -ctx "{\"model_path\": \"[model_name]\"}"
+The retrained model is kept in memory it can be save into the local machine in a preffered location.
+
+`jac run [file_name].jac -walk save_model -ctx "{\"model_path\": \"[model_path]\"}"`
 
 We set walker as `save_model` here. Inside the model file we should create a node with the name `save_model`
+
+Example:
+```
+jaseci > jac run bi_enc.jac -walk save_model -ctx "{\"model_path\": \"retrained_model\"}"
+Saving non-shared model to : retrained_model
+{
+  "success": true,
+  "report": [],
+  "final_node": "urn:uuid:f43dc5e0-bd77-4c6b-b5eb-0e117dfc36d8",
+  "yielded": false
+}
+```
+If the model is saved successfully the `success` status will be shown as `true`.
+
+### Loading a saved model
+
+Similarly, you can load a saved model with load_model,
+
+`jac run [file_name].jac -walk load_model -ctx "{\"model_path\": \"model_path\"}"`
+
+Example:
+```
+jaseci > jac run bi_enc.jac -walk load_model -ctx "{\"model_path\": \"retrained_model\"}"
+Loading non-shared model from : retrained_model
+{
+  "success": true,
+  "report": [],
+  "final_node": "urn:uuid:b1dd56b0-865a-4150-9df0-50e97ffb8388",
+  "yielded": false
+}
+```
+If the model is saved successfully the `success` status will be shown as `true`.
