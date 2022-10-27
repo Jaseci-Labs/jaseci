@@ -13,6 +13,7 @@ from jaseci.element.element import Element
 from jaseci.utils.utils import logger, ColCodes as Cc
 from jaseci_serv.base.models import Master as ServMaster
 from jaseci_serv.svc import MetaService
+from jaseci_serv.user_api import serializers as user_slzr
 
 
 class JResponse(Response):
@@ -117,6 +118,7 @@ class AbstractJacAPIView(APIView):
                     )
 
     def proc_request_ctx(self, request, req_data):
+        user_slzr.requests_for_emails = request
         req_query = request.GET.dict()
         req_data.update(
             {
