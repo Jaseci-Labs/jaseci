@@ -1,1 +1,0 @@
-node simple2 {has a=4;}

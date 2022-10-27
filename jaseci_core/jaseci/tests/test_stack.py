@@ -106,7 +106,7 @@ class StackTests(CoreTest):
         )
         self.assertIn("has_var", ret["errors"][0])
         ret = self.call(
-            self.smast,
+            self.mast,
             [
                 "sentinel_register",
                 {
@@ -123,4 +123,4 @@ class StackTests(CoreTest):
             self.mast,
             ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
         )
-        self.assertTrue(ret["success"])
+        self.assertEqual(ret["context"]["b"], 6)
