@@ -1,10 +1,9 @@
 
-# Jaseci Onboarding Guidance
+# Guidance to work with Jaseci AI kit
 
-In this page, you will find all the basic commands needed to work with Jaseci. 
+In this page, you will find all the basic commands needed to work with Jaseci AI kit. 
 
-##
- ### Starting a Jaseci Shell session;
+### Starting a Jaseci Shell session;
 ```
 jsctl
 ```
