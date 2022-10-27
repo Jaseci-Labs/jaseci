@@ -48,7 +48,7 @@
   - [Transformer NER](jaseci_ai_kit/jaseci_ai_kit/modules/tfm_ner/README.md)
   - [USE Encoder](jaseci_ai_kit/jaseci_ai_kit/modules/use_enc/README.md)
   - [USE QA](jaseci_ai_kit/jaseci_ai_kit/modules/use_qa/README.md)
-- [Jaseci AI Kit Overview](jaseci_ai_kit/jaseci_ai_kit/guid-to-use-ai-kit.md)
+- [How to use Jaseci AI Kit](jaseci_ai_kit/jaseci_ai_kit/guid-to-use-ai-kit.md)
 
 ## Jaseci UI Widget Library
 
