@@ -17,11 +17,10 @@ To start a in memory session `-m` or `--mem-only` flag can be used. This won't c
 ```
 jsctl> jac run [file_name].jac
 ```
-We can launch any `jsctl` commands directly from the terminal without first entering to the jaseci shell. To run Jaseci program directly from the command line;
+We can launch any `jsctl` commands directly from the terminal without first entering to the jaseci shell. To run Jaseci program directly from the below command line;
 ```
 jsctl jac run [file_name].jac
 ```
-
 To ensure the program runs fast, we can first compile the program using `build` command in prior to run the program.
 ```
 jsctl jac build [file_name].jac
@@ -33,20 +32,66 @@ jsctl jac run [file_name].jir
 ```
 ### Using Jaseci AI kit
  
- We can load modules from Jaseci AI kit from locally or remotely.
+ Jaseci Kit is a collection of state-of-the-art machine learning models that are already trained on large amount of data and available to load into jaseci can retrained with our owndata.
+ 
  #### To load a module from Jaseci AI kit;
- ``` 
- actions load module jaseci_ai_kit.[module_name]
+
+ We can simply do `pip install jaseci_ai_kit` in the python environment we are currently working and import the ai models from jaseci ai kit to the jaseci using `actions load module jaseci_ai_kit.[module_name]` command.
+
+ Example module load:
+
  ```
+ $ jsctl
+jaseci > actions load module jaseci_ai_kit.bi_enc
+{
+  "success": true
+}
+```
+
 #### Load from remote
+
+Also we can load jaseci ai models from a remote server using  `actions load remote [url_to_model]` command. For this each AI model should deployed as a separate service. This URL should obtained from the remote server which AI model was deployed.
+
+Example remote load:
 ```
-actions load remote [url_to_model]
+jaseci > actions load remote  http://192.168.49.2:32267
+{
+  "success": true
+}
 ```
+
 #### Load from local
+
+Once we cloned the jaseci main repository to local machine we can load AI models from jaseci_ai_kit using `actions load local [path_to_model]`. 
+Example local load:
+
 ```
-actions load local [path_to_model]
+jaseci > actions load local jaseci_ai_kit\jaseci_ai_kit\modules\use_enc\use_enc.py
+
+{
+  "success": true
+}
 ```
-The complete list of available module names and their details can be viewed [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit#readme).
+The complete list of available module names and their details can be viewed [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit#readme). once loaded any model use `actions list` command to view available actions' as below.
+
+```
+jaseci > actions list
+[
+  "net.max",
+  "net.min",
+  "net.pack",
+  "net.unpack",
+  "net.root",
+  "rand.seed",
+  "rand.integer",
+  "rand.choice",
+  "rand.sentence",
+  "rand.paragraph",
+  .
+  .
+  .
+  .
+```
 
 ### Retraining a Jaseci model with customized data.
 
@@ -117,7 +162,7 @@ walker load_model {
 	bi_enc.load_model(model_path);
 }
 ````
-As we can see there are three walkers in the jac code above, `train`, `infer`, `save_model` and `load_model`. 
+As we can see there are four walkers in the jac code above, `train`, `infer`, `save_model` and `load_model`. 
 
     jac run [file_name].jac -walk train -ctx "{\"train_file\": \[file_nam_of_training_data].json\"}"
 
