@@ -19,6 +19,12 @@
 ## Codelabs and Guides
 
 - [Building a Conversational AI System](examples/CanoniCAI/CCAI_codelab.md)
+  1. [Preparation and Background](examples/CanoniCAI/codelabs/1_preparation.md)
+  2. [Automated FAQ Answering Chatbot](examples/CanoniCAI/codelabs/2_faq.md)
+  3. [Multi-turn Dialogue System](examples/CanoniCAI/codelabs/3_dialogue_system.md)
+  4. [Unify the Dialogue and FAQ Systems](examples/CanoniCAI/codelabs/4_unify_system.md)
+  5. [Bring Your Application to Production](examples/CanoniCAI/codelabs/5_production.md)
+  6. [Improve Your AI Models](examples/CanoniCAI/codelabs/6_crowdsource.md)
 - [Build a Custom Jaseci Module](support/codelabs/custom_jaseci_module_codelab.md)
 - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
 - [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
@@ -26,7 +32,50 @@
 - [Locust Load Test for JASECI](support/locust/README.md)
 - [Setting up Monitoring for JASECI](support/monitoring/README.md)
 
-## The JAC Programming Language Guide
+## Jaseci Core Implementation Guide
+
+- [Services](jaseci_core/jaseci/svc/README.md)
+  - [JsOrc](jaseci_core/jaseci/svc/jsorc/README.md)
+  - [Task](jaseci_core/jaseci/svc/task/README.md)
+  - [Mail](jaseci_core/jaseci/svc/mail/README.md)
+
+## The JAC Language Guide
+
+- [Key Abstractions and Concepts](support/guide/lang_docs/key_concepts.md)
+  - [Graphs](support/guide/lang_docs/graphs.md)
+  - [Walkers](support/guide/lang_docs/walkers.md)
+  - [Abilities](support/guide/lang_docs/abilities.md)
+    - [`here` and `visitor`](support/guide/lang_docs/here_visitor.md)
+  - [Actions](support/guide/lang_docs/actions.md)
+
+## Jac Language Features
+
+- [Main](docs/docs/Developing_with_JAC/Language_Feature.md)
+  - [ControlFlow](docs/docs/Developing_with_JAC/Language_Features/ControlFlow.md)
+  - [FileHnadling](docs/docs/Developing_with_JAC/Language_Features/FileHnadling.md)
+  - [OOP](docs/docs/Developing_with_JAC/Language_Features/OOP.md)
+  - [Operator](docs/docs/Developing_with_JAC/Language_Features/Operator.md)
+  - [Data Types](docs/docs/Developing_with_JAC/Language_Features/dataTypes.md)
+  - [Function](docs/docs/Developing_with_JAC/Language_Features/function.md)
+  - [Globals](docs/docs/Developing_with_JAC/Language_Features/globals.md)
+  - [Input/Output](docs/docs/Developing_with_JAC/Language_Features/input_output.md)
+  - [Multipart](docs/docs/Developing_with_JAC/Language_Features/multipart.md)
+  - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
+  - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md)
+
+## Standard Actions
+
+  - [Alias](docs/docs/Developing_with_JAC/Language_Features/actions/alias.md)
+  - [Date](docs/docs/Developing_with_JAC/Language_Features/actions/date.md)
+  - [File](docs/docs/Developing_with_JAC/Language_Features/actions/file.md)
+  - [Global](docs/docs/Developing_with_JAC/Language_Features/actions/global.md)
+  - [Jaseci](docs/docs/Developing_with_JAC/Language_Features/actions/jaseci.md)
+  - [Net](docs/docs/Developing_with_JAC/Language_Features/actions/net.md)
+  - [Rand](docs/docs/Developing_with_JAC/Language_Features/actions/rand.md)
+  - [Request](docs/docs/Developing_with_JAC/Language_Features/actions/request.md)
+  - [Std](docs/docs/Developing_with_JAC/Language_Features/actions/std.md)
+  - [Vectors](docs/docs/Developing_with_JAC/Language_Features/actions/vectors.md)
+  - [Walker](docs/docs/Developing_with_JAC/Language_Features/actions/walker.md)
 
 ## Jaseci AI Library Reference
 
@@ -51,11 +100,20 @@
 - [Connecting an API](jaseci_ui_kit/components/docs/connecting-an-api.md)
 - [Components](jaseci_ui_kit/README.md)
 
+## Jaseci Core Implementation Guide
+- [Services](jaseci_core/jaseci/svc/README.md)
+  - [JsOrc](jaseci_core/jaseci/svc/jsorc/README.md)
+  - [Task](jaseci_core/jaseci/svc/task/README.md)
+
+## Contributing to Jaseci
+
+- [Being an Contributor](support/guide/other/contributor_policy.md)
+- [General Guide](CONTRIBUTING.md)
+- [Contributors](CONTRIBUTORS.md)
+
 ## Other Resources
 
 - [About this Release](CHANGELOG.md)
-- [How to Contribute](CONTRIBUTING.md)
-- [Contributors](CONTRIBUTORS.md)
 - [Archived Notes](NOTES.md)
 - [Join our Community](https://forum.jaseci.org/)
 - [Online Documentation](https://docs.jaseci.org/)

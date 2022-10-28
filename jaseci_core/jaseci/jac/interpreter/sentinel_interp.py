@@ -21,7 +21,7 @@ class SentinelInterp(Interp):
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "ver_label":
             self.run_ver_label(kid[0])
-        for i in kid[:-1]:
+        for i in kid:
             self.run_element(i)
 
     def run_ver_label(self, jac_ast):
@@ -55,7 +55,8 @@ class SentinelInterp(Interp):
             if const_name in self.global_vars:
                 self.rt_error(f"Global {const_name} already defined!", kid[0])
             else:
-                self.global_vars[const_name] = self.run_expression(kid[2]).value
+                self.run_expression(kid[2])
+                self.global_vars[const_name] = self.pop().value
             kid = kid[4:] if kid[3].name == "COMMA" else kid[3:]
 
     def load_architype(self, jac_ast):
@@ -72,7 +73,6 @@ class SentinelInterp(Interp):
 
         name = kid[1].token_text()
         kind = kid[0].token_text()
-
         arch = Architype(
             m_id=self._m_id,
             h=self._h,
@@ -156,7 +156,7 @@ class SentinelInterp(Interp):
         }
         kid = kid[3:]
         if kid[0].name == "graph_ref":
-            graph_name = kid[0].kid[2].token_text()
+            graph_name = kid[0].kid[-1].token_text()
             if not self.arch_ids.has_obj_by_name(graph_name, kind="graph"):
                 self.rt_error(f"Graph {graph_name} not found!", kid[0])
                 return
@@ -166,7 +166,7 @@ class SentinelInterp(Interp):
             testcase["graph_block"] = jac_ast_to_ir(kid[0])
         kid = kid[2:]
         if kid[0].name == "walker_ref":
-            walker_name = kid[0].kid[2].token_text()
+            walker_name = kid[0].kid[-1].token_text()
             if not self.arch_ids.has_obj_by_name(name=walker_name, kind="walker"):
                 self.rt_error(f"Walker {walker_name} not found!", kid[0])
                 return

@@ -36,6 +36,7 @@ class SentinelApi:
         name: str = "default",
         code: str = "",
         code_dir: str = "./",
+        opt_level: int = 4,
         mode: str = "default",
         encoded: bool = False,
         auto_run: str = "init",
@@ -58,7 +59,12 @@ class SentinelApi:
                 new_gph = self.graph_create(set_active=set_active)
         if code:
             self.sentinel_set(
-                code=code, code_dir=code_dir, encoded=encoded, snt=snt, mode=mode
+                code=code,
+                code_dir=code_dir,
+                encoded=encoded,
+                snt=snt,
+                mode=mode,
+                opt_level=opt_level,
             )
             if not snt.is_active:
                 return {
@@ -114,6 +120,7 @@ class SentinelApi:
         self,
         code: str,
         code_dir: str = "./",
+        opt_level: int = 4,
         encoded: bool = False,
         snt: Sentinel = None,
         mode: str = "default",
@@ -126,7 +133,7 @@ class SentinelApi:
             code = b64decode_str(code)
         if mode not in ["code", "default", "ir"]:
             return {"response": f"Invalid mode to set {snt}", "success": False}
-        snt.register_code(code, dir=code_dir, mode=mode)
+        snt.register_code(code, dir=code_dir, mode=mode, opt_level=opt_level)
         snt.propagate_access()
 
         if snt.is_active:
@@ -232,7 +239,12 @@ class SentinelApi:
         return [f"Sentinel {snt.id} successfully deleted"]
 
     def active_snt(self):
-        return self._h.get_obj(self._m_id, uuid.UUID(self.active_snt_id))
+        sid = (
+            self._h.get_glob("GLOB_SENTINEL")
+            if self.active_snt_id == "global"
+            else self.active_snt_id
+        )
+        return self._h.get_obj(self._m_id, uuid.UUID(sid)) if sid is not None else None
 
     def attempt_auto_run(self, sent: Sentinel, walk_name, ctx):
         if (

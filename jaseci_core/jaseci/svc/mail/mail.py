@@ -4,9 +4,8 @@ from email.mime.text import MIMEText
 from json import dumps
 from smtplib import SMTP, SMTP_SSL
 
-from jaseci.svc import CommonService, ServiceState as Ss
-from jaseci.utils.utils import logger
-from .common import MAIL_CONFIG
+from jaseci.svc import CommonService
+from .config import MAIL_CONFIG
 
 
 #################################################
@@ -17,36 +16,12 @@ from .common import MAIL_CONFIG
 class MailService(CommonService):
 
     ###################################################
-    #                   INITIALIZER                   #
+    #                     BUILDER                     #
     ###################################################
 
-    def __init__(self, hook=None):
-        super().__init__(MailService)
-
-        try:
-            if self.is_ready():
-                self.state = Ss.STARTED
-                self.__mail(hook)
-        except Exception as e:
-            if not (self.quiet):
-                logger.error(
-                    "Skipping Mail setup due to initialization failure!\n"
-                    f"{e.__class__.__name__}: {e}"
-                )
-            self.app = None
-            self.state = Ss.FAILED
-
-    def __mail(self, hook):
-        configs = self.get_config(hook)
-        enabled = configs.get("enabled", True)
-
-        if enabled:
-            self.quiet = configs.pop("quiet", False)
-            self.__convert_config(hook, configs)
-            self.app = self.connect(configs)
-            self.state = Ss.RUNNING
-        else:
-            self.state = Ss.DISABLED
+    def run(self, hook=None):
+        self.__convert_config(hook)
+        self.app = self.connect()
 
     # ----------- BACKWARD COMPATIBILITY ------------ #
     # ---------------- TO BE REMOVED ---------------- #
@@ -62,13 +37,13 @@ class MailService(CommonService):
                         holder[v] = conf
         return holder
 
-    def __convert_config(self, hook, configs: dict):
-        version = configs.get("version", 2)
-        migrate = configs.pop("migrate", False)
+    def __convert_config(self, hook):
+        version = self.config.get("version", 2)
+        migrate = self.config.get("migrate", False)
         if version == 1 or migrate:
             self.__convert(
                 hook,
-                configs,
+                self.config,
                 {
                     "EMAIL_BACKEND": "backend",
                     "EMAIL_HOST": "host",
@@ -80,12 +55,12 @@ class MailService(CommonService):
                 },
             )
 
-            if "templates" not in configs:
-                configs["templates"] = {}
+            if "templates" not in self.config:
+                self.config["templates"] = {}
 
             self.__convert(
                 hook,
-                configs["templates"],
+                self.config["templates"],
                 {
                     "EMAIL_ACTIVATION_SUBJ": "activation_subj",
                     "EMAIL_ACTIVATION_BODY": "activation_body",
@@ -97,7 +72,8 @@ class MailService(CommonService):
             )
 
             if migrate:
-                hook.save_glob("MAIL_CONFIG", dumps(configs))
+                self.config["migrate"] = False
+                hook.save_glob("MAIL_CONFIG", dumps(self.config))
 
     ###################################################
     #                     CLEANER                     #
@@ -106,22 +82,23 @@ class MailService(CommonService):
     def reset(self, hook):
         if self.is_running():
             self.app.terminate()
-        self.build(hook)
+
+        super().reset(hook)
 
     ####################################################
     #                    OVERRIDDEN                    #
     ####################################################
 
-    def connect(self, configs):
-        host = configs.get("host")
-        port = configs.get("port")
-        user = configs.get("user")
-        _pass = configs.get("pass")
-        sender = configs.get("sender", user)
+    def connect(self):
+        host = self.config.get("host")
+        port = self.config.get("port")
+        user = self.config.get("user")
+        _pass = self.config.get("pass")
+        sender = self.config.get("sender", user)
 
         context = ssl.create_default_context()
 
-        if configs.get("tls", True):
+        if self.config.get("tls", True):
             server = SMTP(host, port)
             server.ehlo()
             server.starttls(context=context)
@@ -133,8 +110,8 @@ class MailService(CommonService):
 
         return Mailer(server, sender)
 
-    def get_config(self, hook) -> dict:
-        return hook.build_config("MAIL_CONFIG", MAIL_CONFIG)
+    def build_config(self, hook) -> dict:
+        return hook.service_glob("MAIL_CONFIG", MAIL_CONFIG)
 
 
 # ----------------------------------------------- #

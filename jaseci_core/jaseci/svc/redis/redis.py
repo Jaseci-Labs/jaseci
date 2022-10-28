@@ -1,8 +1,8 @@
 from redis import Redis
 
-from jaseci.svc import CommonService, ServiceState as Ss
-from jaseci.utils.utils import logger
-from .common import REDIS_CONFIG
+from jaseci.svc import CommonService
+from .config import REDIS_CONFIG
+from .kube import REDIS_KUBE
 
 
 #################################################
@@ -13,36 +13,12 @@ from .common import REDIS_CONFIG
 class RedisService(CommonService):
 
     ###################################################
-    #                   INITIALIZER                   #
+    #                     BUILDER                     #
     ###################################################
 
-    def __init__(self, hook=None):
-        super().__init__(RedisService)
-
-        try:
-            if self.is_ready():
-                self.state = Ss.STARTED
-                self.__redis(hook)
-        except Exception as e:
-            if not (self.quiet):
-                logger.error(
-                    "Skipping Redis due to initialization failure!\n"
-                    f"{e.__class__.__name__}: {e}"
-                )
-            self.app = None
-            self.state = Ss.FAILED
-
-    def __redis(self, hook):
-        configs = self.get_config(hook)
-        enabled = configs.pop("enabled", True)
-
-        if enabled:
-            self.quiet = configs.pop("quiet", False)
-            self.app = Redis(**configs, decode_responses=True)
-            self.app.ping()
-            self.state = Ss.RUNNING
-        else:
-            self.state = Ss.DISABLED
+    def run(self, hook=None):
+        self.app = Redis(**self.config, decode_responses=True)
+        self.app.ping()
 
     ###################################################
     #                     COMMONS                     #
@@ -79,9 +55,6 @@ class RedisService(CommonService):
     #                     CLEANER                     #
     ###################################################
 
-    def reset(self, hook):
-        self.build(hook)
-
     def clear(self):
         if self.is_running():
             self.app.flushdb()
@@ -90,8 +63,11 @@ class RedisService(CommonService):
     #                     CONFIG                      #
     ###################################################
 
-    def get_config(self, hook) -> dict:
-        return hook.build_config("REDIS_CONFIG", REDIS_CONFIG)
+    def build_config(self, hook) -> dict:
+        return hook.service_glob("REDIS_CONFIG", REDIS_CONFIG)
+
+    def build_kube(self, hook) -> dict:
+        return hook.service_glob("REDIS_KUBE", REDIS_KUBE)
 
 
 # ----------------------------------------------- #

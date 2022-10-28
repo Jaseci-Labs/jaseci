@@ -14,6 +14,11 @@ from jaseci.element.element import Element
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.machine.jac_scope import JacScope
 from jaseci.utils.id_list import IdList
+from jaseci.jac.ir.ast import Ast
+from jaseci.graph.edge import Edge
+from jaseci.graph.node import Node
+from jaseci.jac.machine.jac_value import JacValue
+from jaseci.jac.jsci_vm.op_codes import JsCmp
 
 
 class MachineState:
@@ -37,7 +42,7 @@ class MachineState:
         self._stopped = None
         self._assign_mode = False
         self._loop_limit = 10000
-        self._cur_jac_ast = None
+        self._cur_jac_ast = Ast("none")
         self.inform_hook()
 
     def inform_hook(self):
@@ -78,6 +83,52 @@ class MachineState:
         """
         for i in self.yielded_walkers_ids.obj_list():
             i.destroy()
+
+    # Core State Management ##################
+    def load_variable(self, name, assign_mode=None, jac_ast=None):
+        val = self._jac_scope.get_live_var(
+            name, create_mode=self._assign_mode if assign_mode is None else assign_mode
+        )
+        if val is None:
+            self.rt_error(f"Variable not defined - {name}", jac_ast)
+            self.push(JacValue(self))
+        else:
+            self.push(val)
+
+    def perform_assignment(self, dest, src, jac_ast=None):
+        if dest.check_assignable(jac_ast):
+            dest.value = src.value
+            dest.write(jac_ast)
+        self.push(dest)
+
+    def perform_copy_fields(self, dest, src, jac_ast=None):
+        if dest.check_assignable(jac_ast):
+            if not self.rt_check_type(dest.value, [Node, Edge], jac_ast):
+                self.rt_error("Copy fields only applies to nodes and edges", jac_ast)
+                self.push(dest)
+            if dest.value.name != src.value.name:
+                self.rt_error(
+                    f"Node/edge arch {dest.value} don't match {src.value}!", jac_ast
+                )
+                self.push(dest)
+            for i in src.value.context.keys():
+                if i in dest.value.context.keys():
+                    JacValue(
+                        self, ctx=dest.value, name=i, value=src.value.context[i]
+                    ).write(jac_ast)
+        self.push(dest)
+
+    def perform_increment(self, dest, src, op, jac_ast=None):
+        if op == JsCmp.PEQ:
+            dest.value = dest.value + src.value
+        elif op == JsCmp.MEQ:
+            dest.value = dest.value - src.value
+        elif op == JsCmp.TEQ:
+            dest.value = dest.value * src.value
+        elif op == JsCmp.DEQ:
+            dest.value = dest.value / src.value
+        dest.write(jac_ast)
+        self.push(dest)
 
     # Helper Functions ##################
 
@@ -126,9 +177,10 @@ class MachineState:
         and returns new name used as hook by action class
         """
         if func_name not in live_actions.keys():
+            self.rt_warn(f"Attempting auto-load for {func_name}", jac_ast)
             load_preconfig_actions(self._h)
         if func_name not in live_actions.keys():
-            self.rt_warn(f"Builtin action not loaded - {func_name}", jac_ast)
+            self.rt_warn(f"Builtin action unable to be loaded - {func_name}", jac_ast)
             return False
         return True
 

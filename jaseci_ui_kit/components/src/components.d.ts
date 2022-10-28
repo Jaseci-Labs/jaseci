@@ -256,6 +256,15 @@ export namespace Components {
         "operations": string;
         "target": string;
     }
+    interface JscGraph {
+        "css": string;
+        "events": string;
+        "graphId": string;
+        "height": string;
+        "onFocus": 'expand' | 'isolate';
+        "serverUrl": string;
+        "token": string;
+    }
     interface JscHero {
         "action": string;
         "backgroundImage": string;
@@ -410,9 +419,10 @@ export namespace Components {
         "label": string;
         "name": string;
         "operations": string;
-        "options": string;
+        "options": string | { label: string }[];
         "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder": string;
+        "selected": string;
         "type": string;
         "value": string;
     }
@@ -704,6 +714,12 @@ declare global {
         prototype: HTMLJscDropdownItemElement;
         new (): HTMLJscDropdownItemElement;
     };
+    interface HTMLJscGraphElement extends Components.JscGraph, HTMLStencilElement {
+    }
+    var HTMLJscGraphElement: {
+        prototype: HTMLJscGraphElement;
+        new (): HTMLJscGraphElement;
+    };
     interface HTMLJscHeroElement extends Components.JscHero, HTMLStencilElement {
     }
     var HTMLJscHeroElement: {
@@ -868,6 +884,7 @@ declare global {
         "jsc-drawer": HTMLJscDrawerElement;
         "jsc-dropdown": HTMLJscDropdownElement;
         "jsc-dropdown-item": HTMLJscDropdownItemElement;
+        "jsc-graph": HTMLJscGraphElement;
         "jsc-hero": HTMLJscHeroElement;
         "jsc-inputbox": HTMLJscInputboxElement;
         "jsc-label": HTMLJscLabelElement;
@@ -1138,6 +1155,15 @@ declare namespace LocalJSX {
         "operations"?: string;
         "target"?: string;
     }
+    interface JscGraph {
+        "css"?: string;
+        "events"?: string;
+        "graphId"?: string;
+        "height"?: string;
+        "onFocus"?: 'expand' | 'isolate';
+        "serverUrl"?: string;
+        "token"?: string;
+    }
     interface JscHero {
         "action"?: string;
         "backgroundImage"?: string;
@@ -1291,9 +1317,10 @@ declare namespace LocalJSX {
         "name"?: string;
         "onValueChanged"?: (event: JscSelectCustomEvent<string>) => void;
         "operations"?: string;
-        "options"?: string;
+        "options"?: string | { label: string }[];
         "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder"?: string;
+        "selected"?: string;
         "type"?: string;
         "value"?: string;
     }
@@ -1425,6 +1452,7 @@ declare namespace LocalJSX {
         "jsc-drawer": JscDrawer;
         "jsc-dropdown": JscDropdown;
         "jsc-dropdown-item": JscDropdownItem;
+        "jsc-graph": JscGraph;
         "jsc-hero": JscHero;
         "jsc-inputbox": JscInputbox;
         "jsc-label": JscLabel;
@@ -1479,6 +1507,7 @@ declare module "@stencil/core" {
             "jsc-drawer": LocalJSX.JscDrawer & JSXBase.HTMLAttributes<HTMLJscDrawerElement>;
             "jsc-dropdown": LocalJSX.JscDropdown & JSXBase.HTMLAttributes<HTMLJscDropdownElement>;
             "jsc-dropdown-item": LocalJSX.JscDropdownItem & JSXBase.HTMLAttributes<HTMLJscDropdownItemElement>;
+            "jsc-graph": LocalJSX.JscGraph & JSXBase.HTMLAttributes<HTMLJscGraphElement>;
             "jsc-hero": LocalJSX.JscHero & JSXBase.HTMLAttributes<HTMLJscHeroElement>;
             "jsc-inputbox": LocalJSX.JscInputbox & JSXBase.HTMLAttributes<HTMLJscInputboxElement>;
             "jsc-label": LocalJSX.JscLabel & JSXBase.HTMLAttributes<HTMLJscLabelElement>;

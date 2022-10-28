@@ -31,3 +31,138 @@ class StackTests(CoreTest):
         life_node.context.pop("note")
         ret = self.call(self.mast, ["walker_run", {"name": "print_life_note"}])
         self.assertTrue(ret["success"])
+
+    def test_action_module_list(self):
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        self.assertIn("jaseci.actions.standard.rand", ret)
+        self.assertIn("jaseci.actions.standard.std", ret)
+        self.assertIn("jaseci.actions.standard.file", ret)
+
+    def test_action_module_unload_reload(self):
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        before = len(ret)
+        ret = self.call(
+            self.smast,
+            ["actions_unload_module", {"name": "jaseci.actions.standard.rand"}],
+        )
+        ret = self.call(
+            self.smast,
+            ["actions_unload_module", {"name": "jaseci.actions.standard.file"}],
+        )
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        self.assertEqual(len(ret), before - 2)
+        ret = self.call(
+            self.smast,
+            ["actions_load_module", {"mod": "jaseci.actions.standard.rand"}],
+        )
+        ret = self.call(
+            self.smast,
+            ["actions_load_module", {"mod": "jaseci.actions.standard.file"}],
+        )
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        self.assertEqual(len(ret), before)
+
+    def test_action_unload(self):
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        before = len(ret)
+        ret = self.call(self.smast, ["actions_list", {"name": "rand"}])
+        for i in ret:
+            self.call(self.smast, ["actions_unload_action", {"name": i}])
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        self.assertEqual(len(ret), before - 1)
+        ret = self.call(
+            self.smast,
+            ["actions_load_module", {"mod": "jaseci.actions.standard.rand"}],
+        )
+
+    def test_action_set_unload(self):
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        before = len(ret)
+        ret = self.call(self.smast, ["actions_unload_actionset", {"name": "rand"}])
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        self.assertEqual(len(ret), before - 1)
+        ret = self.call(
+            self.smast,
+            ["actions_load_module", {"mod": "jaseci.actions.standard.rand"}],
+        )
+
+    def test_sentinel_missing_architype(self):
+        """
+        Test when the original sentinel is missing the corresponding architype for a
+        node
+        """
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("simple.jac")}],
+        )
+        old_snt = ret[0]["jid"]
+        ret = self.call(self.mast, ["walker_run", {"name": "init", "snt": old_snt}])
+        node_id = ret["report"][0]["jid"]
+        ret = self.call(self.mast, ["sentinel_delete", {"snt": old_snt}])
+        ret = self.call(self.mast, ["sentinel_list", {"snt": old_snt}])
+        ret = self.call(
+            self.mast,
+            ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
+        )
+        self.assertIn("has_var", ret["errors"][0])
+        ret = self.call(
+            self.mast,
+            [
+                "sentinel_register",
+                {
+                    "name": "new_snt",
+                    "auto_create_graph": False,
+                    "auto_run": False,
+                    "set_active": True,
+                    "code": self.load_jac("simple.jac"),
+                },
+            ],
+        )
+        self.mast._h._machine = None
+        ret = self.call(
+            self.mast,
+            ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
+        )
+        self.assertEqual(ret["context"]["b"], 6)
+
+    def test_sentinel_missing_architype_global(self):
+        """
+        Test when the original sentinel is missing the corresponding architype for a
+        node
+        """
+        ret = self.call(
+            self.smast,
+            [
+                "sentinel_register",
+                {
+                    "name": "new_snt",
+                    "auto_create_graph": False,
+                    "auto_run": False,
+                    "set_active": True,
+                    "code": self.load_jac("simple.jac"),
+                },
+            ],
+        )
+        glob_snt = ret[0]["jid"]
+        ret = self.call(self.smast, ["global_sentinel_set", {"snt": glob_snt}])
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("simple.jac")}],
+        )
+        old_snt = ret[0]["jid"]
+        ret = self.call(self.mast, ["walker_run", {"name": "init", "snt": old_snt}])
+        node_id = ret["report"][0]["jid"]
+        ret = self.call(self.mast, ["sentinel_delete", {"snt": old_snt}])
+        ret = self.call(self.mast, ["sentinel_list", {"snt": old_snt}])
+        ret = self.call(
+            self.mast,
+            ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
+        )
+        self.assertIn("has_var", ret["errors"][0])
+        ret = self.call(self.mast, ["sentinel_active_global", {}])
+        self.mast._h._machine = None
+        ret = self.call(
+            self.mast,
+            ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
+        )
+        self.assertEqual(ret["context"]["b"], 6)

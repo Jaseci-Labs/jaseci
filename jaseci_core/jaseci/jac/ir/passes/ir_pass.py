@@ -1,5 +1,5 @@
 class IrPass:
-    def __init__(self, ir):
+    def __init__(self, ir=None):
         self.ir = ir
 
     def before_pass(self):
@@ -18,6 +18,7 @@ class IrPass:
         self.before_pass()
         self.traverse()
         self.after_pass()
+        return self
 
     def traverse(self, node=None):
         if node is None:

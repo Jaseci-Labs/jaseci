@@ -1,182 +1,140 @@
-from .promon.promon import Promon
-import time
-from kubernetes import client, config
+from time import sleep
+
 from kubernetes.client.rest import ApiException
-import os
-import yaml
-import multiprocessing
 from jaseci.utils.utils import logger
+from jaseci.svc import CommonService, ServiceState as Ss
+from jaseci.svc.kubernetes import Kube
+from .config import JSORC_CONFIG
+
+#################################################
+#                  JASECI ORC                   #
+#################################################
 
 
-class KubeController:
-    # A set of all functions that are helpful for kubernetes operations
-    # Configs can be set in Configuration class directly or using helper utility
+class JsOrcService(CommonService):
 
-    def __init__(self, configuration):
-        self.config = configuration
-        self.api_instance = client.CoreV1Api(self.config)
-        self.app_client = client.ApiClient(self.config)
-        self.app_api = client.AppsV1Api(self.app_client)
+    ###################################################
+    #                   INITIALIZER                   #
+    ###################################################
 
-    def get_pod_list(self):
-        ret = self.api_instance.list_pod_for_all_namespaces(watch=False)
-        res = []
-        for i in ret.items:
-            res.append({"namespace": i.metadata.namespace, "name": i.metadata.name})
-        return res
+    def __init__(self, hook=None):
+        self.interval = 10
+        self.namespace = "default"
+        self.keep_alive = []
 
-    def get_deployment_list(self):
-        ret = self.app_api.list_deployment_for_all_namespaces(watch=False)
-        res = []
-        for i in ret.items:
-            res.append({"namespace": i.metadata.namespace, "name": i.metadata.name})
-        return res
+        super().__init__(hook)
 
-    def create_deployment(self, config: dict, namespace: str = "default"):
-        return self.app_api.create_namespaced_deployment(
-            namespace=namespace, body=config
-        )
+    ###################################################
+    #                     BUILDER                     #
+    ###################################################
 
-    def get_deployment_conf(self, name: str, namespace: str = "default"):
-        api_response = self.app_api.read_namespaced_deployment(
-            name=name, namespace=namespace
-        )
-        return api_response
+    def run(self, hook=None):
+        self.interval = self.config.get("interval", 10)
+        self.namespace = self.config.get("namespace", "default")
+        self.keep_alive = self.config.get("keep_alive", [])
 
-    def patch_deployment_conf(self, config, name: str, namespace: str = "default"):
-        api_response = self.app_api.patch_namespaced_deployment(
-            name=name, namespace=namespace, body=config
-        )
-        return api_response
+        self.app = JsOrc(hook.meta, hook.kube.app, self.quiet)
+        self.state = Ss.RUNNING
+        # self.app.check(self.namespace, "redis")
+        self.spawn_daemon(jsorc=self.interval_check)
 
-    def deployment_set_scale(
-        self, name: str, namespace: str = "default", scale: int = 1
-    ):
-        # This is just a small shortcut to set the scale of a deployment
-        conf = self.get_deployment_conf(name, namespace)
-        conf.spec.replicas = scale
-        self.patch_deployment_conf(conf, name, namespace)
+    def interval_check(self):
+        while True:
+            for svc in self.keep_alive:
+                try:
+                    self.app.check(self.namespace, svc)
+                except Exception as e:
+                    logger.error(
+                        f"Error checking {svc} !\n" f"{e.__class__.__name__}: {e}"
+                    )
 
-    def kill_deployment(self, name: str, namespace: str = "default"):
+            sleep(self.interval)
+
+    ###################################################
+    #                     CLEANER                     #
+    ###################################################
+
+    def reset(self, hook):
+        self.terminate_daemon("jsorc")
+        super().reset(hook)
+
+    def failed(self):
+        super().failed()
+        self.terminate_daemon("jsorc")
+
+    ####################################################
+    #                    OVERRIDDEN                    #
+    ####################################################
+
+    def build_config(self, hook) -> dict:
+        return hook.service_glob("JSORC_CONFIG", JSORC_CONFIG)
+
+
+# ----------------------------------------------- #
+
+
+class JsOrc:
+    def __init__(self, meta, kube: Kube, quiet: bool):
+        self.meta = meta
+        self.kube = kube
+        self.quiet = quiet
+
+    def is_running(self, name: str, namespace: str):
         try:
-            api_response = self.app_api.delete_namespaced_deployment(
-                name=name, namespace=namespace
+            return (
+                self.kube.core.list_namespaced_pod(
+                    namespace=namespace, label_selector=f"pod={name}"
+                )
+                .items[0]
+                .status.phase
+                == "Running"
             )
-            return api_response
-        except ApiException as e:
-            print("Exception when calling CoreV1Api->delete_namespaced_pod: %s\n" % e)
+        except Exception:
+            return False
 
-
-class Monitor:
-    def __init__(self, promon_url: str, k8sconfig):
-        self.promon = Promon(promon_url)
-        self.controller = KubeController(k8sconfig)
-
-    def strategy_start_redis(self):
-        deployments = self.controller.get_deployment_list()
-        exsits = False
-        for deployment in deployments:
-            if deployment["name"] == "jaseci-redis":
-                exsits = True
-        if not exsits:
-            logger.info("Creating new jaseci redis")
-            dirpath = os.path.dirname(os.path.realpath(__file__))
-            filepath = os.path.join(dirpath, "jaseci-redis.yaml")
-            self.controller.create_deployment(
-                config=yaml.safe_load(open(filepath, "r"))
-            )
-
-    def strategy_redis_cpu(
-        self, node_name: str, deployment_namespace: str, deployment_name: str
-    ):
-        cpu = self.promon.cpu_utilization_percentage()
-        cpu_usage = cpu[node_name]
-        print(f"Detect CPU Usage: {cpu_usage}")
-        if cpu_usage > 10:
-            pods = self.controller.get_deployment_list()
-            for pod in pods:
-                namespace = pod["namespace"]
-                name = pod["name"]
-                if name == deployment_name:
-                    print("Kill deployment")
-                    self.controller.kill_deployment(name=name, namespace=namespace)
-        if cpu_usage < 5:
-            pods = self.controller.get_deployment_list()
-            redis_running = False
-            for pod in pods:
-                if pod["name"] == deployment_name:
-                    redis_running = True
-            if not redis_running:
-                print("Creating new deployment")
-                self.controller.create_deployment(
-                    config=yaml.safe_load(open("jaseci.yaml", "r"))
+    def create(self, kind: str, name: str, namespace: str, conf: dict):
+        try:
+            if not self.quiet:
+                logger.info(
+                    f"Creating {kind} for `{name}` with namespace `{namespace}`"
+                )
+            self.kube.create(kind, namespace, conf)
+        except ApiException:
+            if not self.quiet:
+                logger.error(
+                    f"Error creating {kind} for `{name}` with namespace `{namespace}`"
                 )
 
-    def strategy_service_cpu(self):
-        cpu = self.promon.cpu_utilization_per_pod_cores()
-        count = 0
-        total = 0
-        for pod_name in cpu.keys():
-            if pod_name.startswith("jaseci-redis"):
-                count = count + 1
-                total = total + cpu[pod_name]
+    def read(self, kind: str, name: str, namespace: str):
+        try:
+            return self.kube.read(kind, name, namespace=namespace)
+        except ApiException as e:
+            if not self.quiet:
+                logger.error(
+                    f"Error retrieving {kind} for `{name}` with namespace `{namespace}`"
+                )
+            return e
 
-        avg = total / count
-        print(avg)
-        if avg > 0.001:
-            conf = self.controller.get_deployment_conf("jaseci-redis", "default")
-            replicas = conf.spec.replicas + 1
-            print(f"Num of Replicas: {replicas}")
-            self.controller.deployment_set_scale("jaseci-redis", "default", replicas)
-        if avg < 0.001:
-            conf = self.controller.get_deployment_conf("jaseci-redis", "default")
-            replicas = conf.spec.replicas - 1
-            print(f"Num of Replicas: {replicas}")
-            self.controller.deployment_set_scale("jaseci-redis", "default", replicas)
+    def check(self, namespace, svc):
 
+        svc = self.meta.get_service(svc)
 
-def daemon(k8s_conf, prometheus_url: str):
-    m = Monitor(prometheus_url, k8s_conf)
-    while True:
-        # m.strategy_redis_cpu("minikube", "default", "jaseci-redis")
-        m.strategy_start_redis()
-        time.sleep(10)
+        if not svc.is_running():
+            if svc.kube:
+                config_map = svc.kube
+                pod_name = ""
+                for kind, confs in config_map.items():
+                    for conf in confs:
+                        name = conf["metadata"]["name"]
+                        if kind == "Service":
+                            pod_name = name
+                        res = self.read(kind, name, namespace)
+                        if hasattr(res, "status") and res.status == 404 and conf:
+                            self.create(kind, name, namespace, conf)
 
-
-def start_monitoring(k8s_conf, prometheus_url: str):
-    monitor = multiprocessing.Process(target=daemon, args=(k8s_conf, prometheus_url))
-    monitor.start()
-    return monitor
-
-
-def wait_monitoring(monitor_thread):
-    monitor_thread.join()
-
-
-def stop_monitoring(monitor_thread):
-    monitor_thread.terminate()
-
-
-def remote_k8s_conf(k8s_url: str):
-    k8sconf = client.Configuration()
-    k8sconf.host = k8s_url
-    k8sconf.verify_ssl = False
-    return k8sconf
-
-
-def incluster():
-    try:
-        config.load_incluster_config()
-    except config.config_exception.ConfigException:
-        return False
-    return True
-
-
-def jsorc_start():
-    logger.info("JSORC Running")
-    if incluster():
-        k8s_config = None
-        start_monitoring(
-            k8s_conf=k8s_config, prometheus_url="http://js-prometheus:9090"
-        )
-        logger.info("Monitoring started")
+                if self.is_running(pod_name, namespace):
+                    res = self.read("Endpoints", pod_name, namespace)
+                    if res.metadata:
+                        svc.reset(self.meta.build_hook())
+            else:
+                svc.reset(self.meta.build_hook())

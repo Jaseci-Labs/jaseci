@@ -96,11 +96,11 @@ class MemoryHook:
         if persist:
             self.destroy_glob_from_store(name)
 
-    # ----------------- GLOB CONFIG ------------------ #
+    # ----------------- SERVICE GLOB ----------------- #
 
-    def build_config(self, name, config):
+    def service_glob(self, name, val):
         if not self.has_glob(name):
-            self.save_glob(name, dumps(config))
+            self.save_glob(name, dumps(val))
             self.commit()
         return loads(self.get_glob(name))
 
@@ -221,7 +221,7 @@ class MemoryHook:
 
     def find_class_and_import(self, j_type, mod):
 
-        cls = getattr(self.meta, j_type, False)
+        cls = self.meta.get_context(j_type)
 
         if not cls:
             cls = find_class_and_import(j_type, mod)

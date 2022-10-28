@@ -2,6 +2,7 @@ import { Config } from '@stencil/core';
 import tailwind, { tailwindHMR } from 'stencil-tailwind-plugin';
 import { blue, blueDark, plumDark, violetDark, slateDark, indigoDark, yellowDark, redDark, grassDark, slate, indigo, grass, yellow, red, plum, violet } from '@radix-ui/colors';
 
+// @ts-ignore
 export const config: Config = {
   namespace: 'components',
   devServer: { reloadStrategy: 'hmr' },
@@ -14,7 +15,7 @@ export const config: Config = {
     {
       type: 'dist',
       esmLoaderPath: '../loader',
-      buildDir: '../../renderer/static/build',
+      buildDir: '../../jaseci_ui_kit/static/build',
     },
     {
       type: 'dist-custom-elements',
@@ -31,6 +32,7 @@ export const config: Config = {
   plugins: [
     tailwind({
       tailwindConf: {
+        content: [],
         plugins: [require('@tailwindcss/typography'), require('daisyui')],
         daisyui: {
           styled: true,
