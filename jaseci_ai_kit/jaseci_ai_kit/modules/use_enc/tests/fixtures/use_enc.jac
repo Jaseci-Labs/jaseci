@@ -13,3 +13,8 @@ walker test_enc_get_embeddings {
     can use.get_embedding;
     report use.get_embedding("Share my location with Hillary's sister");
 }
+
+walker test_enc_cos_sim_score {
+    can use.cos_sim_score;
+    report use.cos_sim_score([1,2,3], [1,2,4]);
+}
