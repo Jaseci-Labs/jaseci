@@ -1,7 +1,7 @@
 
 # Guidance to work with Jaseci AI kit
 
-In this page, you will find all the basic commands needed to work with Jaseci AI kit. 
+In this page, you will find all the basic commands needed to work with Jaseci AI kit.
 
 ### Starting a Jaseci Shell session;
 ```
@@ -23,16 +23,16 @@ jsctl jac run [file_name].jac
 To ensure the program runs fast, we can first compile the program using `build` command in prior to run the program.
 ```
 jsctl jac build [file_name].jac
-``` 
+```
 This will create a `[file_name].jir` file in the working directory. To run the compiled program run this `jir` file.
 
 ```
 jsctl jac run [file_name].jir
 ```
 ### Using Jaseci AI kit
- 
+
  Jaseci Kit is a collection of state-of-the-art machine learning models that are already trained on large amount of data and available to load into jaseci can retrained with our owndata.
- 
+
  #### To load a module from Jaseci AI kit;
 
  We can simply do `pip install jaseci_ai_kit` in the python environment we are currently working and import the ai models from jaseci ai kit to the jaseci using `actions load module jaseci_ai_kit.[module_name]` command.
@@ -61,7 +61,7 @@ jaseci > actions load remote  http://192.168.49.2:32267
 
 #### Load from local
 
-Once we cloned the jaseci main repository to local machine we can load AI models from jaseci_ai_kit using `actions load local [path_to_model]`. 
+Once we cloned the jaseci main repository to local machine we can load AI models from jaseci_ai_kit using `actions load local [path_to_model]`.
 Example local load:
 
 ```
@@ -97,7 +97,7 @@ jaseci > actions list
 
 Jaseci AI kit provides pretrained model with large scale of data. We can retrain these models with custom data. Before training any model the model should be load from one of the method which is mentioned above.  The training data should be in JSON format. An example of training jac code is in below;
 
-````
+```jac
 node bi_enc {
 	can bi_enc.train, bi_enc.infer;
 	can train {
@@ -144,7 +144,7 @@ walker infer {
 			while  true {
 				query = std.input("Enter input text (Ctrl-C to exit)>");
 				here::infer;
-				std.out(prediction);}} 
+				std.out(prediction);}}
 		else {
 	here::infer;
 	report prediction;}}
@@ -162,12 +162,12 @@ walker load_model {
 	bi_enc.load_model(model_path);
 }
 ````
-As we can see there are four walkers in the jac code above, `train`, `infer`, `save_model` and `load_model`. 
+As we can see there are four walkers in the jac code above, `train`, `infer`, `save_model` and `load_model`.
 
 `jac run [file_name].jac -walk train -ctx "{\"train_file\": \[file_nam_of_training_data].json\"}"`
 
  -   `-walk`  specifies the name of the walker to run. By default, it runs the  `init`  walker. but in this case we have set the walker as train.
- - `-ctx`  stands for  `context`. This lets us provide input parameters to the walker. This accept parameters in `JSON` format. 
+ - `-ctx`  stands for  `context`. This lets us provide input parameters to the walker. This accept parameters in `JSON` format.
 
  Example:
 
@@ -176,7 +176,7 @@ As we can see there are four walkers in the jac code above, `train`, `infer`, `s
  .
  .
  .
- 
+
             Epoch : 50
             loss : 0.0435857983926932
             LR : 0.0
@@ -192,7 +192,7 @@ Each training epoch, the above output will print with the training loss and lear
 
 ### Make inferencing with the retrained model
 
-After finishes the training the `infer` walker can be used to make inferencing, 
+After finishes the training the `infer` walker can be used to make inferencing,
 
 `jac run [file_name].jac -walk infer -ctx "{\"labels\": [\"[label_1]\", \"[label_2"]}"`
 
