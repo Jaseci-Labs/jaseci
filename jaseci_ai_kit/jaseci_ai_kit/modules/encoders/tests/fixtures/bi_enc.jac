@@ -1,7 +1,6 @@
 walker test_bi_enc_cos_sim{
     can bi_enc.cosine_sim;
-    test_data = file.load_json("cos_test_data.json");
-    report bi_enc.cosine_sim(test_data['vec_a'],test_data['vec_b']);
+    report bi_enc.cosine_sim([0.4659, -0.3153, 0.6579, 0.2519],[0.3732, -0.4034, 0.8592, 0.3341]);
 }
 
 walker test_bi_enc_infer{
@@ -31,8 +30,25 @@ walker test_bi_enc_model_config{
 
 walker test_bi_enc_train{
     can bi_enc.train;
-    train_data = file.load_json("train_data.json");
-    report bi_enc.train(train_data['dataset'],false,{"num_train_epochs": 2});
+    dataset={
+        "credit score question": [
+            "i want to learn more about credit score",
+            "can you tell me more about credit score",
+            "how do improve my credit score",
+            "how is my credit score calculated"
+        ],
+        "fair lending question": [
+            "i want to learn more about redlining",
+            "what can you tell me about fair lending",
+            "tell me about racial gap in homeownership"
+        ],
+        "choosing a lender": [
+            "what kind of questions should I ask my lender",
+            "how to find the best lender for me",
+            "help me choose a lender"
+        ]
+        };
+    report bi_enc.train(dataset,false,{"num_train_epochs": 2});
 }
 
 walker test_bi_enc_load_model{
