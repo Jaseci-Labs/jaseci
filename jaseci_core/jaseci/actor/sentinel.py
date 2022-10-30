@@ -161,9 +161,11 @@ class Sentinel(Element, JacCode, SentinelInterp):
         import io
 
         num_failed = 0
+        num_tests = 0
         for i in self.testcases:
             if specific is not None and i["name"] != specific:
                 continue
+            num_tests += 1
             screen_out = [sys.stdout, sys.stderr]
             buff_out = [io.StringIO(), io.StringIO()]
             destroy_set = []
@@ -225,7 +227,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
                     print(f"{e}")
             for i in destroy_set:  # FIXME: destroy set not complete
                 i.destroy()
-        num_tests = len(self.testcases)
         summary = {
             "tests": num_tests,
             "passed": num_tests - num_failed,
