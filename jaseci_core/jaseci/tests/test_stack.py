@@ -62,6 +62,23 @@ class StackTests(CoreTest):
         ret = self.call(self.smast, ["actions_module_list", {}])
         self.assertEqual(len(ret), before)
 
+    def test_action_module_unload_reload_aliased(self):
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        before = len(ret)
+        ret = self.call(
+            self.smast,
+            ["actions_unload_module", {"name": "jaseci.actions.standard.vector"}],
+        )
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        self.assertEqual(len(ret), before - 1)
+        self.assertNotIn("vector.cos_sim", self.call(self.smast, ["actions_list", {}]))
+        ret = self.call(
+            self.smast,
+            ["actions_load_module", {"mod": "jaseci.actions.standard.vector"}],
+        )
+        ret = self.call(self.smast, ["actions_module_list", {}])
+        self.assertEqual(len(ret), before)
+
     def test_action_unload(self):
         ret = self.call(self.smast, ["actions_module_list", {}])
         before = len(ret)
