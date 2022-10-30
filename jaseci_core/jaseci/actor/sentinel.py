@@ -10,6 +10,9 @@ from jaseci.jac.ir.jac_code import JacCode, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import SentinelInterp
 from jaseci.actor.walker import Walker
 from jaseci.actor.architype import Architype
+import io
+import pstats
+import cProfile
 
 
 class Sentinel(Element, JacCode, SentinelInterp):
@@ -138,7 +141,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
             self.rt_error(f"Unable to find architype for {obj.name}, {obj.kind}")
         return ret
 
-    def run_tests(self, specific=None, detailed=False, silent=False):
+    def run_tests(self, specific=None, profiling=False, detailed=False, silent=False):
         """
         Testcase schema
         testcase = {
@@ -198,6 +201,9 @@ class Sentinel(Element, JacCode, SentinelInterp):
                 self.run_spawn_ctx(jac_ir_to_ast(i["spawn_ctx"]), wlk)
 
             stime = time()
+            if profiling:
+                pr = cProfile.Profile()
+                pr.enable()
             try:
                 if not silent:
                     print(f"Testing {title}: ", end="")
@@ -227,6 +233,18 @@ class Sentinel(Element, JacCode, SentinelInterp):
                     print(f"{e}")
             for i in destroy_set:  # FIXME: destroy set not complete
                 i.destroy()
+            if profiling:
+                pr.disable()
+                s = io.StringIO()
+                sortby = pstats.SortKey.CUMULATIVE
+                ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+                ps.print_stats()
+                s = s.getvalue()
+                s = "ncalls" + s.split("ncalls")[-1]
+                s = "\n".join(
+                    [",".join(line.rstrip().split(None, 5)) for line in s.split("\n")]
+                )
+                print(s)
         summary = {
             "tests": num_tests,
             "passed": num_tests - num_failed,
