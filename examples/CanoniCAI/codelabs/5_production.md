@@ -334,4 +334,8 @@ We are now going to show an example of how to integrate with a frontend to our t
 We have provided a template web-based frontend at https://github.com/Jaseci-Labs/jaseci/blob/main/examples/CanoniCAI/code/html/.
 This is a simple chatbot frontend that supports both voice and text input.
 It also coverts the response text to speech and speak it back.
-The UI looks like this
+
+You need to update the webapp to point to your own jaseci server URL (line 360 of `index.html`) as well as an updated authentication token (line 365 of `index.html`) which can you obtain from logging in via `jsctl`.
+
+Here is a screenshot of the UI. You can click on the microphone button to talk to it or use the textbox below for a text input.
+![](../images/web_ui.png)
