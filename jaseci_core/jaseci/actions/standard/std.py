@@ -190,3 +190,13 @@ def get_report(meta):
     Get current report so far for walker run
     """
     return meta["interp"].report
+
+
+@jaseci_action()
+def clear_report(meta):
+    """
+    Clear report so far
+    """
+    meta["interp"].report = []
+    if hasattr(meta["interp"], "save"):
+        meta["interp"].save()
