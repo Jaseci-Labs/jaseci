@@ -27,8 +27,10 @@ class CoreTest(TestCaseHelper, TestCase):
         with open(os.path.dirname(self.fixture_src) + "/fixtures/" + fn) as f:
             return f.read()
 
-def jac_testcase(jac_file: str, test_name:str):
-    '''decorator for test cases'''
+
+def jac_testcase(jac_file: str, test_name: str):
+    """decorator for test cases"""
+
     def decorator(func):
         def wrapper(self):
             self.call(
@@ -37,5 +39,7 @@ def jac_testcase(jac_file: str, test_name:str):
             )
             ret = self.call(self.mast, ["walker_run", {"name": test_name}])
             func(self, ret)
+
         return wrapper
+
     return decorator
