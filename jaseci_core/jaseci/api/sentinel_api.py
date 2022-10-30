@@ -157,11 +157,15 @@ class SentinelApi:
         return snts
 
     @Interface.private_api()
-    def sentinel_test(self, snt: Sentinel = None, detailed: bool = False):
+    def sentinel_test(
+        self, snt: Sentinel = None, single: str = "", detailed: bool = False
+    ):
         """
         Run battery of test cases within sentinel and provide result
         """
-        return snt.run_tests(detailed=detailed)
+        if not len(single):
+            single = None
+        return snt.run_tests(specific=single, detailed=detailed)
 
     @Interface.private_api(cli_args=["snt"])
     def sentinel_active_set(self, snt: Sentinel):

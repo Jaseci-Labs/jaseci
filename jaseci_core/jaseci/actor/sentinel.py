@@ -138,14 +138,22 @@ class Sentinel(Element, JacCode, SentinelInterp):
             self.rt_error(f"Unable to find architype for {obj.name}, {obj.kind}")
         return ret
 
-    def run_tests(self, detailed=False, silent=False):
+    def run_tests(self, specific=None, detailed=False, silent=False):
         """
         Testcase schema
-        testcase = {'title': kid[1].token_text(),
-            'graph_ref': None, 'graph_block': None,
-            'walker_ref': None, 'spawn_ctx': None,
-            'assert_block': None, 'walker_block': None,
-            'passed': None}
+        testcase = {
+            "name": kid[1].token_text() if kid[1].name == "NAME" else "",
+            "title": kid[2].token_text()
+            if kid[1].name == "NAME"
+            else kid[1].token_text(),
+            "graph_ref": None,
+            "graph_block": None,
+            "walker_ref": None,
+            "spawn_ctx": None,
+            "assert_block": None,
+            "walker_block": None,
+            "outcome": None,
+        }
         """
         from pprint import pformat
         from time import time
@@ -153,7 +161,11 @@ class Sentinel(Element, JacCode, SentinelInterp):
         import io
 
         num_failed = 0
+        num_tests = 0
         for i in self.testcases:
+            if specific is not None and i["name"] != specific:
+                continue
+            num_tests += 1
             screen_out = [sys.stdout, sys.stderr]
             buff_out = [io.StringIO(), io.StringIO()]
             destroy_set = []
@@ -215,7 +227,6 @@ class Sentinel(Element, JacCode, SentinelInterp):
                     print(f"{e}")
             for i in destroy_set:  # FIXME: destroy set not complete
                 i.destroy()
-        num_tests = len(self.testcases)
         summary = {
             "tests": num_tests,
             "passed": num_tests - num_failed,
@@ -225,6 +236,8 @@ class Sentinel(Element, JacCode, SentinelInterp):
         if detailed:
             details = []
             for i in self.testcases:
+                if specific is not None and i["name"] != specific:
+                    continue
                 details.append(
                     {
                         "test": i["title"],
