@@ -13,7 +13,7 @@ class UseEncModule(CoreTest):
 
     @jac_testcase("use_enc.jac", "test_enc_cos_sim_score")
     def test_enc_cos_sim_score(self, ret):
-        self.assertEqual(round(ret["report"][0], 2), 0.94)
+        self.assertGreaterEqual(round(ret["report"][0], 2), 0.9)
 
     @jac_testcase("use_enc.jac", "test_enc_text_similarity")
     def test_enc_text_similarity(self, ret):
