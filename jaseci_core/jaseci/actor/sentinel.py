@@ -4,7 +4,13 @@ Sentinel class for Jaseci
 Each sentinel has an id, name, timestamp and it's set of walkers.
 """
 from jaseci.element.element import Element
-from jaseci.utils.utils import logger, ColCodes as Cc, is_true
+from jaseci.utils.utils import (
+    logger,
+    ColCodes as Cc,
+    is_true,
+    perf_test_start,
+    perf_test_stop,
+)
 from jaseci.utils.id_list import IdList
 from jaseci.jac.ir.jac_code import JacCode, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import SentinelInterp
@@ -138,7 +144,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
             self.rt_error(f"Unable to find architype for {obj.name}, {obj.kind}")
         return ret
 
-    def run_tests(self, specific=None, detailed=False, silent=False):
+    def run_tests(self, specific=None, profiling=False, detailed=False, silent=False):
         """
         Testcase schema
         testcase = {
@@ -198,6 +204,8 @@ class Sentinel(Element, JacCode, SentinelInterp):
                 self.run_spawn_ctx(jac_ir_to_ast(i["spawn_ctx"]), wlk)
 
             stime = time()
+            if profiling:
+                pr = perf_test_start()
             try:
                 if not silent:
                     print(f"Testing {title}: ", end="")
@@ -227,6 +235,9 @@ class Sentinel(Element, JacCode, SentinelInterp):
                     print(f"{e}")
             for i in destroy_set:  # FIXME: destroy set not complete
                 i.destroy()
+            if profiling:
+                print(perf_test_stop(pr))
+
         summary = {
             "tests": num_tests,
             "passed": num_tests - num_failed,
