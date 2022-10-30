@@ -4,15 +4,18 @@ Sentinel class for Jaseci
 Each sentinel has an id, name, timestamp and it's set of walkers.
 """
 from jaseci.element.element import Element
-from jaseci.utils.utils import logger, ColCodes as Cc, is_true
+from jaseci.utils.utils import (
+    logger,
+    ColCodes as Cc,
+    is_true,
+    perf_test_start,
+    perf_test_stop,
+)
 from jaseci.utils.id_list import IdList
 from jaseci.jac.ir.jac_code import JacCode, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import SentinelInterp
 from jaseci.actor.walker import Walker
 from jaseci.actor.architype import Architype
-import io
-import pstats
-import cProfile
 
 
 class Sentinel(Element, JacCode, SentinelInterp):
@@ -202,8 +205,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
 
             stime = time()
             if profiling:
-                pr = cProfile.Profile()
-                pr.enable()
+                pr = perf_test_start()
             try:
                 if not silent:
                     print(f"Testing {title}: ", end="")
@@ -234,17 +236,8 @@ class Sentinel(Element, JacCode, SentinelInterp):
             for i in destroy_set:  # FIXME: destroy set not complete
                 i.destroy()
             if profiling:
-                pr.disable()
-                s = io.StringIO()
-                sortby = pstats.SortKey.CUMULATIVE
-                ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-                ps.print_stats()
-                s = s.getvalue()
-                s = "ncalls" + s.split("ncalls")[-1]
-                s = "\n".join(
-                    [",".join(line.rstrip().split(None, 5)) for line in s.split("\n")]
-                )
-                print(s)
+                print(perf_test_stop(pr))
+
         summary = {
             "tests": num_tests,
             "passed": num_tests - num_failed,
