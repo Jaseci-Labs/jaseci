@@ -18,12 +18,12 @@ walker test_bi_enc_cand_emb{
     report bi_enc.get_candidate_emb(["sharecurrentlocation"]);
 }
 
-walker test_bi_enc_train_config{
+walker test_bi_enc_get_train_config{
     can bi_enc.get_train_config;
     report bi_enc.get_train_config();
 }
 
-walker test_bi_enc_model_config{
+walker test_bi_enc_get_model_config{
     can bi_enc.get_model_config;
     report bi_enc.get_model_config();
 }
@@ -59,4 +59,14 @@ walker test_bi_enc_load_model{
 walker test_bi_enc_save_model{
     can bi_enc.save_model;
     report bi_enc.save_model("modeloutput");
+}
+
+walker test_bi_enc_set_train_config{
+    can bi_enc.set_train_config;
+    report bi_enc.set_train_config({"num_train_epochs": 2});
+}
+
+walker test_bi_enc_set_model_config{
+    can bi_enc.set_model_config;
+    report bi_enc.set_model_config({"shared": true});
 }

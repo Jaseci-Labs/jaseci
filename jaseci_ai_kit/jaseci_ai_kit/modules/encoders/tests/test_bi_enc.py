@@ -10,7 +10,7 @@ class BiEncTest(CoreTest):
     def setUpClass(cls):
         super(BiEncTest, cls).setUpClass()
         ret = load_module_actions("jaseci_ai_kit.bi_enc")
-        assert ret == True
+        assert ret is True
 
     @pytest.mark.order(1)
     @jac_testcase("bi_enc.jac", "test_bi_enc_cos_sim")
@@ -36,13 +36,13 @@ class BiEncTest(CoreTest):
         self.assertEqual(len(ret["report"][0][0]), 128)
 
     @pytest.mark.order(5)
-    @jac_testcase("bi_enc.jac", "test_bi_enc_train_config")
-    def test_biencoder_train_config(self, ret):
+    @jac_testcase("bi_enc.jac", "test_bi_enc_get_train_config")
+    def test_biencoder_get_train_config(self, ret):
         self.assertEqual(ret["success"], True)
 
     @pytest.mark.order(6)
-    @jac_testcase("bi_enc.jac", "test_bi_enc_model_config")
-    def test_biencoder_model_config(self, ret):
+    @jac_testcase("bi_enc.jac", "test_bi_enc_get_model_config")
+    def test_biencoder_get_model_config(self, ret):
         self.assertEqual(ret["success"], True)
 
     @pytest.mark.order(7)
@@ -61,8 +61,19 @@ class BiEncTest(CoreTest):
     def test_biencoder_load_model(self, ret):
         self.assertEqual(ret["success"], True)
 
+    @pytest.mark.order(10)
+    @jac_testcase("bi_enc.jac", "test_bi_enc_set_model_config")
+    def test_biencoder_set_model_config(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @pytest.mark.order(11)
+    @jac_testcase("bi_enc.jac", "test_bi_enc_set_train_config")
+    def test_biencoder_set_train_config(self, ret):
+        print(ret)
+        self.assertEqual(ret["success"], True)
+
     @classmethod
     def tearDownClass(cls):
         super(BiEncTest, cls).tearDownClass()
         ret = unload_module("jaseci_ai_kit.modules.encoders.bi_enc")
-        assert ret == True
+        assert ret is True
