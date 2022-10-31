@@ -335,7 +335,62 @@ We have provided a template web-based frontend at https://github.com/Jaseci-Labs
 This is a simple chatbot frontend that supports both voice and text input.
 It also coverts the response text to speech and speak it back.
 
-You need to update the webapp to point to your own jaseci server URL (line 360 of `index.html`) as well as an updated authentication token (line 365 of `index.html`) which can you obtain from logging in via `jsctl`.
-
 Here is a screenshot of the UI. You can click on the microphone button to talk to it or use the textbox below for a text input.
 ![](../images/web_ui.png)
+
+The web frontend communciates with the Jaseci backend via HTTP requests.
+Here is the relevant code where the frontend makes a POST request to the `/js/walker_run` API to run the `talk` walker to ask a question.
+```js
+const getAnswer = async (question) => {
+      let data = {
+        ctx: { "question": question },
+        name: "talk"
+      }
+
+      try {
+        // NOTE: Change this URL to your Jaseci server URL.
+        // NOTE: Change the token to your authenticated token
+        let result = await fetch('http://localhost:8000/js/walker_run', {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'token bf6c3138799af356cbec27da90de0f7476fd9e25059c83dc0dfdd339ff68dd5b'
+          },
+          body: JSON.stringify(data),
+        })
+        result = await result.json();
+
+        const answer = result.report[0];
+
+        document.querySelector('#answer').innerHTML = answer;
+        speech.text = answer.replace(/https?.*?(?= |$)/g, "");
+        var voices = window.speechSynthesis.getVoices();
+        speech.voice = voices[7];
+        speechSynthesis.getVoices().forEach(function (voice) {
+          console.log(voice.name, voice.default ? voice.default : '');
+        });
+
+        // Start Speaking
+        window.speechSynthesis.speak(speech);
+
+      } catch (error) {
+        console.log(error)
+      }
+    }
+```
+Let's quickly dissect this API call.
+* It is sending a POST request, as specified by the `method` field.
+* It is sending the request to the URL `http://localhost:8000/js/walker_run`. You should replace the `localhost:8000` with your own jaseci server URL.
+* The request payload is a JSON data structured stored in `data`, as follows. The `name` field specifies the name of the walker to run and `ctx` is a dictionary containing all neccessary parameters to the walker, just like what we have been doing with `walker run` in `jsctl`. In this webapp, the question is being pulled from the frontend from either the Speech-to-text engine or the text input.
+```json
+{
+    "ctx": {
+        "question": "USER QUESTION",
+    },
+    "name": "talk"
+}
+```
+> **Note**
+>
+> You need to update the webapp to point to your own jaseci server URL (line 360 of `index.html`) as well as an updated authentication token (line 365 of `index.html`) which can you obtain from logging in via `jsctl`.
