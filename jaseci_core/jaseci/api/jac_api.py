@@ -70,7 +70,13 @@ class JacApi:
                 return ret
 
     @Interface.cli_api(cli_args=["file"])
-    def jac_test(self, file: str, detailed: bool = False):
+    def jac_test(
+        self,
+        file: str,
+        single: str = "",
+        profiling: bool = False,
+        detailed: bool = False,
+    ):
         """
         Command line tooling for running all test in both .jac code files
         and .jir executables
@@ -88,7 +94,9 @@ class JacApi:
                 )
                 if "success" in ret and not ret["success"]:
                     return ret
-        return faux.sentinel_test(snt=faux.active_snt(), detailed=detailed)
+        return faux.sentinel_test(
+            snt=faux.active_snt(), single=single, profiling=profiling, detailed=detailed
+        )
 
     @Interface.cli_api(cli_args=["file"])
     def jac_run(

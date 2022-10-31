@@ -203,22 +203,22 @@ def b64decode_str(code):
     return code
 
 
-perf_prof = None
-
-
 def perf_test_start():
-    global perf_prof
     perf_prof = cProfile.Profile()
     perf_prof.enable()
+    return perf_prof
 
 
-def perf_test_stop():
+def perf_test_stop(perf_prof):
     perf_prof.disable()
     s = io.StringIO()
     sortby = pstats.SortKey.CUMULATIVE
     ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)
-    ps.print_stats(100)
-    print(s.getvalue())
+    ps.print_stats()
+    s = s.getvalue()
+    s = "ncalls" + s.split("ncalls")[-1]
+    s = "\n".join([",".join(line.rstrip().split(None, 5)) for line in s.split("\n")])
+    return s
 
 
 class TestCaseHelper:
@@ -275,16 +275,10 @@ class TestCaseHelper:
         self.assertTrue(False)
 
     def perf_test_start(self):
-        self.pr = cProfile.Profile()
-        self.pr.enable()
+        self.pr = perf_test_start()
 
     def perf_test_stop(self):
-        self.pr.disable()
-        s = io.StringIO()
-        sortby = pstats.SortKey.CUMULATIVE
-        ps = pstats.Stats(self.pr, stream=s).sort_stats(sortby)
-        ps.print_stats(100)
-        print(s.getvalue())
+        print(perf_test_stop(self.pr))
 
 
 def is_true(val):

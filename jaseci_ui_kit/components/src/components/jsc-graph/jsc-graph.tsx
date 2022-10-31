@@ -30,7 +30,7 @@ export class JscGraph {
   @Prop({ mutable: true }) events: string;
   @Prop() token: string = '';
   @Prop() graphId: string = '';
-  @Prop({ attribute: 'serverurl' }) serverUrl: string = 'http://localhost:8888';
+  @Prop({ attribute: 'serverurl' }) serverUrl: string = 'http://localhost:8000';
   @Prop() onFocus: 'expand' | 'isolate' = 'expand';
   @Prop() height = '100vh';
 
@@ -39,6 +39,7 @@ export class JscGraph {
   @State() prevNd = '';
   @State() network: vis.Network;
   @State() graphs: Graph[] = [];
+  @State() hiddenGroups: Set<string> = new Set();
 
   nodesArray: vis.Node[] = [];
   edgesArray: vis.Edge[] = [];
@@ -198,9 +199,6 @@ export class JscGraph {
     } else {
       this.clickedEdge = this.edges.get([edge])[0];
     }
-
-    console.log({ node, edge });
-    console.log({ node: this.clickedNode, edge: this.clickedEdge });
   }
 
   // convert response to match required format for vis
@@ -214,6 +212,41 @@ export class JscGraph {
         context: edge.context,
         group: edge.name,
       }));
+  }
+
+  /** Update the network with the correct visibility of nodes */
+  refreshNodes() {
+    const displayedNodes = new visData.DataSet(
+      this.nodes.get({
+        filter: (item: vis.Node) => {
+          return !this.hiddenGroups.has(item.group);
+        },
+      }),
+    );
+
+    this.network.setData({ edges: this.edges as any, nodes: displayedNodes as any });
+  }
+
+  hideNodeGroup() {
+    if (this.clickedNode) {
+      this.hiddenGroups.add(this.clickedNode.group);
+
+      // force update ui
+      this.clickedNode = null;
+      this.clickedNode = undefined;
+
+      this.refreshNodes();
+    }
+  }
+
+  showNodeGroup(group: string) {
+    this.hiddenGroups.delete(group);
+
+    // force update ui
+    this.clickedNode = null;
+    this.clickedNode = undefined;
+
+    this.refreshNodes();
   }
 
   renderContext() {
@@ -306,7 +339,7 @@ export class JscGraph {
             <div
               style={{
                 height: '260px',
-                width: '240px',
+                width: '340px',
                 borderRadius: '4px',
                 padding: '16px',
                 top: '20px',
@@ -338,6 +371,32 @@ export class JscGraph {
                       event.detail === 'true' ? (this.onFocus = 'expand') : (this.onFocus = 'isolate');
                     }}
                   ></jsc-checkbox>
+                </div>
+              </div>
+
+              <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
+                <input type={'checkbox'} defaultChecked={true} />
+                <div class={'collapse-title text-md font-medium'}>Display</div>
+                <div class="collapse-content">
+                  <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
+                  <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
+                  {Array.from(this.hiddenGroups).map(group => (
+                    <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
+                      <jsc-chip label={group}>
+                        <svg
+                          slot="right"
+                          onClick={() => this.showNodeGroup(group)}
+                          style={{ cursor: 'pointer' }}
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          class="inline-block w-4 h-4 stroke-current"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                      </jsc-chip>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

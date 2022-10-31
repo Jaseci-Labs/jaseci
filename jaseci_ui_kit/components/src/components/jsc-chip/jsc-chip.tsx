@@ -30,6 +30,11 @@ export class Chip {
   }
 
   render() {
-    return <div class="chip">{this.label}</div>;
+    return (
+      <div class="chip flex items-center">
+        <slot name="right"></slot>
+        {this.label}
+      </div>
+    );
   }
 }
