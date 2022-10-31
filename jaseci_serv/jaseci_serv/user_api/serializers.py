@@ -104,7 +104,7 @@ class AuthTokenSerializer(serializers.Serializer):
                 "User not activated. Resending activation email.\n"
                 + "Please check your email."
             )
-            send_activation_email(self.context.get("request"), email)
+            send_activation_email(email)
             raise serializers.ValidationError(msg)
 
         attrs["user"] = user
