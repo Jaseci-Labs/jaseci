@@ -30,7 +30,6 @@ export class JscGraph {
   @Prop({ mutable: true }) events: string;
   @Prop() token: string = '';
   @Prop() graphId: string = '';
-  @Prop({ attribute: 'serverurl' }) serverUrl: string = 'http://localhost:8000';
   @Prop() onFocus: 'expand' | 'isolate' = 'expand';
   @Prop() height = '100vh';
 
@@ -39,6 +38,7 @@ export class JscGraph {
   @State() prevNd = '';
   @State() network: vis.Network;
   @State() graphs: Graph[] = [];
+  @State() serverUrl: string = localStorage.getItem('serverUrl') || 'http://localhost:8000';
   @State() hiddenGroups: Set<string> = new Set();
 
   nodesArray: vis.Node[] = [];
@@ -331,92 +331,102 @@ export class JscGraph {
         {!localStorage.getItem('token') ? (
           <div style={{ width: '520px', margin: '40px auto' }}>
             <jsc-card title={'Login'}>
-              <jsc-auth-form slot={'children'} serverURL={this.serverUrl} redirectURL={window.location.toString()}></jsc-auth-form>
+              <jsc-auth-form
+                onServerUrlChanged={e => {
+                  localStorage.setItem('serverUrl', e.detail);
+                  this.serverUrl = e.detail;
+                }}
+                slot={'children'}
+                serverURL={this.serverUrl}
+                redirectURL={window.location.toString()}
+              ></jsc-auth-form>
             </jsc-card>
           </div>
         ) : (
-          <div style={{ height: this.height, width: 'auto', position: 'relative' }}>
-            <div
-              style={{
-                height: '260px',
-                width: '340px',
-                borderRadius: '4px',
-                padding: '16px',
-                top: '20px',
-                right: '20px',
-                position: 'absolute',
-                zIndex: '9999',
-                border: '2px solid #f4f4f4',
-                background: '#fff',
-                boxShadow: 'rgb(0 0 0 / 15%) 0px 1px 2px 0px, rgb(0 0 0 / 2%) 0px 0px 2px 1px',
-                overflowY: 'auto',
-                overflowX: 'hidden',
-              }}
-            >
-              <div tabindex="0" class="collapse collapse-plus border border-base-300 bg-base-100 rounded-box">
-                <input type="checkbox" defaultChecked={true} />
-                <div class="collapse-title text-md font-medium">Context</div>
-                <div class="collapse-content">{this.renderContext()}</div>
-              </div>
-
-              <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
-                <input type={'checkbox'} defaultChecked={true} />
-                <div class={'collapse-title text-md font-medium'}>Behaviour</div>
-                <div class="collapse-content">
-                  <jsc-checkbox
-                    label={'Expand nodes on click'}
-                    size={'sm'}
-                    value={String(this.onFocus === 'expand')}
-                    onValueChanged={event => {
-                      event.detail === 'true' ? (this.onFocus = 'expand') : (this.onFocus = 'isolate');
-                    }}
-                  ></jsc-checkbox>
-                </div>
-              </div>
-
-              <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
-                <input type={'checkbox'} defaultChecked={true} />
-                <div class={'collapse-title text-md font-medium'}>Display</div>
-                <div class="collapse-content">
-                  <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
-                  <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
-                  {Array.from(this.hiddenGroups).map(group => (
-                    <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
-                      <jsc-chip label={group}>
-                        <svg
-                          slot="right"
-                          onClick={() => this.showNodeGroup(group)}
-                          style={{ cursor: 'pointer' }}
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          class="inline-block w-4 h-4 stroke-current"
-                        >
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                      </jsc-chip>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
-              {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
-            </div>
-
-            {/*Graph Switcher*/}
-            <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999' }}>
-              <jsc-select
-                placeholder={'Select Graph'}
-                onValueChanged={e => {
-                  this.graphId = e.detail.split(':').slice(1).join(':');
-                  localStorage.setItem('selectedGraph', this.graphId);
+          this.serverUrl && (
+            <div style={{ height: this.height, width: 'auto', position: 'relative' }}>
+              <div
+                style={{
+                  height: '260px',
+                  width: '340px',
+                  borderRadius: '4px',
+                  padding: '16px',
+                  top: '20px',
+                  right: '20px',
+                  position: 'absolute',
+                  zIndex: '9999',
+                  border: '2px solid #f4f4f4',
+                  background: '#fff',
+                  boxShadow: 'rgb(0 0 0 / 15%) 0px 1px 2px 0px, rgb(0 0 0 / 2%) 0px 0px 2px 1px',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
                 }}
-                options={this.graphs?.map(graph => ({ label: `${graph.name}:${graph.jid}` }))}
-              ></jsc-select>
+              >
+                <div tabindex="0" class="collapse collapse-plus border border-base-300 bg-base-100 rounded-box">
+                  <input type="checkbox" defaultChecked={true} />
+                  <div class="collapse-title text-md font-medium">Context</div>
+                  <div class="collapse-content">{this.renderContext()}</div>
+                </div>
+
+                <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
+                  <input type={'checkbox'} defaultChecked={true} />
+                  <div class={'collapse-title text-md font-medium'}>Behaviour</div>
+                  <div class="collapse-content">
+                    <jsc-checkbox
+                      label={'Expand nodes on click'}
+                      size={'sm'}
+                      value={String(this.onFocus === 'expand')}
+                      onValueChanged={event => {
+                        event.detail === 'true' ? (this.onFocus = 'expand') : (this.onFocus = 'isolate');
+                      }}
+                    ></jsc-checkbox>
+                  </div>
+                </div>
+
+                <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
+                  <input type={'checkbox'} defaultChecked={true} />
+                  <div class={'collapse-title text-md font-medium'}>Display</div>
+                  <div class="collapse-content">
+                    <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
+                    <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
+                    {Array.from(this.hiddenGroups).map(group => (
+                      <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
+                        <jsc-chip label={group}>
+                          <svg
+                            slot="right"
+                            onClick={() => this.showNodeGroup(group)}
+                            style={{ cursor: 'pointer' }}
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            class="inline-block w-4 h-4 stroke-current"
+                          >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                          </svg>
+                        </jsc-chip>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
+                {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
+              </div>
+
+              {/*Graph Switcher*/}
+              <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999' }}>
+                <jsc-select
+                  placeholder={'Select Graph'}
+                  onValueChanged={e => {
+                    this.graphId = e.detail.split(':').slice(1).join(':');
+                    localStorage.setItem('selectedGraph', this.graphId);
+                  }}
+                  options={this.graphs?.map(graph => ({ label: `${graph.name}:${graph.jid}` }))}
+                ></jsc-select>
+              </div>
+              <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: this.height }}></div>
             </div>
-            <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: this.height }}></div>
-          </div>
+          )
         )}
       </div>
     );

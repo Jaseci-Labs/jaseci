@@ -262,7 +262,6 @@ export namespace Components {
         "graphId": string;
         "height": string;
         "onFocus": 'expand' | 'isolate';
-        "serverUrl": string;
         "token": string;
     }
     interface JscHero {
@@ -530,6 +529,10 @@ export namespace Components {
 export interface JscAppCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLJscAppElement;
+}
+export interface JscAuthFormCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLJscAuthFormElement;
 }
 export interface JscCheckboxCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -940,6 +943,7 @@ declare namespace LocalJSX {
         "hideNameField"?: string;
         "mode"?: 'signup' | 'login';
         "name"?: string;
+        "onServerUrlChanged"?: (event: JscAuthFormCustomEvent<string>) => void;
         "operations"?: any;
         "redirectURL"?: string;
         "requireActivation"?: 'true' | 'false';
@@ -1161,7 +1165,6 @@ declare namespace LocalJSX {
         "graphId"?: string;
         "height"?: string;
         "onFocus"?: 'expand' | 'isolate';
-        "serverUrl"?: string;
         "token"?: string;
     }
     interface JscHero {
