@@ -30,7 +30,7 @@ interacting with the context in nodes and edges of that graph.
 
 In addition to the introduction of the `take` command to support new types of control flow for node-bound iterations. The keywords and semantics of `disengage`, `skip`, and `ignore` are also introduced. These instruct walkers to stop walking the graph, skip over a node for execution, and ignore certain paths of the graph.
 
-## Walkers Navigating Graphs Examples
+## Basic Walkers Example
 
 When we run a jac code, by default it's exucuting the `init` walker. Basically the `walker init` works as the main method in other programming language. save following code as `main.jac` and run the code in `jsctl` shell with `jac dot main.jac`
 
@@ -85,8 +85,114 @@ walker init{
 
 You can see we get output similar to the previous code, here we are defining the nodes in the `build_example` walker and calling the `build_example` walker inside the `init` walker. Also we can directly run the `build example` walker using `jac dot main.jac -walk build_example`. Here the `-walk` argument tells the jsctl which walker should execute.
 
+## Walkers Navigating Graphs Examples
+
 Look at the following example;
 
 ```
+node person: has name;
+edge married: has year;
+edge family: has kind;
+edge friend;
+
+walker get_names {
+    std.out(here.name);
+    take -->;
+}
+
+walker build_example{
+    node1 = spawn here -[friend]-> node::person(name="Joe");
+    node2 = spawn node1 -[married]-> node::person(name="Susan");
+    spawn node2 -[family]-> node::person(name="Matt");
+}
+
+walker init{
+    root{
+        spawn here walker::build_example;
+        take -->;
+    }
+
+    person {
+        spawn here walker::get_names;
+        disengage;
+    }
+}
 
 ```
+`take` command lets the walker travers through graph nodes. By default, a walker travers with `take` command using the breadth-first approach. But the `take` command is flexible hence you can indicate whether the take command should use a depth-first or a breadth-first traversal to navigate.
+
+```
+node plain: has name;
+
+graph example {
+    has anchor head;
+    spawn {
+        n=[];
+        for i=0 to i<7 by i+=1 {
+        n.l::append(spawn node::plain(name=i+1));
+        }
+
+        n[0] --> n[1] --> n[2];
+        n[1] --> n[3];
+        n[0] --> n[4] --> n[5];
+        n[4] --> n[6];
+
+        head=n[0];
+        }
+    }
+
+walker walk_with_breadth {
+    has anchor node_order = [];
+    node_order.l::append(here.name);
+    take:bfs -->; #take:b can also be used
+    }
+
+walker walk_with_depth {
+    has anchor node_order = [];
+    node_order.l::append(here.name);
+    take:dfs -->; #take:d can also be used
+    }
+
+walker init {
+    start = spawn here --> graph::example;
+    b_order = spawn start walker::walk_with_breadth;
+    d_order = spawn start walker::walk_with_depth;
+    std.out("Walk with Breadth:",b_order,"\nWalk with Depth:",d_order);
+    }
+```
+
+## Skipping and Disengaging 
+
+The idea behind the abstraction of `skip` in the context of a walkers code block is that it tells a walker to halt and abandon any unfinished work on the current node in favor of moving to the next node (or complete computation if no nodes are queued up).
+
+Node/edge abilities also support the usage of the skip directive. The skip merely decides not to use the remaining steps of that `ability` itself in this context.
+
+Lets look at an example of a walker using the skip command.
+
+```
+global node_count=0;
+node simple: has id;
+
+walker init {
+    has output = [];
+    with entry {
+        t = here;
+        for i=0 to i<10 by i+=1 {
+            t = spawn t --> node::simple(id=global.node_count);
+        global.node_count+=1;
+        }
+        }
+    take -->;
+    simple {
+        if(here.id % 2==0): skip;
+            output.l::append(here.id);
+    }
+    output.l::append(here.info['name']);
+    with exit: std.out(output);
+    }
+```
+
+
+
+
+
