@@ -74,7 +74,7 @@ export class JscGraph {
   @Watch('nd')
   async getGraphState() {
     let body: EndpointBody = { detailed: true, gph: this.graphId, mode: 'default' };
-    let endpoint = `${this.serverUrl}/js/graph_get`;
+    let endpoint = `${this.serverUrl}/js/graph_node_view`;
 
     if (this.nd) {
       endpoint = `${this.serverUrl}/js/graph_node_view`;
