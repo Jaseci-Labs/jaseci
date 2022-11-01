@@ -161,7 +161,7 @@ walker init {
     }
 ```
 
-## Skipping and Disengaging 
+## Skipping
 
 The idea behind the abstraction of `skip` in the context of a walkers code block is that it tells a walker to halt and abandon any unfinished work on the current node in favor of moving to the next node (or complete computation if no nodes are queued up).
 
@@ -191,7 +191,38 @@ walker init {
     with exit: std.out(output);
     }
 ```
+In the above code; skips the code execution when the node id is an even number.
 
+## Disengaging 
+
+The command `disengage` tells the walker to stop all execution and "disengage" from the graph (i.e., stop visiting nodes anymore from here) and can only be used inside the code body of a walker.
+
+Look at the example below;
+
+```
+global node_count=0;
+node simple: has id;
+
+walker init {
+    has output = [];
+        with entry {
+        t = here;
+        for i=0 to i<10 by i+=1 {
+            t = spawn t --> node::simple(id=global.node_count);
+        global.node_count+=1;
+        }
+        }
+    take -->;
+    simple {
+    if(here.id % 2==0): skip;
+        if(here.id == 7): disengage;
+            output.l::append(here.id);
+        }
+        output.l::append(here.info['name']);
+    with exit: std.out(output);
+}
+
+```
 
 
 
