@@ -1,3 +1,4 @@
+from uuid import uuid4
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -20,7 +21,7 @@ create_superuser = get_user_model().objects.create_superuser
 get_user = get_user_model().objects.get
 
 
-class user_api_tests_public(TestCaseHelper, TestCase):
+class UserApiPublicTests(TestCaseHelper, TestCase):
     """Tests for user API (public)"""
 
     def setUp(self):
@@ -93,6 +94,24 @@ class user_api_tests_public(TestCaseHelper, TestCase):
         create_user(**payload)
         res = self.client.post(CREATE_USER_URL, payload)
 
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        get_user(email=payload["email"]).delete()
+
+    def test_user_exists_js_api(self):
+        """Test creating a user that already exists fails"""
+        payload = {"email": "jscitest_test2@jaseci.com", "password": "testpass"}
+        create_user(**payload)
+        payload2 = {
+            "op": "user_create",
+            "name": "jscitest_test2@jaseci.com",
+            "other_fields": {
+                "password": "password",
+                "is_activated": True,
+            },
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload2["op"]}'), payload2, format="json"
+        )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         get_user(email=payload["email"]).delete()
 
@@ -218,11 +237,6 @@ class user_api_tests_public(TestCaseHelper, TestCase):
         user.save()
 
         email_pl = {"email": "jscitest_test@jaseci.com"}
-        from jaseci_serv.base.mail import email_config_defaults
-
-        email_config_defaults[
-            "EMAIL_BACKEND"
-        ] = "django.core.mail.backends.locmem.EmailBackend"
 
         res = self.client.post(PASSWORD_RESET_URL, email_pl)
 
@@ -237,11 +251,6 @@ class user_api_tests_public(TestCaseHelper, TestCase):
         user.save()
 
         email_pl = {"email": "jjscitest_test@jaseci.com"}
-        from jaseci_serv.base.mail import email_config_defaults
-
-        email_config_defaults[
-            "EMAIL_BACKEND"
-        ] = "django.core.mail.backends.locmem.EmailBackend"
 
         res = self.client.post(PASSWORD_RESET_URL, email_pl)
 
@@ -249,7 +258,7 @@ class user_api_tests_public(TestCaseHelper, TestCase):
         get_user(email=payload["email"]).delete()
 
 
-class user_api_tests_private(TestCaseHelper, TestCase):
+class UserApiPrivateTests(TestCaseHelper, TestCase):
     """Test API requests that are authenticated"""
 
     def setUp(self):
@@ -281,6 +290,40 @@ class user_api_tests_private(TestCaseHelper, TestCase):
                 "is_superuser": self.user.is_superuser,
             },
         )
+
+    def test_user_delete_js_api(self):
+        """Test creating a user that already exists fails"""
+        payload = {"email": "jscitest_test2@jaseci.com", "password": "testpass"}
+        create_user(**payload)
+        payload2 = {
+            "op": "user_delete",
+            "name": "jscitest_test2@jaseci.com",
+        }
+        self.assertTrue(
+            get_user_model().objects.filter(email=payload2["name"]).exists()
+        )
+        res = self.client.post(
+            reverse(f'jac_api:{payload2["op"]}'), payload2, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            get_user_model().objects.filter(email=payload2["name"]).exists()
+        )
+        res = self.client.post(
+            reverse(f'jac_api:{payload2["op"]}'), payload2, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_deleteself_js_api(self):
+        """Test creating a user that already exists fails"""
+        selfname = "jscitest_test@jaseci.com"
+        payload2 = {"op": "user_deleteself"}
+        self.assertTrue(get_user_model().objects.filter(email=selfname).exists())
+        res = self.client.post(
+            reverse(f'jac_api:{payload2["op"]}'), payload2, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertFalse(get_user_model().objects.filter(email=selfname).exists())
 
     def test_post_me_not_allowed(self):
         """Test that POST is not allowed to update user"""
@@ -314,3 +357,39 @@ class user_api_tests_private(TestCaseHelper, TestCase):
         self.assertEqual(self.user.name, payload["name"])
         self.assertTrue(self.user.check_password(payload["password"]))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_manage_user_by_id(self):
+        """Test manage user by id"""
+        payload = {"email": f"{uuid4()}@jaseci.com", "password": "testpass"}
+        user = create_user(**payload)
+        user.save()
+
+        self.assertEqual(user.is_activated, False)
+        self.assertEqual(user.is_superuser, False)
+
+        payload = {"email": "super@jaseci.com", "password": "testpass"}
+        superuser = create_superuser(**payload)
+        superuser.save()
+
+        res = self.client.post(TOKEN_URL, payload).data
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + res["token"])
+
+        payload = {
+            "is_activated": True,
+            "is_superuser": True,
+        }
+
+        res = self.client.post(f"{MANAGE_URL}{user.id}", payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, "Update Success!")
+
+        res = self.client.post(f"{MANAGE_URL}{user.id}", payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, "No changes found!")
+
+        user = get_user(id=user.id)
+
+        self.assertEqual(user.is_activated, True)
+        self.assertEqual(user.is_superuser, True)

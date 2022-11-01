@@ -4,7 +4,7 @@
 To load the T5 Summarizer run :
 
 ```
-actions load module jaseci_kit.t5_sum
+actions load module jaseci_ai_kit.t5_sum
 ```
 
 * `classify_text`: use the T5 model to summarize a body of text

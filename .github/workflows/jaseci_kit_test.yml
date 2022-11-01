@@ -1,14 +1,14 @@
-name: jaseci_kit Tests
+name: jaseci_ai_kit Tests
 
 on:
   push:
     branches: [ main ]
     paths:
-      - jaseci_kit/**
+      - jaseci_ai_kit/**
   pull_request:
     branches: [ main ]
     paths:
-      - jaseci_kit/**
+      - jaseci_ai_kit/**
 
 jobs:
   tests:
@@ -34,15 +34,15 @@ jobs:
       run: |
         pip3 install jaseci_core/
 
-    - name: Install jaseci_kit
+    - name: Install jaseci_ai_kit
       run: |
-        pip3 install jaseci_kit/
+        pip3 install jaseci_ai_kit/
 
-    - name: Verify jaseci_kit installation
+    - name: Verify jaseci_ai_kit installation
       run: |
-        python -c "import jaseci_kit"
+        python -c "import jaseci_ai_kit"
 
     - name: Run tests
       run: |
-        cd jaseci_kit/
+        cd jaseci_ai_kit/
         source test.sh

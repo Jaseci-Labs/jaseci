@@ -16,11 +16,12 @@ export class Select {
   @Prop() label: string;
   @Prop() altLabel: string;
   @Prop() type: string = 'text';
+  @Prop() selected: string;
   @Prop() events: string;
   @Prop() fullwidth: string;
   @Prop() placeholder: string;
   @Prop() operations: string;
-  @Prop() options: string;
+  @Prop() options: string | { label: string }[];
   @Prop() palette: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
   @Element() host: HTMLElement;
 
@@ -83,9 +84,8 @@ export class Select {
           <option disabled selected>
             {this.placeholder}
           </option>
-          {getProp<{ name: string; label: string }[]>(this.options)?.map(option => (
-            <option>{option.label}</option>
-          ))}
+          {typeof this.options === 'string' && getProp<{ name: string; label: string }[]>(this.options)?.map(option => <option>{option.label}</option>)}
+          {Array.isArray(this.options) && this.options.map(option => <option selected={this.selected === option.label}>{option.label}</option>)}
         </select>
         {/* register some classes so they aren't purged by daisy-ui */}
         {false && (

@@ -3,17 +3,17 @@ Variable manager for Jac
 
 Representations for all jac runtime variables
 """
-from jaseci.element.element import element
-from jaseci.graph.node import node
-from jaseci.graph.edge import edge
-from jaseci.graph.graph import graph
-from jaseci.jac.jac_set import jac_set
+from jaseci.element.element import Element
+from jaseci.graph.node import Node
+from jaseci.graph.edge import Edge
+from jaseci.graph.graph import Graph
+from jaseci.jac.jac_set import JacSet
 import uuid
 
 NoneType = type(None)
 
 
-class JAC_TYPE:
+class JacType:
     STR = "JAC_TYPE.STR"
     INT = "JAC_TYPE.INT"
     FLOAT = "JAC_TYPE.FLOAT"
@@ -29,51 +29,51 @@ class JAC_TYPE:
 def jac_type_wrap(val):
     if isinstance(val, type):
         if val == str:
-            val = JAC_TYPE.STR
+            val = JacType.STR
         elif val == int:
-            val = JAC_TYPE.INT
+            val = JacType.INT
         elif val == float:
-            val = JAC_TYPE.FLOAT
+            val = JacType.FLOAT
         elif val == list:
-            val = JAC_TYPE.LIST
-        elif val == jac_set:
-            val = JAC_TYPE.LIST
+            val = JacType.LIST
+        elif val == JacSet:
+            val = JacType.LIST
         elif val == dict:
-            val = JAC_TYPE.DICT
+            val = JacType.DICT
         elif val == bool:
-            val = JAC_TYPE.BOOL
-        elif val in [node, graph]:
-            val = JAC_TYPE.NODE
-        elif val == edge:
-            val = JAC_TYPE.EDGE
+            val = JacType.BOOL
+        elif val in [Node, Graph]:
+            val = JacType.NODE
+        elif val == Edge:
+            val = JacType.EDGE
         elif val == type:
-            val = JAC_TYPE.TYPE
+            val = JacType.TYPE
         elif val == NoneType:
-            val = JAC_TYPE.NULL
+            val = JacType.NULL
     return val
 
 
 def jac_type_unwrap(val):
     if type(val) == str and val.startswith("JAC_TYPE."):
-        if val == JAC_TYPE.STR:
+        if val == JacType.STR:
             val = str
-        elif val == JAC_TYPE.INT:
+        elif val == JacType.INT:
             val = int
-        elif val == JAC_TYPE.FLOAT:
+        elif val == JacType.FLOAT:
             val = float
-        elif val == JAC_TYPE.LIST:
+        elif val == JacType.LIST:
             val = list
-        elif val == JAC_TYPE.DICT:
+        elif val == JacType.DICT:
             val = dict
-        elif val == JAC_TYPE.BOOL:
+        elif val == JacType.BOOL:
             val = bool
-        elif val == JAC_TYPE.NODE:
-            val = node
-        elif val == JAC_TYPE.EDGE:
-            val = edge
-        elif val == JAC_TYPE.TYPE:
+        elif val == JacType.NODE:
+            val = Node
+        elif val == JacType.EDGE:
+            val = Edge
+        elif val == JacType.TYPE:
             val = type
-        elif val == JAC_TYPE.NULL:
+        elif val == JacType.NULL:
             val = NoneType
     return val
 
@@ -99,9 +99,9 @@ def jac_elem_unwrap(val, parent):
 def jac_wrap_value(val, serialize_mode=False):
     """converts all elements to uuids in lists etc"""
     val = jac_type_wrap(val)
-    if isinstance(val, element):
+    if isinstance(val, Element):
         val = jac_elem_wrap(val, serialize_mode=serialize_mode)
-    elif isinstance(val, jac_set):
+    elif isinstance(val, JacSet):
         val = jac_wrap_value(list(val), serialize_mode)
     elif isinstance(val, list):
         for i in range(len(val)):
@@ -125,12 +125,14 @@ def jac_unwrap_value(val, parent):
     return jac_type_unwrap(val)
 
 
-class jac_value:
+class JacValue:
     """
     A reference to a variable in context dict that is common for elements
     """
 
-    def __init__(self, parent, value=None, ctx=None, name=None, end=None):
+    def __init__(
+        self, parent, value=None, ctx=None, name=None, end=None, create_mode=False
+    ):
         """
         Abstraction of all Jac types, ctx and name serve as obj[key/idx]
         end is for idx ranges for list slices
@@ -140,10 +142,10 @@ class jac_value:
         self.is_element = False
         self.name = name
         self.end = end
-        self.value = self.setup_value(value)
+        self.value = self.setup_value(value, create_mode=create_mode)
 
-    def setup_value(self, value):
-        if isinstance(self.ctx, element):
+    def setup_value(self, value, create_mode):
+        if isinstance(self.ctx, Element):
             self.is_element = self.ctx
             if self.parent._assign_mode:
                 self.is_element.save()
@@ -155,6 +157,8 @@ class jac_value:
                 return self.ctx[self.name : self.end]
             elif type(self.name) == int or self.name in self.ctx.keys():
                 return self.ctx[self.name]
+            elif not self.parent._assign_mode and not create_mode:
+                self.parent.rt_error(f"Key {self.name} not found in object/dict.")
         else:
             return None
 
@@ -163,9 +167,7 @@ class jac_value:
             not force
             and self.is_element
             and self.name not in self.ctx.keys()
-            and not self.parent.parent().check_in_arch_context(
-                self.name, self.is_element
-            )
+            and self.name not in self.is_element.get_architype().has_vars
         ):
             self.parent.rt_error(
                 f"Creating variable {self.name} in graph "
@@ -181,6 +183,12 @@ class jac_value:
             self.ctx[self.name : self.end] = self.wrap()
         else:
             self.ctx[self.name] = self.wrap()
+
+    def check_assignable(self, jac_ast=None):
+        if self.ctx is None:
+            self.parent.rt_error("Cannot assign to this value", jac_ast)
+            return False
+        return True
 
     def self_destruct(self, jac_ast):
         if self.is_element and self.name in self.ctx.keys():

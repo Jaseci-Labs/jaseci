@@ -101,6 +101,7 @@ export class App {
   render() {
     return (
       <div data-theme={getTheme()}>
+        <jsc-graph></jsc-graph>
         <div innerHTML={renderComponentTree(this.markup)} class="bg-base-100"></div>
         <jsc-toast></jsc-toast>
       </div>

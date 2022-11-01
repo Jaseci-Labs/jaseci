@@ -1,9 +1,32 @@
 # Jaseci Change / Release Notes
 
+## Version 1.3.5
+
+### Updates
+
+- Improvement: `jac test` and `sentinel test` apis have new paramerter `single` to specify a single named test to run
+- New Feature: Tests now can be named (see docs)
+- New Feature: Added ability to flush report with standard library through `std.clear_report()`
+- Major Improvement: Multipass compilation framework implemented, new optimization pass introduced, code size down by more than 2x
+- New Lang Feature: introduced type structs with `type::custom_data` style notations
+- New Feature: Introduced `graph node view` API
+- Major Improvement: Walkers are now proper architypes in stack, all code in architypes
+- Improvement: Attributes like anchored and private are not fuzed with anchored objects.
+- Improvement: Incompatible/outdated IR now rejected by Jaseci stack
+
+### Notes
+
+- Imports updated, imports of style `import {walker*} with...` is now `import {walker::*} with...`
+- Walker register and set deprecated. Now architype register and set should be used.
+- Deprecated spawn graphs using specail dot syntax (overcomplicates language grammar)
+
 ## Version 1.3.4
 
 ### Updates
 
+- Improvement: Indicator for being logged in in JSCTL
+- New Feature: Email action set
+- Major Feature: Async walkers
 - Deprecation: Stripe API soft removed.
 - Improvement: Improved the deref operator `*` to be more nimble
 - New Feature: Can now pluck lists of values from collections of nodes and edges.

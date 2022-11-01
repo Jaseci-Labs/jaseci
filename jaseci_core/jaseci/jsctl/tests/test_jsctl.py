@@ -3,15 +3,16 @@ from jaseci.utils.utils import TestCaseHelper
 from jaseci.jsctl import jsctl
 from click.testing import CliRunner
 import json
+import os
 
 
-class jsctl_test(TestCaseHelper, TestCase):
+class JsctlTest(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
         super().setUp()
 
-    def call(self, cmd):
+    def call(self, cmd: str):
         res = CliRunner(mix_stderr=False).invoke(jsctl.jsctl, ["-m"] + cmd.split())
         # self.log(res.stdout)
         # self.log(res.stderr)
@@ -29,7 +30,7 @@ class jsctl_test(TestCaseHelper, TestCase):
         return ret.split("\n")
 
     def tearDown(self):
-        jsctl.session["master"]._h.clear_mem_cache()
+        jsctl.reset_state()
         super().tearDown()
 
     def test_jsctl_extract_tree(self):
@@ -120,8 +121,8 @@ class jsctl_test(TestCaseHelper, TestCase):
         num = len(self.call_cast("alias list"))
 
         self.call("architype delete zsb:architype:bot")
-        self.call("walker delete zsb:walker:similar_questions")
-        self.call("walker delete zsb:walker:create_nugget")
+        self.call("architype delete zsb:walker:similar_questions")
+        self.call("architype delete zsb:walker:create_nugget")
         self.assertEqual(num - 3, len(self.call_cast("alias list")))
 
     def test_jsctl_config_cmds(self):
@@ -129,8 +130,9 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(
             "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
         )
-        self.call("config set CONFIG_EXAMPLE -value TEST -do_check False")
+        self.call('config set CONFIG_EXAMPLE -value "TEST" -do_check False')
         self.call("config set APPLE -value Grape2 -do_check False")
+        self.call("config set APPLE_JSON -value '{\"test\":true}' -do_check False")
         self.call('config set "Banana" -value "Grape" -do_check False')
         self.call('config set "Pear" -value "Banana" -do_check False')
         r = self.call("config get APPLE -do_check False")
@@ -176,15 +178,15 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.call(
             "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
         )
-        r = self.call_cast("walker get zsb:walker:pubinit -mode keys")
+        wjid = self.call_cast("walker spawn create pubinit")["jid"]
+        r = self.call_cast(f"walker get {wjid} -mode keys")
         key = r["anyone"]
         r = self.call_cast("alias list")
-        walk = r["zsb:walker:pubinit"]
         nd = r["active:graph"]
-        r = self.call_cast(f"walker summon {walk} -key {key} -nd {nd}")
+        r = self.call_cast(f"walker summon {wjid} -key {key} -nd {nd}")
         self.assertEqual(len(r["report"]), 0)
         key = "aaaaaaaa"
-        r = self.call_cast(f"walker summon {walk} -key {key} -nd {nd}")
+        r = self.call_cast(f"walker summon {wjid} -key {key} -nd {nd}")
         self.assertFalse(r["success"])
 
     def test_jsctl_import(self):
@@ -275,13 +277,11 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertNotIn("Some Output", r)
 
     def test_jsctl_jac_build(self):
-        import os
-
         if os.path.exists("jaseci/jsctl/tests/teststest.jir"):
             os.remove("jaseci/jsctl/tests/teststest.jir")
             self.assertFalse(os.path.exists("jaseci/jsctl/tests/teststest.jir"))
         self.call("jac build jaseci/jsctl/tests/teststest.jac")
-        self.assertGreater(os.path.getsize("jaseci/jsctl/tests/teststest.jir"), 50000)
+        self.assertGreater(os.path.getsize("jaseci/jsctl/tests/teststest.jir"), 20000)
 
     def test_jsctl_jac_build_with_action(self):
         import os
@@ -299,11 +299,24 @@ class jsctl_test(TestCaseHelper, TestCase):
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
+    def test_jsctl_jac_test_single(self):
+        r = self.call_split(
+            "jac test jaseci/jsctl/tests/teststest.jac -single the_second"
+        )
+        self.assertTrue(r[0].startswith('Testing "a second test"'))
+        self.assertTrue(r[2].startswith('  "tests": 1'))
+        self.assertTrue(r[5].startswith('  "success": true'))
+
     def test_jsctl_jac_test_jir(self):
         r = self.call_split("jac test jaseci/jsctl/tests/teststest.jir")
         self.assertTrue(r[0].startswith('Testing "assert should be'))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
+
+    def test_jsctl_jac_disas_jir(self):
+        r = self.call("jac disas jaseci/jsctl/tests/teststest.jir")
+        self.assertIn("LOAD_CONST", r)
+        self.assertIn("LOAD_VAR", r)
 
     def test_jsctl_jac_run(self):
         r = self.call_cast("jac run jaseci/jsctl/tests/teststest.jac")
@@ -381,3 +394,46 @@ class jsctl_test(TestCaseHelper, TestCase):
     def test_jsctl_bookgen_api_spec(self):
         r = self.call("booktool cheatsheet")
         self.assertGreater(len(r), 2000)
+
+    def test_jsctl_print_detailed_sentinel(self):
+        r = self.call_cast(
+            "sentinel register jaseci/jsctl/tests/teststest.jir -name test -mode ir"
+        )
+        r = self.call_cast("object get sentinel:test")
+        before = len(r.keys())
+        r = self.call_cast("object get sentinel:test -detailed true")
+        after = len(r.keys())
+        self.assertGreater(before, 4)
+        self.assertGreater(after, before)
+
+
+class JsctlTestWithSession(TestCaseHelper, TestCase):
+    """Unit tests for Jac language"""
+
+    def setUp(self):
+        super().setUp()
+
+    def call(self, cmd):
+        ses = " -f jaseci/jsctl/tests/js.session "
+        res = CliRunner(mix_stderr=False).invoke(jsctl.jsctl, (ses + cmd).split())
+        return res.stdout
+
+    def call_cast(self, cmd):
+        ret = self.call(cmd)
+        return json.loads(ret)
+
+    def call_split(self, cmd):
+        ret = self.call(cmd)
+        return ret.split("\n")
+
+    def tearDown(self):
+        if os.path.exists("jaseci/jsctl/tests/js.session"):
+            os.remove("jaseci/jsctl/tests/js.session")
+        jsctl.reset_state()
+        super().tearDown()
+
+    def test_jsctl_register_with_session(self):
+        self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
+        self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
+        r = self.call_cast("object get active:sentinel -detailed true")
+        self.assertGreater(len(r["arch_ids"]), 3)

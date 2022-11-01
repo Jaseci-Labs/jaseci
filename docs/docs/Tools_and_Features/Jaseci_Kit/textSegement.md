@@ -7,7 +7,7 @@
 To load the Text Segmenter run :
 
 ```
-actions load module jaseci_kit.text_seg
+actions load module jaseci_ai_kit.text_seg
 ```
 
     * Input 

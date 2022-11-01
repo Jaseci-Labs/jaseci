@@ -1,10 +1,18 @@
-from jaseci.utils.test_core import core_test
+from jaseci.utils.test_core import CoreTest
 
 
-class interpreter_test(core_test):
+class InterpreterTest(CoreTest):
     """Unit tests for Jac Interpreter / Language features"""
 
     fixture_src = __file__
+
+    def test_quick_check(self):
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("lang_features.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "quick_check"}])
+        self.assertEqual(ret["report"][0], "edge5")
 
     def test_has_var_plucking(self):
         ret = self.call(

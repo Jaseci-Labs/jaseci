@@ -4,22 +4,21 @@ Edge class for Jaseci
 Each edge has an id, name, timestamp, the from node at the element of the edge
 and the to node it is pointing to.
 """
-from jaseci.element.element import element
-from jaseci.element.obj_mixins import anchored
+from jaseci.element.element import Element
+from jaseci.element.obj_mixins import Anchored
 from jaseci.utils.utils import logger
 import uuid
 
 
-class edge(element, anchored):
+class Edge(Element, Anchored):
     """Edge class for Jaseci"""
 
-    def __init__(self, from_node=None, to_node=None, *args, **kwargs):
+    def __init__(self, from_node=None, to_node=None, **kwargs):
         self.from_node_id = None
         self.to_node_id = None
         self.bidirected: bool = False
-        self.context = {}
-        anchored.__init__(self)
-        element.__init__(self, *args, **kwargs)
+        Element.__init__(self, **kwargs)
+        Anchored.__init__(self)
         if from_node:
             self.set_from_node(from_node)
         if to_node:
@@ -127,18 +126,6 @@ class edge(element, anchored):
                 return False
         return True
 
-    def set_context(self, ctx, arch=None):
-        """Assign values to context of edge"""
-        if arch is None:
-            arch = self
-        for i in ctx.keys():
-            if i not in arch.context.keys():
-                logger.warning(str(f"{i} not a context member of {self}"))
-                continue
-            else:
-                self.context[i] = ctx[i]
-        self.save()
-
     def destroy(self):
         """
         Destroys self from memory and persistent storage
@@ -149,7 +136,7 @@ class edge(element, anchored):
             base.edge_ids.remove_obj(self)
         if target and self.jid in target.edge_ids:
             target.edge_ids.remove_obj(self)
-        element.destroy(self)
+        Element.destroy(self)
 
     def dot_str(self, node_map=None, edge_map=None, detailed=False):
         """
@@ -187,9 +174,8 @@ class edge(element, anchored):
             dstr += ', dir="both"'
 
         edge_dict = self.context
-        if "_private" in edge_dict:
-            for i in edge_dict["_private"]:
-                edge_dict.pop(i)
+        for i in self.private_values():
+            edge_dict.pop(i)
 
         if edge_dict and detailed:
             for k, v in edge_dict.items():

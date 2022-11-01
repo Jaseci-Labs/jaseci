@@ -1,20 +1,20 @@
-from unittest import TestCase
-from jaseci.utils.utils import TestCaseHelper
-from jaseci.element.super_master import super_master
-from jaseci.element.master import master
-from jaseci.utils.redis_hook import redis_hook
 import os
+from unittest import TestCase
+
+from jaseci.svc import MetaService
+from jaseci.utils.utils import TestCaseHelper
 
 
-class core_test(TestCaseHelper, TestCase):
+class CoreTest(TestCaseHelper, TestCase):
     """Unit tests for Jac Core APIs"""
 
     fixture_src = __file__
 
-    def setUp(self):
+    def setUp(self, run_svcs=False):
         super().setUp()
-        self.smast = super_master(h=redis_hook())
-        self.mast = master(h=self.smast._h)
+        self.meta = MetaService(run_svcs=run_svcs)
+        self.smast = self.meta.build_super_master()
+        self.mast = self.meta.build_master(h=self.smast._h)
 
     def tearDown(self):
         super().tearDown()

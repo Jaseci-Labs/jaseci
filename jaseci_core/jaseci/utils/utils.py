@@ -12,9 +12,17 @@ import re
 import json
 import functools
 import traceback
+import inspect
 from time import time
 from datetime import datetime
 from pprint import pformat
+
+
+class ColCodes:
+    TY = "\033[33m"
+    TG = "\033[32m"
+    TR = "\033[31m"
+    EC = "\033[m"
 
 
 def master_from_meta(meta):
@@ -45,6 +53,13 @@ def log_var_out(val):
     """Print to log"""
     if not logging.getLogger("core").disabled:
         logger.info(pformat(val))
+
+
+camel_to_snake_re = re.compile(r"(?<!^)(?=[A-Z])")
+
+
+def camel_to_snake(name):
+    return camel_to_snake_re.sub("_", name).lower()
 
 
 def bp():
@@ -137,9 +152,13 @@ def build_class_dict(from_where):
     prefix = from_where.__name__ + "."
     for importer, modname, ispkg in pkgutil.iter_modules(from_where.__path__, prefix):
         if not ispkg:
-            cls = modname.split(".")[-1]
-            if hasattr(importlib.import_module(modname), cls):
-                obj_class_cache[cls] = getattr(importlib.import_module(modname), cls)
+            clsmembers = inspect.getmembers(
+                importlib.import_module(modname), inspect.isclass
+            )
+            for cls, obj in clsmembers:
+                obj_class_cache[camel_to_snake(cls)] = getattr(
+                    importlib.import_module(modname), cls
+                )
         else:
             if hasattr(from_where, modname.split(".")[-1]):
                 build_class_dict(getattr(from_where, modname.split(".")[-1]))
@@ -184,6 +203,24 @@ def b64decode_str(code):
     return code
 
 
+def perf_test_start():
+    perf_prof = cProfile.Profile()
+    perf_prof.enable()
+    return perf_prof
+
+
+def perf_test_stop(perf_prof):
+    perf_prof.disable()
+    s = io.StringIO()
+    sortby = pstats.SortKey.CUMULATIVE
+    ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)
+    ps.print_stats()
+    s = s.getvalue()
+    s = "ncalls" + s.split("ncalls")[-1]
+    s = "\n".join([",".join(line.rstrip().split(None, 5)) for line in s.split("\n")])
+    return s
+
+
 class TestCaseHelper:
     """Helper to pretty print test results"""
 
@@ -193,23 +230,19 @@ class TestCaseHelper:
         return super().setUp()
 
     def tearDown(self):
-        TY = "\033[33m"
-        TG = "\033[32m"
-        TR = "\033[31m"
-        EC = "\033[m"
         td = super().tearDown()
         result = (
-            f"Time: {TY}{time()-self.stime:.3f} "
-            + f'- {EC}{self.id().split(".")[-1]}: '
+            f"Time: {ColCodes.TY}{time()-self.stime:.3f} "
+            + f'- {ColCodes.EC}{self.id().split(".")[-1]}: '
         )
         get_outcome = self.defaultTestResult()
         self._feedErrorsToResult(get_outcome, self._outcome.errors)
         if len(get_outcome.errors) or len(get_outcome.failures):
-            result += f"{TR}[failed]{EC}"
+            result += f"{ColCodes.TR}[failed]{ColCodes.EC}"
         elif len(self._outcome.skipped):
-            result += f"{TY}[skipped]{EC}"
+            result += f"{ColCodes.TY}[skipped]{ColCodes.EC}"
         else:
-            result += f"{TG}[passed]{EC}"
+            result += f"{ColCodes.TG}[passed]{ColCodes.EC}"
 
         print(result)
         self.logger_on()
@@ -228,11 +261,12 @@ class TestCaseHelper:
     def is_logger_off(self):
         return logging.getLogger("core").disabled and logging.getLogger("app").disabled
 
-    def log(self, val):
+    def log(self, *val):
         """Print to log"""
         is_off = self.is_logger_off()
         self.logger_on()
-        log_var_out(val)
+        for i in val:
+            log_var_out(i)
         if is_off:
             self.logger_off()
 
@@ -240,19 +274,16 @@ class TestCaseHelper:
         """Force test to fail"""
         self.assertTrue(False)
 
-    def start_perf_test(self):
-        self.pr = cProfile.Profile()
-        self.pr.enable()
+    def perf_test_start(self):
+        self.pr = perf_test_start()
 
-    def stop_perf_test(self):
-        self.pr.disable()
-        s = io.StringIO()
-        sortby = pstats.SortKey.CUMULATIVE
-        ps = pstats.Stats(self.pr, stream=s).sort_stats(sortby)
-        ps.print_stats(100)
-        print(s.getvalue())
+    def perf_test_stop(self):
+        print(perf_test_stop(self.pr))
 
 
-class bunch:
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)
+def is_true(val):
+    return (
+        val.lower() == "true"
+        if type(val) is str
+        else val is True  # is_async might be non bool
+    )

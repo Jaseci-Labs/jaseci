@@ -1,5 +1,5 @@
 jaseci > sentinel register -name fam -code fam.jac -set_active true
-2021-08-15 18:03:38,823 - INFO - parse_jac_code: fam: Processing Jac code...
+2021-08-15 18:03:38,823 - INFO - compile_jac_code: fam: Processing Jac code...
 2021-08-15 18:03:39,001 - INFO - register_code: fam: Successfully registered code
 {
   "name": "fam",

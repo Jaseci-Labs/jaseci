@@ -3,14 +3,13 @@ General master interface engine for client interfaces as mixin
 """
 import uuid
 from inspect import signature, getdoc
-from jaseci.utils.utils import logger
-from jaseci.utils.utils import is_jsonable
-from jaseci.element.element import element
-from jaseci.actor.walker import walker
+from jaseci.utils.utils import logger, is_jsonable, is_true
+from jaseci.element.element import Element
+from jaseci.actor.walker import Walker
 import json
 
 
-class interface:
+class Interface:
     """
     General master interface engine
     """
@@ -51,8 +50,8 @@ class interface:
 
     def public_api(cmd_group=None, cli_args=None, url_args=None, allowed_methods=None):
         def decorator_func(func):
-            return interface.assimilate_api(
-                interface._public_api,
+            return Interface.assimilate_api(
+                Interface._public_api,
                 func,
                 cmd_group,
                 cli_args,
@@ -64,8 +63,8 @@ class interface:
 
     def private_api(cmd_group=None, cli_args=None, url_args=None, allowed_methods=None):
         def decorator_func(func):
-            return interface.assimilate_api(
-                interface._private_api,
+            return Interface.assimilate_api(
+                Interface._private_api,
                 func,
                 cmd_group,
                 cli_args,
@@ -77,8 +76,8 @@ class interface:
 
     def admin_api(cmd_group=None, cli_args=None, url_args=None, allowed_methods=None):
         def decorator_func(func):
-            return interface.assimilate_api(
-                interface._admin_api,
+            return Interface.assimilate_api(
+                Interface._admin_api,
                 func,
                 cmd_group,
                 cli_args,
@@ -90,16 +89,16 @@ class interface:
 
     def cli_api(cmd_group=None, cli_args=None):
         def decorator_func(func):
-            return interface.assimilate_api(
-                interface._cli_api, func, cmd_group, cli_args
+            return Interface.assimilate_api(
+                Interface._cli_api, func, cmd_group, cli_args
             )
 
         return decorator_func
 
     def all_apis(self, with_cli_only=False):
-        ret = interface._public_api + interface._private_api + interface._admin_api
+        ret = Interface._public_api + Interface._private_api + Interface._admin_api
         if with_cli_only:
-            return ret + interface._cli_api
+            return ret + Interface._cli_api
         return ret
 
     assimilate_api = staticmethod(assimilate_api)
@@ -177,7 +176,7 @@ class interface:
                     val = json.loads(val)
             if str(val) in _caller.alias_map.keys():
                 val = _caller.alias_map[val]
-            if issubclass(p_type, element):
+            if issubclass(p_type, Element):
                 if val is None:
                     break
                 val = _caller._h.get_obj(_caller._m_id, uuid.UUID(val))
@@ -188,7 +187,7 @@ class interface:
             else:  # TODO: Can do type checks here too
                 param_map[i] = val
 
-            if param_map[i] is None:
+            if p_default and param_map[i] is None:
                 return self.interface_error(f"Invalid API args - {params}")
         try:
             ret = getattr(_caller, api_name)(**param_map)
@@ -227,7 +226,7 @@ class interface:
                     val = {}
                 else:
                     val = json.loads(val)
-            if issubclass(p_type, element):
+            if issubclass(p_type, Element):
                 if val is None:
                     return self.interface_error(
                         f"No {p_type} value for {p_name} provided!"
@@ -259,26 +258,16 @@ class interface:
 
     # future constraints other than `async` should be add here
     def sync_constraints(self, obj, params):
-        if isinstance(obj, walker):
-            obj._async = params.get("is_async", False)
+        if isinstance(obj, Walker):
+            obj.is_async = is_true(params.get("is_async", obj.is_async))
 
         return obj
 
     def seek_committer(self, obj):
         """Opportunistically assign a committer"""
-        if not self._pub_committer:
+        if not self._pub_committer and not (obj is None):
             self._pub_committer = obj._h.get_obj(obj._m_id, uuid.UUID(obj._m_id))
 
     def clear_committer(self):
         """Unset committer"""
         self._pub_committer = None
-
-    def sync_walker_from_global_sent(self, wlk):
-        """Checks for matching code ir between global and spawned walker"""
-        glob_id = wlk._h.get_glob("GLOB_SENTINEL")
-        if glob_id:
-            snt = wlk._h.get_obj(wlk._m_id, uuid.UUID(glob_id))
-            if snt:
-                glob_wlk = snt.walker_ids.get_obj_by_name(wlk.name)
-                if glob_wlk and glob_wlk.code_sig != wlk.code_sig:
-                    wlk.apply_ir(glob_wlk.code_ir)

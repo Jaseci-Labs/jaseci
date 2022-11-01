@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
-import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,7 +26,6 @@ SECRET_KEY = "@%ad_kyis62uf7qf^w9kv(8$db4)%c$nnnjk^us=s@-gj*)aal"
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-
 
 # Application definition
 
@@ -84,7 +82,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "jaseci_serv.jaseci_serv.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
@@ -121,32 +118,6 @@ else:
         }
     }
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-
-# REDIS
-REDIS_ENABLED = True and ("test" in sys.argv or "runserver" in sys.argv)
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = os.getenv("REDIS_PORT", "6379")
-REDIS_DB = os.getenv("REDIS_DB", "1")
-REDIS_URL = "redis://{host}:{port}/{db}".format(
-    host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB
-)
-
-# TASK_HOOK
-TASK_ENABLED = True and ("test" in sys.argv or "runserver" in sys.argv)
-TASK_QUIET = False
-broker_url = REDIS_URL
-beat_scheduler = "django_celery_beat.schedulers:DatabaseScheduler"
-result_backend = "django-db"
-task_track_started = True
-broker_connection_retry_on_startup = True
-
-if "test" in sys.argv or "test_coverage" in sys.argv:
-    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-    task_always_eager = True
-    task_store_eager_result = True
-    beat_scheduler = "celery.beat:PersistentScheduler"
-
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
@@ -166,7 +137,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
@@ -179,7 +149,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = False
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/

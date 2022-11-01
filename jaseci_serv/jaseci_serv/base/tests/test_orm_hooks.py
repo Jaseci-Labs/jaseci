@@ -1,14 +1,14 @@
 from django.contrib.auth import get_user_model
 
 from jaseci.utils.utils import TestCaseHelper
-from jaseci.utils.redis_hook import redis_hook as rh
 from django.test import TestCase
 
 from jaseci_serv.base.models import JaseciObject
 from jaseci.graph import node
-from jaseci.graph.graph import graph
-from jaseci.actor.sentinel import sentinel
+from jaseci.graph.graph import Graph
+from jaseci.actor.sentinel import Sentinel
 import jaseci.tests.jac_test_code as jtc
+from jaseci_serv.utils.test_utils import skip_without_redis
 
 
 # Alias for create user
@@ -16,7 +16,7 @@ create_user = get_user_model().objects.create_user
 get_user = get_user_model().objects.get
 
 
-class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
+class OrmPrivateTests(TestCaseHelper, TestCase):
     """Test Jaseci Engine when authenticated"""
 
     def setUp(self):
@@ -34,7 +34,7 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         """Test that db hooks are set up correctly for saving"""
         user = self.user
         self.assertIsNotNone(user._h)
-        tnode = node.node(m_id="anon", h=user._h)
+        tnode = node.Node(m_id="anon", h=user._h)
         tnode.name = "GOBBY"
         tnode.save()  # Jaseci object save
         user._h.commit()
@@ -46,11 +46,12 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         """Test that db hooks are set up correctly for loading"""
         user = self.user
         self.assertIsNotNone(user._h)
-        temp_id = node.node(m_id=user.master.urn, h=user._h).id
-
-        user._h.commit()
-        del user._h.mem[temp_id.urn]
-        rh.app.delete(temp_id.urn)
+        temp_id = node.Node(m_id=user.master.urn, h=user._h).id
+        h = user._h
+        h.commit()
+        del h.mem[temp_id.urn]
+        if h.redis.is_running():
+            h.redis.delete(temp_id.urn)
 
         load_test = JaseciObject.objects.filter(jid=temp_id).first()
 
@@ -69,11 +70,13 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         """
         user = self.user
         self.assertIsNotNone(user._h)
-        temp_id = node.node(m_id="anon", h=user._h).id
+        temp_id = node.Node(m_id="anon", h=user._h).id
 
-        user._h.commit()
-        del user._h.mem[temp_id.urn]
-        rh.app.delete(temp_id.urn)
+        h = user._h
+        h.commit()
+        del h.mem[temp_id.urn]
+        if h.redis.is_running():
+            h.redis.delete(temp_id.urn)
 
         load_test = JaseciObject.objects.filter(jid=temp_id).first()
 
@@ -84,7 +87,7 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         self.assertEqual(load_test.kind, otnode.kind)
 
         otnode.name = "Rizzoou"
-        oedge = otnode.attach_outbound(node.node(m_id=otnode._m_id, h=otnode._h))
+        oedge = otnode.attach_outbound(node.Node(m_id=otnode._m_id, h=otnode._h))
         otnode.save()  # Jaseci object save
         user._h.commit()
         oload_test = JaseciObject.objects.get(jid=otnode.id)
@@ -103,11 +106,11 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         Test that db hooks handle walkers ok
         """
         user = self.user
-        gph = graph(m_id="anon", h=user._h)
-        sent = sentinel(m_id="anon", h=gph._h)
+        gph = Graph(m_id="anon", h=user._h)
+        sent = Sentinel(m_id="anon", h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
-        test_walker = sent.walker_ids.get_obj_by_name("get_gen_day")
+        test_walker = sent.run_architype("get_gen_day")
         test_walker.prime(test_node)
         test_walker.context["date"] = "2010-08-03T03:00:00.000000"
         self.assertEqual(len(test_node.outbound_nodes()), 0)
@@ -119,25 +122,28 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         Test that UUIDs function correctly for store adn loads
         """
         user = self.user
-        node1 = node.node(m_id="anon", h=user._h)
-        node2 = node.node(m_id="anon", h=user._h, parent_id=node1.id)
+        node1 = node.Node(m_id="anon", h=user._h)
+        node2 = node.Node(m_id="anon", h=user._h, parent=node1)
         user._h.commit()
         new_node = JaseciObject.objects.filter(j_parent=node1.id).first()
         new_jsci_node = user._h.get_obj_from_store(new_node.jid)
         self.assertEqual(node2.id, new_node.jid)
-        self.assertEqual(node1.id, new_jsci_node.parent_id)
+        self.assertEqual(node1.id, new_jsci_node.parent().id)
 
+    @skip_without_redis
     def test_redis_connection(self):
         """Test redis connection"""
 
-        self.assertTrue(rh.is_running())
+        redis = self.user._h.redis
 
-        rh.app.set("test", "this is a test")
-        self.assertEqual(rh.app.get("test"), "this is a test")
+        self.assertTrue(redis.is_running())
+
+        redis.set("test", "this is a test")
+        self.assertEqual(redis.get("test"), "this is a test")
 
     def test_redis_saving(self):
         """Test that redis hooks are set up correctly for saving"""
-        tnode = node.node(m_id="anon", h=self.user._h)
+        tnode = node.Node(m_id="anon", h=self.user._h)
         tnode.name = "GOBBY"
         tnode.save()  # Jaseci object save
         tnode._h.commit()
@@ -148,7 +154,7 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         """
         Test that redis hooks are set up correctly for loading single server
         """
-        nd = node.node(m_id="anon", h=self.user._h)
+        nd = node.Node(m_id="anon", h=self.user._h)
         temp_id = nd.id
         nd._h.commit()
         load_test = nd._h.get_obj("anon", temp_id)
@@ -165,7 +171,7 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         then deleting, also tests that '_id' and '_ids' conventions handle
         uuid types loading from db
         """
-        nd = node.node(m_id="anon", h=self.user._h)
+        nd = node.Node(m_id="anon", h=self.user._h)
         temp_id = nd.id
         nd._h.commit()
 
@@ -179,7 +185,7 @@ class jaseci_engine_orm_tests_private(TestCaseHelper, TestCase):
         self.assertEqual(load_test.kind, otnode.kind)
 
         otnode.name = "Rizzoou"
-        oedge = otnode.attach_outbound(node.node(m_id="anon", h=self.user._h))
+        oedge = otnode.attach_outbound(node.Node(m_id="anon", h=self.user._h))
         otnode.save()  # Jaseci object save
         otnode._h.commit()
         oload_test = otnode._h.get_obj("anon", otnode.id)

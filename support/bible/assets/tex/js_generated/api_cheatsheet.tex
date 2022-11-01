@@ -1,21 +1,22 @@
-\lstinline$walker summon$ & \lstinline$key: str (*req), wlk: walker (*req), nd: node (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)$ \\ \hline
-\lstinline$walker callback$ & \lstinline$nd: node (*req), wlk: walker (*req), key: str (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)$ \\ \hline
-\lstinline$walker register$ & \lstinline$snt: sentinel (None), code: str (), encoded: bool (False)$ \\ \hline
-\lstinline$walker get$ & \lstinline$wlk: walker (*req), mode: str (default), detailed: bool (False)$ \\ \hline
-\lstinline$walker set$ & \lstinline$wlk: walker (*req), code: str (*req), mode: str (default)$ \\ \hline
-\lstinline$walker list$ & \lstinline$snt: sentinel (None), detailed: bool (False)$ \\ \hline
-\lstinline$walker delete$ & \lstinline$wlk: walker (*req), snt: sentinel (None)$ \\ \hline
-\lstinline$walker spawn create$ & \lstinline$name: str (*req), snt: sentinel (None)$ \\ \hline
+\lstinline$info$ & \lstinline$n/a$ \\ \hline
+\lstinline$walker summon$ & \lstinline$key: str (*req), wlk: Walker (*req), nd: Node (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)$ \\ \hline
+\lstinline$walker callback$ & \lstinline$nd: Node (*req), wlk: Walker (*req), key: str (*req), ctx: dict (\{\}), _req_ctx: dict (\{\}), global_sync: bool (True)$ \\ \hline
+\lstinline$walker register$ & \lstinline$snt: Sentinel (None), code: str (), dir: str (/), encoded: bool (False)$ \\ \hline
+\lstinline$walker get$ & \lstinline$wlk: Walker (*req), mode: str (default), detailed: bool (False)$ \\ \hline
+\lstinline$walker set$ & \lstinline$wlk: Walker (*req), code: str (*req), mode: str (default)$ \\ \hline
+\lstinline$walker list$ & \lstinline$snt: Sentinel (None), detailed: bool (False)$ \\ \hline
+\lstinline$walker spawn create$ & \lstinline$name: str (*req), snt: Sentinel (None)$ \\ \hline
 \lstinline$walker spawn list$ & \lstinline$detailed: bool (False)$ \\ \hline
 \lstinline$walker spawn delete$ & \lstinline$name: str (*req)$ \\ \hline
 \lstinline$walker spawn clear$ & \lstinline$n/a$ \\ \hline
 \lstinline$walker yield list$ & \lstinline$detailed: bool (False)$ \\ \hline
 \lstinline$walker yield delete$ & \lstinline$name: str (*req)$ \\ \hline
 \lstinline$walker yield clear$ & \lstinline$n/a$ \\ \hline
-\lstinline$walker prime$ & \lstinline$wlk: walker (*req), nd: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\})$ \\ \hline
-\lstinline$walker execute$ & \lstinline$wlk: walker (*req), prime: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), profiling: bool (False)$ \\ \hline
-\lstinline$walker run$ & \lstinline$name: str (*req), nd: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), snt: sentinel (None), profiling: bool (False), is_async: bool (False)$ \\ \hline
-\lstinline$walker queue$ & \lstinline$task_id: str ()$ \\ \hline
+\lstinline$walker prime$ & \lstinline$wlk: Walker (*req), nd: Node (None), ctx: dict (\{\}), _req_ctx: dict (\{\})$ \\ \hline
+\lstinline$walker execute$ & \lstinline$wlk: Walker (*req), prime: Node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), profiling: bool (False)$ \\ \hline
+\lstinline$walker run$ & \lstinline$name: str (*req), nd: Node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), snt: Sentinel (None), profiling: bool (False), is_async: bool (False)$ \\ \hline
+\lstinline$walker queue check$ & \lstinline$task_id: str ()$ \\ \hline
+\lstinline$walker queue wait$ & \lstinline$task_id: str (*req)$ \\ \hline
 \lstinline$user create$ & \lstinline$name: str (*req), global_init: str (), global_init_ctx: dict (\{\}), other_fields: dict (\{\})$ \\ \hline
 \lstinline$alias register$ & \lstinline$name: str (*req), value: str (*req)$ \\ \hline
 \lstinline$alias list$ & \lstinline$n/a$ \\ \hline
@@ -24,41 +25,42 @@
 \lstinline$global get$ & \lstinline$name: str (*req)$ \\ \hline
 \lstinline$global set$ & \lstinline$name: str (*req), value: str (*req)$ \\ \hline
 \lstinline$global delete$ & \lstinline$name: str (*req)$ \\ \hline
-\lstinline$global sentinel set$ & \lstinline$snt: sentinel (None)$ \\ \hline
+\lstinline$global sentinel set$ & \lstinline$snt: Sentinel (None)$ \\ \hline
 \lstinline$global sentinel unset$ & \lstinline$n/a$ \\ \hline
-\lstinline$object get$ & \lstinline$obj: element (*req), depth: int (0), detailed: bool (False)$ \\ \hline
-\lstinline$object perms get$ & \lstinline$obj: element (*req)$ \\ \hline
-\lstinline$object perms set$ & \lstinline$obj: element (*req), mode: str (*req)$ \\ \hline
+\lstinline$object get$ & \lstinline$obj: Element (*req), depth: int (0), detailed: bool (False)$ \\ \hline
+\lstinline$object perms get$ & \lstinline$obj: Element (*req)$ \\ \hline
+\lstinline$object perms set$ & \lstinline$obj: Element (*req), mode: str (*req)$ \\ \hline
 \lstinline$object perms default$ & \lstinline$mode: str (*req)$ \\ \hline
-\lstinline$object perms grant$ & \lstinline$obj: element (*req), mast: element (*req), read_only: bool (False)$ \\ \hline
-\lstinline$object perms revoke$ & \lstinline$obj: element (*req), mast: element (*req)$ \\ \hline
+\lstinline$object perms grant$ & \lstinline$obj: Element (*req), mast: Element (*req), read_only: bool (False)$ \\ \hline
+\lstinline$object perms revoke$ & \lstinline$obj: Element (*req), mast: Element (*req)$ \\ \hline
 \lstinline$graph create$ & \lstinline$set_active: bool (True)$ \\ \hline
-\lstinline$graph get$ & \lstinline$gph: graph (None), mode: str (default), detailed: bool (False)$ \\ \hline
+\lstinline$graph get$ & \lstinline$gph: Graph (None), mode: str (default), detailed: bool (False)$ \\ \hline
 \lstinline$graph list$ & \lstinline$detailed: bool (False)$ \\ \hline
-\lstinline$graph active set$ & \lstinline$gph: graph (*req)$ \\ \hline
+\lstinline$graph active set$ & \lstinline$gph: Graph (*req)$ \\ \hline
 \lstinline$graph active unset$ & \lstinline$n/a$ \\ \hline
 \lstinline$graph active get$ & \lstinline$detailed: bool (False)$ \\ \hline
-\lstinline$graph delete$ & \lstinline$gph: graph (*req)$ \\ \hline
-\lstinline$graph node get$ & \lstinline$nd: node (*req), keys: list ([])$ \\ \hline
-\lstinline$graph node set$ & \lstinline$nd: node (*req), ctx: dict (*req), snt: sentinel (None)$ \\ \hline
-\lstinline$graph walk (cli only)$ & \lstinline$nd: node (None)$ \\ \hline
+\lstinline$graph delete$ & \lstinline$gph: Graph (*req)$ \\ \hline
+\lstinline$graph node get$ & \lstinline$nd: Node (*req), keys: list ([])$ \\ \hline
+\lstinline$graph node view$ & \lstinline$nd: Node (None), detailed: bool (False), show_edges: bool (True), node_type: str (), edge_type: str ()$ \\ \hline
+\lstinline$graph node set$ & \lstinline$nd: Node (*req), ctx: dict (*req), snt: Sentinel (None)$ \\ \hline
+\lstinline$graph walk (cli only)$ & \lstinline$nd: Node (None)$ \\ \hline
 \lstinline$sentinel register$ & \lstinline$name: str (default), code: str (), code_dir: str (./), mode: str (default), encoded: bool (False), auto_run: str (init), auto_run_ctx: dict (\{\}), auto_create_graph: bool (True), set_active: bool (True)$ \\ \hline
 \lstinline$sentinel pull$ & \lstinline$set_active: bool (True), on_demand: bool (True)$ \\ \hline
-\lstinline$sentinel get$ & \lstinline$snt: sentinel (None), mode: str (default), detailed: bool (False)$ \\ \hline
-\lstinline$sentinel set$ & \lstinline$code: str (*req), code_dir: str (./), encoded: bool (False), snt: sentinel (None), mode: str (default)$ \\ \hline
+\lstinline$sentinel get$ & \lstinline$snt: Sentinel (None), mode: str (default), detailed: bool (False)$ \\ \hline
+\lstinline$sentinel set$ & \lstinline$code: str (*req), code_dir: str (./), encoded: bool (False), snt: Sentinel (None), mode: str (default)$ \\ \hline
 \lstinline$sentinel list$ & \lstinline$detailed: bool (False)$ \\ \hline
-\lstinline$sentinel test$ & \lstinline$snt: sentinel (None), detailed: bool (False)$ \\ \hline
-\lstinline$sentinel active set$ & \lstinline$snt: sentinel (*req)$ \\ \hline
+\lstinline$sentinel test$ & \lstinline$snt: Sentinel (None), detailed: bool (False)$ \\ \hline
+\lstinline$sentinel active set$ & \lstinline$snt: Sentinel (*req)$ \\ \hline
 \lstinline$sentinel active unset$ & \lstinline$n/a$ \\ \hline
 \lstinline$sentinel active global$ & \lstinline$auto_run: str (), auto_run_ctx: dict (\{\}), auto_create_graph: bool (False), detailed: bool (False)$ \\ \hline
 \lstinline$sentinel active get$ & \lstinline$detailed: bool (False)$ \\ \hline
-\lstinline$sentinel delete$ & \lstinline$snt: sentinel (*req)$ \\ \hline
-\lstinline$wapi$ & \lstinline$name: str (*req), nd: node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), snt: sentinel (None), profiling: bool (False)$ \\ \hline
-\lstinline$architype register$ & \lstinline$code: str (*req), encoded: bool (False), snt: sentinel (None)$ \\ \hline
-\lstinline$architype get$ & \lstinline$arch: architype (*req), mode: str (default), detailed: bool (False)$ \\ \hline
-\lstinline$architype set$ & \lstinline$arch: architype (*req), code: str (*req), mode: str (default)$ \\ \hline
-\lstinline$architype list$ & \lstinline$snt: sentinel (None), detailed: bool (False)$ \\ \hline
-\lstinline$architype delete$ & \lstinline$arch: architype (*req), snt: sentinel (None)$ \\ \hline
+\lstinline$sentinel delete$ & \lstinline$snt: Sentinel (*req)$ \\ \hline
+\lstinline$wapi$ & \lstinline$name: str (*req), nd: Node (None), ctx: dict (\{\}), _req_ctx: dict (\{\}), snt: Sentinel (None), profiling: bool (False)$ \\ \hline
+\lstinline$architype register$ & \lstinline$code: str (*req), encoded: bool (False), snt: Sentinel (None)$ \\ \hline
+\lstinline$architype get$ & \lstinline$arch: Architype (*req), mode: str (default), detailed: bool (False)$ \\ \hline
+\lstinline$architype set$ & \lstinline$arch: Architype (*req), code: str (*req), mode: str (default)$ \\ \hline
+\lstinline$architype list$ & \lstinline$snt: Sentinel (None), detailed: bool (False)$ \\ \hline
+\lstinline$architype delete$ & \lstinline$arch: Architype (*req), snt: Sentinel (None)$ \\ \hline
 \lstinline$master create$ & \lstinline$name: str (*req), global_init: str (), global_init_ctx: dict (\{\}), other_fields: dict (\{\})$ \\ \hline
 \lstinline$master get$ & \lstinline$name: str (*req), mode: str (default), detailed: bool (False)$ \\ \hline
 \lstinline$master list$ & \lstinline$detailed: bool (False)$ \\ \hline
@@ -68,11 +70,12 @@
 \lstinline$master self$ & \lstinline$detailed: bool (False)$ \\ \hline
 \lstinline$master delete$ & \lstinline$name: str (*req)$ \\ \hline
 \lstinline$master createsuper$ & \lstinline$name: str (*req), global_init: str (), global_init_ctx: dict (\{\}), other_fields: dict (\{\})$ \\ \hline
-\lstinline$master allusers$ & \lstinline$num: int (0), start_idx: int (0)$ \\ \hline
-\lstinline$master become$ & \lstinline$mast: master (*req)$ \\ \hline
+\lstinline$master allusers$ & \lstinline$limit: int (0), offset: int (0), asc: bool (False)$ \\ \hline
+\lstinline$master become$ & \lstinline$mast: Master (*req)$ \\ \hline
 \lstinline$master unbecome$ & \lstinline$n/a$ \\ \hline
 \lstinline$config get$ & \lstinline$name: str (*req), do_check: bool (True)$ \\ \hline
 \lstinline$config set$ & \lstinline$name: str (*req), value: str (*req), do_check: bool (True)$ \\ \hline
+\lstinline$config refresh$ & \lstinline$name: str (*req)$ \\ \hline
 \lstinline$config list$ & \lstinline$n/a$ \\ \hline
 \lstinline$config index$ & \lstinline$n/a$ \\ \hline
 \lstinline$config exists$ & \lstinline$name: str (*req)$ \\ \hline

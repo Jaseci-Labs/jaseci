@@ -1,5 +1,5 @@
 prog0 = """
-    node testnode:0 {
+    node testnode {
         has a, b, c;
         can std.log::a,b::>c with exit;
     }
@@ -16,7 +16,7 @@ prog0 = """
         }
     }
 
-    node life:0 {
+    node life {
     }
 
     node year {
@@ -35,7 +35,7 @@ prog0 = """
     """
 
 prog1 = """
-    node testnode:0 {
+    node testnode {
         has a, b, c;
         can std.log::a,b::>c with exit;
     }
@@ -52,7 +52,7 @@ prog1 = """
         }
     }
 
-    node life:0 {
+    node life {
     }
 
     node year {
@@ -436,6 +436,22 @@ set_get_global = """
         root {
             a=std.get_global('globby');
             std.log(std.get_global('globby'));
+        }
+    }
+    """
+
+set_get_global2 = """
+    walker setter {
+        root {
+            std.set_global('globby2', 59);
+        }
+    }
+
+    walker getter {
+        has a;
+        root {
+            a=std.get_global('globby2');
+            std.log(std.get_global('globby2'));
         }
     }
     """
@@ -1115,5 +1131,30 @@ rand_choice = """
 
         report a;
         report rand.choice(a);
+    }
+    """
+
+
+struct_types = """
+    type simple {
+        has apple;
+        has orange=43;
+    }
+
+    type another {
+        has apple=spawn t::simple(apple=33);
+    }
+
+    node mynode {
+        has basic=spawn type::another;
+    }
+
+    walker init {
+        a = spawn here --> n::mynode;
+
+        report
+        [a.basic["apple"]["orange"],
+         a.basic["apple"]["apple"]];
+        report [a.basic.apple.apple, a.basic.apple.orange];
     }
     """

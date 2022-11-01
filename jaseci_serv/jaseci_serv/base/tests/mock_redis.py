@@ -1,4 +1,4 @@
-class mock_redis:
+class MockRedis:
     def __init__(self, cache=dict()):
         self.cache = cache
 

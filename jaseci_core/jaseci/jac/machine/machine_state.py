@@ -9,14 +9,19 @@ from jaseci.utils.utils import logger
 from jaseci.actions.live_actions import live_actions, load_preconfig_actions
 
 # from jaseci.actions.find_action import find_action
-from jaseci.element.element import element
+from jaseci.element.element import Element
 
-from jaseci.jac.jac_set import jac_set
-from jaseci.jac.machine.jac_scope import jac_scope
-from jaseci.utils.id_list import id_list
+from jaseci.jac.jac_set import JacSet
+from jaseci.jac.machine.jac_scope import JacScope
+from jaseci.utils.id_list import IdList
+from jaseci.jac.ir.ast import Ast
+from jaseci.graph.edge import Edge
+from jaseci.graph.node import Node
+from jaseci.jac.machine.jac_value import JacValue
+from jaseci.jac.jsci_vm.op_codes import JsCmp
 
 
-class machine_state:
+class MachineState:
     """Shared interpreter class across both sentinels and walkers"""
 
     def __init__(self, parent_override=None, caller=None):
@@ -25,9 +30,9 @@ class machine_state:
         self.report_custom = None
         self.request_context = None
         self.runtime_errors = []
-        self.yielded_walkers_ids = id_list(self)
+        self.yielded_walkers_ids = IdList(self)
         self._parent_override = parent_override
-        if not isinstance(self, element) and caller:
+        if not isinstance(self, Element) and caller:
             self._m_id = caller._m_id
             self._h = caller._h
         self._scope_stack = [None]
@@ -37,13 +42,18 @@ class machine_state:
         self._stopped = None
         self._assign_mode = False
         self._loop_limit = 10000
-        self._cur_jac_ast = None
+        self._cur_jac_ast = Ast("none")
+        self.inform_hook()
 
-    def parent(self):
+    def inform_hook(self):
+        if hasattr(self, "_h"):
+            self._h._machine = self
+
+    def parent(self):  # parent here is always a sentinel
         if self._parent_override:
             return self._parent_override
         else:
-            return element.parent(self)
+            return Element.parent(self)
 
     def reset(self):
         self.report = []
@@ -55,7 +65,7 @@ class machine_state:
         self._loop_ctrl = None
         self._stopped = None
 
-    def push_scope(self, scope: jac_scope):
+    def push_scope(self, scope: JacScope):
         self._scope_stack.append(scope)
         self._jac_scope = scope
 
@@ -74,6 +84,52 @@ class machine_state:
         for i in self.yielded_walkers_ids.obj_list():
             i.destroy()
 
+    # Core State Management ##################
+    def load_variable(self, name, assign_mode=None, jac_ast=None):
+        val = self._jac_scope.get_live_var(
+            name, create_mode=self._assign_mode if assign_mode is None else assign_mode
+        )
+        if val is None:
+            self.rt_error(f"Variable not defined - {name}", jac_ast)
+            self.push(JacValue(self))
+        else:
+            self.push(val)
+
+    def perform_assignment(self, dest, src, jac_ast=None):
+        if dest.check_assignable(jac_ast):
+            dest.value = src.value
+            dest.write(jac_ast)
+        self.push(dest)
+
+    def perform_copy_fields(self, dest, src, jac_ast=None):
+        if dest.check_assignable(jac_ast):
+            if not self.rt_check_type(dest.value, [Node, Edge], jac_ast):
+                self.rt_error("Copy fields only applies to nodes and edges", jac_ast)
+                self.push(dest)
+            if dest.value.name != src.value.name:
+                self.rt_error(
+                    f"Node/edge arch {dest.value} don't match {src.value}!", jac_ast
+                )
+                self.push(dest)
+            for i in src.value.context.keys():
+                if i in dest.value.context.keys():
+                    JacValue(
+                        self, ctx=dest.value, name=i, value=src.value.context[i]
+                    ).write(jac_ast)
+        self.push(dest)
+
+    def perform_increment(self, dest, src, op, jac_ast=None):
+        if op == JsCmp.PEQ:
+            dest.value = dest.value + src.value
+        elif op == JsCmp.MEQ:
+            dest.value = dest.value - src.value
+        elif op == JsCmp.TEQ:
+            dest.value = dest.value * src.value
+        elif op == JsCmp.DEQ:
+            dest.value = dest.value / src.value
+        dest.write(jac_ast)
+        self.push(dest)
+
     # Helper Functions ##################
 
     def inherit_runtime_state(self, mach):
@@ -85,18 +141,11 @@ class machine_state:
             self.report_custom = mach.report_custom
         self.runtime_errors += mach.runtime_errors
 
-    def get_arch_for(self, obj):
-        """Returns the architype that matches object"""
-        ret = self.parent().arch_ids.get_obj_by_name(name=obj.name, kind=obj.kind)
-        if ret is None:
-            self.rt_error(f"Unable to find architype for {obj.name}, {obj.kind}")
-        return ret
-
     def obj_set_to_jac_set(self, obj_set):
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set()
+        ret = JacSet()
         for i in obj_set:
             ret.add_obj(i)
         return ret
@@ -105,7 +154,7 @@ class machine_state:
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set()
+        ret = JacSet()
         for i in edge_set.obj_list():
             ret.add_obj(i.opposing_node(self.current_node))
         return ret
@@ -114,7 +163,7 @@ class machine_state:
         """
         Returns nodes jac_set from edge jac_set from current node
         """
-        ret = jac_set()
+        ret = JacSet()
         for i in edge_set.obj_list():
             for j in node_set.obj_list():
                 if i.jid in j.edge_ids:
@@ -128,9 +177,10 @@ class machine_state:
         and returns new name used as hook by action class
         """
         if func_name not in live_actions.keys():
+            self.rt_warn(f"Attempting auto-load for {func_name}", jac_ast)
             load_preconfig_actions(self._h)
         if func_name not in live_actions.keys():
-            self.rt_warn(f"Builtin action not loaded - {func_name}", jac_ast)
+            self.rt_warn(f"Builtin action unable to be loaded - {func_name}", jac_ast)
             return False
         return True
 
@@ -143,11 +193,11 @@ class machine_state:
     def jac_exception(self, e: Exception, jac_ast):
         return {
             "type": type(e).__name__,
-            "mod": jac_ast.mod_name,
+            "mod": jac_ast.loc[2],
             "msg": str(e),
             "args": e.args,
-            "line": jac_ast.line,
-            "col": jac_ast.column,
+            "line": jac_ast.loc[0],
+            "col": jac_ast.loc[1],
             "name": self.name if hasattr(self, "name") else "blank",
             "rule": jac_ast.name,
         }
@@ -159,8 +209,8 @@ class machine_state:
         name = self.name if hasattr(self, "name") else "blank"
         if jac_ast:
             msg = (
-                f"{jac_ast.mod_name}:{name} - line {jac_ast.line}, "
-                + f"col {jac_ast.column} - rule {jac_ast.name} - {msg}"
+                f"{jac_ast.loc[2]}:{name} - line {jac_ast.loc[0]}, "
+                + f"col {jac_ast.loc[1]} - rule {jac_ast.name} - {msg}"
             )
         else:
             msg = f"{msg}"

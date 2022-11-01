@@ -1,14 +1,14 @@
 """
 Super (master) api as a mixin
 """
-from jaseci.api.interface import interface
-from jaseci.element.master import master
+from jaseci.api.interface import Interface
+from jaseci.element.master import Master
 
 
-class super_api:
+class SuperApi:
     """Super APIs for creating nicknames for UUIDs and other long strings"""
 
-    @interface.admin_api(cli_args=["name"])
+    @Interface.admin_api(cli_args=["name"])
     def master_createsuper(
         self,
         name: str,
@@ -35,23 +35,23 @@ class super_api:
         ret["success"] = True
         return ret
 
-    @interface.admin_api()
-    def master_allusers(self, num: int = 0, start_idx: int = 0):
+    @Interface.admin_api()
+    def master_allusers(self, limit: int = 0, offset: int = 0, asc: bool = False):
         """
-        Returns info on a set of users, num specifies the number of users to
-        return and start idx specfies where to start
+        Returns info on a set of users, limit specifies the number of users to
+        return and offset specfies where to start
         NOTE: Abstract interface to be overridden
         """
 
-    @interface.admin_api(cli_args=["mast"])
-    def master_become(self, mast: master):
+    @Interface.admin_api(cli_args=["mast"])
+    def master_become(self, mast: Master):
         """
         Sets the default master master should use
         """
         self.caller = mast.jid
         return {"response": f"You are now {mast.name}"}
 
-    @interface.admin_api(cli_args=["mast"])
+    @Interface.admin_api(cli_args=["mast"])
     def master_unbecome(self):
         """
         Unsets the default master master should use

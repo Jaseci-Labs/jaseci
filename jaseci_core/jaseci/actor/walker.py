@@ -6,43 +6,35 @@ TODO: Perhaps  I should have walker state (context ids) in mem only with
 default hooks to save db read/writes
 """
 
-from jaseci.utils.utils import logger
-from jaseci.element.element import element
-from jaseci.element.obj_mixins import anchored
-from jaseci.utils.id_list import id_list
-from jaseci.jac.interpreter.walker_interp import walker_interp
-from jaseci.jac.ir.jac_code import jac_code
+from jaseci.utils.utils import logger, perf_test_start, perf_test_stop
+from jaseci.element.element import Element
+from jaseci.element.obj_mixins import Anchored
+from jaseci.utils.id_list import IdList
+from jaseci.jac.interpreter.walker_interp import WalkerInterp
 import uuid
 import hashlib
-import io
-import pstats
-import cProfile
 
 
-class walker(element, jac_code, walker_interp, anchored):
+class Walker(Element, WalkerInterp, Anchored):
     """Walker class for Jaseci"""
 
-    valid_async = [True, "true"]
-
-    def __init__(self, code_ir=None, *args, **kwargs):
+    def __init__(self, is_async=False, **kwargs):
         self.yielded = False
-        self.activity_action_ids = id_list(self)
         self.namespaces = []
-        self.context = {}
         self.profile = {}
         # Process state
         self.current_node_id = None
-        self.next_node_ids = id_list(self)
-        self.ignore_node_ids = id_list(self)
-        self.destroy_node_ids = id_list(self)
+        self.next_node_ids = IdList(self)
+        self.ignore_node_ids = IdList(self)
+        self.destroy_node_ids = IdList(self)
         self.current_step = 0
         self.in_entry_exit = False
         self.step_limit = 10000
-        self._async = False
-        anchored.__init__(self)
-        element.__init__(self, *args, **kwargs)
-        jac_code.__init__(self, code_ir=code_ir)
-        walker_interp.__init__(self)
+        self.is_async = is_async
+        self._to_await = False
+        Element.__init__(self, **kwargs)
+        WalkerInterp.__init__(self)
+        Anchored.__init__(self)
 
     @property
     def current_node(self):
@@ -68,6 +60,9 @@ class walker(element, jac_code, walker_interp, anchored):
             ret[i] = hashlib.md5((self._m_id + i).encode()).hexdigest()
         return ret
 
+    def for_queue(self):
+        return self.is_async and not (self._to_await)
+
     def step(self):
         """
         Take single step through program
@@ -86,7 +81,7 @@ class walker(element, jac_code, walker_interp, anchored):
             return False
 
         self.current_node = self.next_node_ids.pop_first_obj()
-        self.run_walker(jac_ast=self._jac_ast)
+        self.run_walker(jac_ast=self.get_architype().get_jac_ast())
         if self.current_step < 200:
             self.log_history("visited", self.current_node.id)
         self.current_step += 1
@@ -130,15 +125,30 @@ class walker(element, jac_code, walker_interp, anchored):
 
     def run(self, start_node=None, prime_ctx=None, request_ctx=None, profiling=False):
         """Executes Walker to completion"""
-        if self._h.task_hook_ready() and self._async in walker.valid_async:
-            task_id = self._h.add_queue(
-                self, start_node, prime_ctx, request_ctx, profiling
+        if self.for_queue() and self._h.task.is_running():
+            start_node = (
+                start_node
+                if not (start_node is None)
+                else (
+                    self.next_node_ids.pop_first_obj() if self.next_node_ids else None
+                )
             )
-            return {"task_id": task_id}
+
+            self._h.commit_all_cache_sync()
+
+            return {
+                "is_queued": True,
+                "result": self._h.task.add_queue(
+                    self,
+                    start_node,
+                    prime_ctx or self.context,
+                    request_ctx or self.request_context,
+                    profiling,
+                ),
+            }
 
         if profiling:
-            pr = cProfile.Profile()
-            pr.enable()
+            pr = perf_test_start()
 
         if start_node and (not self.yielded or not len(self.next_node_ids)):
             self.prime(start_node, prime_ctx, request_ctx)
@@ -147,7 +157,7 @@ class walker(element, jac_code, walker_interp, anchored):
                 self.context[str(i)] = prime_ctx[i]
 
         report_ret = {"success": True}
-        walker_interp.reset(self)
+        WalkerInterp.reset(self)
         self.yielded = False
 
         try:
@@ -175,18 +185,11 @@ class walker(element, jac_code, walker_interp, anchored):
             report_ret["errors"] = self.runtime_errors
             report_ret["success"] = False
         if profiling:
-            pr.disable()
-            s = io.StringIO()
-            sortby = pstats.SortKey.CUMULATIVE
-            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-            ps.print_stats()
-            s = s.getvalue()
-            s = "ncalls" + s.split("ncalls")[-1]
-            s = "\n".join(
-                [",".join(line.rstrip().split(None, 5)) for line in s.split("\n")]
-            )
-            self.profile["perf"] = s
+            self.profile["perf"] = perf_test_stop(pr)
             report_ret["profile"] = self.profile
+
+        if self.for_queue():
+            return {"is_queued": False, "result": report_ret}
 
         return report_ret
 
@@ -196,7 +199,7 @@ class walker(element, jac_code, walker_interp, anchored):
 
     def log_history(self, name, value):
         """Helper function for logging history of walker's activities"""
-        if isinstance(value, element):
+        if isinstance(value, Element):
             value = {"type": value.j_type, "id": value.id.urn}
         if isinstance(value, uuid.UUID):
             value = value.urn
@@ -214,18 +217,15 @@ class walker(element, jac_code, walker_interp, anchored):
         self.ignore_node_ids.remove_all()
         self.destroy_node_ids.remove_all()
         self.current_node = None
-        self.activity_action_ids.destroy_all()
         self.context = {}
-        walker_interp.reset(self)
+        WalkerInterp.reset(self)
 
     def destroy(self):
         """
         Destroys self from memory and persistent storage
         """
-        if not self._h.task_hook_ready() or self._async not in walker.valid_async:
-            for i in self.activity_action_ids.obj_list():
-                i.destroy()
-            walker_interp.destroy(self)
+        if not self.for_queue() or not self._h.task.is_running():
+            WalkerInterp.destroy(self)
             super().destroy()
 
     def register_yield_or_destroy(self, yield_ids):
@@ -236,3 +236,9 @@ class walker(element, jac_code, walker_interp, anchored):
             self.destroy()
         else:
             yield_ids.add_obj(self, silent=True)
+
+    def save(self):
+        """
+        Write self through hook to persistent storage
+        """
+        self._h.save_obj(caller_id=self._m_id, item=self, all_caches=self.is_async)
