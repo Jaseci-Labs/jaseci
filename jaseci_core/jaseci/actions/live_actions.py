@@ -167,6 +167,7 @@ def get_global_actions(hook):
             or i.startswith("request.")
             or i.startswith("date.")
             or i.startswith("jaseci.")
+            or i.startswith("internal.")
         ):
             global_action_list.append(
                 Action(
