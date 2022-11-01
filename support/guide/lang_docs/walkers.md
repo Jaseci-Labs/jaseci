@@ -62,7 +62,7 @@ strict digraph root {
     "n2" -> "n3" [ label="e2:family" ] 
 }
 ```
-As you can see, this code has exicuted the init walker. Now let's take the definition of nodes out of the `init` walker. So here we are creating another walker to define the example nodes; 
+As you can see, this code has executed the init walker. Now let's take the definition of nodes out of the `init` walker. So here we are creating another walker to define the example nodes; 
 
 ```
 node person;
@@ -81,4 +81,12 @@ walker init{
         spawn here walker::build_example;
     }
 }
+```
+
+You can see we get output similar to the previous code, here we are defining the nodes in the `build_example` walker and calling the `build_example` walker inside the `init` walker. Also we can directly run the `build example` walker using `jac dot main.jac -walk build_example`. Here the `-walk` argument tells the jsctl which walker should execute.
+
+Look at the following example;
+
+```
+
 ```
