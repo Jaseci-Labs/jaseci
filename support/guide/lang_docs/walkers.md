@@ -34,20 +34,22 @@ In addition to the introduction of the `take` command to support new types of co
 
 When we run a jac code, by default it's exucuting the `init` walker. Basically the `walker init` works as the main method in other programming language. save following code as `main.jac` and run the code in `jsctl` shell with `jac run main.jac`
 
+**Example 1:**
 ```
 walker init{
-    std.out("This is from init walker");
+    std.out("This is from init walker \n");
 }
 ```
 
-Output:
+**Output 1:**
 
 ```
     jaseci > jac run main.jac
     This is from init walker
 ```
-As you can see, this code has executed the init walker. Now let's create another walker;
+As you can see, this code has executed the `init` walker. Now let's create another walker;
 
+**Output 2:**
 ```
 walker second_walker{
     std.out("This is from second walker \n");
@@ -62,9 +64,9 @@ walker init{
 
 ```
 
-Output:
+**Output 2:**
 ```
-    jaseci > jac run walker_2.jac
+    jaseci > jac run main.jac
     This is from init walker
     This is from second walker
 ```
@@ -73,18 +75,21 @@ The statements from `second walker` and `init` are printed in the jac shell, and
 
 ## Walkers Navigating Graphs Examples
 
-As mentioned earlier the walkers can traverse(walk) through the nodes of the graph in breadfast search or depth first search approuches.
+As mentioned earlier the walkers can traverse(walk) through the nodes of the graph in breadth first search (BFS) or depth first search(DFS) approaches.
 
 > **Note**
 >
 > BFS is a traversal approach in which begins from root node and walk through all nodes on the same level before moving on to the next level. DFS is also a traversal approach in which the traverse begins at the root node and proceeds through the nodes as far as possible until we reach the node with no unvisited nearby nodes.
 
-Look at the following example;
+We are creating the following graph to demostrate traversing of walkers in comming sections;
 
 ![Example Graph - Navigating](images/traverse_graph_example.PNG)
 
+Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. See how that works in following example; 
+
+**Example 3:**
 ```
-node plain: has name;
+node plain: has number;
 
 ## defining the graph
 graph example {
@@ -92,7 +97,7 @@ graph example {
     spawn {
         n=[];
         for i=0 to i<7 by i+=1 {
-            n.l::append(spawn node::plain(name=i+1));
+            n.l::append(spawn node::plain(number=i+1));
         }
 
         n[0] --> n[1] --> n[2];
@@ -110,19 +115,30 @@ walker init {
         take-->;
         }
     plain {
-        std.out(here.name);
+        std.out(here.number);
         take-->;
     }
-}
-
+}  
 ```
-`take` command lets the walker travers through graph nodes. By default, a walker travers with `take` command using the breadth-first search approach. But the `take` command is flexible hence you can indicate whether the take command should use a depth-first or a breadth-first traversal to navigate.
 
-Look at the following example;
+**Output 3:**
+```
+jaseci > jac run main.jac
+1
+2
+5
+3
+4
+6
+7
+```
+`take` command lets the walker travers through graph nodes. You may notice by default, a walker travers with `take` command using the breadth first search approach. But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example;
 
+**Example 4:**
 ```
 node plain: has name;
 
+## defining the graph
 graph example {
     has anchor head;
     spawn {
@@ -130,26 +146,25 @@ graph example {
         for i=0 to i<7 by i+=1 {
         n.l::append(spawn node::plain(name=i+1));
         }
-
         n[0] --> n[1] --> n[2];
         n[1] --> n[3];
         n[0] --> n[4] --> n[5];
         n[4] --> n[6];
-
         head=n[0];
         }
     }
 
+## walker for breadth first search
 walker walk_with_breadth {
     has anchor node_order = [];
     node_order.l::append(here.name);
-    take:bfs -->; #take:b can also be used
+    take:bfs -->; #can be replaced with take:b -->
     }
 
 walker walk_with_depth {
     has anchor node_order = [];
     node_order.l::append(here.name);
-    take:dfs -->; #take:d can also be used
+    take:dfs -->; #can be replaced with take:d -->
     }
 
 walker init {
@@ -160,7 +175,7 @@ walker init {
     }
 ```
 
-Output:
+**Output 4:**
 
 ```
 jaseci > jac run main.jac
@@ -168,69 +183,95 @@ Walk with Breadth: [1, 2, 5, 3, 4, 6, 7]
 Walk with Depth: [1, 2, 3, 4, 5, 6, 7]
 ```
 
-## Skipping
+You may see in the above example `take:bfs-->` and `take:dfs --` commands instruct walker to traverse breadth first search or depth first search accordingly. Additionally, to define breadth first or depth first traversals, can use the short hand of `take:b -->` or `take:d —>`.
+
+## Skipping and Disengaging
+
+Jac offers couple of more useful control statements that are pretty convenient, `skip` and `disengage`, with walker traversing graphs with `take` commands.
+
+### Skipping
 
 The idea behind the abstraction of `skip` in the context of a walkers code block is that it tells a walker to halt and abandon any unfinished work on the current node in favor of moving to the next node (or complete computation if no nodes are queued up).
 
-Node/edge abilities also support the usage of the skip directive. The skip merely decides not to use the remaining steps of that `ability` itself in this context.
+**Note**
+>
+> Node/edge abilities also support the usage of the skip directive. The skip merely decides not to use the remaining steps of that `ability` itself in this context.
 
-Lets look at an example of a walker using the skip command.
+
+Lets change the `init` walker of **Example 3** to demostrate how the `skip` command works;
+
+**Example 5:**
 
 ```
-global node_count=0;
-node simple: has id;
+.
+.
+.
 
+#init walker traversing
 walker init {
-    has output = [];
-    with entry {
-        t = here;
-        for i=0 to i<10 by i+=1 {
-            t = spawn t --> node::simple(id=global.node_count);
-        global.node_count+=1;
+    root {
+        start = spawn here --> graph::example;
+        take-->;
         }
-        }
-    take -->;
-    simple {
-        if(here.id % 2==0): skip;
-            output.l::append(here.id);
+    plain {
+        ## Skipping the nodes with even numbers
+        if(here.number % 2==0): skip;
+        std.out(here.number);
+        take-->;
     }
-    output.l::append(here.info['name']);
-    with exit: std.out(output);
-    }
+}
 ```
-In the above code; skips the code execution when the node id is an even number.
 
-## Disengaging 
+**Output 5:**
+
+```
+jaseci > jac run  main.jac
+1
+5
+7
+```
+Now it is evident when the node number is an even number, the code in the example above skips the code execution for the particular node. The line `if(here.number %2 ==): skip;` says walker to skips nodes with an even number.
+
+The skip command "breaks" out of a walker or ability rather than a loop, but otherwise has semantics that are nearly comparable to the standard `break` command in other programming languages.
+
+### Disengaging 
 
 The command `disengage` tells the walker to stop all execution and "disengage" from the graph (i.e., stop visiting nodes anymore from here) and can only be used inside the code body of a walker.
 
-Look at the example below;
+To demonstrate how the `disengage` command functions, let's once more utilize the `init` walker from example 3;
+
+**Example 6:**
 
 ```
-global node_count=0;
-node simple: has id;
+.
+.
+.
 
+#init walker traversing
 walker init {
-    has output = [];
-        with entry {
-        t = here;
-        for i=0 to i<10 by i+=1 {
-            t = spawn t --> node::simple(id=global.node_count);
-        global.node_count+=1;
+    root {
+        start = spawn here --> graph::example;
+        take-->;
         }
-        }
-    take -->;
-    simple {
-    if(here.id % 2==0): skip;
-        if(here.id == 7): disengage;
-            output.l::append(here.id);
-        }
-        output.l::append(here.info['name']);
-    with exit: std.out(output);
+    plain {
+        ## Stoping execution from the node number equals to 5
+        if(here.number==5): disengage;
+        std.out(here.number);
+        take-->;
+    }
 }
-
 ```
 
+**Output 6**
 
+```
+jaseci > jac run main.jac
+1
+2
+```
+The `init` walker in this example is nearly identical to the code in example 5, but we added the condition `if(here.numer == 5): disengage;`. This caused the walker to halt execution and finish its walk, thus truncating the output array.
 
+**Note**
+>
+> In addition to a standard disengage, Jac additionally supports a disengage-report shorthand of the type disengage report "I'm disengaging";. Before the disconnect really takes place, this directive produces a final report.
 
