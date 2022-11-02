@@ -12,7 +12,9 @@ from .train import train
 
 
 HEAD_NOT_FOUND = "No Active head found. Please create a head first using create_head."
-HEAD_LIST_NOT_FOUND = "No Active head list found. Please create a head list first using create_head_list."
+HEAD_LIST_NOT_FOUND = (
+    "No Active head list found. Please create a head list first using create_head_list."
+)
 
 
 warnings.filterwarnings("ignore")
@@ -32,9 +34,9 @@ setup()
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
 def create_head_list(config_file: str, overwrite: bool = False) -> None:
-    '''
+    """
     Create a holder for heads
-    '''
+    """
     print("Creating head list")
     try:
         global il, config
@@ -49,11 +51,13 @@ def create_head_list(config_file: str, overwrite: bool = False) -> None:
 
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
-def create_head(config_file: str = None, uuid: str = None, overwrite: bool = False) -> None:
-    '''
+def create_head(
+    config_file: str = None, uuid: str = None, overwrite: bool = False
+) -> None:
+    """
     Create a personalized head. This will create a new inference engine.
     @param new_config: new config to be used for the head
-    '''
+    """
     try:
         global il, config
         if config_file:
@@ -72,10 +76,10 @@ def create_head(config_file: str = None, uuid: str = None, overwrite: bool = Fal
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
 def predict(uuid: str, data: Any) -> Any:
-    '''
+    """
     Predict using the current active model.
     @param data: data to be used for prediction
-    '''
+    """
     try:
         global il
         if il:
@@ -92,21 +96,16 @@ def predict(uuid: str, data: Any) -> Any:
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
 def train_head(config_file: str = None, uuid: str = None) -> None:
-    '''
+    """
     Train the current active model.
     @param new_config: new config yaml to be used for training
-    '''
+    """
     try:
         global config
         new_config = read_yaml(config_file)
         config = {**config, **new_config}
         write_yaml(config, config_file)
-        train({
-            "config": config_file,
-            "device": None,
-            "resume": None,
-            "uuid": uuid
-        })
+        train({"config": config_file, "device": None, "resume": None, "uuid": uuid})
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
@@ -140,9 +139,11 @@ def check_head(uuid: str) -> bool:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
+
 ### End of PersonalizedHead Actions ###
 
 
 if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
+
     launch_server(port=8000)

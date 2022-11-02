@@ -15,7 +15,7 @@ value = net.max(jac_set)
 ```jac
 # returns object (node,edges) with the lowest anchor value
 node year {
-  
+
     has_anchor year_num;
 }
 
@@ -24,7 +24,7 @@ value = net.min(jac_set)
 ```
 ### Get Node Root
 ```jac
-# returns root node of a given graph 
+# returns root node of a given graph
 node year {
     has_anchor year_num;
 }

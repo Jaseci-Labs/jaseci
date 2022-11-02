@@ -174,7 +174,7 @@ For creating a dashboard to monitor the cluster:
 
 Click '+' button on left panel and select ‘Import’.
 
-Copy paste the json file in grafana-dashboards folder. 
+Copy paste the json file in grafana-dashboards folder.
 
 Click ‘Load’.
 
@@ -184,6 +184,6 @@ Click ‘Import’.
 
 This will show monitoring dashboard for all cluster nodes
 
-Generally, this dashboard contains a set of necessary panels. It monitors CPU and memory utilization for the nodes and for each pod. 
+Generally, this dashboard contains a set of necessary panels. It monitors CPU and memory utilization for the nodes and for each pod.
 
 ##### Credits https://www.eksworkshop.com/

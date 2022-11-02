@@ -340,7 +340,7 @@ jac run main.jac -ctx '{"input_image": "test.jpg"}'
 
 ## Todo
 - [ ] Need to work on the Concurrency, Currently cannot use the service while training is going on using a single script. Workaround need 2 JAC Scripts running for separate tasks. And if we are running the service with multiple workers, the personalized heads won’t be shared among all the workers.
-- [ ] Lots of Boilerplate coding (need to simplify) 
+- [ ] Lots of Boilerplate coding (need to simplify)
 - [ ] Need to add the ability to change specific attributes without writing the whole Trainer configuration
 - [ ] Logging should be changed to a standard format of jaseci.
 - [ ] Current way of connecting 2 models is through loading 2 modules and combining them in the JAC code. But this can be made into a combined module (Compositor is Proposed), where you can pass a model config to the compositor to create the Model Inference & Training Pipeline.

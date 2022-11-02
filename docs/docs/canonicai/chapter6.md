@@ -21,7 +21,7 @@ login [link here]
 
 Terminal View
 ```
-> Username: 
+> Username:
 test
 > Password:
 password
@@ -97,11 +97,11 @@ PAYLOAD: {
 }
 
 RESPONSE: {
-"expiry": null, 
+"expiry": null,
 "token": "2b4824cd3136616aa5380580578b2f5d1fccd3cad669f78029911e239300d3c0"
 }
 ```
-We will send a POST request to /user/token and get a token response now you can now make API calls to your JAC program once you copy token returned. Add it to the authorization header with the word "token" before sending any request. 
+We will send a POST request to /user/token and get a token response now you can now make API calls to your JAC program once you copy token returned. Add it to the authorization header with the word "token" before sending any request.
 ```
 REQUEST [POST]: http://localhost:8000/js/sentinel_register
 
@@ -154,7 +154,7 @@ PAYLOAD: {
 ```
 For the payload sent to the /js/walker_run, the name (name of walker to be called), ctx (information sent to the walker), snt (sentinel ID  of the program ), detailed (returns additional information for the walker), nd (node walker will be set to, if not included will go to the root node). This is how we interact with jac application through restful API endpoints. In this example we ran the talk walker.
 
-## Bringing in the AI models for the dialogue 
+## Bringing in the AI models for the dialogue
 In this section, we will explain how we added the AI model into this application. We have added two AI models the bi-encoder and tfm ner model. Before we explain the code implementation for both models, we will explain the top inheritance AI model they inherit.
 
 **Explanation of the ai_model node**
@@ -210,7 +210,7 @@ walker infer {
 This walker allows you to pass an input (user query) to the parameter and receive the necessary information for that ai model based on the input.
 
 **Explanation of the bi_enc node**
-In the last section we explained the ai_model node and in this section we integrated the ai_model node into the bi-encoder ai model which is called bi_enc. The explanation of each code input is as follows: 
+In the last section we explained the ai_model node and in this section we integrated the ai_model node into the bi-encoder ai model which is called bi_enc. The explanation of each code input is as follows:
 
 ```
 can bi_enc.train, bi_enc.infer, bi_enc.save_model;
@@ -369,7 +369,7 @@ can classify_intent {
             # Sort result
             max_score = 0;
             max_intent = "";
-        
+
             for i=0 to i < pred["candidate"].length by i+=1 {
                 if (pred["score"][i] > max_score){
                     max_intent = pred["candidate"][i];
@@ -377,7 +377,7 @@ can classify_intent {
                 }
             }
         }
-        
+
         visitor.predicted_intent = max_intent;
     }
 ```

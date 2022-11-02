@@ -28,8 +28,7 @@ class PersonalizedHeadPreProcessor:
 
 class CustomProcessor:
     def __init__(self, python_file, module_name, **kwargs):
-        spec = importlib.util.spec_from_file_location(
-            "module.name", python_file)
+        spec = importlib.util.spec_from_file_location("module.name", python_file)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         self.processor = getattr(module, module_name)(**kwargs)

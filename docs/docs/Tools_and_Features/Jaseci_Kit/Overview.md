@@ -38,7 +38,7 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 | --------- | ------------- | ------------------------------ | ------ | ------------------------------------------ | ------------------------------------------------ |
 | `pdf_ext` | PDF Extractor | [Link](#pdf-extractor-pdf_ext) | Ready  | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
 
-## Install Jaseci Kit 
+## Install Jaseci Kit
 
 Run :
 
@@ -54,7 +54,7 @@ jsctl
 Jaseci default libraries can be seen by running :
 
 ```
-actions list 
+actions list
 ```
 
 We can load additional models by running <strong>actions load module</strong> in the terminal followed by the name of the model we want to use.

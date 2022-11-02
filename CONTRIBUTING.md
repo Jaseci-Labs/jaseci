@@ -155,16 +155,16 @@ flake8 --exclude=settings.py,*migrations*,jac_parse --max-line-length=88 --exten
 
 ## How to Update the Official Documentation
 
-The source of the Jaseci Official Documentation comes from the collection of `README.md` files placed in specific folders throughout the codebase. Developers and Maintainers must ensure that their contributions are properly documented according to the following procedures outlined in this section.  
+The source of the Jaseci Official Documentation comes from the collection of `README.md` files placed in specific folders throughout the codebase. Developers and Maintainers must ensure that their contributions are properly documented according to the following procedures outlined in this section.
 
 ### Adding a new module or library
 
-Ensure that you follow the prevailing directory sturcture convention when adding a new module or library to Jaseci. 
+Ensure that you follow the prevailing directory sturcture convention when adding a new module or library to Jaseci.
 
-* All source files belonging to your module or library must be contained within a folder bearing the non-whitespace, lowercase name of your module or library. 
-* You must author a `README.md` document to describe the purpose of your module or library, any features, configurations or uses as well as code excerpts on how to implement your module's functionaliy. 
+* All source files belonging to your module or library must be contained within a folder bearing the non-whitespace, lowercase name of your module or library.
+* You must author a `README.md` document to describe the purpose of your module or library, any features, configurations or uses as well as code excerpts on how to implement your module's functionaliy.
 * The `README.md` must be included in the root folder of the module or library.
-* Ensure you update the related `README.md` in the subsection (if applicable) which contains your module, e.g. `jaseci_ai_kit/README.md` as well as the main `README.md` in the root directory of the codebase to include references to your new module or library. 
+* Ensure you update the related `README.md` in the subsection (if applicable) which contains your module, e.g. `jaseci_ai_kit/README.md` as well as the main `README.md` in the root directory of the codebase to include references to your new module or library.
 
 
 ### Adding a new code lab example
