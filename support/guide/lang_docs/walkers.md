@@ -81,7 +81,7 @@ As mentioned earlier the walkers can traverse(walk) through the nodes of the gra
 
 Look at the following example;
 
-![alt text](support\guide\lang_docs\images\traverse_graph_example.PNG "Example Graph - Navigating")
+![Example Graph - Navigating](support\guide\lang_docs\images\traverse_graph_example.PNG)
 
 ```
 node plain: has name;
