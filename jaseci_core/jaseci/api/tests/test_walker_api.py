@@ -292,7 +292,18 @@ class WalkerApiTest(CoreTest):
             self.mast,
             ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
         )
-        ret = []
+        self.call(self.mast, ["walker_run", {"name": "error_walker_action"}])
+        ret = self.call(self.mast, ["walker_run", {"name": "error_walker_action"}])
+        self.assertIn('cannot execute the statement "disengage ; "', ret["errors"][0])
+
+    def test_walker_yield_testing(self):
+        self.call(
+            self.mast,
+            [
+                "sentinel_register",
+                {"code": self.load_jac("walker_yield_test.jac"), "auto_run": ""},
+            ],
+        )
         self.call(self.mast, ["walker_run", {"name": "error_walker_action"}])
         ret = self.call(self.mast, ["walker_run", {"name": "error_walker_action"}])
         self.assertIn('cannot execute the statement "disengage ; "', ret["errors"][0])
