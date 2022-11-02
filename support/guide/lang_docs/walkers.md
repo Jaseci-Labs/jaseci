@@ -81,32 +81,37 @@ As mentioned earlier the walkers can traverse(walk) through the nodes of the gra
 
 Look at the following example;
 
+![alt text](support\guide\lang_docs\images\traverse_graph_example.PNG "Example Graph - Navigating")
+
 ```
-node person: has name;
-edge married: has year;
-edge family: has kind;
-edge friend;
+node plain: has name;
 
-walker get_names {
-    std.out(here.name);
-    take -->;
-}
+## defining the graph
+graph example {
+    has anchor head;
+    spawn {
+        n=[];
+        for i=0 to i<7 by i+=1 {
+            n.l::append(spawn node::plain(name=i+1));
+        }
 
-walker build_example{
-    node1 = spawn here -[friend]-> node::person(name="Joe");
-    node2 = spawn node1 -[married]-> node::person(name="Susan");
-    spawn node2 -[family]-> node::person(name="Matt");
-}
-
-walker init{
-    root{
-        spawn here walker::build_example;
-        take -->;
+        n[0] --> n[1] --> n[2];
+        n[1] --> n[3];
+        n[0] --> n[4] --> n[5];
+        n[4] --> n[6];
+        head=n[0];
+        }
     }
 
-    person {
-        spawn here walker::get_names;
-        disengage;
+#init walker traversing
+walker init {
+    root {
+        start = spawn here --> graph::example;
+        take-->;
+        }
+    plain {
+        std.out(here.name);
+        take-->;
     }
 }
 
