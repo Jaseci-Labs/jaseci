@@ -15,7 +15,6 @@ class BiEncTest(CoreTest):
     @pytest.mark.order(1)
     @jac_testcase("bi_enc.jac", "test_bi_enc_cos_sim")
     def test_cos_sim_function(self, ret):
-        print(ret)
         self.assertEqual(round(ret["report"][0], 2), 0.98)
 
     @pytest.mark.order(2)
@@ -69,7 +68,6 @@ class BiEncTest(CoreTest):
     @pytest.mark.order(11)
     @jac_testcase("bi_enc.jac", "test_bi_enc_set_train_config")
     def test_biencoder_set_train_config(self, ret):
-        print(ret)
         self.assertEqual(ret["success"], True)
 
     @classmethod
