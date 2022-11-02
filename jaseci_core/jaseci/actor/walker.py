@@ -6,16 +6,13 @@ TODO: Perhaps  I should have walker state (context ids) in mem only with
 default hooks to save db read/writes
 """
 
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import logger, perf_test_start, perf_test_stop
 from jaseci.element.element import Element
 from jaseci.element.obj_mixins import Anchored
 from jaseci.utils.id_list import IdList
 from jaseci.jac.interpreter.walker_interp import WalkerInterp
 import uuid
 import hashlib
-import io
-import pstats
-import cProfile
 
 
 class Walker(Element, WalkerInterp, Anchored):
@@ -151,8 +148,7 @@ class Walker(Element, WalkerInterp, Anchored):
             }
 
         if profiling:
-            pr = cProfile.Profile()
-            pr.enable()
+            pr = perf_test_start()
 
         if start_node and (not self.yielded or not len(self.next_node_ids)):
             self.prime(start_node, prime_ctx, request_ctx)
@@ -189,17 +185,7 @@ class Walker(Element, WalkerInterp, Anchored):
             report_ret["errors"] = self.runtime_errors
             report_ret["success"] = False
         if profiling:
-            pr.disable()
-            s = io.StringIO()
-            sortby = pstats.SortKey.CUMULATIVE
-            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-            ps.print_stats()
-            s = s.getvalue()
-            s = "ncalls" + s.split("ncalls")[-1]
-            s = "\n".join(
-                [",".join(line.rstrip().split(None, 5)) for line in s.split("\n")]
-            )
-            self.profile["perf"] = s
+            self.profile["perf"] = perf_test_stop(pr)
             report_ret["profile"] = self.profile
 
         if self.for_queue():

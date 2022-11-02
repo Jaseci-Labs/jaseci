@@ -299,6 +299,14 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
+    def test_jsctl_jac_test_single(self):
+        r = self.call_split(
+            "jac test jaseci/jsctl/tests/teststest.jac -single the_second"
+        )
+        self.assertTrue(r[0].startswith('Testing "a second test"'))
+        self.assertTrue(r[2].startswith('  "tests": 1'))
+        self.assertTrue(r[5].startswith('  "success": true'))
+
     def test_jsctl_jac_test_jir(self):
         r = self.call_split("jac test jaseci/jsctl/tests/teststest.jir")
         self.assertTrue(r[0].startswith('Testing "assert should be'))
