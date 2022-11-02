@@ -5,11 +5,24 @@ Using the Personalized Head module, you can create a custom model head which you
 You can use your own custom models and datasets to create a personalized head with just using a configuration
 file and a python file.
 
-## **1. Using the 'Personalized Head' as a Transformer Head**
+![Personalized Head Architecture](assets/architecture.png "Personalized Head Architecture")
+
+**PH Actions:**
+![PH Jaseci Actions](assets/ph_actions.png "PH Jaseci Actions")
+
+**How Inferecing Works:**
+![How Inferecing Works](assets/inferencing.png "How Inferecing Works")
+
+**Recommended way of Using PH Head in your App:**
+![Recommended Usage of PH](assets/recommended_usage.png "Recommended Usage of PH")
+
+## **How to Use**
+
+### **1. Using the 'Personalized Head' as a Transformer Head**
 
 Default Model for the Personalized Head is a Transformer Head. You can inference the transformer head with just using a single configuration file. For training the model, you need to create a python file which contains the torch.utils.data.Dataset inherited class. But in the following example we will use the inbuilt SnipsDataloader class.
 
-### **1.1. Creating a Configuration File**
+#### **1.1. Creating a Configuration File**
 ```yaml
 # PATH: ./config.yaml
 
@@ -325,3 +338,10 @@ actions load module jaseci_kit.ph
 jac run main.jac -ctx '{"input_image": "test.jpg"}'
 ```
 
+## Todo
+- [ ] Need to work on the Concurrency, Currently cannot use the service while training is going on using a single script. Workaround need 2 JAC Scripts running for separate tasks. And if we are running the service with multiple workers, the personalized heads won’t be shared among all the workers.
+- [ ] Lots of Boilerplate coding (need to simplify) 
+- [ ] Need to add the ability to change specific attributes without writing the whole Trainer configuration
+- [ ] Logging should be changed to a standard format of jaseci.
+- [ ] Current way of connecting 2 models is through loading 2 modules and combining them in the JAC code. But this can be made into a combined module (Compositor is Proposed), where you can pass a model config to the compositor to create the Model Inference & Training Pipeline.
+- [ ] Dynamic device selection for each personalized head (for multi GPU usage)
