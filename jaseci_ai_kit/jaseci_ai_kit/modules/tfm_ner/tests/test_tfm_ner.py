@@ -33,7 +33,6 @@ class TfmNerTest(CoreTest):
     @pytest.mark.order(4)
     @jac_testcase("tfm_ner.jac", "test_extract_entity")
     def test_extract_entity(self, ret):
-        print(ret)
         self.assertEqual(ret["success"], True)
 
     @pytest.mark.order(5)
@@ -54,12 +53,10 @@ class TfmNerTest(CoreTest):
     @pytest.mark.order(8)
     @jac_testcase("tfm_ner.jac", "test_tfm_ner_set_model_config")
     def test_tfm_ner_set_model_config(self, ret):
-        print(ret)
         self.assertEqual(ret["success"], True)
 
     @classmethod
     def tearDownClass(cls):
         super(TfmNerTest, cls).tearDownClass()
         ret = unload_module("jaseci_ai_kit.modules.tfm_ner.tfm_ner")
-        print(ret)
         assert ret is True
