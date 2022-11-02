@@ -185,7 +185,7 @@ class WalkerInterp(Interp):
             );
         """
         kid = self.set_cur_ast(jac_ast)
-        if kid[1].name != "SEMI":
+        if len(kid) and kid[1].name != "SEMI":
             expr_func = getattr(self, f"run_{kid[1].name}")
             expr_func(kid[1])
         self.yield_walk()

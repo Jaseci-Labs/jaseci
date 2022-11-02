@@ -1,6 +1,6 @@
 from redis import Redis
 
-from jaseci.svc import CommonService, ServiceState as Ss
+from jaseci.svc import CommonService
 from .config import REDIS_CONFIG
 from .kube import REDIS_KUBE
 
@@ -13,23 +13,12 @@ from .kube import REDIS_KUBE
 class RedisService(CommonService):
 
     ###################################################
-    #                   INITIALIZER                   #
-    ###################################################
-
-    def __init__(self, hook=None):
-        super().__init__(hook)
-
-    ###################################################
     #                     BUILDER                     #
     ###################################################
 
     def run(self, hook=None):
-        if self.enabled:
-            self.app = Redis(**self.config, decode_responses=True)
-            self.app.ping()
-            self.state = Ss.RUNNING
-        else:
-            self.state = Ss.DISABLED
+        self.app = Redis(**self.config, decode_responses=True)
+        self.app.ping()
 
     ###################################################
     #                     COMMONS                     #

@@ -97,6 +97,24 @@ class UserApiPublicTests(TestCaseHelper, TestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         get_user(email=payload["email"]).delete()
 
+    def test_user_exists_js_api(self):
+        """Test creating a user that already exists fails"""
+        payload = {"email": "jscitest_test2@jaseci.com", "password": "testpass"}
+        create_user(**payload)
+        payload2 = {
+            "op": "user_create",
+            "name": "jscitest_test2@jaseci.com",
+            "other_fields": {
+                "password": "password",
+                "is_activated": True,
+            },
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload2["op"]}'), payload2, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        get_user(email=payload["email"]).delete()
+
     def test_password_too_short(self):
         """Test that passwords less than 8 characters fail"""
         payload = {"email": "jscitest_test2@jaseci.com", "password": "pw"}
@@ -272,6 +290,40 @@ class UserApiPrivateTests(TestCaseHelper, TestCase):
                 "is_superuser": self.user.is_superuser,
             },
         )
+
+    def test_user_delete_js_api(self):
+        """Test creating a user that already exists fails"""
+        payload = {"email": "jscitest_test2@jaseci.com", "password": "testpass"}
+        create_user(**payload)
+        payload2 = {
+            "op": "user_delete",
+            "name": "jscitest_test2@jaseci.com",
+        }
+        self.assertTrue(
+            get_user_model().objects.filter(email=payload2["name"]).exists()
+        )
+        res = self.client.post(
+            reverse(f'jac_api:{payload2["op"]}'), payload2, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            get_user_model().objects.filter(email=payload2["name"]).exists()
+        )
+        res = self.client.post(
+            reverse(f'jac_api:{payload2["op"]}'), payload2, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_deleteself_js_api(self):
+        """Test creating a user that already exists fails"""
+        selfname = "jscitest_test@jaseci.com"
+        payload2 = {"op": "user_deleteself"}
+        self.assertTrue(get_user_model().objects.filter(email=selfname).exists())
+        res = self.client.post(
+            reverse(f'jac_api:{payload2["op"]}'), payload2, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertFalse(get_user_model().objects.filter(email=selfname).exists())
 
     def test_post_me_not_allowed(self):
         """Test that POST is not allowed to update user"""

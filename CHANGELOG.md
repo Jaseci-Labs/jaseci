@@ -4,6 +4,9 @@
 
 ### Updates
 
+- Improvement: `jac test` and `sentinel test` apis have new paramerter `single` to specify a single named test to run
+- New Feature: Tests now can be named (see docs)
+- New Feature: Added ability to flush report with standard library through `std.clear_report()`
 - Major Improvement: Multipass compilation framework implemented, new optimization pass introduced, code size down by more than 2x
 - New Lang Feature: introduced type structs with `type::custom_data` style notations
 - New Feature: Introduced `graph node view` API

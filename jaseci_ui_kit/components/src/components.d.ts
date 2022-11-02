@@ -260,7 +260,8 @@ export namespace Components {
         "css": string;
         "events": string;
         "graphId": string;
-        "serverUrl": string;
+        "height": string;
+        "onFocus": 'expand' | 'isolate';
         "token": string;
     }
     interface JscHero {
@@ -417,9 +418,10 @@ export namespace Components {
         "label": string;
         "name": string;
         "operations": string;
-        "options": string;
+        "options": string | { label: string }[];
         "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder": string;
+        "selected": string;
         "type": string;
         "value": string;
     }
@@ -527,6 +529,10 @@ export namespace Components {
 export interface JscAppCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLJscAppElement;
+}
+export interface JscAuthFormCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLJscAuthFormElement;
 }
 export interface JscCheckboxCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -937,6 +943,7 @@ declare namespace LocalJSX {
         "hideNameField"?: string;
         "mode"?: 'signup' | 'login';
         "name"?: string;
+        "onServerUrlChanged"?: (event: JscAuthFormCustomEvent<string>) => void;
         "operations"?: any;
         "redirectURL"?: string;
         "requireActivation"?: 'true' | 'false';
@@ -1156,7 +1163,8 @@ declare namespace LocalJSX {
         "css"?: string;
         "events"?: string;
         "graphId"?: string;
-        "serverUrl"?: string;
+        "height"?: string;
+        "onFocus"?: 'expand' | 'isolate';
         "token"?: string;
     }
     interface JscHero {
@@ -1312,9 +1320,10 @@ declare namespace LocalJSX {
         "name"?: string;
         "onValueChanged"?: (event: JscSelectCustomEvent<string>) => void;
         "operations"?: string;
-        "options"?: string;
+        "options"?: string | { label: string }[];
         "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder"?: string;
+        "selected"?: string;
         "type"?: string;
         "value"?: string;
     }

@@ -4,11 +4,12 @@ from operator import itemgetter
 from jaseci.actions.live_actions import jaseci_action
 
 
+
 def check_nested_list(lst):
     return all(isinstance(el, list) for el in lst)
 
 
-@jaseci_action()
+@jaseci_action(aliases=["cos_sim"])
 def cosine_sim(vec_a: list, vec_b: list):
     """
     Caculate the cosine similarity score of two given vectors
