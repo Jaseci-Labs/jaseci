@@ -32,13 +32,6 @@
 - [Locust Load Test for JASECI](support/locust/README.md)
 - [Setting up Monitoring for JASECI](support/monitoring/README.md)
 
-## Jaseci Core Implementation Guide
-
-- [Services](jaseci_core/jaseci/svc/README.md)
-  - [JsOrc](jaseci_core/jaseci/svc/jsorc/README.md)
-  - [Task](jaseci_core/jaseci/svc/task/README.md)
-  - [Mail](jaseci_core/jaseci/svc/mail/README.md)
-
 ## The JAC Language Guide
 
 - [Key Abstractions and Concepts](support/guide/lang_docs/key_concepts.md)
@@ -101,10 +94,12 @@
 - [Connecting an API](jaseci_ui_kit/components/docs/connecting-an-api.md)
 - [Components](jaseci_ui_kit/README.md)
 
-## Jaseci Core Implementation Guide
+## Jaseci Core Internals
+
 - [Services](jaseci_core/jaseci/svc/README.md)
   - [JsOrc](jaseci_core/jaseci/svc/jsorc/README.md)
   - [Task](jaseci_core/jaseci/svc/task/README.md)
+  - [Mail](jaseci_core/jaseci/svc/mail/README.md)
 
 ## Contributing to Jaseci
 
