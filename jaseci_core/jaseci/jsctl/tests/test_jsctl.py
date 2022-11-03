@@ -437,3 +437,7 @@ class JsctlTestWithSession(TestCaseHelper, TestCase):
         self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
         r = self.call_cast("object get active:sentinel -detailed true")
         self.assertGreater(len(r["arch_ids"]), 3)
+
+    def test_jsctl_script(self):
+        r = self.call("script jaseci/jsctl/tests/jsctl_script")
+        self.assertEqual(r, "[]\n\n[]\n\n{}\n\n")
