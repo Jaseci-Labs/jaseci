@@ -4,7 +4,6 @@ from operator import itemgetter
 from jaseci.actions.live_actions import jaseci_action
 
 
-
 def check_nested_list(lst):
     return all(isinstance(el, list) for el in lst)
 
