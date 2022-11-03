@@ -35,7 +35,7 @@ In addition to the introduction of the `take` command to support new types of co
 When we run a jac code, by default it's exucuting the `init` walker. Basically the `walker init` works as the main method in other programming language. save following code as `main.jac` and run the code in `jsctl` shell with `jac run main.jac`
 
 **Example 1:**
-```
+```jac
 walker init{
     std.out("This is from init walker \n");
 }
@@ -50,7 +50,7 @@ walker init{
 As you can see, this code has executed the `init` walker. Now let's create another walker;
 
 **Output 2:**
-```
+```jac
 walker second_walker{
     std.out("This is from second walker \n");
 }
@@ -88,7 +88,7 @@ We are creating the following graph to demostrate traversing of walkers in commi
 Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. See how that works in following example; 
 
 **Example 3:**
-```
+```jac
 node plain: has number;
 
 ## defining the graph
@@ -135,7 +135,7 @@ jaseci > jac run main.jac
 `take` command lets the walker travers through graph nodes. You may notice by default, a walker travers with `take` command using the breadth first search approach. But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example;
 
 **Example 4:**
-```
+```jac
 node plain: has name;
 
 ## defining the graph
@@ -193,7 +193,7 @@ Jac offers couple of more useful control statements that are pretty convenient, 
 
 The idea behind the abstraction of `skip` in the context of a walkers code block is that it tells a walker to halt and abandon any unfinished work on the current node in favor of moving to the next node (or complete computation if no nodes are queued up).
 
-**Note**
+> **Note**
 >
 > Node/edge abilities also support the usage of the skip directive. The skip merely decides not to use the remaining steps of that `ability` itself in this context.
 
@@ -202,7 +202,7 @@ Lets change the `init` walker of **Example 3** to demostrate how the `skip` comm
 
 **Example 5:**
 
-```
+```jac
 .
 .
 .
@@ -242,7 +242,7 @@ To demonstrate how the `disengage` command functions, let's once more utilize th
 
 **Example 6:**
 
-```
+```jac
 .
 .
 .
@@ -271,7 +271,83 @@ jaseci > jac run main.jac
 ```
 The `init` walker in this example is nearly identical to the code in example 5, but we added the condition `if(here.numer == 5): disengage;`. This caused the walker to halt execution and finish its walk, thus truncating the output array.
 
-**Note**
+>**Note**
 >
 > In addition to a standard disengage, Jac additionally supports a disengage-report shorthand of the type disengage report "I'm disengaging";. Before the disconnect really takes place, this directive produces a final report.
+
+### Technical Semantics of Skip and Disengage
+
+It's important to remember a few key semantic differences between `skip` and `disengage` commands.
+
+    - The 'skip' statement can be used in the code bodies of walkers and abilities.
+    - The 'disengage' statement can only be used in the code body of walkers.
+    - 'skip' and 'disengage' statements have no effect on the block of code that ends with an 'exit'. Any code in a walker's with 'exit' block will start running as soon as the walker exit the graph.
+    - An easy way to think about these semantics is as similar to the behavior of a traditional return (skip) and a return and stop walking (disengage).
+
+
+## Ignoring and Deleting
+
+### Ignoring
+
+**Example 7:**
+```jac
+node person: has name;
+edge family;
+edge friend;
+
+walker build_example {
+    spawn here -[friend]-> node::person(name="Joe");
+    spawn here -[friend]-> node::person(name="Susan");
+    spawn here -[family]-> node::person(name="Matt");
+    spawn here -[family]-> node::person(name="Dan");
+    }
+
+walker init {
+    root {
+        spawn here walker::build_example;
+    ignore -[family]->;
+    ignore -[friend(name=="Dan")]->;
+    take -->;
+    }
+person {
+    std.out(here.name);
+    take-->;
+    }
+}
+```
+
+### Deleting
+
+**Example 8:**
+
+```jac
+node person: has name;
+edge family;
+edge friend;
+
+walker build_example {
+    spawn here -[friend]-> node::person(name="Joe");
+    spawn here -[friend]-> node::person(name="Susan");
+    spawn here -[family]-> node::person(name="Matt");
+    spawn here -[family]-> node::person(name="Dan");
+}
+
+walker init {
+    root {
+        spawn here walker::build_example;
+    for i in -[friend]->: destroy i;
+    take -->;
+    }
+
+person {
+    std.out(here.name);
+    take-->;
+}
+}
+```
+
+
+
+
+
 
