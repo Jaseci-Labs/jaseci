@@ -52,6 +52,21 @@ def dump_from_b64(fn: str, b64: str):
 
 
 @jaseci_action()
+def append_str(fn: str, s: str):
+    """Standard built in for appending to file from string"""
+    with open(fn, "a") as file:
+        num_chars = file.write(s)
+    return num_chars
+
+
+@jaseci_action()
+def append_from_b64(fn: str, b64: str):
+    """Standard built in for appending binary to file from from base64"""
+    with open(fn, "ab") as file:
+        file.write(base64.b64decode(b64.encode("ascii")))
+
+
+@jaseci_action()
 def delete(fn: str):
     """Standard built in for deleting a file"""
     if os.path.exists(fn):
