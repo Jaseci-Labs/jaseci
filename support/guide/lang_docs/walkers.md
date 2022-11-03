@@ -44,7 +44,6 @@ walker init{
 **Output 1:**
 
 ```
-    jaseci > jac run main.jac
     This is from init walker
 ```
 As you can see, this code has executed the `init` walker. Now let's create another walker;
@@ -66,7 +65,6 @@ walker init{
 
 **Output 2:**
 ```
-    jaseci > jac run main.jac
     This is from init walker
     This is from second walker
 ```
@@ -83,7 +81,7 @@ As mentioned earlier the walkers can traverse(walk) through the nodes of the gra
 
 We are creating the following graph to demostrate traversing of walkers in comming sections;
 
- <div style="text-align:center"><img src="images/traverse_graph_example.PNG" /> <b>Example Graph - Navigating </b></div> 
+ <div style="text-align:center"><img style="text-align:center" src="images/traverse_graph_example.PNG" /> <b>Example Graph - Navigating </b></div> 
  
 <p> 
 </p>
@@ -126,7 +124,6 @@ walker init {
 
 **Output 3:**
 ```
-jaseci > jac run main.jac
 1
 2
 5
@@ -181,7 +178,6 @@ walker init {
 **Output 4:**
 
 ```
-jaseci > jac run main.jac
 Walk with Breadth: [1, 2, 5, 3, 4, 6, 7] 
 Walk with Depth: [1, 2, 3, 4, 5, 6, 7]
 ```
@@ -228,7 +224,6 @@ walker init {
 **Output 5:**
 
 ```
-jaseci > jac run  main.jac
 1
 5
 7
@@ -268,7 +263,6 @@ walker init {
 **Output 6**
 
 ```
-jaseci > jac run main.jac
 1
 2
 ```
@@ -396,12 +390,8 @@ person {
 ```
 **Output 9:**
 ```json
-jaseci > jac run run.jac
 {
   "success": true,
-    .
-    .
-    .
     {
       "name": "person",
       "kind": "node",
@@ -422,10 +412,8 @@ jaseci > jac run run.jac
         "name": "Dan"
       }
     }
-    .
-    .
-    .
 ```
+A portion of the final result is shown in the sample above. As the number of nodes in the graphs grows, the output will lengthen.
 
 ## Yielding Walkers
 
@@ -465,7 +453,6 @@ person {
 ```
 **Output 10:**
 ```json
-jaseci > jac run main.jac
 {
   "success": true,
   "report": [
