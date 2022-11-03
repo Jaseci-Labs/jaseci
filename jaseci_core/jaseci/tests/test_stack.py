@@ -114,6 +114,7 @@ class StackTests(CoreTest):
         )
         old_snt = ret[0]["jid"]
         ret = self.call(self.mast, ["walker_run", {"name": "init", "snt": old_snt}])
+        self.log(ret)
         node_id = ret["report"][0]["jid"]
         ret = self.call(self.mast, ["sentinel_delete", {"snt": old_snt}])
         ret = self.call(self.mast, ["sentinel_list", {"snt": old_snt}])

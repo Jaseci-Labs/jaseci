@@ -64,6 +64,7 @@ class MachineState:
         self._jac_scope = None
         self._loop_ctrl = None
         self._stopped = None
+        # MachineState.destroy(self)
 
     def push_scope(self, scope: JacScope):
         self._scope_stack.append(scope)

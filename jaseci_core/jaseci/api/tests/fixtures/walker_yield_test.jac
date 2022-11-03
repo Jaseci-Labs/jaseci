@@ -25,12 +25,10 @@ walker W {
 test "Delete yielded walker in test"
 with graph::G by walker::W {
     std.out(std.get_report());
-    std.out(jaseci.walker_list());
-    std.out(jaseci.walker_yield_list());
-    std.out(jaseci.walker_yield_delete("W"));
-    std.out(jaseci.walker_yield_clear());
 }
 
-walker init {
-    spawn here --> graph::G;
+test "Delete yielded walker in test 2"
+with graph::G by walker::W {
+    std.out(std.get_report());
 }
+
