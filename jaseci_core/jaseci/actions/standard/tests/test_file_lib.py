@@ -1,4 +1,5 @@
 from jaseci.utils.test_core import CoreTest
+import os
 
 
 class FileLibTest(CoreTest):
@@ -24,3 +25,4 @@ class FileLibTest(CoreTest):
             "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX"
             "///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII=",
         )
+        self.assertFalse(os.path.exists("file.gif"))
