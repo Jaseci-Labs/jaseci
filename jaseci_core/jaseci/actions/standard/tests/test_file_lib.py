@@ -12,3 +12,15 @@ class FileLibTest(CoreTest):
         )
         ret = self.call(self.mast, ["walker_run", {"name": "pack_it"}])
         self.assertEqual(ret["report"][0], {"hello": 5})
+
+    def test_bin_load_save(self):
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("file_stuff.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "bin_load_save"}])
+        self.assertEqual(
+            ret["report"][0],
+            "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX"
+            "///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII=",
+        )
