@@ -24,3 +24,12 @@ class StdLibTest(CoreTest):
         self.assertTrue(
             ret["report"][0].startswith("ncalls,tottime,percall,cumtime,percall,")
         )
+
+    def test_rand_float_round(self):
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("general.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "rand_float_round"}])
+        self.assertEqual(ret["report"][0], 2.313)
+        self.assertEqual(ret["report"][1], 2.847)
