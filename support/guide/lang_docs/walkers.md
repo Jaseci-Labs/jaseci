@@ -83,7 +83,10 @@ As mentioned earlier the walkers can traverse(walk) through the nodes of the gra
 
 We are creating the following graph to demostrate traversing of walkers in comming sections;
 
-![Example Graph - Navigating](images/traverse_graph_example.PNG)
+ <div style="text-align:center"><img src="images/traverse_graph_example.PNG" /> <b>Example Graph - Navigating </b></div> 
+ 
+<p> 
+</p>
 
 Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. See how that works in following example; 
 
@@ -287,7 +290,10 @@ It's important to remember a few key semantic differences between `skip` and `di
 
 ## Ignoring and Deleting
 
+The Jaseci walkers also have two more useful commands: `ignore` and `destroy`.
+
 ### Ignoring
+The quite handy command `ignore` from Juseci allows you to skip(ignore) visiting nodes or edges when traversing.
 
 **Example 7:**
 ```jac
@@ -318,6 +324,8 @@ person {
 
 ### Deleting
 
+To remove nodes or edges from the graph, Jaseci also offers the very useful command "destroy." Run the example that follows using the 'dot' command in the Jac shell. i.e. `jac dot main.jac`.
+
 **Example 8:**
 
 ```jac
@@ -345,9 +353,151 @@ person {
 }
 }
 ```
+The majic line in the above code is the `for i in -[friend]->: destroy i;` it instruct walker to remove all the nodes connected by friend edges. try playing with the code by removing and adding `destroy` command.
 
 
+Graph before `destroy` command            |  Graph after `destroy` command
+:-------------------------:|:-------------------------:
+![Example Graph - Deleting 1](images/delete_example_before.png)  |  ![Example Graph 2 - Deleting 2](images/delete_example_after.png)
 
 
+> **Note**
+> 
+> To visualize the dot output can use the Graphviz. An online version of it is [Here](https://dreampuf.github.io/GraphvizOnline/).
+
+## Reporting Back as you Travel
+
+The `report` command in jac resembles a conventional programming logging function in certain ways. The state of each node the walker visits while trarsing will continue to be recorded in this way.
+
+**Example 9:**
+```jac
+node person: has name;
+edge family;
+edge friend;
+
+walker build_example {
+spawn here -[friend]-> node::person(name="Joe");
+spawn here -[friend]-> node::person(name="Susan");
+spawn here -[family]-> node::person(name="Matt");
+spawn here -[family]-> node::person(name="Dan");
+}
+
+walker init {
+    root {
+        spawn here walker::build_example;
+        spawn -->[0] walker::build_example;
+        take -->;
+    }
+person {
+        report here; # report print back on disengage
+        take -->;
+    }
+}
+```
+**Output 9:**
+```json
+jaseci > jac run run.jac
+{
+  "success": true,
+    .
+    .
+    .
+    {
+      "name": "person",
+      "kind": "node",
+      "jid": "urn:uuid:dcec06b4-4b7f-461d-bbe1-1fbe22a0ed0c",
+      "j_timestamp": "2022-11-03T10:18:08.328560",
+      "j_type": "node",
+      "context": {
+        "name": "Matt"
+      }
+    },
+    {
+      "name": "person",
+      "kind": "node",
+      "jid": "urn:uuid:1dde2125-f858-401e-b0e8-fc2bdb7b38fb",
+      "j_timestamp": "2022-11-03T10:18:08.330218",
+      "j_type": "node",
+      "context": {
+        "name": "Dan"
+      }
+    }
+    .
+    .
+    .
+```
+
+## Yielding Walkers
+
+We have so far examined walkers that carry variables and state as they move around a graph. Each time a walk is completed, a walker's state is cleared by default , but node/edge state is preserved. Nevertheless, there are circumstances in which you would want a walker to maintain its state across runs, or even to pause in the middle of a walk and wait to be explicitly called again, updating a subset of its dynamic state. This is where the `yield` keyword comes in.
+
+To see an example of `yield` in action we will modify the 'init' walker from example 9.
+
+**Example 10:**
+
+```jac
+.
+.
+.
+node person: has name;
+edge family;
+edge friend;
+
+walker build_example {
+spawn here -[friend]-> node::person(name="Joe");
+spawn here -[friend]-> node::person(name="Susan");
+spawn here -[family]-> node::person(name="Matt");
+spawn here -[family]-> node::person(name="Dan");
+}
+
+walker init {
+    root {
+        spawn here walker::build_example;
+        spawn -->[0] walker::build_example;
+        take -->;
+    }
+person {
+        report here.context; 
+        take -->;
+        yield;
+    }
+}
+```
+**Output 10:**
+```json
+jaseci > jac run main.jac
+{
+  "success": true,
+  "report": [
+    {
+      "name": "Joe"
+    }
+  ],
+  "final_node": "urn:uuid:b7ebf434-bd90-443a-b8e2-c29589c3da57",
+  "yielded": true
+}
+```
+The yield keyword in example 9 instructs the walker simple_yield to stop walking and wait to be called again, even though the walker is instructed to `take-->` edges. In this example, a single next node location is queued up and the walker reports a single here.context each time it’s called, taking only 1 edge per call.
+
+Also note yield can be followed by a number of operations as a shorthand. For example `take-->;` and `yield;` could be combined to a single line with `yield take -->;`. We call
+this a `yield-take`. Shorthands include,
+- Yield-Take: `yield take -->;`
+- Yield-Report: yield `report "hi";`
+- Yield-Disengage: `yield disengage; and yield disengage report "bye";`
+  
+In each of these cases, the `take`, `report`, and `disengage` executes with the `yield`.
+
+### Technical Semantics of Yield
+
+There are several key semantics of `yield` to remember, including:
+
+1. Upon a yield, a report is returned back and cleared.
+2. Additional report items from further walking will be return on subsequent yields or walk completion.
+3. Like the take command, the entire body of the walker will execute on the current node and actually yield at the end of this execution.
+• Note: Keep in mind yield can be combined with disengage and skip commands.
+4. If a start node, also known as a "prime" node, is supplied while continuing a walker after a yield, the walker will disregard this prime node and continue from where it left off on its journey if there are still other walk nodes it is planned to visit.
+5. If there are no nodes scheduled for the walker to go to next, a prime node must be specified (or the walker will continue from root by default).
+6. with `entry` and with `exit` code blocks in the walker are not executed upon continuing from a `yield` or executing a `yeild` respectively. Regardless of how many yields there are in between, they only execute once at the beginning and finish of a walk.
+7. At the level of the master (user) abstraction, Jaseci maintains the distinction between walkers that have been yielded and need to be resumed and those that are currently being run. The semantics of walkers that are summoned as public are currently unclear. For customized yield behaviors, developers should use the more basic walker spawn and walker execute APIs.
 
 
