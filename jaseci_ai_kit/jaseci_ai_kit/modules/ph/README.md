@@ -85,7 +85,7 @@ Trainer:
 ```
 ### **1.2. Create your JAC Program**
 
-```python
+```jac
 # Path: ./main.jac
 
 walker identify_intent{
@@ -284,7 +284,7 @@ Trainer:
 
 ### **2.3. Create your JAC program**
 
-```python
+```jac
 # Path: ./main.jac
 walker identify_number {
   has input_image;

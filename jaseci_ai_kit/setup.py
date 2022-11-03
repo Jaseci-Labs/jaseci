@@ -18,6 +18,7 @@ setup(
         "tensorflow-text >= 2.7.3, < 3.0.0",
         "transformers == 4.16.2",
         "torch >= 1.10.2, < 2.0.0",
+        "torchvision",
         "pandas>=1.4.1,<2.0.0",
         "flair == 0.10",
         "numpy >= 1.22.1, < 2.0.0",

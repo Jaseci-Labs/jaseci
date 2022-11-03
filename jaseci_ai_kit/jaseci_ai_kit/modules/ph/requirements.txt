@@ -1,1 +1,4 @@
-pytest-order
+torchvision
+torch
+torchaudio
+pytorch-cuda=11.6
