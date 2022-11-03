@@ -319,9 +319,18 @@ def script(filename, output):
         return
     with open(filename) as file:
         cmds = [line.rstrip() for line in file]
+    if output:
+        with open(output, "w") as f:
+            f.write("Multi Command Script Output:\n")
     for i in cmds:
         res = CliRunner(mix_stderr=False).invoke(jsctl, i.split())
         click.echo(res.stdout)
+        if output:
+            with open(output, "a") as f:
+                f.write(f"Output for {i}:\n")
+                f.write(res.stdout)
+    if output:
+        click.echo(f"[saved to {output}]")
 
 
 @click.command(help="Internal book generation tools")

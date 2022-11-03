@@ -406,6 +406,29 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertGreater(before, 4)
         self.assertGreater(after, before)
 
+    def test_jsctl_script(self):
+        r = self.call("script jaseci/jsctl/tests/jsctl_script")
+        self.assertEqual(r, "[]\n\n[]\n\n{}\n\n")
+
+    def test_jsctl_script_output(self):
+        self.call("script jaseci/jsctl/tests/jsctl_script -o scr_out")
+        with open("scr_out", "r") as f:
+            s = [line.rstrip() for line in f]
+        if os.path.exists("scr_out"):
+            os.remove("scr_out")
+        self.assertEqual(
+            s,
+            [
+                "Multi Command Script Output:",
+                "Output for sentinel list:",
+                "[]",
+                "Output for graph list:",
+                "[]",
+                "Output for alias list:",
+                "{}",
+            ],
+        )
+
 
 class JsctlTestWithSession(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
@@ -437,7 +460,3 @@ class JsctlTestWithSession(TestCaseHelper, TestCase):
         self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
         r = self.call_cast("object get active:sentinel -detailed true")
         self.assertGreater(len(r["arch_ids"]), 3)
-
-    def test_jsctl_script(self):
-        r = self.call("script jaseci/jsctl/tests/jsctl_script")
-        self.assertEqual(r, "[]\n\n[]\n\n{}\n\n")
