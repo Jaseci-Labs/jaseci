@@ -4,7 +4,7 @@ from django.db.models import Q
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 
-from jaseci_serv.base.models import GlobalVars
+from base.models import GlobalVars
 
 # Alias for create user
 create_user = get_user_model().objects.create_user

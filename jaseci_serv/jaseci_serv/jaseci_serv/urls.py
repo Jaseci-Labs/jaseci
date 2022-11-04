@@ -41,7 +41,7 @@ urlpatterns = [
     ),
     path("redocs/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     path("admin/", admin.site.urls),
-    path("user/", include("jaseci_serv.user_api.urls")),
-    path("", include("jaseci_serv.jac_api.urls")),
-    path("", include("jaseci_serv.obj_api.urls")),
+    path("user/", include("user_api.urls")),
+    path("", include("jac_api.urls")),
+    path("", include("obj_api.urls")),
 ]

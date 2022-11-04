@@ -11,9 +11,9 @@ from rest_framework.views import APIView
 
 from jaseci.element.element import Element
 from jaseci.utils.utils import logger, ColCodes as Cc
-from jaseci_serv.base.models import Master as ServMaster
-from jaseci_serv.svc import MetaService
-from jaseci_serv.user_api import serializers as user_slzr
+from base.models import Master as ServMaster
+from svc import MetaService
+from user_api import serializers as user_slzr
 
 
 class JResponse(Response):

@@ -3,12 +3,12 @@ from django.contrib.auth import get_user_model
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 
-from jaseci_serv.base.models import JaseciObject
+from base.models import JaseciObject
 from jaseci.graph import node
 from jaseci.graph.graph import Graph
 from jaseci.actor.sentinel import Sentinel
 import jaseci.tests.jac_test_code as jtc
-from jaseci_serv.utils.test_utils import skip_without_redis
+from utils.test_utils import skip_without_redis
 
 
 # Alias for create user

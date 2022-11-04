@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
-import os
+import os, sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,10 +40,10 @@ INSTALLED_APPS = [
     "knox",
     "django_rest_passwordreset",
     "drf_yasg",
-    "jaseci_serv.base",
-    "jaseci_serv.user_api",
-    "jaseci_serv.obj_api",
-    "jaseci_serv.jac_api",
+    "base",
+    "user_api",
+    "obj_api",
+    "jac_api",
     "corsheaders",
     "django_celery_results",
     "django_celery_beat",
@@ -62,7 +62,7 @@ MIDDLEWARE = [
 
 CORS_ORIGIN_ALLOW_ALL = True
 
-ROOT_URLCONF = "jaseci_serv.jaseci_serv.urls"
+ROOT_URLCONF = "jaseci_serv.urls"
 
 TEMPLATES = [
     {
@@ -80,7 +80,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "jaseci_serv.jaseci_serv.wsgi.application"
+WSGI_APPLICATION = "jaseci_serv.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
@@ -109,6 +109,13 @@ elif "POSTGRES_HOST" in os.environ:
         }
     }
 
+elif "test" in sys.argv or "test_coverage" in sys.argv:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
+    }
 else:
     DATABASES = {
         "default": {

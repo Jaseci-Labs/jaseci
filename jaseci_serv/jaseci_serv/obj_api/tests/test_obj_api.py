@@ -7,7 +7,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from jaseci_serv.base.models import JaseciObject, GlobalVars
+from base.models import JaseciObject, GlobalVars
 
 
 NODE_URL = reverse("obj_api:jaseciobject-list")

@@ -5,7 +5,7 @@ import jaseci.tests.jac_test_code as jtc
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import Graph
 from jaseci.utils.utils import TestCaseHelper
-from jaseci_serv.svc import MetaService
+from svc import MetaService
 
 
 class JacTests(TestCaseHelper, TestCase):

@@ -9,7 +9,7 @@ from rest_framework import serializers
 
 from jaseci.svc.mail import MAIL_ERR_MSG
 from jaseci.utils.utils import logger
-from jaseci_serv.svc import MetaService
+from svc import MetaService
 
 requests_for_emails = None
 

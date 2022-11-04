@@ -1,6 +1,6 @@
 import unittest
 
-from jaseci_serv.svc import MetaService
+from svc import MetaService
 
 
 def skip_without_redis(test):
