@@ -26,11 +26,6 @@
   5. [Bring Your Application to Production](examples/CanoniCAI/codelabs/5_production.md)
   6. [Improve Your AI Models](examples/CanoniCAI/codelabs/6_crowdsource.md)
 - [Build a Custom Jaseci Module](support/codelabs/custom_jaseci_module_codelab.md)
-- [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
-- [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
-- [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
-- [Locust Load Test for JASECI](support/locust/README.md)
-- [Setting up Monitoring for JASECI](support/monitoring/README.md)
 
 ## The JAC Language Guide
 
@@ -94,6 +89,13 @@
 - [Connecting an API](jaseci_ui_kit/components/docs/connecting-an-api.md)
 - [Components](jaseci_ui_kit/README.md)
 
+## DevOps Guides
+- [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
+- [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
+- [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
+- [Locust Load Test for JASECI](support/locust/README.md)
+- [Setting up Monitoring for JASECI](support/monitoring/README.md)
+
 ## Jaseci Core Internals
 
 - [Services](jaseci_core/jaseci/svc/README.md)
@@ -103,6 +105,7 @@
 
 ## Contributing to Jaseci
 
+- [Guide on Contributing](examples/CanoniCAI/codelabs/7.contributing_to_jaseci.md)
 - [Being an Contributor](support/guide/other/contributor_policy.md)
 - [General Guide](CONTRIBUTING.md)
 - [Contributors](CONTRIBUTORS.md)
