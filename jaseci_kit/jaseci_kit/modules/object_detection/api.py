@@ -1,8 +1,4 @@
-import asyncio
-import websockets
-import websocket
-
-from fastapi import FastAPI, Form, File, UploadFile
+from fastapi import FastAPI, Form, File, UploadFile, WebSocket
 from typing import List, Optional
 
 import cv2, torch, random, base64, uuid
@@ -83,6 +79,20 @@ def detect(
     return encoded_json_results
 
 
+def detect_online(img_arr, image_size):
+    img_arr = base64.b64decode(img_arr)
+    buf_img = np.fromstring(img_arr, np.uint8)
+    img = cv2.imdecode(buf_img, 0)
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    model.conf = 0.02
+    print("starting model:: ")
+    results = model(img_rgb, size=416)
+    print(results)
+    json_results = results_to_json(results, model)
+    encoded_json_results = str(json_results).replace("'", r'"')
+    return encoded_json_results
+
+
 ##############################################
 # --------------Helper Functions---------------
 ##############################################
@@ -142,55 +152,21 @@ def base64EncodeImage(img):
     return im_b64
 
 
-def detect_online(img_arr, image_size):
-    # confidence threshold
-    model.conf = conf
-
-    img = cv2.imdecode(np.frombuffer(img_arr, np.uint8), cv2.IMREAD_COLOR)
-
-    # create a copy that corrects for cv2.imdecode generating BGR images instead of RGB,
-    # using cvtColor instead of [...,::-1] to keep array contiguous in RAM
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-    results = model(img_rgb, size=image_size)
-
-    json_results = results_to_json(results, model)
-
-    encoded_json_results = str(json_results).replace("'", r'"')
-    return encoded_json_results
-
-
-@app.websocket("/ws_stream")
-async def websocket_endpoint(websocket: WebSocket, img_size):
-    # print("started")
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    print("connected to the server::")
     try:
         while True:
-            index = 0
-            # buffer to hold image bytes
-            image_store = bytearray()
-            while index < img_size:
-                data = await websocket.receive_bytes()
-                print(f"received: {int(data)}")
-                image_store.append(data)
-                index += int(data)
+            data = await websocket.receive()
+
+            #print("data is enough for a frame")
+            print(type(data['text'].encode()))
             # need to store image stream in buffer
-            encoded_json = detect_online(image_store)
+            encoded_json = detect_online(data['text'], len(data['text']))
+            print("encoded_json::", encoded_json)
             await websocket.send_json(encoded_json)
     except Exception as e:
-        print(e)
+        print("error", e)
     finally:
         websocket.close()
-
-
-@app.post("/img_stream")
-async def send_img(img):
-    # this url will be replaced
-    async with websockets.connect('ws://localhost:8000/ws') as Websocket:
-        while True:
-            await Websocket.send(base64EncodeImage(img))
-            response = await Websocket.recv()
-            # print(response)
-
-
-#asyncio.get_event_loop().run_until_complete(send_img())
