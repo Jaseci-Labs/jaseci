@@ -4,14 +4,15 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 # Model Directory
 
 ## Encoders
-| Module      | Model Name    | Example                            | Type                    | Status       | Description                                                 | Resources                                 |
-| ----------- | ------------- | ---------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
-| `use_enc`   | USE Encoder   | [Link](#use-encoder-use_enc)       | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
-| `use_qa`    | USE QA        | [Link](#use-qa-use_qa)             | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
-| `fast_enc`  | FastText      | [Link](#fasttext-encoder-fast_enc) | Training req.           | Ready        | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
-| `bi_enc`    | Bi-encoder    | [Link](#bi-encoder-bi_enc)         | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
-| `poly_enc`  | Poly-encoder  |                                    | Training req./Zero-shot | Experimental | Poly Encoder                                                | [Paper](https://arxiv.org/abs/1905.01969) |
-| `cross_enc` | Cross-encoder |                                    | Training req./Zero-shot | Experimental | Cross Encoder                                               | [Paper](https://arxiv.org/abs/1905.01969) |
+| Module      | Model Name       | Example                             | Type                    | Status       | Description                                                 | Resources                                 |
+| ----------- | ---------------- | ----------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
+| `use_enc`   | USE Encoder      | [Link](#use-encoder-use_enc)        | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
+| `use_qa`    | USE QA           | [Link](#use-qa-use_qa)              | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
+| `fast_enc`  | FastText         | [Link](#fasttext-encoder-fast_enc)  | Training req.           | Ready        | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
+| `bi_enc`    | Bi-encoder       | [Link](#bi-encoder-bi_enc)          | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
+| `sbert_sim` | SBert Similarity | [Link](#sbert-similarity-sbert_sim) | Training req./Zero-shot | Ready        | SBert Encoders for Sentence Similarity                      | [Paper](https://arxiv.org/abs/1908.10084) |
+| `poly_enc`  | Poly-encoder     |                                     | Training req./Zero-shot | Experimental | Poly Encoder                                                | [Paper](https://arxiv.org/abs/1905.01969) |
+| `cross_enc` | Cross-encoder    |                                     | Training req./Zero-shot | Experimental | Cross Encoder                                               | [Paper](https://arxiv.org/abs/1905.01969) |
 
 ## Entity
 | Module                | Model Name      | Example                                               | Type           | Status       | Description                                                       | Resources                                                                                               |
@@ -323,6 +324,93 @@ walker bi_enc_example{
     std.out("predicted intent : ",max_intent ," Conf_Score:", max_score);
 }
 ```
+
+###  Sbert Similarity (`sbert_sim`)
+`sbert_sim` is a implementation of SentenceBert for scoring similarity between sentence pairs, it uses bi-encoder in a saimese setup to encode the sentences followed by the cosine similarity to score the similarity.
+
+* `get_dot_score` : Caculate the dot product of two given vectors
+    * Input: 
+        * `vec_a` (list of float): first embeded text
+        * `vec_b` (list of float): second embeded text
+    * Return: dot product score
+* `get_cos_score` : Caculate the cosine similarity score of two given vectors
+    * Input:
+        * `vec_a` (list of float): first embeded text
+        * `vec_b` (list of float): second embeded text
+    * Return: cosine similarity score
+* `get_text_sim`: gets the similarity score between `query` with all the sentences in `corpus` and return the top_k similar sentences with `sim_score` 
+    * Input:
+        * `query` (string or list of strings): context which needs to be classified
+        * `corpus` (string or list of strings): list of candidates for the context 
+        * `top_k` (string): can be text or embedding type
+    * Return: list of top_k similar sentences with `sim_score` 
+* `train`: used to train the Bi-Encoder for custom input
+    * Input:
+        * `dataset` (List): List of List, each list contains a pair of sentence and similarity score.
+        * `training_parameters` (Dict): dictionary of training parameters
+    * Returns: text when model training is completed
+* `getembeddings`:
+    * Input:
+        * `texts` (string or list of strings): take text and returns a encoded embeddings
+    * Returns a list of embeddings
+* `get_train_config`:  
+    * Input: None
+    * Returns: json of all the current training configuration
+     ```
+     {
+        "device": "cpu",
+        "num_epochs": 2,
+        "model_save_path": "output/sent_model-2022-11-04_17-43-18",
+        "model_name": "bert-base-uncased",
+        "max_seq_length": 256
+    }
+    ```
+* `load_model`:  
+    * Input 
+        * `model_type` (string): can be `default` or `tfm_model`
+          * `default` : loads model from the [sbert](https://www.sbert.net/docs/pretrained_models.html) model zoo
+          * `tfm_model` : load tranformer model from the [huggingface hub](https://huggingface.co/models)  
+        * `model_name` (string): this is name of the model to be loaded
+      *  ```
+          {
+          "model_name": "all-MiniLM-L12-v2",
+          "model_type": "default"
+          }
+          ```
+
+    * Returns: "[loaded model from] : <model_type> <model_name>" if model successfully loaded
+      * ```
+        [loaded model from] SBERT Hub : all-MiniLM-L12-v2
+        ```
+
+#### Example Jac Usage:
+```jac
+## Train and evalute a sbert model for senetence similarity
+walker sbert_sim_example{
+    has train_file = "train_sbert.json";
+    has num_epochs = 2;
+    has query= ["A girl is on a sandy beach."];
+    has corpus=["A girl dancing on a sandy beach."];
+    has top_k=1;
+
+    can sbert_sim.train,sbert_sim.get_text_sim;
+
+    train_data = file.load_json(train_file);
+    
+    # Train the model 
+    sbert_sim.train(
+        dataset=train_data['train_data'],
+        training_parameters={
+            "num_epochs": num_epochs
+        }
+    );
+
+    # returns the top_k of simlar test in the corpus 
+    resp_data = sbert_sim.get_text_sim(query=query,corpus=corpus,top_k=top_k);
+    std.out(resp_data);
+}
+```
+
 
 ###  FastText Encoder (`fast_enc`)
 `fast_enc` module uses the facebook's fasttext -- efficient learning of word representations and sentence classification.
