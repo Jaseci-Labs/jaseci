@@ -32,7 +32,7 @@
 - [Key Abstractions and Concepts](support/guide/lang_docs/key_concepts.md)
   - [Graphs](support/guide/lang_docs/graphs.md)
   - [Walkers](support/guide/lang_docs/walkers.md)
-    - [Understanding Walkers By Example](support/guide/lang_docs/walkers_by_example.md)
+    - [Walkers By Example](support/guide/lang_docs/walkers_by_example.md)
   - [Abilities](support/guide/lang_docs/abilities.md)
     - [`here` and `visitor`](support/guide/lang_docs/here_visitor.md)
   - [Actions](support/guide/lang_docs/actions.md)

@@ -1,4 +1,4 @@
-## Basic Walkers Example
+# Understanding Walkers by Example
 
 When we run a jac code, by default it's exucuting the `init` walker. Basically the `walker init` works as the main method in other programming language. save following code as `main.jac` and run the code in `jsctl` shell with `jac run main.jac`
 
