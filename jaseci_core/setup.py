@@ -28,6 +28,8 @@ setup(
         "prometheus_api_client==0.5.1",
         "prometheus-client==0.14.1",
         "kubernetes==23.6.0",
+        "pytest",
+        "pytest-xdist",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
