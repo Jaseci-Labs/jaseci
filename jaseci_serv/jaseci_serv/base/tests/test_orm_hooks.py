@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 
-from base.models import JaseciObject
+from jaseci_serv.base.models import JaseciObject
 from jaseci.graph import node
 from jaseci.graph.graph import Graph
 from jaseci.actor.sentinel import Sentinel

@@ -2,7 +2,7 @@ from django.urls import path
 from .views import AbstractJacAPIView
 from .views import AbstractAdminJacAPIView, AbstractPublicJacAPIView
 from jaseci.element.element import Element
-from base.models import SuperMaster
+from jaseci_serv.base.models import SuperMaster
 from jaseci.utils.utils import copy_func
 from inspect import signature
 import uuid

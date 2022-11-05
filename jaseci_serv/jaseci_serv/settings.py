@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     "knox",
     "django_rest_passwordreset",
     "drf_yasg",
-    "base",
+    "jaseci_serv.base",
     "user_api",
     "obj_api",
     "jac_api",
