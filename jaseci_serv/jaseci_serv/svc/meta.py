@@ -1,5 +1,5 @@
 from jaseci.svc import MetaService as Ms
-from svc import (
+from jaseci_serv.svc import (
     MailService,
     RedisService,
     TaskService,
@@ -23,7 +23,7 @@ class MetaService(Ms):
     ###################################################
 
     def populate_context(self):
-        from hook.orm import OrmHook
+        from jaseci_serv.hook.orm import OrmHook
         from jaseci_serv.base.models import (
             Master,
             SuperMaster,

@@ -8,7 +8,7 @@ from jaseci.graph import node
 from jaseci.graph.graph import Graph
 from jaseci.actor.sentinel import Sentinel
 import jaseci.tests.jac_test_code as jtc
-from utils.test_utils import skip_without_redis
+from jaseci_serv.utils.test_utils import skip_without_redis
 
 
 # Alias for create user

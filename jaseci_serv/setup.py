@@ -31,7 +31,6 @@ setup(
         "": ["*.jac", "VERSION"],
     },
     scripts=["jsserv"],
-    # entry_points={"console_scripts": ["jsserv = jaseci_serv.manage:main"]},
     author="Jason Mars",
     author_email="jason@jaseci.org",
     url="https://github.com/Jaseci-Labs/jaseci",

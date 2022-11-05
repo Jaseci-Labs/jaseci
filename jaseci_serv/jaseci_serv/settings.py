@@ -35,15 +35,14 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "django.contrib.staticfiles",
     "rest_framework",
     "knox",
     "django_rest_passwordreset",
     "drf_yasg",
     "jaseci_serv.base",
-    "user_api",
-    "obj_api",
-    "jac_api",
+    "jaseci_serv.user_api",
+    "jaseci_serv.obj_api",
+    "jaseci_serv.jac_api",
     "corsheaders",
     "django_celery_results",
     "django_celery_beat",
@@ -157,11 +156,6 @@ USE_L10N = True
 
 USE_TZ = False
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.0/howto/static-files/
-
-STATIC_URL = "/static/"
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 # Sets global default user model to be custom
 AUTH_USER_MODEL = "base.User"

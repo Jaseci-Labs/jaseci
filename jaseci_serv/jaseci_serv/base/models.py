@@ -13,7 +13,7 @@ from jaseci.api.interface import Interface
 from jaseci.element.master import Master as CoreMaster
 from jaseci.element.super_master import SuperMaster as CoreSuper
 from jaseci_serv.settings import JASECI_CONFIGS
-from svc import MetaService
+from jaseci_serv.svc import MetaService
 
 
 class Master(CoreMaster):
@@ -31,7 +31,7 @@ class Master(CoreMaster):
         data = {"email": name}
         for i in other_fields.keys():
             data[i] = other_fields[i]
-        from user_api.serializers import UserSerializer
+        from jaseci_serv.user_api.serializers import UserSerializer
 
         serializer = UserSerializer(data=data)
         if serializer.is_valid(raise_exception=False):
@@ -51,7 +51,7 @@ class Master(CoreMaster):
         data = {"email": name}
         for i in other_fields.keys():
             data[i] = other_fields[i]
-        from user_api.serializers import SuperUserSerializer
+        from jaseci_serv.user_api.serializers import SuperUserSerializer
 
         serializer = SuperUserSerializer(data=data)
         if serializer.is_valid(raise_exception=False):

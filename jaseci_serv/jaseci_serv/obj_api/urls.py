@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from obj_api import views
+from jaseci_serv.obj_api import views
 
 router = DefaultRouter()
 router.register("obj", views.ObjectViewSet)

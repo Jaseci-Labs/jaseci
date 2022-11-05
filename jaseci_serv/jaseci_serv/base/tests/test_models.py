@@ -5,8 +5,8 @@ from jaseci.element import element
 from jaseci.element.super_master import SuperMaster
 from jaseci.utils.utils import TestCaseHelper
 from jaseci_serv.base import models
-from obj_api.views import JaseciObjectSerializer
-from svc import MetaService
+from jaseci_serv.obj_api.views import JaseciObjectSerializer
+from jaseci_serv.svc import MetaService
 
 
 def sample_user(email="JSCITEST_user@jaseci.com", password="whatever"):
