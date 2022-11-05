@@ -25,9 +25,14 @@ setup(
         "tblib",
         "django-celery-results>=2.3,<2.4",
         "django-celery-beat>=2.2",
+        "pytest-django",
     ],
     package_data={
         "": ["*.jac", "VERSION"],
     },
+    # scripts=["jaseci_serv/jsserv.py"]
     entry_points={"console_scripts": ["jsserv = jaseci_serv.manage:main"]},
+    author="Jason Mars",
+    author_email="jason@jaseci.org",
+    url="https://github.com/Jaseci-Labs/jaseci",
 )

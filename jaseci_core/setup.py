@@ -35,4 +35,7 @@ setup(
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
     },
     entry_points={"console_scripts": ["jsctl = jaseci.jsctl.jsctl:main"]},
+    author="Jason Mars",
+    author_email="jason@jaseci.org",
+    url="https://github.com/Jaseci-Labs/jaseci",
 )

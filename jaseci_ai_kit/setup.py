@@ -31,4 +31,7 @@ setup(
     package_data={
         "": ["*.json", "*.cfg", "VERSION"],
     },
+    author="Jason Mars",
+    author_email="jason@jaseci.org",
+    url="https://github.com/Jaseci-Labs/jaseci",
 )
