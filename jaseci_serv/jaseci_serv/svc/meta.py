@@ -7,7 +7,7 @@ from jaseci_serv.svc import (
     PromotheusService,
     JsOrcService,
 )
-from jaseci_serv.jaseci_serv.configs import RUN_SVCS
+from jaseci_serv.configs import RUN_SVCS
 
 
 class MetaService(Ms):
