@@ -3,14 +3,14 @@ from os.path import join
 
 
 def get_ver():
-    with open(join("./jaseci_serv", "VERSION")) as version_file:
+    with open(join("./", "VERSION")) as version_file:
         return version_file.read().strip()
 
 
 setup(
     name="jaseci_serv",
     version=get_ver(),
-    packages=find_packages(include=["jaseci_serv", "jaseci_serv.*"]),
+    packages=find_packages(),
     install_requires=[
         "jaseci",
         "Django>=3.2.12,<3.3.0",
@@ -30,8 +30,8 @@ setup(
     package_data={
         "": ["*.jac", "VERSION"],
     },
-    # scripts=["jaseci_serv/jsserv.py"]
-    entry_points={"console_scripts": ["jsserv = jaseci_serv.manage:main"]},
+    scripts=["jsserv"],
+    # entry_points={"console_scripts": ["jsserv = jaseci_serv.manage:main"]},
     author="Jason Mars",
     author_email="jason@jaseci.org",
     url="https://github.com/Jaseci-Labs/jaseci",
