@@ -32,7 +32,7 @@ setup(
         "pytest-order",
     ],
     package_data={
-        "": ["*.json", "*.cfg", "VERSION"],
+        "": ["*.json", "*.cfg", "VERSION", "*.yaml"],
     },
     author="Jason Mars",
     author_email="jason@jaseci.org",
