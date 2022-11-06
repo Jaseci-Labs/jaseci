@@ -75,8 +75,9 @@ class AbstractJacAPIView(APIView):
             str(
                 f"API call to {Cc.TG}{type(self).__name__}{Cc.EC}"
                 f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
-                f" touched {Cc.TY}{touch_count} ({db_touches} in db)"
-                f"({touch_kb:.1f}kb){Cc.EC} and"
+                f" touched {Cc.TY}{touch_count}{Cc.EC}"
+                f" ({Cc.TY}{db_touches}{Cc.EC} in db)"
+                f" ({Cc.TY}{touch_kb:.1f}kb{Cc.EC}) and"
                 f" saving {Cc.TY}{save_count}{Cc.EC} objects."
             )
         )
