@@ -206,16 +206,6 @@ class JacValue:
                 f"{self.value} is not destroyable, try setting to null", jac_ast
             )
 
-    def wrap(self, serialize_mode=False):
-        "Caller for recursive wrap"
-        self.value = jac_wrap_value(self.value, serialize_mode)
-        return self.value
-
-    def unwrap(self):
-        "Caller for recursive unwrap"
-        self.value = jac_unwrap_value(self.value, self.parent)
-        return self.value
-
     def jac_type(self):
         """Return Jac type of value"""
         return jac_type_wrap(type(self.value))

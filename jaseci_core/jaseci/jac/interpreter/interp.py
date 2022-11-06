@@ -17,6 +17,7 @@ from jaseci.jac.machine.machine_state import TryException
 
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
+from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 from copy import copy, deepcopy
 from base64 import b64decode
 
@@ -437,7 +438,7 @@ class Interp(VirtualMachine):
                 self.rt_error("Invalid report attribute to set", kid[2])
         else:
             self.run_expression(kid[1])
-            report = self.pop().wrap(serialize_mode=True)
+            report = jwv(self.pop().value, serialize_mode=True)
             if not is_jsonable(report):
                 self.rt_error(f"Report {report} not Json serializable", kid[0])
             self.report.append(copy(report))
@@ -959,7 +960,8 @@ class Interp(VirtualMachine):
                 atom_res.value = typ.value(atom_res.value)
             except Exception:
                 self.rt_error(
-                    f"Invalid cast of {atom_res.jac_type()} " f"to {typ.wrap()}", kid[0]
+                    f"Invalid cast of {atom_res.jac_type()} " f"to {jwv(typ.value)}",
+                    kid[0],
                 )
             return atom_res
 
