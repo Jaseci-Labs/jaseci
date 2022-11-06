@@ -39,7 +39,7 @@ walker slow {
                                   d=spawn t::t, e=spawn t::t, f=spawn t::t);
         }
         take-->;
-        #internal.start_perf_test();
+        internal.start_perf_test();
     }
     a {
         biglist.l::append((*(&here)).context);
@@ -47,6 +47,6 @@ walker slow {
         steps+=1;
     }
     with exit {
-        #std.out(internal.stop_perf_test());
+        std.out(internal.stop_perf_test());
     }
 }

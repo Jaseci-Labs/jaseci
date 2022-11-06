@@ -437,7 +437,7 @@ class Interp(VirtualMachine):
                 self.rt_error("Invalid report attribute to set", kid[2])
         else:
             self.run_expression(kid[1])
-            report = self.pop()
+            report = self.pop().wrap(serialize_mode=True)
             if not is_jsonable(report):
                 self.rt_error("Report not Json serializable", kid[0])
             self.report.append(copy(report))
