@@ -1,27 +1,26 @@
 """Built in actions for Jaseci"""
 from datetime import datetime
 from datetime import timedelta
-from jaseci.jac.machine.jac_value import jac_type_unwrap as jtu
 from jaseci.actions.live_actions import jaseci_action
 
 
 @jaseci_action()
 def quantize_to_year(date: str):
-    date = datetime.fromisoformat(jtu(date))
+    date = datetime.fromisoformat(date)
     date = date.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     return date.isoformat()
 
 
 @jaseci_action()
 def quantize_to_month(date: str):
-    date = datetime.fromisoformat(jtu(date))
+    date = datetime.fromisoformat(date)
     date = date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     return date.isoformat()
 
 
 @jaseci_action()
 def quantize_to_week(date: str):
-    date = datetime.fromisoformat(jtu(date))
+    date = datetime.fromisoformat(date)
     date = date.replace(hour=0, minute=0, second=0, microsecond=0)
     date = date - timedelta(days=date.weekday())
     return date.isoformat()
@@ -29,7 +28,7 @@ def quantize_to_week(date: str):
 
 @jaseci_action()
 def quantize_to_day(date: str):
-    date = datetime.fromisoformat(jtu(date))
+    date = datetime.fromisoformat(date)
     date = date.replace(hour=0, minute=0, second=0, microsecond=0)
     return date.isoformat()
 
