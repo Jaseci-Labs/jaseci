@@ -216,3 +216,8 @@ class JacValue:
     def jac_type(self):
         """Return Jac type of value"""
         return jac_type_wrap(type(self.value))
+
+    def __str__(self):
+        return (
+            "JacValue:" + str(self.ctx) + ":" + str(self.name) + ":" + str(self.value)
+        )
