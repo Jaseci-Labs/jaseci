@@ -23,6 +23,7 @@ class OrmHook(RedisHook):
     def __init__(self, objects, globs):
         self.objects = objects
         self.globs = globs
+        self.db_touch_count = 0
         super().__init__()
 
     ####################################################
@@ -36,6 +37,7 @@ class OrmHook(RedisHook):
         if loaded_obj is None:
             try:
                 loaded_obj = self.objects.get(jid=item_id)
+                self.db_touch_count += 1
             except ObjectDoesNotExist:
                 logger.error(
                     str(f"Object {item_id} does not exist in Django ORM!"),
@@ -82,6 +84,7 @@ class OrmHook(RedisHook):
         if glob is None:
             try:
                 glob = self.globs.get(name=name).value
+                self.db_touch_count += 1
             except ObjectDoesNotExist:
                 logger.error(
                     str(f"Global {name} does not exist in Django ORM!"), exc_info=True
