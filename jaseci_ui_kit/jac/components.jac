@@ -42,7 +42,7 @@ node Component {
             }
         }
     }
-
+    
 
     can pre_render with pre_renderer exit {
         loc['name'] = name;
@@ -55,7 +55,7 @@ node Component {
         ::set_props;
         ::set_events;
         ::set_operations;
-
+        
 
 
         for i in -[section]-> {
@@ -248,7 +248,7 @@ node Hero:Component {
     has action;
     has description;
     has background_image;
-
+    
     can get_props {
         ::Component:get_props;
         loc["props"].dict::update({"backgroundimage": loc["props"]["background_image"]});

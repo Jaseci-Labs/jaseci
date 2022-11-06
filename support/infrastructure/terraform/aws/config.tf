@@ -20,7 +20,7 @@ locals {
   }
   #END: Workspace Environments
 
-  #Local Variables
+  #Local Variables 
   environment = lookup(local.environments, local.env)
   envprefix   = lookup(local.envs, local.env)
   envsuffix   = lookup(local.envs, local.env)

@@ -18,7 +18,7 @@ locals {
     "production" = "prod"
   }
 
-  #Local Variables
+  #Local Variables 
   environment = lookup(local.environments, local.env)
   envprefix   = lookup(local.envs, local.env)
   envsuffix   = lookup(local.envs, local.env)
@@ -30,5 +30,5 @@ locals {
   isProd = local.env == "production" ? 1 : 0
   isDev  = local.env == "default" ? 1 : 0
 
-
+ 
 }

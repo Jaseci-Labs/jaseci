@@ -9,27 +9,27 @@ graph my_site {
     spawn {
         root = spawn node::Container(name="mainContainer");
         hero = spawn node::Hero(name="hero1", background_image="https://i.imgur.com/0Z1Z0Zm.jpg");
-
+        
         root-[section(name="children")]->hero;
 
         navbar1 = spawn root-[section(name="children")]->node::Navbar(
-            name="navbar1",
+            name="navbar1", 
             links=[
-                {"label": "Home", "href": "#"},
+                {"label": "Home", "href": "#"}, 
                 {"label": "About", "href": "#"}
             ]
         );
 
        endpoint = spawn node::call_endpoint(
-                                endpoint="http://localhost:8000/js/walker_run",
-                                method="POST",
+                                endpoint="http://localhost:8000/js/walker_run", 
+                                method="POST", 
                                 headers={
                                     'Authorization': "token 198ab01ffecda8b09c98e2e679257d25644c430690ae0cacd54529bcd83b0b9a",
                                     "Content-Type": "application/json"
                             });
 
         runOp = spawn node::run_operation(
-                                operation="navbar1.sayHello",
+                                operation="navbar1.sayHello", 
                                 args=["a", "b"]
                             );
 
@@ -38,8 +38,8 @@ graph my_site {
 
 
         navbar1-[operation(name="op1", args=["a", "b"])]->spawn node::call_endpoint(
-                                endpoint="http://localhost:8000/js/walker_run",
-                                method="POST",
+                                endpoint="http://localhost:8000/js/walker_run", 
+                                method="POST", 
                                 headers={
                                     'Authorization': "token 198ab01ffecda8b09c98e2e679257d25644c430690ae0cacd54529bcd83b0b9a",
                                     "Content-Type": "application/json"
@@ -47,7 +47,7 @@ graph my_site {
 
 s
         navbar1-[operation(name="op1")]->spawn node::show_toast(
-                                message="Congratulations!",
+                                message="Congratulations!", 
                                 timeout=300
                             );
 
@@ -61,8 +61,8 @@ s
 
         // alert1-[section(name="children")]->alertBtn;
         // alertBtn-[section(name="children")]->alertBtn2;
-    }
-
+    }    
+    
 }
 
 

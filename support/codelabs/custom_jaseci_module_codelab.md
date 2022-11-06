@@ -37,12 +37,12 @@ What this functions does, it adds the two numbers from the parameter and returns
 
 > **Note**
 >
-> Practice adding data type to the parameters for e.g. `first_number: int` because jaseci_actions use this as validation, remotely and also through the jaseci application.
+> Practice adding data type to the parameters for e.g. `first_number: int` because jaseci_actions use this as validation, remotely and also through the jaseci application.  
 
 ## Loading the custom module (API)
 In this section, I will run you through how to load the custom module through the API.
 ```bash
-> uvicorn calculator:serv_actions
+> uvicorn calculator:serv_actions 
 ```
 
 We use uvicorn to run modules remotely.
@@ -187,7 +187,7 @@ def classify_text(text: str, min_length: int = 30, max_length: int = 100):
     return output
 ```
 In this block:
-- Since we created a function which generates the summary. we need a jaseci action function that will bind the summarization module to jac and to the API.
+- Since we created a function which generates the summary. we need a jaseci action function that will bind the summarization module to jac and to the API. 
 - here we called the action group `t5_sum`.
 
 ### Full Code
