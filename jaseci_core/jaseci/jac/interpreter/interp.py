@@ -159,7 +159,7 @@ class Interp(VirtualMachine):
                 ret.append(i.token_text())
         return ret
 
-    def run_expr_list(self, jac_ast, wrap=False):
+    def run_expr_list(self, jac_ast):
         """
         expr_list: expression (COMMA expression)*;
         """
@@ -168,10 +168,7 @@ class Interp(VirtualMachine):
         for i in kid:
             if i.name == "expression":
                 self.run_expression(i)
-                if wrap:
-                    ret.append(self.pop().wrap())
-                else:
-                    ret.append(self.pop().value)
+                ret.append(self.pop().value)
         return JacValue(self, value=ret)
 
     def run_code_block(self, jac_ast):
@@ -442,7 +439,7 @@ class Interp(VirtualMachine):
             self.run_expression(kid[1])
             report = self.pop().wrap(serialize_mode=True)
             if not is_jsonable(report):
-                self.rt_error("Report not Json serializable", kid[0])
+                self.rt_error(f"Report {report} not Json serializable", kid[0])
             self.report.append(copy(report))
 
     def run_expression(self, jac_ast):
@@ -813,7 +810,6 @@ class Interp(VirtualMachine):
                                         kid[1],
                                     )
                             ret = JacValue(self, value=plucked)
-                        ret.unwrap()
                         return ret
                     else:
                         self.rt_error(f"Invalid variable {n}", kid[0])
@@ -1413,7 +1409,6 @@ class Interp(VirtualMachine):
                     kid[1],
                 )
                 return atom_res
-            atom_res.unwrap()
             try:
                 return JacValue(self, ctx=atom_res.value, name=idx)
             except Exception:
@@ -1430,7 +1425,6 @@ class Interp(VirtualMachine):
                     kid[1],
                 )
                 return atom_res
-            atom_res.unwrap()
             try:
                 return JacValue(self, ctx=atom_res.value, name=idx, end=end)
             except Exception:
@@ -1603,8 +1597,6 @@ class Interp(VirtualMachine):
                 res["result"] = walk.anchor_value()
 
             tr = JacValue(self, value=res if walk.for_queue() else walk.anchor_value())
-
-            tr.unwrap()
             ret.append(tr.value)
             self.inherit_runtime_state(walk)
             walk.register_yield_or_destroy(self.yielded_walkers_ids)
