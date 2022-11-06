@@ -180,9 +180,9 @@ class JacValue:
                 f"No valid live variable! ctx: {self.ctx} name: {self.name}", jac_ast
             )
         elif self.end is not None:
-            self.ctx[self.name : self.end] = self
+            self.ctx[self.name : self.end] = self.value
         else:
-            self.ctx[self.name] = self
+            self.ctx[self.name] = self.value
 
     def check_assignable(self, jac_ast=None):
         if self.ctx is None:
