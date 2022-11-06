@@ -439,7 +439,7 @@ class Interp(VirtualMachine):
             self.run_expression(kid[1])
             report = self.pop().wrap(serialize_mode=True)
             if not is_jsonable(report):
-                self.rt_error("Report not Json serializable", kid[0])
+                self.rt_error(f"Report {report} not Json serializable", kid[0])
             self.report.append(copy(report))
 
     def run_expression(self, jac_ast):
