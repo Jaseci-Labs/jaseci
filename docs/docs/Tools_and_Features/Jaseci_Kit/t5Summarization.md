@@ -18,13 +18,13 @@ actions load module jaseci_ai_kit.t5_sum
 # Use the T5 model to summarize a given piece of text
 walker summarization {
     can t5_sum.classify_text;
-
+    
     has text;
     has min_length = 30;
     has max_length = 100;
-
+    
     summarized_text = t5_sum.classify_text(text=text, min_length=min_length, max_length=max_length);
-
+    
     report summarized_text;
 }
 ```

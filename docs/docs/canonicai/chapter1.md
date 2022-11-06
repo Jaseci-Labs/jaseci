@@ -9,7 +9,7 @@ We are building a Conversational AI.
 Conversational AI is a type of artificial intelligence that enables consumers to interact with computer applications the way they would with other humans.
 
 ### Real world examples of conversational AI
-* Amazon Alexa (Voice)
+* Amazon Alexa (Voice) 
 
 ![Amazon Alexa (Voice) ](https://imageio.forbes.com/specials-images/imageserve/6022e0a7644b9ab003f0dcb7/iPhone-screenshots-of-the-Alexa-app-s-new-Light-and-Dark-modes/960x0.jpg?format=jpg&width=700)
 
@@ -29,9 +29,9 @@ Intent classification (Text classification) is the process of assigning tags or 
 ![Alt text](./images/intent_classification.png?raw=true)
 
 Explanation Of The Current Nodes:
-* **Input** Text: This is the text from the user.
+* **Input** Text: This is the text from the user. 
 * **Classes**: A groups of intent labels that helps an AI Model to make conversations.
-* **Output Class**: A single intent label that makes the meaning of a user
+* **Output Class**: A single intent label that makes the meaning of a user 
 
 When a user inputs a query either via speech or text it goes to the intent classification AI model alongside with the classes of intent. These together when gets processed by the AI model it will generate an output class of one single intent. I promise you in the real example you will understand this flow and you will walk out knowing what this intent classification state actually do.
 
@@ -50,7 +50,7 @@ Entity extraction is a text analysis technique that uses Natural Language Proces
 ![Alt text](./images/entity_extraction.png?raw=true "Title")
 
 Explanation Of The Current Nodes:
-* **Input Text**: This is the text from the user.
+* **Input Text**: This is the text from the user. 
 * **Feature Dataset**: A lot of training data on where certain keywords would usually be located in a sentence.
 * **Extract Features**: A process of picking out keywords and mapping a meaning to that keyword
 * **Output Feature Set**: The result of defining the keyword and what class it belongs to.

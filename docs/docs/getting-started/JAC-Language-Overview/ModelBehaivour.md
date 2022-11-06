@@ -18,7 +18,7 @@ title: Modelling Behaivour
 
 #### Defining a Walker
 
-```jac
+```jac 
  walker [name_of_walker]{
 
 }
@@ -44,13 +44,13 @@ Defining specific node code to execute When defining a walker, you also write sp
 }
 ```
 
-## More on Behaivour with Abilities
+## More on Behaivour with Abilities 
 
-#### With Entry and Exit
+#### With Entry and Exit 
 
 When defining a walker, you also have the ability to write specific code blocks that execute if and only if a walker enters or exists a node. Any code within the with_entry block is the first thing that executes as soon as a walker enter a node. And the opposite is true for with_exit, triggering only when the walker is about to leave a node.
 
-```jac
+```jac 
 walker [name_of_walker]{
     with entry{
         [code to execute when a walker first enters a node]

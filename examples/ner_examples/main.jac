@@ -17,7 +17,7 @@ node flair_ner {
                 "LR": visitor.learning_rate.float
                 });
     }
-
+    
     can infer with predict_entity_from_flair entry{
         # TODO: remove this
         report ent_ext.entity_detection(
@@ -66,7 +66,7 @@ node flair_ner {
             ]}];
     }
 
-    # you might also need
+    # you might also need 
     # load_model, save_model, etc.
 }
 
@@ -144,11 +144,11 @@ graph ner_eval_graph {
 
 walker init {
     root {
-       spawn here --> graph::ner_eval_graph;
+       spawn here --> graph::ner_eval_graph; 
     }
 }
 
-## creating walker
+## creating walker 
 walker train_and_eval_all_models {
     # Take in a training and eval dataset
     has train_file;

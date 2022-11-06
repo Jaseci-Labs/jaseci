@@ -37,7 +37,7 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 
 
 
-## Install Jaseci Kit
+## Install Jaseci Kit 
 
 Run :
 
@@ -53,7 +53,7 @@ jsctl
 Jaseci default libraries can be seen by running :
 
 ```
-actions list
+actions list 
 ```
 
 We can load additional models by running <strong>actions load module</strong> in the terminal followed by the name of the model we want to use.

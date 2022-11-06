@@ -4,7 +4,7 @@ title: Walker to Node communication
 
 The `here` keyword is used reference the node the walker is currently on.
 
-```jac
+```jac 
 walker talker {
     has utterance;
 

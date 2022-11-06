@@ -16,7 +16,7 @@ All traversal begins at the Init or default node. This `init` node will connect 
 The Walkers are initialized and added on the root node and from there they begin traveral.
 The walkers decide which node to travel to based on which edge satisfies it's intent. The intent being a criteria meet by the edge.
 
-![Pic of Nodes and Edges](/img/tutorial/intermediate/graph.png)
+![Pic of Nodes and Edges](/img/tutorial/intermediate/graph.png) 
 
 The Walker can move from node to node but it can also jump to other nodes that are not in it's path or connected directly in the path.
 
@@ -67,7 +67,7 @@ walker init {
 
 ## Modelling structures with Nodes , Edges and Graphs
 
-Nodes , Edges and Graphs are vital to any Jaseci program.
+Nodes , Edges and Graphs are vital to any Jaseci program. 
 
 ### Nodes
 A node is a representation of an entity.
@@ -76,7 +76,7 @@ A node is a representation of an entity.
 * Nodes accumulate context via a push function, context can be read ass well
 * Nodes can execute a set of actions upon entry and exit.
 
-```jac
+```jac 
 node [name of node]{
     # to declare a variable
     has variable;
@@ -107,7 +107,7 @@ graph [name of graph] {
 
     #here is where we start to connect nodes with edges creating a graph.
     spawn{
-        # declare your nodes in here
+        # declare your nodes in here 
 
      }
 }
@@ -129,7 +129,7 @@ graph [name of graph] {
 
 #### Defining a Walker
 
-```jac
+```jac 
  walker [name_of_walker]{
 
 }
@@ -154,13 +154,13 @@ Defining specific node code to execute When defining a walker, you also write sp
 
 }
 ```
-## More on Behaivour with Abilities
+## More on Behaivour with Abilities 
 
-#### With Entry and Exit
+#### With Entry and Exit 
 
 When defining a walker, you also have the ability to write specific code blocks that execute if and only if a walker enters or exists a node. Any code within the with_entry block is the first thing that executes as soon as a walker enter a node. And the opposite is true for with_exit, triggering only when the walker is about to leave a node.
 
-```jac
+```jac 
 walker [name_of_walker]{
     with entry{
         [code to execute when a walker first enters a node]
@@ -205,13 +205,13 @@ state, input_state{
     input_state{
 
         #These operating context can be embedded within other operating context.
-
+        
     }
 
 }
 
 closing_state{
-
+ 
     #execute code specific to  closing_state nodes
 
 }
@@ -219,7 +219,7 @@ closing_state{
 }
 
 ```
-
+ 
 
 
 ## Passing Arguments to Walkers , Nodes and Edges
@@ -239,7 +239,7 @@ spawn::talker(name="Jaseci" ,value = 10);
 ```
 
 ### Passing Arguments to Nodes
-```jac
+```jac 
 node::calculator(first_number, second_number);
 ```
 
@@ -253,7 +253,7 @@ node::calculator(first_number, second_number);
 
 
 
-## Grabbing Results from reports
+## Grabbing Results from reports 
 * It can be thought of as a global list that can be appended to by any walker through out the request.
 * The data returned from using the report is always a list.
 
@@ -280,7 +280,7 @@ walker myWalker{
 
 The `here` keyword is used reference the node the walker is currently on.
 
-```jac
+```jac 
 walker talker {
     has utterance;
 
@@ -314,7 +314,7 @@ node state{
 ## Telling Walkers where to walk (Take)
 
 
-* Take is used for nodes/Edge trversal in a walker
+* Take is used for nodes/Edge trversal in a walker 
 
 * Only until all other walker logic is executed, then all queued up take operations are executed.
 * An operation would tell the walker to move/traverse on to the next node with the given filter provided when using take.

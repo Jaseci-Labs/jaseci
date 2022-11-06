@@ -1,5 +1,5 @@
 ---
-title : Multiple Inheritance
+title : Multiple Inheritance 
 ---
 JAC allows for nodes and edges  to inherit attributes and functions of the same type .
 
@@ -22,7 +22,7 @@ node output_state :input:state{
 
 ### Edge Inheritance
 
-```jac
+```jac 
 edge transition {
     has transition_next ;
 }

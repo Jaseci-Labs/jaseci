@@ -1,6 +1,6 @@
 
 
-#  Use  Encoder
+#  Use  Encoder  
 
 
 `use_enc` module uses the universal sentence encoder to generate sentence level embeddings.

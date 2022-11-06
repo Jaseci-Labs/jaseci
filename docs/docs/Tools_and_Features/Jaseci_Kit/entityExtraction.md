@@ -34,29 +34,29 @@ actions load module jaseci_ai_kit.ent_ext
         ]
         ```
         * `train_params`: (Dict): dictionary of training parameters to modify the training behaviour
-        ```
+        ``` 
         {
             "num_epoch": 20,
             "batch_size": 16,
             "LR": 0.01
         }
-        ```
+        ``` 
 * `entity_detection`: detects all availabe entities from the provided context
     * Input:
         * `text` (string): context to detect entities.
         * `ner_labels`(list of strings): List of entities, e.g. ["LOC","PER"]
-    * Return: a list of dictionary entities containing entity_text, entity_value, conf_score and index
-* `save_model`:
-    * Input
+    * Return: a list of dictionary entities containing entity_text, entity_value, conf_score and index   
+* `save_model`:  
+    * Input 
         * `model_path` (string): the path to save model
     * Returns: "[Saved model at] : <model_path>" if model successfully saved
-* `load_model`:
-    * Input
+* `load_model`:  
+    * Input 
         * `model_path` (string): the path to save model
     * Returns: "[loaded model from] : <model_path>" if model successfully loaded
-* `set_config`:
-    * Input
-        * `ner_model`: pretrained or basic model to be loaded, provide the exact name of the model, available options are:
+* `set_config`:  
+    * Input 
+        * `ner_model`: pretrained or basic model to be loaded, provide the exact name of the model, available options are: 
             * `Pre-trained LSTM / GRU` : ["ner", "ner-fast","ner-large"]
             * `Huggingface model` : all available models that can be intialized with AutoModel
             * `None` : for load a RNN model from scratch

@@ -1,4 +1,4 @@
-# Entity Extraction Using Transformers
+# Entity Extraction Using Transformers 
 
 
 `tfm_ner` module uses transformers to identify and extract entities. It uses TokenClassification method from Huggingface.
@@ -43,16 +43,16 @@ actions load module jaseci_ai_kit.ent_ext
 * `extract_entity`: detects all availabe entities from the provided context
     * Input:
         * `text` (string): context to detect entities.
-    * Return: a list of dictionary entities containing entity_text, entity_value, conf_score and index
-* `save_model`:
-    * Input
+    * Return: a list of dictionary entities containing entity_text, entity_value, conf_score and index   
+* `save_model`:  
+    * Input 
         * `model_path` (string): the path to save model
     * Returns: "[Saved model at] : <model_path>" if model successfully saved
-* `load_model`:
-    * Input
+* `load_model`:  
+    * Input 
         * `model_path` (string): the path to save model
     * Returns: "[loaded model from] : <model_path>" if model successfully loaded
-* `get_train_config`:
+* `get_train_config`:  
     * Input: None
     * Returns: json of all the current training configuration
      ```
@@ -66,21 +66,21 @@ actions load module jaseci_ai_kit.ent_ext
             "MODE": "default"
         }
     ```
-* `set_train_config`:
-    * Input
+* `set_train_config`:  
+    * Input 
         * `train_parameters` (Dict): dictionary of training parameters. See the json example above for available configuration parameters.
     * Returns: "Config setup is complete." if train configuration is completed successfully
-* `get_model_config`:
+* `get_model_config`:  
     * Input: None
     * Returns: json of all the current model configuration
     ```
         {
-            "model_name": "prajjwal1/bert-tiny",
+            "model_name": "prajjwal1/bert-tiny", 
             "model_save_path": "modeloutput"
         }
     ```
-* `set_model_config`:
-    * Input
+* `set_model_config`:  
+    * Input 
         * `model_parameters`(Dict): dictionary of model parameters. See the json example above for available configuration parameters.
     * Returns: "Config setup is complete." if model configuration is completed successfully
 #### Example Jac Usage:
@@ -93,7 +93,7 @@ walker tfm_ner_example {
     has mode = "default";
     can tfm_ner.extract_entity, tfm_ner.train;
     train_data = file.load_json(train_file);
-
+    
     # Training the model
     tfm_ner.train(
         mode = mode,

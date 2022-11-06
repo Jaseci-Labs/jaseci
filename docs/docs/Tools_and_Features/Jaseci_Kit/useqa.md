@@ -1,5 +1,5 @@
 
-# Use QA
+# Use QA 
 `use_qa` module uses the multilingual-qa to generate sentence level embeddings.
 The sentence level embeddings can then be used to calculate best match between question and available answers via cosine similarity and/or dist_score.
 
@@ -59,7 +59,7 @@ actions load module jaseci_ai_kit.use_qa
     * Input:
         * `text` (string): text to classify
         * `classes` (list of strings): candidate classification classes
-    * Returns:
+    * Returns: 
 #### Example Jac Usage:
 ```jac
 # Use USE_QA model for zero-shot text classification

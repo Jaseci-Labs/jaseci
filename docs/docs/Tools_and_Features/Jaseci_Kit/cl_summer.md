@@ -1,5 +1,5 @@
 
-# Summarizer
+# Summarizer 
 `cl_summer` uses the sumy summarizer to create extractive summary.
 
 To load the Summarizer run :
@@ -9,7 +9,7 @@ actions load module jaseci_ai_kit.cl_summer
 ```
 
 * `summarize`: to get the extractive summary in provided sentences count.
-    * Input
+    * Input 
         * `text`(String): text the contain the entire context
         * `url`(String): the link to the webpage
         * `sent_count`(int): number of sentence you want in the summary

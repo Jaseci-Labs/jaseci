@@ -2,7 +2,7 @@
 title : Operators
 ---
 
-### Arthimetic
+### Arthimetic 
 
 ```jac
 // addition

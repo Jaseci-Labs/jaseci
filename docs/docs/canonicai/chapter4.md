@@ -7,13 +7,13 @@ We are building a Conversational AI.
 
 ### Explaining std.input and std.out
 
-Let's start with std.input, std meaning "standard" and input meaning "what is put in". std.input is a function that intakes, what a user put in only from the terminal and can be stored in a variable. It pauses the program to intake data from the user. The function accepts an optional string to display to the terminal. It acts like a prompt so user know what to input to the terminal.  This function cannot be used to intake any data from api or anything external. That is what std.input is all about.
+Let's start with std.input, std meaning "standard" and input meaning "what is put in". std.input is a function that intakes, what a user put in only from the terminal and can be stored in a variable. It pauses the program to intake data from the user. The function accepts an optional string to display to the terminal. It acts like a prompt so user know what to input to the terminal.  This function cannot be used to intake any data from api or anything external. That is what std.input is all about. 
 
 ```
 name = std.input('what is your name');
 ```
 
-Let's now talk about std.out. std in jac means "standard" and out meaning "output". std.out is a function in jac when called it display data to a terminal or server and it intake a string parameter which is used to display.
+Let's now talk about std.out. std in jac means "standard" and out meaning "output". std.out is a function in jac when called it display data to a terminal or server and it intake a string parameter which is used to display. 
 
 ```
 std.out('Display TEXT here');
@@ -23,8 +23,8 @@ std.out('Display TEXT here');
 
 In this section we will be running you through how to run a program interactively via jsctl. Let's start from the first step. You need to install jaseci if you have not. Run the command below in the terminal.
 
-```
-pip install jaseci
+``` 
+pip install jaseci 
 ```
 
 After, installing jaseci we have to run the command jsctl meaning "jaseci control". Run the command below in the terminal.
@@ -73,7 +73,7 @@ Can you confirm your name to be Tony Stark and your address as 10880 Malibu Poin
 ```
 
 **My address is at 10880 Malibu Point**: Coming from the last query, when get re-transitioned to the collect information state and the bot prompt the user for data and the user responds with the current query. The entity extraction model will extract the feature address and map  **10880 Malibu Point** to address, alongside with the last features extracted from the last query and with both information provided it will do an entity transition and move to the next state (node) called confirmation state.
-
+ 
 ```
 > Yes that looks correct
 You are all set for a Tesla test drive!

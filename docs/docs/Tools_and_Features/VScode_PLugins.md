@@ -10,7 +10,7 @@ Jaseci has developed it's own plugin for Visual Studio Code to aid in your devel
 ## To install
 1. Open Visual Studio Code.
 
-2. Go to View > Command Palette .
+2. Go to View > Command Palette . 
 ![Go to Command Palette](/img/vsplugin_1.png)
 
 3. Type Install and select extensions.

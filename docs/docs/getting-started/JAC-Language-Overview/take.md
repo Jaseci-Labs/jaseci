@@ -2,7 +2,7 @@
 title: Telling Walkers where to walk
 ---
 
-* Take is used for nodes/Edge trversal in a walker
+* Take is used for nodes/Edge trversal in a walker 
 
 * Only until all other walker logic is executed, then all queued up take operations are executed.
 * An operation would tell the walker to move/traverse on to the next node with the given filter provided when using take.

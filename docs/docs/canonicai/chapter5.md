@@ -64,7 +64,7 @@ node cai_state {
 ```
 Before, we had classify_intent, extract_entities, gen_response functionality in the cai_state for specifically virtual assistance. However, since we have added the FAQ model (faq node) to the conversation AI state we needed to centralize the functionality, they have completely different functionality when it comes to the NLU (Natural Language Understanding) where we used it for intent classification and entity extraction. Likewise, the FAQ model uses the NLU to find the faq node which matches the appropriate user query, and for the NLG (Natural Language Generation) they generates different responses based on the NLU.
 
-After:
+After: 
 ```
 node cai_state {
     has name;
@@ -92,7 +92,7 @@ can nlu {
     }
 ```
 
-For the NLU here, intent classification and extract entities function have been called and it override the nlu logic from the cai_state.
+For the NLU here, intent classification and extract entities function have been called and it override the nlu logic from the cai_state. 
 
 **NLG logic for va_state which inherits cai_state**
 
@@ -235,7 +235,7 @@ jsctl load module JASECI_AI_KIT_MODULE
 It's a sentence level embeddings which is used to calculate best match between question and available answers via cosine similarity and/or dist_score.
 
 **What does it do?**
-It is used for text classification. It requires no training data. However it requires you to have the labels (classes) as prerequisite in order for you to match between the user query.
+It is used for text classification. It requires no training data. However it requires you to have the labels (classes) as prerequisite in order for you to match between the user query. 
 
 **How to load it as an action?**
 Above, we showed you how to load actions and now in this section we will show you how to implememt it by loading the use_qa actions. Once you run the command sucessfully you should be able to use all of it's functionality. The command for loading the actions is as follows:
@@ -265,7 +265,7 @@ node faq_state:cai_state {
     can nlg {
         visitor.response = here.answer;
     }
-}
+} 
 ```
 
 **How is it useful in this FAQ chatbot?**
@@ -293,7 +293,7 @@ node faq_state:cai_state {
     can nlg {
         visitor.response = here.answer;
     }
-}
+} 
 ```
 
 Let's begin. The faq state inherits the cai_state node because it's a part of the conversational state. It accepts **answer** as a parameter and that's all the faq answer node generated from the FAQ. The faq state also inherits a function from the use_qa module called **use.qa_classify** this will be used to find the mathing answer to be returned to the user. use_qa_classify function as discussed in a recent section, intakes two paramters: text (which is the question the user provided) and classes (the answers extracted from the faq_transition edges which is used to store all the answers) and these functions will be called when faq_state calls the nlu node ability and the nlg node ability when executed will return the answer.
@@ -304,7 +304,7 @@ This is a edge transition created for user query to navigate to node with the an
 ```
 edge answer_transition {
     has answer;
-}
+} 
 ```
 
 ### The updated talk walker logic
@@ -379,7 +379,7 @@ walker ingest_faq {
 
 So, let's explain what this walker does. Essentially, it takes a kb_file (knowledge base file) in the form of json that have a key of question and a key of answer. Then loop is created in the faq state to spawn answers nodes with answer transition edge from the answers from the knowledge based. This walker just intakes a file and generate faq answer nodes with edges.
 
-### Interacting with the FAQ side using the interactive_faq walker
+### Interacting with the FAQ side using the interactive_faq walker 
 In this section, we will walk you through a session interacting with the faq side. So let's get started.
 
 Let's run jaseci control in the terminal.
