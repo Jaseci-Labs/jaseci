@@ -1,32 +1,34 @@
-from unittest import TestCase
-from jaseci.utils.utils import TestCaseHelper
-from ..use_enc import serv_actions
-from fastapi.testclient import TestClient
-
-from .test_data import test_text_similarity, test_text_classify  # noqa
+from jaseci.utils.test_core import CoreTest, jac_testcase
+from jaseci.actions.live_actions import load_module_actions, unload_module
 
 
-class use_enc_test(TestCaseHelper, TestCase):
-    """Unit test for USE Encoder FastAPI server"""
+class UseEncModule(CoreTest):
+    fixture_src = __file__
 
-    def setUp(self):
-        super().setUp()
-        self.client = TestClient(serv_actions())
+    @classmethod
+    def setUpClass(cls):
+        super(UseEncModule, cls).setUpClass()
+        ret = load_module_actions("jaseci_ai_kit.use_enc")
+        assert ret == True
 
-    def tearDown(self) -> None:
-        return super().tearDown()
+    @jac_testcase("use_enc.jac", "test_enc_cos_sim_score")
+    def test_enc_cos_sim_score(self, ret):
+        self.assertGreaterEqual(round(ret["report"][0], 2), 0.9)
 
-    def test_enc_text_similarity(self):
-        response = self.client.post("/text_similarity/", json=test_text_similarity)
-        self.assertEqual(response.status_code, 200)
+    @jac_testcase("use_enc.jac", "test_enc_text_similarity")
+    def test_enc_text_similarity(self, ret):
+        self.assertEqual(round(ret["report"][0], 2), 0.03)
 
-    def test_enc_text_classify(self):
-        response = self.client.post("/text_classify/", json=test_text_classify)
-        self.assertEqual(response.status_code, 200)
+    @jac_testcase("use_enc.jac", "test_enc_text_classify")
+    def test_enc_text_classify(self, ret):
+        self.assertEqual(ret["report"][0]["match"], "getdirections")
 
-    def test_enc_get_embeddings(self):
-        response = self.client.post(
-            "/get_embedding/", json={"text": "Share my location with Hillary's sister"}
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()[0]), 512)
+    @jac_testcase("use_enc.jac", "test_enc_get_embeddings")
+    def test_enc_get_embeddings(self, ret):
+        self.assertEqual(len(ret["report"][0][0]), 512)
+
+    @classmethod
+    def tearDownClass(cls):
+        super(UseEncModule, cls).tearDownClass()
+        ret = unload_module("jaseci_ai_kit.modules.use_enc.use_enc")
+        assert ret == True

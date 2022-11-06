@@ -1,68 +1,50 @@
-from unittest import TestCase
-from jaseci.utils.utils import TestCaseHelper
-from ..use_qa import serv_actions
-from fastapi.testclient import TestClient
-from .test_data import (  # noqa
-    test_answer_similarity,
-    test_question_similarity,
-    test_text_classify,
-    test_question_answer_similarity,
-)
+from jaseci.utils.test_core import CoreTest, jac_testcase
+from jaseci.actions.live_actions import load_module_actions, unload_module
 
 
-class use_qa_test(TestCaseHelper, TestCase):
-    """Unit test for USE QA model FastAPI server"""
+class UseQAModule(CoreTest):
+    fixture_src = __file__
 
-    def setUp(self):
-        super().setUp()
-        self.client = TestClient(serv_actions())
+    @classmethod
+    def setUpClass(cls):
+        super(UseQAModule, cls).setUpClass()
+        ret = load_module_actions("jaseci_ai_kit.use_qa")
+        assert ret == True
 
-    def tearDown(self) -> None:
-        return super().tearDown()
+    @jac_testcase("use_qa.jac", "test_enc_question_similarity")
+    def test_enc_question_similarity(self, ret):
+        self.assertGreaterEqual(round(ret["report"][0], 2), 0.9)
 
-    def test_enc_question_similarity(self):
-        response = self.client.post(
-            "/question_similarity/", json=test_question_similarity
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertGreaterEqual(round(response.json(), 2), 0.9)
+    @jac_testcase("use_qa.jac", "test_enc_answer_similarity")
+    def test_enc_answer_similarity(self, ret):
+        self.assertGreaterEqual(round(ret["report"][0], 2), 0.9)
 
-    def test_enc_question_classify(self):
-        response = self.client.post("/question_classify/", json=test_text_classify)
-        self.assertEqual(response.status_code, 200)
+    @jac_testcase("use_qa.jac", "test_enc_question_classify")
+    def test_enc_question_classify(self, ret):
+        self.assertEqual(ret["report"][0]["match"], "getdirections")
 
-    def test_enc_answer_similarity(self):
-        response = self.client.post("/answer_similarity/", json=test_answer_similarity)
-        self.assertEqual(response.status_code, 200)
-        self.assertGreaterEqual(round(response.json(), 2), 0.9)
+    @jac_testcase("use_qa.jac", "test_enc_answer_classify")
+    def test_enc_answer_classify(self, ret):
+        self.assertEqual(ret["report"][0]["match"], "searchplace")
 
-    def test_enc_answer_classify(self):
-        response = self.client.post("/answer_classify/", json=test_text_classify)
-        self.assertEqual(response.status_code, 200)
+    @jac_testcase("use_qa.jac", "test_enc_question")
+    def test_enc_question(self, ret):
+        self.assertEqual(len(ret["report"][0][0]), 512)
 
-    def test_enc_question(self):
-        response = self.client.post(
-            "/enc_question/",
-            json={"question": "How old are you?"},
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()[0]), 512)
+    @jac_testcase("use_qa.jac", "test_enc_answer")
+    def test_enc_answer(self, ret):
+        self.assertEqual(len(ret["report"][0][0]), 512)
 
-    def test_enc_answer(self):
-        response = self.client.post(
-            "/enc_answer/",
-            json={"answer": "i am 30 years old"},
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()[0]), 512)
+    @jac_testcase("use_qa.jac", "test_enc_qa_classify")
+    def test_enc_qa_classify(self, ret):
+        self.assertEqual(ret["report"][0]["match"], "searchplace")
 
-    def test_enc_qa_classify(self):
-        response = self.client.post("/qa_classify/", json=test_text_classify)
-        self.assertEqual(response.status_code, 200)
+    @jac_testcase("use_qa.jac", "test_enc_qa_similarity")
+    def test_enc_qa_similarity(self, ret):
+        self.assertGreaterEqual(round(ret["report"][0], 2), 0.4)
 
-    def test_qa_similarity(self):
-        response = self.client.post(
-            "/qa_similarity/", json=test_question_answer_similarity
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertGreaterEqual(round(response.json(), 2), 0.4)
+    @classmethod
+    def tearDownClass(cls):
+        super(UseQAModule, cls).tearDownClass()
+        ret = unload_module("jaseci_ai_kit.modules.use_qa.use_qa")
+        assert ret == True

@@ -1,6 +1,6 @@
 from jaseci.svc import RedisService as Rs
-from jaseci_serv.jaseci_serv.configs import REDIS_CONFIG
-from jaseci_serv.jaseci_serv.kubes import REDIS_KUBE
+from jaseci_serv.configs import REDIS_CONFIG
+from jaseci_serv.kubes import REDIS_KUBE
 
 
 class RedisService(Rs):

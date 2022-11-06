@@ -3,3 +3,12 @@ walker pack_it {
     report file.load_json("data.json");
     file.delete("data.json");
 }
+
+global gif = "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII=";
+
+walker bin_load_save {
+    file.dump_from_b64("file.gif", global.gif);
+    s=file.load_to_b64("file.gif");
+    report s;
+    file.delete("file.gif");
+}

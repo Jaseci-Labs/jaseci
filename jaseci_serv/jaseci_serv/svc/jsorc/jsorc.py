@@ -1,5 +1,5 @@
 from jaseci.svc import JsOrcService as Js
-from jaseci_serv.jaseci_serv.configs import JSORC_CONFIG
+from jaseci_serv.configs import JSORC_CONFIG
 
 
 class JsOrcService(Js):
