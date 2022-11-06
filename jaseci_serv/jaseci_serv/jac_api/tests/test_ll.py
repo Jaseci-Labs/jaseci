@@ -87,7 +87,9 @@ class TestLL(TestCaseHelper, TestCase):
         data = self.run_walker("get_gen_day", {})["report"]
         self.assertEqual(data[0][1]["name"], "day")
         jid = data[0][1]["jid"]
-        data = self.run_walker("create_workette", {}, prime=jid)["report"]
+        data = self.run_walker("create_workette", {}, prime=jid)
+        self.log(data)
+        data = data["report"]
         self.assertEqual(data[0]["name"], "workette")
         data = self.run_walker("create_workette", {}, prime=jid)["report"]
         self.assertEqual(data[0]["name"], "workette")
