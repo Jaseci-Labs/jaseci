@@ -4,6 +4,7 @@ Variable manager for Jac
 Representations for all jac runtime variables
 """
 from jaseci.element.element import Element
+from jaseci.element.obj_mixins import Anchored
 from jaseci.graph.node import Node
 from jaseci.graph.edge import Edge
 from jaseci.graph.graph import Graph
@@ -85,6 +86,8 @@ def is_jac_elem(val):
 
 def jac_elem_wrap(val, serialize_mode=False):
     if serialize_mode:
+        if isinstance(val, Anchored):
+            val.context = jac_wrap_value(val.context)
         val = val.serialize()
     else:
         val = val.id.urn.replace("urn", "jac")
