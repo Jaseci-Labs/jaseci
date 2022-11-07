@@ -49,7 +49,7 @@ Trainer:
       batch_size: 32
       num_workers: 1
       shuffle: true
-      train_json: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/ph/tests/train.json
+      train_json: jaseci_ai_kit/modules/ph/tests/fixtures/train.json
       validation_split: 0.2
     type: SnipsDataLoader
   loss: nll_loss
@@ -73,7 +73,7 @@ Trainer:
     early_stop: 10
     epochs: 100
     monitor: min val_loss
-    save_dir: personalized_head/jaseci/jaseci_kit/jaseci_kit/modules/ph/tests/saved_models/
+    save_dir: output/
     save_period: 1
     tensorboard: true
     verbosity: 2

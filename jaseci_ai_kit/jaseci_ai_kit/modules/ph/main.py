@@ -51,9 +51,7 @@ def create_head_list(config_file: str, overwrite: bool = False) -> None:
 
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
-def create_head(
-    config_file: str = None, uuid: str = None, overwrite: bool = False
-) -> None:
+def create_head(uuid: str, config_file: str = None, overwrite: bool = False) -> None:
     """
     Create a personalized head. This will create a new inference engine.
     @param new_config: new config to be used for the head
