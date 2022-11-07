@@ -1,6 +1,4 @@
----
-title :  File Actions
----
+# File Actions 
 ### Load file to string 
 ```jac 
 # Converts file to string , max_chars is set to none by default

@@ -1,6 +1,4 @@
----
-title :  Rand Actions
----
+# Rand Actions
 ### Seeds random number generator
 ```jac
 # seeds random num generator

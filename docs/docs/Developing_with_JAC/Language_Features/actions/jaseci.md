@@ -1,6 +1,4 @@
----
-title :  Jaseci Actions
----
+# Jaseci Actions
 ## Alias
 Alias provides names  for long string like UUIDs.
 

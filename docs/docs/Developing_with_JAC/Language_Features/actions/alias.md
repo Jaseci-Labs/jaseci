@@ -1,7 +1,4 @@
----
-title :  Alias Actions
----
-
+# Alias Actions
 Alias provides names  for long string like UUIDs.
 
 ### Register Alias 
