@@ -20,6 +20,7 @@ class RedisHook(MemoryHook):
 
         # proxy redis, to be overriden by build_apps
         self.redis = ProxyService()
+        self.red_touch_count = 0
 
         super().__init__()
 
@@ -38,6 +39,7 @@ class RedisHook(MemoryHook):
         if obj is None and self.redis.is_running():
             loaded_obj = self.redis.get(item_id.urn)
             if loaded_obj:
+                self.red_touch_count += 1
                 jdict = json.loads(loaded_obj, cls=JaseciJsonDecoder)
                 j_type = jdict["j_type"]
                 j_master = jdict["j_master"]
@@ -70,6 +72,7 @@ class RedisHook(MemoryHook):
             glob = self.redis.hget("global", name)
 
             if glob:
+                self.red_touch_count += 1
                 super().commit_glob_to_cache(name, glob)
 
         return glob
