@@ -9,7 +9,6 @@ import math
 from datetime import datetime
 import numpy as np
 from fastapi import HTTPException
-from fastapi.responses import JSONResponse
 from jaseci.actions.live_actions import jaseci_action
 
 """
@@ -77,10 +76,10 @@ def train(dataset: List, training_parameters: Dict = None):
             warmup_steps=warmup_steps,
             output_path=training_config["model_save_path"],
         )
-        return JSONResponse(content="Model Training is comnpleted", status_code=200)
+        return "Model Training is completed"
     except Exception as e:
         print(e)
-        return JSONResponse(content=f"Error Occured {str(e)}", status_code=500)
+        return f"Error Occured {str(e)}"
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
@@ -101,10 +100,10 @@ def get_text_sim(query: List[str], corpus: List[str], top_k=1):
                     }
                 )
             count += 1
-        return JSONResponse(resp_sim_matrix)
+        return resp_sim_matrix
     except Exception as e:
         print(e)
-        return JSONResponse(content=f"Error Occured : {str(e)}", status_code=500)
+        return f"Error Occured : {str(e)}"
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
@@ -113,13 +112,10 @@ def getembeddings(text: List[str]):
     model.eval()
     try:
         embeddings = model.encode(text)
-        return JSONResponse(
-            content={np.squeeze(np.asarray(embeddings)).tolist()},
-            status_code=200,
-        )
+        return {np.squeeze(np.asarray(embeddings)).tolist()}
     except Exception as e:
         print(e)
-        return JSONResponse(content=f"Error Occured : {str(e)}", status_code=500)
+        return f"Error Occured : {str(e)}"
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
@@ -130,7 +126,7 @@ def get_cos_score(vec_a: list, vec_b: list):
     Param 2 - Second vector
     Return - float between 0 and 1
     """
-    return cos_sim(vec_a, vec_b)
+    return np.asarray(cos_sim(vec_a, vec_b)).tolist()
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
@@ -141,7 +137,7 @@ def get_dot_score(vec_a: list, vec_b: list):
     Param 2 - Second vector
     Return - float between 0 and 1
     """
-    return dot_score(vec_a, vec_b)
+    return np.asarray(dot_score(vec_a, vec_b)).tolist()
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
