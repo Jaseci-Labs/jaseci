@@ -28,7 +28,7 @@ class ColCodes:
 
 def master_from_meta(meta):
     """Return master from meta in actions"""
-    return meta["h"].get_obj(meta["m_id"], uuid.UUID(meta["m_id"]))
+    return meta["h"].get_obj(meta["m_id"], meta["m_id"])
 
 
 # Get an instance of a logger

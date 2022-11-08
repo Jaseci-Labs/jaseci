@@ -27,7 +27,7 @@ class StackTests(CoreTest):
             ["sentinel_register", {"code": self.load_jac("ll.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "print_life_note"}])
-        life_node = self.mast._h.get_obj(self.mast._m_id, uuid.UUID(ret["final_node"]))
+        life_node = self.mast._h.get_obj(self.mast._m_id, ret["final_node"])
         life_node.context.pop("note")
         ret = self.call(self.mast, ["walker_run", {"name": "print_life_note"}])
         self.assertTrue(ret["success"])

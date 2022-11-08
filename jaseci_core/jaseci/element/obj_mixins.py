@@ -63,8 +63,8 @@ class Sharable:
         self.j_access = (
             mode
             if mode is not None
-            else self._h.get_obj(self._m_id, uuid.UUID(self._m_id)).perm_default
-            if self._h.has_obj(uuid.UUID(self._m_id))
+            else self._h.get_obj(self._m_id, self._m_id).perm_default
+            if self._h.has_obj(self._m_id)
             else "private"
         )
         self.j_r_acc_ids = IdList(self)
@@ -76,7 +76,7 @@ class Sharable:
 
     def set_master(self, m_id):
         if m_id is None or m_id == "anon":
-            m_id = uuid.UUID(int=0).urn
+            m_id = 0
         self.j_master = m_id
 
     def make_public(self):
@@ -96,7 +96,7 @@ class Sharable:
 
     def is_public(self):
         """Check if element is publically accessible"""
-        return self.j_access == "public" or self.j_master == uuid.UUID(int=0).urn
+        return self.j_access == "public" or self.j_master == 0
 
     def is_read_only(self):
         """Check if element is publically readable"""
@@ -114,7 +114,7 @@ class Sharable:
         """Quick check if caller is super master"""
         if not hasattr(self, "_h"):
             return False
-        user = self._h.get_obj(caller_id, uuid.UUID(caller_id), override=True)
+        user = self._h.get_obj(caller_id, caller_id, override=True)
         if user.j_type == "super_master":
             return True
         return False
@@ -173,7 +173,7 @@ class Hookable(Sharable):
     def __init__(self, h, persist: bool = True, parent=None, **kwargs):
         self._h = h  # hook for storing and loading to persistent store
         self._persist = persist
-        self.j_parent = parent.id.urn if parent else None  # member of
+        self.j_parent = parent.jid if parent else None  # member of
         Sharable.__init__(self, **kwargs)
 
     def check_hooks_match(self, target, silent=False):
@@ -208,4 +208,4 @@ class Hookable(Sharable):
         Returns the objects for list of owners of this element
         """
         if self.j_parent:
-            return self._h.get_obj(self._m_id, uuid.UUID(self.j_parent))
+            return self._h.get_obj(self._m_id, self.j_parent)

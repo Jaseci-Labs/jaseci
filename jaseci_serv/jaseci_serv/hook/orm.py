@@ -48,7 +48,6 @@ class OrmHook(RedisHook):
             kwargs = {"h": self, "m_id": loaded_obj.j_master.urn, "auto_save": False}
             ret_obj = class_for_type(**kwargs)
             utils.map_assignment_of_matching_fields(ret_obj, loaded_obj)
-            assert uuid.UUID(ret_obj.jid) == loaded_obj.jid
 
             # Unwind jsci_payload for fields beyond element object
             ret_obj.json_load(loaded_obj.jsci_obj)

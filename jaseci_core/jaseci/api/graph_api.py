@@ -85,7 +85,7 @@ class GraphApi:
         Returns the default graph master is using
         """
         if self.active_gph_id:
-            default = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
+            default = self._h.get_obj(self._m_id, self.active_gph_id)
             return default.serialize(detailed=detailed)
         else:
             return {"success": False, "response": "No default graph is selected!"}
@@ -157,7 +157,7 @@ class GraphApi:
             cmd = input("graph_walk_mode > ")
 
     def active_gph(self):
-        return self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
+        return self._h.get_obj(self._m_id, self.active_gph_id)
 
     def destroy(self):
         """

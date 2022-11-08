@@ -94,7 +94,7 @@ class Element(Hookable):
 
     def get_master(self):
         """Get the master of an element"""
-        return self._h.get_obj(self._m_id, uuid.UUID(self.j_master))
+        return self._h.get_obj(self._m_id, self.j_master)
 
     def duplicate(self, persist_dup: bool = False):
         """
@@ -173,9 +173,7 @@ class Element(Hookable):
                 if deep > 0 and isinstance(jdict[i], IdList):
                     for j in range(len(jdict[i])):
                         jdict[i][j] = copy.copy(
-                            self._h.get_obj(
-                                self._m_id, uuid.UUID(jdict[i][j])
-                            ).serialize(deep - 1)
+                            self._h.get_obj(self._m_id, jdict[i][j]).serialize(deep - 1)
                         )
         return jdict
 

@@ -171,7 +171,7 @@ def get_global_actions(hook):
         ):
             global_action_list.append(
                 Action(
-                    m_id=uuid.UUID(int=0).urn,
+                    m_id=0,
                     h=hook,
                     mode="public",
                     name=i,

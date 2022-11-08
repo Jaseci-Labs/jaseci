@@ -88,7 +88,7 @@ class SentinelApi:
         glob_id = self._h.get_glob("GLOB_SENTINEL")
         if not glob_id:
             return {"response": "No global sentinel is available!", "success": False}
-        g_snt = self._h.get_obj(self._m_id, uuid.UUID(glob_id)).duplicate()
+        g_snt = self._h.get_obj(self._m_id, glob_id).duplicate()
 
         snt = self.sentinel_ids.get_obj_by_name(g_snt.name, silent=True)
         if not snt:
@@ -208,7 +208,7 @@ class SentinelApi:
         else:
             self.active_snt_id = "global"  # Resolved in interface
             self.alias_register("active:sentinel", glob_id)
-            sent = self._h.get_obj(self._m_id, uuid.UUID(glob_id))
+            sent = self._h.get_obj(self._m_id, glob_id)
             if auto_create_graph:
                 ret["graph_created"] = self.graph_create(set_active=True)
             auto_run_ret = self.attempt_auto_run(
@@ -232,7 +232,7 @@ class SentinelApi:
         if not id:
             return {"response": "No default sentinel is selected!", "success": False}
         else:
-            default = self._h.get_obj(self._m_id, uuid.UUID(id))
+            default = self._h.get_obj(self._m_id, id)
             return default.serialize(detailed=detailed)
 
     @Interface.private_api(cli_args=["snt"])
@@ -252,14 +252,14 @@ class SentinelApi:
             if self.active_snt_id == "global"
             else self.active_snt_id
         )
-        return self._h.get_obj(self._m_id, uuid.UUID(sid)) if sid is not None else None
+        return self._h.get_obj(self._m_id, sid) if sid is not None else None
 
     def attempt_auto_run(self, sent: Sentinel, walk_name, ctx):
         if (
             sent.arch_ids.has_obj_by_name(walk_name, kind="walker")
             and self.active_gph_id
         ):
-            nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
+            nd = self._h.get_obj(self._m_id, self.active_gph_id)
             return self.walker_run(name=walk_name, nd=nd, ctx=ctx, snt=sent)
 
     def destroy(self):

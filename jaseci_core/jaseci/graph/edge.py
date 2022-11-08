@@ -27,7 +27,7 @@ class Edge(Element, Anchored):
     def from_node(self):
         """Returns node edge is pointing from"""
         ret = (
-            self._h.get_obj(self._m_id, uuid.UUID(self.from_node_id))
+            self._h.get_obj(self._m_id, self.from_node_id)
             if self.from_node_id
             else None
         )
@@ -41,11 +41,7 @@ class Edge(Element, Anchored):
         """Returns node edge is pointing to"""
         if not self.to_node_id:
             return None
-        ret = (
-            self._h.get_obj(self._m_id, uuid.UUID(self.to_node_id))
-            if self.to_node_id
-            else None
-        )
+        ret = self._h.get_obj(self._m_id, self.to_node_id) if self.to_node_id else None
         if not ret:
             logger.critical(str(f"{self} disconnected to target node"))
             return None
@@ -60,8 +56,8 @@ class Edge(Element, Anchored):
         """Returns opposite node edge is pointing from node_obj"""
         node_set = [self.to_node_id, self.from_node_id]
         try:
-            node_set.remove(node_obj.id.urn)
-            return self._h.get_obj(self._m_id, uuid.UUID(node_set[0]))
+            node_set.remove(node_obj.jid)
+            return self._h.get_obj(self._m_id, node_set[0])
         except ValueError:
             logger.critical(str(f"{self} disconnected to node {node_obj}"))
             return None
@@ -115,14 +111,14 @@ class Edge(Element, Anchored):
         if not source and not target:
             return False
         if self.bidirected or ignore_direction:
-            if source and source.id.urn not in [self.from_node_id, self.to_node_id]:
+            if source and source.jid not in [self.from_node_id, self.to_node_id]:
                 return False
-            if target and target.id.urn not in [self.from_node_id, self.to_node_id]:
+            if target and target.jid not in [self.from_node_id, self.to_node_id]:
                 return False
         else:
-            if source and source.id.urn != self.from_node_id:
+            if source and source.jid != self.from_node_id:
                 return False
-            if target and target.id.urn != self.to_node_id:
+            if target and target.jid != self.to_node_id:
                 return False
         return True
 

@@ -40,16 +40,16 @@ class Walker(Element, WalkerInterp, Anchored):
     def current_node(self):
         if not self.current_node_id:
             return None
-        elif not self._h.has_obj(uuid.UUID(self.current_node_id)):
+        elif not self._h.has_obj(self.current_node_id):
             self.current_node_id = None
             return None
         else:
-            return self._h.get_obj(self._m_id, uuid.UUID(self.current_node_id))
+            return self._h.get_obj(self._m_id, self.current_node_id)
 
     @current_node.setter
     def current_node(self, obj):
         if obj:
-            self.current_node_id = obj.id.urn
+            self.current_node_id = obj.jid
         else:
             self.current_node_id = None
 
@@ -200,7 +200,7 @@ class Walker(Element, WalkerInterp, Anchored):
     def log_history(self, name, value):
         """Helper function for logging history of walker's activities"""
         if isinstance(value, Element):
-            value = {"type": value.j_type, "id": value.id.urn}
+            value = {"type": value.j_type, "id": value.jid}
         if isinstance(value, uuid.UUID):
             value = value.urn
         if name in self.profile.keys():
