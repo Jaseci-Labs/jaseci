@@ -6,6 +6,9 @@ import os
 
 class TfmNerTest(CoreTest):
     fixture_src = __file__
+    """
+    Test Class for Tfm_Ner Module to test the functionality of api's
+    """
 
     @classmethod
     def setUpClass(cls):
