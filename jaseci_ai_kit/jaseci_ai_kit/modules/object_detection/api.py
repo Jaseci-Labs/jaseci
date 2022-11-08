@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Form, File, UploadFile
+from fastapi import FastAPI, Form, File, UploadFile, WebSocket
 from typing import List, Optional
 
 import cv2, torch, random, base64, uuid
@@ -13,10 +13,9 @@ colors = [
 
 @app.post("/load_model")
 def load_model(
-    name: str = Form("last"),
-    confidence_threshold: float = Form(0.05),
+        name: str = Form("last"),
+        confidence_threshold: float = Form(0.05),
 ):
-
     global model
     global conf
 
@@ -36,11 +35,10 @@ def load_model(
 
 @app.post("/detect")
 def detect(
-    file_list: List[UploadFile] = File(...),
-    image_size: Optional[int] = Form(416),
-    download_image: Optional[bool] = Form(False),
+        file_list: List[UploadFile] = File(...),
+        image_size: Optional[int] = Form(416),
+        download_image: Optional[bool] = Form(False),
 ):
-
     # confidence threshold
     model.conf = conf
 
@@ -81,6 +79,20 @@ def detect(
     return encoded_json_results
 
 
+def detect_online(img_arr, image_size):
+    img_arr = base64.b64decode(img_arr)
+    buf_img = np.fromstring(img_arr, np.uint8)
+    img = cv2.imdecode(buf_img, 0)
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    model.conf = 0.02
+    print("starting model:: ")
+    results = model(img_rgb, size=416)
+    print(results)
+    json_results = results_to_json(results, model)
+    encoded_json_results = str(json_results).replace("'", r'"')
+    return encoded_json_results
+
+
 ##############################################
 # --------------Helper Functions---------------
 ##############################################
@@ -111,7 +123,7 @@ def plot_one_box(x, im, color=(128, 128, 128), label=None, line_thickness=3):
         im.data.contiguous
     ), "Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image."
     tl = (
-        line_thickness or round(0.002 * (im.shape[0] + im.shape[1]) / 2) + 1
+            line_thickness or round(0.002 * (im.shape[0] + im.shape[1]) / 2) + 1
     )  # line/font thickness
     c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
     cv2.rectangle(im, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
@@ -138,3 +150,23 @@ def base64EncodeImage(img):
     im_b64 = base64.b64encode(im_arr.tobytes()).decode("utf-8")
 
     return im_b64
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    print("connected to the server::")
+    try:
+        while True:
+            data = await websocket.receive()
+
+            #print("data is enough for a frame")
+            print(type(data['text'].encode()))
+            # need to store image stream in buffer
+            encoded_json = detect_online(data['text'], len(data['text']))
+            print("encoded_json::", encoded_json)
+            await websocket.send_json(encoded_json)
+    except Exception as e:
+        print("error", e)
+    finally:
+        websocket.close()
