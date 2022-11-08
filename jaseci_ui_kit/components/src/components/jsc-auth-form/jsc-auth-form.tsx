@@ -1,4 +1,4 @@
-import { Component, Element, h, Prop, State } from '@stencil/core';
+import { Component, Event, EventEmitter, Element, h, Prop, State } from '@stencil/core';
 import { setUpEvents } from '../../utils/events';
 import { getOperations } from '../../utils/utils';
 
@@ -21,10 +21,16 @@ export class JscAuthForm {
   @Prop({ attribute: 'tokenkey' }) tokenKey: string = 'token';
 
   @State() errorMessage: string;
+  @State() showServerURLField: boolean = false;
 
   fullName: string;
   email: string;
   password: string;
+
+  @Event() serverUrlChanged: EventEmitter<string>;
+  private onServerURLChanged(event: Event) {
+    this.serverUrlChanged.emit(this.serverURL);
+  }
 
   componentDidLoad() {
     // const childrenSlot = this.host.shadowRoot.querySelector('slot[name=children]') as HTMLSlotElement;
@@ -112,6 +118,25 @@ export class JscAuthForm {
           type="password"
           placeholder={'Enter your password'}
         ></jsc-inputbox>
+
+        {!this.showServerURLField ? (
+          <div style={{ display: 'flex', justifyContent: 'right' }}>
+            <jsc-anchor onClick={() => (this.showServerURLField = true)} label="Change Server URL"></jsc-anchor>
+          </div>
+        ) : (
+          <jsc-inputbox
+            fullwidth={'true'}
+            onValueChanged={e => {
+              this.serverURL = e.detail;
+              this.onServerURLChanged(e);
+            }}
+            label={'Sever URL'}
+            palette={this.errorMessage ? 'error' : null}
+            placeholder={'Enter Jaseci server url'}
+            value={this.serverURL}
+          ></jsc-inputbox>
+        )}
+
         {this.errorMessage && <p class="text-red-500">{this.errorMessage}</p>}
         <div>
           <jsc-button label={this.mode === 'signup' ? 'Sign Up' : 'Login'} onClick={() => (this.mode === 'signup' ? this.signUp() : this.logIn())}></jsc-button>

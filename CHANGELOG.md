@@ -4,6 +4,9 @@
 
 ### Updates
 
+- New Major Feature: `jsctl` can now run scripts of commands from file
+- New Feature: Introduction of `std.round` for rounding floating point valuse, and `std.uniform` for random float values
+- Improvement:  `jac test` and `sentinel test` apis have new paramerter `profiling` to enable internal stack profile outputs
 - Improvement: `jac test` and `sentinel test` apis have new paramerter `single` to specify a single named test to run
 - New Feature: Tests now can be named (see docs)
 - New Feature: Added ability to flush report with standard library through `std.clear_report()`

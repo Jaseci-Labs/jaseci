@@ -26,24 +26,13 @@
   5. [Bring Your Application to Production](examples/CanoniCAI/codelabs/5_production.md)
   6. [Improve Your AI Models](examples/CanoniCAI/codelabs/6_crowdsource.md)
 - [Build a Custom Jaseci Module](support/codelabs/custom_jaseci_module_codelab.md)
-- [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
-- [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
-- [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
-- [Locust Load Test for JASECI](support/locust/README.md)
-- [Setting up Monitoring for JASECI](support/monitoring/README.md)
-
-## Jaseci Core Implementation Guide
-
-- [Services](jaseci_core/jaseci/svc/README.md)
-  - [JsOrc](jaseci_core/jaseci/svc/jsorc/README.md)
-  - [Task](jaseci_core/jaseci/svc/task/README.md)
-  - [Mail](jaseci_core/jaseci/svc/mail/README.md)
 
 ## The JAC Language Guide
 
 - [Key Abstractions and Concepts](support/guide/lang_docs/key_concepts.md)
   - [Graphs](support/guide/lang_docs/graphs.md)
   - [Walkers](support/guide/lang_docs/walkers.md)
+    - [Walkers By Example](support/guide/lang_docs/walkers_by_example.md)
   - [Abilities](support/guide/lang_docs/abilities.md)
     - [`here` and `visitor`](support/guide/lang_docs/here_visitor.md)
   - [Actions](support/guide/lang_docs/actions.md)
@@ -101,13 +90,23 @@
 - [Connecting an API](jaseci_ui_kit/components/docs/connecting-an-api.md)
 - [Components](jaseci_ui_kit/README.md)
 
-## Jaseci Core Implementation Guide
+## DevOps Guides
+- [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
+- [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
+- [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
+- [Locust Load Test for JASECI](support/locust/README.md)
+- [Setting up Monitoring for JASECI](support/monitoring/README.md)
+
+## Jaseci Core Internals
+
 - [Services](jaseci_core/jaseci/svc/README.md)
   - [JsOrc](jaseci_core/jaseci/svc/jsorc/README.md)
   - [Task](jaseci_core/jaseci/svc/task/README.md)
+  - [Mail](jaseci_core/jaseci/svc/mail/README.md)
 
 ## Contributing to Jaseci
 
+- [Guide on Contributing](examples/CanoniCAI/codelabs/7.contributing_to_jaseci.md)
 - [Being an Contributor](support/guide/other/contributor_policy.md)
 - [General Guide](CONTRIBUTING.md)
 - [Contributors](CONTRIBUTORS.md)

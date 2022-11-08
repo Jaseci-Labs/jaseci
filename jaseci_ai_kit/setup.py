@@ -27,8 +27,13 @@ setup(
         "PyPDF2 >= 1.27.12, < 1.28",
         "evaluate >=0.2.2, < 0.3",
         "seqeval >= 1.2.2, < 1.3",
+        "pytest",
+        "pytest-order",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION"],
     },
+    author="Jason Mars",
+    author_email="jason@jaseci.org",
+    url="https://github.com/Jaseci-Labs/jaseci",
 )

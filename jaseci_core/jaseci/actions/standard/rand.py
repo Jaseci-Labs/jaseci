@@ -34,6 +34,12 @@ def choice(lst: list):
 
 
 @jaseci_action()
+def uniform(low: float, high: float):
+    """Random select a float between low an high"""
+    return random.uniform(low, high)
+
+
+@jaseci_action()
 def sentence(min_lenth: int = 4, max_length: int = 10, sep: str = " "):
     """Get a random sentence"""
     n = random.randint(min_lenth, max_length)
