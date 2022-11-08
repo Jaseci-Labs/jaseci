@@ -10,7 +10,7 @@ def get_ver():
 setup(
     name="jaseci_serv",
     version=get_ver(),
-    packages=find_packages(include=["jaseci_serv", "jaseci_serv.*"]),
+    packages=find_packages(),
     install_requires=[
         "jaseci",
         "Django>=3.2.12,<3.3.0",
@@ -25,9 +25,13 @@ setup(
         "tblib",
         "django-celery-results>=2.3,<2.4",
         "django-celery-beat>=2.2",
+        "pytest-django",
     ],
     package_data={
         "": ["*.jac", "VERSION"],
     },
-    entry_points={"console_scripts": ["jsserv = jaseci_serv.manage:main"]},
+    scripts=["jsserv"],
+    author="Jason Mars",
+    author_email="jason@jaseci.org",
+    url="https://github.com/Jaseci-Labs/jaseci",
 )

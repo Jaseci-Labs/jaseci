@@ -4,6 +4,7 @@ Variable manager for Jac
 Representations for all jac runtime variables
 """
 from jaseci.element.element import Element
+from jaseci.element.obj_mixins import Anchored
 from jaseci.graph.node import Node
 from jaseci.graph.edge import Edge
 from jaseci.graph.graph import Graph
@@ -85,6 +86,8 @@ def is_jac_elem(val):
 
 def jac_elem_wrap(val, serialize_mode=False):
     if serialize_mode:
+        if isinstance(val, Anchored):
+            val.context = jac_wrap_value(val.context)
         val = val.serialize()
     else:
         val = val.id.urn.replace("urn", "jac")
@@ -180,9 +183,9 @@ class JacValue:
                 f"No valid live variable! ctx: {self.ctx} name: {self.name}", jac_ast
             )
         elif self.end is not None:
-            self.ctx[self.name : self.end] = self.wrap()
+            self.ctx[self.name : self.end] = self.value
         else:
-            self.ctx[self.name] = self.wrap()
+            self.ctx[self.name] = self.value
 
     def check_assignable(self, jac_ast=None):
         if self.ctx is None:
@@ -203,16 +206,11 @@ class JacValue:
                 f"{self.value} is not destroyable, try setting to null", jac_ast
             )
 
-    def wrap(self, serialize_mode=False):
-        "Caller for recursive wrap"
-        self.value = jac_wrap_value(self.value, serialize_mode)
-        return self.value
-
-    def unwrap(self):
-        "Caller for recursive unwrap"
-        self.value = jac_unwrap_value(self.value, self.parent)
-        return self.value
-
     def jac_type(self):
         """Return Jac type of value"""
         return jac_type_wrap(type(self.value))
+
+    def __str__(self):
+        return (
+            "JacValue:" + str(self.ctx) + ":" + str(self.name) + ":" + str(self.value)
+        )

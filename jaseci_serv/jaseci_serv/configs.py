@@ -5,7 +5,7 @@
 import os
 import sys
 
-from jaseci_serv.jaseci_serv.kubes import PROMON_KUBE, REDIS_KUBE
+from jaseci_serv.kubes import PROMON_KUBE, REDIS_KUBE
 
 
 RUN_SVCS = "test" in sys.argv or "runserver" in sys.argv

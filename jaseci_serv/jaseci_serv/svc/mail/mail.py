@@ -2,8 +2,7 @@ from django.core import mail
 
 from jaseci.svc import MailService as Ms
 from jaseci.svc.mail import Mailer as Em
-from jaseci_serv.jaseci_serv.configs import MAIL_CONFIG
-
+from jaseci_serv.configs import MAIL_CONFIG
 
 #################################################
 #                 EMAIL APP ORM                 #
@@ -24,7 +23,12 @@ class MailService(Ms):
             password=self.config.get("pass"),
             use_tls=self.config.get("tls"),
         )
+
+        # this is now for initial trial of connection
         server.open()
+
+        # closing will now let the actual email sending open their own connecion
+        server.close()
 
         return Mailer(server, sender, self.config["templates"])
 

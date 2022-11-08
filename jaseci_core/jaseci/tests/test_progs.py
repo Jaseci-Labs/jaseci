@@ -364,6 +364,8 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_async_syntax_with_celery(self):
         mast = self.meta.build_master()
+        if not mast._h.task.is_running():
+            self.skip_test("Celery not running")
         mast.sentinel_register(name="test", code=jtp.async_syntax, auto_run="")
         res = mast.general_interface_to_api(
             api_name="walker_run",
@@ -436,6 +438,8 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_async_sync_syntax_with_celery(self):
         mast = self.meta.build_master()
+        if not mast._h.task.is_running():
+            self.skip_test("Celery not running")
         mast.sentinel_register(name="test", code=jtp.async_syntax, auto_run="")
         res = mast.general_interface_to_api(
             api_name="walker_run",
