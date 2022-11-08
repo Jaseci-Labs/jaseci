@@ -1,5 +1,5 @@
 from jaseci.svc import KubernetesService as Ks
-from jaseci_serv.jaseci_serv.configs import KUBE_CONFIG
+from jaseci_serv.configs import KUBE_CONFIG
 
 
 class KubernetesService(Ks):

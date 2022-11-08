@@ -13,6 +13,7 @@ import json
 import functools
 import traceback
 import inspect
+import unittest
 from time import time
 from datetime import datetime
 from pprint import pformat
@@ -279,6 +280,9 @@ class TestCaseHelper:
 
     def perf_test_stop(self):
         print(perf_test_stop(self.pr))
+
+    def skip_test(self, msg="No reason provided"):
+        raise unittest.SkipTest("Skipping: " + msg)
 
 
 def is_true(val):

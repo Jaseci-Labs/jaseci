@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
-import os
+import os, sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,7 +35,6 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "django.contrib.staticfiles",
     "rest_framework",
     "knox",
     "django_rest_passwordreset",
@@ -62,7 +61,7 @@ MIDDLEWARE = [
 
 CORS_ORIGIN_ALLOW_ALL = True
 
-ROOT_URLCONF = "jaseci_serv.jaseci_serv.urls"
+ROOT_URLCONF = "jaseci_serv.urls"
 
 TEMPLATES = [
     {
@@ -80,7 +79,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "jaseci_serv.jaseci_serv.wsgi.application"
+WSGI_APPLICATION = "jaseci_serv.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
@@ -109,6 +108,13 @@ elif "POSTGRES_HOST" in os.environ:
         }
     }
 
+elif "test" in sys.argv or "test_coverage" in sys.argv:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
+    }
 else:
     DATABASES = {
         "default": {
@@ -150,11 +156,6 @@ USE_L10N = True
 
 USE_TZ = False
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.0/howto/static-files/
-
-STATIC_URL = "/static/"
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 # Sets global default user model to be custom
 AUTH_USER_MODEL = "base.User"

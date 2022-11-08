@@ -1,5 +1,5 @@
 from jaseci.svc import TaskService as Ts
-from jaseci_serv.jaseci_serv.configs import TASK_CONFIG
+from jaseci_serv.configs import TASK_CONFIG
 
 
 #################################################
