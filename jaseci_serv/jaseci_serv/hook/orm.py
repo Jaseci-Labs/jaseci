@@ -52,7 +52,7 @@ class OrmHook(RedisHook):
 
             # Unwind jsci_payload for fields beyond element object
             ret_obj.json_load(loaded_obj.jsci_obj)
-            self.commit_obj_to_cache(ret_obj)
+            self.commit_obj_to_cache(ret_obj, all_caches=True)
             return ret_obj
         return loaded_obj
 
@@ -138,7 +138,7 @@ class OrmHook(RedisHook):
         """Write through all saves to store"""
         for i in self.save_obj_list:
             if not skip_cache:
-                self.commit_obj_to_cache(i)
+                self.commit_obj_to_cache(i, all_caches=True)
             self.commit_obj(i)
         self.save_obj_list = set()
 
