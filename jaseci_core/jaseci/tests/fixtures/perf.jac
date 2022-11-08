@@ -34,7 +34,7 @@ walker slow {
     has biglist=[];
     with entry {
         g=here;
-        for i=0 to i<300 by i+=1 {
+        for i=0 to i<600 by i+=1 {
             g=spawn g --> node::a(b=spawn t::t, c=spawn t::t,
                                   d=spawn t::t, e=spawn t::t, f=spawn t::t);
         }

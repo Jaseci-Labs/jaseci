@@ -212,6 +212,7 @@ def perf_test_start():
 
 def perf_test_stop(perf_prof):
     perf_prof.disable()
+    perf_prof.dump_stats(f"{id(perf_prof)}.prof")
     s = io.StringIO()
     sortby = pstats.SortKey.CUMULATIVE
     ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)
