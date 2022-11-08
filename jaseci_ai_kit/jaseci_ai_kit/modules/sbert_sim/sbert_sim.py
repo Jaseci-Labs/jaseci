@@ -29,6 +29,7 @@ def create_model(model_name="bert-base-uncased", max_seq_length=256):
     This fumctions can be used to create a custom sbert model from transformers
     model name :- valid transformer model from the hugging face hub
     max_seq_len :- the max_seq_len that it would support for tokenization
+    Returns :- returns the custom tranformer model in sbert setup
     """
     word_embedding_model = models.Transformer(model_name, max_seq_length=max_seq_length)
     pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
@@ -52,6 +53,7 @@ def train(dataset: List, training_parameters: Dict = None):
     train data :- takes list of sentence1 and sentence2 followed by the similarity score
     training_parameter :- take the dictionary of parameters that can be used to
     manipulate the training
+    Returns :- confirmations when training is completed
     """
     global model, training_config
     try:
@@ -84,6 +86,14 @@ def train(dataset: List, training_parameters: Dict = None):
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
 def get_text_sim(query: List[str], corpus: List[str], top_k=1):
+    """
+    Calculates the similarity score between query and corpus
+    query :- contains a list of queries that is scored against the list of corpus
+    corpus :- contain a list of entries that is evaluated with each query
+    top_k :- returns k number of top similar entries in corpus
+    Returns :- a dictionary with query as key and list of top_k sentences
+    from corpus as value
+    """
     try:
         resp_sim_matrix = {}
         text_embeddings = model.encode(query)
@@ -108,6 +118,11 @@ def get_text_sim(query: List[str], corpus: List[str], top_k=1):
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
 def getembeddings(text: List[str]):
+    """
+    encodes the list of sentences provided and returns the respected embeddings
+    text : contains a list of sentences to generate encodings
+    Returns:  List of encoding for each text
+    """
     global model
     model.eval()
     try:
@@ -142,11 +157,21 @@ def get_dot_score(vec_a: list, vec_b: list):
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
 def load_model(model_name="all-MiniLM-L12-v2", model_type="default"):
+    """
+    Load models load in the memory for similarty scoring
+    model_type : can be default or tfm_model
+            default : loads model from the sbert model zoo
+            tfm_model : load tranformer model from the huggingface hub
+    model_name : this is name of the model to be loaded
+    Returns: confirmation if the model is loaded
+    """
     global model
     if model_type == "tfm_model":
         model = create_model(model_name=model_name, max_seq_length=512)
+        return f"{model_name} - loaded from huggingface hub"
     elif model_type == "default":
         model = SentenceTransformer(model_name)
+        return f"{model_name} - loaded from SBERT library"
     else:
         raise HTTPException(
             status_code=500,
@@ -159,6 +184,10 @@ def load_model(model_name="all-MiniLM-L12-v2", model_type="default"):
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
 def get_train_config():
+    """
+    returns the active values of the training config
+    Returns: a dictionary with key as param name and value as current status
+    """
     try:
         return training_config
     except Exception as e:
