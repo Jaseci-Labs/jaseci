@@ -29,6 +29,7 @@ setup(
         "seqeval >= 1.2.2, < 1.3",
         "pytest",
         "pytest-order",
+        "sentence-transformers",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION"],
