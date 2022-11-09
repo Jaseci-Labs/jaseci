@@ -21,10 +21,11 @@ warnings.filterwarnings("ignore")
 
 
 def setup():
-    global config, il
+    global config, il, head_list_config
     dirname = os.path.dirname(__file__)
     config = read_yaml(os.path.join(dirname, "config.yaml"))
     il = InferenceList()
+    head_list_config = ""
 
 
 setup()
@@ -39,7 +40,8 @@ def create_head_list(config_file: str, overwrite: bool = False) -> None:
     """
     print("Creating head list")
     try:
-        global il, config
+        global il, config, head_list_config
+        head_list_config = config_file
         new_config = read_yaml(config_file)
         config = {**config, **new_config}
         il = InferenceList(config=config)
@@ -51,7 +53,9 @@ def create_head_list(config_file: str, overwrite: bool = False) -> None:
 
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
-def create_head(uuid: str, config_file: str = None, overwrite: bool = False) -> None:
+def create_head(
+    uuid: str = None, config_file: str = None, overwrite: bool = False
+) -> None:
     """
     Create a personalized head. This will create a new inference engine.
     @param new_config: new config to be used for the head
@@ -93,17 +97,26 @@ def predict(uuid: str, data: Any) -> Any:
 
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
-def train_head(config_file: str = None, uuid: str = None) -> None:
+def train_head(uuid: str, config_file: str = None) -> None:
     """
     Train the current active model.
     @param new_config: new config yaml to be used for training
     """
     try:
-        global config
-        new_config = read_yaml(config_file)
+        global config, head_list_config
+        if config_file:
+            new_config = read_yaml(config_file)
+        else:
+            new_config = read_yaml(head_list_config)
         config = {**config, **new_config}
-        write_yaml(config, config_file)
-        train({"config": config_file, "device": None, "resume": None, "uuid": uuid})
+        temp_config_file = os.path.join(os.path.dirname(__file__), "temp.yaml")
+        write_yaml(config, temp_config_file)
+
+        train(
+            {"config": temp_config_file, "device": None, "resume": None, "uuid": uuid}
+        )
+
+        os.remove(temp_config_file)
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))

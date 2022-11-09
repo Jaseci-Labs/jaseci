@@ -1,7 +1,5 @@
 import numpy as np
 import torch
-from torchvision.utils import make_grid
-from tqdm import tqdm
 
 from .base import BaseTrainer
 from .util import inf_loop, MetricTracker

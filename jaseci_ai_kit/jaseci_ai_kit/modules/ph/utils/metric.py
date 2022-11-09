@@ -18,3 +18,12 @@ def top_k_acc(output, target, k=3):
         for i in range(k):
             correct += torch.sum(pred[:, i] == target).item()
     return correct / len(target)
+
+
+# mean squared error
+def mse(output, target):
+    with torch.no_grad():
+        batch_size = target.size(0)
+        diff = torch.square(output - target) / batch_size
+        diff = diff.sum()
+    return diff

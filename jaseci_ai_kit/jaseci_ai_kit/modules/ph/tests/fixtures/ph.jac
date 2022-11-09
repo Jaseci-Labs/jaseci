@@ -15,7 +15,7 @@ walker test_predict {
 
 walker test_train {
     can ph.train_head;
-    ph.train_head(config_file = 'jaseci_ai_kit/modules/ph/tests/fixtures/config.yaml', uuid = 'test_head');
+    ph.train_head(uuid = 'test_head', config_file = 'jaseci_ai_kit/modules/ph/tests/fixtures/config.yaml');
 }
 
 walker test_load_weights {

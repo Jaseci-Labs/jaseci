@@ -1,4 +1,2 @@
-torchvision
 torch
-torchaudio
-pytorch-cuda=11.6
+uuid
