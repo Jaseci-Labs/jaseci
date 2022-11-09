@@ -2,15 +2,15 @@
 
 ###  Yolo V5 (`yolov5`)
  YOLOv5 `yolov5`  is a family of object detection architectures and models pretrained on the COCO dataset, and represents Ultralytics open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
- 
+
  * `load_model`: Allows you to load the yolov5 pytorch model.
-    * Input: 
-        * `name` (string) (required): the name of the trained model. 
+    * Input:
+        * `name` (string) (required): the name of the trained model.
         * `confidence_threshold` (integer) (optional): is a number between 0 and 1 that represents the likelihood that the output of the Machine Learning model is correct and will satisfy a user's request.
     * Return : Message whether the model was sucessfully loaded or not.
     * Note: Before loading the model (weights) need to be in a specific location at `object_detection/yolov5/runs/train/exp/weights`, with a specific file suffix/type (*.pt)
 * `detect`: Based on the image(s) provided by the user it will try to predict where an object alongside with it's label is on the each attached image(s).
-    * Input:  
+    * Input:
         * `file_list` (files) (required): the image files you want the model to detect objects location.
         * `image_size` (integer) (optional): The inference size of the image(s) attached.
         * `download_image` (boolean) (optional): Whether or not you want the image(s) to be returned to the current API.

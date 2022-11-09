@@ -30,7 +30,7 @@ SNIPS is a popular intent classificawtion datasets that covers intents such as `
 ]
     `
 We need to do a little data format conversion to create a version of SNIPS that work with our `use_encoder` implemenation.
-For this part, we are going to use Python. First, 
+For this part, we are going to use Python. First,
 
 1. `Import the dataset` from huggingface [dataset library](https://huggingface.co/datasets/snips_built_in_intents).
     ```python
@@ -200,7 +200,7 @@ For this tutorial, we are going to `evaluation of text classification` with `use
                 result.list::append({"text":text,"class_true":class_true,"class_pred":resp["match"]});
             }
             fn = "result_use_enc.json";
-            file.dump_json(fn, result);        
+            file.dump_json(fn, result);
         }
         ```
         **Parameter details**
@@ -219,9 +219,9 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         # adding edge
         edge use_model {
             has model_type;
-        }        
+        }
         ```
-    
+
     6. Adding graph name of `use_encoder_graph` for initializing node .
         ```
         graph use_encoder_graph {
@@ -238,14 +238,14 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         ```
         walker init {
             root {
-            spawn here --> graph::use_encoder_graph; 
+            spawn here --> graph::use_encoder_graph;
             }
         }
         ```
     8. Creating walker name of `eval_text_classification` for getting parameter from context or default and calling ability `text_classify`.
         ```
-        # Declaring the walker: 
-        walker eval_text_classification{ 
+        # Declaring the walker:
+        walker eval_text_classification{
             has test_file="test.json";
             root {
                 take --> node::model_dir;
@@ -278,7 +278,7 @@ For this tutorial, we are going to `evaluation of text classification` with `use
                     result.list::append({"text":text,"class_true":class_true,"class_pred":resp["match"]});
                 }
                 fn = "result_use_enc.json";
-                file.dump_json(fn, result);        
+                file.dump_json(fn, result);
             }
         }
 
@@ -300,13 +300,13 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         # initialize init walker
         walker init {
             root {
-            spawn here --> graph::use_encoder_graph; 
+            spawn here --> graph::use_encoder_graph;
             }
         }
 
 
-        # Declaring the walker fro calling : 
-        walker eval_text_classification{ 
+        # Declaring the walker fro calling :
+        walker eval_text_classification{
             has test_file="test.json";
             root {
                 take --> node::model_dir;
@@ -339,8 +339,8 @@ For this tutorial, we are going to `evaluation of text classification` with `use
     Evaluation accuracy score        :  0.0303
     Evaluation F1_score              :  0.0495
 
-    Evaluation classification_report : 
-    
+    Evaluation classification_report :
+
                             precision    recall  f1-score   support
 
             BookRestaurant       0.00      0.00      0.00        17

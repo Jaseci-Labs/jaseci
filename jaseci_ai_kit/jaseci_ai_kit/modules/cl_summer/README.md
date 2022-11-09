@@ -43,13 +43,13 @@ For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) whi
         # summarizer
         can summarize with summarizer entry{
             data = file.load_json(visitor.data);
-            
+
             report cl_summer.summarize(
                 text = data["text"],
                 url = data["url"],
                 sent_count = data["sent_count"],
                 summarizer_type = data["summarizer_type"]
-                );      
+                );
         }
         ```
         `summarize`: to get the extractive summary of the text in the given number of sentence counts .
@@ -57,7 +57,7 @@ For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) whi
         **Parameter details**
 
         * **Input Data**
-        
+
             **data.json** file
             ```
             {
@@ -101,7 +101,7 @@ For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) whi
         ```
         walker init {
             root {
-            spawn here --> graph::summ_graph; 
+            spawn here --> graph::summ_graph;
             }
         }
         ```
@@ -129,13 +129,13 @@ For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) whi
             # summarizer
             can summarize with summarizer entry{
                 data = file.load_json(visitor.data);
-                
+
                 report cl_summer.summarize(
                     text = data["text"],
                     url = data["url"],
                     sent_count = data["sent_count"],
                     summarizer_type = data["summarizer_type"]
-                    );      
+                    );
             }
         }
 
@@ -157,7 +157,7 @@ For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) whi
         # declaring init walker
         walker init {
             root {
-            spawn here --> graph::summ_graph; 
+            spawn here --> graph::summ_graph;
             }
         }
 
@@ -171,7 +171,7 @@ For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) whi
             model_dir {
                 take -->;
             }
-        }    
+        }
         ```
     * **Steps for running `summarizer.jac` program**
 
