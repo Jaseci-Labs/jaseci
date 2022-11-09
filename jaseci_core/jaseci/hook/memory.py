@@ -18,7 +18,6 @@ class MemoryHook:
         self._machine = None
         self.save_obj_list = set()
         self.save_glob_dict = {}
-        self.global_action_list = get_global_actions(self)
 
     ####################################################
     #               COMMON GETTER/SETTER               #

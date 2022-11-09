@@ -148,15 +148,16 @@ def load_preconfig_actions(hook):
             pass
 
 
-def get_global_actions(hook):
+def get_global_actions():
     """
     Loads all global action hooks for use by Jac programs
     Attaches globals to mem_hook
     """
     from jaseci.attr.action import Action
-    import uuid
+    from jaseci.hook.memory import MemoryHook
 
     global_action_list = []
+    hook = MemoryHook()
     for i in live_actions.keys():
         if (
             i.startswith("std.")
@@ -177,7 +178,7 @@ def get_global_actions(hook):
                     name=i,
                     value=i,
                     persist=False,
-                ).jid
+                )
             )
     return global_action_list
 

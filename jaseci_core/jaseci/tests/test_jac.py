@@ -164,7 +164,12 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_availabilty_of_global_functions(self):
         """Test preset function loading"""
-        self.assertGreater(len(self.meta.build_hook().global_action_list), 10)
+        from jaseci.jac.machine.jac_scope import JacScope
+
+        JacScope(None, None, [])
+        from jaseci.jac.machine.jac_scope import global_action_list
+
+        self.assertGreater(len(global_action_list), 10)
 
     def test_multiple_edged_between_nodes_work(self):
         """Test that multiple edges between the same two nodes are allowed"""

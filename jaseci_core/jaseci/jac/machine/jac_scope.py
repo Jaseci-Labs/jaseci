@@ -5,6 +5,9 @@ Utility for all runtime interaction with variables in different scopes
 """
 from jaseci.utils.id_list import IdList
 from jaseci.jac.machine.jac_value import JacValue
+from jaseci.actions.live_actions import get_global_actions
+
+global_action_list = None
 
 
 class JacScope:
@@ -13,13 +16,14 @@ class JacScope:
         self.local_scope = {}
         self.has_obj = has_obj if has_obj else self
         self.context = {}
-        self.action_sets = action_sets + [
-            IdList(parent, in_list=parent._h.global_action_list, auto_save=False)
-        ]
+        self.action_sets = action_sets
         self.setup_actions()
 
     def setup_actions(self):
-        allactions = []
+        global global_action_list
+        if global_action_list is None:
+            global_action_list = get_global_actions()
+        allactions = global_action_list
         for i in self.action_sets:
             allactions += i.obj_list()
         self.action_sets = {}

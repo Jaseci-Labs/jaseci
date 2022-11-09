@@ -178,7 +178,9 @@ class Hookable(Sharable):
 
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""
-        if not silent and target._h != self._h:
+        if not self._m_id or not target._m_id:
+            return True
+        elif not silent and target._h != self._h:
             logger.critical(
                 str(
                     "Hook for {} does not match {}, {} != {}".format(
