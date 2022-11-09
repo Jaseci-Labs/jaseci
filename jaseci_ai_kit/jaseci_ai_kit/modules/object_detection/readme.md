@@ -32,3 +32,9 @@ def base64EncodeImage(img):
 
 ### How it supports multiple images
 For the `/detect` endpoint it accepts an array of files and the data have to be send through a multipart or formdata or else it won't work, which will be later encoded, processed and then returned to the user.
+
+### How to run the jaseci streaming feature
+For the `/ws` endpoint I have set up a websocket connection between the `client.py` and the `/ws` endpoint. In order to run object detection on a streamed image, you must start the server and upload the AI model. Once the model is uploaded, you must then run the `client.py` file which has an image already and will constantly send this image to the server for object detection.
+
+
+
