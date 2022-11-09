@@ -364,6 +364,8 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_async_syntax_with_celery(self):
         mast = self.meta.build_master()
+        if not mast._h.task.is_running():
+            self.skip_test("Celery not running")
         mast.sentinel_register(name="test", code=jtp.async_syntax, auto_run="")
         res = mast.general_interface_to_api(
             api_name="walker_run",
@@ -374,7 +376,7 @@ class JacTests(TestCaseHelper, TestCase):
 
         res = mast.general_interface_to_api(
             api_name="walker_queue_wait",
-            params={"task_id": res["result"]},
+            params={"task_id": res["result"], "timeout": 15},
         )
 
         self.assertEqual("test", res["result"]["anchor"])
@@ -405,7 +407,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_async_syntax_without_celery(self):
         mast = self.meta.build_master()
-        mast._h.task.state = ServiceState.DISABLED
+        mast._h.task.state = ServiceState.NOT_STARTED
         mast.sentinel_register(name="test", code=jtp.async_syntax, auto_run="")
         res = mast.general_interface_to_api(
             api_name="walker_run",
@@ -436,6 +438,8 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_async_sync_syntax_with_celery(self):
         mast = self.meta.build_master()
+        if not mast._h.task.is_running():
+            self.skip_test("Celery not running")
         mast.sentinel_register(name="test", code=jtp.async_syntax, auto_run="")
         res = mast.general_interface_to_api(
             api_name="walker_run",
@@ -446,7 +450,7 @@ class JacTests(TestCaseHelper, TestCase):
 
         res = mast.general_interface_to_api(
             api_name="walker_queue_wait",
-            params={"task_id": res["result"]},
+            params={"task_id": res["result"], "timeout": 15},
         )
 
         self.assertEqual("test", res["result"]["anchor"])
@@ -477,7 +481,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_async_sync_syntax_without_celery(self):
         mast = self.meta.build_master()
-        mast._h.task.state = ServiceState.DISABLED
+        mast._h.task.state = ServiceState.NOT_STARTED
         mast.sentinel_register(name="test", code=jtp.async_syntax, auto_run="")
         res = mast.general_interface_to_api(
             api_name="walker_run",
@@ -508,7 +512,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_block_scope_check(self):
         mast = self.meta.build_master()
-        mast._h.task.state = ServiceState.DISABLED
+        mast._h.task.state = ServiceState.NOT_STARTED
         mast.sentinel_register(name="test", code=jtp.block_scope_check, auto_run="")
         res = mast.general_interface_to_api(
             api_name="walker_run",

@@ -24,7 +24,7 @@ export class Checkbox {
 
   @Event() valueChanged: EventEmitter<string>;
   private onInputChangeValue(event: Event) {
-    this.value = (event.target as HTMLInputElement).value;
+    this.value = String((event.target as HTMLInputElement).checked);
     this.valueChanged.emit(this.value);
   }
 

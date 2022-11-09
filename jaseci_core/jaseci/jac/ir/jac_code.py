@@ -132,12 +132,12 @@ class JacCode:
         irout.run()
         return irout.output
 
-    def register(self, code, dir):
+    def register(self, code, dir, opt_level=4):
         """
         Parses Jac code and saves IR
         """
         start_rule = "start" if self.j_type == "sentinel" else self.j_type
-        tree = self.compile_jac(code, dir, start_rule=start_rule)
+        tree = self.compile_jac(code, dir, start_rule=start_rule, opt_level=opt_level)
 
         if not tree:
             self.is_active = False

@@ -92,6 +92,10 @@ class Element(Hookable):
                 logger.error(f"{self} does not have super master status")
         return ret
 
+    def get_master(self):
+        """Get the master of an element"""
+        return self._h.get_obj(self._m_id, uuid.UUID(self.j_master))
+
     def duplicate(self, persist_dup: bool = False):
         """
         Duplicates elements by creating copy with new id

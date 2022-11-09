@@ -48,7 +48,10 @@ walker_block:
 	)* walk_exit_block? RBRACE;
 
 test:
-	KW_TEST STRING KW_WITH (graph_ref | KW_GRAPH graph_block) KW_BY (
+	KW_TEST NAME? STRING KW_WITH (
+		graph_ref
+		| KW_GRAPH graph_block
+	) KW_BY (
 		(walker_ref spawn_ctx? (code_block | SEMI))
 		| KW_WALKER walker_block
 	);

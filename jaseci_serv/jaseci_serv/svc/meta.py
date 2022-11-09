@@ -7,7 +7,7 @@ from jaseci_serv.svc import (
     PromotheusService,
     JsOrcService,
 )
-from jaseci_serv.jaseci_serv.configs import RUN_SVCS
+from jaseci_serv.configs import RUN_SVCS
 
 
 class MetaService(Ms):
@@ -18,7 +18,11 @@ class MetaService(Ms):
     def __init__(self):
         super().__init__(run_svcs=RUN_SVCS)
 
-    def build_classes(self):
+    ###################################################
+    #                   OVERRIDEN                     #
+    ###################################################
+
+    def populate_context(self):
         from jaseci_serv.hook.orm import OrmHook
         from jaseci_serv.base.models import (
             Master,
@@ -27,15 +31,13 @@ class MetaService(Ms):
             JaseciObject,
         )
 
-        self.hook = OrmHook
-        self.hook_param = {
-            "args": [],
-            "kwargs": {"objects": JaseciObject.objects, "globs": GlobalVars.objects},
-        }
-        self.master = Master
-        self.super_master = SuperMaster
+        self.add_context(
+            "hook", OrmHook, objects=JaseciObject.objects, globs=GlobalVars.objects
+        )
+        self.add_context("master", Master)
+        self.add_context("super_master", SuperMaster)
 
-    def build_services(self):
+    def populate_services(self):
         self.add_service_builder("redis", RedisService)
         self.add_service_builder("task", TaskService)
         self.add_service_builder("mail", MailService)

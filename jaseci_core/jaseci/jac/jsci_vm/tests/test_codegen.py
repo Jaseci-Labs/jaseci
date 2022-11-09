@@ -21,3 +21,11 @@ class TestCodegen(CoreTest):
         self.assertEqual(ret["report"][2], "ab")
         self.assertEqual(ret["report"][3], {"base": 5, "test": 5})
         self.assertEqual(ret["report"][4], {"a": 3, "b": 55, "c": 311})
+
+    def test_unicode(self):
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("unicode.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "unicode"}])
+        self.assertEqual(len(ret["report"]), 1)

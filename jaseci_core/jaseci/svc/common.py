@@ -36,9 +36,11 @@ class CommonService:
 
     def start(self, hook=None):
         try:
-            if self.is_ready():
+            if self.enabled and self.is_ready():
                 self.state = Ss.STARTED
                 self.run(hook)
+                self.state = Ss.RUNNING
+                self.post_run(hook)
         except Exception as e:
             if not (self.quiet):
                 logger.error(
@@ -50,7 +52,10 @@ class CommonService:
         return self
 
     def run(self, hook=None):
-        raise Exception(f"{COMMON_ERROR} Please override build method!")
+        raise Exception(f"{COMMON_ERROR} Please override run method!")
+
+    def post_run(self, hook=None):
+        pass
 
     ###################################################
     #                     COMMONS                     #
@@ -73,11 +78,12 @@ class CommonService:
             self.quiet = config.pop("quiet", False)
             self.config = config
         except Exception:
+            logger.exception(f"Error loading settings for {self.__class__}")
             self.config = DEFAULT_CONFIG
             self.kube = None
 
     def build_config(self, hook) -> dict:
-        pass
+        return DEFAULT_CONFIG
 
     def build_kube(self, hook) -> dict:
         pass
@@ -119,16 +125,96 @@ class ProxyService(CommonService):
         super().__init__(__class__)
 
 
+class ApplicationContext:
+    def __init__(self):
+        self.services = {}
+        self.background = {}
+        self.context = {}
+
+    ###################################################
+    #                 SERVICE HANDLER                 #
+    ###################################################
+
+    def add_service_builder(self, name, svc):
+        if self.services.get(name):
+            raise Exception(f"{name} already exists!")
+
+        self.services[name] = svc
+
+    def build_service(self, name, background, *args, **kwargs):
+
+        svc = self.services.get(name)
+
+        if not svc:
+            logger.error(f"Service {name} is not yet set!")
+            return None
+
+        svc = svc(*args, **kwargs)
+
+        if background:
+            self.background[name] = svc
+
+        return svc
+
+    def get_service(self, name, *args, **kwargs):
+        svc = self.background.get(name)
+
+        if not svc:
+            return self.build_service(name, True, *args, **kwargs)
+
+        return svc
+
+    ###################################################
+    #                 CONTEXT HANDLER                 #
+    ###################################################
+
+    def add_context(self, name, cls, *args, **kwargs):
+        self.context[name] = {"class": cls, "args": args, "kwargs": kwargs}
+
+    def build_context(self, ctx, *args, **kwargs):
+        ctx = self.context[ctx]
+        return ctx["class"](*args, *ctx["args"], **kwargs, **ctx["kwargs"])
+
+
 class MetaProperties:
     def __init__(self, cls):
         self.cls = cls
-        if not hasattr(cls, "_services"):
+
+        if not hasattr(cls, "_app"):
+            setattr(cls, "_app", None)
+            setattr(cls, "_enabled", True)
+            setattr(cls, "_state", Ss.NOT_STARTED)
+            setattr(cls, "_quiet", False)
             setattr(cls, "_services", {})
             setattr(cls, "_background", {})
             setattr(cls, "_hook", None)
             setattr(cls, "_hook_param", {})
             setattr(cls, "_master", None)
             setattr(cls, "_super_master", None)
+
+    @property
+    def app(self) -> ApplicationContext:
+        return self.cls._app
+
+    @app.setter
+    def app(self, val: ApplicationContext):
+        self.cls._app = val
+
+    @property
+    def state(self) -> Ss:
+        return self.cls._state
+
+    @state.setter
+    def state(self, val: Ss):
+        self.cls._state = val
+
+    @property
+    def enabled(self) -> Ss:
+        return self.cls._enabled
+
+    @enabled.setter
+    def enabled(self, val: Ss):
+        return self.cls._enabled
 
     @property
     def services(self) -> dict:

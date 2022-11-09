@@ -11,13 +11,18 @@ from jaseci.svc.mail import MAIL_ERR_MSG
 from jaseci.utils.utils import logger
 from jaseci_serv.svc import MetaService
 
+requests_for_emails = None
 
-def send_activation_email(request, email):
+
+def send_activation_email(email):
     """Construct activation email body"""
     code = base64.b64encode(email.encode()).decode()
-    link = request.build_absolute_uri(
-        reverse("user_api:activate", kwargs={"code": code})
-    )
+    if requests_for_emails is not None:
+        link = requests_for_emails.build_absolute_uri(
+            reverse("user_api:activate", kwargs={"code": code})
+        )
+    else:
+        link = "invalid"
     ma = MetaService().get_service("mail")
     if ma.is_running():
         ma.app.send_activation_email(email, code, link)
@@ -48,7 +53,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create a new user with encrypted password and return it"""
-        return get_user_model().objects.create_user(**validated_data)
+        created_object = get_user_model().objects.create_user(**validated_data)
+        if not created_object.is_activated:
+            send_activation_email(created_object.email)
+        return created_object
 
     def update(self, instance, validated_data):
         """Update user, setting the password if needed"""
@@ -96,7 +104,7 @@ class AuthTokenSerializer(serializers.Serializer):
                 "User not activated. Resending activation email.\n"
                 + "Please check your email."
             )
-            send_activation_email(self.context.get("request"), email)
+            send_activation_email(email)
             raise serializers.ValidationError(msg)
 
         attrs["user"] = user

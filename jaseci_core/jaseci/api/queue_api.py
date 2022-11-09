@@ -25,7 +25,7 @@ class QueueApi:
             return self._h.task.get_by_task_id(task_id)
 
     @Interface.private_api(allowed_methods=["get"])
-    def walker_queue_wait(self, task_id: str):
+    def walker_queue_wait(self, task_id: str, timeout: int = 30):
         """
         Wait Queues
         """
@@ -35,4 +35,4 @@ class QueueApi:
         if not task_id:
             return "Task id is required!"
         else:
-            return self._h.task.get_by_task_id(task_id, True)
+            return self._h.task.get_by_task_id(task_id, True, timeout)

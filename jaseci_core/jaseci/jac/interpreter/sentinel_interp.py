@@ -21,7 +21,7 @@ class SentinelInterp(Interp):
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "ver_label":
             self.run_ver_label(kid[0])
-        for i in kid[:-1]:
+        for i in kid:
             self.run_element(i)
 
     def run_ver_label(self, jac_ast):
@@ -73,7 +73,6 @@ class SentinelInterp(Interp):
 
         name = kid[1].token_text()
         kind = kid[0].token_text()
-
         arch = Architype(
             m_id=self._m_id,
             h=self._h,
@@ -139,14 +138,20 @@ class SentinelInterp(Interp):
     def load_test(self, jac_ast):
         """
         test:
-            KW_TEST STRING KW_WITH (graph_ref | KW_GRAPH graph_block) KW_BY (
+            KW_TEST NAME? STRING KW_WITH (
+                graph_ref
+                | KW_GRAPH graph_block
+            ) KW_BY (
                 (walker_ref spawn_ctx? (code_block | SEMI))
                 | KW_WALKER walker_block
             );
         """
         kid = self.set_cur_ast(jac_ast)
         testcase = {
-            "title": kid[1].token_text(),
+            "name": kid[1].token_text() if kid[1].name == "NAME" else "",
+            "title": kid[2].token_text()
+            if kid[1].name == "NAME"
+            else kid[1].token_text(),
             "graph_ref": None,
             "graph_block": None,
             "walker_ref": None,
@@ -155,7 +160,7 @@ class SentinelInterp(Interp):
             "walker_block": None,
             "outcome": None,
         }
-        kid = kid[3:]
+        kid = kid[4:] if kid[1].name == "NAME" else kid[3:]
         if kid[0].name == "graph_ref":
             graph_name = kid[0].kid[-1].token_text()
             if not self.arch_ids.has_obj_by_name(graph_name, kind="graph"):

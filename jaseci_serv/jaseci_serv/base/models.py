@@ -12,7 +12,7 @@ from django.db import models
 from jaseci.api.interface import Interface
 from jaseci.element.master import Master as CoreMaster
 from jaseci.element.super_master import SuperMaster as CoreSuper
-from jaseci_serv.jaseci_serv.settings import JASECI_CONFIGS
+from jaseci_serv.settings import JASECI_CONFIGS
 from jaseci_serv.svc import MetaService
 
 
@@ -38,6 +38,8 @@ class Master(CoreMaster):
             mas = serializer.save().get_master()
             mas._h = self._h
             return mas
+        else:
+            return {"error": serializer._errors, "status_code": 400}
 
     def superuser_creator(self, name, other_fields: dict = {}):
         """
@@ -61,7 +63,11 @@ class Master(CoreMaster):
         """
         Permanently delete master with given id
         """
-        get_user_model().objects.get(email=name).delete()
+        try:
+            get_user_model().objects.get(email=name).delete()
+            return True
+        except Exception:
+            return False
 
 
 class SuperMaster(Master, CoreSuper):

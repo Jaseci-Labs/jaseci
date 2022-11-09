@@ -1,6 +1,6 @@
 from jaseci.svc import PromotheusService as Ps
-from jaseci_serv.jaseci_serv.configs import PROMON_CONFIG
-from jaseci_serv.jaseci_serv.kubes import PROMON_KUBE
+from jaseci_serv.configs import PROMON_CONFIG
+from jaseci_serv.kubes import PROMON_KUBE
 
 
 class PromotheusService(Ps):

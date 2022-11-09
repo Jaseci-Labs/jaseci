@@ -10,6 +10,15 @@ type EndpointBody = {
   show_edges?: boolean;
 };
 
+type Graph = {
+  name: string;
+  kind: string;
+  jid: string;
+  j_timestamp: string;
+  j_type: 'graph';
+  context: Record<any, any>;
+};
+
 @Component({
   tag: 'jsc-graph',
   styleUrl: 'jsc-graph.css',
@@ -19,15 +28,18 @@ export class JscGraph {
   @Element() host: HTMLElement;
   @Prop() css: string = JSON.stringify({});
   @Prop({ mutable: true }) events: string;
-  @Prop() token: string = '5eed3f010f323cd8bb6d58c14bacec2274156e82ef913b4be96e2d9d0bbffa49';
-  @Prop() graphId: string = 'urn:uuid:58562489-7910-4d5a-88ec-8f4d8cd7bb22';
-  @Prop() serverUrl: string = 'http://localhost:8000';
-  @Prop() onFocus: 'expand' | 'isolate' = 'isolate';
+  @Prop() token: string = '';
+  @Prop() graphId: string = '';
+  @Prop() onFocus: 'expand' | 'isolate' = 'expand';
+  @Prop() height = '100vh';
 
   // viewed node
-  @State() nd = 'urn:uuid:153846bc-86ec-4068-8349-ec4c500241d9';
+  @State() nd = '';
   @State() prevNd = '';
   @State() network: vis.Network;
+  @State() graphs: Graph[] = [];
+  @State() serverUrl: string = localStorage.getItem('serverUrl') || 'http://localhost:8000';
+  @State() hiddenGroups: Set<string> = new Set();
 
   nodesArray: vis.Node[] = [];
   edgesArray: vis.Edge[] = [];
@@ -35,13 +47,34 @@ export class JscGraph {
   nodes: vis.data.DataSet<any, string>;
 
   @State() clickedNode: vis.Node & { context: {} };
+  @State() clickedEdge: vis.Edge & { context: {} };
 
   networkEl!: HTMLDivElement;
 
+  async getActiveGraph(): Promise<Graph> {
+    return await fetch(`${this.serverUrl}/js/graph_active_get`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${localStorage.getItem('token')}`,
+      },
+    }).then(res => res.json());
+  }
+
+  async getAllGraphs(): Promise<Graph[]> {
+    return await fetch(`${this.serverUrl}/js/graph_list`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${localStorage.getItem('token')}`,
+      },
+    }).then(res => res.json());
+  }
+
   @Watch('nd')
-  getGraphState() {
+  async getGraphState() {
     let body: EndpointBody = { detailed: true, gph: this.graphId, mode: 'default' };
-    let endpoint = `${this.serverUrl}/js/graph_get`;
+    let endpoint = `${this.serverUrl}/js/graph_node_view`;
 
     if (this.nd) {
       endpoint = `${this.serverUrl}/js/graph_node_view`;
@@ -58,7 +91,7 @@ export class JscGraph {
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `token ${this.token}`,
+        'Authorization': `token ${localStorage.getItem('token')}`,
       },
     }).then(async res => {
       const data = await res.json();
@@ -96,9 +129,8 @@ export class JscGraph {
 
         // update view when viewing the full graph
         if (this.network) {
-          this.network.setData({edges: this.edges as any, nodes: this.nodes as any})
+          this.network.setData({ edges: this.edges as any, nodes: this.nodes as any });
         }
-        
       }
 
       if (!this.network) {
@@ -129,6 +161,11 @@ export class JscGraph {
     });
   }
 
+  @Watch('graphId')
+  async refreshGraph() {
+    await this.getGraphState();
+  }
+
   // convert response to match required format for vis
   @Watch('nd')
   formatNodes(data: [][]): vis.Node[] {
@@ -144,13 +181,24 @@ export class JscGraph {
   }
 
   handleNetworkClick(network: vis.Network, params?: any) {
+    const selection = network.getSelection();
     const node = network.getNodeAt({
       x: params?.pointer.DOM.x,
       y: params?.pointer.DOM.y,
     });
 
-    this.clickedNode = this.nodes.get([node])[0];
-    console.log(this.clickedNode);
+    const edge = network.getEdgeAt({
+      x: params?.pointer.DOM.x,
+      y: params?.pointer.DOM.y,
+    });
+
+    // we don't want to have a clicked edge if we click on a node
+    if (selection.nodes.length) {
+      this.clickedNode = this.nodes.get([node])[0];
+      this.clickedEdge = undefined;
+    } else {
+      this.clickedEdge = this.edges.get([edge])[0];
+    }
   }
 
   // convert response to match required format for vis
@@ -166,11 +214,51 @@ export class JscGraph {
       }));
   }
 
+  /** Update the network with the correct visibility of nodes */
+  refreshNodes() {
+    const displayedNodes = new visData.DataSet(
+      this.nodes.get({
+        filter: (item: vis.Node) => {
+          return !this.hiddenGroups.has(item.group);
+        },
+      }),
+    );
+
+    this.network.setData({ edges: this.edges as any, nodes: displayedNodes as any });
+  }
+
+  hideNodeGroup() {
+    if (this.clickedNode) {
+      this.hiddenGroups.add(this.clickedNode.group);
+
+      // force update ui
+      this.clickedNode = null;
+      this.clickedNode = undefined;
+
+      this.refreshNodes();
+    }
+  }
+
+  showNodeGroup(group: string) {
+    this.hiddenGroups.delete(group);
+
+    // force update ui
+    this.clickedNode = null;
+    this.clickedNode = undefined;
+
+    this.refreshNodes();
+  }
+
   renderContext() {
-    const context = this.clickedNode?.context;
+    let context: undefined | Record<any, any> = {};
+    if (this.clickedEdge?.context) {
+      context = this.clickedEdge.context;
+    } else {
+      context = this.clickedNode?.context;
+    }
 
     return context ? (
-      Object.keys(this.clickedNode?.context).map(contextKey => (
+      Object.keys(context).map(contextKey => (
         <div key={contextKey}>
           <p style={{ fontWeight: 'bold' }}>{contextKey}</p>
           <p>
@@ -189,11 +277,17 @@ export class JscGraph {
 
   async componentDidLoad() {
     try {
+      // set the initial graph
+      let activeGraph: Graph = await this.getActiveGraph();
+      this.graphId = activeGraph?.jid;
+
+      // get all graphs for the graph switcher
+      this.graphs = await this.getAllGraphs();
+
       await this.getGraphState();
     } catch (err) {
       console.log(err);
     }
-    
 
     this.network.on('click', params => {
       this.handleNetworkClick(this.network, params);
@@ -208,10 +302,8 @@ export class JscGraph {
       });
 
       this.nd = node.toString();
-      
-      console.log({ nd: this.nd });
 
-      
+      console.log({ nd: this.nd });
     });
 
     this.network.on('oncontext', params => {
@@ -235,34 +327,107 @@ export class JscGraph {
 
   render() {
     return (
-      <div style={{ height: '500px', width: 'auto', position: 'relative' }}>
-        <div
-          style={{
-            height: '260px',
-            width: '240px',
-            borderRadius: '4px',
-            padding: '16px 4px',
-            top: '20px',
-            right: '20px',
-            position: 'absolute',
-            zIndex: '9999',
-            border: '2px solid #f4f4f4',
-            background: '#fff',
-            boxShadow: 'rgb(0 0 0 / 15%) 0px 1px 4px 0px, rgb(0 0 0 / 2%) 0px 0px 2px 1px',
-            overflowY: 'auto',
-            overflowX: 'hidden',
-          }}
-        >
-          <div tabindex="0" class="collapse collapse-plus border border-base-300 bg-base-100 rounded-box">
-            <input type="checkbox" defaultChecked={true} />
-            <div class="collapse-title text-md font-medium">Context</div>
-            <div class="collapse-content">{this.renderContext()}</div>
+      <div data-theme={'greenheart'}>
+        {!localStorage.getItem('token') ? (
+          <div style={{ width: '520px', margin: '40px auto' }}>
+            <jsc-card title={'Login'}>
+              <jsc-auth-form
+                onServerUrlChanged={e => {
+                  localStorage.setItem('serverUrl', e.detail);
+                  this.serverUrl = e.detail;
+                }}
+                slot={'children'}
+                serverURL={this.serverUrl}
+                redirectURL={window.location.toString()}
+              ></jsc-auth-form>
+            </jsc-card>
           </div>
-        </div>
-        <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
-          {this.nd && <jsc-button size="sm" label={'View Full Graph'}  onClick={() => (this.nd = '')}></jsc-button>}
-        </div>
-        <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: '100%' }}></div>
+        ) : (
+          this.serverUrl && (
+            <div style={{ height: this.height, width: 'auto', position: 'relative' }}>
+              <div
+                style={{
+                  height: '260px',
+                  width: '340px',
+                  borderRadius: '4px',
+                  padding: '16px',
+                  top: '20px',
+                  right: '20px',
+                  position: 'absolute',
+                  zIndex: '9999',
+                  border: '2px solid #f4f4f4',
+                  background: '#fff',
+                  boxShadow: 'rgb(0 0 0 / 15%) 0px 1px 2px 0px, rgb(0 0 0 / 2%) 0px 0px 2px 1px',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                }}
+              >
+                <div tabindex="0" class="collapse collapse-plus border border-base-300 bg-base-100 rounded-box">
+                  <input type="checkbox" defaultChecked={true} />
+                  <div class="collapse-title text-md font-medium">Context</div>
+                  <div class="collapse-content">{this.renderContext()}</div>
+                </div>
+
+                <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
+                  <input type={'checkbox'} defaultChecked={true} />
+                  <div class={'collapse-title text-md font-medium'}>Behaviour</div>
+                  <div class="collapse-content">
+                    <jsc-checkbox
+                      label={'Expand nodes on click'}
+                      size={'sm'}
+                      value={String(this.onFocus === 'expand')}
+                      onValueChanged={event => {
+                        event.detail === 'true' ? (this.onFocus = 'expand') : (this.onFocus = 'isolate');
+                      }}
+                    ></jsc-checkbox>
+                  </div>
+                </div>
+
+                <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
+                  <input type={'checkbox'} defaultChecked={true} />
+                  <div class={'collapse-title text-md font-medium'}>Display</div>
+                  <div class="collapse-content">
+                    <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
+                    <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
+                    {Array.from(this.hiddenGroups).map(group => (
+                      <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
+                        <jsc-chip label={group}>
+                          <svg
+                            slot="right"
+                            onClick={() => this.showNodeGroup(group)}
+                            style={{ cursor: 'pointer' }}
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            class="inline-block w-4 h-4 stroke-current"
+                          >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                          </svg>
+                        </jsc-chip>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
+                {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
+              </div>
+
+              {/*Graph Switcher*/}
+              <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999' }}>
+                <jsc-select
+                  placeholder={'Select Graph'}
+                  onValueChanged={e => {
+                    this.graphId = e.detail.split(':').slice(1).join(':');
+                    localStorage.setItem('selectedGraph', this.graphId);
+                  }}
+                  options={this.graphs?.map(graph => ({ label: `${graph.name}:${graph.jid}` }))}
+                ></jsc-select>
+              </div>
+              <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: this.height }}></div>
+            </div>
+          )
+        )}
       </div>
     );
   }

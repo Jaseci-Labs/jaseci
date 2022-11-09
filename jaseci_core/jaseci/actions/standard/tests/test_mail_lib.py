@@ -13,6 +13,9 @@ class MailLibTest(CoreTest):
         MailService.connect = MagicMock(return_value=Mock())
         super(MailLibTest, self).__init__(*args, **kwargs)
 
+    def setUp(self):
+        super().setUp(True)
+
     def test_send_mail(self):
         self.call(
             self.mast,

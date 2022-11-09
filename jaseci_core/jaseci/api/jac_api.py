@@ -15,7 +15,7 @@ class JacApi:
     """
 
     @Interface.cli_api(cli_args=["file"])
-    def jac_build(self, file: str, out: str = ""):
+    def jac_build(self, file: str, out: str = "", opt_level: int = 4):
         """
         Command line tooling for building executable jac ir
         """
@@ -28,7 +28,11 @@ class JacApi:
         faux = self.faux_master()
         with open(file, "r") as file:
             ret = faux.sentinel_register(
-                code=file.read(), code_dir=dir, name=filename, auto_run=""
+                code=file.read(),
+                code_dir=dir,
+                name=filename,
+                auto_run="",
+                opt_level=opt_level,
             )
             if "success" in ret and not ret["success"]:
                 return ret
@@ -66,7 +70,13 @@ class JacApi:
                 return ret
 
     @Interface.cli_api(cli_args=["file"])
-    def jac_test(self, file: str, detailed: bool = False):
+    def jac_test(
+        self,
+        file: str,
+        single: str = "",
+        profiling: bool = False,
+        detailed: bool = False,
+    ):
         """
         Command line tooling for running all test in both .jac code files
         and .jir executables
@@ -84,7 +94,9 @@ class JacApi:
                 )
                 if "success" in ret and not ret["success"]:
                     return ret
-        return faux.sentinel_test(snt=faux.active_snt(), detailed=detailed)
+        return faux.sentinel_test(
+            snt=faux.active_snt(), single=single, profiling=profiling, detailed=detailed
+        )
 
     @Interface.cli_api(cli_args=["file"])
     def jac_run(
@@ -146,7 +158,7 @@ class JacApi:
         return faux.graph_get(gph=faux.active_gph(), mode="dot", detailed=detailed)
 
     def faux_master(self):
-        faux = MetaService().build_super_master()
+        faux = MetaService(run_svcs=False).build_super_master()
         faux._h.mem["global"] = deepcopy(self._h.mem["global"])
         return faux
 
