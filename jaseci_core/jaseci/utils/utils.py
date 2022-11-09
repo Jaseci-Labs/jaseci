@@ -15,7 +15,7 @@ import traceback
 import inspect
 import unittest
 from time import time
-from datetime import datetime
+
 from pprint import pformat
 
 
@@ -130,19 +130,6 @@ def matching_fields(obj1, obj2):
                 if a == b:
                     matches.append(a)
     return matches
-
-
-def map_assignment_of_matching_fields(dest, source):
-    """
-    Assign the values of identical feild names from source to destination.
-    """
-    for i in matching_fields(dest, source):
-        if type(getattr(source, i)) == uuid.UUID:
-            setattr(dest, i, getattr(source, i).urn)
-        elif type(getattr(source, i)) == datetime:
-            setattr(dest, i, getattr(source, i).isoformat())
-        elif not callable(getattr(dest, i)):
-            setattr(dest, i, getattr(source, i))
 
 
 obj_class_cache = {}

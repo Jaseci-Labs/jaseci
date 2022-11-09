@@ -75,8 +75,8 @@ class Sharable:
         return self.j_master
 
     def set_master(self, m_id):
-        if m_id is None or m_id == "anon":
-            m_id = 0
+        if not m_id:
+            m_id = uuid.UUID(int=0).urn
         self.j_master = m_id
 
     def make_public(self):
@@ -96,7 +96,7 @@ class Sharable:
 
     def is_public(self):
         """Check if element is publically accessible"""
-        return self.j_access == "public" or self.j_master == 0
+        return self.j_access == "public" or self.j_master == uuid.UUID(int=0).urn
 
     def is_read_only(self):
         """Check if element is publically readable"""

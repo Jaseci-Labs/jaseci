@@ -1354,16 +1354,16 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        payload = {"op": "graph_list"}
-        res = self.sclient.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        self.assertEqual(user_gph_id, res.data[0]["jid"])
         payload = {"op": "master_active_get"}
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         self.assertEqual(user_id, res.data["jid"])
+        payload = {"op": "graph_list"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(user_gph_id, res.data[0]["jid"])
 
     def test_jac_report_custom(self):
         """Test API for running a walker"""

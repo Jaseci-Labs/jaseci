@@ -9,7 +9,7 @@ from jaseci.graph.graph import Graph
 from jaseci.actor.sentinel import Sentinel
 import jaseci.tests.jac_test_code as jtc
 from jaseci_serv.utils.test_utils import skip_without_redis
-
+import uuid
 
 # Alias for create user
 create_user = get_user_model().objects.create_user
@@ -157,7 +157,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         nd = node.Node(m_id=0, h=self.user._h)
         temp_id = nd.id
         nd._h.commit()
-        load_test = nd._h.get_obj(0, temp_id)
+        load_test = nd._h.get_obj(uuid.UUID(int=0).urn, temp_id)
 
         load_test.kind = "Fasho!"
         load_test.save()
@@ -175,7 +175,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         temp_id = nd.id
         nd._h.commit()
 
-        load_test = nd._h.get_obj(0, temp_id)
+        load_test = nd._h.get_obj(uuid.UUID(int=0).urn, temp_id)
 
         load_test.kind = "Fasheezzy!"
         load_test.save()  # Jaseci model save
@@ -188,7 +188,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         oedge = otnode.attach_outbound(node.Node(m_id=0, h=self.user._h))
         otnode.save()  # Jaseci object save
         otnode._h.commit()
-        oload_test = otnode._h.get_obj(0, otnode.id)
+        oload_test = otnode._h.get_obj(uuid.UUID(int=0).urn, otnode.id)
         self.assertEqual(oload_test.name, otnode.name)
         # Below tests loading hex uuid strings and converting to uuid type
         newobj = otnode._h.get_obj_from_store(oload_test.id)
