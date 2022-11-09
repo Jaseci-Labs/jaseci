@@ -58,6 +58,13 @@ def assimilate_action(func, act_group=None, aliases=list()):
             live_action_modules[func.__module__] = [action_name]
     for i in aliases:
         live_actions[f"{'.'.join(act_group+[i])}"] = func
+        if func.__module__ != "js_remote_hook":
+            if func.__module__ in live_action_modules:
+                live_action_modules[func.__module__].append(
+                    f"{'.'.join(act_group+[i])}"
+                )
+            else:
+                live_action_modules[func.__module__] = [f"{'.'.join(act_group+[i])}"]
     return func
 
 
@@ -160,6 +167,7 @@ def get_global_actions(hook):
             or i.startswith("request.")
             or i.startswith("date.")
             or i.startswith("jaseci.")
+            or i.startswith("internal.")
         ):
             global_action_list.append(
                 Action(

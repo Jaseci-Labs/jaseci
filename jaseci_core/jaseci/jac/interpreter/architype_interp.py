@@ -9,7 +9,6 @@ from jaseci.graph.edge import Edge
 from jaseci.actor.walker import Walker
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.machine.jac_scope import JacScope
-from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 
 
 class ArchitypeInterp(Interp):
@@ -149,7 +148,7 @@ class ArchitypeInterp(Interp):
         local_state = m._jac_scope.local_scope
         self.report = self.report + m.report
         if root_name in local_state.keys():
-            obj = jeu(local_state[root_name], parent=self)
+            obj = local_state[root_name]
             if not isinstance(obj, Node):
                 self.rt_error(f"{root_name} is {type(obj)} not node!", kid[3])
             return obj

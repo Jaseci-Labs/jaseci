@@ -23,6 +23,7 @@ class OrmHook(RedisHook):
     def __init__(self, objects, globs):
         self.objects = objects
         self.globs = globs
+        self.db_touch_count = 0
         super().__init__()
 
     ####################################################
@@ -36,6 +37,7 @@ class OrmHook(RedisHook):
         if loaded_obj is None:
             try:
                 loaded_obj = self.objects.get(jid=item_id)
+                self.db_touch_count += 1
             except ObjectDoesNotExist:
                 logger.error(
                     str(f"Object {item_id} does not exist in Django ORM!"),
@@ -50,7 +52,7 @@ class OrmHook(RedisHook):
 
             # Unwind jsci_payload for fields beyond element object
             ret_obj.json_load(loaded_obj.jsci_obj)
-            self.commit_obj_to_cache(ret_obj)
+            self.commit_obj_to_cache(ret_obj, all_caches=True)
             return ret_obj
         return loaded_obj
 
@@ -82,6 +84,7 @@ class OrmHook(RedisHook):
         if glob is None:
             try:
                 glob = self.globs.get(name=name).value
+                self.db_touch_count += 1
             except ObjectDoesNotExist:
                 logger.error(
                     str(f"Global {name} does not exist in Django ORM!"), exc_info=True
@@ -135,7 +138,7 @@ class OrmHook(RedisHook):
         """Write through all saves to store"""
         for i in self.save_obj_list:
             if not skip_cache:
-                self.commit_obj_to_cache(i)
+                self.commit_obj_to_cache(i, all_caches=True)
             self.commit_obj(i)
         self.save_obj_list = set()
 

@@ -169,6 +169,11 @@ We will also need an admin user so we can log into the jaseci server. To create 
 jsserv createsuperuser
 ```
 And follow the command line prompts to create a super user.
+For the purpose of this codelab, we are going to use the following credentials:
+```bash
+Email: admin@j.org
+Password: JaseciAdmin
+```
 
 Then launch the jaseci server with
 ```bash
@@ -199,6 +204,14 @@ Username:
 Password:
 ```
 Follow the prompts the provide the email and password you used to create the superuser earlier.
+In our case, it will be
+```bash
+jsctl
+jaseci > login http://localhost:8000/
+Username: admin@j.org
+Password: JaseciAdmin
+```
+
 If logged in successfully, you should see a token being returned.
 It will look something like this
 ```bash
@@ -211,7 +224,8 @@ Login successful!
 ```
 > **Important**
 >
-> Notice the `@` symbol in front of the `@jaseci >` command line prompt. This indicates that your jsctl session is now logged into a jsserv instance, while `jaseci >` indicates it is in a local session.
+> Notice the `@` symbol in front of the `@jaseci >` command line prompt. This indicates that your jsctl session is now logged into a jsserv
+instance, while `jaseci >` indicates it is in a local session.
 
 While logged into the jsserv instance, you can register a sentinel on it with `sentinel register` command, just like how you were running it before in the local jsctl session
 ```bash
@@ -219,7 +233,7 @@ While logged into the jsserv instance, you can register a sentinel on it with `s
 ```
 After registering, you can then run walker run, just like before in a local jsctl session
 ```bash
-jaseci > walker run talk -ctx "{\"question\": \"I want to schedule a test drive\"}"
+@jaseci > walker run talk -ctx "{\"question\": \"I want to schedule a test drive\"}"
 ```
 > **Important**
 >
@@ -231,3 +245,152 @@ All the `jsctl` commands we have used throughput this tutorial have an equivalen
 As a matter of fact, the entire development journey in this tutorial can be done completely with a remote jaseci server instance.
 You can go to `localhost:8000/docs` to check out all the available APIs.
 
+> **Note**
+>
+> `jsserv` is a wrapper around the django `manage.py` script and it supports the commands that `manage.py` supports.
+
+> **Note**
+>
+> So far we have shown how to run the jaseci server natively on a machine. If you wish to stand up a jaseci server in a kubernetes cluster, you can find an example kubernetes manifest file at https://github.com/Jaseci-Labs/jaseci/blob/main/scripts/jaseci.yaml
+
+## Manage Sentinels on the Jaseci Server
+Because we have been running our jac program in a local jsctl environment and under a development setting, we only need to worry about one single user.
+In a production setting, our application need to serve many users.
+In addition, new accounts will be created when new users sign up for our application.
+While it is certainly possible to register a new sentinel for every new user, it is far from ideal from a scalability standpoint.
+To solve this, we introduce the concept of the global sentinel.
+
+A global sentinel is a sentinel that is exposed globally and can be set as the active sentinel for any users.
+To create a global sentinel, you need to login as a user with admin priviledge so we are going to use the superuser we created earlier.
+We are going to first register a sentinel and name it `tesla_ai_global`.
+```bash
+@jaseci > sentinel register -set_active true -mode ir tesla_ai.jir -name tesla_ai_global
+```
+To set a sentinel as the global sentinel for the jaseci server, we run
+```bash
+@jaseci > global sentinel set -snt sentinel:tesla_ai_global
+```
+Now that this sentinel is the global sentinel, to activate this sentinel as the active sentinel for any given user, run the following while logged in as the user
+```bash
+@jaseci > sentinel active global
+```
+This will set the active sentinel for the user to the global sentinel, which in our case is named `tesla_ai_global`.
+Once this is set, any future walker run requests will by default use the global sentinel.
+
+To update the global sentinel, run as the admin user
+```bash
+@jaseci > sentinel set -snt sentinel:tesla_ai_global -mode ir tesla_ai.jir
+```
+This will update the gloabl sentinel with the updated `jir` code and because this is a global sentinel, any users that have the global sentinel set as their active sentinel will also effectively be running with an updated sentinel.
+
+## Manage Graphs
+Now that we have the global sentinel set up, it's time to discuss the management of graphs in a production environment.
+Let's first create two general categories of application, un-authenticated and authenticated applications.
+Un-authenticated applications do not require any user authentication and can be used by anyone in the world as long as they access the URL of the application.
+This category of applications usually serve functions that can benefit a wide range of audience but lack any personalized usage due to lack of access to personal data that is only possible with authentication.
+Example of un-authenticated applications include chatbot that provides public service annoucement or information that are useful to the general public.
+In contrast, authenticated applications require user to log in first before they can use the application.
+The application then can fetch information and data specific to the user that is interacting with the application.
+Example of authenticated applications include a virtual assistant within your bank app that you can use about your account balance or your recent account transactions.
+
+Both un-authenticated and authenticated applications can utilize the global sentinel pattern.
+Developers of the application register and update a global sentinel for all users.
+On the other hand, depending on the application, the management of graphs can be different.
+For un-authenticated applications, the front-end of the application is often integrated with the backend with a service account.
+All users will be effectively using the graph of this service account.
+For authenticated applications, each user will often have a corresponding account in the jaseci backend and their own graph.
+Therefore, a graph needs to be created and set as active for every new user creation. To create a graph, run
+```bash
+@jaseci > graph create -set_active true
+```
+And depending on the application, you might also need to initialize the graph with the init walker
+```bash
+@jaseci > walker run init
+```
+> **Note**
+>
+> Our tesla bot falls into the category of un-authenticated applications. Anyone can ask about FAQs and schedule a test drive. So for this tutorial, we will use the admin account as our service account and its graph as the active graph
+
+## The Jaseci RESTful APIs
+With a jaseci web server (i.e., `jsserv`), we also get access to the full suite of Jaseci RESTful APIs.
+You can go to `http://localhost:8000/docs/` to checkout the list of available APIs and their documentation and request and response payload format.
+The documentation looks like this
+
+![](../images/api_docs.png)
+Every `jsctl` command has a corresponding API endpoint.
+Click on the triangle to the right of the endpoint to see details on its request and response format.
+The command line argument to the `jsctl` command becomes the fields in the request payload of the API endpoint.
+`jsctl` is great for rapid development and testing but for deploying a jaseci application to production, a set of RESTful API endpoints is the industry standard.
+Here are the most commonly used endpoints that you should pick up and get familarized first.
+* `/user/create` to create a new user
+![](../images/api_docs_user_create.png)
+* `/js/sentinel_register` to register a sentinel
+![](../images/api_docs_sentinel_register.png)
+* `/js/walker_run` to run a walker
+![](../images/api_docs_walker_run.png)
+
+## Integration with a Webapp
+We are now going to show an example of how to integrate with a frontend to our tesla chatbot.
+We have provided a template web-based frontend at https://github.com/Jaseci-Labs/jaseci/blob/main/examples/CanoniCAI/code/html/.
+This is a simple chatbot frontend that supports both voice and text input.
+It also coverts the response text to speech and speak it back.
+
+Here is a screenshot of the UI. You can click on the microphone button to talk to it or use the textbox below for a text input.
+![](../images/web_ui.png)
+
+The web frontend communciates with the Jaseci backend via HTTP requests.
+Here is the relevant code where the frontend makes a POST request to the `/js/walker_run` API to run the `talk` walker to ask a question.
+```js
+const getAnswer = async (question) => {
+      let data = {
+        ctx: { "question": question },
+        name: "talk"
+      }
+
+      try {
+        // NOTE: Change this URL to your Jaseci server URL.
+        // NOTE: Change the token to your authenticated token
+        let result = await fetch('http://localhost:8000/js/walker_run', {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'token bf6c3138799af356cbec27da90de0f7476fd9e25059c83dc0dfdd339ff68dd5b'
+          },
+          body: JSON.stringify(data),
+        })
+        result = await result.json();
+
+        const answer = result.report[0];
+
+        document.querySelector('#answer').innerHTML = answer;
+        speech.text = answer.replace(/https?.*?(?= |$)/g, "");
+        var voices = window.speechSynthesis.getVoices();
+        speech.voice = voices[7];
+        speechSynthesis.getVoices().forEach(function (voice) {
+          console.log(voice.name, voice.default ? voice.default : '');
+        });
+
+        // Start Speaking
+        window.speechSynthesis.speak(speech);
+
+      } catch (error) {
+        console.log(error)
+      }
+    }
+```
+Let's quickly dissect this API call.
+* It is sending a POST request, as specified by the `method` field.
+* It is sending the request to the URL `http://localhost:8000/js/walker_run`. You should replace the `localhost:8000` with your own jaseci server URL.
+* The request payload is a JSON data structured stored in `data`, as follows. The `name` field specifies the name of the walker to run and `ctx` is a dictionary containing all neccessary parameters to the walker, just like what we have been doing with `walker run` in `jsctl`. In this webapp, the question is being pulled from the frontend from either the Speech-to-text engine or the text input.
+```json
+{
+    "ctx": {
+        "question": "USER QUESTION",
+    },
+    "name": "talk"
+}
+```
+> **Note**
+>
+> You need to update the webapp to point to your own jaseci server URL (line 360 of `index.html`) as well as an updated authentication token (line 365 of `index.html`) which can you obtain from logging in via `jsctl`.

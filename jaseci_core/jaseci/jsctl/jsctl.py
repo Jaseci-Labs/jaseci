@@ -10,7 +10,7 @@ import pickle
 import click
 import requests
 from click_shell import shell
-
+from click.testing import CliRunner
 from jaseci import __version__
 from jaseci.element.super_master import SuperMaster
 from jaseci.svc import MetaService
@@ -303,6 +303,36 @@ def reset():
     click.echo("Jaseci State Cleared!")
 
 
+@click.command(help="Run multiple commands sequentially from file")
+@click.argument("filename", type=str, required=True)
+@click.option(
+    "--output",
+    "-o",
+    default="",
+    required=False,
+    type=str,
+    help="Filename to dump output of this command call.",
+)
+def script(filename, output):
+    if not os.path.isfile(filename):
+        click.echo("File not found!")
+        return
+    with open(filename) as file:
+        cmds = [line.rstrip() for line in file]
+    if output:
+        with open(output, "w") as f:
+            f.write("Multi Command Script Output:\n")
+    for i in cmds:
+        res = CliRunner(mix_stderr=False).invoke(jsctl, i.split())
+        click.echo(res.stdout)
+        if output:
+            with open(output, "a") as f:
+                f.write(f"Output for {i}:\n")
+                f.write(res.stdout)
+    if output:
+        click.echo(f"[saved to {output}]")
+
+
 @click.command(help="Internal book generation tools")
 @click.argument("op", type=str, default="cheatsheet", required=True)
 @click.option(
@@ -334,6 +364,7 @@ jsctl.add_command(edit)
 jsctl.add_command(ls)
 jsctl.add_command(clear)
 jsctl.add_command(reset)
+jsctl.add_command(script)
 jsctl.add_command(booktool)
 cmd_tree_builder(extract_api_tree())
 

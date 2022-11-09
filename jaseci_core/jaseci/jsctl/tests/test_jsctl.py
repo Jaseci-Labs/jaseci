@@ -74,7 +74,6 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.call(
             "sentinel register jaseci/jsctl/tests/ll.jac -name ll -set_active true"
         )
-        self.call("graph create -set_active true")
         self.call("walker run init")
         self.call("walker run gen_rand_life")
         r = self.call("graph get -mode dot")
@@ -83,7 +82,7 @@ class JsctlTest(TestCaseHelper, TestCase):
 
         r = self.call("graph get -mode dot -detailed true")
         self.assertIn('"n0" -> "n', r)
-        self.assertIn('week="', r)
+        self.assertIn('id="', r)
 
     def test_jsctl_aliases(self):
         """Tests that alias mapping api works"""
@@ -284,8 +283,6 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertGreater(os.path.getsize("jaseci/jsctl/tests/teststest.jir"), 20000)
 
     def test_jsctl_jac_build_with_action(self):
-        import os
-
         if os.path.exists("jaseci/jsctl/tests/withaction.jir"):
             os.remove("jaseci/jsctl/tests/withaction.jir")
             self.assertFalse(os.path.exists("jaseci/jsctl/tests/withaction.jir"))
@@ -298,6 +295,14 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertTrue(r[0].startswith('Testing "assert should be'))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
+
+    def test_jsctl_jac_test_single(self):
+        r = self.call_split(
+            "jac test jaseci/jsctl/tests/teststest.jac -single the_second"
+        )
+        self.assertTrue(r[0].startswith('Testing "a second test"'))
+        self.assertTrue(r[2].startswith('  "tests": 1'))
+        self.assertTrue(r[5].startswith('  "success": true'))
 
     def test_jsctl_jac_test_jir(self):
         r = self.call_split("jac test jaseci/jsctl/tests/teststest.jir")
@@ -397,6 +402,29 @@ class JsctlTest(TestCaseHelper, TestCase):
         after = len(r.keys())
         self.assertGreater(before, 4)
         self.assertGreater(after, before)
+
+    def test_jsctl_script(self):
+        r = self.call("script jaseci/jsctl/tests/jsctl_script")
+        self.assertEqual(r, "[]\n\n[]\n\n{}\n\n")
+
+    def test_jsctl_script_output(self):
+        self.call("script jaseci/jsctl/tests/jsctl_script -o scr_out")
+        with open("scr_out", "r") as f:
+            s = [line.rstrip() for line in f]
+        if os.path.exists("scr_out"):
+            os.remove("scr_out")
+        self.assertEqual(
+            s,
+            [
+                "Multi Command Script Output:",
+                "Output for sentinel list:",
+                "[]",
+                "Output for graph list:",
+                "[]",
+                "Output for alias list:",
+                "{}",
+            ],
+        )
 
 
 class JsctlTestWithSession(TestCaseHelper, TestCase):

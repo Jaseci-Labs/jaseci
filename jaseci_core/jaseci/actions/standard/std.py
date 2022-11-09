@@ -33,6 +33,12 @@ def js_input(prompt: str = ""):
     return input(prompt)
 
 
+@jaseci_action(aliases=["round"])
+def js_round(num: float, digits: int = 0):
+    """Standard built in for rounding floats"""
+    return round(num, digits)
+
+
 @jaseci_action()
 def err(*args):
     """Standard built in for printing to stderr"""
@@ -190,3 +196,13 @@ def get_report(meta):
     Get current report so far for walker run
     """
     return meta["interp"].report
+
+
+@jaseci_action()
+def clear_report(meta):
+    """
+    Clear report so far
+    """
+    meta["interp"].report = []
+    if hasattr(meta["interp"], "save"):
+        meta["interp"].save()

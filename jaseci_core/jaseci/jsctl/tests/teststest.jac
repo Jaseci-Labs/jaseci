@@ -43,7 +43,8 @@ with graph::dummy by walker::init {
     assert <--[0].v1=="I'm apple";
 }
 
-test "a second test"
+test the_second
+"a second test"
 with graph::dummy by walker::init {
     assert (num==4);
     assert (here.x1=="I'm banana");

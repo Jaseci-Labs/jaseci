@@ -4,7 +4,11 @@ from operator import itemgetter
 from jaseci.actions.live_actions import jaseci_action
 
 
-@jaseci_action()
+def check_nested_list(lst):
+    return all(isinstance(el, list) for el in lst)
+
+
+@jaseci_action(aliases=["cos_sim"])
 def cosine_sim(vec_a: list, vec_b: list):
     """
     Caculate the cosine similarity score of two given vectors
@@ -13,6 +17,16 @@ def cosine_sim(vec_a: list, vec_b: list):
 
     Return - float between 0 and 1
     """
+    vec_a_nested = check_nested_list(vec_a)
+    vec_b_nested = check_nested_list(vec_b)
+    if vec_a_nested or vec_b_nested:
+        vec_a_np = np.array(vec_a) if vec_a_nested else np.array([vec_a] * len(vec_b))
+        vec_b_np = np.array(vec_b) if vec_b_nested else np.array([vec_b] * len(vec_a))
+        sim = np.dot(vec_a_np, vec_b_np.T) / (
+            np.linalg.norm(vec_a_np, axis=1)[:, None] * np.linalg.norm(vec_b_np, axis=1)
+        )
+        return sim.diagonal().tolist()
+
     result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
     return float(result.astype(float))
 
@@ -40,7 +54,7 @@ def get_centroid(vec_list: list):
     """
     centroid = np.mean(vec_list, axis=0)
     tightness = np.mean([cosine_sim(vec, centroid) for vec in vec_list]).astype(float)
-    return [centroid, tightness]
+    return [centroid.tolist(), tightness]
 
 
 @jaseci_action()

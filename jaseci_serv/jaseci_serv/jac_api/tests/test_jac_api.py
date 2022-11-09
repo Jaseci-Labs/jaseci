@@ -1448,7 +1448,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         ).data
 
         self.assertFalse(res["success"])
-        self.assertEquals(payload, res["report"][4]["body"])
+        self.assertEqual(payload, res["report"][4]["body"])
 
     def test_multipart_json_file(self):
         """Test multipart using json file as ctx parameter"""
@@ -1465,7 +1465,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
 
         self.assertTrue(res["success"])
-        self.assertEquals({"sample": "sample"}, res["report"][0]["ctx"])
+        self.assertEqual({"sample": "sample"}, res["report"][0]["ctx"])
 
     @skip_without_redis
     def test_multipart_json_file_async(self):
@@ -1493,7 +1493,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
         self.assertEqual("SUCCESS", res["status"])
         self.assertEqual("test", res["result"]["anchor"])
-        self.assertEquals(
+        self.assertEqual(
             {"sample": "sample"}, res["result"]["response"]["report"][0]["ctx"]
         )
 
@@ -1503,7 +1503,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
 
         self.assertEqual("SUCCESS", res["status"])
         self.assertEqual("test", res["result"]["anchor"])
-        self.assertEquals(
+        self.assertEqual(
             {"sample": "sample"}, res["result"]["response"]["report"][0]["ctx"]
         )
 
@@ -1570,7 +1570,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
 
         self.assertTrue(res["success"])
-        self.assertEquals({"sample": "sample"}, res["report"][0]["ctx"])
+        self.assertEqual({"sample": "sample"}, res["report"][0]["ctx"])
 
     def test_multipart_with_additional_file(self):
         """Test multipart with additional file"""
@@ -1598,8 +1598,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         ]
 
         self.assertTrue(res["success"])
-        self.assertEquals(default_file, res["report"][0])
-        self.assertEquals(default_file, res["report"][1])
+        self.assertEqual(default_file, res["report"][0])
+        self.assertEqual(default_file, res["report"][1])
 
     def test_multipart_custom_payload_with_additional_file(self):
         """Test multipart custom payload (non ctx format) with additional file"""
@@ -1625,7 +1625,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         ]
 
         self.assertTrue(res["success"])
-        self.assertEquals(default_file, res["report"][2])
+        self.assertEqual(default_file, res["report"][2])
 
     def test_try_catch(self):
         """Test try catch triggers"""
