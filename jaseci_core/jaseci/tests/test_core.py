@@ -77,7 +77,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         Test saving object to json and back to python dict
         """
         for i in get_all_subclasses(Element):
-            kwargs = {"m_id": "anon", "h": self.meta.build_hook()}
+            kwargs = {"m_id": 0, "h": self.meta.build_hook()}
             orig = i(**kwargs)
             blob1 = orig.json(detailed=True)
             new = i(**kwargs)

@@ -135,7 +135,7 @@ class Element(Hookable):
         """
         global element_fields
         if element_fields is None:
-            element_fields = dir(Element(m_id="anon", h=MemoryHook()))
+            element_fields = dir(Element(m_id=0, h=MemoryHook()))
         obj_fields = []
         for i in vars(self).keys():
             if not i.startswith("_") and i not in element_fields:

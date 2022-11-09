@@ -34,7 +34,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         """Test that db hooks are set up correctly for saving"""
         user = self.user
         self.assertIsNotNone(user._h)
-        tnode = node.Node(m_id="anon", h=user._h)
+        tnode = node.Node(m_id=0, h=user._h)
         tnode.name = "GOBBY"
         tnode.save()  # Jaseci object save
         user._h.commit()
@@ -70,7 +70,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         """
         user = self.user
         self.assertIsNotNone(user._h)
-        temp_id = node.Node(m_id="anon", h=user._h).id
+        temp_id = node.Node(m_id=0, h=user._h).id
 
         h = user._h
         h.commit()
@@ -106,8 +106,8 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         Test that db hooks handle walkers ok
         """
         user = self.user
-        gph = Graph(m_id="anon", h=user._h)
-        sent = Sentinel(m_id="anon", h=gph._h)
+        gph = Graph(m_id=0, h=user._h)
+        sent = Sentinel(m_id=0, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
         test_walker = sent.run_architype("get_gen_day")
@@ -122,8 +122,8 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         Test that UUIDs function correctly for store adn loads
         """
         user = self.user
-        node1 = node.Node(m_id="anon", h=user._h)
-        node2 = node.Node(m_id="anon", h=user._h, parent=node1)
+        node1 = node.Node(m_id=0, h=user._h)
+        node2 = node.Node(m_id=0, h=user._h, parent=node1)
         user._h.commit()
         new_node = JaseciObject.objects.filter(j_parent=node1.id).first()
         new_jsci_node = user._h.get_obj_from_store(new_node.jid)
@@ -143,7 +143,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
 
     def test_redis_saving(self):
         """Test that redis hooks are set up correctly for saving"""
-        tnode = node.Node(m_id="anon", h=self.user._h)
+        tnode = node.Node(m_id=0, h=self.user._h)
         tnode.name = "GOBBY"
         tnode.save()  # Jaseci object save
         tnode._h.commit()
@@ -154,10 +154,10 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         """
         Test that redis hooks are set up correctly for loading single server
         """
-        nd = node.Node(m_id="anon", h=self.user._h)
+        nd = node.Node(m_id=0, h=self.user._h)
         temp_id = nd.id
         nd._h.commit()
-        load_test = nd._h.get_obj("anon", temp_id)
+        load_test = nd._h.get_obj(0, temp_id)
 
         load_test.kind = "Fasho!"
         load_test.save()
@@ -171,11 +171,11 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         then deleting, also tests that '_id' and '_ids' conventions handle
         uuid types loading from db
         """
-        nd = node.Node(m_id="anon", h=self.user._h)
+        nd = node.Node(m_id=0, h=self.user._h)
         temp_id = nd.id
         nd._h.commit()
 
-        load_test = nd._h.get_obj("anon", temp_id)
+        load_test = nd._h.get_obj(0, temp_id)
 
         load_test.kind = "Fasheezzy!"
         load_test.save()  # Jaseci model save
@@ -185,10 +185,10 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertEqual(load_test.kind, otnode.kind)
 
         otnode.name = "Rizzoou"
-        oedge = otnode.attach_outbound(node.Node(m_id="anon", h=self.user._h))
+        oedge = otnode.attach_outbound(node.Node(m_id=0, h=self.user._h))
         otnode.save()  # Jaseci object save
         otnode._h.commit()
-        oload_test = otnode._h.get_obj("anon", otnode.id)
+        oload_test = otnode._h.get_obj(0, otnode.id)
         self.assertEqual(oload_test.name, otnode.name)
         # Below tests loading hex uuid strings and converting to uuid type
         newobj = otnode._h.get_obj_from_store(oload_test.id)
