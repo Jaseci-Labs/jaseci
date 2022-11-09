@@ -167,9 +167,9 @@ class JacTests(TestCaseHelper, TestCase):
         from jaseci.jac.machine.jac_scope import JacScope
 
         JacScope(None, None, [])
-        from jaseci.jac.machine.jac_scope import global_action_list
+        from jaseci.jac.machine.jac_scope import global_action_sets
 
-        self.assertGreater(len(global_action_list), 10)
+        self.assertGreater(len(global_action_sets), 5)
 
     def test_multiple_edged_between_nodes_work(self):
         """Test that multiple edges between the same two nodes are allowed"""

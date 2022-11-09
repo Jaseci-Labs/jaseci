@@ -37,7 +37,6 @@ class VirtualMachine(MachineState, Stack, InstPtr):
     def reset_vm(self):
         Stack.__init__(self)
         InstPtr.__init__(self)
-        self._op = self.build_op_call()
 
     def build_op_call(self):
         op_map = {}

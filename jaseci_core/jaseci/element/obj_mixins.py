@@ -11,10 +11,15 @@ import uuid
 class Anchored:
     """Utility class for objects that hold anchor values"""
 
+    arch_map = {}
+
     def __init__(self):
         self.context = {}
 
     def get_architype(self):
+        arch = self.get_arch_from_cache()
+        if arch and id(arch._h) == id(self._h):
+            return arch
         arch = (
             self._h._machine.parent().get_arch_for(self)
             if self._h._machine is not None
@@ -25,9 +30,21 @@ class Anchored:
         mast = self.get_master()
         if arch is None and mast.active_snt() is not None:
             arch = mast.active_snt().get_arch_for(self)
-        if arch is None and self.parent() and self.parent().j_type == "sentinel":
+        elif arch is None and self.parent() and self.parent().j_type == "sentinel":
             arch = self.parent().get_arch_for(self)
+        self.cache_arch(arch)
         return arch
+
+    def cache_arch(self, arch):
+        Anchored.arch_map[self.kind + self.name] = arch
+
+    def get_arch_from_cache(self):
+        if (self.kind + self.name) in Anchored.arch_map:
+            return Anchored.arch_map[self.kind + self.name]
+        return None
+
+    def flush_cache():
+        Anchored.arch_map = {}
 
     def anchor_value(self):
         """Returns value of anchor context object"""
