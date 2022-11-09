@@ -93,6 +93,8 @@ def build_summary_file():
     import_assets(files)
     files = get_images(os.path.join(root, "support/codelabs/canonicai/images"))
     import_assets(files)
+    files = get_images(os.path.join(root, "support/guide/lang_docs/images"))
+    import_assets(files)
 
 
 def process_line(line):
