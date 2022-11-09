@@ -4,14 +4,15 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 # Model Directory
 
 ## Encoders
-| Module      | Model Name    | Example                            | Type                    | Status       | Description                                                 | Resources                                 |
-| ----------- | ------------- | ---------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
-| `use_enc`   | USE Encoder   | [Link](#use-encoder-use_enc)       | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
-| `use_qa`    | USE QA        | [Link](#use-qa-use_qa)             | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
-| `fast_enc`  | FastText      | [Link](#fasttext-encoder-fast_enc) | Training req.           | Ready        | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
-| `bi_enc`    | Bi-encoder    | [Link](#bi-encoder-bi_enc)         | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
-| `poly_enc`  | Poly-encoder  |                                    | Training req./Zero-shot | Experimental | Poly Encoder                                                | [Paper](https://arxiv.org/abs/1905.01969) |
-| `cross_enc` | Cross-encoder |                                    | Training req./Zero-shot | Experimental | Cross Encoder                                               | [Paper](https://arxiv.org/abs/1905.01969) |
+| Module      | Model Name       | Example                             | Type                    | Status       | Description                                                 | Resources                                 |
+| ----------- | ---------------- | ----------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
+| `use_enc`   | USE Encoder      | [Link](#use-encoder-use_enc)        | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
+| `use_qa`    | USE QA           | [Link](#use-qa-use_qa)              | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
+| `fast_enc`  | FastText         | [Link](#fasttext-encoder-fast_enc)  | Training req.           | Ready        | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
+| `bi_enc`    | Bi-encoder       | [Link](#bi-encoder-bi_enc)          | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
+| `sbert_sim` | SBert Similarity | [Link](#sbert-similarity-sbert_sim) | Training req./Zero-shot | Ready        | SBert Encoders for Sentence Similarity                      | [Paper](https://arxiv.org/abs/1908.10084) |
+| `poly_enc`  | Poly-encoder     |                                     | Training req./Zero-shot | Experimental | Poly Encoder                                                | [Paper](https://arxiv.org/abs/1905.01969) |
+| `cross_enc` | Cross-encoder    |                                     | Training req./Zero-shot | Experimental | Cross Encoder                                               | [Paper](https://arxiv.org/abs/1905.01969) |
 
 ## Entity
 | Module                | Model Name      | Example                                               | Type           | Status       | Description                                                       | Resources                                                                                               |
@@ -149,7 +150,7 @@ The sentence level embeddings can then be used to calculate best match between q
     * Input:
         * `text` (string): text to classify
         * `classes` (list of strings): candidate classification classes
-    * Returns: 
+    * Returns:
 #### Example Jac Usage:
 ```jac
 # Use USE_QA model for zero-shot text classification
@@ -189,30 +190,30 @@ walker use_qa_example {
         * `vec_a` (list of float): first embeded text
         * `vec_b` (list of float): second embeded text
     * Return: cosine similarity score
-* `infer`: predits the most suitable candidate for a provided context, takes text or embedding 
+* `infer`: predits the most suitable candidate for a provided context, takes text or embedding
     * Input:
         * `contexts` (string or list of strings): context which needs to be classified
-        * `candidates` (string or list of strings): list of candidates for the context 
+        * `candidates` (string or list of strings): list of candidates for the context
         * `context_type` (string): can be text or embedding type
         * `candidate_type` (string): can be text or embedding type
-    * Return: a dictionary of similarity score for each candidate and context 
+    * Return: a dictionary of similarity score for each candidate and context
 * `train`: used to train the Bi-Encoder for custom input
     * Input:
         * `dataset` (Dict): dictionary of candidates and suportting contexts for each candidate
-        * `from_scratch` (bool): if set to true train the model from scratch otherwise trains incrementally 
+        * `from_scratch` (bool): if set to true train the model from scratch otherwise trains incrementally
         * `training_parameters` (Dict): dictionary of training parameters
     * Returns: text when model training is completed
-* `get_context_emb`:  
+* `get_context_emb`:
     * Alternate name: `encode_context`
     * Input:
         * `contexts` (string or list of strings): context which needs to be encoded
     * Returns a list of embedding of 128 length for tiny bert
-* `get_candidate_emb`:  
+* `get_candidate_emb`:
     * Alternate name: `encode_candidate`
     * Input:
         * `candidates` (string or list of strings): candidates which needs to be encoded
     * Returns: list of embedding of 128 length for tiny bert
-* `get_train_config`:  
+* `get_train_config`:
     * Input: None
     * Returns: json of all the current training configuration
      ```
@@ -237,11 +238,11 @@ walker use_qa_example {
         "device": "cuda"
     }
     ```
-* `set_train_config`:  
-    * Input 
+* `set_train_config`:
+    * Input
         * `train_parameters` (Dict): dictionary of training parameters. See the json example above under `get_train_config` for the list of available training parameters.
     * Returns: "Config setup is complete." if train configuration is completed successfully
-* `get_model_config`:  
+* `get_model_config`:
     * Input: None
     * Returns: json of all the current model configuration
     ```
@@ -253,16 +254,16 @@ walker use_qa_example {
         "loss_type": "dot"
     }
     ```
-* `set_model_config`:  
-    * Input 
+* `set_model_config`:
+    * Input
         * `model_parameters`(Dict): dictionary of model parameters. See the json example above under `get_model_config` for the list of available training parameters.
     * Returns: "Config setup is complete." if model configuration is completed successfully
-* `save_model`:  
-    * Input 
+* `save_model`:
+    * Input
         * `model_path` (string): the path to save model
     * Returns: "[Saved model at] : <model_path>" if model successfully saved
-* `load_model`:  
-    * Input 
+* `load_model`:
+    * Input
         * `model_path` (string): the path to save model
     * Returns: "[loaded model from] : <model_path>" if model successfully loaded
 
@@ -291,8 +292,8 @@ walker bi_enc_example{
     can bi_enc.train,bi_enc.infer;
 
     train_data = file.load_json(train_file);
-    
-    # Train the model 
+
+    # Train the model
     bi_enc.train(
         dataset=train_data,
         from_scratch=from_scratch,
@@ -324,23 +325,110 @@ walker bi_enc_example{
 }
 ```
 
+###  Sbert Similarity (`sbert_sim`)
+`sbert_sim` is a implementation of SentenceBert for scoring similarity between sentence pairs, it uses bi-encoder in a saimese setup to encode the sentences followed by the cosine similarity to score the similarity.
+
+* `get_dot_score` : Caculate the dot product of two given vectors
+    * Input: 
+        * `vec_a` (list of float): first embeded text
+        * `vec_b` (list of float): second embeded text
+    * Return: dot product score
+* `get_cos_score` : Caculate the cosine similarity score of two given vectors
+    * Input:
+        * `vec_a` (list of float): first embeded text
+        * `vec_b` (list of float): second embeded text
+    * Return: cosine similarity score
+* `get_text_sim`: gets the similarity score between `query` with all the sentences in `corpus` and return the top_k similar sentences with `sim_score` 
+    * Input:
+        * `query` (string or list of strings): context which needs to be classified
+        * `corpus` (string or list of strings): list of candidates for the context 
+        * `top_k` (string): can be text or embedding type
+    * Return: list of top_k similar sentences with `sim_score` 
+* `train`: used to train the Bi-Encoder for custom input
+    * Input:
+        * `dataset` (List): List of List, each list contains a pair of sentence and similarity score.
+        * `training_parameters` (Dict): dictionary of training parameters
+    * Returns: text when model training is completed
+* `getembeddings`:
+    * Input:
+        * `texts` (string or list of strings): take text and returns a encoded embeddings
+    * Returns a list of embeddings
+* `get_train_config`:  
+    * Input: None
+    * Returns: json of all the current training configuration
+     ```
+     {
+        "device": "cpu",
+        "num_epochs": 2,
+        "model_save_path": "output/sent_model-2022-11-04_17-43-18",
+        "model_name": "bert-base-uncased",
+        "max_seq_length": 256
+    }
+    ```
+* `load_model`:  
+    * Input 
+        * `model_type` (string): can be `default` or `tfm_model`
+          * `default` : loads model from the [sbert](https://www.sbert.net/docs/pretrained_models.html) model zoo
+          * `tfm_model` : load tranformer model from the [huggingface hub](https://huggingface.co/models)  
+        * `model_name` (string): this is name of the model to be loaded
+      *  ```
+          {
+          "model_name": "all-MiniLM-L12-v2",
+          "model_type": "default"
+          }
+          ```
+
+    * Returns: "[loaded model from] : <model_type> <model_name>" if model successfully loaded
+      * ```
+        [loaded model from] SBERT Hub : all-MiniLM-L12-v2
+        ```
+
+#### Example Jac Usage:
+```jac
+## Train and evalute a sbert model for senetence similarity
+walker sbert_sim_example{
+    has train_file = "train_sbert.json";
+    has num_epochs = 2;
+    has query= ["A girl is on a sandy beach."];
+    has corpus=["A girl dancing on a sandy beach."];
+    has top_k=1;
+
+    can sbert_sim.train,sbert_sim.get_text_sim;
+
+    train_data = file.load_json(train_file);
+    
+    # Train the model 
+    sbert_sim.train(
+        dataset=train_data['train_data'],
+        training_parameters={
+            "num_epochs": num_epochs
+        }
+    );
+
+    # returns the top_k of simlar test in the corpus 
+    resp_data = sbert_sim.get_text_sim(query=query,corpus=corpus,top_k=top_k);
+    std.out(resp_data);
+}
+```
+
+
 ###  FastText Encoder (`fast_enc`)
 `fast_enc` module uses the facebook's fasttext -- efficient learning of word representations and sentence classification.
 
 * `train`: used to train the Bi-Encoder for custom input
     * Input:
         * `traindata` (Dict): dictionary of candidates and suportting contexts for each candidate
-        * `train_with_existing` (bool): if set to true train the model from scratch otherwise trains incrementally 
-* `predict`: predits the most suitable candidate for a provided context, takes text or embedding 
+        * `train_with_existing` (bool): if set to true train the model from scratch otherwise trains incrementally
+* `predict`: predits the most suitable candidate for a provided context, takes text or embedding
     * Input:
         * `sentences` (list of strings): list of sentences the needs to be classified
-    * Return: a dictionary of sentence, predicted intent and probability 
-* `save_model`:  
-    * Input 
+    * Return: a dictionary of sentence, predicted intent and probability
+* `save_model`:
+    * Input
         * `model_path` (string): the path to save model
     * Returns: "[Saved model at] : <model_path>" if model successfully saved
-* `load_model`:  
-    * Input 
+* `load_model`:
+    * Input
         * `model_path` (string): the path to save model
     * Returns: "[loaded model from] : <model_path>" if model successfully loaded
 #### Example Jac Usage:
@@ -355,7 +443,7 @@ walker fast_enc_example {
     # Training the model
     train_data = file.load_json(train_file);
     fast_enc.train(traindata=train_data,train_with_existing=false);
-    
+
     # Getting inference from the model
     resp_data=fast_enc.predict(sentences=test_sentence);
     std.out(resp_data);
@@ -441,29 +529,29 @@ walker fast_enc_example {
         ]
         ```
         * `train_params`: (Dict): dictionary of training parameters to modify the training behaviour
-        ``` 
+        ```
         {
             "num_epoch": 20,
             "batch_size": 16,
             "LR": 0.01
         }
-        ``` 
+        ```
 * `entity_detection`: detects all availabe entities from the provided context
     * Input:
         * `text` (string): context to detect entities.
         * `ner_labels`(list of strings): List of entities, e.g. ["LOC","PER"]
-    * Return: a list of dictionary entities containing entity_text, entity_value, conf_score and index   
-* `save_model`:  
-    * Input 
+    * Return: a list of dictionary entities containing entity_text, entity_value, conf_score and index
+* `save_model`:
+    * Input
         * `model_path` (string): the path to save model
     * Returns: "[Saved model at] : <model_path>" if model successfully saved
-* `load_model`:  
-    * Input 
+* `load_model`:
+    * Input
         * `model_path` (string): the path to save model
     * Returns: "[loaded model from] : <model_path>" if model successfully loaded
-* `set_config`:  
-    * Input 
-        * `ner_model`: pretrained or basic model to be loaded, provide the exact name of the model, available options are: 
+* `set_config`:
+    * Input
+        * `ner_model`: pretrained or basic model to be loaded, provide the exact name of the model, available options are:
             * `Pre-trained LSTM / GRU` : ["ner", "ner-fast","ner-large"]
             * `Huggingface model` : all available models that can be intialized with AutoModel
             * `None` : for load a RNN model from scratch
@@ -540,16 +628,16 @@ walker ent_ext_example {
 * `extract_entity`: detects all availabe entities from the provided context
     * Input:
         * `text` (string): context to detect entities.
-    * Return: a list of dictionary entities containing entity_text, entity_value, conf_score and index   
-* `save_model`:  
-    * Input 
+    * Return: a list of dictionary entities containing entity_text, entity_value, conf_score and index
+* `save_model`:
+    * Input
         * `model_path` (string): the path to save model
     * Returns: "[Saved model at] : <model_path>" if model successfully saved
-* `load_model`:  
-    * Input 
+* `load_model`:
+    * Input
         * `model_path` (string): the path to save model
     * Returns: "[loaded model from] : <model_path>" if model successfully loaded
-* `get_train_config`:  
+* `get_train_config`:
     * Input: None
     * Returns: json of all the current training configuration
      ```
@@ -563,21 +651,21 @@ walker ent_ext_example {
             "MODE": "default"
         }
     ```
-* `set_train_config`:  
-    * Input 
+* `set_train_config`:
+    * Input
         * `train_parameters` (Dict): dictionary of training parameters. See the json example above for available configuration parameters.
     * Returns: "Config setup is complete." if train configuration is completed successfully
-* `get_model_config`:  
+* `get_model_config`:
     * Input: None
     * Returns: json of all the current model configuration
     ```
         {
-            "model_name": "prajjwal1/bert-tiny", 
+            "model_name": "prajjwal1/bert-tiny",
             "model_save_path": "modeloutput"
         }
     ```
-* `set_model_config`:  
-    * Input 
+* `set_model_config`:
+    * Input
         * `model_parameters`(Dict): dictionary of model parameters. See the json example above for available configuration parameters.
     * Returns: "Config setup is complete." if model configuration is completed successfully
 #### Example Jac Usage:
@@ -590,7 +678,7 @@ walker tfm_ner_example {
     has mode = "default";
     can tfm_ner.extract_entity, tfm_ner.train;
     train_data = file.load_json(train_file);
-    
+
     # Training the model
     tfm_ner.train(
         mode = mode,
@@ -610,7 +698,7 @@ walker tfm_ner_example {
 `cl_summer` uses the sumy summarizer to create extractive summary.
 
 * `summarize`: to get the extractive summary in provided sentences count.
-    * Input 
+    * Input
         * `text`(String): text the contain the entire context
         * `url`(String): the link to the webpage
         * `sent_count`(int): number of sentence you want in the summary
@@ -692,8 +780,8 @@ walker summarization {
     has data = "data.json";
     data = file.load_json(data);
     summarized_text = t5_sum.classify_text(
-        text = data["text"], 
-        min_length = data["min_length"], 
+        text = data["text"],
+        min_length = data["min_length"],
         max_length = data["max_length"]
         );
     report summarized_text;
@@ -703,14 +791,14 @@ walker summarization {
 ## Text Processing
 ### Text Segmenter (`text_seg`)
 `text_seg` Text segmentation is a method of splitting a document into smaller parts, which is usually called segments. It is widely used in text processing. Each segment has its relevant meaning. Those segments categorized as word, sentence, topic, phrase etc. module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
-* `get_segements`: gets different topics in the context provided, given a threshold 
-    * Input 
+* `get_segements`: gets different topics in the context provided, given a threshold
+    * Input
         * `text`(String): text the contain the entire context
         * `threshold`(Float): range is between 0-1, make each sentence as segment if, threshold is 1.
     * Returns: List of Sentences that best summarizes the context
-  
+
 * `load_model`: to load the available model for text segmentation
-    * Input 
+    * Input
         * `model_name`(String): name of the transformer model to load, options are:
             * `wiki`: trained on wikipedia data
             * `legal`: trained on legal documents
@@ -745,13 +833,13 @@ walker text_seg_example {
 ## Non-AI Tools
 ### PDF Extractor (`pdf_ext`)
 `pdf_ext` module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
-* `extract_pdf`: gets different topics in the context provided, given a threshold 
-    * Input 
+* `extract_pdf`: gets different topics in the context provided, given a threshold
+    * Input
         * `url`(String): gets the pdf from URL
         * `path`(Float): gets the pdf from local path
         * `metadata`(Bool): to display available metadata of PDF
     * Returns: a json with number of pages the pdf had and content
-  
+
 #### Example Jac Usage:
 ```jac
 walker pdf_ext_example {
