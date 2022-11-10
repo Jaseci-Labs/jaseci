@@ -4,6 +4,7 @@ from kubernetes.client.rest import ApiException
 from jaseci.utils.utils import logger
 from jaseci.svc import CommonService, ServiceState as Ss
 from jaseci.svc.kubernetes import Kube
+from jaseci.svc.action_optimizer import ActionOptimizer
 from .config import JSORC_CONFIG
 
 #################################################
@@ -21,6 +22,7 @@ class JsOrcService(CommonService):
         self.interval = 10
         self.namespace = "default"
         self.keep_alive = []
+        self.action_optimizer = ActionOptimizer()
 
         super().__init__(hook)
 
@@ -40,6 +42,7 @@ class JsOrcService(CommonService):
 
     def interval_check(self):
         while True:
+            # Keeping set of services alive
             for svc in self.keep_alive:
                 try:
                     self.app.check(self.namespace, svc)
@@ -47,6 +50,8 @@ class JsOrcService(CommonService):
                     logger.error(
                         f"Error checking {svc} !\n" f"{e.__class__.__name__}: {e}"
                     )
+
+            self.action_optimizer.run()
 
             sleep(self.interval)
 
