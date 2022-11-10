@@ -119,4 +119,4 @@ class TestLLWall(TestCaseHelper, TestCase):
         self.snt._h.clear_cache()
         ret = self.run_walker("check_deep_write_report", {})
         self.log(ret)
-        self.assertEqual(ret["report"], 6)
+        self.assertEqual(ret["report"], [{"a": {"b": {"c": [5, 6]}}}])
