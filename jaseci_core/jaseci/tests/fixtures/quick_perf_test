@@ -1,0 +1,1 @@
+rm *.prof; jsctl -m jac run perf.jac -walk slow; gprof2dot -f pstats *.prof | dot -Tpng -o output.png
