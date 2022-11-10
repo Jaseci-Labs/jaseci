@@ -30,6 +30,7 @@ setup(
         "kubernetes==23.6.0",
         "pytest",
         "pytest-xdist",
+        "pytest-cov",
         "gprof2dot",
     ],
     package_data={
