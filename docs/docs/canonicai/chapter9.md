@@ -25,6 +25,9 @@ Once run it should look like this once successful.
 ←[32mINFO←[0m:     Uvicorn running on ←[1mhttp://127.0.0.1:8000←[0m (Press CTRL+C to quit)
 ```
 
+To use it in your jaseci app, you will have to load the action using the following command.
+* `actions load remote http://127.0.0.1:8000`
+
 Let's walk you through the other way.
 
 ## Through the repo
@@ -56,5 +59,8 @@ After you run the command it should look like this, once it is successful.
 
 After you see the server started you will have to go to the browser and run this domain:
 * `http://0.0.0.0:9000/docs`
+
+To use it in your jaseci app, you will have to load the action using the following command.
+* `actions load remote http://0.0.0.0:9000` 
 
 Congratulations, you have successfully use uvicorn to stand up a jaseci_ai_kit server locally.
