@@ -50,16 +50,19 @@ class Action(Item):
         args = inspect.getfullargspec(func)
         self.do_auto_conversions(args, func, param_list)
         args = args[0] + args[4]
+        hook = scope.parent._h
+        hook.jsorc.pre_action_hook() if hook.meta.run_svcs else None
         if "meta" in args:
             result = func(
                 *param_list,
                 meta={
                     "m_id": scope.parent._m_id,
-                    "h": scope.parent._h,
+                    "h": hook,
                     "scope": scope,
                     "interp": interp,
                 },
             )
         else:
             result = func(*param_list)
+        hook.jsorc.post_action_hook() if hook.meta.run_svcs else None
         return result
