@@ -42,7 +42,7 @@ class IdList(list):
             else:
                 self.append(obj.jid)
             if not obj.j_parent:
-                obj.j_parent = self.parent_obj.id.urn
+                obj.j_parent = self.parent_obj.jid
                 self.save(obj)
             self.save()
 
@@ -83,7 +83,7 @@ class IdList(list):
         """Returns a Jaseci obj obj by it's name"""
         ret = None
         for i in self:
-            obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
+            obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, i)
             if not obj:
                 logger.critical(self.obj_for_id_not_exist_error(i))
                 continue
@@ -113,7 +113,7 @@ class IdList(list):
         """Return list of objects from ids"""
         if not len(self.cached_objects):
             for i in self:
-                obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(i))
+                obj = self.parent_obj._h.get_obj(self.parent_obj._m_id, i)
                 if not obj:
                     logger.critical(self.obj_for_id_not_exist_error(i))
                 else:
@@ -150,7 +150,7 @@ class IdList(list):
         if not self:
             logger.error(str(f"List in '{self.parent_obj}' is empty!"))
             return None
-        return self.parent_obj._h.get_obj(self.parent_obj._m_id, uuid.UUID(self[0]))
+        return self.parent_obj._h.get_obj(self.parent_obj._m_id, self[0])
 
     def pop_first_obj(self):
         """Get first object in list"""

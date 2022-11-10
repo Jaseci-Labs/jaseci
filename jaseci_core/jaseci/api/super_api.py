@@ -49,6 +49,7 @@ class SuperApi:
         Sets the default master master should use
         """
         self.caller = mast.jid
+        self.save()
         return {"response": f"You are now {mast.name}"}
 
     @Interface.admin_api(cli_args=["mast"])

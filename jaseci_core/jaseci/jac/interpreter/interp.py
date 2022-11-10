@@ -424,7 +424,7 @@ class Interp(VirtualMachine):
             if kid[2].token_text() in ["status", "status_code"]:
                 self.report_status = self.pop().value
             elif kid[2].token_text() == "custom":
-                self.report_custom = self.pop().value
+                self.report_custom = jwv(self.pop().value, serialize_mode=True)
             elif kid[2].token_text() == "error":
                 err = self.pop().value
                 if isinstance(err, str):

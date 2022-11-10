@@ -19,7 +19,7 @@ Module `t5_sum` uses the hugging face T5 transformer model to provide abstractiv
 
 
 ## **2. Summarization**
-For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which would generate the summary from text. 
+For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which would generate the summary from text.
 
 * Creating Jac Program for **summarizer** (`t5_sum`)
 
@@ -92,7 +92,7 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
         ```
         walker init {
             root {
-            spawn here --> graph::summ_graph; 
+            spawn here --> graph::summ_graph;
             }
         }
         ```
@@ -120,12 +120,12 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
             # summarizer
             can summarize with summarizer entry{
                 data = file.load_json(visitor.dataset);
-                
+
                 report t5_sum.classify_text(
                     text = data["text"],
                     min_length = data["min_length"],
                     max_length = data["max_length"]
-                    );      
+                    );
             }
         }
 
@@ -146,7 +146,7 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
 
         walker init {
             root {
-            spawn here --> graph::summ_graph; 
+            spawn here --> graph::summ_graph;
             }
         }
 

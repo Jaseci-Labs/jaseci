@@ -68,7 +68,7 @@ class AbstractJacAPIView(APIView):
         touch_kb = 0
         if isinstance(self.caller, Element):
             save_count = len(self.caller._h.save_obj_list)
-            touch_count = len(self.caller._h.mem.keys()) - 1
+            touch_count = len(self.caller._h.mem.keys())
             db_touches = self.caller._h.db_touch_count
             red_touches = self.caller._h.red_touch_count
             touch_kb = self.caller._h.mem_size()

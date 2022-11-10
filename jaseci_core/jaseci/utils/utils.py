@@ -15,7 +15,7 @@ import traceback
 import inspect
 import unittest
 from time import time
-from datetime import datetime
+
 from pprint import pformat
 
 
@@ -28,7 +28,7 @@ class ColCodes:
 
 def master_from_meta(meta):
     """Return master from meta in actions"""
-    return meta["h"].get_obj(meta["m_id"], uuid.UUID(meta["m_id"]))
+    return meta["h"].get_obj(meta["m_id"], meta["m_id"])
 
 
 # Get an instance of a logger
@@ -42,10 +42,12 @@ def connect_logger_handler(target_logger, handler, level=logging.WARN):
 
 
 logger = logging.getLogger("core")
+logger.propagate = False
 if len(logger.handlers) < 1:
     connect_logger_handler(logger, logging.StreamHandler(), logging.INFO)
 
 app_logger = logging.getLogger("app")
+app_logger.propagate = False
 if len(app_logger.handlers) < 1:
     connect_logger_handler(app_logger, logging.StreamHandler(), logging.INFO)
 
@@ -132,19 +134,6 @@ def matching_fields(obj1, obj2):
     return matches
 
 
-def map_assignment_of_matching_fields(dest, source):
-    """
-    Assign the values of identical feild names from source to destination.
-    """
-    for i in matching_fields(dest, source):
-        if type(getattr(source, i)) == uuid.UUID:
-            setattr(dest, i, getattr(source, i).urn)
-        elif type(getattr(source, i)) == datetime:
-            setattr(dest, i, getattr(source, i).isoformat())
-        elif not callable(getattr(dest, i)):
-            setattr(dest, i, getattr(source, i))
-
-
 obj_class_cache = {}
 
 
@@ -212,6 +201,7 @@ def perf_test_start():
 
 def perf_test_stop(perf_prof):
     perf_prof.disable()
+    perf_prof.dump_stats(f"{id(perf_prof)}.prof")
     s = io.StringIO()
     sortby = pstats.SortKey.CUMULATIVE
     ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)
