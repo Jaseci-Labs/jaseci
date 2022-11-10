@@ -59,7 +59,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         load_test.save()  # Jaseci model save
         self.assertIsInstance(load_test, JaseciObject)
 
-        otnode = user._h.get_obj(load_test.j_master.urn, load_test.jid)
+        otnode = user._h.get_obj(load_test.j_master.urn, load_test.jid.urn)
         self.assertEqual(load_test.kind, otnode.kind)
 
     def test_jsci_db_to_engine_hook_on_authenticated_transacting(self):
@@ -83,7 +83,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         load_test.kind = "Fasheezzy!"
         load_test.save()  # Jaseci model save
 
-        otnode = user._h.get_obj(load_test.j_master.urn, load_test.jid)
+        otnode = user._h.get_obj(load_test.j_master.urn, load_test.jid.urn)
         self.assertEqual(load_test.kind, otnode.kind)
 
         otnode.name = "Rizzoou"
@@ -93,12 +93,12 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         oload_test = JaseciObject.objects.get(jid=otnode.id)
         self.assertEqual(oload_test.name, otnode.name)
         # Below tests loading hex uuid strings and converting to uuid type
-        newobj = otnode._h.get_obj_from_store(oload_test.jid)
+        newobj = otnode._h.get_obj_from_store(oload_test.jid.urn)
         self.assertIn(oedge[0], newobj.edge_ids.obj_list())
 
         otnode.destroy()
         self.assertFalse(
-            JaseciObject.objects.filter(jid=oload_test.jid).exists(), False
+            JaseciObject.objects.filter(jid=oload_test.jid.urn).exists(), False
         )
 
     def test_jsci_walker_writes_through_graph_updates(self):
@@ -126,7 +126,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         node2 = node.Node(m_id=0, h=user._h, parent=node1)
         user._h.commit()
         new_node = JaseciObject.objects.filter(j_parent=node1.id).first()
-        new_jsci_node = user._h.get_obj_from_store(new_node.jid)
+        new_jsci_node = user._h.get_obj_from_store(new_node.jid.urn)
         self.assertEqual(node2.id, new_node.jid)
         self.assertEqual(node1.id, new_jsci_node.parent().id)
 
@@ -147,7 +147,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         tnode.name = "GOBBY"
         tnode.save()  # Jaseci object save
         tnode._h.commit()
-        load_test = tnode._h.get_obj_from_store(tnode.id)
+        load_test = tnode._h.get_obj_from_store(tnode.id.urn)
         self.assertEqual(load_test.name, tnode.name)
 
     def test_redis_loading(self):
@@ -157,12 +157,12 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         nd = node.Node(m_id=0, h=self.user._h)
         temp_id = nd.id
         nd._h.commit()
-        load_test = nd._h.get_obj(uuid.UUID(int=0).urn, temp_id)
+        load_test = nd._h.get_obj(uuid.UUID(int=0).urn, temp_id.urn)
 
         load_test.kind = "Fasho!"
         load_test.save()
         load_test._h.commit()
-        otnode = load_test._h.get_obj(load_test._m_id, load_test.id)
+        otnode = load_test._h.get_obj(load_test._m_id, load_test.id.urn)
         self.assertEqual(load_test.kind, otnode.kind)
 
     def test_redis_transacting(self):
@@ -175,24 +175,24 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         temp_id = nd.id
         nd._h.commit()
 
-        load_test = nd._h.get_obj(uuid.UUID(int=0).urn, temp_id)
+        load_test = nd._h.get_obj(uuid.UUID(int=0).urn, temp_id.urn)
 
         load_test.kind = "Fasheezzy!"
         load_test.save()  # Jaseci model save
         load_test._h.commit()
 
-        otnode = nd._h.get_obj(load_test._m_id, load_test.id)
+        otnode = nd._h.get_obj(load_test._m_id, load_test.id.urn)
         self.assertEqual(load_test.kind, otnode.kind)
 
         otnode.name = "Rizzoou"
         oedge = otnode.attach_outbound(node.Node(m_id=0, h=self.user._h))
         otnode.save()  # Jaseci object save
         otnode._h.commit()
-        oload_test = otnode._h.get_obj(uuid.UUID(int=0).urn, otnode.id)
+        oload_test = otnode._h.get_obj(uuid.UUID(int=0).urn, otnode.id.urn)
         self.assertEqual(oload_test.name, otnode.name)
         # Below tests loading hex uuid strings and converting to uuid type
-        newobj = otnode._h.get_obj_from_store(oload_test.id)
+        newobj = otnode._h.get_obj_from_store(oload_test.id.urn)
         self.assertIn(oedge[0], newobj.edge_ids.obj_list())
 
         otnode.destroy()
-        self.assertIsNone(newobj._h.get_obj(oload_test._m_id, oload_test.id))
+        self.assertIsNone(newobj._h.get_obj(oload_test._m_id, oload_test.id.urn))
