@@ -110,3 +110,13 @@ class TestLLWall(TestCaseHelper, TestCase):
 
         # data[0][0][0][2] is the highlight items
         self.assertEqual(len(data[0][0][0][2]), 3)
+
+    def test_check_deep_write(self):
+        """Test get_gen_day walker response time after cerify day"""
+        ret = self.run_walker("check_deep_write_start", {})
+        self.snt._h.clear_cache()
+        ret = self.run_walker("check_deep_write_update", {})
+        self.snt._h.clear_cache()
+        ret = self.run_walker("check_deep_write_report", {})
+        self.log(ret)
+        self.assertEqual(ret["report"], 6)
