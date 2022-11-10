@@ -17,7 +17,7 @@ class Anchored:
         self.context = {}
 
     def get_architype(self):
-        arch = self.get_arch_from_cache()
+        arch = self.get_arch_from_cache()  # Optimization
         if arch and id(arch._h) == id(self._h):
             return arch
         arch = (
