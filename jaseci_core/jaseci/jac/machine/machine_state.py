@@ -43,6 +43,7 @@ class MachineState:
         self._assign_mode = False
         self._loop_limit = 10000
         self._cur_jac_ast = Ast("none")
+        self._write_candidate = None
         self.inform_hook()
 
     def inform_hook(self):
@@ -94,6 +95,11 @@ class MachineState:
             self.push(JacValue(self))
         else:
             self.push(val)
+
+    def candidate_writethrough(self):
+        if self._write_candidate:
+            self._write_candidate.save()
+            self._write_candidate = None
 
     def perform_assignment(self, dest, src, jac_ast=None):
         if dest.check_assignable(jac_ast):
