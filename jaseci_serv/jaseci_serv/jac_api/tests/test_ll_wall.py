@@ -31,12 +31,8 @@ class TestLLWall(TestCaseHelper, TestCase):
         }
         lact.load_local_actions(os.path.dirname(__file__) + "/infer.py")
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.snt = self.master._h.get_obj(
-            self.master.jid, uuid.UUID(res.data[0]["jid"])
-        )
-        self.gph = self.master._h.get_obj(
-            self.master.jid, uuid.UUID(res.data[1]["jid"])
-        )
+        self.snt = self.master._h.get_obj(self.master.jid, res.data[0]["jid"])
+        self.gph = self.master._h.get_obj(self.master.jid, res.data[1]["jid"])
 
     def tearDown(self):
         super().tearDown()
@@ -45,19 +41,19 @@ class TestLLWall(TestCaseHelper, TestCase):
         """Helper to make calls to execute walkers"""
         if not prime:
             payload = {
-                "snt": self.snt.id.urn,
+                "snt": self.snt.jid,
                 "name": w_name,
-                "nd": self.gph.id.urn,
+                "nd": self.gph.jid,
                 "ctx": ctx,
             }
         else:
-            payload = {"snt": self.snt.id.urn, "name": w_name, "nd": prime, "ctx": ctx}
+            payload = {"snt": self.snt.jid, "name": w_name, "nd": prime, "ctx": ctx}
         res = self.client.post(reverse("jac_api:walker_run"), payload, format="json")
         return res.data
 
     def graph_node_set(self, nd_id, ctx):
         """Helper to set node context"""
-        payload = {"snt": self.snt.id.urn, "nd": nd_id, "ctx": ctx}
+        payload = {"snt": self.snt.jid, "nd": nd_id, "ctx": ctx}
         res = self.client.post(
             reverse("jac_api:graph_node_set"), payload, format="json"
         )

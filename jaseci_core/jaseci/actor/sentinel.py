@@ -4,6 +4,7 @@ Sentinel class for Jaseci
 Each sentinel has an id, name, timestamp and it's set of walkers.
 """
 from jaseci.element.element import Element
+from jaseci.element.obj_mixins import Anchored
 from jaseci.utils.utils import (
     logger,
     ColCodes as Cc,
@@ -43,6 +44,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
         self.arch_ids.destroy_all()
         JacCode.reset(self)
         SentinelInterp.reset(self)
+        Anchored.flush_cache()
 
     def refresh(self):
         super().refresh()
@@ -264,6 +266,7 @@ class Sentinel(Element, JacCode, SentinelInterp):
         """
         Destroys self from memory and persistent storage
         """
+        Anchored.flush_cache()
         for i in self.arch_ids.obj_list():
             i.destroy()
         super().destroy()

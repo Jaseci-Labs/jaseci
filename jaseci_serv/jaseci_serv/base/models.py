@@ -177,7 +177,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_master(self):
         """Returns main user Jaseci node"""
-        return self._h.get_obj(caller_id=self.master.urn, item_id=self.master)
+        return self._h.get_obj(caller_id=self.master.urn, item_id=self.master.urn)
 
     def delete(self):
         JaseciObject.objects.filter(j_master=self.master.urn).delete()

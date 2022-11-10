@@ -12,7 +12,10 @@ import jaseci as core_mod
 from jaseci.hook import RedisHook
 from jaseci.utils import utils
 from jaseci.utils.json_handler import json_str_to_jsci_dict
+from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
+from datetime import datetime
+import json
 
 
 class OrmHook(RedisHook):
@@ -47,8 +50,7 @@ class OrmHook(RedisHook):
             class_for_type = self.find_class_and_import(loaded_obj.j_type, core_mod)
             kwargs = {"h": self, "m_id": loaded_obj.j_master.urn, "auto_save": False}
             ret_obj = class_for_type(**kwargs)
-            utils.map_assignment_of_matching_fields(ret_obj, loaded_obj)
-            assert uuid.UUID(ret_obj.jid) == loaded_obj.jid
+            map_assignment_of_matching_fields(ret_obj, loaded_obj)
 
             # Unwind jsci_payload for fields beyond element object
             ret_obj.json_load(loaded_obj.jsci_obj)
@@ -124,7 +126,7 @@ class OrmHook(RedisHook):
 
     def commit_obj(self, item):
         item_from_db, created = self.objects.get_or_create(jid=item.id)
-        utils.map_assignment_of_matching_fields(item_from_db, item)
+        map_assignment_of_matching_fields(item_from_db, item)
         item_from_db.jsci_obj = item.jsci_payload()
         item_from_db.save()
 
@@ -145,3 +147,20 @@ class OrmHook(RedisHook):
         for k, v in self.save_glob_dict.items():
             self.commit_glob(k, v)
         self.save_glob_dict = {}
+
+
+def map_assignment_of_matching_fields(dest, source):
+    """
+    Assign the values of identical feild names from source to destination.
+    """
+    for i in utils.matching_fields(dest, source):
+        if type(getattr(source, i)) == uuid.UUID:
+            setattr(dest, i, getattr(source, i).urn)
+        elif type(getattr(source, i)) == datetime:
+            setattr(dest, i, getattr(source, i).isoformat())
+        elif i.endswith("_ids") and type(getattr(source, i)) == str:
+            setattr(
+                dest, i, IdList(parent_obj=dest, in_list=json.loads(getattr(source, i)))
+            )
+        elif not callable(getattr(dest, i)):
+            setattr(dest, i, getattr(source, i))

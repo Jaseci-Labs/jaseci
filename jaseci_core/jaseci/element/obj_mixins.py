@@ -11,10 +11,15 @@ import uuid
 class Anchored:
     """Utility class for objects that hold anchor values"""
 
+    arch_map = {}
+
     def __init__(self):
         self.context = {}
 
     def get_architype(self):
+        arch = self.get_arch_from_cache()  # Optimization
+        if arch and id(arch._h) == id(self._h):
+            return arch
         arch = (
             self._h._machine.parent().get_arch_for(self)
             if self._h._machine is not None
@@ -25,9 +30,21 @@ class Anchored:
         mast = self.get_master()
         if arch is None and mast.active_snt() is not None:
             arch = mast.active_snt().get_arch_for(self)
-        if arch is None and self.parent() and self.parent().j_type == "sentinel":
+        elif arch is None and self.parent() and self.parent().j_type == "sentinel":
             arch = self.parent().get_arch_for(self)
+        self.cache_arch(arch)
         return arch
+
+    def cache_arch(self, arch):
+        Anchored.arch_map[self.kind + self.name] = arch
+
+    def get_arch_from_cache(self):
+        if (self.kind + self.name) in Anchored.arch_map:
+            return Anchored.arch_map[self.kind + self.name]
+        return None
+
+    def flush_cache():
+        Anchored.arch_map = {}
 
     def anchor_value(self):
         """Returns value of anchor context object"""
@@ -63,8 +80,8 @@ class Sharable:
         self.j_access = (
             mode
             if mode is not None
-            else self._h.get_obj(self._m_id, uuid.UUID(self._m_id)).perm_default
-            if self._h.has_obj(uuid.UUID(self._m_id))
+            else self._h.get_obj(self._m_id, self._m_id).perm_default
+            if self._h.has_obj(self._m_id)
             else "private"
         )
         self.j_r_acc_ids = IdList(self)
@@ -75,7 +92,7 @@ class Sharable:
         return self.j_master
 
     def set_master(self, m_id):
-        if m_id is None or m_id == "anon":
+        if not m_id:
             m_id = uuid.UUID(int=0).urn
         self.j_master = m_id
 
@@ -114,7 +131,7 @@ class Sharable:
         """Quick check if caller is super master"""
         if not hasattr(self, "_h"):
             return False
-        user = self._h.get_obj(caller_id, uuid.UUID(caller_id), override=True)
+        user = self._h.get_obj(caller_id, caller_id, override=True)
         if user.j_type == "super_master":
             return True
         return False
@@ -173,12 +190,14 @@ class Hookable(Sharable):
     def __init__(self, h, persist: bool = True, parent=None, **kwargs):
         self._h = h  # hook for storing and loading to persistent store
         self._persist = persist
-        self.j_parent = parent.id.urn if parent else None  # member of
+        self.j_parent = parent.jid if parent else None  # member of
         Sharable.__init__(self, **kwargs)
 
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""
-        if not silent and target._h != self._h:
+        if not self._m_id or not target._m_id:
+            return True
+        elif not silent and target._h != self._h:
             logger.critical(
                 str(
                     "Hook for {} does not match {}, {} != {}".format(
@@ -208,4 +227,4 @@ class Hookable(Sharable):
         Returns the objects for list of owners of this element
         """
         if self.j_parent:
-            return self._h.get_obj(self._m_id, uuid.UUID(self.j_parent))
+            return self._h.get_obj(self._m_id, self.j_parent)

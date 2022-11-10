@@ -56,20 +56,20 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         Test that the destroy of sentinels clears owned objects
         """
         mast = self.meta.build_master()
-        num_objs = len(mast._h.mem.keys()) - len(mast._h.global_action_list)
+        num_objs = len(mast._h.mem.keys())
         self.assertEqual(num_objs, 2)
         new_graph = Graph(m_id=mast._m_id, h=mast._h)
         sent = Sentinel(m_id=mast._m_id, h=mast._h)
         code = jtc.prog1
         mast.sentinel_ids.add_obj(sent)
         mast.graph_ids.add_obj(new_graph)
-        num_new = len(mast._h.mem.keys()) - len(mast._h.global_action_list)
+        num_new = len(mast._h.mem.keys())
         self.assertEqual(num_new, num_objs + 2)
 
         sent.register_code(code)
-        num_objs = len(mast._h.mem.keys()) - len(mast._h.global_action_list)
+        num_objs = len(mast._h.mem.keys())
         sent.register_code(code)
-        new_num = len(mast._h.mem.keys()) - len(mast._h.global_action_list)
+        new_num = len(mast._h.mem.keys())
         self.assertEqual(num_objs, new_num)
 
     def test_json_blob_of_objects(self):
@@ -77,7 +77,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         Test saving object to json and back to python dict
         """
         for i in get_all_subclasses(Element):
-            kwargs = {"m_id": "anon", "h": self.meta.build_hook()}
+            kwargs = {"m_id": 0, "h": self.meta.build_hook()}
             orig = i(**kwargs)
             blob1 = orig.json(detailed=True)
             new = i(**kwargs)
@@ -92,8 +92,8 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         mast2 = self.meta.build_master(h=mh)
         node12 = Node(m_id=mast2._m_id, h=mast2._h)
         supmast = self.meta.build_super_master(h=mh)
-        bad = mh.get_obj(mast._m_id, uuid.UUID(node12.jid))
-        good = mh.get_obj(supmast._m_id, uuid.UUID(node12.jid))
+        bad = mh.get_obj(mast._m_id, node12.jid)
+        good = mh.get_obj(supmast._m_id, node12.jid)
         self.assertEqual(good, node12)
         self.assertNotEqual(bad, node12)
         self.assertIsNone(bad)
@@ -102,9 +102,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         self.logger_on()
         mast = self.meta.build_master()
         sent = Sentinel(m_id=mast._m_id, h=mast._h)
-        self.assertIn(
-            "arch_ids", sent.arch_ids.obj_for_id_not_exist_error(uuid.UUID(int=0).urn)
-        )
+        self.assertIn("arch_ids", sent.arch_ids.obj_for_id_not_exist_error(0))
 
     def test_dont_store_invalid_feilds_in_blob(self):
         self.logger_on()
@@ -151,8 +149,8 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         sent = Sentinel(m_id=mast._m_id, h=mast._h)
         sent.register_code(text="node simple; walker init {}")
         before = len(sent.arch_ids)
-        sent._h.get_obj(mast._m_id, uuid.UUID(sent.arch_ids[1])).destroy()
-        sent._h.get_obj(mast._m_id, uuid.UUID(sent.arch_ids[3])).destroy()
+        sent._h.get_obj(mast._m_id, sent.arch_ids[1]).destroy()
+        sent._h.get_obj(mast._m_id, sent.arch_ids[3]).destroy()
         sent.arch_ids.obj_list()
         after = len(sent.arch_ids)
         self.assertEqual(after, before - 2)
