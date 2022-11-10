@@ -159,8 +159,13 @@ def map_assignment_of_matching_fields(dest, source):
         elif type(getattr(source, i)) == datetime:
             setattr(dest, i, getattr(source, i).isoformat())
         elif i.endswith("_ids") and type(getattr(source, i)) == str:
-            setattr(
-                dest, i, IdList(parent_obj=dest, in_list=json.loads(getattr(source, i)))
-            )
+            try:
+                setattr(
+                    dest,
+                    i,
+                    IdList(parent_obj=dest, in_list=json.loads(getattr(source, i))),
+                )
+            except Exception:
+                setattr(dest, i, IdList(parent_obj=dest))
         elif not callable(getattr(dest, i)):
             setattr(dest, i, getattr(source, i))
