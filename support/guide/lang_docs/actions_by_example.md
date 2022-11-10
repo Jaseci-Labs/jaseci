@@ -30,7 +30,7 @@ walker init {
 }
 ```
 **Output 1:**
-```json
+```
 Date  1995-05-20
 Quantized date to year  1995-01-01T00:00:00
 Quantized date to month  1995-05-01T00:00:00
@@ -63,7 +63,7 @@ walker init {
 ```
 
 **Output 2:**
-```json
+```
 Josh  Birthdate Quantized to year  1995-01-01T00:00:00
 Joe  Birthdate Quantized to year  1998-01-01T00:00:00
 Jack  Birthdate Quantized to year  1997-01-01T00:00:00
@@ -103,7 +103,7 @@ walker setter {
 ```
 
 **Output 3:**
-```json
+```
 1995-01-01T00:00:00  from  {"name": "setter", "kind": "walker", "jid": "urn:uuid:a3e5f4b6-aeda-4cd0-9552-506cb3b7c693", "j_timestamp": "2022-11-09T09:10:05.134836", "j_type": "walker", "context": {"year": "1995-01-01"}}
 1995-01-01T00:00:00  from  {"name": "init", "kind": "walker", "jid": "urn:uuid:47f1e467-a0e6-4772-a06a-204f6a1b69c3", "j_timestamp": "2022-11-09T09:10:05.129720", "j_type": "walker", "context": {"year": "2022-11-09T09:10:05.131397"}}
 ```

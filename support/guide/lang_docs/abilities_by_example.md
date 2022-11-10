@@ -37,7 +37,7 @@ walker init{
 `set_name` is the ability defined inside the `city` node. This ability will set a name to the city node. `here::set_name` is the syntax of triggering the node ability from the `walker init`. 
 
 **Output 1:**
-```json
+```
 Setting city name: {"name": "c1"}
 c1
 ```
@@ -91,7 +91,7 @@ walker init{
 Run the example code to obtain following output.
 
 **Output 2:**
-```json
+```
 Setting number of tourists in c1 city
 41
 Setting number of tourists in c2 city
@@ -154,7 +154,7 @@ walker traveller{
 ```
 **Output 3:**
 
-```json
+```
 Setting number of tourists in c1 city
 Initial tourists : 90
 After traveller : 91
