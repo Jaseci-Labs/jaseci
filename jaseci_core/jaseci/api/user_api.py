@@ -22,6 +22,7 @@ class UserApi:
     def user_create(
         self,
         name: str,
+        password: str = "",
         global_init: str = "",
         global_init_ctx: dict = {},
         other_fields: dict = {},
@@ -59,8 +60,8 @@ class UserApi:
             and is_superuser.
         """
         ret = {}
-        mast = self.user_creator(name, other_fields)
-        if type(mast) is dict:
+        mast = self.user_creator(name, password, other_fields)
+        if type(mast) is dict:  # in case of upstream error
             return mast
         ret["user"] = mast.serialize()
         self.seek_committer(mast)
@@ -101,14 +102,14 @@ class UserApi:
             ret["status_code"] = 400
         return ret
 
-    def user_creator(self, name, other_fields: dict = {}):
+    def user_creator(self, name, password: str = "", other_fields: dict = {}):
         """
         Abstraction for user creation for elegant overriding
         """
 
         return MetaService().build_master(h=self._h, name=name)
 
-    def superuser_creator(self, name, other_fields: dict = {}):
+    def superuser_creator(self, name, password: str = "", other_fields: dict = {}):
         """
         Abstraction for super user creation for elegant overriding
         """
