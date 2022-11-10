@@ -123,6 +123,12 @@ class JsOrc:
     def manage_actions(self, name):
         self.action_optimizer.load_action(name, mode="auto")
 
+    def pre_action_call_hook(self, *args):
+        pass
+
+    def post_action_call_hook(self, *args):
+        pass
+
     def optimize(self):
         self.action_optimizer.run()
 

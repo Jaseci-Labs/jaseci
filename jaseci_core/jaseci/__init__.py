@@ -7,7 +7,7 @@ def get_ver():
 
 
 __version__ = get_ver()
-__creator__ = "Jason Mars"
+__creator__ = "Jason Mars and friends"
 __url__ = "https://jaseci.org"
 
 

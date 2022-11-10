@@ -3,7 +3,8 @@
 ## Version 1.3.5
 
 ### Updates
-
+- New Feature: Can now log in anonymously to any jaseci server with `publogin` command in jsctl
+- Improvement: can now create users more easily through `user create` apis
 - New Major Feature: `jsctl` can now run scripts of commands from file
 - New Feature: Introduction of `std.round` for rounding floating point valuse, and `std.uniform` for random float values
 - Improvement:  `jac test` and `sentinel test` apis have new paramerter `profiling` to enable internal stack profile outputs
