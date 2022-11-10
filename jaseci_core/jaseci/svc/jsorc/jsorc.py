@@ -4,7 +4,7 @@ from kubernetes.client.rest import ApiException
 from jaseci.utils.utils import logger
 from jaseci.svc import CommonService, ServiceState as Ss
 from jaseci.svc.kubernetes import Kube
-from jaseci.svc.action_optimizer import ActionOptimizer
+from jaseci.svc.action_optimizer.action_optimizer import ActionOptimizer
 from .config import JSORC_CONFIG
 
 #################################################

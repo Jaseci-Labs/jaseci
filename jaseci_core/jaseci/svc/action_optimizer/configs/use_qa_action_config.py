@@ -25,7 +25,7 @@ USE_QA_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "pip install jaseci-ai-kit==$version\nuvicorn jaseci_ai_kit.use_qa:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "pip install jaseci-ai-kit==$1.3.5.22\nuvicorn jaseci_ai_kit.use_qa:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {

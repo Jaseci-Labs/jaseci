@@ -18,7 +18,7 @@ metadata:
   namespace: default
 data:
   prod_up: |-
-    pip install jaseci-ai-kit==$version
+    pip install jaseci-ai-kit==1.3.5.22
     uvicorn jaseci_ai_kit.use_enc:serv_actions --host 0.0.0.0 --port 80 --workers 4
 ---
 apiVersion: apps/v1

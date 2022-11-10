@@ -51,6 +51,10 @@ class Kube:
         else:
             return self.read_apis[api](name=name, namespace=namespace)
 
+    def delete(self, api: str, name: str, namespace: str):
+        # TODO: implemente delete operations for k8s
+        pass
+
     def defaults(self):
         self.create_apis = {
             "Service": self.core.create_namespaced_service,
