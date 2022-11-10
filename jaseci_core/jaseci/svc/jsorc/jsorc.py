@@ -120,6 +120,9 @@ class JsOrc:
                 )
             return e
 
+    def manage_actions(self, name):
+        pass
+
     def check(self, namespace, svc):
 
         svc = self.meta.get_service(svc)
