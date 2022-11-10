@@ -1,6 +1,9 @@
 """Built in actions for Jaseci"""
 import numpy as np
 from operator import itemgetter
+from sklearn.decomposition import IncrementalPCA
+import pickle, base64
+
 from jaseci.actions.live_actions import jaseci_action
 
 
@@ -84,3 +87,34 @@ def sort_by_key(data: dict, reverse=False, key_pos=None):
         return sorted(data, key=itemgetter(key_pos), reverse=reverse)
     else:
         return sorted(data, reverse=reverse)
+
+
+@jaseci_action()
+def dim_reduce_genkey(data: list):
+    """
+    Dimensionally reduce a list of vectors using incremental PCA
+    Param 1 - List of vectors
+
+    Return - base64 encoded string of the model
+    """
+    data_arr = np.array(data)
+    ipca = IncrementalPCA(n_components=2, batch_size=3)
+    ipca = ipca.fit(data_arr)
+    return base64.b64encode(pickle.dumps(ipca)).decode("utf-8")
+
+
+@jaseci_action()
+def dim_reduce_apply(data: list, model: str):
+    """
+    Dimensionally reduce a list of vectors using incremental PCA
+    Param 1 - List of vectors
+    Param 2 - base64 encoded string of the model
+
+    Return - List of reduced vectors
+    """
+    data_arr = np.array(data)
+    # reshaping the data if it is a single vector
+    if len(data_arr.shape) == 1:
+        data_arr = data_arr.reshape(1, -1)
+    ipca = pickle.loads(base64.b64decode(model))
+    return ipca.transform(data_arr).tolist()
