@@ -3,6 +3,7 @@ Admin Global api functions as a mixin
 """
 from jaseci.api.interface import Interface
 import jaseci.actions.live_actions as lact
+from jaseci.svc.jsorc.jsorc import JsOrc
 import json
 
 
@@ -44,7 +45,9 @@ class ActionsApi:
             else:
                 self.config_set(
                     "ACTION_SETS",
-                    json.dumps({"local": [file], "remote": [], "module": []}),
+                    json.dumps(
+                        {"local": [file], "remote": [], "module": [], "auto": []}
+                    ),
                 )
         return {"success": success}
 
@@ -74,7 +77,9 @@ class ActionsApi:
             else:
                 self.config_set(
                     "ACTION_SETS",
-                    json.dumps({"local": [], "remote": [url], "module": []}),
+                    json.dumps(
+                        {"local": [], "remote": [url], "module": [], "auto": []}
+                    ),
                 )
         return {"success": success}
 
@@ -103,7 +108,39 @@ class ActionsApi:
             else:
                 self.config_set(
                     "ACTION_SETS",
-                    json.dumps({"local": [], "remote": [], "module": [mod]}),
+                    json.dumps(
+                        {"local": [], "remote": [], "module": [mod], "auto": []}
+                    ),
+                )
+        return {"success": success}
+
+    @Interface.admin_api(cli_args=["name"])
+    def actions_load_auto(self, name: str):
+        """
+        Instruct Jaseci to discover, hot load and automatically manage a Jaseci Action
+        Set
+
+        This API will instruct Jaseci to dynamically load and manage an action set
+        automatically deciding wether to have the set be locally binded or a remote
+        microservice.
+
+        :param name: The name of the action set for JSOrce to discover, launch and mange
+            (i.e., bi_enc)
+        """
+        success = self._h.jsorc.manage_actions(name) if self._h.meta.run_svcs else False
+        if success:
+            cur_config = self.config_get("ACTION_SETS")
+            if cur_config and (not isinstance(cur_config, list)):
+                config = json.loads(cur_config)
+                if name not in config["auto"]:
+                    config["auto"].append(name)
+                    self.config_set("ACTION_SETS", json.dumps(config))
+            else:
+                self.config_set(
+                    "ACTION_SETS",
+                    json.dumps(
+                        {"local": [], "remote": [], "module": [], "auto": [name]}
+                    ),
                 )
         return {"success": success}
 
