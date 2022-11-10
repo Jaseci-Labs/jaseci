@@ -12,6 +12,7 @@ class SuperApi:
     def master_createsuper(
         self,
         name: str,
+        password: str = "",
         global_init: str = "",
         global_init_ctx: dict = {},
         other_fields: dict = {},
@@ -25,7 +26,7 @@ class SuperApi:
         if self.sub_master_ids.has_obj_by_name(name):
             return {"response": f"{name} already exists", "success": False}
         ret = {}
-        mast = self.superuser_creator(name, other_fields)
+        mast = self.superuser_creator(name, password, other_fields)
         ret["user"] = mast.serialize()
         if len(global_init):
             ret["global_init"] = self.user_global_init(

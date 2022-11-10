@@ -36,7 +36,7 @@ reset_state()
 
 
 def is_connected():
-    return session["connection"]["token"] and session["connection"]["url"]
+    return bool(session["connection"]["url"])
 
 
 def get_prompt():
@@ -89,7 +89,7 @@ def remote_api_call(payload, api_name):
         headers=session["connection"]["headers"],
     )
     if ret.status_code > 205:
-        ret = f"Status Code Error {ret.status_code}"
+        ret = f"Status Code Error {ret.status_code}\n{ret.json()}"
     else:
         ret = ret.json()
     return ret
@@ -261,6 +261,22 @@ def login(url, username, password):
             pickle.dump(session, f)
 
 
+@click.command(help="Command for unauthenticated log into live Jaseci server")
+@click.argument("url", type=str, required=True)
+def publogin(url):
+    url = url[:-1] if url[-1] == "/" else url
+    if requests.get(url).status_code <= 205:
+        session["connection"]["token"] = "PUBLIC"
+        session["connection"]["url"] = url
+        session["connection"]["headers"] = {}
+        click.echo("Login successful!")
+    else:
+        click.echo("Login failed!\n")
+    if not session["mem-only"]:
+        with open(session["filename"], "wb") as f:
+            pickle.dump(session, f)
+
+
 @click.command(help="Command to log out of live Jaseci server")
 def logout():
     if session["connection"]["token"]:
@@ -368,6 +384,7 @@ def booktool(op, output):
 
 
 jsctl.add_command(login)
+jsctl.add_command(publogin)
 jsctl.add_command(logout)
 jsctl.add_command(edit)
 jsctl.add_command(ls)
