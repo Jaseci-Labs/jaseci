@@ -506,7 +506,7 @@ class Interp(VirtualMachine):
 
     def run_connect(self, jac_ast):
         """
-        connect: logical ( (NOT)? edge_ref expression)?;
+        connect: logical ( (NOT | PLUS) edge_ref expression)?;
         """
         kid = self.set_cur_ast(jac_ast)
         if len(kid) < 2:
@@ -528,10 +528,10 @@ class Interp(VirtualMachine):
                     j.detach_edges(i, self.run_edge_ref(kid[2]).obj_list())
             return bret
         else:
-            direction = kid[1].kid[0].name
+            direction = kid[2].kid[0].name
             for i in target.obj_list():
                 for j in base.obj_list():
-                    use_edge = self.run_edge_ref(kid[1], is_spawn=True)
+                    use_edge = self.run_edge_ref(kid[2], is_spawn=True)
                     self.rt_check_type(i, Node, kid[-1])
                     self.rt_check_type(j, Node, kid[-1])
                     if direction == "edge_from":

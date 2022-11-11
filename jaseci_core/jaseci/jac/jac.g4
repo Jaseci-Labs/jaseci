@@ -177,7 +177,7 @@ copy_assign: CPY_EQ expression;
 
 inc_assign: (PEQ | MEQ | TEQ | DEQ) expression;
 
-connect: logical ( (NOT)? edge_ref expression)?;
+connect: logical ( (NOT | PLUS) edge_ref expression)?;
 
 logical: compare ((KW_AND | KW_OR) compare)*;
 
@@ -205,7 +205,7 @@ atom:
 	| NULL
 	| NAME
 	| global_ref
-	| node_edge_ref
+	| node_edge_ref+
 	| list_val
 	| dict_val
 	| LPAREN expression RPAREN
