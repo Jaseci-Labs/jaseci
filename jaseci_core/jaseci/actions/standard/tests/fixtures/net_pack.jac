@@ -45,7 +45,7 @@ walker pack_unpack {
         }
         val = net.pack(to_pack);
         new = net.unpack(val);
-        here --> new[0];
+        here +--> new[0];
     }
     take -->;
     count+=1;
@@ -65,7 +65,7 @@ walker pack_unpack_terse {
             to_pack.l::append(t);
             global.count+=1;
         }
-        here --> net.unpack(net.pack(to_pack))[0];
+        here +--> net.unpack(net.pack(to_pack))[0];
     }
     take -->;
     count+=1;
@@ -106,7 +106,7 @@ walker pack_it_anc_priv {
     }
     root {
         up=net.unpack(p);
-        here --> up[0];
+        here +--> up[0];
     }
     take --> node::simple == 5.4;
     report here;
