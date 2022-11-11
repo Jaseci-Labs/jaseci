@@ -51,9 +51,14 @@ class Kube:
         else:
             return self.read_apis[api](name=name, namespace=namespace)
 
-    def delete(self, api: str, name: str, namespace: str):
-        # TODO: implemente delete operations for k8s
-        pass
+    def delete(self, api: str, name: str, namespace: str = None):
+        # TODO: Need to think about what to delete vs keep when deleting k8s resources, just skipping PVCs for now
+        if api == "PersistentVolumeClaim":
+            return
+        if api.startswith("ClusterRole"):
+            self.delete_apis[api](name=name)
+        else:
+            return self.delete_apis[api](name=name, namespace=namespace)
 
     def defaults(self):
         self.create_apis = {
@@ -68,6 +73,19 @@ class Kube:
                 self.core.create_namespaced_persistent_volume_claim
             ),
             "DaemonSet": self.api.create_namespaced_daemon_set,
+        }
+        self.delete_apis = {
+            "Service": self.core.delete_namespaced_service,
+            "Deployment": self.api.delete_namespaced_deployment,
+            "ConfigMap": self.core.delete_namespaced_config_map,
+            "ServiceAccount": self.core.delete_namespaced_service_account,
+            "ClusterRole": self.auth.delete_cluster_role,
+            "ClusterRoleBinding": self.auth.delete_cluster_role_binding,
+            "Secret": self.core.delete_namespaced_secret,
+            "PersistentVolumeClaim": (
+                self.core.delete_namespaced_persistent_volume_claim
+            ),
+            "DaemonSet": self.api.delete_namespaced_daemon_set,
         }
         self.read_apis = {
             "Service": self.core.read_namespaced_service,
