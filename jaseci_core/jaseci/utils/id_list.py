@@ -23,8 +23,7 @@ class IdList(list):
         self.heal_list = []
         self.auto_save = auto_save
         if in_list:
-            for i in in_list:
-                self.append(i)
+            self.extend(in_list)
 
     def cache_reset(self):
         self.cached_objects = []

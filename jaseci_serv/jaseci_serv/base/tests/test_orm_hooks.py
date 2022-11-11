@@ -94,7 +94,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertEqual(oload_test.name, otnode.name)
         # Below tests loading hex uuid strings and converting to uuid type
         newobj = otnode._h.get_obj_from_store(oload_test.jid.urn)
-        self.assertIn(oedge[0], newobj.edge_ids.obj_list())
+        self.assertIn(oedge[0], newobj.smart_edge_list.obj_list())
 
         otnode.destroy()
         self.assertFalse(
@@ -192,7 +192,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertEqual(oload_test.name, otnode.name)
         # Below tests loading hex uuid strings and converting to uuid type
         newobj = otnode._h.get_obj_from_store(oload_test.id.urn)
-        self.assertIn(oedge[0], newobj.edge_ids.obj_list())
+        self.assertIn(oedge[0], newobj.smart_edge_list.obj_list())
 
         otnode.destroy()
         self.assertIsNone(newobj._h.get_obj(oload_test._m_id, oload_test.id.urn))

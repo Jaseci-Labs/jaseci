@@ -71,8 +71,8 @@ class Edge(Element, Anchored):
             if not self.to_node().dimension_matches(node_obj, silent=False):
                 return False
         self.from_node_id = node_obj.jid
-        if self.jid not in node_obj.edge_ids:
-            node_obj.edge_ids.add_obj(self)
+        if self.jid not in node_obj.smart_edge_list:
+            node_obj.smart_add_edge(self)
         self.save()
         return True
 
@@ -85,8 +85,8 @@ class Edge(Element, Anchored):
             if not self.from_node().dimension_matches(node_obj, silent=False):
                 return False
         self.to_node_id = node_obj.jid
-        if self.jid not in node_obj.edge_ids:
-            node_obj.edge_ids.add_obj(self)
+        if self.jid not in node_obj.smart_edge_list:
+            node_obj.smart_add_edge(self)
         self.save()
         return True
 
@@ -121,6 +121,16 @@ class Edge(Element, Anchored):
             if target and target.jid != self.to_node_id:
                 return False
         return True
+
+    def is_fast(self):
+        return not len(self.context)
+
+    def save(self):
+        """
+        Write self through hook to persistent storage
+        """
+        if not self.is_fast():
+            super().save(self)
 
     def destroy(self):
         """

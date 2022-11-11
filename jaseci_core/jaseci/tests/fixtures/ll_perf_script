@@ -1,4 +1,4 @@
-sentinel register ll_perf.jir -mode ir
+sentinel register ll_perf.jac
 walker run init
 walker run gen_rand_life
 walker run get_gen_day

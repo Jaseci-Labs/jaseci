@@ -12,17 +12,64 @@ from jaseci.utils.utils import logger
 
 import uuid
 
+TO = 0
+FROM = 1
+BI = 2
+
 
 class Node(Element, Anchored):
     """Node class for Jaseci"""
 
     def __init__(self, dimension=0, **kwargs):
         self.edge_ids = IdList(self)
+        self.fast_edges = {}  # {name: [[DIR, UUID]]}
+        self._fast_edge_ids = IdList(self)
         self.parent_node_ids = IdList(self)
         self.member_node_ids = IdList(self)
         self.dimension = dimension  # Nodes are always hdgd 0
         Element.__init__(self, **kwargs)
         Anchored.__init__(self)
+
+    @property
+    def smart_edge_list(self):
+        if not len(self._fast_edge_ids):
+            self._fast_edge_ids.extend(self.edge_ids)
+            for k, e in self.fast_edges:
+                for v in e:
+                    node = self._h.get_obj(self._m_id, v[0])
+                    self._fast_edge_ids.append(
+                        self.attach(
+                            node_obj=node,
+                            edge_set=[
+                                Edge(
+                                    m_id=self._m_id,
+                                    h=self._h,
+                                    kind="edge",
+                                    name=k,
+                                )
+                            ],
+                            as_outbound=v[1] in [TO, BI],
+                            as_bidirected=v[1] == BI,
+                        )
+                    )
+        return self._fast_edge_ids
+
+    def smart_add_edge(self, obj):
+        if obj.is_fast():
+            if obj.name not in self.fast_edges:
+                self.fast_edges[obj.name] = []
+            self.fast_edges[obj.name].append(
+                [
+                    BI
+                    if obj.is_bidirected()
+                    else TO
+                    if obj.from_node() == self
+                    else FROM,
+                    obj.opposing_node().jid,
+                ]
+            )
+        else:
+            self.edge_ids.add_obj(obj)
 
     def attach(self, node_obj, edge_set=None, as_outbound=True, as_bidirected=False):
         """
@@ -218,7 +265,7 @@ class Node(Element, Anchored):
     def outbound_edges(self, node_obj=None):
         """Returns list of all edges out of node"""
         edge_set = []
-        for e in self.edge_ids.obj_list():
+        for e in self.smart_edge_list.obj_list():
             if not e.is_bidirected() and e.connects(self, node_obj):
                 edge_set.append(e)
         return edge_set
@@ -226,7 +273,7 @@ class Node(Element, Anchored):
     def inbound_edges(self, node_obj=None):
         """Returns list of all edges in to node"""
         edge_set = []
-        for e in self.edge_ids.obj_list():
+        for e in self.smart_edge_list.obj_list():
             if not e.is_bidirected() and e.connects(node_obj, self):
                 edge_set.append(e)
         return edge_set
@@ -234,7 +281,7 @@ class Node(Element, Anchored):
     def bidirected_edges(self, node_obj=None):
         """Returns list of all edges between nodes"""
         edge_set = []
-        for e in self.edge_ids.obj_list():
+        for e in self.smart_edge_list.obj_list():
             if e.is_bidirected() and e.connects(self, node_obj):
                 edge_set.append(e)
         return edge_set
@@ -258,7 +305,7 @@ class Node(Element, Anchored):
     def outbound_nodes(self, edge_set=None):
         """Returns list of all nodes connected by edges out"""
         if edge_set is None:
-            edge_set = self.edge_ids.obj_list()
+            edge_set = self.smart_edge_list.obj_list()
         ret_list = []
         for e in edge_set:
             if not e.is_bidirected() and e.connects(source=self):
@@ -268,7 +315,7 @@ class Node(Element, Anchored):
     def inbound_nodes(self, edge_set=None):
         """Returns list of all nodes connected by edges in"""
         if edge_set is None:
-            edge_set = self.edge_ids.obj_list()
+            edge_set = self.smart_edge_list.obj_list()
         ret_list = []
         for e in edge_set:
             if not e.is_bidirected() and e.connects(target=self):
@@ -278,7 +325,7 @@ class Node(Element, Anchored):
     def bidirected_nodes(self, edge_set=None):
         """Returns list of all nodes connected by edges"""
         if edge_set is None:
-            edge_set = self.edge_ids.obj_list()
+            edge_set = self.smart_edge_list.obj_list()
         ret_list = []
         for e in edge_set:
             if e.is_bidirected():
@@ -287,7 +334,7 @@ class Node(Element, Anchored):
 
     def attached_nodes(self):
         """Returns list of all nodes connected"""
-        edge_set = self.edge_ids.obj_list()
+        edge_set = self.smart_edge_list.obj_list()
         ret_list = []
         for e in edge_set:
             ret_list.append(e.opposing_node(self))
