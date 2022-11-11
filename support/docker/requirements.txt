@@ -1,0 +1,2 @@
+jaseci==1.3.5.12
+jaseci-serv==1.3.5.12

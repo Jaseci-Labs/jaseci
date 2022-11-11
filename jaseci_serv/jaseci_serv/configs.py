@@ -11,16 +11,16 @@ from jaseci_serv.kubes import PROMON_KUBE, REDIS_KUBE
 RUN_SVCS = "test" in sys.argv or "runserver" in sys.argv
 
 REDIS_CONFIG = {
-    "enabled": True,
-    "quiet": False,
+    "enabled": False,
+    "quiet": True,
     "host": os.getenv("REDIS_HOST", "localhost"),
     "port": os.getenv("REDIS_PORT", "6379"),
     "db": os.getenv("REDIS_DB", "1"),
 }
 
 TASK_CONFIG = {
-    "enabled": True,
-    "quiet": False,
+    "enabled": False,
+    "quiet": True,
     "broker_url": f'redis://{os.getenv("REDIS_HOST", "localhost")}:{os.getenv("REDIS_PORT", "6379")}/{os.getenv("REDIS_DB", "1")}',
     "beat_scheduler": "django_celery_beat.schedulers:DatabaseScheduler",
     "result_backend": "django-db",
@@ -30,8 +30,8 @@ TASK_CONFIG = {
 }
 
 MAIL_CONFIG = {
-    "enabled": True,
-    "quiet": False,
+    "enabled": False,
+    "quiet": True,
     "version": 1,
     "tls": True,
     "host": "",
@@ -56,14 +56,15 @@ MAIL_CONFIG = {
     "migrate": False,
 }
 
-KUBE_CONFIG = {"enabled": False, "quiet": False, "in_cluster": False, "config": None}
+KUBE_CONFIG = {"enabled": True, "quiet": False, "in_cluster": True, "config": None}
 
 JSORC_CONFIG = {
-    "enabled": False,
+    "enabled": True,
     "quiet": False,
     "interval": 10,
     "namespace": "default",
-    "keep_alive": ["promon", "redis", "task"],
+    "keep_alive": ["redis"],
+    # "keep_alive": [],
 }
 
 PROMON_CONFIG = {

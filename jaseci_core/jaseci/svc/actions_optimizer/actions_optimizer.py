@@ -12,6 +12,7 @@ from jaseci.actions.live_actions import (
     load_module_actions,
     unload_module,
     load_remote_actions,
+    load_local_actions,
 )
 import requests
 import copy
@@ -103,10 +104,11 @@ class ActionsOptimizer:
                 )
                 # TODO: should we use jsorc's create function here
                 self.kube.delete(kind, name, namespace)
-            except ApiException:
+            except ApiException as e:
                 logger.error(
-                    f"Error creating {kind} for {name} for namespace {namespace}"
+                    f"Error deleting {kind} for {name} for namespace {namespace}"
                 )
+                logger.error(str(e))
 
     def retire_remote(self, name):
         """
@@ -122,12 +124,18 @@ class ActionsOptimizer:
         config = ACTION_CONFIGS[name]["remote"]
         self.kube_create(config)
         # TODO: Hack for testing
-
-        url = "http://localhost:8001/"
+        url = f"http://{config['Service']['metadata']['name']}/"
         return url
 
     def load_action_remote(self, url):
         load_remote_actions(url)
+
+    def load_action_local(self, name):
+        """
+        Load a local action
+        """
+        local_path = ACTION_CONFIGS[name]["local"]
+        load_local_actions(local_path)
 
     def load_action_module(self, name):
         """
@@ -152,7 +160,15 @@ class ActionsOptimizer:
         """
         if url is None:
             return False
-        logger.info(f"Checking if remote action {name} is ready at {url}")
+        spec_url = url.rstrip("/") + ACTIONS_SPEC_LOC
+        logger.info(f"Checking if remote action {name} is ready at {spec_url}")
         headers = {"content-type": "application/json"}
-        res = requests.get(url.rstrip("/") + ACTIONS_SPEC_LOC, headers=headers)
+        try:
+            res = requests.get(
+                url.rstrip("/") + ACTIONS_SPEC_LOC, headers=headers, timeout=1
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            # Remote service not ready yet
+            return False
+
         return res.status_code == 200

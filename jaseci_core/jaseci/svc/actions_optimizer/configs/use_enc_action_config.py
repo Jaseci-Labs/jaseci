@@ -1,4 +1,5 @@
 USE_ENC_ACTION_CONFIG = {
+    "local": "/jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/use_enc/use_enc.py",
     "module": "jaseci_ai_kit.use_enc",
     "remote": {
         "Service": {
@@ -25,7 +26,7 @@ USE_ENC_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "pip install jaseci-ai-kit==1.3.5.22\nuvicorn jaseci_ai_kit.use_enc:serv_actions --host 0.0.0.0 --port 80 --workers 4"
+                "prod_up": "pip install jaseci-ai-kit==1.3.5.22\nuvicorn jaseci_ai_kit.use_enc:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {

@@ -61,11 +61,11 @@ rules:
       "validatingwebhookconfigurations",
       "volumeattachments"
     ]
-    verbs: ["get", "watch", "list", "update", "patch", "create"]
+    verbs: ["get", "watch", "list", "update", "patch", "create", "delete"]
   - nonResourceURLs: [
       "/metrics"
     ]
-    verbs: ["get", "watch", "list", "update", "patch", "create"]
+    verbs: ["get", "watch", "list", "update", "patch", "create", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -101,10 +101,10 @@ metadata:
 data:
   prod_up: |-
     apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    git clone https://github.com/Jaseci-Labs/jaseci.git
-    cd jaseci;
-    cd jaseci_core; source install.sh;
-    cd ../jaseci_serv; source install.sh;
+    # git clone https://github.com/Jaseci-Labs/jaseci.git
+    cd /jaseci;
+    cd jaseci_core; source install_live.sh;
+    cd ../jaseci_serv; source install_live.sh;
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -127,7 +127,8 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: python:3-slim
+          #image: python:3-slim
+          image: jaseci-with-ai-kit
           resources:
             requests:
               memory: "350Mi"
@@ -160,11 +161,17 @@ spec:
           volumeMounts:
             - name: prod-script
               mountPath: /script
+            - name: host-mount
+              mountPath: /jaseci/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
+        - name: host-mount
+          hostPath:
+            path: /run/desktop/mnt/host/wsl/jaseci
+            type: Directory
 ---
 kind: Service
 apiVersion: v1
