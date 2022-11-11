@@ -13,16 +13,12 @@ import uuid
 class Edge(Element, Anchored):
     """Edge class for Jaseci"""
 
-    def __init__(self, from_node=None, to_node=None, **kwargs):
+    def __init__(self, **kwargs):
         self.from_node_id = None
         self.to_node_id = None
         self.bidirected: bool = False
         Anchored.__init__(self)
         Element.__init__(self, **kwargs)
-        if from_node:
-            self.set_from_node(from_node)
-        if to_node:
-            self.set_to_node(to_node)
 
     def from_node(self):
         """Returns node edge is pointing from"""
@@ -62,40 +58,17 @@ class Edge(Element, Anchored):
             logger.critical(str(f"{self} disconnected to node {node_obj}"))
             return None
 
-    def set_from_node(self, node_obj):
-        """
-        Returns node edge is pointing from
-        TODO: should check prior nodes edge_ids if is a reset
-        """
-        if self.to_node_id:
-            if not self.to_node().dimension_matches(node_obj, silent=False):
-                return False
-        self.from_node_id = node_obj.jid
-        if self.jid not in node_obj.smart_edge_list:
-            node_obj.smart_add_edge(self)
-        self.save()
-        return True
-
-    def set_to_node(self, node_obj):
-        """
-        Returns node edge is pointing to
-        TODO: should check prior nodes edge_ids if is a reset
-        """
-        if self.from_node_id:
-            if not self.from_node().dimension_matches(node_obj, silent=False):
-                return False
-        self.to_node_id = node_obj.jid
-        if self.jid not in node_obj.smart_edge_list:
-            node_obj.smart_add_edge(self)
-        self.save()
-        return True
-
     def connect(self, source, target, bi_dir=False):
         """
         Connects both ends of the edge
         """
+        self.from_node_id = source.jid
+        self.to_node_id = target.jid
+        source.smart_add_edge(self)
+        target.smart_add_edge(self)
         self.set_bidirected(bi_dir)
-        return self.set_from_node(source) and self.set_to_node(target)
+        self.save()
+        return True
 
     def set_bidirected(self, bidirected: bool):
         """Sets/unsets edge to be bidirected"""
@@ -129,7 +102,8 @@ class Edge(Element, Anchored):
         """
         Write self through hook to persistent storage
         """
-        # if not self.is_fast():
+        if not self.is_fast():
+            self._persist = False
         super().save()
 
     def destroy(self):
@@ -140,7 +114,7 @@ class Edge(Element, Anchored):
         target = self.to_node()
         base.smart_remove_edge(self)
         target.smart_remove_edge(self)
-        Element.destroy(self)
+        super().destroy()
 
     def dot_str(self, node_map=None, edge_map=None, detailed=False):
         """

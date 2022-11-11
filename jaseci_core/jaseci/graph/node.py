@@ -22,7 +22,7 @@ class Node(Element, Anchored):
 
     def __init__(self, dimension=0, **kwargs):
         self.edge_ids = IdList(self)
-        self.fast_edges = {}  # {name: [[DIR, UUID]]}
+        self.fast_edges = {}  # {name: [[UUID, DIR]]}
         self._fast_edge_ids = IdList(self)
         self.parent_node_ids = IdList(self)
         self.member_node_ids = IdList(self)
@@ -32,61 +32,55 @@ class Node(Element, Anchored):
 
     @property
     def smart_edge_list(self):
-        return self.edge_ids
         if not len(self._fast_edge_ids):
             self._fast_edge_ids.extend(self.edge_ids)
             for k in self.fast_edges.keys():
                 for v in self.fast_edges[k]:
-                    node = self._h.get_obj(self._m_id, v[0])
-                    self._fast_edge_ids.append(
-                        self.attach(
-                            node_obj=node,
-                            edge_set=[
-                                Edge(
-                                    m_id=self._m_id,
-                                    h=self._h,
-                                    kind="edge",
-                                    name=k,
-                                )
-                            ],
-                            as_outbound=v[1] in [TO, BI],
-                            as_bidirected=v[1] == BI,
-                        )
-                    )
+                    self.smart_update_fast_ids(k, v)
         return self._fast_edge_ids
 
     def smart_add_edge(self, obj):
-        self.edge_ids.add_obj(obj)
-        return
-        self._fast_edge_ids = IdList(self)
         if obj.is_fast():
             if obj.name not in self.fast_edges:
                 self.fast_edges[obj.name] = []
-            self.fast_edges[obj.name].append(
-                [
-                    BI
-                    if obj.is_bidirected()
-                    else TO
-                    if obj.from_node() == self
-                    else FROM,
-                    obj.opposing_node(self).jid,
-                ]
-            )
-            print(self.fast_edges)
+            details = [
+                obj.opposing_node(self).jid,
+                BI if obj.is_bidirected() else TO if obj.from_node() == self else FROM,
+            ]
+            self.fast_edges[obj.name].append(details)
+            self._fast_edge_ids.add_obj(obj)
         else:
             self.edge_ids.add_obj(obj)
 
     def smart_remove_edge(self, obj):
-        self._fast_edge_ids = IdList(self)
-        if 0 and obj.is_fast():
+        if obj.is_fast():
             pluck = None
             for i in self.fast_edges[obj.name]:
-                if i[1] == obj.opposing_node(self):
+                if i[0] == obj.opposing_node(self).jid:
                     pluck = i
                     break
             self.fast_edges[obj.name].remove(pluck)
+            self._fast_edge_ids.remove_obj(obj)
         elif obj and obj.jid in self.edge_ids:
             self.edge_ids.remove_obj(obj)
+
+    def smart_update_fast_ids(self, name, details):
+        node = self._h.get_obj(self._m_id, details[0])
+        self._fast_edge_ids.append(
+            self.attach(
+                node_obj=node,
+                edge_set=[
+                    Edge(
+                        m_id=self._m_id,
+                        h=self._h,
+                        kind="edge",
+                        name=name,
+                    )
+                ],
+                as_outbound=details[1] in [TO, BI],
+                as_bidirected=details[1] == BI,
+            )
+        )
 
     def attach(self, node_obj, edge_set=None, as_outbound=True, as_bidirected=False):
         """
@@ -103,7 +97,7 @@ class Node(Element, Anchored):
             ]
         link_order = [self, node_obj] if as_outbound else [node_obj, self]
         for e in edge_set:
-            if not e.set_from_node(link_order[0]) or not e.set_to_node(link_order[1]):
+            if not e.connect(link_order[0], link_order[1]):
                 # Node not found error logged in set node function
                 return []
             e.set_bidirected(as_bidirected)
