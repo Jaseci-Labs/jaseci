@@ -19,7 +19,7 @@ Module `text_seg` implemented for the Topical Change Detection in Documents via 
 
 
 ## **2. Get segments**
-For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) for the purpose of text segmentation, 
+For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) for the purpose of text segmentation,
 
 * Creating Jac Program **text segmenter** (`text_seg`)
 
@@ -40,7 +40,7 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
     4. Initialize module `load_model` and `get_segments` inside `get_seg` node.
 
         ```python
-        # loading model 
+        # loading model
         can load_model with text_segment entry{
             text_seg.load_model(
                 model_name = visitor.model_name
@@ -50,11 +50,11 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
         # text segmentation
         can get_segments with text_segment entry{
             data = file.load_json(visitor.data);
-            
+
             report text_seg.get_segments(
                 text = data["text"],
                 threshold = data["threshold"]
-            );      
+            );
         }
         ```
         `load_model` to load the available model for text segmentation.
@@ -74,7 +74,7 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
                     "threshold": 0.65
                 }
                 ```
-                * `text(String)`: text the contain the entire context 
+                * `text(String)`: text the contain the entire context
                 * `threshold(Float)`: range is between 0-1, make each sentence as segment if, threshold is 1.
 
             * **Output**
@@ -102,7 +102,7 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
         ```
         walker init {
             root {
-            spawn here --> graph::text_seg_graph; 
+            spawn here --> graph::text_seg_graph;
             }
         }
         ```
@@ -111,7 +111,7 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
         # declaring walker for summerize text
         walker text_segment{
             has model_name="wiki";
-            has data="text.json";    
+            has data="text.json";
 
             root {
                 take --> node::model_dir;
@@ -128,7 +128,7 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
             # import all module ability
             can text_seg.load_model, text_seg.get_segments;
 
-            # loading model 
+            # loading model
             can load_model with text_segment entry{
                 text_seg.load_model(
                     model_name = visitor.model_name
@@ -138,11 +138,11 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
             # text segmentation
             can segment with text_segment entry{
                 data = file.load_json(visitor.data);
-                
+
                 report text_seg.get_segments(
                     text = data["text"],
                     threshold = data["threshold"]
-                );      
+                );
             }
         }
 
@@ -166,7 +166,7 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
         # declare init graph
         walker init {
             root {
-            spawn here --> graph::text_seg_graph; 
+            spawn here --> graph::text_seg_graph;
             }
         }
 
@@ -174,7 +174,7 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
         # declaring walker for summerize text
         walker text_segment{
             has model_name="wiki";
-            has data="text.json";    
+            has data="text.json";
 
             root {
                 take --> node::model_dir;

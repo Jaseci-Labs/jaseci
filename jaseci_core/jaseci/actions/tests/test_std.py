@@ -18,8 +18,8 @@ class JacTests(TestCaseHelper, TestCase):
         super().tearDown()
 
     def test_rand_std(self):
-        sent = Sentinel(m_id="anon", h=self.meta.build_hook())
-        gph = Graph(m_id="anon", h=sent._h)
+        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        gph = Graph(m_id=0, h=sent._h)
         sent.register_code(stc.rand_std)
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
@@ -31,8 +31,8 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertGreater(len(report[3]), len(report[2]))
 
     def test_file_io(self):
-        sent = Sentinel(m_id="anon", h=self.meta.build_hook())
-        gph = Graph(m_id="anon", h=sent._h)
+        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        gph = Graph(m_id=0, h=sent._h)
         sent.register_code(stc.file_io)
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
@@ -41,8 +41,8 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(report, ['{"a": 10}{"a": 10}'])
 
     def test_std_used_in_node_has_var(self):
-        sent = Sentinel(m_id="anon", h=self.meta.build_hook())
-        gph = Graph(m_id="anon", h=sent._h)
+        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        gph = Graph(m_id=0, h=sent._h)
         sent.register_code(stc.std_used_in_node_has_var)
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)

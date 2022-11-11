@@ -187,5 +187,5 @@ def root(meta):
     """
     mast = master_from_meta(meta)
     if mast.active_gph_id:
-        return mast._h.get_obj(mast._m_id, uuid.UUID(mast.active_gph_id))
+        return mast._h.get_obj(mast._m_id, mast.active_gph_id)
     return None

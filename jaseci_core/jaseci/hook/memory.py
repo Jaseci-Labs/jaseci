@@ -18,7 +18,6 @@ class MemoryHook:
         self._machine = None
         self.save_obj_list = set()
         self.save_glob_dict = {}
-        self.global_action_list = get_global_actions(self)
 
     ####################################################
     #               COMMON GETTER/SETTER               #
@@ -114,8 +113,8 @@ class MemoryHook:
         """
         Get item from externally hooked general store by id
         """
-        if item_id.urn in self.mem:
-            return self.mem[item_id.urn]
+        if item_id in self.mem:
+            return self.mem[item_id]
 
         return None
 
@@ -123,7 +122,7 @@ class MemoryHook:
         """
         Checks for object existance in store
         """
-        return item_id.urn in self.mem
+        return item_id in self.mem
 
     def destroy_obj_from_store(self, item):
         """Destroy item to externally hooked general store"""
@@ -189,14 +188,14 @@ class MemoryHook:
         return id is not None and id in self.mem
 
     def commit_obj_to_cache(self, item, all_caches=False):
-        self.mem[item.id.urn] = item
+        self.mem[item.jid] = item
 
     def commit_all_cache_sync(self):
         for i in self.save_obj_list:
             self.commit_obj_to_cache(i, all_caches=True)
 
     def decommit_obj_from_cache(self, item):
-        self.mem.pop(item.id.urn)
+        self.mem.pop(item.jid)
 
     ####################################################
     # ------------------ UTILITIES ------------------- #
