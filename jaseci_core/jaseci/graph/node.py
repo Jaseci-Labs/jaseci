@@ -40,9 +40,11 @@ class Node(Element, Anchored):
         return self._fast_edge_ids
 
     def smart_add_edge(self, obj):
-        if not len(self._fast_edge_ids) and len(self.edge_ids):
-            self._fast_edge_ids.extend(self.edge_ids)
-        if obj.is_fast():
+        if not obj.is_fast():
+            self.edge_ids.add_obj(obj)
+        else:
+            if not len(self._fast_edge_ids) and len(self.edge_ids):
+                self._fast_edge_ids.extend(self.edge_ids)
             if obj.name not in self.fast_edges:
                 self.fast_edges[obj.name] = []
             details = [
@@ -51,8 +53,6 @@ class Node(Element, Anchored):
             ]
             self.fast_edges[obj.name].append(details)
             self._fast_edge_ids.add_obj(obj)
-        else:
-            self.edge_ids.add_obj(obj)
 
     def smart_remove_edge(self, obj):
         if obj.is_fast():
