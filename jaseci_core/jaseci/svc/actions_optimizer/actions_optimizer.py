@@ -11,6 +11,7 @@ from jaseci.svc.actions_optimizer.actions_optimizer_policy import (
 from jaseci.actions.live_actions import (
     load_module_actions,
     unload_module,
+    unload_remote_actions,
     load_remote_actions,
     load_local_actions,
     live_actions,
@@ -126,6 +127,7 @@ class ActionsOptimizer:
         """
         config = ACTION_CONFIGS[name]["remote"]
         self.kube_delete(config)
+        self.actions_state.remove_remote(name)
 
     def spawn_remote(self, name):
         """
@@ -147,7 +149,7 @@ class ActionsOptimizer:
             cur_state = self.actions_state.init_state(name)
             logger.info("init state")
 
-        if cur_state["mode"] == "remote":
+        if cur_state["mode"] == "remote" and cur_state["remote"]["status"] == "READY":
             # Check if there is already a remote action loaded
             return
 
@@ -199,16 +201,45 @@ class ActionsOptimizer:
         logger.info(f"live_action_modules: {live_action_modules}")
         logger.info(f"remote_actions: {remote_actions}")
 
-    def unload_action_remote(self, name):
-        pass
-
     def unload_action_module(self, name):
         """
         Unload an action module
-        TODO
         """
-        module = ACTION_CONFIGS[name]["module"]
-        unload_module(module)
+        cur_state = self.actions_state.get_state(name)
+        if cur_state is None:
+            return False, "Action is not loaded."
+
+        if cur_state["mode"] != "module":
+            return False, "Action is not loaded as module."
+
+        module_name = cur_state["module"]["name"]
+
+        unload_module(module_name)
+        self.actions_state.module_action_unloaded(name)
+
+        return (True, f"Action module {name} unloaded.")
+
+    def unload_action_remote(self, name):
+        """
+        Unload a remote action
+        """
+        cur_state = self.actions_state.get_state(name)
+        if cur_state is None:
+            return False, "Action is not loaded."
+
+        if cur_state["mode"] != "remote":
+            return False, "Action is not loaded as remote."
+
+        if cur_state["remote"]["status"] != "READY":
+            return False, "Remote action is not ready."
+
+        # Get the list of actions from the action spec of the server
+        url = cur_state["remote"]["url"]
+
+        unload_remote_actions(url)
+        self.actions_state.remote_action_unloaded(name)
+
+        return (True, f"Remote actions from {url} unloaded.")
 
     def remote_action_ready_check(self, name, url):
         """

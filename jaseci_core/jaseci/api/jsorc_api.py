@@ -105,7 +105,8 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            hook.jsorc.app.unload_actions(name, mode)
+            res = hook.jsorc.app.unload_actions(name, mode, retire_svc)
+            return {"success": res[0], "message": res[1]}
         else:
             return {"success": False, "message": "No running JSORC service."}
 

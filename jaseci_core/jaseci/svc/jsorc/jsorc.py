@@ -154,14 +154,29 @@ class JsOrc:
         elif mode == "remote":
             self.actions_optimizer.load_action_remote(name)
 
-    def unload_actions(self, name, mode):
+    def unload_actions(self, name, mode, retire_svc):
         """
         Unload an action
         """
-        pass
+        # We are using module for local
+        mode = "module" if mode == "local" else mode
+        if mode == "module":
+            return self.actions_optimizer.unload_action_module(name)
+        elif mode == "remote":
+            res = self.actions_optimizer.unload_action_remote(name)
+            if not res[0]:
+                return res
+            if retire_svc:
+                self.retire_uservice(name)
+            return res
+        else:
+            return (False, f"Unrecognized action mode {mode}.")
 
     def retire_uservice(self, name):
-        pass
+        """
+        Retire a remote microservice for the action.
+        """
+        self.actions_optimizer.retire_remote(name)
 
     def get_actions_status(self, name):
         """

@@ -183,6 +183,21 @@ def get_global_actions():
     return global_action_list
 
 
+def unload_remote_actions(url):
+    """
+    Get the list of actions from the given URL and then unload them.
+    """
+    headers = {"content-type": "application/json"}
+    try:
+        spec = requests.get(url.rstrip("/") + ACTIONS_SPEC_LOC, headers=headers)
+        spec = spec.json()
+        for i in spec.keys():
+            unload_action(i)
+        return True
+    except Exception as e:
+        logger.error(f"Cannot unload remote action from {url}: {e}")
+
+
 def load_remote_actions(url):
     """Load all jaseci actions from live pod"""
     headers = {"content-type": "application/json"}

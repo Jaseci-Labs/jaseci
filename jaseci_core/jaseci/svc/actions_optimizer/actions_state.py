@@ -62,7 +62,6 @@ class ActionsState:
 
     def module_action_loaded(self, name, module):
         self.state[name]["mode"] = "module"
-        self.state[name]["module"]["loaded"] = True
         self.state[name]["module"]["name"] = module
 
         if name in self.change_set:
@@ -71,12 +70,17 @@ class ActionsState:
             if len(self.change_set[name]) == 0:
                 del self.change_set[name]
 
+    def module_action_unloaded(self, name):
+        self.state[name]["module"] = {"name": None}
+
     def local_action_unloaded(self, name):
         del self.change_set[name]["local"]
 
+    def remove_remote(self, name):
+        self.state[name]["remote"] = {"url": None, "status": None}
+
     def remote_action_loaded(self, name):
         self.state[name]["mode"] = "remote"
-        self.state[name]["remote"]["loaded"] = True
 
         if name in self.change_set:
             if "remote" in self.change_set[name]:
@@ -85,7 +89,12 @@ class ActionsState:
                 del self.change_set[name]
 
     def remote_action_unloaded(self, name):
-        del self.change_set[name]["remote"]
+
+        if name in self.change_set:
+            if "remote" in self.change_set[name]:
+                del self.change_set[name]["remote"]
+            if len(self.change_set[name]) == 0:
+                del self.change_set[name]
 
     def start_remote_service(self, name, url):
         self.state[name]["remote"] = {"status": "STARTING", "url": url}
