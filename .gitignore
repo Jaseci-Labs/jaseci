@@ -11,8 +11,10 @@ venv
 # General #
 *.egg-info/
 *.egg
+*.prof
 
 # Others #
+.coverage
 .antlr
 .session
 .DS_Store

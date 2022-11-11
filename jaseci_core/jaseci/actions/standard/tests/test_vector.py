@@ -29,3 +29,8 @@ class VectorTest(CoreTest):
     def test_cosine_similarity_batch(self, ret):
         ret = [round(num, 2) for num in ret["report"][0]]
         self.assertEqual(ret, [0.99, 1.0])
+
+    @jac_testcase("vector.jac", "dimensionality_reduction_test")
+    def test_dimensionality_reduction(self, ret):
+        ret = len(ret["report"][0][0])
+        self.assertEqual(ret, 2)

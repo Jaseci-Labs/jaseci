@@ -17,6 +17,7 @@ from jaseci.jac.machine.machine_state import TryException
 
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
+from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 from copy import copy, deepcopy
 from base64 import b64decode
 
@@ -159,7 +160,7 @@ class Interp(VirtualMachine):
                 ret.append(i.token_text())
         return ret
 
-    def run_expr_list(self, jac_ast, wrap=False):
+    def run_expr_list(self, jac_ast):
         """
         expr_list: expression (COMMA expression)*;
         """
@@ -168,10 +169,7 @@ class Interp(VirtualMachine):
         for i in kid:
             if i.name == "expression":
                 self.run_expression(i)
-                if wrap:
-                    ret.append(self.pop().wrap())
-                else:
-                    ret.append(self.pop().value)
+                ret.append(self.pop().value)
         return JacValue(self, value=ret)
 
     def run_code_block(self, jac_ast):
@@ -426,7 +424,7 @@ class Interp(VirtualMachine):
             if kid[2].token_text() in ["status", "status_code"]:
                 self.report_status = self.pop().value
             elif kid[2].token_text() == "custom":
-                self.report_custom = self.pop().value
+                self.report_custom = jwv(self.pop().value, serialize_mode=True)
             elif kid[2].token_text() == "error":
                 err = self.pop().value
                 if isinstance(err, str):
@@ -440,9 +438,9 @@ class Interp(VirtualMachine):
                 self.rt_error("Invalid report attribute to set", kid[2])
         else:
             self.run_expression(kid[1])
-            report = self.pop().wrap(serialize_mode=True)
+            report = jwv(self.pop().value, serialize_mode=True)
             if not is_jsonable(report):
-                self.rt_error("Report not Json serializable", kid[0])
+                self.rt_error(f"Report {report} not Json serializable", kid[0])
             self.report.append(copy(report))
 
     def run_expression(self, jac_ast):
@@ -793,6 +791,8 @@ class Interp(VirtualMachine):
             kid = self.set_cur_ast(jac_ast)
             if atom_res is None:
                 atom_res = JacValue(self, value=self._jac_scope.has_obj)
+            if isinstance(atom_res.value, Element):
+                self._write_candidate = atom_res.value
             if kid[0].name == "DOT":
                 if kid[1].name == "built_in":
                     return self.run_built_in(kid[1], atom_res)
@@ -800,6 +800,8 @@ class Interp(VirtualMachine):
                     d = atom_res.value
                     n = kid[1].token_text()
                     if self.rt_check_type(d, [dict, Element, JacSet], kid[0]):
+                        if isinstance(d, Element):
+                            self._write_candidate = d
                         if not isinstance(d, JacSet):
                             ret = JacValue(self, ctx=d, name=n)
                         else:
@@ -813,7 +815,6 @@ class Interp(VirtualMachine):
                                         kid[1],
                                     )
                             ret = JacValue(self, value=plucked)
-                        ret.unwrap()
                         return ret
                     else:
                         self.rt_error(f"Invalid variable {n}", kid[0])
@@ -963,7 +964,8 @@ class Interp(VirtualMachine):
                 atom_res.value = typ.value(atom_res.value)
             except Exception:
                 self.rt_error(
-                    f"Invalid cast of {atom_res.jac_type()} " f"to {typ.wrap()}", kid[0]
+                    f"Invalid cast of {atom_res.jac_type()} " f"to {jwv(typ.value)}",
+                    kid[0],
                 )
             return atom_res
 
@@ -1032,8 +1034,10 @@ class Interp(VirtualMachine):
                     result = JacValue(self, value=list(atom_res.value.keys()))
                 elif op == "clear":
                     result = JacValue(self, value=atom_res.value.clear())
+                    self.candidate_writethrough()
                 elif op == "popitem":
                     result = JacValue(self, value=list(atom_res.value.popitem()))
+                    self.candidate_writethrough()
                 elif op == "values":
                     result = JacValue(self, value=list(atom_res.value.values()))
                 if result:
@@ -1044,8 +1048,10 @@ class Interp(VirtualMachine):
                     args = self.run_expr_list(kid[2]).value
                     if op == "pop":
                         result = JacValue(self, value=atom_res.value.pop(*args))
+                        self.candidate_writethrough()
                     elif op == "update":
                         result = JacValue(self, value=atom_res.value.update(*args))
+                        self.candidate_writethrough()
                     elif op == "get":
                         result = JacValue(self, value=atom_res.value.get(*args))
                     if result:
@@ -1084,6 +1090,7 @@ class Interp(VirtualMachine):
             try:
                 if op == "reverse":
                     result = JacValue(self, value=atom_res.value.reverse())
+                    self.candidate_writethrough()
                 elif op == "reversed":
                     result = JacValue(self, value=list(reversed(atom_res.value)))
                 elif op == "copy":
@@ -1092,8 +1099,10 @@ class Interp(VirtualMachine):
                     result = JacValue(self, value=deepcopy(atom_res.value))
                 elif op == "sort":
                     result = JacValue(self, value=atom_res.value.sort())
+                    self.candidate_writethrough()
                 elif op == "clear":
                     result = JacValue(self, value=atom_res.value.clear())
+                    self.candidate_writethrough()
                 elif op == "max":
                     result = JacValue(self, value=max(atom_res.value))
                 elif op == "min":
@@ -1108,6 +1117,7 @@ class Interp(VirtualMachine):
                     )
                 elif len(kid) < 2 and op == "pop":
                     result = JacValue(self, value=atom_res.value.pop())
+                    self.candidate_writethrough()
                 if result:
                     if len(kid) > 1:
                         self.rt_warn(f"{op} does not take parameters, ignoring", kid[2])
@@ -1118,16 +1128,21 @@ class Interp(VirtualMachine):
                         result = JacValue(self, value=atom_res.value.index(*args))
                     elif op == "append":
                         result = JacValue(self, value=atom_res.value.append(*args))
+                        self.candidate_writethrough()
                     elif op == "extend":
                         result = JacValue(self, value=atom_res.value.extend(*args))
+                        self.candidate_writethrough()
                     elif op == "insert":
                         result = JacValue(self, value=atom_res.value.insert(*args))
+                        self.candidate_writethrough()
                     elif op == "remove":
                         result = JacValue(self, value=atom_res.value.remove(*args))
+                        self.candidate_writethrough()
                     elif op == "count":
                         result = JacValue(self, value=atom_res.value.count(*args))
                     elif op == "pop":
                         result = JacValue(self, value=atom_res.value.pop(*args))
+                        self.candidate_writethrough()
                     if result:
                         return result
             except Exception as e:
@@ -1413,7 +1428,6 @@ class Interp(VirtualMachine):
                     kid[1],
                 )
                 return atom_res
-            atom_res.unwrap()
             try:
                 return JacValue(self, ctx=atom_res.value, name=idx)
             except Exception:
@@ -1430,7 +1444,6 @@ class Interp(VirtualMachine):
                     kid[1],
                 )
                 return atom_res
-            atom_res.unwrap()
             try:
                 return JacValue(self, ctx=atom_res.value, name=idx, end=end)
             except Exception:
@@ -1603,8 +1616,6 @@ class Interp(VirtualMachine):
                 res["result"] = walk.anchor_value()
 
             tr = JacValue(self, value=res if walk.for_queue() else walk.anchor_value())
-
-            tr.unwrap()
             ret.append(tr.value)
             self.inherit_runtime_state(walk)
             walk.register_yield_or_destroy(self.yielded_walkers_ids)
