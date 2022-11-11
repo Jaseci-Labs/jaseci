@@ -33,58 +33,56 @@ class Node(Element, Anchored):
     @property
     def smart_edge_list(self):
         if not len(self._fast_edge_ids):
-            self._fast_edge_ids.extend(self.edge_ids)
-            for k in self.fast_edges.keys():
-                for v in self.fast_edges[k]:
-                    self.smart_update_fast_ids(k, v)
+            self.smart_build_fast_edge_ids()
         return self._fast_edge_ids
 
+    def smart_build_fast_edge_ids(self):
+        self._fast_edge_ids.extend(self.edge_ids)
+        for k in self.fast_edges.keys():
+            for v in self.fast_edges[k]:
+                self.smart_update_fast_ids(k, v)
+                node = self._h.get_obj(self._m_id, v[0])
+                link_order = [node, self] if v[1] == FROM else [self, node]
+                edge = Edge(m_id=self._m_id, h=self._h, kind="edge", name=k)
+                edge.from_node_id = link_order[0]
+                edge.to_node_id = link_order[1]
+                edge.is_bidirected = v[1] == BI
+                self._fast_edge_ids.append()
+
     def smart_add_edge(self, obj):
-        if not obj.is_fast():
-            self.edge_ids.add_obj(obj)
+        if not len(self._fast_edge_ids):
+            self.smart_build_fast_edge_ids()
+        self._fast_edge_ids.add_obj(obj)
+        if obj.is_fast():
+            self.smart_edge_to_fast_edge(obj)
         else:
-            if not len(self._fast_edge_ids) and len(self.edge_ids):
-                self._fast_edge_ids.extend(self.edge_ids)
-            if obj.name not in self.fast_edges:
-                self.fast_edges[obj.name] = []
-            details = [
-                obj.opposing_node(self).jid,
-                BI if obj.is_bidirected() else TO if obj.from_node() == self else FROM,
-            ]
-            self.fast_edges[obj.name].append(details)
-            self._fast_edge_ids.add_obj(obj)
+            self.edge_ids.add_obj(obj)
+
+    def smart_edge_to_fast_edge(self, obj):
+        if obj.name not in self.fast_edges:
+            self.fast_edges[obj.name] = []
+        details = [
+            obj.opposing_node(self).jid,
+            BI if obj.is_bidirected() else TO if obj.from_node() == self else FROM,
+        ]
+        self.fast_edges[obj.name].append(details)
 
     def smart_remove_edge(self, obj):
         if obj.is_fast():
             pluck = None
             for i in self.fast_edges[obj.name]:
                 if i[0] == obj.opposing_node(self).jid:
-                    pluck = i
-                    break
+                    if obj.is_bidirected() or not (
+                        i[1] == TO and obj.to_node() == self
+                    ):
+                        pluck = i
+                        break
             self.fast_edges[obj.name].remove(pluck)
             if not len(self.fast_edges[obj.name]):
                 del self.fast_edges[obj.name]
-            self._fast_edge_ids.remove_obj(obj)
         elif obj and obj.jid in self.edge_ids:
             self.edge_ids.remove_obj(obj)
-
-    def smart_update_fast_ids(self, name, details):
-        node = self._h.get_obj(self._m_id, details[0])
-        self._fast_edge_ids.append(
-            self.attach(
-                node_obj=node,
-                edge_set=[
-                    Edge(
-                        m_id=self._m_id,
-                        h=self._h,
-                        kind="edge",
-                        name=name,
-                    )
-                ],
-                as_outbound=details[1] in [TO, BI],
-                as_bidirected=details[1] == BI,
-            )
-        )
+        self._fast_edge_ids.remove_obj(obj)
 
     def attach(self, node_obj, edge_set=None, as_outbound=True, as_bidirected=False):
         """
