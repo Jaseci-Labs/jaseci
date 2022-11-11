@@ -40,14 +40,12 @@ class Node(Element, Anchored):
         self._fast_edge_ids.extend(self.edge_ids)
         for k in self.fast_edges.keys():
             for v in self.fast_edges[k]:
-                self.smart_update_fast_ids(k, v)
-                node = self._h.get_obj(self._m_id, v[0])
-                link_order = [node, self] if v[1] == FROM else [self, node]
+                link_order = [v[0], self.jid] if v[1] == FROM else [self.jid, v[0]]
                 edge = Edge(m_id=self._m_id, h=self._h, kind="edge", name=k)
                 edge.from_node_id = link_order[0]
                 edge.to_node_id = link_order[1]
-                edge.is_bidirected = v[1] == BI
-                self._fast_edge_ids.append()
+                edge.bidirected = v[1] == BI
+                self._fast_edge_ids.add_obj(edge)
 
     def smart_add_edge(self, obj):
         if not len(self._fast_edge_ids):
