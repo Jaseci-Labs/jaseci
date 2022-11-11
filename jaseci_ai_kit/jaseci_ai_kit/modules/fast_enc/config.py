@@ -1,19 +1,21 @@
 import os
-from pathlib import Path
+
+# from pathlib import Path
+
+# import fast_enc
 
 
 def make_path(file):
     return os.path.join(os.path.dirname(__file__), file)
 
 
-model_dir = Path("pretrained_model")
-model_dir.mkdir(exist_ok=True, parents=True)
-model_path = model_dir / "model.ftz"
+model_dir = make_path("pretrained")
+if not os.path.isdir(model_dir):
+    model_dir = make_path("pretrained")
+    os.mkdir(model_dir)
+model_path = make_path(model_dir + "\\model.ftz")
 model_file_path = make_path(model_path)
-train_path = model_dir / "train.txt"
-train_file_path = make_path(train_path)
+train_file_path = make_path(model_dir + "\\train.txt")
 test_file_path = make_path("test_sentences.txt")
-json_file_path = model_dir / "training_data.json"
-clf_json_file_path = make_path(json_file_path)
-base_file_path = model_dir / "base_model.json"
-base_json_file_path = make_path(base_file_path)
+clf_json_file_path = make_path(model_dir + "\\training_data.json")
+base_json_file_path = make_path(model_dir + "\\base_model.json")
