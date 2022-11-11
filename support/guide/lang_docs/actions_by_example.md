@@ -2,7 +2,7 @@
 
 ## Basic action example 
 
-Jaseci has set of inbuilt actions. Also you can load and unload actions. to see the available actions in jaseci session try running `actions list`. Here are two basic example of jaseci `date` actions.
+Jaseci has set of inbuilt actions. Also you can load and unload actions in `jsctl` shell. to see the available actions in jaseci session try running `actions list`. Here are two basic example of jaseci `date` actions.
 
 **Example 1:**
 
@@ -71,6 +71,11 @@ Jack  Birthdate Quantized to year  1997-01-01T00:00:00
 
 ## Basic actions with presets and event triggers
 
+
+> **Note**
+> `here` refers to the current node scope pertinent to the program's execution point and `visitor` refers to the pertinent walker scope pertinent to that particular point of execution. All variables, built-in characteristics, and operations of the linked object instance are fully accessible through these references.
+> 
+
 **Example 3:**
 ```
 node person {
@@ -79,6 +84,7 @@ node person {
 
     #this sets the birth year from the setter
     can date.quantize_to_year::visitor.year::>byear with setter entry;
+
     #this executes upon exit of the walker from node
     can std.out::byear," from ", visitor.info:: with exit;
 
@@ -86,6 +92,7 @@ node person {
 
 walker init {
 
+    #collect the current time
     has year=std.time_now();
     root {
         person1 = spawn here --> node::person(name="Josh", byear="1992-01-01");
