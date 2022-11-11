@@ -17,8 +17,8 @@ class Edge(Element, Anchored):
         self.from_node_id = None
         self.to_node_id = None
         self.bidirected: bool = False
-        Element.__init__(self, **kwargs)
         Anchored.__init__(self)
+        Element.__init__(self, **kwargs)
         if from_node:
             self.set_from_node(from_node)
         if to_node:
@@ -129,8 +129,8 @@ class Edge(Element, Anchored):
         """
         Write self through hook to persistent storage
         """
-        if not self.is_fast():
-            super().save(self)
+        # if not self.is_fast():
+        super().save()
 
     def destroy(self):
         """
@@ -138,10 +138,8 @@ class Edge(Element, Anchored):
         """
         base = self.from_node()
         target = self.to_node()
-        if base and self.jid in base.edge_ids:
-            base.edge_ids.remove_obj(self)
-        if target and self.jid in target.edge_ids:
-            target.edge_ids.remove_obj(self)
+        base.smart_remove_edge(self)
+        target.smart_remove_edge(self)
         Element.destroy(self)
 
     def dot_str(self, node_map=None, edge_map=None, detailed=False):
