@@ -711,10 +711,13 @@ PROMON_KUBE = {
                                     {
                                         "name": "root",
                                         "mountPath": "/host/root",
-                                        "mountPropagation": "HostToContainer",
                                         "readOnly": True,
                                     },
                                 ],
+                                "hostRootFsMount": {
+                                    "enabled": False,
+                                    "mountPropagation": "HostToContainer",
+                                },
                             }
                         ],
                         "hostNetwork": True,

@@ -103,6 +103,20 @@ class JsOrc:
                 logger.info(
                     f"Creating {kind} for `{name}` with namespace `{namespace}`"
                 )
+                # HACK
+                if kind == "DaemonSet" and name == "jaseci-prometheus-node-exporter":
+                    # TODO: temporary hack until we figure out why kube config from the python file is not updating
+                    del conf["spec"]["template"]["spec"]["containers"][0][
+                        "volumeMounts"
+                    ][2]["mountPropagation"]
+                    conf["spec"]["template"]["spec"]["containers"][0][
+                        "hostRootFsMount"
+                    ] = {"enabled": False, "mountPropagation": "HostToContainer"}
+                    conf["spec"]["template"]["spec"]["containers"][0][
+                        "hostRootFs"
+                    ] = False
+                logger.info(conf)
+
             self.kube.create(kind, namespace, conf)
         except ApiException:
             if not self.quiet:
