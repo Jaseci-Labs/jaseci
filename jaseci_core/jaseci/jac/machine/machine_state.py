@@ -172,7 +172,7 @@ class MachineState:
         ret = JacSet()
         for i in edge_set.obj_list():
             for j in node_set.obj_list():
-                if i.jid in j.edge_ids:
+                if i.jid in j.smart_edge_list:
                     ret.add_obj(i)
                     break
         return ret
