@@ -62,6 +62,8 @@ class AbstractJacAPIView(APIView):
     def log_request_stats(self):
         """Api call preamble"""
         tot_time = time() - self.start_time
+        # hook = self.caller._h
+        # hook.post_request_hook(tot_time) if hook.meta.run_svcs else None
         save_count = 0
         touch_count = 0
         db_touches = 0

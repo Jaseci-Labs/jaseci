@@ -5,7 +5,10 @@ from jaseci.utils.utils import logger
 from jaseci.svc import CommonService, ServiceState as Ss
 from jaseci.svc.kubernetes import Kube
 from jaseci.svc.actions_optimizer.actions_optimizer import ActionsOptimizer
-from jaseci.svc.actions_optimizer.actions_optimizer_policy import BackAndForthPolicy
+from jaseci.svc.actions_optimizer.actions_optimizer_policy import (
+    BackAndForthPolicy,
+    DefaultPolicy,
+)
 from .config import JSORC_CONFIG
 
 #################################################
@@ -84,7 +87,9 @@ class JsOrc:
         self.kube = kube
         self.quiet = quiet
         self.actions_optimizer = ActionsOptimizer(
-            kube=kube, policy=BackAndForthPolicy(module="use_enc")
+            # kube=kube, policy=BackAndForthPolicy(module="use_enc")
+            kube=kube,
+            policy=DefaultPolicy(),
         )
 
     def is_running(self, name: str, namespace: str):
@@ -137,6 +142,33 @@ class JsOrc:
                 )
             return e
 
+    def load_actions(self, name, mode):
+        """
+        Load an action as local, module or remote.
+        """
+        # We are using module for local
+        mode = "module" if mode == "local" else mode
+
+        if mode == "module":
+            self.actions_optimizer.load_action_module(name)
+        elif mode == "remote":
+            self.actions_optimizer.load_action_remote(name)
+
+    def unload_actions(self, name, mode):
+        """
+        Unload an action
+        """
+        pass
+
+    def retire_uservice(self, name):
+        pass
+
+    def get_actions_status(self, name):
+        """
+        Return the status of the action
+        """
+        return self.actions_optimizer.get_actions_status(name)
+
     def manage_actions(self, name):
         self.actions_optimizer.load_action(name, mode="auto")
 
@@ -144,6 +176,12 @@ class JsOrc:
         pass
 
     def post_action_call_hook(self, *args):
+        pass
+
+    def pre_request_hook(self, *args):
+        pass
+
+    def post_request_hook(self, *args):
         pass
 
     def optimize(self):

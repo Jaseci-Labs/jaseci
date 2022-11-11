@@ -13,7 +13,10 @@ from jaseci.actions.live_actions import (
     unload_module,
     load_remote_actions,
     load_local_actions,
+    live_actions,
+    live_action_modules,
 )
+from jaseci.actions.remote_actions import remote_actions
 import requests
 import copy
 from kubernetes.client.rest import ApiException
@@ -63,7 +66,7 @@ class ActionsOptimizer:
                 cmd = changes["remote"]
                 if cmd == "START":
                     url = self.spawn_remote(name)
-                    self.actions_state.start_remote_action(name, url)
+                    self.actions_state.start_remote_service(name, url)
                     self.actions_state.set_change_set(name, "remote", "STARTING")
                     if self.remote_action_ready_check(name, url):
                         self.load_action_remote(url)
@@ -110,9 +113,16 @@ class ActionsOptimizer:
                 )
                 logger.error(str(e))
 
+    def get_actions_status(self, name):
+        """
+        Return the state of action
+        """
+        return self.actions_state.get_state(name)
+
     def retire_remote(self, name):
         """
         Retire a microservice through the kube service
+        TODO
         """
         config = ACTION_CONFIGS[name]["remote"]
         self.kube_delete(config)
@@ -120,29 +130,74 @@ class ActionsOptimizer:
     def spawn_remote(self, name):
         """
         Spawn a microservice through the kube service
+        TODO
         """
         config = ACTION_CONFIGS[name]["remote"]
         self.kube_create(config)
-        # TODO: Hack for testing
         url = f"http://{config['Service']['metadata']['name']}/"
         return url
 
-    def load_action_remote(self, url):
-        load_remote_actions(url)
+    def load_action_remote(self, name):
+        """
+        Load a remote action.
+        JSORC will get the URL of the remote microservice and stand up a microservice if there isn't currently one in the cluster.
+        """
+        cur_state = self.actions_state.get_state(name)
+        if cur_state is None:
+            cur_state = self.actions_state.init_state(name)
+            logger.info("init state")
+
+        if cur_state["mode"] == "remote":
+            # Check if there is already a remote action loaded
+            return
+
+        url = self.actions_state.get_remote_url(name)
+        if url is None:
+            logger.info("spawning a uservice")
+            # Spawn a remote microservice
+            url = self.spawn_remote(name)
+            self.actions_state.start_remote_service(name, url)
+            cur_state = self.actions_state.get_state(name)
+
+        if cur_state["remote"]["status"] == "STARTING":
+            logger.info("service is starting")
+            if_ready = self.remote_action_ready_check(name, url)
+            if if_ready:
+                self.actions_state.set_remote_action_ready(name)
+                cur_state = self.actions_state.get_state(name)
+
+        if cur_state["remote"]["status"] == "READY":
+            logger.info("service is ready")
+            load_remote_actions(url)
+            self.actions_state.remote_action_loaded(name)
+
+        logger.info(f"live_actions: {live_actions}")
+        logger.info(f"live_action_modules: {live_action_modules}")
+        logger.info(f"remote_actions: {remote_actions}")
 
     def load_action_local(self, name):
-        """
-        Load a local action
-        """
-        local_path = ACTION_CONFIGS[name]["local"]
-        load_local_actions(local_path)
+        """ """
+        pass
 
     def load_action_module(self, name):
         """
         Load an action module
         """
+        cur_state = self.actions_state.get_state(name)
+        if cur_state is None:
+            cur_state = self.actions_state.init_state(name)
+
+        if cur_state["mode"] == "module":
+            # Check if there is already a local action loaded
+            return
+
         module = ACTION_CONFIGS[name]["module"]
         load_module_actions(module)
+        self.actions_state.module_action_loaded(name, module)
+
+        logger.info(f"live_actions: {live_actions}")
+        logger.info(f"live_action_modules: {live_action_modules}")
+        logger.info(f"remote_actions: {remote_actions}")
 
     def unload_action_remote(self, name):
         pass
@@ -150,6 +205,7 @@ class ActionsOptimizer:
     def unload_action_module(self, name):
         """
         Unload an action module
+        TODO
         """
         module = ACTION_CONFIGS[name]["module"]
         unload_module(module)
@@ -157,6 +213,7 @@ class ActionsOptimizer:
     def remote_action_ready_check(self, name, url):
         """
         Check if a remote action is ready by querying the action_spec endpoint
+        TODO
         """
         if url is None:
             return False

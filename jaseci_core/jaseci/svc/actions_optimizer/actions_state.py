@@ -12,6 +12,12 @@ class ActionsState:
         actions_state = {
             "ACTION_NAME": {
                 "mode": "local|remote",
+                "module": {
+                    "name": MDOULE_NAME
+                },
+                "local": {
+                    "path": LOCAL MODULE FILE PATH
+                },
                 "remote": {
                     "url": "remote_url of the action microservice",
                     "status": "READY|STARTING|RETIRING"
@@ -23,11 +29,24 @@ class ActionsState:
             "ACTION_NAME": {
                 "local": "START|STOP|STOP_WHEN_READY",
                 "remote": "START|STARTING|STOP|STOP_WHEN_READY"
-            }
+           }
         ]
         """
         self.state = {}
         self.change_set = {}
+
+    def init_state(self, name):
+        """
+        Initialize the data structure for the action state tracking for a specific action
+        """
+        self.state[name] = {
+            "mode": None,
+            "module": {"name": None},
+            "local": {"path": None},
+            "remote": {"url": None, "status": None},
+        }
+
+        return self.state[name]
 
     def if_changing(self):
         return len(self.change_set) > 0
@@ -41,25 +60,38 @@ class ActionsState:
         if len(self.change_set[name]) == 0:
             del self.change_set[name]
 
+    def module_action_loaded(self, name, module):
+        self.state[name]["mode"] = "module"
+        self.state[name]["module"]["loaded"] = True
+        self.state[name]["module"]["name"] = module
+
+        if name in self.change_set:
+            if "module" in self.change_set[name]:
+                del self.change_set[name]["module"]
+            if len(self.change_set[name]) == 0:
+                del self.change_set[name]
+
     def local_action_unloaded(self, name):
         del self.change_set[name]["local"]
 
     def remote_action_loaded(self, name):
         self.state[name]["mode"] = "remote"
-        self.state[name]["remote"]["status"] = "READY"
-        del self.change_set[name]["remote"]
-        if len(self.change_set[name]) == 0:
-            del self.change_set[name]
+        self.state[name]["remote"]["loaded"] = True
+
+        if name in self.change_set:
+            if "remote" in self.change_set[name]:
+                del self.change_set[name]["remote"]
+            if len(self.change_set[name]) == 0:
+                del self.change_set[name]
 
     def remote_action_unloaded(self, name):
         del self.change_set[name]["remote"]
 
-    def start_remote_action(self, name, url):
-        if name not in self.state:
-            self.state[name] = {}
+    def start_remote_service(self, name, url):
         self.state[name]["remote"] = {"status": "STARTING", "url": url}
-        logger.info("START REMOTE ACTION")
-        logger.info(self.state)
+
+    def set_remote_action_ready(self, name):
+        self.state[name]["remote"]["status"] = "READY"
 
     def remote_action_started(self, name):
         self.change_set[name]["remote"] = "STARTING"
