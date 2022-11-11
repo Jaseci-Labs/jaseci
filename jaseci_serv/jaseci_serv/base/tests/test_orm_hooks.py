@@ -94,7 +94,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertEqual(oload_test.name, otnode.name)
         # Below tests loading hex uuid strings and converting to uuid type
         newobj = otnode._h.get_obj_from_store(oload_test.jid.urn)
-        self.assertIn(oedge[0], newobj.smart_edge_list.obj_list())
+        self.assertIn(oedge[0], newobj.smart_edges)
 
         otnode.destroy()
         self.assertFalse(
@@ -192,7 +192,58 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertEqual(oload_test.name, otnode.name)
         # Below tests loading hex uuid strings and converting to uuid type
         newobj = otnode._h.get_obj_from_store(oload_test.id.urn)
-        self.assertIn(oedge[0], newobj.smart_edge_list.obj_list())
+        self.assertIn(oedge[0], newobj.smart_edges)
 
         otnode.destroy()
         self.assertIsNone(newobj._h.get_obj(oload_test._m_id, oload_test.id.urn))
+
+    def test_fast_edges(self):
+        """
+        Test that db hooks handle walkers ok
+        """
+        user = self.user
+        gph = Graph(m_id=0, h=user._h)
+        sent = Sentinel(m_id=0, h=gph._h)
+        sent.register_code(jtc.prog1)
+        test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
+        test_walker = sent.run_architype("get_gen_day")
+        test_walker.prime(test_node)
+        test_walker.context["date"] = "2010-08-03T03:00:00.000000"
+        user._h.commit()
+        before = JaseciObject.objects.filter(kind="edge").count()
+        test_walker.run()
+        user._h.commit()
+        after = JaseciObject.objects.filter(kind="edge").count()
+        self.assertEqual(before, 1)
+        self.assertEqual(after, 1)
+        test_walker.run()
+        user._h.commit()
+        after = JaseciObject.objects.filter(kind="edge").count()
+        self.assertEqual(after, 1)
+
+    def test_fast_edges_reloads(self):
+        """
+        Test that db hooks handle walkers ok
+        """
+        user = self.user
+        gph = Graph(m_id=0, h=user._h)
+        sent = Sentinel(m_id=0, h=gph._h)
+        sent.register_code(jtc.prog1)
+        test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
+        test_walker = sent.run_architype("get_gen_day")
+        test_walker.prime(test_node)
+        test_walker.context["date"] = "2010-08-03T03:00:00.000000"
+        user._h.commit()
+        user._h.clear_cache()
+        before = JaseciObject.objects.filter(kind="edge").count()
+        test_walker.run()
+        user._h.commit()
+        user._h.clear_cache()
+        after = JaseciObject.objects.filter(kind="edge").count()
+        self.assertEqual(before, 1)
+        self.assertEqual(after, 1)
+        test_walker.run()
+        user._h.commit()
+        user._h.clear_cache()
+        after = JaseciObject.objects.filter(kind="edge").count()
+        self.assertEqual(after, 1)

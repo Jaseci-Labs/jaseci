@@ -102,7 +102,7 @@ class Edge(Element, Anchored):
         """
         Write self through hook to persistent storage
         """
-        if not self.is_fast():
+        if self.is_fast():
             self._persist = False
         super().save()
 
