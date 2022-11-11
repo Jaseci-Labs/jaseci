@@ -21,6 +21,7 @@ class JacTests(TestCaseHelper, TestCase):
         super().tearDown()
 
     def test_bug_check1(self):
+        self.logger_on()
         sent = Sentinel(m_id=0, h=self.meta.build_hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtp.bug_check1)

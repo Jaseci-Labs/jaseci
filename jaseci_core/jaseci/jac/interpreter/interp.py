@@ -723,7 +723,7 @@ class Interp(VirtualMachine):
             | NULL
             | NAME
             | global_ref
-            | node_edge_ref
+            | node_edge_ref+
             | list_val
             | dict_val
             | LPAREN expression RPAREN
@@ -1240,7 +1240,7 @@ class Interp(VirtualMachine):
         self.rt_error(f"Call to {str_op} is invalid.", jac_ast)
         return atom_res
 
-    def run_node_edge_ref(self, jac_ast):
+    def run_node_edge_ref(self, jac_ast, viable_nodes=None):
         """
         node_edge_ref:
             node_ref filter_ctx?
@@ -1248,36 +1248,44 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "node_ref":
-            result = self.run_node_ref(kid[0])
+            result = self.run_node_ref(kid[0], viable_nodes=viable_nodes)
             if len(kid) > 1:
                 result = self.run_filter_ctx(kid[1], result)
             return JacValue(self, value=result)
 
         elif kid[0].name == "edge_ref":
-            relevant_edges = self.run_edge_ref(kid[0])
-            result = self.edge_to_node_jac_set(self.run_edge_ref(kid[0]))
-            if len(kid) > 1 and kid[1].name == "node_ref":
-                nres = self.run_node_ref(kid[1])
-                if len(kid) > 2:
-                    nres = self.run_filter_ctx(kid[2], nres)
-                result = result * nres
-                relevant_edges = self.edges_filter_on_nodes(relevant_edges, result)
-            self._relevant_edges = relevant_edges
+            if not viable_nodes:
+                viable_nodes = [None]
+            final_result = JacSet()
+            self._relevant_edges = JacSet()
+            for i in viable_nodes:
+                relevant_edges = self.run_edge_ref(kid[0], location=i)
+                result = self.edge_to_node_jac_set(relevant_edges)
+                if len(kid) > 1 and kid[1].name == "node_ref":
+                    nres = self.run_node_ref(kid[1], viable_nodes=result)
+                    if len(kid) > 2:
+                        nres = self.run_filter_ctx(kid[2], nres)
+                    result = result * nres
+                    relevant_edges = self.edges_filter_on_nodes(relevant_edges, result)
+                self._relevant_edges += relevant_edges
+                final_result += result
             return JacValue(self, value=result)
 
-    def run_node_ref(self, jac_ast, is_spawn=False):
+    def run_node_ref(self, jac_ast, is_spawn=False, viable_nodes=None):
         """
         node_ref: NODE_DBL_COLON NAME;
         """
         kid = self.set_cur_ast(jac_ast)
         if not is_spawn:
             result = JacSet()
+            if not viable_nodes:
+                viable_nodes = self.viable_nodes()
             if len(kid) > 1:
-                for i in self.viable_nodes().obj_list():
+                for i in viable_nodes.obj_list():
                     if i.get_architype().is_instance(kid[-1].token_text()):
                         result.add_obj(i)
             else:
-                result += self.viable_nodes()
+                result += viable_nodes
         else:
             result = self.parent().run_architype(
                 kid[-1].token_text(), kind="node", caller=self
@@ -1318,13 +1326,13 @@ class Interp(VirtualMachine):
         )
         return JacValue(self, value=obj)
 
-    def run_edge_ref(self, jac_ast, is_spawn=False):
+    def run_edge_ref(self, jac_ast, is_spawn=False, location=None):
         """
         edge_ref: edge_to | edge_from | edge_any;
         """
         kid = self.set_cur_ast(jac_ast)
         if not is_spawn:
-            return self.run_rule(kid[0])
+            return self.run_rule(kid[0], location)
         else:
             if len(kid[0].kid) > 2:
                 result = self.parent().run_architype(
@@ -1343,17 +1351,17 @@ class Interp(VirtualMachine):
                 )
             return result
 
-    def run_edge_to(self, jac_ast):
+    def run_edge_to(self, jac_ast, location=None):
         """
         edge_to:
             '-->'
             | '-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
         """
         kid = self.set_cur_ast(jac_ast)
+        if not location:
+            location = self.current_node
         result = JacSet()
-        for i in (
-            self.current_node.outbound_edges() + self.current_node.bidirected_edges()
-        ):
+        for i in location.outbound_edges() + location.bidirected_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
                 continue
             result.add_obj(i)
@@ -1363,17 +1371,17 @@ class Interp(VirtualMachine):
             self.rt_error("Assigning values not allowed here", kid[3])
         return result
 
-    def run_edge_from(self, jac_ast):
+    def run_edge_from(self, jac_ast, location=None):
         """
         edge_from:
             '<--'
             | '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '-';
         """
         kid = self.set_cur_ast(jac_ast)
+        if not location:
+            location = self.current_node
         result = JacSet()
-        for i in (
-            self.current_node.inbound_edges() + self.current_node.bidirected_edges()
-        ):
+        for i in location.inbound_edges() + location.bidirected_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
                 continue
             result.add_obj(i)
@@ -1383,7 +1391,7 @@ class Interp(VirtualMachine):
             self.rt_error("Assigning values not allowed here", kid[3])
         return result
 
-    def run_edge_any(self, jac_ast):
+    def run_edge_any(self, jac_ast, location=None):
         """
         edge_any:
             '<-->'
@@ -1391,8 +1399,10 @@ class Interp(VirtualMachine):
         NOTE: these do not use strict bidirected semantic but any edge
         """
         kid = self.set_cur_ast(jac_ast)
+        if not location:
+            location = self.current_node
         result = JacSet()
-        for i in self.current_node.attached_edges():
+        for i in location.attached_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
                 continue
             result.add_obj(i)

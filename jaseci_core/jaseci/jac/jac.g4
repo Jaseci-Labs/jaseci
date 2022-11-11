@@ -210,7 +210,7 @@ atom:
 	| dict_val
 	| LPAREN expression RPAREN
 	| ability_op NAME spawn_ctx?
-	| atom atom_trailer+
+	| atom atom_trailer
 	| KW_SYNC atom
 	| spawn
 	| ref
