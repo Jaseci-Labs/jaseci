@@ -6,7 +6,7 @@ import pytest
 class T5SumTest(CoreTest):
     fixture_src = __file__
     """
-    Test Class for Tfm_Ner Module to test the functionality of api's
+    Test Class for T5Sum Module to test the functionality of api's
     """
 
     @classmethod
