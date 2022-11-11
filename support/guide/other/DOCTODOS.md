@@ -1,3 +1,4 @@
 - Can use publogin in jsctl to log in to public jaseci server, can use info api to test
 - Can use first user api to create first superuser easily
 - Can use new script command in jsctl to run lists of command from file
+- Tests can be named and executed individually
