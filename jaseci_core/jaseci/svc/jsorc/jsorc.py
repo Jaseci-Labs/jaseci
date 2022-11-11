@@ -4,7 +4,8 @@ from kubernetes.client.rest import ApiException
 from jaseci.utils.utils import logger
 from jaseci.svc import CommonService, ServiceState as Ss
 from jaseci.svc.kubernetes import Kube
-from jaseci.svc.action_optimizer.action_optimizer import ActionOptimizer
+from jaseci.svc.actions_optimizer.actions_optimizer import ActionsOptimizer
+from jaseci.svc.actions_optimizer.actions_optimizer_policy import BackAndForthPolicy
 from .config import JSORC_CONFIG
 
 #################################################
@@ -82,7 +83,9 @@ class JsOrc:
         self.meta = meta
         self.kube = kube
         self.quiet = quiet
-        self.action_optimizer = ActionOptimizer(kube=kube)
+        self.actions_optimizer = ActionsOptimizer(
+            kube=kube, policy=BackAndForthPolicy(module="use_enc")
+        )
 
     def is_running(self, name: str, namespace: str):
         try:
@@ -135,7 +138,7 @@ class JsOrc:
             return e
 
     def manage_actions(self, name):
-        self.action_optimizer.load_action(name, mode="auto")
+        self.actions_optimizer.load_action(name, mode="auto")
 
     def pre_action_call_hook(self, *args):
         pass
@@ -144,7 +147,7 @@ class JsOrc:
         pass
 
     def optimize(self):
-        self.action_optimizer.run()
+        self.actions_optimizer.run()
 
     def check(self, namespace, svc):
 

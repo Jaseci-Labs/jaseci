@@ -1,4 +1,5 @@
 from kubernetes import config
+from jaseci.utils.utils import logger
 from kubernetes.client import ApiClient, CoreV1Api, AppsV1Api, RbacAuthorizationV1Api
 
 from jaseci.svc import CommonService
@@ -51,14 +52,17 @@ class Kube:
         else:
             return self.read_apis[api](name=name, namespace=namespace)
 
-    def delete(self, api: str, name: str, namespace: str = None):
+    def delete(self, api: str, name: str, namespace: str):
         # TODO: Need to think about what to delete vs keep when deleting k8s resources, just skipping PVCs for now
         if api == "PersistentVolumeClaim":
             return
         if api.startswith("ClusterRole"):
             self.delete_apis[api](name=name)
         else:
-            return self.delete_apis[api](name=name, namespace=namespace)
+            logger.info("IN kube delete")
+            logger.info(name)
+            logger.info(namespace)
+            self.delete_apis[api](name=name, namespace=namespace)
 
     def defaults(self):
         self.create_apis = {
