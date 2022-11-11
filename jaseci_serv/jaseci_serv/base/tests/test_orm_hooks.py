@@ -247,27 +247,3 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         user._h.clear_cache()
         after = JaseciObject.objects.filter(kind="edge").count()
         self.assertEqual(after, 1)
-
-    # def test_fast_edges_correcting(self):
-    #     """
-    #     Test that db hooks handle walkers ok
-    #     """
-    #     user = self.user
-    #     gph = Graph(m_id=0, h=user._h)
-    #     sent = Sentinel(m_id=0, h=gph._h)
-    #     sent.register_code(jtc.prog1)
-    #     test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
-    #     test_walker = sent.run_architype("get_gen_day")
-    #     test_walker.prime(test_node)
-    #     test_walker.context["date"] = "2010-08-03T03:00:00.000000"
-    #     user._h.commit()
-    #     before = JaseciObject.objects.filter(kind="edge").count()
-    #     test_walker.run()
-    #     user._h.commit()
-    #     after = JaseciObject.objects.filter(kind="edge").count()
-    #     self.assertEqual(before, 1)
-    #     self.assertEqual(after, 1)
-    #     test_walker.run()
-    #     user._h.commit()
-    #     after = JaseciObject.objects.filter(kind="edge").count()
-    #     self.assertEqual(after, 1)
