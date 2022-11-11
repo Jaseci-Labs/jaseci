@@ -42,7 +42,6 @@ class NetLibTest(CoreTest):
         self.assertEqual(ret["report"][0], 16)
 
     def test_pack_and_destroy(self):
-
         self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],

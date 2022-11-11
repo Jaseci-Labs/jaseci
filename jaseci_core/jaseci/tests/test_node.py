@@ -87,13 +87,6 @@ class NodeTests(TestCaseHelper, TestCase):
         node1.leave_memebership_of(hdgd1)
         self.assertEqual(len(hdgd1.member_node_ids), 0)
 
-    def test_dimensions_must_match_to_connect_nodes(self):
-        """Test dimension matching requirement for node connection"""
-        node1 = Node(m_id=0, h=self.meta.build_hook())
-        hdgd1 = Node(m_id=0, h=node1._h, name="yeah dude", dimension=1)
-        node1.attach_outbound(hdgd1)
-        self.assertFalse(node1.is_attached_out(hdgd1))
-
     def test_inherit_from_element_edge(self):
         """Test that inheriting params with kwargs works"""
         hook = self.meta.build_hook()

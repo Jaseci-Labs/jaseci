@@ -60,6 +60,8 @@ class Node(Element, Anchored):
                     pluck = i
                     break
             self.fast_edges[obj.name].remove(pluck)
+            if not len(self.fast_edges[obj.name]):
+                del self.fast_edges[obj.name]
             self._fast_edge_ids.remove_obj(obj)
         elif obj and obj.jid in self.edge_ids:
             self.edge_ids.remove_obj(obj)
@@ -401,7 +403,7 @@ class Node(Element, Anchored):
         """
         Destroys self from memory and persistent storage
         """
-        for i in self.edge_ids.obj_list():
+        for i in self.edge_ids.obj_list() + self._fast_edge_ids.obj_list():
             i.destroy()
         super().destroy()
 
