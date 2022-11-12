@@ -44,12 +44,12 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         node1 = Node(m_id=mast._m_id, h=mast._h)
         node2 = Node(m_id=mast._m_id, h=mast._h)
         edge = node1.attach_outbound(node2)
-        self.assertEqual(len(node1.edge_ids), 1)
-        self.assertEqual(len(node2.edge_ids), 1)
+        self.assertEqual(len(node1.smart_edge_list), 1)
+        self.assertEqual(len(node2.smart_edge_list), 1)
         self.assertEqual(len(edge), 1)
         edge[0].destroy()
-        self.assertEqual(len(node1.edge_ids), 0)
-        self.assertEqual(len(node2.edge_ids), 0)
+        self.assertEqual(len(node1.smart_edge_list), 0)
+        self.assertEqual(len(node2.smart_edge_list), 0)
 
     def test_object_creation_by_sentinel_no_leaks(self):
         """

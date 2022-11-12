@@ -1,4 +1,5 @@
 import io
+import os
 import pstats
 import cProfile
 import pdb
@@ -209,6 +210,17 @@ def perf_test_stop(perf_prof):
     s = s.getvalue()
     s = "ncalls" + s.split("ncalls")[-1]
     s = "\n".join([",".join(line.rstrip().split(None, 5)) for line in s.split("\n")])
+    return s
+
+
+def perf_test_to_b64(perf_prof, do_delete=True):
+    s = ""
+    fn = f"{id(perf_prof)}.prof"
+    if os.path.exists(fn):
+        with open(fn, "rb") as image_file:
+            s = base64.b64encode(image_file.read()).decode()
+        if do_delete:
+            os.remove(fn)
     return s
 
 

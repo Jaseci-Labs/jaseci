@@ -16,6 +16,7 @@ from jaseci.element.super_master import SuperMaster
 from jaseci.svc import MetaService
 from jaseci.utils.utils import copy_func
 from .book_tools import Book
+from jaseci.utils.utils import logger, perf_test_start, perf_test_stop
 
 session = None
 
@@ -321,6 +322,7 @@ def reset():
 
 @click.command(help="Run multiple commands sequentially from file")
 @click.argument("filename", type=str, required=True)
+@click.option("--profile", "-p", is_flag=True)
 @click.option(
     "--output",
     "-o",
@@ -329,7 +331,9 @@ def reset():
     type=str,
     help="Filename to dump output of this command call.",
 )
-def script(filename, output):
+def script(filename, profile, output):
+    if profile:
+        prof = perf_test_start()
     if not os.path.isfile(filename):
         click.echo("File not found!")
         return
@@ -345,7 +349,12 @@ def script(filename, output):
             with open(output, "a") as f:
                 f.write(f"Output for {i}:\n")
                 f.write(res.stdout)
+    perf = perf_test_stop(prof)
+    click.echo(perf)
     if output:
+        with open(output, "a") as f:
+            f.write(f"\nProfile:\n")
+            f.write(perf)
         click.echo(f"[saved to {output}]")
 
 
