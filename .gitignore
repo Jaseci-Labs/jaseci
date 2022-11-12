@@ -19,6 +19,8 @@ venv
 .session
 .DS_Store
 build
+test
+test-journal
 .vscode
 js.session
 .idea
