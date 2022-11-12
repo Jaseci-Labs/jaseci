@@ -58,9 +58,12 @@ class Node(Element, Anchored):
                 self._fast_edge_ids.add_obj(edge)
 
     def smart_add_edge(self, obj):
+        # make sure fast edges built
         if not len(self._fast_edge_ids):
             self.smart_build_fast_edge_ids()
+        # add new edge
         self._fast_edge_ids.add_obj(obj)
+        # then store how needed
         if obj.is_fast():
             self.smart_edge_to_fast_edge(obj)
         else:
@@ -416,7 +419,7 @@ class Node(Element, Anchored):
         """
         Destroys self from memory and persistent storage
         """
-        for i in self.edge_ids.obj_list() + self._fast_edge_ids.obj_list():
+        for i in self.smart_edges:
             i.destroy()
         super().destroy()
 

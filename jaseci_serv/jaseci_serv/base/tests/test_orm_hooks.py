@@ -265,19 +265,24 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
     def test_fast_edges_node_destroy(self):
         self.logger_on()
         user = self.user
+        e_chk = lambda x: self.assertEqual(
+            user._h.get_object_distribution()[edge.Edge], x
+        )
         snode = node.Node(m_id=0, h=user._h)
         tnode = node.Node(m_id=0, h=user._h)
         cedge = edge.Edge(m_id=0, h=user._h)
+        e_chk(1)
         cedge.connect(snode, tnode)
+        e_chk(1)
         user._h.commit()
         user._h.clear_cache()
         snode = user._h.get_obj(0, snode.jid)
         tnode = user._h.get_obj(0, tnode.jid)
         self.assertEqual(len(snode.outbound_edges()), 1)
+        e_chk(1)
         self.assertEqual(len(tnode.inbound_edges()), 1)
-        edge_num = user._h.get_object_distribution()[edge.Edge]
-        self.assertEqual(edge_num, 2)
+        e_chk(2)
         snode.destroy()
+        e_chk(1)
         tnode.destroy()
-        edge_num = user._h.get_object_distribution()[edge.Edge]
-        self.assertEqual(edge_num, 0)
+        e_chk(0)
