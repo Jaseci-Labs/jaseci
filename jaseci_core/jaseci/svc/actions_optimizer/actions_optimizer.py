@@ -92,7 +92,6 @@ class ActionsOptimizer:
             name = conf["metadata"]["name"]
             # TODO: should we use jsorc's create function here
             try:
-                logger.info(f"ActionsOptimzer: creating {kind} for {name}")
                 self.kube.create(kind, namespace, conf)
             except ApiException:
                 logger.error(f"Error creating {kind} for {name}")
@@ -147,7 +146,6 @@ class ActionsOptimizer:
         cur_state = self.actions_state.get_state(name)
         if cur_state is None:
             cur_state = self.actions_state.init_state(name)
-            logger.info("init state")
 
         if cur_state["mode"] == "remote" and cur_state["remote"]["status"] == "READY":
             # Check if there is already a remote action loaded
@@ -155,27 +153,20 @@ class ActionsOptimizer:
 
         url = self.actions_state.get_remote_url(name)
         if url is None:
-            logger.info("spawning a uservice")
             # Spawn a remote microservice
             url = self.spawn_remote(name)
             self.actions_state.start_remote_service(name, url)
             cur_state = self.actions_state.get_state(name)
 
         if cur_state["remote"]["status"] == "STARTING":
-            logger.info("service is starting")
             if_ready = self.remote_action_ready_check(name, url)
             if if_ready:
                 self.actions_state.set_remote_action_ready(name)
                 cur_state = self.actions_state.get_state(name)
 
         if cur_state["remote"]["status"] == "READY":
-            logger.info("service is ready")
             load_remote_actions(url)
             self.actions_state.remote_action_loaded(name)
-
-        logger.info(f"live_actions: {live_actions}")
-        logger.info(f"live_action_modules: {live_action_modules}")
-        logger.info(f"remote_actions: {remote_actions}")
 
     def load_action_local(self, name):
         """ """
@@ -196,10 +187,6 @@ class ActionsOptimizer:
         module = ACTION_CONFIGS[name]["module"]
         load_module_actions(module)
         self.actions_state.module_action_loaded(name, module)
-
-        logger.info(f"live_actions: {live_actions}")
-        logger.info(f"live_action_modules: {live_action_modules}")
-        logger.info(f"remote_actions: {remote_actions}")
 
     def unload_action_module(self, name):
         """
@@ -249,7 +236,6 @@ class ActionsOptimizer:
         if url is None:
             return False
         spec_url = url.rstrip("/") + ACTIONS_SPEC_LOC
-        logger.info(f"Checking if remote action {name} is ready at {spec_url}")
         headers = {"content-type": "application/json"}
         try:
             res = requests.get(
