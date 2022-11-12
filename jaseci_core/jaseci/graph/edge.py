@@ -113,13 +113,7 @@ class Edge(Element, Anchored):
         base = self.from_node()
         target = self.to_node()
         base.smart_remove_edge(self)
-        # logger.info(
-        #     f"Base: {base.jid} {base.fast_edges}, {base.smart_edges}, {base.edge_ids}"
-        # )
         target.smart_remove_edge(self)
-        # logger.info(
-        #     f"Target: {target.jid} {target.fast_edges}, {target.smart_edges}, {target.edge_ids} "
-        # )
         super().destroy()
 
     def dot_str(self, node_map=None, edge_map=None, detailed=False):

@@ -90,8 +90,6 @@ class Node(Element, Anchored):
                 del self.fast_edges[obj.name]
         elif obj and obj.jid in self.edge_ids:
             self.edge_ids.remove_obj(obj)
-        # if obj.jid in self._fast_edge_ids:
-        #     self._fast_edge_ids.remove_obj(obj)
         self.clear_fast_edge_ids()
         self.save()
 

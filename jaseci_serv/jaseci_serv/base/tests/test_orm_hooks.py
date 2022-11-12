@@ -200,9 +200,6 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertIsNone(newobj._h.get_obj(oload_test._m_id, oload_test.id.urn))
 
     def test_fast_edges(self):
-        """
-        Test that db hooks handle walkers ok
-        """
         user = self.user
         gph = Graph(m_id=0, h=user._h)
         sent = Sentinel(m_id=0, h=gph._h)
@@ -224,9 +221,6 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertEqual(after, 1)
 
     def test_fast_edges_reloads(self):
-        """
-        Test that db hooks handle walkers ok
-        """
         user = self.user
         gph = Graph(m_id=0, h=user._h)
         sent = Sentinel(m_id=0, h=gph._h)
@@ -250,10 +244,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         after = JaseciObject.objects.filter(kind="edge").count()
         self.assertEqual(after, 1)
 
-    def test_fast_edges_detach1(self):
-        """
-        Test that db hooks handle walkers ok
-        """
+    def test_fast_edges_detach(self):
         self.logger_on()
         user = self.user
         snode = node.Node(m_id=0, h=user._h)
@@ -264,27 +255,10 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         user._h.clear_cache()
         snode = user._h.get_obj(0, snode.jid)
         tnode = user._h.get_obj(0, tnode.jid)
-        snode.detach(tnode)
-
-        # self.log(snode.jid, snode.fast_edges, snode.smart_edges, snode.edge_ids)
-        # self.log(tnode.jid, tnode.fast_edges, tnode.smart_edges, tnode.edge_ids)
-        self.assertEqual(len(snode.smart_edges), 0)
-        self.assertEqual(len(tnode.smart_edges), 0)
-
-    def test_fast_edges_detach2(self):
-        """
-        Test that db hooks handle walkers ok
-        """
-        self.logger_on()
-        user = self.user
-        snode = node.Node(m_id=0, h=user._h)
-        tnode = node.Node(m_id=0, h=user._h)
-        cedge = edge.Edge(m_id=0, h=user._h)
-        cedge.connect(snode, tnode)
-        user._h.commit()
-        user._h.clear_cache()
         self.assertEqual(len(snode.outbound_edges()), 1)
+        self.assertEqual(len(tnode.inbound_edges()), 1)
         snode.detach(tnode)
-
+        self.assertEqual(len(snode.outbound_edges()), 0)
+        self.assertEqual(len(tnode.inbound_edges()), 0)
         self.assertEqual(len(snode.smart_edges), 0)
         self.assertEqual(len(tnode.smart_edges), 0)
