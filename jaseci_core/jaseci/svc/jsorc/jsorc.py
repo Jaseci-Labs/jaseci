@@ -145,37 +145,46 @@ class JsOrc:
             return e
 
     # TODO: should we have a separate and dedicated benchmark service?
-    def benchmark_start(self, benchmark_name):
+    def benchmark_start(self):
         """
         Put JSORC under benchmark mode.
         """
         self.benchmark = True
-        self.benchmark_requests[benchmark_name] = {}
+        self.benchmark_requests = {}
 
-    def benchmark_stop(self, benchmark_name, report):
+    def benchmark_stop(self, report):
         """
         Stop benchmark mode and report result during the benchmark period
         """
         if not self.benchmark:
             return {}
 
-        res = self.benchmark_report(benchmark_name)
-        del self.benchmark_requests[benchmark_name]
+        res = self.benchmark_report()
+        self.benchmark_requests = {}
+        self.benchmark = False
 
         if report:
             return res
         else:
             return {}
 
-    def benchmark_report(self, benchmark_name):
+    def benchmark_report(self):
         """
         Summarize benchmark results and report.
         """
         summary = {}
-        for request, times in self.benchmark_requests[benchmark_name].items():
+        for request, times in self.benchmark_requests.items():
             summary[request] = {"average_latency": sum(times) / len(times)}
 
         return summary
+
+    def add_to_benchmark(self, request_type, request_time):
+        """
+        Add requests to benchmark performance tracking
+        """
+        if request_type not in self.benchmark_requests:
+            self.benchmark_requests[request_type] = []
+        self.benchmark_requests[request_type].append(request_time)
 
     def load_actions(self, name, mode):
         """
@@ -232,7 +241,10 @@ class JsOrc:
         pass
 
     def post_request_hook(self, *args):
-        pass
+        request_type = args[0]
+        request_time = args[1]
+        if self.benchmark:
+            self.add_to_benchmark(request_type, request_time)
 
     def optimize(self):
         self.actions_optimizer.run()
