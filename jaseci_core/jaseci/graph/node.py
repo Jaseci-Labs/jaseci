@@ -22,7 +22,7 @@ class Node(Element, Anchored):
 
     def __init__(self, dimension=0, **kwargs):
         self.edge_ids = IdList(self)
-        self.fast_edges = {}  # {name: [[UUID, DIR]]}
+        self.fast_edges = {}  # {name: [[NODEID, DIR, EDGEID]]}
         self._fast_edge_ids = IdList(self)
         self.parent_node_ids = IdList(self)
         self.member_node_ids = IdList(self)
@@ -51,10 +51,14 @@ class Node(Element, Anchored):
         for k in self.fast_edges.keys():
             for v in self.fast_edges[k]:
                 link_order = [v[0], self.jid] if v[1] == FROM else [self.jid, v[0]]
-                edge = Edge(m_id=self._m_id, h=self._h, kind="edge", name=k)
+                edge = Edge(
+                    m_id=self._m_id, h=self._h, kind="edge", name=k, auto_save=False
+                )
                 edge.from_node_id = link_order[0]
                 edge.to_node_id = link_order[1]
                 edge.bidirected = v[1] == BI
+                edge.jid = v[2] if len(v) > 2 else uuid.uuid4().urn
+                edge.save()
                 self._fast_edge_ids.add_obj(edge)
 
     def smart_add_edge(self, obj):
@@ -75,6 +79,7 @@ class Node(Element, Anchored):
         details = [
             obj.opposing_node(self).jid,
             BI if obj.is_bidirected() else TO if obj.from_node() == self else FROM,
+            obj.jid,
         ]
         self.fast_edges[obj.name].append(details)
 

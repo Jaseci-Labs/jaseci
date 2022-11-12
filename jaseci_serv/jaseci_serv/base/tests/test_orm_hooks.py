@@ -262,7 +262,7 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertEqual(len(snode.smart_edges), 0)
         self.assertEqual(len(tnode.smart_edges), 0)
 
-    def test_fast_edges_node_destroy(self):
+    def test_fast_edges_node_edge_no_dupe(self):
         self.logger_on()
         user = self.user
         e_chk = lambda x: self.assertEqual(
@@ -281,8 +281,6 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertEqual(len(snode.outbound_edges()), 1)
         e_chk(1)
         self.assertEqual(len(tnode.inbound_edges()), 1)
-        e_chk(2)
-        snode.destroy()
         e_chk(1)
-        tnode.destroy()
-        e_chk(0)
+        snode.destroy()
+        self.assertFalse(edge.Edge in user._h.get_object_distribution())
