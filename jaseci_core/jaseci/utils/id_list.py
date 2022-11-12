@@ -7,7 +7,6 @@ objects
 parent_obj is the instance that the list belongs to
 """
 from jaseci.utils.utils import logger
-import uuid
 
 
 class IdList(list):

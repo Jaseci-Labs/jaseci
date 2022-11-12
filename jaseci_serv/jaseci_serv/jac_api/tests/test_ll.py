@@ -3,6 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from jaseci.utils.utils import TestCaseHelper
 import jaseci.actions.live_actions as lact
+from jaseci.graph.edge import Edge
 from django.test import TestCase
 import uuid
 import base64
@@ -160,6 +161,7 @@ class TestLL(TestCaseHelper, TestCase):
         data = self.run_walker("create_workette", {}, prime=jid)["report"]
         self.assertEqual(data[0]["name"], "workette")
         len_before = self.master._h.get_object_distribution()
+        len_before.pop(Edge)
         data = self.run_walker("create_workette", {}, prime=jid)["report"]
         self.assertEqual(data[0]["name"], "workette")
         data = self.run_walker("get_workettes", {}, prime=jid)["report"]
@@ -181,6 +183,7 @@ class TestLL(TestCaseHelper, TestCase):
         data = self.run_walker("get_workettes_deep", {}, prime=jid)["report"]
         self.assertEqual(len(data), 1)
         len_after = self.master._h.get_object_distribution()
+        len_after.pop(Edge)
         self.assertEqual(len_before, len_after)
 
     def test_due_soon(self):
