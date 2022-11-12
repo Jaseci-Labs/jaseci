@@ -13,6 +13,11 @@ class JsOrcApi:
     temporary
     """
 
+    @Interface.admin_api()
+    def jsorc_loadtest(self):
+        """ """
+        pass
+
     @Interface.admin_api(cli_args=["name"])
     def jsorc_load_yaml(self, files: list, namespace: str = "default"):
         """
