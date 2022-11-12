@@ -111,22 +111,36 @@ class JsOrcApi:
             return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api()
-    def jsorc_benchmark_start(self):
+    def jsorc_benchmark_start(self, benchmark_name: str = "default"):
         """
         Tell JSORC to start collecting request performance metrics
         """
-        pass
+        hook = self._h
+        if hook.meta.run_svcs:
+            hook.jsorc.app.benchmark_start(benchmark_name)
+        else:
+            return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api()
-    def jsorc_benchmark_report(self):
+    def jsorc_benchmark_report(self, benchmark_name: str = "default"):
         """
         Report the collected request performance metrics of the currently ongoing benchmark
         """
-        pass
+        hook = self._h
+        if hook.meta.run_svcs:
+            return hook.jsorc.app.benchmark_report(benchmark_name)
+        else:
+            return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api()
-    def jsorc_benchmark_stop(self):
+    def jsorc_benchmark_stop(
+        self, benchmark_name: str = "default", report: bool = True
+    ):
         """
         End the benchmark period and report performance metrics
         """
-        pass
+        hook = self._h
+        if hook.meta.run_svcs:
+            return hook.jsorc.app.benchmark_stop(benchmark_name, report)
+        else:
+            return {"success": False, "message": "No running JSORC service."}

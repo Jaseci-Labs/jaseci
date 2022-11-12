@@ -91,6 +91,8 @@ class JsOrc:
             kube=kube,
             policy=DefaultPolicy(),
         )
+        self.benchmark = False
+        self.benchmark_requests = {}
 
     def is_running(self, name: str, namespace: str):
         try:
@@ -141,6 +143,39 @@ class JsOrc:
                     f"Error retrieving {kind} for `{name}` with namespace `{namespace}`"
                 )
             return e
+
+    # TODO: should we have a separate and dedicated benchmark service?
+    def benchmark_start(self, benchmark_name):
+        """
+        Put JSORC under benchmark mode.
+        """
+        self.benchmark = True
+        self.benchmark_requests[benchmark_name] = {}
+
+    def benchmark_stop(self, benchmark_name, report):
+        """
+        Stop benchmark mode and report result during the benchmark period
+        """
+        if not self.benchmark:
+            return {}
+
+        res = self.benchmark_report(benchmark_name)
+        del self.benchmark_requests[benchmark_name]
+
+        if report:
+            return res
+        else:
+            return {}
+
+    def benchmark_report(self, benchmark_name):
+        """
+        Summarize benchmark results and report.
+        """
+        summary = {}
+        for request, times in self.benchmark_requests[benchmark_name].items():
+            summary[request] = {"average_latency": sum(times) / len(times)}
+
+        return summary
 
     def load_actions(self, name, mode):
         """
