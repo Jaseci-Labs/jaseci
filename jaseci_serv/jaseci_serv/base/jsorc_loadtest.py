@@ -25,12 +25,9 @@ class JsorcLoadTest:
 
     def __init__(self):
         self.client = APIClient()
-        logger.info("In JSORC load test")
         user_email = "JSCITfdfdEST_test@jaseci.com"
         suser_email = "JSCITfdfdEST_test2@jaseci.com"
         password = "password"
-        logger.info("my head is failling off")
-        logger.info(get_user_model().objects.all())
         try:
             self.user = get_user_model().objects.get(email=user_email.lower())
         except get_user_model().DoesNotExist:
@@ -46,7 +43,6 @@ class JsorcLoadTest:
         self.auth_client.force_authenticate(self.user)
         self.sauth_client = APIClient()
         self.sauth_client.force_authenticate(self.suser)
-        logger.info("Authenticated")
 
     def test_use_enc_cosine_sim_switching(self):
         result = {}
