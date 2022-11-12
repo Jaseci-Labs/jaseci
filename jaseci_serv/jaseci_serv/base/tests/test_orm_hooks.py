@@ -245,7 +245,6 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertEqual(after, 1)
 
     def test_fast_edges_detach(self):
-        self.logger_on()
         user = self.user
         snode = node.Node(m_id=0, h=user._h)
         tnode = node.Node(m_id=0, h=user._h)
@@ -262,3 +261,23 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertEqual(len(tnode.inbound_edges()), 0)
         self.assertEqual(len(snode.smart_edges), 0)
         self.assertEqual(len(tnode.smart_edges), 0)
+
+    def test_fast_edges_node_destroy(self):
+        self.logger_on()
+        user = self.user
+        snode = node.Node(m_id=0, h=user._h)
+        tnode = node.Node(m_id=0, h=user._h)
+        cedge = edge.Edge(m_id=0, h=user._h)
+        cedge.connect(snode, tnode)
+        user._h.commit()
+        user._h.clear_cache()
+        snode = user._h.get_obj(0, snode.jid)
+        tnode = user._h.get_obj(0, tnode.jid)
+        self.assertEqual(len(snode.outbound_edges()), 1)
+        self.assertEqual(len(tnode.inbound_edges()), 1)
+        edge_num = user._h.get_object_distribution()[edge.Edge]
+        self.assertEqual(edge_num, 2)
+        snode.destroy()
+        tnode.destroy()
+        edge_num = user._h.get_object_distribution()[edge.Edge]
+        self.assertEqual(edge_num, 0)

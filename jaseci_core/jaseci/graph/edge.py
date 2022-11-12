@@ -112,8 +112,8 @@ class Edge(Element, Anchored):
         """
         base = self.from_node()
         target = self.to_node()
-        base.smart_remove_edge(self)
-        target.smart_remove_edge(self)
+        base.smart_remove_edge(self) if base else None
+        target.smart_remove_edge(self) if target else None
         super().destroy()
 
     def dot_str(self, node_map=None, edge_map=None, detailed=False):

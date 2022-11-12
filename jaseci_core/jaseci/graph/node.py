@@ -79,7 +79,8 @@ class Node(Element, Anchored):
         if obj.is_fast():
             pluck = None
             for i in self.fast_edges[obj.name]:
-                if i[0] == obj.opposing_node(self).jid:
+                other_node_id = obj.to_node_id if i[1] == TO else obj.from_node_id
+                if i[0] == other_node_id:
                     if obj.is_bidirected() or not (
                         i[1] == TO and obj.to_node() == self
                     ):
