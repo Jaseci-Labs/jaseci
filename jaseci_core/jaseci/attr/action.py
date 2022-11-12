@@ -51,7 +51,7 @@ class Action(Item):
         self.do_auto_conversions(args, func, param_list)
         args = args[0] + args[4]
         hook = scope.parent._h
-        hook.jsorc.pre_action_hook() if hook.meta.run_svcs else None
+        hook.jsorc.app.pre_action_call_hook() if hook.meta.run_svcs else None
         if "meta" in args:
             result = func(
                 *param_list,
@@ -64,5 +64,5 @@ class Action(Item):
             )
         else:
             result = func(*param_list)
-        hook.jsorc.post_action_hook() if hook.meta.run_svcs else None
+        hook.jsorc.app.post_action_call_hook() if hook.meta.run_svcs else None
         return result

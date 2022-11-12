@@ -16,6 +16,7 @@ from jaseci_serv.settings import JASECI_CONFIGS
 from jaseci_serv.svc import MetaService
 from jaseci.api.jsorc_api import JsOrcApi as CoreJsOrcApi
 from .jsorc_loadtest import JsorcLoadTest
+from jaseci.utils.utils import logger
 
 
 class JsOrcApi(CoreJsOrcApi):
@@ -25,7 +26,7 @@ class JsOrcApi(CoreJsOrcApi):
         A jsorc loadtest
         """
         tester = JsorcLoadTest()
-        tester.test_use_enc_cosine_sim_switching()
+        return tester.test_use_enc_cosine_sim_switching()
 
 
 class Master(CoreMaster):

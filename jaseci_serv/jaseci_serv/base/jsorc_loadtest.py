@@ -2,6 +2,7 @@ import base64
 from time import sleep
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
 from django.urls import reverse
 from jaseci_serv.utils.test_utils import skip_without_redis
 from jaseci.utils.utils import logger
@@ -24,31 +25,31 @@ class JsorcLoadTest:
 
     def __init__(self):
         self.client = APIClient()
+        logger.info("In JSORC load test")
+        user_email = "JSCITfdfdEST_test@jaseci.com"
+        suser_email = "JSCITfdfdEST_test2@jaseci.com"
+        password = "password"
+        logger.info("my head is failling off")
+        logger.info(get_user_model().objects.all())
         try:
-            get_user_model().objects.create_user(
-                "throwawayJSCITfdfdEST_test@jaseci.com", "password"
-            )
-            self.user = get_user_model().objects.create_user(
-                "JSCITfdfdEST_test@jaseci.com", "password"
-            )
+            self.user = get_user_model().objects.get(email=user_email.lower())
+        except get_user_model().DoesNotExist:
+            self.user = get_user_model().objects.create_user(user_email, password)
+        try:
+            self.suser = get_user_model().objects.get(email=suser_email.lower())
+        except get_user_model().DoesNotExist:
             self.suser = get_user_model().objects.create_superuser(
-                "JSCITfdfdEST_test2@jaseci.com", "password"
-            )
-        except Exception as e:
-            logger.info("Test set up exception", str(e))
-            self.user = get_user_model().objects.filter(
-                email="JSCITfdfdEST_test@jaseci.com"
-            )
-            self.suser = get_user_model().objects.filter(
-                email="JSCITfdfdEST_test2@jaseci.com"
+                suser_email, password
             )
 
         self.auth_client = APIClient()
         self.auth_client.force_authenticate(self.user)
         self.sauth_client = APIClient()
         self.sauth_client.force_authenticate(self.suser)
+        logger.info("Authenticated")
 
     def test_use_enc_cosine_sim_switching(self):
+        result = {}
         jac_file = open(JAC_PATH + "use_enc/cos_sim_score.jac").read()
         # Regsiter the sentinel
         payload = {"op": "sentinel_register", "code": jac_file}
@@ -70,7 +71,7 @@ class JsorcLoadTest:
 
         # Execute the walker
         payload = {"op": "walker_run", "name": "cos_sim_score"}
-        for i in range(100):
+        for i in range(20):
             res = self.sauth_client.post(
                 reverse(f'jac_api:{payload["op"]}'), payload, format="json"
             )
@@ -80,8 +81,7 @@ class JsorcLoadTest:
         res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        print("=================Local Action==============")
-        pprint.pprint(res.data, indent=2)
+        result["local"] = res.data
 
         # Load use_enc remote action
         payload = {"op": "jsorc_actions_load", "name": "use_enc", "mode": "remote"}
@@ -107,7 +107,7 @@ class JsorcLoadTest:
 
         # Execute the walker
         payload = {"op": "walker_run", "name": "cos_sim_score"}
-        for i in range(100):
+        for i in range(20):
             res = self.sauth_client.post(
                 reverse(f'jac_api:{payload["op"]}'), payload, format="json"
             )
@@ -117,5 +117,6 @@ class JsorcLoadTest:
         res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        print("=================Local Action==============")
-        pprint.pprint(res.data, indent=2)
+        result["remote"] = res.data
+
+        return result
