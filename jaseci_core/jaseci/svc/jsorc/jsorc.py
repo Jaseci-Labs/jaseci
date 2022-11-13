@@ -50,7 +50,7 @@ class JsOrcService(CommonService):
                         f"Error checking {svc} !\n" f"{e.__class__.__name__}: {e}"
                     )
 
-            self.app.optimize()
+            self.app.optimize(jsorc_interval=self.interval)
 
             sleep(self.interval)
 
@@ -82,12 +82,9 @@ class JsOrc:
         self.meta = meta
         self.kube = kube
         self.quiet = quiet
-        self.actions_optimizer = ActionsOptimizer(
-            kube=kube,
-            policy="default",
-        )
         self.benchmark = False
         self.benchmark_requests = {}
+        self.actions_optimizer = ActionsOptimizer(kube=kube, policy="default")
 
     def is_running(self, name: str, namespace: str):
         try:

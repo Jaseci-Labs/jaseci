@@ -64,12 +64,6 @@ class ActionsState:
         self.state[name]["mode"] = "module"
         self.state[name]["module"]["name"] = module
 
-        if name in self.change_set:
-            if "module" in self.change_set[name]:
-                del self.change_set[name]["module"]
-            if len(self.change_set[name]) == 0:
-                del self.change_set[name]
-
     def module_action_unloaded(self, name):
         self.state[name]["module"] = {"name": None}
 
@@ -81,12 +75,6 @@ class ActionsState:
 
     def remote_action_loaded(self, name):
         self.state[name]["mode"] = "remote"
-
-        if name in self.change_set:
-            if "remote" in self.change_set[name]:
-                del self.change_set[name]["remote"]
-            if len(self.change_set[name]) == 0:
-                del self.change_set[name]
 
     def remote_action_unloaded(self, name):
 

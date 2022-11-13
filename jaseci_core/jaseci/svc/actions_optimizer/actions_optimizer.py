@@ -21,20 +21,22 @@ POLICIES = ["Default", "BackAndForth"]
 
 
 class ActionsOptimizer:
-    def __init__(
-        self, kube: Kube, policy: ActionsOptimizerPolicy = DefaultPolicy()
-    ) -> None:
+    def __init__(self, kube: Kube, policy: str = "Default") -> None:
         self.kube = kube
         self.policy = policy
         self.actions_state = ActionsState()
-        self.policy.set_actions_state(self.actions_state)
+        self.actions_change = {}
+        self.policy_state = {}
+        self.jsorc_interval = 0
 
     def set_action_policy(self, policy_name: str):
         """
         Set the action optimization policy for JSORC
         """
+        # TODO: manage policy switching if there are unresolved actions state
         if policy_name in POLICIES:
             self.policy = policy_name
+            self.policy_state[policy_name] = {}
             return True
         else:
             return f"Policy {policy_name} not found."
@@ -43,61 +45,73 @@ class ActionsOptimizer:
         """
         Return the currently active action policy
         """
-        return str(self.policy)
+        return self.policy
 
-    def run(self):
+    def run(self, jsorc_interval: int):
         """
         The main optimization function.
         This gets invoked by JSROC regularly at a configured interval.
         """
-        self.policy.check()
-        if self.actions_state.if_changing():
-            self.apply_actions_state()
+        self.jsorc_interval = jsorc_interval
+        if self.policy == "Default":
+            # Default policy does not manage action automatically
+            return
+        elif self.policy == "BackAndForth":
+            self._actionpolicy_backandforth()
 
-    def apply_actions_state(self):
+        if len(self.actions_change) > 0:
+            self.apply_actions_change()
+
+    def _actionpolicy_backandforth(self):
+        """
+        A policy mostly for testing purpose.
+        It will switch one action module back and forth between local and remote at a fixed interval
+        """
+        policy_state = self.policy_state["BackAndForth"]
+        if len(policy_state) == 0:
+            # initialize policy tracking state
+            policy_state = {"time_since_switch": 0, "actions_to_switch": "use_enc"}
+
+        # Check if its time to switch again
+        policy_state["time_since_switch"] += self.jsorc_interval
+        if policy_state["time_since_switch"] >= 60:
+            # Check if the action is still switching
+            if policy_state["actions_to_switch"] in self.actions_change:
+                return
+
+            action_name = policy_state["actions_to_switch"]
+            cur_state = self.actions_state.get_state(action_name)
+            if cur_state["mode"] is None:
+                # start with local
+                self.actions_change[action_name] = "to_local"
+            elif cur_state["mode"] == "local":
+                self.actions_change[action_name] = "local_to_remote"
+            elif cur_state["mode"] == "remote":
+                self.actions_change[action_name] = "remote_to_local"
+
+    def apply_actions_change(self):
         """
         Apply any action configuration changes
         """
-        # Update the actions depending on the change set
-        change_set = self.actions_state.get_change_set()
-        for name, changes in copy.deepcopy(change_set).items():
-            if "local" in changes:
-                cmd = changes["local"]
-                if cmd == "START":
-                    self.load_action_module(name)
-                    self.actions_state.local_action_loaded(name)
-                elif cmd == "STOP":
-                    self.unload_action_module(name)
-                    self.actions_state.local_action_unloaded(name)
-                elif cmd == "STOP_WHEN_READY":
-                    # Check if remote action is ready
-                    url = self.actions_state.get_remote_url(name)
-                    if self.remote_action_ready_check(name, url):
-                        self.unload_action_module(name)
-                        self.actions_state.local_action_unloaded(name)
-
-            if "remote" in changes:
-                cmd = changes["remote"]
-                if cmd == "START":
-                    url = self.spawn_remote(name)
-                    self.actions_state.start_remote_service(name, url)
-                    self.actions_state.set_change_set(name, "remote", "STARTING")
-                    if self.remote_action_ready_check(name, url):
-                        self.load_action_remote(url)
-                        self.actions_state.remote_action_loaded(name)
-                elif cmd == "STARTING":
-                    url = self.actions_state.get_remote_url(name)
-                    if self.remote_action_ready_check(name, url):
-                        self.load_action_remote(url)
-                        self.actions_state.remote_action_loaded(name)
-                elif cmd == "STOP":
-                    self.retire_remote(name)
-                    # TODO: Need to check if it is safe to retire the pod
-                    self.actions_state.stop_remote_action(name)
-                elif cmd == "STOP_WHEN_READY":
-                    # TODO: This is the same as STOP because we always deal with local changes first in this function
-                    self.retire_remote(name)
-                    self.actions_state.stop_remote_action(name)
+        actions_change = dict(self.actions_change)
+        # For now, to_* and *_to_* are teh same logic
+        # But this might change down the line
+        for name, change_type in actions_change.items():
+            if change_type == "to_local":
+                # Switching from no action loaded to local
+                self.load_action_module(name)
+                del self.actions_change[name]
+            elif change_type == "to_remote":
+                loaded = self.load_action_remote(name)
+                if loaded:
+                    del self.actions_change[name]
+            elif change_type == "local_to_remote":
+                loaded = self.load_action_remote(name)
+                if loaded:
+                    del self.actions_change[name]
+            elif change_type == "remote_to_local":
+                self.load_action_module(name)
+                del self.actions_change[name]
 
     def kube_create(self, config):
         namespace = "default"  # TODO: hardcoded
@@ -155,6 +169,8 @@ class ActionsOptimizer:
         """
         Load a remote action.
         JSORC will get the URL of the remote microservice and stand up a microservice if there isn't currently one in the cluster.
+        Return True if the remote action is loaded successfully,
+        False otherwise
         """
         cur_state = self.actions_state.get_state(name)
         if cur_state is None:
@@ -162,7 +178,7 @@ class ActionsOptimizer:
 
         if cur_state["mode"] == "remote" and cur_state["remote"]["status"] == "READY":
             # Check if there is already a remote action loaded
-            return
+            return True
 
         url = self.actions_state.get_remote_url(name)
         if url is None:
@@ -180,6 +196,9 @@ class ActionsOptimizer:
         if cur_state["remote"]["status"] == "READY":
             load_remote_actions(url)
             self.actions_state.remote_action_loaded(name)
+            return True
+
+        return False
 
     def load_action_local(self, name):
         """ """
