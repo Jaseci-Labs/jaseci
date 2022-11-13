@@ -3,11 +3,6 @@ from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.utils.utils import logger
 from jaseci.svc.kubernetes import Kube
 from jaseci.svc.actions_optimizer.actions_state import ActionsState
-from jaseci.svc.actions_optimizer.actions_optimizer_policy import (
-    ActionsOptimizerPolicy,
-    DefaultPolicy,
-    BackAndForthPolicy,
-)
 from jaseci.actions.live_actions import (
     load_module_actions,
     unload_module,
@@ -22,6 +17,8 @@ import requests
 import copy
 from kubernetes.client.rest import ApiException
 
+POLICIES = ["Default", "BackAndForth"]
+
 
 class ActionsOptimizer:
     def __init__(
@@ -31,6 +28,22 @@ class ActionsOptimizer:
         self.policy = policy
         self.actions_state = ActionsState()
         self.policy.set_actions_state(self.actions_state)
+
+    def set_action_policy(self, policy_name: str):
+        """
+        Set the action optimization policy for JSORC
+        """
+        if policy_name in POLICIES:
+            self.policy = policy_name
+            return True
+        else:
+            return f"Policy {policy_name} not found."
+
+    def get_action_policy(self):
+        """
+        Return the currently active action policy
+        """
+        return str(self.policy)
 
     def run(self):
         """

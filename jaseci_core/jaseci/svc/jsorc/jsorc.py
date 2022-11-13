@@ -5,10 +5,6 @@ from jaseci.utils.utils import logger
 from jaseci.svc import CommonService, ServiceState as Ss
 from jaseci.svc.kubernetes import Kube
 from jaseci.svc.actions_optimizer.actions_optimizer import ActionsOptimizer
-from jaseci.svc.actions_optimizer.actions_optimizer_policy import (
-    BackAndForthPolicy,
-    DefaultPolicy,
-)
 from .config import JSORC_CONFIG
 
 #################################################
@@ -87,9 +83,8 @@ class JsOrc:
         self.kube = kube
         self.quiet = quiet
         self.actions_optimizer = ActionsOptimizer(
-            # kube=kube, policy=BackAndForthPolicy(module="use_enc")
             kube=kube,
-            policy=DefaultPolicy(),
+            policy="default",
         )
         self.benchmark = False
         self.benchmark_requests = {}
@@ -125,7 +120,6 @@ class JsOrc:
                     conf["spec"]["template"]["spec"]["containers"][0][
                         "hostRootFs"
                     ] = False
-                logger.info(conf)
 
             self.kube.create(kind, namespace, conf)
         except ApiException:
@@ -227,6 +221,12 @@ class JsOrc:
         Return the status of the action
         """
         return self.actions_optimizer.get_actions_status(name)
+
+    def set_action_policy(self, policy_name):
+        """
+        Set an action optimizer policy
+        """
+        return self.actions_optimizer.set_action_policy(policy_name)
 
     def manage_actions(self, name):
         self.actions_optimizer.load_action(name, mode="auto")

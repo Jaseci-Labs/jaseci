@@ -8,8 +8,15 @@ class ActionsOptimizerPolicy:
     """
 
     def __init__(self) -> None:
+        self.name = "NullPolicy"
         self.actions_state = None
         pass
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
 
     def set_actions_state(self, actions_state: ActionsState):
         self.actions_state = actions_state
@@ -20,7 +27,8 @@ class ActionsOptimizerPolicy:
 
 class DefaultPolicy(ActionsOptimizerPolicy):
     """
-    Default action optimizer policy, i.e. no automatic optimization
+    Default action optimizer policy, i.e. no automatic optimization.
+    Set this if you do not want JSORC to manage the actions.
     """
 
     def check(self):
@@ -37,9 +45,7 @@ class BackAndForthPolicy(ActionsOptimizerPolicy):
         super().__init__()
 
     def check(self):
-        logger.info("IN BACK AND FORTH POLICY")
         change_state = self.actions_state.get_change_set()
-        logger.info(change_state)
         if self.module in self.actions_state.get_change_set():
             return
         else:
