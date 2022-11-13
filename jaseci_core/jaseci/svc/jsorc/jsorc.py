@@ -225,6 +225,12 @@ class JsOrc:
         """
         return self.actions_optimizer.set_action_policy(policy_name)
 
+    def get_action_policy(self):
+        """
+        Get the current action optimization policy
+        """
+        return self.actions_optimizer.get_action_policy()
+
     def manage_actions(self, name):
         self.actions_optimizer.load_action(name, mode="auto")
 

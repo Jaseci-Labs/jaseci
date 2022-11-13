@@ -5,6 +5,7 @@ from jaseci.utils.utils import logger
 from rest_framework.test import APIClient
 
 import os
+from time import sleep
 
 JAC_PATH = os.path.join(os.path.dirname(__file__), "action_micro_jac/")
 
@@ -44,6 +45,47 @@ class JsorcLoadTest:
         test_func = getattr(self, self.test)
         return test_func()
 
+    def use_enc_back_and_forth(self):
+        result = {}
+        jac_file = open(JAC_PATH + "use_enc/cos_sim_score.jac").read()
+        # Regsiter the sentinel
+        payload = {"op": "sentinel_register", "code": jac_file}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # Set the policy
+        payload = {"op": "jsorc_actionpolicy_set", "policy_name": "BackAndForth"}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # Start the benchmark
+        self.start_benchmark()
+
+        # Execute the walker
+        payload = {"op": "walker_run", "name": "cos_sim_score"}
+        for i in range(100):
+            res = self.sauth_client.post(
+                reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+            )
+
+        result = self.stop_benchmark()
+        return result
+
+    def start_benchmark(self):
+        # Start benchmark
+        payload = {"op": "jsorc_benchmark_start"}
+        self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+    def stop_benchmark(self):
+        # Stop benchmark and get report
+        payload = {"op": "jsorc_benchmark_stop", "report": True}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        return res.data
+
     def use_enc_cosine_sim_switching(self):
         result = {}
         jac_file = open(JAC_PATH + "use_enc/cos_sim_score.jac").read()
@@ -59,11 +101,7 @@ class JsorcLoadTest:
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
 
-        # Start benchmark
-        payload = {"op": "jsorc_benchmark_start"}
-        res = self.sauth_client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
+        self.start_benchmark()
 
         # Execute the walker
         payload = {"op": "walker_run", "name": "cos_sim_score"}
@@ -72,12 +110,7 @@ class JsorcLoadTest:
                 reverse(f'jac_api:{payload["op"]}'), payload, format="json"
             )
 
-        # Stop benchmark and get report
-        payload = {"op": "jsorc_benchmark_stop", "report": True}
-        res = self.sauth_client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        result["local"] = res.data
+        result["local"] = self.stop_benchmark()
 
         # Load use_enc remote action
         payload = {"op": "jsorc_actions_load", "name": "use_enc", "mode": "remote"}
@@ -95,11 +128,7 @@ class JsorcLoadTest:
 
             sleep(5)
 
-        # Start benchmark
-        payload = {"op": "jsorc_benchmark_start"}
-        res = self.sauth_client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
+        self.start_benchmark()
 
         # Execute the walker
         payload = {"op": "walker_run", "name": "cos_sim_score"}
@@ -109,10 +138,6 @@ class JsorcLoadTest:
             )
 
         # Stop benchmark and get report
-        payload = {"op": "jsorc_benchmark_stop", "report": True}
-        res = self.sauth_client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        result["remote"] = res.data
+        result["remote"] = self.stop_benchmark()
 
         return result

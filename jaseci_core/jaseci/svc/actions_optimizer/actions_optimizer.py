@@ -69,20 +69,27 @@ class ActionsOptimizer:
 
         # Check if its time to switch again
         policy_state["time_since_switch"] += self.jsorc_interval
-        if policy_state["time_since_switch"] >= 60:
+
+        if policy_state["time_since_switch"] >= 9:
             # Check if the action is still switching
             if policy_state["actions_to_switch"] in self.actions_change:
                 return
 
             action_name = policy_state["actions_to_switch"]
             cur_state = self.actions_state.get_state(action_name)
+            if cur_state is None:
+                cur_state = self.actions_state.init_state(action_name)
+
             if cur_state["mode"] is None:
                 # start with local
                 self.actions_change[action_name] = "to_local"
-            elif cur_state["mode"] == "local":
+            elif cur_state["mode"] == "local" or cur_state["mode"] == "module":
                 self.actions_change[action_name] = "local_to_remote"
             elif cur_state["mode"] == "remote":
                 self.actions_change[action_name] = "remote_to_local"
+
+            policy_state["time_since_switch"] = 0
+        self.policy_state["BackAndForth"] = policy_state
 
     def apply_actions_change(self):
         """
@@ -92,6 +99,7 @@ class ActionsOptimizer:
         # For now, to_* and *_to_* are teh same logic
         # But this might change down the line
         for name, change_type in actions_change.items():
+            logger.info(f"==Actions Optimizer== Changing {name} {change_type}")
             if change_type == "to_local":
                 # Switching from no action loaded to local
                 self.load_action_module(name)
@@ -164,6 +172,7 @@ class ActionsOptimizer:
         Return True if the remote action is loaded successfully,
         False otherwise
         """
+        logger.info(f"==Actions Optimizer== LOAD remote action for {name}")
         cur_state = self.actions_state.get_state(name)
         if cur_state is None:
             cur_state = self.actions_state.init_state(name)
@@ -188,6 +197,7 @@ class ActionsOptimizer:
         if cur_state["remote"]["status"] == "READY":
             load_remote_actions(url)
             self.actions_state.remote_action_loaded(name)
+            logger.info(f"==Actions Optimizer== LOADED remote action for {name}")
             return True
 
         return False
@@ -196,6 +206,7 @@ class ActionsOptimizer:
         """
         Load an action module
         """
+        logger.info(f"==Actions Optimizer== LOAD module action for {name}")
         cur_state = self.actions_state.get_state(name)
         if cur_state is None:
             cur_state = self.actions_state.init_state(name)
@@ -207,6 +218,7 @@ class ActionsOptimizer:
         module = ACTION_CONFIGS[name]["module"]
         load_module_actions(module)
         self.actions_state.module_action_loaded(name, module)
+        logger.info(f"==Actions Optimizer== LOADED module action for {name}")
 
     def unload_action_module(self, name):
         """
