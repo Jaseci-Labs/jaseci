@@ -40,6 +40,12 @@ class ActionsState:
 
         return self.state[name]
 
+    def get_active_actions(self):
+        """
+        Return list of action modules currently used
+        """
+        return list(self.state.keys())
+
     def local_action_loaded(self, name):
         self.state[name]["mode"] = "local"
 

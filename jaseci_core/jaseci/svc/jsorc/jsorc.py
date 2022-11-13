@@ -82,9 +82,14 @@ class JsOrc:
         self.meta = meta
         self.kube = kube
         self.quiet = quiet
-        self.benchmark = False
-        self.benchmark_requests = {}
-        self.actions_optimizer = ActionsOptimizer(kube=kube, policy="default")
+        # overall performance tracking benchmark
+        self.benchmark = {
+            "jsorc": {"active": False, "requests": {}},
+            "actions_optimizer": {"active": False, "requests": {}},
+        }
+        self.actions_optimizer = ActionsOptimizer(
+            kube=kube, policy="default", benchmark=self.benchmark["actions_optimizer"]
+        )
 
     def is_running(self, name: str, namespace: str):
         try:
@@ -140,19 +145,19 @@ class JsOrc:
         """
         Put JSORC under benchmark mode.
         """
-        self.benchmark = True
-        self.benchmark_requests = {}
+        self.benchmark["jsorc"]["active"] = True
+        self.benchmark["jsorc"]["requests"] = {}
 
     def benchmark_stop(self, report):
         """
         Stop benchmark mode and report result during the benchmark period
         """
-        if not self.benchmark:
+        if not self.benchmark["jsorc"]["active"]:
             return {}
 
         res = self.benchmark_report()
-        self.benchmark_requests = {}
-        self.benchmark = False
+        self.benchmark["jsorc"]["requests"] = {}
+        self.benchmark["jsorc"]["active"] = False
 
         if report:
             return res
@@ -164,7 +169,7 @@ class JsOrc:
         Summarize benchmark results and report.
         """
         summary = {}
-        for request, times in self.benchmark_requests.items():
+        for request, times in self.benchmark["jsorc"]["requests"].items():
             summary[request] = {"average_latency": sum(times) / len(times)}
 
         return summary
@@ -173,9 +178,10 @@ class JsOrc:
         """
         Add requests to benchmark performance tracking
         """
-        if request_type not in self.benchmark_requests:
-            self.benchmark_requests[request_type] = []
-        self.benchmark_requests[request_type].append(request_time)
+        for bm in self.benchmark.values():
+            if request_type not in bm["requests"]:
+                bm["requests"][request_type] = []
+            bm["requests"][request_type].append(request_time)
 
     def load_actions(self, name, mode):
         """
@@ -246,7 +252,7 @@ class JsOrc:
     def post_request_hook(self, *args):
         request_type = args[0]
         request_time = args[1]
-        if self.benchmark:
+        if self.benchmark["jsorc"]["active"]:
             self.add_to_benchmark(request_type, request_time)
 
     def optimize(self, jsorc_interval):

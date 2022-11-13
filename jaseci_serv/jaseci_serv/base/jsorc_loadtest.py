@@ -45,6 +45,40 @@ class JsorcLoadTest:
         test_func = getattr(self, self.test)
         return test_func()
 
+    def use_enc_evaluate(self):
+        result = {}
+        jac_file = open(JAC_PATH + "use_enc/cos_sim_score.jac").read()
+        # Regsiter the sentinel
+        payload = {"op": "sentinel_register", "code": jac_file}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        # Set the policy
+        payload = {"op": "jsorc_actionpolicy_set", "policy_name": "Evaluation"}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # Load use_enc local action
+        payload = {"op": "jsorc_actions_load", "name": "use_enc", "mode": "local"}
+
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        # Start the benchmark
+        self.start_benchmark()
+
+        # Execute the walker
+        payload = {"op": "walker_run", "name": "cos_sim_score"}
+        for i in range(200):
+            self.sauth_client.post(
+                reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+            )
+
+        result = self.stop_benchmark()
+        return result
+
     def use_enc_back_and_forth(self):
         result = {}
         jac_file = open(JAC_PATH + "use_enc/cos_sim_score.jac").read()
@@ -63,8 +97,8 @@ class JsorcLoadTest:
 
         # Execute the walker
         payload = {"op": "walker_run", "name": "cos_sim_score"}
-        for i in range(100):
-            res = self.sauth_client.post(
+        for i in range(200):
+            self.sauth_client.post(
                 reverse(f'jac_api:{payload["op"]}'), payload, format="json"
             )
 
