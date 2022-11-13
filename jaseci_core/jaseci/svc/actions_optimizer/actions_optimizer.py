@@ -51,6 +51,7 @@ class ActionsOptimizer:
         This gets invoked by JSROC regularly at a configured interval.
         """
         self.jsorc_interval = jsorc_interval
+        logger.info("=====JSORC RUN=======")
         if self.policy == "Default":
             # Default policy does not manage action automatically
             return
@@ -162,6 +163,13 @@ class ActionsOptimizer:
                 if policy_state["cur_phase"] >= policy_state["eval_phase"]:
                     # The eval phase for the current configuration is complete
                     # Get performance
+                    if "walker_run" not in self.benchmark["requests"]:
+                        # meaning no incoming requests during this period.
+                        # stay in this phase
+                        logger.info(f"===Evaluation Policy=== No walkers were executed")
+                        self.policy_state["Evaluation"] = policy_state
+                        return
+
                     walker_runs = self.benchmark["requests"]["walker_run"]
                     avg_walker_lat = sum(walker_runs) / len(walker_runs)
                     policy_state["cur_config"]["avg_walker_lat"] = avg_walker_lat
