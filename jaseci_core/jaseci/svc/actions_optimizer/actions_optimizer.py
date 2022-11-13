@@ -8,13 +8,8 @@ from jaseci.actions.live_actions import (
     unload_module,
     unload_remote_actions,
     load_remote_actions,
-    load_local_actions,
-    live_actions,
-    live_action_modules,
 )
-from jaseci.actions.remote_actions import remote_actions
 import requests
-import copy
 from kubernetes.client.rest import ApiException
 
 POLICIES = ["Default", "BackAndForth"]
@@ -200,10 +195,6 @@ class ActionsOptimizer:
 
         return False
 
-    def load_action_local(self, name):
-        """ """
-        pass
-
     def load_action_module(self, name):
         """
         Load an action module
@@ -256,23 +247,19 @@ class ActionsOptimizer:
         url = cur_state["remote"]["url"]
 
         unload_remote_actions(url)
-        self.actions_state.remote_action_unloaded(name)
 
         return (True, f"Remote actions from {url} unloaded.")
 
     def remote_action_ready_check(self, name, url):
         """
         Check if a remote action is ready by querying the action_spec endpoint
-        TODO
         """
         if url is None:
             return False
         spec_url = url.rstrip("/") + ACTIONS_SPEC_LOC
         headers = {"content-type": "application/json"}
         try:
-            res = requests.get(
-                url.rstrip("/") + ACTIONS_SPEC_LOC, headers=headers, timeout=1
-            )
+            res = requests.get(spec_url, headers=headers, timeout=1)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             # Remote service not ready yet
             return False
