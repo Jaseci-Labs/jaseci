@@ -112,22 +112,19 @@ class ActionsOptimizer:
         namespace = "default"  # TODO: hardcoded
         for kind, conf in config.items():
             name = conf["metadata"]["name"]
-            # TODO: should we use jsorc's create function here
             try:
                 self.kube.create(kind, namespace, conf)
             except ApiException:
                 logger.error(f"Error creating {kind} for {name}")
 
     def kube_delete(self, config):
-        namespace = "default"  # TODO: hardcoded
+        namespace = "default"  # TODO: hardcoded for now
         for kind, conf in config.items():
             name = conf["metadata"]["name"]
-            # TODO: should we use jsorc's create function here
             try:
                 logger.info(
                     f"ActionsOptimzer: deleting {kind} for {name} for namespace {namespace}"
                 )
-                # TODO: should we use jsorc's create function here
                 self.kube.delete(kind, name, namespace)
             except ApiException as e:
                 logger.error(

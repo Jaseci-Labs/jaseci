@@ -243,8 +243,8 @@ class JsOrc:
         if self.benchmark:
             self.add_to_benchmark(request_type, request_time)
 
-    def optimize(self):
-        self.actions_optimizer.run()
+    def optimize(self, jsorc_interval):
+        self.actions_optimizer.run(jsorc_interval)
 
     def check(self, namespace, svc):
 

@@ -1,29 +1,20 @@
-import base64
-from time import sleep
-
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import User
 from django.urls import reverse
-from jaseci_serv.utils.test_utils import skip_without_redis
 from jaseci.utils.utils import logger
 
 from rest_framework.test import APIClient
-from rest_framework import status
 
-from jaseci.utils.utils import TestCaseHelper
-from django.test import TestCase
-
-import uuid
-import pprint
 import os
 
 JAC_PATH = os.path.join(os.path.dirname(__file__), "action_micro_jac/")
 
 
 class JsorcLoadTest:
-    """Test the JSORC APIs"""
+    """
+    A load tester module around JSORC.
+    """
 
-    def __init__(self):
+    def __init__(self, test):
         self.client = APIClient()
         user_email = "JSCITfdfdEST_test@jaseci.com"
         suser_email = "JSCITfdfdEST_test2@jaseci.com"
@@ -44,7 +35,16 @@ class JsorcLoadTest:
         self.sauth_client = APIClient()
         self.sauth_client.force_authenticate(self.suser)
 
-    def test_use_enc_cosine_sim_switching(self):
+        self.test = test
+
+    def run_test(self):
+        """
+        Run the corresponding jsorc test
+        """
+        test_func = getattr(self, self.test)
+        return test_func()
+
+    def use_enc_cosine_sim_switching(self):
         result = {}
         jac_file = open(JAC_PATH + "use_enc/cos_sim_score.jac").read()
         # Regsiter the sentinel
