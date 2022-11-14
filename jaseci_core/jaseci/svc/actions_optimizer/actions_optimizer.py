@@ -263,6 +263,8 @@ class ActionsOptimizer:
                 del self.actions_change[name]
 
         if len(actions_change) > 0 and self.actions_history["active"]:
+            logger.info("record history")
+            logger.info(self.actions_state.get_all_state())
             self.actions_history["history"].append(
                 {"ts": time.time(), "actions_state": self.actions_state.get_all_state()}
             )

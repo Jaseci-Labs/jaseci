@@ -1,4 +1,5 @@
 from jaseci.utils.utils import logger
+import copy
 
 
 class ActionsState:
@@ -77,7 +78,7 @@ class ActionsState:
         return self.state[name]["remote"].get("url", None)
 
     def get_all_state(self):
-        return self.state
+        return copy.deepcopy(self.state)
 
     def get_state(self, name):
         return self.state.get(name, None)

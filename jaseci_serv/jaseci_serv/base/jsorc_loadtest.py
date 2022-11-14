@@ -79,16 +79,18 @@ class JsorcLoadTest:
 
         # Start the benchmark
         self.start_benchmark()
+        self.start_actions_tracking()
 
         # Execute the walker trace
-        for i in range(200):
+        for i in range(50):
             for req in metadata["walkers"]:
                 payload = {"op": "walker_run", "name": req["name"], "ctx": req["ctx"]}
                 self.sauth_client.post(
                     reverse(f'jac_api:{payload["op"]}'), payload, format="json"
                 )
 
-        result = self.stop_benchmark()
+        result["performance"] = self.stop_benchmark()
+        result["actions_history"] = self.stop_actions_tracking()
         return result
 
     def two_modules_evaluate(self):
@@ -118,9 +120,10 @@ class JsorcLoadTest:
 
         # Start the benchmark
         self.start_benchmark()
+        self.start_actions_tracking()
 
         # Execute the walker
-        for i in range(200):
+        for i in range(25):
             payload = {"op": "walker_run", "name": "cos_sim_score"}
             self.sauth_client.post(
                 reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -130,7 +133,8 @@ class JsorcLoadTest:
                 reverse(f'jac_api:{payload["op"]}'), payload, format="json"
             )
 
-        result = self.stop_benchmark()
+        result["performance"] = self.stop_benchmark()
+        result["actions_history"] = self.stop_actions_tracking()
         return result
 
     def use_enc_evaluate(self):
@@ -203,6 +207,20 @@ class JsorcLoadTest:
     def stop_benchmark(self):
         # Stop benchmark and get report
         payload = {"op": "jsorc_benchmark_stop", "report": True}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        return res.data
+
+    def start_actions_tracking(self):
+        payload = {"op": "jsorc_actionstracking_start"}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        return res.data
+
+    def stop_actions_tracking(self):
+        payload = {"op": "jsorc_actionstracking_stop"}
         res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
