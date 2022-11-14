@@ -150,7 +150,7 @@ class Interface:
         ):
             _caller = self
         elif self.caller:
-            _caller = self._h.get_obj(self._m_id, uuid.UUID(self.caller))
+            _caller = self._h.get_obj(self._m_id, self.caller)
         else:
             _caller = self
         if not hasattr(_caller, api_name):
@@ -179,7 +179,7 @@ class Interface:
             if issubclass(p_type, Element):
                 if val is None:
                     break
-                val = _caller._h.get_obj(_caller._m_id, uuid.UUID(val))
+                val = _caller._h.get_obj(_caller._m_id, val)
                 if isinstance(val, p_type):
                     param_map[i] = self.sync_constraints(val, params)
                 else:
@@ -231,7 +231,7 @@ class Interface:
                     return self.interface_error(
                         f"No {p_type} value for {p_name} provided!"
                     )
-                val = self._h.get_obj("override", uuid.UUID(val), override=True)
+                val = self._h.get_obj("override", val, override=True)
                 self.seek_committer(val)
                 if isinstance(val, p_type):
                     param_map[i] = self.sync_constraints(val, params)
@@ -266,7 +266,7 @@ class Interface:
     def seek_committer(self, obj):
         """Opportunistically assign a committer"""
         if not self._pub_committer and not (obj is None):
-            self._pub_committer = obj._h.get_obj(obj._m_id, uuid.UUID(obj._m_id))
+            self._pub_committer = obj._h.get_obj(obj._m_id, obj._m_id)
 
     def clear_committer(self):
         """Unset committer"""

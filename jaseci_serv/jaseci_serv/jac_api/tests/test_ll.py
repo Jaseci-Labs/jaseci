@@ -3,6 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from jaseci.utils.utils import TestCaseHelper
 import jaseci.actions.live_actions as lact
+from jaseci.graph.edge import Edge
 from django.test import TestCase
 import uuid
 import base64
@@ -46,11 +47,9 @@ class TestLL(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         payload = {"op": "graph_create"}
-        self.snt = self.master._h.get_obj(
-            self.master.jid, uuid.UUID(res.data["sentinel"]["jid"])
-        )
+        self.snt = self.master._h.get_obj(self.master.jid, res.data["sentinel"]["jid"])
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
-        self.gph = self.master._h.get_obj(self.master.jid, uuid.UUID(res.data["jid"]))
+        self.gph = self.master._h.get_obj(self.master.jid, res.data["jid"])
 
     def tearDown(self):
         super().tearDown()
@@ -59,19 +58,19 @@ class TestLL(TestCaseHelper, TestCase):
         """Helper to make calls to execute walkers"""
         if not prime:
             payload = {
-                "snt": self.snt.id.urn,
+                "snt": self.snt.jid,
                 "name": w_name,
-                "nd": self.gph.id.urn,
+                "nd": self.gph.jid,
                 "ctx": ctx,
             }
         else:
-            payload = {"snt": self.snt.id.urn, "name": w_name, "nd": prime, "ctx": ctx}
+            payload = {"snt": self.snt.jid, "name": w_name, "nd": prime, "ctx": ctx}
         res = self.client.post(reverse("jac_api:walker_run"), payload, format="json")
         return res.data
 
     def graph_node_set(self, nd_id, ctx):
         """Helper to set node context"""
-        payload = {"snt": self.snt.id.urn, "nd": nd_id, "ctx": ctx}
+        payload = {"snt": self.snt.jid, "nd": nd_id, "ctx": ctx}
         self.client.post(reverse("jac_api:graph_node_set"), payload, format="json")
 
     def test_ll_today_new(self):
@@ -176,8 +175,8 @@ class TestLL(TestCaseHelper, TestCase):
         data = self.run_walker("get_workettes", {}, prime=wjid)["report"]
         self.assertEqual(len(data), 3)
         data = self.run_walker("delete_workette", {}, prime=wjid)["report"]
-        self.assertNotIn(uuid.UUID(exjid).urn, self.master._h.mem.keys())
-        self.assertIn(uuid.UUID(jid).urn, self.master._h.mem.keys())
+        self.assertNotIn(exjid, self.master._h.mem.keys())
+        self.assertIn(jid, self.master._h.mem.keys())
         data = self.run_walker("get_workettes", {}, prime=jid)["report"]
         self.assertEqual(len(data), 1)
         data = self.run_walker("get_workettes_deep", {}, prime=jid)["report"]

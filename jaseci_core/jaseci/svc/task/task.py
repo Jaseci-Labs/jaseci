@@ -88,7 +88,7 @@ class TaskService(CommonService):
     ###################################################
 
     def add_queue(self, wlk, nd, *args):
-        return self.queue.delay(wlk.id.urn, nd.id.urn, args).task_id
+        return self.queue.delay(wlk.jid, nd.jid, args).task_id
 
     ###################################################
     #                     CLEANER                     #

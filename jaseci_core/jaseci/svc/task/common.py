@@ -15,10 +15,10 @@ class Queue(Task):
 
         hook = MetaService().build_hook()
 
-        wlk = hook.get_obj_from_store(UUID(wlk))
+        wlk = hook.get_obj_from_store(wlk)
         wlk._to_await = True
 
-        nd = hook.get_obj_from_store(UUID(nd))
+        nd = hook.get_obj_from_store(nd)
         resp = wlk.run(nd, *args)
         wlk.destroy()
 
@@ -27,7 +27,7 @@ class Queue(Task):
 
 class ScheduledWalker(Task):
     def get_obj(self, jid):
-        return self.hook.get_obj_from_store(UUID(jid))
+        return self.hook.get_obj_from_store(jid)
 
     def run(self, name, ctx, nd=None, snt=None, mst=None):
         from jaseci.svc import MetaService

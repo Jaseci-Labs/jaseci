@@ -33,11 +33,13 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         InstPtr.__init__(self)
         MachineState.__init__(self, **kwargs)
         self._op = self.build_op_call()
+        self._op_id = id(self)
 
     def reset_vm(self):
         Stack.__init__(self)
         InstPtr.__init__(self)
-        self._op = self.build_op_call()
+        if id(self) != self._op_id:
+            self._op = self.build_op_call()
 
     def build_op_call(self):
         op_map = {}

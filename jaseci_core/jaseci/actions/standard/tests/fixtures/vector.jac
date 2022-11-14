@@ -17,3 +17,9 @@ walker cosine_similarity_test {
 walker cosine_similarity_batch_test{
     report vector.cosine_sim([[1,2,3], [1,2,4]], [1,2,4]); // [0.9914601339836675, 1.0]
 }
+
+walker dimensionality_reduction_test {
+    has test_data = [[1, 2, 3], [1, 2, 4], [1, 2, 5]];
+    model =  vector.dim_reduce_fit(test_data, 2);
+    report vector.dim_reduce_apply([3, 4, 5], model);
+}
