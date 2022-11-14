@@ -73,13 +73,13 @@ LICENSE_VALIDATION_ERROR_MSG = (
     "Your license copy is invalid or expired. Please contact to Jaseci team."
 )
 
-
 SCHEDULER_CONFIG = {
     "apscheduler.jobstores.default": {
         "class": "django_apscheduler.jobstores:DjangoJobStore"
     },
     "apscheduler.executors.processpool": {"type": "threadpool"},
 }
+
 SCHEDULER_AUTOSTART = True
 
 DEBUG = False
