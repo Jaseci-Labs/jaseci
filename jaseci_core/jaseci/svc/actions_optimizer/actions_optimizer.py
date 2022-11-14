@@ -118,8 +118,8 @@ class ActionsOptimizer:
                 "cur_config": None,  # current active configuration
                 "remain_configs": [],  # remaining configurations that need to be evaluated
                 "past_configs": [],  # configurations already evaluated
-                "eval_phase": 10,  # how long is evaluatin period (in seconds)
-                "perf_phase": 10,  # how long is the performance period (in seconds)
+                "eval_phase": 20,  # how long is evaluatin period (in seconds)
+                "perf_phase": 1000000000,  # how long is the performance period (in seconds)
                 "cur_phase": 0,  # how long the current period has been running
             }
         policy_state["cur_phase"] += self.jsorc_interval
