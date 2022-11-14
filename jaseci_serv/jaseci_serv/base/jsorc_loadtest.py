@@ -5,9 +5,11 @@ from jaseci.utils.utils import logger
 from rest_framework.test import APIClient
 
 import os
+import json
 from time import sleep
 
 JAC_PATH = os.path.join(os.path.dirname(__file__), "action_micro_jac/")
+HLP_JAC_PATH = os.path.join(os.path.dirname(__file__), "hlp_jac/")
 
 
 class JsorcLoadTest:
@@ -44,6 +46,50 @@ class JsorcLoadTest:
         """
         test_func = getattr(self, self.test)
         return test_func()
+
+    def hlp_evaluate(self):
+        result = {}
+        # Regsiter the sentinel
+        jac_file = open(HLP_JAC_PATH + "main.jir").read()
+        payload = {"op": "sentinel_register", "code": jac_file, "mode": "ir"}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        with open(HLP_JAC_PATH + "metadata.json") as fin:
+            metadata = json.load(fin)
+
+        for action in metadata["actions"]:
+            payload = {"op": "jsorc_actions_load", "name": action, "mode": "local"}
+            res = self.sauth_client.post(
+                reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+            )
+
+        for req in metadata["prep"]:
+            payload = {"op": "walker_run", "name": req["name"], "ctx": req["ctx"]}
+            self.sauth_client.post(
+                reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+            )
+
+        # Set the policy
+        payload = {"op": "jsorc_actionpolicy_set", "policy_name": "Evaluation"}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        # Start the benchmark
+        self.start_benchmark()
+
+        # Execute the walker trace
+        for i in range(200):
+            for req in metadata["walkers"]:
+                payload = {"op": "walker_run", "name": req["name"], "ctx": req["ctx"]}
+                self.sauth_client.post(
+                    reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+                )
+
+        result = self.stop_benchmark()
+        return result
 
     def two_modules_evaluate(self):
         result = {}

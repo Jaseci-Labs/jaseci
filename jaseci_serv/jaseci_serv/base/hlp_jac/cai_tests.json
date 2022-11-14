@@ -1,0 +1,172 @@
+[
+    {
+        "test_name": "home price inquiry",
+        "flow": [
+            {
+                "query": "I am looking to buy a home in Orlando Florida. What's the average price of homes in that area",
+                "state": "home_price_inquiry",
+                "response_contains": "orlando florida"
+            }
+        ]
+    },
+    {
+        "test_name": "home price inquiry 2",
+        "flow": [
+            {
+                "query": "How much does a house in Seattle go for nowadays",
+                "state": "home_price_inquiry",
+                "response_contains": "seattle"
+            }
+        ]
+    },
+    {
+        "test_name": "loan approval 1",
+        "flow": [
+            {
+                "query": "Do you think I will get approved for a loan?",
+                "state": "prob_of_approval",
+                "response_contains": "Based on your profile and credit history"
+            }
+        ]
+    },
+    {
+        "test_name": "saving advice 1",
+        "flow": [
+            {
+                "query": "$400,000 seems a little high to me right now. Can you give me steps to take to make me purchase ready?",
+                "state": "saving_advice",
+                "response_contains": "to lower this cost"
+            }
+        ]
+    },
+    {
+        "test_name": "home price inquiry 3, followup",
+        "flow": [
+            {
+                "query": "I am looking to buy a new house. How is housing market these days?",
+                "state": "home_price_inquiry",
+                "response_contains": "Is there a specific area you have in mind"
+            },
+            {
+                "query": "oh i am thinking buying a house in florida",
+                "state": "home_price_inquiry",
+                "response_contains": "florida"
+            }
+        ]
+    },
+    {
+        "test_name": "saving advice 2, full flow",
+        "flow": [
+            {
+                "query": "Can you give me steps to take to make me purchase ready?",
+                "state": "saving_advice",
+                "response_contains": "Blue Apron"
+            },
+            {
+                "query": "yes let's try that",
+                "state": "saving_advice_confirmation",
+                "response_contains": "recommend other ways"
+            },
+            {
+                "query": "is there anything else you can do to help make me purchase ready?",
+                "state": "saving_advice",
+                "response_contains": "down payment assistance programs"
+            },
+            {
+                "query": "yes please do",
+                "state": "saving_advice_confirmation",
+                "response_contains": "The program information"
+            }
+        ]
+    },
+    {
+        "test_name": "saving advice 3, full flow, denial",
+        "flow": [
+            {
+                "query": "Can you give me steps to make me purchase ready?",
+                "state": "saving_advice",
+                "response_contains": "Blue Apron"
+            },
+            {
+                "query": "no i don't want that",
+                "state": "saving_advice_denial",
+                "response_contains": "No problem."
+            },
+            {
+                "query": "is there anything else you can do to make me purchase ready?",
+                "state": "saving_advice",
+                "response_contains": "down payment assistance programs"
+            },
+            {
+                "query": "no for now",
+                "state": "saving_advice_denial",
+                "response_contains": "No problem."
+            }
+        ]
+    },
+    {
+        "test_name": "loan approval full flow",
+        "flow": [
+            {
+                "query": "Do you think I will get approved for a loan?",
+                "state": "prob_of_approval",
+                "response_contains": "will increase"
+            },
+            {
+                "query": "let's do it",
+                "state": "loan_approval_strategy",
+                "response_contains": "cash flow analysis"
+            },
+            {
+                "query": "sounds good",
+                "state": "loan_approval_strategy_confirmation",
+                "response_contains": "4-month payment plan"
+            }
+        ]
+    },
+    {
+        "test_name": "loan approval with denail",
+        "flow": [
+            {
+                "query": "Do you think I will get approved for a loan?",
+                "state": "prob_of_approval",
+                "response_contains": "will increase"
+            },
+            {
+                "query": "i don't need that",
+                "state": "loan_approval_denial",
+                "response_contains": "No problem."
+            }
+        ]
+    },
+    {
+        "test_name": "test home interests",
+        "flow": [
+            {
+                "query": "can you show me some homes that may be of interest to me?",
+                "state": "home_interests",
+                "response_contains": "Take a look"
+            },
+            {
+                "query": "Thanks so much Kev! So, i really like these homes, but what are my chances for getting approved for a loan?",
+                "state": "prob_of_approval",
+                "response_contains": "Based on"
+            }
+        ]
+    },
+    {
+        "test_name": "chitchat",
+        "flow": [
+            {
+                "query": "hi kev how are you?",
+                "state": "greeting",
+                "response_contains": "doing well"
+            },
+            {
+                "query": "i'm doing good could you tell me a joke?",
+                "state": "tell_a_joke",
+                "response_contains": "waves"
+            }
+        ]
+    }
+]

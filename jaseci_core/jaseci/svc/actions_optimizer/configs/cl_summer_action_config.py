@@ -25,7 +25,8 @@ CL_SUMMER_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/\ncd /jaseci/jaseci_core/\nsource install.sh\ncd /jaseci\ncd /jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/cl_summer\nuvicorn jaseci_ai_kit.cl_summer:serv_actions --host 0.0.0.0 --port 80"
+                # "prod_up": "git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/\ncd /jaseci/jaseci_core/\nsource install.sh\ncd /jaseci\ncd /jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/cl_summer\nuvicorn jaseci_ai_kit.cl_summer:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "pip install jaseci-ai-kit==1.3.5.22\nuvicorn jaseci_ai_kit.cl_summer:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {

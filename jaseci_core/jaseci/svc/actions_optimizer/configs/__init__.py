@@ -30,4 +30,6 @@ ACTION_CONFIGS = {
     "use_enc": USE_ENC_ACTION_CONFIG,
     "use_qa": USE_QA_ACTION_CONFIG,
     "bi_enc": BI_ENC_ACTION_CONFIG,
+    "tfm_ner": TFM_NER_ACTION_CONFIG,
+    "cl_summer": CL_SUMMER_ACTION_CONFIG,
 }

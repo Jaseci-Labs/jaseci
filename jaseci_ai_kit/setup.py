@@ -30,6 +30,7 @@ setup(
         "pytest>=7.0.1,<7.1",
         "pytest-order>=1.0.1,<1.1",
         "sentence-transformers>=2.2.0,<2.3",
+        "protobuf>=3.20.1,<3.21",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],

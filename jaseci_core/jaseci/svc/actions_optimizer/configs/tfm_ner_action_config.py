@@ -25,7 +25,7 @@ TFM_NER_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/\npip install datasets\ncd /jaseci/jaseci_core/\nsource install.sh\ncd /jaseci/jaseci_ai_kit/\nsource install.sh\ncd /jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/tfm_ner\nuvicorn jaseci_ai_kit.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "pip install jaseci-ai-kit==1.3.5.22\npip install protobuf==3.20.*\nuvicorn jaseci_ai_kit.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
