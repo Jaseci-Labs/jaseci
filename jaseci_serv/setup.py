@@ -26,9 +26,12 @@ setup(
         "django-celery-results>=2.3,<2.4",
         "django-celery-beat>=2.2",
         "pytest-django",
+        "dj-rest-auth[with_social]",
+        "apscheduler",
+        "django-apscheduler",
     ],
     package_data={
-        "": ["*.jac", "VERSION"],
+        "": ["*.jac", "VERSION", "templates/examples/*.html"],
     },
     scripts=["jsserv"],
     author="Jason Mars",
