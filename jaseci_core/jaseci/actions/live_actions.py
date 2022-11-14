@@ -112,8 +112,8 @@ def unload_action(name):
         mod = live_actions[name].__module__
         if mod != "js_remote_hook":
             live_action_modules[mod].remove(name)
-        if len(live_action_modules[mod]) < 1:
-            unload_module(mod)
+            if len(live_action_modules[mod]) < 1:
+                unload_module(mod)
         del live_actions[name]
         return True
     return False
