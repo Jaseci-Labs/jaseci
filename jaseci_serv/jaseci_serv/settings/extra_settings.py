@@ -81,3 +81,5 @@ SCHEDULER_CONFIG = {
     "apscheduler.executors.processpool": {"type": "threadpool"},
 }
 SCHEDULER_AUTOSTART = True
+
+DEBUG = False
