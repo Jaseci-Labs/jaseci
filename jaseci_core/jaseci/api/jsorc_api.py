@@ -118,6 +118,29 @@ class JsOrcApi:
             return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api()
+    def jsorc_actionstracking_start(self):
+        """ "
+        Instruct JSORC to start tracking any changes in actions state
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            hook.jsorc.app.actions_tracking_start()
+            return {"success": True}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_actionstracking_stop(self):
+        """ "
+        Instruct JSORC to start tracking any changes in actions state
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            return hook.jsorc.app.actions_tracking_stop()
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
     def jsorc_benchmark_start(self):
         """
         Tell JSORC to start collecting request performance metrics

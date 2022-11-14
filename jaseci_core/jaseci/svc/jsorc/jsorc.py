@@ -87,8 +87,12 @@ class JsOrc:
             "jsorc": {"active": False, "requests": {}},
             "actions_optimizer": {"active": False, "requests": {}},
         }
+        self.actions_history = {"active": False, "history": []}
         self.actions_optimizer = ActionsOptimizer(
-            kube=kube, policy="default", benchmark=self.benchmark["actions_optimizer"]
+            kube=kube,
+            policy="default",
+            benchmark=self.benchmark["actions_optimizer"],
+            actions_history=self.actions_history,
         )
 
     def is_running(self, name: str, namespace: str):
@@ -139,6 +143,18 @@ class JsOrc:
                     f"Error retrieving {kind} for `{name}` with namespace `{namespace}`"
                 )
             return e
+
+    def actions_tracking_start(self):
+        """ """
+        self.actions_history["active"] = True
+        self.actions_history["history"] = []
+
+    def actions_tracking_stop(self):
+        """ """
+        if not self.actions_history["active"]:
+            return []
+
+        return self.actions_history["history"]
 
     # TODO: should we have a separate and dedicated benchmark service?
     def benchmark_start(self):

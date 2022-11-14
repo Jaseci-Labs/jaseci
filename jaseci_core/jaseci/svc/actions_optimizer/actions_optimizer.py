@@ -10,6 +10,7 @@ from jaseci.actions.live_actions import (
     load_remote_actions,
 )
 import requests
+import time
 from kubernetes.client.rest import ApiException
 
 POLICIES = ["Default", "BackAndForth", "Evaluation"]
@@ -17,7 +18,11 @@ POLICIES = ["Default", "BackAndForth", "Evaluation"]
 
 class ActionsOptimizer:
     def __init__(
-        self, kube: Kube, policy: str = "Default", benchmark: dict = {}
+        self,
+        kube: Kube,
+        policy: str = "Default",
+        benchmark: dict = {},
+        actions_history: dict = {},
     ) -> None:
         self.kube = kube
         self.policy = policy
@@ -26,6 +31,7 @@ class ActionsOptimizer:
         self.policy_state = {}
         self.benchmark = benchmark
         self.jsorc_interval = 0
+        self.actions_history = actions_history
 
     def set_action_policy(self, policy_name: str):
         """
@@ -236,7 +242,7 @@ class ActionsOptimizer:
         Apply any action configuration changes
         """
         actions_change = dict(self.actions_change)
-        # For now, to_* and *_to_* are teh same logic
+        # For now, to_* and *_to_* are the same logic
         # But this might change down the line
         for name, change_type in actions_change.items():
             logger.info(f"==Actions Optimizer== Changing {name} {change_type}")
@@ -255,6 +261,11 @@ class ActionsOptimizer:
             elif change_type == "remote_to_local" or change_type == "remote_to_module":
                 self.load_action_module(name)
                 del self.actions_change[name]
+
+        if len(actions_change) > 0 and self.actions_history["active"]:
+            self.actions_history["history"].append(
+                {"ts": time.time(), "actions_state": self.actions_state.get_all_state()}
+            )
 
     def kube_create(self, config):
         namespace = "default"  # TODO: hardcoded

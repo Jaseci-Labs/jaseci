@@ -76,6 +76,9 @@ class ActionsState:
             return None
         return self.state[name]["remote"].get("url", None)
 
+    def get_all_state(self):
+        return self.state
+
     def get_state(self, name):
         return self.state.get(name, None)
 
