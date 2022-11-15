@@ -85,7 +85,7 @@ PROMON_KUBE = {
                     "app.kubernetes.io/version": "2.5.0",
                 },
                 "name": "jaseci-prometheus-kube-state-metrics",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "imagePullSecrets": [],
         },
@@ -101,7 +101,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-alertmanager",
-                "namespace": "default",
+                "namespace": "jsorc",
                 "annotations": {},
             },
         },
@@ -117,7 +117,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-node-exporter",
-                "namespace": "default",
+                "namespace": "jsorc",
                 "annotations": {},
             },
         },
@@ -133,7 +133,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-pushgateway",
-                "namespace": "default",
+                "namespace": "jsorc",
                 "annotations": {},
             },
         },
@@ -149,7 +149,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-server",
-                "namespace": "default",
+                "namespace": "jsorc",
                 "annotations": {},
             },
         },
@@ -167,7 +167,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-alertmanager",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "data": {
                 "allow-snippet-annotations": "false",
@@ -186,7 +186,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-server",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "data": {
                 "allow-snippet-annotations": "false",
@@ -211,7 +211,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-alertmanager",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "spec": {
                 "accessModes": ["ReadWriteOnce"],
@@ -230,7 +230,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-server",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "spec": {
                 "accessModes": ["ReadWriteOnce"],
@@ -476,7 +476,7 @@ PROMON_KUBE = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-kube-state-metrics",
-                    "namespace": "default",
+                    "namespace": "jsorc",
                 }
             ],
         },
@@ -497,7 +497,7 @@ PROMON_KUBE = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-alertmanager",
-                    "namespace": "default",
+                    "namespace": "jsorc",
                 }
             ],
             "roleRef": {
@@ -523,7 +523,7 @@ PROMON_KUBE = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-pushgateway",
-                    "namespace": "default",
+                    "namespace": "jsorc",
                 }
             ],
             "roleRef": {
@@ -549,7 +549,7 @@ PROMON_KUBE = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-server",
-                    "namespace": "default",
+                    "namespace": "jsorc",
                 }
             ],
             "roleRef": {
@@ -565,7 +565,7 @@ PROMON_KUBE = {
             "kind": "Service",
             "metadata": {
                 "name": "jaseci-prometheus-kube-state-metrics",
-                "namespace": "default",
+                "namespace": "jsorc",
                 "labels": {
                     "helm.sh/chart": "kube-state-metrics-4.13.0",
                     "app.kubernetes.io/managed-by": "Helm",
@@ -605,7 +605,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-alertmanager",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "spec": {
                 "ports": [
@@ -633,7 +633,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-node-exporter",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "spec": {
                 "ports": [
@@ -665,7 +665,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-pushgateway",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "spec": {
                 "ports": [
@@ -696,7 +696,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-server",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "spec": {
                 "ports": [
@@ -730,7 +730,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-node-exporter",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "spec": {
                 "selector": {
@@ -820,7 +820,7 @@ PROMON_KUBE = {
             "kind": "Deployment",
             "metadata": {
                 "name": "jaseci-prometheus-kube-state-metrics",
-                "namespace": "default",
+                "namespace": "jsorc",
                 "labels": {
                     "helm.sh/chart": "kube-state-metrics-4.13.0",
                     "app.kubernetes.io/managed-by": "Helm",
@@ -898,7 +898,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-alertmanager",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "spec": {
                 "selector": {
@@ -1016,7 +1016,7 @@ PROMON_KUBE = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-pushgateway",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "spec": {
                 "selector": {
@@ -1078,7 +1078,7 @@ PROMON_KUBE = {
                     "pod": "jaseci-prometheus-server",
                 },
                 "name": "jaseci-prometheus-server",
-                "namespace": "default",
+                "namespace": "jsorc",
             },
             "spec": {
                 "selector": {

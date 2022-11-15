@@ -45,6 +45,7 @@ class JsOrcService(CommonService):
         while True:
             # Keeping set of services alive
             for svc in self.keep_alive:
+                logger.info(f"keeping alive {svc}")
                 try:
                     self.app.check(self.namespace, svc)
                 except Exception as e:
@@ -120,25 +121,35 @@ class JsOrc:
                 logger.info(
                     f"Creating {kind} for `{name}` with namespace `{namespace}`"
                 )
-                # HACK
+                # live patching k8s configs
                 if kind == "DaemonSet" and name == "jaseci-prometheus-node-exporter":
                     # TODO: temporary hack until we figure out why kube config from the python file is not updating
-                    del conf["spec"]["template"]["spec"]["containers"][0][
-                        "volumeMounts"
-                    ][2]["mountPropagation"]
+                    # del conf["spec"]["template"]["spec"]["containers"][0][
+                    #     "volumeMounts"
+                    # ][2]["mountPropagation"]
                     conf["spec"]["template"]["spec"]["containers"][0][
                         "hostRootFsMount"
                     ] = {"enabled": False, "mountPropagation": "HostToContainer"}
                     conf["spec"]["template"]["spec"]["containers"][0][
                         "hostRootFs"
                     ] = False
+                elif "namespace" in conf["metadata"]:
+                    del conf["metadata"]["namespace"]
+                elif kind == "ClusterRoleBinding":
+                    for subj in conf["subjects"]:
+                        if subj["kind"] == "ServiceAccount":
+                            subj["namespace"] = namespace
 
+            logger.info(kind)
+            logger.info(namespace)
+            logger.info(conf)
             self.kube.create(kind, namespace, conf)
-        except ApiException:
+        except ApiException as e:
             if not self.quiet:
                 logger.error(
                     f"Error creating {kind} for `{name}` with namespace `{namespace}`"
                 )
+                logger.error(str(e))
 
     def read(self, kind: str, name: str, namespace: str):
         try:

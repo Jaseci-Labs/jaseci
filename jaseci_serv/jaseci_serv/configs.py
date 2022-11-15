@@ -63,7 +63,7 @@ JSORC_CONFIG = {
     "quiet": False,
     "interval": 10,
     "namespace": "jsorc",
-    "keep_alive": ["redis"],
+    "keep_alive": ["promon"],
 }
 
 PROMON_CONFIG = {
