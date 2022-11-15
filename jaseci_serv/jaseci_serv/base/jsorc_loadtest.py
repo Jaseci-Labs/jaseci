@@ -63,6 +63,7 @@ class JsorcLoadTest:
         res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
+        return res.data
 
     def run_walker(self, walker_name, ctx={}):
         payload = {"op": "walker_run", "name": walker_name, "ctx": ctx}
@@ -79,7 +80,7 @@ class JsorcLoadTest:
         for action_set in ["use_enc"]:
             latency[action_set] = {}
             # for mode in ["local", "remote"]:
-            for mode in ["local"]:
+            for mode in ["local", "remote"]:
                 self.load_action(action_set, mode)
                 action_set_path = os.path.join(JAC_PATH, f"{action_set}/")
                 for jac_file in os.listdir(action_set_path):
@@ -110,7 +111,9 @@ class JsorcLoadTest:
                     latency[action_set][action_name][mode] = result["walker_run"][
                         "average_latency"
                     ]
-                self.unload_action(action_set, mode)
+                res = self.unload_action(action_set, mode)
+                logger.info(f"=======Attempt to unload action {action_set} {mode}")
+                logger.info(res)
 
         # for action_set, res in latency.items():
         #     for action_name in res.keys():

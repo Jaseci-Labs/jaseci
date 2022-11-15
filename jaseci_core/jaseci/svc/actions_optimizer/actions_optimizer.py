@@ -255,11 +255,11 @@ class ActionsOptimizer:
                 if loaded:
                     del self.actions_change[name]
             elif change_type == "local_to_remote" or change_type == "module_to_remote":
-                loaded = self.load_action_remote(name)
+                loaded = self.load_action_remote(name, unload_existing=True)
                 if loaded:
                     del self.actions_change[name]
             elif change_type == "remote_to_local" or change_type == "remote_to_module":
-                self.load_action_module(name)
+                self.load_action_module(name, unload_existing=True)
                 del self.actions_change[name]
 
         if len(actions_change) > 0 and self.actions_history["active"]:
@@ -318,7 +318,7 @@ class ActionsOptimizer:
         url = f"http://{config['Service']['metadata']['name']}/"
         return url
 
-    def load_action_remote(self, name):
+    def load_action_remote(self, name, unload_existing=False):
         """
         Load a remote action.
         JSORC will get the URL of the remote microservice and stand up a microservice if there isn't currently one in the cluster.
@@ -348,6 +348,8 @@ class ActionsOptimizer:
                 cur_state = self.actions_state.get_state(name)
 
         if cur_state["remote"]["status"] == "READY":
+            if unload_existing:
+                self.unload_action_module(name)
             load_remote_actions(url)
             self.actions_state.remote_action_loaded(name)
             logger.info(f"==Actions Optimizer== LOADED remote action for {name}")
@@ -355,7 +357,7 @@ class ActionsOptimizer:
 
         return False
 
-    def load_action_module(self, name):
+    def load_action_module(self, name, unload_existing=False):
         """
         Load an action module
         """
@@ -369,6 +371,8 @@ class ActionsOptimizer:
             return
 
         module = ACTION_CONFIGS[name]["module"]
+        if unload_existing:
+            self.unload_action_remote(name)
         load_module_actions(module)
         self.actions_state.module_action_loaded(name, module)
         logger.info(f"==Actions Optimizer== LOADED module action for {name}")
@@ -385,6 +389,10 @@ class ActionsOptimizer:
             return False, "Action is not loaded as module."
 
         module_name = cur_state["module"]["name"]
+
+        # Hack?
+        module_name = module_name.split(".")[-1]
+        module_name = f"jaseci_ai_kit.modules.{module_name}.{module_name}"
 
         unload_module(module_name)
         self.actions_state.module_action_unloaded(name)
