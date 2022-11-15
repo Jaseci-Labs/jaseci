@@ -76,16 +76,24 @@ class JsorcLoadTest:
         Run action level tests
         """
         latency = {}
-        # for action_set in ["use_enc", "use_qa", "tfm_ner", "text_seg", "flair_ner", "cl_summer", "bi_enc"]:
-        for action_set in ["use_enc"]:
+        for action_set in [
+            "use_enc",
+            "use_qa",
+            "text_seg",
+            "flair_ner",
+            "cl_summer",
+            "bi_enc",
+            "tfm_ner",
+        ]:
+            # for action_set in ["use_enc"]:
             latency[action_set] = {}
             # for mode in ["local", "remote"]:
             for mode in ["local", "remote"]:
                 self.load_action(action_set, mode)
                 action_set_path = os.path.join(JAC_PATH, f"{action_set}/")
                 for jac_file in os.listdir(action_set_path):
-                    if jac_file != "cos_sim_score.jac":
-                        continue
+                    # if jac_file != "cos_sim_score.jac":
+                    #     continue
                     if not jac_file.endswith(".jac"):
                         continue
                     action_name = jac_file.split(".")[0]
@@ -93,8 +101,6 @@ class JsorcLoadTest:
                         latency[action_set][action_name] = {}
                     full_jac_file_path = os.path.join(action_set_path, jac_file)
                     jac_code = open(full_jac_file_path).read()
-                    logger.info(full_jac_file_path)
-                    logger.info(jac_code)
                     payload = {"op": "sentinel_register", "code": jac_code}
                     res = self.sauth_client.post(
                         reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -104,20 +110,19 @@ class JsorcLoadTest:
                         reverse(f'jac_api:{payload["op"]}'), payload, format="json"
                     )
                     self.start_benchmark()
-                    for i in range(1):
+                    for i in range(50):
                         self.run_walker(action_name)
                     result = self.stop_benchmark()
-                    logger.info(result)
                     latency[action_set][action_name][mode] = result["walker_run"][
                         "average_latency"
                     ]
                 res = self.unload_action(action_set, mode)
-                logger.info(f"=======Attempt to unload action {action_set} {mode}")
-                logger.info(res)
 
-        # for action_set, res in latency.items():
-        #     for action_name in res.keys():
-        #         res[action_name]["local_vs_remote"] = res[action_name]["remote"]/res[action_name]["local"]
+        for action_set, res in latency.items():
+            for action_name in res.keys():
+                res[action_name]["local_vs_remote"] = (
+                    res[action_name]["remote"] / res[action_name]["local"]
+                )
         return latency
 
     def hlp_evaluate(self):
@@ -155,7 +160,7 @@ class JsorcLoadTest:
         self.start_actions_tracking()
 
         # Execute the walker trace
-        for i in range(50):
+        for i in range(1):
             for req in metadata["walkers"]:
                 payload = {"op": "walker_run", "name": req["name"], "ctx": req["ctx"]}
                 self.sauth_client.post(
@@ -175,11 +180,6 @@ class JsorcLoadTest:
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
 
-        # Set the policy
-        payload = {"op": "jsorc_actionpolicy_set", "policy_name": "Evaluation"}
-        res = self.sauth_client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
         # Load use_enc local action
         payload = {"op": "jsorc_actions_load", "name": "use_enc", "mode": "local"}
         res = self.sauth_client.post(
@@ -188,6 +188,11 @@ class JsorcLoadTest:
         # Load bi_enc local action
         payload = {"op": "jsorc_actions_load", "name": "bi_enc", "mode": "local"}
         self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # Set the policy
+        payload = {"op": "jsorc_actionpolicy_set", "policy_name": "Evaluation"}
+        res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
 
@@ -212,6 +217,17 @@ class JsorcLoadTest:
 
     def two_modules_all_local(self):
         result = {}
+        # Load use_enc local action
+        payload = {"op": "jsorc_actions_load", "name": "use_enc", "mode": "local"}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # Load bi_enc local action
+        payload = {"op": "jsorc_actions_load", "name": "bi_enc", "mode": "local"}
+        self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
         jac_file = open(JAC_PATH + "mixture.jac").read()
         # Regsiter the sentinel
         payload = {"op": "sentinel_register", "code": jac_file}
@@ -222,16 +238,6 @@ class JsorcLoadTest:
         # Set the policy
         payload = {"op": "jsorc_actionpolicy_set", "policy_name": "Default"}
         res = self.sauth_client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        # Load use_enc local action
-        payload = {"op": "jsorc_actions_load", "name": "use_enc", "mode": "local"}
-        res = self.sauth_client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        # Load bi_enc local action
-        payload = {"op": "jsorc_actions_load", "name": "bi_enc", "mode": "local"}
-        self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
 

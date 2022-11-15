@@ -1,5 +1,6 @@
 CL_SUMMER_ACTION_CONFIG = {
     "module": "jaseci_ai_kit.cl_summer",
+    "loaded_module": "jaseci_ai_kit.modules.cl_summer.cl_summer",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -21,12 +22,10 @@ CL_SUMMER_ACTION_CONFIG = {
             "apiVersion": "v1",
             "metadata": {
                 "name": "cl-summer-up",
-                "namespace": "default",
                 "creationTimestamp": None,
             },
             "data": {
-                # "prod_up": "git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/\ncd /jaseci/jaseci_core/\nsource install.sh\ncd /jaseci\ncd /jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/cl_summer\nuvicorn jaseci_ai_kit.cl_summer:serv_actions --host 0.0.0.0 --port 80"
-                "prod_up": "pip install jaseci-ai-kit==1.3.5.22\nuvicorn jaseci_ai_kit.cl_summer:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jaseci_ai_kit.cl_summer:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -55,7 +54,7 @@ CL_SUMMER_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "cl-summer",
-                                "image": "jaseci/jaseci-ai-kit:latest",
+                                "image": "jaseci/jaseci-ai-kit:1.3.5.22",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

@@ -1,5 +1,6 @@
 ENT_EXT_ACTION_CONFIG = {
     "module": "jaseci_ai_kit.ent_ext",
+    "loaded_module": "jaseci_ai_kit.modules.ent_ext.ent_ext",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -21,11 +22,10 @@ ENT_EXT_ACTION_CONFIG = {
             "apiVersion": "v1",
             "metadata": {
                 "name": "ent-ext-up",
-                "namespace": "default",
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/\ncd /jaseci/jaseci_core/\nsource install.sh\ncd /jaseci/jaseci_ai_kit/\nsource install.sh\npip install flair==0.10\ncd /jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/ent_ext\nuvicorn jaseci_ai_kit.ent_ext:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jaseci_ai_kit.ent_ext:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -51,7 +51,7 @@ ENT_EXT_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "ent-ext",
-                                "image": "jaseci/jaseci-ai-kit:latest",
+                                "image": "jaseci/jaseci-ai-kit:1.3.5.22",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {"requests": {"memory": "3Gi"}},

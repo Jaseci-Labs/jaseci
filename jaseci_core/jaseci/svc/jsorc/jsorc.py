@@ -6,6 +6,8 @@ from jaseci.svc import CommonService, ServiceState as Ss
 from jaseci.svc.kubernetes import Kube
 from jaseci.svc.actions_optimizer.actions_optimizer import ActionsOptimizer
 from .config import JSORC_CONFIG
+import numpy as np
+import time
 
 #################################################
 #                  JASECI ORC                   #
@@ -34,7 +36,7 @@ class JsOrcService(CommonService):
         self.namespace = self.config.get("namespace", "default")
         self.keep_alive = self.config.get("keep_alive", [])
 
-        self.app = JsOrc(hook.meta, hook.kube.app, self.quiet)
+        self.app = JsOrc(hook.meta, hook.kube.app, self.quiet, self.namespace)
         self.state = Ss.RUNNING
         # self.app.check(self.namespace, "redis")
         self.spawn_daemon(jsorc=self.interval_check)
@@ -78,10 +80,11 @@ class JsOrcService(CommonService):
 
 
 class JsOrc:
-    def __init__(self, meta, kube: Kube, quiet: bool):
+    def __init__(self, meta, kube: Kube, quiet: bool, namespace: str):
         self.meta = meta
         self.kube = kube
         self.quiet = quiet
+        self.namespace = namespace
         # overall performance tracking benchmark
         self.benchmark = {
             "jsorc": {"active": False, "requests": {}},
@@ -93,6 +96,7 @@ class JsOrc:
             policy="default",
             benchmark=self.benchmark["actions_optimizer"],
             actions_history=self.actions_history,
+            namespace=self.namespace,
         )
 
     def is_running(self, name: str, namespace: str):
@@ -163,6 +167,7 @@ class JsOrc:
         """
         self.benchmark["jsorc"]["active"] = True
         self.benchmark["jsorc"]["requests"] = {}
+        self.benchmark["jsorc"]["start_ts"] = time.time()
 
     def benchmark_stop(self, report):
         """
@@ -185,8 +190,16 @@ class JsOrc:
         Summarize benchmark results and report.
         """
         summary = {}
+        duration = time.time() - self.benchmark["jsorc"]["start_ts"]
         for request, times in self.benchmark["jsorc"]["requests"].items():
-            summary[request] = {"average_latency": sum(times) / len(times)}
+            summary[request] = {
+                "throughput": len(times) / duration,
+                "average_latency": sum(times) / len(times) * 1000,
+                "50th_latency": np.percentile(times, 50) * 1000,
+                "90th_latency": np.percentile(times, 90) * 1000,
+                "95th_latency": np.percentile(times, 95) * 1000,
+                "99th_latency": np.percentile(times, 99) * 1000,
+            }
 
         return summary
 

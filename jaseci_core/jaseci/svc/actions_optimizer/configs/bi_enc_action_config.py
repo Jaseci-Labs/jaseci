@@ -1,5 +1,6 @@
 BI_ENC_ACTION_CONFIG = {
     "module": "jaseci_ai_kit.bi_enc",
+    "loaded_module": "jaseci_ai_kit.modules.encoder.bi_enc",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -21,11 +22,10 @@ BI_ENC_ACTION_CONFIG = {
             "apiVersion": "v1",
             "metadata": {
                 "name": "bi-enc-up",
-                "namespace": "default",
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "pip install jaseci-ai-kit==1.3.5.22\npip install protobuf==3.20.*\nuvicorn jaseci_ai_kit.bi_enc:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jaseci_ai_kit.bi_enc:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -51,7 +51,7 @@ BI_ENC_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "bi-enc",
-                                "image": "jaseci/jaseci-ai-kit:latest",
+                                "image": "jaseci/jaseci-ai-kit:1.3.5.22",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

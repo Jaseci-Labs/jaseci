@@ -1,5 +1,6 @@
 PDF_EXT_ACTION_CONFIG = {
     "module": "jaseci_ai_kit.pdf_ext",
+    "loaded_module": "jaseci_ai_kit.modules.pdf_ext.pdf_ext",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -21,11 +22,10 @@ PDF_EXT_ACTION_CONFIG = {
             "apiVersion": "v1",
             "metadata": {
                 "name": "pdf-ext-up",
-                "namespace": "default",
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/\ncd /jaseci/jaseci_core/\nsource install.sh\ncd /jaseci/jaseci_ai_kit\nsource install.sh\ncd /jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/pdf_ext\nuvicorn jaseci_ai_kit.pdf_ext:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jaseci_ai_kit.pdf_ext:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -51,7 +51,7 @@ PDF_EXT_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "pdf-ext",
-                                "image": "jaseci/jaseci-ai-kit:latest",
+                                "image": "jaseci/jaseci-ai-kit:1.3.5.22",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

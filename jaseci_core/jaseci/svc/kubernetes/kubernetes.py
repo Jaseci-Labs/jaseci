@@ -59,9 +59,6 @@ class Kube:
         if api.startswith("ClusterRole"):
             self.delete_apis[api](name=name)
         else:
-            logger.info("IN kube delete")
-            logger.info(name)
-            logger.info(namespace)
             self.delete_apis[api](name=name, namespace=namespace)
 
     def defaults(self):

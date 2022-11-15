@@ -1,7 +1,7 @@
 JSORC_CONFIG = {
-    "enabled": False,
-    "quiet": True,
+    "enabled": True,
+    "quiet": False,
     "interval": 10,
-    "namespace": "default",
-    "keep_alive": ["promon", "redis", "task", "mail"],
+    "namespace": "jsorc",
+    "keep_alive": ["promon", "task", "mail"],
 }

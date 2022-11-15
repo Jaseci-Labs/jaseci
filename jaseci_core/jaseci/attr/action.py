@@ -6,6 +6,7 @@ Each action has an id, name, timestamp and it's set of edges.
 from .item import Item
 from jaseci.actions.live_actions import live_actions
 from jaseci.jac.jac_set import JacSet
+from jaseci.utils.utils import logger
 import inspect
 
 # ACTION_PACKAGE = 'jaseci.actions.'
@@ -47,6 +48,8 @@ class Action(Item):
             interp.rt_error(f"Cannot execute {self.value} - Not Found")
             return None
         func = live_actions[self.value]
+        # logger.info(self.value)
+        # logger.info(func)
         args = inspect.getfullargspec(func)
         self.do_auto_conversions(args, func, param_list)
         args = args[0] + args[4]
@@ -63,6 +66,7 @@ class Action(Item):
                 },
             )
         else:
+            # This is where we need to time action call
             result = func(*param_list)
         hook.jsorc.app.post_action_call_hook() if hook.meta.run_svcs else None
         return result

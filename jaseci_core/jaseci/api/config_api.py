@@ -52,20 +52,23 @@ class ConfigApi:
         """
         update global configs
         """
-
-        hook = self._h
-        if name == "TASK_CONFIG":
-            hook.task.reset(hook)
-        elif name == "REDIS_CONFIG":
-            hook.redis.reset(hook)
-        elif name == "MAIL_CONFIG":
-            hook.mail.reset(hook)
-        elif name == "PROMON_CONFIG":
-            hook.promon.reset(hook)
-        elif name == "KUBE_CONFIG":
-            hook.kube.reset(hook)
-        elif name == "JSORC_CONFIG":
-            hook.jsorc.reset(hook)
+        try:
+            hook = self._h
+            if name == "TASK_CONFIG":
+                hook.task.reset(hook)
+            elif name == "REDIS_CONFIG":
+                hook.redis.reset(hook)
+            elif name == "MAIL_CONFIG":
+                hook.mail.reset(hook)
+            elif name == "PROMON_CONFIG":
+                hook.promon.reset(hook)
+            elif name == "KUBE_CONFIG":
+                hook.kube.reset(hook)
+            elif name == "JSORC_CONFIG":
+                hook.jsorc.reset(hook)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "message": str(e)}
 
     @Interface.admin_api()
     def config_list(self):

@@ -23,6 +23,7 @@ class ActionsOptimizer:
         policy: str = "Default",
         benchmark: dict = {},
         actions_history: dict = {},
+        namespace: str = "default",
     ) -> None:
         self.kube = kube
         self.policy = policy
@@ -32,6 +33,7 @@ class ActionsOptimizer:
         self.benchmark = benchmark
         self.jsorc_interval = 0
         self.actions_history = actions_history
+        self.namespace = namespace
 
     def set_action_policy(self, policy_name: str):
         """
@@ -114,12 +116,12 @@ class ActionsOptimizer:
         if len(policy_state) == 0:
             # Initialize policy tracking state
             policy_state = {
-                "phase": "perf",  # current phase of policy: eval|perf
+                "phase": "eval",  # current phase of policy: eval|perf
                 "cur_config": None,  # current active configuration
                 "remain_configs": [],  # remaining configurations that need to be evaluated
                 "past_configs": [],  # configurations already evaluated
-                "eval_phase": 20,  # how long is evaluatin period (in seconds)
-                "perf_phase": 1000000000,  # how long is the performance period (in seconds)
+                "eval_phase": 10,  # how long is evaluatin period (in seconds)
+                "perf_phase": 100,  # how long is the performance period (in seconds)
                 "cur_phase": 0,  # how long the current period has been running
             }
         policy_state["cur_phase"] += self.jsorc_interval
@@ -140,23 +142,32 @@ class ActionsOptimizer:
                 # construct list of possible configurations
                 all_configs = [{}]
                 for act in actions:
-                    logger.info(act)
                     new_configs = []
                     for c in all_configs:
-                        logger.info(c)
                         for m in ["local", "remote"]:
                             c[act] = m
-                            logger.info(c)
                             new_configs.append(dict(c))
-                        logger.info(new_configs)
                     all_configs = list(new_configs)
                 policy_state["remain_configs"] = all_configs
-                logger.info(policy_state["remain_configs"])
 
         if policy_state["phase"] == "eval":
             # In evaluation phase
             if policy_state["cur_config"] is None:
                 logger.info("===Evaluation Policy=== First evaluation config")
+                logger.info("===Evaluation Policy=== Initialize evaluation model")
+                # Initialize configs to eval
+                actions = self.actions_state.get_active_actions()
+                # construct list of possible configurations
+                all_configs = [{}]
+                for act in actions:
+                    new_configs = []
+                    for c in all_configs:
+                        for m in ["local", "remote"]:
+                            c[act] = m
+                            new_configs.append(dict(c))
+                    all_configs = list(new_configs)
+                policy_state["remain_configs"] = all_configs
+
                 # This is the start of evaluation period
                 policy_state["cur_config"] = policy_state["remain_configs"][0]
                 del policy_state["remain_configs"][0]
@@ -255,11 +266,13 @@ class ActionsOptimizer:
                 if loaded:
                     del self.actions_change[name]
             elif change_type == "local_to_remote" or change_type == "module_to_remote":
-                loaded = self.load_action_remote(name, unload_existing=True)
+                # loaded = self.load_action_remote(name, unload_existing=True)
+                loaded = self.load_action_remote(name)
                 if loaded:
                     del self.actions_change[name]
             elif change_type == "remote_to_local" or change_type == "remote_to_module":
-                self.load_action_module(name, unload_existing=True)
+                # self.load_action_module(name, unload_existing=True)
+                self.load_action_module(name)
                 del self.actions_change[name]
 
         if len(actions_change) > 0 and self.actions_history["active"]:
@@ -270,26 +283,24 @@ class ActionsOptimizer:
             )
 
     def kube_create(self, config):
-        namespace = "default"  # TODO: hardcoded
         for kind, conf in config.items():
             name = conf["metadata"]["name"]
             try:
-                self.kube.create(kind, namespace, conf)
+                self.kube.create(kind, self.namespace, conf)
             except ApiException:
                 logger.error(f"Error creating {kind} for {name}")
 
     def kube_delete(self, config):
-        namespace = "default"  # TODO: hardcoded for now
         for kind, conf in config.items():
             name = conf["metadata"]["name"]
             try:
                 logger.info(
-                    f"ActionsOptimzer: deleting {kind} for {name} for namespace {namespace}"
+                    f"ActionsOptimzer: deleting {kind} for {name} for namespace {self.namespace}"
                 )
-                self.kube.delete(kind, name, namespace)
+                self.kube.delete(kind, name, self.namespace)
             except ApiException as e:
                 logger.error(
-                    f"Error deleting {kind} for {name} for namespace {namespace}"
+                    f"Error deleting {kind} for {name} for namespace {self.namespace}"
                 )
                 logger.error(str(e))
 

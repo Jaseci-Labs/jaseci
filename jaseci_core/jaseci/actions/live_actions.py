@@ -50,12 +50,22 @@ def assimilate_action(func, act_group=None, aliases=list()):
     """Helper for jaseci_action decorator"""
     act_group = [func.__module__.split(".")[-1]] if act_group is None else act_group
     action_name = f"{'.'.join(act_group+[func.__name__])}"
+    # logger.info("------in assimilate_action")
+    # logger.info(action_name)
+    # logger.info(func)
     live_actions[action_name] = func
     if func.__module__ != "js_remote_hook":
         if func.__module__ in live_action_modules:
+            # logger.info("1")
+            # logger.info(func.__module__)
+            # logger.info(live_action_modules[func.__module__])
             live_action_modules[func.__module__].append(action_name)
+            # logger.info(live_action_modules[func.__module__])
         else:
             live_action_modules[func.__module__] = [action_name]
+            # logger.info("2")
+            # logger.info(func.__module__)
+            # logger.info(live_action_modules[func.__module__])
     for i in aliases:
         live_actions[f"{'.'.join(act_group+[i])}"] = func
         if func.__module__ != "js_remote_hook":
@@ -89,8 +99,23 @@ def load_local_actions(file: str):
 
 def load_module_actions(mod):
     """Load all jaseci actions from python module"""
+    # logger.info(mod)
+    # logger.info(sys.modules.get(mod, None))
+    # logger.info(sys.modules.get("jaseci_ai_kit.modules.bi_enc.bi_enc", None))
+    # logger.info(sys.modules.get("jaseci_ai_kit.modules.use_enc.use_enc", None))
     if mod in sys.modules:
         del sys.modules[mod]
+    # Hack
+    modmod = mod.split(".")[-1]
+    modmod = f"jaseci_ai_kit.modules.{modmod}.{modmod}"
+    # logger.info(modmod)
+    if modmod in sys.modules:
+        del sys.modules[modmod]
+
+    # HACK 2
+    modmod2 = "jaseci_ai_kit.modules.encoders.bi_enc"
+    if modmod2 in sys.modules:
+        del sys.modules[modmod2]
     mod = importlib.import_module(mod)
     if mod:
         return True

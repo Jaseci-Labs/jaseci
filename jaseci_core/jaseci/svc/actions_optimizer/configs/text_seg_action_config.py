@@ -1,5 +1,6 @@
 TEXT_SEG_ACTION_CONFIG = {
     "module": "jaseci_ai_kit.text_seg",
+    "loaded_module": "jaseci_ai_kit.modules.text_seg.text_seg",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -21,11 +22,10 @@ TEXT_SEG_ACTION_CONFIG = {
             "apiVersion": "v1",
             "metadata": {
                 "name": "text-seg-up",
-                "namespace": "default",
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/\ncd /jaseci/jaseci_core/\nsource install.sh\ncd /jaseci/jaseci_ai_kit/\nsource install.sh\ncd /jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/text_seg\nuvicorn jaseci_ai_kit.text_seg:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jaseci_ai_kit.text_seg:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -54,7 +54,7 @@ TEXT_SEG_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "text-seg",
-                                "image": "jaseci/jaseci-ai-kit:latest",
+                                "image": "jaseci/jaseci-ai-kit:1.3.5.22",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
