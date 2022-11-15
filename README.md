@@ -81,6 +81,7 @@
   - [USE QA](jaseci_ai_kit/jaseci_ai_kit/modules/use_qa/README.md)
   - [Personalized Head](jaseci_ai_kit/jaseci_ai_kit/modules/ph/README.md)
 - [Guide to use Jaseci AI Kit](jaseci_ai_kit/jaseci_ai_kit/guid-to-use-ai-kit.md)
+- [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/jaseci_ai_kit/README.md)
 
 ## Jaseci UI Widget Library
 
