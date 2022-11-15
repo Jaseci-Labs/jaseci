@@ -2432,15 +2432,6 @@
   resolved "https://registry.yarnpkg.com/@rushstack/eslint-patch/-/eslint-patch-1.2.0.tgz#8be36a1f66f3265389e90b5f9c9962146758f728"
   integrity sha512-sXo/qW2/pAcmT43VoRKOJbDOfV3cYpq3szSVfIThQXNt+E4DfKj361vaAt3c88U5tPUxzEswam7GW48PJqtKAg==
 
-"@spectrum-icons/illustrations@^3.5.0":
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/@spectrum-icons/illustrations/-/illustrations-3.5.0.tgz#2b374b63e368f36b50d0854dd5dd110f8bb9d635"
-  integrity sha512-bsfwLdQoYZKUVnYrFXP3fwA/JR8/hWhNCEAozi89x+GxtzZ47KzSC2WgqTJFtx4pnYP7I90HbgOdR141Q7wtBA==
-  dependencies:
-    "@babel/runtime" "^7.6.2"
-    "@react-aria/utils" "^3.14.0"
-    "@react-spectrum/icon" "^3.6.1"
-
 "@spectrum-icons/ui@^3.3.3":
   version "3.3.3"
   resolved "https://registry.yarnpkg.com/@spectrum-icons/ui/-/ui-3.3.3.tgz#ba357a6ab7b9cae722f9fba1287c50d0cba14384"

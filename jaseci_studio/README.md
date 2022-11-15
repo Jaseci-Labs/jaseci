@@ -1,7 +1,14 @@
-# Tauri + Next.js + Typescript
+# Development
+## Setup
+- Install [rust](https://www.rust-lang.org/learn/get-started)
+- Install [yarn](https://classic.yarnpkg.com/lang/en/docs/install/)
+- run `yarn install`
+## Running the Dev Server
+- To start the development server along with the tauri instance run `yarn tauri dev`. You will see an application window popup.
 
-This template should help get you started developing with Tauri, Next.js and Typescript.
+- To start only the NextJS development server run `yarn dev`. Then go to `localhost:1420` to view the website.
 
-## Recommended IDE Setup
+## Building the Application
+- Run `yarn tauri build` to build the application.
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+

@@ -17,8 +17,6 @@
     "@mantine/core": "^5.7.1",
     "@mantine/hooks": "^5.7.1",
     "@mantine/next": "^5.7.1",
-    "@spectrum-icons/illustrations": "^3.5.0",
-    "@spectrum-icons/workflow": "^4.0.3",
     "@tabler/icons": "^1.110.0",
     "@tanstack/react-query": "^4.14.5",
     "@tauri-apps/api": "^1.2.0",
