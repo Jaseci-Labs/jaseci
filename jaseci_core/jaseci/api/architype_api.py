@@ -131,6 +131,7 @@ class ArchitypeApi:
         Args:
             snt (uuid): The sentinel for which to list its architypes
             detailed (bool): Flag to give summary or complete set of fields
+            kind (str): Architype kind used to narrow the result set
 
         Returns:
             json: List of architype objects
@@ -147,8 +148,15 @@ class ArchitypeApi:
 
     @Interface.private_api()
     def architype_count(self, snt: Sentinel = None, kind: str = None):
-        """
-        Get total nodes known to sentinel
+        """Return total number of architypes
+
+        Args:
+            snt (uuid): The sentinel for which to list its architypes
+            detailed (bool): Flag to give summary or complete set of fields
+            kind (str): Architype kind used to narrow the result set from which the count is evaluated
+
+        Returns:
+            int: Count of architype objects
         """
         arch_objects = snt.arch_ids.obj_list()
 
