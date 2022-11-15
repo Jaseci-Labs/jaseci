@@ -1,32 +1,15 @@
 import { Text, Card, Title, Grid } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
+import { client } from "./ReactQuery";
 
 function BasicSummary() {
   const { isLoading, data } = useQuery({
+    queryKey: ["summary"],
     queryFn: () => {
-      const token = localStorage.getItem("token");
       return Promise.all([
-        fetch("http://localhost:8200/js/node_total", {
-          method: "post",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "token " + token,
-          },
-        }).then((res) => res.json()),
-        fetch("http://localhost:8200/js/edge_total", {
-          method: "post",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "token " + token,
-          },
-        }).then((res) => res.json()),
-        fetch("http://localhost:8200/js/walker_total", {
-          method: "post",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "token " + token,
-          },
-        }).then((res) => res.json()),
+        client.post("/js/node_total").then((res) => res.data),
+        client.post("/js/edge_total").then((res) => res.data),
+        client.post("/js/walker_total").then((res) => res.data),
       ]).then((value) => ({
         totalNodes: value[0],
         totalEdges: value[1],
@@ -34,6 +17,7 @@ function BasicSummary() {
       }));
     },
   });
+
   return (
     <Card
       withBorder
@@ -48,10 +32,12 @@ function BasicSummary() {
       <Grid columns={3}>
         <Grid.Col span={1}>
           <Title order={5}>
-            {data?.totalNodes} <br></br>
-            <Text component="span" weight={"normal"} color="dimmed">
-              Nodes
-            </Text>
+            <>
+              {data?.totalNodes} <br />
+              <Text component="span" weight={"normal"} color="dimmed">
+                Nodes
+              </Text>
+            </>
           </Title>
         </Grid.Col>
         <Grid.Col span={1}>

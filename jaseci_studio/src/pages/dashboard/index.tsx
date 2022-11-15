@@ -1,9 +1,18 @@
 import { Box, Card, Flex, Grid } from "@mantine/core";
+import { getCookie } from "cookies-next";
 import BasicSummary from "../../components/BasicSummary";
 
-function Dashboard() {
+export const getServerSideProps = ({ req, res }) => {
+  const tokenCookieResult = getCookie("token", { req, res }) || null;
+  const serverUrl = getCookie("serverUrl", { req, res }) || null;
+
+  return { props: { serverUrl, tokenCookieResult } };
+};
+
+function Dashboard({ serverUrl, tokenCookieResult }) {
   return (
     <Box>
+      <>{JSON.stringify({ serverUrl, tokenCookieResult })}</>
       <Grid columns={3}>
         <Grid.Col span={1}>
           <BasicSummary></BasicSummary>
