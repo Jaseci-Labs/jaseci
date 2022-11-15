@@ -191,26 +191,46 @@ class JsOrc:
         """
         summary = {}
         duration = time.time() - self.benchmark["jsorc"]["start_ts"]
-        for request, times in self.benchmark["jsorc"]["requests"].items():
-            summary[request] = {
-                "throughput": len(times) / duration,
-                "average_latency": sum(times) / len(times) * 1000,
-                "50th_latency": np.percentile(times, 50) * 1000,
-                "90th_latency": np.percentile(times, 90) * 1000,
-                "95th_latency": np.percentile(times, 95) * 1000,
-                "99th_latency": np.percentile(times, 99) * 1000,
+        for request, data in self.benchmark["jsorc"]["requests"].items():
+            summary[request] = {}
+            all_reqs = []
+            for req_name, times in data.items():
+                if len(times) == 0:
+                    continue
+                all_reqs.extend(times)
+                summary[request][req_name] = {
+                    "throughput": len(times) / duration,
+                    "average_latency": sum(times) / len(times) * 1000,
+                    "50th_latency": np.percentile(times, 50) * 1000,
+                    "90th_latency": np.percentile(times, 90) * 1000,
+                    "95th_latency": np.percentile(times, 95) * 1000,
+                    "99th_latency": np.percentile(times, 99) * 1000,
+                }
+            summary[request]["all"] = {
+                "throughput": len(all_reqs) / duration,
+                "average_latency": sum(all_reqs) / len(all_reqs) * 1000,
+                "50th_latency": np.percentile(all_reqs, 50) * 1000,
+                "90th_latency": np.percentile(all_reqs, 90) * 1000,
+                "95th_latency": np.percentile(all_reqs, 95) * 1000,
+                "99th_latency": np.percentile(all_reqs, 99) * 1000,
             }
 
         return summary
 
-    def add_to_benchmark(self, request_type, request_time):
+    def add_to_benchmark(self, request_type, request, request_time):
         """
         Add requests to benchmark performance tracking
         """
         for bm in self.benchmark.values():
             if request_type not in bm["requests"]:
-                bm["requests"][request_type] = []
-            bm["requests"][request_type].append(request_time)
+                bm["requests"][request_type] = {"_default_": []}
+            if request_type == "walker_run":
+                walker_name = dict(request.data)["name"]
+                if walker_name not in bm["requests"][request_type]:
+                    bm["requests"][request_type][walker_name] = []
+                bm["requests"][request_type][walker_name].append(request_time)
+            else:
+                bm["requests"][request_type]["_default_"].append(request_time)
 
     def load_actions(self, name, mode):
         """
@@ -280,9 +300,10 @@ class JsOrc:
 
     def post_request_hook(self, *args):
         request_type = args[0]
-        request_time = args[1]
+        request = args[1]
+        request_time = args[2]
         if self.benchmark["jsorc"]["active"]:
-            self.add_to_benchmark(request_type, request_time)
+            self.add_to_benchmark(request_type, request, request_time)
 
     def optimize(self, jsorc_interval):
         self.actions_optimizer.run(jsorc_interval)

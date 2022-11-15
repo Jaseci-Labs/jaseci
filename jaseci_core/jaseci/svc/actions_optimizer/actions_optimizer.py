@@ -187,7 +187,15 @@ class ActionsOptimizer:
                         self.policy_state["Evaluation"] = policy_state
                         return
 
-                    walker_runs = self.benchmark["requests"]["walker_run"]
+                    walker_runs = []
+                    for walker, times in self.benchmark["requests"][
+                        "walker_run"
+                    ].items():
+                        if walker == "_default_":
+                            continue
+                        else:
+                            walker_runs.extend(times)
+
                     avg_walker_lat = sum(walker_runs) / len(walker_runs)
                     policy_state["cur_config"]["avg_walker_lat"] = avg_walker_lat
                     policy_state["past_configs"].append(policy_state["cur_config"])

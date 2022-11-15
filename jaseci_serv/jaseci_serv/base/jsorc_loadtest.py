@@ -201,7 +201,7 @@ class JsorcLoadTest:
         self.start_actions_tracking()
 
         # Execute the walker
-        for i in range(500):
+        for i in range(1):
             payload = {"op": "walker_run", "name": "cos_sim_score"}
             self.sauth_client.post(
                 reverse(f'jac_api:{payload["op"]}'), payload, format="json"

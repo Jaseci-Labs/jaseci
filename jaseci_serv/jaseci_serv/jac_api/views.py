@@ -56,15 +56,15 @@ class AbstractJacAPIView(APIView):
         """
         self.proc_request(request, **kwargs)
         api_result = self.caller.general_interface_to_api(self.cmd, type(self).__name__)
-        self.log_request_stats()
+        self.log_request_stats(request)
         return self.issue_response(api_result)
 
-    def log_request_stats(self):
+    def log_request_stats(self, request):
         """Api call preamble"""
         tot_time = time() - self.start_time
         hook = self.caller._h
         hook.jsorc.app.post_request_hook(
-            type(self).__name__, tot_time
+            type(self).__name__, request, tot_time
         ) if hook.meta.run_svcs else None
         save_count = 0
         touch_count = 0
