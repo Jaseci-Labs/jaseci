@@ -7,6 +7,7 @@ from .item import Item
 from jaseci.actions.live_actions import live_actions
 from jaseci.jac.jac_set import JacSet
 from jaseci.utils.utils import logger
+import time
 import inspect
 
 # ACTION_PACKAGE = 'jaseci.actions.'
@@ -48,13 +49,12 @@ class Action(Item):
             interp.rt_error(f"Cannot execute {self.value} - Not Found")
             return None
         func = live_actions[self.value]
-        # logger.info(self.value)
-        # logger.info(func)
         args = inspect.getfullargspec(func)
         self.do_auto_conversions(args, func, param_list)
         args = args[0] + args[4]
         hook = scope.parent._h
         hook.jsorc.app.pre_action_call_hook() if hook.meta.run_svcs else None
+        ts = time.time()
         if "meta" in args:
             result = func(
                 *param_list,
@@ -68,5 +68,8 @@ class Action(Item):
         else:
             # This is where we need to time action call
             result = func(*param_list)
-        hook.jsorc.app.post_action_call_hook() if hook.meta.run_svcs else None
+        t = time.time() - ts
+        hook.jsorc.app.post_action_call_hook(
+            self.value, t
+        ) if hook.meta.run_svcs else None
         return result

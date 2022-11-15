@@ -91,11 +91,13 @@ class JsOrc:
             "actions_optimizer": {"active": False, "requests": {}},
         }
         self.actions_history = {"active": False, "history": []}
+        self.actions_calls = {}
         self.actions_optimizer = ActionsOptimizer(
             kube=kube,
             policy="default",
             benchmark=self.benchmark["actions_optimizer"],
             actions_history=self.actions_history,
+            actions_calls=self.actions_calls,
             namespace=self.namespace,
         )
 
@@ -152,6 +154,7 @@ class JsOrc:
         """ """
         self.actions_history["active"] = True
         self.actions_history["history"] = []
+        self.actions_calls.clear()
 
     def actions_tracking_stop(self):
         """ """
@@ -293,7 +296,12 @@ class JsOrc:
         pass
 
     def post_action_call_hook(self, *args):
-        pass
+        action_name = args[0]
+        action_time = args[1]
+        if action_name not in self.actions_calls:
+            self.actions_calls[action_name] = []
+
+        self.actions_calls[action_name].append(action_time)
 
     def pre_request_hook(self, *args):
         pass

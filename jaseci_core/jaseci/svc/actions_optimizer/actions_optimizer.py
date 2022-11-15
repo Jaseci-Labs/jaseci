@@ -23,6 +23,7 @@ class ActionsOptimizer:
         policy: str = "Default",
         benchmark: dict = {},
         actions_history: dict = {},
+        actions_calls: dict = {},
         namespace: str = "default",
     ) -> None:
         self.kube = kube
@@ -33,6 +34,7 @@ class ActionsOptimizer:
         self.benchmark = benchmark
         self.jsorc_interval = 0
         self.actions_history = actions_history
+        self.actions_calls = actions_calls
         self.namespace = namespace
 
     def set_action_policy(self, policy_name: str):
@@ -284,8 +286,15 @@ class ActionsOptimizer:
                 del self.actions_change[name]
 
         if len(actions_change) > 0 and self.actions_history["active"]:
-            logger.info("record history")
-            logger.info(self.actions_state.get_all_state())
+            # Summarize action stats during this period and add to previous state
+            actions_summary = {}
+            for action_name, calls in self.actions_calls.items():
+                actions_summary[action_name] = sum(calls) / len(calls)
+            self.actions_calls.clear()
+
+            if len(self.actions_history["history"]) > 0:
+                self.actions_history["history"][-1]["actions_calls"] = actions_summary
+
             self.actions_history["history"].append(
                 {"ts": time.time(), "actions_state": self.actions_state.get_all_state()}
             )
