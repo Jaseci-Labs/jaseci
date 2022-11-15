@@ -284,3 +284,19 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         e_chk(1)
         snode.destroy()
         self.assertFalse(edge.Edge in user._h.get_object_distribution())
+
+    def test_fast_edges_with_context(self):
+        self.logger_on()
+        user = self.user
+        snode = node.Node(m_id=0, h=user._h)
+        tnode = node.Node(m_id=0, h=user._h)
+        cedge = edge.Edge(m_id=0, h=user._h)
+        cedge.context["a"] = "b"
+        cedge.connect(snode, tnode)
+        user._h.commit()
+        user._h.clear_cache()
+        snode = user._h.get_obj(0, snode.jid)
+        tnode = user._h.get_obj(0, tnode.jid)
+        cedge = snode.outbound_edges()[0]
+        self.assertIn("a", cedge.context.keys())
+        self.assertEqual(cedge.context["a"], "b")

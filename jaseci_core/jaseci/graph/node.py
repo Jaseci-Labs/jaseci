@@ -22,7 +22,7 @@ class Node(Element, Anchored):
 
     def __init__(self, dimension=0, **kwargs):
         self.edge_ids = IdList(self)
-        self.fast_edges = {}  # {name: [[NODEID, DIR, EDGEID]]}
+        self.fast_edges = {}  # {name: [[NODEID, DIR, EDGEID, CONTEXT]]}
         self._fast_edge_ids = IdList(self)
         self.parent_node_ids = IdList(self)
         self.member_node_ids = IdList(self)
@@ -58,6 +58,7 @@ class Node(Element, Anchored):
                 edge.to_node_id = link_order[1]
                 edge.bidirected = v[1] == BI
                 edge.jid = v[2] if len(v) > 2 else uuid.uuid4().urn
+                edge.context = v[3] if len(v) > 3 else {}
                 edge.save()
                 self._fast_edge_ids.add_obj(edge)
 
@@ -80,6 +81,7 @@ class Node(Element, Anchored):
             obj.opposing_node(self).jid,
             BI if obj.is_bidirected() else TO if obj.from_node() == self else FROM,
             obj.jid,
+            obj.context,
         ]
         self.fast_edges[obj.name].append(details)
 
