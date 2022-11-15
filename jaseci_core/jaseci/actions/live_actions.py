@@ -89,6 +89,8 @@ def load_local_actions(file: str):
 
 def load_module_actions(mod):
     """Load all jaseci actions from python module"""
+    if mod in sys.modules:
+        del sys.modules[mod]
     mod = importlib.import_module(mod)
     if mod:
         return True
