@@ -8,6 +8,7 @@ from jaseci.element.element import Element
 from jaseci.element.obj_mixins import Anchored
 from jaseci.utils.utils import logger
 import uuid
+import sys
 
 
 class Edge(Element, Anchored):
@@ -96,7 +97,7 @@ class Edge(Element, Anchored):
         return True
 
     def is_fast(self):
-        return not len(self.context)
+        return sys.getsizeof(self.context) < 2000
 
     def save(self):
         """
