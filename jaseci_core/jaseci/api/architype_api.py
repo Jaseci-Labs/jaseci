@@ -148,7 +148,7 @@ class ArchitypeApi:
 
     @Interface.private_api()
     def architype_count(self, snt: Sentinel = None, kind: str = None):
-        """Return total number of architypes
+        """Return count of architypes
 
         Args:
             snt (uuid): The sentinel for which to list its architypes
