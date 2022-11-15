@@ -1,5 +1,3 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Box,
@@ -7,7 +5,6 @@ import {
   Title,
   Stack,
   Grid,
-  TextInput,
   Text,
   Flex,
   Button,
@@ -19,6 +16,7 @@ import FormTextField from "./FormTextField";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { setCookie } from "cookies-next";
 
 const connectionSchema = z.object({
   email: z.string().email(),
@@ -53,11 +51,9 @@ export function LoginForm() {
       onSuccess: (data) => {
         if (mode === "connect") {
           if (data.token) {
-            localStorage.setItem("token", data.token);
-            localStorage.setItem(
-              "serverUrl",
-              `http://${values.host}:${values.port}`
-            );
+            setCookie("token", data.token);
+            setCookie("serverUrl", `http://${values.host}:${values.port}`);
+
             router.push("/dashboard");
           }
         }

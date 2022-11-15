@@ -39,6 +39,15 @@ class WalkerApi:
             return wlk.serialize(detailed=detailed)
 
     @Interface.private_api()
+    def walker_total(self, snt: Sentinel = None, detailed: bool = False):
+        """
+        Get total walkers known to sentinel
+        """
+        objects = snt.arch_ids.obj_list()
+        walker_objects = list(filter(lambda obj: obj.kind == "walker", objects))
+        return len(walker_objects)
+
+    @Interface.private_api()
     def walker_list(self, snt: Sentinel = None, detailed: bool = False):
         """
         List walkers known to sentinel
