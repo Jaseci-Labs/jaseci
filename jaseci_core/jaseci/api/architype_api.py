@@ -123,7 +123,9 @@ class ArchitypeApi:
             }
 
     @Interface.private_api()
-    def architype_list(self, snt: Sentinel = None, detailed: bool = False):
+    def architype_list(
+        self, snt: Sentinel = None, kind: str = None, detailed: bool = False
+    ):
         """List architypes known to sentinel
 
         Args:
@@ -134,9 +136,26 @@ class ArchitypeApi:
             json: List of architype objects
         """
         archs = []
+
         for i in snt.arch_ids.obj_list():
-            archs.append(i.serialize(detailed=detailed))
+            if not kind:
+                archs.append(i.serialize(detailed=detailed))
+            elif i.kind == kind:
+                archs.append(i.serialize(detailed=detailed))
+
         return archs
+
+    @Interface.private_api()
+    def architype_count(self, snt: Sentinel = None, kind: str = None):
+        """
+        Get total nodes known to sentinel
+        """
+        arch_objects = snt.arch_ids.obj_list()
+
+        if kind:
+            arch_objects = list(filter(lambda obj: obj.kind == kind, arch_objects))
+
+        return len(arch_objects)
 
     @Interface.private_api(cli_args=["arch"])
     def architype_delete(self, arch: Architype, snt: Sentinel = None):
