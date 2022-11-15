@@ -1,16 +1,14 @@
-# Test
+# Running Action Library as Independent Server
 
-In this tutorial, we will discuss how to use uvicorn to stand up a jaseci_ai_kit server locally.
+In this tutorial, we will discuss how to use uvicorn to stand up a Jaseci action library as an independet server.
+We use the jaseci_ai_kit for this example.
 
-Let's walk you through the process.
-
-# Process
-There are two ways to stand up a jaseci_ai_kit server and we will explore those in the following section.
+There are two ways to stand up a jaseci_ai_kit server, we will explore those in the following section.
 
 ## Through the installed jaseci_ai_kit pip package
 After installing jaseci_ai_kit package.
 * `pip install jaseci_ai_kit`
-  
+
 Run the following command to stand up the server.
 * `uvicorn jaseci_ai_kit.[ai_model]:serv_actions`
 
@@ -61,6 +59,6 @@ After you see the server started you will have to go to the browser and run this
 * `http://0.0.0.0:9000/docs`
 
 To use it in your jaseci app, you will have to load the action using the following command.
-* `actions load remote http://0.0.0.0:9000` 
+* `actions load remote http://0.0.0.0:9000`
 
 Congratulations, you have successfully use uvicorn to stand up a jaseci_ai_kit server locally.
