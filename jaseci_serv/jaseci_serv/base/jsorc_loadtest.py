@@ -94,13 +94,13 @@ class JsorcLoadTest:
         """
         performance = {}
         for action_set in [
-            # "use_enc",
-            # "use_qa",
+            "use_enc",
+            "use_qa",
             "text_seg",
-            # "flair_ner",
-            # "cl_summer",
-            # "bi_enc",
-            # "tfm_ner",
+            "flair_ner",
+            "cl_summer",
+            "bi_enc",
+            "tfm_ner",
         ]:
             # for action_set in ["use_enc"]:
             performance[action_set] = {}
@@ -128,17 +128,15 @@ class JsorcLoadTest:
                     )
                     self.start_benchmark()
                     self.start_actions_tracking()
-                    for i in range(200):
+                    for i in range(50):
                         res = self.run_walker(action_name)
-                        logger.info(mode)
-                        logger.info(res)
                     result = self.stop_benchmark()
                     action_result = self.stop_actions_tracking()
                     performance[action_set][action_name][mode] = {
                         "walker_level": result["walker_run"][action_name],
                         "action_level": action_result[-1]["actions_calls"],
                     }
-                res = self.unload_action(action_set, mode, retire_svc=False)
+                res = self.unload_action(action_set, mode, retire_svc=True)
 
         for action_set, res in performance.items():
             for action_name, action_perf in res.items():
