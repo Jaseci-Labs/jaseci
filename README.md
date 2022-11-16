@@ -26,6 +26,7 @@
   5. [Bring Your Application to Production](examples/CanoniCAI/codelabs/5_production.md)
   6. [Improve Your AI Models](examples/CanoniCAI/codelabs/6_crowdsource.md)
 - [Build a Custom Jaseci Module](support/codelabs/custom_jaseci_module_codelab.md)
+- [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
 
 ## The JAC Language Guide
 
@@ -81,6 +82,7 @@
   - [USE QA](jaseci_ai_kit/jaseci_ai_kit/modules/use_qa/README.md)
   - [Personalized Head](jaseci_ai_kit/jaseci_ai_kit/modules/ph/README.md)
 - [Guide to use Jaseci AI Kit](jaseci_ai_kit/jaseci_ai_kit/guid-to-use-ai-kit.md)
+- [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/jaseci_ai_kit/README.md)
 
 ## Jaseci UI Widget Library
 

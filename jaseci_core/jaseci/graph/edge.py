@@ -8,21 +8,18 @@ from jaseci.element.element import Element
 from jaseci.element.obj_mixins import Anchored
 from jaseci.utils.utils import logger
 import uuid
+import sys
 
 
 class Edge(Element, Anchored):
     """Edge class for Jaseci"""
 
-    def __init__(self, from_node=None, to_node=None, **kwargs):
+    def __init__(self, **kwargs):
         self.from_node_id = None
         self.to_node_id = None
         self.bidirected: bool = False
-        Element.__init__(self, **kwargs)
         Anchored.__init__(self)
-        if from_node:
-            self.set_from_node(from_node)
-        if to_node:
-            self.set_to_node(to_node)
+        Element.__init__(self, **kwargs)
 
     def from_node(self):
         """Returns node edge is pointing from"""
@@ -62,40 +59,17 @@ class Edge(Element, Anchored):
             logger.critical(str(f"{self} disconnected to node {node_obj}"))
             return None
 
-    def set_from_node(self, node_obj):
-        """
-        Returns node edge is pointing from
-        TODO: should check prior nodes edge_ids if is a reset
-        """
-        if self.to_node_id:
-            if not self.to_node().dimension_matches(node_obj, silent=False):
-                return False
-        self.from_node_id = node_obj.jid
-        if self.jid not in node_obj.edge_ids:
-            node_obj.edge_ids.add_obj(self)
-        self.save()
-        return True
-
-    def set_to_node(self, node_obj):
-        """
-        Returns node edge is pointing to
-        TODO: should check prior nodes edge_ids if is a reset
-        """
-        if self.from_node_id:
-            if not self.from_node().dimension_matches(node_obj, silent=False):
-                return False
-        self.to_node_id = node_obj.jid
-        if self.jid not in node_obj.edge_ids:
-            node_obj.edge_ids.add_obj(self)
-        self.save()
-        return True
-
     def connect(self, source, target, bi_dir=False):
         """
         Connects both ends of the edge
         """
+        self.from_node_id = source.jid
+        self.to_node_id = target.jid
+        source.smart_add_edge(self)
+        target.smart_add_edge(self)
         self.set_bidirected(bi_dir)
-        return self.set_from_node(source) and self.set_to_node(target)
+        self.save()
+        return True
 
     def set_bidirected(self, bidirected: bool):
         """Sets/unsets edge to be bidirected"""
@@ -122,17 +96,26 @@ class Edge(Element, Anchored):
                 return False
         return True
 
+    def is_fast(self):
+        return sys.getsizeof(self.context) < 2000
+
+    def save(self):
+        """
+        Write self through hook to persistent storage
+        """
+        if self.is_fast():
+            self._persist = False
+        super().save()
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage
         """
         base = self.from_node()
         target = self.to_node()
-        if base and self.jid in base.edge_ids:
-            base.edge_ids.remove_obj(self)
-        if target and self.jid in target.edge_ids:
-            target.edge_ids.remove_obj(self)
-        Element.destroy(self)
+        base.smart_remove_edge(self) if base else None
+        target.smart_remove_edge(self) if target else None
+        super().destroy()
 
     def dot_str(self, node_map=None, edge_map=None, detailed=False):
         """

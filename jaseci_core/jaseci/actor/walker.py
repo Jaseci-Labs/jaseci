@@ -6,7 +6,7 @@ TODO: Perhaps  I should have walker state (context ids) in mem only with
 default hooks to save db read/writes
 """
 
-from jaseci.utils.utils import logger, perf_test_start, perf_test_stop
+from jaseci.utils.utils import logger, perf_test_start, perf_test_stop, perf_test_to_b64
 from jaseci.element.element import Element
 from jaseci.element.obj_mixins import Anchored
 from jaseci.utils.id_list import IdList
@@ -186,6 +186,7 @@ class Walker(Element, WalkerInterp, Anchored):
             report_ret["success"] = False
         if profiling:
             self.profile["perf"] = perf_test_stop(pr)
+            self.profile["graph"] = perf_test_to_b64(pr)
             report_ret["profile"] = self.profile
 
         if self.for_queue():

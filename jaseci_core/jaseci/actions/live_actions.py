@@ -89,6 +89,8 @@ def load_local_actions(file: str):
 
 def load_module_actions(mod):
     """Load all jaseci actions from python module"""
+    if mod in sys.modules:
+        del sys.modules[mod]
     mod = importlib.import_module(mod)
     if mod:
         return True
@@ -112,8 +114,8 @@ def unload_action(name):
         mod = live_actions[name].__module__
         if mod != "js_remote_hook":
             live_action_modules[mod].remove(name)
-        if len(live_action_modules[mod]) < 1:
-            unload_module(mod)
+            if len(live_action_modules[mod]) < 1:
+                unload_module(mod)
         del live_actions[name]
         return True
     return False

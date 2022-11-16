@@ -865,3 +865,21 @@ walker get_workettes_deep {
         if( show_report ): report lst;
     }
 }
+
+node deep: has d={"a": {"b": {"c": [5]}}};
+
+walker check_deep_write_start { a=spawn here --> n::deep;}
+
+walker check_deep_write_update {
+    take --> n::deep;
+    deep {
+        here.d["a"]['b']['c'].l::append(6);
+    }
+}
+
+walker check_deep_write_report {
+    take --> n::deep;
+    deep {
+        report here.d;
+    }
+}
