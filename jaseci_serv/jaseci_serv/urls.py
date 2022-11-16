@@ -44,4 +44,5 @@ urlpatterns = [
     path("user/", include("jaseci_serv.user_api.urls")),
     path("", include("jaseci_serv.jac_api.urls")),
     path("", include("jaseci_serv.obj_api.urls")),
+    path("", include("jaseci_serv.jsx_oauth.urls")),
 ]
