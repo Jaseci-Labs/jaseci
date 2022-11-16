@@ -26,6 +26,7 @@ setup(
         "django-celery-results>=2.3,<2.4",
         "django-celery-beat>=2.2",
         "pytest-django",
+        "dj-rest-auth[with_social]",
     ],
     package_data={
         "": ["*.jac", "VERSION"],

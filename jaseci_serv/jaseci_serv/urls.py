@@ -45,4 +45,5 @@ urlpatterns = [
     path("", include("jaseci_serv.jac_api.urls")),
     path("", include("jaseci_serv.obj_api.urls")),
     path("js_admin/stripe/", include("jaseci_serv.jsx_stripe.urls")),
+    path("", include("jaseci_serv.jsx_oauth.urls")),
 ]
