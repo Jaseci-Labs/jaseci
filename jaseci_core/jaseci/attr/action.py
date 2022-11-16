@@ -55,10 +55,6 @@ class Action(Item):
         hook = scope.parent._h
         hook.jsorc.app.pre_action_call_hook() if hook.meta.run_svcs else None
         ts = time.time()
-        logger.info("==========in trigger.py")
-        for i in param_list:
-            logger.info(i)
-        logger.info("==========in trigger.py")
         if "meta" in args:
             result = func(
                 *param_list,

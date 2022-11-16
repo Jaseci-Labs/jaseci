@@ -96,11 +96,11 @@ class JsorcLoadTest:
         for action_set in [
             # "use_enc",
             # "use_qa",
-            # "text_seg",
+            "text_seg",
             # "flair_ner",
             # "cl_summer",
             # "bi_enc",
-            "tfm_ner",
+            # "tfm_ner",
         ]:
             # for action_set in ["use_enc"]:
             performance[action_set] = {}
