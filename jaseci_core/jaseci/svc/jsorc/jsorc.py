@@ -139,6 +139,14 @@ class JsOrc:
                     for subj in conf["subjects"]:
                         if subj["kind"] == "ServiceAccount":
                             subj["namespace"] = namespace
+                if (
+                    kind == "ConfigMap"
+                    and conf["metadata"]["name"] == "jaseci-prometheus-server"
+                ):
+                    logger.info("hot patching configmapp")
+                    conf["data"]["prometheus.yml"] = conf["data"][
+                        "prometheus.yml"
+                    ].replace("scrape_interval: 1m", "scrape_interval: 10s", 1)
 
             logger.info(kind)
             logger.info(namespace)

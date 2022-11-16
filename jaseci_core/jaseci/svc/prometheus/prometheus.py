@@ -3,6 +3,8 @@ from jaseci.svc import CommonService
 from .config import PROMON_CONFIG
 from .kube import PROMON_KUBE
 from jaseci.utils.utils import logger
+from datetime import datetime
+import time
 
 
 class PromotheusService(CommonService):
@@ -46,7 +48,13 @@ class PromotheusService(CommonService):
 
         return res
 
-    def info(self, namespace: str = "", exclude_prom: bool = False) -> dict:
+    def info(
+        self,
+        namespace: str = "",
+        exclude_prom: bool = False,
+        timestamp: int = 0,
+        duration: int = 0,
+    ) -> dict:
         if namespace == "":
             util = self.app.get_current_metric_value("kube_pod_info")
         else:
@@ -60,7 +68,11 @@ class PromotheusService(CommonService):
                 continue
             res[pod_name] = pod["metric"]
 
-        cpu = self.cpu.utilization_per_pod_cores()
+        if timestamp != 0 and duration != 0:
+            cpu = self.cpu.utilization_per_pod_cores(ts=timestamp, duration=duration)
+        else:
+            cpu = self.cpu.utilization_per_pod_cores()
+
         for pod in util:
             pod_name = pod["metric"]["pod"]
             pod_cpu = cpu.get(pod_name, 0)
@@ -76,7 +88,10 @@ class PromotheusService(CommonService):
                 continue
             res[pod_name]["mem_utilization_bytes"] = pod_mem
 
-        recv = self.network.receive_per_pod_bytes()
+        if timestamp != 0 and duration != 0:
+            recv = self.network.receive_per_pod_bytes(ts=timestamp, duration=duration)
+        else:
+            recv = self.network.receive_per_pod_bytes()
         for pod in util:
             pod_name = pod["metric"]["pod"]
             pod_recv = recv.get(pod_name, 0)
@@ -84,7 +99,10 @@ class PromotheusService(CommonService):
                 continue
             res[pod_name]["network_recv_bytes"] = pod_recv
 
-        tran = self.network.transmit_per_pod_bytes()
+        if timestamp != 0 and duration != 0:
+            tran = self.network.transmit_per_pod_bytes(ts=timestamp, duration=duration)
+        else:
+            tran = self.network.transmit_per_pod_bytes()
         for pod in util:
             pod_name = pod["metric"]["pod"]
             pod_tran = tran.get(pod_name, 0)
@@ -135,10 +153,12 @@ class Cpu(Info):
             res[node_name] = node_util
         return res
 
-    def utilization_per_pod_cores(self) -> dict:
-        util = self.app.get_current_metric_value(
-            'sum(irate(container_cpu_usage_seconds_total{pod!=""}[10m])) by (pod)'
-        )
+    def utilization_per_pod_cores(self, ts=int(time.time()), duration=10) -> dict:
+
+        query_str = f'sum(rate(container_cpu_usage_seconds_total{{pod!=""}}[{duration}s] @ {ts})) by (pod)'
+        logger.info(query_str)
+        util = self.app.get_current_metric_value(query_str)
+        logger.info(util)
         res = {}
         for pod in util:
             pod_name = pod["metric"]["pod"]
@@ -206,9 +226,9 @@ class Network(Info):
             res[node_name] = node_util
         return res
 
-    def receive_per_pod_bytes(self):
+    def receive_per_pod_bytes(self, ts: int = int(time.time()), duration: int = 10):
         util = self.app.get_current_metric_value(
-            'sum (rate (container_network_receive_bytes_total{pod!=""}[10m])) by (pod)'
+            f'sum (rate (container_network_receive_bytes_total{{pod!=""}}[{duration}s] @ {ts})) by (pod)'
         )
         res = {}
         for pod in util:
@@ -228,9 +248,9 @@ class Network(Info):
             res[node_name] = node_util
         return res
 
-    def transmit_per_pod_bytes(self):
+    def transmit_per_pod_bytes(self, ts: int = int(time.time()), duration: int = 10):
         util = self.app.get_current_metric_value(
-            'sum (rate (container_network_transmit_bytes_total{pod!=""}[10m])) by (pod)'
+            f'sum (rate (container_network_transmit_bytes_total{{pod!=""}}[{duration}s] @ {ts})) by (pod)'
         )
         res = {}
         for pod in util:
