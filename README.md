@@ -36,7 +36,9 @@
     - [Walkers By Example](support/guide/lang_docs/walkers_by_example.md)
   - [Abilities](support/guide/lang_docs/abilities.md)
     - [`here` and `visitor`](support/guide/lang_docs/here_visitor.md)
+    - [Abilities By Example](support/guide/lang_docs/abilities_by_example.md)
   - [Actions](support/guide/lang_docs/actions.md)
+    - [Actions By Example](support/guide/lang_docs/actions_by_example.md)
 
 ## Jac Language Features
 
