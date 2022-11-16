@@ -47,3 +47,4 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 
 SITE_ID = 1
 DEFAULT_CALLBACK_URL_FOR_SSO = "/auth/examples/google/"
+DEBUG = True
