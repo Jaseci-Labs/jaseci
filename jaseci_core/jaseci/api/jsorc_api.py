@@ -1,5 +1,5 @@
 """
-Queue api functions as a mixin
+JSORC APIs
 """
 import yaml
 import json

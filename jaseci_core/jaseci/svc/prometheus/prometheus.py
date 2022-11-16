@@ -2,6 +2,7 @@ from prometheus_api_client import PrometheusConnect
 from jaseci.svc import CommonService
 from .config import PROMON_CONFIG
 from .kube import PROMON_KUBE
+from jaseci.utils.utils import logger
 
 
 class PromotheusService(CommonService):
@@ -25,47 +26,70 @@ class PromotheusService(CommonService):
     def all_metrics(self) -> list:
         return self.app.all_metrics()
 
-    def pods(self) -> dict:
-        util = self.app.get_current_metric_value("kube_pod_info")
+    def pods(self, namespace: str = "", exclude_prom: bool = False) -> dict:
+        if namespace == "":
+            util = self.app.get_current_metric_value("kube_pod_info")
+        else:
+            util = self.app.get_current_metric_value(
+                f"kube_pod_info{{namespace='{namespace}'}}"
+            )
         res = {}
         for pod in util:
             info = pod["metric"]
             node = info["node"]
             pod = info["pod"]
+            if exclude_prom and "prometheus" in pod:
+                continue
             if res.get(node) is None:
-                res[node] = set()
-            res[node].add(pod)
+                res[node] = []
+            res[node].append(pod)
+
         return res
 
-    def info(self) -> dict:
-        util = self.app.get_current_metric_value("kube_pod_info")
+    def info(self, namespace: str = "", exclude_prom: bool = False) -> dict:
+        if namespace == "":
+            util = self.app.get_current_metric_value("kube_pod_info")
+        else:
+            util = self.app.get_current_metric_value(
+                f"kube_pod_info{{namespace='{namespace}'}}"
+            )
         res = {}
         for pod in util:
             pod_name = pod["metric"]["pod"]
+            if exclude_prom and "prometheus" in pod_name:
+                continue
             res[pod_name] = pod["metric"]
 
         cpu = self.cpu.utilization_per_pod_cores()
         for pod in util:
             pod_name = pod["metric"]["pod"]
             pod_cpu = cpu.get(pod_name, 0)
+            if exclude_prom and "prometheus" in pod_name:
+                continue
             res[pod_name]["cpu_utilization_cores"] = pod_cpu
 
         mem = self.memory.utilization_per_pod_bytes()
         for pod in util:
             pod_name = pod["metric"]["pod"]
             pod_mem = mem.get(pod_name, 0)
+            if exclude_prom and "prometheus" in pod_name:
+                continue
             res[pod_name]["mem_utilization_bytes"] = pod_mem
 
         recv = self.network.receive_per_pod_bytes()
         for pod in util:
             pod_name = pod["metric"]["pod"]
             pod_recv = recv.get(pod_name, 0)
+            if exclude_prom and "prometheus" in pod_name:
+                continue
             res[pod_name]["network_recv_bytes"] = pod_recv
 
         tran = self.network.transmit_per_pod_bytes()
         for pod in util:
             pod_name = pod["metric"]["pod"]
             pod_tran = tran.get(pod_name, 0)
+            if exclude_prom and "prometheus" in pod_name:
+                continue
             res[pod_name]["network_tran_bytes"] = pod_tran
 
         return res
