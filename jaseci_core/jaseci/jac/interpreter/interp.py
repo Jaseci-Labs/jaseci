@@ -506,7 +506,7 @@ class Interp(VirtualMachine):
 
     def run_connect(self, jac_ast):
         """
-        connect: logical ( (NOT | PLUS) edge_ref expression)?;
+        connect: logical ( (NOT edge_ref | connect_op) expression)?;
         """
         kid = self.set_cur_ast(jac_ast)
         if len(kid) < 2:
@@ -531,12 +531,12 @@ class Interp(VirtualMachine):
             direction = kid[2].kid[0].name
             for i in target.obj_list():
                 for j in base.obj_list():
-                    use_edge = self.run_edge_ref(kid[2], is_spawn=True)
+                    use_edge = self.run_connect_op(kid[2])
                     self.rt_check_type(i, Node, kid[-1])
                     self.rt_check_type(j, Node, kid[-1])
-                    if direction == "edge_from":
+                    if direction == "connect_from":
                         j.attach_inbound(i, [use_edge])
-                    elif direction == "edge_to":
+                    elif direction == "connect_to":
                         j.attach_outbound(i, [use_edge])
                     else:
                         j.attach_bidirected(i, [use_edge])
@@ -1326,30 +1326,12 @@ class Interp(VirtualMachine):
         )
         return JacValue(self, value=obj)
 
-    def run_edge_ref(self, jac_ast, is_spawn=False, location=None):
+    def run_edge_ref(self, jac_ast, location=None):
         """
         edge_ref: edge_to | edge_from | edge_any;
         """
         kid = self.set_cur_ast(jac_ast)
-        if not is_spawn:
-            return self.run_rule(kid[0], location)
-        else:
-            if len(kid[0].kid) > 2:
-                result = self.parent().run_architype(
-                    kid[0].kid[2].token_text(), kind="edge", caller=self
-                )
-                if kid[0].kid[3].name == "spawn_ctx":
-                    self.run_spawn_ctx(kid[0].kid[3], result)
-                elif kid[0].kid[3].name == "filter_ctx":
-                    self.rt_error("Filtering not allowed here", kid[0].kid[3])
-            else:
-                result = Edge(
-                    m_id=self._m_id,
-                    h=self._h,
-                    kind="edge",
-                    name="generic",
-                )
-            return result
+        return self.run_rule(kid[0], location)
 
     def run_edge_to(self, jac_ast, location=None):
         """
@@ -1410,6 +1392,26 @@ class Interp(VirtualMachine):
             result = self.run_filter_ctx(kid[3], result)
         elif len(kid) > 2 and kid[3].name == "spawn_ctx":
             self.rt_error("Assigning values not allowed here", kid[3])
+        return result
+
+    def run_connect_op(self, jac_ast):
+        """
+        connect_op: connect_to | connect_from | connect_any;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        if len(kid[0].kid) > 2:
+            result = self.parent().run_architype(
+                kid[0].kid[2].token_text(), kind="edge", caller=self
+            )
+            if kid[0].kid[3].name == "spawn_ctx":
+                self.run_spawn_ctx(kid[0].kid[3], result)
+        else:
+            result = Edge(
+                m_id=self._m_id,
+                h=self._h,
+                kind="edge",
+                name="generic",
+            )
         return result
 
     def run_list_val(self, jac_ast):
@@ -1507,16 +1509,16 @@ class Interp(VirtualMachine):
 
     def run_spawn_edge(self, jac_ast):
         """
-        spawn_edge: expression edge_ref;
+        spawn_edge: expression connect_op;
         """
         kid = self.set_cur_ast(jac_ast)
         self.run_expression(kid[0])
         loc = self.pop().value
         if isinstance(loc, JacSet):
-            edge_set = [self.run_edge_ref(kid[1], is_spawn=True) for _ in loc]
+            edge_set = [self.run_connect_op(kid[1]) for _ in loc]
             loc = loc.obj_list()
         else:
-            edge_set = self.run_edge_ref(kid[1], is_spawn=True)
+            edge_set = self.run_connect_op(kid[1])
         return {
             "location": loc,
             "use_edge": edge_set,
@@ -1537,9 +1539,9 @@ class Interp(VirtualMachine):
             sp = self.run_spawn_edge(kid[0])
             if isinstance(sp["location"], Node):
                 ret_node = self.run_node_ref(kid[1], is_spawn=True)
-                if sp["direction"] == "edge_from":
+                if sp["direction"] == "connect_from":
                     sp["location"].attach_inbound(ret_node, [sp["use_edge"]])
-                elif sp["direction"] == "edge_to":
+                elif sp["direction"] == "connect_to":
                     sp["location"].attach_outbound(ret_node, [sp["use_edge"]])
                 else:
                     sp["location"].attach_bidirected(ret_node, [sp["use_edge"]])
@@ -1551,9 +1553,9 @@ class Interp(VirtualMachine):
                 sp["location"] = sp["location"].obj_list()
                 for i in range(len(sp["location"])):
                     ret_node = self.run_node_ref(kid[1], is_spawn=True)
-                    if sp["direction"] == "edge_from":
+                    if sp["direction"] == "connect_from":
                         sp["location"][i].attach_inbound(ret_node, [sp["use_edge"][i]])
-                    elif sp["direction"] == "edge_to":
+                    elif sp["direction"] == "connect_to":
                         sp["location"][i].attach_outbound(ret_node, [sp["use_edge"][i]])
                     else:
                         sp["location"][i].attach_bidirected(
@@ -1578,9 +1580,9 @@ class Interp(VirtualMachine):
             sp = self.run_spawn_edge(kid[0])
             if isinstance(sp["location"], Node):
                 ret_node = self.run_graph_ref(kid[1])
-                if sp["direction"] == "edge_from":
+                if sp["direction"] == "connect_from":
                     sp["location"].attach_inbound(ret_node, [sp["use_edge"]])
-                elif sp["direction"] == "edge_to":
+                elif sp["direction"] == "connect_to":
                     sp["location"].attach_outbound(ret_node, [sp["use_edge"]])
                 else:
                     sp["location"].attach_bidirected(ret_node, [sp["use_edge"]])
@@ -1590,9 +1592,9 @@ class Interp(VirtualMachine):
                 sp["location"] = sp["location"].obj_list()
                 for i in range(len(sp["location"])):
                     ret_node = self.run_graph_ref(kid[1])
-                    if sp["direction"] == "edge_from":
+                    if sp["direction"] == "connect_from":
                         sp["location"][i].attach_inbound(ret_node, [sp["use_edge"][i]])
-                    elif sp["direction"] == "edge_to":
+                    elif sp["direction"] == "connect_to":
                         sp["location"][i].attach_outbound(ret_node, [sp["use_edge"][i]])
                     else:
                         sp["location"][i].attach_bidirected(

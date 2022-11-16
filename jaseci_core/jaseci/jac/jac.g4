@@ -177,7 +177,7 @@ copy_assign: CPY_EQ expression;
 
 inc_assign: (PEQ | MEQ | TEQ | DEQ) expression;
 
-connect: logical ( (NOT | PLUS) edge_ref expression)?;
+connect: logical ( (NOT edge_ref | connect_op) expression)?;
 
 logical: compare ((KW_AND | KW_OR) compare)*;
 
@@ -273,17 +273,19 @@ type_ref: TYPE_DBL_COLON NAME;
 
 edge_ref: edge_to | edge_from | edge_any;
 
-edge_to:
-	'-->'
-	| '-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
+edge_to: '-->' | '-' ('[' NAME filter_ctx? ']')? '->';
 
-edge_from:
-	'<--'
-	| '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '-';
+edge_from: '<--' | '<-' ('[' NAME filter_ctx? ']')? '-';
 
-edge_any:
-	'<-->'
-	| '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
+edge_any: '<-->' | '<-' ('[' NAME filter_ctx? ']')? '->';
+
+connect_op: connect_to | connect_from | connect_any;
+
+connect_to: '++>' | '+' ('[' NAME spawn_ctx? ']')? '+>';
+
+connect_from: '<++' | '<+' ('[' NAME spawn_ctx? ']')? '+';
+
+connect_any: '<++>' | '<+' ('[' NAME spawn_ctx? ']')? '+>';
 
 list_val: LSQUARE expr_list? RSQUARE;
 
@@ -303,7 +305,7 @@ spawn_object:
 	| graph_spawn
 	| type_spawn;
 
-spawn_edge: expression edge_ref;
+spawn_edge: expression connect_op;
 
 node_spawn: spawn_edge? node_ref spawn_ctx?;
 

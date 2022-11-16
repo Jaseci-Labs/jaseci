@@ -25,11 +25,13 @@ class NetLibTest(CoreTest):
         self.assertEqual(len(ret["report"][0]["edges"]), 4)
 
     def test_pack_unpack(self):
-        self.call(
+        self.logger_on()
+        ret = self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "pack_unpack"}])
+        self.log(ret)
         self.assertEqual(ret["report"][0], 16)
 
     def test_pack_unpack_terse(self):
