@@ -172,13 +172,15 @@ class JsOrc:
     def actions_tracking_start(self):
         """ """
         self.actions_history["active"] = True
-        self.actions_history["history"] = []
+        self.actions_history["history"] = [{"ts": time.time()}]
         self.actions_calls.clear()
 
     def actions_tracking_stop(self):
         """ """
         if not self.actions_history["active"]:
             return []
+
+        self.actions_optimizer.summarize_action_calls()
 
         return self.actions_history["history"]
 

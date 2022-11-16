@@ -40,25 +40,41 @@ class JsorcLoadTest:
 
         self.test = test
 
-    def run_test(self):
+    def run_test(self, experiment):
         """
         Run the corresponding jsorc test
         """
         test_func = getattr(self, self.test)
-        return test_func()
+        if experiment == "":
+            return test_func()
+        else:
+            return test_func(experiment)
 
-    def load_action(self, name, mode):
+    def load_action(self, name, mode, wait_for_ready=False):
+        """
+        Load action in corresponding mode.
+        If wait is True, this function will block until the action is fully loaded, including microserivice is up and connected etc.
+        """
         payload = {"op": "jsorc_actions_load", "name": name, "mode": mode}
         res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
+        while wait_for_ready:
+            mode = "module" if mode == "local" else mode
+            if res.data["action_status"]["mode"] == mode:
+                break
+            sleep(10)
+            payload = {"op": "jsorc_actions_load", "name": name, "mode": mode}
+            res = self.sauth_client.post(
+                reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+            )
 
-    def unload_action(self, name, mode):
+    def unload_action(self, name, mode, retire_svc=False):
         payload = {
             "op": "jsorc_actions_unload",
             "name": name,
             "mode": mode,
-            "retire_svc": False,
+            "retire_svc": retire_svc,
         }
         res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -67,29 +83,30 @@ class JsorcLoadTest:
 
     def run_walker(self, walker_name, ctx={}):
         payload = {"op": "walker_run", "name": walker_name, "ctx": ctx}
-        self.sauth_client.post(
+        res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
+        return res.data
 
     def action_level_test(self):
         """
         Run action level tests
         """
-        latency = {}
+        performance = {}
         for action_set in [
-            "use_enc",
-            "use_qa",
-            "text_seg",
-            "flair_ner",
-            "cl_summer",
-            "bi_enc",
+            # "use_enc",
+            # "use_qa",
+            # "text_seg",
+            # "flair_ner",
+            # "cl_summer",
+            # "bi_enc",
             "tfm_ner",
         ]:
             # for action_set in ["use_enc"]:
-            latency[action_set] = {}
+            performance[action_set] = {}
             # for mode in ["local", "remote"]:
-            for mode in ["local", "remote"]:
-                self.load_action(action_set, mode)
+            for mode in ["remote", "local"]:
+                self.load_action(action_set, mode, wait_for_ready=True)
                 action_set_path = os.path.join(JAC_PATH, f"{action_set}/")
                 for jac_file in os.listdir(action_set_path):
                     # if jac_file != "cos_sim_score.jac":
@@ -97,8 +114,8 @@ class JsorcLoadTest:
                     if not jac_file.endswith(".jac"):
                         continue
                     action_name = jac_file.split(".")[0]
-                    if action_name not in latency[action_set]:
-                        latency[action_set][action_name] = {}
+                    if action_name not in performance[action_set]:
+                        performance[action_set][action_name] = {}
                     full_jac_file_path = os.path.join(action_set_path, jac_file)
                     jac_code = open(full_jac_file_path).read()
                     payload = {"op": "sentinel_register", "code": jac_code}
@@ -110,20 +127,28 @@ class JsorcLoadTest:
                         reverse(f'jac_api:{payload["op"]}'), payload, format="json"
                     )
                     self.start_benchmark()
-                    for i in range(50):
-                        self.run_walker(action_name)
+                    self.start_actions_tracking()
+                    for i in range(200):
+                        res = self.run_walker(action_name)
+                        logger.info(mode)
+                        logger.info(res)
                     result = self.stop_benchmark()
-                    latency[action_set][action_name][mode] = result["walker_run"][
-                        "average_latency"
-                    ]
-                res = self.unload_action(action_set, mode)
+                    action_result = self.stop_actions_tracking()
+                    performance[action_set][action_name][mode] = {
+                        "walker_level": result["walker_run"][action_name],
+                        "action_level": action_result[-1]["actions_calls"],
+                    }
+                res = self.unload_action(action_set, mode, retire_svc=False)
 
-        for action_set, res in latency.items():
-            for action_name in res.keys():
-                res[action_name]["local_vs_remote"] = (
-                    res[action_name]["remote"] / res[action_name]["local"]
-                )
-        return latency
+        for action_set, res in performance.items():
+            for action_name, action_perf in res.items():
+                action_perf["remote_over_local"] = {}
+                for metric in action_perf["local"]["walker_level"].keys():
+                    action_perf["remote_over_local"][metric] = (
+                        action_perf["remote"]["walker_level"][metric]
+                        / action_perf["local"]["walker_level"][metric]
+                    )
+        return performance
 
     def hlp_evaluate(self):
         result = {}
@@ -166,6 +191,80 @@ class JsorcLoadTest:
                 self.sauth_client.post(
                     reverse(f'jac_api:{payload["op"]}'), payload, format="json"
                 )
+
+        result["performance"] = self.stop_benchmark()
+        result["actions_history"] = self.stop_actions_tracking()
+        return result
+
+    def five_modules_experiment(self, experiment="all_local"):
+        result = {}
+        jac_file = open(JAC_PATH + "five_mixture.jac").read()
+        # Regsiter the sentinel
+        payload = {"op": "sentinel_register", "code": jac_file}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        if experiment == "all_local":
+            for action in ["use_enc", "bi_enc", "text_seg", "ent_ext", "cl_summer"]:
+                self.load_action(action, "local")
+            payload = {"op": "jsorc_actionpolicy_set", "policy_name": "Default"}
+            res = self.sauth_client.post(
+                reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+            )
+        elif experiment == "all_remote":
+            for action in ["use_enc", "bi_enc", "ent_ext", "cl_summer"]:
+                self.load_action(action, "remote")
+            payload = {"op": "jsorc_actionpolicy_set", "policy_name": "Default"}
+            res = self.sauth_client.post(
+                reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+            )
+        elif experiment == "evaluate":
+            for action in ["use_enc", "bi_enc", "ent_ext", "cl_summer"]:
+                self.load_action(action, "local")
+            payload = {"op": "jsorc_actionpolicy_set", "policy_name": "Evaluation"}
+            res = self.sauth_client.post(
+                reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+            )
+
+        # # Load use_enc local action
+        # payload = {"op": "jsorc_actions_load", "name": "use_enc", "mode": "local"}
+        # res = self.sauth_client.post(
+        #     reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        # )
+        # # Load bi_enc local action
+        # payload = {"op": "jsorc_actions_load", "name": "bi_enc", "mode": "local"}
+        # self.sauth_client.post(
+        #     reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        # )
+        # payload = {"op": "jsorc_actions_load", "name": "bi_enc", "mode": "local"}
+        # self.sauth_client.post(
+        #     reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        # )
+        # Set the policy
+
+        # Start the benchmark
+        self.start_benchmark()
+        self.start_actions_tracking()
+
+        # Execute the walker
+        for i in range(500):
+            for walker in [
+                "infer",
+                "cos_sim_score",
+                "get_segments",
+                "entity_detection",
+                "summarize",
+            ]:
+                self.run_walker(walker, ctx={})
+            # payload = {"op": "walker_run", "name": "cos_sim_score"}
+            # self.sauth_client.post(
+            #     reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+            # )
+            # payload = {"op": "walker_run", "name": "infer"}
+            # self.sauth_client.post(
+            #     reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+            # )
 
         result["performance"] = self.stop_benchmark()
         result["actions_history"] = self.stop_actions_tracking()

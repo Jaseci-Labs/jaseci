@@ -8,6 +8,7 @@ from jaseci.actions.live_actions import (
     unload_module,
     unload_remote_actions,
     load_remote_actions,
+    live_actions,
 )
 import requests
 import time
@@ -287,17 +288,19 @@ class ActionsOptimizer:
 
         if len(actions_change) > 0 and self.actions_history["active"]:
             # Summarize action stats during this period and add to previous state
-            actions_summary = {}
-            for action_name, calls in self.actions_calls.items():
-                actions_summary[action_name] = sum(calls) / len(calls)
-            self.actions_calls.clear()
-
-            if len(self.actions_history["history"]) > 0:
-                self.actions_history["history"][-1]["actions_calls"] = actions_summary
-
+            self.summarize_action_calls()
             self.actions_history["history"].append(
                 {"ts": time.time(), "actions_state": self.actions_state.get_all_state()}
             )
+
+    def summarize_action_calls(self):
+        actions_summary = {}
+        for action_name, calls in self.actions_calls.items():
+            actions_summary[action_name] = sum(calls) / len(calls)
+        self.actions_calls.clear()
+
+        if len(self.actions_history["history"]) > 0:
+            self.actions_history["history"][-1]["actions_calls"] = actions_summary
 
     def kube_create(self, config):
         for kind, conf in config.items():
@@ -346,6 +349,23 @@ class ActionsOptimizer:
         url = f"http://{config['Service']['metadata']['name']}/"
         return url
 
+    def call_action(self, action_name, *params):
+        """
+        Call an action via live_actions
+        """
+        func = live_actions[action_name]
+        func(*params)
+
+    def action_prep(self, name):
+        """
+        Any action preparation that needs to be called right after action is loaded
+        """
+        if name == "tfm_ner":
+            # tfm_ner requires an initial model loading
+            self.call_action(
+                "tfm_ner.load_model", "/trained_models/trained_tfm_ner_model/", True
+            )
+
     def load_action_remote(self, name, unload_existing=False):
         """
         Load a remote action.
@@ -379,6 +399,7 @@ class ActionsOptimizer:
             if unload_existing:
                 self.unload_action_module(name)
             load_remote_actions(url)
+            self.action_prep(name)
             self.actions_state.remote_action_loaded(name)
             logger.info(f"==Actions Optimizer== LOADED remote action for {name}")
             return True
@@ -402,6 +423,7 @@ class ActionsOptimizer:
         if unload_existing:
             self.unload_action_remote(name)
         load_module_actions(module)
+        self.action_prep(name)
         self.actions_state.module_action_loaded(name, module)
         logger.info(f"==Actions Optimizer== LOADED module action for {name}")
 

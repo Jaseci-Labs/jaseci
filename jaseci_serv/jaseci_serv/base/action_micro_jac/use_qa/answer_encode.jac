@@ -1,8 +1,9 @@
 walker answer_encode {
+	has iters = 1;
 	can use.answer_encode;
 	root {
 		durs = [];
-		for i=0 to i<100 by i+=1 {
+		for i=0 to i<iters by i+=1 {
 			start_time = std.time_now();
 			use.answer_encode("I am Jac.", "I am not Jack");
 			end_time = std.time_now();

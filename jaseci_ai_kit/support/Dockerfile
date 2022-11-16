@@ -8,4 +8,5 @@ RUN pip3 install jaseci_ai_kit==1.3.5.22
 RUN pip3 install flair==0.10
 RUN pip3 install protobuf==3.20.3
 RUN pip3 install sumy==0.11.0
+COPY ../../support/docker/trained_models trained_models/
 CMD ["echo", "Ready"]

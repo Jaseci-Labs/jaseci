@@ -1,8 +1,9 @@
 walker answer_classify {
+	has iters = 1;
 	can use.answer_classify;
 	root {
 		durs = [];
-		for i=0 to i<100 by i+=1 {
+		for i=0 to i<iters by i+=1 {
 			start_time = std.time_now();
 			use.answer_classify("classify me!", ["Class 1", "Class 2"]);
 			end_time = std.time_now();
