@@ -6,7 +6,7 @@ function GraphViewerPage() {
       <Flex justify={"center"} align="center">
         <Card
           w="90%"
-          h="800px"
+          h="90%"
           withBorder
           shadow={"md"}
           p={30}
@@ -15,7 +15,7 @@ function GraphViewerPage() {
         >
           <jsc-graph
             height="80vh"
-            serverUrl="http://localhost:6000"
+            serverUrl="http://localhost:8888"
           ></jsc-graph>
         </Card>
       </Flex>

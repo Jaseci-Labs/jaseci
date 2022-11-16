@@ -51,8 +51,11 @@ export function LoginForm() {
       onSuccess: (data) => {
         if (mode === "connect") {
           if (data.token) {
-            setCookie("token", data.token);
-            setCookie("serverUrl", `http://${values.host}:${values.port}`);
+            localStorage.setItem("token", data.token);
+            localStorage.setItem(
+              "serverUrl",
+              `http://${values.host}:${values.port}`
+            );
 
             router.push("/dashboard");
           }

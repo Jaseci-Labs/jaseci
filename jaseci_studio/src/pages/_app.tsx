@@ -5,7 +5,6 @@ import Script from "next/script";
 import { theme } from "../../theme";
 import ReactQuery from "../components/ReactQuery";
 import { NavbarMinimal } from "../components/Navbar";
-import { getCookie } from "cookies-next";
 
 export default function App(props: AppProps) {
   const { Component, pageProps } = props;

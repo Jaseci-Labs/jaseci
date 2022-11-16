@@ -3,18 +3,34 @@ import { useQuery } from "@tanstack/react-query";
 import { client } from "./ReactQuery";
 
 function BasicSummary() {
-  const { isLoading, data } = useQuery({
-    queryKey: ["summary"],
+  const { data } = useQuery({
+    queryKey: ["architypeSummary"],
     queryFn: () => {
       return Promise.all([
-        client.post("/js/node_total").then((res) => res.data),
-        client.post("/js/edge_total").then((res) => res.data),
-        client.post("/js/walker_total").then((res) => res.data),
+        client
+          .post("/js/architype_count", { kind: "node" })
+          .then((res) => res.data),
+        client
+          .post("/js/architype_count", { kind: "edge" })
+          .then((res) => res.data),
+        client
+          .post("/js/architype_count", { kind: "walker" })
+          .then((res) => res.data),
+        client
+          .post("/js/architype_count", { kind: "graph" })
+          .then((res) => res.data),
       ]).then((value) => ({
         totalNodes: value[0],
         totalEdges: value[1],
         totalWalkers: value[2],
+        totalGraphs: value[3],
       }));
+    },
+    placeholderData: {
+      totalEdges: 0,
+      totalNodes: 0,
+      totalWalkers: 0,
+      totalGraphs: 0,
     },
   });
 
@@ -29,7 +45,7 @@ function BasicSummary() {
       <Title order={3} mb="lg">
         Summary
       </Title>
-      <Grid columns={3}>
+      <Grid columns={4}>
         <Grid.Col span={1}>
           <Title order={5}>
             <>
@@ -53,6 +69,14 @@ function BasicSummary() {
             {data?.totalEdges} <br />
             <Text weight={"normal"} component="span" color="dimmed">
               Edges
+            </Text>
+          </Title>
+        </Grid.Col>
+        <Grid.Col span={1}>
+          <Title order={5}>
+            {data?.totalGraphs} <br />
+            <Text weight={"normal"} component="span" color="dimmed">
+              Graphs
             </Text>
           </Title>
         </Grid.Col>

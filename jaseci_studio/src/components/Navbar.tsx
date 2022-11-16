@@ -16,6 +16,7 @@ import {
   IconVectorBezierCircle,
   TablerIcon,
 } from "@tabler/icons";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Router } from "next/router";
 import { ReactNode, useState } from "react";
@@ -90,10 +91,12 @@ export const NavbarMinimal = () => {
   return (
     <Navbar height={"100vh"} width={{ base: 80 }} p="md">
       <Center>
-        <Title order={5} color="dimmed">
-          Js
-        </Title>
-        <IconBuildingFactory size={14}></IconBuildingFactory>
+        <Image
+          height={42}
+          width={40}
+          alt="Jaseci Logo"
+          src="/Jaseci-Submark.png"
+        ></Image>
       </Center>
       <Navbar.Section grow mt={50}>
         <Stack justify="center" spacing={0}>
@@ -113,8 +116,8 @@ export const NavbarMinimal = () => {
       </Navbar.Section>
       <Navbar.Section>
         <Stack justify="center" spacing={0}>
-          <NavbarLink icon={IconSwitchHorizontal} label="Change server" />
-          <NavbarLink icon={IconLogout} label="Logout" />
+          {/* <NavbarLink icon={IconSwitchHorizontal} label="Change server" /> */}
+          {/* <NavbarLink icon={IconLogout} label="Logout" /> */}
         </Stack>
       </Navbar.Section>
     </Navbar>
