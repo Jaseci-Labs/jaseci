@@ -109,12 +109,17 @@ class JsorcLoadTest:
         """
         Run synthetic application
         """
-        logger.info("in synthetic apps")
         results = {}
-        apps = ["zeroshot_faq_bot"]
-        app_to_actions = {"zeroshot_faq_bot": ["text_seg", "use_qa"]}
-        policies = ["evaluation"]
-        # policies = ["all_remote"]
+        apps = [
+            "zeroshot_faq_bot",
+            # "sentence_pairing"
+        ]
+        app_to_actions = {
+            "zeroshot_faq_bot": ["text_seg", "use_qa"],
+            "sentence_pairing": ["use_enc", "bi_enc"],
+        }
+        # policies = ["all_local"]
+        policies = ["all_remote"]
         for app in apps:
             jac_file = os.path.join(APP_PATH, f"{app}.jac")
             self.sentinel_register(jac_file)
@@ -144,7 +149,7 @@ class JsorcLoadTest:
                 self.start_benchmark()
                 self.start_actions_tracking()
                 start_ts = time.time()
-                experiment_duration = 5 * 60
+                experiment_duration = 1 * 60
                 while (time.time() - start_ts) < experiment_duration:
                     res = self.run_walker(app)
                 result = self.stop_benchmark()
@@ -167,12 +172,12 @@ class JsorcLoadTest:
         """
         performance = {}
         for action_set in [
-            "use_enc",
-            "use_qa",
+            # "use_enc",
+            # "use_qa",
             "text_seg",
-            "flair_ner",
-            "cl_summer",
-            "bi_enc",
+            # "flair_ner",
+            # "cl_summer",
+            # "bi_enc",
             "tfm_ner",
         ]:
             # for action_set in ["use_enc"]:
@@ -210,6 +215,7 @@ class JsorcLoadTest:
                         "action_level": action_result[-1]["actions_calls"],
                     }
                 res = self.unload_action(action_set, mode, retire_svc=True)
+                sleep(10)
 
         for action_set, res in performance.items():
             for action_name, action_perf in res.items():
@@ -371,7 +377,7 @@ class JsorcLoadTest:
         self.start_actions_tracking()
 
         # Execute the walker
-        for i in range(500):
+        for i in range(100):
             payload = {"op": "walker_run", "name": "cos_sim_score"}
             self.sauth_client.post(
                 reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -460,7 +466,7 @@ class JsorcLoadTest:
         self.start_actions_tracking()
 
         # Execute the walker
-        for i in range(500):
+        for i in range(10):
             payload = {"op": "walker_run", "name": "cos_sim_score"}
             self.sauth_client.post(
                 reverse(f'jac_api:{payload["op"]}'), payload, format="json"

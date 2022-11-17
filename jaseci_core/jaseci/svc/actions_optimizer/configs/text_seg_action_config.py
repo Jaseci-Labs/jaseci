@@ -54,7 +54,7 @@ TEXT_SEG_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "text-seg",
-                                "image": "jaseci/jaseci-ai-kit:1.3.5.22",
+                                "image": "jaseci/jee-ai:1.3.6.1",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
@@ -66,7 +66,7 @@ TEXT_SEG_ACTION_CONFIG = {
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
                                 "terminationMessagePolicy": "File",
-                                "imagePullPolicy": "Always",
+                                "imagePullPolicy": "IfNotPresent",
                             }
                         ],
                         "restartPolicy": "Always",

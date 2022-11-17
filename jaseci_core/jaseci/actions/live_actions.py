@@ -99,10 +99,10 @@ def load_local_actions(file: str):
 
 def load_module_actions(mod):
     """Load all jaseci actions from python module"""
-    # logger.info(mod)
-    # logger.info(sys.modules.get(mod, None))
-    # logger.info(sys.modules.get("jaseci_ai_kit.modules.bi_enc.bi_enc", None))
-    # logger.info(sys.modules.get("jaseci_ai_kit.modules.use_enc.use_enc", None))
+    logger.info(mod)
+    logger.info(sys.modules.get(mod, None))
+    logger.info(sys.modules.get("jaseci_ai_kit.modules.bi_enc.bi_enc", None))
+    logger.info(sys.modules.get("jaseci_ai_kit.modules.use_enc.use_enc", None))
     if mod in sys.modules:
         del sys.modules[mod]
     # Hack
@@ -116,7 +116,9 @@ def load_module_actions(mod):
     modmod2 = "jaseci_ai_kit.modules.encoders.bi_enc"
     if modmod2 in sys.modules:
         del sys.modules[modmod2]
+    logger.info("importlib.import module")
     mod = importlib.import_module(mod)
+    logger.info(f"importlib.import module returned with {mod}")
     if mod:
         return True
     return False

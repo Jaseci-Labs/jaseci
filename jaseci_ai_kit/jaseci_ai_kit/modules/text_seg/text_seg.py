@@ -5,12 +5,14 @@ import torch
 from jaseci.actions.live_actions import jaseci_action
 
 # loading segmentation model from hugging face
-tokenizer = AutoTokenizer.from_pretrained("dennlinger/roberta-cls-consec")
+tokenizer = AutoTokenizer.from_pretrained(
+    "/trained_models/roberta-cls-consec", local_files_only=True
+)
 model = AutoModelForSequenceClassification.from_pretrained(
-    "dennlinger/roberta-cls-consec"
+    "/trained_models/roberta-cls-consec", local_files_only=True
 )
 # Download the pretrained model pipeline
-spacy.cli.download("en_core_web_sm")
+# spacy.cli.download("en_core_web_sm")
 # loading space model for sentence tokenization
 pipeline = spacy.load("en_core_web_sm")
 

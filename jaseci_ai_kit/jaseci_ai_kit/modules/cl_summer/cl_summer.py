@@ -10,8 +10,8 @@ from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
 import nltk
 
-nltk.download("punkt")
-nltk.download("stopwords")
+# nltk.download("punkt")
+# nltk.download("stopwords")
 
 # summarizes the text / url passed to the endpoint and
 # returns summary based on the sentences.

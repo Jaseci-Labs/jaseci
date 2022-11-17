@@ -6,7 +6,7 @@ from jaseci.actions.live_actions import jaseci_action
 from typing import Union
 
 
-module = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+module = hub.load("/trained_models/universal-sentence-encoder_4/")
 
 
 @jaseci_action(act_group=["use"], aliases=["get_embedding"], allow_remote=True)

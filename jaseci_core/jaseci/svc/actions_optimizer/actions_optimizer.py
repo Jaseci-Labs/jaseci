@@ -413,14 +413,17 @@ class ActionsOptimizer:
         logger.info(f"==Actions Optimizer== LOAD module action for {name}")
         cur_state = self.actions_state.get_state(name)
         if cur_state is None:
+            logger.info("==Actions Optimizer== initialize actions_state")
             cur_state = self.actions_state.init_state(name)
 
         if cur_state["mode"] == "module":
+            logger.info(f"==Actions Optimizer== {name} already loaded as module")
             # Check if there is already a local action loaded
             return
 
         module = ACTION_CONFIGS[name]["module"]
         if unload_existing:
+            logger.info("==Actions Optimizer== unloading existing remote action {name}")
             self.unload_action_remote(name)
         load_module_actions(module)
         self.action_prep(name)

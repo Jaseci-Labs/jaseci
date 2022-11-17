@@ -9,5 +9,10 @@ RUN pip3 install jaseci_ai_kit==1.3.5.22
 RUN pip3 install flair==0.10
 RUN pip3 install protobuf==3.20.3
 RUN pip3 install sumy==0.11.0
+RUN python3 -m spacy download en_core_web_sm
+RUN python3 -m nltk.downloader punkt
+RUN python3 -m nltk.downloader stopwords
 COPY trained_models/ trained_models/
+COPY jaseci_ai_kit.patch jaseci_ai_kit.patch
+RUN cd /usr/local/lib/python3.10/site-packages/ && mv jaseci_ai_kit/ orig_jaseci_ai_kit/ && patch -s -p0 < /jaseci_ai_kit.patch && mv orig_jaseci_ai_kit/ jaseci_ai_kit/
 CMD ["echo", "Ready"]

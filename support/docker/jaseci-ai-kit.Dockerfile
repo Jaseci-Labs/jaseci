@@ -9,4 +9,6 @@ RUN pip3 install flair==0.10
 RUN pip3 install protobuf==3.20.3
 RUN pip3 install sumy==0.11.0
 COPY trained_models/ trained_models/
+COPY use_enc.patch use_enc.patch
+RUN cd /usr/local/lib/python3.8/dist-packages/jaseci_ai_kit/modules/use_enc/ && patch < /use_enc.patch
 CMD ["echo", "Ready"]
