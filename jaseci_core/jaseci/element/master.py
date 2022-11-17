@@ -27,8 +27,6 @@ class Master(
     ObjectApi,
     SentinelApi,
     WalkerApi,
-    EdgeApi,
-    NodeApi,
     ArchitypeApi,
     JacApi,
     UserApi,
