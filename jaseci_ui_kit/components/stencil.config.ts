@@ -20,7 +20,7 @@ export const config: Config = {
     {
       type: 'dist',
       esmLoaderPath: '../loader',
-      buildDir: '../../../jaseci_studio/public/build',
+      buildDir: '../../../jaseci_studio/public/ui_kit',
     },
     {
       type: 'dist-custom-elements',
