@@ -4,6 +4,46 @@
 
 For this tutorial we are going to leaverage the flair ner `Zero-shot classification` and `Few-shot classification` Use Case
 
+
+### Load the Model by `set_config` actions for Zeroshot
+Different models can be loaded as per the requirement on the basis of size and 
+1. Large model : Transformer based model good for ZeroShot Prediction, can be for with custom entities extraction
+   1. Roberta
+      1. Size - 1.43GB
+      2. Eval_time - 1.20 sec
+   ```jac
+    walker set_config {
+        report ent_ext.set_config(
+            ner_model = "tars-ner",
+            model_type = "tars"
+        );
+    }
+    ```
+2. Medium Size model: LSTM based model trained to predict PER,ORG, LOC, MISC entities only
+    1. Size - 430MB
+    2. Eval_time - 1.48 sec
+
+   ```jac
+    walker set_config {
+        report ent_ext.set_config(
+            ner_model = "ner",
+            model_type = "lstm  "
+        );
+    }
+    ```
+3. Small Size model: LSTM based model trained to predict PER,ORG, LOC, MISC entities only
+    1. Size - 257MB
+    2. Eval_time - 0.40 sec
+
+   ```jac
+    walker set_config {
+        report ent_ext.set_config(
+            ner_model = "ner-fast",
+            model_type = "lstm  "
+        );
+    }
+    ```
+
 **USE CASE I : [Zero-Shot entity detection](#use-case-i--zero-shot-entity-detection-classify-entity-without-training-ner-data)**
 1. Import [flair ner(ent_ext)](#1-import-flair-ner-module-in-jac) module
 2. [Classify Entity](#2-classify-entity-)
