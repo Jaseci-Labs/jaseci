@@ -4,11 +4,7 @@
 
 - Install [rust](https://www.rust-lang.org/learn/get-started)
 - Install [yarn](https://classic.yarnpkg.com/lang/en/docs/install/)
-- run `yarn install`
-- Navigate to `cd ../jaseci_ui_kit/components/`
-  - Run `yarn install`
-  - Lastly, run `yarn build`
-- Navigate back to the jaseci studio directory `cd ../../jaseci_studio`
+- Run `yarn install`
 
 ## Running the Dev Server
 
