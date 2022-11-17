@@ -86,15 +86,17 @@ def build_summary_file():
                 with open(doc_file_link, "a+") as docfile:
                     for rf_line in repo_file_lines:
                         docfile.write(rf_line)
-
-    files = get_images(os.path.join(root, "examples/CanoniCAI/images"))
-    import_assets(files)
-    files = get_images(os.path.join(root, "support/guide/assets"))
-    import_assets(files)
-    files = get_images(os.path.join(root, "support/codelabs/canonicai/images"))
-    import_assets(files)
-    files = get_images(os.path.join(root, "support/guide/lang_docs/images"))
-    import_assets(files)
+    # list of all image folders . Add relative path here to include images in mdbook
+    imageFiles = [
+        "examples/CanoniCAI/images",
+        "support/guide/assets",
+        "support/codelabs/canonicai/images",
+        "support/guide/lang_docs/images",
+        "jaseci_ai_kit/jaseci_ai_kit/modules/ph/assets",
+    ]
+    for images in imageFiles:
+        files = get_images(os.path.join(root, images))
+        import_assets(files)
 
 
 def process_line(line):
