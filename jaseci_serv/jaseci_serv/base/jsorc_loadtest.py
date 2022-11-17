@@ -111,15 +111,19 @@ class JsorcLoadTest:
         """
         results = {}
         apps = [
-            "zeroshot_faq_bot",
+            # "zeroshot_faq_bot",
             # "sentence_pairing"
+            "discussion_analysis"
         ]
         app_to_actions = {
             "zeroshot_faq_bot": ["text_seg", "use_qa"],
             "sentence_pairing": ["use_enc", "bi_enc"],
+            "discussion_analysis": ["bi_enc", "cl_summer"],
         }
+        policies = ["evaluation"]
         # policies = ["all_local"]
-        policies = ["all_remote"]
+        # policies = ["all_evaluation"]
+        # policies = ["all_remote", "all_local", "evaluation"]
         for app in apps:
             jac_file = os.path.join(APP_PATH, f"{app}.jac")
             self.sentinel_register(jac_file)
@@ -149,7 +153,7 @@ class JsorcLoadTest:
                 self.start_benchmark()
                 self.start_actions_tracking()
                 start_ts = time.time()
-                experiment_duration = 1 * 60
+                experiment_duration = 2 * 60
                 while (time.time() - start_ts) < experiment_duration:
                     res = self.run_walker(app)
                 result = self.stop_benchmark()

@@ -38,17 +38,9 @@ walker discussion_analysis {
     summaries = cl_summer.summarize(text=all_text, url="none", sent_count=3, summarizer_type="LsaSummarizer");
 
     # get embeddings
-    context_embs = [];
-    for trans in transcripts {
-        emb = bi_enc.get_context_emb(trans);
-        context_embs.l::append(emb);
-    }
+    context_embs = bi_enc.get_context_emb(transcripts);
 
-    candidate_embs = [];
-    for sum in summaries {
-        emb = bi_enc.get_candidate_emb(sum);
-        candidate_embs.l::append(emb);
-    }
+    candidate_embs = bi_enc.get_candidate_emb(summaries);
 
     # cosine similarity
     for c in context_embs {
