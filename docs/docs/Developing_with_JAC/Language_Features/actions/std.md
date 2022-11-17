@@ -1,6 +1,5 @@
----
-title :  Standard  Actions
----
+# Standard Actions 
+
 ### Logging output
 ```jac 
 
