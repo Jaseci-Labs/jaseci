@@ -12,12 +12,12 @@ export default function App(props: AppProps) {
   return (
     <>
       <Head>
-        <title>Page title</title>
+        <title>Jaseci Studio</title>
         <meta
           name="viewport"
           content="minimum-scale=1, initial-scale=1, width=device-width"
         />
-        <link type={"text/css"} href="/build/components/components.css"></link>
+        <link type={"text/css"} href="/ui_kit/components/components.css"></link>
       </Head>
       <Script
         type={"module"}

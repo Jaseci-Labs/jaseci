@@ -18,6 +18,11 @@ export const config: Config = {
       buildDir: '../../jaseci_ui_kit/static/build',
     },
     {
+      type: 'dist',
+      esmLoaderPath: '../loader',
+      buildDir: '../../../jaseci_studio/public/build',
+    },
+    {
       type: 'dist-custom-elements',
     },
     {

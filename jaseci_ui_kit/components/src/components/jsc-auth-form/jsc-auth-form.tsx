@@ -28,7 +28,7 @@ export class JscAuthForm {
   password: string;
 
   @Event() serverUrlChanged: EventEmitter<string>;
-  private onServerURLChanged(event: Event) {
+  private onServerURLChanged() {
     this.serverUrlChanged.emit(this.serverURL);
   }
 
@@ -128,7 +128,7 @@ export class JscAuthForm {
             fullwidth={'true'}
             onValueChanged={e => {
               this.serverURL = e.detail;
-              this.onServerURLChanged(e);
+              this.onServerURLChanged();
             }}
             label={'Sever URL'}
             palette={this.errorMessage ? 'error' : null}
