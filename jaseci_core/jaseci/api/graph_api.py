@@ -31,7 +31,7 @@ class GraphApi:
     @Interface.private_api()
     def graph_get(
         self,
-        gph: Graph = None,
+        nd: Node = None,
         mode: str = "default",
         detailed: bool = False,
         depth: int = 0,
@@ -41,15 +41,15 @@ class GraphApi:
         Valid modes: {default, dot, }
         """
         if mode == "dot":
-            return gph.graph_dot_str(detailed=detailed, depth=depth)
-        else:
-            items = []
-            nodes = gph.get_all_nodes(depth=depth)
-            for i in nodes:
-                items.append(i.serialize(detailed=detailed))
-            for i in gph.get_all_edges(nodes=nodes):
-                items.append(i.serialize(detailed=detailed))
-            return items
+            return nd.traversing_dot_str(detailed, depth)
+
+        nodes, edges = nd.get_all_architypes(depth)
+        items = []
+        for i in nodes.values():
+            items.append(i.serialize(detailed=detailed))
+        for i in edges.values():
+            items.append(i.serialize(detailed=detailed))
+        return items
 
     @Interface.private_api()
     def graph_list(self, detailed: bool = False):
@@ -85,7 +85,7 @@ class GraphApi:
         Returns the default graph master is using
         """
         if self.active_gph_id:
-            default = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
+            default = self._h.get_obj(self._m_id, self.active_gph_id)
             return default.serialize(detailed=detailed)
         else:
             return {"success": False, "response": "No default graph is selected!"}
@@ -157,7 +157,7 @@ class GraphApi:
             cmd = input("graph_walk_mode > ")
 
     def active_gph(self):
-        return self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
+        return self._h.get_obj(self._m_id, self.active_gph_id)
 
     def destroy(self):
         """

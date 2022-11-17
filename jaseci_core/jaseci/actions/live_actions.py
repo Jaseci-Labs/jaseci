@@ -89,6 +89,8 @@ def load_local_actions(file: str):
 
 def load_module_actions(mod):
     """Load all jaseci actions from python module"""
+    if mod in sys.modules:
+        del sys.modules[mod]
     mod = importlib.import_module(mod)
     if mod:
         return True
@@ -112,8 +114,8 @@ def unload_action(name):
         mod = live_actions[name].__module__
         if mod != "js_remote_hook":
             live_action_modules[mod].remove(name)
-        if len(live_action_modules[mod]) < 1:
-            unload_module(mod)
+            if len(live_action_modules[mod]) < 1:
+                unload_module(mod)
         del live_actions[name]
         return True
     return False
@@ -148,15 +150,16 @@ def load_preconfig_actions(hook):
             pass
 
 
-def get_global_actions(hook):
+def get_global_actions():
     """
     Loads all global action hooks for use by Jac programs
     Attaches globals to mem_hook
     """
     from jaseci.attr.action import Action
-    import uuid
+    from jaseci.hook.memory import MemoryHook
 
     global_action_list = []
+    hook = MemoryHook()
     for i in live_actions.keys():
         if (
             i.startswith("std.")
@@ -171,13 +174,13 @@ def get_global_actions(hook):
         ):
             global_action_list.append(
                 Action(
-                    m_id=uuid.UUID(int=0).urn,
+                    m_id=0,
                     h=hook,
                     mode="public",
                     name=i,
                     value=i,
                     persist=False,
-                ).jid
+                )
             )
     return global_action_list
 

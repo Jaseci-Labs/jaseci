@@ -12,7 +12,7 @@ This tutorial shows you how to train a Bi-Encoder with a custom training loop to
 5. Use the trained model to make [predictions](#5-use-the-trained-model-to-make-predictions-)
 
 
-## **Walk through** 
+## **Walk through**
 
 ### **1. Praparing dataset**
 For this tutorial, we are going to leverage the biencoder for intent classification, which is categorizing an incoming text into a one of predefined intents. for demonstration purpose, we are going to use the SNIPS dataset as an example here. [snips dataset](https://huggingface.co/datasets/snips_built_in_intents).
@@ -32,7 +32,7 @@ SNIPS is a popular intent classificawtion datasets that covers intents such as `
 ]
     `
 We need to do a little data format conversion to create a version of SNIPS that work with our biencoder implemenation.
-For this part, we are going to use Python. First, 
+For this part, we are going to use Python. First,
 
 1. `Import the dataset` from huggingface [dataset library](https://huggingface.co/datasets/snips_built_in_intents).
     ```python
@@ -82,7 +82,7 @@ For this part, we are going to use Python. First,
     # write data in json file 'train_bi.json'
     with open("train_bi.json", "w", encoding="utf8") as f:
         f.write(json.dumps(train_data, indent = 4))
-        
+
 
     # Create test dataset
     test_data = CreateData(test)
@@ -109,7 +109,7 @@ For this part, we are going to use Python. First,
             "What's the cheapest between the two restaurants the closest to my hotel?"
             ]
         ```
-    
+
     * **test_bi.json**
         ```
         {
@@ -147,12 +147,12 @@ For this part, we are going to use Python. First,
 2. Load `bi_enc` module in jac by cmd
     > actions load module jaseci_ai_kit.bi_enc
 
-### **3. Train the model**  
+### **3. Train the model**
 For this tutorial, we are going to `train and infer` the `biencoder` for `intent classification` its `train` on snips `train datasets` and `infer` on `test dataset`, which is categorizing an incoming text into a one of predefined intents.
 
 * **Creating Jac Program (`train and infer` bi_enc)**
     1. Create a file by name `bi_encoder.jac`
-    2. Create node `model_dir` and `bi_encoder` in `bi_encoder.jac` file        
+    2. Create node `model_dir` and `bi_encoder` in `bi_encoder.jac` file
         ```
         node model_dir;
         node bi_encoder {};
@@ -168,8 +168,8 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         can train_bi_enc with train_bi_enc entry{
         # Code snippet for training the model
         train_data = file.load_json(visitor.train_file);
-        
-        # Train the model 
+
+        # Train the model
         report bi_enc.train(
             dataset=train_data,
             from_scratch=visitor.from_scratch,
@@ -211,7 +211,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
             report [result];
         }
         # predict intent on new text
-        can predict with predict entry{        
+        can predict with predict entry{
         # Use the model to perform inference
         # returns the list of context with the suitable candidates
         test_data = file.load_json(visitor.test_data_file);
@@ -244,18 +244,18 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         * `train`: will be used to train the Bi-Encoder on custom data
             * Input:
                 * `dataset` (Dict): dictionary of candidates and suportting contexts for each candidate
-                * `from_scratch` (bool): if set to true train the model from scratch otherwise trains incrementally 
+                * `from_scratch` (bool): if set to true train the model from scratch otherwise trains incrementally
                 * `training_parameters` (Dict): dictionary of training parameters
             * Returns: text when model training is completed
-        * `infer`: will be used to predits the most suitable candidate for a provided context, takes text or embedding 
+        * `infer`: will be used to predits the most suitable candidate for a provided context, takes text or embedding
             * Input:
                 * `contexts` (string or list of strings): context which needs to be classified
-                * `candidates` (string or list of strings): list of candidates for the context 
+                * `candidates` (string or list of strings): list of candidates for the context
                 * `context_type` (string): can be text or embedding type
                 * `candidate_type` (string): can be text or embedding type
-            * Return: a dictionary of similarity score for each candidate and context 
+            * Return: a dictionary of similarity score for each candidate and context
 
-    
+
     5. Adding edge name of `bi_model` in `bi_encoder.jac` file for connecting nodes inside graph.
         ```
         # adding edge
@@ -278,19 +278,19 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         ```
         walker init {
             root {
-            spawn here --> graph::bi_encoder_graph; 
+            spawn here --> graph::bi_encoder_graph;
             }
         }
         ```
     8. Creating walker name of `train_bi_enc` for getting parameter from **context or default** and calling ability `train and infer` bi_encoder.
         ```
-        # Declaring the walker: 
+        # Declaring the walker:
         walker train_bi_enc{
-            # the parameters required for training    
+            # the parameters required for training
             has train_file = "train_bi.json";
             has from_scratch = true;
             has num_train_epochs = 20;
-            has test_file = "test_bi.json";    
+            has test_file = "test_bi.json";
 
             root {
                 take --> node::model_dir;
@@ -305,11 +305,11 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         `from_scratch` : **true** </br>
         `num_train_epochs` : **20** </br>
         `test_file` : local path of **test_bi.json** file </br>
-    
+
     9. Declaring walker for `predicting intents` on new text
-        ```  
+        ```
         walker predict{
-            has test_data_file = "test_dataset.json";    
+            has test_data_file = "test_dataset.json";
 
             root {
                 take --> node::model_dir;
@@ -331,8 +331,8 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
             can train_bi_enc with train_bi_enc entry{
                 #Code snippet for training the model
                 train_data = file.load_json(visitor.train_file);
-                
-                # Train the model 
+
+                # Train the model
                 report bi_enc.train(
                     dataset=train_data,
                     from_scratch=visitor.from_scratch,
@@ -376,7 +376,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
             }
 
             # predict intent on new text
-            can predict with predict entry{        
+            can predict with predict entry{
             # Use the model to perform inference
             test_data = file.load_json(visitor.test_data_file);
             resp_data = bi_enc.infer(
@@ -385,7 +385,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
                 context_type=test_data["context_type"],
                 candidate_type=test_data["candidate_type"]
                 );
-            
+
             # the infer action returns all the candidate with the confidence scores
             # Iterate through the candidate labels and their predicted scores
             pred = resp_data[0];
@@ -422,18 +422,18 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
 
         walker init {
             root {
-            spawn here --> graph::bi_encoder_graph; 
+            spawn here --> graph::bi_encoder_graph;
             }
         }
 
 
-        # Declaring the walker: 
+        # Declaring the walker:
         walker train_bi_enc{
-            # the parameters required for training    
+            # the parameters required for training
             has train_file = "train_bi.json";
             has from_scratch = true;
             has num_train_epochs = 20;
-            has test_file = "test_bi.json";    
+            has test_file = "test_bi.json";
 
             root {
                 take --> node::model_dir;
@@ -446,7 +446,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         # declaring walker for predicting intents on new text
         walker predict{
             # passing input data for prediction
-            has test_data_file = "test_dataset.json";    
+            has test_data_file = "test_dataset.json";
 
             root {
                 take --> node::model_dir;
@@ -461,12 +461,12 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         > jac build bi_encoder.jac
     2. Activate sentinal by run cmd
         > sentinel set -snt active:sentinel -mode ir bi_encoder.jir
-        
+
         **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
         > sentinel register -set_active true -mode ir bi_encoder.jir
     3. Calling walker `train_bi_enc` with `default parameter` for training `bi_enc` module by cmd
         > walker run train_bi_enc </br>
-    
+
     After `3rd step` running logging will shown on console </br>
     **`training logs`**
     ```
@@ -509,7 +509,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
                 LR : 0.0
 
     Epoch: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 5/5 [00:22<00:00,  4.49s/batch]
-    
+
     ```
 ### **4. Evaluation of the model effectiveness**
 
@@ -585,7 +585,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
             "true intent": "RequestRide",
             "Conf_Score": 18.330015462917917
         },
-        
+
         {
             "context": "Get me a ride to the airport",
             "pred intent": "RequestRide",
@@ -640,4 +640,4 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         "Conf_Score": 19.72020419731474
       }
     ]
-    ```      
+    ```

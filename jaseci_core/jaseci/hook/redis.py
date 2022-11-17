@@ -37,7 +37,7 @@ class RedisHook(MemoryHook):
         obj = super().get_obj_from_store(item_id)
 
         if obj is None and self.redis.is_running():
-            loaded_obj = self.redis.get(item_id.urn)
+            loaded_obj = self.redis.get(item_id)
             if loaded_obj:
                 self.red_touch_count += 1
                 jdict = json.loads(loaded_obj, cls=JaseciJsonDecoder)
@@ -57,7 +57,7 @@ class RedisHook(MemoryHook):
         Checks for object existance in store
         """
         return super().has_obj_in_store(item_id) or (
-            self.redis.is_running() and self.redis.exists(item_id.urn)
+            self.redis.is_running() and self.redis.exists(item_id)
         )
 
     # --------------------- GLOB --------------------- #
@@ -117,13 +117,13 @@ class RedisHook(MemoryHook):
         super().commit_obj_to_cache(item)
 
         if all_caches and item._persist and self.redis.is_running():
-            self.redis.set(item.id.urn, item.json(detailed=True))
+            self.redis.set(item.jid, item.json(detailed=True))
 
     def decommit_obj_from_cache(self, item):
         super().decommit_obj_from_cache(item)
 
         if self.redis.is_running():
-            self.redis.delete(item.id.urn)
+            self.redis.delete(item.jid)
 
     ###################################################
     #                     CLEANER                     #

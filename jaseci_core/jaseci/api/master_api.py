@@ -93,9 +93,7 @@ class MasterApi:
         Returns the default master master is using
         """
         if self.caller:
-            return self._h.get_obj(self._m_id, uuid.UUID(self.caller)).serialize(
-                detailed=detailed
-            )
+            return self._h.get_obj(self._m_id, self.caller).serialize(detailed=detailed)
         else:
             return self.serialize(detailed=detailed)
 

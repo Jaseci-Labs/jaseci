@@ -26,7 +26,8 @@
   5. [Bring Your Application to Production](examples/CanoniCAI/codelabs/5_production.md)
   6. [Improve Your AI Models](examples/CanoniCAI/codelabs/6_crowdsource.md)
 - [Build a Custom Jaseci Module](support/codelabs/custom_jaseci_module_codelab.md)
-
+- [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
+- [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
 ## The JAC Language Guide
 
 - [Key Abstractions and Concepts](support/guide/lang_docs/key_concepts.md)
@@ -35,7 +36,9 @@
     - [Walkers By Example](support/guide/lang_docs/walkers_by_example.md)
   - [Abilities](support/guide/lang_docs/abilities.md)
     - [`here` and `visitor`](support/guide/lang_docs/here_visitor.md)
+    - [Abilities By Example](support/guide/lang_docs/abilities_by_example.md)
   - [Actions](support/guide/lang_docs/actions.md)
+    - [Actions By Example](support/guide/lang_docs/actions_by_example.md)
 
 ## Jac Language Features
 
@@ -79,7 +82,9 @@
   - [Transformer NER](jaseci_ai_kit/jaseci_ai_kit/modules/tfm_ner/README.md)
   - [USE Encoder](jaseci_ai_kit/jaseci_ai_kit/modules/use_enc/README.md)
   - [USE QA](jaseci_ai_kit/jaseci_ai_kit/modules/use_qa/README.md)
+  - [Personalized Head](jaseci_ai_kit/jaseci_ai_kit/modules/ph/README.md)
 - [Guide to use Jaseci AI Kit](jaseci_ai_kit/jaseci_ai_kit/guid-to-use-ai-kit.md)
+- [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/jaseci_ai_kit/README.md)
 
 ## Jaseci UI Widget Library
 

@@ -90,12 +90,12 @@ def jac_elem_wrap(val, serialize_mode=False):
             val.context = jac_wrap_value(val.context)
         val = val.serialize()
     else:
-        val = val.id.urn.replace("urn", "jac")
+        val = val.jid.replace("urn", "jac")
     return val
 
 
 def jac_elem_unwrap(val, parent):
-    val = parent._h.get_obj(parent._m_id, uuid.UUID(val.replace("jac", "urn")))
+    val = parent._h.get_obj(parent._m_id, val.replace("jac", "urn"))
     return val
 
 

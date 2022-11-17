@@ -1,6 +1,8 @@
 """Built in actions for Jaseci"""
 import numpy as np
 from operator import itemgetter
+import pickle, base64
+
 from jaseci.actions.live_actions import jaseci_action
 
 
@@ -84,3 +86,72 @@ def sort_by_key(data: dict, reverse=False, key_pos=None):
         return sorted(data, key=itemgetter(key_pos), reverse=reverse)
     else:
         return sorted(data, reverse=reverse)
+
+
+@jaseci_action()
+def dim_reduce_fit(data: list, dim=2):
+    """
+    Dimensionally reduce a list of vectors using incremental PCA
+    Param 1 - List of vectors
+    Param 2 - Dimension to reduce to
+
+    Return - base64 encoded string of the model
+    """
+    data_arr = np.array(data)
+    ipca = IncrementalPCA(n_components=dim)
+    ipca = ipca.fit(data_arr)
+    return base64.b64encode(pickle.dumps(ipca)).decode("utf-8")
+
+
+@jaseci_action()
+def dim_reduce_apply(data: list, model: str):
+    """
+    Dimensionally reduce a list of vectors using incremental PCA
+    Param 1 - List of vectors
+    Param 2 - base64 encoded string of the model
+
+    Return - List of reduced vectors
+    """
+    data_arr = np.array(data)
+    # reshaping the data if it is a single vector
+    if len(data_arr.shape) == 1:
+        data_arr = data_arr.reshape(1, -1)
+    ipca = pickle.loads(base64.b64decode(model))
+    return ipca.transform(data_arr).tolist()
+
+
+class IncrementalPCA:
+    def __init__(self, n_components):
+        self.n_components = n_components
+        self.mean_ = None
+        self.components_ = None
+        self.n_samples_seen_ = 0
+
+    def fit(self, X):
+        if self.mean_ is None:
+            self.mean_ = np.zeros(X.shape[1], dtype=np.float64)
+        if self.components_ is None:
+            self.components_ = np.zeros(
+                (self.n_components, X.shape[1]), dtype=np.float64
+            )
+
+        # update mean
+        col_mean = np.mean(X, axis=0)
+        total_n_samples = self.n_samples_seen_ + X.shape[0]
+        self.mean_ = (
+            self.n_samples_seen_ * self.mean_ + X.shape[0] * col_mean
+        ) / total_n_samples
+
+        # update components
+        X_centered = X - self.mean_
+        U, S, V = np.linalg.svd(X_centered, full_matrices=False)
+        explained_variance = S**2 / (X.shape[0] - 1)
+        explained_variance_ratio = explained_variance / np.sum(explained_variance)
+        self.components_ = V[: self.n_components]
+        self.n_samples_seen_ = total_n_samples
+
+        return self
+
+    def transform(self, X):
+        X_centered = X - self.mean_
+        return np.dot(X_centered, self.components_.T)

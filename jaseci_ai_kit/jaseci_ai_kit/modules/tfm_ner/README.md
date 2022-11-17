@@ -126,9 +126,9 @@ For this tutorial we are going to train the model on train dataset and validate 
 
 4. Initializing module for `train and validation` inside `node tfm_ner`
     In this step we are initializing `training` and `validation` of tfm_ner model. It will take 5 parameter train, test, val (file contain `list of dict`) and mode and epochs
-    
+
     ```
-    # train and validation model 
+    # train and validation model
     can train_and_val with train_and_val_tfm entry {
         train_data = file.load_json(visitor.train_file);
         val_data = file.load_json(visitor.val_file);
@@ -161,9 +161,9 @@ For this tutorial we are going to train the model on train dataset and validate 
     edge ner_model {
         has model_type;
     }
-    ``` 
+    ```
 
-7. Adding `graph` name of `ner_val_graph` for initializing node . 
+7. Adding `graph` name of `ner_val_graph` for initializing node .
     ```
     # Adding Graph
     graph ner_val_graph {
@@ -174,19 +174,19 @@ For this tutorial we are going to train the model on train dataset and validate 
             ner_model_dir -[ner_model(model_type="tfm_ner")]-> tfm_ner_node;
         }
     }
-    ``` 
+    ```
 
 8. Initializing `walker init` for calling graph
     ```
     walker init {
         root {
-        spawn here --> graph::ner_val_graph; 
+        spawn here --> graph::ner_val_graph;
         }
     }
     ```
 9. Creating `walker` name of `train_and_val_tfm` for getting parameter from context and calling ability `training and validation` model.
     ```
-    # creating walker 
+    # creating walker
     walker train_and_val_tfm {
         has train_file;
         has val_file;
@@ -272,11 +272,11 @@ For this tutorial we are going to train the model on train dataset and validate 
 
     walker init {
         root {
-        spawn here --> graph::ner_val_graph; 
+        spawn here --> graph::ner_val_graph;
         }
     }
 
-    ## creating walker 
+    ## creating walker
     walker train_and_val_tfm {
         has train_file;
         has val_file;
@@ -327,7 +327,7 @@ For this tutorial we are going to train the model on train dataset and validate 
     * `train_file`: `list[dict]` train data file name.
     * `val_file`: `list[dict]` validation data file name.
     * `test_file`: `list[dict]` test data file name.
-       
+
 
 6. Run the following command to execute walker `train_and_val_tfm`
     ```
@@ -370,7 +370,7 @@ For this tutorial we are going to train the model on train dataset and validate 
     2022-06-01 07:08:22.797807     Model testing is started
     2022-06-01 07:08:22.797819     ------------------------------------------------------------
     2022-06-01 07:08:27.092534     f1_score(macro) : 0.6822521889259535
-    2022-06-01 07:08:27.092573     Accuracy : 0.7892490767336889 
+    2022-06-01 07:08:27.092573     Accuracy : 0.7892490767336889
     2022-06-01 07:08:27.092581     Classification Report
     2022-06-01 07:08:27.092584     ------------------------------------------------------------
                 precision    recall  f1-score   support
@@ -391,7 +391,7 @@ For this tutorial we are going to train the model on train dataset and validate 
 
     2022-06-01 07:08:27.092694     ------------------------------------------------------------
     2022-06-01 07:08:27.092707     Total time taken to completed testing :  0:00:04.294899
-    2022-06-01 07:08:27.092722     ------------------------------------------------------------ 
+    2022-06-01 07:08:27.092722     ------------------------------------------------------------
 
     ```
 ## **4. Predicting Entities**
