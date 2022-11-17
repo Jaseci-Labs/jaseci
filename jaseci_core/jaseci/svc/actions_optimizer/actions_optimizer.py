@@ -427,6 +427,19 @@ class ActionsOptimizer:
         self.actions_state.module_action_loaded(name, module)
         logger.info(f"==Actions Optimizer== LOADED module action for {name}")
 
+    def unload_action_auto(self, name):
+        """
+        Unload an action based on how it is currently loaded
+        """
+        cur_state = self.actions_state.get_state(name)
+        if cur_state is None:
+            return False, "Action is not loaded."
+        if cur_state["mode"] == "module":
+            return self.unload_action_module(name)
+        elif cur_state["mode"] == "remote":
+            return self.unload_action_remote(name)
+        return False, f"Unrecognized action loaded status {cur_state['mode']}"
+
     def unload_action_module(self, name):
         """
         Unload an action module

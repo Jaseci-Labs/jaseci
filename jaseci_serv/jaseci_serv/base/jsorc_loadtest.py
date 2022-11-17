@@ -7,9 +7,11 @@ from rest_framework.test import APIClient
 import os
 import json
 from time import sleep
+import time
 
 JAC_PATH = os.path.join(os.path.dirname(__file__), "action_micro_jac/")
 HLP_JAC_PATH = os.path.join(os.path.dirname(__file__), "hlp_jac/")
+APP_PATH = os.path.join(os.path.dirname(__file__), "synthetic_apps")
 
 
 class JsorcLoadTest:
@@ -44,6 +46,7 @@ class JsorcLoadTest:
         """
         Run the corresponding jsorc test
         """
+        logger.info("in test")
         test_func = getattr(self, self.test)
         if experiment == "":
             return test_func()
@@ -87,6 +90,76 @@ class JsorcLoadTest:
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         return res.data
+
+    def sentinel_register(self, jac_file):
+        jac_code = open(jac_file).read()
+        # TODO: remove this once opt_level bug is fixed
+        payload = {"op": "sentinel_register", "code": jac_code, "opt_level": 2}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+    def set_jsorc_actionpolicy(self, policy_name):
+        payload = {"op": "jsorc_actionpolicy_set", "policy_name": policy_name}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+    def synthetic_apps(self):
+        """
+        Run synthetic application
+        """
+        logger.info("in synthetic apps")
+        results = {}
+        apps = ["zeroshot_faq_bot"]
+        app_to_actions = {"zeroshot_faq_bot": ["text_seg", "use_qa"]}
+        policies = ["evaluation"]
+        # policies = ["all_remote"]
+        for app in apps:
+            jac_file = os.path.join(APP_PATH, f"{app}.jac")
+            self.sentinel_register(jac_file)
+            action_modules = app_to_actions[app]
+            for policy in policies:
+                if policy == "all_local":
+                    jsorc_policy = "Default"
+                    for module in action_modules:
+                        self.load_action(module, "local", wait_for_ready=True)
+                elif policy == "all_remote":
+                    jsorc_policy = "Default"
+                    for module in action_modules:
+                        self.load_action(module, "remote", wait_for_ready=True)
+                elif policy == "evaluation":
+                    jsorc_policy = "Evaluation"
+                    # For JSORC mode, we start as remote everything
+                    for module in action_modules:
+                        self.load_action(module, "remote", wait_for_ready=True)
+                else:
+                    logger.error(f"Unrecognized policy {policy}")
+                    return
+
+                self.set_jsorc_actionpolicy(jsorc_policy)
+                #
+                # Experiment Start
+                #
+                self.start_benchmark()
+                self.start_actions_tracking()
+                start_ts = time.time()
+                experiment_duration = 5 * 60
+                while (time.time() - start_ts) < experiment_duration:
+                    res = self.run_walker(app)
+                result = self.stop_benchmark()
+                action_result = self.stop_actions_tracking()
+                results.setdefault(app, {})[policy] = {
+                    "walker_level": result,
+                    "action_level": action_result,
+                }
+                #
+                # Experiment Ends. Unload actions. Reset the cluster
+                #
+                for module in action_modules:
+                    self.unload_action(module, mode="auto", retire_svc=True)
+                sleep(10)
+        return results
 
     def action_level_test(self):
         """

@@ -105,7 +105,9 @@ class JsOrcApi:
             return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api(cli_args=["name"])
-    def jsorc_actions_unload(self, name: str, mode: str, retire_svc: bool = True):
+    def jsorc_actions_unload(
+        self, name: str, mode: str = "auto", retire_svc: bool = True
+    ):
         """
         Unload an action through JSORC.
         If retire_svc is set to True (true by default), it will also retire the corresponding microservice.

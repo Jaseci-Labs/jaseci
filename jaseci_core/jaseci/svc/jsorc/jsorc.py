@@ -45,7 +45,6 @@ class JsOrcService(CommonService):
         while True:
             # Keeping set of services alive
             for svc in self.keep_alive:
-                logger.info(f"keeping alive {svc}")
                 try:
                     self.app.check(self.namespace, svc)
                 except Exception as e:
@@ -274,7 +273,14 @@ class JsOrc:
         """
         # We are using module for local
         mode = "module" if mode == "local" else mode
-        if mode == "module":
+        if mode == "auto":
+            res = self.actions_optimizer.unload_action_auto(name)
+            if not res[0]:
+                return res
+            if retire_svc:
+                self.retire_uservice(name)
+            return res
+        elif mode == "module":
             return self.actions_optimizer.unload_action_module(name)
         elif mode == "remote":
             res = self.actions_optimizer.unload_action_remote(name)

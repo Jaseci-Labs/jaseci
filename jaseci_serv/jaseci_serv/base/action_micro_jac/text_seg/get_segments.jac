@@ -12,7 +12,8 @@ walker get_segments {
 			x += "He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. 'Poor thing,' said Bruce: 'you, too, know what it is to fail.'";
 			x += " But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as he watched her swing herself out upon the slender line.";
 			x += " Would she fail again? No! The thread was carried safely to the beam and fastened there.";
-			text_seg.get_segments(x, 0.95);
+			res = text_seg.get_segments(x, 0.95);
+			std.log(res);
 		}
 	}
 }
