@@ -1,0 +1,641 @@
+{
+  "zeroshot_faq_bot": {
+    "evaluation": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.0033332714489664084,
+            "average_latency": 0.07963180541992188,
+            "50th_latency": 0.07963180541992188,
+            "90th_latency": 0.07963180541992188,
+            "95th_latency": 0.07963180541992188,
+            "99th_latency": 0.07963180541992188
+          },
+          "all": {
+            "throughput": 0.0033332714489664084,
+            "average_latency": 0.07963180541992188,
+            "50th_latency": 0.07963180541992188,
+            "90th_latency": 0.07963180541992188,
+            "95th_latency": 0.07963180541992188,
+            "99th_latency": 0.07963180541992188
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.0033332714489664084,
+            "average_latency": 0.07867813110351562,
+            "50th_latency": 0.07867813110351562,
+            "90th_latency": 0.07867813110351562,
+            "95th_latency": 0.07867813110351562,
+            "99th_latency": 0.07867813110351562
+          },
+          "all": {
+            "throughput": 0.0033332714489664084,
+            "average_latency": 0.07867813110351562,
+            "50th_latency": 0.07867813110351562,
+            "90th_latency": 0.07867813110351562,
+            "95th_latency": 0.07867813110351562,
+            "99th_latency": 0.07867813110351562
+          }
+        },
+        "walker_run": {
+          "zeroshot_faq_bot": {
+            "throughput": 1.4166403658107236,
+            "average_latency": 687.7060951906092,
+            "50th_latency": 596.4303016662598,
+            "90th_latency": 756.8435668945315,
+            "95th_latency": 935.7275962829582,
+            "99th_latency": 2267.1677112579346
+          },
+          "all": {
+            "throughput": 1.4166403658107236,
+            "average_latency": 687.7060951906092,
+            "50th_latency": 596.4303016662598,
+            "90th_latency": 756.8435668945315,
+            "95th_latency": 935.7275962829582,
+            "99th_latency": 2267.1677112579346
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668690055.0243015,
+          "actions_calls": {
+            "text_seg.get_segments": 0.4920188391750509,
+            "use.answer_encode": 0.11649974096905101,
+            "use.question_encode": 0.05510553768702916,
+            "use.cos_sim_score": 0.00829106194632394
+          }
+        },
+        {
+          "ts": 1668690191.0501454,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-qa/"
+              }
+            }
+          },
+          "actions_calls": {
+            "use.question_encode": 0.1445316351377047,
+            "use.cos_sim_score": 0.00012252065870496962,
+            "text_seg.get_segments": 0.4094454844792684,
+            "use.answer_encode": 0.25436190764109295
+          }
+        },
+        {
+          "ts": 1668690201.0631557,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-qa/"
+              }
+            }
+          },
+          "actions_calls": {
+            "text_seg.get_segments": 0.3930909182574298,
+            "use.answer_encode": 0.12741328574515678,
+            "use.question_encode": 0.06385858638866528,
+            "use.cos_sim_score": 0.010461304638836835
+          }
+        },
+        {
+          "ts": 1668690226.9063513,
+          "actions_state": {
+            "text_seg": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-qa/"
+              }
+            }
+          },
+          "actions_calls": {
+            "text_seg.get_segments": 0.3638317584991455,
+            "use.answer_encode": 0.23335643609364828,
+            "use.question_encode": 0.16340319315592447,
+            "use.cos_sim_score": 0.00010033448537190755
+          }
+        },
+        {
+          "ts": 1668690236.9264092,
+          "actions_state": {
+            "text_seg": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-qa/"
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668690368.4285328,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668690379.4766767,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://use-qa/"
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668690389.481919,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://use-qa/"
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668690399.490672,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://use-qa/"
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668690409.5023274,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://use-qa/"
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668690419.5153995,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://use-qa/"
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668690429.5196674,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://use-qa/"
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668690439.5294776,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://use-qa/"
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668690449.5526285,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.text_seg"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://text-seg/"
+              }
+            },
+            "use_qa": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-qa/"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "all_remote": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.003329826519593697,
+            "average_latency": 0.10895729064941406,
+            "50th_latency": 0.10895729064941406,
+            "90th_latency": 0.10895729064941406,
+            "95th_latency": 0.10895729064941406,
+            "99th_latency": 0.10895729064941406
+          },
+          "all": {
+            "throughput": 0.003329826519593697,
+            "average_latency": 0.10895729064941406,
+            "50th_latency": 0.10895729064941406,
+            "90th_latency": 0.10895729064941406,
+            "95th_latency": 0.10895729064941406,
+            "99th_latency": 0.10895729064941406
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.003329826519593697,
+            "average_latency": 0.6506443023681641,
+            "50th_latency": 0.6506443023681641,
+            "90th_latency": 0.6506443023681641,
+            "95th_latency": 0.6506443023681641,
+            "99th_latency": 0.6506443023681641
+          },
+          "all": {
+            "throughput": 0.003329826519593697,
+            "average_latency": 0.6506443023681641,
+            "50th_latency": 0.6506443023681641,
+            "90th_latency": 0.6506443023681641,
+            "95th_latency": 0.6506443023681641,
+            "99th_latency": 0.6506443023681641
+          }
+        },
+        "walker_run": {
+          "zeroshot_faq_bot": {
+            "throughput": 1.6682430863164424,
+            "average_latency": 594.1202098024105,
+            "50th_latency": 580.2288055419922,
+            "90th_latency": 628.2966136932373,
+            "95th_latency": 652.3909568786621,
+            "99th_latency": 710.413932800293
+          },
+          "all": {
+            "throughput": 1.6682430863164424,
+            "average_latency": 594.1202098024105,
+            "50th_latency": 580.2288055419922,
+            "90th_latency": 628.2966136932373,
+            "95th_latency": 652.3909568786621,
+            "99th_latency": 710.413932800293
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668690456.6572452,
+          "actions_calls": {
+            "text_seg.get_segments": 0.370110260988186,
+            "use.answer_encode": 0.10995055006411737,
+            "use.question_encode": 0.05387509130908106,
+            "use.cos_sim_score": 0.006239103567682209
+          }
+        }
+      ]
+    },
+    "all_local": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.0033278267241003906,
+            "average_latency": 0.08845329284667969,
+            "50th_latency": 0.08845329284667969,
+            "90th_latency": 0.08845329284667969,
+            "95th_latency": 0.08845329284667969,
+            "99th_latency": 0.08845329284667969
+          },
+          "all": {
+            "throughput": 0.0033278267241003906,
+            "average_latency": 0.08845329284667969,
+            "50th_latency": 0.08845329284667969,
+            "90th_latency": 0.08845329284667969,
+            "95th_latency": 0.08845329284667969,
+            "99th_latency": 0.08845329284667969
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.0033278267241003906,
+            "average_latency": 0.08630752563476562,
+            "50th_latency": 0.08630752563476562,
+            "90th_latency": 0.08630752563476562,
+            "95th_latency": 0.08630752563476562,
+            "99th_latency": 0.08630752563476562
+          },
+          "all": {
+            "throughput": 0.0033278267241003906,
+            "average_latency": 0.08630752563476562,
+            "50th_latency": 0.08630752563476562,
+            "90th_latency": 0.08630752563476562,
+            "95th_latency": 0.08630752563476562,
+            "99th_latency": 0.08630752563476562
+          }
+        },
+        "walker_run": {
+          "zeroshot_faq_bot": {
+            "throughput": 1.7271420698081028,
+            "average_latency": 573.0208519106885,
+            "50th_latency": 549.5800971984863,
+            "90th_latency": 632.7246189117432,
+            "95th_latency": 661.625838279724,
+            "99th_latency": 799.8535776138326
+          },
+          "all": {
+            "throughput": 1.7271420698081028,
+            "average_latency": 573.0208519106885,
+            "50th_latency": 549.5800971984863,
+            "90th_latency": 632.7246189117432,
+            "95th_latency": 661.625838279724,
+            "99th_latency": 799.8535776138326
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668690796.6763077,
+          "actions_calls": {
+            "text_seg.get_segments": 0.41940844403525995,
+            "use.answer_encode": 0.10165960389065605,
+            "use.question_encode": 0.047179704916040795,
+            "use.cos_sim_score": 0.00010970699993861204
+          }
+        }
+      ]
+    }
+  }
+}
