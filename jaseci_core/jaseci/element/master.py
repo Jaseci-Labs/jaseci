@@ -9,8 +9,6 @@ from jaseci.api.object_api import ObjectApi
 from jaseci.api.graph_api import GraphApi
 from jaseci.api.sentinel_api import SentinelApi
 from jaseci.api.walker_api import WalkerApi
-from jaseci.api.edge_api import EdgeApi
-from jaseci.api.node_api import NodeApi
 from jaseci.api.architype_api import ArchitypeApi
 from jaseci.api.config_api import ConfigApi
 from jaseci.api.interface import Interface
@@ -48,8 +46,6 @@ class Master(
         ObjectApi.__init__(self)
         GraphApi.__init__(self)
         WalkerApi.__init__(self)
-        EdgeApi.__init__(self)
-        NodeApi.__init__(self)
         SentinelApi.__init__(self)
         Interface.__init__(self)
 
@@ -61,6 +57,4 @@ class Master(
         SentinelApi.destroy(self)
         MasterApi.destroy(self)
         WalkerApi.destroy(self)
-        EdgeApi.destroy(self)
-        NodeApi.destroy(self)
         super().destroy()
