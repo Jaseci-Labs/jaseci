@@ -21,9 +21,9 @@ export default function App(props: AppProps) {
       </Head>
       <Script
         type={"module"}
-        src={"/build/components/components.esm.js"}
+        src={"/ui_kit/components/components.esm.js"}
       ></Script>
-      <Script noModule src={"/build/components/components.js"}></Script>
+      <Script noModule src={"/ui_kit/components/components.js"}></Script>
       <ReactQuery>
         <MantineProvider withGlobalStyles withNormalizeCSS theme={theme}>
           <div data-theme="greenheart">
