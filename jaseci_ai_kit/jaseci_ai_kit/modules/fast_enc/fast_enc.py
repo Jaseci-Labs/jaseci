@@ -12,7 +12,6 @@ from .config import (
     model_file_path,
     train_file_path,
     clf_json_file_path,
-    model_dir,
     base_json_file_path,
 )
 
@@ -22,13 +21,12 @@ Below code is to create a base_model.json file,
 which help initialize a default model with a default data,
 if not already exist.
 """
-model_dir.mkdir(exist_ok=True, parents=True)
 if not os.path.exists(base_json_file_path):
     default_data = {
         "sample_train_intent": ["this is a sample train text to create base model"]
     }
     json_object = json.dumps(default_data, indent=4)
-    with open((model_dir / "base_model.json"), "w") as outfile:
+    with open(base_json_file_path, "w") as outfile:
         outfile.write(json_object)
 
 
@@ -57,6 +55,7 @@ def train(traindata: Dict[str, List[str]] = None, train_with_existing: bool = Tr
     global model
     print("Training...")
     # we pass the ##train_with_existing param to updatetrainfile function
+    print(traindata)
     updatetrainfile(traindata, train_with_existing)
 
     json_to_train()

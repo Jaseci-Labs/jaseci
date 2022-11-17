@@ -1,0 +1,28 @@
+Logger:
+  disable_existing_loggers: false
+  formatters:
+    datetime:
+      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    simple:
+      format: "%(message)s"
+  handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: simple
+      level: DEBUG
+      stream: ext://sys.stdout
+    info_file_handler:
+      backupCount: 20
+      class: logging.handlers.RotatingFileHandler
+      encoding: utf8
+      filename: info.log
+      formatter: datetime
+      level: INFO
+      maxBytes: 10485760
+  log_dir: logs/
+  root:
+    handlers:
+      - console
+      - info_file_handler
+    level: INFO
+  version: 1

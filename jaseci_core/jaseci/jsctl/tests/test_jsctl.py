@@ -93,9 +93,9 @@ class JsctlTest(TestCaseHelper, TestCase):
         snt_id = self.call_cast("sentinel list")[0]["jid"]
         self.call(f"alias register s -value {snt_id}")
         self.call(f"alias register g -value {gph_id}")
-        self.assertEqual(len(self.call_cast("graph get -gph g")), 1)
+        self.assertEqual(len(self.call_cast("graph get -nd g")), 1)
         self.call("walker run init -snt s -nd g")
-        self.assertEqual(len(self.call_cast("graph get -gph g")), 3)
+        self.assertEqual(len(self.call_cast("graph get -nd g")), 3)
         self.call("alias clear")
         self.assertEqual(len(self.call_cast("alias list").keys()), 0)
 

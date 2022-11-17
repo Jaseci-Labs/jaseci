@@ -10,7 +10,7 @@ This tutorial shows you how to train a `fasttext Classifier` with a custom train
 4. [Evaluate](#4-evaluation-of-the-model-effectiveness-) the model's effectiveness
 5. Use the trained model to make [predictions](#5-use-the-trained-model-to-make-predictions-br)
 
-# **Walk through** 
+# **Walk through**
 
 ### **1. Praparing dataset**
 For this tutorial, we are going to leverage the `fasttext Classifier` for sentence classification, which is categorizing an incoming text into a one of predefined intents. for demonstration purpose, we are going to use the SNIPS dataset as an example here. [snips dataset](https://huggingface.co/datasets/snips_built_in_intents).
@@ -30,7 +30,7 @@ SNIPS is a popular intent classificawtion datasets that covers intents such as `
 ]
     ``
 We need to do a little data format conversion to create a version of SNIPS that work with our `fasttext Classifier` implemenation.
-For this part, we are going to use Python. First, 
+For this part, we are going to use Python. First,
 
 1. `Import the dataset` from huggingface [dataset library](https://huggingface.co/datasets/snips_built_in_intents).
     ```python
@@ -81,7 +81,7 @@ For this part, we are going to use Python. First,
     # write data in json file 'train.json'
     with open("train.json", "w", encoding="utf8") as f:
         f.write(json.dumps(train_data, indent = 4))
-        
+
 
     # Create test dataset
     test_data = CreateData(test)
@@ -106,7 +106,7 @@ For this part, we are going to use Python. First,
             "What's the cheapest between the two restaurants the closest to my hotel?"
             ]
         ```
-    
+
     * **test.json**
         ```
         {
@@ -142,12 +142,12 @@ For this part, we are going to use Python. First,
 2. Load `fast_enc` module in jac by cmd
     > actions load module jaseci_ai_kit.fast_enc
 
-### **3. Train the model**  
+### **3. Train the model**
 For this tutorial, we are going to `train and test` the `fast_enc` for `intent classification` its `train` on snips `train datasets` and `test` on `test dataset`, which is categorizing an incoming text into a one of predefined intents.
 
 * **Creating Jac Program (`train and test` fast_enc)**
     1. Create a file by name `fasttext.jac`
-    2. Create node `model_dir` and `fasttext` in `fasttext.jac` file        
+    2. Create node `model_dir` and `fasttext` in `fasttext.jac` file
         ```
         node model_dir;
         node fasttext {};
@@ -175,7 +175,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
             # Use the model to perform inference
             # returns the list of context with the suitable intents
             test_data = file.load_json(visitor.test_file);
-            
+
             resp_data = fast_enc.predict(
                 sentences=test_data["contexts"]
             );
@@ -186,7 +186,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
         ```
     5. Initialize module for predict intent on new text
         ```python
-        can predict with predict_fasttext entry{        
+        can predict with predict_fasttext entry{
         # Use the model to perform inference
         resp_data = fast_enc.predict(
             sentences=file.load_json(visitor.test_file)["text"]
@@ -199,14 +199,14 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
         * `train`: will be used to train the `fasttext module` on custom dataset
             * Input:
                 * `traindata` (Dict): dictionary of candidates and suportting contexts for each candidate
-                * `train_with_existing` (bool): if set to `false` train the model from `scratch` otherwise trains `incrementally` 
+                * `train_with_existing` (bool): if set to `false` train the model from `scratch` otherwise trains `incrementally`
 
-        * `infer`: will be used to predits the most suitable candidate for a provided context, takes text or embedding 
+        * `infer`: will be used to predits the most suitable candidate for a provided context, takes text or embedding
             * Input:
                 * `contexts` (list of strings): context which needs to be classified
-            * Return: a dictionary of probability score for each candidate and context 
+            * Return: a dictionary of probability score for each candidate and context
 
-    
+
     5. Adding edge name of `enc_model` in `fasttext.jac` file for connecting nodes inside graph.
         ```
         # adding edge
@@ -229,18 +229,18 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
         ```
         walker init {
             root {
-            spawn here --> graph::encoder_graph; 
+            spawn here --> graph::encoder_graph;
             }
         }
         ```
     8. Creating walker name of `train_and_evaluate_fasttext` for getting parameter from **context or default** and calling ability `train and test`.
         ```python
-        # Declaring the walker: 
+        # Declaring the walker:
         walker train_and_evaluate_fasttext{
-            # the parameters required for training  
+            # the parameters required for training
             has train_with_existing=false;
             has train_file="train.json";
-            has test_file="test.json";    
+            has test_file="test.json";
             root {
                 take --> node::model_dir;
             }
@@ -253,13 +253,13 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
         `train_file` : local path of **train.json** file </br>
         `train_with_existing` : **false** </br>
         `test_file` : local path of **test.json** file </br>
-    
+
     9. Declaring walker for `predicting intents` on new text
-       
+
         ``` python
         # Declaring walker for predicting intents on new text
         walker predict_fasttext{
-            has test_file = "test_dataset.json";    
+            has test_file = "test_dataset.json";
 
             root {
                 take --> node::model_dir;
@@ -267,7 +267,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
             model_dir {
                 take -->;
             }
-        }            
+        }
         ```
 
         **Final fasttext.jac** program
@@ -286,14 +286,14 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
                     train_with_existing = visitor.train_with_existing
                 );
             }
-                
+
 
             can tests with train_and_test_fasttext exit{
                 std.out("fasttext validation started...");
                 # Use the model to perform inference
                 # returns the list of context with the suitable candidates
                 test_data = file.load_json(visitor.test_file);
-                
+
                 resp_data = fast_enc.predict(
                     sentences=test_data["contexts"]
                 );
@@ -304,7 +304,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
                 file.dump_json(fn, resp_data);
             }
 
-            can predict with predict_fasttext entry{        
+            can predict with predict_fasttext entry{
             # Use the model to perform inference
             resp_data = fast_enc.predict(
                 sentences=file.load_json(visitor.test_file)["text"]
@@ -331,17 +331,17 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
 
         walker init {
             root {
-            spawn here --> graph::encoder_graph; 
+            spawn here --> graph::encoder_graph;
             }
         }
 
 
-        # Declaring the walker: 
+        # Declaring the walker:
         walker train_and_test_fasttext{
-            # the parameters required for training  
+            # the parameters required for training
             has train_with_existing=false;
             has train_file="train.json";
-            has test_file="test.json";    
+            has test_file="test.json";
             root {
                 take --> node::model_dir;
             }
@@ -352,7 +352,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
 
         # declaring walker for predicting intents on new text
         walker predict_fasttext{
-            has test_file = "test_dataset.json";    
+            has test_file = "test_dataset.json";
 
             root {
                 take --> node::model_dir;
@@ -367,12 +367,12 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
         > jac build fasttext.jac
     2. Run the following command to Activate sentinal
         > sentinel set -snt active:sentinel -mode ir fasttext.jir
-    
+
         **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
         > sentinel register -set_active true -mode ir fasttext.jir
     3. Run the following command to execute  walker `train_and_test_fasttext` with `default parameter` for training `fast_enc` module.
         > walker run train_and_test_fasttext </br>
-    
+
     4. You'll find the following logs on console
 
         **training logs**

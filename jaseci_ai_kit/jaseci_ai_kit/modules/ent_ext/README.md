@@ -4,6 +4,46 @@
 
 For this tutorial we are going to leaverage the flair ner `Zero-shot classification` and `Few-shot classification` Use Case
 
+
+### Load the Model by `set_config` actions for Zeroshot
+Different models can be loaded as per the requirement on the basis of size and 
+1. Large model : Transformer based model good for ZeroShot Prediction, can be for with custom entities extraction
+   1. Roberta
+      1. Size - 1.43GB
+      2. Eval_time - 1.20 sec
+   ```jac
+    walker set_config {
+        report ent_ext.set_config(
+            ner_model = "tars-ner",
+            model_type = "tars"
+        );
+    }
+    ```
+2. Medium Size model: LSTM based model trained to predict PER,ORG, LOC, MISC entities only
+    1. Size - 430MB
+    2. Eval_time - 1.48 sec
+
+   ```jac
+    walker set_config {
+        report ent_ext.set_config(
+            ner_model = "ner",
+            model_type = "lstm  "
+        );
+    }
+    ```
+3. Small Size model: LSTM based model trained to predict PER,ORG, LOC, MISC entities only
+    1. Size - 257MB
+    2. Eval_time - 0.40 sec
+
+   ```jac
+    walker set_config {
+        report ent_ext.set_config(
+            ner_model = "ner-fast",
+            model_type = "lstm  "
+        );
+    }
+    ```
+
 **USE CASE I : [Zero-Shot entity detection](#use-case-i--zero-shot-entity-detection-classify-entity-without-training-ner-data)**
 1. Import [flair ner(ent_ext)](#1-import-flair-ner-module-in-jac) module
 2. [Classify Entity](#2-classify-entity-)
@@ -16,18 +56,18 @@ For this tutorial we are going to leaverage the flair ner `Zero-shot classificat
 
 **[Eperiment and methodology](#experiment-and-methodology)**
 
-# **Walk through** 
+# **Walk through**
 ## **USE CASE I** : `Zero-Shot entity detection` Classify entity without training `NER Data`:
 ### **1. Import Flair Ner Module in jac**
 1. Open terminal an run jaseci by cmd
     ```
     jsctl -m
-    ```  
+    ```
 2. Load module `ent_ext` in jac by cmd
     ```
     actions load module jaseci_ai_kit.ent_ext
     ```
-### **2. Classify Entity** : 
+### **2. Classify Entity** :
 For this tutorial we are going to classify entity text with `flair ner(ent_ext)` module on `tars-ner` pretrained model.
 
 * Creating jac program for **zero-shot(ent_ext)**
@@ -74,7 +114,7 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
             file.dump_json(fn, result);
         }
         ```
-        
+
     6. Adding edge name of `ner_model` in `zero_shot_ner.jac` file for connecting nodes inside graph.
         ```
         # adding edge
@@ -98,7 +138,7 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
         ```
         walker init {
             root {
-            spawn here --> graph::ner_val_graph; 
+            spawn here --> graph::ner_val_graph;
             }
         }
         ```
@@ -169,7 +209,7 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
 
         walker init {
             root {
-            spawn here --> graph::ner_eval_graph; 
+            spawn here --> graph::ner_eval_graph;
             }
         }
 
@@ -190,7 +230,7 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
         ```
 
 * Steps for calling jac program `use case 1` and `infer_zero_shot entity` from new text.
-        
+
     1. Build `zero_shot_ner.jac` by run cmd
         ```
         jac build zero_shot_ner.jac
@@ -204,10 +244,10 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
     3. Module `entity_detection`: detects all availabe entities from the provided context
         * ### Input Data:
             * `model_name`: name of model which we are using for zero-shot entity detection e.g. `tars-ner`
-            * `model_type` : type of model using in entity detection e.g. `tars` 
+            * `model_type` : type of model using in entity detection e.g. `tars`
             * `text (string)`: context to detect entities. e.g. "They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses"
             * `ner_labels(list of strings)`: List of entities, e.g. `["LOC","PER"]`
-            
+
         * ### Output
             * `Result`: Created a json file that stored `input text` and `predicted entities` in result.json file`
 
@@ -216,7 +256,7 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
         walker run infer_zero_shot -ctx "{\"model_name\":\"tars-ner\",\"model_type\":\"tars\",\"text\":\"They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses\",\"labels\":[\"building\", \"organization\"]}"
         ```
 
-    7. After executing step 6 entity output will be stored in `result.json` file 
+    7. After executing step 6 entity output will be stored in `result.json` file
         ```
         {
             "text": "They had a record of five wins and two losses in Opening Day games at Bennett Park 19 wins and 22 losses at Tiger Stadium and three wins and four losses at Comerica Park for a total home record in Opening Day games of 26 wins and 28 losses",
@@ -253,7 +293,7 @@ In Few shot classification we are going train, test and validate `ent_ext` modul
 
 ### 1. Creating Input Datasets
 
-For `train` `test` and `validation` we are going to prepare dataset from [Conll2003](https://huggingface.co/datasets/conll2003) dataset, we are creating list of dict and storing in json file by name `train.json, validation.json and test.json`, 
+For `train` `test` and `validation` we are going to prepare dataset from [Conll2003](https://huggingface.co/datasets/conll2003) dataset, we are creating list of dict and storing in json file by name `train.json, validation.json and test.json`,
 and storing dataset file in directory name `dataset` and put all required file in this.
 
 
@@ -334,7 +374,7 @@ and storing dataset file in directory name `dataset` and put all required file i
 1. Open terminal an run jaseci by cmd
     ```
     jsctl -m
-    ```  
+    ```
 2. Load module `ent_ext` in jac by cmd
     ```
     actions load module jaseci_ai_kit.ent_ext
@@ -399,7 +439,7 @@ For this tutorial we are going to train the model on train dataset and validate 
         ```
         **train** will take 4 parameter describing in upcoming steps [parameter_description](#input-data-for-train-and-validation)
 
-        
+
     6. Adding edge name of `ner_model` in `flair_ner.jac` file for connecting nodes inside graph.
         ```
         # adding edge
@@ -423,7 +463,7 @@ For this tutorial we are going to train the model on train dataset and validate 
         ```
         walker init {
             root {
-            spawn here --> graph::ner_val_graph; 
+            spawn here --> graph::ner_val_graph;
             }
         }
         ```
@@ -431,7 +471,7 @@ For this tutorial we are going to train the model on train dataset and validate 
     9. Creating `walker` name of `train_and_val_flair` for getting parameter from context and calling ability `set_config` and `train` and start training model on new dataset, validate and test
 
         ```
-        ## creating walker 
+        ## creating walker
         walker train_and_val_flair {
             # Take in a training and eval dataset
             has train_file;
@@ -535,7 +575,7 @@ For this tutorial we are going to train the model on train dataset and validate 
 
         walker init {
             root {
-            spawn here --> graph::ner_eval_graph; 
+            spawn here --> graph::ner_eval_graph;
             }
         }
 
@@ -601,11 +641,11 @@ For this tutorial we are going to train the model on train dataset and validate 
             * `num_train_epochs(int)` : `3` (default)
             * `batch_size(int)`: `8`
             * `learning_rate(float)`:`0.02`
-    
+
     4. Run the following command to execute walker for `model train and validation` and pass [`input data`](#input-data-for-train-and-validation) in context.
         ```
         walker run train_and_val_flair -ctx "{\"train_file\":\"dataset/train.json\",\"val_file\":\"dataset/val.json\",\"test_file\":\"dataset/test.json\",\"model_name\":\"prajjwal1/bert-tiny\",\"model_type\":\"trfmodel\",\"num_train_epochs\":\"10\",\"batch_size\":\"8\",\"learning_rate\":\"0.02\"}"
-    
+
     5. You'll find the following logs in train folder inside model name.
         `Console logs`
         ```
@@ -666,7 +706,7 @@ For this tutorial we are going to train the model on train dataset and validate 
         2022-06-14 11:53:51,726 loading file train/prajjwal1/bert-tiny/best-model.pt
         2022-06-14 11:53:54,423 No model_max_length in Tokenizer's config.json - setting it to 512. Specify desired model_max_length by passing it as attribute to embedding instance.
         2022-06-14 11:55:30,534 0.7138	0.7305	0.7221	0.6166
-        2022-06-14 11:55:30,534 
+        2022-06-14 11:55:30,534
         Results:
         - F-score (micro) 0.7221
         - F-score (macro) 0.5625

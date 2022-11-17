@@ -15,7 +15,10 @@ class GraphApiTest(CoreTest):
         ret = self.call(self.mast, ["graph_get", {}])
         self.assertEqual(len(ret), 9)
         ret = self.call(self.mast, ["graph_get", {"depth": 2}])
-        self.assertEqual(len(ret), 6)
+
+        # old approach will include married edge
+        # but it shouldn't since it's considered a 3rd step
+        self.assertEqual(len(ret), 5)
         ret = self.call(self.mast, ["graph_get", {"depth": 1}])
         self.assertEqual(len(ret), 1)
 

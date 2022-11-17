@@ -1,3 +1,5 @@
 logoutput/
 modeloutput*/
 pretrained_model
+logs/
+output/

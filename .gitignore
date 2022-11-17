@@ -11,12 +11,16 @@ venv
 # General #
 *.egg-info/
 *.egg
+*.prof
 
 # Others #
+.coverage
 .antlr
 .session
 .DS_Store
 build
+test
+test-journal
 .vscode
 js.session
 .idea

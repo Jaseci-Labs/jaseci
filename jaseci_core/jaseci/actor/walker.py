@@ -6,7 +6,7 @@ TODO: Perhaps  I should have walker state (context ids) in mem only with
 default hooks to save db read/writes
 """
 
-from jaseci.utils.utils import logger, perf_test_start, perf_test_stop
+from jaseci.utils.utils import logger, perf_test_start, perf_test_stop, perf_test_to_b64
 from jaseci.element.element import Element
 from jaseci.element.obj_mixins import Anchored
 from jaseci.utils.id_list import IdList
@@ -40,16 +40,16 @@ class Walker(Element, WalkerInterp, Anchored):
     def current_node(self):
         if not self.current_node_id:
             return None
-        elif not self._h.has_obj(uuid.UUID(self.current_node_id)):
+        elif not self._h.has_obj(self.current_node_id):
             self.current_node_id = None
             return None
         else:
-            return self._h.get_obj(self._m_id, uuid.UUID(self.current_node_id))
+            return self._h.get_obj(self._m_id, self.current_node_id)
 
     @current_node.setter
     def current_node(self, obj):
         if obj:
-            self.current_node_id = obj.id.urn
+            self.current_node_id = obj.jid
         else:
             self.current_node_id = None
 
@@ -186,6 +186,7 @@ class Walker(Element, WalkerInterp, Anchored):
             report_ret["success"] = False
         if profiling:
             self.profile["perf"] = perf_test_stop(pr)
+            self.profile["graph"] = perf_test_to_b64(pr)
             report_ret["profile"] = self.profile
 
         if self.for_queue():
@@ -200,7 +201,7 @@ class Walker(Element, WalkerInterp, Anchored):
     def log_history(self, name, value):
         """Helper function for logging history of walker's activities"""
         if isinstance(value, Element):
-            value = {"type": value.j_type, "id": value.id.urn}
+            value = {"type": value.j_type, "id": value.jid}
         if isinstance(value, uuid.UUID):
             value = value.urn
         if name in self.profile.keys():
