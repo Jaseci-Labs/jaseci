@@ -205,7 +205,7 @@ atom:
 	| NULL
 	| NAME
 	| global_ref
-	| node_edge_ref+
+	| node_edge_ref
 	| list_val
 	| dict_val
 	| LPAREN expression RPAREN
@@ -260,8 +260,8 @@ string_built_in:
 	)?;
 
 node_edge_ref:
-	node_ref filter_ctx?
-	| edge_ref (node_ref filter_ctx?)?;
+	node_ref filter_ctx? (edge_ref node_edge_ref?)?
+	| edge_ref node_edge_ref?;
 
 node_ref: NODE_DBL_COLON NAME;
 

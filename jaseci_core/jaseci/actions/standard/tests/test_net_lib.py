@@ -25,7 +25,6 @@ class NetLibTest(CoreTest):
         self.assertEqual(len(ret["report"][0]["edges"]), 4)
 
     def test_pack_unpack(self):
-        self.logger_on()
         ret = self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],

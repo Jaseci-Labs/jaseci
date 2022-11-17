@@ -528,10 +528,10 @@ class Interp(VirtualMachine):
                     j.detach_edges(i, self.run_edge_ref(kid[2]).obj_list())
             return bret
         else:
-            direction = kid[2].kid[0].name
+            direction = kid[1].kid[0].name
             for i in target.obj_list():
                 for j in base.obj_list():
-                    use_edge = self.run_connect_op(kid[2])
+                    use_edge = self.run_connect_op(kid[1])
                     self.rt_check_type(i, Node, kid[-1])
                     self.rt_check_type(j, Node, kid[-1])
                     if direction == "connect_from":
@@ -723,7 +723,7 @@ class Interp(VirtualMachine):
             | NULL
             | NAME
             | global_ref
-            | node_edge_ref+
+            | node_edge_ref
             | list_val
             | dict_val
             | LPAREN expression RPAREN
@@ -1243,33 +1243,36 @@ class Interp(VirtualMachine):
     def run_node_edge_ref(self, jac_ast, viable_nodes=None):
         """
         node_edge_ref:
-            node_ref filter_ctx?
-            | edge_ref (node_ref filter_ctx?)?;
+            node_ref filter_ctx? (edge_ref node_edge_ref?)?
+            | edge_ref node_edge_ref?;
         """
         kid = self.set_cur_ast(jac_ast)
+        result = None
         if kid[0].name == "node_ref":
             result = self.run_node_ref(kid[0], viable_nodes=viable_nodes)
-            if len(kid) > 1:
-                result = self.run_filter_ctx(kid[1], result)
-            return JacValue(self, value=result)
+            kid = kid[1:]
+            if len(kid) and kid[0].name == "filter_ctx":
+                result = self.run_filter_ctx(kid[0], result)
+                kid = kid[1:]
+            if len(kid):
+                result = self.run_node_edge_ref(kid[0], viable_nodes=result).value
 
         elif kid[0].name == "edge_ref":
             if not viable_nodes:
                 viable_nodes = [None]
-            final_result = JacSet()
             self._relevant_edges = JacSet()
             for i in viable_nodes:
                 relevant_edges = self.run_edge_ref(kid[0], location=i)
                 result = self.edge_to_node_jac_set(relevant_edges)
-                if len(kid) > 1 and kid[1].name == "node_ref":
-                    nres = self.run_node_ref(kid[1], viable_nodes=result)
-                    if len(kid) > 2:
-                        nres = self.run_filter_ctx(kid[2], nres)
-                    result = result * nres
+                kid = kid[1:]
+                if len(kid):
+                    result = (
+                        result
+                        * self.run_node_edge_ref(kid[0], viable_nodes=result).value
+                    )
                     relevant_edges = self.edges_filter_on_nodes(relevant_edges, result)
                 self._relevant_edges += relevant_edges
-                final_result += result
-            return JacValue(self, value=result)
+        return JacValue(self, value=result)
 
     def run_node_ref(self, jac_ast, is_spawn=False, viable_nodes=None):
         """
