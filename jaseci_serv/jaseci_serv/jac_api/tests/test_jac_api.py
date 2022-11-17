@@ -325,8 +325,10 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         """Test API for getting graph in dot str"""
         payload = {"op": "graph_create"}
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
+
         gph = self.master._h.get_obj(self.master.j_master, res.data["jid"])
-        payload = {"op": "graph_get", "mode": "dot", "gph": gph.jid, "dot": True}
+        payload = {"op": "graph_get", "mode": "dot", "nd": gph.jid, "dot": True}
+
         res = self.client.post(reverse(f'jac_api:{payload["op"]}'), payload)
         self.assertTrue("graph root" in res.json())
 
