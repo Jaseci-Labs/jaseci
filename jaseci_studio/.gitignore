@@ -29,3 +29,4 @@ dist-ssr
 /test-results/
 /playwright-report/
 /playwright/.cache/
+/public/ui_kit
