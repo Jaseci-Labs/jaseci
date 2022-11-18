@@ -1,5 +1,5 @@
 {
-    "shared": true,
+    "shared": false,
     "model_name": "/trained_models/bert-large-uncased/",
     "model_save_path": "modeloutput",
     "loss_function": "mse",

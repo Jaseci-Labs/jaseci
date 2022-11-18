@@ -4,6 +4,7 @@ from kubernetes.client.rest import ApiException
 from jaseci.utils.utils import logger
 from jaseci.svc import CommonService, ServiceState as Ss
 from jaseci.svc.kubernetes import Kube
+from jaseci.svc.prometheus import PromotheusService
 from jaseci.svc.actions_optimizer.actions_optimizer import ActionsOptimizer
 from .config import JSORC_CONFIG
 import numpy as np
@@ -36,7 +37,14 @@ class JsOrcService(CommonService):
         self.namespace = self.config.get("namespace", "default")
         self.keep_alive = self.config.get("keep_alive", [])
 
-        self.app = JsOrc(hook.meta, hook.kube.app, self.quiet, self.namespace)
+        self.app = JsOrc(
+            hook.meta,
+            hook.kube.app,
+            hook.promon,
+            self.quiet,
+            self.namespace,
+            self.interval,
+        )
         self.state = Ss.RUNNING
         # self.app.check(self.namespace, "redis")
         self.spawn_daemon(jsorc=self.interval_check)
@@ -53,6 +61,9 @@ class JsOrcService(CommonService):
                     )
 
             self.app.optimize(jsorc_interval=self.interval)
+
+            # record current state of the system observed by JSORC
+            self.app.record_system_state()
 
             sleep(self.interval)
 
@@ -80,11 +91,21 @@ class JsOrcService(CommonService):
 
 
 class JsOrc:
-    def __init__(self, meta, kube: Kube, quiet: bool, namespace: str):
+    def __init__(
+        self,
+        meta,
+        kube: Kube,
+        prom: PromotheusService,
+        quiet: bool,
+        namespace: str,
+        interval: int,
+    ):
         self.meta = meta
         self.kube = kube
+        self.prom = prom
         self.quiet = quiet
         self.namespace = namespace
+        self.interval = interval
         # overall performance tracking benchmark
         self.benchmark = {
             "jsorc": {"active": False, "requests": {}},
@@ -100,6 +121,7 @@ class JsOrc:
             actions_calls=self.actions_calls,
             namespace=self.namespace,
         )
+        self.system_states = {"active": False, "states": []}
 
     def is_running(self, name: str, namespace: str):
         try:
@@ -192,6 +214,45 @@ class JsOrc:
         self.benchmark["jsorc"]["requests"] = {}
         self.benchmark["jsorc"]["start_ts"] = time.time()
 
+    def state_tracking_start(self):
+        """
+        Ask JSORC to start tracking the state of the system as observed by JSORC on every interval.
+        """
+        self.system_states = {"active": True, "states": []}
+
+    def state_tracking_stop(self):
+        """
+        Stop state tracking for JSORC
+        """
+        ret = self.system_states
+        self.system_states = {"active": True, "states": []}
+        return ret
+
+    def state_tracking_report(self):
+        """
+        Return state tracking history so far
+        """
+        return self.system_states
+
+    def record_system_state(self):
+        """
+        Record system state
+        """
+        if self.system_states["active"]:
+            ts = int(time.time())
+            self.system_states["states"].append(
+                {
+                    "ts": ts,
+                    "actions": self.get_actions_status(name=""),
+                    "prometheus": self.prom.info(
+                        namespace=self.namespace,
+                        exclude_prom=True,
+                        timestamp=ts,
+                        duration=self.interval,
+                    ),
+                }
+            )
+
     def benchmark_stop(self, report):
         """
         Stop benchmark mode and report result during the benchmark period
@@ -239,6 +300,11 @@ class JsOrc:
             }
 
         return summary
+
+    def record_state(self):
+        """
+        Record the current state of the system observed by JSORC
+        """
 
     def add_to_benchmark(self, request_type, request, request_time):
         """
@@ -298,7 +364,7 @@ class JsOrc:
         """
         self.actions_optimizer.retire_remote(name)
 
-    def get_actions_status(self, name):
+    def get_actions_status(self, name=""):
         """
         Return the status of the action
         """

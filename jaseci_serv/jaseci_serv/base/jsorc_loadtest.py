@@ -111,13 +111,13 @@ class JsorcLoadTest:
         """
         results = {}
         apps = [
-            # "sentence_pairing",
+            "sentence_pairing",
             # "discussion_analysis",
             # "zeroshot_faq_bot",
             # "flight_chatbot",
             # "restaurant_chatbot",
-            "virtual_assistant",
-            "flow_analysis",
+            # "virtual_assistant",
+            # "flow_analysis",
         ]
         app_to_actions = {
             "zeroshot_faq_bot": ["text_seg", "use_qa"],
@@ -129,8 +129,8 @@ class JsorcLoadTest:
             "flow_analysis": ["text_seg", "tfm_ner", "use_enc"],
         }
         # policies = ["evaluation"]
-        # policies = ["all_local"]
-        policies = ["all_remote", "all_local"]
+        policies = ["all_local"]
+        # policies = ["all_remote", "all_local"]
         # policies = ["all_remote", "all_local", "evaluation"]
         for app in apps:
             jac_file = os.path.join(APP_PATH, f"{app}.jac")

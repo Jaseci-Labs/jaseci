@@ -341,11 +341,14 @@ class ActionsOptimizer:
                 )
                 logger.error(str(e))
 
-    def get_actions_status(self, name):
+    def get_actions_status(self, name=""):
         """
         Return the state of action
         """
-        return self.actions_state.get_state(name)
+        if name == "":
+            return self.actions_state.get_all_state()
+        else:
+            return self.actions_state.get_state(name)
 
     def retire_remote(self, name):
         """

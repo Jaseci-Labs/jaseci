@@ -177,6 +177,40 @@ class JsOrcApi:
             return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api()
+    def jsorc_systemtracking_start(self):
+        """
+        Ask JSORC to start tracking the state of the system as observed by JSORC on every interval.
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            hook.jsorc.app.state_tracking_start()
+            return {"success": True}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_systemtracking_report(self):
+        """
+        Report the tracked system states so far
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            return hook.jsorc.app.state_tracking_report()
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_systemtracking_stop(self):
+        """
+        Stop state tracking for JSORC
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            return hook.jsorc.app.state_tracking_stop()
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
     def jsorc_actionpolicy_set(self, policy_name: str):
         """
         Set an action optimization policy for JSORC
