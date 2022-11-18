@@ -382,9 +382,7 @@ class ActionsOptimizer:
         """
         if name == "tfm_ner":
             # tfm_ner requires an initial model loading
-            self.call_action(
-                "tfm_ner.load_model", "/trained_models/trained_tfm_ner_model/", True
-            )
+            self.call_action("tfm_ner.load_model", "/trained_models/roberta_ner", True)
 
     def load_action_remote(self, name, unload_existing=False):
         """

@@ -55,7 +55,7 @@ BI_ENC_ACTION_CONFIG = {
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "2Gi"},
+                                    # "limits": {"memory": "2Gi"},
                                     "requests": {"memory": "2Gi"},
                                 },
                                 "volumeMounts": [
