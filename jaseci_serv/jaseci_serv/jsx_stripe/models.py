@@ -1,9 +1,8 @@
 from django.db import models
 import os.path
-from ..settings import JSX_DIR
+from ..settings import JSX_STRIPE_DIR
 
 
-JSX_STRIPE_DIR = os.path.join(JSX_DIR, "jsx_stripe")
 STRIPE_EVENTS_FILE = os.path.join(JSX_STRIPE_DIR, "stripe_events.txt")
 
 COLOR_CHOICES = ()
@@ -18,8 +17,7 @@ else:
     for line in lines:
         STRIPE_EVENTS.append(line.replace("\n", ""))
         COLOR_CHOICES = COLOR_CHOICES + (
-            (line.replace("\n", ""), line.replace(
-                "\n", "").replace(".", "_").upper()),
+            (line.replace("\n", ""), line.replace("\n", "").replace(".", "_").upper()),
         )
 
 

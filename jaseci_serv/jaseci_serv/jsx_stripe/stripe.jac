@@ -3,16 +3,6 @@ walker stripe_webhook: anyone {
         req_ctx = global.info['request_context'];
         req_data = req_ctx['body']['data']['object'];
         event_type = req_ctx['body']['type'];
-
-        if( event_type == 'customer.created' ) {
-          if( req_data["metadata"]["node_id"] ) {
-            # DO LOGIC HERE
-          }
-        } elif( event_type == 'customer.subscription.created' ) {
-          if( req_data["metadata"]["node_id"] ) {
-            # DO LOGIC HERE
-          }
-        }
     }
 }
 
@@ -211,7 +201,7 @@ walker create_trial_subscription {
 walker create_subscription {
   has payment_method_id, price_id, customer_id, mock_api;
   can stripe.create_subscription;
-  
+
   try {
     report stripe.create_subscription(payment_method_id, price_id, customer_id, mock_api);
   } else with error {
@@ -223,7 +213,7 @@ walker create_subscription {
 walker cancel_subscription {
   has subscription_id, mock_api;
   can stripe.cancel_subscription;
-  
+
   try {
     report stripe.cancel_subscription(subscription_id, mock_api);
   } else with error {
@@ -235,7 +225,7 @@ walker cancel_subscription {
 walker get_subscription {
   has subscription_id, mock_api;
   can stripe.get_subscription;
-  
+
   try {
     report stripe.get_subscription(subscription_id, mock_api);
   } else with error {
@@ -279,12 +269,3 @@ walker create_usage_report {
     report:error = error;
   }
 }
-
-
-
-
-
-
-
-
-

@@ -35,9 +35,9 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.staticfiles",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "django.contrib.staticfiles",
     "rest_framework",
     "knox",
     "django_rest_passwordreset",
@@ -160,6 +160,12 @@ USE_L10N = True
 
 USE_TZ = False
 
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/3.0/howto/static-files/
+
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+
 
 # Sets global default user model to be custom
 AUTH_USER_MODEL = "base.User"
@@ -201,4 +207,4 @@ JASECI_CONFIGS = [
 DJANGO_CELERY_BEAT_TZ_AWARE = False
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
-JSX_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+JSX_STRIPE_DIR = os.path.join(BASE_DIR, "jaseci_serv/jsx_stripe")
