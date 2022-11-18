@@ -1,6 +1,4 @@
----
-title :  Net Actions
----
+# Net Actions 
 ### Max Anchor Value
 ```jac
 # returns object (node,edge) with the highest  anchor value

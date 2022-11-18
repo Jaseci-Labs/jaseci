@@ -4,6 +4,7 @@ Node class for Jaseci
 Each node has an id, name, timestamp and it's set of edges.
 First node in list of 'member_node_ids' is designated root node
 """
+from collections import OrderedDict
 from jaseci.element.element import Element
 from jaseci.element.obj_mixins import Anchored
 from jaseci.graph.edge import Edge
@@ -463,3 +464,59 @@ class Node(Element, Anchored):
         dstr += " ]"
 
         return dstr + "\n"
+
+    def get_all_architypes(self, depth: int = 0):
+        """
+        Returns all reachable architypes
+        """
+
+        childs = {self.jid: self}
+
+        edges = OrderedDict()
+        nodes = OrderedDict(childs)
+
+        depth -= 1
+
+        while len(childs) and depth != 0:
+            new_childs = OrderedDict()
+
+            for node in childs.values():
+                for edge in node.attached_edges():
+                    if not (edge.jid in edges):
+                        n_node = False
+                        to_node = edge.to_node()
+
+                        if to_node == node:
+                            n_node = edge.from_node()
+                        else:
+                            n_node = to_node
+
+                        if not (n_node.jid in nodes):
+                            edges.update({edge.jid: edge})
+                            new_childs.update({n_node.jid: n_node})
+                        else:
+                            edges.update({edge.jid: edge})
+
+            childs = new_childs
+            nodes.update(childs)
+            depth -= 1
+
+        return nodes, edges
+
+    def traversing_dot_str(self, detailed=False, depth: int = 0):
+        """
+        DOT representation for graph.
+        NOTE: This is different from the dot_str method for node intentionally
+        because graph inherits node.
+        """
+        nodes, edges = self.get_all_architypes(depth)
+
+        # Construct the graph string
+        dstr = ""
+        dstr += f"strict digraph {self.name} {{\n"
+        for n in nodes.values():
+            dstr += f"    {n.dot_str(list(nodes.keys()), detailed)}"
+        for e in edges.values():
+            dstr += f"    {e.dot_str(list(nodes.keys()), list(edges.keys()), detailed)}"
+        dstr += "}"
+        return dstr
