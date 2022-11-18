@@ -25,17 +25,17 @@ config = configparser.ConfigParser()
 
 
 # 1. initialize each embedding we use
-embedding_types = [
-    # GloVe embeddings
-    WordEmbeddings("glove"),
-    # contextual string embeddings, forward
-    FlairEmbeddings("news-forward"),
-    # contextual string embeddings, backward
-    FlairEmbeddings("news-backward"),
-]
-
-# embedding stack consists of Flair and GloVe embeddings
-embeddings = StackedEmbeddings(embeddings=embedding_types)
+# embedding_types = [
+#     # GloVe embeddings
+#     WordEmbeddings("glove"),
+#     # contextual string embeddings, forward
+#     FlairEmbeddings("news-forward"),
+#     # contextual string embeddings, backward
+#     FlairEmbeddings("news-backward"),
+# ]
+#
+# # embedding stack consists of Flair and GloVe embeddings
+# embeddings = StackedEmbeddings(embeddings=embedding_types)
 
 # device = torch.device("cpu")
 # uncomment this if you wish to use GPU to train

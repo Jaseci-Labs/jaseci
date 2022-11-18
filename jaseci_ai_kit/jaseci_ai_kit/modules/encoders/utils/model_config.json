@@ -1,6 +1,6 @@
 {
     "shared": true,
-    "model_name": "prajjwal1/bert-tiny",
+    "model_name": "/trained_models/bert-large-uncased/",
     "model_save_path": "modeloutput",
     "loss_function": "mse",
     "loss_type": "dot"

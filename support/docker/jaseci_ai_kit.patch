@@ -1,3 +1,6 @@
+Binary files orig_jaseci_ai_kit/__pycache__/__init__.cpython-38.pyc and jaseci_ai_kit/__pycache__/__init__.cpython-38.pyc differ
+Binary files orig_jaseci_ai_kit/__pycache__/ent_ext.cpython-38.pyc and jaseci_ai_kit/__pycache__/ent_ext.cpython-38.pyc differ
+Binary files orig_jaseci_ai_kit/modules/__pycache__/__init__.cpython-38.pyc and jaseci_ai_kit/modules/__pycache__/__init__.cpython-38.pyc differ
 diff -ruN orig_jaseci_ai_kit/modules/cl_summer/cl_summer.py jaseci_ai_kit/modules/cl_summer/cl_summer.py
 --- orig_jaseci_ai_kit/modules/cl_summer/cl_summer.py	2022-11-17 16:16:40.916150000 -0500
 +++ jaseci_ai_kit/modules/cl_summer/cl_summer.py	2022-11-17 16:16:33.526150000 -0500
@@ -12,6 +15,62 @@ diff -ruN orig_jaseci_ai_kit/modules/cl_summer/cl_summer.py jaseci_ai_kit/module
 
  # summarizes the text / url passed to the endpoint and
  # returns summary based on the sentences.
+diff -ruN orig_jaseci_ai_kit/modules/encoders/utils/model_config.json jaseci_ai_kit/modules/encoders/utils/model_config.json
+--- orig_jaseci_ai_kit/modules/encoders/utils/model_config.json	2022-11-09 15:17:22.088032000 -0500
++++ jaseci_ai_kit/modules/encoders/utils/model_config.json	2022-11-18 12:39:43.331751000 -0500
+@@ -1,6 +1,6 @@
+ {
+     "shared": true,
+-    "model_name": "prajjwal1/bert-tiny",
++    "model_name": "/trained_models/bert-large-uncased/",
+     "model_save_path": "modeloutput",
+     "loss_function": "mse",
+     "loss_type": "dot"
+Binary files orig_jaseci_ai_kit/modules/ent_ext/__pycache__/__init__.cpython-38.pyc and jaseci_ai_kit/modules/ent_ext/__pycache__/__init__.cpython-38.pyc differ
+Binary files orig_jaseci_ai_kit/modules/ent_ext/__pycache__/ent_ext.cpython-38.pyc and jaseci_ai_kit/modules/ent_ext/__pycache__/ent_ext.cpython-38.pyc differ
+Binary files orig_jaseci_ai_kit/modules/ent_ext/__pycache__/entity_utils.cpython-38.pyc and jaseci_ai_kit/modules/ent_ext/__pycache__/entity_utils.cpython-38.pyc differ
+diff -ruN orig_jaseci_ai_kit/modules/ent_ext/config.cfg jaseci_ai_kit/modules/ent_ext/config.cfg
+--- orig_jaseci_ai_kit/modules/ent_ext/config.cfg	2022-11-09 15:17:22.088032000 -0500
++++ jaseci_ai_kit/modules/ent_ext/config.cfg	2022-11-18 12:00:06.634305000 -0500
+@@ -1,5 +1,5 @@
+ [TAGGER_MODEL]
+-ner_model = tars-ner
++ner_model = /trained_models/tars-ner.pt
+ model_type = tars
+
+ [LABEL_TYPE]
+diff -ruN orig_jaseci_ai_kit/modules/ent_ext/ent_ext.py jaseci_ai_kit/modules/ent_ext/ent_ext.py
+--- orig_jaseci_ai_kit/modules/ent_ext/ent_ext.py	2022-09-30 09:40:35.910429000 -0400
++++ jaseci_ai_kit/modules/ent_ext/ent_ext.py	2022-11-18 13:00:58.285937000 -0500
+@@ -25,17 +25,17 @@
+
+
+ # 1. initialize each embedding we use
+-embedding_types = [
+-    # GloVe embeddings
+-    WordEmbeddings("glove"),
+-    # contextual string embeddings, forward
+-    FlairEmbeddings("news-forward"),
+-    # contextual string embeddings, backward
+-    FlairEmbeddings("news-backward"),
+-]
+-
+-# embedding stack consists of Flair and GloVe embeddings
+-embeddings = StackedEmbeddings(embeddings=embedding_types)
++# embedding_types = [
++#     # GloVe embeddings
++#     WordEmbeddings("glove"),
++#     # contextual string embeddings, forward
++#     FlairEmbeddings("news-forward"),
++#     # contextual string embeddings, backward
++#     FlairEmbeddings("news-backward"),
++# ]
++#
++# # embedding stack consists of Flair and GloVe embeddings
++# embeddings = StackedEmbeddings(embeddings=embedding_types)
+
+ # device = torch.device("cpu")
+ # uncomment this if you wish to use GPU to train
 diff -ruN orig_jaseci_ai_kit/modules/text_seg/text_seg.py jaseci_ai_kit/modules/text_seg/text_seg.py
 --- orig_jaseci_ai_kit/modules/text_seg/text_seg.py	2022-11-17 16:16:40.926150000 -0500
 +++ jaseci_ai_kit/modules/text_seg/text_seg.py	2022-11-17 16:16:33.556150000 -0500

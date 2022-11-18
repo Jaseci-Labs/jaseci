@@ -111,18 +111,26 @@ class JsorcLoadTest:
         """
         results = {}
         apps = [
+            # "sentence_pairing",
+            # "discussion_analysis",
             # "zeroshot_faq_bot",
-            # "sentence_pairing"
-            "discussion_analysis"
+            # "flight_chatbot",
+            # "restaurant_chatbot",
+            "virtual_assistant",
+            "flow_analysis",
         ]
         app_to_actions = {
             "zeroshot_faq_bot": ["text_seg", "use_qa"],
             "sentence_pairing": ["use_enc", "bi_enc"],
             "discussion_analysis": ["bi_enc", "cl_summer"],
+            "flight_chatbot": ["use_qa", "ent_ext"],
+            "restaurant_chatbot": ["bi_enc", "tfm_ner"],
+            "virtual_assistant": ["text_seg", "bi_enc", "tfm_ner", "ent_ext", "use_qa"],
+            "flow_analysis": ["text_seg", "tfm_ner", "use_enc"],
         }
-        policies = ["evaluation"]
+        # policies = ["evaluation"]
         # policies = ["all_local"]
-        # policies = ["all_evaluation"]
+        policies = ["all_remote", "all_local"]
         # policies = ["all_remote", "all_local", "evaluation"]
         for app in apps:
             jac_file = os.path.join(APP_PATH, f"{app}.jac")
@@ -153,7 +161,7 @@ class JsorcLoadTest:
                 self.start_benchmark()
                 self.start_actions_tracking()
                 start_ts = time.time()
-                experiment_duration = 2 * 60
+                experiment_duration = 1 * 60
                 while (time.time() - start_ts) < experiment_duration:
                     res = self.run_walker(app)
                 result = self.stop_benchmark()

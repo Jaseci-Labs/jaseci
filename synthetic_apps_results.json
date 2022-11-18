@@ -1,0 +1,963 @@
+{
+  "sentence_pairing": {
+    "all_remote": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.01664614558138383,
+            "average_latency": 0.1914501190185547,
+            "50th_latency": 0.1914501190185547,
+            "90th_latency": 0.1914501190185547,
+            "95th_latency": 0.1914501190185547,
+            "99th_latency": 0.1914501190185547
+          },
+          "all": {
+            "throughput": 0.01664614558138383,
+            "average_latency": 0.1914501190185547,
+            "50th_latency": 0.1914501190185547,
+            "90th_latency": 0.1914501190185547,
+            "95th_latency": 0.1914501190185547,
+            "99th_latency": 0.1914501190185547
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.01664614558138383,
+            "average_latency": 0.19168853759765625,
+            "50th_latency": 0.19168853759765625,
+            "90th_latency": 0.19168853759765625,
+            "95th_latency": 0.19168853759765625,
+            "99th_latency": 0.19168853759765625
+          },
+          "all": {
+            "throughput": 0.01664614558138383,
+            "average_latency": 0.19168853759765625,
+            "50th_latency": 0.19168853759765625,
+            "90th_latency": 0.19168853759765625,
+            "95th_latency": 0.19168853759765625,
+            "99th_latency": 0.19168853759765625
+          }
+        },
+        "walker_run": {
+          "sentence_pairing": {
+            "throughput": 11.202855976271318,
+            "average_latency": 87.71839822029465,
+            "50th_latency": 82.56912231445312,
+            "90th_latency": 105.33146858215332,
+            "95th_latency": 116.25738143920897,
+            "99th_latency": 145.84005355834947
+          },
+          "all": {
+            "throughput": 11.202855976271318,
+            "average_latency": 87.71839822029465,
+            "50th_latency": 82.56912231445312,
+            "90th_latency": 105.33146858215332,
+            "95th_latency": 116.25738143920897,
+            "99th_latency": 145.84005355834947
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668777991.1292186,
+          "actions_calls": {
+            "bi_enc.infer": 0.01567301034573106,
+            "use.cos_sim_score": 0.005714091822438573
+          }
+        }
+      ]
+    },
+    "all_local": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.01666493208713893,
+            "average_latency": 0.14281272888183594,
+            "50th_latency": 0.14281272888183594,
+            "90th_latency": 0.14281272888183594,
+            "95th_latency": 0.14281272888183594,
+            "99th_latency": 0.14281272888183594
+          },
+          "all": {
+            "throughput": 0.01666493208713893,
+            "average_latency": 0.14281272888183594,
+            "50th_latency": 0.14281272888183594,
+            "90th_latency": 0.14281272888183594,
+            "95th_latency": 0.14281272888183594,
+            "99th_latency": 0.14281272888183594
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.01666493208713893,
+            "average_latency": 0.10848045349121094,
+            "50th_latency": 0.10848045349121094,
+            "90th_latency": 0.10848045349121094,
+            "95th_latency": 0.10848045349121094,
+            "99th_latency": 0.10848045349121094
+          },
+          "all": {
+            "throughput": 0.01666493208713893,
+            "average_latency": 0.10848045349121094,
+            "50th_latency": 0.10848045349121094,
+            "90th_latency": 0.10848045349121094,
+            "95th_latency": 0.10848045349121094,
+            "99th_latency": 0.10848045349121094
+          }
+        },
+        "walker_run": {
+          "sentence_pairing": {
+            "throughput": 39.8125227561749,
+            "average_latency": 23.514613989458365,
+            "50th_latency": 20.6451416015625,
+            "90th_latency": 32.06162452697754,
+            "95th_latency": 37.52131462097167,
+            "99th_latency": 55.230617523193345
+          },
+          "all": {
+            "throughput": 39.8125227561749,
+            "average_latency": 23.514613989458365,
+            "50th_latency": 20.6451416015625,
+            "90th_latency": 32.06162452697754,
+            "95th_latency": 37.52131462097167,
+            "99th_latency": 55.230617523193345
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668778071.7415912,
+          "actions_calls": {
+            "bi_enc.infer": 0.01067656520621554,
+            "use.cos_sim_score": 5.569127674829316e-05
+          }
+        }
+      ]
+    },
+    "evaluation": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.016663744895682644,
+            "average_latency": 0.19311904907226562,
+            "50th_latency": 0.19311904907226562,
+            "90th_latency": 0.19311904907226562,
+            "95th_latency": 0.19311904907226562,
+            "99th_latency": 0.19311904907226562
+          },
+          "all": {
+            "throughput": 0.016663744895682644,
+            "average_latency": 0.19311904907226562,
+            "50th_latency": 0.19311904907226562,
+            "90th_latency": 0.19311904907226562,
+            "95th_latency": 0.19311904907226562,
+            "99th_latency": 0.19311904907226562
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.016663744895682644,
+            "average_latency": 0.1456737518310547,
+            "50th_latency": 0.1456737518310547,
+            "90th_latency": 0.1456737518310547,
+            "95th_latency": 0.1456737518310547,
+            "99th_latency": 0.1456737518310547
+          },
+          "all": {
+            "throughput": 0.016663744895682644,
+            "average_latency": 0.1456737518310547,
+            "50th_latency": 0.1456737518310547,
+            "90th_latency": 0.1456737518310547,
+            "95th_latency": 0.1456737518310547,
+            "99th_latency": 0.1456737518310547
+          }
+        },
+        "walker_run": {
+          "sentence_pairing": {
+            "throughput": 20.563061201272383,
+            "average_latency": 46.770363031755195,
+            "50th_latency": 27.75251865386963,
+            "90th_latency": 95.82223892211915,
+            "95th_latency": 112.84697055816639,
+            "99th_latency": 311.74722433090307
+          },
+          "all": {
+            "throughput": 20.563061201272383,
+            "average_latency": 46.770363031755195,
+            "50th_latency": 27.75251865386963,
+            "90th_latency": 95.82223892211915,
+            "95th_latency": 112.84697055816639,
+            "99th_latency": 311.74722433090307
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668778163.892674,
+          "actions_calls": {
+            "bi_enc.infer": 0.019129600635794705,
+            "use.cos_sim_score": 0.0036195770054560563
+          }
+        },
+        {
+          "ts": 1668778207.2031465,
+          "actions_state": {
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            },
+            "use_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-enc/"
+              }
+            },
+            "bi_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.bi_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://bi-enc/"
+              }
+            }
+          },
+          "actions_calls": {
+            "bi_enc.infer": 0.010574599504470825,
+            "use.cos_sim_score": 5.411499738693237e-05
+          }
+        },
+        {
+          "ts": 1668778217.2191763,
+          "actions_state": {
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            },
+            "use_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-enc/"
+              }
+            },
+            "bi_enc": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.bi_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://bi-enc/"
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668778230.3353155,
+          "actions_state": {
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            },
+            "use_enc": {
+              "mode": "module",
+              "module": {
+                "name": null
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "STARTING",
+                "url": "http://use-enc/"
+              }
+            },
+            "bi_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.bi_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668778240.3450215,
+          "actions_state": {
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            },
+            "use_enc": {
+              "mode": "remote",
+              "module": {
+                "name": null
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-enc/"
+              }
+            },
+            "bi_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.bi_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "discussion_analysis": {
+    "all_remote": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.016583074300883214,
+            "average_latency": 0.3056526184082031,
+            "50th_latency": 0.3056526184082031,
+            "90th_latency": 0.3056526184082031,
+            "95th_latency": 0.3056526184082031,
+            "99th_latency": 0.3056526184082031
+          },
+          "all": {
+            "throughput": 0.016583074300883214,
+            "average_latency": 0.3056526184082031,
+            "50th_latency": 0.3056526184082031,
+            "90th_latency": 0.3056526184082031,
+            "95th_latency": 0.3056526184082031,
+            "99th_latency": 0.3056526184082031
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.016583074300883214,
+            "average_latency": 0.10800361633300781,
+            "50th_latency": 0.10800361633300781,
+            "90th_latency": 0.10800361633300781,
+            "95th_latency": 0.10800361633300781,
+            "99th_latency": 0.10800361633300781
+          },
+          "all": {
+            "throughput": 0.016583074300883214,
+            "average_latency": 0.10800361633300781,
+            "50th_latency": 0.10800361633300781,
+            "90th_latency": 0.10800361633300781,
+            "95th_latency": 0.10800361633300781,
+            "99th_latency": 0.10800361633300781
+          }
+        },
+        "walker_run": {
+          "discussion_analysis": {
+            "throughput": 2.1889658077165843,
+            "average_latency": 451.44909078424627,
+            "50th_latency": 437.87550926208496,
+            "90th_latency": 503.2891750335693,
+            "95th_latency": 526.8754959106445,
+            "99th_latency": 609.1458344459533
+          },
+          "all": {
+            "throughput": 2.1889658077165843,
+            "average_latency": 451.44909078424627,
+            "50th_latency": 437.87550926208496,
+            "90th_latency": 503.2891750335693,
+            "95th_latency": 526.8754959106445,
+            "99th_latency": 609.1458344459533
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668778274.6480775,
+          "actions_calls": {
+            "cl_summer.summarize": 0.017504392248211487,
+            "bi_enc.get_context_emb": 0.05640228950616085,
+            "bi_enc.get_candidate_emb": 0.01017012560006344,
+            "bi_enc.dot_prod": 0.005541757473067173
+          }
+        }
+      ]
+    },
+    "all_local": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.016646620333677125,
+            "average_latency": 0.08869171142578125,
+            "50th_latency": 0.08869171142578125,
+            "90th_latency": 0.08869171142578125,
+            "95th_latency": 0.08869171142578125,
+            "99th_latency": 0.08869171142578125
+          },
+          "all": {
+            "throughput": 0.016646620333677125,
+            "average_latency": 0.08869171142578125,
+            "50th_latency": 0.08869171142578125,
+            "90th_latency": 0.08869171142578125,
+            "95th_latency": 0.08869171142578125,
+            "99th_latency": 0.08869171142578125
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.016646620333677125,
+            "average_latency": 0.10275840759277344,
+            "50th_latency": 0.10275840759277344,
+            "90th_latency": 0.10275840759277344,
+            "95th_latency": 0.10275840759277344,
+            "99th_latency": 0.10275840759277344
+          },
+          "all": {
+            "throughput": 0.016646620333677125,
+            "average_latency": 0.10275840759277344,
+            "50th_latency": 0.10275840759277344,
+            "90th_latency": 0.10275840759277344,
+            "95th_latency": 0.10275840759277344,
+            "99th_latency": 0.10275840759277344
+          }
+        },
+        "walker_run": {
+          "discussion_analysis": {
+            "throughput": 10.320904606879816,
+            "average_latency": 91.47709915714879,
+            "50th_latency": 76.02035999298096,
+            "90th_latency": 141.4505481719971,
+            "95th_latency": 206.82549476623524,
+            "99th_latency": 267.79274702072064
+          },
+          "all": {
+            "throughput": 10.320904606879816,
+            "average_latency": 91.47709915714879,
+            "50th_latency": 76.02035999298096,
+            "90th_latency": 141.4505481719971,
+            "95th_latency": 206.82549476623524,
+            "99th_latency": 267.79274702072064
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668778347.9367244,
+          "actions_calls": {
+            "cl_summer.summarize": 0.012149445856771161,
+            "bi_enc.get_context_emb": 0.06219181745283065,
+            "bi_enc.get_candidate_emb": 0.004261986286409439,
+            "bi_enc.dot_prod": 2.3952637705141254e-05
+          }
+        }
+      ]
+    },
+    "evaluation": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.016656747936107868,
+            "average_latency": 0.091552734375,
+            "50th_latency": 0.091552734375,
+            "90th_latency": 0.091552734375,
+            "95th_latency": 0.091552734375,
+            "99th_latency": 0.091552734375
+          },
+          "all": {
+            "throughput": 0.016656747936107868,
+            "average_latency": 0.091552734375,
+            "50th_latency": 0.091552734375,
+            "90th_latency": 0.091552734375,
+            "95th_latency": 0.091552734375,
+            "99th_latency": 0.091552734375
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.016656747936107868,
+            "average_latency": 0.08869171142578125,
+            "50th_latency": 0.08869171142578125,
+            "90th_latency": 0.08869171142578125,
+            "95th_latency": 0.08869171142578125,
+            "99th_latency": 0.08869171142578125
+          },
+          "all": {
+            "throughput": 0.016656747936107868,
+            "average_latency": 0.08869171142578125,
+            "50th_latency": 0.08869171142578125,
+            "90th_latency": 0.08869171142578125,
+            "95th_latency": 0.08869171142578125,
+            "99th_latency": 0.08869171142578125
+          }
+        },
+        "walker_run": {
+          "discussion_analysis": {
+            "throughput": 5.679951046212783,
+            "average_latency": 170.56529612834854,
+            "50th_latency": 82.13376998901367,
+            "90th_latency": 434.0052604675293,
+            "95th_latency": 465.4221534729004,
+            "99th_latency": 627.7002334594755
+          },
+          "all": {
+            "throughput": 5.679951046212783,
+            "average_latency": 170.56529612834854,
+            "50th_latency": 82.13376998901367,
+            "90th_latency": 434.0052604675293,
+            "95th_latency": 465.4221534729004,
+            "99th_latency": 627.7002334594755
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668778440.13689,
+          "actions_calls": {
+            "cl_summer.summarize": 0.020121395587921143,
+            "bi_enc.get_context_emb": 0.05960442125797272,
+            "bi_enc.get_candidate_emb": 0.011648863554000854,
+            "bi_enc.dot_prod": 0.006825070769067795
+          }
+        },
+        {
+          "ts": 1668778448.9367228,
+          "actions_state": {
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            },
+            "use_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-enc/"
+              }
+            },
+            "bi_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.bi_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://bi-enc/"
+              }
+            },
+            "cl_summer": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.cl_summer"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://cl-summer/"
+              }
+            }
+          },
+          "actions_calls": {
+            "cl_summer.summarize": 0.015158864359060923,
+            "bi_enc.get_context_emb": 0.06804390706514057,
+            "bi_enc.get_candidate_emb": 0.004744695362291838,
+            "bi_enc.dot_prod": 2.0804042704621255e-05
+          }
+        },
+        {
+          "ts": 1668778458.9435675,
+          "actions_state": {
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            },
+            "use_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-enc/"
+              }
+            },
+            "bi_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.bi_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://bi-enc/"
+              }
+            },
+            "cl_summer": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.cl_summer"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://cl-summer/"
+              }
+            }
+          },
+          "actions_calls": {
+            "bi_enc.get_context_emb": 0.06409401446580887,
+            "bi_enc.get_candidate_emb": 0.0043378497163454694,
+            "bi_enc.dot_prod": 2.2054704093428515e-05,
+            "cl_summer.summarize": 0.018245526363975122
+          }
+        },
+        {
+          "ts": 1668778468.9547582,
+          "actions_state": {
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            },
+            "use_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-enc/"
+              }
+            },
+            "bi_enc": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.bi_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://bi-enc/"
+              }
+            },
+            "cl_summer": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.cl_summer"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://cl-summer/"
+              }
+            }
+          },
+          "actions_calls": {
+            "cl_summer.summarize": 0.012351730595464292,
+            "bi_enc.get_context_emb": 0.05514133494833241,
+            "bi_enc.get_candidate_emb": 0.00973454765651537,
+            "bi_enc.dot_prod": 0.005373398629192528
+          }
+        },
+        {
+          "ts": 1668778478.9713213,
+          "actions_state": {
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            },
+            "use_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-enc/"
+              }
+            },
+            "bi_enc": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.bi_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://bi-enc/"
+              }
+            },
+            "cl_summer": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.cl_summer"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://cl-summer/"
+              }
+            }
+          },
+          "actions_calls": {
+            "bi_enc.dot_prod": 0.0052312294240075595,
+            "cl_summer.summarize": 0.017103918961116245,
+            "bi_enc.get_context_emb": 0.053077987262180874,
+            "bi_enc.get_candidate_emb": 0.010564693382808141
+          }
+        },
+        {
+          "ts": 1668778491.1938484,
+          "actions_state": {
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            },
+            "use_enc": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.use_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-enc/"
+              }
+            },
+            "bi_enc": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.bi_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://bi-enc/"
+              }
+            },
+            "cl_summer": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.cl_summer"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://cl-summer/"
+              }
+            }
+          },
+          "actions_calls": {}
+        },
+        {
+          "ts": 1668778501.2038267,
+          "actions_state": {
+            "use_qa": {
+              "mode": "module",
+              "module": {
+                "name": "jaseci_ai_kit.use_qa"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            },
+            "use_enc": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.use_enc"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://use-enc/"
+              }
+            },
+            "bi_enc": {
+              "mode": "module",
+              "module": {
+                "name": null
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "url": null,
+                "status": null
+              }
+            },
+            "cl_summer": {
+              "mode": "remote",
+              "module": {
+                "name": "jaseci_ai_kit.cl_summer"
+              },
+              "local": {
+                "path": null
+              },
+              "remote": {
+                "status": "READY",
+                "url": "http://cl-summer/"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

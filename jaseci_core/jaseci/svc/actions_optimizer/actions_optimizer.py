@@ -70,6 +70,8 @@ class ActionsOptimizer:
             self._actionpolicy_backandforth()
         elif self.policy == "Evaluation":
             self._actionpolicy_evaluation()
+        elif self.policy == "ActionEvaluation":
+            self._actionpolicy_actionevaluation()
 
         if len(self.actions_change) > 0:
             self.apply_actions_change()
@@ -240,6 +242,21 @@ class ActionsOptimizer:
                         )
 
         self.policy_state["Evaluation"] = policy_state
+
+    def _actionpolicy_actionevaluation(self):
+        """
+        Use action pressure to trigger an evaluation
+        """
+        policy_state = self.policy_state["ActionEvaluation"]
+        if len(policy_state) == 0:
+            # Initialize the policy tracking state
+            policy_state = {}
+
+    def _actionpolicy_actionprediction(self):
+        """
+        use action pressure to predict the next configuration
+        """
+        pass
 
     def _get_action_change(self, new_action_state):
         """
