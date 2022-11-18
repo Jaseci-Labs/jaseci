@@ -63,9 +63,9 @@ class AbstractJacAPIView(APIView):
         """Api call preamble"""
         tot_time = time() - self.start_time
         hook = self.caller._h
-        hook.jsorc.app.post_request_hook(
-            type(self).__name__, request, tot_time
-        ) if hook.meta.run_svcs else None
+        hook.jsorc.app.post_request_hook(type(self).__name__, request, tot_time) if (
+            hook.meta.run_svcs and hook.jsorc.app != None
+        ) else None
         save_count = 0
         touch_count = 0
         db_touches = 0

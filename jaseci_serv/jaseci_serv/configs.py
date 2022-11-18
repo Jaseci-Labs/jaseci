@@ -11,8 +11,8 @@ from jaseci_serv.kubes import PROMON_KUBE, REDIS_KUBE
 RUN_SVCS = "test" in sys.argv or "runserver" in sys.argv
 
 REDIS_CONFIG = {
-    "enabled": False,
-    "quiet": True,
+    "enabled": True,
+    "quiet": False,
     "host": os.getenv("REDIS_HOST", "localhost"),
     "port": os.getenv("REDIS_PORT", "6379"),
     "db": os.getenv("REDIS_DB", "1"),
@@ -63,7 +63,7 @@ JSORC_CONFIG = {
     "quiet": False,
     "interval": 10,
     "namespace": "jsorc",
-    "keep_alive": ["promon"],
+    "keep_alive": ["promon", "redis"],
 }
 
 PROMON_CONFIG = {
