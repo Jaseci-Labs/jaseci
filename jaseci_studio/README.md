@@ -5,6 +5,7 @@
 - Install [rust](https://www.rust-lang.org/learn/get-started)
 - Install [yarn](https://classic.yarnpkg.com/lang/en/docs/install/)
 - Run `yarn install`
+- Run `yarn setup:ui`
 
 ## Running the Dev Server
 

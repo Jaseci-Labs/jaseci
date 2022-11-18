@@ -20,6 +20,19 @@
 | `target`     | `target`     |             | `string`                                            | `undefined`          |
 
 
+## Dependencies
+
+### Used by
+
+ - [jsc-auth-form](../jsc-auth-form)
+
+### Graph
+```mermaid
+graph TD;
+  jsc-auth-form --> jsc-anchor
+  style jsc-anchor fill:#f9f,stroke:#333,stroke-width:4px
+```
+
 ----------------------------------------------
 
 *Built with [StencilJS](https://stenciljs.com/)*

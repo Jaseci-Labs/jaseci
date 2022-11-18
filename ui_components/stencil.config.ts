@@ -15,12 +15,12 @@ export const config: Config = {
     {
       type: 'dist',
       esmLoaderPath: '../loader',
-      buildDir: '../../jaseci_ui_kit/static/build',
+      buildDir: '../../jaseci_ui_kit/jaseci_ui_kit/static/build',
     },
     {
       type: 'dist',
       esmLoaderPath: '../loader',
-      buildDir: '../../../jaseci_studio/public/ui_kit',
+      buildDir: '../../jaseci_studio/public/ui_kit',
     },
     {
       type: 'dist-custom-elements',

@@ -16,7 +16,6 @@
 | `label`       | `label`       |             | `string`                                                                                                   | `undefined`          |
 | `name`        | `name`        |             | `string`                                                                                                   | `undefined`          |
 | `operations`  | `operations`  |             | `string`                                                                                                   | `undefined`          |
-| `options`     | `options`     |             | `string`                                                                                                   | `undefined`          |
 | `palette`     | `palette`     |             | `"accent" \| "error" \| "ghost" \| "info" \| "link" \| "primary" \| "secondary" \| "success" \| "warning"` | `undefined`          |
 | `placeholder` | `placeholder` |             | `string`                                                                                                   | `undefined`          |
 | `type`        | `type`        |             | `string`                                                                                                   | `'text'`             |
@@ -29,6 +28,21 @@
 | -------------- | ----------- | --------------------- |
 | `valueChanged` |             | `CustomEvent<string>` |
 
+
+## Dependencies
+
+### Used by
+
+ - [jsc-auth-form](../jsc-auth-form)
+ - [jsc-date-picker](../jsc-date-picker)
+
+### Graph
+```mermaid
+graph TD;
+  jsc-auth-form --> jsc-inputbox
+  jsc-date-picker --> jsc-inputbox
+  style jsc-inputbox fill:#f9f,stroke:#333,stroke-width:4px
+```
 
 ----------------------------------------------
 

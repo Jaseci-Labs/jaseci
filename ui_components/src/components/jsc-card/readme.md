@@ -19,6 +19,19 @@
 | `variant`    | `variant`    |             | `"outline" \| "shadow"`          | `'outline'`          |
 
 
+## Dependencies
+
+### Used by
+
+ - [jsc-graph](../jsc-graph)
+
+### Graph
+```mermaid
+graph TD;
+  jsc-graph --> jsc-card
+  style jsc-card fill:#f9f,stroke:#333,stroke-width:4px
+```
+
 ----------------------------------------------
 
 *Built with [StencilJS](https://stenciljs.com/)*

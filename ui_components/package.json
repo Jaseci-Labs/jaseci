@@ -48,7 +48,7 @@
     "@tailwindcss/typography": "^0.5.2",
     "@types/artyom.js": "^1.0.6",
     "@types/jest": "^27.0.3",
-    "@types/node": "^18.0.0",
+    "@types/node": "^18.11.9",
     "jest": "^27.4.5",
     "jest-cli": "^27.4.5",
     "prettier": "^2.7.1",

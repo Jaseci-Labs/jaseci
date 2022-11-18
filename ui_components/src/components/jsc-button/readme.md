@@ -30,14 +30,16 @@
 
 ### Used by
 
- - [jsc-auth-form](../jsc-container)
+ - [jsc-auth-form](../jsc-auth-form)
  - [jsc-dropdown](../jsc-dropdown)
+ - [jsc-graph](../jsc-graph)
 
 ### Graph
 ```mermaid
 graph TD;
   jsc-auth-form --> jsc-button
   jsc-dropdown --> jsc-button
+  jsc-graph --> jsc-button
   style jsc-button fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

@@ -16,8 +16,10 @@
 | `label`       | `label`       |             | `string`                                                                                                   | `undefined`          |
 | `name`        | `name`        |             | `string`                                                                                                   | `undefined`          |
 | `operations`  | `operations`  |             | `string`                                                                                                   | `undefined`          |
+| `options`     | `options`     |             | `string \| { label: string; }[]`                                                                           | `undefined`          |
 | `palette`     | `palette`     |             | `"accent" \| "error" \| "ghost" \| "info" \| "link" \| "primary" \| "secondary" \| "success" \| "warning"` | `undefined`          |
 | `placeholder` | `placeholder` |             | `string`                                                                                                   | `undefined`          |
+| `selected`    | `selected`    |             | `string`                                                                                                   | `undefined`          |
 | `type`        | `type`        |             | `string`                                                                                                   | `'text'`             |
 | `value`       | `value`       |             | `string`                                                                                                   | `undefined`          |
 
@@ -33,15 +35,13 @@
 
 ### Used by
 
- - [jsc-auth-form](../jsc-container)
- - [jsc-date-picker](../jsc-date-picker)
+ - [jsc-graph](../jsc-graph)
 
 ### Graph
 ```mermaid
 graph TD;
-  jsc-auth-form --> jsc-inputbox
-  jsc-date-picker --> jsc-inputbox
-  style jsc-inputbox fill:#f9f,stroke:#333,stroke-width:4px
+  jsc-graph --> jsc-select
+  style jsc-select fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

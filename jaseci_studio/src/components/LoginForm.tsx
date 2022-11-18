@@ -9,6 +9,7 @@ import {
   Flex,
   Button,
   Alert,
+  Transition,
 } from "@mantine/core";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -22,17 +23,20 @@ const connectionSchema = z.object({
   email: z.string().email(),
   password: z.string(),
   host: z.string(),
-  port: z.preprocess(Number, z.number()),
+  port: z.preprocess(Number, z.number()).optional(),
 });
 
-type LoginParams = z.infer<typeof connectionSchema>;
+type LoginParams = Pick<
+  z.infer<typeof connectionSchema>,
+  "email" | "password"
+> & { serverUrl: string };
 
 export function LoginForm() {
   const [mode, setMode] = useState<"test" | "connect">();
   const router = useRouter();
   const { isLoading, error, data, mutateAsync } = useMutation({
-    mutationFn: ({ host, email, password, port }: LoginParams) =>
-      fetch(`http://${host}:${port}/user/token/`, {
+    mutationFn: ({ serverUrl, email, password }: LoginParams) =>
+      fetch(`${serverUrl}/user/token/`, {
         method: "POST",
         body: JSON.stringify({
           email,
@@ -46,22 +50,28 @@ export function LoginForm() {
     resolver: zodResolver(connectionSchema),
   });
 
-  async function onSubmit(values) {
-    await mutateAsync(values, {
-      onSuccess: (data) => {
-        if (mode === "connect") {
-          if (data.token) {
-            localStorage.setItem("token", data.token);
-            localStorage.setItem(
-              "serverUrl",
-              `http://${values.host}:${values.port}`
-            );
+  async function onSubmit(values: z.infer<typeof connectionSchema>) {
+    const serverUrlHasScheme =
+      values.host.startsWith("https://") || values.host.startsWith("http://");
+    const serverUrl = `${serverUrlHasScheme ? "" : "http://"}${values.host}${
+      values.port ? `:${values.port}` : ""
+    }`;
 
-            router.push("/dashboard");
+    await mutateAsync(
+      { serverUrl, email: values.email, password: values.password },
+      {
+        onSuccess: (data) => {
+          if (mode === "connect") {
+            if (data.token) {
+              localStorage.setItem("token", data.token);
+              localStorage.setItem("serverUrl", serverUrl);
+
+              router.push("/dashboard");
+            }
           }
-        }
-      },
-    });
+        },
+      }
+    );
   }
 
   return (
@@ -91,7 +101,6 @@ export function LoginForm() {
               </Grid.Col>
               <Grid.Col span={2}>
                 <FormTextField
-                  required
                   placeholder="Enter port e.g 8888"
                   name="port"
                   control={control}
@@ -133,13 +142,26 @@ export function LoginForm() {
               </Button>
             </Flex>
 
-            {data?.token && <Alert color="green">Connection successful</Alert>}
-            {data?.non_field_errors && (
-              <Alert color="red">{data?.non_field_errors[0]}</Alert>
-            )}
-            {error && (
-              <Alert color="red">Unable to established connection</Alert>
-            )}
+            <Transition
+              mounted={data?.token || data?.non_field_errors || error}
+              transition="fade"
+              duration={400}
+              timingFunction="ease"
+            >
+              {(styles) => (
+                <div style={styles}>
+                  {data?.token && (
+                    <Alert color="green">Connection successful</Alert>
+                  )}
+                  {data?.non_field_errors && (
+                    <Alert color="red">{data?.non_field_errors[0]}</Alert>
+                  )}
+                  {error && (
+                    <Alert color="red">Unable to established connection</Alert>
+                  )}
+                </div>
+              )}
+            </Transition>
           </Stack>
         </form>
       </Card>
