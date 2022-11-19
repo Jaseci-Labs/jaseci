@@ -235,7 +235,7 @@ Similar to nodes, in order to create the graph, we will use the
 \begin{lstlisting}
 walker init {
     root {
-        spawn here --> graph::faq;
+        spawn here ++> graph::faq;
     }
 }
 \end{lstlisting}
@@ -256,7 +256,7 @@ This is the first walker we have introduced, so let's break it down.
   executed on any node, though the root is used by default if none is
   specified.
 \item
-  \passthrough{\lstinline!spawn here --> graph::faq!} creates an
+  \passthrough{\lstinline!spawn here ++> graph::faq!} creates an
   instance of the \passthrough{\lstinline!faq!} graph and connects its
   anchor node to \passthrough{\lstinline!here!}, which is the node the
   walker is currently on.
@@ -422,7 +422,7 @@ process
 \begin{lstlisting}
 walker init {
     root {
-        spawn here --> graph::faq;
+        spawn here ++> graph::faq;
         spawn here walker::ask;
     }
 }
@@ -540,7 +540,7 @@ walker ingest_faq {
         kb = file.load_json(kb_file);
         for faq in kb {
             answer = faq["answer"];
-            spawn here --> node::faq_state(answer=answer);
+            spawn here ++> node::faq_state(answer=answer);
         }
     }
 }
@@ -575,7 +575,7 @@ we won't need the static graph definition.
 \begin{lstlisting}
 walker init {
     root {
-        spawn here --> node::faq_root;
+        spawn here ++> node::faq_root;
         spawn here walker::ingest_faq(kb_file="tesla_faq.json");
         spawn here walker::ask;
     }
@@ -805,7 +805,7 @@ jac program.
 \begin{lstlisting}
 walker init {
     root {
-        spawn here --> graph::dialogue_system;
+        spawn here ++> graph::dialogue_system;
     }
 }
 \end{lstlisting}
@@ -866,7 +866,7 @@ include this walker.
 \begin{lstlisting}
 walker init {
     root {
-        spawn here --> graph::dialogue_system;
+        spawn here ++> graph::dialogue_system;
         spawn here walker::talk;
     }
 }
@@ -2054,7 +2054,7 @@ well.
 \begin{lstlisting}
 walker init {
     root {
-        spawn here --> graph::tesla_ai;
+        spawn here ++> graph::tesla_ai;
         spawn here walker::talk;
     }
 }

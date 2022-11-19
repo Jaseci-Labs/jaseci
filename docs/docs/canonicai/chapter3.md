@@ -24,12 +24,12 @@ There are two stages which handles the conversational aspect of the AI and they 
 ### **Inheritance**
 **What is inheritance?**
  It is a mechanism where you can to derive a class from another class for a hierarchy of classes that share a set of attributes and methods.
- 
+
  **Node Inheritance**
-``` 
+```
 node vehicle {
     has plate_number;
-    
+
     can drive {
         report 'yes';
     }
@@ -44,10 +44,10 @@ node bus:vehicle {
 }
 ```
 In the above code snippet. This is a very basic example of inheritance. We created a node named car and bus but since they are related and simply share the same property and node ability we created a node named vehicle and inherit its attributes. Imagine life without inheritance, the code will look like this.
-``` 
+```
 node car {
     has plate_number = "RAC001";
-    
+
     can drive {
         report 'yes';
     }
@@ -55,7 +55,7 @@ node car {
 
 node bus {
     has plate_number = "SUB002";
-    
+
     can drive {
         report 'yes';
     }
@@ -151,9 +151,9 @@ You can go to [jaseci docs](https://docs.jaseci.org/docs/Developing_with_JAC/Lan
 
 ### **Nodes (States)**
 ### collect_info state
-This state collects the address and name of the user from the user utterance. If the user only provides their address the AI will ask the user for their name and vice versa. It will ask the user for those information until it is fulfilled before moving on to the next state which is the **confirmation** state, this process is done using entity extraction. The user can also cancel the entire process and this will move them to the **cancel** state, this is triggered by intent classification. Below shows how the node is created. 
+This state collects the address and name of the user from the user utterance. If the user only provides their address the AI will ask the user for their name and vice versa. It will ask the user for those information until it is fulfilled before moving on to the next state which is the **confirmation** state, this process is done using entity extraction. The user can also cancel the entire process and this will move them to the **cancel** state, this is triggered by intent classification. Below shows how the node is created.
 
-``` 
+```
 node collect_info:cai_state {
     has name = "collect_info";
     can gen_response {
@@ -170,9 +170,9 @@ node collect_info:cai_state {
 }
 ```
 #### confirmation state
-This state confirms whether or not the information provided by the user is completely correct. If there is any mistake made, the AI will revert to the **collect_info** state where it will repeat the process, if all the data provided is confirmed by the user it will them move to the next state which is the **confirmed** state. Below shows how the node is created. 
+This state confirms whether or not the information provided by the user is completely correct. If there is any mistake made, the AI will revert to the **collect_info** state where it will repeat the process, if all the data provided is confirmed by the user it will them move to the next state which is the **confirmed** state. Below shows how the node is created.
 
-``` 
+```
 node confirmation:cai_state {
     has name = "confirmation";
     can gen_response {
@@ -183,7 +183,7 @@ node confirmation:cai_state {
 ```
 
 ### confirmed state
-This state is triggered after the user have positively agreed that all the data provided is correct and based on the information provided the company will makes it decision afterwards. In this case the sales person will tell the user "You are all set for a tesla test drive". Below shows how the node is created. 
+This state is triggered after the user have positively agreed that all the data provided is correct and based on the information provided the company will makes it decision afterwards. In this case the sales person will tell the user "You are all set for a tesla test drive". Below shows how the node is created.
 
 ```
 node confirmed:cai_state {
@@ -195,7 +195,7 @@ node confirmed:cai_state {
 ```
 
 ### canceled state
-This state is triggered when the user wants to hop out of the entire conversation and it's done through intent classification. 
+This state is triggered when the user wants to hop out of the entire conversation and it's done through intent classification.
 
 ```
 node canceled:cai_state {
@@ -217,12 +217,12 @@ edge intent_transition {
 ```
 
 ### entity_transition edge
-This edge allows you to transition from state to state (node to node) when provided all the entities needed which is passed as a parameter. For e.g. when the user have to provide information in the collect_info state "My name is Jemmott I live in lot 1 pineapple street" it will go through the entity extraction AI model, extract "Jemmott" as the name and "lot 1 pineapple street" as the address and it will passed these information into the entity_transition edge and move you on to the next state, in this case it will be the confirmed state. If all the information is not provided it will not transition to the next state until all the entities are fulfilled. 
+This edge allows you to transition from state to state (node to node) when provided all the entities needed which is passed as a parameter. For e.g. when the user have to provide information in the collect_info state "My name is Jemmott I live in lot 1 pineapple street" it will go through the entity extraction AI model, extract "Jemmott" as the name and "lot 1 pineapple street" as the address and it will passed these information into the entity_transition edge and move you on to the next state, in this case it will be the confirmed state. If all the information is not provided it will not transition to the next state until all the entities are fulfilled.
 
 ```
 edge entity_transition {
     has entities;
-} 
+}
 ```
 
 ### **Graph Definition**
@@ -239,7 +239,7 @@ spawn {
 ```
 
 ### connecting the nodes with the two types of edges
-There are two types of edges: intent_transition edge and entity_transition edge and we will use these to connect states (nodes) to each other. 
+There are two types of edges: intent_transition edge and entity_transition edge and we will use these to connect states (nodes) to each other.
 
 Intent Transition Example:
 ```
@@ -259,7 +259,7 @@ Here we have an entity transiton going from the collect_info state to the confir
 
 
 ### the anchor node
-The anchor node is the main node or the starting node for the conversational AI state. This node is mandatory for the application. 
+The anchor node is the main node or the starting node for the conversational AI state. This node is mandatory for the application.
 ```
 graph tesla_sales_rep {
     has anchor state_cai_root;
@@ -271,7 +271,7 @@ graph tesla_sales_rep {
 * **question**: This intakes the user utterance.
 * **intent_override**: Allows you to override the intent produced by the intent classification model from the NLU.
 * **entity_override**: Allows you to override the entities extracted from the entity extraction model from the NLU.
-* **predicted_intent**: This is the variable that holds the intent predicted from the intent classification model. 
+* **predicted_intent**: This is the variable that holds the intent predicted from the intent classification model.
 * **extracted_entities**: This is the variable that holds the extracted entities that produced from the entity extraction model from the NLU.
 * **traveled**: This variable tells you whether or not we moved on to the next state.
 * **response**: This holds the response generated from the NLG.
@@ -301,7 +301,7 @@ take -[intent_transition(intent=predicted_intent)]-> node::cai_state;
 ```
 \
 **How does take, else work?**
-The take, else works just like the if, else statement in any other programming language. If the node from the take statement does not exist it will activate the else statement and execute what is in the else block. 
+The take, else works just like the if, else statement in any other programming language. If the node from the take statement does not exist it will activate the else statement and execute what is in the else block.
 
 ```
 take -[intent_transition(intent=predicted_intent)]-> node::cai_state else {
@@ -309,9 +309,9 @@ take -[intent_transition(intent=predicted_intent)]-> node::cai_state else {
     }
 ```
 
-For more information about what the take statement and take, else statement works. Reference the [Jaseci Documentation](https://docs.jaseci.org/docs/getting-started/JAC-Language-Overview/take) 
+For more information about what the take statement and take, else statement works. Reference the [Jaseci Documentation](https://docs.jaseci.org/docs/getting-started/JAC-Language-Overview/take)
 
-### The Flow 
+### The Flow
 NLU ➝ traversal ➝ NLG ➝ return response
 \
 We know already that the NLU is responsible for understanding the context of the user query using the intent classification model and the entity extraction model. The traversal is essentially the state of the graph that collects information and if the information is not met it will ask the user until it understands and get all the user information required in order to move to the next state. The NLG is responsible for the natural generation of the response based on the current state, entities and intent and based on the response generated from the NLG it will return this information to the user. That's basically the rundown of how the flow works in this application.
@@ -320,9 +320,9 @@ We know already that the NLU is responsible for understanding the context of the
 ```
 walker init {
     root {
-        spawn here --> graph::tesla_sales_rep;
+        spawn here ++> graph::tesla_sales_rep;
     }
-} 
+}
 ```
 The above code snippet shows how we utilize generating the graph using the init walker using jac. Note: the graph spawn statement returns the anchor node defined in the graph block. Therefore, the anchor node is a return statement. The init walker is also the first block of code that will be runned in the entire application and that will look for the graph we created for the tesla sales rep and generate all the nodes and edges of the application.
 

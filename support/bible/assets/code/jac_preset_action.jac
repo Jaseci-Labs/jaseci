@@ -8,7 +8,7 @@ node person {
 walker init {
     has year=std.time_now();
     root {
-        person1 = spawn here -->
+        person1 = spawn here ++>
             node::person(name="Josh", byear="1992-01-01");
         take --> ;
     }

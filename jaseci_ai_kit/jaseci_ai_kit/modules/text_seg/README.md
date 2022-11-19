@@ -102,7 +102,7 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
         ```
         walker init {
             root {
-            spawn here --> graph::text_seg_graph;
+            spawn here ++> graph::text_seg_graph;
             }
         }
         ```
@@ -166,7 +166,7 @@ For this tutorial, we are going to leverage the **text segmenter** (`text_seg`) 
         # declare init graph
         walker init {
             root {
-            spawn here --> graph::text_seg_graph;
+            spawn here ++> graph::text_seg_graph;
             }
         }
 

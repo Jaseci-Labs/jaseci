@@ -120,7 +120,7 @@ Similar to nodes, in order to create the graph, we will use the `spawn` keyword.
 ```jac
 walker init {
     root {
-        spawn here --> graph::faq;
+        spawn here ++> graph::faq;
     }
 }
 ```
@@ -129,7 +129,7 @@ This is the first walker we have introduced, so let's break it down.
 
 - The walker is called `init`.
 - It contains logic specifically for the `root` node, meaning that the code inside the `root {}` block will run **only** on the `root` node. This syntax applies for any node types, as you will see very soon. Every Jac program starts with a single root node, but as you will later learn, a walker can be executed on any node, though the root is used by default if none is specified.
-- `spawn here --> graph::faq` creates an instance of the `faq` graph and connects its anchor node to `here`, which is the node the walker is currently on.
+- `spawn here ++> graph::faq` creates an instance of the `faq` graph and connects its anchor node to `here`, which is the node the walker is currently on.
 
 > **Note**
 >
@@ -226,7 +226,7 @@ Before we run this walker, we are going to update the `init` walker to speed up 
 ```jac
 walker init {
     root {
-        spawn here --> graph::faq;
+        spawn here ++> graph::faq;
         spawn here walker::ask;
     }
 }
@@ -315,7 +315,7 @@ walker ingest_faq {
         kb = file.load_json(kb_file);
         for faq in kb {
             answer = faq["answer"];
-            spawn here --> node::faq_state(answer=answer);
+            spawn here ++> node::faq_state(answer=answer);
         }
     }
 }
@@ -347,7 +347,7 @@ Because we are going to use the `ingest_faq` walker to generate the graph, we wo
 ```jac
 walker init {
     root {
-        spawn here --> node::faq_root;
+        spawn here ++> node::faq_root;
         spawn here walker::ingest_faq(kb_file="tesla_faq.json");
         spawn here walker::ask;
     }

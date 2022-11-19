@@ -29,9 +29,9 @@ std_used_in_node_has_var = """
 
     walker init
     {
-        a = spawn here --> node::testnode;
-        a = spawn here --> node::testnode;
-        a = spawn --> --> node::testnode;
+        a = spawn here ++> node::testnode;
+        a = spawn here ++> node::testnode;
+        a = spawn --> ++> node::testnode;
         report a[0].a;
     }
     """

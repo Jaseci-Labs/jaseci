@@ -30,9 +30,9 @@ walker init {
 }
 
 walker hop_buildout {
-    spawn here --> node::state;
-    spawn here --> node::state;
-    spawn here --> node::state;
+    spawn here ++> node::state;
+    spawn here ++> node::state;
+    spawn here ++> node::state;
 }
 
 walker hop_counter {

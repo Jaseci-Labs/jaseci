@@ -21,8 +21,8 @@ node state {
 
 walker init {
     root {
-        n1 = spawn here --> node::state;
-        n2 = spawn here --> node::state;
+        n1 = spawn here ++> node::state;
+        n2 = spawn here ++> node::state;
     }
     spawn here walker::talker;
     spawn here walker::hop_counter;

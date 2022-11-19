@@ -7,13 +7,13 @@ edge married;
 
 walker create_fam {
     root {
-        spawn here --> node::man;
-        spawn here --> node::woman;
+        spawn here ++> node::man;
+        spawn here ++> node::woman;
         --> node::man +<-[married]-> --> node::woman;
         take -->;
     }
     woman {
-        son = spawn here <-[mom]- node::man;
+        son = spawn here <+[mom]+ node::man;
         son +-[dad]-> <-[married]->;
     }
     man {

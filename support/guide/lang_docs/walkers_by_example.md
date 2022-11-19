@@ -80,7 +80,7 @@ graph example {
 #init walker traversing
 walker init {
     root {
-        start = spawn here --> graph::example;
+        start = spawn here ++> graph::example;
         take-->;
         }
     plain {
@@ -136,7 +136,7 @@ walker walk_with_depth {
     }
 
 walker init {
-    start = spawn here --> graph::example;
+    start = spawn here ++> graph::example;
     b_order = spawn start walker::walk_with_breadth;
     d_order = spawn start walker::walk_with_depth;
     std.out("Walk with Breadth:",b_order,"\nWalk with Depth:",d_order);
@@ -177,7 +177,7 @@ Lets change the `init` walker of **Example 3** to demostrate how the `skip` comm
 #init walker traversing
 walker init {
     root {
-        start = spawn here --> graph::example;
+        start = spawn here ++> graph::example;
         take-->;
         }
     plain {
@@ -216,7 +216,7 @@ To demonstrate how the `disengage` command functions, let's once more utilize th
 #init walker traversing
 walker init {
     root {
-        start = spawn here --> graph::example;
+        start = spawn here ++> graph::example;
         take-->;
         }
     plain {

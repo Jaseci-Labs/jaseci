@@ -92,7 +92,7 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
         ```
         walker init {
             root {
-            spawn here --> graph::summ_graph;
+            spawn here ++> graph::summ_graph;
             }
         }
         ```
@@ -146,7 +146,7 @@ For this tutorial, we are going to leverage the **Summarizer**(`t5_sum`) which w
 
         walker init {
             root {
-            spawn here --> graph::summ_graph;
+            spawn here ++> graph::summ_graph;
             }
         }
 

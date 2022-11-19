@@ -200,9 +200,10 @@ def perf_test_start():
     return perf_prof
 
 
-def perf_test_stop(perf_prof):
+def perf_test_stop(perf_prof, save_to_file=False):
     perf_prof.disable()
-    perf_prof.dump_stats(f"{id(perf_prof)}.prof")
+    if save_to_file:
+        perf_prof.dump_stats(f"{id(perf_prof)}.prof")
     s = io.StringIO()
     sortby = pstats.SortKey.CUMULATIVE
     ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)

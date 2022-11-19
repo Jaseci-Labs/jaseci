@@ -180,7 +180,7 @@ For this tutorial we are going to train the model on train dataset and validate 
     ```
     walker init {
         root {
-        spawn here --> graph::ner_val_graph;
+        spawn here ++> graph::ner_val_graph;
         }
     }
     ```
@@ -272,7 +272,7 @@ For this tutorial we are going to train the model on train dataset and validate 
 
     walker init {
         root {
-        spawn here --> graph::ner_val_graph;
+        spawn here ++> graph::ner_val_graph;
         }
     }
 

@@ -229,7 +229,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
         ```
         walker init {
             root {
-            spawn here --> graph::encoder_graph;
+            spawn here ++> graph::encoder_graph;
             }
         }
         ```
@@ -331,7 +331,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
 
         walker init {
             root {
-            spawn here --> graph::encoder_graph;
+            spawn here ++> graph::encoder_graph;
             }
         }
 

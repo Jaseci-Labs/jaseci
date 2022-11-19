@@ -163,22 +163,22 @@ prog1 = """
         can infer.week_from_date;
         can infer.day_from_date;
         life: take --> node::year == infer.year_from_date(date) else {
-                new = spawn here --> node::year;
+                new = spawn here ++> node::year;
                 new.year = infer.year_from_date(date);
                 take --> node::year == infer.year_from_date(date);
             }
         year: take --> node::month == infer.month_from_date(date) else {
-                new = spawn here --> node::month;
+                new = spawn here ++> node::month;
                 new.month = infer.month_from_date(date);
                 take --> node::month == infer.month_from_date(date);
             }
         month: take --> node::week == infer.week_from_date(date) else {
-                new = spawn here --> node::week;
+                new = spawn here ++> node::week;
                 new.week = infer.week_from_date(date);
                 take --> node::week == infer.week_from_date(date);
             }
         week: take --> node::day == infer.day_from_date(date) else {
-                new = spawn here --> node::day;
+                new = spawn here ++> node::day;
                 new.day = infer.day_from_date(date);
                 take --> node::day == infer.day_from_date(date);
             }
@@ -199,7 +199,7 @@ prog1 = """
     walker carry_forward {
         has my_root;
         day {
-            new_day = spawn here --> node::day;
+            new_day = spawn here ++> node::day;
             my_root = new_day;
             take day.outbound_nodes;
         }
@@ -209,7 +209,7 @@ prog1 = """
                 continue;
             }
             childern = workette.outbound_nodes;
-            new_workette = spawn here --> node::workette;
+            new_workette = spawn here ++> node::workette;
             parent = me.spawn_history.last(-1);
             new_workette <-- parent;
             take --> node::workette;
@@ -227,7 +227,7 @@ edgey = """
 
     walker init {
         root {
-            a = spawn here --> node::testnode ;
+            a = spawn here ++> node::testnode ;
             here -[apple]-> a;
             here -[banana]-> a;
         }
@@ -242,7 +242,7 @@ edgey2 = """
 
     walker init {
         root {
-            a = spawn here --> node::testnode ;
+            a = spawn here ++> node::testnode ;
             here -[apple]-> a;
             here -[banana]-> a;
 
@@ -259,8 +259,8 @@ edgey2b = """
 
     walker init {
         root {
-            a = spawn here --> node::testnode ;
-            b = spawn here --> node::testnode ;
+            a = spawn here ++> node::testnode ;
+            b = spawn here ++> node::testnode ;
             here -[apple]-> a;
             here -[banana]-> a;
 
@@ -277,8 +277,8 @@ edgey2c = """
 
     walker init {
         root {
-            a = spawn here --> node::testnode ;
-            b = spawn here --> node::testnode ;
+            a = spawn here ++> node::testnode ;
+            b = spawn here ++> node::testnode ;
             here -[apple]-> a;
             here -[banana]-> a;
 
@@ -295,8 +295,8 @@ edgey3 = """
 
     walker init {
         root {
-            a = spawn here --> node::testnode ;
-            b = spawn here --> node::testnode ;
+            a = spawn here ++> node::testnode ;
+            b = spawn here ++> node::testnode ;
             here -[apple]-> a;
             here -[apple]-> a;
             here -[banana]-> a;
@@ -317,7 +317,7 @@ edgey4 = """
 
     walker init {
         root {
-            a = spawn here --> node::testnode ;
+            a = spawn here ++> node::testnode ;
             here --> a;
             here -[apple]-> a;
             here -[banana]-> a;
@@ -335,7 +335,7 @@ edgey5 = """
 
     walker init {
         root {
-            a = spawn here --> node::testnode ;
+            a = spawn here ++> node::testnode ;
             here --> a;
             here --> a;
             here -[apple]-> a;
@@ -354,8 +354,8 @@ edgey6 = """
 
     walker init {
         root {
-            a = spawn here --> node::testnode ;
-            b = spawn here --> node::testnode ;
+            a = spawn here ++> node::testnode ;
+            b = spawn here ++> node::testnode ;
 
             here -[apple]-> -[generic]->;
         }
@@ -370,8 +370,8 @@ edgey7 = """
 
     walker init {
         root {
-            a = spawn here --> node::testnode ;
-            b = spawn here --> node::testnode ;
+            a = spawn here ++> node::testnode ;
+            b = spawn here ++> node::testnode ;
             here --> a;
             here --> a;
             here -[apple]-> a;
@@ -415,8 +415,8 @@ has_assign = """
 
     walker init {
         root {
-            a = spawn here --> node::testnode ;
-            b = spawn here --> node::testnode ;
+            a = spawn here ++> node::testnode ;
+            b = spawn here ++> node::testnode ;
 
             std.log(a.a, b.a);
         }
@@ -502,7 +502,7 @@ sharable = """
 
     walker init {
         root {
-            new = spawn here --> node::life;
+            new = spawn here ++> node::life;
             take -->;
         }
         life {
@@ -517,7 +517,7 @@ basic = """
 
     walker init {
         root {
-            new = spawn here --> node::life;
+            new = spawn here ++> node::life;
             take -->;
         }
         life {
@@ -593,7 +593,7 @@ null_handleing = """
     node person: has name, age, birthday, profession;
 
     walker init {
-        person1 = spawn here -->
+        person1 = spawn here ++>
             node::person(name = "Josh", age = 32);
 
         if(person1.birthday==null): report true;
@@ -613,7 +613,7 @@ bool_type_convert = """
     node person: has name;
 
     walker init {
-        p1 = spawn here -->
+        p1 = spawn here ++>
             node::person(name = "Josh");
 
         p1.name = true;
@@ -828,7 +828,7 @@ destroy_and_misc = """
 arbitrary_assign_on_element = """
     node person: has name, age, birthday, profession;
     walker init {
-        some = spawn here --> node::person;
+        some = spawn here ++> node::person;
         some.apple = 45;
         report some.context;
     }
@@ -981,7 +981,7 @@ report_not_to_jacset = """
     }
 
     walker init {
-        spawn here --> node::testnode;
+        spawn here ++> node::testnode;
         report -->;
     }
     """
@@ -1022,7 +1022,7 @@ func_with_array_index = """
 
 rt_error_test1 = """
     walker init {
-       spawn here --> node::generic;
+       spawn here ++> node::generic;
        report -->[2];
     }
     """
@@ -1083,7 +1083,7 @@ graph_in_graph = """
 
     walker init {
         root {
-            spawn here --> graph::two;
+            spawn here ++> graph::two;
         }
         take -->;
         report here;
@@ -1150,7 +1150,7 @@ struct_types = """
     }
 
     walker init {
-        a = spawn here --> n::mynode;
+        a = spawn here ++> n::mynode;
 
         report
         [a.basic["apple"]["orange"],

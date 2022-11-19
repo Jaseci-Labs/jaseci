@@ -7,7 +7,7 @@ walker init {
 
 walker one_node {
     with entry {
-        spawn here --> node::simple(msg="hello world");
+        spawn here ++> node::simple(msg="hello world");
     }
     take --> else {report here;}
 }

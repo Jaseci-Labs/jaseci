@@ -101,7 +101,7 @@ For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) whi
         ```
         walker init {
             root {
-            spawn here --> graph::summ_graph;
+            spawn here ++> graph::summ_graph;
             }
         }
         ```
@@ -157,7 +157,7 @@ For this tutorial, we are going to leverage the **Summarizer** (`cl_summer`) whi
         # declaring init walker
         walker init {
             root {
-            spawn here --> graph::summ_graph;
+            spawn here ++> graph::summ_graph;
             }
         }
 

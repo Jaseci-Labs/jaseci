@@ -278,7 +278,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         ```
         walker init {
             root {
-            spawn here --> graph::bi_encoder_graph;
+            spawn here ++> graph::bi_encoder_graph;
             }
         }
         ```
@@ -422,7 +422,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
 
         walker init {
             root {
-            spawn here --> graph::bi_encoder_graph;
+            spawn here ++> graph::bi_encoder_graph;
             }
         }
 
