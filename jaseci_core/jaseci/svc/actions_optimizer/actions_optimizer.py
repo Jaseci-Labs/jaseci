@@ -133,6 +133,7 @@ class ActionsOptimizer:
                 "eval_phase": 10,  # how long is evaluatin period (in seconds)
                 "perf_phase": 100,  # how long is the performance period (in seconds)
                 "cur_phase": 0,  # how long the current period has been running
+                "prev_best_config": self.actions_state.get_all_state(),
             }
         policy_state["cur_phase"] += self.jsorc_interval
 
@@ -232,6 +233,20 @@ class ActionsOptimizer:
                         # Switch the system to the best config
                         del best_config["avg_walker_lat"]
                         self.actions_change = self._get_action_change(best_config)
+
+                        # ADAPTIVE: if the selected best config is the same config as the previous best one, double the performance period
+                        if all(
+                            [
+                                best_config[act]
+                                == policy_state["prev_best_config"][act]["mode"]
+                                for act in best_config.keys()
+                            ]
+                        ):
+                            policy_state["perf_phase"] *= 2
+                            logger.info(
+                                f"===Evaluation Policy=== Best config is the same as previous one. Doubling performance phase to {policy_state['perf_phase']}"
+                            )
+
                         policy_state["phase"] = "perf"
                         policy_state["cur_config"] = None
                         policy_state["past_configs"] = []
