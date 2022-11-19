@@ -240,16 +240,17 @@ class JsOrc:
         """
         if self.system_states["active"]:
             ts = int(time.time())
+            prom_profile = self.prom.info(
+                namespace=self.namespace,
+                exclude_prom=True,
+                timestamp=ts,
+                duration=self.interval,
+            )
             self.system_states["states"].append(
                 {
                     "ts": ts,
                     "actions": self.get_actions_status(name=""),
-                    "prometheus": self.prom.info(
-                        namespace=self.namespace,
-                        exclude_prom=True,
-                        timestamp=ts,
-                        duration=self.interval,
-                    ),
+                    "prometheus": prom_profile,
                 }
             )
 

@@ -1,4 +1,5 @@
 BI_ENC_ACTION_CONFIG = {
+    "remote_memory": 3.025 * 1024,
     "module": "jaseci_ai_kit.bi_enc",
     "loaded_module": "jaseci_ai_kit.modules.encoder.bi_enc",
     "remote": {

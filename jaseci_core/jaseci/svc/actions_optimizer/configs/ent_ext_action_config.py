@@ -1,4 +1,5 @@
 ENT_EXT_ACTION_CONFIG = {
+    "remote_memory": 4.05 * 1024,
     "module": "jaseci_ai_kit.ent_ext",
     "loaded_module": "jaseci_ai_kit.modules.ent_ext.ent_ext",
     "remote": {

@@ -37,8 +37,9 @@ class ActionsOptimizer:
         self.actions_history = actions_history
         self.actions_calls = actions_calls
         self.namespace = namespace
+        self.policy_params = {}
 
-    def set_action_policy(self, policy_name: str):
+    def set_action_policy(self, policy_name: str, policy_params: dict = {}):
         """
         Set the action optimization policy for JSORC
         """
@@ -46,6 +47,7 @@ class ActionsOptimizer:
         if policy_name in POLICIES:
             self.policy = policy_name
             self.policy_state[policy_name] = {}
+            self.policy_params = policy_params
             return True
         else:
             return f"Policy {policy_name} not found."
@@ -118,6 +120,9 @@ class ActionsOptimizer:
         """
         logger.info("===Evaluation Policy===")
         policy_state = self.policy_state["Evaluation"]
+        # 999 is just really large memory size so everything can fits in local
+        node_mem = self.policy_params.get("node_mem", 999 * 1024)
+        jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
         if len(policy_state) == 0:
             # Initialize policy tracking state
             policy_state = {
@@ -145,13 +150,21 @@ class ActionsOptimizer:
                 # Initialize configs to eval
                 actions = self.actions_state.get_active_actions()
                 # construct list of possible configurations
-                all_configs = [{}]
+                all_configs = [{"local_mem": jaseci_runtime_mem}]
                 for act in actions:
                     new_configs = []
                     for c in all_configs:
                         for m in ["local", "remote"]:
                             c[act] = m
-                            new_configs.append(dict(c))
+                            if m == "local":
+                                new_mem = (
+                                    c["local_mem"]
+                                    + ACTION_CONFIGS[act]["remote_memory"]
+                                )
+                                if new_mem < node_mem:
+                                    new_configs.append(dict(c))
+                            else:
+                                new_configs.append(dict(c))
                     all_configs = list(new_configs)
                 policy_state["remain_configs"] = all_configs
 

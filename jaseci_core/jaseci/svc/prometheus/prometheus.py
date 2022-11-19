@@ -66,7 +66,8 @@ class PromotheusService(CommonService):
             pod_name = pod["metric"]["pod"]
             if exclude_prom and "prometheus" in pod_name:
                 continue
-            res[pod_name] = pod["metric"]
+            # res[pod_name] = pod["metric"]
+            res[pod_name] = {}
 
         if timestamp != 0 and duration != 0:
             cpu = self.cpu.utilization_per_pod_cores(ts=timestamp, duration=duration)

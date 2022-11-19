@@ -99,8 +99,12 @@ class JsorcLoadTest:
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
 
-    def set_jsorc_actionpolicy(self, policy_name):
-        payload = {"op": "jsorc_actionpolicy_set", "policy_name": policy_name}
+    def set_jsorc_actionpolicy(self, policy_name, policy_params):
+        payload = {
+            "op": "jsorc_actionpolicy_set",
+            "policy_name": policy_name,
+            "policy_params": policy_params,
+        }
         res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
@@ -110,12 +114,13 @@ class JsorcLoadTest:
         Run synthetic application
         """
         results = {}
+        node_mem = [4 * 1024, 6 * 1024, 8 * 1024]
         apps = [
-            "sentence_pairing",
+            # "sentence_pairing",
             # "discussion_analysis",
             # "zeroshot_faq_bot",
             # "flight_chatbot",
-            # "restaurant_chatbot",
+            "restaurant_chatbot",
             # "virtual_assistant",
             # "flow_analysis",
         ]
@@ -129,7 +134,7 @@ class JsorcLoadTest:
             "flow_analysis": ["text_seg", "tfm_ner", "use_enc"],
         }
         # policies = ["evaluation"]
-        policies = ["all_local"]
+        policies = ["all_remote"]
         # policies = ["all_remote", "all_local"]
         # policies = ["all_remote", "all_local", "evaluation"]
         for app in apps:
@@ -154,28 +159,38 @@ class JsorcLoadTest:
                     logger.error(f"Unrecognized policy {policy}")
                     return
 
-                self.set_jsorc_actionpolicy(jsorc_policy)
-                #
-                # Experiment Start
-                #
-                self.start_benchmark()
-                self.start_actions_tracking()
-                start_ts = time.time()
-                experiment_duration = 1 * 60
-                while (time.time() - start_ts) < experiment_duration:
-                    res = self.run_walker(app)
-                result = self.stop_benchmark()
-                action_result = self.stop_actions_tracking()
-                results.setdefault(app, {})[policy] = {
-                    "walker_level": result,
-                    "action_level": action_result,
-                }
-                #
-                # Experiment Ends. Unload actions. Reset the cluster
-                #
-                for module in action_modules:
-                    self.unload_action(module, mode="auto", retire_svc=True)
-                sleep(10)
+                if policy == "all_local" or policy == "all_remote":
+                    policy_params = [{}]
+                else:
+                    policy_params = [{"node_mem": nm} for nm in node_mem]
+
+                for pparams in policy_params:
+                    self.set_jsorc_actionpolicy(jsorc_policy, policy_params=pparams)
+                    #
+                    # Experiment Start
+                    #
+                    self.start_benchmark()
+                    self.start_actions_tracking()
+                    start_ts = time.time()
+                    experiment_duration = 1 * 60
+                    while (time.time() - start_ts) < experiment_duration:
+                        res = self.run_walker(app)
+                    result = self.stop_benchmark()
+                    action_result = self.stop_actions_tracking()
+                    if policy == "all_local" or policy == "all_remote":
+                        policy_str = policy
+                    else:
+                        policy_str = f"{policy}-mem-{pparams['node_mem']}"
+                    results.setdefault(app, {})[policy_str] = {
+                        "walker_level": result,
+                        "action_level": action_result,
+                    }
+                    #
+                    # Experiment Ends. Unload actions. Reset the cluster
+                    #
+                    for module in action_modules:
+                        self.unload_action(module, mode="auto", retire_svc=True)
+                    sleep(10)
         return results
 
     def action_level_test(self):
