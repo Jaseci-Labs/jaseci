@@ -4,6 +4,7 @@ Node class for Jaseci
 Each node has an id, name, timestamp and it's set of edges.
 First node in list of 'member_node_ids' is designated root node
 """
+from collections import OrderedDict
 from jaseci.element.element import Element
 from jaseci.element.obj_mixins import Anchored
 from jaseci.graph.edge import Edge
@@ -22,7 +23,7 @@ class Node(Element, Anchored):
 
     def __init__(self, dimension=0, **kwargs):
         self.edge_ids = IdList(self)
-        self.fast_edges = {}  # {name: [[NODEID, DIR, EDGEID]]}
+        self.fast_edges = {}  # {name: [[NODEID, DIR, EDGEID, CONTEXT]]}
         self._fast_edge_ids = IdList(self)
         self.parent_node_ids = IdList(self)
         self.member_node_ids = IdList(self)
@@ -58,6 +59,7 @@ class Node(Element, Anchored):
                 edge.to_node_id = link_order[1]
                 edge.bidirected = v[1] == BI
                 edge.jid = v[2] if len(v) > 2 else uuid.uuid4().urn
+                edge.context = v[3] if len(v) > 3 else {}
                 edge.save()
                 self._fast_edge_ids.add_obj(edge)
 
@@ -80,6 +82,7 @@ class Node(Element, Anchored):
             obj.opposing_node(self).jid,
             BI if obj.is_bidirected() else TO if obj.from_node() == self else FROM,
             obj.jid,
+            obj.context,
         ]
         self.fast_edges[obj.name].append(details)
 
@@ -461,3 +464,59 @@ class Node(Element, Anchored):
         dstr += " ]"
 
         return dstr + "\n"
+
+    def get_all_architypes(self, depth: int = 0):
+        """
+        Returns all reachable architypes
+        """
+
+        childs = {self.jid: self}
+
+        edges = OrderedDict()
+        nodes = OrderedDict(childs)
+
+        depth -= 1
+
+        while len(childs) and depth != 0:
+            new_childs = OrderedDict()
+
+            for node in childs.values():
+                for edge in node.attached_edges():
+                    if not (edge.jid in edges):
+                        n_node = False
+                        to_node = edge.to_node()
+
+                        if to_node == node:
+                            n_node = edge.from_node()
+                        else:
+                            n_node = to_node
+
+                        if not (n_node.jid in nodes):
+                            edges.update({edge.jid: edge})
+                            new_childs.update({n_node.jid: n_node})
+                        else:
+                            edges.update({edge.jid: edge})
+
+            childs = new_childs
+            nodes.update(childs)
+            depth -= 1
+
+        return nodes, edges
+
+    def traversing_dot_str(self, detailed=False, depth: int = 0):
+        """
+        DOT representation for graph.
+        NOTE: This is different from the dot_str method for node intentionally
+        because graph inherits node.
+        """
+        nodes, edges = self.get_all_architypes(depth)
+
+        # Construct the graph string
+        dstr = ""
+        dstr += f"strict digraph {self.name} {{\n"
+        for n in nodes.values():
+            dstr += f"    {n.dot_str(list(nodes.keys()), detailed)}"
+        for e in edges.values():
+            dstr += f"    {e.dot_str(list(nodes.keys()), list(edges.keys()), detailed)}"
+        dstr += "}"
+        return dstr

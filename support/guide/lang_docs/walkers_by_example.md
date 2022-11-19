@@ -49,7 +49,7 @@ As mentioned earlier the walkers can traverse(walk) through the nodes of the gra
 
 We are creating the following graph to demostrate traversing of walkers in comming sections;
 
- <div style="text-align:center"><img style="text-align:center" src="images/traverse_graph_example.PNG" /> <b>Example Graph - Navigating </b></div>
+ <div style="text-align:center"><img style="align:center" src="images/traverse_graph_example.PNG" /> <b>Example Graph - Navigating </b></div>
 
 <p>
 </p>
