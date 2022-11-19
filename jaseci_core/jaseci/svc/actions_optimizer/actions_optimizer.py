@@ -12,6 +12,7 @@ from jaseci.actions.live_actions import (
 )
 import requests
 import time
+import copy
 from kubernetes.client.rest import ApiException
 
 POLICIES = ["Default", "BackAndForth", "Evaluation"]
@@ -48,6 +49,7 @@ class ActionsOptimizer:
             self.policy = policy_name
             self.policy_state[policy_name] = {}
             self.policy_params = policy_params
+            logger.info(self.policy_params)
             return True
         else:
             return f"Policy {policy_name} not found."
@@ -112,6 +114,33 @@ class ActionsOptimizer:
             policy_state["time_since_switch"] = 0
         self.policy_state["BackAndForth"] = policy_state
 
+    def _init_evalution_policy(self, policy_state):
+        # 999 is just really large memory size so everything can fits in local
+        node_mem = self.policy_params.get("node_mem", 999 * 1024)
+        jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
+        logger.info("===Evaluation Policy=== Initialize evaluation model")
+        # Initialize configs to eval
+        actions = self.actions_state.get_active_actions()
+        # construct list of possible configurations
+        all_configs = [{"local_mem": jaseci_runtime_mem}]
+        for act in actions:
+            new_configs = []
+            for con in all_configs:
+                for m in ["local", "remote"]:
+                    c = copy.deepcopy(con)
+                    c[act] = m
+                    if m == "local":
+                        c["local_mem"] += ACTION_CONFIGS[act]["remote_memory"]
+                        if c["local_mem"] < node_mem:
+                            new_configs.append(dict(c))
+                    else:
+                        new_configs.append(dict(c))
+            all_configs = list(new_configs)
+        policy_state["remain_configs"] = all_configs
+        logger.info("====Evaluation Policy===== All configs to be evaluated")
+        logger.info(node_mem)
+        logger.info(policy_state["remain_configs"])
+
     def _actionpolicy_evaluation(self):
         """
         A evaluation based policy.
@@ -120,9 +149,7 @@ class ActionsOptimizer:
         """
         logger.info("===Evaluation Policy===")
         policy_state = self.policy_state["Evaluation"]
-        # 999 is just really large memory size so everything can fits in local
-        node_mem = self.policy_params.get("node_mem", 999 * 1024)
-        jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
+
         if len(policy_state) == 0:
             # Initialize policy tracking state
             policy_state = {
@@ -142,59 +169,36 @@ class ActionsOptimizer:
             policy_state["phase"] == "perf"
             and policy_state["cur_phase"] >= policy_state["perf_phase"]
         ):
-            logger.info("===Evaluation Policy=== Switching to evaluation mode")
-            policy_state["phase"] = "eval"
-            policy_state["cur_phase"] = 0
-            policy_state["cur_config"] = None
-            if len(policy_state["remain_configs"]) == 0:
-                logger.info("===Evaluation Policy=== Initialize evaluation model")
-                # Initialize configs to eval
-                actions = self.actions_state.get_active_actions()
-                # construct list of possible configurations
-                all_configs = [{"local_mem": jaseci_runtime_mem}]
-                for act in actions:
-                    new_configs = []
-                    for c in all_configs:
-                        for m in ["local", "remote"]:
-                            c[act] = m
-                            if m == "local":
-                                new_mem = (
-                                    c["local_mem"]
-                                    + ACTION_CONFIGS[act]["remote_memory"]
-                                )
-                                if new_mem < node_mem:
-                                    new_configs.append(dict(c))
-                            else:
-                                new_configs.append(dict(c))
-                    all_configs = list(new_configs)
-                policy_state["remain_configs"] = all_configs
-
+            # if no enough walker were execueted in this period, keep in perf phase
+            if len(self.benchmark["requests"].get("walker_run", [])) < 10:
+                policy_state["cur_phase"] = 0
+            else:
+                logger.info("===Evaluation Policy=== Switching to evaluation mode")
+                policy_state["phase"] = "eval"
+                policy_state["cur_phase"] = 0
+                policy_state["cur_config"] = None
+                if len(policy_state["remain_configs"]) == 0:
+                    self._init_evalution_policy(policy_state)
         if policy_state["phase"] == "eval":
             # In evaluation phase
             if policy_state["cur_config"] is None:
-                logger.info("===Evaluation Policy=== First evaluation config")
-                logger.info("===Evaluation Policy=== Initialize evaluation model")
-                # Initialize configs to eval
-                actions = self.actions_state.get_active_actions()
-                # construct list of possible configurations
-                all_configs = [{}]
-                for act in actions:
-                    new_configs = []
-                    for c in all_configs:
-                        for m in ["local", "remote"]:
-                            c[act] = m
-                            new_configs.append(dict(c))
-                    all_configs = list(new_configs)
-                policy_state["remain_configs"] = all_configs
+                self._init_evalution_policy(policy_state)
 
                 # This is the start of evaluation period
                 policy_state["cur_config"] = policy_state["remain_configs"][0]
                 del policy_state["remain_configs"][0]
                 policy_state["cur_phase"] = 0
                 self.benchmark["active"] = True
+                self.benchmark["requests"] = {}
                 self.actions_change = self._get_action_change(
                     policy_state["cur_config"]
                 )
+                if len(self.actions_change) > 0:
+                    logger.info(
+                        f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"
+                    )
+                    policy_state["phase"] = "eval_switching"
+                    self.benchmark["active"] = False
             else:
                 if policy_state["cur_phase"] >= policy_state["eval_phase"]:
                     # The eval phase for the current configuration is complete
@@ -240,6 +244,7 @@ class ActionsOptimizer:
                                 best_config[act]
                                 == policy_state["prev_best_config"][act]["mode"]
                                 for act in best_config.keys()
+                                if act in ACTION_CONFIGS.keys()
                             ]
                         ):
                             policy_state["perf_phase"] *= 2
@@ -252,7 +257,7 @@ class ActionsOptimizer:
                         policy_state["past_configs"] = []
                         policy_state["cur_phase"] = 0
                         self.benchmark["requests"] = {}
-                        self.benchmark["active"] = False
+                        self.benchmark["active"] = True
                         logger.info(
                             f"===Evaluation Policy=== Evaluation phase over. Selected best config as {best_config}"
                         )
@@ -260,14 +265,32 @@ class ActionsOptimizer:
                         next_config = policy_state["remain_configs"][0]
                         del policy_state["remain_configs"][0]
                         self.actions_change = self._get_action_change(next_config)
-                        # TODO: for now, we are including the configuration switching part in the eval period for simplicity
                         policy_state["cur_config"] = next_config
                         policy_state["cur_phase"] = 0
-                        self.benchmark["active"] = True
                         self.benchmark["requests"] = {}
+                        if len(self.actions_change) > 0:
+                            logger.info(
+                                f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"
+                            )
+                            policy_state["phase"] = "eval_switching"
+                            self.benchmark["active"] = False
+                        else:
+                            policy_state["phase"] = "eval"
+                            self.benchmark["active"] = True
                         logger.info(
                             f"===Evaluation Policy=== Switching to next config to evaluate {next_config}"
                         )
+        elif policy_state["phase"] == "eval_switching":
+            # in the middle of switching between configs for evaluation
+            if len(self.actions_change) == 0:
+                # this means all actions change have been applied, start evaluation phase
+                logger.info(
+                    f"===Evaluation Policy=== All actions change have been applied. Start evaluation phase."
+                )
+                policy_state["phase"] = "eval"
+                policy_state["cur_phase"] = 0
+                self.benchmark["active"] = True
+                self.benchmark["requests"] = {}
 
         self.policy_state["Evaluation"] = policy_state
 
@@ -278,7 +301,12 @@ class ActionsOptimizer:
         policy_state = self.policy_state["ActionEvaluation"]
         if len(policy_state) == 0:
             # Initialize the policy tracking state
-            policy_state = {}
+            policy_state = {
+                "window": 10,
+                "threshold": 0.2,
+                "last_window": {},
+                "cur_window": {},
+            }
 
     def _actionpolicy_actionprediction(self):
         """
@@ -292,6 +320,8 @@ class ActionsOptimizer:
         """
         change_state = {}
         for name, new_state in new_action_state.items():
+            if name not in ACTION_CONFIGS.keys():
+                continue
             cur = self.actions_state.get_state(name)
             if cur is None:
                 cur = self.actions_state.init_state(name)

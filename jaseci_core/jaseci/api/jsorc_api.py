@@ -211,17 +211,17 @@ class JsOrcApi:
             return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api()
-    def jsorc_actionpolicy_set(self, policy_name: str):
+    def jsorc_actionpolicy_set(self, policy_name: str, policy_params: dict = {}):
         """
         Set an action optimization policy for JSORC
         """
         hook = self._h
         if hook.meta.run_svcs:
-            res = hook.jsorc.app.set_action_policy(policy_name)
+            res = hook.jsorc.app.set_action_policy(policy_name, policy_params)
             if res is True:
                 return {
                     "success": True,
-                    "message": f"Action optimization policy configured as {policy_name}",
+                    "message": f"Action optimization policy configured as {policy_name} with params {policy_params}",
                 }
             else:
                 return {"success": False, "message": res}

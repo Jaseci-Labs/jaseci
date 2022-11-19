@@ -138,6 +138,8 @@ spec:
           resources:
             requests:
               memory: "3Gi"
+            limits:
+              memory: "8Gi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:

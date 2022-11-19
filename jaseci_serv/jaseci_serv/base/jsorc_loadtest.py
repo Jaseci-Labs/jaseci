@@ -114,13 +114,14 @@ class JsorcLoadTest:
         Run synthetic application
         """
         results = {}
-        node_mem = [4 * 1024, 6 * 1024, 8 * 1024]
+        # node_mem = [4 * 1024, 6 * 1024, 8 * 1024]
+        node_mem = [4 * 1024]
         apps = [
-            # "sentence_pairing",
+            "sentence_pairing",
             # "discussion_analysis",
             # "zeroshot_faq_bot",
             # "flight_chatbot",
-            "restaurant_chatbot",
+            # "restaurant_chatbot",
             # "virtual_assistant",
             # "flow_analysis",
         ]
@@ -133,8 +134,8 @@ class JsorcLoadTest:
             "virtual_assistant": ["text_seg", "bi_enc", "tfm_ner", "ent_ext", "use_qa"],
             "flow_analysis": ["text_seg", "tfm_ner", "use_enc"],
         }
-        # policies = ["evaluation"]
-        policies = ["all_remote"]
+        policies = ["evaluation"]
+        # policies = ["all_local"]
         # policies = ["all_remote", "all_local"]
         # policies = ["all_remote", "all_local", "evaluation"]
         for app in apps:
@@ -172,7 +173,7 @@ class JsorcLoadTest:
                     self.start_benchmark()
                     self.start_actions_tracking()
                     start_ts = time.time()
-                    experiment_duration = 1 * 60
+                    experiment_duration = 2 * 60
                     while (time.time() - start_ts) < experiment_duration:
                         res = self.run_walker(app)
                     result = self.stop_benchmark()

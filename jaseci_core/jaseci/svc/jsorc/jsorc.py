@@ -371,11 +371,11 @@ class JsOrc:
         """
         return self.actions_optimizer.get_actions_status(name)
 
-    def set_action_policy(self, policy_name):
+    def set_action_policy(self, policy_name, policy_params):
         """
         Set an action optimizer policy
         """
-        return self.actions_optimizer.set_action_policy(policy_name)
+        return self.actions_optimizer.set_action_policy(policy_name, policy_params)
 
     def get_action_policy(self):
         """

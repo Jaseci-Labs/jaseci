@@ -57,7 +57,7 @@ BI_ENC_ACTION_CONFIG = {
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
                                     # "limits": {"memory": "2Gi"},
-                                    "requests": {"memory": "2Gi"},
+                                    "requests": {"memory": "4Gi"},
                                 },
                                 "volumeMounts": [
                                     {"name": "prod-script", "mountPath": "/script"}
