@@ -1,6 +1,5 @@
 import argparse
 import torch
-import numpy as np
 import os
 from pathlib import Path
 
@@ -14,14 +13,6 @@ from .utils import prepare_device, read_yaml
 from .utils.logger import setup_logging
 
 
-# fix random seeds for reproducibility
-SEED = 123
-torch.manual_seed(SEED)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-np.random.seed(SEED)
-
-
 def train(args):
     if args["device"] is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.device
@@ -29,12 +20,14 @@ def train(args):
     # Loading Configuration
     if args["resume"] is not None:
         resume = Path(args["resume"])
-        cfg_fname = resume.parent / "config.yaml"
     else:
-        msg_no_cfg = "Configuration file need to be specified. Add '-c config.yaml', for example."
-        assert args["config"] is not None, msg_no_cfg
         resume = None
-        cfg_fname = Path(args["config"])
+
+    msg_no_cfg = (
+        "Configuration file need to be specified. Add '-c config.yaml', for example."
+    )
+    assert args["config"] is not None, msg_no_cfg
+    cfg_fname = Path(args["config"])
 
     config = read_yaml(cfg_fname)
 
@@ -88,6 +81,7 @@ def train(args):
     )
 
     trainer.train()
+    return trainer.run_id
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-class PersonalizedHead(BaseModel):
+class PHClassifier(BaseModel):
     def __init__(
         self, embedding_length, ph_nhead, ph_ff_dim, batch_first, ph_nlayers, n_classes
     ):
