@@ -16,7 +16,7 @@ venv
 # Others #
 .coverage
 .antlr
-.session
+*.session
 .DS_Store
 build
 test
@@ -27,6 +27,8 @@ js.session
 mydatabase
 *Zone.Identifier
 .DS_Store
+*.pdf
+
 
 *.rdb
 celerybeat-schedule*
