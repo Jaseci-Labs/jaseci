@@ -1,0 +1,40 @@
+{
+  "tfm_ner": {
+    "extract_entity": {
+      "local": {
+        "walker_level": {
+          "throughput": 6.371623931597964,
+          "average_latency": 154.9033236503601,
+          "50th_latency": 126.9296407699585,
+          "90th_latency": 222.58133888244632,
+          "95th_latency": 271.5278267860412,
+          "99th_latency": 485.78184604644775
+        },
+        "action_level": {
+          "tfm_ner.extract_entity": 0.14939435243606566
+        }
+      },
+      "remote": {
+        "walker_level": {
+          "throughput": 7.588749822553005,
+          "average_latency": 129.9125075340271,
+          "50th_latency": 121.92738056182861,
+          "90th_latency": 154.325270652771,
+          "95th_latency": 170.20111083984375,
+          "99th_latency": 231.15676641464282
+        },
+        "action_level": {
+          "tfm_ner.extract_entity": 0.1275409483909607
+        }
+      },
+      "remote_over_local": {
+        "throughput": 1.1910228701538876,
+        "average_latency": 0.8386683027360923,
+        "50th_latency": 0.9605902909849422,
+        "90th_latency": 0.6933432579191917,
+        "95th_latency": 0.6268275073477423,
+        "99th_latency": 0.4758448021389027
+      }
+    }
+  }
+}

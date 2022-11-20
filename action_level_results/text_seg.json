@@ -1,0 +1,42 @@
+{
+  "text_seg": {
+    "get_segments": {
+      "local": {
+        "walker_level": {
+          "throughput": 0.6008675190412383,
+          "average_latency": 1662.5392746925354,
+          "50th_latency": 1597.9362726211548,
+          "90th_latency": 1909.931993484497,
+          "95th_latency": 2003.8479804992676,
+          "99th_latency": 2267.4264121055603
+        },
+        "action_level": {
+          "text_seg.get_segments": 1.659573528766632,
+          "std.log": 0.00025568246841430666
+        }
+      },
+      "remote": {
+        "walker_level": {
+          "throughput": 0.611895016532631,
+          "average_latency": 1632.493920326233,
+          "50th_latency": 1593.1754112243652,
+          "90th_latency": 1795.7115411758425,
+          "95th_latency": 1926.4267325401306,
+          "99th_latency": 2090.140852928163
+        },
+        "action_level": {
+          "text_seg.get_segments": 1.629658935070038,
+          "std.log": 0.0001619720458984375
+        }
+      },
+      "remote_over_local": {
+        "throughput": 1.0183526270632643,
+        "average_latency": 0.9819280333260946,
+        "50th_latency": 0.9970206187328233,
+        "90th_latency": 0.9401965867380075,
+        "95th_latency": 0.9613637118620909,
+        "99th_latency": 0.9218119899146946
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "cl_summer": {
+    "summarize": {
+      "local": {
+        "walker_level": {
+          "throughput": 81.66357319019944,
+          "average_latency": 10.321037769317627,
+          "50th_latency": 9.304165840148926,
+          "90th_latency": 11.167454719543459,
+          "95th_latency": 12.729978561401367,
+          "99th_latency": 15.63324451446568
+        },
+        "action_level": {
+          "std.time_now": 8.182525634765625e-06,
+          "cl_summer.summarize": 0.00739215612411499
+        }
+      },
+      "remote": {
+        "walker_level": {
+          "throughput": 47.165485553383995,
+          "average_latency": 19.024317264556885,
+          "50th_latency": 17.377376556396484,
+          "90th_latency": 20.802760124206547,
+          "95th_latency": 30.512368679046617,
+          "99th_latency": 50.62561511993413
+        },
+        "action_level": {
+          "std.time_now": 1.4727115631103516e-05,
+          "cl_summer.summarize": 0.0158025598526001
+        }
+      },
+      "remote_over_local": {
+        "throughput": 0.5775584353079029,
+        "average_latency": 1.8432562393204646,
+        "50th_latency": 1.8676984970979769,
+        "90th_latency": 1.8628022809710567,
+        "95th_latency": 2.396890814220483,
+        "99th_latency": 3.2383306659784843
+      }
+    }
+  }
+}

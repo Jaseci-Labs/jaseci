@@ -1,0 +1,42 @@
+{
+  "ent_ext": {
+    "entity_detection": {
+      "local": {
+        "walker_level": {
+          "throughput": 3.7238715520438674,
+          "average_latency": 266.665620803833,
+          "50th_latency": 237.62571811676025,
+          "90th_latency": 331.84754848480225,
+          "95th_latency": 368.4190988540649,
+          "99th_latency": 468.42940568924035
+        },
+        "action_level": {
+          "std.time_now": 1.1059045791625976e-05,
+          "ent_ext.entity_detection": 0.26394420623779297
+        }
+      },
+      "remote": {
+        "walker_level": {
+          "throughput": 4.060517107807842,
+          "average_latency": 244.5984649658203,
+          "50th_latency": 235.7109785079956,
+          "90th_latency": 278.75823974609375,
+          "95th_latency": 300.816524028778,
+          "99th_latency": 353.4297728538516
+        },
+        "action_level": {
+          "std.time_now": 8.488893508911132e-06,
+          "ent_ext.entity_detection": 0.24225964546203613
+        }
+      },
+      "remote_over_local": {
+        "throughput": 1.0904020321482906,
+        "average_latency": 0.9172478410546745,
+        "50th_latency": 0.9919422037987327,
+        "90th_latency": 0.8400189816645885,
+        "95th_latency": 0.8165063238155712,
+        "99th_latency": 0.7544995437120777
+      }
+    }
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "bi_enc": {
+    "dot_prod": {
+      "local": {
+        "walker_level": {
+          "throughput": 164.3815601869597,
+          "average_latency": 4.149432182312012,
+          "50th_latency": 3.6475658416748047,
+          "90th_latency": 5.285525321960451,
+          "95th_latency": 6.878566741943359,
+          "99th_latency": 10.304455757141152
+        },
+        "action_level": {
+          "std.time_now": 6.847381591796875e-06,
+          "bi_enc.dot_prod": 6.415128707885742e-05
+        }
+      },
+      "remote": {
+        "walker_level": {
+          "throughput": 87.81173891279192,
+          "average_latency": 9.863789081573486,
+          "50th_latency": 9.296655654907227,
+          "90th_latency": 10.816478729248047,
+          "95th_latency": 12.425506114959715,
+          "99th_latency": 22.87228345870972
+        },
+        "action_level": {
+          "std.time_now": 6.248950958251953e-06,
+          "bi_enc.dot_prod": 0.006505153179168701
+        }
+      },
+      "remote_over_local": {
+        "throughput": 0.5341945824879571,
+        "average_latency": 2.3771418951297347,
+        "50th_latency": 2.5487286750768026,
+        "90th_latency": 2.0464340004781425,
+        "95th_latency": 1.8064091810279088,
+        "99th_latency": 2.219649828945004
+      }
+    },
+    "get_candidate_emb": {
+      "local": {
+        "walker_level": {
+          "throughput": 5.703969423391295,
+          "average_latency": 173.6640977859497,
+          "50th_latency": 164.6181344985962,
+          "90th_latency": 207.53512382507327,
+          "95th_latency": 219.99738216400146,
+          "99th_latency": 295.3380322456361
+        },
+        "action_level": {
+          "std.time_now": 9.81450080871582e-06,
+          "bi_enc.get_candidate_emb": 0.17119025468826293
+        }
+      },
+      "remote": {
+        "walker_level": {
+          "throughput": 4.9548015806632435,
+          "average_latency": 200.0880241394043,
+          "50th_latency": 174.48127269744873,
+          "90th_latency": 240.72237014770516,
+          "95th_latency": 300.58667659759516,
+          "99th_latency": 375.3047323226973
+        },
+        "action_level": {
+          "std.time_now": 8.677244186401368e-06,
+          "bi_enc.get_candidate_emb": 0.19756463050842285
+        }
+      },
+      "remote_over_local": {
+        "throughput": 0.8686585100446359,
+        "average_latency": 1.1521553774806321,
+        "50th_latency": 1.0599152592081929,
+        "90th_latency": 1.1599114680491611,
+        "95th_latency": 1.3663193336251465,
+        "99th_latency": 1.2707632994945668
+      }
+    },
+    "infer": {
+      "local": {
+        "walker_level": {
+          "throughput": 1.9004403894746849,
+          "average_latency": 524.5939183235168,
+          "50th_latency": 511.8105411529541,
+          "90th_latency": 579.5377016067506,
+          "95th_latency": 600.0003337860107,
+          "99th_latency": 644.7615885734559
+        },
+        "action_level": {
+          "std.time_now": 9.667873382568359e-06,
+          "bi_enc.infer": 0.522156093120575
+        }
+      },
+      "remote": {
+        "walker_level": {
+          "throughput": 1.4923184720643108,
+          "average_latency": 668.2331800460815,
+          "50th_latency": 584.7101211547852,
+          "90th_latency": 817.3036098480227,
+          "95th_latency": 1038.3939385414121,
+          "99th_latency": 1293.2521557807997
+        },
+        "action_level": {
+          "std.time_now": 9.245872497558594e-06,
+          "bi_enc.infer": 0.6656485962867736
+        }
+      },
+      "remote_over_local": {
+        "throughput": 0.7852487667223352,
+        "average_latency": 1.2738103830513385,
+        "50th_latency": 1.142434698272549,
+        "90th_latency": 1.4102682320443922,
+        "95th_latency": 1.7306556014546381,
+        "99th_latency": 2.0057834999788655
+      }
+    },
+    "get_context_emb": {
+      "local": {
+        "walker_level": {
+          "throughput": 3.7429061163264628,
+          "average_latency": 265.3905510902405,
+          "50th_latency": 254.88412380218506,
+          "90th_latency": 302.814817428589,
+          "95th_latency": 330.8613896369934,
+          "99th_latency": 370.0569796562196
+        },
+        "action_level": {
+          "std.time_now": 1.042485237121582e-05,
+          "bi_enc.get_context_emb": 0.2628356575965881
+        }
+      },
+      "remote": {
+        "walker_level": {
+          "throughput": 3.583882263867816,
+          "average_latency": 277.4273920059204,
+          "50th_latency": 267.4131393432617,
+          "90th_latency": 305.17759323120123,
+          "95th_latency": 364.4973397254944,
+          "99th_latency": 388.8916754722597
+        },
+        "action_level": {
+          "std.time_now": 8.333921432495117e-06,
+          "bi_enc.get_context_emb": 0.2752037739753723
+        }
+      },
+      "remote_over_local": {
+        "throughput": 0.9575132670934522,
+        "average_latency": 1.0453551977123219,
+        "50th_latency": 1.0491557314523066,
+        "90th_latency": 1.0078027086741534,
+        "95th_latency": 1.1016617566812643,
+        "99th_latency": 1.0508967452351186
+      }
+    },
+    "cosine_sim": {
+      "local": {
+        "walker_level": {
+          "throughput": 164.00701808443208,
+          "average_latency": 4.292688369750977,
+          "50th_latency": 3.642559051513672,
+          "90th_latency": 4.836535453796387,
+          "95th_latency": 5.725610256195066,
+          "99th_latency": 13.542568683624367
+        },
+        "action_level": {
+          "std.time_now": 7.23123550415039e-06,
+          "bi_enc.cosine_sim": 0.0001419544219970703
+        }
+      },
+      "remote": {
+        "walker_level": {
+          "throughput": 92.53127723176368,
+          "average_latency": 9.31849718093872,
+          "50th_latency": 9.127497673034668,
+          "90th_latency": 10.444974899291992,
+          "95th_latency": 10.633504390716551,
+          "99th_latency": 11.898930072784424
+        },
+        "action_level": {
+          "std.time_now": 6.2155723571777344e-06,
+          "bi_enc.cosine_sim": 0.006075499057769776
+        }
+      },
+      "remote_over_local": {
+        "throughput": 0.5641909615363403,
+        "average_latency": 2.1707835226527976,
+        "50th_latency": 2.5057926430161017,
+        "90th_latency": 2.1595985388866157,
+        "95th_latency": 1.857182713268194,
+        "99th_latency": 0.878631694677877
+      }
+    }
+  }
+}
