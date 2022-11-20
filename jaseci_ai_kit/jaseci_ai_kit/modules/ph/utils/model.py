@@ -33,6 +33,35 @@ class PHClassifier(BaseModel):
         return x.squeeze(1)
 
 
+class PHVector2Vector(BaseModel):
+    def __init__(
+        self,
+        embedding_length,
+        ph_nhead,
+        ph_ff_dim,
+        batch_first,
+        ph_nlayers,
+        n_classes,
+    ):
+        super().__init__()
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=embedding_length,
+            nhead=ph_nhead,
+            dim_feedforward=ph_ff_dim,
+            batch_first=batch_first,
+        )
+        self.encoder = nn.TransformerEncoder(
+            encoder_layer=encoder_layer, num_layers=ph_nlayers
+        )
+        self.decoder = nn.Linear(embedding_length, n_classes)
+        nn.init.xavier_uniform_(self.decoder.weight)
+
+    def forward(self, emb):
+        x = self.encoder(emb)
+        x = self.decoder(x)
+        return x
+
+
 class CustomModel(BaseModel):
     def __init__(self, python_file: str, module_name: str, **kwargs):
         super().__init__()

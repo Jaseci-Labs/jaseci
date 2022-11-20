@@ -22,7 +22,13 @@ walker test_predict {
 
 walker test_train {
     can ph.train_head;
-    ph.train_head('test_head');
+    ph.train_head('test_head', {
+        "Trainer":{
+            "trainer":{
+                "epochs": 3
+            }
+        }
+    });
 }
 
 walker test_predict_trained {
