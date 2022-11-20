@@ -1,0 +1,235 @@
+{
+  "sentence_pairing": {
+    "all_remote": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.005521827171671647,
+            "average_latency": 0.0896453857421875,
+            "50th_latency": 0.0896453857421875,
+            "90th_latency": 0.0896453857421875,
+            "95th_latency": 0.0896453857421875,
+            "99th_latency": 0.0896453857421875
+          },
+          "all": {
+            "throughput": 0.005521827171671647,
+            "average_latency": 0.0896453857421875,
+            "50th_latency": 0.0896453857421875,
+            "90th_latency": 0.0896453857421875,
+            "95th_latency": 0.0896453857421875,
+            "99th_latency": 0.0896453857421875
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.005521827171671647,
+            "average_latency": 0.09703636169433594,
+            "50th_latency": 0.09703636169433594,
+            "90th_latency": 0.09703636169433594,
+            "95th_latency": 0.09703636169433594,
+            "99th_latency": 0.09703636169433594
+          },
+          "all": {
+            "throughput": 0.005521827171671647,
+            "average_latency": 0.09703636169433594,
+            "50th_latency": 0.09703636169433594,
+            "90th_latency": 0.09703636169433594,
+            "95th_latency": 0.09703636169433594,
+            "99th_latency": 0.09703636169433594
+          }
+        },
+        "walker_run": {
+          "sentence_pairing": {
+            "throughput": 0.7730558040340306,
+            "average_latency": 1292.0772297041756,
+            "50th_latency": 1281.8381786346436,
+            "90th_latency": 1358.8348388671875,
+            "95th_latency": 1405.0540566444397,
+            "99th_latency": 1425.9592628479004
+          },
+          "all": {
+            "throughput": 0.7730558040340306,
+            "average_latency": 1292.0772297041756,
+            "50th_latency": 1281.8381786346436,
+            "90th_latency": 1358.8348388671875,
+            "95th_latency": 1405.0540566444397,
+            "99th_latency": 1425.9592628479004
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668917404.1242611,
+          "actions_calls": {
+            "bi_enc.infer": 1.2257394790649414,
+            "use.cos_sim_score": 0.00521430356161935
+          }
+        }
+      ]
+    },
+    "all_local": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.005554018423971026,
+            "average_latency": 0.16379356384277344,
+            "50th_latency": 0.16379356384277344,
+            "90th_latency": 0.16379356384277344,
+            "95th_latency": 0.16379356384277344,
+            "99th_latency": 0.16379356384277344
+          },
+          "all": {
+            "throughput": 0.005554018423971026,
+            "average_latency": 0.16379356384277344,
+            "50th_latency": 0.16379356384277344,
+            "90th_latency": 0.16379356384277344,
+            "95th_latency": 0.16379356384277344,
+            "99th_latency": 0.16379356384277344
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.005554018423971026,
+            "average_latency": 0.17881393432617188,
+            "50th_latency": 0.17881393432617188,
+            "90th_latency": 0.17881393432617188,
+            "95th_latency": 0.17881393432617188,
+            "99th_latency": 0.17881393432617188
+          },
+          "all": {
+            "throughput": 0.005554018423971026,
+            "average_latency": 0.17881393432617188,
+            "50th_latency": 0.17881393432617188,
+            "90th_latency": 0.17881393432617188,
+            "95th_latency": 0.17881393432617188,
+            "99th_latency": 0.17881393432617188
+          }
+        },
+        "walker_run": {
+          "sentence_pairing": {
+            "throughput": 0.7720085609319726,
+            "average_latency": 1293.6891600382414,
+            "50th_latency": 1278.825283050537,
+            "90th_latency": 1379.4891834259033,
+            "95th_latency": 1407.2089433670044,
+            "99th_latency": 1459.0495920181274
+          },
+          "all": {
+            "throughput": 0.7720085609319726,
+            "average_latency": 1293.6891600382414,
+            "50th_latency": 1278.825283050537,
+            "90th_latency": 1379.4891834259033,
+            "95th_latency": 1407.2089433670044,
+            "99th_latency": 1459.0495920181274
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668917607.8908246,
+          "actions_calls": {
+            "bi_enc.infer": 1.2804470679742828,
+            "use.cos_sim_score": 5.197199128514571e-05
+          }
+        }
+      ]
+    },
+    "evaluation-mem-8192": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.003331168074825961,
+            "average_latency": 0.11754035949707031,
+            "50th_latency": 0.11754035949707031,
+            "90th_latency": 0.11754035949707031,
+            "95th_latency": 0.11754035949707031,
+            "99th_latency": 0.11754035949707031
+          },
+          "all": {
+            "throughput": 0.003331168074825961,
+            "average_latency": 0.11754035949707031,
+            "50th_latency": 0.11754035949707031,
+            "90th_latency": 0.11754035949707031,
+            "95th_latency": 0.11754035949707031,
+            "99th_latency": 0.11754035949707031
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.003331168074825961,
+            "average_latency": 0.10752677917480469,
+            "50th_latency": 0.10752677917480469,
+            "90th_latency": 0.10752677917480469,
+            "95th_latency": 0.10752677917480469,
+            "99th_latency": 0.10752677917480469
+          },
+          "all": {
+            "throughput": 0.003331168074825961,
+            "average_latency": 0.10752677917480469,
+            "50th_latency": 0.10752677917480469,
+            "90th_latency": 0.10752677917480469,
+            "95th_latency": 0.10752677917480469,
+            "99th_latency": 0.10752677917480469
+          }
+        },
+        "walker_run": {
+          "sentence_pairing": {
+            "throughput": 0.7661686572099711,
+            "average_latency": 1303.64903367084,
+            "50th_latency": 1291.5928363800049,
+            "90th_latency": 1375.5839586257935,
+            "95th_latency": 1401.4821648597717,
+            "99th_latency": 1442.2679734230044
+          },
+          "all": {
+            "throughput": 0.7661686572099711,
+            "average_latency": 1303.64903367084,
+            "50th_latency": 1291.5928363800049,
+            "90th_latency": 1375.5839586257935,
+            "95th_latency": 1401.4821648597717,
+            "99th_latency": 1442.2679734230044
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668917820.0663424,
+          "actions_calls": {
+            "bi_enc.infer": 1.3393659591674805,
+            "use.cos_sim_score": 0.005106186866760254
+          }
+        },
+        {
+          "ts": 1668917822.213859,
+          "actions_state": {
+            "use_enc": {
+              "mode": "module"
+            },
+            "bi_enc": {
+              "mode": "module"
+            }
+          },
+          "actions_calls": {
+            "bi_enc.infer": 1.2717685848474503,
+            "use.cos_sim_score": 5.079507827758789e-05
+          }
+        },
+        {
+          "ts": 1668917842.2359707,
+          "actions_state": {
+            "use_enc": {
+              "mode": "module"
+            },
+            "bi_enc": {
+              "mode": "remote"
+            }
+          },
+          "actions_calls": {
+            "bi_enc.infer": 1.2417908319285218,
+            "use.cos_sim_score": 0.004850386789706951
+          }
+        }
+      ]
+    }
+  }
+}

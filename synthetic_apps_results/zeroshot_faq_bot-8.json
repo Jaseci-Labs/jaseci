@@ -1,0 +1,245 @@
+{
+  "zeroshot_faq_bot": {
+    "all_remote": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.005548176630388543,
+            "average_latency": 0.10228157043457031,
+            "50th_latency": 0.10228157043457031,
+            "90th_latency": 0.10228157043457031,
+            "95th_latency": 0.10228157043457031,
+            "99th_latency": 0.10228157043457031
+          },
+          "all": {
+            "throughput": 0.005548176630388543,
+            "average_latency": 0.10228157043457031,
+            "50th_latency": 0.10228157043457031,
+            "90th_latency": 0.10228157043457031,
+            "95th_latency": 0.10228157043457031,
+            "99th_latency": 0.10228157043457031
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.005548176630388543,
+            "average_latency": 0.11181831359863281,
+            "50th_latency": 0.11181831359863281,
+            "90th_latency": 0.11181831359863281,
+            "95th_latency": 0.11181831359863281,
+            "99th_latency": 0.11181831359863281
+          },
+          "all": {
+            "throughput": 0.005548176630388543,
+            "average_latency": 0.11181831359863281,
+            "50th_latency": 0.11181831359863281,
+            "90th_latency": 0.11181831359863281,
+            "95th_latency": 0.11181831359863281,
+            "99th_latency": 0.11181831359863281
+          }
+        },
+        "walker_run": {
+          "zeroshot_faq_bot": {
+            "throughput": 1.625615752703843,
+            "average_latency": 609.9232683409604,
+            "50th_latency": 594.743013381958,
+            "90th_latency": 645.7472324371338,
+            "95th_latency": 667.3313617706299,
+            "99th_latency": 697.1066856384277
+          },
+          "all": {
+            "throughput": 1.625615752703843,
+            "average_latency": 609.9232683409604,
+            "50th_latency": 594.743013381958,
+            "90th_latency": 645.7472324371338,
+            "95th_latency": 667.3313617706299,
+            "99th_latency": 697.1066856384277
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668922307.5879805,
+          "actions_calls": {
+            "text_seg.get_segments": 0.3759449293182165,
+            "use.answer_encode": 0.11974143900562065,
+            "use.question_encode": 0.058338627473486164,
+            "use.cos_sim_score": 0.005777303766562354
+          }
+        }
+      ]
+    },
+    "all_local": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.005551319058750882,
+            "average_latency": 0.09441375732421875,
+            "50th_latency": 0.09441375732421875,
+            "90th_latency": 0.09441375732421875,
+            "95th_latency": 0.09441375732421875,
+            "99th_latency": 0.09441375732421875
+          },
+          "all": {
+            "throughput": 0.005551319058750882,
+            "average_latency": 0.09441375732421875,
+            "50th_latency": 0.09441375732421875,
+            "90th_latency": 0.09441375732421875,
+            "95th_latency": 0.09441375732421875,
+            "99th_latency": 0.09441375732421875
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.005551319058750882,
+            "average_latency": 0.09894371032714844,
+            "50th_latency": 0.09894371032714844,
+            "90th_latency": 0.09894371032714844,
+            "95th_latency": 0.09894371032714844,
+            "99th_latency": 0.09894371032714844
+          },
+          "all": {
+            "throughput": 0.005551319058750882,
+            "average_latency": 0.09894371032714844,
+            "50th_latency": 0.09894371032714844,
+            "90th_latency": 0.09894371032714844,
+            "95th_latency": 0.09894371032714844,
+            "99th_latency": 0.09894371032714844
+          }
+        },
+        "walker_run": {
+          "zeroshot_faq_bot": {
+            "throughput": 1.770870779741531,
+            "average_latency": 558.3471736190461,
+            "50th_latency": 540.5282974243164,
+            "90th_latency": 612.7675533294678,
+            "95th_latency": 637.9606485366821,
+            "99th_latency": 714.033989906311
+          },
+          "all": {
+            "throughput": 1.770870779741531,
+            "average_latency": 558.3471736190461,
+            "50th_latency": 540.5282974243164,
+            "90th_latency": 612.7675533294678,
+            "95th_latency": 637.9606485366821,
+            "99th_latency": 714.033989906311
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668922512.4487388,
+          "actions_calls": {
+            "text_seg.get_segments": 0.4016131084167098,
+            "use.answer_encode": 0.10253114909587609,
+            "use.question_encode": 0.0494647063431695,
+            "use.cos_sim_score": 0.00010781759835418945
+          }
+        }
+      ]
+    },
+    "evaluation-mem-8192": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.003332945278102495,
+            "average_latency": 0.12159347534179688,
+            "50th_latency": 0.12159347534179688,
+            "90th_latency": 0.12159347534179688,
+            "95th_latency": 0.12159347534179688,
+            "99th_latency": 0.12159347534179688
+          },
+          "all": {
+            "throughput": 0.003332945278102495,
+            "average_latency": 0.12159347534179688,
+            "50th_latency": 0.12159347534179688,
+            "90th_latency": 0.12159347534179688,
+            "95th_latency": 0.12159347534179688,
+            "99th_latency": 0.12159347534179688
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.003332945278102495,
+            "average_latency": 0.08559226989746094,
+            "50th_latency": 0.08559226989746094,
+            "90th_latency": 0.08559226989746094,
+            "95th_latency": 0.08559226989746094,
+            "99th_latency": 0.08559226989746094
+          },
+          "all": {
+            "throughput": 0.003332945278102495,
+            "average_latency": 0.08559226989746094,
+            "50th_latency": 0.08559226989746094,
+            "90th_latency": 0.08559226989746094,
+            "95th_latency": 0.08559226989746094,
+            "99th_latency": 0.08559226989746094
+          }
+        },
+        "walker_run": {
+          "zeroshot_faq_bot": {
+            "throughput": 1.6798044201636575,
+            "average_latency": 585.3379520158919,
+            "50th_latency": 572.6293325424194,
+            "90th_latency": 632.0920944213867,
+            "95th_latency": 652.0415782928466,
+            "99th_latency": 689.0859460830688
+          },
+          "all": {
+            "throughput": 1.6798044201636575,
+            "average_latency": 585.3379520158919,
+            "50th_latency": 572.6293325424194,
+            "90th_latency": 632.0920944213867,
+            "95th_latency": 652.0415782928466,
+            "99th_latency": 689.0859460830688
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668922724.7138731,
+          "actions_calls": {
+            "text_seg.get_segments": 0.39106353123982746,
+            "use.answer_encode": 0.8319348096847534,
+            "use.question_encode": 0.7579243183135986,
+            "use.cos_sim_score": 0.006246818436516656
+          }
+        },
+        {
+          "ts": 1668922729.205171,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module"
+            },
+            "use_qa": {
+              "mode": "module"
+            }
+          },
+          "actions_calls": {
+            "use.answer_encode": 0.09137013084010075,
+            "use.question_encode": 0.03861787444666812,
+            "use.cos_sim_score": 0.00010690354464346903,
+            "text_seg.get_segments": 0.39213825560904836
+          }
+        },
+        {
+          "ts": 1668922749.2244685,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module"
+            },
+            "use_qa": {
+              "mode": "remote"
+            }
+          },
+          "actions_calls": {
+            "text_seg.get_segments": 0.3691762228464258,
+            "use.answer_encode": 0.10836278004892941,
+            "use.question_encode": 0.05016246026959913,
+            "use.cos_sim_score": 0.005796951523685821
+          }
+        }
+      ]
+    }
+  }
+}

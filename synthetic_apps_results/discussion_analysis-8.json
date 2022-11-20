@@ -1,0 +1,243 @@
+{
+  "discussion_analysis": {
+    "all_remote": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.005461580114261882,
+            "average_latency": 0.1068115234375,
+            "50th_latency": 0.1068115234375,
+            "90th_latency": 0.1068115234375,
+            "95th_latency": 0.1068115234375,
+            "99th_latency": 0.1068115234375
+          },
+          "all": {
+            "throughput": 0.005461580114261882,
+            "average_latency": 0.1068115234375,
+            "50th_latency": 0.1068115234375,
+            "90th_latency": 0.1068115234375,
+            "95th_latency": 0.1068115234375,
+            "99th_latency": 0.1068115234375
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.005461580114261882,
+            "average_latency": 0.0820159912109375,
+            "50th_latency": 0.0820159912109375,
+            "90th_latency": 0.0820159912109375,
+            "95th_latency": 0.0820159912109375,
+            "99th_latency": 0.0820159912109375
+          },
+          "all": {
+            "throughput": 0.005461580114261882,
+            "average_latency": 0.0820159912109375,
+            "50th_latency": 0.0820159912109375,
+            "90th_latency": 0.0820159912109375,
+            "95th_latency": 0.0820159912109375,
+            "99th_latency": 0.0820159912109375
+          }
+        },
+        "walker_run": {
+          "discussion_analysis": {
+            "throughput": 0.15838582331359458,
+            "average_latency": 6307.865915627315,
+            "50th_latency": 6293.777704238892,
+            "90th_latency": 6474.259328842163,
+            "95th_latency": 6492.528438568115,
+            "99th_latency": 6528.785133361816
+          },
+          "all": {
+            "throughput": 0.15838582331359458,
+            "average_latency": 6307.865915627315,
+            "50th_latency": 6293.777704238892,
+            "90th_latency": 6474.259328842163,
+            "95th_latency": 6492.528438568115,
+            "99th_latency": 6528.785133361816
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668919843.3564131,
+          "actions_calls": {
+            "cl_summer.summarize": 0.018016642537610286,
+            "bi_enc.get_context_emb": 5.239462293427566,
+            "bi_enc.get_candidate_emb": 0.38059847108249006,
+            "bi_enc.dot_prod": 0.010362324195281365
+          }
+        }
+      ]
+    },
+    "all_local": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.0055336701905947605,
+            "average_latency": 0.11563301086425781,
+            "50th_latency": 0.11563301086425781,
+            "90th_latency": 0.11563301086425781,
+            "95th_latency": 0.11563301086425781,
+            "99th_latency": 0.11563301086425781
+          },
+          "all": {
+            "throughput": 0.0055336701905947605,
+            "average_latency": 0.11563301086425781,
+            "50th_latency": 0.11563301086425781,
+            "90th_latency": 0.11563301086425781,
+            "95th_latency": 0.11563301086425781,
+            "99th_latency": 0.11563301086425781
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.0055336701905947605,
+            "average_latency": 0.08916854858398438,
+            "50th_latency": 0.08916854858398438,
+            "90th_latency": 0.08916854858398438,
+            "95th_latency": 0.08916854858398438,
+            "99th_latency": 0.08916854858398438
+          },
+          "all": {
+            "throughput": 0.0055336701905947605,
+            "average_latency": 0.08916854858398438,
+            "50th_latency": 0.08916854858398438,
+            "90th_latency": 0.08916854858398438,
+            "95th_latency": 0.08916854858398438,
+            "99th_latency": 0.08916854858398438
+          }
+        },
+        "walker_run": {
+          "discussion_analysis": {
+            "throughput": 0.16601010571784283,
+            "average_latency": 6011.126120885213,
+            "50th_latency": 5986.517310142517,
+            "90th_latency": 6303.226375579834,
+            "95th_latency": 6332.849442958832,
+            "99th_latency": 6368.159704208374
+          },
+          "all": {
+            "throughput": 0.16601010571784283,
+            "average_latency": 6011.126120885213,
+            "50th_latency": 5986.517310142517,
+            "90th_latency": 6303.226375579834,
+            "95th_latency": 6332.849442958832,
+            "99th_latency": 6368.159704208374
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668920045.1703644,
+          "actions_calls": {
+            "cl_summer.summarize": 0.013174486160278321,
+            "bi_enc.get_context_emb": 5.615450851122538,
+            "bi_enc.get_candidate_emb": 0.36641293366750083,
+            "bi_enc.dot_prod": 7.989797642622045e-05
+          }
+        }
+      ]
+    },
+    "evaluation-mem-8192": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.0033223637267394365,
+            "average_latency": 0.11873245239257812,
+            "50th_latency": 0.11873245239257812,
+            "90th_latency": 0.11873245239257812,
+            "95th_latency": 0.11873245239257812,
+            "99th_latency": 0.11873245239257812
+          },
+          "all": {
+            "throughput": 0.0033223637267394365,
+            "average_latency": 0.11873245239257812,
+            "50th_latency": 0.11873245239257812,
+            "90th_latency": 0.11873245239257812,
+            "95th_latency": 0.11873245239257812,
+            "99th_latency": 0.11873245239257812
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.0033223637267394365,
+            "average_latency": 0.13637542724609375,
+            "50th_latency": 0.13637542724609375,
+            "90th_latency": 0.13637542724609375,
+            "95th_latency": 0.13637542724609375,
+            "99th_latency": 0.13637542724609375
+          },
+          "all": {
+            "throughput": 0.0033223637267394365,
+            "average_latency": 0.13637542724609375,
+            "50th_latency": 0.13637542724609375,
+            "90th_latency": 0.13637542724609375,
+            "95th_latency": 0.13637542724609375,
+            "99th_latency": 0.13637542724609375
+          }
+        },
+        "walker_run": {
+          "discussion_analysis": {
+            "throughput": 0.16279582261023237,
+            "average_latency": 6137.1992023623725,
+            "50th_latency": 6193.974733352661,
+            "90th_latency": 6306.845855712891,
+            "95th_latency": 6357.555866241454,
+            "99th_latency": 6485.497989654541
+          },
+          "all": {
+            "throughput": 0.16279582261023237,
+            "average_latency": 6137.1992023623725,
+            "50th_latency": 6193.974733352661,
+            "90th_latency": 6306.845855712891,
+            "95th_latency": 6357.555866241454,
+            "99th_latency": 6485.497989654541
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668920258.0120947,
+          "actions_calls": {
+            "cl_summer.summarize": 0.0408935546875,
+            "bi_enc.get_context_emb": 5.238403797149658
+          }
+        },
+        {
+          "ts": 1668920263.6098192,
+          "actions_state": {
+            "bi_enc": {
+              "mode": "module"
+            },
+            "cl_summer": {
+              "mode": "module"
+            }
+          },
+          "actions_calls": {
+            "bi_enc.get_candidate_emb": 0.3604106307029724,
+            "bi_enc.dot_prod": 7.646140598115467e-05,
+            "cl_summer.summarize": 0.011818647384643555,
+            "bi_enc.get_context_emb": 5.28708799680074
+          }
+        },
+        {
+          "ts": 1668920283.6259942,
+          "actions_state": {
+            "bi_enc": {
+              "mode": "module"
+            },
+            "cl_summer": {
+              "mode": "remote"
+            }
+          },
+          "actions_calls": {
+            "bi_enc.get_context_emb": 5.1557138866848415,
+            "bi_enc.get_candidate_emb": 0.3789215882619222,
+            "bi_enc.dot_prod": 0.009675771723348627,
+            "cl_summer.summarize": 0.016937353394248268
+          }
+        }
+      ]
+    }
+  }
+}

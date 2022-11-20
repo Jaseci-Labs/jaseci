@@ -1,0 +1,262 @@
+{
+  "restaurant_chatbot": {
+    "all_remote": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.0055354137758961515,
+            "average_latency": 0.08893013000488281,
+            "50th_latency": 0.08893013000488281,
+            "90th_latency": 0.08893013000488281,
+            "95th_latency": 0.08893013000488281,
+            "99th_latency": 0.08893013000488281
+          },
+          "all": {
+            "throughput": 0.0055354137758961515,
+            "average_latency": 0.08893013000488281,
+            "50th_latency": 0.08893013000488281,
+            "90th_latency": 0.08893013000488281,
+            "95th_latency": 0.08893013000488281,
+            "99th_latency": 0.08893013000488281
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.0055354137758961515,
+            "average_latency": 0.08940696716308594,
+            "50th_latency": 0.08940696716308594,
+            "90th_latency": 0.08940696716308594,
+            "95th_latency": 0.08940696716308594,
+            "99th_latency": 0.08940696716308594
+          },
+          "all": {
+            "throughput": 0.0055354137758961515,
+            "average_latency": 0.08940696716308594,
+            "50th_latency": 0.08940696716308594,
+            "90th_latency": 0.08940696716308594,
+            "95th_latency": 0.08940696716308594,
+            "99th_latency": 0.08940696716308594
+          }
+        },
+        "walker_run": {
+          "restaurant_chatbot": {
+            "throughput": 1.2122556169212573,
+            "average_latency": 819.725625591191,
+            "50th_latency": 809.1392517089844,
+            "90th_latency": 856.3904762268066,
+            "95th_latency": 893.9359903335571,
+            "99th_latency": 949.1922378540039
+          },
+          "all": {
+            "throughput": 1.2122556169212573,
+            "average_latency": 819.725625591191,
+            "50th_latency": 809.1392517089844,
+            "90th_latency": 856.3904762268066,
+            "95th_latency": 893.9359903335571,
+            "99th_latency": 949.1922378540039
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668925723.412319,
+          "actions_calls": {
+            "bi_enc.get_context_emb": 0.2416977305390519,
+            "bi_enc.get_candidate_emb": 0.44340139110338744,
+            "bi_enc.dot_prod": 0.009888209890194316,
+            "tfm_ner.extract_entity": 0.10208346854606176
+          }
+        }
+      ]
+    },
+    "all_local": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.005549972184798646,
+            "average_latency": 0.29850006103515625,
+            "50th_latency": 0.29850006103515625,
+            "90th_latency": 0.29850006103515625,
+            "95th_latency": 0.29850006103515625,
+            "99th_latency": 0.29850006103515625
+          },
+          "all": {
+            "throughput": 0.005549972184798646,
+            "average_latency": 0.29850006103515625,
+            "50th_latency": 0.29850006103515625,
+            "90th_latency": 0.29850006103515625,
+            "95th_latency": 0.29850006103515625,
+            "99th_latency": 0.29850006103515625
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.005549972184798646,
+            "average_latency": 0.33020973205566406,
+            "50th_latency": 0.33020973205566406,
+            "90th_latency": 0.33020973205566406,
+            "95th_latency": 0.33020973205566406,
+            "99th_latency": 0.33020973205566406
+          },
+          "all": {
+            "throughput": 0.005549972184798646,
+            "average_latency": 0.33020973205566406,
+            "50th_latency": 0.33020973205566406,
+            "90th_latency": 0.33020973205566406,
+            "95th_latency": 0.33020973205566406,
+            "99th_latency": 0.33020973205566406
+          }
+        },
+        "walker_run": {
+          "restaurant_chatbot": {
+            "throughput": 1.2431937693948967,
+            "average_latency": 798.7161087138312,
+            "50th_latency": 784.2532396316528,
+            "90th_latency": 860.647702217102,
+            "95th_latency": 880.6576371192932,
+            "99th_latency": 938.0777287483215
+          },
+          "all": {
+            "throughput": 1.2431937693948967,
+            "average_latency": 798.7161087138312,
+            "50th_latency": 784.2532396316528,
+            "90th_latency": 860.647702217102,
+            "95th_latency": 880.6576371192932,
+            "99th_latency": 938.0777287483215
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668925926.5072646,
+          "actions_calls": {
+            "bi_enc.get_context_emb": 0.24637792259454727,
+            "bi_enc.get_candidate_emb": 0.4359688652413232,
+            "bi_enc.dot_prod": 0.00013713219336100986,
+            "tfm_ner.extract_entity": 0.11210440844297409
+          }
+        }
+      ]
+    },
+    "evaluation-mem-4096": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.003326257098125796,
+            "average_latency": 0.10395050048828125,
+            "50th_latency": 0.10395050048828125,
+            "90th_latency": 0.10395050048828125,
+            "95th_latency": 0.10395050048828125,
+            "99th_latency": 0.10395050048828125
+          },
+          "all": {
+            "throughput": 0.003326257098125796,
+            "average_latency": 0.10395050048828125,
+            "50th_latency": 0.10395050048828125,
+            "90th_latency": 0.10395050048828125,
+            "95th_latency": 0.10395050048828125,
+            "99th_latency": 0.10395050048828125
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.003326257098125796,
+            "average_latency": 0.11420249938964844,
+            "50th_latency": 0.11420249938964844,
+            "90th_latency": 0.11420249938964844,
+            "95th_latency": 0.11420249938964844,
+            "99th_latency": 0.11420249938964844
+          },
+          "all": {
+            "throughput": 0.003326257098125796,
+            "average_latency": 0.11420249938964844,
+            "50th_latency": 0.11420249938964844,
+            "90th_latency": 0.11420249938964844,
+            "95th_latency": 0.11420249938964844,
+            "99th_latency": 0.11420249938964844
+          }
+        },
+        "walker_run": {
+          "restaurant_chatbot": {
+            "throughput": 1.1043173565777644,
+            "average_latency": 896.2920164487448,
+            "50th_latency": 819.2648887634277,
+            "90th_latency": 887.1186494827272,
+            "95th_latency": 915.0044202804564,
+            "99th_latency": 2314.36654090881
+          },
+          "all": {
+            "throughput": 1.1043173565777644,
+            "average_latency": 896.2920164487448,
+            "50th_latency": 819.2648887634277,
+            "90th_latency": 887.1186494827272,
+            "95th_latency": 915.0044202804564,
+            "99th_latency": 2314.36654090881
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668926150.9051878,
+          "actions_calls": {
+            "bi_enc.get_context_emb": 0.25082260370254517,
+            "bi_enc.get_candidate_emb": 0.4525030526247891,
+            "bi_enc.dot_prod": 0.010252063924616034,
+            "tfm_ner.extract_entity": 0.10813138701698997
+          }
+        },
+        {
+          "ts": 1668926160.721049,
+          "actions_state": {
+            "bi_enc": {
+              "mode": "module"
+            },
+            "tfm_ner": {
+              "mode": "remote"
+            }
+          },
+          "actions_calls": {
+            "bi_enc.get_candidate_emb": 0.44556282247815815,
+            "bi_enc.dot_prod": 0.02115123328708467,
+            "tfm_ner.extract_entity": 0.11406408888953072,
+            "bi_enc.get_context_emb": 0.42512121370860506
+          }
+        },
+        {
+          "ts": 1668926192.7236364,
+          "actions_state": {
+            "bi_enc": {
+              "mode": "remote"
+            },
+            "tfm_ner": {
+              "mode": "module"
+            }
+          },
+          "actions_calls": {
+            "bi_enc.get_candidate_emb": 0.4906728744506836,
+            "bi_enc.dot_prod": 0.06575596332550049,
+            "tfm_ner.extract_entity": 0.3739062588790367,
+            "bi_enc.get_context_emb": 0.24702840015806002
+          }
+        },
+        {
+          "ts": 1668926231.467077,
+          "actions_state": {
+            "bi_enc": {
+              "mode": "remote"
+            },
+            "tfm_ner": {
+              "mode": "remote"
+            }
+          },
+          "actions_calls": {
+            "tfm_ner.extract_entity": 0.1112727468663996,
+            "bi_enc.get_context_emb": 0.24465950269662834,
+            "bi_enc.get_candidate_emb": 0.44527108043772184,
+            "bi_enc.dot_prod": 0.010350428606620759
+          }
+        }
+      ]
+    }
+  }
+}

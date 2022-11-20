@@ -83,7 +83,10 @@ class ActionsState:
         return self.state[name]["remote"].get("url", None)
 
     def get_all_state(self):
-        return copy.deepcopy(self.state)
+        ret = {}
+        for name, state in self.state.items():
+            ret[name] = {"mode": state["mode"]}
+        return ret
 
     def get_state(self, name):
         return self.state.get(name, None)

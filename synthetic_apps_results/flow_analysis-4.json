@@ -1,0 +1,271 @@
+{
+  "flow_analysis": {
+    "all_remote": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.005401960129301497,
+            "average_latency": 0.10418891906738281,
+            "50th_latency": 0.10418891906738281,
+            "90th_latency": 0.10418891906738281,
+            "95th_latency": 0.10418891906738281,
+            "99th_latency": 0.10418891906738281
+          },
+          "all": {
+            "throughput": 0.005401960129301497,
+            "average_latency": 0.10418891906738281,
+            "50th_latency": 0.10418891906738281,
+            "90th_latency": 0.10418891906738281,
+            "95th_latency": 0.10418891906738281,
+            "99th_latency": 0.10418891906738281
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.005401960129301497,
+            "average_latency": 0.1437664031982422,
+            "50th_latency": 0.1437664031982422,
+            "90th_latency": 0.1437664031982422,
+            "95th_latency": 0.1437664031982422,
+            "99th_latency": 0.1437664031982422
+          },
+          "all": {
+            "throughput": 0.005401960129301497,
+            "average_latency": 0.1437664031982422,
+            "50th_latency": 0.1437664031982422,
+            "90th_latency": 0.1437664031982422,
+            "95th_latency": 0.1437664031982422,
+            "99th_latency": 0.1437664031982422
+          }
+        },
+        "walker_run": {
+          "flow_analysis": {
+            "throughput": 0.13504900323253743,
+            "average_latency": 7398.489103317261,
+            "50th_latency": 7384.257555007935,
+            "90th_latency": 7472.157764434814,
+            "95th_latency": 7527.644348144531,
+            "99th_latency": 7844.275808334351
+          },
+          "all": {
+            "throughput": 0.13504900323253743,
+            "average_latency": 7398.489103317261,
+            "50th_latency": 7384.257555007935,
+            "90th_latency": 7472.157764434814,
+            "95th_latency": 7527.644348144531,
+            "99th_latency": 7844.275808334351
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668928245.7924182,
+          "actions_calls": {
+            "text_seg.get_segments": 2.351288204193115,
+            "use.get_embedding": 0.028936786651611326,
+            "use.cos_sim_score": 0.006294448852539062,
+            "tfm_ner.extract_entity": 0.9961147918701172
+          }
+        }
+      ]
+    },
+    "all_local": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.005392425993096138,
+            "average_latency": 0.09274482727050781,
+            "50th_latency": 0.09274482727050781,
+            "90th_latency": 0.09274482727050781,
+            "95th_latency": 0.09274482727050781,
+            "99th_latency": 0.09274482727050781
+          },
+          "all": {
+            "throughput": 0.005392425993096138,
+            "average_latency": 0.09274482727050781,
+            "50th_latency": 0.09274482727050781,
+            "90th_latency": 0.09274482727050781,
+            "95th_latency": 0.09274482727050781,
+            "99th_latency": 0.09274482727050781
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.005392425993096138,
+            "average_latency": 0.08487701416015625,
+            "50th_latency": 0.08487701416015625,
+            "90th_latency": 0.08487701416015625,
+            "95th_latency": 0.08487701416015625,
+            "99th_latency": 0.08487701416015625
+          },
+          "all": {
+            "throughput": 0.005392425993096138,
+            "average_latency": 0.08487701416015625,
+            "50th_latency": 0.08487701416015625,
+            "90th_latency": 0.08487701416015625,
+            "95th_latency": 0.08487701416015625,
+            "99th_latency": 0.08487701416015625
+          }
+        },
+        "walker_run": {
+          "flow_analysis": {
+            "throughput": 0.12941822383430732,
+            "average_latency": 7720.713794231415,
+            "50th_latency": 7612.008213996887,
+            "90th_latency": 7959.117865562439,
+            "95th_latency": 8435.899698734282,
+            "99th_latency": 8697.767133712769
+          },
+          "all": {
+            "throughput": 0.12941822383430732,
+            "average_latency": 7720.713794231415,
+            "50th_latency": 7612.008213996887,
+            "90th_latency": 7959.117865562439,
+            "95th_latency": 8435.899698734282,
+            "99th_latency": 8697.767133712769
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668928453.965206,
+          "actions_calls": {
+            "text_seg.get_segments": 2.5075659652551017,
+            "use.get_embedding": 0.01625638206799825,
+            "use.cos_sim_score": 0.00019307533899943035,
+            "tfm_ner.extract_entity": 1.037829758723577
+          }
+        }
+      ]
+    },
+    "evaluation-mem-4096": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.003303843791452766,
+            "average_latency": 0.08225440979003906,
+            "50th_latency": 0.08225440979003906,
+            "90th_latency": 0.08225440979003906,
+            "95th_latency": 0.08225440979003906,
+            "99th_latency": 0.08225440979003906
+          },
+          "all": {
+            "throughput": 0.003303843791452766,
+            "average_latency": 0.08225440979003906,
+            "50th_latency": 0.08225440979003906,
+            "90th_latency": 0.08225440979003906,
+            "95th_latency": 0.08225440979003906,
+            "99th_latency": 0.08225440979003906
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.003303843791452766,
+            "average_latency": 0.08130073547363281,
+            "50th_latency": 0.08130073547363281,
+            "90th_latency": 0.08130073547363281,
+            "95th_latency": 0.08130073547363281,
+            "99th_latency": 0.08130073547363281
+          },
+          "all": {
+            "throughput": 0.003303843791452766,
+            "average_latency": 0.08130073547363281,
+            "50th_latency": 0.08130073547363281,
+            "90th_latency": 0.08130073547363281,
+            "95th_latency": 0.08130073547363281,
+            "99th_latency": 0.08130073547363281
+          }
+        },
+        "walker_run": {
+          "flow_analysis": {
+            "throughput": 0.11893837649229957,
+            "average_latency": 8398.792737060123,
+            "50th_latency": 7804.9328327178955,
+            "90th_latency": 8246.5341091156,
+            "95th_latency": 11705.79743385315,
+            "99th_latency": 17361.126351356495
+          },
+          "all": {
+            "throughput": 0.11893837649229957,
+            "average_latency": 8398.792737060123,
+            "50th_latency": 7804.9328327178955,
+            "90th_latency": 8246.5341091156,
+            "95th_latency": 11705.79743385315,
+            "99th_latency": 17361.126351356495
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668928684.2416701,
+          "actions_calls": {
+            "text_seg.get_segments": 2.4894585609436035,
+            "use.get_embedding": 0.23743224143981934,
+            "use.cos_sim_score": 0.008294916152954102,
+            "tfm_ner.extract_entity": 1.6810680389404298
+          }
+        },
+        {
+          "ts": 1668928703.4372194,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module"
+            },
+            "tfm_ner": {
+              "mode": "module"
+            },
+            "use_enc": {
+              "mode": "remote"
+            }
+          },
+          "actions_calls": {
+            "text_seg.get_segments": 3.9246479272842407,
+            "use.get_embedding": 0.038110196590423584,
+            "use.cos_sim_score": 0.006599254078335232,
+            "tfm_ner.extract_entity": 1.519769261865055
+          }
+        },
+        {
+          "ts": 1668928741.530119,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module"
+            },
+            "tfm_ner": {
+              "mode": "remote"
+            },
+            "use_enc": {
+              "mode": "module"
+            }
+          },
+          "actions_calls": {
+            "tfm_ner.extract_entity": 1.339122460438655,
+            "use.cos_sim_score": 0.0003171563148498535,
+            "text_seg.get_segments": 2.575211763381958,
+            "use.get_embedding": 0.08866119384765625
+          }
+        },
+        {
+          "ts": 1668928761.5540166,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module"
+            },
+            "tfm_ner": {
+              "mode": "remote"
+            },
+            "use_enc": {
+              "mode": "remote"
+            }
+          },
+          "actions_calls": {
+            "text_seg.get_segments": 2.369050387678475,
+            "use.get_embedding": 0.01809393126389076,
+            "use.cos_sim_score": 0.006425360975594356,
+            "tfm_ner.extract_entity": 1.0772343208049906
+          }
+        }
+      ]
+    }
+  }
+}

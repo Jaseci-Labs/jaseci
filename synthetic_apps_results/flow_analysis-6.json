@@ -1,0 +1,251 @@
+{
+  "flow_analysis": {
+    "all_remote": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.005395998263165117,
+            "average_latency": 0.08273124694824219,
+            "50th_latency": 0.08273124694824219,
+            "90th_latency": 0.08273124694824219,
+            "95th_latency": 0.08273124694824219,
+            "99th_latency": 0.08273124694824219
+          },
+          "all": {
+            "throughput": 0.005395998263165117,
+            "average_latency": 0.08273124694824219,
+            "50th_latency": 0.08273124694824219,
+            "90th_latency": 0.08273124694824219,
+            "95th_latency": 0.08273124694824219,
+            "99th_latency": 0.08273124694824219
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.005395998263165117,
+            "average_latency": 0.0820159912109375,
+            "50th_latency": 0.0820159912109375,
+            "90th_latency": 0.0820159912109375,
+            "95th_latency": 0.0820159912109375,
+            "99th_latency": 0.0820159912109375
+          },
+          "all": {
+            "throughput": 0.005395998263165117,
+            "average_latency": 0.0820159912109375,
+            "50th_latency": 0.0820159912109375,
+            "90th_latency": 0.0820159912109375,
+            "95th_latency": 0.0820159912109375,
+            "99th_latency": 0.0820159912109375
+          }
+        },
+        "walker_run": {
+          "flow_analysis": {
+            "throughput": 0.13489995657912793,
+            "average_latency": 7407.156820297241,
+            "50th_latency": 7371.859550476074,
+            "90th_latency": 7568.225860595703,
+            "95th_latency": 7690.58895111084,
+            "99th_latency": 7862.1866512298575
+          },
+          "all": {
+            "throughput": 0.13489995657912793,
+            "average_latency": 7407.156820297241,
+            "50th_latency": 7371.859550476074,
+            "90th_latency": 7568.225860595703,
+            "95th_latency": 7690.58895111084,
+            "99th_latency": 7862.1866512298575
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668929113.0326474,
+          "actions_calls": {
+            "text_seg.get_segments": 2.3469301414489747,
+            "use.get_embedding": 0.026149988174438477,
+            "use.cos_sim_score": 0.006367938995361328,
+            "tfm_ner.extract_entity": 0.999247880935669
+          }
+        }
+      ]
+    },
+    "all_local": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.0054300141430094016,
+            "average_latency": 0.5209445953369141,
+            "50th_latency": 0.5209445953369141,
+            "90th_latency": 0.5209445953369141,
+            "95th_latency": 0.5209445953369141,
+            "99th_latency": 0.5209445953369141
+          },
+          "all": {
+            "throughput": 0.0054300141430094016,
+            "average_latency": 0.5209445953369141,
+            "50th_latency": 0.5209445953369141,
+            "90th_latency": 0.5209445953369141,
+            "95th_latency": 0.5209445953369141,
+            "99th_latency": 0.5209445953369141
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.0054300141430094016,
+            "average_latency": 0.28896331787109375,
+            "50th_latency": 0.28896331787109375,
+            "90th_latency": 0.28896331787109375,
+            "95th_latency": 0.28896331787109375,
+            "99th_latency": 0.28896331787109375
+          },
+          "all": {
+            "throughput": 0.0054300141430094016,
+            "average_latency": 0.28896331787109375,
+            "50th_latency": 0.28896331787109375,
+            "90th_latency": 0.28896331787109375,
+            "95th_latency": 0.28896331787109375,
+            "99th_latency": 0.28896331787109375
+          }
+        },
+        "walker_run": {
+          "flow_analysis": {
+            "throughput": 0.12489032528921623,
+            "average_latency": 7999.600099480671,
+            "50th_latency": 7819.068908691406,
+            "90th_latency": 8221.22049331665,
+            "95th_latency": 8276.992583274841,
+            "99th_latency": 10780.910196304325
+          },
+          "all": {
+            "throughput": 0.12489032528921623,
+            "average_latency": 7999.600099480671,
+            "50th_latency": 7819.068908691406,
+            "90th_latency": 8221.22049331665,
+            "95th_latency": 8276.992583274841,
+            "99th_latency": 10780.910196304325
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668929320.720963,
+          "actions_calls": {
+            "text_seg.get_segments": 2.4977805925452192,
+            "use.get_embedding": 0.019327319186666737,
+            "use.cos_sim_score": 0.0002277436463729195,
+            "tfm_ner.extract_entity": 1.0943665359331214
+          }
+        }
+      ]
+    },
+    "evaluation-mem-6144": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 4.1328014335272506e-05,
+            "average_latency": 0.08320808410644531,
+            "50th_latency": 0.08320808410644531,
+            "90th_latency": 0.08320808410644531,
+            "95th_latency": 0.08320808410644531,
+            "99th_latency": 0.08320808410644531
+          },
+          "all": {
+            "throughput": 4.1328014335272506e-05,
+            "average_latency": 0.08320808410644531,
+            "50th_latency": 0.08320808410644531,
+            "90th_latency": 0.08320808410644531,
+            "95th_latency": 0.08320808410644531,
+            "99th_latency": 0.08320808410644531
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 4.1328014335272506e-05,
+            "average_latency": 0.10061264038085938,
+            "50th_latency": 0.10061264038085938,
+            "90th_latency": 0.10061264038085938,
+            "95th_latency": 0.10061264038085938,
+            "99th_latency": 0.10061264038085938
+          },
+          "all": {
+            "throughput": 4.1328014335272506e-05,
+            "average_latency": 0.10061264038085938,
+            "50th_latency": 0.10061264038085938,
+            "90th_latency": 0.10061264038085938,
+            "95th_latency": 0.10061264038085938,
+            "99th_latency": 0.10061264038085938
+          }
+        },
+        "walker_run": {
+          "flow_analysis": {
+            "throughput": 0.0011158563870523575,
+            "average_latency": 896106.001606694,
+            "50th_latency": 7748.65984916687,
+            "90th_latency": 10321.430492401125,
+            "95th_latency": 20225.482702255238,
+            "99th_latency": 17744825.15948292
+          },
+          "all": {
+            "throughput": 0.0011158563870523575,
+            "average_latency": 896106.001606694,
+            "50th_latency": 7748.65984916687,
+            "90th_latency": 10321.430492401125,
+            "95th_latency": 20225.482702255238,
+            "99th_latency": 17744825.15948292
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668929549.7911127,
+          "actions_calls": {
+            "text_seg.get_segments": 2.7159353494644165,
+            "use.get_embedding": 0.1399366855621338,
+            "use.cos_sim_score": 0.007217144966125489,
+            "tfm_ner.extract_entity": 1.411960530281067
+          }
+        },
+        {
+          "ts": 1668929573.0436273,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module"
+            },
+            "tfm_ner": {
+              "mode": "module"
+            },
+            "use_enc": {
+              "mode": "module"
+            }
+          },
+          "actions_calls": {
+            "text_seg.get_segments": 3.1490395863850913,
+            "use.get_embedding": 0.032569567362467446,
+            "use.cos_sim_score": 0.0001890858014424642,
+            "tfm_ner.extract_entity": 1.0514267574657092
+          }
+        },
+        {
+          "ts": 1668929593.0707166,
+          "actions_state": {
+            "text_seg": {
+              "mode": "module"
+            },
+            "tfm_ner": {
+              "mode": "module"
+            },
+            "use_enc": {
+              "mode": "remote"
+            }
+          },
+          "actions_calls": {
+            "tfm_ner.extract_entity": 1.2068197810859012,
+            "use.cos_sim_score": 0.008389781006669577,
+            "text_seg.get_segments": 1091.5769278027794,
+            "use.get_embedding": 0.01907424493269487
+          }
+        }
+      ]
+    }
+  }
+}

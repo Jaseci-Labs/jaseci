@@ -15,7 +15,7 @@ class JsOrcApi:
     """
 
     @Interface.admin_api()
-    def jsorc_loadtest(self, test: str, experiment: str = ""):
+    def jsorc_loadtest(self, test: str, experiment: str = "", mem: int = 0):
         """
         load test API. overwritten in jaseci_serv
         """

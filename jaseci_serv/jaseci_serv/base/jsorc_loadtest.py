@@ -42,7 +42,7 @@ class JsorcLoadTest:
 
         self.test = test
 
-    def run_test(self, experiment):
+    def run_test(self, experiment, mem):
         """
         Run the corresponding jsorc test
         """
@@ -51,7 +51,7 @@ class JsorcLoadTest:
         if experiment == "":
             return test_func()
         else:
-            return test_func(experiment)
+            return test_func(experiment, mem)
 
     def load_action(self, name, mode, wait_for_ready=False):
         """
@@ -109,22 +109,24 @@ class JsorcLoadTest:
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
 
-    def synthetic_apps(self):
+    def synthetic_apps(self, experiment, mem):
         """
         Run synthetic application
         """
         results = {}
+        node_mem = [int(mem) * 1024]
         # node_mem = [4 * 1024, 6 * 1024, 8 * 1024]
-        node_mem = [4 * 1024]
-        apps = [
-            # "sentence_pairing",
-            # "discussion_analysis",
-            "zeroshot_faq_bot",
-            # "flight_chatbot",
-            # "restaurant_chatbot",
-            # "virtual_assistant",
-            # "flow_analysis",
-        ]
+        # node_mem = [4 * 1024]
+        # apps = [
+        #    # "sentence_pairing",
+        #    # "discussion_analysis",
+        #    "zeroshot_faq_bot",
+        #    # "flight_chatbot",
+        #    # "restaurant_chatbot",
+        #    # "virtual_assistant",
+        #    # "flow_analysis",
+        # ]
+        apps = [experiment]
         app_to_actions = {
             "zeroshot_faq_bot": ["text_seg", "use_qa"],
             "sentence_pairing": ["use_enc", "bi_enc"],
@@ -134,38 +136,38 @@ class JsorcLoadTest:
             "virtual_assistant": ["text_seg", "bi_enc", "tfm_ner", "ent_ext", "use_qa"],
             "flow_analysis": ["text_seg", "tfm_ner", "use_enc"],
         }
-        # policies = ["evaluation"]
-        policies = ["all_local"]
+        policies = ["evaluation"]
+        # policies = ["all_local"]
         # policies = ["all_remote", "all_local"]
-        # policies = ["all_remote", "all_local", "evaluation"]
+        policies = ["all_remote", "all_local", "evaluation"]
         for app in apps:
             jac_file = os.path.join(APP_PATH, f"{app}.jac")
             self.sentinel_register(jac_file)
             action_modules = app_to_actions[app]
             for policy in policies:
-                if policy == "all_local":
-                    jsorc_policy = "Default"
-                    for module in action_modules:
-                        self.load_action(module, "local", wait_for_ready=True)
-                elif policy == "all_remote":
-                    jsorc_policy = "Default"
-                    for module in action_modules:
-                        self.load_action(module, "remote", wait_for_ready=True)
-                elif policy == "evaluation":
-                    jsorc_policy = "Evaluation"
-                    # For JSORC mode, we start as remote everything
-                    for module in action_modules:
-                        self.load_action(module, "remote", wait_for_ready=True)
-                else:
-                    logger.error(f"Unrecognized policy {policy}")
-                    return
-
                 if policy == "all_local" or policy == "all_remote":
                     policy_params = [{}]
                 else:
                     policy_params = [{"node_mem": nm} for nm in node_mem]
 
                 for pparams in policy_params:
+                    if policy == "all_local":
+                        jsorc_policy = "Default"
+                        for module in action_modules:
+                            self.load_action(module, "local", wait_for_ready=True)
+                    elif policy == "all_remote":
+                        jsorc_policy = "Default"
+                        for module in action_modules:
+                            self.load_action(module, "remote", wait_for_ready=True)
+                    elif policy == "evaluation":
+                        jsorc_policy = "Evaluation"
+                        # For JSORC mode, we start as remote everything
+                        for module in action_modules:
+                            self.load_action(module, "remote", wait_for_ready=True)
+                    else:
+                        logger.error(f"Unrecognized policy {policy}")
+                        return
+
                     self.set_jsorc_actionpolicy(jsorc_policy, policy_params=pparams)
                     #
                     # Experiment Start
@@ -173,7 +175,10 @@ class JsorcLoadTest:
                     self.start_benchmark()
                     self.start_actions_tracking()
                     start_ts = time.time()
-                    experiment_duration = 10 * 60
+                    if policy == "all_local" or policy == "all_remote":
+                        experiment_duration = 3 * 60
+                    else:
+                        experiment_duration = 5 * 60
                     while (time.time() - start_ts) < experiment_duration:
                         res = self.run_walker(app)
                     result = self.stop_benchmark()
@@ -189,8 +194,15 @@ class JsorcLoadTest:
                     #
                     # Experiment Ends. Unload actions. Reset the cluster
                     #
-                    for module in action_modules:
-                        self.unload_action(module, mode="auto", retire_svc=True)
+                    if policy == "all_local":
+                        for module in action_modules:
+                            self.unload_action(module, mode="local", retire_svc=True)
+                    elif policy == "all_remote":
+                        for module in action_modules:
+                            self.unload_action(module, mode="remote", retire_svc=True)
+                    else:
+                        for module in action_modules:
+                            self.unload_action(module, mode="auto", retire_svc=True)
                     sleep(10)
         return results
 

@@ -21,12 +21,12 @@ from jaseci.utils.utils import logger
 
 class JsOrcApi(CoreJsOrcApi):
     @Interface.admin_api()
-    def jsorc_loadtest(self, test: str, experiment: str = ""):
+    def jsorc_loadtest(self, test: str, experiment: str = "", mem: int = 0):
         """
         A jsorc loadtest
         """
         tester = JsorcLoadTest(test)
-        return tester.run_test(experiment)
+        return tester.run_test(experiment, mem)
 
 
 class Master(CoreMaster):

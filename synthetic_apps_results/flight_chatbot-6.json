@@ -1,0 +1,262 @@
+{
+  "flight_chatbot": {
+    "all_remote": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.0055398516708011864,
+            "average_latency": 0.10085105895996094,
+            "50th_latency": 0.10085105895996094,
+            "90th_latency": 0.10085105895996094,
+            "95th_latency": 0.10085105895996094,
+            "99th_latency": 0.10085105895996094
+          },
+          "all": {
+            "throughput": 0.0055398516708011864,
+            "average_latency": 0.10085105895996094,
+            "50th_latency": 0.10085105895996094,
+            "90th_latency": 0.10085105895996094,
+            "95th_latency": 0.10085105895996094,
+            "99th_latency": 0.10085105895996094
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.0055398516708011864,
+            "average_latency": 0.1087188720703125,
+            "50th_latency": 0.1087188720703125,
+            "90th_latency": 0.1087188720703125,
+            "95th_latency": 0.1087188720703125,
+            "99th_latency": 0.1087188720703125
+          },
+          "all": {
+            "throughput": 0.0055398516708011864,
+            "average_latency": 0.1087188720703125,
+            "50th_latency": 0.1087188720703125,
+            "90th_latency": 0.1087188720703125,
+            "95th_latency": 0.1087188720703125,
+            "99th_latency": 0.1087188720703125
+          }
+        },
+        "walker_run": {
+          "flight_chatbot": {
+            "throughput": 1.4680606927623145,
+            "average_latency": 675.8104558260935,
+            "50th_latency": 654.8845767974854,
+            "90th_latency": 719.413423538208,
+            "95th_latency": 750.0619411468506,
+            "99th_latency": 831.5494632720953
+          },
+          "all": {
+            "throughput": 1.4680606927623145,
+            "average_latency": 675.8104558260935,
+            "50th_latency": 654.8845767974854,
+            "90th_latency": 719.413423538208,
+            "95th_latency": 750.0619411468506,
+            "99th_latency": 831.5494632720953
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668923999.4636598,
+          "actions_calls": {
+            "use.question_encode": 0.04398528135047769,
+            "use.answer_encode": 0.07790018297591299,
+            "use.dist_score": 0.00559864673974379,
+            "ent_ext.entity_detection": 0.5051899954957783
+          }
+        }
+      ]
+    },
+    "all_local": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.005553012359904386,
+            "average_latency": 0.20003318786621094,
+            "50th_latency": 0.20003318786621094,
+            "90th_latency": 0.20003318786621094,
+            "95th_latency": 0.20003318786621094,
+            "99th_latency": 0.20003318786621094
+          },
+          "all": {
+            "throughput": 0.005553012359904386,
+            "average_latency": 0.20003318786621094,
+            "50th_latency": 0.20003318786621094,
+            "90th_latency": 0.20003318786621094,
+            "95th_latency": 0.20003318786621094,
+            "99th_latency": 0.20003318786621094
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.005553012359904386,
+            "average_latency": 0.18167495727539062,
+            "50th_latency": 0.18167495727539062,
+            "90th_latency": 0.18167495727539062,
+            "95th_latency": 0.18167495727539062,
+            "99th_latency": 0.18167495727539062
+          },
+          "all": {
+            "throughput": 0.005553012359904386,
+            "average_latency": 0.18167495727539062,
+            "50th_latency": 0.18167495727539062,
+            "90th_latency": 0.18167495727539062,
+            "95th_latency": 0.18167495727539062,
+            "99th_latency": 0.18167495727539062
+          }
+        },
+        "walker_run": {
+          "flight_chatbot": {
+            "throughput": 1.5048663495340886,
+            "average_latency": 655.4423196729259,
+            "50th_latency": 638.2982730865479,
+            "90th_latency": 716.8257236480713,
+            "95th_latency": 733.1662178039551,
+            "99th_latency": 782.3680162429811
+          },
+          "all": {
+            "throughput": 1.5048663495340886,
+            "average_latency": 655.4423196729259,
+            "50th_latency": 638.2982730865479,
+            "90th_latency": 716.8257236480713,
+            "95th_latency": 733.1662178039551,
+            "99th_latency": 782.3680162429811
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668924225.1483896,
+          "actions_calls": {
+            "use.question_encode": 0.042003612236783075,
+            "use.answer_encode": 0.06427059490302392,
+            "use.dist_score": 5.7952980273764075e-05,
+            "ent_ext.entity_detection": 0.5445718422147181
+          }
+        }
+      ]
+    },
+    "evaluation-mem-6144": {
+      "walker_level": {
+        "jsorc_benchmark_start": {
+          "_default_": {
+            "throughput": 0.003328237423139942,
+            "average_latency": 0.10538101196289062,
+            "50th_latency": 0.10538101196289062,
+            "90th_latency": 0.10538101196289062,
+            "95th_latency": 0.10538101196289062,
+            "99th_latency": 0.10538101196289062
+          },
+          "all": {
+            "throughput": 0.003328237423139942,
+            "average_latency": 0.10538101196289062,
+            "50th_latency": 0.10538101196289062,
+            "90th_latency": 0.10538101196289062,
+            "95th_latency": 0.10538101196289062,
+            "99th_latency": 0.10538101196289062
+          }
+        },
+        "jsorc_actionstracking_start": {
+          "_default_": {
+            "throughput": 0.003328237423139942,
+            "average_latency": 0.08082389831542969,
+            "50th_latency": 0.08082389831542969,
+            "90th_latency": 0.08082389831542969,
+            "95th_latency": 0.08082389831542969,
+            "99th_latency": 0.08082389831542969
+          },
+          "all": {
+            "throughput": 0.003328237423139942,
+            "average_latency": 0.08082389831542969,
+            "50th_latency": 0.08082389831542969,
+            "90th_latency": 0.08082389831542969,
+            "95th_latency": 0.08082389831542969,
+            "99th_latency": 0.08082389831542969
+          }
+        },
+        "walker_run": {
+          "flight_chatbot": {
+            "throughput": 1.4178291422576152,
+            "average_latency": 699.7721838839177,
+            "50th_latency": 654.6769142150879,
+            "90th_latency": 723.6140966415405,
+            "95th_latency": 745.6373572349548,
+            "99th_latency": 824.2457509040833
+          },
+          "all": {
+            "throughput": 1.4178291422576152,
+            "average_latency": 699.7721838839177,
+            "50th_latency": 654.6769142150879,
+            "90th_latency": 723.6140966415405,
+            "95th_latency": 745.6373572349548,
+            "99th_latency": 824.2457509040833
+          }
+        }
+      },
+      "action_level": [
+        {
+          "ts": 1668924456.6279771,
+          "actions_calls": {
+            "use.question_encode": 0.24309672628130233,
+            "use.answer_encode": 0.262305532182966,
+            "use.dist_score": 0.0063399099836162496,
+            "ent_ext.entity_detection": 0.572451114654541
+          }
+        },
+        {
+          "ts": 1668924463.9969304,
+          "actions_state": {
+            "use_qa": {
+              "mode": "module"
+            },
+            "ent_ext": {
+              "mode": "remote"
+            }
+          },
+          "actions_calls": {
+            "use.dist_score": 9.412481882315142e-05,
+            "ent_ext.entity_detection": 0.5067067074053215,
+            "use.question_encode": 0.029379844665527344,
+            "use.answer_encode": 0.054169047962535515
+          }
+        },
+        {
+          "ts": 1668924484.0293415,
+          "actions_state": {
+            "use_qa": {
+              "mode": "remote"
+            },
+            "ent_ext": {
+              "mode": "module"
+            }
+          },
+          "actions_calls": {
+            "ent_ext.entity_detection": 0.5463237421853202,
+            "use.question_encode": 0.045221149921417236,
+            "use.answer_encode": 0.0773519788469587,
+            "use.dist_score": 0.005678195557836014
+          }
+        },
+        {
+          "ts": 1668924504.0456862,
+          "actions_state": {
+            "use_qa": {
+              "mode": "remote"
+            },
+            "ent_ext": {
+              "mode": "remote"
+            }
+          },
+          "actions_calls": {
+            "use.dist_score": 0.005705104394060359,
+            "ent_ext.entity_detection": 0.5288404953512973,
+            "use.question_encode": 0.05304041854496109,
+            "use.answer_encode": 0.06826021018640956
+          }
+        }
+      ]
+    }
+  }
+}
