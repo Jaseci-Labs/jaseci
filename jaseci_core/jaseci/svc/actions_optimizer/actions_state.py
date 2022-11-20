@@ -34,7 +34,7 @@ class ActionsState:
         """
         self.state[name] = {
             "mode": None,
-            "module": {"name": None},
+            "module": {"name": None, "loaded_module": None},
             "local": {"path": None},
             "remote": {"url": None, "status": None},
         }
@@ -50,12 +50,17 @@ class ActionsState:
     def local_action_loaded(self, name):
         self.state[name]["mode"] = "local"
 
-    def module_action_loaded(self, name, module):
+    def module_action_loaded(self, name, module, loaded):
         self.state[name]["mode"] = "module"
         self.state[name]["module"]["name"] = module
+        self.state[name]["module"]["loaded_module"] = loaded
 
     def module_action_unloaded(self, name):
-        self.state[name]["module"] = {"name": None}
+        self.state[name]["mode"] = None
+        self.state[name]["module"]["name"] = None
+
+    def remote_action_unloaded(self, name):
+        self.state[name]["mode"] = None
 
     def remove_remote(self, name):
         self.state[name]["remote"] = {"url": None, "status": None}

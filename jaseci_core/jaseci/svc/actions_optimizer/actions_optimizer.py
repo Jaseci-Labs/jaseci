@@ -170,7 +170,7 @@ class ActionsOptimizer:
             and policy_state["cur_phase"] >= policy_state["perf_phase"]
         ):
             # if no enough walker were execueted in this period, keep in perf phase
-            if len(self.benchmark["requests"].get("walker_run", [])) < 10:
+            if "walker_run" not in self.benchmark["requests"]:
                 policy_state["cur_phase"] = 0
             else:
                 logger.info("===Evaluation Policy=== Switching to evaluation mode")
@@ -406,7 +406,7 @@ class ActionsOptimizer:
         if name == "":
             return self.actions_state.get_all_state()
         else:
-            return self.actions_state.get_state(name)
+            return {"mode": self.actions_state.get_state(name)["mode"]}
 
     def retire_remote(self, name):
         """
@@ -501,9 +501,10 @@ class ActionsOptimizer:
         if unload_existing:
             logger.info("==Actions Optimizer== unloading existing remote action {name}")
             self.unload_action_remote(name)
-        load_module_actions(module)
+
+        loaded_mod = load_module_actions(module, cur_state["module"]["loaded_module"])
         self.action_prep(name)
-        self.actions_state.module_action_loaded(name, module)
+        self.actions_state.module_action_loaded(name, module, loaded_mod)
         logger.info(f"==Actions Optimizer== LOADED module action for {name}")
 
     def unload_action_auto(self, name):
@@ -531,12 +532,28 @@ class ActionsOptimizer:
             return False, "Action is not loaded as module."
 
         module_name = cur_state["module"]["name"]
+        loaded_module = cur_state["module"]["loaded_module"]
+        # logger.info("deleting loaded module")
+        # logger.info(loaded_module)
+        # del loaded_module
 
-        # Hack?
-        module_name = module_name.split(".")[-1]
-        module_name = f"jaseci_ai_kit.modules.{module_name}.{module_name}"
+        # Alright we are in prime hack terrotoriy now lol
+        core_mod_name = module_name.split(".")[-1]
+        if core_mod_name == "bi_enc":
+            possible_module_name = [
+                module_name,
+                "jaseci_ai_kit.modules.encoders",
+                "jaseci_ai_kit.modules.encoders.bi_enc",
+            ]
+        else:
+            possible_module_name = [
+                module_name,
+                f"jaseci_ai_kit.modules.{core_mod_name}",
+                f"jaseci_ai_kit.modules.{core_mod_name}.{core_mod_name}",
+            ]
+        for mod in possible_module_name:
+            unload_module(mod)
 
-        unload_module(module_name)
         self.actions_state.module_action_unloaded(name)
 
         return (True, f"Action module {name} unloaded.")
@@ -559,6 +576,7 @@ class ActionsOptimizer:
         url = cur_state["remote"]["url"]
 
         unload_remote_actions(url)
+        self.actions_state.remote_action_unloaded(name)
 
         return (True, f"Remote actions from {url} unloaded.")
 

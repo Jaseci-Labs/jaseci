@@ -55,7 +55,10 @@ ENT_EXT_ACTION_CONFIG = {
                                 "image": "jaseci/jee-ai:1.3.6.1",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
-                                "resources": {"requests": {"memory": "3Gi"}},
+                                "resources": {
+                                    "requests": {"memory": "5Gi"},
+                                    "limits": {"memory": "6Gi"},
+                                },
                                 "volumeMounts": [
                                     {"name": "prod-script", "mountPath": "/script"}
                                 ],

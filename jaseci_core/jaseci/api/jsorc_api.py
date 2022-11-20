@@ -6,6 +6,7 @@ import json
 from base64 import b64decode
 from jaseci.svc.kubernetes import Kube
 from jaseci.api.interface import Interface
+from pathlib import Path
 
 
 class JsOrcApi:
@@ -239,3 +240,9 @@ class JsOrcApi:
             return {"success": True, "policy": policy}
         else:
             return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_restart_django(self):
+        """ """
+        Path("/jaseci/jaseci_serv/jsserv").touch(exist_ok=True)
+        return {"success": True}

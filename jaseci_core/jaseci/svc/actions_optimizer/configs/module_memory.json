@@ -1,0 +1,9 @@
+{
+    "bi_enc": 3.025,
+    "cl_summer": 0.25,
+    "ent_ext": 4.05,
+    "text_seg": 1.461,
+    "tfm_ner": 2.01,
+    "use_enc": 1.967,
+    "use_qa": 1.865
+}

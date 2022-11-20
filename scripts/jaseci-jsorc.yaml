@@ -137,9 +137,9 @@ spec:
           image: jaseci/jee-ai:1.3.6.1
           resources:
             requests:
-              memory: "3Gi"
+              memory: "6Gi"
             limits:
-              memory: "8Gi"
+              memory: "10Gi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:

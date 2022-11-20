@@ -117,9 +117,9 @@ class JsorcLoadTest:
         # node_mem = [4 * 1024, 6 * 1024, 8 * 1024]
         node_mem = [4 * 1024]
         apps = [
-            "sentence_pairing",
+            # "sentence_pairing",
             # "discussion_analysis",
-            # "zeroshot_faq_bot",
+            "zeroshot_faq_bot",
             # "flight_chatbot",
             # "restaurant_chatbot",
             # "virtual_assistant",
@@ -134,8 +134,8 @@ class JsorcLoadTest:
             "virtual_assistant": ["text_seg", "bi_enc", "tfm_ner", "ent_ext", "use_qa"],
             "flow_analysis": ["text_seg", "tfm_ner", "use_enc"],
         }
-        policies = ["evaluation"]
-        # policies = ["all_local"]
+        # policies = ["evaluation"]
+        policies = ["all_local"]
         # policies = ["all_remote", "all_local"]
         # policies = ["all_remote", "all_local", "evaluation"]
         for app in apps:
@@ -173,7 +173,7 @@ class JsorcLoadTest:
                     self.start_benchmark()
                     self.start_actions_tracking()
                     start_ts = time.time()
-                    experiment_duration = 2 * 60
+                    experiment_duration = 10 * 60
                     while (time.time() - start_ts) < experiment_duration:
                         res = self.run_walker(app)
                     result = self.stop_benchmark()
@@ -194,24 +194,25 @@ class JsorcLoadTest:
                     sleep(10)
         return results
 
-    def action_level_test(self):
+    def action_level_test(self, experiment):
         """
         Run action level tests
         """
         performance = {}
-        for action_set in [
-            # "use_enc",
-            # "use_qa",
-            "text_seg",
-            # "flair_ner",
-            # "cl_summer",
-            # "bi_enc",
-            "tfm_ner",
-        ]:
-            # for action_set in ["use_enc"]:
+        exp_set = [experiment]
+        # for action_set in [
+        #     "ent_ext",
+        #     "text_seg",
+        #     "cl_summer",
+        #     "bi_enc",
+        #     "tfm_ner",
+        #     "use_enc",
+        #     "use_qa",
+        # ]:
+        for action_set in exp_set:
             performance[action_set] = {}
-            # for mode in ["local", "remote"]:
-            for mode in ["remote", "local"]:
+            for mode in ["local", "remote"]:
+                # for mode in ["remote"]:
                 self.load_action(action_set, mode, wait_for_ready=True)
                 action_set_path = os.path.join(JAC_PATH, f"{action_set}/")
                 for jac_file in os.listdir(action_set_path):
@@ -224,7 +225,11 @@ class JsorcLoadTest:
                         performance[action_set][action_name] = {}
                     full_jac_file_path = os.path.join(action_set_path, jac_file)
                     jac_code = open(full_jac_file_path).read()
-                    payload = {"op": "sentinel_register", "code": jac_code}
+                    payload = {
+                        "op": "sentinel_register",
+                        "code": jac_code,
+                        "opt_level": 2,
+                    }
                     res = self.sauth_client.post(
                         reverse(f'jac_api:{payload["op"]}'), payload, format="json"
                     )
@@ -234,9 +239,10 @@ class JsorcLoadTest:
                     )
                     self.start_benchmark()
                     self.start_actions_tracking()
-                    for i in range(50):
+                    for i in range(100):
                         res = self.run_walker(action_name)
                     result = self.stop_benchmark()
+                    logger.info(result)
                     action_result = self.stop_actions_tracking()
                     performance[action_set][action_name][mode] = {
                         "walker_level": result["walker_run"][action_name],
