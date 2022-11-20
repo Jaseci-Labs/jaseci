@@ -1,31 +1,27 @@
 from http.client import ImproperConnectionState
-from typing import Any
-from jaseci.actions.live_actions import jaseci_action
+from typing import Any, Dict
 import warnings
 import os
 import traceback
 from fastapi import HTTPException
 
-from .utils.util import read_yaml, write_yaml
+from jaseci.actions.live_actions import jaseci_action
+
+from .utils.util import read_yaml, deep_update
 from .inference import InferenceList
-from .train import train
-
-
-HEAD_NOT_FOUND = "No Active head found. Please create a head first using create_head."
-HEAD_LIST_NOT_FOUND = (
-    "No Active head list found. Please create a head list first using create_head_list."
-)
-
 
 warnings.filterwarnings("ignore")
 
 
+HEAD_NOT_FOUND = "No Active head found. Please create a head first using create_head."
+HEAD_LIST_NOT_FOUND = "No Active head list found. Use create_head_list first."
+
+
 def setup():
-    global config, il, head_list_config
+    global il, list_config
     dirname = os.path.dirname(__file__)
-    config = read_yaml(os.path.join(dirname, "config.yaml"))
-    il = InferenceList()
-    head_list_config = ""
+    list_config = read_yaml(os.path.join(dirname, "config.yaml"))
+    il = None
 
 
 setup()
@@ -34,40 +30,32 @@ setup()
 
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
-def create_head_list(config_file: str, overwrite: bool = False) -> None:
+def create_head_list(config: Dict = None) -> None:
     """
-    Create a holder for heads
+    Create a holder for all the heads
     """
-    print("Creating head list")
     try:
-        global il, config, head_list_config
-        head_list_config = config_file
-        new_config = read_yaml(config_file)
-        config = {**config, **new_config}
-        il = InferenceList(config=config)
-        if overwrite:
-            write_yaml(config, config_file)
+        global il, list_config
+        if config:
+            deep_update(list_config, config)
+        il = InferenceList(config=list_config)
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
-def create_head(
-    uuid: str = None, config_file: str = None, overwrite: bool = False
-) -> None:
+def create_head(uuid: str = None, config: Dict = None) -> None:
     """
     Create a personalized head. This will create a new inference engine.
-    @param new_config: new config to be used for the head
+    @param config: new config to be used for the head
     """
     try:
-        global il, config
-        if config_file:
-            new_config = read_yaml(config_file)
-            config = {**config, **new_config}
-            if overwrite:
-                write_yaml(config, config_file)
-            _uuid = il.add(config=config, uuid=uuid)
+        global il, list_config
+        if config:
+            head_config = list_config.copy()
+            deep_update(head_config, config)
+            _uuid = il.add(config=head_config, uuid=uuid)
         else:
             _uuid = il.add(uuid=uuid)
         return _uuid
@@ -89,6 +77,8 @@ def predict(uuid: str, data: Any) -> Any:
                 return il.predict(uuid, data)
             except ImproperConnectionState:
                 raise Exception(HEAD_NOT_FOUND)
+            except Exception as e:
+                raise e
         else:
             raise Exception(HEAD_LIST_NOT_FOUND)
     except Exception as e:
@@ -97,40 +87,41 @@ def predict(uuid: str, data: Any) -> Any:
 
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
-def train_head(uuid: str, config_file: str = None) -> None:
+def train_head(uuid: str, config: Dict = None, auto_update: bool = True) -> None:
     """
     Train the current active model.
-    @param new_config: new config yaml to be used for training
+    @param config: new config to be used for training
     """
     try:
-        global config, head_list_config
-        if config_file:
-            new_config = read_yaml(config_file)
+        global il
+        if il:
+            try:
+                il.train(uuid, config, auto_update)
+            except ImproperConnectionState:
+                raise Exception(HEAD_NOT_FOUND)
+            except Exception as e:
+                raise e
         else:
-            new_config = read_yaml(head_list_config)
-        config = {**config, **new_config}
-        temp_config_file = os.path.join(os.path.dirname(__file__), "temp.yaml")
-        write_yaml(config, temp_config_file)
-
-        train(
-            {"config": temp_config_file, "device": None, "resume": None, "uuid": uuid}
-        )
-
-        os.remove(temp_config_file)
+            raise Exception(HEAD_LIST_NOT_FOUND)
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
-def load_weights(uuid: str, path: str) -> None:
+def get_config(uuid: str) -> Dict:
+    """
+    Get the config of the personalized head.
+    """
     try:
         global il
         if il:
             try:
-                il.load_weights(uuid, path)
+                return il.get_config(uuid)
             except ImproperConnectionState:
                 raise Exception(HEAD_NOT_FOUND)
+            except Exception as e:
+                raise e
         else:
             raise Exception(HEAD_LIST_NOT_FOUND)
     except Exception as e:

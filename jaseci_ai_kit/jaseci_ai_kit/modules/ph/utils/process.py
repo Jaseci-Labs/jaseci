@@ -3,7 +3,7 @@ from transformers import AutoTokenizer, AutoModel
 import importlib
 
 
-class PersonalizedHeadPostProcessor:
+class SnipsPostProcessor:
     def __init__(self, to_list: bool = False):
         self.to_list = to_list
 
@@ -14,7 +14,7 @@ class PersonalizedHeadPostProcessor:
         return output
 
 
-class PersonalizedHeadPreProcessor:
+class SnipsPreProcessor:
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         self.model = AutoModel.from_pretrained("bert-base-uncased")
