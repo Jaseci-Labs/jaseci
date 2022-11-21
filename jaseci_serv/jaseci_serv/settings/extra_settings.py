@@ -34,7 +34,7 @@ SOCIAL_AUTH_CREDS = {
     },
 }
 
-JSX_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+JSX_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TEMPLATES[0]["DIRS"] += [os.path.join(JSX_DIR, "templates")]
 KNOX_TOKEN_EXPIRY = 24
 

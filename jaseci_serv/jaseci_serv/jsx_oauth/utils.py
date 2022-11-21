@@ -53,7 +53,6 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
                 raise serializers.ValidationError(
                     _("Define client_class in view"),
                 )
-
             provider = adapter.get_provider()
             scope = provider.get_scope(request)
             client = self.client_class(
@@ -178,12 +177,12 @@ def resolve(name):
         return None
 
 
-social_auth_config_defaults = {
-    "GOOGLE_CLIENT_ID": "582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com",
-    "GOOGLE_CLIENT_SECRET": "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",
-    "FACEBOOK_CLIENT_ID": "",
-    "FACEBOOK_CLIENT_SECRET": "",
-    "GLOBAL_SOCIAL_SECRET": "9Pe7o42EpeDBC7cOs1KybETm611L0kHa",
-}
+# social_auth_config_defaults = {
+#     "GOOGLE_CLIENT_ID": "582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com",
+#     "GOOGLE_CLIENT_SECRET": "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",
+#     "FACEBOOK_CLIENT_ID": "",
+#     "FACEBOOK_CLIENT_SECRET": "",
+#     "GLOBAL_SOCIAL_SECRET": "9Pe7o42EpeDBC7cOs1KybETm611L0kHa",
+# }
 
-CLIENT_ID = "582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com"
+# CLIENT_ID = "582296225245-3kqi04d89ahlk1kr8j15j1uolci0hrtq.apps.googleusercontent.com"
