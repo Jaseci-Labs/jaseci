@@ -1,7 +1,4 @@
----
-title :  Date Actions
-sidebar_position : 1
----
+# Date Actions
 Jaseci has it's own set of built-in Date Functions 
 
 ### Quantize to Year

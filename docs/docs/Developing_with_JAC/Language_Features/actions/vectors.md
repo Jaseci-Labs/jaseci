@@ -1,7 +1,7 @@
----
-title :  Vector Actions
----
-### Cosine Similarity
+#  Vector Actions
+
+### Cosine Similarity 
+
 
 ```jac
 #Calculate the Cosine similarity score between 2 vectors.
