@@ -29,7 +29,7 @@ setup(
         "dj-rest-auth[with_social]",
     ],
     package_data={
-        "": ["*.jac", "VERSION"],
+        "": ["*.jac", "VERSION", "templates/examples/*.html"],
     },
     scripts=["jsserv"],
     author="Jason Mars",
