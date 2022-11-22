@@ -44,10 +44,10 @@ class testStripeJac(TestCaseHelper, TestCase):
 
         GlobalVars.objects.create(
             name="STRIPE_API_KEY",
-            value="123123",
+            value="sk_test_4eC39HqLyjWDarjtT1zdp7dc",
         )
 
-        res = self.client.post("/js_admin/stripe/init/")
+        res = self.client.post(reverse("stripe_init"))
 
         self.assertEqual(res.status_code, 200)
         self.assertTrue(res.json()["success"])

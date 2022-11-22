@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 
 from django.contrib.auth import get_user_model
 from jaseci_serv.base.models import GlobalVars
+from django.urls import reverse
 
 
 class ApiTest(TestCaseHelper, TestCase):
@@ -18,11 +19,12 @@ class ApiTest(TestCaseHelper, TestCase):
         self.user = get_user_model().objects.create_user(
             email="JSCITEST_test@jaseci.com", password="password"
         )
+        self.master = self.user.get_master()
         self.client.force_authenticate(self.admin_user)
 
     def test_stripe_init_should_return_forbidden_response(self):
-        """strioe"""
-        res = self.client.post("/js_admin/stripe/init/")
+        """should reutnr forbidden response"""
+        res = self.client.post(reverse("stripe_init"))
 
         self.assertEqual(res.status_code, 403)
         self.assertFalse(res.json()["success"])
@@ -35,10 +37,12 @@ class ApiTest(TestCaseHelper, TestCase):
         """/stripe/init"""
         GlobalVars.objects.create(
             name="STRIPE_API_KEY",
-            value="123123",
+            value="sk_test_4eC39HqLyjWDarjtT1zdp7dc",
         )
 
-        res = self.client.post("/js_admin/stripe/init/")
+        res = self.client.post(reverse("stripe_init"))
+
+        print(res)
 
         self.assertEqual(res.status_code, 200)
         self.assertTrue(res.json()["success"])
