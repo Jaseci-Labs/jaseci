@@ -42,5 +42,4 @@ class ApiTest(TestCaseHelper, TestCase):
 
         self.assertEqual(res.status_code, 200)
         self.assertTrue(res.json()["success"])
-        self.assertTrue(res.json()["data"].startswith(
-            "/js_public/walker_callback/"))
+        self.assertTrue(res.json()["data"].startswith("/js_public/walker_callback/"))
