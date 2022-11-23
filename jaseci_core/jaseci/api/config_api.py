@@ -1,8 +1,13 @@
 """
 Admin config api functions as a mixin
 """
-from json import dumps
+import yaml
+from base64 import b64decode
+from time import time
+
+from json import dumps, loads
 from jaseci.api.interface import Interface
+from jaseci.svc import CommonService
 
 
 class ConfigApi:
@@ -48,24 +53,64 @@ class ConfigApi:
         return [f"Config of '{name}' to '{value}' set!"]
 
     @Interface.admin_api()
+    def config_yaml(self, name: str, file: list):
+        """
+        Set a config from yaml
+        """
+
+        new_config = {}
+
+        config_version = str(time())
+
+        for conf in yaml.safe_load_all(b64decode(file[0]["base64"])):
+            kind = conf["kind"]
+            labels = conf.get("metadata").get("labels")
+            if not labels.get("config_version"):
+                labels["config_version"] = config_version
+
+            if not new_config.get(kind):
+                new_config[kind] = []
+            new_config[kind].append(conf)
+
+        old_config = self._h.get_glob(name)
+        if old_config:
+            old_config = loads(old_config)
+            old_config.pop("__OLD_CONFIG__", None)
+            for kind, confs in old_config.items():
+                names = []
+                for conf in confs:
+                    names.append(conf["metadata"]["name"])
+                old_config[kind] = names
+
+            new_config["__OLD_CONFIG__"] = old_config
+
+        self._h.save_glob(name, dumps(new_config))
+
+        return new_config
+
+    @Interface.admin_api()
     def config_refresh(self, name: str):
         """
-        update global configs
+        refresh service configs
         """
 
         hook = self._h
-        if name == "TASK_CONFIG":
-            hook.task.reset(hook)
-        elif name == "REDIS_CONFIG":
-            hook.redis.reset(hook)
-        elif name == "MAIL_CONFIG":
-            hook.mail.reset(hook)
-        elif name == "PROMON_CONFIG":
-            hook.promon.reset(hook)
-        elif name == "KUBE_CONFIG":
-            hook.kube.reset(hook)
-        elif name == "JSORC_CONFIG":
-            hook.jsorc.reset(hook)
+
+        to_start = not hook.meta.is_automated()
+
+        service = getattr(hook, name, None)
+
+        response = {"success": False}
+
+        if isinstance(service, CommonService):
+            service.reset(hook, to_start)
+            response["success"] = True
+        else:
+            response[
+                "message"
+            ] = f"{name} is not a valid service. Can not refresh config."
+
+        return response
 
     @Interface.admin_api()
     def config_list(self):

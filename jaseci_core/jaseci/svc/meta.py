@@ -1,13 +1,12 @@
 from jaseci.svc import (
     CommonService,
-    ApplicationContext,
+    JsOrc,
     MetaProperties,
     MailService,
     RedisService,
     TaskService,
-    KubernetesService,
     PromotheusService,
-    JsOrcService,
+    ServiceState as Ss,
 )
 
 
@@ -23,9 +22,15 @@ class MetaService(CommonService, MetaProperties):
     ###################################################
 
     def run(self, hook=None):
-        self.app = ApplicationContext()
+        self.app = JsOrc(self)
         self.populate_context()
         self.populate_services()
+
+    def post_run(self, hook=None):
+        if self.run_svcs:
+            self.app.build()
+            if self.is_automated():
+                self.spawn_daemon(jsorc=self.app.interval_check)
 
     ###################################################
     #                    SERVICES                     #
@@ -54,6 +59,13 @@ class MetaService(CommonService, MetaProperties):
         return self.app.context.get(ctx, {}).get("class")
 
     ###################################################
+    #                     COMMON                      #
+    ###################################################
+
+    def is_automated(self):
+        return self.is_running() and self.app and self.app.automated
+
+    ###################################################
     #                     BUILDER                     #
     ###################################################
 
@@ -61,19 +73,12 @@ class MetaService(CommonService, MetaProperties):
         h = self.build_context("hook")
         h.meta = self
         if self.run_svcs:
-            h.kube = self.get_service("kube", h)
-            h.jsorc = self.get_service("jsorc", h)
             h.promon = self.get_service("promon", h)
             h.redis = self.get_service("redis", h)
             h.task = self.get_service("task", h)
             h.mail = self.get_service("mail", h)
 
-            if not (
-                h.kube.start(h)
-                and h.kube.is_running()
-                and h.jsorc.start(h)
-                and h.jsorc.is_running()
-            ):
+            if not self.is_automated():
                 h.mail.start(h)
                 h.redis.start(h)
                 h.task.start(h)
@@ -96,6 +101,12 @@ class MetaService(CommonService, MetaProperties):
     #                   OVERRIDEN                     #
     ###################################################
 
+    def reset(self, hook=None, start=True):
+        self.terminate_daemon("jsorc")
+        self.app = None
+        self.state = Ss.NOT_STARTED
+        self.__init__()
+
     def populate_context(self):
         from jaseci.hook import RedisHook
         from jaseci.element.master import Master
@@ -109,6 +120,4 @@ class MetaService(CommonService, MetaProperties):
         self.add_service_builder("redis", RedisService)
         self.add_service_builder("task", TaskService)
         self.add_service_builder("mail", MailService)
-        self.add_service_builder("kube", KubernetesService)
         self.add_service_builder("promon", PromotheusService)
-        self.add_service_builder("jsorc", JsOrcService)

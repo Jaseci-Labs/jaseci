@@ -54,9 +54,9 @@ class JsOrcService(CommonService):
     #                     CLEANER                     #
     ###################################################
 
-    def reset(self, hook):
+    def reset(self, hook, start=True):
         self.terminate_daemon("jsorc")
-        super().reset(hook)
+        super().reset(hook, start)
 
     def failed(self):
         super().failed()

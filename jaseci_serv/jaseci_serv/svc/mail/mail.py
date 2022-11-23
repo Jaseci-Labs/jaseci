@@ -2,7 +2,7 @@ from django.core import mail
 
 from jaseci.svc import MailService as Ms
 from jaseci.svc.mail import Mailer as Em
-from jaseci_serv.configs import MAIL_CONFIG
+from .config import MAIL_CONFIG
 
 #################################################
 #                 EMAIL APP ORM                 #

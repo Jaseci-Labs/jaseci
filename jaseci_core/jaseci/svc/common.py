@@ -1,9 +1,16 @@
 import threading
+from copy import deepcopy
+from time import sleep
 from threading import Thread
 from ctypes import c_long, py_object, pythonapi
 
+from kubernetes import config as kubernetes_config
+from kubernetes.client import ApiClient, CoreV1Api, AppsV1Api, RbacAuthorizationV1Api
+from kubernetes.client.rest import ApiException
+
 from jaseci.utils.utils import logger
 from .state import ServiceState as Ss
+from .config import META_CONFIG, KUBERNETES_CONFIG
 
 COMMON_ERROR = "Not properly configured!"
 DEFAULT_CONFIG = {"enabled": False}
@@ -73,6 +80,8 @@ class CommonService:
     def build_settings(self, hook) -> dict:
         try:
             self.kube = self.build_kube(hook)
+            self.old_kube = self.kube.pop("__OLD_CONFIG__", {}) if self.kube else {}
+
             config = self.build_config(hook)
             self.enabled = config.pop("enabled", False)
             self.quiet = config.pop("quiet", False)
@@ -81,6 +90,7 @@ class CommonService:
             logger.exception(f"Error loading settings for {self.__class__}")
             self.config = DEFAULT_CONFIG
             self.kube = None
+            self.old_kube = {}
 
     def build_config(self, hook) -> dict:
         return DEFAULT_CONFIG
@@ -109,11 +119,13 @@ class CommonService:
     #                     CLEANER                     #
     ###################################################
 
-    def reset(self, hook):
+    def reset(self, hook, start=True):
         self.app = None
         self.state = Ss.NOT_STARTED
         self.__init__(hook)
-        self.start(hook)
+
+        if start:
+            self.start(hook)
 
     def failed(self):
         self.app = None
@@ -125,11 +137,250 @@ class ProxyService(CommonService):
         super().__init__(__class__)
 
 
-class ApplicationContext:
-    def __init__(self):
+class Kube:
+    def __init__(self, in_cluster: bool, config: dict):
+        if in_cluster:
+            kubernetes_config.load_incluster_config()
+        else:
+            kubernetes_config.load_kube_config()
+
+        self.client = ApiClient(config)
+        self.core = CoreV1Api(config)
+        self.api = AppsV1Api(self.client)
+        self.auth = RbacAuthorizationV1Api(self.client)
+        self.ping()
+        self.defaults()
+
+    def ping(self):
+        self.client.call_api("/readyz", "GET")
+
+    def create(self, api, namespace, conf):
+        if api.startswith("ClusterRole"):
+            self.create_apis[api](body=conf)
+        else:
+            self.create_apis[api](namespace=namespace, body=conf)
+
+    def patch(self, api, name, namespace, conf):
+        if api.startswith("ClusterRole"):
+            self.patch_apis[api](name=name, body=conf)
+        else:
+            self.patch_apis[api](name=name, namespace=namespace, body=conf)
+
+    def read(self, api: str, name: str, namespace: str = None):
+        if api.startswith("ClusterRole"):
+            return self.read_apis[api](name=name)
+        else:
+            return self.read_apis[api](name=name, namespace=namespace)
+
+    def delete(self, api: str, name: str, namespace: str = None):
+        if api.startswith("ClusterRole"):
+            return self.delete_apis[api](name=name)
+        else:
+            return self.delete_apis[api](name=name, namespace=namespace)
+
+    def is_running(self, name: str, namespace: str):
+        try:
+            return (
+                self.core.list_namespaced_pod(
+                    namespace=namespace, label_selector=f"pod={name}"
+                )
+                .items[0]
+                .status.phase
+                == "Running"
+            )
+        except Exception:
+            return False
+
+    def defaults(self):
+        self.create_apis = {
+            "Service": self.core.create_namespaced_service,
+            "Deployment": self.api.create_namespaced_deployment,
+            "ConfigMap": self.core.create_namespaced_config_map,
+            "ServiceAccount": self.core.create_namespaced_service_account,
+            "ClusterRole": self.auth.create_cluster_role,
+            "ClusterRoleBinding": self.auth.create_cluster_role_binding,
+            "Secret": self.core.create_namespaced_secret,
+            "PersistentVolumeClaim": (
+                self.core.create_namespaced_persistent_volume_claim
+            ),
+            "DaemonSet": self.api.create_namespaced_daemon_set,
+        }
+        self.patch_apis = {
+            "Service": self.core.patch_namespaced_service,
+            "Deployment": self.api.patch_namespaced_deployment,
+            "ConfigMap": self.core.patch_namespaced_config_map,
+            "ServiceAccount": self.core.patch_namespaced_service_account,
+            "ClusterRole": self.auth.patch_cluster_role,
+            "ClusterRoleBinding": self.auth.patch_cluster_role_binding,
+            "Secret": self.core.patch_namespaced_secret,
+            "PersistentVolumeClaim": (
+                self.core.patch_namespaced_persistent_volume_claim
+            ),
+            "DaemonSet": self.api.patch_namespaced_daemon_set,
+        }
+        self.delete_apis = {
+            "Service": self.core.delete_namespaced_service,
+            "Deployment": self.api.delete_namespaced_deployment,
+            "ConfigMap": self.core.delete_namespaced_config_map,
+            "ServiceAccount": self.core.delete_namespaced_service_account,
+            "ClusterRole": self.auth.delete_cluster_role,
+            "ClusterRoleBinding": self.auth.delete_cluster_role_binding,
+            "Secret": self.core.delete_namespaced_secret,
+            "PersistentVolumeClaim": (
+                self.core.delete_namespaced_persistent_volume_claim
+            ),
+            "DaemonSet": self.api.delete_namespaced_daemon_set,
+        }
+        self.read_apis = {
+            "Service": self.core.read_namespaced_service,
+            "Endpoints": self.core.read_namespaced_endpoints,
+            "Deployment": self.api.read_namespaced_deployment,
+            "ConfigMap": self.core.read_namespaced_config_map,
+            "ServiceAccount": self.core.read_namespaced_service_account,
+            "ClusterRole": self.auth.read_cluster_role,
+            "ClusterRoleBinding": self.auth.read_cluster_role_binding,
+            "Secret": self.core.read_namespaced_secret,
+            "PersistentVolumeClaim": self.core.read_namespaced_persistent_volume_claim,
+            "DaemonSet": self.api.read_namespaced_daemon_set,
+        }
+
+
+class JsOrc:
+    def __init__(self, meta):
+        self.automated = False
+        self.meta = meta
         self.services = {}
         self.background = {}
         self.context = {}
+
+    ###################################################
+    #                     BUILDER                     #
+    ###################################################
+
+    def build(self):
+        try:
+            hook = self.build_context("hook")
+            config = hook.service_glob("META_CONFIG", META_CONFIG)
+            if config.pop("automation", False):
+                self.kubernetes = Kube(**config.pop("kubernetes", KUBERNETES_CONFIG))
+                self.prometheus = self.meta.get_service("promon", hook)
+                self.interval = config.pop("interval", 10)
+                self.namespace = config.pop("namespace", "default")
+                self.keep_alive = config.pop(
+                    "keep_alive", ["promon", "redis", "task", "mail"]
+                )
+                self.automated = True
+            else:
+                self.automated = False
+        except Exception:
+            self.automated = False
+
+    def interval_check(self):
+        while True:
+            hook = self.meta.build_hook()
+            for svc in self.keep_alive:
+                try:
+                    self.check(self.namespace, svc, hook)
+                except Exception as e:
+                    logger.exception(
+                        f"Error checking {svc} !\n" f"{e.__class__.__name__}: {e}"
+                    )
+
+            sleep(self.interval)
+
+    ###################################################
+    #                   KUBERNETES                    #
+    ###################################################
+
+    def create(self, kind: str, name: str, namespace: str, conf: dict):
+        try:
+            logger.info(f"Creating {kind} for `{name}` with namespace `{namespace}`")
+            self.kubernetes.create(kind, namespace, conf)
+        except ApiException:
+            logger.error(
+                f"Error creating {kind} for `{name}` with namespace `{namespace}`"
+            )
+
+    def patch(self, kind: str, name: str, namespace: str, conf: dict):
+        try:
+            logger.info(f"Patching {kind} for `{name}` with namespace `{namespace}`")
+            self.kubernetes.patch(kind, name, namespace, conf)
+        except ApiException:
+            logger.error(
+                f"Error patching {kind} for `{name}` with namespace `{namespace}`"
+            )
+
+    def read(self, kind: str, name: str, namespace: str):
+        try:
+            logger.info(f"Retrieving {kind} for `{name}` with namespace `{namespace}`")
+            return self.kubernetes.read(kind, name, namespace=namespace)
+        except ApiException as e:
+            logger.error(
+                f"Error retrieving {kind} for `{name}` with namespace `{namespace}`"
+            )
+            return e
+
+    def delete(self, kind: str, name: str, namespace: str):
+        try:
+            logger.info(f"Deleting {kind} for `{name}` with namespace `{namespace}`")
+            return self.kubernetes.delete(kind, name, namespace=namespace)
+        except ApiException as e:
+            logger.error(
+                f"Error deleting {kind} for `{name}` with namespace `{namespace}`"
+            )
+            return e
+
+    def check(self, namespace, svc, hook):
+
+        svc = self.meta.get_service(svc, hook)
+
+        if not svc.is_running():
+            if svc.kube:
+                config_map = svc.kube
+                pod_name = ""
+                old_config_map = deepcopy(svc.old_kube)
+                for kind, confs in config_map.items():
+                    for conf in confs:
+                        name = conf["metadata"]["name"]
+                        names = old_config_map.get(kind, [])
+                        if name in names:
+                            names.remove(name)
+
+                        if kind == "Service":
+                            pod_name = name
+                        res = self.read(kind, name, namespace)
+                        if hasattr(res, "status") and res.status == 404 and conf:
+                            self.create(kind, name, namespace, conf)
+                        elif res.metadata:
+                            if res.metadata.labels:
+                                config_version = res.metadata.labels.get(
+                                    "config_version", 1
+                                )
+                            else:
+                                config_version = 1
+
+                            if config_version != conf.get("metadata").get(
+                                "labels", {}
+                            ).get("config_version", 1):
+                                self.patch(kind, name, namespace, conf)
+
+                    if (
+                        old_config_map
+                        and type(old_config_map) is dict
+                        and kind in old_config_map
+                        and name in old_config_map[kind]
+                    ):
+                        old_config_map.get(kind, []).remove(name)
+
+                    for to_be_removed in old_config_map.get(kind, []):
+                        res = self.read(kind, to_be_removed, namespace)
+                        if not isinstance(res, ApiException) and res.metadata:
+                            self.delete(kind, to_be_removed, namespace)
+
+                if self.kubernetes.is_running(pod_name, namespace):
+                    svc.reset(hook)
+            else:
+                svc.reset(hook)
 
     ###################################################
     #                 SERVICE HANDLER                 #
@@ -185,19 +436,13 @@ class MetaProperties:
             setattr(cls, "_enabled", True)
             setattr(cls, "_state", Ss.NOT_STARTED)
             setattr(cls, "_quiet", False)
-            setattr(cls, "_services", {})
-            setattr(cls, "_background", {})
-            setattr(cls, "_hook", None)
-            setattr(cls, "_hook_param", {})
-            setattr(cls, "_master", None)
-            setattr(cls, "_super_master", None)
 
     @property
-    def app(self) -> ApplicationContext:
+    def app(self) -> JsOrc:
         return self.cls._app
 
     @app.setter
-    def app(self, val: ApplicationContext):
+    def app(self, val: JsOrc):
         self.cls._app = val
 
     @property
@@ -209,60 +454,20 @@ class MetaProperties:
         self.cls._state = val
 
     @property
-    def enabled(self) -> Ss:
+    def enabled(self) -> bool:
         return self.cls._enabled
 
     @enabled.setter
-    def enabled(self, val: Ss):
-        return self.cls._enabled
+    def enabled(self, val: bool):
+        pass
 
     @property
-    def services(self) -> dict:
-        return self.cls._services
+    def quiet(self) -> bool:
+        return self.cls._quiet
 
-    @services.setter
-    def services(self, val: dict):
-        self.cls._services = val
-
-    @property
-    def background(self) -> dict:
-        return self.cls._background
-
-    @background.setter
-    def background(self, val: dict):
-        self.cls._background = val
-
-    @property
-    def hook(self):
-        return self.cls._hook
-
-    @hook.setter
-    def hook(self, val):
-        self.cls._hook = val
-
-    @property
-    def hook_param(self) -> dict:
-        return self.cls._hook_param
-
-    @hook_param.setter
-    def hook_param(self, val: dict):
-        self.cls._hook_param = val
-
-    @property
-    def master(self):
-        return self.cls._master
-
-    @master.setter
-    def master(self, val):
-        self.cls._master = val
-
-    @property
-    def super_master(self):
-        return self.cls._super_master
-
-    @super_master.setter
-    def super_master(self, val):
-        self.cls._super_master = val
+    @quiet.setter
+    def quiet(self, val: bool):
+        pass
 
 
 # ----------------------------------------------- #

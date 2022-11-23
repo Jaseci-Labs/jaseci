@@ -629,7 +629,12 @@ PROMON_KUBE = {
             },
             "spec": {
                 "ports": [
-                    {"name": "http", "port": 80, "protocol": "TCP", "targetPort": 9090}
+                    {
+                        "name": "http",
+                        "port": 9090,
+                        "protocol": "TCP",
+                        "targetPort": 9090,
+                    }
                 ],
                 "selector": {
                     "component": "server",
