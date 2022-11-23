@@ -139,7 +139,7 @@ This class is the base for implementing service. Dev should use this class if th
 - `reset` (optional)
     - this will be used if you have other process that needs to be executed upon resetting
 ```python
-    def reset(self, hook):
+    def reset(self, hook, start):
         if self.is_running():
             self.app.terminate() # app needs to be terminated before calling the actual reset
 
