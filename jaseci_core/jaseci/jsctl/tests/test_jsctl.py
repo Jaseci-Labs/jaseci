@@ -50,7 +50,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertIn("Group of `sentinel active` commands", r)
 
     def test_jsctl_create_graph_mem_only(self):
-        self.call(
+        ret = self.call(
             "sentinel register jaseci/jsctl/tests/ll.jac -name ll -set_active true"
         )
         self.assertEqual(len(self.call_cast("graph list")), 1)

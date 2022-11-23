@@ -161,7 +161,7 @@ destroy_disconn = """
     walker init{
         node1 = spawn here ++> node::testnode ;
         node2 = spawn here ++> node::testnode ;
-        node1 --> node2;
+        node1 ++> node2;
         std.out(-->);
         destroy node1;
         # All node destroys queue'd after walk
@@ -529,7 +529,7 @@ fam_example = """
         }
         woman {
             son = spawn here <+[mom]+ node::man;
-            son <-[dad]- <-[married]->;
+            son <+[dad]+ <-[married]->;
         }
         man {
             std.out("I didn't do any of the hard work.");
@@ -605,13 +605,13 @@ copy_assign_to_edge = """
     edge family: has kind;
 
     walker init {
-        person1 = spawn here -[friend(meeting_place = "college")] ->
+        person1 = spawn here +[friend(meeting_place = "college")]+>
             node::person(name = "Josh", age = 32);
-        person2 = spawn here -[family(kind = "sister")] ->
+        person2 = spawn here +[family(kind = "sister")]+>
             node::person(name = "Jane", age = 30);
 
-        twin1 = spawn here -[friend]-> node::person;
-        twin2 = spawn here -[family]-> node::person;
+        twin1 = spawn here +[friend]+> node::person;
+        twin2 = spawn here +[family]+> node::person;
         twin1 := person1;
         twin2 := person2;
 
