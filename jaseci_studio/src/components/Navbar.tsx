@@ -3,23 +3,18 @@ import {
   createStyles,
   Navbar,
   Stack,
-  Title,
   Tooltip,
   UnstyledButton,
 } from "@mantine/core";
 import {
-  IconBuildingFactory,
   IconGauge,
   IconHome2,
-  IconLogout,
-  IconSwitchHorizontal,
   IconVectorBezierCircle,
   TablerIcon,
 } from "@tabler/icons";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Router } from "next/router";
-import { ReactNode, useState } from "react";
+import { useState } from "react";
 
 const useStyles = createStyles((theme) => ({
   link: {

@@ -17,7 +17,7 @@ const config: PlaywrightTestConfig = {
     timeout: 120 * 1000,
     reuseExistingServer: !process.env.CI,
   },
-  testDir: "./e2e",
+  testDir: "./__e2e__",
   /* Maximum time one test can run for. */
   timeout: 30 * 1000,
   expect: {
@@ -60,7 +60,6 @@ const config: PlaywrightTestConfig = {
     {
       name: "firefox",
       use: {
-        baseURL: "http://localhost:1420",
         ...devices["Desktop Firefox"],
       },
     },
@@ -102,7 +101,7 @@ const config: PlaywrightTestConfig = {
   ],
 
   /* Folder for test artifacts such as screenshots, videos, traces, etc. */
-  // outputDir: 'test-results/',
+  outputDir: "test-results/",
 
   /* Run your local dev server before starting the tests */
   // webServer: {
