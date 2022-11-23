@@ -36,10 +36,10 @@ class testStripeJac(TestCaseHelper, TestCase):
 
         res = self.client.post(reverse("jac_api:sentinel_register"), payload)
         self.snt = self.master._h.get_obj(
-            self.master.jid, uuid.UUID(res.data[0]["jid"])
+            self.master.jid, str(uuid.UUID(res.data[0]["jid"]))
         )
         self.gph = self.master._h.get_obj(
-            self.master.jid, uuid.UUID(res.data[1]["jid"])
+            self.master.jid, str(uuid.UUID(res.data[1]["jid"]))
         )
 
         GlobalVars.objects.create(

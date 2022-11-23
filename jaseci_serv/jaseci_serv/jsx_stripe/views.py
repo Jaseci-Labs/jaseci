@@ -40,7 +40,7 @@ class StripeView(APIView):
             master._h.commit()
 
             stripe_sentinel = master._h.get_obj(
-                master._m_id, uuid.UUID(stripe_sentinel[0]["jid"])
+                master._m_id, str(uuid.UUID(stripe_sentinel[0]["jid"]))
             )
 
             stripe_webhook_arch = stripe_sentinel.arch_ids.get_obj_by_name(
