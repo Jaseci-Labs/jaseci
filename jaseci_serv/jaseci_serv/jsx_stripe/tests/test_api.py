@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import NoReverseMatch
 from jaseci.utils.utils import TestCaseHelper
 from rest_framework.test import APIClient
+from rest_framework import status
 
 from django.contrib.auth import get_user_model
 from jaseci_serv.base.models import GlobalVars
@@ -22,11 +23,21 @@ class ApiTest(TestCaseHelper, TestCase):
         self.master = self.user.get_master()
         self.client.force_authenticate(self.admin_user)
 
+    def tearDown(self):
+        """Deletes test users and sample stripe_api_key out of databases"""
+        self.admin_user.delete()
+        self.user.delete()
+        GlobalVars.objects.filter(name="STRIPE_API_KEY").delete()
+        super().tearDown()
+
     def test_stripe_init_should_return_forbidden_response(self):
-        """should reutnr forbidden response"""
+        """should return forbidden response"""
+
         res = self.client.post(reverse("stripe_init"))
 
-        self.assertEqual(res.status_code, 403)
+        print(res.json())
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
         self.assertFalse(res.json()["success"])
         self.assertTrue(
             res.json()["message"]
@@ -42,8 +53,8 @@ class ApiTest(TestCaseHelper, TestCase):
 
         res = self.client.post(reverse("stripe_init"))
 
-        print(res)
+        print(res.json())
 
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["success"])
         self.assertTrue(res.json()["data"].startswith("/js_public/walker_callback/"))

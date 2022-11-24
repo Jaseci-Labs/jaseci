@@ -1,14 +1,17 @@
+import uuid
+import base64
+import os
+
 from django.test import TestCase
 from django.urls import reverse
 from ..models import JSX_STRIPE_DIR
 from jaseci.utils.utils import TestCaseHelper
 from rest_framework.test import APIClient
-import uuid
-import base64
-import os
+from rest_framework import status
+
+
 from django.contrib.auth import get_user_model
 from jaseci_serv.base.models import GlobalVars
-import jaseci.actions.live_actions as lact
 
 
 class testStripeJac(TestCaseHelper, TestCase):
@@ -49,7 +52,7 @@ class testStripeJac(TestCaseHelper, TestCase):
 
         res = self.client.post(reverse("stripe_init"))
 
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["success"])
         self.assertTrue(res.json()["data"].startswith("/js_public/walker_callback/"))
 
@@ -66,7 +69,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_create_product_price(self):
@@ -83,7 +86,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_product_list(self):
@@ -98,7 +101,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_create_product_price(self):
@@ -115,7 +118,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_create_customer(self):
@@ -134,7 +137,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_get_customer(self):
@@ -149,7 +152,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_attach_payment_method(self):
@@ -165,7 +168,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_delete_payment_method(self):
@@ -180,7 +183,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_get_payment_methods(self):
@@ -195,7 +198,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_update_default_payment_method(self):
@@ -211,7 +214,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_create_invoice(self):
@@ -226,7 +229,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_get_invoice_list(self):
@@ -244,7 +247,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_get_payment_intents(self):
@@ -261,7 +264,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_create_payment_intents(self):
@@ -279,7 +282,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_get_customer_subscription(self):
@@ -294,7 +297,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_create_payment_method(self):
@@ -310,7 +313,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_create_trial_subscription(self):
@@ -328,7 +331,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_create_subscription(self):
@@ -345,7 +348,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_cancel_subscription(self):
@@ -360,7 +363,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_get_subscription(self):
@@ -375,7 +378,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_update_subscription(self):
@@ -392,7 +395,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_get_invoice(self):
@@ -407,7 +410,7 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
 
     def test_create_usage_report(self):
@@ -423,5 +426,5 @@ class testStripeJac(TestCaseHelper, TestCase):
         }
 
         res = self.client.post("/js/walker_run", payload, format="json")
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.json()["report"][0]["success"])
