@@ -1,0 +1,50 @@
+{
+  "name": "jaseci-studio-app",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "setup:ui": "cd ../ui_components && yarn install && yarn build",
+    "dev": "next dev -p 1420",
+    "build": "next build && next export -o dist",
+    "tauri": "tauri",
+    "test:e2e": "playwright test",
+    "test:unit": "vitest test",
+    "test:e2e:report": "playwright show-report"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.10.5",
+    "@emotion/server": "^11.10.0",
+    "@hookform/resolvers": "^2.9.10",
+    "@mantine/core": "^5.7.1",
+    "@mantine/hooks": "^5.7.1",
+    "@mantine/next": "^5.7.1",
+    "@tabler/icons": "^1.110.0",
+    "@tanstack/react-query": "^4.14.5",
+    "@tauri-apps/api": "^1.2.0",
+    "axios": "^1.1.3",
+    "cookies-next": "^2.1.1",
+    "eslint-config-next": "^13.0.2",
+    "jotai": "^1.9.1",
+    "next": "^13.0.2",
+    "next-transpile-modules": "^10.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.39.1",
+    "zod": "^3.19.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.28.0",
+    "@tauri-apps/cli": "^1.2.0",
+    "@testing-library/react": "^13.4.0",
+    "@types/node": "^18.7.11",
+    "@types/react": "^18.0.17",
+    "@types/react-dom": "^18.0.6",
+    "@vitejs/plugin-react": "^2.2.0",
+    "jsdom": "^20.0.3",
+    "msw": "^0.49.0",
+    "playwright-msw": "^2.0.1",
+    "prettier": "^2.7.1",
+    "typescript": "^4.7.4",
+    "vitest": "^0.25.3"
+  }
+}
