@@ -27,11 +27,11 @@ class ApiTest(TestCaseHelper, TestCase):
         """Deletes test users and sample stripe_api_key out of databases"""
         self.admin_user.delete()
         self.user.delete()
-        GlobalVars.objects.filter(name="STRIPE_API_KEY").delete()
         super().tearDown()
 
     def test_stripe_init_should_return_forbidden_response(self):
         """should return forbidden response"""
+        GlobalVars.objects.filter(name="STRIPE_API_KEY").delete()
 
         res = self.client.post(reverse("stripe_init"))
 
