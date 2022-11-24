@@ -13,8 +13,8 @@ class TextSegModule(CoreTest):
         assert ret == True
 
     @pytest.mark.order(1)
-    @jac_testcase("text_seg.jac", "test_seg_load_model")
-    def test_seg_load_model(self, ret):
+    @jac_testcase("text_seg.jac", "test_umap")
+    def test_umaps(self, ret):
         self.assertEqual(ret["report"][0], "[Model Loaded] : wiki")
 
     @pytest.mark.order(2)

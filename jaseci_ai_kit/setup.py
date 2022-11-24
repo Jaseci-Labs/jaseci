@@ -30,6 +30,8 @@ setup(
         "pytest>=7.0.1,<7.1",
         "pytest-order>=1.0.1,<1.1",
         "sentence-transformers>=2.2.0,<2.3",
+        "umap-learn==0.5.3",
+        "hdbscan==0.8.29",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],
