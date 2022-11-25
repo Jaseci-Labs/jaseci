@@ -1,22 +1,5 @@
-# Model Configurations
-Model:
-  args:
-    batch_first: true
-    embedding_length: 768
-    n_classes: 10
-    ph_ff_dim: 512
-    ph_nhead: 8
-    ph_nlayers: 1
-  type: PHClassifier
-
 # Inference Configurations
 Inference:
-  postprocess:
-    args:
-      to_list: true
-    type: SnipsPostProcessor
-  preprocess:
-    type: SnipsPreProcessor
   weights: ''
 
 # Training Configurations
@@ -26,7 +9,6 @@ Trainer:
       batch_size: 32
       num_workers: 1
       shuffle: true
-      train_json: jaseci_ai_kit/modules/ph/tests/fixtures/train.json
       validation_split: 0.2
     type: SnipsDataLoader
   loss: nll_loss
@@ -39,7 +21,7 @@ Trainer:
   - accuracy
   - top_k_acc
   n_gpu: 1
-  name: PersonalizedHeadTrainer
+  name: ModelTrainer
   optimizer:
     args:
       amsgrad: true

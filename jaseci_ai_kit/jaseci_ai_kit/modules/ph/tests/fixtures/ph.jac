@@ -4,7 +4,24 @@ walker test_create_head_list {
         "Model":{
             "args":{
                 "batch_first": true,
-                "embedding_length": 768
+                "embedding_length": 768,
+                "n_classes": 10,
+                "ph_ff_dim": 512,
+                "ph_nhead": 8,
+                "ph_nlayers": 1
+            },
+            "type": "PHClassifier"
+        },
+        "Inference":{
+            "postprocess":{
+                "args":{
+                    "to_list": true
+                },
+                "type": "SnipsPostProcessor"
+            },
+            "preprocess":{
+                "args":{},
+                "type": "SnipsPreProcessor"
             }
         }
     }, "print('hello world')");
@@ -26,7 +43,14 @@ walker test_train {
         "Trainer":{
             "trainer":{
                 "epochs": 3
-            }
+            },
+            "dataloader":{
+                "args": {
+                    "train_json": "jaseci_ai_kit/modules/ph/tests/fixtures/train.json"
+                },
+                "type": "SnipsDataLoader"
+            },
+            "name": "SnipsTrainer"
         }
     });
 }
