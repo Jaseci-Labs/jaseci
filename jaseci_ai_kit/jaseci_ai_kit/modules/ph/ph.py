@@ -39,6 +39,7 @@ def create_head_list(config: Dict = None, python: str = None) -> None:
         if config:
             deep_update(list_config, config)
         if python:
+            os.makedirs("heads", exist_ok=True)
             save_custom_python(python)
         il = InferenceList(config=list_config)
     except Exception as e:

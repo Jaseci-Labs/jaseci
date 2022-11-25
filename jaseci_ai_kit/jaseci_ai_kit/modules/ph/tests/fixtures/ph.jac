@@ -7,7 +7,7 @@ walker test_create_head_list {
                 "embedding_length": 768
             }
         }
-    }, "print('apple')");
+    }, "print('hello world')");
 }
 
 walker test_create_head{
