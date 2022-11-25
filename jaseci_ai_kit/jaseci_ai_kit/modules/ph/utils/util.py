@@ -73,9 +73,11 @@ def prepare_device(n_gpu_use):
     list_ids = list(range(n_gpu_use))
     return device, list_ids
 
-def save_custom_python(python:str, path:str = "heads/custom.py"):
-    with open(path, 'w') as f:
+
+def save_custom_python(python: str, path: str = "heads/custom.py"):
+    with open(path, "w") as f:
         f.write(python)
+
 
 class MetricTracker:
     def __init__(self, *keys, writer=None):

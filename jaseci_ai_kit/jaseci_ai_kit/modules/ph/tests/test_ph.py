@@ -45,5 +45,5 @@ class PHModule(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(PHModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.ph.main")
+        ret = unload_module("jaseci_ai_kit.modules.ph.ph")
         assert ret == True
