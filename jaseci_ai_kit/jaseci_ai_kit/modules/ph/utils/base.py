@@ -189,6 +189,7 @@ class BaseTrainer:
         self.logger.info("Loading checkpoint: {} ...".format(resume_path))
         checkpoint = torch.load(resume_path)
         self.start_epoch = checkpoint["epoch"] + 1
+        self.epochs += checkpoint["epoch"]
         self.mnt_best = checkpoint["monitor_best"]
 
         # load architecture params from checkpoint.

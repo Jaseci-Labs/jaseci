@@ -35,8 +35,6 @@ class SnipsDataset(torch.utils.data.Dataset):
 class CustomDataLoader(BaseDataLoader):
     def __init__(
         self,
-        python_file,
-        module_name,
         batch_size,
         shuffle=True,
         validation_split=0.0,
@@ -44,11 +42,11 @@ class CustomDataLoader(BaseDataLoader):
         **kwargs
     ):
         # import the python file
-        spec = importlib.util.spec_from_file_location("module.name", python_file)
+        spec = importlib.util.spec_from_file_location("module.name", "heads/custom.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         # get the model
-        self.dataset = getattr(module, module_name)(**kwargs)
+        self.dataset = getattr(module, "CustomDataset")(**kwargs)
         super().__init__(
             self.dataset, batch_size, shuffle, validation_split, num_workers
         )
