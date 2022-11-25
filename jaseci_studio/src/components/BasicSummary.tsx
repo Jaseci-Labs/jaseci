@@ -47,7 +47,7 @@ function BasicSummary() {
       </Title>
       <Grid columns={4}>
         <Grid.Col span={1}>
-          <Title order={5}>
+          <Title order={5} aria-label="Total Nodes">
             <>
               {data?.totalNodes} <br />
               <Text component="span" weight={"normal"} color="dimmed">
@@ -57,7 +57,7 @@ function BasicSummary() {
           </Title>
         </Grid.Col>
         <Grid.Col span={1}>
-          <Title order={5}>
+          <Title order={5} aria-label="Total Walkers">
             {data?.totalWalkers} <br></br>
             <Text weight={"normal"} component="span" color="dimmed">
               Walkers
@@ -65,7 +65,7 @@ function BasicSummary() {
           </Title>
         </Grid.Col>
         <Grid.Col span={1}>
-          <Title order={5}>
+          <Title order={5} aria-label="Total Edges">
             {data?.totalEdges} <br />
             <Text weight={"normal"} component="span" color="dimmed">
               Edges
@@ -73,7 +73,7 @@ function BasicSummary() {
           </Title>
         </Grid.Col>
         <Grid.Col span={1}>
-          <Title order={5}>
+          <Title order={5} aria-label="Total Graphs">
             {data?.totalGraphs} <br />
             <Text weight={"normal"} component="span" color="dimmed">
               Graphs

@@ -88,12 +88,11 @@
 
 ## Jaseci UI Widget Library
 
-- [Jaseci UI Kit](jaseci_ui_kit/README.md)
-- [Introduction](jaseci_ui_kit/components/docs/what-is-jaseci-ui-kit.md)
-- [Basic Concepts](jaseci_ui_kit/components/docs/basic-concepts.md)
-- [Built-in Actions](jaseci_ui_kit/components/docs/built-in-actions.md)
-- [Connecting an API](jaseci_ui_kit/components/docs/connecting-an-api.md)
-- [Components](jaseci_ui_kit/README.md)
+- [Jaseci UI Kit](ui_components/readme.md)
+- [Introduction](ui_components/docs/what-is-jaseci-ui-kit.md)
+- [Basic Concepts](ui_components/docs/basic-concepts.md)
+- [Built-in Actions](ui_components/docs/built-in-actions.md)
+- [Connecting an API](ui_components/docs/connecting-an-api.md)
 
 ## DevOps Guides
 - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
