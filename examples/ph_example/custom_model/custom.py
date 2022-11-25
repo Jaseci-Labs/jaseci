@@ -4,6 +4,7 @@ from torchvision import datasets, transforms
 import os
 import PIL
 
+
 class CustomModel(torch.nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
@@ -25,14 +26,14 @@ class CustomModel(torch.nn.Module):
 
 class CustomDataset(torch.utils.data.Dataset):
     def __init__(self, data_dir):
-        trsfm = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,))
-        ])
+        trsfm = transforms.Compose(
+            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+        )
         self.data_dir = data_dir
         os.makedirs(self.data_dir, exist_ok=True)
         self.dataset = datasets.MNIST(
-            self.data_dir, train=True, download=True, transform=trsfm)
+            self.data_dir, train=True, download=True, transform=trsfm
+        )
 
     def __len__(self):
         return len(self.dataset)
@@ -43,12 +44,14 @@ class CustomDataset(torch.utils.data.Dataset):
 
 class CustomPreProcessor:
     def __init__(self):
-        self.trsfm = transforms.Compose([
-            transforms.Grayscale(),
-            transforms.Resize((28, 28)),
-            transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,))
-        ])
+        self.trsfm = transforms.Compose(
+            [
+                transforms.Grayscale(),
+                transforms.Resize((28, 28)),
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,)),
+            ]
+        )
 
     def process(self, x):
         img = PIL.Image.open(x)
