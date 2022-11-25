@@ -1,19 +1,19 @@
 # Text Cluster (cluster)
 
-Module `cluster` implemented for clustering text document into similar clusters. This module accepts input as list of raw text documents and will produce cluster labels for each text documents.
+Module `cluster` implemented for clustering text document into similar clusters. This is a example program to cluster documents with jaseci `cluster` module. We will use input as list of raw text documents and will produce cluster labels for each text documents.
 
 # **Walk through**
 
 ## **1. Import text cluster (`cluster`) module in jac**
-1. For executing jaseci Open terminal and run follow command.
+1. For executing jaseci open terminal and run following command.
     ```
     jsctl -m
     ```
-2.  Load `cluster` module in jac command
+2.  Load `cluster` module in jac shell session
     ```
     actions load module jaseci_ai_kit.cluster
     ```
-3. Load `use_enc` module in jac command
+3. Load `use_enc` module in jac shell session
    ```
    actions load module jaseci_ai_kit.use_enc
    ```
@@ -24,6 +24,8 @@ In this section, we'll take raw text as input, encode it, and then output a list
 
 ### **1. Load the text data**
 
+Save the text data in `json` format.
+
 ```jac
 walker features{
     can file.load_json;
@@ -31,15 +33,19 @@ walker features{
 }
 ```
 
-### **2. Create embeddings and get features**
+### **2. Create embeddings and reduce features**
 
-In this section we are using use.encode jaseci module to encode raw text. The `use.encode` will return size of 512 vectors for each text document. We are reducing the dimention of text using `cluster.get_umap`.
+In this section we are using use.encode jaseci module to encode raw text. The `use.encode` will return size of 512 vectors for each text document. We are reducing the dimention of vectors using `cluster.get_umap` action.
 
 ** Parameters of `cluster.get_umap`**
-- `text_embeddings`: list -  This is a mandotory field. list of text embeddings should past here.
-- `n_neighbors`: int - By defauld this value is `15`. This is not a manodoty field, but if you want to get better out of this you have to set a value for this based on your data points. This parameter balances local versus global structure in the data. Low values will focus on local data points (will make an impact on the big picture), higher values will focus on the global data points (overall structure of the data)  (will lose fine details in the structure).
+
+- `text_embeddings`: list -  This is a mandotory field. list of text embeddings should pass here.
+
+- `n_neighbors`: int - By defauld this value is `15`. This is not a manodoty field, but if you want to get better out of this you have to set a value for this based on your input data. This parameter balances local versus global structure in the data. Low values will focus on local data points (will make an impact on the big picture), higher values will focus on the global data points (overall structure of the data)  (will lose fine details in the structure).
+
 - `min_dist`: float - By default this value is 0.1. This is also not a mandotory field. This parameter controls how tightly `cluster.get_umap` is allowed to pack points together. Set this to low value when trying for clustering.
-- `n_components`: int - By default this is set to 2 this is not mandotory either. This represents the dimensionality of the reduced data. This is not limited 2 or 3 can try further like pca.
+
+- `n_components`: int - The default value for this is 2, however it is not mandtory field. This represents the dimensionality of the reduced data. This is not limited 2 or 3 can try further like pca.
 
 - `random_state`: int - By default this is 42. This represent the preproducability of the algorithm.
 
@@ -60,10 +66,14 @@ node feature_embedd{
 
 We will obtain cluster labels for each text document in this section. The output from the previous section is the input here. To get cluster lables we are using `cluster.get_cluster_labels`  action.
 
-** Parameters of `cluster.get_cluster_labels`**
+**Parameters of `cluster.get_cluster_labels`**
+
 - embeddings: list - This accept list of embedded text features, this is a mandotory field.
+
 - algorithm: str - By default the value of this is "hbdscan". So far jaseci only support `hbdscan` algorithm for clutering.
+
 - min_samples: int - This is a mandotory field. The minimum number of data points in a cluster is represented here. Increasing this will reduces number of clusters.
+
 - min_cluster_size: int - This is also a mandotory field. This represents how conservative you want your clustering should be. Larger values more data points will be considered as noise
 
 ```jac
