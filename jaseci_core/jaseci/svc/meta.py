@@ -1,3 +1,5 @@
+import signal
+
 from jaseci.svc import (
     CommonService,
     JsOrc,
@@ -30,7 +32,12 @@ class MetaService(CommonService, MetaProperties):
         if self.run_svcs:
             self.app.build()
             if self.is_automated():
-                self.spawn_daemon(jsorc=self.app.interval_check)
+                self.push_interval(1)
+
+    def push_interval(self, interval):
+        if self.running_interval == 0:
+            self.running_interval += 1
+            signal.alarm(interval)
 
     ###################################################
     #                    SERVICES                     #
@@ -121,3 +128,21 @@ class MetaService(CommonService, MetaProperties):
         self.add_service_builder("task", TaskService)
         self.add_service_builder("mail", MailService)
         self.add_service_builder("promon", PromotheusService)
+
+
+def interval_check(signum, frame):
+    meta = MetaService()
+    if meta.is_automated():
+        meta.app.interval_check()
+        logger.info(
+            f"Backing off for {meta.app.backoff_interval} seconds before the next interval check..."
+        )
+
+        # wait interval_check to be finished before decrement
+        meta.running_interval -= 1
+        meta.push_interval(meta.app.backoff_interval)
+    else:
+        meta.running_interval -= 1
+
+
+signal.signal(signal.SIGALRM, interval_check)

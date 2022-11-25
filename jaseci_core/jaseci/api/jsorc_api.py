@@ -1,10 +1,14 @@
 """
 Queue api functions as a mixin
 """
+
 import yaml
 import json
+from json import dumps, loads
+from time import time
 from base64 import b64decode
-from jaseci.svc.kubernetes import Kube
+from jaseci.svc import CommonService
+from jaseci.svc.common import Kube
 from jaseci.api.interface import Interface
 
 
@@ -13,7 +17,7 @@ class JsOrcApi:
     temporary
     """
 
-    @Interface.admin_api(cli_args=["name"])
+    @Interface.admin_api()
     def load_yaml(self, files: list, namespace: str = "default"):
         """
         temporary
@@ -33,6 +37,66 @@ class JsOrcApi:
                 res[kind].append(conf)
 
         return res
+
+    @Interface.admin_api(cli_args=["name"])
+    def config_yaml(self, name: str, file: list):
+        """
+        Set a config from yaml
+        """
+
+        new_config = {}
+
+        config_version = str(time())
+
+        for conf in yaml.safe_load_all(b64decode(file[0]["base64"])):
+            kind = conf["kind"]
+            labels = conf.get("metadata").get("labels")
+            if not labels.get("config_version"):
+                labels["config_version"] = config_version
+
+            if not new_config.get(kind):
+                new_config[kind] = []
+            new_config[kind].append(conf)
+
+        old_config = self._h.get_glob(name)
+        if old_config:
+            old_config = loads(old_config)
+            old_config.pop("__OLD_CONFIG__", None)
+            for kind, confs in old_config.items():
+                names = []
+                for conf in confs:
+                    names.append(conf["metadata"]["name"])
+                old_config[kind] = names
+
+            new_config["__OLD_CONFIG__"] = old_config
+
+        self._h.save_glob(name, dumps(new_config))
+
+        return new_config
+
+    @Interface.admin_api(cli_args=["name"])
+    def service_refresh(self, name: str):
+        """
+        refresh service
+        """
+
+        hook = self._h
+
+        to_start = not hook.meta.is_automated()
+
+        service = getattr(hook, name, None)
+
+        response = {"success": False}
+
+        if isinstance(service, CommonService):
+            service.reset(hook, to_start)
+            response["success"] = True
+        else:
+            response[
+                "message"
+            ] = f"{name} is not a valid service. Can not refresh config."
+
+        return response
 
     @Interface.admin_api(cli_args=["name"])
     def service_call(self, svc: str, attrs: list = []):

@@ -1,8 +1,5 @@
-import threading
 from copy import deepcopy
-from time import sleep
-from threading import Thread
-from ctypes import c_long, py_object, pythonapi
+from multiprocessing import Process
 
 from kubernetes import config as kubernetes_config
 from kubernetes.client import ApiClient, CoreV1Api, AppsV1Api, RbacAuthorizationV1Api
@@ -102,18 +99,18 @@ class CommonService:
 
     def spawn_daemon(self, **targets):
         for name, target in targets.items():
-            dae: ClosableThread = self.daemon.get(name)
+            dae: Process = self.daemon.get(name)
             if not dae or not dae.is_alive():
-                thread = ClosableThread(target=target, daemon=True)
-                thread.start()
-                self.daemon[name] = thread
+                process = Process(target=target, daemon=True)
+                process.start()
+                self.daemon[name] = process
 
     def terminate_daemon(self, *names):
         for name in names:
-            dae: ClosableThread = self.daemon.pop(name, None)
+            dae: Process = self.daemon.pop(name, None)
             if not (dae is None) and dae.is_alive():
                 logger.info(f"Terminating {name} ...")
-                dae.force_close()
+                dae.terminate()
 
     ###################################################
     #                     CLEANER                     #
@@ -264,7 +261,7 @@ class JsOrc:
             if config.pop("automation", False):
                 self.kubernetes = Kube(**config.pop("kubernetes", KUBERNETES_CONFIG))
                 self.prometheus = self.meta.get_service("promon", hook)
-                self.interval = config.pop("interval", 10)
+                self.backoff_interval = config.pop("backoff_interval", 10)
                 self.namespace = config.pop("namespace", "default")
                 self.keep_alive = config.pop(
                     "keep_alive", ["promon", "redis", "task", "mail"]
@@ -276,17 +273,14 @@ class JsOrc:
             self.automated = False
 
     def interval_check(self):
-        while True:
-            hook = self.meta.build_hook()
-            for svc in self.keep_alive:
-                try:
-                    self.check(self.namespace, svc, hook)
-                except Exception as e:
-                    logger.exception(
-                        f"Error checking {svc} !\n" f"{e.__class__.__name__}: {e}"
-                    )
-
-            sleep(self.interval)
+        hook = self.meta.build_hook()
+        for svc in self.keep_alive:
+            try:
+                self.check(self.namespace, svc, hook)
+            except Exception as e:
+                logger.exception(
+                    f"Error checking {svc} !\n" f"{e.__class__.__name__}: {e}"
+                )
 
     ###################################################
     #                   KUBERNETES                    #
@@ -436,6 +430,7 @@ class MetaProperties:
             setattr(cls, "_enabled", True)
             setattr(cls, "_state", Ss.NOT_STARTED)
             setattr(cls, "_quiet", False)
+            setattr(cls, "_running_interval", 0)
 
     @property
     def app(self) -> JsOrc:
@@ -469,30 +464,10 @@ class MetaProperties:
     def quiet(self, val: bool):
         pass
 
+    @property
+    def running_interval(self) -> int:
+        return self.cls._running_interval
 
-# ----------------------------------------------- #
-
-
-###################################################
-#                  CUSTOM THREAD                  #
-###################################################
-
-
-class ClosableThread(Thread):
-    def force_close(self):
-        if self.is_alive() and not hasattr(self, "_thread_id"):
-            for tid, tobj in threading._active.items():
-                if tobj is self:
-                    self._thread_id = tid
-                    break
-
-            if (
-                pythonapi.PyThreadState_SetAsyncExc(
-                    c_long(self._thread_id), py_object(SystemExit)
-                )
-                != 1
-            ):
-                pythonapi.PyThreadState_SetAsyncExc(c_long(self._thread_id), None)
-                raise SystemError("Failed to force close running thread!")
-
-        self.join()
+    @running_interval.setter
+    def running_interval(self, val: int):
+        self.cls._running_interval = val
