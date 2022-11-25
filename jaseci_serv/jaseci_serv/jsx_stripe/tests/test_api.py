@@ -20,8 +20,8 @@ class ApiTest(TestCaseHelper, TestCase):
         self.user = get_user_model().objects.create_user(
             email="JSCITEST_test@jaseci.com", password="password"
         )
-        self.master = self.user.get_master()
         self.client.force_authenticate(self.admin_user)
+        self.master = self.user.get_master()
 
     def tearDown(self):
         """Deletes test users and sample stripe_api_key out of databases"""
@@ -29,13 +29,39 @@ class ApiTest(TestCaseHelper, TestCase):
         self.user.delete()
         super().tearDown()
 
+    def test_stripe_init_returns_stripe_webhook_url(self):
+        """/stripe/init"""
+        # self.master._h.save_glob(
+        #     "STRIPE_API_KEY",
+        #     "sk_test_4eC39HqLyjWDarjtT1zdp7dc",
+        # )
+        GlobalVars.objects.create(
+            name="STRIPE_API_KEY",
+            value="sk_test_4eC39HqLyjWDarjtT1zdp7dc",
+        )
+
+        print(list(self.master._h.list_glob_from_store()))
+
+        res = self.client.post(reverse("stripe_init"))
+
+        # print(res.json())
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.json()["success"])
+        self.assertTrue(res.json()["data"].startswith("/js_public/walker_callback/"))
+
     def test_stripe_init_should_return_forbidden_response(self):
         """should return forbidden response"""
+
+        # self.master._h.destroy_glob(
+        #     "STRIPE_API_KEY"
+        # )
+
         GlobalVars.objects.filter(name="STRIPE_API_KEY").delete()
 
         res = self.client.post(reverse("stripe_init"))
 
-        print(res.json())
+        # print(res.json())
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
         self.assertFalse(res.json()["success"])
@@ -43,18 +69,3 @@ class ApiTest(TestCaseHelper, TestCase):
             res.json()["message"]
             == "Stripe is not yet configured. Please set a valid stripe key."
         )
-
-    def test_stripe_init_returns_stripe_webhook_url(self):
-        """/stripe/init"""
-        GlobalVars.objects.create(
-            name="STRIPE_API_KEY",
-            value="sk_test_4eC39HqLyjWDarjtT1zdp7dc",
-        )
-
-        res = self.client.post(reverse("stripe_init"))
-
-        print(res.json())
-
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertTrue(res.json()["success"])
-        self.assertTrue(res.json()["data"].startswith("/js_public/walker_callback/"))
