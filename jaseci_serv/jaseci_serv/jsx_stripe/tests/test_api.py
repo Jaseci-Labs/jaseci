@@ -48,8 +48,6 @@ class ApiTest(TestCaseHelper, TestCase):
         self.assertTrue(res.json()["success"])
         self.assertTrue(res.json()["data"].startswith("/js_public/walker_callback/"))
 
-        GlobalVars.objects.filter(name="STRIPE_API_KEY").delete()
-
     def test_stripe_init_should_return_forbidden_response(self):
         """should return forbidden response"""
 
@@ -58,6 +56,9 @@ class ApiTest(TestCaseHelper, TestCase):
         # )
 
         GlobalVars.objects.filter(name="STRIPE_API_KEY").delete()
+
+        if self.master._h.get_glob("STRIPE_API_KEY"):
+            self.master._h.destroy_glob("STRIPE_API_KEY")
 
         res = self.client.post(reverse("stripe_init"))
 
