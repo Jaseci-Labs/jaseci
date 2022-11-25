@@ -25,12 +25,14 @@ class SnipsPreProcessor:
         emb = emb[0][:, 0, :]
         return emb
 
+
 class V2VPostProcessor:
     def __init__(self):
         pass
 
     def process(self, output: torch.Tensor) -> list:
         return output.tolist()[0]
+
 
 class V2VPreProcessor:
     def __init__(self):
@@ -42,7 +44,9 @@ class V2VPreProcessor:
 
 
 class CustomProcessor:
-    def __init__(self, module_name:str, python_file:str = "heads/custom.py", **kwargs):
+    def __init__(
+        self, module_name: str, python_file: str = "heads/custom.py", **kwargs
+    ):
         spec = importlib.util.spec_from_file_location("module.name", python_file)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
