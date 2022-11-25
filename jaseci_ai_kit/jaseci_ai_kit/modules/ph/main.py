@@ -7,7 +7,7 @@ from fastapi import HTTPException
 
 from jaseci.actions.live_actions import jaseci_action
 
-from .utils.util import read_yaml, deep_update
+from .utils.util import read_yaml, deep_update, save_custom_python
 from .inference import InferenceList
 
 warnings.filterwarnings("ignore")
@@ -30,7 +30,7 @@ setup()
 
 
 @jaseci_action(act_group=["ph"], allow_remote=True)
-def create_head_list(config: Dict = None) -> None:
+def create_head_list(config: Dict = None, python: str = None) -> None:
     """
     Create a holder for all the heads
     """
@@ -38,6 +38,8 @@ def create_head_list(config: Dict = None) -> None:
         global il, list_config
         if config:
             deep_update(list_config, config)
+        if python:
+            save_custom_python(python)
         il = InferenceList(config=list_config)
     except Exception as e:
         print(traceback.format_exc())

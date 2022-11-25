@@ -7,7 +7,7 @@ walker test_create_head_list {
                 "embedding_length": 768
             }
         }
-    });
+    }, "print('apple')");
 }
 
 walker test_create_head{

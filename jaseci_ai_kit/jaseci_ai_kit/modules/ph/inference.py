@@ -63,13 +63,19 @@ class InferenceEngine:
         self.model.eval()
 
         # Initialize Pre-processor
+        preprocessor_args = self.infer_config["preprocess"].get("args", {})
+        if self.infer_config["preprocess"]["type"].startswith("Custom"):
+            preprocessor_args["module_name"] = "CustomPreProcessor"
         self.preprocessor = getattr(
             process_module, self.infer_config["preprocess"]["type"]
-        )(**self.infer_config["preprocess"].get("args", {}))
+        )(**preprocessor_args)
         # Initialize Post-processor
+        postprocessor_args = self.infer_config["postprocess"].get("args", {})
+        if self.infer_config["postprocess"]["type"].startswith("Custom"):
+            postprocessor_args["module_name"] = "CustomPostProcessor"
         self.postprocessor = getattr(
             process_module, self.infer_config["postprocess"]["type"]
-        )(**self.infer_config["postprocess"].get("args", {}))
+        )(**postprocessor_args)
 
     @torch.no_grad()
     def predict(self, data: Any) -> Any:
@@ -145,10 +151,14 @@ class InferenceList:
             raise ImproperConnectionState("Inference Engine not found.")
 
     def update_head(self, uuid: str, run_id: str) -> None:
-        shutil.copyfile(
-            f"heads/{uuid}/runs/{run_id}/model_best.pth", f"heads/{uuid}/current.pth"
-        )
-        self.ie_list[uuid].load_weights(f"heads/{uuid}/current.pth")
+        if os.path.exists(f"heads/{uuid}/runs/{run_id}/model_best.pth"):
+            shutil.copyfile(
+                f"heads/{uuid}/runs/{run_id}/model_best.pth",
+                f"heads/{uuid}/current.pth",
+            )
+            self.ie_list[uuid].load_weights(f"heads/{uuid}/current.pth")
+        else:
+            print(f"Model for {uuid} has not improved. No update.")
 
     def get_config(self, uuid: str) -> Dict:
         if self.check(uuid):
