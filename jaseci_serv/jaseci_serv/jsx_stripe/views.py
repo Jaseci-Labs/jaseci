@@ -18,7 +18,6 @@ class StripeView(APIView):
         master = request.user.get_master()
         api_key = master._h.get_glob("STRIPE_API_KEY")
 
-        print("batman", api_key, list(master._h.list_glob_from_store()))
         if not api_key:
             return Response(
                 {

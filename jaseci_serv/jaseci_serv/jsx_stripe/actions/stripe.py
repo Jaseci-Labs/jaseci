@@ -106,13 +106,6 @@ def create_customer(
             payment_method=payment_method_id,
             invoice_settings={"default_payment_method": payment_method_id},
         )
-
-        # TODO: update user node, try to add customer_id in the context,
-        # in zsb: update [botset.context.customer]
-        # in myca: add [life.context.customer]
-
-        # WHERE or WHAT NODE should stripe customer details be put?
-        # WHERE or WHAT NODE should stripe subscription details be put?
     except Exception as e:
         return {"message": str(e)}
 
