@@ -1,6 +1,7 @@
 import { Component, Element, h, Prop, State, Watch } from '@stencil/core';
 import * as vis from 'vis-network';
 import * as visData from 'vis-data';
+import { formatEdges, formatNodes } from './utils';
 
 type EndpointBody = {
   gph?: string | null;
@@ -49,6 +50,10 @@ export class JscGraph {
   @State() clickedNode: vis.Node & { context: {} };
   @State() clickedEdge: vis.Edge & { context: {} };
 
+  // convert response to match required format for vis
+  formatNodes = formatNodes;
+  formatEdges = formatEdges;
+
   networkEl!: HTMLDivElement;
 
   async getActiveGraph(): Promise<Graph> {
@@ -94,7 +99,7 @@ export class JscGraph {
         'Authorization': `token ${localStorage.getItem('token')}`,
       },
     }).then(async res => {
-      const data = await res.json();
+      const data = (await res.json()) || [];
       if (this.nd && this.onFocus === 'expand' && this.prevNd !== '') {
         // create datasets
         if (!this.edges && !this.nodes) {
@@ -103,7 +108,7 @@ export class JscGraph {
         }
 
         if (this.network) {
-          this.network.stabilize();
+          // this.network.stabilize();
           this.network.storePositions();
         }
 
@@ -119,13 +124,33 @@ export class JscGraph {
         });
 
         this.formatEdges(data).forEach(edge => {
-          if (!this.edges.get({ filter: item => item.to === edge.to }).length) {
+          const edges = this.edges.get({ filter: item => item.context.jid === (edge as any).context.jid });
+
+          if (!edges.length) {
             this.edges.add(edge);
+            const fromNode = this.nodes.get({ filter: (item: vis.Node) => item.id === edge.from })[0];
+            const toNode = this.nodes.get({ filter: (item: vis.Node) => item.id === edge.to })[0];
+
+            const updates = [];
+
+            if (fromNode) {
+              updates.push({ id: fromNode.id, value: (fromNode.value || 0) + 1 });
+            }
+
+            if (toNode) {
+              updates.push({ id: toNode.id, value: (toNode.value || 0) + 1 });
+            }
+
+            this.nodes.update(updates);
           }
         });
       } else {
-        this.nodes = new visData.DataSet(this.formatNodes(data) as any);
-        this.edges = new visData.DataSet(this.formatEdges(data) as any);
+        try {
+          this.nodes = new visData.DataSet(this.formatNodes(data) as any);
+          this.edges = new visData.DataSet(this.formatEdges(data) as any);
+        } catch (err) {
+          console.log(err);
+        }
 
         // update view when viewing the full graph
         if (this.network) {
@@ -141,22 +166,42 @@ export class JscGraph {
             // width: '100%',
             edges: {
               arrows: { to: { enabled: true, scaleFactor: 0.5 } },
-              dashes: true,
+              // dashes: true,
               selectionWidth: 2,
               width: 0.5,
               color: {},
+              smooth: true,
+            },
+            nodes: {
+              shape: 'dot',
+              size: 10,
+              scaling: {
+                min: 10,
+                max: 30,
+                label: {
+                  min: 10,
+                  max: 25,
+                  drawThreshold: 12,
+                  maxVisible: 25,
+                },
+              },
+              borderWidth: 1,
             },
             interaction: {},
+
+            physics: {
+              forceAtlas2Based: {
+                springLength: 50,
+              },
+              minVelocity: 0.55,
+              solver: 'forceAtlas2Based',
+            },
             // layout: { improvedLayout: true },
           },
         );
       } else {
-        this.network.stabilize();
         this.network.storePositions();
-
-        // this.network.setData({ edges: this.edgesArray, nodes: this.nodesArray });
         this.network.selectNodes([this.nd], true);
-        this.network.focus(this.nd, { scale: 2 });
       }
     });
   }
@@ -164,20 +209,6 @@ export class JscGraph {
   @Watch('graphId')
   async refreshGraph() {
     await this.getGraphState();
-  }
-
-  // convert response to match required format for vis
-  @Watch('nd')
-  formatNodes(data: [][]): vis.Node[] {
-    return data
-      ?.filter((item: any) => item.j_type === 'node')
-      .map((node: any) => ({
-        id: node.jid,
-        label: node.name,
-        group: node.name,
-        context: node.context,
-        shape: 'circle',
-      }));
   }
 
   handleNetworkClick(network: vis.Network, params?: any) {
@@ -199,19 +230,6 @@ export class JscGraph {
     } else {
       this.clickedEdge = this.edges.get([edge])[0];
     }
-  }
-
-  // convert response to match required format for vis
-  formatEdges(data: {}[]): vis.Edge[] {
-    return data
-      ?.filter((item: any) => item.j_type === 'edge')
-      .map((edge: any) => ({
-        from: edge.from_node_id,
-        to: edge.to_node_id,
-        label: edge.name,
-        context: edge.context,
-        group: edge.name,
-      }));
   }
 
   /** Update the network with the correct visibility of nodes */
