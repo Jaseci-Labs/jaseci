@@ -47,7 +47,7 @@ jobs:
           build-args: |
             JASECI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_SERV_VERSION=${{steps.set_version.outputs.no-v-tag}}
-          file: {context}/jaseci.Dockerfile
+          file: ./support/docker/jaseci.Dockerfile
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
