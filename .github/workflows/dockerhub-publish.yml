@@ -28,7 +28,7 @@ jobs:
 
       # a little string manipulation to get the tag number without the leading letter v
       - name: Set versions
-        users: actions/github-script@v4
+        uses: actions/github-script@v4
         id: set_version
         with:
           script: |
