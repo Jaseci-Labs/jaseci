@@ -1,4 +1,4 @@
-from jaseci.svc import PromotheusService as Ps
+from jaseci.svc import PrometheusService as Ps
 from .config import PROMON_CONFIG
 
 
