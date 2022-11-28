@@ -48,11 +48,7 @@ metadata:
   namespace: default
 data:
   prod_up: |-
-    apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    git clone https://github.com/Jaseci-Labs/jaseci.git
-    cd jaseci;
-    cd jaseci_core; source install.sh;
-    cd ../jaseci_serv; source install.sh;
+    cd /;
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -75,7 +71,7 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: python:3-slim
+          image: jaseci/jaseci:1.3.5.22
           resources:
             requests:
               memory: "350Mi"
