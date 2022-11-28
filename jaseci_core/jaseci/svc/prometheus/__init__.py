@@ -1,5 +1,5 @@
-from .prometheus import PromotheusService
+from .prometheus import PrometheusService
 
 __all__ = [
-    "PromotheusService",
+    "PrometheusService",
 ]

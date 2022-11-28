@@ -7,7 +7,7 @@ from jaseci.svc import (
     MailService,
     RedisService,
     TaskService,
-    PromotheusService,
+    PrometheusService,
     ServiceState as Ss,
 )
 
@@ -132,7 +132,7 @@ class MetaService(CommonService, MetaProperties):
         self.add_service_builder("redis", RedisService)
         self.add_service_builder("task", TaskService)
         self.add_service_builder("mail", MailService)
-        self.add_service_builder("promon", PromotheusService)
+        self.add_service_builder("promon", PrometheusService)
 
 
 def interval_check(signum, frame):

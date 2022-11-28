@@ -145,9 +145,34 @@ This class is the base for implementing service. Dev should use this class if th
 
         super().reset(hook)
 ```
-
+---
 # `MetaService` (base from `CommonService`)
-This class will now be the handler for every service class. It's attributes are different from other services as they are static variable instead of instance variable. This is to have a global handler for every services and will not reinitialize every time it was called.
+This class will now be the handler for every service class with the help of `JsOrc`. MetaService's attributes are different from other services as they are static variable instead of instance variable. This is to have a global handler for every services and will not reinitialize every time it was called. This Service can't be disabled and will always shows logs.
+
+`JsOrc` will be the app that MetaService will use to hold every context and services. It also holds the initalization part of that values.
+
+## `CONFIG`
+
+```python
+KUBERNETES_CONFIG = {"in_cluster": True, "config": None}
+
+META_CONFIG = {
+    # if jsorc will have the power to re/build itself
+    "automation": False,
+
+    # waiting time before the next interval is triggered
+    "backoff_interval": 10,
+
+    # jsorc namespace. Initially for cluster but should be used on every other settings
+    "namespace": "default",
+
+    # name of services that needs to be check for every interval
+    "keep_alive": ["promon", "redis", "task", "mail"],
+
+    # this config use for kubectl configs
+    "kubernetes": KUBERNETES_CONFIG,
+}
+```
 
 ## `Usage`
 
@@ -230,8 +255,6 @@ This class will now be the handler for every service class. It's attributes are 
         ms1.add_context("hook", RedisHook, *args, **kwargs) # args/kwargs are optional
 
         hook = ms1.build_hook() # hook will be RedisHook instance
-        hook.kube # kube service
-        hook.jsorc # jsorc service
         hook.promon # promon service
         hook.redis # redis service
         hook.task # task service
@@ -257,8 +280,6 @@ This class will now be the handler for every service class. It's attributes are 
 
         master = ms1.build_master() # hook will be RedisHook instance
         master._h # hook instance
-        _h.kube # kube service
-        _h.jsorc # jsorc service
         _h.promon # promon service
         _h.redis # redis service
         _h.task # task service
@@ -284,8 +305,6 @@ This class will now be the handler for every service class. It's attributes are 
 
         master = ms1.build_master() # hook will be RedisHook instance
         master._h # hook instance
-        _h.kube # kube service
-        _h.jsorc # jsorc service
         _h.promon # promon service
         _h.redis # redis service
         _h.task # task service
@@ -301,7 +320,7 @@ import stripe
 from jaseci.svc import CommonService
 from .config import STRIPE_CONFIG
 
-class StripeService(Co):
+class StripeService(CommonService):
 
     def run(self):
         self.app = stripe
@@ -345,3 +364,131 @@ from jaseci_serv.svc import MetaService
     stripe_service1.app.call_any_stripe_methods()
     stripe_service2.other_method_for_automation2()
     stripe_service3.other_method_for_automation3()
+
+```
+
+---
+# **`Automation `**(`JsOrc`)
+This will only happen if META_CONFIG is set to be automated.
+- `JsOrc` will try to run all **not** `RUNNING` services but tagged to keep alive
+- it will check each service if it has kube config and will try to add every setting to cluster.
+- It will also check in the cluster if the pod state is running before it tries to re/run the actual service
+- if service doesn't have kube config it will just try to rerun the service
+
+## `USAGE`
+- adding the service to keep_alive will let the jsorc handle it
+- any `{{NAME}}_KUBE` and `{{NAME}}_CONFIG` is set to the actual service not on `JsOrc`
+
+## `EXAMPLE`
+
+### `with` kube config
+- [prometheus.py](../prometheus/prometheus.py)
+- [kube.py](../prometheus/kube.py)
+    - `PROMON_KUBE` == grouped values from `yaml.safe_load_all(...yaml_file...)`
+        - ex:
+        ```json
+            // map each safe_load_all to $.kind
+            {
+                "ServiceAccount": [
+                    {
+                        "apiVersion": "v1",
+                        "kind": "ServiceAccount",
+                        "metadata": {
+                            "labels": {
+                                "helm.sh/chart": "kube-state-metrics-4.13.0",
+                                "app.kubernetes.io/managed-by": "Helm",
+                                "app.kubernetes.io/component": "metrics",
+                                "app.kubernetes.io/part-of": "kube-state-metrics",
+                                "app.kubernetes.io/name": "kube-state-metrics",
+                                "app.kubernetes.io/instance": "jaseci-prometheus",
+                                "app.kubernetes.io/version": "2.5.0",
+                            },
+                            "name": "jaseci-prometheus-kube-state-metrics",
+                            "namespace": "default",
+                        },
+                        "imagePullSecrets": [],
+                    }
+                ]
+            }
+        ```
+
+```python
+# ... other imports
+from .kube import PROMON_KUBE
+class PromotheusService(CommonService):
+    # ... all other codes ...
+    def build_kube(self, hook) -> dict:
+        return hook.service_glob("PROMON_KUBE", PROMON_KUBE)
+```
+- since `promon` is included on keep_alive, `JsOrc` will include it on `interval_check`
+- during `interval_check`, `JsOrc` will try to add every kube configuration from `PROMON_KUBE` grouped by commands
+- on first `interval_check`, it is expected to ignore the rerun of the `promon` service because the pods that has been generated is **`not`** yet fully initialized and running.
+- subsequent `interval_check` should have the ability to restart the `promon` service since pods for prometheus server should be available by that time (this may vary depends on network or server)
+- if `promon` is now running it will now be ignored on next `interval_check`
+
+### `without` kube config
+- [task.py](../task/task.py)
+- if it's not yet running, every `interval_check` will check if TaskService is running.
+- if it returns false, it will just run task.reset(hook)
+
+## `SUMMARY`
+- Initialization of every service included in `keep_alive` config should be automatically handled by `JsOrc`.
+
+---
+
+# `Configuration API's`
+
+## `config_set`
+ - for updating service configs
+ - ex: `MetaService`
+    > ```js
+    > {
+    >     "name": "META_CONFIG",
+    >     "value": {
+    >         "automation": true,
+    >         "backoff_interval": 10,
+    >         "namespace": "default",
+    >         "keep_alive": [
+    >             "promon",
+    >             "redis",
+    >             "task",
+    >             "mail"
+    >         ],
+    >         "kubernetes": {
+    >             "in_cluster": true,
+    >             "config": null
+    >         }
+    >     },
+    >     "do_check": false
+    > }
+    > ```
+
+
+## `config_yaml` (to be renamed)
+ - for updating service's kube configurations
+ - uses multipart/form-data since it needs the yaml file
+ - this will also have mechanism for automatic versioning to be able to use the patching features in cluster
+ - this can handle create/patch/delete mechanism
+ - ex: `PROMON_KUBE`
+    > ```js
+    > const form = new FormData();
+    > form.append('name', 'PROMON_KUBE');
+    > form.append('file', File(['<data goes here>'], '...\\prometheus.yaml'));
+    >
+    > fetch('.../config_yaml', {
+    >   method: 'POST',
+    >   headers: {...},
+    >   body: form
+    > });
+    > ```
+
+## `service_refresh`
+ - for restarting service
+ - if automation is enabled. This will just resync the configs and let `JsOrc` handle the rest
+ - ex: `MetaService`
+    > ```js
+    > {
+    >   // name of service in hook [task/redis/promon/mail/meta]
+    >   "name": "meta"
+    > }
+    > ```

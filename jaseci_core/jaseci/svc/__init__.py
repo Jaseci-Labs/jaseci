@@ -3,7 +3,7 @@ from .common import CommonService, ProxyService, JsOrc, MetaProperties
 from .redis import RedisService
 from .task import TaskService
 from .mail import MailService
-from .prometheus import PromotheusService
+from .prometheus import PrometheusService
 from .meta import MetaService
 
 __all__ = [
@@ -15,6 +15,6 @@ __all__ = [
     "RedisService",
     "TaskService",
     "MailService",
-    "PromotheusService",
+    "PrometheusService",
     "MetaService",
 ]

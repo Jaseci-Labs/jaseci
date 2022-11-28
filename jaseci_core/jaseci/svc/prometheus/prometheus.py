@@ -4,7 +4,7 @@ from .config import PROMON_CONFIG
 from .kube import PROMON_KUBE
 
 
-class PromotheusService(CommonService):
+class PrometheusService(CommonService):
 
     ###################################################
     #                     BUILDER                     #
