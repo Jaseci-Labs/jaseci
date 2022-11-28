@@ -1,6 +1,5 @@
 from jaseci.utils.log_utils import parse_logs
 from jaseci.utils.test_core import CoreTest
-from jaseci.utils.utils import logger, app_logger
 
 
 class LoggerApiTest(CoreTest):
@@ -23,14 +22,14 @@ class LoggerApiTest(CoreTest):
         self.assertEqual(parsed_logs[1]["date"], None)
 
     def test_get_logs(self):
+        self.logger_on()
         self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("test_logging.jac")}],
         )
-
-        logger.warning("hello")
-        app_logger.warning("hello")
+        self.logger_off()
 
         ret = self.call(self.smast, ["logger_get_logs", {}])
 
-        print("ret", ret)
+        self.assertEqual(len(ret), 1)
+        self.assertTrue(ret[0]["log"].endswith("Hello world!"))

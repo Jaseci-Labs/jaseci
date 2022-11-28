@@ -1,3 +1,3 @@
 walker init {
-    std.out("Hello world!");
+    std.log("Hello world!");
 }
