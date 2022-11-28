@@ -324,9 +324,9 @@ class JsOrc:
             )
             return e
 
-    def check(self, namespace, svc, hook):
+    def check(self, namespace, svc_name, hook):
 
-        svc = self.meta.get_service(svc, hook)
+        svc = self.meta.get_service(svc_name, hook)
 
         if not svc.is_running():
             if svc.kube:
@@ -372,8 +372,12 @@ class JsOrc:
                             self.delete(kind, to_be_removed, namespace)
 
                 if self.kubernetes.is_running(pod_name, namespace):
+                    logger.info(
+                        f"Pod state is running. Trying to Restart {svc_name}..."
+                    )
                     svc.reset(hook)
             else:
+                logger.info(f"Restarting {svc_name}...")
                 svc.reset(hook)
 
     ###################################################
