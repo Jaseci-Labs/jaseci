@@ -101,6 +101,9 @@
 - [Locust Load Test for JASECI](support/locust/README.md)
 - [Setting up Monitoring for JASECI](support/monitoring/README.md)
 
+## Jaseci X Features
+- [Stripe Integration](jaseci_serv/jaseci_serv/jsx_stripe/README.md)
+
 ## Jaseci Core Internals
 
 - [Services](jaseci_core/jaseci/svc/README.md)
