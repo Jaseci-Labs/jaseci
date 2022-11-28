@@ -75,7 +75,7 @@ spec:
           resources:
             requests:
               memory: "350Mi"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command: [bash, -c, "source script/prod_up"]
           ports:
             - containerPort: 80

@@ -37,7 +37,8 @@ jobs:
             core.setOutput('no-v-tag', no_v_tag)
 
       # build the image and push to docker hub
-      - name: Build image and push to Docker Hub
+      # 1. jaseci 
+      - name: Build and push image -- Jaseci
         uses: docker/build-push-action@v3
         with:
           push: true
@@ -49,5 +50,17 @@ jobs:
             JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
           file: ./support/docker/jaseci.Dockerfile
 
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+      # 2. jaseci with jaseci_ai_kit
+      - name: Build and push image -- Jaseci with jaseci-ai-kit
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          context: ./support/docker/
+          tags: |
+            jaseci/jaseci-ai:${{steps.set_version.outputs.no-v-tag}}
+          build-args: |
+            JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
+            JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
+            JASECI_AI_KIT_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
+            BUILD_WITH_AI=1
+          file: ./support/docker/jaseci.Dockerfile
