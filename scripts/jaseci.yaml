@@ -71,11 +71,11 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: jaseci/jaseci-ai:1.3.5.22
+          image: jaseci/jaseci-ai:latest
           resources:
             requests:
               memory: "350Mi"
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:
             - containerPort: 80
