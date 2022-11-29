@@ -91,7 +91,7 @@ jobs:
   build-and-release-jaseci-docker-image:
     name: Build Jaseci Docker image and push to dockerhub
     runs-on: ubuntu-latest
-    needs: [push_jaseci_core_to_pypi, push_jaseci_serve_to_pypi]
+    needs: [push_jaseci_core_to_pypi, push_jaseci_serv_to_pypi]
 
     steps:
       - name: Checkout code
@@ -136,7 +136,7 @@ jobs:
   build-and-release-jaseci-ai-docker-image:
     name: Build Jaseci AI Docker image and push to dockerhub
     runs-on: ubuntu-latest
-    needs: [push_jaseci_core_to_pypi, push_jaseci_serve_to_pypi, push_jaseci_ai_kit_to_pypi]
+    needs: [push_jaseci_core_to_pypi, push_jaseci_serv_to_pypi, push_jaseci_ai_kit_to_pypi]
 
     steps:
       - name: Checkout code
