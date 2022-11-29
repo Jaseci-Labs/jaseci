@@ -3,6 +3,8 @@ name: Build and Push to DockerHub
 on:
   workflow_run:
     workflows: [Upload Python Package]
+    tags:
+      - "*"
     types:
       - completed
 
