@@ -1,0 +1,181 @@
+# This workflow will upload a Python Package using Twine when a new tag is created
+# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# This workflow will also build and upload two docker images to dockerhub
+
+name: Build and Release to Pypi and DockerHub
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  push_jaseci_core_to_pypi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+          pip install build
+
+      - name: Push to pypi
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.JASECI_PYPI_API_TOKEN }}
+        run: |
+          cd jaseci_core
+          python3 -m build
+          python3 -m twine upload --skip-existing dist/*
+
+  push_jaseci_serv_to_pypi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+          pip install build
+
+      - name: Push to pypi
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.JASECI_SERV_PYPI_API_TOKEN }}
+        run: |
+          cd jaseci_serv
+          python3 -m build
+          python3 -m twine upload --skip-existing dist/*
+
+  push_jaseci_ai_kit_to_pypi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+          pip install build
+
+      - name: Push to pypi
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.JASECI_JSKIT_PYPI_API_TOKEN }}
+        run: |
+          cd jaseci_ai_kit
+          python3 -m build
+          python3 -m twine upload --skip-existing dist/*
+
+  build-and-release-jaseci-docker-image:
+    name: Build Jaseci Docker image and push to dockerhub
+    runs-on: ubuntu-latest
+    needs: [push_jaseci_core_to_pypi, push_jaseci_serve_to_pypi]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # setup Docker buld action
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      # login to dockerhub
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # a little string manipulation to get the tag number without the leading letter v
+      - name: Set versions
+        uses: actions/github-script@v4
+        id: set_version
+        with:
+          script: |
+            const tag = context.ref.substring(10)
+            const no_v_tag = tag.replace('v', '')
+            core.setOutput('no-v-tag', no_v_tag)
+
+      # build the image and push to docker hub
+      # 1. jaseci 
+      - name: Build and push image -- Jaseci
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          context: ./support/docker/
+          tags: |
+            jaseci/jaseci:${{steps.set_version.outputs.no-v-tag}}
+          build-args: |
+            JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
+            JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
+          file: ./support/docker/jaseci.Dockerfile
+
+  build-and-release-jaseci-ai-docker-image:
+    name: Build Jaseci AI Docker image and push to dockerhub
+    runs-on: ubuntu-latest
+    needs: [push_jaseci_core_to_pypi, push_jaseci_serve_to_pypi, push_jaseci_ai_kit_to_pypi]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # setup Docker buld action
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      # login to dockerhub
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # a little string manipulation to get the tag number without the leading letter v
+      - name: Set versions
+        uses: actions/github-script@v4
+        id: set_version
+        with:
+          script: |
+            const tag = context.ref.substring(10)
+            const no_v_tag = tag.replace('v', '')
+            core.setOutput('no-v-tag', no_v_tag)
+
+      # build the image and push to docker hub
+      # 2. jaseci with jaseci_ai_kit
+      - name: Build and push image -- Jaseci with jaseci-ai-kit
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          context: ./support/docker/
+          tags: |
+            jaseci/jaseci-ai:${{steps.set_version.outputs.no-v-tag}}
+          build-args: |
+            JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
+            JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
+            JASECI_AI_KIT_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
+            BUILD_WITH_AI=1
+          file: ./support/docker/jaseci.Dockerfile
