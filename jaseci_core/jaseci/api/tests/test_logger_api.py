@@ -29,7 +29,7 @@ class LoggerApiTest(CoreTest):
         )
         self.logger_off()
 
-        ret = self.call(self.smast, ["logger_get_logs", {}])
+        ret = self.call(self.smast, ["logger_get", {}])
 
         self.assertEqual(len(ret), 1)
         self.assertTrue(ret[0]["log"].endswith("Hello world!"))
