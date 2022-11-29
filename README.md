@@ -79,10 +79,11 @@
   - [Object Detection](jaseci_ai_kit/jaseci_ai_kit/modules/object_detection/readme.md)
   - [T5 Summarization](jaseci_ai_kit/jaseci_ai_kit/modules/t5_sum/README.md)
   - [Text Segmenter](jaseci_ai_kit/jaseci_ai_kit/modules/text_seg/README.md)
+  - [Text Clustering](jaseci_ai_kit/jaseci_ai_kit/modules/cluster/README.md)
   - [Transformer NER](jaseci_ai_kit/jaseci_ai_kit/modules/tfm_ner/README.md)
   - [USE Encoder](jaseci_ai_kit/jaseci_ai_kit/modules/use_enc/README.md)
   - [USE QA](jaseci_ai_kit/jaseci_ai_kit/modules/use_qa/README.md)
-  - [Personalized Head](jaseci_ai_kit/jaseci_ai_kit/modules/ph/README.md)
+
 - [Guide to use Jaseci AI Kit](jaseci_ai_kit/jaseci_ai_kit/guid-to-use-ai-kit.md)
 - [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/jaseci_ai_kit/README.md)
 

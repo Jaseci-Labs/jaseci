@@ -33,7 +33,7 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 | ---------- | -------------- | -------------------------------- | ---------------- | ----------- | ------------------------------------- | ------------------------------------------------------------------- |
 | `text_seg` | Text Segmenter | [Link](#text-segmenter-text_seg) | No Training req. | Experimetal | Topical Change Detection in Documents | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec) |
 
-## Text Clusterin
+## Text Clustering
 | Module    | Model Name   | Example                       | Type             | Status      | Description                                               | Resources                                            |
 | --------- | ------------ | ----------------------------- | ---------------- | ----------- | --------------------------------------------------------- | ---------------------------------------------------- |
 | `cluster` | Text Cluster | [Link](#text-cluster-cluster) | No Training req. | Experimetal | Indentifying Posible Similar Clusters in Set of Documents | [UMAP](https://umap-learn.readthedocs.io/en/latest/) |
@@ -876,7 +876,8 @@ Module `cluster` implemented for clustering text document into similar clusters.
     "info card delivery",
     "new card still come",
     "way track delivery card",
-    "countries currently support"] ```
+    "countries currently support"]
+    ```
 
 * #### Example Jac Usage:
 
