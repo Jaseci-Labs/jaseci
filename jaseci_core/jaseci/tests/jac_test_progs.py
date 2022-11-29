@@ -638,3 +638,18 @@ block_scope_check = """
         report i;
     }
 """
+
+ignore_check = """
+    walker init {
+        has nds=[];
+        with entry{
+            for i=0 to i<10 by i+=1 {
+                nds.l::append(spawn here ++> node::generic);
+            }
+            ignore nds[0];
+            ignore nds[4];
+            take -->;
+        }
+        report "hi";
+    }
+"""

@@ -516,7 +516,15 @@ class JacTests(TestCaseHelper, TestCase):
         mast._h.task.state = ServiceState.NOT_STARTED
         mast.sentinel_register(name="test", code=jtp.block_scope_check, auto_run="")
         res = mast.general_interface_to_api(
-            api_name="walker_run",
-            params={"name": "init"},
+            api_name="walker_run", params={"name": "init"}
         )
         self.assertEqual(res["report"][-1], 10)
+
+    def test_ignore_check(self):
+        mast = self.meta.build_master()
+        mast._h.task.state = ServiceState.NOT_STARTED
+        res = mast.sentinel_register(name="test", code=jtp.ignore_check, auto_run="")
+        res = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(len(res["report"]), 9)

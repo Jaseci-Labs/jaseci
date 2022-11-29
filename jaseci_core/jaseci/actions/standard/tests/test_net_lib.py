@@ -30,7 +30,7 @@ class NetLibTest(CoreTest):
             ["sentinel_register", {"code": self.load_jac("net_pack.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "pack_unpack"}])
-        self.log(ret)
+
         self.assertEqual(ret["report"][0], 16)
 
     def test_pack_unpack_terse(self):
