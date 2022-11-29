@@ -80,7 +80,7 @@ walker init {
 ```
 
 and ```Viola!``` you have created a personalized head.
-Refer this [Link]() for the example of the above code.
+Refer this [Link](../../../../examples/ph_example/tfm_head) for the example of the above code.
 
 ### **1.2. Running your JAC Program**
 
@@ -247,7 +247,7 @@ walker init {
   }
 }
 ```
-
+Refer this [Link](../../../../examples/ph_example/custom_model) for the example of the above code.
 ### **1.3. Running your JAC Program**
 
 - Open the terminal and run Jaseci Command Line Tool using the command below.
@@ -270,8 +270,6 @@ jac run main.jac -ctx '{"input_image": "test.jpg"}'
 
 ### **Configuration File Structure**
 ```yaml
-# PATH: ./config.yaml
-
 # Inference Configuration
 Inference:
   postprocess:
