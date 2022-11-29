@@ -17,7 +17,6 @@ import FormTextField from "./FormTextField";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { setCookie } from "cookies-next";
 
 const connectionSchema = z.object({
   email: z.string().email(),
@@ -137,6 +136,7 @@ export function LoginForm() {
                 type="submit"
                 onClick={() => setMode("connect")}
                 color="teal"
+                aria-label="Connect to Server"
               >
                 Connect
               </Button>
@@ -151,7 +151,9 @@ export function LoginForm() {
               {(styles) => (
                 <div style={styles}>
                   {data?.token && (
-                    <Alert color="green">Connection successful</Alert>
+                    <Alert color="green" aria-label="Result">
+                      Connection successful
+                    </Alert>
                   )}
                   {data?.non_field_errors && (
                     <Alert color="red">{data?.non_field_errors[0]}</Alert>

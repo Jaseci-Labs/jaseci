@@ -1,8 +1,10 @@
 """
 Logger api as a mixin
 """
+import re
 from jaseci.api.interface import Interface
-from jaseci.utils.utils import logger, app_logger
+from jaseci.utils.log_utils import parse_logs
+from jaseci.utils.utils import logger, app_logger, logs
 from jaseci.utils.utils import connect_logger_handler
 from logging.handlers import HTTPHandler
 
@@ -49,6 +51,29 @@ class LoggerApi:
                     app_logger.removeHandler(i)
                     num += 1
         return [f"{num} http handlers removed!"]
+
+    @Interface.admin_api()
+    def logger_get_logs(self, search: str = "", level: str = None):
+        """Get logs across loggers"""
+        result = []
+        for log in logs.getvalue().splitlines():
+            # skip logs produced by calling this endpoint
+            if re.search("Incoming call to logger_get_logs", log):
+                continue
+
+            if search:
+                if re.search(search, log):
+                    result.append(log)
+                continue
+
+            result.append(log)
+
+        result = parse_logs(result)
+
+        if level:
+            result = list(filter(lambda item: level and item["level"] == level, result))
+
+        return result
 
     @Interface.admin_api()
     def logger_list(self):

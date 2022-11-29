@@ -35,3 +35,10 @@ sudo apt install libwebkit2gtk-4.0-dev \
 
 - To build for windows you'll need to install rust for windows and node.js for windows
   - Once you have node install you might have to run `corepack enable` to activate yarn
+
+# Testing
+
+- Run `yarn test:e2e` to run unit tests with [Playwright](https://playwright.dev/)
+  - API mocks uses [msw](https://mswjs.io/)
+- Run `yarn test:unit` to run unit tests with [Vitest](https://vitest.dev/)
+  - Component testing uses [react-testing-library](https://testing-library.com/docs/react-testing-library/intro)
