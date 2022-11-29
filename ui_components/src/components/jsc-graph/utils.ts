@@ -23,7 +23,7 @@ export function formatEdges(data: {}[]): vis.Edge[] {
       label: edge.name,
       context: { ...edge.context, jid: edge.jid },
       group: edge.name,
-      length: 250,
+      length: 150,
     }));
 
   return newEdges;

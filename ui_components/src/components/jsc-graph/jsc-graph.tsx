@@ -180,8 +180,8 @@ export class JscGraph {
                 max: 30,
                 label: {
                   min: 10,
-                  max: 25,
-                  drawThreshold: 12,
+                  max: 20,
+                  drawThreshold: 5,
                   maxVisible: 25,
                 },
               },
