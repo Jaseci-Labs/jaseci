@@ -3,7 +3,6 @@ import os
 import pstats
 import cProfile
 import pdb
-import uuid
 import importlib
 import pkgutil
 import logging
@@ -44,13 +43,16 @@ def connect_logger_handler(target_logger, handler, level=logging.WARN):
 
 logger = logging.getLogger("core")
 logger.propagate = False
+logs = io.StringIO()
 if len(logger.handlers) < 1:
     connect_logger_handler(logger, logging.StreamHandler(), logging.INFO)
+    connect_logger_handler(logger, logging.StreamHandler(stream=logs), logging.INFO)
 
 app_logger = logging.getLogger("app")
 app_logger.propagate = False
 if len(app_logger.handlers) < 1:
     connect_logger_handler(app_logger, logging.StreamHandler(), logging.INFO)
+    connect_logger_handler(app_logger, logging.StreamHandler(stream=logs), logging.INFO)
 
 
 def log_var_out(val):
