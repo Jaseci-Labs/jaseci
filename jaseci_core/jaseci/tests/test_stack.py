@@ -183,3 +183,16 @@ class StackTests(CoreTest):
             ["graph_node_set", {"nd": node_id, "ctx": {"b": 6}}],
         )
         self.assertEqual(ret["context"]["b"], 6)
+
+    def test_interp_deep_except(self):
+        ret = self.call(
+            self.smast,
+            [
+                "sentinel_register",
+                {"auto_run": "", "code": self.load_jac("simple.jac")},
+            ],
+        )
+
+        ret = self.call(self.smast, ["walker_run", {"name": "deep_except"}])
+        self.log(ret)
+        self.assertTrue(ret["success"])
