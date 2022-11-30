@@ -1,4 +1,4 @@
-REDIS_KUBE = {
+REDIS_MANIFEST = {
     "Service": [
         {
             "apiVersion": "v1",

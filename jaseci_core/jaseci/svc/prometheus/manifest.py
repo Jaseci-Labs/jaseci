@@ -1,4 +1,4 @@
-PROMON_KUBE = {
+PROMON_MANIFEST = {
     "ServiceAccount": [
         {
             "apiVersion": "v1",
