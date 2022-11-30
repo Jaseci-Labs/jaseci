@@ -83,11 +83,13 @@ class CommonService:
 
     def build_settings(self, hook) -> dict:
         try:
-            self.kube = self.build_kube(hook)
-            self.kube_meta = {}
-            if self.kube:
-                self.kube_meta["__OLD_CONFIG__"] = self.kube.pop("__OLD_CONFIG__", {})
-                self.kube_meta["__UNSAFE_PARAPHRASE__"] = self.kube.pop(
+            self.manifest = self.build_manifest(hook)
+            self.manifest_meta = {}
+            if self.manifest:
+                self.manifest_meta["__OLD_CONFIG__"] = self.manifest.pop(
+                    "__OLD_CONFIG__", {}
+                )
+                self.manifest_meta["__UNSAFE_PARAPHRASE__"] = self.manifest.pop(
                     "__UNSAFE_PARAPHRASE__", ""
                 )
 
@@ -98,13 +100,13 @@ class CommonService:
         except Exception:
             logger.exception(f"Error loading settings for {self.__class__}")
             self.config = DEFAULT_CONFIG
-            self.kube = None
-            self.kube_meta = {}
+            self.manifest = None
+            self.manifest_meta = {}
 
     def build_config(self, hook) -> dict:
         return DEFAULT_CONFIG
 
-    def build_kube(self, hook) -> dict:
+    def build_manifest(self, hook) -> dict:
         pass
 
     # ------------------- DAEMON -------------------- #
@@ -341,11 +343,11 @@ class JsOrc:
         svc = self.meta.get_service(svc_name, hook)
 
         if not svc.is_running():
-            if svc.kube:
-                config_map = svc.kube
+            if svc.manifest:
+                config_map = svc.manifest
                 pod_name = ""
-                old_config_map = deepcopy(svc.kube_meta.get("__OLD_CONFIG__", {}))
-                unsafe_paraphrase = svc.kube_meta.get("__UNSAFE_PARAPHRASE__", "")
+                old_config_map = deepcopy(svc.manifest_meta.get("__OLD_CONFIG__", {}))
+                unsafe_paraphrase = svc.manifest_meta.get("__UNSAFE_PARAPHRASE__", "")
                 for kind, confs in config_map.items():
                     for conf in confs:
                         name = conf["metadata"]["name"]
@@ -381,15 +383,16 @@ class JsOrc:
 
                     for to_be_removed in old_config_map.get(kind, []):
                         res = self.read(kind, to_be_removed, namespace)
-                        if (
-                            not isinstance(res, ApiException)
-                            and res.metadata
-                            and (
+                        if not isinstance(res, ApiException) and res.metadata:
+                            if (
                                 kind not in UNSAFE_KINDS
                                 or unsafe_paraphrase == UNSAFE_PARAPHRASE
-                            )
-                        ):
-                            self.delete(kind, to_be_removed, namespace)
+                            ):
+                                self.delete(kind, to_be_removed, namespace)
+                            else:
+                                logger.info(
+                                    f"You don't have permission to delete `{kind}` for `{to_be_removed}` with namespace `{namespace}`!"
+                                )
 
                 if self.kubernetes.is_running(pod_name, namespace):
                     logger.info(

@@ -14,29 +14,32 @@ from jaseci.api.interface import Interface
 
 class JsOrcApi:
     """
-    temporary
+    API for managing JsOrc
     """
 
     @Interface.admin_api()
     def load_yaml(self, files: list, namespace: str = "default"):
         """
-        temporary
+        applying list of yaml files without associating to any modules/services
         """
 
-        kube = self._h.kube.app
-        kube: Kube
+        if self._h.meta.is_automated():
+            kube = self._h.meta.app.kubernetes
+            kube: Kube
 
-        res = {}
+            res = {}
 
-        for file in files:
-            for conf in yaml.safe_load_all(b64decode(file["base64"])):
-                kind = conf["kind"]
-                kube.create(kind, namespace, conf)
-                if not res.get(kind):
-                    res[kind] = []
-                res[kind].append(conf)
+            for file in files:
+                for conf in yaml.safe_load_all(b64decode(file["base64"])):
+                    kind = conf["kind"]
+                    kube.create(kind, namespace, conf)
+                    if not res.get(kind):
+                        res[kind] = []
+                    res[kind].append(conf)
 
-        return res
+            return res
+        else:
+            return {"message": "load_yaml is not supported on non automated JsOrc!"}
 
     @Interface.admin_api(cli_args=["name"])
     def apply_yaml(self, name: str, file: list, unsafe_paraphrase: str = ""):
@@ -80,7 +83,7 @@ class JsOrcApi:
     @Interface.admin_api(cli_args=["name"])
     def service_refresh(self, name: str):
         """
-        refresh service
+        refreshing service's config. If JsOrc is not automated, service will restart else JsOrc will handle the rest
         """
 
         hook = self._h
@@ -104,7 +107,7 @@ class JsOrcApi:
     @Interface.admin_api(cli_args=["name"])
     def service_call(self, svc: str, attrs: list = []):
         """
-        temporary
+        temporary api for retreiving/calling attributes of specific instance.
         """
 
         from jaseci.svc import MetaService

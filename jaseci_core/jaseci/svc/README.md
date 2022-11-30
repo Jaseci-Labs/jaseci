@@ -86,17 +86,17 @@ This class is the base for implementing service. Dev should use this class if th
         # ... your other code here ...
 ```
 
-- `build_kube` (required to be overriden if you have kube settings)
+- `build_manifest` (required to be overriden if you have kube settings)
     - will be called upon build and before `build_config`
-    - sample kube config are on `jaseci_serv.jaseci_serv.kubes`
+    - sample kube config are on `jaseci.svc.redis.manifest`
 ```python
-    def build_kube(self, hook) -> dict:
-        return hook.service_glob("REDIS_KUBE", REDIS_KUBE) # common implementation using global vars
+    def build_manifest(self, hook) -> dict:
+        return hook.service_glob("REDIS_MANIFEST", REDIS_MANIFEST) # common implementation using global vars
 ```
 
 - `build_config` (required to be overriden)
-    - will be called upon build and after `build_kube`
-    - sample config are on `jaseci_serv.jaseci_serv.configs`
+    - will be called upon build and after `build_manifest`
+    - sample config are on `jaseci.svc.config`
 ```python
     def build_config(self, hook) -> dict:
         return hook.service_glob("REDIS_CONFIG", REDIS_CONFIG) # common implementation using global vars
@@ -409,14 +409,14 @@ This will only happen if META_CONFIG is set to be automated.
 
 ## `USAGE`
 - adding the service to keep_alive will let the jsorc handle it
-- any `{{NAME}}_KUBE` and `{{NAME}}_CONFIG` is set to the actual service not on `JsOrc`
+- any `{{NAME}}_MANIFEST` and `{{NAME}}_CONFIG` is set to the actual service not on `JsOrc`
 
 ## `EXAMPLE`
 
 ### `with` kube config
 - [prometheus.py](../prometheus/prometheus.py)
 - [kube.py](../prometheus/kube.py)
-    - `PROMON_KUBE` == grouped values from `yaml.safe_load_all(...yaml_file...)`
+    - `PROMON_MANIFEST` == grouped values from `yaml.safe_load_all(...yaml_file...)`
         - ex:
         ```json
             // map each safe_load_all to $.kind
@@ -446,14 +446,14 @@ This will only happen if META_CONFIG is set to be automated.
 
 ```python
 # ... other imports
-from .kube import PROMON_KUBE
+from .manifest import PROMON_MANIFEST
 class PromotheusService(CommonService):
     # ... all other codes ...
-    def build_kube(self, hook) -> dict:
-        return hook.service_glob("PROMON_KUBE", PROMON_KUBE)
+    def build_manifest(self, hook) -> dict:
+        return hook.service_glob("PROMON_MANIFEST", PROMON_MANIFEST)
 ```
 - since `promon` is included on keep_alive, `JsOrc` will include it on `interval_check`
-- during `interval_check`, `JsOrc` will try to add every kube configuration from `PROMON_KUBE` grouped by commands
+- during `interval_check`, `JsOrc` will try to add every kube configuration from `PROMON_MANIFEST` grouped by commands
 - on first `interval_check`, it is expected to ignore the rerun of the `promon` service because the pods that has been generated is **`not`** yet fully initialized and running.
 - subsequent `interval_check` should have the ability to restart the `promon` service since pods for prometheus server should be available by that time (this may vary depends on network or server)
 - if `promon` is now running it will now be ignored on next `interval_check`
@@ -502,10 +502,10 @@ class PromotheusService(CommonService):
  - this will also have mechanism for automatic versioning to be able to use the patching features in cluster
  - this can handle create/patch/delete mechanism
  - currently, not all kind of manifest have permission to be deleted. For ex: `PersistentVolumeClaim`, to delete this kind of manifest you need to specify `unsafe_paraphrase` field with value of `I know what I'm doing!` case sensitive. This is to verify that you really know what you're doing.
- - ex: `PROMON_KUBE`
+ - ex: `PROMON_MANIFEST`
     > ```js
     > const form = new FormData();
-    > form.append('name', 'PROMON_KUBE');
+    > form.append('name', 'PROMON_MANIFEST');
     > form.append('file', File(['<data goes here>'], '...\\prometheus.yaml'));
     > // not needed if for safe patching/deleting only
     > form.append('unsafe_paraphrase', 'I know what I\'m doing!')

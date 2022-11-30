@@ -1,7 +1,7 @@
 from prometheus_api_client import PrometheusConnect
 from jaseci.svc import CommonService
 from .config import PROMON_CONFIG
-from .kube import PROMON_KUBE
+from .manifest import PROMON_MANIFEST
 
 
 class PrometheusService(CommonService):
@@ -87,8 +87,8 @@ class PrometheusService(CommonService):
     def build_config(self, hook) -> dict:
         return hook.service_glob("PROMON_CONFIG", PROMON_CONFIG)
 
-    def build_kube(self, hook) -> dict:
-        return hook.service_glob("PROMON_KUBE", PROMON_KUBE)
+    def build_manifest(self, hook) -> dict:
+        return hook.service_glob("PROMON_MANIFEST", PROMON_MANIFEST)
 
 
 class Info:
