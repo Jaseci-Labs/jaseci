@@ -94,10 +94,10 @@ class TaskService(CommonService):
     #                     CLEANER                     #
     ###################################################
 
-    def reset(self, hook):
+    def reset(self, hook, start=True):
         self.terminate_daemon("worker", "scheduler")
         self.inspect = None
-        super().reset(hook)
+        super().reset(hook, start)
 
     def failed(self):
         super().failed()

@@ -7,6 +7,7 @@ describe('my-component', () => {
       components: [MyComponent],
       html: '<my-component></my-component>',
     });
+
     expect(root).toEqualHtml(`
       <my-component>
         <mock:shadow-root>
