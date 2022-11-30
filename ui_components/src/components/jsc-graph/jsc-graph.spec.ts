@@ -26,7 +26,6 @@ describe('jsc-graph', () => {
 
     expect(graph.graphId).toBe('urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549');
     expect(graph.graphs.length).toBe(2);
-    console.log(graph.graphs);
     expect(graph.nodes.length).toBe(2);
 
     graph.network.destroy();
