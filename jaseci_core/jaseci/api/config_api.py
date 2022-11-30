@@ -20,9 +20,8 @@ class ConfigApi:
             "REDIS_CONFIG",
             "TASK_CONFIG",
             "MAIL_CONFIG",
-            "KUBE_CONFIG",
             "PROMON_CONFIG",
-            "JSORC_CONFIG",
+            "META_CONFIG",
         ]
 
     @Interface.admin_api(cli_args=["name"])

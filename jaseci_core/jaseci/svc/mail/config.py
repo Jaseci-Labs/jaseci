@@ -1,5 +1,3 @@
-import sys
-
 MAIL_ERR_MSG = "Mail service is disabled or not yet configured!"
 
 MAIL_CONFIG = {
@@ -27,7 +25,3 @@ MAIL_CONFIG = {
         "resetpass_html_body": "Your Jaseci password reset" "token is: {{token}}",
     },
 }
-
-
-if "python3 -m unittest" in sys.argv:
-    MAIL_CONFIG["enabled"] = True

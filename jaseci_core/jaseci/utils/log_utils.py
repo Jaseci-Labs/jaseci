@@ -1,4 +1,5 @@
 import re
+from typing import List, Dict
 
 
 def match_date(line: str) -> str:
@@ -20,7 +21,7 @@ def match_level(line: str) -> str:
     return None
 
 
-def parse_logs(logs: list[str]) -> list[dict[str, str]]:
+def parse_logs(logs: List[str]) -> List[Dict[str, str]]:
     """Convert log lines into an object with log metadata"""
     result = []
     for log in logs:
