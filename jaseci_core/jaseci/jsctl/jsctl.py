@@ -349,6 +349,8 @@ def booktool(op, output):
         out = f"{Book().bookgen_api_cheatsheet(extract_api_tree())}"
     elif op == "stdlib":
         out = Book().bookgen_std_library()
+    elif op == "mdcheatsheet":
+        out = f"{modifiedBook().bookgen_api_cheatsheet(extract_api_tree())}"
     elif op == "mdstdlib":
         out = modifiedBook().bookgen_std_library()
     elif op == "classes":

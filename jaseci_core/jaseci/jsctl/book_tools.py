@@ -259,21 +259,28 @@ class modifiedBook:
     def bookgen_api_cheatsheet(self, root, out=None, str=""):
         if out is None:
             out = []
+        line = "<tr> \n"
         if "leaf" in root.keys():
-            line = "\\lstinline$" + str.strip()
+            line = "<tr> \n <td>" + str.strip()
             if root["leaf"][5]:  # cli_only
                 line += " (cli only)"
-            line += (
-                "$ "
-                + "& \\lstinline$"
-                + f'{self.format_params(root["leaf"][1])}'
-                + "$ \\\\ \\hline\n"
-            )
+            line += "</td>"
+            line += "<td> \n <ul>"
+            arguments = self.format_params(root["leaf"][1])
+            arguments = arguments.split(",")
+            for argument in arguments:
+                line += "<li>" + f"{argument}" + "</li>\n"
+            line += "</ul> \n </td> \n </tr>"
             out.append(line)
             return
         for i in root.keys():
             self.bookgen_api_cheatsheet(root[i], out, str + f"{i} ")
-        return "".join(out)
+        all_info = "".join(out)
+        return (
+            "<table id='cheatsheet'>  <tr> <th>Interface</th> <th>Parameters</th> </tr>"
+            + all_info
+            + "</table>"
+        )
 
     def get_stdlib_pre_table(self):
         clip = (
@@ -320,41 +327,40 @@ class modifiedBook:
     def func_to_sexy_box(self, fname, func, ignore_args=[]):
         doc = getdoc(func)
         line = (
-            fname
-            + "}"
+            "\<div class='actionName'> "
+            + fname
+            + " </div> \n <div class ='actionsArgs'> "
             + f"{self.format_params(signature(func), ignore_args=ignore_args)}"
-            + "}"
+            + "</div>\n"
         )
+        line = line.replace("\\", "")
         parsed_doc = parse(doc)
         doc = parsed_doc.long_description
         if doc is None:
             doc = "No documentation yet."
         doc = doc.replace("_", " ")
         if len(parsed_doc.params):
-            # doc += "\\vspace{4mm}\\par\n"
-            args_doc = "{"
+            # doc += "\\vspace{3mm}\\par\n\\textbf{Parameters}\n\\par"
+            doc += "<div class='params'> Params"
+            # args_doc = "\\argspec{Parameters}{"
+            args_doc = " "
             for i in parsed_doc.params:
-                args_doc += f"- {i.arg_name} -" f"- {i.description} - "
-            args_doc += "}"
-            # args_doc = args_doc.replace("_", "\\_")
+                args_doc += f"\n{i.arg_name} -" f"- {i.description} <br> \n"
+            args_doc += "</div>"
+
             doc += args_doc
         if parsed_doc.returns:
             # doc += "\\vspace{3mm}\\par\n\\textbf{Parameters}\n\\par"
-            # doc += "\\vspace{4mm}\\par\n"
-            args_doc = "{Returns}" + parsed_doc.returns.description
+            doc += "<div class='return'>"
+            args_doc = "Returns - " + parsed_doc.returns.description
             args_doc = args_doc.replace("_", "\\_")
             doc += args_doc
-        line += doc + "}"
-        lines = line.split("}")
-        mdmarkdown = " "
-        for line in lines:
-            line.replace("{", " ", 1)
-            line.replace("\par", "", 10)
-            line.replace("\n", " ", 10)
-            mdmarkdown += "\n" + line
-
-        # print(lines)
-        return mdmarkdown
+        line += (
+            " <div class ='mainbody'> <div class ='actionsDescription'>"
+            + doc
+            + "</div> </div> \n"
+        )
+        return line
 
     def bookgen_std_library(self):
         out = []
