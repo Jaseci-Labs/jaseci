@@ -34,9 +34,9 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 | `text_seg` | Text Segmenter | [Link](#text-segmenter-text_seg) | No Training req. | Experimetal | Topical Change Detection in Documents | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec) |
 
 ## Text Clustering
-| Module    | Model Name   | Example                       | Type             | Status      | Description                                               | Resources                                                                                                                         |
-| --------- | ------------ | ----------------------------- | ---------------- | ----------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `cluster` | Text Cluster | [Link](#text-cluster-cluster) | No Training req. | Experimetal | Indentifying Posible Similar Clusters in Set of Documents | [UMAP](https://umap-learn.readthedocs.io/en/latest/) , [HBDSCAN](https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html) |
+| Module    | Model Name   | Example                       | Type             | Status      | Description                                               | Resources                                                                                                                                   |
+| --------- | ------------ | ----------------------------- | ---------------- | ----------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cluster` | Text Cluster | [Link](#text-cluster-cluster) | No Training req. | Experimetal | Indentifying Posible Similar Clusters in Set of Documents | [UMAP](https://umap-learn.readthedocs.io/en/latest/) , [HBDSCAN Algorithm](https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html) |
 
 ## Non-AI Tools
 | Module    | Model Name    | Example                        | Status | Description                                | Resources                                        |
