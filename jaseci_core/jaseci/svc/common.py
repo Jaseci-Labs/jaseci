@@ -358,7 +358,7 @@ class JsOrc:
                         res = self.read(kind, name, namespace)
                         if hasattr(res, "status") and res.status == 404 and conf:
                             self.create(kind, name, namespace, conf)
-                        elif res.metadata:
+                        elif not isinstance(res, ApiException) and res.metadata:
                             if res.metadata.labels:
                                 config_version = res.metadata.labels.get(
                                     "config_version", 1
