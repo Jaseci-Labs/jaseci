@@ -9,6 +9,13 @@ from jaseci.utils.utils import logger
 from .state import ServiceState as Ss
 from .config import META_CONFIG, KUBERNETES_CONFIG
 
+###################################################
+#                  UNSAFE PARAMS                  #
+###################################################
+
+UNSAFE_PARAPHRASE = "I know what I'm doing!"
+UNSAFE_KINDS = ["PersistentVolumeClaim"]
+
 COMMON_ERROR = "Not properly configured!"
 DEFAULT_CONFIG = {"enabled": False}
 
@@ -77,7 +84,12 @@ class CommonService:
     def build_settings(self, hook) -> dict:
         try:
             self.kube = self.build_kube(hook)
-            self.old_kube = self.kube.pop("__OLD_CONFIG__", {}) if self.kube else {}
+            self.kube_meta = {}
+            if self.kube:
+                self.kube_meta["__OLD_CONFIG__"] = self.kube.pop("__OLD_CONFIG__", {})
+                self.kube_meta["__UNSAFE_PARAPHRASE__"] = self.kube.pop(
+                    "__UNSAFE_PARAPHRASE__", ""
+                )
 
             config = self.build_config(hook)
             self.enabled = config.pop("enabled", False)
@@ -87,7 +99,7 @@ class CommonService:
             logger.exception(f"Error loading settings for {self.__class__}")
             self.config = DEFAULT_CONFIG
             self.kube = None
-            self.old_kube = {}
+            self.kube_meta = {}
 
     def build_config(self, hook) -> dict:
         return DEFAULT_CONFIG
@@ -332,7 +344,8 @@ class JsOrc:
             if svc.kube:
                 config_map = svc.kube
                 pod_name = ""
-                old_config_map = deepcopy(svc.old_kube)
+                old_config_map = deepcopy(svc.kube_meta.get("__OLD_CONFIG__", {}))
+                unsafe_paraphrase = svc.kube_meta.get("__UNSAFE_PARAPHRASE__", "")
                 for kind, confs in config_map.items():
                     for conf in confs:
                         name = conf["metadata"]["name"]
@@ -368,7 +381,14 @@ class JsOrc:
 
                     for to_be_removed in old_config_map.get(kind, []):
                         res = self.read(kind, to_be_removed, namespace)
-                        if not isinstance(res, ApiException) and res.metadata:
+                        if (
+                            not isinstance(res, ApiException)
+                            and res.metadata
+                            and (
+                                kind not in UNSAFE_KINDS
+                                or unsafe_paraphrase == UNSAFE_PARAPHRASE
+                            )
+                        ):
                             self.delete(kind, to_be_removed, namespace)
 
                 if self.kubernetes.is_running(pod_name, namespace):
