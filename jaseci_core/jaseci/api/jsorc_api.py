@@ -39,9 +39,9 @@ class JsOrcApi:
         return res
 
     @Interface.admin_api(cli_args=["name"])
-    def config_yaml(self, name: str, file: list, unsafe_paraphrase: str = ""):
+    def apply_yaml(self, name: str, file: list, unsafe_paraphrase: str = ""):
         """
-        Set a config from yaml
+        apply manifest yaml to specific service
         """
 
         new_config = {}
