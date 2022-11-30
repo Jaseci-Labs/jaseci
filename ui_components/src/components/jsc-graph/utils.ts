@@ -2,7 +2,7 @@ import * as vis from 'vis-network';
 
 export function formatNodes(data: [][] = []): vis.Node[] {
   return data
-    ?.filter((item: any) => item.j_type === 'node')
+    ?.filter((item: any) => item.j_type === 'node' || item.j_type === 'graph')
     .map((node: any) => ({
       id: node.jid,
       label: node.name,

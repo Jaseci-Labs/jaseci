@@ -1,10 +1,4 @@
 [
-  {
-    "name": "root",
-    "kind": "node",
-    "jid": "urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549",
-    "j_timestamp": "2022-10-22T16:23:06.838308",
-    "j_type": "graph",
-    "context": {}
-  }
+  { "name": "root", "kind": "node", "jid": "urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549", "j_timestamp": "2022-10-22T16:23:06.838308", "j_type": "graph", "context": {} },
+  { "name": "root", "kind": "node", "jid": "urn:uuid:a13be887-df9f-49bd-a7c6-f5a93839aa3b", "j_timestamp": "2022-11-29T17:31:28.718938", "j_type": "graph", "context": {} }
 ]

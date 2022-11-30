@@ -15,6 +15,6 @@
     "jsxFactory": "h",
     "skipLibCheck": true
   },
-  "include": ["src"],
+  "include": ["src", "handlers.ts"],
   "exclude": ["node_modules"]
 }

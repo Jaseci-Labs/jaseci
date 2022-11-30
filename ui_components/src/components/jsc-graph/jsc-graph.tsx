@@ -63,7 +63,9 @@ export class JscGraph {
         'Content-Type': 'application/json',
         'Authorization': `token ${localStorage.getItem('token')}`,
       },
-    }).then(res => res.json());
+    }).then(async res => {
+      return res.json();
+    });
   }
 
   async getAllGraphs(): Promise<Graph[]> {
@@ -107,11 +109,6 @@ export class JscGraph {
           this.edges = new visData.DataSet([]);
         }
 
-        if (this.network) {
-          // this.network.stabilize();
-          this.network.storePositions();
-        }
-
         // expand nodes and edges sets
         this.formatNodes(data).forEach(node => {
           try {
@@ -122,6 +119,10 @@ export class JscGraph {
             console.log(err);
           }
         });
+
+        if (this.network) {
+          this.network.storePositions();
+        }
 
         this.formatEdges(data).forEach(edge => {
           const edges = this.edges.get({ filter: item => item.context.jid === (edge as any).context.jid });
@@ -191,9 +192,9 @@ export class JscGraph {
 
             physics: {
               forceAtlas2Based: {
-                springLength: 50,
+                springLength: 40,
               },
-              minVelocity: 0.55,
+              // minVelocity: 0.2,
               solver: 'forceAtlas2Based',
             },
             // layout: { improvedLayout: true },
@@ -201,7 +202,7 @@ export class JscGraph {
         );
       } else {
         this.network.storePositions();
-        this.network.selectNodes([this.nd], true);
+        // this.network.selectNodes([this.nd], true);
       }
     });
   }
@@ -320,8 +321,6 @@ export class JscGraph {
       });
 
       this.nd = node.toString();
-
-      console.log({ nd: this.nd });
     });
 
     this.network.on('oncontext', params => {
