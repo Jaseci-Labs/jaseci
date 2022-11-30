@@ -13,8 +13,8 @@ colors = [
 
 @app.post("/load_model")
 def load_model(
-        name: str = Form("last"),
-        confidence_threshold: float = Form(0.05),
+    name: str = Form("last"),
+    confidence_threshold: float = Form(0.05),
 ):
     global model
     global conf
@@ -35,9 +35,9 @@ def load_model(
 
 @app.post("/detect")
 def detect(
-        file_list: List[UploadFile] = File(...),
-        image_size: Optional[int] = Form(416),
-        download_image: Optional[bool] = Form(False),
+    file_list: List[UploadFile] = File(...),
+    image_size: Optional[int] = Form(416),
+    download_image: Optional[bool] = Form(False),
 ):
     # confidence threshold
     model.conf = conf
@@ -123,7 +123,7 @@ def plot_one_box(x, im, color=(128, 128, 128), label=None, line_thickness=3):
         im.data.contiguous
     ), "Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image."
     tl = (
-            line_thickness or round(0.002 * (im.shape[0] + im.shape[1]) / 2) + 1
+        line_thickness or round(0.002 * (im.shape[0] + im.shape[1]) / 2) + 1
     )  # line/font thickness
     c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
     cv2.rectangle(im, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
@@ -160,10 +160,10 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive()
 
-            #print("data is enough for a frame")
-            print(type(data['text'].encode()))
+            # print("data is enough for a frame")
+            print(type(data["text"].encode()))
             # need to store image stream in buffer
-            encoded_json = detect_online(data['text'], len(data['text']))
+            encoded_json = detect_online(data["text"], len(data["text"]))
             print("encoded_json::", encoded_json)
             await websocket.send_json(encoded_json)
     except Exception as e:
