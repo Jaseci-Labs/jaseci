@@ -11,9 +11,61 @@ metadata:
   namespace: default
   name: jaseci-orc
 rules:
-  - apiGroups: ["v1", "apps"]
-    resources: ["pods", "deployments", "services", "deployments.apps"]
-    verbs: ["get", "watch", "list", "update", "patch", "create"]
+  - apiGroups: [
+      "",
+      "admissionregistration.k8s.io",
+      "apps",
+      "autoscaling",
+      "batch",
+      "certificates.k8s.io",
+      "extensions",
+      "networking.k8s.io",
+      "policy",
+      "rbac.authorization.k8s.io",
+      "storage.k8s.io",
+      "v1"
+    ]
+    resources: [
+      "certificatesigningrequests",
+      "clusterroles",
+      "clusterrolebindings",
+      "configmaps",
+      "cronjobs",
+      "daemonsets",
+      "deployments.apps",
+      "deployments",
+      "endpoints",
+      "horizontalpodautoscalers",
+      "ingresses",
+      "ingresses/status",
+      "jobs",
+      "limitranges",
+      "mutatingwebhookconfigurations",
+      "namespaces",
+      "networkpolicies",
+      "nodes",
+      "nodes/metrics",
+      "nodes/proxy",
+      "persistentvolumeclaims",
+      "persistentvolumes",
+      "poddisruptionbudgets",
+      "pods",
+      "replicasets",
+      "replicationcontrollers",
+      "resourcequotas",
+      "secrets",
+      "serviceaccounts",
+      "services",
+      "statefulsets",
+      "storageclasses",
+      "validatingwebhookconfigurations",
+      "volumeattachments"
+    ]
+    verbs: ["get", "watch", "list", "update", "patch", "create", "delete"]
+  - nonResourceURLs: [
+      "/metrics"
+    ]
+    verbs: ["get", "watch", "list", "update", "patch", "create", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -101,11 +153,17 @@ spec:
           volumeMounts:
             - name: prod-script
               mountPath: /script
+            - name: host-mount
+              mountPath: /jaseci/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
+        - name: host-mount
+          hostPath:
+            path: /run/desktop/mnt/host/wsl/jaseci
+            type: Directory
 ---
 kind: Service
 apiVersion: v1
