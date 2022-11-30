@@ -53,12 +53,12 @@ class LoggerApi:
         return [f"{num} http handlers removed!"]
 
     @Interface.admin_api()
-    def logger_get_logs(self, search: str = "", level: str = None):
+    def logger_get(self, search: str = "", level: str = None):
         """Get logs across loggers"""
         result = []
         for log in logs.getvalue().splitlines():
             # skip logs produced by calling this endpoint
-            if re.search("Incoming call to logger_get_logs", log):
+            if re.search("Incoming call to logger_get", log):
                 continue
 
             if search:

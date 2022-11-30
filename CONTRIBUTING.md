@@ -17,6 +17,7 @@
     - [Opening issues before PRs](#opening-issues-before-prs)
     - [Draft/Work-in-progress(WIP) PRs](#draft-work-in-progress-wip--prs)
     - [Code style & Linting](#code-style---linting)
+  - [CI/CD](#ci-cd)
 - [How to Update the Official Documentation](#how-to-update-the-official-documentation)
 
 ---
@@ -150,6 +151,26 @@ To standardize coding style, Jaseci code is enforeced by the flake8 linter and a
 ```
 flake8 --exclude=settings.py,*migrations*,jac_parse --max-line-length=88 --extend-ignore = E203,
 ```
+
+---
+## CI/CD
+
+Jaseci uses the Github Actions to handle a series of Continuous Integration (CI) and Continuous Deployment (CD) processes.
+
+### Regression Tests on PR
+
+Every PR automatically triggers a set of regression tests for each of the main module of Jaseci, as well as a liniting check. PRs are required to pass all tests including linting before it can be merged. You can check the status of the regression tests in your PR summary view. It will look like the following:
+
+![](https://lh5.googleusercontent.com/0H4GQQ0ljj0SxRf9yjSJA5O0xMpcd6TQWp1bXmO2El-SwoZbU340vhIYTZha1yt8Kcw=w2400)
+
+### Build and Release
+
+Jaseci is released through two channels: Python packages on pypi and docker images on DockerHub. On every new tag creation, a github action workflow `build-and-release` will trigger and build and release the python packages and docker images for that tag.
+
+* Three python packages are built and released to pypi, `jaseci`, `jaseci-serv` and `jaseci-ai-kit`
+* Two docker images are built and released to DockerHub, `jaseci/jaseci:VERSION` which contains the core jaseci modules and `jaseci/jaseci-ai:VERSION` which also include the AI modules in `jaseci-ai-kit`. The tag of the repo, python package version and docker image tags are kept in sync. For example, when a tag `v2.0.3` is created for the code repo, the python packages will be versioned `2.0.3` and the docker images will have the same tag, as `jaseci/jaseci:2.0.3` and `jaseci/jaseci-ai:2.0.3`.
+
+![](https://lh5.googleusercontent.com/7MthpUaanAXO9kMhgFzZ9jHd0InjJOrrZaQfOXMp9S9Og8LwcI-WHG6CtWSQzb1GKF8=w2400)
 
 ---
 
