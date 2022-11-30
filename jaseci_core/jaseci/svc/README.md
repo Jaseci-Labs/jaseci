@@ -496,18 +496,21 @@ class PromotheusService(CommonService):
     > ```
 
 
-## `config_yaml` (to be renamed)
- - for updating service's kube configurations
+## `apply_yaml` (to be renamed)
+ - for updating service's kubernetes manifest
  - uses multipart/form-data since it needs the yaml file
  - this will also have mechanism for automatic versioning to be able to use the patching features in cluster
  - this can handle create/patch/delete mechanism
+ - currently, not all kind of manifest have permission to be deleted. For ex: `PersistentVolumeClaim`, to delete this kind of manifest you need to specify `unsafe_paraphrase` field with value of `I know what I'm doing!` case sensitive. This is to verify that you really know what you're doing.
  - ex: `PROMON_KUBE`
     > ```js
     > const form = new FormData();
     > form.append('name', 'PROMON_KUBE');
     > form.append('file', File(['<data goes here>'], '...\\prometheus.yaml'));
+    > // not needed if for safe patching/deleting only
+    > form.append('unsafe_paraphrase', 'I know what I\'m doing!')
     >
-    > fetch('.../config_yaml', {
+    > fetch('.../apply_yaml', {
     >   method: 'POST',
     >   headers: {...},
     >   body: form

@@ -1,5 +1,3 @@
-import sys
-
 MAIL_CONFIG = {
     "enabled": False,
     "quiet": False,
@@ -26,6 +24,3 @@ MAIL_CONFIG = {
     },
     "migrate": False,
 }
-
-if "test" in sys.argv or "test_coverage" in sys.argv:
-    MAIL_CONFIG["backend"] = "locmem"
