@@ -8,7 +8,7 @@ from json import dumps, loads
 from time import time
 from base64 import b64decode
 from jaseci.svc import CommonService
-from jaseci.svc.common import Kube
+from jaseci.svc.common import Kube, UNSAFE_PARAPHRASE
 from jaseci.api.interface import Interface
 
 
@@ -39,7 +39,7 @@ class JsOrcApi:
         return res
 
     @Interface.admin_api(cli_args=["name"])
-    def config_yaml(self, name: str, file: list):
+    def config_yaml(self, name: str, file: list, unsafe_paraphrase: str = ""):
         """
         Set a config from yaml
         """
@@ -69,6 +69,9 @@ class JsOrcApi:
                 old_config[kind] = names
 
             new_config["__OLD_CONFIG__"] = old_config
+
+            if unsafe_paraphrase == UNSAFE_PARAPHRASE:
+                new_config["__UNSAFE_PARAPHRASE__"] = unsafe_paraphrase
 
         self._h.save_glob(name, dumps(new_config))
 
