@@ -2,7 +2,7 @@ import os
 import sys
 
 TASK_CONFIG = {
-    "enabled": True,
+    "enabled": os.getenv("REDIS_ENABLED", "true").lower() == "true",
     "quiet": False,
     "broker_url": f'redis://{os.getenv("REDIS_HOST", "localhost")}:{os.getenv("REDIS_PORT", "6379")}/{os.getenv("REDIS_DB", "1")}',
     "beat_scheduler": "django_celery_beat.schedulers:DatabaseScheduler",
