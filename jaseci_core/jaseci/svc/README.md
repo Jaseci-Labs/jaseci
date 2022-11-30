@@ -375,6 +375,38 @@ This will only happen if META_CONFIG is set to be automated.
 - It will also check in the cluster if the pod state is running before it tries to re/run the actual service
 - if service doesn't have kube config it will just try to rerun the service
 
+## `!!!PREREQUISITE!!!`
+- `config_set` trigger
+```js
+{
+	"name": "META_CONFIG",
+	"value": {
+		"automation": true,
+		"backoff_interval": 10,
+		"namespace": "default",
+		"keep_alive": [
+			"promon",
+			"redis",
+			"task",
+			"mail"
+		],
+		"kubernetes": {
+			"in_cluster": true,
+			"config": null
+		}
+	},
+	"do_check": false
+}
+```
+- `service_refresh` trigger
+```js
+{
+    "name": "meta"
+}
+```
+- `JsOrc` should do it's thing
+
+
 ## `USAGE`
 - adding the service to keep_alive will let the jsorc handle it
 - any `{{NAME}}_KUBE` and `{{NAME}}_CONFIG` is set to the actual service not on `JsOrc`
