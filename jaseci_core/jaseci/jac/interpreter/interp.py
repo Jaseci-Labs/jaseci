@@ -1264,7 +1264,9 @@ class Interp(VirtualMachine):
             self._relevant_edges = JacSet()
             for i in viable_nodes:
                 relevant_edges = self.run_edge_ref(kid[0], location=i)
-                result = self.edge_to_node_jac_set(relevant_edges)
+                result = self.visibility_prune(
+                    self.edge_to_node_jac_set(relevant_edges)
+                )
                 kid = kid[1:]
                 if len(kid):
                     result = (
@@ -1282,8 +1284,7 @@ class Interp(VirtualMachine):
         kid = self.set_cur_ast(jac_ast)
         if not is_spawn:
             result = JacSet()
-            if not viable_nodes:
-                viable_nodes = self.viable_nodes()
+            viable_nodes = self.visibility_prune(viable_nodes)
             if len(kid) > 1:
                 for i in viable_nodes.obj_list():
                     if i.get_architype().is_instance(kid[-1].token_text()):

@@ -237,10 +237,12 @@ class WalkerInterp(Interp):
             if not i.preset_in_out:  # All preset in and outs get executed
                 already_executed.append(i.name)
 
-    def viable_nodes(self):
+    def visibility_prune(self, node_set=None):
         """Returns all nodes that shouldnt be ignored"""
         ret = JacSet()
-        for i in self.current_node.attached_nodes():
+        if node_set is None:
+            node_set = self.current_node.attached_nodes()
+        for i in node_set:
             if i not in self.ignore_node_ids.obj_list():
                 ret.add_obj(i)
         return ret
