@@ -8,13 +8,13 @@ walker init {
 }
 
 walker deep_except {
-    std.log("Before try block");
+    report "Before try block";
     try {
         invalid_id = "xxxx.xxxx";
-        std.log(*(invalid_id));
-        std.log("After trying to reference an invalid object id.");
+        report *(invalid_id);
+        report "After trying to reference an invalid object id.";
     } else with error {
-        std.log("Exception caught");
-        std.log(error);
+        report "Exception caught";
+        report error;
     }
 }
