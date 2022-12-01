@@ -108,8 +108,7 @@
 
 ## Jaseci Core Internals
 
-- [Services](jaseci_core/jaseci/svc/README.md)
-  - [JsOrc](jaseci_core/jaseci/svc/jsorc/README.md)
+- [Services/JsOrc](jaseci_core/jaseci/svc/README.md)
   - [Task](jaseci_core/jaseci/svc/task/README.md)
   - [Mail](jaseci_core/jaseci/svc/mail/README.md)
 

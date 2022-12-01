@@ -1,6 +1,7 @@
 """
 Admin config api functions as a mixin
 """
+
 from json import dumps
 from jaseci.api.interface import Interface
 
@@ -19,9 +20,8 @@ class ConfigApi:
             "REDIS_CONFIG",
             "TASK_CONFIG",
             "MAIL_CONFIG",
-            "KUBE_CONFIG",
             "PROMON_CONFIG",
-            "JSORC_CONFIG",
+            "META_CONFIG",
         ]
 
     @Interface.admin_api(cli_args=["name"])
@@ -46,26 +46,6 @@ class ConfigApi:
 
         self._h.save_glob(name, value)
         return [f"Config of '{name}' to '{value}' set!"]
-
-    @Interface.admin_api()
-    def config_refresh(self, name: str):
-        """
-        update global configs
-        """
-
-        hook = self._h
-        if name == "TASK_CONFIG":
-            hook.task.reset(hook)
-        elif name == "REDIS_CONFIG":
-            hook.redis.reset(hook)
-        elif name == "MAIL_CONFIG":
-            hook.mail.reset(hook)
-        elif name == "PROMON_CONFIG":
-            hook.promon.reset(hook)
-        elif name == "KUBE_CONFIG":
-            hook.kube.reset(hook)
-        elif name == "JSORC_CONFIG":
-            hook.jsorc.reset(hook)
 
     @Interface.admin_api()
     def config_list(self):

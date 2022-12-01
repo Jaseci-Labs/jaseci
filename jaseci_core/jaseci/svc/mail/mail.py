@@ -79,11 +79,11 @@ class MailService(CommonService):
     #                     CLEANER                     #
     ###################################################
 
-    def reset(self, hook):
+    def reset(self, hook, start=True):
         if self.is_running():
             self.app.terminate()
 
-        super().reset(hook)
+        super().reset(hook, start)
 
     ####################################################
     #                    OVERRIDDEN                    #

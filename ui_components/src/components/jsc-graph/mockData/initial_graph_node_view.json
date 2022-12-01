@@ -1,0 +1,48 @@
+[
+  {
+    "hd_node_ids": [],
+    "edge_ids": [],
+    "fast_edges": {
+      "generic": [["urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4", 0]]
+    },
+    "parent_node_ids": [],
+    "member_node_ids": [],
+    "dimension": 0,
+    "name": "root",
+    "kind": "node",
+    "jid": "urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549",
+    "j_timestamp": "2022-10-22T16:23:06.838308",
+    "j_type": "graph",
+    "j_parent": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_master": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_access": "private",
+    "j_r_acc_ids": [],
+    "j_rw_acc_ids": [],
+    "context": {}
+  },
+  {
+    "edge_ids": [],
+    "fast_edges": {
+      "generic": [
+        ["urn:uuid:31ad19b6-abf6-4539-a58e-f66e18382e4c", 0],
+        ["urn:uuid:2028765d-b824-4751-bf17-b38986dd19b4", 0],
+        ["urn:uuid:de573eb4-8090-4249-9cb4-51660e6203eb", 0],
+        ["urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549", 1]
+      ]
+    },
+    "parent_node_ids": [],
+    "member_node_ids": [],
+    "dimension": 0,
+    "name": "app",
+    "kind": "node",
+    "jid": "urn:uuid:951bd893-42d7-4cca-ae5d-f6e39f41f3e4",
+    "j_timestamp": "2022-10-22T16:23:06.889722",
+    "j_type": "node",
+    "j_parent": "urn:uuid:36cf3bed-dbc0-4c0d-a9b9-974c54eb4538",
+    "j_master": "urn:uuid:75e4caee-823f-4962-b4b6-795b7ce075de",
+    "j_access": "private",
+    "j_r_acc_ids": [],
+    "j_rw_acc_ids": [],
+    "context": {}
+  }
+]
