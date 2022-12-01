@@ -194,5 +194,5 @@ class StackTests(CoreTest):
         )
 
         ret = self.call(self.smast, ["walker_run", {"name": "deep_except"}])
-        self.log(ret)
         self.assertTrue(ret["success"])
+        self.assertIn("xxxx.xxxx", ret["report"][2]["msg"])
