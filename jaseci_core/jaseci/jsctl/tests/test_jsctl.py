@@ -190,10 +190,10 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertFalse(r["success"])
 
     def test_jsctl_import(self):
-        r = self.call(
-            "sentinel regisfter "
-            "{os.path.dirname(__file__)}/ll_base.jac -code_dir "
-            "jaseci/jsctl/tests -set_active true"
+        r = self.call_cast(
+            f"sentinel register "
+            f"{os.path.dirname(__file__)}/ll_base.jac -code_dir "
+            f"jaseci/jsctl/tests -set_active true"
         )
         self.call("walker run init")
         self.call("walker run gen_rand_life")

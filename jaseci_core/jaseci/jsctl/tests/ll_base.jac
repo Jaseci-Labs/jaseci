@@ -186,7 +186,7 @@ walker move_workette {
     if(!dest_node): disengage;
     workette {
         here !<-[parent]- <-[parent]-;
-        here <-[parent]- dest_node;
+        here <+[parent]+ dest_node;
         report here;
     }
 }
@@ -209,7 +209,7 @@ walker create_workette {
     has title;
     has wtype, note;
     day, week, month, year, life, workette {
-        new = spawn here -[parent]->
+        new = spawn here +[parent]+>
             node::workette(name=title, wtype=wtype, note=note, is_MIT=is_MIT, snooze_till=snooze_till, date=date, is_ritual=is_ritual, color=color);
         report new;
     }
