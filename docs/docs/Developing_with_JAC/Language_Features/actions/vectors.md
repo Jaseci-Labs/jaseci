@@ -5,9 +5,9 @@
 
 ```jac
 #Calculate the Cosine similarity score between 2 vectors.
-# return float betweeen  0 and 1
-# vectora :list
-# vectorb : list
+# return list[float] floats betweeen  0 and 1
+# vectora :list[list[float]]] | list[float]
+# vectorb : list[list[float]]] | list[float]
 similarity = vector.cosine_sim(vectora, vectorb);
 
 ```

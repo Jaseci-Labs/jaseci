@@ -2,7 +2,7 @@ from redis import Redis
 
 from jaseci.svc import CommonService
 from .config import REDIS_CONFIG
-from .kube import REDIS_KUBE
+from .manifest import REDIS_MANIFEST
 
 
 #################################################
@@ -66,8 +66,8 @@ class RedisService(CommonService):
     def build_config(self, hook) -> dict:
         return hook.service_glob("REDIS_CONFIG", REDIS_CONFIG)
 
-    def build_kube(self, hook) -> dict:
-        return hook.service_glob("REDIS_KUBE", REDIS_KUBE)
+    def build_manifest(self, hook) -> dict:
+        return hook.service_glob("REDIS_MANIFEST", REDIS_MANIFEST)
 
 
 # ----------------------------------------------- #

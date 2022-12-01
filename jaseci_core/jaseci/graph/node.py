@@ -23,7 +23,7 @@ class Node(Element, Anchored):
 
     def __init__(self, dimension=0, **kwargs):
         self.edge_ids = IdList(self)
-        self.fast_edges = {}  # {name: [[NODEID, DIR, EDGEID, CONTEXT]]}
+        self.fast_edges = {}  # {name: [[NODEID, DIR, EDGEID, CONTEXT],...]}
         self._fast_edge_ids = IdList(self)
         self.parent_node_ids = IdList(self)
         self.member_node_ids = IdList(self)

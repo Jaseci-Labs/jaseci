@@ -20,7 +20,7 @@ setup(
         "torch>=1.10.2,<2.0.0",
         "pandas>=1.4.1,<2.0.0",
         "flair==0.10",
-        "numpy>=1.22.1,<2.0.0",
+        "numpy>=1.23.0,<1.24.0",
         "fasttext>=0.9.2,<0.10.0",
         "spacy==3.3.0",
         "sumy>=0.9.0,<0.10.0",
@@ -30,6 +30,9 @@ setup(
         "pytest>=7.0.1,<7.1",
         "pytest-order>=1.0.1,<1.1",
         "sentence-transformers>=2.2.0,<2.3",
+        "beautifulsoup4 >= 4.10.0, < 4.11.0",
+        "umap-learn==0.5.3",
+        "hdbscan==0.8.29",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],

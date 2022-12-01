@@ -1,10 +1,10 @@
 from prometheus_api_client import PrometheusConnect
 from jaseci.svc import CommonService
 from .config import PROMON_CONFIG
-from .kube import PROMON_KUBE
+from .manifest import PROMON_MANIFEST
 
 
-class PromotheusService(CommonService):
+class PrometheusService(CommonService):
 
     ###################################################
     #                     BUILDER                     #
@@ -12,7 +12,7 @@ class PromotheusService(CommonService):
 
     def run(self, hook=None):
         self.app = PrometheusConnect(url=self.config.get("url"), disable_ssl=True)
-        self.app.check_prometheus_connection()
+        self.ping()
         self.cpu = Cpu(self.app)
         self.memory = Memory(self.app)
         self.network = Network(self.app)
@@ -21,6 +21,16 @@ class PromotheusService(CommonService):
     ###################################################
     #                  COMMON UTILS                   #
     ###################################################
+
+    def ping(self) -> bool:
+        prom = self.app
+        response = prom._session.get(
+            "{0}/".format(prom.url),
+            verify=prom.ssl_verification,
+            headers=prom.headers,
+            timeout=2,
+        )
+        return response.ok
 
     def all_metrics(self) -> list:
         return self.app.all_metrics()
@@ -77,8 +87,8 @@ class PromotheusService(CommonService):
     def build_config(self, hook) -> dict:
         return hook.service_glob("PROMON_CONFIG", PROMON_CONFIG)
 
-    def build_kube(self, hook) -> dict:
-        return hook.service_glob("PROMON_KUBE", PROMON_KUBE)
+    def build_manifest(self, hook) -> dict:
+        return hook.service_glob("PROMON_MANIFEST", PROMON_MANIFEST)
 
 
 class Info:

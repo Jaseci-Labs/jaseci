@@ -88,12 +88,11 @@
 
 ## Jaseci UI Widget Library
 
-- [Jaseci UI Kit](jaseci_ui_kit/README.md)
-- [Introduction](jaseci_ui_kit/components/docs/what-is-jaseci-ui-kit.md)
-- [Basic Concepts](jaseci_ui_kit/components/docs/basic-concepts.md)
-- [Built-in Actions](jaseci_ui_kit/components/docs/built-in-actions.md)
-- [Connecting an API](jaseci_ui_kit/components/docs/connecting-an-api.md)
-- [Components](jaseci_ui_kit/README.md)
+- [Jaseci UI Kit](ui_components/readme.md)
+- [Introduction](ui_components/docs/what-is-jaseci-ui-kit.md)
+- [Basic Concepts](ui_components/docs/basic-concepts.md)
+- [Built-in Actions](ui_components/docs/built-in-actions.md)
+- [Connecting an API](ui_components/docs/connecting-an-api.md)
 
 ## DevOps Guides
 - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
@@ -102,10 +101,12 @@
 - [Locust Load Test for JASECI](support/locust/README.md)
 - [Setting up Monitoring for JASECI](support/monitoring/README.md)
 
+## Jaseci X Features
+- [Stripe Integration](jaseci_serv/jaseci_serv/jsx_stripe/README.md)
+
 ## Jaseci Core Internals
 
-- [Services](jaseci_core/jaseci/svc/README.md)
-  - [JsOrc](jaseci_core/jaseci/svc/jsorc/README.md)
+- [Services/JsOrc](jaseci_core/jaseci/svc/README.md)
   - [Task](jaseci_core/jaseci/svc/task/README.md)
   - [Mail](jaseci_core/jaseci/svc/mail/README.md)
 

@@ -1,7 +1,7 @@
 MAIL_ERR_MSG = "Mail service is disabled or not yet configured!"
 
 MAIL_CONFIG = {
-    "enabled": True,
+    "enabled": False,
     "quiet": True,
     "version": 2,
     "tls": True,

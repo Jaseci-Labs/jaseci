@@ -10,7 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
-import os, sys
+import os
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -34,9 +35,9 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.staticfiles",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "django.contrib.staticfiles",
     "rest_framework",
     "knox",
     "django_rest_passwordreset",
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_celery_results",
     "django_celery_beat",
+    "jaseci_serv.jsx_stripe",
 ]
 
 MIDDLEWARE = [
@@ -158,6 +160,12 @@ USE_L10N = True
 
 USE_TZ = False
 
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/3.0/howto/static-files/
+
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+
 
 # Sets global default user model to be custom
 AUTH_USER_MODEL = "base.User"
@@ -198,4 +206,5 @@ JASECI_CONFIGS = [
 
 DJANGO_CELERY_BEAT_TZ_AWARE = False
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
-STATIC_URL = "/static/"
+
+JSX_STRIPE_DIR = os.path.join(BASE_DIR, "jaseci_serv/jsx_stripe")

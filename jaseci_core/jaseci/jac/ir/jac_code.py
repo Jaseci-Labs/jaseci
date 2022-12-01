@@ -109,16 +109,16 @@ class JacCode:
         # Must clear this state across compiles (so fresh imports dont use stale data)
         JacAstBuilder._ast_head_map = {}
 
-        multi_pass_optimizer(
-            tree.root, opt_level=opt_level
-        )  # run analysis and optimizers
-
         self.errors = tree._parse_errors
         if tree._parse_errors:
             logger.error(str(f"{self.name}: Invalid syntax in Jac code!"))
             for i in tree._parse_errors:
                 logger.error(i)
             return None
+
+        multi_pass_optimizer(
+            tree.root, opt_level=opt_level
+        )  # run analysis and optimizers
 
         return tree.root
 
