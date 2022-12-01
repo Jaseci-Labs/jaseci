@@ -30,3 +30,8 @@ node_modules
 
 # Docs
 mdbook/
+standralib.txt
+standardlib.txt
+classes.txt
+booktool.json
+bookmd.txt
