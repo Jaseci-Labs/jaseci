@@ -24,7 +24,7 @@ class InferenceEngine:
     @param: config: Dict
     """
 
-    def __init__(self, config: Dict, uuid: str = None):
+    def __init__(self, config: Dict, uuid=None):
         self.ph_config = config
         self.id = uuid if uuid else str(uuid_gen.uuid4())
 
@@ -62,6 +62,14 @@ class InferenceEngine:
         self.model = self.model.to(self.device)
         self.model.eval()
 
+        # Get Intermediate Activations
+        self.out_activation_layer = self.infer_config.get("out_activation_layer", None)
+        if self.out_activation_layer:
+            self.activation = {}
+            getattr(self.model, self.out_activation_layer).register_forward_hook(
+                self.get_activation(self.out_activation_layer)
+            )
+
         # Initialize Pre-processor
         preprocessor_args = self.infer_config["preprocess"].get("args", {})
         if self.infer_config["preprocess"]["type"].startswith("Custom"):
@@ -79,11 +87,19 @@ class InferenceEngine:
 
     @torch.no_grad()
     def predict(self, data: Any) -> Any:
+        self.logger.info("Predict is called")
         data = self.preprocessor.process(data)
         data = data.to(self.device)
         output = self.model(data)
-        self.logger.info("Predict is called")
+        if self.out_activation_layer:
+            output = self.activation[self.out_activation_layer]
         return self.postprocessor.process(output)
+
+    def get_activation(self, name):
+        def hook(model, input, output):
+            self.activation[name] = output.detach()
+
+        return hook
 
     def load_weights(self, weights: str) -> None:
         self.logger.info("Loading new weights: {} ...".format(weights))
@@ -102,12 +118,12 @@ class InferenceList:
     Parent of Inference Engines. use to manage multiple Inference Engines.
     """
 
-    def __init__(self, config: Dict = None) -> None:
+    def __init__(self, config: Dict = None) -> None:  # type: ignore
         self.config = config
         os.makedirs("heads", exist_ok=True)
         self.ie_list = {}
 
-    def add(self, config: Dict = None, uuid: str = None) -> None:
+    def add(self, config: Dict = None, uuid: str = None) -> str:  # type: ignore
         if self.check(uuid):
             raise ImproperConnectionState(
                 f"{self.check(uuid)} Inference Engine already exists. Please use another uuid."
@@ -125,7 +141,7 @@ class InferenceList:
         else:
             raise ImproperConnectionState("Inference Engine not found.")
 
-    def train(self, uuid: str, config: Dict = None, auto_update=True) -> None:
+    def train(self, uuid: str, config: Dict = None, auto_update=True) -> None:  # type: ignore
         if self.check(uuid):
             ph_config = self.ie_list[uuid].ph_config
             if config:
