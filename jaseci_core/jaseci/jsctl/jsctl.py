@@ -355,6 +355,8 @@ def booktool(op, output):
         out = modifiedBook().bookgen_std_library()
     elif op == "classes":
         out = Book().bookgen_api_spec()
+    elif op == "mdclasses":
+        out = modifiedBook().bookgen_api_spec()
     click.echo(out)
     if output:
         with open(output, "w") as f:

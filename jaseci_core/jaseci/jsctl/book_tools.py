@@ -127,8 +127,7 @@ class Book:
             args_doc = args_doc.replace("_", "\\_")
             doc += args_doc
         line += "{" + doc + "}\n"
-        print("line>>>>>>>", line)
-        print("END")
+
         return line
 
     def bookgen_std_library(self):
@@ -192,7 +191,7 @@ class Book:
             )
             ret += f"{doc}\n\n"
             ret += self.api_call_spec(obj_class_cache[i])
-        return ret
+        # return ret
 
     def api_call_spec(self, cls):
         ret = ""
@@ -225,6 +224,7 @@ class Book:
             if auth_level != "cli_only":
                 authstr = f"| api: {api} | auth: {auth_level}"
             ret += self.func_to_sexy_box(f"cli: {name} {authstr}", v)
+        print(ret)
         return ret
 
 
@@ -417,8 +417,8 @@ class modifiedBook:
         for i in obj_class_cache.keys():
             if not i.endswith("_api"):
                 continue
-            ret += f"\\subsection{{APIs for {i[:-4]}}}\n\n"
-            doc = getdoc(obj_class_cache[i]).replace("\n\n", "\n\\par\n")
+            ret += f" # APIs for {i[:-4]}\n\n"
+            doc = getdoc(obj_class_cache[i]).replace("\n\n", "\n\n")
             doc = parse(doc).long_description
             doc = (
                 doc.replace("_", "\\_") if doc is not None else "No documentation yet."
@@ -450,10 +450,7 @@ class modifiedBook:
                 continue
             name = i.replace("_", " ")
             api = i.replace("_", "\\_")
-            ret += (
-                f"\\subsubsection{{\\lstinline"
-                f"[basicstyle=\\Large\\ttfamily]${name}$}}\n\n"
-            )
+            ret += f"<div class='actionHeading'>{name}</div>\n\n"
             authstr = "(cli only)"
             if auth_level != "cli_only":
                 authstr = f"| api: {api} | auth: {auth_level}"
