@@ -34,7 +34,7 @@ function LogsViewer({
     <Card
       sx={{
         background: "#FAFAFA",
-        height: 400,
+        height: "500px",
         overflow: "auto",
         textRendering: "optimizeLegibility",
       }}
