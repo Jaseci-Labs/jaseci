@@ -236,7 +236,7 @@ class JsctlTest(TestCaseHelper, TestCase):
 
     def test_jsctl_import_globals(self):
         self.call(
-            f"sentinel regisfter "
+            f"sentinel register "
             f"{os.path.dirname(__file__)}/base4.jac -code_dir {os.path.dirname(__file__)}/ "
             f"-set_active true"
         )
@@ -245,7 +245,7 @@ class JsctlTest(TestCaseHelper, TestCase):
 
     def test_jsctl_import_recursive(self):
         self.call(
-            "sentinel regisfter "
+            "sentinel register "
             f"{os.path.dirname(__file__)}/base5.jac -code_dir {os.path.dirname(__file__)}/ "
             "-set_active true"
         )
@@ -254,7 +254,7 @@ class JsctlTest(TestCaseHelper, TestCase):
 
     def test_jsctl_import_path(self):
         self.call(
-            "sentinel regisfter "
+            "sentinel register "
             f"{os.path.dirname(__file__)}/base6.jac -code_dir {os.path.dirname(__file__)}/ "
             "-set_active true"
         )
@@ -290,64 +290,64 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertNotIn("Some Output", r)
 
     def test_jsctl_jac_build(self):
-        if os.path.exists("{os.path.dirname(__file__)}/teststest.jir"):
-            os.remove("{os.path.dirname(__file__)}/teststest.jir")
-            self.assertFalfse(
-                os.path.exists("{os.path.dirname(__file__)}/teststest.jir")
+        if os.path.exists(f"{os.path.dirname(__file__)}/teststest.jir"):
+            os.remove(f"{os.path.dirname(__file__)}/teststest.jir")
+            self.assertFalse(
+                os.path.exists(f"{os.path.dirname(__file__)}/teststest.jir")
             )
-        self.call("jac build {os.path.dirname(__file__)}/teststest.jac")
-        self.assertGreatefr(
-            os.path.getsize("{os.path.dirname(__file__)}/teststest.jir"), 20000
+        self.call(f"jac build {os.path.dirname(__file__)}/teststest.jac")
+        self.assertGreater(
+            os.path.getsize(f"{os.path.dirname(__file__)}/teststest.jir"), 20000
         )
 
     def test_jsctl_jac_build_with_action(self):
-        if os.path.exists("{os.path.dirname(__file__)}/withaction.jir"):
-            os.remove("{os.path.dirname(__file__)}/withaction.jir")
-            self.assertFalfse(
-                os.path.exists("{os.path.dirname(__file__)}/withaction.jir")
+        if os.path.exists(f"{os.path.dirname(__file__)}/withaction.jir"):
+            os.remove(f"{os.path.dirname(__file__)}/withaction.jir")
+            self.assertFalse(
+                os.path.exists(f"{os.path.dirname(__file__)}/withaction.jir")
             )
-        self.call("jac build {os.path.dirname(__file__)}/withaction.jac")
-        self.assertGreatefr(
-            os.path.getsize("{os.path.dirname(__file__)}/withaction.jir"), 1000
+        self.call(f"jac build {os.path.dirname(__file__)}/withaction.jac")
+        self.assertGreater(
+            os.path.getsize(f"{os.path.dirname(__file__)}/withaction.jir"), 1000
         )
-        os.remove("{os.path.dirname(__file__)}/withaction.jir")
+        os.remove(f"{os.path.dirname(__file__)}/withaction.jir")
 
     def test_jsctl_jac_test(self):
-        r = self.cafll_split("jac test {os.path.dirname(__file__)}/teststest.jac")
+        r = self.call_split(f"jac test {os.path.dirname(__file__)}/teststest.jac")
         self.assertTrue(r[0].startswith('Testing "assert should be'))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
     def test_jsctl_jac_test_single(self):
         r = self.call_split(
-            "jac test {os.path.dirname(__file__)}/teststest.jac -single the_second"
+            f"jac test {os.path.dirname(__file__)}/teststest.jac -single the_second"
         )
         self.assertTrue(r[0].startswith('Testing "a second test"'))
         self.assertTrue(r[2].startswith('  "tests": 1'))
         self.assertTrue(r[5].startswith('  "success": true'))
 
     def test_jsctl_jac_test_jir(self):
-        r = self.cafll_split("jac test {os.path.dirname(__file__)}/teststest.jir")
+        r = self.call_split(f"jac test {os.path.dirname(__file__)}/teststest.jir")
         self.assertTrue(r[0].startswith('Testing "assert should be'))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
     def test_jsctl_jac_disas_jir(self):
-        r = seflf.call("jac disas {os.path.dirname(__file__)}/teststest.jir")
+        r = self.call(f"jac disas {os.path.dirname(__file__)}/teststest.jir")
         self.assertIn("LOAD_CONST", r)
         self.assertIn("LOAD_VAR", r)
 
     def test_jsctl_jac_run(self):
-        r = self.fcall_cast("jac run {os.path.dirname(__file__)}/teststest.jac")
+        r = self.call_cast(f"jac run {os.path.dirname(__file__)}/teststest.jac")
         self.assertEqual(r["report"], [{}, 4])
 
     def test_jsctl_jac_run_jir(self):
-        r = self.fcall_cast("jac run {os.path.dirname(__file__)}/teststest.jir")
+        r = self.call_cast(f"jac run {os.path.dirname(__file__)}/teststest.jir")
         self.assertEqual(r["report"], [{}, 4])
 
     def test_jsctl_jac_run_jir_walk(self):
-        r = self.fcall_cast(
-            "jac run {os.path.dirname(__file__)}/teststest.jir -walk alt_init"
+        r = self.call_cast(
+            f"jac run {os.path.dirname(__file__)}/teststest.jir -walk alt_init"
         )
         self.assertEqual(r["report"], [7])
 
@@ -355,7 +355,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.call(
             f"sentinel register {os.path.dirname(__file__)}/teststest.jac -set_active true"
         )
-        self.call("sentinel set {os.path.dirname(__file__)}/base.jac")
+        self.call(f"sentinel set {os.path.dirname(__file__)}/base.jac")
         r = self.call_cast("walker run init")
         r = self.call_cast("walker run init")
         self.assertEqual(len(r["report"]), 8)
@@ -375,9 +375,9 @@ class JsctlTest(TestCaseHelper, TestCase):
 
     def test_jsctl_graph_can(self):
         self.call(f"actions load local {self.infer_loc}")
-        self.call(
-            "sentinel regisfter "
-            "{os.path.dirname(__file__)}/graph_can.jac -name gc -set_active true"
+        r = self.call(
+            f"sentinel register "
+            f"{os.path.dirname(__file__)}/graph_can.jac -name gc -set_active true"
         )
         r = self.call("walker run go")
         self.assertEqual(r.split()[0], "2020-01-01T00:00:00")
@@ -436,11 +436,11 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertGreater(after, before)
 
     def test_jsctl_script(self):
-        r = self.call("script {os.path.dirname(__file__)}/jsctl_script")
+        r = self.call(f"script {os.path.dirname(__file__)}/jsctl_script")
         self.assertEqual(r, "[]\n\n[]\n\n{}\n\n")
 
     def test_jsctl_script_output(self):
-        self.call("script {os.path.dirname(__file__)}/jsctl_script -o scr_out")
+        self.call(f"script {os.path.dirname(__file__)}/jsctl_script -o scr_out")
         with open("scr_out", "r") as f:
             s = [line.rstrip() for line in f]
         if os.path.exists("scr_out"):
@@ -479,8 +479,8 @@ class JsctlTestWithSession(TestCaseHelper, TestCase):
         return ret.split("\n")
 
     def tearDown(self):
-        if os.path.exists("{os.path.dirname(__file__)}/js.session"):
-            os.remove("{os.path.dirname(__file__)}/js.session")
+        if os.path.exists(f"{os.path.dirname(__file__)}/js.session"):
+            os.remove(f"{os.path.dirname(__file__)}/js.session")
         jsctl.reset_state()
         super().tearDown()
 
