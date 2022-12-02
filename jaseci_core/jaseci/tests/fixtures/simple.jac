@@ -6,3 +6,15 @@ walker init {
         report new_node;
     }
 }
+
+walker deep_except {
+    report "Before try block";
+    try {
+        invalid_id = "xxxx.xxxx";
+        report *(invalid_id);
+        report "After trying to reference an invalid object id.";
+    } else with error {
+        report "Exception caught";
+        report error;
+    }
+}
