@@ -224,8 +224,8 @@ walker carry_forward {
         if(!(here.is_ritual) and
            (here.status == 'done' or
             here.status == 'canceled')): skip;
-        new_workette = spawn here <-[past]- node::workette;
-        new_workette <-[parent]- parent;
+        new_workette = spawn here <+[past]+ node::workette;
+        new_workette <+[parent]+ parent;
         new_workette := here;
         if(new_workette.is_ritual): new_workette.status="open";
         spawn -[parent]-> node::workette
@@ -263,7 +263,7 @@ walker gen_rand_life {
         if(num_workettes == 0): disengage;
         gen_num = rand.integer(3, 5);
         for i=0 to i<gen_num by i+=1 {
-            spawn here -[parent]-> node::workette(name=rand.sentence());
+            spawn here +[parent]+> node::workette(name=rand.sentence());
         }
         take --> ;
         num_workettes -= 1;

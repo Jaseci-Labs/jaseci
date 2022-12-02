@@ -9,6 +9,10 @@ import os
 class JsctlTest(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
+    infer_loc = (
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))) + "/tests/infer.py"
+    )
+
     def setUp(self):
         super().setUp()
 
@@ -60,8 +64,8 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertEqual(len(self.call_cast("graph list")), 4)
 
     def test_jsctl_carry_forward(self):
-        infer_loc = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        ret = self.call(f"actions load local {infer_loc}/tests/infer.py")
+
+        ret = self.call(f"actions load local {self.infer_loc}")
         ret = self.call(
             f"sentinel register {os.path.dirname(__file__)}/ll.jac -name ll -set_active true"
         )
@@ -190,18 +194,19 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertFalse(r["success"])
 
     def test_jsctl_import(self):
+        self.call(f"actions load local {self.infer_loc}")
         r = self.call_cast(
             f"sentinel register "
             f"{os.path.dirname(__file__)}/ll_base.jac -code_dir "
-            f"jaseci/jsctl/tests -set_active true"
+            f"{os.path.dirname(__file__)} -set_active true"
         )
-        self.call("walker run init")
-        self.call("walker run gen_rand_life")
+        r = self.call_cast("walker run init")
+        r = self.call_cast("walker run gen_rand_life")
         r = self.call_cast("walker run get_gen_day")
         self.assertGreater(len(r["report"]), 3)
 
     def test_jsctl_import_filters(self):
-        self.call(
+        self.call_cast(
             f"sentinel register {os.path.dirname(__file__)}/base.jac -set_active true"
         )
         r = self.call_cast("walker run init")
@@ -231,9 +236,9 @@ class JsctlTest(TestCaseHelper, TestCase):
 
     def test_jsctl_import_globals(self):
         self.call(
-            "sentinel regisfter "
-            "{os.path.dirname(__file__)}/bfase4.jac -code_dir {os.path.dirname(__file__)}/ "
-            "-set_active true"
+            f"sentinel regisfter "
+            f"{os.path.dirname(__file__)}/base4.jac -code_dir {os.path.dirname(__file__)}/ "
+            f"-set_active true"
         )
         r = self.call_cast("walker run init")
         self.assertEqual(len(r["report"]), 8)
@@ -241,7 +246,7 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_import_recursive(self):
         self.call(
             "sentinel regisfter "
-            "{os.path.dirname(__file__)}/bfase5.jac -code_dir {os.path.dirname(__file__)}/ "
+            f"{os.path.dirname(__file__)}/base5.jac -code_dir {os.path.dirname(__file__)}/ "
             "-set_active true"
         )
         r = self.call_cast("walker run init")
@@ -250,7 +255,7 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_import_path(self):
         self.call(
             "sentinel regisfter "
-            "{os.path.dirname(__file__)}/bfase6.jac -code_dir {os.path.dirname(__file__)}/ "
+            f"{os.path.dirname(__file__)}/base6.jac -code_dir {os.path.dirname(__file__)}/ "
             "-set_active true"
         )
         r = self.call_cast("walker run init")
@@ -350,7 +355,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.call(
             f"sentinel register {os.path.dirname(__file__)}/teststest.jac -set_active true"
         )
-        self.fcall("sentinel set {os.path.dirname(__file__)}/base.jac")
+        self.call("sentinel set {os.path.dirname(__file__)}/base.jac")
         r = self.call_cast("walker run init")
         r = self.call_cast("walker run init")
         self.assertEqual(len(r["report"]), 8)
@@ -369,7 +374,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertEqual(a, b)
 
     def test_jsctl_graph_can(self):
-        self.call("actions load local jaseci/tests/infer.py")
+        self.call(f"actions load local {self.infer_loc}")
         self.call(
             "sentinel regisfter "
             "{os.path.dirname(__file__)}/graph_can.jac -name gc -set_active true"
