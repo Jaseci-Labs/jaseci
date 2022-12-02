@@ -1,9 +1,8 @@
 import { Card, Table, useMantineTheme } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { client } from "../ReactQuery";
-import { parse, bgYellow, strip } from "ansicolor";
+import { parse, bgYellow } from "ansicolor";
 import { NextFont } from "@next/font/dist/types";
-import { useEffect } from "react";
 
 type ServerLog = {
   log: string;
