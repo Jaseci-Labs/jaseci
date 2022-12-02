@@ -1,0 +1,5 @@
+{
+    "t_model_name": "prajjwal1/bert-tiny",
+    "e_model_name": "prajjwal1/bert-tiny",
+    "model_save_path": "modeloutput"
+}
