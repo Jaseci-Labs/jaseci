@@ -9,12 +9,13 @@ import {
 import {
   IconGauge,
   IconHome2,
+  IconPrompt,
   IconVectorBezierCircle,
   TablerIcon,
 } from "@tabler/icons";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const useStyles = createStyles((theme) => ({
   link: {
@@ -70,18 +71,30 @@ function NavbarLink({ icon: Icon, label, active, onClick }: NavbarLinkProps) {
   );
 }
 
+const linksConfig = [
+  { icon: IconHome2, label: "Home", href: "/" },
+  { icon: IconGauge, label: "Dashboard", href: "/dashboard" },
+  {
+    icon: IconVectorBezierCircle,
+    label: "Graph Viewer",
+    href: "/graph-viewer",
+  },
+  {
+    icon: IconPrompt,
+    label: "View Logs",
+    href: "/logs",
+  },
+];
+
 export const NavbarMinimal = () => {
   const router = useRouter();
-  const [active, setActive] = useState(2);
-  const linksConfig = [
-    { icon: IconHome2, label: "Home", href: "/" },
-    { icon: IconGauge, label: "Dashboard", href: "/dashboard" },
-    {
-      icon: IconVectorBezierCircle,
-      label: "Graph Viewer",
-      href: "/graph-viewer",
-    },
-  ];
+  const pathName = usePathname();
+  const defaultActive = linksConfig.findIndex((link) => link.href === pathName);
+  const [active, setActive] = useState(
+    defaultActive === -1 ? 0 : defaultActive
+  );
+
+  useEffect(() => {}, []);
 
   return (
     <Navbar height={"100vh"} width={{ base: 80 }} p="md">
