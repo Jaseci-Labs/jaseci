@@ -1,4 +1,4 @@
-import { Card, Flex } from "@mantine/core";
+import { Card, Flex, Title } from "@mantine/core";
 
 function GraphViewerPage() {
   return (
@@ -13,6 +13,10 @@ function GraphViewerPage() {
           radius={"md"}
           sx={{ margin: "0 auto" }}
         >
+          <Title order={3} mb={"xl"}>
+            Graph
+          </Title>
+
           <jsc-graph
             height="80vh"
             serverUrl="http://localhost:8888"
