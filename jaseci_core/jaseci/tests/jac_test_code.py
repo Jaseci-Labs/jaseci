@@ -211,7 +211,7 @@ prog1 = """
             childern = workette.outbound_nodes;
             new_workette = spawn here ++> node::workette;
             parent = me.spawn_history.last(-1);
-            new_workette <-- parent;
+            new_workette <++ parent;
             take --> node::workette;
         }
         report me.spawn_history;
@@ -228,8 +228,8 @@ edgey = """
     walker init {
         root {
             a = spawn here ++> node::testnode ;
-            here -[apple]-> a;
-            here -[banana]-> a;
+            here +[apple]+> a;
+            here +[banana]+> a;
         }
     }
     """
@@ -243,8 +243,8 @@ edgey2 = """
     walker init {
         root {
             a = spawn here ++> node::testnode ;
-            here -[apple]-> a;
-            here -[banana]-> a;
+            here +[apple]+> a;
+            here +[banana]+> a;
 
             here !--> a;
         }
@@ -261,8 +261,8 @@ edgey2b = """
         root {
             a = spawn here ++> node::testnode ;
             b = spawn here ++> node::testnode ;
-            here -[apple]-> a;
-            here -[banana]-> a;
+            here +[apple]+> a;
+            here +[banana]+> a;
 
             here !--> a;
         }
@@ -279,8 +279,8 @@ edgey2c = """
         root {
             a = spawn here ++> node::testnode ;
             b = spawn here ++> node::testnode ;
-            here -[apple]-> a;
-            here -[banana]-> a;
+            here +[apple]+> a;
+            here +[banana]+> a;
 
             here !-[apple]-> a;
         }
@@ -297,11 +297,11 @@ edgey3 = """
         root {
             a = spawn here ++> node::testnode ;
             b = spawn here ++> node::testnode ;
-            here -[apple]-> a;
-            here -[apple]-> a;
-            here -[banana]-> a;
-            here -[banana]-> a;
-            here -[banana]-> a;
+            here +[apple]+> a;
+            here +[apple]+> a;
+            here +[banana]+> a;
+            here +[banana]+> a;
+            here +[banana]+> a;
 
             here !-[apple]-> a;
         }
@@ -318,9 +318,9 @@ edgey4 = """
     walker init {
         root {
             a = spawn here ++> node::testnode ;
-            here --> a;
-            here -[apple]-> a;
-            here -[banana]-> a;
+            here ++> a;
+            here +[apple]+> a;
+            here +[banana]+> a;
 
             here !-[generic]-> a;
         }
@@ -336,10 +336,10 @@ edgey5 = """
     walker init {
         root {
             a = spawn here ++> node::testnode ;
-            here --> a;
-            here --> a;
-            here -[apple]-> a;
-            here -[banana]-> a;
+            here ++> a;
+            here ++> a;
+            here +[apple]+> a;
+            here +[banana]+> a;
 
             here !-[generic]-> -[generic]->;
         }
@@ -357,7 +357,7 @@ edgey6 = """
             a = spawn here ++> node::testnode ;
             b = spawn here ++> node::testnode ;
 
-            here -[apple]-> -[generic]->;
+            here +[apple]+> -[generic]->;
         }
     }
     """
@@ -372,11 +372,11 @@ edgey7 = """
         root {
             a = spawn here ++> node::testnode ;
             b = spawn here ++> node::testnode ;
-            here --> a;
-            here --> a;
-            here -[apple]-> a;
-            here -[apple]-> b;
-            here -[banana]-> a;
+            here ++> a;
+            here ++> a;
+            here +[apple]+> a;
+            here +[apple]+> b;
+            here +[banana]+> a;
 
             here !-[generic]-> -[apple]->;
         }
@@ -396,8 +396,8 @@ edge_access = """
 
     walker init {
         root {
-            a = spawn here -[apple]-> node::testnode ;
-            b = spawn here -[banana]-> node::testnode ;
+            a = spawn here +[apple]+> node::testnode ;
+            b = spawn here +[banana]+> node::testnode ;
 
             e = -[apple]->.edge[0];
             e.v1 = 7;
@@ -540,10 +540,10 @@ visibility_builtins = """
 
     walker init {
         root {
-            a = spawn here -[apple]-> node::testnode ;
+            a = spawn here +[apple]+> node::testnode ;
             a.yo="Yeah i said";
             a.mama="Yo Mama Fool!";
-            b = spawn here -[banana]-> node::testnode ;
+            b = spawn here +[banana]+> node::testnode ;
 
             e = -[apple]->.edge[0];
             e.v1 = 7;
@@ -561,9 +561,9 @@ spawn_ctx_edge_node = """
     edge family: has kind;
 
     walker init {
-        person1 = spawn here -[friend(meeting_place = "college")]->
+        person1 = spawn here +[friend(meeting_place = "college")]+>
             node::person(name = "Josh", age = 32);
-        person2 = spawn here -[family(kind = "sister")] ->
+        person2 = spawn here +[family(kind = "sister")] +>
             node::person(name = "Jane", age = 30);
 
         for i in -->{
@@ -579,9 +579,9 @@ filter_ctx_edge_node = """
     edge family: has kind;
 
     walker init {
-        person1 = spawn here -[friend(meeting_place = "college")]->
+        person1 = spawn here +[friend(meeting_place = "college")]+>
             node::person(name = "Josh", age = 32);
-        person2 = spawn here -[family(kind = "sister")] ->
+        person2 = spawn here +[family(kind = "sister")] +>
             node::person(name = "Jane", age = 30);
 
         report --> node::person(name=='Jane')[0].context;
@@ -668,10 +668,10 @@ filter_on_context = """
 
     walker init {
         root {
-            a = spawn here -[apple]-> node::testnode ;
+            a = spawn here +[apple]+> node::testnode ;
             a.yo="Yeah i said";
             a.mama="Yo Mama Fool!";
-            b = spawn here -[banana]-> node::testnode ;
+            b = spawn here +[banana]+> node::testnode ;
 
             e = -[apple]->.edge[0];
             e.v1 = 7;
@@ -796,9 +796,9 @@ destroy_and_misc = """
     edge family: has kind;
 
     walker init {
-        person1 = spawn here -[friend(meeting_place = "college")]->
+        person1 = spawn here +[friend(meeting_place = "college")]+>
             node::person(name = "Josh", age = 32);
-        person2 = spawn here -[family(kind = "sister")] ->
+        person2 = spawn here +[family(kind = "sister")] +>
             node::person(name = "Jane", age = 30);
 
         report person1.name;
@@ -854,7 +854,7 @@ node_edge_same_name = """
     edge person: has meeting_place;
 
     walker init {
-        person1 = spawn here -[person(meeting_place = "college")]->
+        person1 = spawn here +[person(meeting_place = "college")]+>
             node::person(name = "Josh", age = 32);
 
         report -->.edge[0].context;
@@ -881,7 +881,7 @@ testcases = """
             graph_root = spawn node::testnode (yo="Hey yo!");
             n1=spawn node::apple(v1="I'm apple");
             n2=spawn node::banana(x1="I'm banana");
-            graph_root --> n1 --> n2;
+            graph_root ++> n1 ++> n2;
         }
     }
 
@@ -914,8 +914,8 @@ testcases = """
             graph_root = spawn node::testnode (yo="Hey yo!");
             n1=spawn node::apple(v1="I'm apple");
             n2=spawn node::banana(x1="I'm banana");
-            graph_root --> n1 --> n2;
-            graph_root --> n2;
+            graph_root ++> n1 ++> n2;
+            graph_root ++> n2;
         }
     } by walker::init {
         report "ASSERT BLOCK";
@@ -942,7 +942,7 @@ testcase_asserts = """
             graph_root = spawn node::testnode (yo="Hey yo!");
             n1=spawn node::apple(v1="I'm apple");
             n2=spawn node::banana(x1="I'm banana");
-            graph_root --> n1 --> n2;
+            graph_root ++> n1 ++> n2;
         }
     }
 
@@ -1030,7 +1030,7 @@ rt_error_test1 = """
 
 root_type_nodes = """
     walker init {
-       spawn here -[generic]-> node::root;
+       spawn here +[generic]+> node::root;
        report here.details['name'];
        report -->[0].details['name'];
     }
@@ -1077,7 +1077,7 @@ graph_in_graph = """
             graph_root = spawn node::generic;
             day1 = spawn graph::one;
 
-            graph_root --> day1;
+            graph_root ++> day1;
         }
     }
 
@@ -1109,13 +1109,13 @@ edge_bug = """
 
     walker init {
         root {
-            nd = spawn here -[g]-> node::plain;
-            nd -[g]-> nd;
-            spawn nd -[g]-> node::plain;
-            spawn nd -[g]-> node::plain;
-            a = spawn nd <-[g]- node::plain;
-            spawn nd <-[g]- node::plain;
-            nd -[g]-> a;
+            nd = spawn here +[g]+> node::plain;
+            nd +[g]+> nd;
+            spawn nd +[g]+> node::plain;
+            spawn nd +[g]+> node::plain;
+            a = spawn nd <+[g]+ node::plain;
+            spawn nd <+[g]+ node::plain;
+            nd +[g]+> a;
         }
         take -[g]->;
         plain {
