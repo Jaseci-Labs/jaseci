@@ -19,8 +19,8 @@ bug_check1 = """
         spawn {
             state_node = spawn node::state;
             state_2 = spawn node::state;
-            state_node -[transition(intent_label =
-                        "THIS IS AN INTENT_LABEL")]-> state_2;
+            state_node +[transition(intent_label =
+                        "THIS IS AN INTENT_LABEL")]+> state_2;
         }
     }
 

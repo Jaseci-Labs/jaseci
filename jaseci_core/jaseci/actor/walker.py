@@ -25,7 +25,6 @@ class Walker(Element, WalkerInterp, Anchored):
         # Process state
         self.current_node_id = None
         self.next_node_ids = IdList(self)
-        self.ignore_node_ids = IdList(self)
         self.destroy_node_ids = IdList(self)
         self.current_step = 0
         self.in_entry_exit = False

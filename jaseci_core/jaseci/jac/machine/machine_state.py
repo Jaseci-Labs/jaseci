@@ -31,6 +31,7 @@ class MachineState:
         self.request_context = None
         self.runtime_errors = []
         self.yielded_walkers_ids = IdList(self)
+        self.ignore_node_ids = IdList(self)
         self._parent_override = parent_override
         if not isinstance(self, Element) and caller:
             self._m_id = caller._m_id

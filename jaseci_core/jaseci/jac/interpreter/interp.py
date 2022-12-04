@@ -1767,6 +1767,16 @@ class Interp(VirtualMachine):
             self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
         self.inherit_runtime_state(m)
 
+    def visibility_prune(self, node_set=None):
+        """Returns all nodes that shouldnt be ignored"""
+        ret = JacSet()
+        if node_set is None:
+            node_set = self.current_node.attached_nodes()
+        for i in node_set:
+            if i not in self.ignore_node_ids.obj_list():
+                ret.add_obj(i)
+        return ret
+
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
         try:
