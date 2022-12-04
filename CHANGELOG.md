@@ -3,7 +3,8 @@
 ## Version 1.3.5
 
 ### Updates
-
+- New Feature: Can now log in anonymously to any jaseci server with `publogin` command in jsctl
+- Improvement: can now create users more easily through `user create` apis
 - New Major Feature: `jsctl` can now run scripts of commands from file
 - New Feature: Introduction of `std.round` for rounding floating point valuse, and `std.uniform` for random float values
 - Improvement:  `jac test` and `sentinel test` apis have new paramerter `profiling` to enable internal stack profile outputs
@@ -19,6 +20,7 @@
 
 ### Notes
 
+- The parameters for `master_create` and `user_create` now take password paramter directly, may need to update calls to those `jaseci.` jac action calls for correct `args` argument.
 - Imports updated, imports of style `import {walker*} with...` is now `import {walker::*} with...`
 - Walker register and set deprecated. Now architype register and set should be used.
 - Deprecated spawn graphs using specail dot syntax (overcomplicates language grammar)
