@@ -263,12 +263,12 @@ global_reregistering = """
 
     walker init {
         root {
-            spawn here - -> node::plain;
-            spawn here - -> node::plain;
-            spawn here - -> node::plain;
+            spawn here ++> node::plain;
+            spawn here ++> node::plain;
+            spawn here ++> node::plain;
         }
         report global.a;
-        take - ->;
+        take -->;
     }
     """
 
@@ -413,10 +413,10 @@ depth_first_take = """
             n6=spawn node::a(num=6);
             n7=spawn node::a(num=7);
 
-            here --> n1 --> n2 --> n3;
-                            n2 --> n4;
-                     n1 --> n5 --> n6;
-                            n5 --> n7;
+            here ++> n1 ++> n2 ++> n3;
+                            n2 ++> n4;
+                     n1 ++> n5 ++> n6;
+                            n5 ++> n7;
         }
 
         a: report here.num;
@@ -439,10 +439,10 @@ breadth_first_take = """
             n6=spawn node::a(num=6);
             n7=spawn node::a(num=7);
 
-            here --> n1 --> n2 --> n3;
-                            n2 --> n4;
-                     n1 --> n5 --> n6;
-                            n5 --> n7;
+            here ++> n1 ++> n2 ++> n3;
+                            n2 ++> n4;
+                     n1 ++> n5 ++> n6;
+                            n5 ++> n7;
         }
 
         a: report here.num;
