@@ -2,10 +2,16 @@ from http.client import ImproperConnectionState
 from typing import Any, Dict
 import torch
 import uuid as uuid_gen
+import os
+import shutil
 
 from .utils import model as model_module
 from .utils import process as process_module
 from .utils.logger import get_logger
+import logging
+from .utils.util import deep_update, write_yaml
+
+from .train import train
 
 import warnings
 
@@ -18,9 +24,16 @@ class InferenceEngine:
     @param: config: Dict
     """
 
-    def __init__(self, config: Dict, uuid: str = None):
+    def __init__(self, config: Dict, uuid=None):
+        self.ph_config = config
         self.id = uuid if uuid else str(uuid_gen.uuid4())
-        self.logger = get_logger(f"Personalized Header {self.id}")
+
+        os.makedirs(f"heads/{self.id}", exist_ok=True)
+        write_yaml(self.ph_config, f"heads/{self.id}/config.yaml")
+
+        self.logger = get_logger(name=self.id)
+        self.logger.addHandler(logging.FileHandler(f"heads/{self.id}/log.txt"))
+        self.logger.setLevel(logging.DEBUG)
 
         self.infer_config = config["Inference"]
 
@@ -32,10 +45,15 @@ class InferenceEngine:
 
         # Loading the weights
         if self.infer_config["weights"]:
-            self.logger.info(
-                "Loading checkpoint: {} ...".format(self.infer_config["weights"])
+            shutil.copyfile(
+                self.infer_config["weights"], f"heads/{self.id}/current.pth"
             )
-            checkpoint = torch.load(self.infer_config["weights"])
+            self.logger.info(
+                "Loading default checkpoint: {} ...".format(
+                    self.infer_config["weights"]
+                )
+            )
+            checkpoint = torch.load(f"heads/{self.id}/current.pth")
             state_dict = checkpoint["state_dict"]
             self.model.load_state_dict(state_dict)
 
@@ -44,21 +62,44 @@ class InferenceEngine:
         self.model = self.model.to(self.device)
         self.model.eval()
 
+        # Get Intermediate Activations
+        self.out_activation_layer = self.infer_config.get("out_activation_layer", None)
+        if self.out_activation_layer:
+            self.activation = {}
+            getattr(self.model, self.out_activation_layer).register_forward_hook(
+                self.get_activation(self.out_activation_layer)
+            )
+
         # Initialize Pre-processor
+        preprocessor_args = self.infer_config["preprocess"].get("args", {})
+        if self.infer_config["preprocess"]["type"].startswith("Custom"):
+            preprocessor_args["module_name"] = "CustomPreProcessor"
         self.preprocessor = getattr(
             process_module, self.infer_config["preprocess"]["type"]
-        )(**self.infer_config["preprocess"].get("args", {}))
+        )(**preprocessor_args)
         # Initialize Post-processor
+        postprocessor_args = self.infer_config["postprocess"].get("args", {})
+        if self.infer_config["postprocess"]["type"].startswith("Custom"):
+            postprocessor_args["module_name"] = "CustomPostProcessor"
         self.postprocessor = getattr(
             process_module, self.infer_config["postprocess"]["type"]
-        )(**self.infer_config["postprocess"].get("args", {}))
+        )(**postprocessor_args)
 
     @torch.no_grad()
     def predict(self, data: Any) -> Any:
+        self.logger.info("Predict is called")
         data = self.preprocessor.process(data)
         data = data.to(self.device)
         output = self.model(data)
+        if self.out_activation_layer:
+            output = self.activation[self.out_activation_layer]
         return self.postprocessor.process(output)
+
+    def get_activation(self, name):
+        def hook(model, input, output):
+            self.activation[name] = output.detach()
+
+        return hook
 
     def load_weights(self, weights: str) -> None:
         self.logger.info("Loading new weights: {} ...".format(weights))
@@ -77,11 +118,12 @@ class InferenceList:
     Parent of Inference Engines. use to manage multiple Inference Engines.
     """
 
-    def __init__(self, config: Dict = None) -> None:
+    def __init__(self, config: Dict = None) -> None:  # type: ignore
         self.config = config
+        os.makedirs("heads", exist_ok=True)
         self.ie_list = {}
 
-    def add(self, config: Dict = None, uuid: str = None) -> None:
+    def add(self, config: Dict = None, uuid: str = None) -> str:  # type: ignore
         if self.check(uuid):
             raise ImproperConnectionState(
                 f"{self.check(uuid)} Inference Engine already exists. Please use another uuid."
@@ -99,9 +141,44 @@ class InferenceList:
         else:
             raise ImproperConnectionState("Inference Engine not found.")
 
-    def load_weights(self, uuid: str, weights: str) -> None:
-        if uuid in self.ie_list:
-            self.ie_list[uuid].load_weights(weights)
+    def train(self, uuid: str, config: Dict = None, auto_update=True) -> None:  # type: ignore
+        if self.check(uuid):
+            ph_config = self.ie_list[uuid].ph_config
+            if config:
+                deep_update(ph_config, config)
+                write_yaml(ph_config, f"heads/{uuid}/config.yaml")
+            resume = (
+                f"heads/{uuid}/current.pth"
+                if os.path.exists(f"heads/{uuid}/current.pth")
+                else None
+            )
+
+            run_id = train(
+                {
+                    "uuid": uuid,
+                    "config": f"heads/{uuid}/config.yaml",
+                    "resume": resume,
+                    "device": None,
+                }
+            )
+            if auto_update:
+                self.update_head(uuid, run_id)
+        else:
+            raise ImproperConnectionState("Inference Engine not found.")
+
+    def update_head(self, uuid: str, run_id: str) -> None:
+        if os.path.exists(f"heads/{uuid}/runs/{run_id}/model_best.pth"):
+            shutil.copyfile(
+                f"heads/{uuid}/runs/{run_id}/model_best.pth",
+                f"heads/{uuid}/current.pth",
+            )
+            self.ie_list[uuid].load_weights(f"heads/{uuid}/current.pth")
+        else:
+            print(f"Model for {uuid} has not improved. No update.")
+
+    def get_config(self, uuid: str) -> Dict:
+        if self.check(uuid):
+            return self.ie_list[uuid].ph_config
         else:
             raise ImproperConnectionState("Inference Engine not found.")
 
