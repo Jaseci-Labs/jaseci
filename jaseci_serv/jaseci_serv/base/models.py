@@ -21,19 +21,23 @@ class Master(CoreMaster):
         super().__init__(*args, **kwargs)
         self._valid_configs += JASECI_CONFIGS
 
-    def user_creator(self, name, other_fields: dict = {}):
+    def user_creator(self, name, password, other_fields: dict = {}):
         """
         Create a master instance and return root node master object
 
         other_fields used for additional fields for overloaded interfaces
         (i.e., Django interface)
         """
-        data = {"email": name}
+        from jaseci_serv.user_api.serializers import UserSerializer, SuperUserSerializer
+
+        data = {"email": name, "password": password}
         for i in other_fields.keys():
             data[i] = other_fields[i]
-        from jaseci_serv.user_api.serializers import UserSerializer
-
-        serializer = UserSerializer(data=data)
+        serializer = (
+            UserSerializer(data=data)
+            if get_user_model().objects.count()
+            else SuperUserSerializer(data=data)
+        )
         if serializer.is_valid(raise_exception=False):
             mas = serializer.save().get_master()
             mas._h = self._h
@@ -41,23 +45,25 @@ class Master(CoreMaster):
         else:
             return {"error": serializer._errors, "status_code": 400}
 
-    def superuser_creator(self, name, other_fields: dict = {}):
+    def superuser_creator(self, name, password, other_fields: dict = {}):
         """
         Create a master instance and return root node master object
 
         other_fields used for additional fields for overloaded interfaces
         (i.e., Django interface)
         """
-        data = {"email": name}
-        for i in other_fields.keys():
-            data[i] = other_fields[i]
         from jaseci_serv.user_api.serializers import SuperUserSerializer
 
+        data = {"email": name, "password": password}
+        for i in other_fields.keys():
+            data[i] = other_fields[i]
         serializer = SuperUserSerializer(data=data)
         if serializer.is_valid(raise_exception=False):
             mas = serializer.save().get_master()
             mas._h = self._h
             return mas
+        else:
+            return {"error": serializer._errors, "status_code": 400}
 
     def user_destroyer(self, name: str):
         """

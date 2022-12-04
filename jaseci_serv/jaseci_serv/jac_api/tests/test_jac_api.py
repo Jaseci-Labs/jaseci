@@ -1395,7 +1395,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         payload = {
             "op": "sentinel_register",
             "name": "Something",
-            "code": "walker testwalker{ report jaseci.master_create('a@b.com', '',  {},"
+            "code": "walker testwalker{ report jaseci.master_create('a@b.com', '' ,'',  {},"
             "{'password': 'yoyoyoyoyoyo', 'name': '', 'is_activated': true}); }",
         }
         res = self.client.post(
