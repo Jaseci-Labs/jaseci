@@ -41,6 +41,7 @@ class MachineState:
         self._loop_ctrl = None
         self._stopped = None
         self._assign_mode = False
+        self._jac_try_mode = 0  # 0 is false, +=1 for each nested try
         self._loop_limit = 10000
         self._cur_jac_ast = Ast("none")
         self._write_candidate = None
@@ -229,6 +230,8 @@ class MachineState:
 
     def rt_error(self, error, jac_ast=None):
         """Prints runtime error to screen"""
+        if self._jac_try_mode:
+            raise Exception(error)
         error = self.rt_log_str(error, jac_ast)
         logger.error(str(error))
         self.runtime_errors.append(error)

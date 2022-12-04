@@ -40,21 +40,23 @@ class BaseTrainer:
     """
 
     def __init__(
-        self, model, criterion, metric_ftns, optimizer, config, resume=None, uuid=None
+        self,
+        model,
+        criterion,
+        metric_ftns,
+        optimizer,
+        config,
+        uuid,
+        resume=None,
     ):
         self.config = config
         self.logger = get_logger("train")
 
-        save_dir = Path(self.config["trainer"]["save_dir"])
-        model_name = self.config["name"]
-        if uuid is None:
-            run_id = datetime.now().strftime(r"%m%d_%H%M%S")
-        else:
-            run_id = uuid
+        save_dir = Path("heads")
+        self.run_id = datetime.now().strftime(r"%m%d_%H%M%S")
 
-        self.checkpoint_dir = save_dir / "models" / model_name / run_id
-        self.log_dir = save_dir / "logs" / model_name / run_id
-
+        self.checkpoint_dir = save_dir / uuid / "runs" / self.run_id
+        self.log_dir = save_dir / uuid / "runs" / self.run_id / "logs"
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -187,14 +189,10 @@ class BaseTrainer:
         self.logger.info("Loading checkpoint: {} ...".format(resume_path))
         checkpoint = torch.load(resume_path)
         self.start_epoch = checkpoint["epoch"] + 1
+        self.epochs += checkpoint["epoch"]
         self.mnt_best = checkpoint["monitor_best"]
 
         # load architecture params from checkpoint.
-        if checkpoint["config"]["arch"] != self.config["arch"]:
-            self.logger.warning(
-                "Warning: Architecture configuration given in config file is different from that of "
-                "checkpoint. This may yield an exception while state_dict is being loaded."
-            )
         self.model.load_state_dict(checkpoint["state_dict"])
 
         # load optimizer state from checkpoint only when optimizer type is not changed.

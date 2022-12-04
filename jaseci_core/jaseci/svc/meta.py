@@ -1,13 +1,14 @@
+import signal
+from jaseci.utils.utils import logger
 from jaseci.svc import (
     CommonService,
-    ApplicationContext,
+    JsOrc,
     MetaProperties,
     MailService,
     RedisService,
     TaskService,
-    KubernetesService,
-    PromotheusService,
-    JsOrcService,
+    PrometheusService,
+    ServiceState as Ss,
 )
 
 
@@ -23,9 +24,25 @@ class MetaService(CommonService, MetaProperties):
     ###################################################
 
     def run(self, hook=None):
-        self.app = ApplicationContext()
+        self.app = JsOrc(self)
         self.populate_context()
         self.populate_services()
+
+    def post_run(self, hook=None):
+        if self.run_svcs:
+            self.app.build()
+            if self.is_automated():
+                logger.info("JsOrc is automated. Pushing interval check alarm...")
+                self.push_interval(1)
+            else:
+                logger.info("JsOrc is not automated.")
+
+    def push_interval(self, interval):
+        if self.running_interval == 0:
+            self.running_interval += 1
+            signal.alarm(interval)
+        else:
+            logger.info("Reusing current running interval...")
 
     ###################################################
     #                    SERVICES                     #
@@ -54,6 +71,13 @@ class MetaService(CommonService, MetaProperties):
         return self.app.context.get(ctx, {}).get("class")
 
     ###################################################
+    #                     COMMON                      #
+    ###################################################
+
+    def is_automated(self):
+        return self.is_running() and self.app and self.app.automated
+
+    ###################################################
     #                     BUILDER                     #
     ###################################################
 
@@ -61,19 +85,12 @@ class MetaService(CommonService, MetaProperties):
         h = self.build_context("hook")
         h.meta = self
         if self.run_svcs:
-            h.kube = self.get_service("kube", h)
-            h.jsorc = self.get_service("jsorc", h)
             h.promon = self.get_service("promon", h)
             h.redis = self.get_service("redis", h)
             h.task = self.get_service("task", h)
             h.mail = self.get_service("mail", h)
 
-            if not (
-                h.kube.start(h)
-                and h.kube.is_running()
-                and h.jsorc.start(h)
-                and h.jsorc.is_running()
-            ):
+            if not self.is_automated():
                 h.mail.start(h)
                 h.redis.start(h)
                 h.task.start(h)
@@ -96,6 +113,12 @@ class MetaService(CommonService, MetaProperties):
     #                   OVERRIDEN                     #
     ###################################################
 
+    def reset(self, hook=None, start=True):
+        self.terminate_daemon("jsorc")
+        self.app = None
+        self.state = Ss.NOT_STARTED
+        self.__init__()
+
     def populate_context(self):
         from jaseci.hook import RedisHook
         from jaseci.element.master import Master
@@ -109,6 +132,22 @@ class MetaService(CommonService, MetaProperties):
         self.add_service_builder("redis", RedisService)
         self.add_service_builder("task", TaskService)
         self.add_service_builder("mail", MailService)
-        self.add_service_builder("kube", KubernetesService)
-        self.add_service_builder("promon", PromotheusService)
-        self.add_service_builder("jsorc", JsOrcService)
+        self.add_service_builder("promon", PrometheusService)
+
+
+def interval_check(signum, frame):
+    meta = MetaService()
+    if meta.is_automated():
+        meta.app.interval_check()
+        logger.info(
+            f"Backing off for {meta.app.backoff_interval} seconds before the next interval check..."
+        )
+
+        # wait interval_check to be finished before decrement
+        meta.running_interval -= 1
+        meta.push_interval(meta.app.backoff_interval)
+    else:
+        meta.running_interval -= 1
+
+
+signal.signal(signal.SIGALRM, interval_check)
