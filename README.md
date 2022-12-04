@@ -28,6 +28,7 @@
 - [Build a Custom Jaseci Module](support/codelabs/custom_jaseci_module_codelab.md)
 - [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
 - [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
+- [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
 ## The JAC Language Guide
 
 - [Key Abstractions and Concepts](support/guide/lang_docs/key_concepts.md)
