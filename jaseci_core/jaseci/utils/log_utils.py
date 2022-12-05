@@ -1,3 +1,4 @@
+from io import StringIO
 import re
 from typing import List, Dict
 
@@ -30,3 +31,24 @@ def parse_logs(logs: List[str]) -> List[Dict[str, str]]:
         result.append({"date": date, "level": level, "log": log})
 
     return result
+
+
+class LimitedSlidingBuffer(StringIO):
+    def __init__(self, buffer=None, max_size=5 * 1000 * 1000) -> None:
+        """A string buffer that accepts a maximum length."""
+        StringIO.__init__(self, buffer)
+        self.current_size = 0
+        self.max_size = max_size
+
+    def write(self, str: str):
+        self.current_size += len(str)
+
+        if self.current_size > self.max_size:
+            size_diff = self.current_size - self.max_size
+            new_str = str[0 : len(str) - size_diff]
+
+            self.current_size = self.max_size
+
+            return StringIO.write(self, new_str)
+
+        return StringIO.write(self, str)
