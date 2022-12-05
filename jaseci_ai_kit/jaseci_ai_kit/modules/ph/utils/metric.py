@@ -27,3 +27,12 @@ def mse(output, target):
         diff = torch.square(output - target) / batch_size
         diff = diff.sum()
     return diff
+
+
+# mean absolute error
+def mae(output, target):
+    with torch.no_grad():
+        batch_size = target.size(0)
+        diff = torch.abs(output - target) / batch_size
+        diff = diff.sum()
+    return diff

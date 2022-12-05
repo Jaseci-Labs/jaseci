@@ -1,5 +1,3 @@
-import { context } from "msw";
-import { o } from "msw/lib/SetupApi-0d3126ba";
 import { test, expect } from "../mocks/test";
 
 test("login page loads", async ({ page }) => {

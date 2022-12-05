@@ -3,7 +3,7 @@ import torch
 import pandas as pd
 from pathlib import Path
 from itertools import repeat
-from collections import OrderedDict
+from collections import OrderedDict, abc
 import yaml
 
 
@@ -43,6 +43,15 @@ def inf_loop(data_loader):
         yield from loader
 
 
+def deep_update(d, u):
+    for k, v in u.items():
+        if isinstance(v, abc.Mapping):
+            d[k] = deep_update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
+
+
 def prepare_device(n_gpu_use):
     """
     setup GPU device if available. get gpu device indices which are used for DataParallel
@@ -63,6 +72,11 @@ def prepare_device(n_gpu_use):
     device = torch.device("cuda:0" if n_gpu_use > 0 else "cpu")
     list_ids = list(range(n_gpu_use))
     return device, list_ids
+
+
+def save_custom_python(python: str, path: str = "heads/custom.py"):
+    with open(path, "w") as f:
+        f.write(python)
 
 
 class MetricTracker:

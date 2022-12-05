@@ -3,7 +3,7 @@ from transformers import AutoTokenizer, AutoModel
 import importlib
 
 
-class PersonalizedHeadPostProcessor:
+class SnipsPostProcessor:
     def __init__(self, to_list: bool = False):
         self.to_list = to_list
 
@@ -14,7 +14,7 @@ class PersonalizedHeadPostProcessor:
         return output
 
 
-class PersonalizedHeadPreProcessor:
+class SnipsPreProcessor:
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         self.model = AutoModel.from_pretrained("bert-base-uncased")
@@ -26,8 +26,27 @@ class PersonalizedHeadPreProcessor:
         return emb
 
 
+class V2VPostProcessor:
+    def __init__(self):
+        pass
+
+    def process(self, output: torch.Tensor) -> list:
+        return output.tolist()[0]
+
+
+class V2VPreProcessor:
+    def __init__(self):
+        pass
+
+    def process(self, input: list) -> torch.Tensor:
+        input = torch.tensor(input)
+        return input
+
+
 class CustomProcessor:
-    def __init__(self, python_file, module_name, **kwargs):
+    def __init__(
+        self, module_name: str, python_file: str = "heads/custom.py", **kwargs
+    ):
         spec = importlib.util.spec_from_file_location("module.name", python_file)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
