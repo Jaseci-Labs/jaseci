@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from jaseci_serv.utils.test_utils import skip_without_kube
 
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -31,6 +32,7 @@ class JsorcAPITests(TestCaseHelper, TestCase):
     def tearDown(self):
         super().tearDown()
 
+    @skip_without_kube
     def test_service_refresh(self):
         """Test service refresh through the service_refresh API"""
         payload = {"op": "service_refresh", "name": "meta"}

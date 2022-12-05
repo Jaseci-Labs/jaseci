@@ -300,6 +300,21 @@ class JsOrc:
     #                   KUBERNETES                    #
     ###################################################
 
+    def in_cluster(self):
+        """
+        Check if JSORC/Jaseci is running in a kubernetes cluster
+        """
+        try:
+            if not hasattr(self, "kubernetes"):
+                return False
+            res = self.kubernetes.ping()
+            logger.info("in in_cluster check")
+            logger.info(res)
+        except ApiException as e:
+            logger.info("in in_cluster check exception block")
+            logger.info(e)
+            return False
+
     def create(self, kind: str, name: str, namespace: str, conf: dict):
         try:
             logger.info(f"Creating {kind} for `{name}` with namespace `{namespace}`")
