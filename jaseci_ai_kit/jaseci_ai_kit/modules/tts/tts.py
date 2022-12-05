@@ -9,7 +9,7 @@ from scipy.io.wavfile import write
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.actions.remote_actions import launch_server
 
-from .tacotron2.model import Tacotron2
+from tacotron2 import model as Tacotron2
 from waveglow import model as Waveglow
 
 taco_checkpoint = "https://api.ngc.nvidia.com/v2/models/nvidia/tacotron2_pyt_ckpt_amp/versions/19.09.0/files/nvidia_tacotron2pyt_fp16_20190427"
@@ -137,7 +137,7 @@ def make_utils(force_reload):
     return tacotron2, waveglow, utils
 
 
-tacotron2, waveglow, utils = make_utils()
+tacotron2, waveglow, utils = make_utils(force_reload)
 
 
 def prediction(input_text, model=tacotron2, vocorder=waveglow, utils=utils):
