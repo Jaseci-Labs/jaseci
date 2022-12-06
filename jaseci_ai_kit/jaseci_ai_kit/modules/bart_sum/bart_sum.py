@@ -18,8 +18,8 @@ bart_model = BartForConditionalGeneration.from_pretrained("facebook/bart-large-c
 
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
 def summarize(
-    text: Union[List[str], str] = None,
-    url: str = None,
+    text: Union[List[str], str] = None,  # type: ignore
+    url: str = None,  # type: ignore
     max_length: int = 100,
     min_length: int = 10,
     num_beams: int = 4,

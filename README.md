@@ -74,6 +74,7 @@
 
 - [Jaseci AI Kit Overview](jaseci_ai_kit/README.md)
   - [CL Summarization](jaseci_ai_kit/jaseci_ai_kit/modules/cl_summer/README.md)
+  - [Bart Summarization](jaseci_ai_kit/jaseci_ai_kit/modules/bart_sum/README.md)
   - [Bi-Encoder](jaseci_ai_kit/jaseci_ai_kit/modules/encoders/README.md)
   - [FLair NER](jaseci_ai_kit/jaseci_ai_kit/modules/ent_ext/README.md)
   - [Fasttext Classifier](jaseci_ai_kit/jaseci_ai_kit/modules/fast_enc/README.md)
