@@ -5,7 +5,6 @@ from jaseci.api.interface import Interface
 from jaseci.actor.walker import Walker
 from jaseci.graph.node import Node
 from jaseci.actor.sentinel import Sentinel
-from jaseci.utils.utils import b64decode_str
 from jaseci.utils.id_list import IdList
 
 
@@ -24,26 +23,6 @@ class WalkerApi:
         self.spawned_walker_ids = IdList(self)
         self.yielded_walkers_ids = IdList(self)
 
-    @Interface.private_api(cli_args=["code"])
-    def walker_register(
-        self, snt: Sentinel = None, code: str = "", encoded: bool = False
-    ):
-        """
-        Allows for the specific parsing and registering of individual walkers.
-
-        Though the common case is to register entire sentinels, a user can also
-        register individual walkers one at a time. This API accepts code for a single
-        walker (i.e., \\lstinline\\{walker \\{...\\}\\}).
-        """
-        if encoded:
-            code = b64decode_str(code)
-        walk = snt.register_walker(code)
-        if walk:
-            self.extract_wlk_aliases(snt, walk)
-            return walk.serialize()
-        else:
-            return ["Walker not created, invalid code!"]
-
     @Interface.private_api(cli_args=["wlk"])
     def walker_get(self, wlk: Walker, mode: str = "default", detailed: bool = False):
         """
@@ -59,22 +38,14 @@ class WalkerApi:
         else:
             return wlk.serialize(detailed=detailed)
 
-    @Interface.private_api(cli_args=["wlk"])
-    def walker_set(self, wlk: Walker, code: str, mode: str = "default"):
+    @Interface.private_api()
+    def walker_total(self, snt: Sentinel = None, detailed: bool = False):
         """
-        Set code/ir for a walker
-        Valid modes: {code, ir, }
+        Get total walkers known to sentinel
         """
-        if mode == "code" or mode == "default":
-            wlk.register(code)
-        elif mode == "ir":
-            wlk.apply_ir(code)
-        else:
-            return [f"Invalid mode to set {wlk}"]
-        if wlk.is_active:
-            return [f"{wlk} registered and active!"]
-        else:
-            return [f"{wlk} code issues encountered!"]
+        objects = snt.arch_ids.obj_list()
+        walker_objects = list(filter(lambda obj: obj.kind == "walker", objects))
+        return len(walker_objects)
 
     @Interface.private_api()
     def walker_list(self, snt: Sentinel = None, detailed: bool = False):
@@ -82,30 +53,17 @@ class WalkerApi:
         List walkers known to sentinel
         """
         walks = []
-        for i in snt.walker_ids.obj_list():
-            walks.append(i.serialize(detailed=detailed))
+        for i in snt.arch_ids.obj_list():
+            if i.kind == "walker":
+                walks.append(i.serialize(detailed=detailed))
         return walks
-
-    @Interface.private_api(cli_args=["wlk"])
-    def walker_delete(self, wlk: Walker, snt: Sentinel = None):
-        """
-        Permanently delete walker with given id
-        """
-        self.remove_wlk_aliases(snt, wlk)
-        wlkid = wlk.jid
-        ret = {"success": True, "response": f"Walker {wlkid} successfully deleted"}
-        if wlk.jid in snt.walker_ids:
-            snt.walker_ids.destroy_obj(wlk)
-        else:
-            ret = {"success": False, "response": f"Walker {wlkid} not found!"}
-        return ret
 
     @Interface.private_api(cli_args=["name"])
     def walker_spawn_create(self, name: str, snt: Sentinel = None):
         """
         Creates new instance of walker and returns new walker object
         """
-        wlk = snt.spawn_walker(name, caller=self)
+        wlk = snt.run_architype(name=name, kind="walker", caller=self, is_async=False)
         if wlk:
             if self.spawned_walker_ids.has_obj_by_name(name):
                 self.spawned_walker_ids.destroy_obj_by_name(name)
@@ -220,7 +178,7 @@ class WalkerApi:
         _req_ctx: dict = {},
         snt: Sentinel = None,
         profiling: bool = False,
-        is_async: bool = False,
+        is_async: bool = None,
     ):
         """
         Creates walker instance, primes walker on node, executes walker,
@@ -228,7 +186,9 @@ class WalkerApi:
         """
         wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
         if wlk is None:
-            wlk = snt.spawn_walker(name, caller=self, is_async=is_async)
+            wlk = snt.run_architype(
+                name=name, kind="walker", caller=self, is_async=is_async
+            )
         if wlk is None:
             return self.bad_walk_response([f"Walker {name} not found!"])
         res = self.walker_execute(
@@ -269,10 +229,10 @@ class WalkerApi:
         if key not in wlk.namespace_keys().values():
             return self.bad_walk_response(["Not authorized to execute this walker"])
         if global_sync:
-            self.sync_walker_from_global_sent(wlk)
+            # Deprecated Walkers are always synced with sentinel now
+            pass
 
         walk = wlk.duplicate()
-        walk.refresh()
         res = self.walker_execute(
             wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
         )
@@ -294,18 +254,14 @@ class WalkerApi:
         along with the walker id and node id
         """
 
-        if key not in wlk.namespace_keys().values():
-            return self.bad_walk_response(["Not authorized to execute this walker"])
-        if global_sync:
-            self.sync_walker_from_global_sent(wlk)
-
-        walk = wlk.duplicate()
-        walk.refresh()
-        res = self.walker_execute(
-            wlk=walk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=False
+        return self.walker_summon(
+            nd=nd,
+            wlk=wlk,
+            key=key,
+            ctx=ctx,
+            _req_ctx=_req_ctx,
+            global_sync=global_sync,
         )
-        walk.destroy()
-        return res
 
     def destroy(self):
         """

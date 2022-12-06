@@ -11,26 +11,77 @@ import uuid
 class Anchored:
     """Utility class for objects that hold anchor values"""
 
+    arch_map = {}
+
     def __init__(self):
-        self.anchor = None
+        self.context = {}
+
+    def get_architype(self):
+        arch = self.get_arch_from_cache()  # Optimization
+        if arch and id(arch._h) == id(self._h):
+            return arch
+        arch = (
+            self._h._machine.parent().get_arch_for(self)
+            if self._h._machine is not None
+            and self._h._machine.parent() is not None
+            and self._h._machine.parent().j_type == "sentinel"
+            else None
+        )
+        mast = self.get_master()
+        if arch is None and mast.active_snt() is not None:
+            arch = mast.active_snt().get_arch_for(self)
+        elif arch is None and self.parent() and self.parent().j_type == "sentinel":
+            arch = self.parent().get_arch_for(self)
+        self.cache_arch(arch)
+        return arch
+
+    def cache_arch(self, arch):
+        Anchored.arch_map[self.kind + self.name] = arch
+
+    def get_arch_from_cache(self):
+        if (self.kind + self.name) in Anchored.arch_map:
+            return Anchored.arch_map[self.kind + self.name]
+        return None
+
+    def flush_cache():
+        Anchored.arch_map = {}
 
     def anchor_value(self):
         """Returns value of anchor context object"""
-        if self.anchor:
-            return self.context[self.anchor]
+        arch = self.get_architype()
+        if arch is not None:
+            anch = arch.anchor_var
+            if anch and anch in self.context.keys():
+                return self.context[anch]
         return None
+
+    def private_values(self):
+        """Returns value of anchor context object"""
+        arch = self.get_architype()
+        if arch is not None:
+            return arch.private_vars
+        return []
+
+    def set_context(self, ctx):
+        """Assign values to context fields of object"""
+        for i in ctx.keys():
+            if i in self.get_architype().has_vars:
+                self.context[i] = ctx[i]
+            else:
+                logger.warning(str(f"{i} not a context member of {self}"))
+        self.save()
 
 
 class Sharable:
     """Utility class for objects that are sharable between users"""
 
-    def __init__(self, m_id, mode=None):
+    def __init__(self, m_id, mode=None, **kwargs):
         self.set_master(m_id)
         self.j_access = (
             mode
             if mode is not None
-            else self._h.get_obj(self._m_id, uuid.UUID(self._m_id)).perm_default
-            if self._h.has_obj(uuid.UUID(self._m_id))
+            else self._h.get_obj(self._m_id, self._m_id).perm_default
+            if self._h.has_obj(self._m_id)
             else "private"
         )
         self.j_r_acc_ids = IdList(self)
@@ -41,7 +92,7 @@ class Sharable:
         return self.j_master
 
     def set_master(self, m_id):
-        if m_id is None or m_id == "anon":
+        if not m_id:
             m_id = uuid.UUID(int=0).urn
         self.j_master = m_id
 
@@ -80,7 +131,7 @@ class Sharable:
         """Quick check if caller is super master"""
         if not hasattr(self, "_h"):
             return False
-        user = self._h.get_obj(caller_id, uuid.UUID(caller_id), override=True)
+        user = self._h.get_obj(caller_id, caller_id, override=True)
         if user.j_type == "super_master":
             return True
         return False
@@ -136,14 +187,17 @@ class Sharable:
 class Hookable(Sharable):
     """Utility class for objects that are savable to DBs and other stores"""
 
-    def __init__(self, h, m_id, persist: bool = True, *args, **kwargs):
+    def __init__(self, h, persist: bool = True, parent=None, **kwargs):
         self._h = h  # hook for storing and loading to persistent store
         self._persist = persist
-        Sharable.__init__(self, m_id, *args, **kwargs)
+        self.j_parent = parent.jid if parent else None  # member of
+        Sharable.__init__(self, **kwargs)
 
     def check_hooks_match(self, target, silent=False):
         """Checks whether target object hook matches self's hook"""
-        if not silent and target._h != self._h:
+        if not self._m_id or not target._m_id:
+            return True
+        elif not silent and target._h != self._h:
             logger.critical(
                 str(
                     "Hook for {} does not match {}, {} != {}".format(
@@ -157,7 +211,7 @@ class Hookable(Sharable):
         """
         Write self through hook to persistent storage
         """
-        self._h.save_obj(self._m_id, self, self._persist)
+        self._h.save_obj(self._m_id, self)
 
     def destroy(self):
         """
@@ -165,11 +219,12 @@ class Hookable(Sharable):
 
         Note that the object will still exist in python until GC'd
         """
-        self._h.destroy_obj(self._m_id, self, self._persist)
+        self._h.destroy_obj(self._m_id, self)
         del self
 
     def parent(self):
         """
         Returns the objects for list of owners of this element
         """
-        return self._h.get_obj(self._m_id, self.parent_id)
+        if self.j_parent:
+            return self._h.get_obj(self._m_id, self.j_parent)

@@ -10,11 +10,13 @@ import pickle
 import click
 import requests
 from click_shell import shell
-
+from click.testing import CliRunner
+from jaseci import __version__
 from jaseci.element.super_master import SuperMaster
 from jaseci.svc import MetaService
 from jaseci.utils.utils import copy_func
 from .book_tools import Book
+from jaseci.utils.utils import logger, perf_test_start, perf_test_stop
 
 session = None
 
@@ -23,7 +25,7 @@ def reset_state():
     global session
     session = {
         "filename": "js.session",
-        "user": [MetaService().super_master(name="admin")],
+        "user": [MetaService(run_svcs=False).build_super_master(name="admin")],
         "mem-only": session["mem-only"] if session is not None else False,
         "connection": {"url": None, "token": None, "headers": None},
     }
@@ -33,7 +35,22 @@ def reset_state():
 reset_state()
 
 
-@shell(prompt="jaseci > ", intro="Starting Jaseci Shell...")
+def is_connected():
+    return bool(session["connection"]["url"])
+
+
+def get_prompt():
+    if is_connected():
+        return "@jaseci > "
+    else:
+        return "jaseci > "
+
+
+def get_intro():
+    return f"Jaseci {__version__}\n" + "Starting Shell..."
+
+
+@shell(prompt=get_prompt, intro=get_intro())
 @click.option(
     "--filename", "-f", default="js.session", help="Specify filename for session state."
 )
@@ -72,7 +89,7 @@ def remote_api_call(payload, api_name):
         headers=session["connection"]["headers"],
     )
     if ret.status_code > 205:
-        ret = f"Status Code Error {ret.status_code}"
+        ret = f"Status Code Error {ret.status_code}\n{ret.json()}"
     else:
         ret = ret.json()
     return ret
@@ -103,17 +120,17 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
             click.echo(f"Code file {kwargs['code']} not found!")
             return
     resolve_none_type(kwargs)
-    if (
-        not is_cli_only
-        and session["connection"]["token"]
-        and session["connection"]["url"]
-    ):
+    if not is_cli_only and is_connected():
         out = remote_api_call(kwargs, api_name)
     elif is_public:
         out = session["master"].public_interface_to_api(kwargs, api_name)
     else:
         out = session["master"].general_interface_to_api(kwargs, api_name)
-    if isinstance(out, dict) and "report_custom" in out.keys():
+    if (
+        isinstance(out, dict)
+        and "report_custom" in out.keys()
+        and out["report_custom"] is not None
+    ):
         out = out["report_custom"]
     if isinstance(out, dict) or isinstance(out, list):
         out = json.dumps(out, indent=2)
@@ -180,7 +197,10 @@ def build_cmd(group_func, func_name, leaf):
             f = click.argument(f"{i}", type=p_type)(f)
         elif p_default is not func_sig.parameters[i].empty:
             f = click.option(
-                f"-{i}", default=p_type(p_default), required=False, type=p_type
+                f"-{i}",
+                default=p_default if p_default is None else p_type(p_default),
+                required=False,
+                type=p_type,
             )(f)
         else:
             f = click.option(f"-{i}", required=True, type=p_type)(f)
@@ -241,6 +261,22 @@ def login(url, username, password):
             pickle.dump(session, f)
 
 
+@click.command(help="Command for unauthenticated log into live Jaseci server")
+@click.argument("url", type=str, required=True)
+def publogin(url):
+    url = url[:-1] if url[-1] == "/" else url
+    if requests.get(url).status_code <= 205:
+        session["connection"]["token"] = "PUBLIC"
+        session["connection"]["url"] = url
+        session["connection"]["headers"] = {}
+        click.echo("Login successful!")
+    else:
+        click.echo("Login failed!\n")
+    if not session["mem-only"]:
+        with open(session["filename"], "wb") as f:
+            pickle.dump(session, f)
+
+
 @click.command(help="Command to log out of live Jaseci server")
 def logout():
     if session["connection"]["token"]:
@@ -284,6 +320,44 @@ def reset():
     click.echo("Jaseci State Cleared!")
 
 
+@click.command(help="Run multiple commands sequentially from file")
+@click.argument("filename", type=str, required=True)
+@click.option("--profile", "-p", is_flag=True)
+@click.option(
+    "--output",
+    "-o",
+    default="",
+    required=False,
+    type=str,
+    help="Filename to dump output of this command call.",
+)
+def script(filename, profile, output):
+    if profile:
+        prof = perf_test_start()
+    if not os.path.isfile(filename):
+        click.echo("File not found!")
+        return
+    with open(filename) as file:
+        cmds = [line.rstrip() for line in file]
+    if output:
+        with open(output, "w") as f:
+            f.write("Multi Command Script Output:\n")
+    for i in cmds:
+        res = CliRunner(mix_stderr=False).invoke(jsctl, i.split())
+        click.echo(res.stdout)
+        if output:
+            with open(output, "a") as f:
+                f.write(f"Output for {i}:\n")
+                f.write(res.stdout)
+    perf = perf_test_stop(prof)
+    click.echo(perf)
+    if output:
+        with open(output, "a") as f:
+            f.write(f"\nProfile:\n")
+            f.write(perf)
+        click.echo(f"[saved to {output}]")
+
+
 @click.command(help="Internal book generation tools")
 @click.argument("op", type=str, default="cheatsheet", required=True)
 @click.option(
@@ -310,11 +384,13 @@ def booktool(op, output):
 
 
 jsctl.add_command(login)
+jsctl.add_command(publogin)
 jsctl.add_command(logout)
 jsctl.add_command(edit)
 jsctl.add_command(ls)
 jsctl.add_command(clear)
 jsctl.add_command(reset)
+jsctl.add_command(script)
 jsctl.add_command(booktool)
 cmd_tree_builder(extract_api_tree())
 

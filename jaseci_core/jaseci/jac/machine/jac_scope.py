@@ -5,7 +5,9 @@ Utility for all runtime interaction with variables in different scopes
 """
 from jaseci.utils.id_list import IdList
 from jaseci.jac.machine.jac_value import JacValue
-from jaseci.jac.machine.jac_value import jac_elem_wrap
+from jaseci.actions.live_actions import get_global_actions
+
+global_action_sets = None
 
 
 class JacScope:
@@ -14,16 +16,17 @@ class JacScope:
         self.local_scope = {}
         self.has_obj = has_obj if has_obj else self
         self.context = {}
-        self.action_sets = action_sets + [
-            IdList(parent, in_list=parent._h.global_action_list)
-        ]
+        self.action_sets = action_sets
         self.setup_actions()
 
     def setup_actions(self):
+        global global_action_sets
+        if global_action_sets is None:
+            global_action_sets = self.group_actions(get_global_actions())
         allactions = []
         for i in self.action_sets:
             allactions += i.obj_list()
-        self.action_sets = {}
+        self.action_sets = global_action_sets
         for i in allactions:
             self.add_action(i)
 
@@ -37,12 +40,25 @@ class JacScope:
         else:
             self.action_sets[group] = act
 
+    def group_actions(self, act_list):
+        action_sets = {}
+        for act in act_list:
+            group = act.name.split(".")[0]
+            if "." in act.name:
+                if group not in action_sets.keys():
+                    action_sets[group] = {}
+                action = act.name.split(".")[1]
+                action_sets[group][action] = act
+            else:
+                action_sets[group] = act
+        return action_sets
+
     def set_agent_refs(self, cur_node, cur_walker):
-        self.local_scope["here"] = jac_elem_wrap(cur_node)
-        self.local_scope["visitor"] = jac_elem_wrap(cur_walker)
+        self.local_scope["here"] = cur_node
+        self.local_scope["visitor"] = cur_walker
 
     def inherit_agent_refs(self, src_scope, src_node):  # used for calls of abilities
-        self.local_scope["here"] = jac_elem_wrap(src_node)
+        self.local_scope["here"] = src_node
         self.local_scope["visitor"] = src_scope.local_scope["visitor"]
 
     def get_aganet_refs(self):
@@ -72,6 +88,5 @@ class JacScope:
             self.local_scope[name] = None
             return JacValue(self.parent, ctx=self.local_scope, name=name)
         if found:
-            found.unwrap()
             return found
         return None

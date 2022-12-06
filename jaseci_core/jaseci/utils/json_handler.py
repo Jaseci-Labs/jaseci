@@ -12,7 +12,7 @@ class JaseciJsonEncoder(JSONEncoder):
         from jaseci.element.element import Element
 
         if isinstance(obj, Element):
-            return {"__mem_id__": obj.id.urn}
+            return {"__mem_id__": obj.jid}
         else:
             return super().default(obj)
 
@@ -45,7 +45,7 @@ class JaseciJsonDecoder(JSONDecoder):
                 self.transform(obj[key], idx)
 
     def convert(self, urn):
-        return MetaService().hook().get_obj_from_store(UUID(urn))
+        return MetaService().build_hook().get_obj_from_store(urn)
 
 
 def json_str_to_jsci_dict(input_str, parent_obj=None):
@@ -59,7 +59,7 @@ def json_str_to_jsci_dict(input_str, parent_obj=None):
     try:
         obj_fields = json.loads(input_str)
     except ValueError:
-        logger.error(str(f"Invalid jsci_obj string {input_str} on {parent_obj.id.urn}"))
+        logger.error(str(f"Invalid jsci_obj string {input_str} on {parent_obj.jid}"))
         obj_fields = {}
     for i in obj_fields.keys():
         if str(i).endswith("_ids") and isinstance(obj_fields[i], list):

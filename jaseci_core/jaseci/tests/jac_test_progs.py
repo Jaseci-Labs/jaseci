@@ -591,3 +591,50 @@ continue_issue = """
         }
     }
 """
+
+async_syntax = """
+async walker simple_async_second_layer {
+    has anchor val1, val2 = 2;
+    with entry {
+        report val1;
+        report val2;
+    }
+}
+
+async walker simple_async {
+    has anchor test_anchor = "test";
+    can task.get_result;
+    with entry {
+        task1 = spawn here sync walker::simple_async_second_layer(val1 = 1);
+        task2 = spawn here walker::simple_async_second_layer(val1 = 2);
+        report task1;
+        report task2;
+
+        if task2["is_queued"]:
+            report task.get_result(task2["result"], true);
+    }
+}
+
+async walker simple_async_with_sync {
+    has anchor test_anchor = "test";
+    can task.get_result;
+    with entry {
+        task1 = spawn here sync walker::simple_async_second_layer(val1 = 1);
+        task2 = spawn here walker::simple_async_second_layer(val1 = 2);
+        report task1;
+        report task2;
+
+        report sync task2;
+    }
+}
+"""
+
+block_scope_check = """
+    walker init {
+        i=5;
+        for i=0 to i<10 by i+=1 {
+            report i;
+        }
+        report i;
+    }
+"""

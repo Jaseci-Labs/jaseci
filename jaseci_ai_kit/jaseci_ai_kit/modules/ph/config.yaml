@@ -1,0 +1,67 @@
+# Inference Configurations
+Inference:
+  weights: ''
+
+# Training Configurations
+Trainer:
+  dataloader:
+    args:
+      batch_size: 32
+      num_workers: 1
+      shuffle: true
+      validation_split: 0.2
+    type: SnipsDataLoader
+  loss: nll_loss
+  lr_scheduler:
+    args:
+      gamma: 0.1
+      step_size: 50
+    type: StepLR
+  metrics:
+  - accuracy
+  - top_k_acc
+  n_gpu: 1
+  name: ModelTrainer
+  optimizer:
+    args:
+      amsgrad: true
+      lr: 0.001
+      weight_decay: 0
+    type: Adam
+  trainer:
+    early_stop: 10
+    epochs: 100
+    monitor: min val_loss
+    save_period: 1
+    tensorboard: true
+    verbosity: 2
+
+# Logger Configurations
+Logger:
+  disable_existing_loggers: false
+  formatters:
+    datetime:
+      format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    simple:
+      format: '%(message)s'
+  handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: simple
+      level: DEBUG
+      stream: ext://sys.stdout
+    info_file_handler:
+      backupCount: 20
+      class: logging.handlers.RotatingFileHandler
+      encoding: utf8
+      filename: ph.log
+      formatter: datetime
+      level: INFO
+      maxBytes: 10485760
+  log_dir: heads/
+  root:
+    handlers:
+    - console
+    - info_file_handler
+    level: INFO
+  version: 1

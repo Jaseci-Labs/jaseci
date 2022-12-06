@@ -11,14 +11,32 @@ venv
 # General #
 *.egg-info/
 *.egg
+*.prof
 
 # Others #
+.coverage
 .antlr
 .session
 .DS_Store
 build
+test
+test-journal
 .vscode
 js.session
 .idea
 mydatabase
 *Zone.Identifier
+.DS_Store
+
+*.rdb
+celerybeat-schedule*
+node_modules
+
+# Docs
+mdbook/
+bookmd.txt
+
+standardlib.txt
+standralib.txt
+classes.txt
+booktool.json

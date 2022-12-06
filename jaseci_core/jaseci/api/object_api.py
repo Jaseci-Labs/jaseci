@@ -25,7 +25,8 @@ class ObjectApi:
     @Interface.private_api(cli_args=["obj"])
     def object_get(self, obj: Element, depth: int = 0, detailed: bool = False):
         """Returns object details for any Jaseci object."""
-        return obj.serialize(deep=depth, detailed=detailed)
+        ret = obj.serialize(deep=depth, detailed=detailed)
+        return ret
 
     @Interface.private_api(cli_args=["obj"])
     def object_perms_get(self, obj: Element):
@@ -79,3 +80,10 @@ class ObjectApi:
         else:
             ret["response"] = f"{mast} did not have access to {obj}"
         return ret
+
+    @Interface.public_api()
+    def info(self):
+        """Provide information about this instance of Jaseci"""
+        from jaseci import __version__, __creator__, __url__
+
+        return {"Version": __version__, "Creator": __creator__, "URL": __url__}

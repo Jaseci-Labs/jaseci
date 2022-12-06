@@ -1,8 +1,8 @@
 import io
+import os
 import pstats
 import cProfile
 import pdb
-import uuid
 import importlib
 import pkgutil
 import logging
@@ -13,8 +13,9 @@ import json
 import functools
 import traceback
 import inspect
+import unittest
 from time import time
-from datetime import datetime
+
 from pprint import pformat
 
 
@@ -27,7 +28,7 @@ class ColCodes:
 
 def master_from_meta(meta):
     """Return master from meta in actions"""
-    return meta["h"].get_obj(meta["m_id"], uuid.UUID(meta["m_id"]))
+    return meta["h"].get_obj(meta["m_id"], meta["m_id"])
 
 
 # Get an instance of a logger
@@ -41,12 +42,17 @@ def connect_logger_handler(target_logger, handler, level=logging.WARN):
 
 
 logger = logging.getLogger("core")
+logger.propagate = False
+logs = io.StringIO()
 if len(logger.handlers) < 1:
     connect_logger_handler(logger, logging.StreamHandler(), logging.INFO)
+    connect_logger_handler(logger, logging.StreamHandler(stream=logs), logging.INFO)
 
 app_logger = logging.getLogger("app")
+app_logger.propagate = False
 if len(app_logger.handlers) < 1:
     connect_logger_handler(app_logger, logging.StreamHandler(), logging.INFO)
+    connect_logger_handler(app_logger, logging.StreamHandler(stream=logs), logging.INFO)
 
 
 def log_var_out(val):
@@ -131,19 +137,6 @@ def matching_fields(obj1, obj2):
     return matches
 
 
-def map_assignment_of_matching_fields(dest, source):
-    """
-    Assign the values of identical feild names from source to destination.
-    """
-    for i in matching_fields(dest, source):
-        if type(getattr(source, i)) == uuid.UUID:
-            setattr(dest, i, getattr(source, i).urn)
-        elif type(getattr(source, i)) == datetime:
-            setattr(dest, i, getattr(source, i).isoformat())
-        elif not callable(getattr(dest, i)):
-            setattr(dest, i, getattr(source, i))
-
-
 obj_class_cache = {}
 
 
@@ -156,7 +149,7 @@ def build_class_dict(from_where):
                 importlib.import_module(modname), inspect.isclass
             )
             for cls, obj in clsmembers:
-                obj_class_cache[cls.lower()] = getattr(
+                obj_class_cache[camel_to_snake(cls)] = getattr(
                     importlib.import_module(modname), cls
                 )
         else:
@@ -203,6 +196,37 @@ def b64decode_str(code):
     return code
 
 
+def perf_test_start():
+    perf_prof = cProfile.Profile()
+    perf_prof.enable()
+    return perf_prof
+
+
+def perf_test_stop(perf_prof, save_to_file=False):
+    perf_prof.disable()
+    if save_to_file:
+        perf_prof.dump_stats(f"{id(perf_prof)}.prof")
+    s = io.StringIO()
+    sortby = pstats.SortKey.CUMULATIVE
+    ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)
+    ps.print_stats()
+    s = s.getvalue()
+    s = "ncalls" + s.split("ncalls")[-1]
+    s = "\n".join([",".join(line.rstrip().split(None, 5)) for line in s.split("\n")])
+    return s
+
+
+def perf_test_to_b64(perf_prof, do_delete=True):
+    s = ""
+    fn = f"{id(perf_prof)}.prof"
+    if os.path.exists(fn):
+        with open(fn, "rb") as image_file:
+            s = base64.b64encode(image_file.read()).decode()
+        if do_delete:
+            os.remove(fn)
+    return s
+
+
 class TestCaseHelper:
     """Helper to pretty print test results"""
 
@@ -243,11 +267,12 @@ class TestCaseHelper:
     def is_logger_off(self):
         return logging.getLogger("core").disabled and logging.getLogger("app").disabled
 
-    def log(self, val):
+    def log(self, *val):
         """Print to log"""
         is_off = self.is_logger_off()
         self.logger_on()
-        log_var_out(val)
+        for i in val:
+            log_var_out(i)
         if is_off:
             self.logger_off()
 
@@ -255,14 +280,19 @@ class TestCaseHelper:
         """Force test to fail"""
         self.assertTrue(False)
 
-    def start_perf_test(self):
-        self.pr = cProfile.Profile()
-        self.pr.enable()
+    def perf_test_start(self):
+        self.pr = perf_test_start()
 
-    def stop_perf_test(self):
-        self.pr.disable()
-        s = io.StringIO()
-        sortby = pstats.SortKey.CUMULATIVE
-        ps = pstats.Stats(self.pr, stream=s).sort_stats(sortby)
-        ps.print_stats(100)
-        print(s.getvalue())
+    def perf_test_stop(self):
+        print(perf_test_stop(self.pr))
+
+    def skip_test(self, msg="No reason provided"):
+        raise unittest.SkipTest("Skipping: " + msg)
+
+
+def is_true(val):
+    return (
+        val.lower() == "true"
+        if type(val) is str
+        else val is True  # is_async might be non bool
+    )

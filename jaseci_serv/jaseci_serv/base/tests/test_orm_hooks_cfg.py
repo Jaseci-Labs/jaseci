@@ -72,9 +72,8 @@ class OrmConfigTestsPrivate(TestCaseHelper, TestCase):
         self.assertNotIn("GOOBY1", user._h.mem["global"].keys())
 
         # Removing default configs
-        GlobalVars.objects.filter(
-            Q(name="REDIS_CONFIG") | Q(name="TASK_CONFIG") | Q(name="MAIL_CONFIG")
-        ).delete()
+        GlobalVars.objects.filter(Q(name__endswith="_CONFIG")).delete()
+        GlobalVars.objects.filter(Q(name__endswith="_MANIFEST")).delete()
 
         li = user._h.list_glob()
         self.assertEqual(len(li), 3)

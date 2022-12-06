@@ -22,10 +22,10 @@ class Action(Item):
     access_list is used by walker to decide what to trigger
     """
 
-    def __init__(self, preset_in_out=None, access_list=None, *args, **kwargs):
+    def __init__(self, preset_in_out=None, access_list=None, **kwargs):
         self.preset_in_out = preset_in_out  # Not using _ids convention
         self.access_list = access_list
-        super().__init__(*args, **kwargs)
+        Item.__init__(self, **kwargs)
 
     def do_auto_conversions(self, args, func, params):
         """
@@ -43,6 +43,9 @@ class Action(Item):
         Also note that Jac stores preset_in_out as input/output list of hex
         ids since preset_in_out doesn't use _ids convention
         """
+        if not interp.check_builtin_action(self.value):
+            interp.rt_error(f"Cannot execute {self.value} - Not Found")
+            return None
         func = live_actions[self.value]
         args = inspect.getfullargspec(func)
         self.do_auto_conversions(args, func, param_list)
@@ -55,7 +58,7 @@ class Action(Item):
                     "h": scope.parent._h,
                     "scope": scope,
                     "interp": interp,
-                }
+                },
             )
         else:
             result = func(*param_list)

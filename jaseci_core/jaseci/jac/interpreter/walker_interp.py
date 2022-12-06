@@ -19,13 +19,13 @@ class WalkerInterp(Interp):
 
     def run_walker(self, jac_ast):
         """
-        walker: KW_WALKER NAME namespaces? walker_block;
+        walker: KW_ASYNC? KW_WALKER NAME namespaces? walker_block;
         """
         kid = self.set_cur_ast(jac_ast)
-        if jac_ast.name == "walker_block":  # used in jac tests
-            self.scope_and_run(jac_ast, self.run_walker_block)
-        else:
-            self.scope_and_run(kid[-1], self.run_walker_block)
+        self.scope_and_run(
+            jac_ast if jac_ast.name == "walker_block" else kid[-1],
+            self.run_walker_block,
+        )
 
     def run_walker_block(self, jac_ast):
         """
@@ -40,8 +40,7 @@ class WalkerInterp(Interp):
             for i in kid:
                 if i.name == "attr_stmt":
                     self.run_attr_stmt(jac_ast=i, obj=self)
-
-        archs = self.get_arch_for(self.current_node).arch_with_supers()
+        archs = self.current_node.get_architype().arch_with_supers()
         act_list = IdList(self)
         for i in archs:
             act_list += i.entry_action_ids
@@ -56,7 +55,7 @@ class WalkerInterp(Interp):
                 self.run_walk_activity_block(i)
 
         # self.trigger_activity_actions()
-        archs = self.get_arch_for(self.current_node).arch_with_supers()
+        archs = self.current_node.get_architype().arch_with_supers()
         act_list = IdList(self)
         for i in archs:
             act_list += i.exit_action_ids
@@ -71,7 +70,7 @@ class WalkerInterp(Interp):
         """
         kid = self.set_cur_ast(jac_ast)
         for i in self.run_name_list(kid[0]):
-            if self.get_arch_for(self.current_node).is_instance(i):
+            if self.current_node.get_architype().is_instance(i):
                 self.run_code_block(kid[1])
                 return
 
@@ -120,7 +119,8 @@ class WalkerInterp(Interp):
         ignore_action: KW_IGNORE expression SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = self.run_expression(kid[1]).value
+        self.run_expression(kid[1])
+        result = self.pop().value
         if isinstance(result, Node):
             self.ignore_node_ids.add_obj(result)
         elif isinstance(result, JacSet):
@@ -138,7 +138,8 @@ class WalkerInterp(Interp):
         if kid[1].name == "COLON":
             style = kid[2].token_text()
             kid = kid[2:]
-        result = self.run_expression(kid[1]).value
+        self.run_expression(kid[1])
+        result = self.pop().value
         before = len(self.next_node_ids)
         if isinstance(result, Node):
             if style in ["b", "bfs"]:
@@ -184,7 +185,7 @@ class WalkerInterp(Interp):
             );
         """
         kid = self.set_cur_ast(jac_ast)
-        if kid[1].name != "SEMI":
+        if len(kid) and kid[1].name != "SEMI":
             expr_func = getattr(self, f"run_{kid[1].name}")
             expr_func(kid[1])
         self.yield_walk()
@@ -200,7 +201,7 @@ class WalkerInterp(Interp):
         kid = self.set_cur_ast(jac_ast)
         param_list = []
         m = Interp(parent_override=self.parent(), caller=self)
-        arch = self.get_arch_for(obj)
+        arch = obj.get_architype()
         m.push_scope(
             JacScope(parent=self, has_obj=obj, action_sets=[arch.activity_action_ids])
         )
@@ -214,7 +215,8 @@ class WalkerInterp(Interp):
             self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
             result = None
         if kid[-1].name == "expression":
-            dest = m.run_expression(kid[-1])
+            m.run_expression(kid[-1])
+            dest = m.pop()
             dest.value = result
             dest.write(kid[-1])
 
@@ -248,12 +250,16 @@ class WalkerInterp(Interp):
         Helper to run ast elements with execution scope added
         (Useful for running arbitrary code blocks as one-offs)
         """
-        arch = self.get_arch_for(self.current_node)
+        node_arch = self.current_node.get_architype()
+        walk_arch = self.get_architype()
         self.push_scope(
             JacScope(
                 parent=self,
                 has_obj=self,
-                action_sets=[self.activity_action_ids, arch.activity_action_ids],
+                action_sets=[
+                    walk_arch.activity_action_ids,
+                    node_arch.activity_action_ids,
+                ],
             )
         )
         self._jac_scope.set_agent_refs(cur_node=self.current_node, cur_walker=self)

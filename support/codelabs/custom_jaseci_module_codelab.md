@@ -231,4 +231,11 @@ def classify_text(text: str, min_length: int = 30, max_length: int = 100):
     output = t5_generate_sum(text, min_length, max_length)
     return output
 ```
-Once you completed these steps you can reference the above sections to test and it will work. Good luck! This is how you create a custom AI module using Python in Jaseci.
+
+Once you have completed these steps, load the module using the actions load local command as shown below:
+
+```bash
+> actions load local path/to/t5_sum.py
+```
+
+Good luck! This is how you create a custom AI module using Python in Jaseci.

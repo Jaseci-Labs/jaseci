@@ -1,5 +1,6 @@
+from jaseci.graph.edge import Edge
+from jaseci.graph.node import Node
 from jaseci.utils.test_core import CoreTest
-from jaseci.actor.walker import Walker
 
 
 class WalkerApiTest(CoreTest):
@@ -229,11 +230,13 @@ class WalkerApiTest(CoreTest):
             self.mast,
             ["sentinel_register", {"code": self.load_jac("walker_yield.jac")}],
         )
-        before = self.mast._h.get_object_distribution()[Walker]
+        before = self.mast._h.get_object_distribution()
         self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
         self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
         self.call(self.mast, ["walker_run", {"name": "deep_yield"}])
-        after = self.mast._h.get_object_distribution()[Walker]
+        after = self.mast._h.get_object_distribution()
+        after.pop(Node)
+        after.pop(Edge)
         self.assertEqual(before, after)
 
     def test_walker_simple_yield_skip_test(self):

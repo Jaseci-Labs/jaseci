@@ -3,8 +3,7 @@ General master interface engine for client interfaces as mixin
 """
 import uuid
 from inspect import signature, getdoc
-from jaseci.utils.utils import logger
-from jaseci.utils.utils import is_jsonable
+from jaseci.utils.utils import logger, is_jsonable, is_true
 from jaseci.element.element import Element
 from jaseci.actor.walker import Walker
 import json
@@ -151,7 +150,7 @@ class Interface:
         ):
             _caller = self
         elif self.caller:
-            _caller = self._h.get_obj(self._m_id, uuid.UUID(self.caller))
+            _caller = self._h.get_obj(self._m_id, self.caller)
         else:
             _caller = self
         if not hasattr(_caller, api_name):
@@ -180,7 +179,7 @@ class Interface:
             if issubclass(p_type, Element):
                 if val is None:
                     break
-                val = _caller._h.get_obj(_caller._m_id, uuid.UUID(val))
+                val = _caller._h.get_obj(_caller._m_id, val)
                 if isinstance(val, p_type):
                     param_map[i] = self.sync_constraints(val, params)
                 else:
@@ -188,7 +187,7 @@ class Interface:
             else:  # TODO: Can do type checks here too
                 param_map[i] = val
 
-            if param_map[i] is None:
+            if p_default and param_map[i] is None:
                 return self.interface_error(f"Invalid API args - {params}")
         try:
             ret = getattr(_caller, api_name)(**param_map)
@@ -232,7 +231,7 @@ class Interface:
                     return self.interface_error(
                         f"No {p_type} value for {p_name} provided!"
                     )
-                val = self._h.get_obj("override", uuid.UUID(val), override=True)
+                val = self._h.get_obj("override", val, override=True)
                 self.seek_committer(val)
                 if isinstance(val, p_type):
                     param_map[i] = self.sync_constraints(val, params)
@@ -260,25 +259,15 @@ class Interface:
     # future constraints other than `async` should be add here
     def sync_constraints(self, obj, params):
         if isinstance(obj, Walker):
-            obj._async = params.get("is_async", False)
+            obj.is_async = is_true(params.get("is_async", obj.is_async))
 
         return obj
 
     def seek_committer(self, obj):
         """Opportunistically assign a committer"""
         if not self._pub_committer and not (obj is None):
-            self._pub_committer = obj._h.get_obj(obj._m_id, uuid.UUID(obj._m_id))
+            self._pub_committer = obj._h.get_obj(obj._m_id, obj._m_id)
 
     def clear_committer(self):
         """Unset committer"""
         self._pub_committer = None
-
-    def sync_walker_from_global_sent(self, wlk):
-        """Checks for matching code ir between global and spawned walker"""
-        glob_id = wlk._h.get_glob("GLOB_SENTINEL")
-        if glob_id:
-            snt = wlk._h.get_obj(wlk._m_id, uuid.UUID(glob_id))
-            if snt:
-                glob_wlk = snt.walker_ids.get_obj_by_name(wlk.name)
-                if glob_wlk and glob_wlk.code_sig != wlk.code_sig:
-                    wlk.apply_ir(glob_wlk.code_ir)

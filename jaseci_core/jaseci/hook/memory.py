@@ -1,5 +1,5 @@
 from json import dumps, loads
-
+import sys
 from jaseci.utils.utils import find_class_and_import
 
 
@@ -15,9 +15,9 @@ class MemoryHook:
         from jaseci.actions.live_actions import get_global_actions
 
         self.mem = {"global": {}}
+        self._machine = None
         self.save_obj_list = set()
         self.save_glob_dict = {}
-        self.global_action_list = get_global_actions(self)
 
     ####################################################
     #               COMMON GETTER/SETTER               #
@@ -40,18 +40,18 @@ class MemoryHook:
         """
         return self.has_obj_in_store(item_id)
 
-    def save_obj(self, caller_id, item, persist=False):
+    def save_obj(self, caller_id, item, all_caches=False):
         """Save item to session cache, then to store"""
         if item.check_write_access(caller_id):
-            self.commit_obj_to_cache(item)
-            if persist:
+            self.commit_obj_to_cache(item, all_caches=all_caches)
+            if item._persist:
                 self.save_obj_list.add(item)
 
-    def destroy_obj(self, caller_id, item, persist=False):
+    def destroy_obj(self, caller_id, item):
         """Destroy item from session cache then  store"""
         if item.check_write_access(caller_id):
             self.decommit_obj_from_cache(item)
-            if persist:
+            if item._persist:
                 self.destroy_obj_from_store(item)
 
     # --------------------- GLOB --------------------- #
@@ -95,11 +95,11 @@ class MemoryHook:
         if persist:
             self.destroy_glob_from_store(name)
 
-    # ----------------- GLOB CONFIG ------------------ #
+    # ----------------- SERVICE GLOB ----------------- #
 
-    def build_config(self, name, config):
+    def service_glob(self, name, val):
         if not self.has_glob(name):
-            self.save_glob(name, dumps(config))
+            self.save_glob(name, dumps(val))
             self.commit()
         return loads(self.get_glob(name))
 
@@ -113,8 +113,8 @@ class MemoryHook:
         """
         Get item from externally hooked general store by id
         """
-        if item_id.urn in self.mem:
-            return self.mem[item_id.urn]
+        if item_id in self.mem:
+            return self.mem[item_id]
 
         return None
 
@@ -122,7 +122,7 @@ class MemoryHook:
         """
         Checks for object existance in store
         """
-        return item_id.urn in self.mem
+        return item_id in self.mem
 
     def destroy_obj_from_store(self, item):
         """Destroy item to externally hooked general store"""
@@ -184,11 +184,18 @@ class MemoryHook:
 
     # --------------------- OBJ --------------------- #
 
-    def commit_obj_to_cache(self, item):
-        self.mem[item.id.urn] = item
+    def has_id_in_mem_cache(self, id):
+        return id is not None and id in self.mem
+
+    def commit_obj_to_cache(self, item, all_caches=False):
+        self.mem[item.jid] = item
+
+    def commit_all_cache_sync(self):
+        for i in self.save_obj_list:
+            self.commit_obj_to_cache(i, all_caches=True)
 
     def decommit_obj_from_cache(self, item):
-        self.mem.pop(item.id.urn)
+        self.mem.pop(item.jid)
 
     ####################################################
     # ------------------ UTILITIES ------------------- #
@@ -204,9 +211,21 @@ class MemoryHook:
                 dist[t] = 1
         return dist
 
+    def mem_size(self):
+        return sys.getsizeof(self.mem) / 1024
+
     ###################################################
     #                  CLASS CONTROL                  #
     ###################################################
 
     def find_class_and_import(self, j_type, mod):
-        return find_class_and_import(j_type, mod)
+
+        cls = self.meta.get_context(j_type)
+
+        if not cls:
+            cls = find_class_and_import(j_type, mod)
+
+        return cls
+
+    def clear_cache(self):
+        MemoryHook.__init__(self)

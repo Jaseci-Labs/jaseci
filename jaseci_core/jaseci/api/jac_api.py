@@ -1,6 +1,7 @@
 """
 Jac tools api functions as a mixin
 """
+from copy import deepcopy
 import json
 import os
 
@@ -14,15 +15,11 @@ class JacApi:
     """
 
     @Interface.cli_api(cli_args=["file"])
-    def jac_build(self, file: str, out: str = ""):
+    def jac_build(self, file: str, out: str = "", opt_level: int = 4):
         """
         Command line tooling for building executable jac ir
         """
-        if not os.path.isfile(file):
-            ret = "File does not exsist!"
-            return ret
-        filename = os.path.basename(file)
-        dir = os.path.dirname(os.path.realpath(file))
+        filename, dir = self.check_for_file(file)
         if not len(out):
             if file.endswith(".jac"):
                 out = file.replace(".jac", ".jir")
@@ -31,7 +28,11 @@ class JacApi:
         faux = self.faux_master()
         with open(file, "r") as file:
             ret = faux.sentinel_register(
-                code=file.read(), code_dir=dir, name=filename, auto_run=""
+                code=file.read(),
+                code_dir=dir,
+                name=filename,
+                auto_run="",
+                opt_level=opt_level,
             )
             if "success" in ret and not ret["success"]:
                 return ret
@@ -45,16 +46,42 @@ class JacApi:
                 return ret
 
     @Interface.cli_api(cli_args=["file"])
-    def jac_test(self, file: str, detailed: bool = False):
+    def jac_disas(self, file: str):
+        """
+        Command line tooling for print IR for both .jac code files
+        and .jir executables
+        """
+        filename, dir = self.check_for_file(file)
+        is_jir = file.endswith(".jir")
+        faux = self.faux_master()
+        with open(file, "r") as file:
+            if is_jir:
+                faux.sentinel_register(name=filename)
+                ret = faux.sentinel_set(
+                    snt=faux.active_snt(), code=file.read(), mode="ir"
+                )
+                faux.active_snt().print_ir()
+            else:
+                ret = faux.sentinel_register(
+                    code=file.read(), code_dir=dir, name=filename, auto_run=""
+                )
+                faux.active_snt().print_ir()
+            if "success" in ret and not ret["success"]:
+                return ret
+
+    @Interface.cli_api(cli_args=["file"])
+    def jac_test(
+        self,
+        file: str,
+        single: str = "",
+        profiling: bool = False,
+        detailed: bool = False,
+    ):
         """
         Command line tooling for running all test in both .jac code files
         and .jir executables
         """
-        if not os.path.isfile(file):
-            ret = "File does not exsist!"
-            return ret
-        filename = os.path.basename(file)
-        dir = os.path.dirname(os.path.realpath(file))
+        filename, dir = self.check_for_file(file)
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
         with open(file, "r") as file:
@@ -67,7 +94,9 @@ class JacApi:
                 )
                 if "success" in ret and not ret["success"]:
                     return ret
-        return faux.sentinel_test(snt=faux.active_snt(), detailed=detailed)
+        return faux.sentinel_test(
+            snt=faux.active_snt(), single=single, profiling=profiling, detailed=detailed
+        )
 
     @Interface.cli_api(cli_args=["file"])
     def jac_run(
@@ -77,11 +106,7 @@ class JacApi:
         Command line tooling for running all test in both .jac code files
         and .jir executables
         """
-        if not os.path.isfile(file):
-            ret = "File does not exsist!"
-            return ret
-        filename = os.path.basename(file)
-        dir = os.path.dirname(os.path.realpath(file))
+        filename, dir = self.check_for_file(file)
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
         with open(file, "r") as file:
@@ -110,11 +135,7 @@ class JacApi:
         Command line tooling for a walker then output graph in both .jac code
         files and .jir executables
         """
-        if not os.path.isfile(file):
-            ret = "File does not exsist!"
-            return ret
-        filename = os.path.basename(file)
-        dir = os.path.dirname(os.path.realpath(file))
+        filename, dir = self.check_for_file(file)
         is_jir = file.endswith(".jir")
         faux = self.faux_master()
         with open(file, "r") as file:
@@ -137,9 +158,14 @@ class JacApi:
         return faux.graph_get(gph=faux.active_gph(), mode="dot", detailed=detailed)
 
     def faux_master(self):
-        from jaseci.element.super_master import SuperMaster
-        from copy import deepcopy
-
-        faux = SuperMaster(h=MetaService().hook())
+        faux = MetaService(run_svcs=False).build_super_master()
         faux._h.mem["global"] = deepcopy(self._h.mem["global"])
         return faux
+
+    def check_for_file(self, file):
+        if not os.path.isfile(file):
+            ret = "File does not exsist!"
+            return ret
+        filename = os.path.basename(file)
+        dir = os.path.dirname(os.path.realpath(file))
+        return filename, dir

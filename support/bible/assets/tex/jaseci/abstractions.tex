@@ -64,6 +64,54 @@ A key principle of Jaseci is to reshape and reimagine how we view data and memor
     \end{enumerate}
 \end{nerd}
 \section{Walkers}
+One of the most important abstractions introduced in Jaseci is that of the \texttt{walker}.
+The semantics of this abstraction is unlike any that has existed in any programming language before.
+
+In a nutshell, a walker is a unit of execution that retains state (its local scope) as it travels over a graphs.
+Walkers `walk' from node to node in the graph and executing its body.
+
+The walker's body is specified with an opening and closing braces (\texttt{ \{ \} }) and is executed to completion on each node it lands on.
+In this sense a walker iterates while spooling through a sequence of nodes that it `takes' using the \lstinline{take} keyword.
+We call each of these iterations \emph{node-bound iterations}.
+
+Variables declared in a walker's body takes two forms: its \emph{context variables}, those that retain state as it travels from node to node in a graph, and its \emph{local variables}, those that are reinitialized for each node-bound iterations.
+
+Walkers present a new way of thinking about programmatic execution distinct from the near-ubiquitous function based asbtraction in other languages.
+Instead of a functions scope being temporally pushed onto an ever increasing stack as functions call other functions.
+Scopes can be spacially laid out on a graph and walkers can hop around the graph taking its scope with it.
+A key difference in this model is in its introduction of data spacial problem solving.
+In the former function-based model scopes become unaccessible upon the sub-call of a function until that function returns.
+In contrast, walkers can access any scope at any time in a modular way.
+
+When solving problems with walkers, a developer can think of that walker as a little self-contained robot or agent that can retain context as it spacially moves about a graph, interacting with the context in nodes and edges of that graph.
+
+In addition to the introduction of the \lstinline{take} command to support new types of control flow for node-bound iterations. The keywords and semantics of \lstinline{disengage}, \lstinline{skip}, and \lstinline{ignore} are also introduced. These instruct walkers to stop walking the graph, skip over a node for execution, and ignore certain paths of the graph.
+These semantics are describe in more detail later in the book.
+
+[Entrypoints to a jac program, init recognized as default]
+
 \section{Abilities}
+
+Nodes, edges, and walkers can have \texttt{abilities}.
+The body of an ability is specified with an opening and closing braces (\texttt{ \{ \} }) within the specification of a node, edge, or walker and specify a unit of execution.
+
+Abilities are most closely analogous to methods in a traditional object oriented program, however they do not have the same semantics of a traditional function.
+An ability can only interact within the scope of context and local variables of the node/edge/walker for which it is affixed and do not have a \texttt{return} semantic. (Though it is important to note, that abilities can always access the scope of the executing walker using the \lstinline{visitor} special variable as described below)
+
+When using abilities, a developer can think of these as self-contained in-memory/in-data compute operations.
+
+\section{\texttt{here} and \texttt{visitor}}
+
+At every execution point in a Jac/Jaseci program there are two scopes visible, that of the walker, and that of the node it is executing on.
+These contexts can be referenced with the special variables \lstinline{here} and \lstinline{visitor} respectively.
+Walkers use \lstinline{here} to refer to the context of the node it is currently executing on, and abilities can use \lstinline{visitor} to refer to the context of the current walker executing.
+
 \section{Actions}
-\section{Other Abstractions Not Yet Actualized in Current Jaseci}
+
+Actions enables bindings to functionality specified outside of Jac/Jaseci and behave as function calls with returns.
+These are analogous to library calls in traditional languages.
+This external functionality in practice takes the form of direct binding to python implementations that are packaged up as a Jaseci action library.
+
+\begin{nerd}
+    Note: This action interface is the abstraction that allows Jaseci to do it's fancy inter-machine optimizations, auto-scaling, auto-componentization etc.
+\end{nerd}

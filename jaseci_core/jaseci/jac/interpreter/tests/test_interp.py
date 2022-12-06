@@ -6,6 +6,14 @@ class InterpreterTest(CoreTest):
 
     fixture_src = __file__
 
+    def test_quick_check(self):
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("lang_features.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "quick_check"}])
+        self.assertEqual(ret["report"][0], "edge5")
+
     def test_has_var_plucking(self):
         ret = self.call(
             self.mast,
@@ -22,14 +30,8 @@ class InterpreterTest(CoreTest):
             ["sentinel_register", {"code": self.load_jac("lang_features.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "deref_adaptive"}])
-        self.assertTrue(
-            ret["report"][0].startswith("junk and stuff")
-            or ret["report"][1].startswith("junk and stuff")
-        )
-        self.assertTrue(
-            ret["report"][1] == {"name": "node0"}
-            or ret["report"][0] == {"name": "node0"}
-        )
+        self.assertTrue(ret["report"][0].startswith("junk and stuff"))
+        self.assertEqual(ret["report"][1], {"name": "node0"})
 
     def test_deref_of_element_fails(self):
         ret = self.call(

@@ -1,39 +1,38 @@
 import re
 from copy import deepcopy
-from multiprocessing import Process
 from typing import Tuple
 from uuid import UUID
 
 from celery import Task
-from celery.app.control import Inspect
+from jaseci.svc.task.config import DEFAULT_MSG
 from requests import get, post
 from requests.exceptions import HTTPError
-
-DEFAULT_MSG = "Skipping scheduled walker!"
 
 
 class Queue(Task):
     def run(self, wlk, nd, args):
         from jaseci.svc import MetaService
 
-        hook = MetaService().hook()
+        hook = MetaService().build_hook()
 
-        wlk = hook.get_obj_from_store(UUID(wlk))
-        nd = hook.get_obj_from_store(UUID(nd))
+        wlk = hook.get_obj_from_store(wlk)
+        wlk._to_await = True
+
+        nd = hook.get_obj_from_store(nd)
         resp = wlk.run(nd, *args)
         wlk.destroy()
 
-        return resp
+        return {"anchor": wlk.anchor_value(), "response": resp}
 
 
 class ScheduledWalker(Task):
     def get_obj(self, jid):
-        return self.hook.get_obj_from_store(UUID(jid))
+        return self.hook.get_obj_from_store(jid)
 
     def run(self, name, ctx, nd=None, snt=None, mst=None):
         from jaseci.svc import MetaService
 
-        self.hook = MetaService().hook()
+        self.hook = MetaService().build_hook()
 
         if mst:
             mst = self.get_obj(mst)
@@ -195,10 +194,10 @@ class ScheduledSequence(Task):
         master = req.get("master")
         app = MetaService()
         if master is None:
-            caller = app.master()
+            caller = app.build_master()
             trigger_type = "public"
         else:
-            caller = app.hook().get_obj_from_store(master)
+            caller = app.build_hook().get_obj_from_store(master)
             trigger_type = "general"
 
         api = req.get("api")
@@ -292,69 +291,3 @@ class ScheduledSequence(Task):
                 break
 
         return persistence
-
-
-c1 = Queue
-c2 = ScheduledWalker
-c3 = ScheduledSequence
-
-
-class TaskProperties:
-    def __init__(self, prop):
-        if not hasattr(prop, "_inspect"):
-            setattr(prop, "_inspect", None)
-            setattr(prop, "_worker", None)
-            setattr(prop, "_scheduler", None)
-
-            # --------------- REGISTERED TASK --------------- #
-            setattr(prop, "_queue", None)
-            setattr(prop, "_scheduled_walker", None)
-            setattr(prop, "_scheduled_sequence", None)
-
-    @property
-    def inspect(self) -> Inspect:
-        return self.cls._inspect
-
-    @inspect.setter
-    def inspect(self, val: Inspect):
-        self.cls._inspect = val
-
-    @property
-    def worker(self) -> Process:
-        return self.cls._worker
-
-    @worker.setter
-    def worker(self, val: Process):
-        self.cls._worker = val
-
-    @property
-    def scheduler(self) -> Process:
-        return self.cls._scheduler
-
-    @scheduler.setter
-    def scheduler(self, val: Process):
-        self.cls._scheduler = val
-
-    @property
-    def queue(self) -> c1:
-        return self.cls._queue
-
-    @queue.setter
-    def queue(self, val: c1):
-        self.cls._queue = val
-
-    @property
-    def scheduled_walker(self) -> c2:
-        return self.cls._scheduled_walker
-
-    @scheduled_walker.setter
-    def scheduled_walker(self, val: c2):
-        self.cls._scheduled_walker = val
-
-    @property
-    def scheduled_sequence(self) -> c3:
-        return self.cls._scheduled_sequence
-
-    @scheduled_sequence.setter
-    def scheduled_sequence(self, val: c3):
-        self.cls._scheduled_sequence = val

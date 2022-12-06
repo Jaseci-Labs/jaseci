@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: js-use-enc
+spec:
+  selector:
+    pod: js-use-enc
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      name: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: js-use-enc-up
+  namespace: default
+data:
+  dev_up: |-
+    git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci/
+    cd /jaseci/jaseci_core/
+    source install.sh
+    cd /jaseci/jaseci_ai_kit
+    source install.sh
+    cd /jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/use_enc
+    uvicorn jaseci_ai_kit.use_enc:serv_actions --host 0.0.0.0 --port 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: js-use-enc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: js-use-enc
+  template:
+    metadata:
+      labels:
+        pod: js-use-enc
+      name: js-use-enc
+    spec:
+      containers:
+        - name: js-use-enc
+          imagePullPolicy: IfNotPresent
+          image: jaseci/jaseci-ai-kit:latest
+          resources:
+            requests:
+              memory: "3Gi"
+            limits:
+              memory: "3Gi"
+          command: [bash, -c, "source script/dev_up"]
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: dev-script
+              mountPath: /script
+
+      volumes:
+        - name: dev-script
+          configMap:
+            name: js-use-enc-up

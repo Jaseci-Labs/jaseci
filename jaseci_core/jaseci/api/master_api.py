@@ -22,6 +22,7 @@ class MasterApi:
     def master_create(
         self,
         name: str,
+        password: str = "",
         global_init: str = "",
         global_init_ctx: dict = {},
         other_fields: dict = {},
@@ -35,7 +36,7 @@ class MasterApi:
         if self.sub_master_ids.has_obj_by_name(name):
             return {"response": f"{name} already exists", "success": False}
         ret = {}
-        mast = self.user_creator(name, other_fields)
+        mast = self.user_creator(name, password, other_fields)
         ret["user"] = mast.serialize()
         if len(global_init):
             ret["global_init"] = self.user_global_init(
@@ -93,9 +94,7 @@ class MasterApi:
         Returns the default master master is using
         """
         if self.caller:
-            return self._h.get_obj(self._m_id, uuid.UUID(self.caller)).serialize(
-                detailed=detailed
-            )
+            return self._h.get_obj(self._m_id, self.caller).serialize(detailed=detailed)
         else:
             return self.serialize(detailed=detailed)
 

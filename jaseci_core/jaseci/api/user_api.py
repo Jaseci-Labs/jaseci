@@ -2,6 +2,7 @@
 User API
 """
 from jaseci.api.interface import Interface
+from jaseci.svc.meta import MetaService
 
 
 class UserApi:
@@ -21,6 +22,7 @@ class UserApi:
     def user_create(
         self,
         name: str,
+        password: str = "",
         global_init: str = "",
         global_init_ctx: dict = {},
         other_fields: dict = {},
@@ -58,7 +60,9 @@ class UserApi:
             and is_superuser.
         """
         ret = {}
-        mast = self.user_creator(name, other_fields)
+        mast = self.user_creator(name, password, other_fields)
+        if type(mast) is dict:  # in case of upstream error
+            return mast
         ret["user"] = mast.serialize()
         self.seek_committer(mast)
         if len(global_init):
@@ -68,21 +72,49 @@ class UserApi:
         ret["success"] = True
         return ret
 
-    def user_creator(self, name, other_fields: dict = {}):
+    @Interface.admin_api(cli_args=["name"])
+    def user_delete(self, name: str):
+        """
+        Delete new user (master object)
+
+        This API is used to delete a user account.
+
+        :param name: The user name to delete. For Jaseci server this must
+        be a valid email address.
+
+        """
+        ret = {}
+        ret["success"] = self.user_destroyer(name)
+        if not ret["success"]:
+            ret["status_code"] = 400
+        return ret
+
+    @Interface.private_api(cli_args=["name"])
+    def user_deleteself(self):
+        """
+        Delete self (master object)
+
+        This API is used to delete a user account.
+        """
+        ret = {}
+        ret["success"] = self.user_destroyer(self.name)
+        if not ret["success"]:
+            ret["status_code"] = 400
+        return ret
+
+    def user_creator(self, name, password: str = "", other_fields: dict = {}):
         """
         Abstraction for user creation for elegant overriding
         """
-        from jaseci.element.master import Master
 
-        return Master(h=self._h, name=name)
+        return MetaService().build_master(h=self._h, name=name)
 
-    def superuser_creator(self, name, other_fields: dict = {}):
+    def superuser_creator(self, name, password: str = "", other_fields: dict = {}):
         """
         Abstraction for super user creation for elegant overriding
         """
-        from jaseci.element.super_master import SuperMaster
 
-        return SuperMaster(h=self._h, name=name)
+        return MetaService().build_super_master(h=self._h, name=name)
 
     def user_global_init(
         self,

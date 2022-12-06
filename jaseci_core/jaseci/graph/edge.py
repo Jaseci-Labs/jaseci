@@ -8,27 +8,23 @@ from jaseci.element.element import Element
 from jaseci.element.obj_mixins import Anchored
 from jaseci.utils.utils import logger
 import uuid
+import sys
 
 
 class Edge(Element, Anchored):
     """Edge class for Jaseci"""
 
-    def __init__(self, from_node=None, to_node=None, *args, **kwargs):
+    def __init__(self, **kwargs):
         self.from_node_id = None
         self.to_node_id = None
         self.bidirected: bool = False
-        self.context = {}
         Anchored.__init__(self)
-        Element.__init__(self, *args, **kwargs)
-        if from_node:
-            self.set_from_node(from_node)
-        if to_node:
-            self.set_to_node(to_node)
+        Element.__init__(self, **kwargs)
 
     def from_node(self):
         """Returns node edge is pointing from"""
         ret = (
-            self._h.get_obj(self._m_id, uuid.UUID(self.from_node_id))
+            self._h.get_obj(self._m_id, self.from_node_id)
             if self.from_node_id
             else None
         )
@@ -42,11 +38,7 @@ class Edge(Element, Anchored):
         """Returns node edge is pointing to"""
         if not self.to_node_id:
             return None
-        ret = (
-            self._h.get_obj(self._m_id, uuid.UUID(self.to_node_id))
-            if self.to_node_id
-            else None
-        )
+        ret = self._h.get_obj(self._m_id, self.to_node_id) if self.to_node_id else None
         if not ret:
             logger.critical(str(f"{self} disconnected to target node"))
             return None
@@ -61,46 +53,23 @@ class Edge(Element, Anchored):
         """Returns opposite node edge is pointing from node_obj"""
         node_set = [self.to_node_id, self.from_node_id]
         try:
-            node_set.remove(node_obj.id.urn)
-            return self._h.get_obj(self._m_id, uuid.UUID(node_set[0]))
+            node_set.remove(node_obj.jid)
+            return self._h.get_obj(self._m_id, node_set[0])
         except ValueError:
             logger.critical(str(f"{self} disconnected to node {node_obj}"))
             return None
-
-    def set_from_node(self, node_obj):
-        """
-        Returns node edge is pointing from
-        TODO: should check prior nodes edge_ids if is a reset
-        """
-        if self.to_node_id:
-            if not self.to_node().dimension_matches(node_obj, silent=False):
-                return False
-        self.from_node_id = node_obj.jid
-        if self.jid not in node_obj.edge_ids:
-            node_obj.edge_ids.add_obj(self)
-        self.save()
-        return True
-
-    def set_to_node(self, node_obj):
-        """
-        Returns node edge is pointing to
-        TODO: should check prior nodes edge_ids if is a reset
-        """
-        if self.from_node_id:
-            if not self.from_node().dimension_matches(node_obj, silent=False):
-                return False
-        self.to_node_id = node_obj.jid
-        if self.jid not in node_obj.edge_ids:
-            node_obj.edge_ids.add_obj(self)
-        self.save()
-        return True
 
     def connect(self, source, target, bi_dir=False):
         """
         Connects both ends of the edge
         """
+        self.from_node_id = source.jid
+        self.to_node_id = target.jid
+        source.smart_add_edge(self)
+        target.smart_add_edge(self)
         self.set_bidirected(bi_dir)
-        return self.set_from_node(source) and self.set_to_node(target)
+        self.save()
+        return True
 
     def set_bidirected(self, bidirected: bool):
         """Sets/unsets edge to be bidirected"""
@@ -116,28 +85,27 @@ class Edge(Element, Anchored):
         if not source and not target:
             return False
         if self.bidirected or ignore_direction:
-            if source and source.id.urn not in [self.from_node_id, self.to_node_id]:
+            if source and source.jid not in [self.from_node_id, self.to_node_id]:
                 return False
-            if target and target.id.urn not in [self.from_node_id, self.to_node_id]:
+            if target and target.jid not in [self.from_node_id, self.to_node_id]:
                 return False
         else:
-            if source and source.id.urn != self.from_node_id:
+            if source and source.jid != self.from_node_id:
                 return False
-            if target and target.id.urn != self.to_node_id:
+            if target and target.jid != self.to_node_id:
                 return False
         return True
 
-    def set_context(self, ctx, arch=None):
-        """Assign values to context of edge"""
-        if arch is None:
-            arch = self
-        for i in ctx.keys():
-            if i not in arch.context.keys():
-                logger.warning(str(f"{i} not a context member of {self}"))
-                continue
-            else:
-                self.context[i] = ctx[i]
-        self.save()
+    def is_fast(self):
+        return sys.getsizeof(self.context) < 2000
+
+    def save(self):
+        """
+        Write self through hook to persistent storage
+        """
+        if self.is_fast():
+            self._persist = False
+        super().save()
 
     def destroy(self):
         """
@@ -145,11 +113,9 @@ class Edge(Element, Anchored):
         """
         base = self.from_node()
         target = self.to_node()
-        if base and self.jid in base.edge_ids:
-            base.edge_ids.remove_obj(self)
-        if target and self.jid in target.edge_ids:
-            target.edge_ids.remove_obj(self)
-        Element.destroy(self)
+        base.smart_remove_edge(self) if base else None
+        target.smart_remove_edge(self) if target else None
+        super().destroy()
 
     def dot_str(self, node_map=None, edge_map=None, detailed=False):
         """
@@ -187,9 +153,8 @@ class Edge(Element, Anchored):
             dstr += ', dir="both"'
 
         edge_dict = self.context
-        if "_private" in edge_dict:
-            for i in edge_dict["_private"]:
-                edge_dict.pop(i)
+        for i in self.private_values():
+            edge_dict.pop(i)
 
         if edge_dict and detailed:
             for k, v in edge_dict.items():

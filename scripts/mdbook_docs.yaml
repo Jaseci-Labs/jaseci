@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jsmdbook
+spec:
+  selector:
+    pod: jsmdbook
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jsmdbook-up
+  namespace: default
+data:
+  prod_up: |-
+    apt update
+    apt upgrade -y
+    apt install git vim curl -y
+    git clone https://github.com/Jaseci-Labs/jaseci.git
+    cd jaseci/scripts
+    curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.21/mdbook-v0.4.21-x86_64-unknown-linux-gnu.tar.gz | tar -xz  --directory=/usr/bin
+    python gen_mdbook.py
+    cd ../mdbook
+    mdbook serve -n 0.0.0.0 -p 80 &
+    cd -
+    while true; do
+    git stash
+    git pull
+    python gen_mdbook.py
+    sleep 150
+    done
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jsmdbook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: jsmdbook
+  template:
+    metadata:
+      labels:
+        pod: jsmdbook
+      name: jsmdbook
+    spec:
+      containers:
+        - name: jsmdbook
+          image: python:3
+          command: [bash, -c, "source script/prod_up"]
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+      volumes:
+      - name: prod-script
+        configMap:
+          name: jsmdbook-up

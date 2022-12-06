@@ -5,7 +5,6 @@ from jaseci.api.interface import Interface
 from jaseci.utils.id_list import IdList
 from jaseci.graph.graph import Graph
 from jaseci.graph.node import Node
-from jaseci.actor.sentinel import Sentinel
 import uuid
 
 
@@ -31,21 +30,26 @@ class GraphApi:
 
     @Interface.private_api()
     def graph_get(
-        self, gph: Graph = None, mode: str = "default", detailed: bool = False
+        self,
+        nd: Node = None,
+        mode: str = "default",
+        detailed: bool = False,
+        depth: int = 0,
     ):
         """
         Return the content of the graph with mode
         Valid modes: {default, dot, }
         """
         if mode == "dot":
-            return gph.graph_dot_str(detailed=detailed)
-        else:
-            items = []
-            for i in gph.get_all_nodes():
-                items.append(i.serialize(detailed=detailed))
-            for i in gph.get_all_edges():
-                items.append(i.serialize(detailed=detailed))
-            return items
+            return nd.traversing_dot_str(detailed, depth)
+
+        nodes, edges = nd.get_all_architypes(depth)
+        items = []
+        for i in nodes.values():
+            items.append(i.serialize(detailed=detailed))
+        for i in edges.values():
+            items.append(i.serialize(detailed=detailed))
+        return items
 
     @Interface.private_api()
     def graph_list(self, detailed: bool = False):
@@ -81,7 +85,7 @@ class GraphApi:
         Returns the default graph master is using
         """
         if self.active_gph_id:
-            default = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
+            default = self._h.get_obj(self._m_id, self.active_gph_id)
             return default.serialize(detailed=detailed)
         else:
             return {"success": False, "response": "No default graph is selected!"}
@@ -109,13 +113,38 @@ class GraphApi:
         return ret
 
     @Interface.private_api(cli_args=["nd"])
-    def graph_node_set(self, nd: Node, ctx: dict, snt: Sentinel = None):
+    def graph_node_view(
+        self,
+        nd: Node = None,
+        detailed: bool = False,
+        show_edges: bool = False,
+        node_type: str = "",
+        edge_type: str = "",
+    ):
+        """
+        Returns value a given node
+        """
+        ret = [nd.serialize(detailed=detailed)]
+        for i in nd.attached_nodes():
+            if not len(node_type) or i.name == node_type:
+                edges = [
+                    en
+                    for en in nd.attached_edges(i)
+                    if not len(edge_type) or en.name == edge_type
+                ]
+                if len(edges):
+                    ret.append(i.serialize(detailed=detailed))
+                    if show_edges:
+                        for j in edges:
+                            ret.append(j.serialize(detailed=detailed))
+        return ret
+
+    @Interface.private_api(cli_args=["nd"])
+    def graph_node_set(self, nd: Node, ctx: dict):
         """
         Assigns values to member variables of a given node using ctx object
         """
-        temp_ref_nd = snt.run_architype(nd.name, kind="node", caller=self)
-        nd.set_context(ctx=ctx, arch=temp_ref_nd)
-        temp_ref_nd.destroy()
+        nd.set_context(ctx=ctx)
         return nd.serialize()
 
     @Interface.cli_api(cli_args=["file"])
@@ -128,7 +157,7 @@ class GraphApi:
             cmd = input("graph_walk_mode > ")
 
     def active_gph(self):
-        return self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
+        return self._h.get_obj(self._m_id, self.active_gph_id)
 
     def destroy(self):
         """

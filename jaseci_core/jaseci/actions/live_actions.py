@@ -4,7 +4,7 @@ General action base class with automation for hot loading
 from importlib.util import spec_from_file_location, module_from_spec
 from jaseci.utils.utils import logger
 from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
-from jaseci.actions.remote_actions import serv_actions, mark_as_remote
+from jaseci.actions.remote_actions import serv_actions, mark_as_remote, mark_as_endpoint
 import requests
 import os
 import sys
@@ -12,6 +12,7 @@ import inspect
 import importlib
 
 live_actions = {}
+live_action_modules = {}
 
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
@@ -30,12 +31,40 @@ def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
     return decorator_func
 
 
+def jaseci_expose(endpoint, mount=None):
+    """Decorator for Jaseci Action interface"""
+    caller_globals = dict(inspect.getmembers(inspect.currentframe().f_back))[
+        "f_globals"
+    ]
+    if "serv_actions" not in caller_globals:
+        caller_globals["serv_actions"] = serv_actions
+
+    def decorator_func(func):
+        mark_as_endpoint([func, endpoint, mount, caller_globals])
+        return func
+
+    return decorator_func
+
+
 def assimilate_action(func, act_group=None, aliases=list()):
     """Helper for jaseci_action decorator"""
     act_group = [func.__module__.split(".")[-1]] if act_group is None else act_group
-    live_actions[f"{'.'.join(act_group+[func.__name__])}"] = func
+    action_name = f"{'.'.join(act_group+[func.__name__])}"
+    live_actions[action_name] = func
+    if func.__module__ != "js_remote_hook":
+        if func.__module__ in live_action_modules:
+            live_action_modules[func.__module__].append(action_name)
+        else:
+            live_action_modules[func.__module__] = [action_name]
     for i in aliases:
         live_actions[f"{'.'.join(act_group+[i])}"] = func
+        if func.__module__ != "js_remote_hook":
+            if func.__module__ in live_action_modules:
+                live_action_modules[func.__module__].append(
+                    f"{'.'.join(act_group+[i])}"
+                )
+            else:
+                live_action_modules[func.__module__] = [f"{'.'.join(act_group+[i])}"]
     return func
 
 
@@ -53,15 +82,55 @@ def load_local_actions(file: str):
         module_dir = os.path.dirname(os.path.dirname(os.path.realpath(file)))
         if module_dir not in sys.path:
             sys.path.append(module_dir)
-        spec.loader.exec_module(module_from_spec(spec))
+        mod = module_from_spec(spec)
+        spec.loader.exec_module(mod)
         return True
 
 
 def load_module_actions(mod):
     """Load all jaseci actions from python module"""
-    if importlib.import_module(mod):
+    if mod in sys.modules:
+        del sys.modules[mod]
+    mod = importlib.import_module(mod)
+    if mod:
         return True
     return False
+
+
+def unload_module(mod):
+    """Unload actions module and all relevant function"""
+    if mod in sys.modules.keys() and mod in live_action_modules.keys():
+        for i in live_action_modules[mod]:
+            del live_actions[i]
+        del sys.modules[mod]
+        del live_action_modules[mod]
+        return True
+    return False
+
+
+def unload_action(name):
+    """Unload actions module and all relevant function"""
+    if name in live_actions.keys():
+        mod = live_actions[name].__module__
+        if mod != "js_remote_hook":
+            live_action_modules[mod].remove(name)
+            if len(live_action_modules[mod]) < 1:
+                unload_module(mod)
+        del live_actions[name]
+        return True
+    return False
+
+
+def unload_actionset(name):
+    """Unload actions module and all relevant function"""
+    act_list = []
+    orig_len = len(live_actions)
+    for i in live_actions.keys():
+        if i.startswith(name + "."):
+            act_list.append(i)
+    for i in act_list:
+        unload_action(i)
+    return len(live_actions) != orig_len
 
 
 def load_preconfig_actions(hook):
@@ -69,24 +138,28 @@ def load_preconfig_actions(hook):
 
     action_preload = hook.resolve_glob("ACTION_SETS", None)
     if action_preload:
-        action_preload = json.loads(action_preload)
-        for i in action_preload["local"]:
-            load_local_actions(i)
-        for i in action_preload["remote"]:
-            load_remote_actions(i)
-        for i in action_preload["module"]:
-            load_module_actions(i)
+        try:
+            action_preload = json.loads(action_preload)
+            for i in action_preload["local"]:
+                load_local_actions(i)
+            for i in action_preload["remote"]:
+                load_remote_actions(i)
+            for i in action_preload["module"]:
+                load_module_actions(i)
+        except Exception:
+            pass
 
 
-def get_global_actions(hook):
+def get_global_actions():
     """
     Loads all global action hooks for use by Jac programs
     Attaches globals to mem_hook
     """
     from jaseci.attr.action import Action
-    import uuid
+    from jaseci.hook.memory import MemoryHook
 
     global_action_list = []
+    hook = MemoryHook()
     for i in live_actions.keys():
         if (
             i.startswith("std.")
@@ -97,16 +170,17 @@ def get_global_actions(hook):
             or i.startswith("request.")
             or i.startswith("date.")
             or i.startswith("jaseci.")
+            or i.startswith("internal.")
         ):
             global_action_list.append(
                 Action(
-                    m_id=uuid.UUID(int=0).urn,
+                    m_id=0,
                     h=hook,
                     mode="public",
                     name=i,
                     value=i,
                     persist=False,
-                ).jid
+                )
             )
     return global_action_list
 
@@ -141,5 +215,7 @@ def gen_remote_func_hook(url, act_name, param_names):
             act_url, headers={"content-type": "application/json"}, json=params
         )
         return res.json()
+
+    func.__module__ = "js_remote_hook"
 
     return func

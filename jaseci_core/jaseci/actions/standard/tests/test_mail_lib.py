@@ -1,4 +1,3 @@
-from copy import copy
 from unittest.mock import MagicMock, Mock
 
 from jaseci.svc import MailService
@@ -12,8 +11,12 @@ class MailLibTest(CoreTest):
     fixture_src = __file__
 
     def __init__(self, *args, **kwargs):
+        MAIL_CONFIG["enabled"] = True
         MailService.connect = MagicMock(return_value=Mock())
         super(MailLibTest, self).__init__(*args, **kwargs)
+
+    def setUp(self):
+        super().setUp(True)
 
     def test_send_mail(self):
         self.call(
@@ -22,14 +25,8 @@ class MailLibTest(CoreTest):
         )
         ret = self.call(self.mast, ["walker_run", {"name": "send_mail"}])
         self.assertTrue(ret["success"])
-
-        ms = MailService()
-        configs = copy(MAIL_CONFIG)
-        configs.pop("quiet")
-
-        self.assertEqual(ms.connect.call_args[0], (configs,))
-
+        self.assertTrue(self.mast._h.mail.connect.called)
         self.assertEqual(
-            ms.app.method_calls[0].args,
+            self.mast._h.mail.app.method_calls[0].args,
             (None, ["jaseci.dev@gmail.com"], "Test Subject", ("Test", "<h1>Test</h1>")),
         )

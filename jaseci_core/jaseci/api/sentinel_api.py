@@ -36,6 +36,7 @@ class SentinelApi:
         name: str = "default",
         code: str = "",
         code_dir: str = "./",
+        opt_level: int = 4,
         mode: str = "default",
         encoded: bool = False,
         auto_run: str = "init",
@@ -58,7 +59,12 @@ class SentinelApi:
                 new_gph = self.graph_create(set_active=set_active)
         if code:
             self.sentinel_set(
-                code=code, code_dir=code_dir, encoded=encoded, snt=snt, mode=mode
+                code=code,
+                code_dir=code_dir,
+                encoded=encoded,
+                snt=snt,
+                mode=mode,
+                opt_level=opt_level,
             )
             if not snt.is_active:
                 return {
@@ -82,7 +88,7 @@ class SentinelApi:
         glob_id = self._h.get_glob("GLOB_SENTINEL")
         if not glob_id:
             return {"response": "No global sentinel is available!", "success": False}
-        g_snt = self._h.get_obj(self._m_id, uuid.UUID(glob_id)).duplicate()
+        g_snt = self._h.get_obj(self._m_id, glob_id).duplicate()
 
         snt = self.sentinel_ids.get_obj_by_name(g_snt.name, silent=True)
         if not snt:
@@ -114,6 +120,7 @@ class SentinelApi:
         self,
         code: str,
         code_dir: str = "./",
+        opt_level: int = 4,
         encoded: bool = False,
         snt: Sentinel = None,
         mode: str = "default",
@@ -126,7 +133,7 @@ class SentinelApi:
             code = b64decode_str(code)
         if mode not in ["code", "default", "ir"]:
             return {"response": f"Invalid mode to set {snt}", "success": False}
-        snt.register_code(code, dir=code_dir, mode=mode)
+        snt.register_code(code, dir=code_dir, mode=mode, opt_level=opt_level)
         snt.propagate_access()
 
         if snt.is_active:
@@ -150,11 +157,19 @@ class SentinelApi:
         return snts
 
     @Interface.private_api()
-    def sentinel_test(self, snt: Sentinel = None, detailed: bool = False):
+    def sentinel_test(
+        self,
+        snt: Sentinel = None,
+        single: str = "",
+        detailed: bool = False,
+        profiling: bool = False,
+    ):
         """
         Run battery of test cases within sentinel and provide result
         """
-        return snt.run_tests(detailed=detailed)
+        if not len(single):
+            single = None
+        return snt.run_tests(specific=single, profiling=profiling, detailed=detailed)
 
     @Interface.private_api(cli_args=["snt"])
     def sentinel_active_set(self, snt: Sentinel):
@@ -193,7 +208,7 @@ class SentinelApi:
         else:
             self.active_snt_id = "global"  # Resolved in interface
             self.alias_register("active:sentinel", glob_id)
-            sent = self._h.get_obj(self._m_id, uuid.UUID(glob_id))
+            sent = self._h.get_obj(self._m_id, glob_id)
             if auto_create_graph:
                 ret["graph_created"] = self.graph_create(set_active=True)
             auto_run_ret = self.attempt_auto_run(
@@ -217,7 +232,7 @@ class SentinelApi:
         if not id:
             return {"response": "No default sentinel is selected!", "success": False}
         else:
-            default = self._h.get_obj(self._m_id, uuid.UUID(id))
+            default = self._h.get_obj(self._m_id, id)
             return default.serialize(detailed=detailed)
 
     @Interface.private_api(cli_args=["snt"])
@@ -232,11 +247,19 @@ class SentinelApi:
         return [f"Sentinel {snt.id} successfully deleted"]
 
     def active_snt(self):
-        return self._h.get_obj(self._m_id, uuid.UUID(self.active_snt_id))
+        sid = (
+            self._h.get_glob("GLOB_SENTINEL")
+            if self.active_snt_id == "global"
+            else self.active_snt_id
+        )
+        return self._h.get_obj(self._m_id, sid) if sid is not None else None
 
     def attempt_auto_run(self, sent: Sentinel, walk_name, ctx):
-        if sent.walker_ids.has_obj_by_name(walk_name) and self.active_gph_id:
-            nd = self._h.get_obj(self._m_id, uuid.UUID(self.active_gph_id))
+        if (
+            sent.arch_ids.has_obj_by_name(walk_name, kind="walker")
+            and self.active_gph_id
+        ):
+            nd = self._h.get_obj(self._m_id, self.active_gph_id)
             return self.walker_run(name=walk_name, nd=nd, ctx=ctx, snt=sent)
 
     def destroy(self):

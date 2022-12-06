@@ -22,11 +22,11 @@ class JacTests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = Graph(m_id="anon", h=self.meta.hook())
+        gph = Graph(m_id=0, h=self.meta.build_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
-        test_walker = sent.walker_ids.get_obj_by_name("use_test")
+        test_walker = sent.run_architype("use_test")
         test_walker.prime(test_node)
         report = test_walker.run()
         test_walker.save()
@@ -38,11 +38,11 @@ class JacTests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building Graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = Graph(m_id="anon", h=self.meta.hook())
+        gph = Graph(m_id=0, h=self.meta.build_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
-        test_walker = sent.walker_ids.get_obj_by_name("use_test_single")
+        test_walker = sent.run_architype("use_test_single")
         test_walker.prime(test_node)
         report = test_walker.run()
         test_walker.save()
@@ -54,11 +54,11 @@ class JacTests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building Graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = Graph(m_id="anon", h=self.meta.hook())
+        gph = Graph(m_id=0, h=self.meta.build_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
-        test_walker = sent.walker_ids.get_obj_by_name("use_test_with_ctx")
+        test_walker = sent.run_architype("use_test_with_ctx")
         test_walker.prime(test_node)
         report = test_walker.run()
         test_walker.save()
@@ -70,11 +70,11 @@ class JacTests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building Graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = Graph(m_id="anon", h=self.meta.hook())
+        gph = Graph(m_id=0, h=self.meta.build_hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
-        test_walker = sent.walker_ids.get_obj_by_name("use_test_with_ctx2")
+        test_walker = sent.run_architype("use_test_with_ctx2")
         test_walker.prime(test_node)
         report = test_walker.run()
         test_walker.save()

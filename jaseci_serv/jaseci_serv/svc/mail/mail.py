@@ -2,8 +2,7 @@ from django.core import mail
 
 from jaseci.svc import MailService as Ms
 from jaseci.svc.mail import Mailer as Em
-from jaseci_serv.jaseci_serv.settings import MAIL_CONFIG
-
+from .config import MAIL_CONFIG
 
 #################################################
 #                 EMAIL APP ORM                 #
@@ -11,23 +10,30 @@ from jaseci_serv.jaseci_serv.settings import MAIL_CONFIG
 
 
 class MailService(Ms):
-    def connect(self, configs):
-        user = configs.get("user")
-        backend = configs.get("backend", "smtp")
-        sender = configs.get("sender", user)
+    def connect(self):
+        user = self.config.get("user")
+        backend = self.config.get("backend", "smtp")
+        sender = self.config.get("sender", user)
 
         server = mail.get_connection(
             backend=f"django.core.mail.backends.{backend}.EmailBackend",
-            host=configs.get("host"),
-            port=configs.get("port"),
+            host=self.config.get("host"),
+            port=self.config.get("port"),
             username=user,
-            password=configs.get("pass"),
-            use_tls=configs.get("tls"),
+            password=self.config.get("pass"),
+            use_tls=self.config.get("tls"),
         )
-        return Mailer(server, sender, configs["templates"])
 
-    def get_config(self, hook) -> dict:
-        return hook.build_config("MAIL_CONFIG", MAIL_CONFIG)
+        # this is now for initial trial of connection
+        server.open()
+
+        # closing will now let the actual email sending open their own connecion
+        server.close()
+
+        return Mailer(server, sender, self.config["templates"])
+
+    def build_config(self, hook) -> dict:
+        return hook.service_glob("MAIL_CONFIG", MAIL_CONFIG)
 
 
 # ----------------------------------------------- #

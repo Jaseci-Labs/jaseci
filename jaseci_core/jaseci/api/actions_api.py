@@ -90,7 +90,7 @@ class ActionsApi:
         Jaseci python instance.
 
         :param mod: The import style module to load actions from.
-            (i.e., jaseci_kit.bi_enc)
+            (i.e., jaseci_ai_kit.bi_enc)
         """
         success = lact.load_module_actions(mod)
         if success:
@@ -129,7 +129,34 @@ class ActionsApi:
             actions = list(filter(lambda a: a.startswith(name), actions))
         return actions
 
-    # @interface.admin_api()
-    # def actions_delete(self, name: str, value: str):
-    #     """
-    #     """
+    @Interface.admin_api()
+    def actions_module_list(self, detailed: bool = False):
+        """
+        List all modules loaded for actions
+        """
+        if not detailed:
+            action_mods = list(lact.live_action_modules.keys())
+        else:
+            action_mods = lact.live_action_modules
+        return action_mods
+
+    @Interface.admin_api(cli_args=["name"])
+    def actions_unload_module(self, name: str):
+        """
+        Unload modules loaded for actions
+        """
+        return {"success": lact.unload_module(name)}
+
+    @Interface.admin_api(cli_args=["name"])
+    def actions_unload_action(self, name: str):
+        """
+        Unload modules loaded for actions
+        """
+        return {"success": lact.unload_action(name)}
+
+    @Interface.admin_api(cli_args=["name"])
+    def actions_unload_actionset(self, name: str):
+        """
+        Unload modules loaded for actions
+        """
+        return {"success": lact.unload_actionset(name)}

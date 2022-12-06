@@ -12,7 +12,7 @@ from django.db import models
 from jaseci.api.interface import Interface
 from jaseci.element.master import Master as CoreMaster
 from jaseci.element.super_master import SuperMaster as CoreSuper
-from jaseci_serv.jaseci_serv.settings import JASECI_CONFIGS
+from jaseci_serv.settings import JASECI_CONFIGS
 from jaseci_serv.svc import MetaService
 
 
@@ -21,55 +21,67 @@ class Master(CoreMaster):
         super().__init__(*args, **kwargs)
         self._valid_configs += JASECI_CONFIGS
 
-    def user_creator(self, name, other_fields: dict = {}):
+    def user_creator(self, name, password, other_fields: dict = {}):
         """
         Create a master instance and return root node master object
 
         other_fields used for additional fields for overloaded interfaces
         (i.e., Django interface)
         """
-        data = {"email": name}
+        from jaseci_serv.user_api.serializers import UserSerializer, SuperUserSerializer
+
+        data = {"email": name, "password": password}
         for i in other_fields.keys():
             data[i] = other_fields[i]
-        from jaseci_serv.user_api.serializers import UserSerializer
-
-        serializer = UserSerializer(data=data)
+        serializer = (
+            UserSerializer(data=data)
+            if get_user_model().objects.count()
+            else SuperUserSerializer(data=data)
+        )
         if serializer.is_valid(raise_exception=False):
             mas = serializer.save().get_master()
             mas._h = self._h
             return mas
+        else:
+            return {"error": serializer._errors, "status_code": 400}
 
-    def superuser_creator(self, name, other_fields: dict = {}):
+    def superuser_creator(self, name, password, other_fields: dict = {}):
         """
         Create a master instance and return root node master object
 
         other_fields used for additional fields for overloaded interfaces
         (i.e., Django interface)
         """
-        data = {"email": name}
-        for i in other_fields.keys():
-            data[i] = other_fields[i]
         from jaseci_serv.user_api.serializers import SuperUserSerializer
 
+        data = {"email": name, "password": password}
+        for i in other_fields.keys():
+            data[i] = other_fields[i]
         serializer = SuperUserSerializer(data=data)
         if serializer.is_valid(raise_exception=False):
             mas = serializer.save().get_master()
             mas._h = self._h
             return mas
+        else:
+            return {"error": serializer._errors, "status_code": 400}
 
     def user_destroyer(self, name: str):
         """
         Permanently delete master with given id
         """
-        get_user_model().objects.get(email=name).delete()
+        try:
+            get_user_model().objects.get(email=name).delete()
+            return True
+        except Exception:
+            return False
 
 
 class SuperMaster(Master, CoreSuper):
     @Interface.admin_api()
     def master_allusers(self, limit: int = 10, offset: int = 0, asc: bool = False):
         """
-        Returns info on a set of users, num specifies the number of users to
-        return and start idx specfies where to start
+        Returns info on a set of users, limit specifies the number of users to
+        return and offset specfies where to start
         """
 
         if (limit < 0) or (offset < 0):
@@ -118,7 +130,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = Master(h=user._h, name=email).id
+        user.master = MetaService().build_master(h=user._h, name=email).id
         user._h.commit()
 
         user.save(using=self._db)
@@ -136,7 +148,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
 
         # Create user's root node
-        user.master = SuperMaster(h=user._h, name=email).id
+        user.master = MetaService().build_super_master(h=user._h, name=email).id
         user._h.commit()
 
         user.save(using=self._db)
@@ -163,7 +175,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     def __init__(self, *args, **kwargs):
-        self._h = MetaService().hook()
+        self._h = MetaService().build_hook()
         AbstractBaseUser.__init__(self, *args, **kwargs)
         PermissionsMixin.__init__(self, *args, **kwargs)
 
@@ -171,7 +183,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_master(self):
         """Returns main user Jaseci node"""
-        return self._h.get_obj(caller_id=self.master.urn, item_id=self.master)
+        return self._h.get_obj(caller_id=self.master.urn, item_id=self.master.urn)
 
     def delete(self):
         JaseciObject.objects.filter(j_master=self.master.urn).delete()

@@ -1,3 +1,23 @@
+spawn_graph_node = """
+    node test_node {has name;}
+    graph test_graph {
+        has anchor graph_root;
+        spawn {
+            graph_root =
+                spawn node::test_node(name="graph_root_node_name");
+        }
+    }
+    walker init {
+        root {
+            spawn here --> graph::test_graph;
+            take --> node::test_node;
+        }
+        test_node {
+            std.out(here.name);
+        }
+    }
+    """
+
 basic_arith = """
     walker init {
         a = 4 + 4;
