@@ -33,6 +33,8 @@ setup(
         "beautifulsoup4 >= 4.10.0, < 4.11.0",
         "umap-learn==0.5.3",
         "hdbscan==0.8.29",
+        "inflect== 6.0.2",
+        "librosa==0.9.2",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],
