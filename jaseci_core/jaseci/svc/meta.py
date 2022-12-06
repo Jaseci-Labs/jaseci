@@ -78,6 +78,7 @@ class MetaService(CommonService, MetaProperties):
         return self.is_running() and self.app and self.app.automated
 
     def in_cluster(self):
+        print("in cluster")
         return self.app.in_cluster()
 
     ###################################################

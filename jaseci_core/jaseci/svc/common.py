@@ -272,6 +272,8 @@ class JsOrc:
         try:
             hook = self.build_context("hook")
             config = hook.service_glob("META_CONFIG", META_CONFIG)
+            logger.info("in jsorc build")
+            logger.info(config)
             if config.pop("automation", False):
                 self.kubernetes = Kube(**config.pop("kubernetes", KUBERNETES_CONFIG))
                 self.prometheus = self.meta.get_service("promon", hook)
@@ -306,13 +308,14 @@ class JsOrc:
         """
         try:
             if not hasattr(self, "kubernetes"):
+                print("no kubernetes attr")
                 return False
             res = self.kubernetes.ping()
-            logger.info("in in_cluster check")
-            logger.info(res)
+            print("in in_cluster check")
+            print(res)
         except ApiException as e:
-            logger.info("in in_cluster check exception block")
-            logger.info(e)
+            print("in in_cluster check exception block")
+            print(e)
             return False
 
     def create(self, kind: str, name: str, namespace: str, conf: dict):
