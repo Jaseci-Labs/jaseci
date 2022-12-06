@@ -4,23 +4,28 @@ import time
 import torch
 import urllib.request
 
+import numpy as np
+
 from fastapi import HTTPException
 from scipy.io.wavfile import write
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.actions.remote_actions import launch_server
 
-from tacotron2 import model as Tacotron2
+# from tacotron2 import model as Tacotron2
 from waveglow import model as Waveglow
+from tacotron2 import model as Tacotron2
+
 
 taco_checkpoint = "https://api.ngc.nvidia.com/v2/models/nvidia/tacotron2_pyt_ckpt_amp/versions/19.09.0/files/nvidia_tacotron2pyt_fp16_20190427"
 waglo_checkpoint = "https://api.ngc.nvidia.com/v2/models/nvidia/waveglow_ckpt_amp/versions/19.09.0/files/nvidia_waveglowpyt_fp16_20190427"
 
 force_reload = True
+rate = 22050
 
 
 def _download_checkpoint(checkpoint, force_reload):
     """
-    This method downloada the tacotron checkpoint weights from the checkpoint url
+    This method download the tacotron checkpoint weights from the checkpoint url
 
     Parameters:
     -----------
@@ -91,15 +96,15 @@ def _unwrap_distributed(state_dict):
 
 def load_tacotron(checkpoint, force_reload):
     """
-    Download tacotron2 checkpoints and loading state dictionery
+    Downloads tacotron2 checkpoints and loading state dictionery
 
     Parameters:
     -----------
-    checkpoint: checkpoint file
-
+    checkpoint: String, url to the tacotron2 checkpoint.
+    force_reload: Boolean. setting this value to true will ignore the downloaded checkpoints from the cache.
     Return:
     -----------
-    tacotron2 = Model
+    tacotron2: Model Tacotron
     """
     ckpt_file = _download_checkpoint(checkpoint, force_reload)
     ckpt = torch.load(ckpt_file, map_location=torch.device("cpu"))
@@ -114,6 +119,17 @@ def load_tacotron(checkpoint, force_reload):
 
 
 def load_waveglow(checkpoint, force_reload):
+    """
+    Downloads waveglow checkpoints and loading state dictionery
+
+    Parameters:
+    -----------
+    checkpoint: String, url to the waveglow checkpoint.
+    force_reload: Boolean. setting this value to true will ignore the downloaded checkpoints from the cache.
+    Return:
+    -----------
+    waveglow: Model, waveglow
+    """
 
     ckpt_file = _download_checkpoint(checkpoint, force_reload)
     ckpt = torch.load(ckpt_file, map_location=torch.device("cpu"))
@@ -127,8 +143,16 @@ def load_waveglow(checkpoint, force_reload):
     return waveglow
 
 
-def make_utils(force_reload):
+def make_utils():
+    """
+    Downloading neccessary utils from torch hub and loading tacotron2 and waveglow models.
 
+    Return:
+    -----------
+    tacotron2: Model, tacotron2
+    waveglow: Model, waveglow
+    utils: Processing
+    """
     tacotron2 = load_tacotron(taco_checkpoint, force_reload)
     waveglow = load_waveglow(waglo_checkpoint, force_reload)
     waveglow = waveglow.remove_weightnorm(waveglow)
@@ -137,33 +161,87 @@ def make_utils(force_reload):
     return tacotron2, waveglow, utils
 
 
-tacotron2, waveglow, utils = make_utils(force_reload)
+tacotron2, waveglow, utils = make_utils()
 
 
 def prediction(input_text, model=tacotron2, vocorder=waveglow, utils=utils):
+    """
+    Inferencing
 
+    Parameters:
+    -----------
+    input_text: String, input text for preprocessing.
+    model: Model, the sequence to sequence model.
+    vocorder: Model, the vocorder model.
+    utils: Processing,
+
+    Return:
+    -----------
+    audio_numpy: Numpy array, 1d numpy with floats contains audio data.
+
+    """
     sequences, lengths = utils.prepare_input_sequence([input_text], cpu_run=True)
     with torch.no_grad():
-        mel, _, _ = tacotron2.infer(sequences, lengths)
-        audio = waveglow.infer(mel)
+        mel, _, _ = model.infer(sequences, lengths)
+        audio = vocorder.infer(mel)
     audio_numpy = audio[0].data.cpu().numpy()
-    rate = 22050
-
-    write("audio.wav", rate, audio_numpy)
 
     return audio_numpy
 
 
+def save_file(input_numpy, path="", rate=rate):
+    """
+    Saving the audio file the given path
+
+    Parameters:
+    -----------
+    input_numpy: Numpy array, 1d numpy with floats contains audio data.
+    path: String, path to the directory to save the file.
+    rate: int, The rate of the audio.
+
+    Return:
+    -----------
+    success: Boolean, True if successfuly saved.
+    file_path: String, path to the saved file.
+    """
+    success = True
+    if os.path.exists(path):
+        try:
+            file_name = "audio_file_" + str(time.time()) + ".wav"
+            file_path = os.path.join(path, file_name)
+            write(file_path, rate, input_numpy)
+            return success, file_path
+        except Exception as ex:
+            print(ex)
+            success = False
+    else:
+        print("Set up directory path properly to save the audio file.")
+        success = False
+    return success
+
+
 @jaseci_action(act_group=["synthesize"], allow_remote=True)
-def synthesize(text: str, threshold: float = 0.7):
+def synthesize(text: str, path: str = "", rate: int = rate):
     try:
         synthesize_audio = prediction(input_text=text)
-        return synthesize_audio
+        status = save_file(synthesize_audio, path, rate)
+        return synthesize_audio.tolist(), status
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["save_audio"], allow_remote=True)
+def synthesize(audio_data: list, path: str = "", rate: int = rate):
+    try:
+        audio_data = np.array(audio_data, dtype="float32")
+        status = save_file(audio_data, path, rate)
+        return status
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
 
-    print("Text Segmentor up and running")
+    print("Text to Speech Synthesizer up and running")
     launch_server(port=8000)

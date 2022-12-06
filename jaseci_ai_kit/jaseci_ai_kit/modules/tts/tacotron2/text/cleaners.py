@@ -19,8 +19,7 @@ hyperparameter. Some cleaners are English-specific. You'll typically want to use
 
 import re
 from .numbers import normalize_numbers
-from .unidecoder import unidecoder
-
+from unidecode import unidecode
 
 # Regular expression matching whitespace:
 _whitespace_re = re.compile(r"\s+")
@@ -70,7 +69,7 @@ def collapse_whitespace(text):
 
 
 def convert_to_ascii(text):
-    return unidecoder(text)
+    return unidecode(text)
 
 
 def basic_cleaners(text):

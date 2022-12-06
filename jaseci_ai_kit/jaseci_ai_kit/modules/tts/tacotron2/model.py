@@ -25,6 +25,8 @@
 #
 # *****************************************************************************
 
+from .common.utils import to_gpu, get_mask_from_lengths
+from .common.layers import ConvNorm, LinearNorm
 from math import sqrt
 import torch
 from torch import nn
@@ -34,8 +36,6 @@ from os.path import abspath, dirname
 
 # enabling modules discovery from global entrypoint
 sys.path.append(abspath(dirname(__file__) + "/../"))
-from tacotron2_common.layers import ConvNorm, LinearNorm
-from tacotron2_common.utils import to_gpu, get_mask_from_lengths
 
 
 class LocationLayer(nn.Module):
