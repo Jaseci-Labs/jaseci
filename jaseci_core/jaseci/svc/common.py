@@ -163,7 +163,8 @@ class Kube:
         self.defaults()
 
     def ping(self):
-        self.client.call_api("/readyz", "GET")
+        res = self.client.call_api("/readyz", "GET")
+        return res[1] == 200
 
     def create(self, api, namespace, conf):
         if api.startswith("ClusterRole"):
@@ -308,14 +309,10 @@ class JsOrc:
         """
         try:
             if not hasattr(self, "kubernetes"):
-                print("no kubernetes attr")
                 return False
-            res = self.kubernetes.ping()
-            print("in in_cluster check")
-            print(res)
+            return self.kubernetes.ping()
         except ApiException as e:
-            print("in in_cluster check exception block")
-            print(e)
+            logger.info(f"Kubernetes cluster environment check failed: {e}")
             return False
 
     def create(self, kind: str, name: str, namespace: str, conf: dict):

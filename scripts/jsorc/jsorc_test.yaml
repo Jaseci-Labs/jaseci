@@ -102,7 +102,8 @@ data:
   prod_up: |-
     cd /jaseci/jaseci_core; source install_live.sh;
     cd /jaseci/jaseci_serv; source install_live.sh;
-    cd /jaseci/jaseci_serv; PYTHONUNBUFFERED=1 pytest -k test_jsorc_kube_api_example &> test_output; cat test_output;
+    while true; do sleep 10000; done
+    cd /jaseci/jaseci_serv; pytest -k test_jsorc_kube_api_example --capture=no --log-cli-level=INFO;
 ---
 apiVersion: apps/v1
 kind: Deployment

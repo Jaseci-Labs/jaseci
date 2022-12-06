@@ -1,6 +1,7 @@
 import unittest
 
 from jaseci_serv.svc import MetaService
+from jaseci.utils.utils import logger
 
 
 def skip_without_redis(test):
@@ -23,7 +24,6 @@ def skip_without_kube(test):
     """
 
     def skipper(*args, **kwargs):
-        print("in skipper")
         meta = MetaService()
         if not meta.in_cluster():
             raise unittest.SkipTest("Jaseci not in a kubernetes context!")

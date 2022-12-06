@@ -21,7 +21,7 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
     def setUp(self):
         super().setUp()
         # TODO: why this has to be called explictly?
-        self.meta = MetaService(run_svcs=True)
+        self.meta = MetaService()
 
         # First user is always super,
         self.user = get_user_model().objects.create_user(
@@ -37,8 +37,7 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         self.master = self.user.get_master()
 
         # Enable JSORC
-        print("WHAT IS GOING ON")
-        logger.info("WHAT IS GOING ON")
+        self.logger_on()
         res = self.enable_jsorc()
 
     def enable_jsorc(self):
@@ -61,6 +60,7 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
+        logger.info(res)
 
         return res
 

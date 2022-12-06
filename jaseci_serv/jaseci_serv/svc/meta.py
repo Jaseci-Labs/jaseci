@@ -1,5 +1,6 @@
 from jaseci.svc import MetaService as Ms
 from jaseci_serv.svc import MailService, RedisService, TaskService, PromotheusService
+from .config import RUN_SVCS
 
 
 class MetaService(Ms):
@@ -7,8 +8,8 @@ class MetaService(Ms):
     ###################################################
     #                   OVERRIDEN                     #
     ###################################################
-    def __init__(self, run_svcs=False):
-        super().__init__(run_svcs=run_svcs)
+    def __init__(self):
+        super().__init__(run_svcs=RUN_SVCS)
 
     ###################################################
     #                   OVERRIDEN                     #
