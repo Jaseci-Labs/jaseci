@@ -20,6 +20,15 @@ type Graph = {
   context: Record<any, any>;
 };
 
+type Walker = {
+  name: string;
+  kind: string;
+  jid: string;
+  j_timestamp: string;
+  j_type: 'graph';
+  code_sig: string;
+};
+
 @Component({
   tag: 'jsc-graph',
   styleUrl: 'jsc-graph.css',
@@ -39,6 +48,7 @@ export class JscGraph {
   @State() prevNd = '';
   @State() network: vis.Network;
   @State() graphs: Graph[] = [];
+  @State() walkers: Walker[] = [];
   @State() serverUrl: string = localStorage.getItem('serverUrl') || 'http://localhost:8000';
   @State() hiddenGroups: Set<string> = new Set();
 
@@ -68,8 +78,36 @@ export class JscGraph {
     });
   }
 
+  async runWalker(nd: string, walker_name: string, ctx: Record<string, any>): Promise<Graph> {
+    return await fetch(`${this.serverUrl}/js/walker_run`, {
+      body: JSON.stringify({
+        name: walker_name,
+        nd,
+        snt: '',
+        ctx,
+      }),
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${localStorage.getItem('token')}`,
+      },
+    }).then(async res => {
+      return res.json();
+    });
+  }
+
   async getAllGraphs(): Promise<Graph[]> {
     return await fetch(`${this.serverUrl}/js/graph_list`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${localStorage.getItem('token')}`,
+      },
+    }).then(res => res.json());
+  }
+
+  async getAllWalkers(): Promise<Walker[]> {
+    return await fetch(`${this.serverUrl}/js/walker_list`, {
       method: 'post',
       headers: {
         'Content-Type': 'application/json',
@@ -302,6 +340,7 @@ export class JscGraph {
 
       // get all graphs for the graph switcher
       this.graphs = await this.getAllGraphs();
+      this.walkers = await this.getAllWalkers();
 
       await this.getGraphState();
     } catch (err) {
@@ -426,8 +465,46 @@ export class JscGraph {
                   </div>
                 </div>
               </div>
+
               <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
                 {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
+                {this.clickedNode && (
+                  <label htmlFor="my-modal" class="btn btn-info btn-xs ml-2">
+                    Run Walker
+                  </label>
+                )}
+              </div>
+              <input type="checkbox" id="my-modal" class="modal-toggle" />
+              <div class="modal">
+                <div class="modal-box relative w-5/12">
+                  <label htmlFor="my-modal" class="btn btn-sm btn-circle absolute right-2 top-2">
+                    ✕
+                  </label>
+                  <h3 class="text-lg font-bold">Select Walker</h3>
+                  <p class="py-4 font-medium">Choose a walker to run on this node</p>
+                  <table class="table w-full table-compact">
+                    <thead>
+                      <tr class={'active'}>
+                        <th></th>
+                        <th>Name</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {this.walkers.map((walker, index) => (
+                        <tr class={index % 2 === 0 ? undefined : 'active'}>
+                          <th>{index + 1}</th>
+                          <td>{walker.name}</td>
+                          <td>
+                            <label htmlFor="my-modal" class="btn btn-info btn-xs ml-2" onClick={() => this.runWalker(this.clickedNode.id as string, walker.name, {})}>
+                              Use
+                            </label>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               {/*Graph Switcher*/}
