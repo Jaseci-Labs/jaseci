@@ -273,8 +273,6 @@ class JsOrc:
         try:
             hook = self.build_context("hook")
             config = hook.service_glob("META_CONFIG", META_CONFIG)
-            logger.info("in jsorc build")
-            logger.info(config)
             if config.pop("automation", False):
                 self.kubernetes = Kube(**config.pop("kubernetes", KUBERNETES_CONFIG))
                 self.prometheus = self.meta.get_service("promon", hook)

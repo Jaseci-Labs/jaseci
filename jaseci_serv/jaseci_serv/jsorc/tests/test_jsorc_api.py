@@ -6,6 +6,7 @@ from rest_framework import status
 
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
+from jaseci_serv.svc import MetaService
 
 
 class JsorcAPITests(TestCaseHelper, TestCase):
@@ -15,6 +16,7 @@ class JsorcAPITests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
+        self.meta = MetaService()
         # First user is always super,
         self.user = get_user_model().objects.create_user(
             "throwawayJSCITfdfdEST_test@jaseci.com", "password"
@@ -33,7 +35,7 @@ class JsorcAPITests(TestCaseHelper, TestCase):
 
     def test_service_refresh(self):
         """Test service refresh through the service_refresh API"""
-        payload = {"op": "service_refresh", "name": "meta"}
+        payload = {"op": "service_refresh", "name": "meta", "do_check": False}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
