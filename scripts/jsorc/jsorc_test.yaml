@@ -122,7 +122,7 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: jaseci/jaseci:1.3.6.3
+          image: jaseci/jaseci:latest
           resources:
             requests:
               memory: "350Mi"
@@ -143,10 +143,16 @@ spec:
           volumeMounts:
             - name: prod-script
               mountPath: /script
+            - name: host-mount
+              mountPath: /jaseci/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
+        - name: host-mount
+          hostPath:
+            path: /run/desktop/mnt/host/wsl/jaseci
+            type: Directory
 ---
 
