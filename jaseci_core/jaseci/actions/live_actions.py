@@ -10,7 +10,6 @@ import os
 import sys
 import inspect
 import importlib
-import gc
 
 live_actions = {}
 live_action_modules = {}
@@ -51,22 +50,12 @@ def assimilate_action(func, act_group=None, aliases=list()):
     """Helper for jaseci_action decorator"""
     act_group = [func.__module__.split(".")[-1]] if act_group is None else act_group
     action_name = f"{'.'.join(act_group+[func.__name__])}"
-    # logger.info("------in assimilate_action")
-    # logger.info(action_name)
-    # logger.info(func)
     live_actions[action_name] = func
     if func.__module__ != "js_remote_hook":
         if func.__module__ in live_action_modules:
-            # logger.info("1")
-            # logger.info(func.__module__)
-            # logger.info(live_action_modules[func.__module__])
             live_action_modules[func.__module__].append(action_name)
-            # logger.info(live_action_modules[func.__module__])
         else:
             live_action_modules[func.__module__] = [action_name]
-            # logger.info("2")
-            # logger.info(func.__module__)
-            # logger.info(live_action_modules[func.__module__])
     for i in aliases:
         live_actions[f"{'.'.join(act_group+[i])}"] = func
         if func.__module__ != "js_remote_hook":
@@ -100,42 +89,20 @@ def load_local_actions(file: str):
 
 def load_module_actions(mod, loaded_module=None):
     """Load all jaseci actions from python module"""
-    # logger.info(mod)
-    # logger.info(sys.modules.get(mod, None))
-    # logger.info(sys.modules.get("jaseci_ai_kit.modules.bi_enc.bi_enc", None))
-    # logger.info(sys.modules.get("jaseci_ai_kit.modules.use_enc.use_enc", None))
-    # if mod in sys.modules:
-    #     del sys.modules[mod]
-    # # Hack
-    # modmod = mod.split(".")[-1]
-    # modmod = f"jaseci_ai_kit.modules.{modmod}.{modmod}"
-    # # logger.info(modmod)
-    # if modmod in sys.modules:
-    #     del sys.modules[modmod]
-
-    # # HACK 2
-    # modmod2 = "jaseci_ai_kit.modules.encoders.bi_enc"
-    # if modmod2 in sys.modules:
-    #     del sys.modules[modmod2]
     if loaded_module is None:
-        logger.info("importlib.import module")
         loaded_module = importlib.import_module(mod)
     else:
-        logger.info("importlib reload")
         loaded_module = importlib.reload(loaded_module)
         # recover live_actions
-        logger.info(live_action_modules)
         core_mod_name = mod.split(".")[-1]
         if core_mod_name == "bi_enc":
             loaded_mod_name = "jaseci_ai_kit.modules.encoders.bi_enc"
         else:
             loaded_mod_name = f"jaseci_ai_kit.modules.{core_mod_name}.{core_mod_name}"
-        logger.info(loaded_mod_name)
 
         for i in live_action_modules[loaded_mod_name]:
             live_actions[i] = live_actions[f"_inactive_{i}"]
             del live_actions[f"_inactive_{i}"]
-    logger.info(f"importlib.import module returned with {mod}")
     if loaded_module:
         return loaded_module
     return False
@@ -150,51 +117,7 @@ def unload_module(mod):
         for i in live_action_modules[mod]:
             live_actions[f"_inactive_{i}"] = live_actions[i]
             del live_actions[i]
-        # sys_module = sys.modules[mod]
-        # del sys_module
-        # del sys.modules[mod]
-        # del live_action_modules[mod]
         unloaded = True
-    # elif mod in sys.modules.keys():
-    #     sys_module = sys.modules[mod]
-    #     del sys_module
-    #     del sys.modules[mod]
-    #     unloaded = True
-
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("-==============================sys modules")
-    # logger.info(sys.modules)
-    # logger.info("-==============================sys modules")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("-==============================live_actions modules")
-    # logger.info(live_action_modules)
-    # logger.info("-==============================live_actions modules")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("-==============================live_actions")
-    # logger.info(live_actions)
-    # logger.info("-==============================live_actions")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("")
-    # logger.info("-----------------start gc ------------")
-    # gc.collect()
-    # logger.info("-----------------after gc ------------")
     return unloaded
 
 
