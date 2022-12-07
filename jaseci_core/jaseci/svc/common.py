@@ -6,6 +6,7 @@ from kubernetes.client import ApiClient, CoreV1Api, AppsV1Api, RbacAuthorization
 from kubernetes.client.rest import ApiException
 
 from jaseci.utils.utils import logger
+from jaseci.svc.actions_optimizer.actions_optimizer import ActionsOptimizer
 from .state import ServiceState as Ss
 from .config import META_CONFIG, KUBERNETES_CONFIG
 
@@ -264,6 +265,7 @@ class JsOrc:
         self.services = {}
         self.background = {}
         self.context = {}
+        self.actions_optimizer = ActionsOptimizer()
 
     ###################################################
     #                     BUILDER                     #
@@ -275,9 +277,11 @@ class JsOrc:
             config = hook.service_glob("META_CONFIG", META_CONFIG)
             if config.pop("automation", False):
                 self.kubernetes = Kube(**config.pop("kubernetes", KUBERNETES_CONFIG))
+                self.actions_optimizer.kube = self.kubernetes
                 self.prometheus = self.meta.get_service("promon", hook)
                 self.backoff_interval = config.pop("backoff_interval", 10)
                 self.namespace = config.pop("namespace", "default")
+                self.actions_optimizer.namespace = self.namespace
                 self.keep_alive = config.pop(
                     "keep_alive", ["promon", "redis", "task", "mail"]
                 )
@@ -459,6 +463,58 @@ class JsOrc:
     def build_context(self, ctx, *args, **kwargs):
         ctx = self.context[ctx]
         return ctx["class"](*args, *ctx["args"], **kwargs, **ctx["kwargs"])
+
+    ###################################################
+    #                 ACTION MANAGER                  #
+    ###################################################
+    def load_actions(self, name, mode):
+        """
+        Load an action as local, module or remote.
+        """
+        # Using module for local
+        mode = "module" if mode == "local" else mode
+
+        if mode == "module":
+            self.actions_optimizer.load_action_module(name)
+        elif mode == "remote":
+            self.actions_optimizer.load_action_remote(name)
+
+    def unload_actions(self, name, mode, retire_svc):
+        """
+        Unload an action
+        """
+        # We are using module for local
+        mode = "module" if mode == "local" else mode
+        if mode == "auto":
+            res = self.actions_optimizer.unload_action_auto(name)
+            if not res[0]:
+                return res
+            if retire_svc:
+                self.retire_uservice(name)
+            return res
+        elif mode == "module":
+            return self.actions_optimizer.unload_action_module(name)
+        elif mode == "remote":
+            res = self.actions_optimizer.unload_action_remote(name)
+            if not res[0]:
+                return res
+            if retire_svc:
+                self.retire_uservice(name)
+            return res
+        else:
+            return (False, f"Unrecognized action mode {mode}.")
+
+    def retire_uservice(self, name):
+        """
+        Retire a remote microservice for the action.
+        """
+        self.actions_optimizer.retire_remote(name)
+
+    def get_actions_status(self, name=""):
+        """
+        Return the status of the action
+        """
+        return self.actions_optimizer.get_actions_status(name)
 
 
 class MetaProperties:
