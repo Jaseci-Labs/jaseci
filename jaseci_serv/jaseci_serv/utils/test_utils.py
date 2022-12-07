@@ -1,7 +1,6 @@
 import unittest
 
 from jaseci_serv.svc import MetaService
-from jaseci.utils.utils import logger
 
 
 def skip_without_redis(test):
