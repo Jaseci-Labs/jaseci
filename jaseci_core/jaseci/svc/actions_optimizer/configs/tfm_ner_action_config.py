@@ -1,5 +1,4 @@
 TFM_NER_ACTION_CONFIG = {
-    "remote_memory": 2.01 * 1024,
     "module": "jaseci_ai_kit.tfm_ner",
     "loaded_module": "jaseci_ai_kit.modules.tfm_ner.tfm_ner",
     "remote": {

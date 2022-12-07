@@ -1,5 +1,4 @@
 CL_SUMMER_ACTION_CONFIG = {
-    "remote_memory": 258.4,
     "module": "jaseci_ai_kit.cl_summer",
     "loaded_module": "jaseci_ai_kit.modules.cl_summer.cl_summer",
     "remote": {

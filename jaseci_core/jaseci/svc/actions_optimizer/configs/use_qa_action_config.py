@@ -1,5 +1,4 @@
 USE_QA_ACTION_CONFIG = {
-    "remote_memory": 1.865 * 1024,
     "module": "jaseci_ai_kit.use_qa",
     "loaded_module": "jaseci_ai_kit.modules.use_qa.use_qa",
     "remote": {

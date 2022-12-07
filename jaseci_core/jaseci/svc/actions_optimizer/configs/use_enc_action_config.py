@@ -1,5 +1,4 @@
 USE_ENC_ACTION_CONFIG = {
-    "remote_memory": 1.967 * 1024,
     "local": "/jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/use_enc/use_enc.py",
     "module": "jaseci_ai_kit.use_enc",
     "loaded_module": "jaseci_ai_kit.modules.use_enc.use_enc",
