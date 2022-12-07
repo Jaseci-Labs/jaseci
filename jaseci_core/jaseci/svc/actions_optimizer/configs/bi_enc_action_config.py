@@ -1,5 +1,4 @@
 BI_ENC_ACTION_CONFIG = {
-    "remote_memory": 3.025 * 1024,
     "module": "jaseci_ai_kit.bi_enc",
     "loaded_module": "jaseci_ai_kit.modules.encoder.bi_enc",
     "remote": {
@@ -52,7 +51,7 @@ BI_ENC_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "bi-enc",
-                                "image": "jaseci/jee-ai:1.3.6.1",
+                                "image": "jaseci/jaseci-ai:1.3.6.3",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

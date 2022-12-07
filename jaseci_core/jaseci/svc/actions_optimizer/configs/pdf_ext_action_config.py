@@ -51,7 +51,7 @@ PDF_EXT_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "pdf-ext",
-                                "image": "jaseci/jee-ai:1.3.6.1",
+                                "image": "jaseci/jaseci-ai:1.3.6.3",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
