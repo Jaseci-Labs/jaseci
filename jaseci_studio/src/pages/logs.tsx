@@ -12,10 +12,16 @@ import {
 } from "@mantine/core";
 import LogsViewer from "../components/LogsViewer/LogsViewer";
 import { IBM_Plex_Mono } from "@next/font/google";
-import { useDebouncedState } from "@mantine/hooks";
+import { useDebouncedState, useScrollIntoView } from "@mantine/hooks";
 import LevelFilter from "../components/LogsViewer/LevelFilter";
-import { IconArrowDown, IconArrowUp, IconPlayerPause } from "@tabler/icons";
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconPlayerPause,
+  IconPlayerPlay,
+} from "@tabler/icons";
 import Head from "next/head";
+import { useEffect, useState } from "react";
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -24,6 +30,25 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 function LogsPage() {
   const [searchTerm, setSearchTerm] = useDebouncedState("", 800);
+  const [level, setLevel] = useState<"ERROR" | "INFO" | "WARNING" | null>(null);
+  const [paused, setPaused] = useState(false);
+  const {
+    scrollIntoView: scrollToLog,
+    targetRef: scrollTargetRef,
+    scrollableRef,
+  } = useScrollIntoView<HTMLTableRowElement>({
+    offset: 0,
+    onScrollFinish: () => setScrollDirection(null),
+    easing: (t) =>
+      t < 0.5 ? 16 * Math.pow(t, 5) : 1 - Math.pow(-2 * t + 2, 5) / 2,
+  });
+  const [scrollDirection, setScrollDirection] = useState<
+    "top" | "bottom" | null
+  >("bottom");
+
+  useEffect(() => {
+    scrollToLog({ alignment: "start" });
+  }, [scrollDirection]);
 
   return (
     <>
@@ -71,30 +96,60 @@ function LogsPage() {
                     ]}
                   />
 
-                  <Tooltip label="Pause Logs" withArrow>
-                    <ActionIcon variant="light" color="orange">
-                      <IconPlayerPause size={16} />
+                  <Tooltip
+                    label={paused ? "Resume Logs" : "Pause Logs"}
+                    withArrow
+                  >
+                    <ActionIcon
+                      onClick={() => setPaused((prevValue) => !prevValue)}
+                      variant="light"
+                      color="orange"
+                    >
+                      {paused ? (
+                        <IconPlayerPlay size={16}> </IconPlayerPlay>
+                      ) : (
+                        <IconPlayerPause size={16} />
+                      )}
                     </ActionIcon>
                   </Tooltip>
 
                   <Tooltip label="Scroll to Top" withArrow>
-                    <ActionIcon variant="light" color="orange">
+                    <ActionIcon
+                      variant="light"
+                      color="orange"
+                      onClick={() => {
+                        setScrollDirection("top");
+                      }}
+                    >
                       <IconArrowUp size={16} />
                     </ActionIcon>
                   </Tooltip>
 
                   <Tooltip label="Scroll to Bottom" withArrow>
-                    <ActionIcon variant="light" color="orange">
+                    <ActionIcon
+                      variant="light"
+                      color="orange"
+                      onClick={() => {
+                        setScrollDirection("bottom");
+                      }}
+                    >
                       <IconArrowDown size={16} />
                     </ActionIcon>
                   </Tooltip>
                 </Group>
 
-                <LevelFilter></LevelFilter>
+                <LevelFilter setLevel={setLevel} level={level}></LevelFilter>
               </Flex>
             </Box>
             <Divider></Divider>
-            <LogsViewer font={ibmPlexMono} searchTerm={searchTerm}></LogsViewer>
+            <LogsViewer
+              scrollDirection={scrollDirection}
+              scrollRefs={[scrollTargetRef, scrollableRef]}
+              paused={paused}
+              level={level}
+              font={ibmPlexMono}
+              searchTerm={searchTerm}
+            ></LogsViewer>
           </Card>
         </Card>
       </Flex>
