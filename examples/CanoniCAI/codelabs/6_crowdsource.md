@@ -13,12 +13,12 @@ The requester application process can take a couple of days to be approved so pl
 #### Step 2: Sign In
 When you sign into the requester account for amazon. Click on `New Project`.
 
-![Alt text](./images/mturk/new_project.png?raw=true)
+![Alt text](../images/mturk/new_project.png?raw=true)
 
 #### Step 3: Selecting Templates
 You will need to select a customizable template to start a new project. In our case scenerio, we will choose the option to `collect utterance`. It will be highlighted in yellow in the image below, after you click on `collect utterance`, then proceed to click `Create Project`.
 
-![Alt text](./images/mturk/collect_utterance.png?raw=true)
+![Alt text](../images/mturk/collect_utterance.png?raw=true)
 
 #### Step 4: Enter Properties
 You will be redirected to the project page where you will specify the following.
@@ -34,7 +34,7 @@ You will be redirected to the project page where you will specify the following.
 
 Here is how the form will look like.
 
-![Alt text](./images/mturk/edit_project.png?raw=true)
+![Alt text](../images/mturk/edit_project.png?raw=true)
 
 #### Step 5: Setting up your task
 > **_NOTE:_** The settings here decide the compensation for the crowd worker.
@@ -50,19 +50,19 @@ Here is how the form will look like.
 * **Auto-approve and pay Workers in**: This is the amount of time you have to reject a Worker's assignment after they submit the assignment.
 
 Putting it together.
-![Alt text](./images/mturk/setting_task.png?raw=true)
+![Alt text](../images/mturk/setting_task.png?raw=true)
 
 #### Step 6: Worker requirements
 You can customize who can work on your mturk job by specifying additional requirements.
 Usually, the default settings here work well for most data collection need.
 
-![Alt text](./images/mturk/worker_requirements.png?raw=true)
+![Alt text](../images/mturk/worker_requirements.png?raw=true)
 
 After filling in all the information, Click `Save`
 
 #### Step 7: Design Layouts
 
-![Alt text](./images/mturk/design_layout.png?raw=true)
+![Alt text](../images/mturk/design_layout.png?raw=true)
 
 This is what you will see when you click on `Design Layout`. This html template when rendered will be viewable to all workers that accepted your task. Here is where they will add their utterances.
 
@@ -131,16 +131,16 @@ So let's explain in details the important bits of this template.
 ```
 
 #### Step 8: Preview and Finish 
-![Alt text](./images/mturk/finish_preview.png?raw=true)
+![Alt text](../images/mturk/finish_preview.png?raw=true)
 
 Click `finish` you will be redirected to the projects page.
 
 #### Step 9: Publish Batch
-![Alt text](./images/mturk/publish_batch.png?raw=true)
+![Alt text](../images/mturk/publish_batch.png?raw=true)
 
 Click on `Publish Batch`, A model will pop up.
 
-![Alt text](./images/mturk/modal.png?raw=true)
+![Alt text](../images/mturk/modal.png?raw=true)
 
 You will need to create a CSV file that have `context` and `intent` in it.
 These two fields will be used to replace the placeholder in the template html above and generate the actual view for the workers. 
@@ -154,36 +154,36 @@ Imagine you are asking about today's weather what would you say, ask_weather
 
 Now save the file and go back to webpage and click choose file and select the file you just created. Then proceed to click `Upload`. Your modal should look like the one below.
 
-![Alt text](./images/mturk/valid_file.png?raw=true)
+![Alt text](../images/mturk/valid_file.png?raw=true)
 
 
 #### Step 10: Preview Tasks
 Here is where you will preview and confirm that everything looks fine.
 
-![Alt text](./images/mturk/preview_task.png?raw=true)
+![Alt text](../images/mturk/preview_task.png?raw=true)
 
 Once everything looks fine, click `Next`
 
 #### Step 11: Confirm and Publish Batch 
 Here you will confirm all billing information. Then click `Publish`
 
-![Alt text](./images/mturk/confirm_and_publish.png?raw=true)
+![Alt text](../images/mturk/confirm_and_publish.png?raw=true)
 
 #### Step 12: Batch Progress
 Here you will see the the progress of your task.
 > **_NOTE:_** Sometimes the last few percentage takes much longer to finish than the rest therefore it can take very long to reach 100%. You can download the result without it hitting 100%
 
-![Alt text](./images/mturk/progress.png?raw=true)
+![Alt text](../images/mturk/progress.png?raw=true)
 
 #### Step 13: Download Results
-![Alt text](./images/mturk/result.png?raw=true)
+![Alt text](../images/mturk/result.png?raw=true)
 
 Click on the result button that is highlighted above. You will be redirected to the page below and then proceed to click download.
 
-![Alt text](./images/mturk/download_csv.png?raw=true)
+![Alt text](../images/mturk/download_csv.png?raw=true)
 
 You will be redirected to another page where you will click `here` which is highlighted blue, check the image below for reference.
 
-![Alt text](./images/mturk/here.png?raw=true)
+![Alt text](../images/mturk/here.png?raw=true)
 
 It will proceed to download all the results in a CSV file.
