@@ -11,4 +11,5 @@ Excited? Hell yeah! Let's jump in.
 3. [Multi-turn Dialogue System](codelabs/3_dialogue_system.md)
 4. [Unify the Dialogue and FAQ Systems](codelabs/4_unify_system.md)
 5. [Bring Your Application to Production](codelabs/5_production.md)
-6. [Improve Your AI Models](codelabs/6_crowdsource.md)
+6. [Collect Training Data via Crowdsource](codelabs/6_crowdsource.md)
+7. [Contritbute to Jaseci Open Source](codelabs/7.contributing_to_jaseci.md)
