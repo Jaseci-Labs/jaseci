@@ -16,7 +16,7 @@ setup(
         "tensorflow>=2.8.0,<3.0.0",
         "tensorflow-hub>=0.12.0,<1.0.0",
         "tensorflow-text>=2.7.3,<3.0.0",
-        "transformers==4.16.2",
+        "transformers==4.25.1",
         "torch>=1.10.2,<2.0.0",
         "pandas>=1.4.1,<2.0.0",
         "flair==0.10",
@@ -33,6 +33,8 @@ setup(
         "beautifulsoup4 >= 4.10.0, < 4.11.0",
         "umap-learn==0.5.3",
         "hdbscan==0.8.29",
+        "librosa==0.9.2",
+        "soundfile==0.11.0",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],
