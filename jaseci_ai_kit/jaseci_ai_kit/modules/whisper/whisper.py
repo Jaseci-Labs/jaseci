@@ -6,6 +6,109 @@ from fastapi import HTTPException
 import traceback
 import requests
 import uuid
+import os
+
+SUPPORTED_LANGUAGES = [
+    "en",
+    "zh",
+    "de",
+    "es",
+    "ru",
+    "ko",
+    "fr",
+    "ja",
+    "pt",
+    "tr",
+    "pl",
+    "ca",
+    "nl",
+    "ar",
+    "sv",
+    "it",
+    "id",
+    "hi",
+    "fi",
+    "vi",
+    "iw",
+    "uk",
+    "el",
+    "ms",
+    "cs",
+    "ro",
+    "da",
+    "hu",
+    "ta",
+    "no",
+    "th",
+    "ur",
+    "hr",
+    "bg",
+    "lt",
+    "la",
+    "mi",
+    "ml",
+    "cy",
+    "sk",
+    "te",
+    "fa",
+    "lv",
+    "bn",
+    "sr",
+    "az",
+    "sl",
+    "kn",
+    "et",
+    "mk",
+    "br",
+    "eu",
+    "is",
+    "hy",
+    "ne",
+    "mn",
+    "bs",
+    "kk",
+    "sq",
+    "sw",
+    "gl",
+    "mr",
+    "pa",
+    "si",
+    "km",
+    "sn",
+    "yo",
+    "so",
+    "af",
+    "oc",
+    "ka",
+    "be",
+    "tg",
+    "sd",
+    "gu",
+    "am",
+    "yi",
+    "lo",
+    "uz",
+    "fo",
+    "ht",
+    "ps",
+    "tk",
+    "nn",
+    "mt",
+    "sa",
+    "lb",
+    "my",
+    "bo",
+    "tl",
+    "mg",
+    "as",
+    "tt",
+    "haw",
+    "ln",
+    "ha",
+    "ba",
+    "jw",
+    "su",
+]
 
 
 def setup(size: str = "tiny"):
@@ -36,6 +139,9 @@ def transcribe(language: str = "en", array: list[float] = None, audio_file: str 
     try:
         global model, processor
 
+        if language not in SUPPORTED_LANGUAGES:
+            raise ValueError(f"Language {language} not supported")
+
         if array is not None:
             audio_array = np.array(array)
         elif audio_file is not None:
@@ -65,6 +171,9 @@ def translate(language: str = "fr", array: list[float] = None, audio_file: str =
     try:
         global model, processor
 
+        if language not in SUPPORTED_LANGUAGES:
+            raise ValueError(f"Language {language} not supported")
+
         if array is not None:
             audio_array = np.array(array)
         elif audio_file is not None:
@@ -72,6 +181,7 @@ def translate(language: str = "fr", array: list[float] = None, audio_file: str =
         elif url is not None:
             downloaded_audio_file = download(url)
             audio_array = get_array(downloaded_audio_file)
+            os.remove(downloaded_audio_file)
         else:
             raise ValueError("Must provide array, audio_file, or url")
 
@@ -86,6 +196,23 @@ def translate(language: str = "fr", array: list[float] = None, audio_file: str =
             0
         ]
         return transcription.strip()
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["whisper"], allow_remote=True)
+def audio_to_array(audio_file: str = None, url: str = None) -> list[float]:  # type: ignore
+    try:
+        if audio_file is not None:
+            audio_array = get_array(audio_file)
+        elif url is not None:
+            downloaded_audio_file = download(url)
+            audio_array = get_array(downloaded_audio_file)
+            os.remove(downloaded_audio_file)
+        else:
+            raise ValueError("Must provide audio_file or url")
+        return audio_array.tolist()
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
