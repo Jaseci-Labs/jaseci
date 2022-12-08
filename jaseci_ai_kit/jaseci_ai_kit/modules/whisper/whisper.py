@@ -7,6 +7,8 @@ import traceback
 import requests
 import uuid
 import os
+import io
+import base64
 
 SUPPORTED_LANGUAGES = [
     "en",
@@ -202,7 +204,7 @@ def translate(language: str = "fr", array: list[float] = None, audio_file: str =
 
 
 @jaseci_action(act_group=["whisper"], allow_remote=True)
-def audio_to_array(audio_file: str = None, url: str = None) -> list[float]:  # type: ignore
+def audio_to_array(audio_file: str = None, url: str = None, base64_str: str = None) -> list[float]:  # type: ignore
     try:
         if audio_file is not None:
             audio_array = get_array(audio_file)
@@ -210,6 +212,13 @@ def audio_to_array(audio_file: str = None, url: str = None) -> list[float]:  # t
             downloaded_audio_file = download(url)
             audio_array = get_array(downloaded_audio_file)
             os.remove(downloaded_audio_file)
+        elif base64_str is not None:
+            # save the base64 string to a file
+            filename = str(uuid.uuid4()) + ".wav"
+            with open(filename, "wb") as fh:
+                fh.write(base64.b64decode(base64_str))
+            audio_array = get_array(filename)
+            os.remove(filename)
         else:
             raise ValueError("Must provide audio_file or url")
         return audio_array.tolist()
