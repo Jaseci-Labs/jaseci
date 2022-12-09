@@ -63,7 +63,15 @@ export class GraphWalkerRunner {
             <label htmlFor="my-modal" class="btn btn-sm btn-circle absolute right-2 top-2">
               ✕
             </label>
-            <h3 class="text-lg font-bold">Select Walker</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '20px' }}>
+              <h3 class="text-lg font-bold">Select Walker</h3>
+              {this.selectedWalker && (
+                <button data-testId="addProperty" class="btn btn-success btn-xs ml-2" onClick={() => (this.selectedWalker = '')}>
+                  Change Walker
+                </button>
+              )}
+            </div>
+
             {this.selectedWalker ? (
               <p data-testId="subTitle" class="py-4 font-medium">
                 Add walker properties and values
