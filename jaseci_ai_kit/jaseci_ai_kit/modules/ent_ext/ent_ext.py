@@ -20,7 +20,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 config = configparser.ConfigParser()
-# flair.device = torch.device("cpu")
 
 
 # 1. initialize each embedding we use
@@ -36,12 +35,7 @@ embedding_types = [
 # embedding stack consists of Flair and GloVe embeddings
 embeddings = StackedEmbeddings(embeddings=embedding_types)
 
-# device = torch.device("cpu")
-# uncomment this if you wish to use GPU to train
-# this is commented out because this causes issues with
-# unittest on machines with GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# tagger = None
 
 
 def init_model(reload=False):
@@ -204,9 +198,7 @@ def train_and_val_entity(train_params: dict):
         print("in exists : ", cp_path)
         tagger = TARSTagger.load(cp_path)
         # make tag dictionary from the corpus
-        tag_dictionary = corpus.make_tag_dictionary(tag_type=NER_LABEL_TYPE)
-
-        # make the model aware of the desired set of labels from the new corpus
+        tag_dictionary = corpus.make_label_dictionary(label_type=NER_LABEL_TYPE)
         # initialize sequence tagger
         try:
             tagger.add_and_switch_to_new_task(
