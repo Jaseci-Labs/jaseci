@@ -25,7 +25,7 @@ export type Walker = {
   kind: string;
   jid: string;
   j_timestamp: string;
-  j_type: 'graph';
+  j_type: string;
   code_sig: string;
 };
 

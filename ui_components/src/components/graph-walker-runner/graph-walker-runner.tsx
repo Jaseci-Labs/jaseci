@@ -9,7 +9,7 @@ import { Walker } from '../jsc-graph/jsc-graph';
 export class GraphWalkerRunner {
   @Prop() walkers: Walker[];
   @Prop({ attribute: 'nodeid' }) nodeId: string;
-  @Prop({ attribute: 'serverurl' }) serverUrl: string;
+  @Prop({ attribute: 'serverurl', mutable: true }) serverUrl: string;
   @Prop() sentinel: string;
   @State() selectedWalker: string = '';
 
@@ -64,7 +64,15 @@ export class GraphWalkerRunner {
               ✕
             </label>
             <h3 class="text-lg font-bold">Select Walker</h3>
-            {this.selectedWalker ? <p class="py-4 font-medium">Add walker properties and values</p> : <p class="py-4 font-medium">Choose a walker to run on this node</p>}
+            {this.selectedWalker ? (
+              <p data-testId="subTitle" class="py-4 font-medium">
+                Add walker properties and values
+              </p>
+            ) : (
+              <p data-testId="subTitle" class="py-4 font-medium">
+                Choose a walker to run on this node
+              </p>
+            )}
             {this.selectedWalker ? (
               <div>
                 <table class="table w-full table-compact">
@@ -119,7 +127,7 @@ export class GraphWalkerRunner {
                   </tbody>
                 </table>
 
-                <button class="btn btn-info btn-xs ml-2" onClick={() => this.addProperty()}>
+                <button data-testId="addProperty" class="btn btn-info btn-xs ml-2" onClick={() => this.addProperty()}>
                   Add Property
                 </button>
                 <div class="flex justify-end">
@@ -140,7 +148,7 @@ export class GraphWalkerRunner {
                 <tbody>
                   {this.walkers.map((walker, index) => (
                     <tr class={index % 2 === 0 ? undefined : 'active'}>
-                      <th>{index + 1}</th>
+                      <td>{index + 1}</td>
                       <td>{walker.name}</td>
                       <td>
                         <label class="btn btn-info btn-xs ml-2" onClick={() => (this.selectedWalker = walker.name)}>

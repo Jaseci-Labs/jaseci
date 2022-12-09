@@ -1,0 +1,19 @@
+{
+  "success": true,
+  "report": [
+    {
+      "name": "selph",
+      "kind": "node",
+      "jid": "urn:uuid:abd2943a-cb43-400f-b4e9-ffc1c0a68343",
+      "j_timestamp": "2022-12-08T13:06:03.837609",
+      "j_type": "node",
+      "context": {
+        "name": "My Selph",
+        "description": "My selph 3",
+        "threshold": 0.2
+      }
+    }
+  ],
+  "final_node": "urn:uuid:a441fb48-d2a0-4085-9f0e-d15312aee837",
+  "yielded": false
+}

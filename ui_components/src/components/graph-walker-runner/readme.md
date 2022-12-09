@@ -7,12 +7,40 @@
 
 ## Properties
 
-| Property | Attribute | Description     | Type     | Default     |
-| -------- | --------- | --------------- | -------- | ----------- |
-| `first`  | `first`   | The first name  | `string` | `undefined` |
-| `last`   | `last`    | The last name   | `string` | `undefined` |
-| `middle` | `middle`  | The middle name | `string` | `undefined` |
+| Property    | Attribute   | Description | Type       | Default     |
+| ----------- | ----------- | ----------- | ---------- | ----------- |
+| `nodeId`    | `nodeid`    |             | `string`   | `undefined` |
+| `sentinel`  | `sentinel`  |             | `string`   | `undefined` |
+| `serverUrl` | `serverurl` |             | `string`   | `undefined` |
+| `walkers`   | --          |             | `Walker[]` | `undefined` |
 
+
+## Events
+
+| Event             | Description | Type                  |
+| ----------------- | ----------- | --------------------- |
+| `walkerCompleted` |             | `CustomEvent<string>` |
+
+
+## Dependencies
+
+### Used by
+
+ - [jsc-graph](../jsc-graph)
+
+### Depends on
+
+- [jsc-inputbox](../jsc-input)
+- [jsc-select](../jsc-select)
+
+### Graph
+```mermaid
+graph TD;
+  graph-walker-runner --> jsc-inputbox
+  graph-walker-runner --> jsc-select
+  jsc-graph --> graph-walker-runner
+  style graph-walker-runner fill:#f9f,stroke:#333,stroke-width:4px
+```
 
 ----------------------------------------------
 
