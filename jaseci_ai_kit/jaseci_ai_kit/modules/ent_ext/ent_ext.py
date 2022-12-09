@@ -22,7 +22,7 @@ warnings.filterwarnings("ignore")
 config = configparser.ConfigParser()
 
 
-# 1. initialize each embedding we use
+# 1. initialize each embedding for LSTM
 embedding_types = [
     # GloVe embeddings
     WordEmbeddings("glove"),
