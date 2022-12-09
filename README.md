@@ -24,7 +24,8 @@
   3. [Multi-turn Dialogue System](examples/CanoniCAI/codelabs/3_dialogue_system.md)
   4. [Unify the Dialogue and FAQ Systems](examples/CanoniCAI/codelabs/4_unify_system.md)
   5. [Bring Your Application to Production](examples/CanoniCAI/codelabs/5_production.md)
-  6. [Improve Your AI Models](examples/CanoniCAI/codelabs/6_crowdsource.md)
+  6. [Collect Training Data via Crowdsource](examples/CanoniCAI/codelabs/6_crowdsource.md)
+  7. [Contritbute to Jaseci Open Source](examples/CanoniCAI/codelabs/7.contributing_to_jaseci.md)
 - [Build a Custom Jaseci Module](support/codelabs/custom_jaseci_module_codelab.md)
 - [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
 - [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
@@ -74,6 +75,7 @@
 
 - [Jaseci AI Kit Overview](jaseci_ai_kit/README.md)
   - [CL Summarization](jaseci_ai_kit/jaseci_ai_kit/modules/cl_summer/README.md)
+  - [Bart Summarization](jaseci_ai_kit/jaseci_ai_kit/modules/bart_sum/README.md)
   - [Bi-Encoder](jaseci_ai_kit/jaseci_ai_kit/modules/encoders/README.md)
   - [FLair NER](jaseci_ai_kit/jaseci_ai_kit/modules/ent_ext/README.md)
   - [Fasttext Classifier](jaseci_ai_kit/jaseci_ai_kit/modules/fast_enc/README.md)

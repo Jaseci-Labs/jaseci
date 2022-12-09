@@ -171,6 +171,7 @@ def get_global_actions():
             or i.startswith("date.")
             or i.startswith("jaseci.")
             or i.startswith("internal.")
+            or i.startswith("zlib.")
         ):
             global_action_list.append(
                 Action(
