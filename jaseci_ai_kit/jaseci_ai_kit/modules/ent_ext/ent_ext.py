@@ -1,7 +1,6 @@
 from random import random
 from typing import List, Optional, Dict
 from fastapi import HTTPException
-from fastapi.encoders import jsonable_encoder
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
 from flair.models import TARSTagger, SequenceTagger
@@ -232,10 +231,7 @@ def train_and_val_entity(train_params: dict):
         )
     else:
         # make tag dictionary from the corpus
-        tag_dictionary = corpus.make_tag_dictionary(tag_type=NER_LABEL_TYPE)
-
-        # make the model aware of the desired set of labels from the new corpus
-        # initialize sequence tagger
+        tag_dictionary = corpus.make_label_dictionary(label_type=NER_LABEL_TYPE)
         try:
             tagger.add_and_switch_to_new_task(
                 "ner_train_nerd",
@@ -283,16 +279,18 @@ def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
                 # predicting entities in the text
                 tagger.predict(sentence)
                 tagged_sentence = sentence.to_dict(NER_LABEL_TYPE)
-                json_compatible_data = jsonable_encoder(tagged_sentence)
                 response_data_format = {"entities": []}
-
-                for json_data in json_compatible_data["entities"]:
+                response_data_format["text"] = tagged_sentence["text"]
+                for entity, entity_details in zip(
+                    sentence.get_spans(NER_LABEL_TYPE),
+                    tagged_sentence[NER_LABEL_TYPE],
+                ):
                     temp_dict = {}
-                    temp_dict["entity_text"] = json_data["text"]
-                    temp_dict["entity_value"] = json_data["labels"][0]["_value"]
-                    temp_dict["conf_score"] = json_data["labels"][0]["_score"]
-                    temp_dict["start_pos"] = json_data["start_pos"]
-                    temp_dict["end_pos"] = json_data["end_pos"]
+                    temp_dict["entity_text"] = entity.text
+                    temp_dict["entity_value"] = entity_details["value"]
+                    temp_dict["conf_score"] = entity_details["confidence"]
+                    temp_dict["start_pos"] = entity.start_position
+                    temp_dict["end_pos"] = entity.end_position
                     response_data_format["entities"].append(temp_dict)
                 return response_data_format
             else:
@@ -361,7 +359,7 @@ def save_model(model_path: str):
             if type(model_path) is str:
                 model_path = Path(model_path)
             model_path.mkdir(exist_ok=True, parents=True)
-            tagger.save(model_path / "final-model.pt")
+            tagger.save(model_path / "final-model.pt", checkpoint=False)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
     else:
