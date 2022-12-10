@@ -51,6 +51,6 @@ jobs:
       - name: test jaseci_serv without redis
         run: |
           cd jaseci_serv/
-          pytest -x
+          jsserv test
         env:
           REDIS_ENABLED: "False"
