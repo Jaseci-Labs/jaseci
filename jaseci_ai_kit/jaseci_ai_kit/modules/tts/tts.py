@@ -11,15 +11,14 @@ from scipy.io.wavfile import write
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.actions.remote_actions import launch_server
 
-# from tacotron2 import model as Tacotron2
-from waveglow import model as Waveglow
-from tacotron2 import model as Tacotron2
+from .tacotron2.model import Tacotron2
+from .waveglow.model import WaveGlow
 
 
 taco_checkpoint = "https://api.ngc.nvidia.com/v2/models/nvidia/tacotron2_pyt_ckpt_amp/versions/19.09.0/files/nvidia_tacotron2pyt_fp16_20190427"
 waglo_checkpoint = "https://api.ngc.nvidia.com/v2/models/nvidia/waveglow_ckpt_amp/versions/19.09.0/files/nvidia_waveglowpyt_fp16_20190427"
 
-force_reload = True
+force_reload = False
 rate = 22050
 
 
@@ -112,7 +111,7 @@ def load_tacotron(checkpoint, force_reload):
     if _checkpoint_from_distributed(state_dict):
         state_dict = _unwrap_distributed(state_dict)
     config = ckpt["config"]
-    tacotron2 = Tacotron2.Tacotron2(**config)
+    tacotron2 = Tacotron2(**config)
     tacotron2.load_state_dict(state_dict)
 
     return tacotron2
@@ -137,7 +136,7 @@ def load_waveglow(checkpoint, force_reload):
     if _checkpoint_from_distributed(state_dict):
         state_dict = _unwrap_distributed(state_dict)
     config = ckpt["config"]
-    waveglow = Waveglow.WaveGlow(**config)
+    waveglow = WaveGlow(**config)
     waveglow.load_state_dict(state_dict)
 
     return waveglow
@@ -164,25 +163,24 @@ def make_utils():
 tacotron2, waveglow, utils = make_utils()
 
 
-def prediction(input_text, model=tacotron2, vocorder=waveglow, utils=utils):
+def prediction(input_text, seq2seqmodel=tacotron2, vocorder=waveglow, utils=utils):
     """
     Inferencing
 
     Parameters:
     -----------
     input_text: String, input text for preprocessing.
-    model: Model, the sequence to sequence model.
+    seq2seqmodel: Model, the sequence to sequence model.
     vocorder: Model, the vocorder model.
     utils: Processing,
 
     Return:
     -----------
     audio_numpy: Numpy array, 1d numpy with floats contains audio data.
-
     """
     sequences, lengths = utils.prepare_input_sequence([input_text], cpu_run=True)
     with torch.no_grad():
-        mel, _, _ = model.infer(sequences, lengths)
+        mel, _, _ = seq2seqmodel.infer(sequences, lengths)
         audio = vocorder.infer(mel)
     audio_numpy = audio[0].data.cpu().numpy()
 
@@ -210,29 +208,49 @@ def save_file(input_numpy, path="", rate=rate):
             file_name = "audio_file_" + str(time.time()) + ".wav"
             file_path = os.path.join(path, file_name)
             write(file_path, rate, input_numpy)
-            return success, file_path
+            ret_dict = {
+                "save_status": success,
+                "file_path": file_path,
+            }
         except Exception as ex:
             print(ex)
             success = False
+            file_path = None
     else:
         print("Set up directory path properly to save the audio file.")
         success = False
-    return success
+        ret_dict = {
+            "save_status": success,
+        }
+    return ret_dict
 
 
-@jaseci_action(act_group=["synthesize"], allow_remote=True)
+@jaseci_action(act_group=["tts"], allow_remote=True)
 def synthesize(text: str, path: str = "", rate: int = rate):
-    try:
-        synthesize_audio = prediction(input_text=text)
-        status = save_file(synthesize_audio, path, rate)
-        return synthesize_audio.tolist(), status
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    if path != "":
+        try:
+            synthesize_audio = prediction(input_text=text)
+            status = save_file(synthesize_audio, path, rate)
+            ret = {"audio_wave": synthesize_audio.tolist(), "saving_status": status}
+            return ret
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    else:
+        try:
+            synthesize_audio = prediction(input_text=text)
+            ret = {
+                "audio_wave": synthesize_audio.tolist(),
+            }
+            return ret
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["save_audio"], allow_remote=True)
-def synthesize(audio_data: list, path: str = "", rate: int = rate):
+@jaseci_action(act_group=["tts"], allow_remote=True)
+def save_audio(audio_data: list, path: str = "", rate: int = rate):
     try:
         audio_data = np.array(audio_data, dtype="float32")
         status = save_file(audio_data, path, rate)
@@ -242,6 +260,5 @@ def synthesize(audio_data: list, path: str = "", rate: int = rate):
 
 
 if __name__ == "__main__":
-
     print("Text to Speech Synthesizer up and running")
     launch_server(port=8000)
