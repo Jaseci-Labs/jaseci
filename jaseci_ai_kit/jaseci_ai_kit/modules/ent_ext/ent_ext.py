@@ -75,9 +75,9 @@ def train_entity(train_params: dict):
     tag_dictionary = corpus.make_tag_dictionary(tag_type=NER_LABEL_TYPE)
 
     # make the model aware of the desired set of labels from the new corpus
-    # initialize sequence tagger
     try:
         if MODEL_TYPE.lower() in ["trfmodel", "tars"]:
+            # initialize Tars tagger with a new task
             val = random()
             tagger.add_and_switch_to_new_task(
                 "ner_train" + str(val),
@@ -85,6 +85,7 @@ def train_entity(train_params: dict):
                 label_type=NER_LABEL_TYPE,
             )
         elif tagger is None and MODEL_TYPE.lower() in ["lstm", "gru"]:
+            # initialize sequence tagger
             tagger = SequenceTagger(
                 hidden_size=256,
                 embeddings=embeddings,
