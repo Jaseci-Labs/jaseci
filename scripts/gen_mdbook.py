@@ -189,13 +189,15 @@ def import_theme():
 
     if not os.path.exists(output_path + "/theme"):
         os.makedirs(output_path + "/theme")
-    files = []
-    for (dirpath, dirnames, filenames) in walk(theme_source_path):
-        files.extend(filenames)
+
+    if not os.path.exists(output_path + "/theme/css"):
+        os.makedirs(output_path + "/theme/css")
+
+    files = get_images(theme_source_path)
 
     for file in files:
-        dest = output_path + "/theme/" + file
-        source = theme_source_path + "/" + file
+        dest = output_path + "/theme/" + file.replace(theme_source_path + "/", "")
+        source = theme_source_path + "/" + file.replace(theme_source_path + "/", "")
         shutil.copy(source, dest)
 
 
