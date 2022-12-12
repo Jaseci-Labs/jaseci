@@ -13,18 +13,20 @@ class TestTTSModule(CoreTest):
         ret = load_module_actions("jaseci_ai_kit.tts")
         assert ret == True
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(1)
     @jac_testcase("tts.jac", "test_synthesize")
     def test_synthesize(self, ret):
         print(len(ret["report"][0]["audio_wave"]))
         self.assertEqual(ret["success"], True)
         # self.assertEqual(type(ret["report"][0]["audio_wave"]), "list")
 
-    @pytest.mark.order(1)
+    """
+    @pytest.mark.order(2)
     @jac_testcase("tts.jac", "test_save_audio")
     def test_save_audio(self, ret):
         self.assertEqual(ret["success"], True)
         self.assertEqual(ret["report"][0]["save_status"], True)
+    """
 
     @classmethod
     def tearDownClass(cls):
