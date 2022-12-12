@@ -29,6 +29,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        sudo apt install ffmpeg
 
     - name: Install jaseci_core
       run: |
