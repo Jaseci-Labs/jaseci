@@ -20,6 +20,7 @@
 | `palette`     | `palette`     |             | `"accent" \| "error" \| "ghost" \| "info" \| "link" \| "primary" \| "secondary" \| "success" \| "warning"` | `undefined`          |
 | `placeholder` | `placeholder` |             | `string`                                                                                                   | `undefined`          |
 | `selected`    | `selected`    |             | `string`                                                                                                   | `undefined`          |
+| `size`        | `size`        |             | `"lg" \| "md" \| "sm" \| "xs"`                                                                             | `undefined`          |
 | `type`        | `type`        |             | `string`                                                                                                   | `'text'`             |
 | `value`       | `value`       |             | `string`                                                                                                   | `undefined`          |
 
@@ -35,11 +36,13 @@
 
 ### Used by
 
+ - [graph-walker-runner](../graph-walker-runner)
  - [jsc-graph](../jsc-graph)
 
 ### Graph
 ```mermaid
 graph TD;
+  graph-walker-runner --> jsc-select
   jsc-graph --> jsc-select
   style jsc-select fill:#f9f,stroke:#333,stroke-width:4px
 ```
